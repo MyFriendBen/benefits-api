@@ -13,13 +13,13 @@
     </thead>
     <tbody>
       <tr>
-        <td>{{ program_category.external_name }}</td>
+        <td>{{ object.external_name }}</td>
         <td>
           <div class="new-actions">
-            <a href="/api/translations/admin/{{ program_category.name.id }}">Name</a>
-            <a href="/api/translations/admin/{{ program_category.description.id }}">Description</a>
+            <a href="/api/translations/admin/{{ object.name.id }}">Name</a>
+            <a href="/api/translations/admin/{{ object.description.id }}">Description</a>
             <a
-              href="/admin/programs/programcategory/{{ program_category.id }}/change/"
+              href="/admin/programs/programcategory/{{ object.id }}/change/"
               target="_blank"
               rel="noopener noreferrer"
             >

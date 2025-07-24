@@ -1,0 +1,74 @@
+{% load static %}
+<div id="urgent-need-type-container">
+  <table
+    id="urgent-need-type-table"
+    class="urgent-need-type-table table is-striped is-fullwidth is-bordered"
+  >
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>External Name</th>
+        <th>Icon</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for urgent_need_type in page_obj %}
+      <tr>
+        <td>{{ urgent_need_type.id }}</td>
+        <td>{{ urgent_need_type.external_name }}</td>
+        <td>{{ urgent_need_type.icon }}</td>
+        <td>
+          <div class="dropdown">
+            <div class="dropdown-trigger">
+              <button
+                class="button"
+                aria-haspopup="true"
+                aria-controls="dropdown-menu{{ forloop.counter }}"
+              >
+                <span>Go to</span>
+                <span class="material-symbols-outlined"> expand_more </span>
+              </button>
+            </div>
+            <div
+              class="dropdown-menu"
+              id="dropdown-menu{{ forloop.counter }}"
+              role="menu"
+            >
+              <div class="dropdown-content">
+                <a
+                  href="/api/translations/admin/{{ urgent_need_type.name.id }}"
+                  class="dropdown-item"
+                  >Edit Name</a
+                >
+                <hr class="dropdown-divider" />
+                <a
+                  href="/admin/programs/urgentneedtype/{{ urgent_need_type.id }}/change/"
+                  class="dropdown-item"
+                >
+                  Edit in Main Admin
+                </a>
+              </div>
+            </div>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="4">No results</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="4">Total: {{ page_obj.paginator.count }}</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  {% include "../pagination.html" %}
+
+  <script>
+    var tableId = "urgent-need-type-table";
+  </script>
+</div>

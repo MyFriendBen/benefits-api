@@ -34,6 +34,7 @@ class MaEaedc(PolicyEngineSpmCalulator):
         dependency.spm.MaEaedcLivingArangementDependency,
         dependency.spm.CashAssetsDependency,
         dependency.spm.PreSubsidyChildcareExpensesDependency,
+        dependency.spm.MaEaedcNonFinancialCriteria,
         dependency.member.EmploymentIncomeDependency,
         dependency.member.SelfEmploymentIncomeDependency,
         dependency.member.InvestmentIncomeDependency,

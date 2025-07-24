@@ -94,7 +94,7 @@ class NcConfigurationData(ConfigurationData):
             "icon": {"_icon": "Legal_services", "_classname": "option-card-icon"},
             "text": {
                 "_label": "acuteConditionOptions.legalServices",
-                "_default_message": "Free or low-cost help with civil legal needs",
+                "_default_message": "Free or low-cost help with civil legal needs or identity documents",
             },
         },
     }
@@ -380,7 +380,7 @@ class NcConfigurationData(ConfigurationData):
                 "icon": {"_icon": "PrivateInsurance", "_classname": "option-card-icon"},
                 "text": {
                     "_label": "healthInsuranceOptions.private",
-                    "_default_message": "Private (non-employer) health insurance",
+                    "_default_message": "Private (student or non-employer) health insurance",
                 },
             },
             "medicaid": {
@@ -441,7 +441,7 @@ class NcConfigurationData(ConfigurationData):
                 "icon": {"_icon": "PrivateInsurance", "_classname": "option-card-icon"},
                 "text": {
                     "_label": "healthInsuranceOptions.private",
-                    "_default_message": "Private (non-employer) health insurance",
+                    "_default_message": "Private (student or non-employer) health insurance",
                 },
             },
             "medicaid": {
@@ -2696,6 +2696,16 @@ class NcConfigurationData(ConfigurationData):
                     "description": {
                         "_label": "foodBenefits.sunbucks_desc",
                         "_default_message": "Summer break food assistance for families with school age children",
+                    },
+                },
+                "nslp": {
+                    "name": {
+                        "_label": "foodAndNutritionBenefits.nslp",
+                        "_default_message": "National School Lunch Program: ",
+                    },
+                    "description": {
+                        "_label": "foodAndNutritionBenefits.nslp_desc",
+                        "_default_message": "Free school meals",
                     },
                 },
             },

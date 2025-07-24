@@ -22,6 +22,10 @@ class MaStateCodeDependency(StateCode):
     state = "MA"
 
 
+class IlStateCodeDependency(StateCode):
+    state = "IL"
+
+
 class NcCountyDependency(Household):
     field = "county_str"
 

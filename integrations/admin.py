@@ -1,9 +1,9 @@
 from django.contrib import admin
-from unfold.admin import ModelAdmin
+from authentication.admin import SecureAdmin
 from integrations.models import Link
 
 
-class LinkAdmin(ModelAdmin):
+class LinkAdmin(SecureAdmin):
     search_fields = ("link",)
     list_display = ["validated", "valid_status_code", "status_code", "in_use", "link"]
 

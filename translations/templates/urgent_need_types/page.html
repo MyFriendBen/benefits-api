@@ -1,24 +1,24 @@
 {% extends "base.html" %}{% block content %}
 <section class="section">
-  <h2>Translation Override Actions</h2>
+  <h2>Urgent Need Category Type Actions</h2>
 </section>
 <hr />
-<div id="translation-override-actions">
+<div id="urgent-need-type-actions">
   <table class="table is-striped is-fullwidth is-bordered">
     <thead>
       <tr>
-        <th>External Name</th>
+        <th>Icon</th>
         <th>Actions (add)</th>
       </tr>
     </thead>
     <tbody>
       <tr>
-        <td>{{ translation_override.external_name }}</td>
+        <td>{{ object.icon }}</td>
         <td>
           <div class="new-actions">
-            <a href="/api/translations/admin/{{ translation_override.translation.id }}">Translation</a>
+            <a href="/api/translations/admin/{{ object.name.id }}">Name</a>
             <a
-              href="/admin/programs/translationoverride/{{ translation_override.id }}/change/"
+              href="/admin/programs/urgentneedtype/{{ object.id }}/change/"
               target="_blank"
               rel="noopener noreferrer"
             >

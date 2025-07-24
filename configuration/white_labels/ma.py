@@ -96,7 +96,7 @@ class MaConfigurationData(ConfigurationData):
             "icon": {"_icon": "Legal_services", "_classname": "option-card-icon"},
             "text": {
                 "_label": "acuteConditionOptions.legalServices",
-                "_default_message": "Free or low-cost help with civil legal needs or IDs",
+                "_default_message": "Free or low-cost help with civil legal needs or identity documents",
             },
         },
         "veteranServices": {
@@ -244,7 +244,7 @@ class MaConfigurationData(ConfigurationData):
                 "icon": {"_icon": "PrivateInsurance", "_classname": "option-card-icon"},
                 "text": {
                     "_label": "healthInsuranceOptions.private",
-                    "_default_message": "Private (non-employer) health insurance",
+                    "_default_message": "Private (student or non-employer) health insurance",
                 },
             },
             "mass_health": {
@@ -288,7 +288,7 @@ class MaConfigurationData(ConfigurationData):
                 "icon": {"_icon": "PrivateInsurance", "_classname": "option-card-icon"},
                 "text": {
                     "_label": "healthInsuranceOptions.private",
-                    "_default_message": "Private (non-employer) health insurance",
+                    "_default_message": "Private (student or non-employer) health insurance",
                 },
             },
             "mass_health": {
@@ -961,9 +961,9 @@ class MaConfigurationData(ConfigurationData):
         "02298": {"Boston": "Boston"},
         "02301": {"Brockton": "Brockton"},
         "02302": {"Brockton": "Brockton"},
-        "02303": {"Brockton ": "Brockton "},
-        "02304": {"Brockton ": "Brockton "},
-        "02305": {"Brockton ": "Brockton "},
+        "02303": {"Brockton": "Brockton"},
+        "02304": {"Brockton": "Brockton"},
+        "02305": {"Brockton": "Brockton"},
         "02315": {"Boston": "Boston"},
         "02322": {"Avon": "Avon"},
         "02324": {"Bridgewater": "Bridgewater"},
@@ -1006,8 +1006,8 @@ class MaConfigurationData(ConfigurationData):
         "02381": {"Plymouth": "Plymouth"},
         "02382": {"Whitman": "Whitman"},
         "02383": {"Whitman": "Whitman"},
-        "02401": {"Brockton ": "Brockton "},
-        "02402": {"Brockton ": "Brockton "},
+        "02401": {"Brockton": "Brockton"},
+        "02402": {"Brockton": "Brockton"},
         "02408": {"Boston": "Boston"},
         "02415": {"Waltham": "Waltham"},
         "02420": {"Lexington": "Lexington"},
@@ -1136,8 +1136,8 @@ class MaConfigurationData(ConfigurationData):
         "02738": {"Marion": "Marion"},
         "02739": {"Mattapoisett": "Mattapoisett"},
         "02740": {"New Bedford": "New Bedford"},
-        "02741": {"New Bedford ": "New Bedford "},
-        "02742": {"New Bedford ": "New Bedford "},
+        "02741": {"New Bedford": "New Bedford"},
+        "02742": {"New Bedford": "New Bedford"},
         "02743": {"Acushnet": "Acushnet"},
         "02744": {"New Bedford": "New Bedford"},
         "02745": {"New Bedford": "New Bedford"},
@@ -1444,5 +1444,10 @@ class MaConfigurationData(ConfigurationData):
         "errorMessage-county": {
             "_label": "questions.zipcode.city.error.ma",
             "_default_message": "Please Select a city",
+        },
+        # NOTE: Change the household size help text
+        "questions.householdSize-helpText": {
+            "_label": "questions.householdSize-helpText.ma",
+            "_default_message": "This is usually family members whom you live with and share important resources with like food and bills. Your roommates / housemates typically do not count as part of your household. If other adults 18 or older in your household file their own tax return, ask them to complete this tool to determine if they qualify for benefits. But even if you and your spouse file taxes separately, include your spouse in the household.",
         },
     }

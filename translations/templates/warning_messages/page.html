@@ -1,9 +1,9 @@
 {% extends "base.html" %}{% block content %}
 <section class="section">
-  <h2>Document Actions</h2>
+  <h2>Warning Actions</h2>
 </section>
 <hr />
-<div id="document-actions">
+<div id="warning-actions">
   <table class="table is-striped is-fullwidth is-bordered">
     <thead>
       <tr>
@@ -13,14 +13,14 @@
     </thead>
     <tbody>
       <tr>
-        <td>{{ document.external_name }}</td>
+        <td>{{ object.external_name }}</td>
         <td>
           <div class="new-actions">
-            <a href="/api/translations/admin/{{ document.text.id }}">Text</a>
-            <a href="/api/translations/admin/{{ document.link_url.id }}">Link Url</a>
-            <a href="/api/translations/admin/{{ document.link_text.id }}">Link Text</a>
+            <a href="/api/translations/admin/{{ object.message.id }}">Message</a>
+            <a href="/api/translations/admin/{{ object.link_url.id }}">Link</a>
+            <a href="/api/translations/admin/{{ object.link_text.id }}">Link Text</a>
             <a
-              href="/admin/programs/document/{{ document.id }}/change/"
+              href="/admin/programs/warningmessage/{{ object.id }}/change/"
               target="_blank"
               rel="noopener noreferrer"
             >

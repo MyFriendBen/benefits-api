@@ -66,7 +66,7 @@ class ConfigurationData:
         "legalServices": {
             "icon": {"_name": "Legal_services", "_classname": "option-card-icon"},
             "_label": "acuteConditionOptions.legalServices",
-            "_default_message": "Free or low-cost help with civil legal needs or IDs",
+            "_default_message": "Free or low-cost help with civil legal needs or identity documents",
         },
     }
 
@@ -196,7 +196,7 @@ class ConfigurationData:
             "private": {
                 "icon": {"_name": "PrivateInsurance", "_classname": "option-card-icon"},
                 "_label": "healthInsuranceOptions.private",
-                "_default_message": "Private (non-employer) health insurance",
+                "_default_message": "Private (student or non-employer) health insurance",
             },
             "medicaid": {
                 "icon": {"_name": "Medicaid", "_classname": "option-card-icon"},
@@ -243,7 +243,7 @@ class ConfigurationData:
             "private": {
                 "icon": {"_name": "PrivateInsurance", "_classname": "option-card-icon"},
                 "_label": "healthInsuranceOptions.private",
-                "_default_message": "Private (non-employer) health insurance",
+                "_default_message": "Private (student or non-employer) health insurance",
             },
             "medicaid": {
                 "icon": {"_name": "Medicaid", "_classname": "option-card-icon"},

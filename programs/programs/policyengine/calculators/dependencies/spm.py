@@ -1,3 +1,4 @@
+from screener.models import HouseholdMember
 from .base import SpmUnit
 
 
@@ -302,6 +303,80 @@ class MaEaedcLivingArangementDependency(SpmUnit):
 
     def value(self):
         return "A"
+
+
+class MaEaedcNonFinancialCriteria(SpmUnit):
+    field = "ma_eaedc_non_financial_eligible"
+
+    elderly_min_age = 65
+    caretaker_min_age = 18
+    disabled_dependent_income_limit = 1_500 * 12
+    dependent_max_age = 18
+
+    # NOTE: copying logic from PE minus the not SSI eligible requirement
+    # https://github.com/PolicyEngine/policyengine-us/blob/master/policyengine_us/variables/gov/states/ma/dta/tcap/eaedc/eligibility/non_financial/ma_eaedc_non_financial_eligible.py
+    def value(self):
+        for member in self.members.all():
+            if any(
+                [
+                    self._elderly(member),
+                    self._disabled_head_or_spouse(member),
+                    self._disabled_dependent(member),
+                    self._caretaker_family(member),
+                ]
+            ):
+                return True
+
+        return False
+
+    def _elderly(self, member: HouseholdMember) -> bool:
+        if not (member.is_head() or member.is_spouse()):
+            return False
+
+        if not member.age >= self.elderly_min_age:
+            return False
+
+        return True
+
+    def _disabled_head_or_spouse(self, member: HouseholdMember) -> bool:
+        if not (member.is_head() or member.is_spouse()):
+            return False
+
+        if not (member.disabled or member.long_term_disability):
+            return False
+
+        return True
+
+    def _disabled_dependent(self, member: HouseholdMember) -> bool:
+        if not member.is_dependent():
+            return False
+
+        if not (member.disabled or member.long_term_disability):
+            return False
+
+        # meets TCAP income eligibility
+        earned_income = member.calc_gross_income("yearly", ["earned"])
+        if not earned_income <= self.disabled_dependent_income_limit:
+            return False
+
+        return True
+
+    def _caretaker_family(self, member: HouseholdMember) -> bool:
+        if not (member.is_head() or member.is_spouse()):
+            return False
+
+        if not member.age >= self.caretaker_min_age:
+            return False
+
+        for other_member in self.members.all():
+            if (
+                other_member.is_dependent()
+                and other_member.age < self.dependent_max_age
+                and other_member.relationship == "fosterChild"
+            ):
+                return True
+
+        return False
 
 
 class MaEaedc(SpmUnit):

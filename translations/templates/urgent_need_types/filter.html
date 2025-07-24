@@ -1,0 +1,20 @@
+{% load static %}
+<form
+  hx-get="urgent_need_types/filter"
+  hx-target="#urgent-need-type-container"
+  hx-swap="outerHTML"
+>
+  <div class="level">
+    <label for="name"></label>
+    <input
+      type="text"
+      name="name"
+      id="name"
+      class="input"
+      placeholder="Search by external name"
+    />
+    <button type="submit" class="button">
+      <span class="material-symbols-outlined"> search </span>
+    </button>
+  </div>
+</form>

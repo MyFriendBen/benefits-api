@@ -13,24 +13,24 @@
     </thead>
     <tbody>
       <tr>
-        <td>{{ urgent_need.name }}</td>
+        <td>{{ object.name }}</td>
         <td>
           <div class="new-actions">
-            <a href="/api/translations/admin/{{ urgent_need.name.id }}">Name</a>
-            <a href="/api/translations/admin/{{ urgent_need.description.id }}">
+            <a href="/api/translations/admin/{{ object.name.id }}">Name</a>
+            <a href="/api/translations/admin/{{ object.description.id }}">
               Description
             </a>
-            <a href="/api/translations/admin/{{ urgent_need.link.id }}">Link</a>
-            <a href="/api/translations/admin/{{ urgent_need.type.id }}">Type</a>
-            <a href="/api/translations/admin/{{ urgent_need.warning.id }}"
+            <a href="/api/translations/admin/{{ object.link.id }}">Link</a>
+            <a href="/api/translations/admin/{{ object.type.id }}">Type</a>
+            <a href="/api/translations/admin/{{ object.warning.id }}"
               >Warning</a
             >
             <a
-              href="/api/translations/admin/{{ urgent_need.website_description.id }}"
+              href="/api/translations/admin/{{ object.website_description.id }}"
               >Website description</a
             >
             <a
-              href="/admin/programs/urgentneed/{{ urgent_need.id }}/change/"
+              href="/admin/programs/urgentneed/{{ object.id }}/change/"
               target="_blank"
               rel="noopener noreferrer"
               >Edit in Main Admin</a

@@ -802,7 +802,9 @@ class EnergyCalculatorScreen(models.Model):
     is_home_owner = models.BooleanField(default=False, null=True, blank=True)
     is_renter = models.BooleanField(default=False, null=True, blank=True)
     electric_provider = models.CharField(max_length=200, null=True, blank=True)
+    electric_provider_name = models.CharField(max_length=200, null=True, blank=True)  # The human readable version
     gas_provider = models.CharField(max_length=200, null=True, blank=True)
+    gas_provider_name = models.CharField(max_length=200, null=True, blank=True)  # The human readable version
     electricity_is_disconnected = models.BooleanField(default=False, null=True, blank=True)
     has_past_due_energy_bills = models.BooleanField(default=False, null=True, blank=True)
     has_old_car = models.BooleanField(default=False, null=True, blank=True)

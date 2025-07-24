@@ -5,6 +5,7 @@ from programs.models import (
     Navigator,
     ProgramCategory,
     UrgentNeed,
+    UrgentNeedType,
     Document,
     WarningMessage,
     TranslationOverride,
@@ -18,6 +19,7 @@ from decouple import config
 TRANSLATED_MODEL_MAP = {
     "Program": Program,
     "UrgentNeed": UrgentNeed,
+    "UrgentNeedType": UrgentNeedType,
     "Navigator": Navigator,
     "Document": Document,
     "WarningMessage": WarningMessage,
@@ -65,7 +67,8 @@ def bulk_add(translations):
 
             for field, label in instance_data["labels"].items():
                 translation = create_translation(label, translations["translations"][label])
-                getattr(translation, field).set([instance])
+                if hasattr(translation, field):
+                    getattr(translation, field).set([instance])
 
         try_count = 1
         max_tries = 9

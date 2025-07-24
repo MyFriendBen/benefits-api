@@ -9,10 +9,10 @@ class EnergyCalculatorWeatherizationAssistance(WeatherizationAssistance):
         "co-holy-cross-energy",
     ]
     gas_providers = [
-        "co-xcel-energy",
+        "co-xcel-energy-gas",
         "co-atmos-energy",
         "co-colorado-natural-gas",
-        "co-black-hills-energy",
+        "co-black-hills-energy-gas",
     ]
 
     def _has_expense(self):

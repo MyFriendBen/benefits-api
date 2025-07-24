@@ -21,8 +21,8 @@ class AffordableResidentialEnergy(ProgramCalculator):
     ]
     gas_providers = [
         "co-atmos-energy",
-        "co-xcel-energy",
-        "co-black-hills-energy",
+        "co-xcel-energy-gas",
+        "co-black-hills-energy-gas",
         "co-colorado-natural-gas",
     ]
     presumptive_eligibility = ["leap", "section_8", "co_tanf", "andcs", "oap", "co_snap", "co_wic", "co_andso", "ssi"]

@@ -24,7 +24,7 @@ class EnergyCalculatorGasAffordabilityBlackHills(ProgramCalculator):
         "co_energy_calculator_ubp",
         "co_energy_calculator_care",
     ]
-    gas_providers = ["co-black-hills-energy"]
+    gas_providers = ["co-black-hills-energy-gas"]
 
     def household_eligible(self, e: Eligibility):
         # eligible for another program

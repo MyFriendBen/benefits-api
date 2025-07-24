@@ -1,0 +1,33 @@
+{% extends "base.html" %}{% block content %}
+<section class="section">
+  <h2>Translation Override Actions</h2>
+</section>
+<hr />
+<div id="translation-override-actions">
+  <table class="table is-striped is-fullwidth is-bordered">
+    <thead>
+      <tr>
+        <th>External Name</th>
+        <th>Actions (add)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>{{ object.external_name }}</td>
+        <td>
+          <div class="new-actions">
+            <a href="/api/translations/admin/{{ object.translation.id }}">Translation</a>
+            <a
+              href="/admin/programs/translationoverride/{{ object.id }}/change/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Edit in Main Admin
+            </a>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+{% endblock content %}

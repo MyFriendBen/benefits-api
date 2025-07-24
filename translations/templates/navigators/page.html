@@ -13,19 +13,19 @@
     </thead>
     <tbody>
       <tr>
-        <td>{{ navigator.name }}</td>
+        <td>{{ object.name }}</td>
         <td>
           <div class="new-actions">
-            <a href="/api/translations/admin/{{ navigator.name.id }}">Name</a>
-            <a href="/api/translations/admin/{{ navigator.email.id }}">Email</a>
-            <a href="/api/translations/admin/{{ navigator.assistance_link.id }}"
+            <a href="/api/translations/admin/{{ object.name.id }}">Name</a>
+            <a href="/api/translations/admin/{{ object.email.id }}">Email</a>
+            <a href="/api/translations/admin/{{ object.assistance_link.id }}"
               >Assistance Link</a
             >
-            <a href="/api/translations/admin/{{ navigator.description.id }}"
+            <a href="/api/translations/admin/{{ object.description.id }}"
               >Description</a
             >
             <a
-              href="/admin/programs/navigator/{{ navigator.id }}/change/"
+              href="/admin/programs/navigator/{{ object.id }}/change/"
               target="_blank"
               rel="noopener noreferrer"
             >

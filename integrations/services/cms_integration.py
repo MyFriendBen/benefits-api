@@ -3,12 +3,9 @@ from django.conf import settings
 from hubspot import HubSpot
 from decouple import config
 from hubspot.crm.contacts import BatchInputSimplePublicObjectBatchInput, SimplePublicObjectInput
-import sib_api_v3_sdk
 from hubspot.crm.contacts.exceptions import ApiException as HubSpotApiException
 from django.conf import settings
 import json
-from sentry_sdk import capture_message
-
 from authentication.models import User
 from screener.models import Screen, WhiteLabel
 
@@ -31,7 +28,35 @@ class CmsIntegration:
 
 
 class HubSpotIntegration(CmsIntegration):
-    access_token = ""
+    access_token = config("HUBSPOT_CENTRAL", "")
+
+    STATE = ""
+    OWNER_ID = ""
+
+    def _hubspot_contact_data(self):
+        contact = {
+            "firstname": self.user.first_name,
+            "lastname": self.user.last_name,
+            "email": self.user.email,
+            "phone": str(self.user.cell),
+            "states": self.STATE,
+            "send_offers": self.user.send_offers,
+            "explicit_tcpa_consent": self.user.explicit_tcpa_consent,
+            "send_updates": self.user.send_updates,
+            "hs_language": self.user.language_code,
+            "hubspot_owner_id": self.OWNER_ID,
+        }
+
+        if self.screen:
+            contact["uuid"] = str(self.screen.uuid)
+
+        return contact
+
+    def _hubspot_send_offers_data(self):
+        return {
+            "send_offers": self.user.send_offers,
+            "send_updates": self.user.send_updates,
+        }
 
     def __init__(self, user: User, screen: Screen):
         self.api_client = HubSpot(access_token=self.access_token)
@@ -69,12 +94,6 @@ class HubSpotIntegration(CmsIntegration):
             return False
         return True
 
-    def _hubspot_contact_data(self) -> dict:
-        raise NotImplemented("Please implement '_hubspot_contact_data'")
-
-    def _hubspot_send_offers_data(self) -> dict:
-        raise NotImplemented("Please implement '_hubspot_send_offers_data'")
-
     def _get_conflict_contact_id(self, e):
         http_body = json.loads(e.body)
         # strip everything out of the error message except the contact id
@@ -104,169 +123,22 @@ class HubSpotIntegration(CmsIntegration):
         )
 
 
-class BrevoIntegration(CmsIntegration):
-    MAX_HOUSEHOLD_SIZE = 8
-
-    def __init__(self, user, screen):
-        super().__init__(user, screen)
-        configuration = sib_api_v3_sdk.Configuration()
-        configuration.api_key["api-key"] = settings.BREVO_API_KEY
-        self.api_instance = sib_api_v3_sdk.ContactsApi(sib_api_v3_sdk.ApiClient(configuration))
-        self.sms_instance = sib_api_v3_sdk.TransactionalSMSApi(sib_api_v3_sdk.ApiClient(configuration))
-        self.email_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
-        self.front_end_domain = settings.FRONTEND_DOMAIN
-
-    def add(self) -> str:
-        contact = {
-            "first_name": self.user.first_name,
-            "last_name": self.user.last_name,
-            "sms": str(self.user.cell),
-            "benefits_screener_id": self.user.id,
-            "send_updates": self.user.send_updates,
-            "send_offers": self.user.send_offers,
-            "tcpa_consent": self.user.tcpa_consent,
-            "language_code": self.user.language_code,
-            "mfb_completion_date": self.user.date_joined.date().isoformat(),
-            "full_name": f"{self.user.first_name} {self.user.last_name}",
-        }
-
-        if self.screen:
-            contact["screener_id"] = self.screen.id
-            contact["uuid"] = str(self.screen.uuid)
-            contact["county"] = self.screen.county
-            contact["number_of_household_members"] = self.screen.household_size
-            contact["mfb_annual_income"] = int(self.screen.calc_gross_income("yearly", ["all"]))
-
-            members = self.screen.household_members.all()
-            if len(members) > self.MAX_HOUSEHOLD_SIZE:
-                capture_message(f"screen has more than {self.MAX_HOUSEHOLD_SIZE} household members", level="error")
-
-            for i, member in enumerate(members):
-                if i >= self.MAX_HOUSEHOLD_SIZE:
-                    break
-
-                contact[f"hhm{i + 1}_age"] = member.age
-
-        create_contact = sib_api_v3_sdk.CreateContact(email=self.user.email, attributes=contact, list_ids=[6])
-        return self.api_instance.create_contact(create_contact)
-
-    def update(self):
-        ext_id_dict = json.loads(self.user.external_id.replace("'", '"'))
-        data = {"send_offers": self.user.send_offers, "send_updates": self.user.send_updates}
-        id_value = ext_id_dict["id"]
-        update_attributes = sib_api_v3_sdk.UpdateContact(attributes=data)
-        self.api_instance.update_contact(id_value, update_attributes)
-
-    def should_add(self):
-        if settings.DEBUG:
-            return False
-        if self.user is None or self.screen.is_test_data is None:
-            return False
-        should_upsert_user = (self.user.send_offers or self.user.send_updates) and self.user.external_id is None
-        if not should_upsert_user or self.screen.is_test_data:
-            return False
-
-        return True
-
-
 class CoHubSpotIntegration(HubSpotIntegration):
-    access_token = config("HUBSPOT", "")
-    MAX_HOUSEHOLD_SIZE = 8
-
-    def _hubspot_contact_data(self):
-        contact = {
-            "email": self.user.email,
-            "firstname": self.user.first_name,
-            "lastname": self.user.last_name,
-            "phone": str(self.user.cell),
-            "benefits_screener_id": self.user.id,
-            "ab01___send_offers": self.user.send_offers,
-            "ab01___send_updates": self.user.send_updates,
-            "ab01___explicit_tcpa_consent": self.user.explicit_tcpa_consent,
-            "hs_language": self.user.language_code,
-            "ab01___1st_mfb_completion_date": self.user.date_joined.date().isoformat(),
-            "full_name": f"{self.user.first_name} {self.user.last_name}",
-        }
-
-        if self.screen:
-            contact["ab01___screener_id"] = self.screen.id
-            contact["ab01___uuid"] = str(self.screen.uuid)
-            contact["ab01___county"] = self.screen.county
-            contact["ab01___number_of_household_members"] = self.screen.household_size
-            contact["ab01___mfb_annual_income"] = int(self.screen.calc_gross_income("yearly", ["all"]))
-
-            members = self.screen.household_members.all()
-            if len(members) > self.MAX_HOUSEHOLD_SIZE:
-                capture_message(f"screen has more than {self.MAX_HOUSEHOLD_SIZE} household members", level="error")
-
-            for i, member in enumerate(members):
-                if i >= self.MAX_HOUSEHOLD_SIZE:
-                    break
-
-                contact[f"ab01___hhm{i + 1}_age"] = member.age
-
-        return contact
-
-    def _hubspot_send_offers_data(self):
-        return {
-            "ab01___send_offers": self.user.send_offers,
-            "ab01___send_updates": self.user.send_updates,
-        }
-
-    @classmethod
-    def format_email_new_benefit(cls, external_id: str, num_benefits: int, value_benefits: int):
-        contact = {
-            "id": external_id,
-            "properties": {
-                "ab01___number_of_new_benefits": num_benefits,
-                "ab01___new_benefit_total_value": value_benefits,
-            },
-        }
-
-        return contact
+    STATE = "CO"
+    OWNER_ID = "80630223"
 
 
-class CentralHubSpotIntegration(HubSpotIntegration):
-    access_token = config("HUBSPOT_CENTRAL", "")
-
-    OWNER_ID = ""
-
-    def _hubspot_contact_data(self):
-        contact = {
-            "firstname": self.user.first_name,
-            "lastname": self.user.last_name,
-            "email": self.user.email,
-            "phone": str(self.user.cell),
-            "states": "NC",
-            "send_offers": self.user.send_offers,
-            "explicit_tcpa_consent": self.user.explicit_tcpa_consent,
-            "send_updates": self.user.send_updates,
-            "hs_language": self.user.language_code,
-            "hubspot_owner_id": self.OWNER_ID,
-        }
-
-        if self.screen:
-            contact["uuid"] = str(self.screen.uuid)
-
-        return contact
-
-    def _hubspot_send_offers_data(self):
-        return {
-            "send_offers": self.user.send_offers,
-            "send_updates": self.user.send_updates,
-        }
-
-
-class NcHubSpotIntegration(CentralHubSpotIntegration):
+class NcHubSpotIntegration(HubSpotIntegration):
+    STATE = "NC"
     OWNER_ID = "47185138"
 
 
-class MaHubSpotIntegration(CentralHubSpotIntegration):
+class MaHubSpotIntegration(HubSpotIntegration):
+    STATE = "MA"
     OWNER_ID = "79223440"
 
 
 CMS_INTEGRATIONS = {
-    "brevo": BrevoIntegration,
     "co_hubspot": CoHubSpotIntegration,
     "nc_hubspot": NcHubSpotIntegration,
     "ma_hubspot": MaHubSpotIntegration,

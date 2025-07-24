@@ -8,9 +8,9 @@ class EnergyCalculatorUtilityBillPay(UtilityBillPay):
     electricity_providers = ["co-xcel-energy", "co-black-hills-energy"]
     gas_providers = [
         "co-atmos-energy",
-        "co-black-hills-energy",
+        "co-black-hills-energy-gas",
         "co-colorado-natural-gas",
-        "co-xcel-energy",
+        "co-xcel-energy-gas",
     ]
 
     def household_eligible(self, e: Eligibility):

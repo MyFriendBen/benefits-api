@@ -1,4 +1,4 @@
-from programs.models import Program, ProgramCategory, UrgentNeed, Navigator
+from programs.models import Program, ProgramCategory, UrgentNeed, UrgentNeedType, Navigator
 from rest_framework import serializers
 from translations.serializers import ModelTranslationSerializer
 
@@ -14,11 +14,24 @@ class ProgramSerializerMeta:
     fields = ("id", "name", "website_description")
 
 
+class UrgentNeedSerializerMeta:
+    model = UrgentNeed
+    fields = ("id", "name", "website_description")
+
+
 class ProgramSerializer(serializers.ModelSerializer):
     name = ModelTranslationSerializer()
     website_description = ModelTranslationSerializer()
 
     class Meta(ProgramSerializerMeta):
+        pass
+
+
+class UrgentNeedSerializer(serializers.ModelSerializer):
+    name = ModelTranslationSerializer()
+    website_description = ModelTranslationSerializer()
+
+    class Meta(UrgentNeedSerializerMeta):
         pass
 
 
@@ -32,6 +45,7 @@ class ProgramSerializerWithCategory(ProgramSerializer):
 class ProgramCategorySerializer(serializers.ModelSerializer):
     programs = serializers.SerializerMethodField()
     name = ModelTranslationSerializer()
+    icon = serializers.SerializerMethodField()
 
     class Meta:
         ref_name = "Program Category List"
@@ -41,12 +55,28 @@ class ProgramCategorySerializer(serializers.ModelSerializer):
     def get_programs(self, obj: ProgramCategory):
         return ProgramSerializer(obj.programs.filter(active=True), many=True).data
 
+    def get_icon(self, obj: ProgramCategory):
+        return obj.icon.name if obj.icon else "default"
+
 
 class UrgentNeedAPISerializer(serializers.ModelSerializer):
     name = ModelTranslationSerializer()
     website_description = ModelTranslationSerializer()
-    type = ModelTranslationSerializer()
 
     class Meta:
         model = UrgentNeed
-        fields = ("id", "name", "website_description", "type")
+        fields = ("id", "name", "website_description")
+
+
+class UrgentNeedTypeSerializer(serializers.ModelSerializer):
+    name = ModelTranslationSerializer()
+    urgent_needs = serializers.SerializerMethodField()
+    icon = serializers.CharField(source="icon_name")
+
+    class Meta:
+        ref_name = "Urgent Need Type List"
+        model = UrgentNeedType
+        fields = ("id", "name", "icon", "urgent_needs")
+
+    def get_urgent_needs(self, obj: UrgentNeedType):
+        return UrgentNeedSerializer(obj.urgent_needs.filter(active=True), many=True).data

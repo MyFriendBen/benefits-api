@@ -1,4 +1,4 @@
-from programs.models import Program, Navigator, ProgramCategory, UrgentNeed
+from programs.models import Program, Navigator, ProgramCategory, UrgentNeed, UrgentNeedType
 from rest_framework import viewsets, mixins
 from rest_framework import permissions
 from programs.serializers import (
@@ -6,6 +6,7 @@ from programs.serializers import (
     NavigatorAPISerializer,
     ProgramSerializerWithCategory,
     UrgentNeedAPISerializer,
+    UrgentNeedTypeSerializer,
 )
 
 
@@ -41,3 +42,13 @@ class UrgentNeedViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, viewse
 
     def get_queryset(self):
         return UrgentNeed.objects.filter(active=True, white_label__code=self.kwargs["white_label"])
+
+
+class UrgentNeedTypeViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
+    serializer_class = UrgentNeedTypeSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return UrgentNeedType.objects.filter(
+            urgent_needs__isnull=False, urgent_needs__active=True, white_label__code=self.kwargs["white_label"]
+        ).distinct()

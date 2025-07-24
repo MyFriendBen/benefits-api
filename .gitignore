@@ -30,3 +30,4 @@ __pycache__/
 
 # Static files
 staticfiles/
+tasks/todo.md

@@ -23,7 +23,7 @@ class EnergyCalculatorGasAffordabilityXcel(ProgramCalculator):
         "co_energy_calculator_cowap",
         "co_energy_calculator_ubp",
     ]
-    gas_providers = ["co-xcel-energy"]
+    gas_providers = ["co-xcel-energy-gas"]
 
     def household_eligible(self, e: Eligibility):
         # eligible for another program

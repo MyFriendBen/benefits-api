@@ -35,6 +35,7 @@ from programs.models import (
     Navigator,
     ProgramCategory,
     UrgentNeed,
+    UrgentNeedType,
     Program,
     Referrer,
     WarningMessage,
@@ -448,7 +449,7 @@ def eligibility_results(screen: Screen, batch=False):
 
         category_map[category.id] = {
             "external_name": category.external_name,
-            "icon": category.icon,
+            "icon": category.icon_name,
             "name": default_message(category.name),
             "description": default_message(category.description),
             "caps": caps,
@@ -510,6 +511,11 @@ def serialized_document(document):
 
 
 def urgent_need_results(screen: Screen, data):
+    """
+    These keys are used to determine which urgent needs
+    programs to show based on the selected options in the
+    immediate needs page.
+    """
     possible_needs = {
         "food": screen.needs_food,
         "baby supplies": screen.needs_baby_supplies,
@@ -535,7 +541,9 @@ def urgent_need_results(screen: Screen, data):
         UrgentNeed.objects.prefetch_related(
             "functions", "counties", *translations_prefetch_name("", UrgentNeed.objects.translated_fields)
         )
-        .filter(type_short__name__in=list_of_needs, active=True, white_label=screen.white_label)
+        .filter(
+            type_short__name__in=list_of_needs, category_type__isnull=False, active=True, white_label=screen.white_label
+        )
         .distinct()
     )
 
@@ -553,14 +561,14 @@ def urgent_need_results(screen: Screen, data):
 
             if not calculator.calc():
                 eligible = False
-
         if eligible:
             phone_number = str(need.phone_number) if need.phone_number else None
             need_data = {
                 "name": default_message(need.name),
                 "description": default_message(need.description),
                 "link": default_message(need.link),
-                "type": default_message(need.type),
+                "category_type": default_message(need.category_type.name),
+                "icon": need.category_type.icon_name,
                 "warning": default_message(need.warning),
                 "phone_number": phone_number,
             }

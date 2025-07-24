@@ -317,21 +317,6 @@ UNFOLD = {
                         "icon": "settings",
                         "link": reverse_lazy("translations_api_url"),
                     },
-                    {
-                        "title": _("Users"),
-                        "icon": "person",
-                        "link": reverse_lazy("admin:authentication_user_changelist"),
-                    },
-                    {
-                        "title": _("Groups"),
-                        "icon": "group",
-                        "link": reverse_lazy("admin:auth_group_changelist"),
-                    },
-                    {
-                        "title": _("Tokens"),
-                        "icon": "key",
-                        "link": reverse_lazy("admin:authtoken_tokenproxy_changelist"),
-                    },
                 ],
             },
         ],

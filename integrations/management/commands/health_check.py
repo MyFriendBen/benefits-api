@@ -5,7 +5,7 @@ from hubspot import HubSpot
 from hubspot.crm.contacts.exceptions import ForbiddenException
 from authentication.models import User
 from integrations.models import Link
-from programs.models import Navigator, Program, TranslationOverride, UrgentNeed
+from programs.models import Document, Navigator, Program, TranslationOverride, UrgentNeed, WarningMessage
 from screener.models import WhiteLabel
 from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
 from configuration.models import Configuration
@@ -48,7 +48,7 @@ class Command(BaseCommand):
         self._output_condition(self._no_pii_in_db(), self.PII_IN_DB_TEXT)
 
     def _cant_read_hubspot(self) -> bool:
-        client = HubSpot(access_token=config("HUBSPOT"))
+        client = HubSpot(access_token=config("HUBSPOT_CENTRAL"))
 
         try:
             client.crm.contacts.basic_api.get_page(limit=1, archived=False)
@@ -103,7 +103,15 @@ class Command(BaseCommand):
         ]
         translation_override_links = [
             o.translation
-            for o in TranslationOverride.objects.filter(field__in=["apply_button_link", "learn_more_link"])
+            for o in TranslationOverride.objects.filter(
+                field__in=["apply_button_link", "learn_more_link"], white_label__code=white_label
+            )
+        ]
+        document_links = [
+            p.link_url for p in Document.objects.filter(program_documents__isnull=False, white_label__code=white_label)
+        ]
+        warning_message_links = [
+            p.link_url for p in WarningMessage.objects.filter(programs__isnull=False, white_label__code=white_label)
         ]
 
         public_charge_links = [
@@ -136,6 +144,8 @@ class Command(BaseCommand):
             *self._get_translation_links(urgent_need_links),
             *self._get_translation_links(navigator_links),
             *self._get_translation_links(translation_override_links),
+            *self._get_translation_links(document_links),
+            *self._get_translation_links(warning_message_links),
             *config_links,
         }
 

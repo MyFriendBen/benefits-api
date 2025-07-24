@@ -19,6 +19,7 @@ from programs.programs.co.energy_calculator.gas_affordability_black_hills.calcul
 from programs.programs.co.energy_calculator.gas_affordability_xcel.calculator import (
     EnergyCalculatorGasAffordabilityXcel,
 )
+from programs.programs.co.energy_calculator.medical_certification.calculator import EnergyCalculatorMedicalCertification
 from programs.programs.co.energy_calculator.medical_exemption.calculator import EnergyCalculatorMedicalExemption
 from programs.programs.co.energy_calculator.natural_gas_bill_assistance.calculator import (
     EnergyCalculatorNaturalGasBillAssistance,
@@ -56,4 +57,5 @@ co_energy_calculators: dict[str, type[ProgramCalculator]] = {
     "co_energy_calculator_energy_ebt": EnergyCalculatorEnergyEbt,
     "co_energy_calculator_energy_vec": EnergyCalculatorVehicleExchange,
     "co_energy_calculator_energy_mep": EnergyCalculatorMedicalExemption,
+    "co_energy_calculator_mcp": EnergyCalculatorMedicalCertification,
 }

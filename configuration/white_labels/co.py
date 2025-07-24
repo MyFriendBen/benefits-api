@@ -107,7 +107,7 @@ class CoConfigurationData(ConfigurationData):
             "icon": {"_icon": "Legal_services", "_classname": "option-card-icon"},
             "text": {
                 "_label": "acuteConditionOptions.legalServices",
-                "_default_message": "Free or low-cost help with civil legal needs or IDs",
+                "_default_message": "Free or low-cost help with civil legal needs or identity documents",
             },
         },
     }
@@ -163,6 +163,7 @@ class CoConfigurationData(ConfigurationData):
         "tellercounty": "Teller County",
         "pueblo": "Pueblo County",
         "pitkin": "Pitkin County",
+        "broomfield": "City and County of Broomfield",
         "gac": "Get Ahead Colorado",
         "bia": "Benefits in Action",
         "fircsummitresourcecenter": {
@@ -269,7 +270,7 @@ class CoConfigurationData(ConfigurationData):
                 "icon": {"_icon": "PrivateInsurance", "_classname": "option-card-icon"},
                 "text": {
                     "_label": "healthInsuranceOptions.private",
-                    "_default_message": "Private (non-employer) health insurance",
+                    "_default_message": "Private (student or non-employer) health insurance",
                 },
             },
             "medicaid": {
@@ -334,7 +335,7 @@ class CoConfigurationData(ConfigurationData):
                 "icon": {"_icon": "PrivateInsurance", "_classname": "option-card-icon"},
                 "text": {
                     "_label": "healthInsuranceOptions.private",
-                    "_default_message": "Private (non-employer) health insurance",
+                    "_default_message": "Private (student or non-employer) health insurance",
                 },
             },
             "medicaid": {
@@ -2203,6 +2204,7 @@ class CoConfigurationData(ConfigurationData):
         "logoSource": {
             "default": "MFB_COLogo",
             "bia": "BIA_MFBLogo",
+            "broomfield": "Broomfield_MFBLogo",
             "jeffcoHS": "JHSA_MFBLogo",
             "jeffcoHSCM": "JHSA_MFBLogo",
             "jeffcoPS": "JPS_MFBLogo",
@@ -2226,6 +2228,10 @@ class CoConfigurationData(ConfigurationData):
             "bia": {
                 "id": "referrerHook.logoAlts.bia",
                 "defaultMessage": "Benefits in Action and MyFriendBen home page button",
+            },
+            "broomfield": {
+                "id": "referrerHook.logoAlts.broomfield",
+                "defaultMessage": "City and County of Broomfield and MyFriendBen home page button",
             },
             "jeffcoHS": {
                 "id": "referrerHook.logoAlts.jeffcoHS",
@@ -2287,6 +2293,7 @@ class CoConfigurationData(ConfigurationData):
         "logoFooterAlt": {"default": {"id": "footer.logo.alt", "defaultMessage": "MFB Logo"}},
         "logoClass": {
             "default": "logo",
+            "broomfield": "broomfield-logo-size",
             "eaglecounty": "eaglecounty-logo-size",
             "larimercounty": "larimercounty-logo-size",
             "tellercounty": "tellercounty-logo-size",

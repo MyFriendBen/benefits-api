@@ -10,7 +10,7 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
     state = {"name": "Colorado"}
 
     public_charge_rule = {
-        "link": "https://cdhs.colorado.gov/public-charge-rule-and-colorado-immigrants#:~:text=About%20public%20charge&text=The%20test%20looks%20at%20whether,affidavit%20of%20support%20or%20contract.",
+        "link": "https://cdhs.colorado.gov/public-charge-rule-and-colorado-immigrants?utm_source=cesn&utm_medium=web&utm_campaign=cesn&utm_id=cesn#:~:text=About%20public%20charge&text=The%20test%20looks%20at%20whether,affidavit%20of%20support%20or%20contract.",
         "text": {
             "_label": "landingPage.publicChargeLinkCO",
             "_default_message": "Colorado Department of Human Services Public Charge Rule",
@@ -21,7 +21,7 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
         "moreHelpOptions": [
             {
                 "name": {"_default_message": "2-1-1 Colorado", "_label": "moreHelp.resource_name1"},
-                "link": "https://www.211colorado.org",
+                "link": "https://www.211colorado.org?utm_source=cesn&utm_medium=web&utm_campaign=cesn&utm_id=cesn",
                 "phone": {"_default_message": "Dial 2-1-1 or 866.760.6489", "_label": "moreHelp.resource_phone1"},
             },
             {
@@ -30,7 +30,7 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
                     "_label": "moreHelp.myfriendben.energy.description",
                     "_default_message": "MyFriendBen is dedicated to empowering individuals and organizations by making it easy to understand and access government benefits, tax credits, and nonprofit programs. Quickly get the information you need to make a plan before you apply.",
                 },
-                "link": "https://screener.myfriendben.org/co/step-1?referrer=energy_calculator",
+                "link": "https://screener.myfriendben.org/co/step-1?referrer=energy_calculator&utm_source=cesn&utm_medium=web&utm_campaign=cesn&utm_id=cesn",
             },
         ]
     }
@@ -1775,13 +1775,13 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
     }
 
     consent_to_contact = {
-        "en-us": "https://www.myfriendben.org/terms-and-conditions/",
-        "es": "https://www.myfriendben.org/terminos-condiciones/",
+        "en-us": "https://www.myfriendben.org/terms-and-conditions/?utm_source=cesn&utm_medium=web&utm_campaign=cesn&utm_id=cesn",
+        "es": "https://www.myfriendben.org/terminos-condiciones/?utm_source=cesn&utm_medium=web&utm_campaign=cesn&utm_id=cesn",
     }
 
     privacy_policy = {
-        "en-us": "https://www.myfriendben.org/privacy-policy/",
-        "es": "https://www.myfriendben.org/privacidad/",
+        "en-us": "https://www.myfriendben.org/privacy-policy/?utm_source=cesn&utm_medium=web&utm_campaign=cesn&utm_id=cesn",
+        "es": "https://www.myfriendben.org/privacidad/?utm_source=cesn&utm_medium=web&utm_campaign=cesn&utm_id=cesn",
     }
 
     referrer_data = {
@@ -1834,6 +1834,8 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
                 "dont_show_category_values",
                 "logo_landing_page_link",
                 "no_lets_get_started",
+                "help_bubble_always_open",
+                "small_header_language_dropdown",
             ]
         },
         "noResultMessage": {
