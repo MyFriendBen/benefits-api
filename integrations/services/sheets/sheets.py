@@ -6,15 +6,15 @@ from integrations.util.cache import Cache
 
 
 class GoogleSheets:
-    info = json.loads(config("GOOGLE_APPLICATION_CREDENTIALS"))
-    creds = service_account.Credentials.from_service_account_info(info)
-    service = build("sheets", "v4", credentials=creds)
-    sheet = service.spreadsheets()
 
     class ColumnDoesNotExist(Exception):
         pass
 
     def __init__(self, spreadsheet_id: str, cell_range: str) -> None:
+        self.info = json.loads(config("GOOGLE_APPLICATION_CREDENTIALS"))
+        self.creds = service_account.Credentials.from_service_account_info(self.info)
+        self.service = build("sheets", "v4", credentials=self.creds)
+        self.sheet = self.service.spreadsheets()
         self.spreadsheet_id = spreadsheet_id
         self.cell_range = cell_range
 

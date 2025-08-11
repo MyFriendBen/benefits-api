@@ -31,3 +31,8 @@ __pycache__/
 # Static files
 staticfiles/
 tasks/todo.md
+
+# dbt artifacts
+/dbt/target/
+/dbt/logs/
+/dbt/.user.yml

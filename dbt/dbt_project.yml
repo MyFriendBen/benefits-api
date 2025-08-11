@@ -1,0 +1,19 @@
+name: benefits_dbt
+version: 1.0.0
+profile: benefits
+require-dbt-version: ">=1.7.0,<2.0.0"
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+models:
+  benefits_dbt:
+    +materialized: view
+    staging:
+      +materialized: view
+    marts:
+      +materialized: table 
