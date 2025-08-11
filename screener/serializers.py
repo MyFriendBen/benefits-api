@@ -232,6 +232,12 @@ class ScreenSerializer(serializers.ModelSerializer):
             "needs_dental_care",
             "needs_legal_services",
             "needs_veteran_services",
+            "utm_id",
+            "utm_source",
+            "utm_medium",
+            "utm_campaign",
+            "utm_content",
+            "utm_term",
         )
         read_only_fields = (
             "id",
@@ -243,7 +249,18 @@ class ScreenSerializer(serializers.ModelSerializer):
             "user",
             "is_test_data",
         )
-        create_only_fields = ("external_id", "is_test", "referrer_code", "white_label")
+        create_only_fields = (
+            "external_id",
+            "is_test",
+            "referrer_code",
+            "white_label",
+            "utm_id",
+            "utm_source",
+            "utm_medium",
+            "utm_campaign",
+            "utm_content",
+            "utm_term",
+        )
 
     def __init__(self, *args, **kwargs):
         self.force = kwargs.pop("force", False)
