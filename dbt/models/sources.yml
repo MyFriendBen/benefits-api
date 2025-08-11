@@ -1,0 +1,268 @@
+version: 2
+
+sources:
+  - name: django_apps
+    description: "Raw Django application tables"
+    schema: public
+    tables:
+      - name: screener_screen
+        description: "Raw screener submissions from Django Screen model"
+        columns:
+          - name: id
+            description: "Primary key"
+            tests:
+              - not_null
+              - unique
+          - name: completed
+            description: "Whether the screener was completed"
+            tests:
+              - not_null
+          - name: submission_date
+            description: "When the screener was submitted"
+          - name: is_test
+            description: "Whether this is test data"
+          - name: created_at
+            description: "When the record was created"
+          - name: updated_at
+            description: "When the record was last updated"
+      - name: screener_expense
+        description: "Expense records from Django Expense model"
+        columns:
+          - name: id
+            description: "Primary key"
+            tests:
+              - not_null
+              - unique
+          - name: screen_id
+            description: "Foreign key to screener_screen"
+          - name: type
+            description: "Type of expense"
+          - name: amount
+            description: "Expense amount"
+          - name: frequency
+            description: "Frequency of expense (monthly, yearly, etc.)"
+      - name: screener_whitelabel
+        description: "White label organizations from Django WhiteLabel model"
+        columns:
+          - name: id
+            description: "Primary key"
+          - name: name
+            description: "White label organization name"
+          - name: code
+            description: "White label organization code"
+          - name: state_code
+            description: "State code for the white label"
+          - name: cms_method
+            description: "CMS method used by the white label"
+      - name: screener_householdmember
+        description: "Household member records from Django HouseholdMember model"
+        columns:
+          - name: id
+            description: "Primary key"
+          - name: screen_id
+            description: "Foreign key to screener_screen"
+          - name: frontend_id
+            description: "UUID for frontend identification"
+          - name: relationship
+            description: "Relationship to head of household"
+          - name: age
+            description: "Age of household member"
+          - name: birth_year_month
+            description: "Birth date of household member"
+          - name: student
+            description: "Whether member is a student"
+          - name: student_full_time
+            description: "Whether member is a full-time student"
+          - name: pregnant
+            description: "Whether member is pregnant"
+          - name: unemployed
+            description: "Whether member is unemployed"
+          - name: worked_in_last_18_mos
+            description: "Whether member worked in last 18 months"
+          - name: visually_impaired
+            description: "Whether member is visually impaired"
+          - name: disabled
+            description: "Whether member has a disability"
+          - name: long_term_disability
+            description: "Whether member has a long-term disability"
+          - name: veteran
+            description: "Whether member is a veteran"
+          - name: medicaid
+            description: "Whether member has Medicaid"
+          - name: disability_medicaid
+            description: "Whether member has disability Medicaid"
+          - name: has_income
+            description: "Whether member has income"
+          - name: has_expenses
+            description: "Whether member has expenses"
+      - name: screener_incomestream
+        description: "Income stream records from Django IncomeStream model"
+        columns:
+          - name: id
+            description: "Primary key"
+          - name: screen_id
+            description: "Foreign key to screener_screen"
+          - name: household_member_id
+            description: "Foreign key to screener_householdmember"
+          - name: type
+            description: "Type of income (wages, selfEmployment, etc.)"
+          - name: amount
+            description: "Income amount"
+          - name: frequency
+            description: "Frequency of income (monthly, weekly, yearly, etc.)"
+          - name: hours_worked
+            description: "Hours worked for hourly income"
+      - name: screener_insurance
+        description: "Insurance records from Django Insurance model"
+        columns:
+          - name: id
+            description: "Primary key"
+          - name: household_member_id
+            description: "Foreign key to screener_householdmember"
+          - name: dont_know
+            description: "Whether insurance status is unknown"
+          - name: none
+            description: "Whether member has no insurance"
+          - name: employer
+            description: "Whether member has employer insurance"
+          - name: private
+            description: "Whether member has private insurance"
+          - name: chp
+            description: "Whether member has CHIP insurance"
+          - name: medicaid
+            description: "Whether member has Medicaid"
+          - name: medicare
+            description: "Whether member has Medicare"
+          - name: emergency_medicaid
+            description: "Whether member has emergency Medicaid"
+          - name: family_planning
+            description: "Whether member has family planning coverage"
+          - name: va
+            description: "Whether member has VA insurance"
+          - name: mass_health
+            description: "Whether member has MassHealth (MA Medicaid/CHIP)"
+      - name: screener_energycalculatorscreen
+        description: "Energy calculator screen records from Django EnergyCalculatorScreen model"
+        columns:
+          - name: id
+            description: "Primary key"
+          - name: screen_id
+            description: "Foreign key to screener_screen"
+          - name: is_home_owner
+            description: "Whether household owns their home"
+          - name: is_renter
+            description: "Whether household rents their home"
+          - name: electric_provider
+            description: "Electric utility provider code"
+          - name: electric_provider_name
+            description: "Human readable electric provider name"
+          - name: gas_provider
+            description: "Gas utility provider code"
+          - name: gas_provider_name
+            description: "Human readable gas provider name"
+          - name: electricity_is_disconnected
+            description: "Whether electricity service is disconnected"
+          - name: has_past_due_energy_bills
+            description: "Whether household has past due energy bills"
+          - name: has_old_car
+            description: "Whether household has an old car"
+          - name: needs_water_heater
+            description: "Whether household needs a water heater"
+          - name: needs_hvac
+            description: "Whether household needs HVAC system"
+          - name: needs_stove
+            description: "Whether household needs a stove"
+          - name: needs_dryer
+            description: "Whether household needs a dryer"
+      - name: screener_energycalculatormember
+        description: "Energy calculator member records from Django EnergyCalculatorMember model"
+        columns:
+          - name: id
+            description: "Primary key"
+          - name: household_member_id
+            description: "Foreign key to screener_householdmember"
+          - name: surviving_spouse
+            description: "Whether member is a surviving spouse"
+          - name: receives_ssi
+            description: "Whether member receives SSI"
+          - name: medical_equipment
+            description: "Whether member needs medical equipment"
+      - name: screener_eligibilitysnapshot
+        description: "Eligibility snapshot records from Django EligibilitySnapshot model"
+        columns:
+          - name: id
+            description: "Primary key"
+          - name: screen_id
+            description: "Foreign key to screener_screen"
+          - name: submission_date
+            description: "When the eligibility snapshot was created"
+          - name: is_batch
+            description: "Whether this is a batch snapshot"
+          - name: had_error
+            description: "Whether the snapshot had an error"
+      - name: screener_programeligibilitysnapshot
+        description: "Program eligibility snapshot records from Django ProgramEligibilitySnapshot model"
+        columns:
+          - name: id
+            description: "Primary key"
+          - name: eligibility_snapshot_id
+            description: "Foreign key to screener_eligibilitysnapshot"
+          - name: new
+            description: "Whether this is a new eligibility result"
+          - name: name
+            description: "Full program name"
+          - name: name_abbreviated
+            description: "Abbreviated program name"
+          - name: value_type
+            description: "Type of benefit value"
+          - name: estimated_value
+            description: "Estimated dollar value of benefit"
+          - name: estimated_delivery_time
+            description: "Estimated time to receive benefit"
+          - name: estimated_application_time
+            description: "Estimated time to apply for benefit"
+          - name: eligible
+            description: "Whether household is eligible for program"
+          - name: failed_tests
+            description: "JSON of failed eligibility tests"
+          - name: passed_tests
+            description: "JSON of passed eligibility tests"
+      - name: screener_message
+        description: "Message records from Django Message model"
+        columns:
+          - name: id
+            description: "Primary key"
+          - name: sent
+            description: "When the message was sent"
+          - name: type
+            description: "Type of message (email, text, etc.)"
+          - name: screen_id
+            description: "Foreign key to screener_screen"
+          - name: content
+            description: "Message content"
+          - name: uid
+            description: "User ID for the message"
+      - name: translations_translation
+        description: "Translation master records"
+        columns:
+          - name: id
+            description: "Primary key"
+            tests:
+              - not_null
+              - unique
+          - name: label
+            description: "Translation label/key"
+      - name: translations_translation_translation
+        description: "Translation text records by language"
+        columns:
+          - name: id
+            description: "Primary key"
+            tests:
+              - not_null
+              - unique
+          - name: master_id
+            description: "Foreign key to translations_translation"
+          - name: language_code
+            description: "Language code (e.g., 'en-us')"
+          - name: text
+            description: "Translated text" 
