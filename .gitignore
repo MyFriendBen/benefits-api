@@ -32,6 +32,9 @@ __pycache__/
 staticfiles/
 tasks/todo.md
 
+# AI tooling
+.claude/projects/
+
 # dbt artifacts
 /dbt/target/
 /dbt/logs/
