@@ -175,6 +175,10 @@ class NcConfigurationData(ConfigurationData):
             "_label": "referralOptions.211nc",
             "_default_message": "2-1-1 North Carolina",
         },
+        "amexcan": {
+            "_label": "referralOptions.amexcan",
+            "_default_message": "AMEXCAN",
+        },
         "blueprint": {
             "_label": "referralOptions.blueprint",
             "_default_message": "Blueprint NC",
@@ -182,6 +186,10 @@ class NcConfigurationData(ConfigurationData):
         "careReach": {
             "_label": "referralOptions.careReach",
             "_default_message": "Care Reach",
+        },
+        "cca": {
+            "_label": "referralOptions.cca",
+            "_default_message": "Community Civil Activist",
         },
         "fiel": {
             "_label": "referralOptions.fiel",
@@ -199,6 +207,10 @@ class NcConfigurationData(ConfigurationData):
             "_label": "referralOptions.hfed",
             "_default_message": "Hispanic Federation",
         },
+        "mfa": {
+            "_label": "referralOptions.mfa",
+            "_default_message": "Mi Familia en Acción",
+        },
         "mda": {
             "_label": "referralOptions.mda",
             "_default_message": "Montagnard Dega Association",
@@ -214,6 +226,14 @@ class NcConfigurationData(ConfigurationData):
         "nariahWay": {
             "_label": "referralOptions.nw",
             "_default_message": "Nariah's Way",
+        },
+        "ncapri": {
+            "_label": "referralOptions.ncapri",
+            "_default_message": "NCAPRI",
+        },
+        "ncba": {
+            "_label": "referralOptions.ncba",
+            "_default_message": "NC Black Alliance",
         },
         "ncchwa": {
             "_label": "referralOptions.NCCHWA",
@@ -236,6 +256,10 @@ class NcConfigurationData(ConfigurationData):
             "_label": "referralOptions.ruralHealthGroup",
             "_default_message": "Rural Health Group",
         },
+        "sf": {
+            "_label": "referralOptions.sf",
+            "_default_message": "Shackle Free",
+        },
         "unidx": {
             "_label": "referralOptions.unidxWNC",
             "_default_message": "Unidx WNC",
@@ -247,6 +271,10 @@ class NcConfigurationData(ConfigurationData):
         "wrcgso": {
             "_label": "referralOptions.wrcgso",
             "_default_message": "Women's Resource Center of Greensboro",
+        },
+        "valores": {
+            "_label": "referralOptions.valores",
+            "_default_message": "Valores",
         },
         "searchEngine": {
             "_label": "referralOptions.searchEngine",
