@@ -34,3 +34,6 @@ class FamilyCare(ProgramCalculator, FplIncomeCheckMixin):
         is_caretaker = member.relationship in self.caretaker_relationships
 
         e.condition(is_pregnant or (has_qualifying_children and is_caretaker))
+
+        # Must not have Medicaid
+        e.condition(not member.has_benefit("medicaid"))
