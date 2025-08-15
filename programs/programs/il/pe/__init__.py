@@ -9,7 +9,9 @@ il_member_calculators = {
     "il_wic": member.IlWic,
 }
 
-il_tax_unit_calculators = {}
+il_tax_unit_calculators = {
+    "il_eitc": tax.Ileitc,
+}
 
 il_spm_calculators = {
     "il_snap": spm.IlSnap,
