@@ -1,9 +1,10 @@
 from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
 from programs.programs.helpers import medicaid_eligible
 import programs.programs.messages as messages
+from programs.programs.mixins import FplIncomeCheckMixin
 
 
-class FamilyCare(ProgramCalculator):
+class FamilyCare(ProgramCalculator, FplIncomeCheckMixin):
     member_amount = 474 * 12
     max_child_age = 18
     fpl_percent = 1.38
@@ -15,12 +16,8 @@ class FamilyCare(ProgramCalculator):
         # Must have base Medicaid eligibility
         e.condition(medicaid_eligible(self.data), messages.must_have_benefit("Medicaid"))
 
-        # Income must be at or below 138% FPL
-        fpl = self.program.year
-        income_limit = int(self.fpl_percent * fpl.get_limit(self.screen.household_size))
-        gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
-
-        e.condition(gross_income <= income_limit, messages.income(gross_income, income_limit))
+        # Check income against 138% FPL (includes 5% disregard)
+        self.check_fpl_income(e, self.fpl_percent)
 
     def member_eligible(self, e: MemberEligibility):
         member = e.member
@@ -37,3 +34,6 @@ class FamilyCare(ProgramCalculator):
         is_caretaker = member.relationship in self.caretaker_relationships
 
         e.condition(is_pregnant or (has_qualifying_children and is_caretaker))
+
+        # Must not have Medicaid
+        e.condition(not member.has_benefit("medicaid"))
