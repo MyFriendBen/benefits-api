@@ -16,6 +16,7 @@ dbt is used to transform data in your PostgreSQL database using SQL. It provides
 dbt/
 ├── dbt_project.yml      # Project configuration
 ├── profiles.yml         # Database connection settings
+├── packages.yml         # Package dependencies
 ├── models/              # SQL models (transformations)
 │   └── staging/        # Raw data staging models
 ├── tests/               # Custom data tests
@@ -41,38 +42,62 @@ DB_NAME=your_db_name
 DB_SCHEMA=analytics  # Optional, defaults to 'analytics'
 ```
 
+### Package Management
+
+This project uses dbt packages to extend functionality. Before running any dbt commands, you need to install the packages:
+
+```bash
+# Navigate to dbt directory
+cd dbt
+
+# Install packages (run this first time or when packages.yml changes)
+dbt deps
+```
+
+#### Current Packages
+- **dbt_utils**: Advanced testing and utility functions
+- **codegen**: SQL generation utilities
+
+**Note**: The `dbt_packages/` directory is in `.gitignore` and should not be committed to version control.
+
 ### Commands
 
-All dbt commands are available via Makefile targets:
+Run these commands from the `dbt/` directory:
 
 ```bash
 # Check dbt version
-make dbt-version
+dbt --version
 
 # Test database connection
-make dbt-debug
+dbt debug
 
 # Build all models
-make dbt-build
+dbt build
 
 # Run tests
-make dbt-test
+dbt test
 
 # Generate documentation
-make dbt-docs
+dbt docs generate
 
 # Serve documentation locally
-make dbt-docs-serve
+dbt docs serve
 
 # Clean build artifacts
-make dbt-clean
+dbt clean
+
+# Run specific models
+dbt run --select model_name
+
+# Run specific tests
+dbt test --select model_name
 ```
 
 ## Adding New Models
 
 1. Create SQL files in `models/` subdirectories
 2. Use the `{{ ref('model_name') }}` function to reference other models
-3. Run `make dbt-build` to build your models
+3. Run `dbt build` to build your models
 
 ### Example Model
 ```sql
@@ -101,6 +126,8 @@ Models are created in the `analytics` schema by default. You can change this by 
 - **Connection issues**: Check your environment variables and database credentials
 - **Build errors**: Check the SQL syntax and table references
 - **Permission errors**: Ensure your database user has CREATE privileges on the target schema
+- **Package errors**: Run `dbt deps` to install/update packages
+- **Test failures**: Check the test configurations and data quality
 
 ## Resources
 

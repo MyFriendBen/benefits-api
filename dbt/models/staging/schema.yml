@@ -1,0 +1,72 @@
+version: 2
+
+models:
+  - name: stg_screener_screen
+    description: "Staging model for screener data, cleaned and filtered"
+    columns:
+      - name: id
+        description: "Primary key from screener_screen"
+        tests:
+          - not_null
+          - unique
+      - name: uuid
+        description: "Unique identifier for the screener"
+        tests:
+          - not_null
+          - unique
+      - name: completed
+        description: "Whether the screener was completed"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true]
+              config:
+                severity: warn
+      - name: submission_date
+        description: "When the screener was submitted"
+        tests:
+          - not_null
+      - name: start_date
+        description: "When the screener was started"
+        tests:
+          - not_null
+      - name: is_test
+        description: "Whether this is test data"
+        tests:
+          - accepted_values:
+              values: [false]
+              config:
+                severity: warn
+      - name: is_test_data
+        description: "Whether this is test data (alternative flag)"
+        tests:
+          - accepted_values:
+              values: [false]
+              config:
+                severity: warn
+      - name: submission_date_only
+        description: "Date part of submission_date"
+        tests:
+          - not_null
+      - name: submission_year
+        description: "Year part of submission_date"
+        tests:
+          - not_null
+      - name: submission_month
+        description: "Month part of submission_date"
+        tests:
+          - not_null
+      - name: submission_day
+        description: "Day part of submission_date"
+        tests:
+          - not_null
+      - name: submission_day_of_week
+        description: "Day of week part of submission_date"
+        tests:
+          - not_null
+    data_tests:
+      - dbt_utils.expression_is_true:
+          name: "submission_date_after_start_date"
+          expression: "submission_date >= start_date"
+          config:
+            severity: warn

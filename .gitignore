@@ -39,3 +39,4 @@ tasks/todo.md
 /dbt/target/
 /dbt/logs/
 /dbt/.user.yml
+/dbt/dbt_packages/
