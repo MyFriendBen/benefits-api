@@ -18,3 +18,6 @@ class AllKids(ProgramCalculator, FplIncomeCheckMixin):
 
         # Must be under 19
         e.condition(member.age <= self.max_age)
+
+        # Must not have Medicaid
+        e.condition(not member.has_benefit("medicaid"))
