@@ -436,6 +436,7 @@ class ConfigurationData:
             "[REPLACE_ME]": [],
         },
         "featureFlags": {"default": []},
+        "defaultLanguage": {"default": "en-us", "[REPLACE_ME]": ""},
     }
 
     footer_data = {

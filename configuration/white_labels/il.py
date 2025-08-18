@@ -2319,6 +2319,21 @@ class IlConfigurationData(ConfigurationData):
                 "_default_message": "Housing and Utilities",
             },
         },
+        "cash": {
+            "benefits": {
+                "ssdi": {
+                    "name": {
+                        "_label": "cashAssistanceBenefits.ssdi",
+                        "_default_message": "Social Security Disability Insurance (SSDI): ",
+                    },
+                    "description": {
+                        "_label": "cashAssistanceBenefits.ssdi_desc",
+                        "_default_message": "Social security benefit for people with disabilities",
+                    },
+                },
+            },
+            "category_name": {"_label": "cashAssistance", "_default_message": "Cash Assistance"},
+        },
     }
 
     consent_to_contact = {
@@ -2371,6 +2386,7 @@ class IlConfigurationData(ConfigurationData):
                 "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. If you indicated need for an immediate resource, please click on the \"Near-Term Benefits\" tab. For additional resources, please click the 'More Help' button below to get the resources you're looking for.",
             },
         },
+        "defaultLanguage": {"default": "en-us"},
     }
 
     footer_data = {
