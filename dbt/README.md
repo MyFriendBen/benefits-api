@@ -5,6 +5,7 @@ This directory contains the dbt (data build tool) project for the Benefits API d
 ## Overview
 
 dbt is used to transform data in your PostgreSQL database using SQL. It provides:
+
 - **Models**: SQL transformations that build tables/views
 - **Tests**: Data quality checks
 - **Documentation**: Auto-generated docs for your data models
@@ -28,18 +29,26 @@ dbt/
 ## Quick Start
 
 ### Prerequisites
+
 - Python 3.10+ with virtual environment activated
 - PostgreSQL database access
 - Environment variables set (see below)
 
 ### Environment Variables
+
 Set these in your `.env` file:
+
 ```bash
 DB_HOST=localhost
 DB_USER=your_db_user
 DB_PASS=your_db_password
-DB_NAME=your_db_name
 DB_SCHEMA=analytics  # Optional, defaults to 'analytics'
+```
+
+Export the variables to your shell:
+
+```bash
+export $(cat .env | xargs)
 ```
 
 ### Package Management
@@ -55,6 +64,7 @@ dbt deps
 ```
 
 #### Current Packages
+
 - **dbt_utils**: Advanced testing and utility functions
 - **codegen**: SQL generation utilities
 
@@ -100,9 +110,10 @@ dbt test --select model_name
 3. Run `dbt build` to build your models
 
 ### Example Model
+
 ```sql
 -- models/staging/my_model.sql
-SELECT 
+SELECT
     id,
     name,
     created_at
@@ -133,4 +144,4 @@ Models are created in the `analytics` schema by default. You can change this by 
 
 - [dbt Documentation](https://docs.getdbt.com/)
 - [dbt Best Practices](https://docs.getdbt.com/guides/best-practices)
-- [dbt Community](https://community.getdbt.com/) 
+- [dbt Community](https://community.getdbt.com/)

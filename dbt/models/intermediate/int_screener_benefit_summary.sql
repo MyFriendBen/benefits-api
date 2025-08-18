@@ -34,15 +34,10 @@ screener_base AS (
         s.is_test,
         s.is_test_data,
         -- Add date parts
-        DATE(s.submission_date) as submission_date_only,
-        EXTRACT(YEAR FROM s.submission_date) as submission_year,
-        EXTRACT(MONTH FROM s.submission_date) as submission_month
-    FROM {{ source('django_apps', 'screener_screen') }} s
-    WHERE
-        s.completed = true
-        AND (s.is_test = false OR s.is_test IS NULL)
-        AND (s.is_test_data = false OR s.is_test_data IS NULL)
-        AND s.submission_date IS NOT NULL
+        s.submission_date_only,
+        s.submission_year,
+        s.submission_month
+    FROM {{ ref('stg_screener_screen') }} s
 )
 
 SELECT
