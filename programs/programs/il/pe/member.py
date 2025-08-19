@@ -1,4 +1,5 @@
 import programs.programs.federal.pe.member as member
+import programs.programs.federal.pe.tax as tax
 import programs.programs.policyengine.calculators.dependencies.household as dependency
 
 
@@ -35,5 +36,13 @@ class IlWic(member.Wic):
     }
     pe_inputs = [
         *member.Wic.pe_inputs,
+        dependency.IlStateCodeDependency,
+    ]
+
+
+class IlAca(tax.Aca):
+    pe_name = "aca_ptc"
+    pe_inputs = [
+        *tax.Aca.pe_inputs,
         dependency.IlStateCodeDependency,
     ]
