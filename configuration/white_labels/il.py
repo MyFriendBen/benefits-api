@@ -2319,6 +2319,21 @@ class IlConfigurationData(ConfigurationData):
             },
             "category_name": {"_label": "cashAssistance", "_default_message": "Cash Assistance"},
         },
+        "taxCredits": {
+            "benefits": {
+                "eitc": {
+                    "name": {
+                        "_label": "taxCreditBenefits.eitc",
+                        "_default_message": "Earned Income Tax Credit (EITC): ",
+                    },
+                    "description": {
+                        "_label": "taxCreditBenefits.eitc_desc",
+                        "_default_message": "Federal tax credit - earned income",
+                    },
+                },
+            },
+            "category_name": {"_label": "taxCredits", "_default_message": "Tax Credits"},
+        },
     }
 
     consent_to_contact = {
