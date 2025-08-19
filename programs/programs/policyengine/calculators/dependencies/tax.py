@@ -26,6 +26,10 @@ class Ileitc(TaxUnit):
     field = "il_eitc"
 
 
+class Ilctc(TaxUnit):
+    field = "il_ctc"
+
+
 class MaChildFamilyCredit(TaxUnit):
     field = "ma_child_and_family_credit"
 

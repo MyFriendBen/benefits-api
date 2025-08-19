@@ -11,6 +11,7 @@ il_member_calculators = {
 
 il_tax_unit_calculators = {
     "il_eitc": tax.Ileitc,
+    "il_ctc": tax.Ilctc,
 }
 
 il_spm_calculators = {
