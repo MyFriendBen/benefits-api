@@ -108,6 +108,9 @@ class Medicaid(Member):
 class Ssi(Member):
     field = "ssi"
 
+    def value(self):
+        return self.member.calc_gross_income("yearly", ["sSI"])
+
 
 class IsDisabledDependency(Member):
     field = "is_disabled"
