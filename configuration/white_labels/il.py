@@ -2351,6 +2351,16 @@ class IlConfigurationData(ConfigurationData):
                         "_default_message": "Transportation benefits for eligible individuals",
                     },
                 },
+                "il_transit_reduced_fare": {
+                    "name": {
+                        "_label": "cashAssistanceBenefits.il_transit_reduced_fare",
+                        "_default_message": "Local Transit Reduced Fare: ",
+                    },
+                    "description": {
+                        "_label": "cashAssistanceBenefits.il_transit_reduced_fare_desc",
+                        "_default_message": "Reduced fare for public transit",
+                    },
+                },
             },
             "category_name": {"_label": "cashAssistance", "_default_message": "Cash Assistance"},
         },
