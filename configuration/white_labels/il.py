@@ -2341,6 +2341,16 @@ class IlConfigurationData(ConfigurationData):
                         "_default_message": "Federal cash assistance for individuals who are disabled, blind, or 65 years of age or older",
                     },
                 },
+                "il_bap": {
+                    "name": {
+                        "_label": "cashAssistanceBenefits.il_bap",
+                        "_default_message": "Benefits Access Program (BAP): ",
+                    },
+                    "description": {
+                        "_label": "cashAssistanceBenefits.il_bap_desc",
+                        "_default_message": "Transportation benefits for eligible individuals",
+                    },
+                },
             },
             "category_name": {"_label": "cashAssistance", "_default_message": "Cash Assistance"},
         },
