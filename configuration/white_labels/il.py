@@ -2298,6 +2298,16 @@ class IlConfigurationData(ConfigurationData):
                         "_default_message": "Food and breastfeeding assistance",
                     },
                 },
+                "il_nslp": {
+                    "name": {
+                        "_label": "foodAndNutritionBenefits.nslp",
+                        "_default_message": "National School Lunch Program: ",
+                    },
+                    "description": {
+                        "_label": "foodAndNutritionBenefits.nslp_desc",
+                        "_default_message": "Free school meals",
+                    },
+                },
             },
             "category_name": {
                 "_label": "foodAndNutrition",

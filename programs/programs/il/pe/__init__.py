@@ -17,6 +17,7 @@ il_tax_unit_calculators = {
 
 il_spm_calculators = {
     "il_snap": spm.IlSnap,
+    "il_nslp": spm.IlNslp,
 }
 
 il_pe_calculators: dict[str, type[PolicyEngineCalulator]] = {
