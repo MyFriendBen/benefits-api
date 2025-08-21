@@ -44,6 +44,8 @@ class NCLieap(ProgramCalculator):
 
         # Calculate earned income (wages + self-employment only)
         earned_income = self.screen.calc_gross_income("yearly", ["earned"])
+
+        # Calculate unearned income
         unearned_income = self.screen.calc_gross_income("yearly", ["unearned"], ["sSI"])
 
         # Apply earned income deduction only to earned income
