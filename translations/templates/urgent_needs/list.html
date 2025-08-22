@@ -53,11 +53,13 @@
                   class="dropdown-item"
                   >Link</a
                 >
+                {% if urgent_need.category_type %}
                 <a
-                  href="/api/translations/admin/{{ urgent_need.type.id }}"
+                  href="/api/translations/admin/{{ urgent_need.category_type.name.id }}"
                   class="dropdown-item"
                   >Type</a
                 >
+                {% endif %}
                 <a
                   href="/api/translations/admin/{{ urgent_need.warning.id }}"
                   class="dropdown-item"
