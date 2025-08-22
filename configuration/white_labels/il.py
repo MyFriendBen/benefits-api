@@ -2381,6 +2381,16 @@ class IlConfigurationData(ConfigurationData):
                         "_default_message": "Cash assistance and work support",
                     },
                 },
+                "il_aabd": {
+                    "name": {
+                        "_label": "cashAssistanceBenefits.il_aabd",
+                        "_default_message": "Aid to the Aged, Blind or Disabled (AABD): ",
+                    },
+                    "description": {
+                        "_label": "cashAssistanceBenefits.il_aabd_desc",
+                        "_default_message": "Cash assistance for aged, blind, or disabled individuals",
+                    },
+                },
             },
             "category_name": {"_label": "cashAssistance", "_default_message": "Cash Assistance"},
         },
