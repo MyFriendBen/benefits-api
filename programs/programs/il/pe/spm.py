@@ -1,5 +1,5 @@
 import programs.programs.policyengine.calculators.dependencies as dependency
-from programs.programs.federal.pe.spm import Snap, SchoolLunch
+from programs.programs.federal.pe.spm import Snap, SchoolLunch, Tanf
 
 
 class IlSnap(Snap):
@@ -36,3 +36,15 @@ class IlNslp(SchoolLunch):
                     value = self.tier_2_amount * num_children
 
         return value
+
+
+class IlTanf(Tanf):
+    pe_name = "il_tanf"
+    pe_inputs = [
+        *Tanf.pe_inputs,
+        dependency.household.IlStateCodeDependency,
+        dependency.spm.IlTanfCountableEarnedIncomeDependency,
+        dependency.spm.IlTanfCountableGrossUnearnedIncomeDependency,
+    ]
+
+    pe_outputs = [dependency.spm.IlTanf]

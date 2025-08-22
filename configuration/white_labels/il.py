@@ -2371,6 +2371,16 @@ class IlConfigurationData(ConfigurationData):
                         "_default_message": "Reduced fare for public transit",
                     },
                 },
+                "il_tanf": {
+                    "name": {
+                        "_label": "cashAssistanceBenefits.il_tanf",
+                        "_default_message": "Temporary Assistance for Needy Families (TANF): ",
+                    },
+                    "description": {
+                        "_label": "cashAssistanceBenefits.il_tanf_desc",
+                        "_default_message": "Cash assistance and work support",
+                    },
+                },
             },
             "category_name": {"_label": "cashAssistance", "_default_message": "Cash Assistance"},
         },
