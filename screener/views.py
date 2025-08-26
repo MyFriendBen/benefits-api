@@ -422,6 +422,7 @@ def eligibility_results(screen: Screen, batch=False):
                     "documents": [serialized_document(document) for document in program.documents.all()],
                     "warning_messages": warnings,
                     "required_programs": [p.id for p in program.required_programs.all()],
+                    "excludes_programs": [p.id for p in program.excludes_programs.all()],
                     "value_format": program.value_format,
                 }
             )

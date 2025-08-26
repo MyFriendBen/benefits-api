@@ -28,11 +28,6 @@ class MomsAndBabies(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
         return any(self._is_eligible_adult(member) for member in members)
 
     def household_eligible(self, e: Eligibility):
-        # Must NOT be eligible for FamilyCare
-        family_care_eligible = "il_family_care" in self.data and self.data["il_family_care"].eligible
-
-        e.condition(not family_care_eligible, messages.must_not_have_benefit("FamilyCare"))
-
         # Income must be at or below 213% FPL
         self.check_fpl_income(e, self.fpl_percent)
 
