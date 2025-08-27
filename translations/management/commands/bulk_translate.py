@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.conf import settings
+from django.db.models import Q, OuterRef, Exists
 from translations.models import Translation
 from integrations.services.google_translate.integration import Translate
 
@@ -13,6 +14,7 @@ class Command(BaseCommand):
         parser.add_argument("--limit", default=1, type=int)
         parser.add_argument("--all", default=False, type=bool)
         parser.add_argument("--lang", default=settings.LANGUAGE_CODE, type=str)
+        parser.add_argument("--force-translations", action="store_true", help="Force processing even if no translations need updating")
 
     def handle(self, *args, **options):
         limit = 10_000 if options["all"] else min(10_000, options["limit"])
@@ -23,6 +25,42 @@ class Command(BaseCommand):
         translate = Translate()
 
         translations = Translation.objects.prefetch_related("translations").language(settings.LANGUAGE_CODE).all()
+
+        print(f"Total translations: {len(translations)}")
+
+        # Count how many need translation using a single query
+        from django.db.models import Q, OuterRef, Exists
+
+        # Check which translations don't have a record for this language
+        lang_exists = Translation.objects.filter(pk=OuterRef("pk"), translations__language_code=lang)
+
+        # Debug the filtering - check translations that have English text
+        from django.db.models import Exists
+
+        # Find translations that have English text
+        has_en_text = Translation.objects.filter(
+            translations__language_code=settings.LANGUAGE_CODE,
+            translations__text__isnull=False,
+            translations__text__gt="",
+        )
+
+        total_en = Translation.objects.language(settings.LANGUAGE_CODE).count()
+        has_text_count = has_en_text.count()
+        auto_allowed = has_en_text.filter(no_auto=False).count()
+        no_target_lang = has_en_text.filter(no_auto=False).filter(~Exists(lang_exists)).count()
+
+        need_translation_count = no_target_lang
+
+        print(f"Total en-us translations: {total_en}")
+        print(f"With English text: {has_text_count}")
+        print(f"Auto translation allowed: {auto_allowed}")
+        print(f"Missing {lang} record: {no_target_lang}")
+        print(f"Translations needing {lang} translation: {need_translation_count}")
+
+        # Exit early if no translations need processing (unless forced)
+        if need_translation_count == 0 and not options.get("force_translations", False):
+            print(f"No translations need {lang} translation. Use --force-translations to run anyway.")
+            return
 
         total_count = 0
         temp_chars = 0
@@ -60,8 +98,23 @@ class Command(BaseCommand):
                 batches.append(texts)
                 break
 
-        for batch in batches:
-            auto = translate.bulk_translate([lang], list(batch.keys()))
-            for [original_text, new_text] in auto.items():
-                for trans in batch[original_text]:
-                    Translation.objects.edit_translation_by_id(trans.id, lang, new_text[lang], manual=False)
+        print(f"Processing {len(batches)} batches for language {lang}")
+
+        records_created = 0
+        
+        for i, batch in enumerate(batches):
+
+            try:
+                auto = translate.bulk_translate([lang], list(batch.keys()))
+
+                for [original_text, new_text] in auto.items():
+                    for trans in batch[original_text]:
+                        Translation.objects.edit_translation_by_id(trans.id, lang, new_text[lang], manual=False)
+                        records_created += 1
+
+            except Exception as e:
+                print(f"ERROR in batch {i+1}: {str(e)}")
+                raise
+
+        print(f"Bulk translate completed successfully for {lang}")
+        print(f"Total records created/updated: {records_created}")
