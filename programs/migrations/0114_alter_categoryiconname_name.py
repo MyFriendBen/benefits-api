@@ -121,8 +121,8 @@ def sync_data(apps, _):
             "ma_legal_finder": "Civil legal needs",
             "ma_housing_works": "Managing housing costs",
         },
-        "il": {           
-            "il_rentervention": "Managing housing costs",            
+        "il": {
+            "il_rentervention": "Managing housing costs",
         },
     }
 
