@@ -261,11 +261,12 @@ PARLER_LANGUAGES = {
 
 # Add custom language info for languages not in Django's built-in LANG_INFO
 from django.conf.locale import LANG_INFO
-LANG_INFO['tl'] = {
-    'bidi': False,
-    'code': 'tl',
-    'name': 'Tagalog',
-    'name_local': 'Tagalog',
+
+LANG_INFO["tl"] = {
+    "bidi": False,
+    "code": "tl",
+    "name": "Tagalog",
+    "name_local": "Tagalog",
 }
 
 # Static files (CSS, JavaScript, Images)
