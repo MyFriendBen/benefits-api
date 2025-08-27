@@ -7,9 +7,6 @@ class il_beacon(UrgentNeedFunction):
     max_age = 21
 
     def eligible(self):
-        # Check if household has marked mental health or child development help
-        needs_mental_health = self.screen.needs_mental_health_help
-        needs_child_dev = self.screen.needs_child_dev_help
 
         # Check if at least one household member is between 5-21
         has_eligible_age_member = False
@@ -19,4 +16,4 @@ class il_beacon(UrgentNeedFunction):
                 break
 
         # Return True if both conditions are met
-        return (needs_mental_health or needs_child_dev) and has_eligible_age_member
+        return has_eligible_age_member
