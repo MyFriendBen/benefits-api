@@ -1,6 +1,5 @@
 from .il_early_intervention import IlEarlyIntervention
 from .il_beacon import il_beacon
-from programs.programs.urgent_needs.il.rentervention import Rentervention
 from .il_cook_foreclosure import IlCookForeclosure
 from .rentervention import Rentervention
 from ..base import UrgentNeedFunction
