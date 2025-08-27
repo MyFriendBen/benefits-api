@@ -203,6 +203,10 @@ class IlConfigurationData(ConfigurationData):
         "zh-hans": "中文 (简体)",
         "ar": "عربي",
         "sw": "Kiswahili",
+        "pl": "Polski",
+        "tl": "Tagalog",
+        "ko": "한국어",
+        "ur": "اردو",
     }
 
     income_options = {

@@ -219,6 +219,10 @@ LANGUAGES = (
     ("zh-hans", _("Simplified Chinese")),
     ("ar", _("Arabic")),
     ("sw", _("Kiswahili")),
+    ("pl", _("Polish")),
+    ("tl", _("Tagalog")),
+    ("ko", _("Korean")),
+    ("ur", _("Urdu")),
 )
 
 TIME_ZONE = "UTC"
@@ -243,12 +247,25 @@ PARLER_LANGUAGES = {
         {"code": "zh-hans"},
         {"code": "ar"},
         {"code": "sw"},
+        {"code": "pl"},
+        {"code": "tl"},
+        {"code": "ko"},
+        {"code": "ur"},
     ),
     "default": {
         "fallbacks": ["en-us"],  # defaults to PARLER_DEFAULT_LANGUAGE_CODE
         # the default; let .active_translations() return fallbacks too.
         "hide_untranslated": True,
     },
+}
+
+# Add custom language info for languages not in Django's built-in LANG_INFO
+from django.conf.locale import LANG_INFO
+LANG_INFO['tl'] = {
+    'bidi': False,
+    'code': 'tl',
+    'name': 'Tagalog',
+    'name_local': 'Tagalog',
 }
 
 # Static files (CSS, JavaScript, Images)
