@@ -2416,6 +2416,26 @@ class IlConfigurationData(ConfigurationData):
                         "_default_message": "Federal tax credit",
                     },
                 },
+                "il_eitc": {
+                    "name": {
+                        "_label": "taxCreditBenefits.il_eitc",
+                        "_default_message": "Illinois Earned Income Tax Credit (IL EITC): ",
+                    },
+                    "description": {
+                        "_label": "taxCreditBenefits.il_eitc_desc",
+                        "_default_message": "Illinois state tax credit - earned income",
+                    },
+                },
+                "il_ctc": {
+                    "name": {
+                        "_label": "taxCreditBenefits.il_ctc",
+                        "_default_message": "Illinois Child Tax Credit: ",
+                    },
+                    "description": {
+                        "_label": "taxCreditBenefits.il_ctc_desc",
+                        "_default_message": "Illinois state tax credit for children",
+                    },
+                },
             },
             "category_name": {"_label": "taxCredits", "_default_message": "Tax Credits"},
         },
