@@ -14,7 +14,9 @@ class Command(BaseCommand):
         parser.add_argument("--limit", default=1, type=int)
         parser.add_argument("--all", default=False, type=bool)
         parser.add_argument("--lang", default=settings.LANGUAGE_CODE, type=str)
-        parser.add_argument("--force-translations", action="store_true", help="Force processing even if no translations need updating")
+        parser.add_argument(
+            "--force-translations", action="store_true", help="Force processing even if no translations need updating"
+        )
 
     def handle(self, *args, **options):
         limit = 10_000 if options["all"] else min(10_000, options["limit"])
@@ -101,7 +103,7 @@ class Command(BaseCommand):
         print(f"Processing {len(batches)} batches for language {lang}")
 
         records_created = 0
-        
+
         for i, batch in enumerate(batches):
 
             try:
