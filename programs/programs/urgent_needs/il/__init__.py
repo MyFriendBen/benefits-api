@@ -1,10 +1,14 @@
 from .il_early_intervention import IlEarlyIntervention
 from .il_cook_foreclosure import IlCookForeclosure
 from .rentervention import Rentervention
+from .housing_development_authority_foreclosure_prevention_counseling import (
+    HousingDevelopmentAuthorityForeclosurePreventionCounseling,
+)
 from ..base import UrgentNeedFunction
 
 il_urgent_need_functions: dict[str, type[UrgentNeedFunction]] = {
     "il_early_interv": IlEarlyIntervention,
     "il_cook_foreclosure": IlCookForeclosure,
     "il_rentervention": Rentervention,
+    "il_save_home": HousingDevelopmentAuthorityForeclosurePreventionCounseling,
 }
