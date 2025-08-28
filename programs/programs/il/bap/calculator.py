@@ -16,11 +16,7 @@ class IlBenefitAccess(IlTransportationMixin, ProgramCalculator):
         household_size = self.screen.household_size
         gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
 
-        income_limit = self.income_limit_by_household_size.get(
-            min(household_size, 3), self.income_limit_by_household_size[3]
-        )
+        income_limit = self.income_limit_by_household_size[min(household_size, 3)]
         income_eligible = gross_income <= income_limit
 
-        household_eligible = household_size <= 3
-
-        e.condition(presumptive_eligible or (income_eligible and household_eligible))
+        e.condition((household_size <= 3) and (presumptive_eligible or income_eligible))
