@@ -1,13 +1,13 @@
 from ..base import UrgentNeedFunction
 
 
-class IlForeclosurePreventionCounseling(UrgentNeedFunction):
+class IlEvictionHelp(UrgentNeedFunction):
     def eligible(self):
         """
-        Illinois Housing Development Authority Foreclosure Prevention Counseling
+        Eviction Help Illinois
 
-        Return True if HH marks need for housing/utilities resource and HH has a mortgage expense
+        Return True if HH marks need for housing/utilities resource and HH has rent expense
         """
-        has_mortgage = self.screen.has_expense(["mortgage"])
+        has_rent = self.screen.has_expense(["rent"])
 
-        return needs_housing_help and has_mortgage
+        return has_rent
