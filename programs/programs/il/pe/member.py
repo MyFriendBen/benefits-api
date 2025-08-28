@@ -1,5 +1,8 @@
 import programs.programs.federal.pe.member as member
+import programs.programs.federal.pe.tax as tax
 import programs.programs.policyengine.calculators.dependencies.household as dependency
+import programs.programs.policyengine.calculators.dependencies.member as member_dependency
+from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
 
 
 class IlMedicaid(member.Medicaid):
@@ -37,3 +40,24 @@ class IlWic(member.Wic):
         *member.Wic.pe_inputs,
         dependency.IlStateCodeDependency,
     ]
+
+
+class IlAca(tax.Aca):
+    pe_name = "aca_ptc"
+    pe_inputs = [
+        *tax.Aca.pe_inputs,
+        dependency.IlStateCodeDependency,
+    ]
+
+
+class IlAabd(PolicyEngineMembersCalculator):
+    pe_name = "il_aabd_person"
+    pe_inputs = [
+        member_dependency.AgeDependency,
+        member_dependency.IsDisabledDependency,
+        member_dependency.IsBlindDependency,
+        member_dependency.IlAabdGrossEarnedIncomeDependency,
+        member_dependency.IlAabdGrossUnearnedIncomeDependency,
+        dependency.IlStateCodeDependency,
+    ]
+    pe_outputs = [member_dependency.IlAabd]

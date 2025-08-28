@@ -7,6 +7,8 @@ from programs.programs.policyengine.calculators.base import PolicyEngineCalulato
 il_member_calculators = {
     "il_medicaid": member.IlMedicaid,
     "il_wic": member.IlWic,
+    "il_aca": member.IlAca,
+    "il_aabd": member.IlAabd,
 }
 
 il_tax_unit_calculators = {
@@ -16,6 +18,8 @@ il_tax_unit_calculators = {
 
 il_spm_calculators = {
     "il_snap": spm.IlSnap,
+    "il_nslp": spm.IlNslp,
+    "il_tanf": spm.IlTanf,
 }
 
 il_pe_calculators: dict[str, type[PolicyEngineCalulator]] = {

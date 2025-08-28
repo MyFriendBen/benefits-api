@@ -203,6 +203,10 @@ class IlConfigurationData(ConfigurationData):
         "zh-hans": "中文 (简体)",
         "ar": "عربي",
         "sw": "Kiswahili",
+        "pl": "Polski",
+        "tl": "Tagalog",
+        "ko": "한국어",
+        "ur": "اردو",
     }
 
     income_options = {
@@ -2298,6 +2302,16 @@ class IlConfigurationData(ConfigurationData):
                         "_default_message": "Food and breastfeeding assistance",
                     },
                 },
+                "il_nslp": {
+                    "name": {
+                        "_label": "foodAndNutritionBenefits.nslp",
+                        "_default_message": "National School Lunch Program: ",
+                    },
+                    "description": {
+                        "_label": "foodAndNutritionBenefits.nslp_desc",
+                        "_default_message": "Free school meals",
+                    },
+                },
             },
             "category_name": {
                 "_label": "foodAndNutrition",
@@ -2341,6 +2355,46 @@ class IlConfigurationData(ConfigurationData):
                         "_default_message": "Federal cash assistance for individuals who are disabled, blind, or 65 years of age or older",
                     },
                 },
+                "il_bap": {
+                    "name": {
+                        "_label": "cashAssistanceBenefits.il_bap",
+                        "_default_message": "Benefits Access Program (BAP): ",
+                    },
+                    "description": {
+                        "_label": "cashAssistanceBenefits.il_bap_desc",
+                        "_default_message": "Transportation benefits for eligible individuals",
+                    },
+                },
+                "il_transit_reduced_fare": {
+                    "name": {
+                        "_label": "cashAssistanceBenefits.il_transit_reduced_fare",
+                        "_default_message": "Local Transit Reduced Fare: ",
+                    },
+                    "description": {
+                        "_label": "cashAssistanceBenefits.il_transit_reduced_fare_desc",
+                        "_default_message": "Reduced fare for public transit",
+                    },
+                },
+                "il_tanf": {
+                    "name": {
+                        "_label": "cashAssistanceBenefits.il_tanf",
+                        "_default_message": "Temporary Assistance for Needy Families (TANF): ",
+                    },
+                    "description": {
+                        "_label": "cashAssistanceBenefits.il_tanf_desc",
+                        "_default_message": "Cash assistance and work support",
+                    },
+                },
+                "il_aabd": {
+                    "name": {
+                        "_label": "cashAssistanceBenefits.il_aabd",
+                        "_default_message": "Aid to the Aged, Blind or Disabled (AABD): ",
+                    },
+                    "description": {
+                        "_label": "cashAssistanceBenefits.il_aabd_desc",
+                        "_default_message": "Cash assistance for aged, blind, or disabled individuals",
+                    },
+                },
             },
             "category_name": {"_label": "cashAssistance", "_default_message": "Cash Assistance"},
         },
@@ -2366,8 +2420,46 @@ class IlConfigurationData(ConfigurationData):
                         "_default_message": "Federal tax credit",
                     },
                 },
+                "il_eitc": {
+                    "name": {
+                        "_label": "taxCreditBenefits.il_eitc",
+                        "_default_message": "Illinois Earned Income Tax Credit (IL EITC): ",
+                    },
+                    "description": {
+                        "_label": "taxCreditBenefits.il_eitc_desc",
+                        "_default_message": "Illinois state tax credit - earned income",
+                    },
+                },
+                "il_ctc": {
+                    "name": {
+                        "_label": "taxCreditBenefits.il_ctc",
+                        "_default_message": "Illinois Child Tax Credit: ",
+                    },
+                    "description": {
+                        "_label": "taxCreditBenefits.il_ctc_desc",
+                        "_default_message": "Illinois state tax credit for children",
+                    },
+                },
             },
             "category_name": {"_label": "taxCredits", "_default_message": "Tax Credits"},
+        },
+        "healthCare": {
+            "benefits": {
+                "il_aca": {
+                    "name": {
+                        "_label": "healthCareBenefits.il_aca",
+                        "_default_message": "ACA (Affordable Care Act) Premium Tax Credit: ",
+                    },
+                    "description": {
+                        "_label": "healthCareBenefits.il_aca_desc",
+                        "_default_message": "Health insurance marketplace and premium tax credit.",
+                    },
+                },
+            },
+            "category_name": {
+                "_label": "healthCare",
+                "_default_message": "Health Care",
+            },
         },
     }
 
