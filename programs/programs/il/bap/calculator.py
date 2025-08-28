@@ -27,13 +27,19 @@ class IlBenefitAccess(ProgramCalculator):
     }
 
     county_benefit_amounts = {
-        # Chicago Area counties only - $75/month ($900/year)
+        # Chicago Area counties - $75/month ($900/year)
         "cook": 900,
         "dupage": 900,
         "kane": 900,
         "lake": 900,
         "mchenry": 900,
         "will": 900,
+        # $40/month counties ($480/year)
+        "madison": 480,
+        "peoria": 480,
+        "sangamon": 480,
+        # Jackson county - $25/month ($300/year)
+        "jackson": 300,
     }
 
     def household_eligible(self, e: Eligibility):
@@ -67,4 +73,5 @@ class IlBenefitAccess(ProgramCalculator):
     def member_value(self, member):
         county = self.screen.county.lower() if self.screen.county else ""
 
-        return self.county_benefit_amounts.get(county, 0)
+        # Default to positive value to enable manual "Varies" override, since county_benefit_amounts are not comprehensive
+        return self.county_benefit_amounts.get(county, 1)
