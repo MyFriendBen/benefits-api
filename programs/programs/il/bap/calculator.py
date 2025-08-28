@@ -43,20 +43,18 @@ class IlBenefitAccess(ProgramCalculator):
     }
 
     def household_eligible(self, e: Eligibility):
-        # Check presumptive eligibility
         presumptive_eligible = self.screen.has_benefit_from_list(
             self.presumptive_eligibility_programs
         ) or self.screen.has_insurance_types(self.presumptive_eligibility_insurances)
 
-        # Check income eligibility
         household_size = self.screen.household_size
         income_limit = self.income_by_household_size.get(min(household_size, 3), self.income_by_household_size[3])
-
         gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
 
         income_eligible = gross_income <= income_limit
+        household_eligible = household_size <= 3
 
-        e.condition(presumptive_eligible or income_eligible)
+        e.condition(presumptive_eligible or (income_eligible and household_eligible))
 
     def member_eligible(self, e: MemberEligibility):
         member = e.member
