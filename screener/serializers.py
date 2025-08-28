@@ -174,6 +174,8 @@ class ScreenSerializer(serializers.ModelSerializer):
             "has_coeitc",
             "has_nslp",
             "has_ctc",
+            "has_il_eitc",
+            "has_il_ctc",
             "has_medicaid",
             "has_rtdlive",
             "has_cccap",
