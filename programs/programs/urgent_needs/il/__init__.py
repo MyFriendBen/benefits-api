@@ -10,5 +10,5 @@ il_urgent_need_functions: dict[str, type[UrgentNeedFunction]] = {
     "il_beacon": il_beacon,
     "il_cook_foreclosure": IlCookForeclosure,
     "il_rentervention": Rentervention,
-    "il_foreclosure_prevention_counseling": IlEvictionHelp,
+    "il_eviction_help": IlEvictionHelp,
 }
