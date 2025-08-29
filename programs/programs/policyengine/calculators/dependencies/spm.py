@@ -168,6 +168,10 @@ class NcTanf(SpmUnit):
     field = "nc_tanf"
 
 
+class IlTanf(SpmUnit):
+    field = "il_tanf"
+
+
 class MaTafdc(SpmUnit):
     field = "ma_tafdc"
 
@@ -222,6 +226,30 @@ class NcTanfCountableGrossUnearnedIncomeDependency(SpmUnit):
                 "yearly", ["unearned"], exclude=["sSI", "gifts", "cashAssistance", "cOSDisability"]
             )
         )
+
+
+class IlTanfCountableEarnedIncomeDependency(SpmUnit):
+    field = "il_tanf_countable_gross_earned_income"
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
+
+    def value(self):
+        return int(self.screen.calc_gross_income("yearly", ["earned"]))
+
+
+class IlTanfCountableGrossUnearnedIncomeDependency(SpmUnit):
+    field = "il_tanf_countable_unearned_income"
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
+
+    def value(self):
+        return int(self.screen.calc_gross_income("yearly", ["unearned"], exclude=["cashAssistance"]))
 
 
 class PreSubsidyChildcareExpensesDependency(SpmUnit):

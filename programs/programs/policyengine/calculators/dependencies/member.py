@@ -108,6 +108,9 @@ class Medicaid(Member):
 class Ssi(Member):
     field = "ssi"
 
+    def value(self):
+        return self.member.calc_gross_income("yearly", ["sSI"])
+
 
 class IsDisabledDependency(Member):
     field = "is_disabled"
@@ -400,3 +403,31 @@ class SsiEarnedIncomeDependency(IncomeDependency):
 class SsiUnearnedIncomeDependency(IncomeDependency):
     field = "ssi_unearned_income"
     income_types = ["unearned"]
+
+
+class IlAabdGrossEarnedIncomeDependency(Member):
+    field = "il_aabd_gross_earned_income"
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
+
+    def value(self):
+        return int(self.member.calc_gross_income("yearly", ["earned"]))
+
+
+class IlAabdGrossUnearnedIncomeDependency(Member):
+    field = "il_aabd_gross_unearned_income"
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
+
+    def value(self):
+        return int(self.member.calc_gross_income("yearly", ["unearned"], exclude=["cashAssistance"]))
+
+
+class IlAabd(Member):
+    field = "il_aabd_person"
