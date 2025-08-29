@@ -63,8 +63,10 @@ class Screen(models.Model):
     has_acp = models.BooleanField(default=False, blank=True, null=True)
     has_eitc = models.BooleanField(default=False, blank=True, null=True)
     has_coeitc = models.BooleanField(default=False, blank=True, null=True)
+    has_il_eitc = models.BooleanField(default=False, blank=True, null=True)
     has_nslp = models.BooleanField(default=False, blank=True, null=True)
     has_ctc = models.BooleanField(default=False, blank=True, null=True)
+    has_il_ctc = models.BooleanField(default=False, blank=True, null=True)
     has_medicaid = models.BooleanField(default=False, blank=True, null=True)
     has_rtdlive = models.BooleanField(default=False, blank=True, null=True)
     has_cccap = models.BooleanField(default=False, blank=True, null=True)
@@ -338,8 +340,10 @@ class Screen(models.Model):
             "acp": self.has_acp,
             "eitc": self.has_eitc,
             "coeitc": self.has_coeitc,
+            "il_eitc": self.has_il_eitc,
             "nslp": self.has_nslp,
             "ctc": self.has_ctc,
+            "il_ctc": self.has_il_ctc,
             "rtdlive": self.has_rtdlive,
             "cccap": self.has_cccap,
             "mydenver": self.has_mydenver,

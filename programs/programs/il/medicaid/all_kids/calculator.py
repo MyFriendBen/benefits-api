@@ -21,3 +21,6 @@ class AllKids(ProgramCalculator, FplIncomeCheckMixin):
 
         # Must not have Medicaid
         e.condition(not member.has_benefit("medicaid"))
+
+        # Must not already have All Kids (chp)
+        e.condition(not member.has_benefit("chp"))
