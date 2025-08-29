@@ -1,36 +1,21 @@
 from programs.programs.il.bap.calculator import IlBenefitAccess
-from programs.programs.calc import Eligibility
+from programs.programs.calc import ProgramCalculator, Eligibility
+from programs.programs.mixins import IlTransportationMixin
 
 
-class IlTransitReducedFare(IlBenefitAccess):
-    county_benefit_amounts = {
-        # Chicago Area counties - $40/month ($480/year)
-        "cook": 480,
-        "dupage": 480,
-        "kane": 480,
-        "lake": 480,
-        "mchenry": 480,
-        "will": 480,
-        # Other counties
-        "madison": 240,
-        "peoria": 240,
-        "sangamon": 228,
-        "jackson": 120,
-    }
+class IlTransitReducedFare(IlTransportationMixin, ProgramCalculator):
+    dependencies = IlTransportationMixin.dependencies + ["county"]
+    eligible_counties = ["cook", "dupage", "kane", "lake", "mchenry", "will"]
 
     def household_eligible(self, e: Eligibility):
-        # Check presumptive eligibility
-        presumptive_eligible = self.screen.has_benefit_from_list(
-            self.presumptive_eligibility_programs
-        ) or self.screen.has_insurance_types(self.presumptive_eligibility_insurances)
+        presumptive_eligible = self.check_presumptive_eligibility()
 
-        # Check income eligibility
         household_size = self.screen.household_size
-        income_limit = self.income_by_household_size.get(min(household_size, 3), self.income_by_household_size[3])
-
         gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
+        bap_income_limit = IlBenefitAccess.income_limit_by_household_size[min(household_size, 3)]
+        income_eligible = gross_income > bap_income_limit
 
-        # Income must be above the Benefit Access limit
-        income_eligible = gross_income > income_limit
+        county = (self.screen.county or "").lower()
+        county_eligible = county in self.eligible_counties
 
-        e.condition(presumptive_eligible or income_eligible)
+        e.condition(county_eligible and (presumptive_eligible or income_eligible))
