@@ -38,7 +38,7 @@ class ZipCodeDependency(Household):
     dependencies = ["zipcode"]
 
     def value(self):
-        return self.screen.zipcode
+        return int(self.screen.zipcode)
 
 
 class IsInPublicHousingDependency(Household):

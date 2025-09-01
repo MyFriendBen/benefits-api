@@ -1,6 +1,20 @@
 from integrations.util.cache import Cache
 from decouple import config
 import requests
+import json
+import logging
+
+# Set up logger for PolicyEngine API debugging
+logger = logging.getLogger('policyengine_api')
+logger.setLevel(logging.DEBUG)
+
+# Create console handler if not exists
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    handler.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
 
 
 class Sim:
@@ -27,8 +41,26 @@ class ApiSim(Sim):
     pe_url = "https://api.policyengine.org/us/calculate"
 
     def __init__(self, data) -> None:
+        logger.info("=" * 80)
+        logger.info(f"PolicyEngine API Request to {self.pe_url}")
+        logger.info("Request data:")
+        logger.info(json.dumps(data, indent=2))
+        
         response = requests.post(self.pe_url, json=data)
-        self.data = response.json()["result"]
+        
+        logger.info(f"Response status: {response.status_code}")
+        response_data = response.json()
+        logger.info("Response data:")
+        logger.info(json.dumps(response_data, indent=2))
+        
+        self.data = response_data["result"]
+        
+        # Log specific ACA PTC values if present
+        if "tax_units" in self.data:
+            for tax_unit_id, tax_unit_data in self.data["tax_units"].items():
+                if "aca_ptc" in tax_unit_data:
+                    logger.info(f"ACA PTC for {tax_unit_id}: {tax_unit_data['aca_ptc']}")
+        logger.info("=" * 80)
 
     def value(self, unit, sub_unit, variable, period):
         return self.data[unit][sub_unit][variable][period]
@@ -69,6 +101,11 @@ class PrivateApiSim(ApiSim):
     pe_url = "https://household.api.policyengine.org/us/calculate"
 
     def __init__(self, data) -> None:
+        logger.info("=" * 80)
+        logger.info(f"Private PolicyEngine API Request to {self.pe_url}")
+        logger.info("Request data:")
+        logger.info(json.dumps(data, indent=2))
+        
         token = self.token.fetch()
 
         headers = {
@@ -76,8 +113,20 @@ class PrivateApiSim(ApiSim):
         }
 
         res = requests.post(self.pe_url, json=data, headers=headers)
-
-        self.data = res.json()["result"]
+        
+        logger.info(f"Response status: {res.status_code}")
+        response_data = res.json()
+        logger.info("Response data:")
+        logger.info(json.dumps(response_data, indent=2))
+        
+        self.data = response_data["result"]
+        
+        # Log specific ACA PTC values if present
+        if "tax_units" in self.data:
+            for tax_unit_id, tax_unit_data in self.data["tax_units"].items():
+                if "aca_ptc" in tax_unit_data:
+                    logger.info(f"ACA PTC for {tax_unit_id}: {tax_unit_data['aca_ptc']}")
+        logger.info("=" * 80)
 
 
 pe_engines: list[Sim] = [PrivateApiSim, ApiSim]
