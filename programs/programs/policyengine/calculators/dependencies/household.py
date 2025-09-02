@@ -1,4 +1,6 @@
 from .base import Household
+import re
+from typing import ClassVar, Optional, Type
 
 
 class StateCode(Household):
@@ -27,13 +29,23 @@ class IlStateCodeDependency(StateCode):
 
 
 class CountyDependency(Household):
-    field = "county_str"
-    dependencies = ["county"]
-    state_dependency_class = None  # Override in subclasses
+    field: ClassVar[str] = "county_str"
+    dependencies: ClassVar[list[str]] = ["county"]
+    state_dependency_class: ClassVar[Optional[Type]] = None  # Override in subclasses
 
     def value(self):
+        if self.state_dependency_class is None:
+            raise ValueError(f"{self.__class__.__name__} must define state_dependency_class")
+        
         state_code = self.state_dependency_class.state
-        return self.screen.county.replace(" ", "_").upper() + f"_{state_code}"
+        
+        # Robust county normalization: remove non-alphanumeric except spaces,
+        # normalize whitespace to single underscores, then uppercase
+        county_token = re.sub(r'[^\w\s]', '', self.screen.county)  # Remove non-alphanumeric except spaces
+        county_token = re.sub(r'\s+', '_', county_token.strip())   # Replace whitespace with underscores
+        county_token = county_token.upper()                        # Uppercase
+        
+        return f"{county_token}_{state_code}"
 
 
 class NcCountyDependency(CountyDependency):
