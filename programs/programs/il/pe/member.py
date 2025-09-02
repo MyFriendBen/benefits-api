@@ -47,6 +47,7 @@ class IlAca(tax.Aca):
     pe_inputs = [
         *tax.Aca.pe_inputs,
         dependency.IlStateCodeDependency,
+        dependency.IlCountyDependency,
     ]
 
 
