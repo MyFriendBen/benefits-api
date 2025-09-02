@@ -11,6 +11,8 @@ class IlBenefitAccess(IlTransportationMixin, ProgramCalculator):
     }
 
     def household_eligible(self, e: Eligibility):
+        e.condition(not self.screen.has_benefit("il_bap"))
+
         presumptive_eligible = self.check_presumptive_eligibility()
 
         household_size = self.screen.household_size

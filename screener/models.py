@@ -68,6 +68,7 @@ class Screen(models.Model):
     has_ctc = models.BooleanField(default=False, blank=True, null=True)
     has_il_ctc = models.BooleanField(default=False, blank=True, null=True)
     has_il_transit_reduced_fare = models.BooleanField(default=False, blank=True, null=True)
+    has_il_bap = models.BooleanField(default=False, blank=True, null=True)
     has_medicaid = models.BooleanField(default=False, blank=True, null=True)
     has_rtdlive = models.BooleanField(default=False, blank=True, null=True)
     has_cccap = models.BooleanField(default=False, blank=True, null=True)
@@ -346,6 +347,7 @@ class Screen(models.Model):
             "ctc": self.has_ctc,
             "il_ctc": self.has_il_ctc,
             "il_transit_reduced_fare": self.has_il_transit_reduced_fare,
+            "il_bap": self.has_il_bap,
             "rtdlive": self.has_rtdlive,
             "cccap": self.has_cccap,
             "mydenver": self.has_mydenver,
