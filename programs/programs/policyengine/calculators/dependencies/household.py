@@ -26,11 +26,22 @@ class IlStateCodeDependency(StateCode):
     state = "IL"
 
 
-class NcCountyDependency(Household):
+class CountyDependency(Household):
     field = "county_str"
+    dependencies = ["county"]
+    state_dependency_class = None  # Override in subclasses
 
     def value(self):
-        return self.screen.county.replace(" ", "_").upper() + "_NC"
+        state_code = self.state_dependency_class.state
+        return self.screen.county.replace(" ", "_").upper() + f"_{state_code}"
+
+
+class NcCountyDependency(CountyDependency):
+    state_dependency_class = NcStateCodeDependency
+
+
+class IlCountyDependency(CountyDependency):
+    state_dependency_class = IlStateCodeDependency
 
 
 class ZipCodeDependency(Household):
@@ -38,7 +49,7 @@ class ZipCodeDependency(Household):
     dependencies = ["zipcode"]
 
     def value(self):
-        return int(self.screen.zipcode)
+        return self.screen.zipcode
 
 
 class IsInPublicHousingDependency(Household):
