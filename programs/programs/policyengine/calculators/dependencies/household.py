@@ -37,11 +37,15 @@ class CountyDependency(Household):
         if self.state_dependency_class is None:
             raise ValueError(f"{self.__class__.__name__} must define state_dependency_class")
 
+        if not self.screen.county:
+            raise ValueError("county missing")
+
         state_code = self.state_dependency_class.state
+        county_str = self.screen.county.strip()
 
         # Robust county normalization: remove non-alphanumeric except spaces,
         # normalize whitespace to single underscores, then uppercase
-        county_token = re.sub(r"[^\w\s]", "", self.screen.county)  # Remove non-alphanumeric except spaces
+        county_token = re.sub(r"[^\w\s]", "", county_str)  # Remove non-alphanumeric except spaces
         county_token = re.sub(r"\s+", "_", county_token.strip())  # Replace whitespace with underscores
         county_token = county_token.upper()  # Uppercase
 
