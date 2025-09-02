@@ -8,6 +8,8 @@ class IlTransitReducedFare(IlTransportationMixin, ProgramCalculator):
     eligible_counties = ["cook", "dupage", "kane", "lake", "mchenry", "will"]
 
     def household_eligible(self, e: Eligibility):
+        e.condition(not self.screen.has_benefit("il_transit_reduced_fare"))
+
         presumptive_eligible = self.check_presumptive_eligibility()
 
         household_size = self.screen.household_size

@@ -2355,26 +2355,6 @@ class IlConfigurationData(ConfigurationData):
                         "_default_message": "Federal cash assistance for individuals who are disabled, blind, or 65 years of age or older",
                     },
                 },
-                "il_bap": {
-                    "name": {
-                        "_label": "cashAssistanceBenefits.il_bap",
-                        "_default_message": "Benefits Access Program (BAP): ",
-                    },
-                    "description": {
-                        "_label": "cashAssistanceBenefits.il_bap_desc",
-                        "_default_message": "Transportation benefits for eligible individuals",
-                    },
-                },
-                "il_transit_reduced_fare": {
-                    "name": {
-                        "_label": "cashAssistanceBenefits.il_transit_reduced_fare",
-                        "_default_message": "Local Transit Reduced Fare: ",
-                    },
-                    "description": {
-                        "_label": "cashAssistanceBenefits.il_transit_reduced_fare_desc",
-                        "_default_message": "Reduced fare for public transit",
-                    },
-                },
                 "il_tanf": {
                     "name": {
                         "_label": "cashAssistanceBenefits.il_tanf",
@@ -2397,6 +2377,31 @@ class IlConfigurationData(ConfigurationData):
                 },
             },
             "category_name": {"_label": "cashAssistance", "_default_message": "Cash Assistance"},
+        },
+        "transportation": {
+            "benefits": {
+                "il_bap": {
+                    "name": {
+                        "_label": "transportationBenefits.il_bap",
+                        "_default_message": "Benefits Access Program (BAP): ",
+                    },
+                    "description": {
+                        "_label": "transportationBenefits.il_bap_desc",
+                        "_default_message": "Transportation benefits for eligible individuals",
+                    },
+                },
+                "il_transit_reduced_fare": {
+                    "name": {
+                        "_label": "transportationBenefits.il_transit_reduced_fare",
+                        "_default_message": "Local Transit Reduced Fare: ",
+                    },
+                    "description": {
+                        "_label": "transportationBenefits.il_transit_reduced_fare_desc",
+                        "_default_message": "Reduced fare for public transit",
+                    },
+                },
+            },
+            "category_name": {"_label": "transportation", "_default_message": "Transportation"},
         },
         "taxCredits": {
             "benefits": {
