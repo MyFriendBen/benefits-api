@@ -1,10 +1,10 @@
 from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
 from programs.programs.helpers import medicaid_eligible
 import programs.programs.messages as messages
-from programs.programs.mixins import FplIncomeCheckMixin
+from programs.programs.mixins import IlMedicaidFplIncomeCheckMixin
 
 
-class FamilyCare(ProgramCalculator, FplIncomeCheckMixin):
+class FamilyCare(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
     member_amount = 474 * 12
     max_child_age = 18
     fpl_percent = 1.38

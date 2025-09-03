@@ -1,10 +1,10 @@
 from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
 from programs.programs.helpers import medicaid_eligible
 import programs.programs.messages as messages
-from programs.programs.mixins import FplIncomeCheckMixin
+from programs.programs.mixins import IlMedicaidFplIncomeCheckMixin
 
 
-class AcaAdults(ProgramCalculator, FplIncomeCheckMixin):
+class AcaAdults(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
     member_amount = 474 * 12  # $474/month
     min_age = 19
     max_age = 64
