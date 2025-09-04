@@ -600,7 +600,11 @@ class Program(models.Model):
         on_delete=models.SET_NULL,
     )
     required_programs = models.ManyToManyField("self", related_name="dependent_programs", symmetrical=False, blank=True)
-    excludes_programs = models.ManyToManyField("self", related_name="excluded_by", symmetrical=False, blank=True)
+    excludes_programs = models.ManyToManyField(
+        "self",
+        blank=True,
+        help_text="Programs that are mutually exclusive with this program. If Program A excludes Program B, Program B automatically excludes Program A. Example: FamilyCare and MomsAndBabies cannot both be received by the same household.",
+    )
     value_format = models.CharField(max_length=120, blank=True, null=True)
 
     description_short = models.ForeignKey(

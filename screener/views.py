@@ -218,6 +218,7 @@ def eligibility_results(screen: Screen, batch=False):
             "legal_status_required",
             "year",
             "required_programs",
+            "excludes_programs",
             *translations_prefetch_name("", Program.objects.translated_fields),
             "navigator",
             "navigator__counties",

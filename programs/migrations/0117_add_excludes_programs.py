@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="program",
             name="excludes_programs",
-            field=models.ManyToManyField(blank=True, related_name="excluded_by", to="programs.program"),
+            field=models.ManyToManyField(blank=True, to="programs.program"),
         ),
     ]
