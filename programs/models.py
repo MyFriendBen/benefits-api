@@ -600,7 +600,13 @@ class Program(models.Model):
         on_delete=models.SET_NULL,
     )
     required_programs = models.ManyToManyField("self", related_name="dependent_programs", symmetrical=False, blank=True)
-    excludes_programs = models.ManyToManyField("self", related_name="excluded_by", symmetrical=False, blank=True)
+    excludes_programs = models.ManyToManyField(
+        "self",
+        related_name="excluded_by_programs",
+        symmetrical=False,
+        blank=True,
+        help_text="Programs that are excluded when eligible for this program.",
+    )
     value_format = models.CharField(max_length=120, blank=True, null=True)
 
     description_short = models.ForeignKey(
