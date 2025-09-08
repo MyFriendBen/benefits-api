@@ -1,11 +1,27 @@
 from programs.programs.il.bap.calculator import IlBenefitAccess
-from programs.programs.calc import ProgramCalculator, Eligibility
+from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
 from programs.programs.mixins import IlTransportationMixin
 
 
 class IlTransitReducedFare(IlTransportationMixin, ProgramCalculator):
     dependencies = IlTransportationMixin.dependencies + ["county"]
-    eligible_counties = ["cook", "dupage", "kane", "lake", "mchenry", "will"]
+    eligible_counties = [
+        "cook",
+        "dekalb",
+        "dupage",
+        "jackson",
+        "kane",
+        "lake",
+        "madison",
+        "mchenry",
+        "peoria",
+        "rock island",
+        "sangamon",
+        "will",
+    ]
+    minimum_age_by_county = {
+        "rock island": 60,
+    }
 
     def household_eligible(self, e: Eligibility):
         e.condition(not self.screen.has_benefit("il_transit_reduced_fare"))
@@ -17,7 +33,22 @@ class IlTransitReducedFare(IlTransportationMixin, ProgramCalculator):
         bap_income_limit = IlBenefitAccess.income_limit_by_household_size[min(household_size, 3)]
         income_eligible = gross_income > bap_income_limit
 
-        county = (self.screen.county or "").lower()
+        county = self.normalize_county(self.screen.county)
         county_eligible = county in self.eligible_counties
 
         e.condition(county_eligible and (presumptive_eligible or income_eligible))
+
+    def member_eligible(self, e: MemberEligibility):
+        member = e.member
+        county = self.normalize_county(self.screen.county)
+
+        age_eligible = member.age >= self.minimum_age_by_county.get(county, self.minimum_age)
+
+        has_minimum_age_with_disability = member.age >= self.minimum_age_with_disability
+        has_eligible_disability = member.visually_impaired or member.disabled
+        disability_eligible = has_minimum_age_with_disability and has_eligible_disability
+
+        e.condition(age_eligible or disability_eligible)
+
+    def normalize_county(self, county: str) -> str:
+        return (county or "").strip().lower()
