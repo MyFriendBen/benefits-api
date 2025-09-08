@@ -181,7 +181,7 @@ class MessageViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
 
 
 def all_results(screen: Screen, batch=False):
-    eligibility, missing_programs, categories = eligibility_results(screen, batch)
+    eligibility, missing_programs, categories, _pe_data = eligibility_results(screen, batch)
     urgent_needs = urgent_need_results(screen, eligibility)
     validations = ValidationSerializer(screen.validations.all(), many=True).data
 
@@ -193,6 +193,7 @@ def all_results(screen: Screen, batch=False):
         "missing_programs": missing_programs,
         "validations": validations,
         "program_categories": categories,
+        "pe_data": _pe_data,
     }
 
 
@@ -263,7 +264,10 @@ def eligibility_results(screen: Screen, batch=False):
         if program is not None:
             pe_calculators[calculator_name] = Calculator(screen, program, missing_dependencies)
 
-    pe_eligibility = calc_pe_eligibility(screen, pe_calculators)
+    result = calc_pe_eligibility(screen, pe_calculators)
+    pe_eligibility = result["eligibility"]
+    pe_data = result["_pe_data"]
+    
     pe_programs = pe_calculators.keys()
 
     def sort_first(program):
@@ -469,7 +473,7 @@ def eligibility_results(screen: Screen, batch=False):
         clean_program["estimated_value"] = math.trunc(clean_program["estimated_value"])
         eligible_programs.append(clean_program)
 
-    return eligible_programs, missing_programs, categories
+    return eligible_programs, missing_programs, categories, pe_data
 
 
 class GetProgramTranslation:

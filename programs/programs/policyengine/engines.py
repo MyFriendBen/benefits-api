@@ -1,3 +1,4 @@
+import json
 from integrations.util.cache import Cache
 from decouple import config
 import requests
@@ -27,8 +28,10 @@ class ApiSim(Sim):
     pe_url = "https://api.policyengine.org/us/calculate"
 
     def __init__(self, data) -> None:
+        self.request_payload = data
         response = requests.post(self.pe_url, json=data)
-        self.data = response.json()["result"]
+        self.response_json = response.json()
+        self.data = self.response_json["result"]
 
     def value(self, unit, sub_unit, variable, period):
         return self.data[unit][sub_unit][variable][period]
@@ -79,5 +82,9 @@ class PrivateApiSim(ApiSim):
 
         self.data = res.json()["result"]
 
+        self.request_payload = data
+        res = requests.post(self.pe_url, json=data, headers=headers)
+        self.response_json = res.json()
+        self.data = self.response_json["result"]
 
 pe_engines: list[Sim] = [PrivateApiSim, ApiSim]

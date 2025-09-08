@@ -28,7 +28,17 @@ def calc_pe_eligibility(
 
     for Method in pe_engines:
         try:
-            return all_eligibility(Method(input_data), valid_programs)
+            method_instance = Method(input_data)
+            eligibility = all_eligibility(method_instance, valid_programs)
+            result = {
+                "eligibility": eligibility,
+                "_pe_data": {
+                    "request": method_instance.request_payload,
+                    "response": method_instance.response_json,
+                },
+            }
+           
+            return result        
         except Exception as e:
             if settings.DEBUG:
                 print(repr(e))
