@@ -37,8 +37,8 @@ def calc_pe_eligibility(
                     "response": method_instance.response_json,
                 },
             }
-           
-            return result        
+
+            return result
         except Exception as e:
             if settings.DEBUG:
                 print(repr(e))

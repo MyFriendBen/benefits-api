@@ -87,4 +87,5 @@ class PrivateApiSim(ApiSim):
         self.response_json = res.json()
         self.data = self.response_json["result"]
 
+
 pe_engines: list[Sim] = [PrivateApiSim, ApiSim]

@@ -267,7 +267,7 @@ def eligibility_results(screen: Screen, batch=False):
     result = calc_pe_eligibility(screen, pe_calculators)
     pe_eligibility = result["eligibility"]
     pe_data = result["_pe_data"]
-    
+
     pe_programs = pe_calculators.keys()
 
     def sort_first(program):
