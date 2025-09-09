@@ -178,7 +178,9 @@ def translation_view(request, id=0):
 
         # sorted in the order of settings.LANGUAGES
         translations = {
-            lang_code: TranslationForm({"text": next((t.text for t in translation.translations.all() if t.language_code == lang_code), "")})
+            lang_code: TranslationForm(
+                {"text": next((t.text for t in translation.translations.all() if t.language_code == lang_code), "")}
+            )
             for lang_code, _ in settings.LANGUAGES
         }
 
@@ -247,7 +249,7 @@ def edit_translation(request, id=0, lang="en-us"):
         excluded_langs = request.POST.getlist("excluded_languages", [])
 
         languages = [l for l in Translate.languages if l not in excluded_langs]
-        
+
         if form.is_valid():
             text = form["text"].value()
             translation = Translation.objects.edit_translation_by_id(id, lang, text)
@@ -272,7 +274,9 @@ def edit_translation(request, id=0, lang="en-us"):
 
             # sorted in the order of settings.LANGUAGES
             forms = {
-                lang_code: TranslationForm({"text": next((t.text for t in parent.translations.all() if t.language_code == lang_code), "")})
+                lang_code: TranslationForm(
+                    {"text": next((t.text for t in parent.translations.all() if t.language_code == lang_code), "")}
+                )
                 for lang_code, _ in settings.LANGUAGES
             }
             context = {
