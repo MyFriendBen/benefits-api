@@ -1,4 +1,4 @@
-{% load filters %}
+{% load static %} {% load filters %}
 <span>
   {% for field in form %}
   <div class="field">
@@ -11,26 +11,30 @@
   {% endfor %}
   <div class="level">
     <div class="level-left">
+      <button id="lang-submit-btn" class="button" type="submit">Update Text</button>
       {% if lang == 'en-us' %}
-      <button class="button" type="submit">Save All</button>
+      <div class="level-item">
+        <label class="label">
+          <div class="control">
+            <input type="checkbox" id="auto-translate-check" name="auto_translate_check">
+            Auto-translate to all languages (except excluded)
+          </div>
+        </label>
+      </div>
       {% else %}
-      <button class="button" type="submit">Save</button>
-      {% endif %} {% if lang != 'en-us' %}
-      <button
-        class="button"
-        type="button"
-        hx-post="{{ translation.id }}/{{ lang }}/auto"
-        hx-target="#{{ lang }}"
-        hx-swap="innerHTML"
-        hx-confirm="This will override the currect text"
-      >
-        Translate
-      </button>
-    {% endif %}
+      <div class="level-item">
+        <label class="label">
+          <div id="exclude-auto-control" class="control" hidden>
+            <input type="checkbox" name="excluded_languages" value="{{ lang }}">
+            Exclude from auto-translate
+          </div>
+        </label>
+      </div>
+      {% endif %}
     </div>
     <div class="level-right">
-      <a class="button" href="/api/translations/admin/translation_history/{{ translation.id }}?lang={{ lang }}">
-        View Change History
+      <a class="button is-text" href="/api/translations/admin/translation_history/{{ translation.id }}?lang={{ lang }}">
+        {{ lang|get_language_name }} History
       </a>
     </div>
   </div>

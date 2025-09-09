@@ -100,6 +100,24 @@ function initializeDropdowns() {
   });
 }
 
+function setupAutoTranslateToggle() {
+  const autoCheckbox = document.querySelector('#auto-translate-check');
+  const updateBtn = autoCheckbox?.closest('form')?.querySelector('#lang-submit-btn');
+  const excludeControls = document.querySelectorAll('#exclude-auto-control');
+
+  if (!autoCheckbox || !updateBtn) return;
+
+  autoCheckbox.addEventListener('change', () => {
+    if (autoCheckbox.checked) {
+      excludeControls.forEach(div => div.removeAttribute('hidden'));
+      updateBtn.textContent = 'Update All Texts';
+    } else {
+      excludeControls.forEach(div => div.setAttribute('hidden', ''));
+      updateBtn.textContent = 'Update Text';
+    }
+  });
+}
+
 function checkDropdownPosition(dropdown, dropdownContent) {
   let dropdownRect = dropdown.getBoundingClientRect();
   let dropdownContentRect = dropdownContent.getBoundingClientRect();
@@ -113,6 +131,7 @@ function checkDropdownPosition(dropdown, dropdownContent) {
 }
 
 function initializeAll() {
+  setupAutoTranslateToggle();
   initializeTableSorting();
   initializeSidebarMenu();
   initializeDropdowns();
