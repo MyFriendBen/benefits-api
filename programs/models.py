@@ -459,6 +459,7 @@ class ProgramDataController(ModelDataController["Program"]):
             "documents": list[str],
             "category": Optional[str],
             "required_programs": list[str],
+            "excludes_programs": list[str],
             "value_format": Optional[str],
             "white_label": str,
         },
@@ -483,6 +484,7 @@ class ProgramDataController(ModelDataController["Program"]):
             "documents": [d.external_name for d in program.documents.all()],
             "category": (program.category.external_name if program.category is not None else None),
             "required_programs": [p.external_name for p in program.required_programs.all()],
+            "excludes_programs": [p.external_name for p in program.excludes_programs.all()],
             "value_format": program.value_format,
             "white_label": program.white_label.code,
         }
@@ -543,6 +545,16 @@ class ProgramDataController(ModelDataController["Program"]):
             required_programs.append(required_program)
         program.required_programs.set(required_programs)
 
+        # add excluded programs
+        excluded_programs = []
+        for excluded_program_name in data.get("excludes_programs", []):
+            try:
+                excluded_program = Program.objects.get(external_name=excluded_program_name)
+            except Program.DoesNotExist:
+                raise self.DeferCreation()  # wait until the program gets created
+            excluded_programs.append(excluded_program)
+        program.excludes_programs.set(excluded_programs)
+
         try:
             white_label = WhiteLabel.objects.get(code=data["white_label"])
         except WhiteLabel.DoesNotExist:
@@ -588,6 +600,13 @@ class Program(models.Model):
         on_delete=models.SET_NULL,
     )
     required_programs = models.ManyToManyField("self", related_name="dependent_programs", symmetrical=False, blank=True)
+    excludes_programs = models.ManyToManyField(
+        "self",
+        related_name="excluded_by_programs",
+        symmetrical=False,
+        blank=True,
+        help_text="Programs that are excluded when eligible for this program.",
+    )
     value_format = models.CharField(max_length=120, blank=True, null=True)
 
     description_short = models.ForeignKey(

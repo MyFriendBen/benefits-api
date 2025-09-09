@@ -29,12 +29,14 @@ class ProgramAdmin(SecureAdmin):
     white_label_filter_horizontal = [
         "documents",
         "required_programs",
+        "excludes_programs",
         "category",
     ]
     filter_horizontal = (
         "legal_status_required",
         "documents",
         "required_programs",
+        "excludes_programs",
     )
     exclude = [
         "name",
