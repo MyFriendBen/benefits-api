@@ -1,10 +1,10 @@
 from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility, HouseholdMember
 from programs.programs.helpers import medicaid_eligible
 import programs.programs.messages as messages
-from programs.programs.mixins import FplIncomeCheckMixin
+from programs.programs.mixins import IlMedicaidFplIncomeCheckMixin
 
 
-class MomsAndBabies(ProgramCalculator, FplIncomeCheckMixin):
+class MomsAndBabies(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
     adult_member_amount = 474 * 12  # $474/month for adults
     newborn_member_amount = 284 * 12  # $284/month for newborns
     fpl_percent = 2.13  # 213% FPL

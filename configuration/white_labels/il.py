@@ -2282,7 +2282,7 @@ class IlConfigurationData(ConfigurationData):
     category_benefits = {
         "foodAndNutrition": {
             "benefits": {
-                "il_snap": {
+                "snap": {
                     "name": {
                         "_label": "foodAndNutritionBenefits.snap",
                         "_default_message": "Supplemental Nutrition Assistance Program (SNAP): ",

@@ -138,10 +138,16 @@ class MaHubSpotIntegration(HubSpotIntegration):
     OWNER_ID = "79223440"
 
 
+class IlHubSpotIntegration(HubSpotIntegration):
+    STATE = "IL"
+    OWNER_ID = "80630223"
+
+
 CMS_INTEGRATIONS = {
     "co_hubspot": CoHubSpotIntegration,
     "nc_hubspot": NcHubSpotIntegration,
     "ma_hubspot": MaHubSpotIntegration,
+    "il_hubspot": IlHubSpotIntegration,
 }
 
 
