@@ -255,12 +255,15 @@ def edit_translation(request, id=0, lang="en-us"):
             translation = Translation.objects.edit_translation_by_id(id, lang, text)
 
             if lang == settings.LANGUAGE_CODE:
-                if not translation.no_auto:
+                if translation.no_auto:
+                    for language in Translate.languages:
+                        Translation.objects.edit_translation_by_id(id, language, text, False)
+
+                else:
                     if not auto_translate_check:
                         Translation.objects.edit_translation_by_id(id, lang, text, False)
                     else:
                         translations = Translate().bulk_translate(languages, [text])[text]
-
                         for language in languages:
                             translated_text = text if translation.no_auto else translations[language]
                             Translation.objects.edit_translation_by_id(id, language, translated_text, False)
