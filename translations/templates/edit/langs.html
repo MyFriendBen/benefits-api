@@ -17,6 +17,14 @@
             </span>
           </label>
         </div>
+        <div class="level-item">
+          <label class="label">Update Type: {% if translation|get_update_type:lang %}
+            Manual
+          {% else %}
+            Auto
+          {% endif %}
+          </label>
+        </div>
       </div>
     </div>
     <form id="{{ lang }}" hx-post="{{ translation.id }}/{{ lang }}" hx-target="#languages" hx-swap="outerHTML">
