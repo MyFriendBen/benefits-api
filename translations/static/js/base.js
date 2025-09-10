@@ -8,8 +8,8 @@ function initializeTableSorting() {
   let sortDirection = "asc";
 
   headers.forEach(function (header, index) {
-    header.addEventListener("click", function () { 
-      sortTable(index); 
+    header.addEventListener("click", function () {
+      sortTable(index);
     });
   });
 
