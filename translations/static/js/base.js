@@ -9,8 +9,9 @@ function initializeTableSorting() {
 
   headers.forEach(function (header, index) {
     header.addEventListener("click", function () { 
-      sortTable(index); });
+      sortTable(index); 
     });
+  });
 
   function sortTable(columnIndex) {
     let rows = Array.from(table.querySelectorAll("tbody tr"));
@@ -34,8 +35,8 @@ function initializeTableSorting() {
     });
 
     let tbody = table.querySelector("tbody");
-    rows.forEach(function (row) { 
-      tbody.appendChild(row); 
+    rows.forEach(function (row) {
+      tbody.appendChild(row);
     });
   }
 }
@@ -53,8 +54,8 @@ function initializeSidebarMenu() {
     }
 
     menuItem.addEventListener("click", function (event) {
-      menuItems.forEach(function (item) { 
-        item.classList.remove("is-active"); 
+      menuItems.forEach(function (item) {
+        item.classList.remove("is-active");
       });
 
       event.currentTarget.classList.add("is-active");
@@ -62,7 +63,7 @@ function initializeSidebarMenu() {
   });
 }
 
-// For handling the dropdown menu in the tables 
+// For handling the dropdown menu in the tables
 function initializeDropdowns() {
   let dropdowns = document.querySelectorAll(".dropdown");
   dropdowns.forEach(function (dropdown) {
