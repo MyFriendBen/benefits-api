@@ -6,21 +6,21 @@ from programs.programs.mixins import IlTransportationMixin
 class IlTransitReducedFare(IlTransportationMixin, ProgramCalculator):
     dependencies = IlTransportationMixin.dependencies + ["county"]
     eligible_counties = [
-        "cook",
-        "dekalb",
-        "dupage",
-        "jackson",
-        "kane",
-        "lake",
-        "madison",
-        "mchenry",
-        "peoria",
-        "rock island",
-        "sangamon",
-        "will",
+        "Cook",
+        "DeKalb",
+        "DuPage",
+        "Jackson",
+        "Kane",
+        "Lake",
+        "Madison",
+        "McHenry",
+        "Peoria",
+        "Rock Island",
+        "Sangamon",
+        "Will",
     ]
     minimum_age_by_county = {
-        "rock island": 60,
+        "Rock Island": 60,
     }
 
     def household_eligible(self, e: Eligibility):
@@ -33,14 +33,14 @@ class IlTransitReducedFare(IlTransportationMixin, ProgramCalculator):
         bap_income_limit = IlBenefitAccess.income_limit_by_household_size[min(household_size, 3)]
         income_eligible = gross_income > bap_income_limit
 
-        county = self.normalize_county(self.screen.county)
+        county = self.screen.county
         county_eligible = county in self.eligible_counties
 
         e.condition(county_eligible and (presumptive_eligible or income_eligible))
 
     def member_eligible(self, e: MemberEligibility):
         member = e.member
-        county = self.normalize_county(self.screen.county)
+        county = self.screen.county
 
         age_eligible = member.age >= self.minimum_age_by_county.get(county, self.minimum_age)
 
@@ -49,6 +49,3 @@ class IlTransitReducedFare(IlTransportationMixin, ProgramCalculator):
         disability_eligible = has_minimum_age_with_disability and has_eligible_disability
 
         e.condition(age_eligible or disability_eligible)
-
-    def normalize_county(self, county: str) -> str:
-        return (county or "").strip().lower()
