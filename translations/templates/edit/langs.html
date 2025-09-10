@@ -10,24 +10,16 @@
       </div>
       <div class="level-right">
         <div class="level-item">
-          <label class="label">Last Updated: {{ updated_dates|get_updated_label:lang }}</label>
-        </div>
-        <div class="level-item">
-          <label class="label">Update Type: {% if translation|get_update_type:lang %}
-            Manual
-          {% else %}
-            Auto
-          {% endif %}
+          <label class="label">
+            Last Updated:
+            <span class="utc-date" data-utc-date="{{ updated_dates|get_updated_label:lang }}">
+              {{ updated_dates|get_updated_label:lang }}
+            </span>
           </label>
         </div>
       </div>
     </div>
-    <form
-      id="{{ lang }}"
-      hx-post="{{ translation.id }}/{{ lang }}"
-      hx-target="#languages"
-      hx-swap="outerHTML"
-    >
+    <form id="{{ lang }}" hx-post="{{ translation.id }}/{{ lang }}" hx-target="#languages" hx-swap="outerHTML">
       {% include "./lang_form.html" with lang=lang form=form %}
     </form>
   </div>

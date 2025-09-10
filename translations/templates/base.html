@@ -1,14 +1,12 @@
 {% load static %}
+
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Translations Admin</title>
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css"
-    />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css" />
     <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
     <link rel="stylesheet" href="{% static 'css/bulma_switch.css' %}" />
     <link
@@ -16,7 +14,6 @@
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0"
     />
   </head>
-
   <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}" }'>
     <div class="columns is-gapless">
       <div class="column is-2 sidebar-nav is-flex is-flex-direction-column">
@@ -145,15 +142,16 @@
           </div>
         </div>
       </div>
-      <div class="column is-2"></div>
+     <div class="column is-2"></div>
       <div class="column is-10 is-offset-2">
         <div class="container">
           <div class="content">{% block content %} {% endblock content %}</div>
         </div>
       </div>
     </div>
+    
     <script src="https://unpkg.com/htmx.org@1.9.5"></script>
-    <script src="{% static 'js/base.js' %}"></script>
+    <script src="{% static 'js/base.js' %}?v=tzfix5"></script>
     <script src="{% static 'js/theme.js' %}"></script>
   </body>
 </html>

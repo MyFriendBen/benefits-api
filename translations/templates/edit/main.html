@@ -1,4 +1,4 @@
-{% extends "base.html" %} {% load filters %} {% block content %}
+{% extends "base.html" %} {% load filters %} {% block content %} {% load static %}
 <section class="section">
   <h2 class="title">{{ translation.label }}</h2>
 </section>
@@ -50,7 +50,12 @@
             </div>
             <div class="level-right">
               <div class="level-item">
-                <label class="label">Last Updated: {{ updated_dates|get_updated_label:lang }}</label>
+                <label class="label">
+                Last Updated:
+                  <span class="utc-date" data-utc-date="{{ updated_dates|get_updated_label:lang }}">
+                    {{ updated_dates|get_updated_label:lang }}
+                  </span>
+                </label>                
               </div>
               <div class="level-item">
                 <label class="label">Update Type: {% if translation|get_update_type:lang %}
@@ -78,3 +83,6 @@
 
   {% endblock content %}
 </div>
+<script>
+  if (window.formatDates) { window.formatDates(); }
+</script>
