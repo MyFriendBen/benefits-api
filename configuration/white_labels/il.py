@@ -167,10 +167,6 @@ class IlConfigurationData(ConfigurationData):
     }
 
     referral_options = {
-        "socialServices": {
-            "_label": "referralOptions.gcfd.il",
-            "_default_message": "Greater Chicago Food Depository",
-        },
         "searchEngine": {
             "_label": "referralOptions.searchEngine",
             "_default_message": "Google or other search engine",
