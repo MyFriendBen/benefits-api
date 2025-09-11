@@ -27,7 +27,12 @@
         </div>
       </div>
     </div>
-    <form id="{{ lang }}" hx-post="{{ translation.id }}/{{ lang }}" hx-target="#languages" hx-swap="outerHTML">
+    <form 
+      id="{{ lang }}" 
+      hx-post="{{ translation.id }}/{{ lang }}" 
+      hx-target="#languages" 
+      hx-swap="outerHTML"
+    >
       {% include "./lang_form.html" with lang=lang form=form %}
     </form>
   </div>

@@ -1,4 +1,4 @@
-// Safe table sorting (no crash if no .table)
+// For handling the safe table sorting (no crash if no .table)
 function initializeTableSorting() {
   let table = document.querySelector(".table");
   if (!table) return;
