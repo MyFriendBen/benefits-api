@@ -439,3 +439,4 @@ class ResultsSerializer(serializers.Serializer):
     missing_programs = serializers.BooleanField()
     validations = ValidationSerializer(many=True)
     program_categories = ProgramCategorySerializer(many=True)
+    pe_data = serializers.DictField(required=False, allow_null=True)

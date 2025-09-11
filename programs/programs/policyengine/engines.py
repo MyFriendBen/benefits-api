@@ -29,8 +29,16 @@ class ApiSim(Sim):
 
     def __init__(self, data) -> None:
         self.request_payload = data
-        response = requests.post(self.pe_url, json=data)
-        self.response_json = response.json()
+        try:
+            res = requests.post(self.pe_url, json=data, timeout=(5, 30))
+            res.raise_for_status()
+            self.response_json = res.json()
+        except requests.RequestException as e:
+            raise RuntimeError(f"{self.method_name} request failed") from e
+        except ValueError as e:
+            raise RuntimeError(f"{self.method_name} returned non-JSON") from e
+        if "result" not in self.response_json:
+            raise RuntimeError("Missing 'result' key in Policy Engine response")
         self.data = self.response_json["result"]
 
     def value(self, unit, sub_unit, variable, period):
@@ -78,13 +86,17 @@ class PrivateApiSim(ApiSim):
             "Authorization": f"Bearer {token}",
         }
 
-        res = requests.post(self.pe_url, json=data, headers=headers)
-
-        self.data = res.json()["result"]
-
         self.request_payload = data
-        res = requests.post(self.pe_url, json=data, headers=headers)
-        self.response_json = res.json()
+        try:
+            res = requests.post(self.pe_url, json=data, headers=headers, timeout=(5, 30))
+            res.raise_for_status()
+            self.response_json = res.json()
+        except requests.RequestException as e:
+            raise RuntimeError(f"{self.method_name} request failed") from e
+        except ValueError as e:
+            raise RuntimeError(f"{self.method_name} returned non-JSON") from e
+        if "result" not in self.response_json:
+            raise RuntimeError("Missing 'result' key in Policy Engine response")
         self.data = self.response_json["result"]
 
 

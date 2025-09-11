@@ -143,7 +143,8 @@ class EligibilityTranslationView(views.APIView):
             "energy_calculator",
         ).get(uuid=id)
 
-        results = all_results(screen)
+        is_admin = request.query_params.get("admin") and request.user.is_superuser
+        results = all_results(screen, is_admin=is_admin)
 
         if screen.submission_date is None:
             screen.submission_date = datetime.now(timezone.utc)
@@ -180,12 +181,12 @@ class MessageViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         return Response({}, status=status.HTTP_201_CREATED)
 
 
-def all_results(screen: Screen, batch=False):
+def all_results(screen: Screen, batch=False, is_admin: bool = False):
     eligibility, missing_programs, categories, _pe_data = eligibility_results(screen, batch)
     urgent_needs = urgent_need_results(screen, eligibility)
     validations = ValidationSerializer(screen.validations.all(), many=True).data
 
-    return {
+    results = {
         "programs": eligibility,
         "urgent_needs": urgent_needs,
         "screen_id": screen.id,
@@ -195,6 +196,11 @@ def all_results(screen: Screen, batch=False):
         "program_categories": categories,
         "pe_data": _pe_data,
     }
+
+    if not is_admin:
+        results.pop("pe_data", None)
+
+    return results
 
 
 def translations_prefetch_name(prefix: str, fields):
