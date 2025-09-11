@@ -4,6 +4,14 @@ import programs.programs.messages as messages
 
 
 class IlBenefitAccess(IlTransportationMixin, ProgramCalculator):
+    dependencies = [
+        "age",
+        "household_size",
+        "income_amount",
+        "income_frequency",
+        "visually_impaired",
+        "disabled",
+    ]
     income_limit_by_household_size = {
         1: 33_562,
         2: 44_533,

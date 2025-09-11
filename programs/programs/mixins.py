@@ -34,21 +34,11 @@ class IlMedicaidFplIncomeCheckMixin:
 class IlTransportationMixin:
     dependencies = [
         "age",
-        "household_size",
-        "income_amount",
-        "income_frequency",
         "visually_impaired",
         "disabled",
     ]
-    presumptive_eligibility_programs = ["ssi", "ssdi"]
-    presumptive_eligibility_insurances = ["medicare"]
     minimum_age = 65
     minimum_age_with_disability = 16
-
-    def check_presumptive_eligibility(self):
-        has_presumptive_program = self.screen.has_benefit_from_list(self.presumptive_eligibility_programs)
-        has_presumptive_insurance = self.screen.has_insurance_types(self.presumptive_eligibility_insurances)
-        return has_presumptive_program or has_presumptive_insurance
 
     def member_eligible(self, e: MemberEligibility):
         member = e.member
