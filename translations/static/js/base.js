@@ -103,7 +103,7 @@ function initializeDropdowns() {
 function setupAutoTranslateToggle() {
   const autoCheckbox = document.querySelector('#auto-translate-check');
   const updateBtn = autoCheckbox?.closest('form')?.querySelector('#lang-submit-btn');
-  const excludeControls = document.querySelectorAll('#exclude-auto-control');
+  const excludeControls = document.querySelectorAll('.exclude-auto-control');
 
   if (!autoCheckbox || !updateBtn) return;
 
