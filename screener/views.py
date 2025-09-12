@@ -530,6 +530,7 @@ def urgent_need_results(screen: Screen, data):
         "dental care": screen.needs_dental_care,
         "legal services": screen.needs_legal_services,
         "veteran services": screen.needs_veteran_services,
+        "savings": screen.needs_savings,
     }
 
     missing_dependencies = screen.missing_fields()
@@ -573,6 +574,9 @@ def urgent_need_results(screen: Screen, data):
                 "icon": need.category_type.icon_name,
                 "warning": default_message(need.warning),
                 "phone_number": phone_number,
+                "notification_message": (
+                    default_message(need.notification_message) if need.notification_message else None
+                ),
             }
             eligible_urgent_needs.append(need_data)
 
