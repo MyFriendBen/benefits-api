@@ -167,10 +167,6 @@ class IlConfigurationData(ConfigurationData):
     }
 
     referral_options = {
-        "socialServices": {
-            "_label": "referralOptions.gcfd.il",
-            "_default_message": "Greater Chicago Food Depository",
-        },
         "searchEngine": {
             "_label": "referralOptions.searchEngine",
             "_default_message": "Google or other search engine",
@@ -2282,7 +2278,7 @@ class IlConfigurationData(ConfigurationData):
     category_benefits = {
         "foodAndNutrition": {
             "benefits": {
-                "il_snap": {
+                "snap": {
                     "name": {
                         "_label": "foodAndNutritionBenefits.snap",
                         "_default_message": "Supplemental Nutrition Assistance Program (SNAP): ",
