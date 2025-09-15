@@ -6,9 +6,8 @@ class FirstStepSavings(UrgentNeedFunction):
     """
     First Step additional resource for Colorado.
     Eligible if household:
-    1. Has identified interest in savings (needs_savings = True)
-    2. Has children aged 0-7 (born on/after Jan 1, 2020)
-    3. Child has eligible relationship: child, foster child, stepchild, grandchild
+    1. Has children aged 0-7 (born on/after Jan 1, 2020)
+    2. Child has eligible relationship: child, foster child, stepchild, grandchild
     """
 
     dependencies = ["age", "relationship"]
@@ -22,10 +21,6 @@ class FirstStepSavings(UrgentNeedFunction):
         has eligible children aged 0-7, but NOT if they're eligible for
         FirstStepSavingsNotifiable (children aged 0-2)
         """
-        # Check if household has expressed interest in savings
-        if not self.screen.needs_savings:
-            return False
-
         # Check for eligible children
         if not self._has_eligible_children():
             return False
@@ -94,9 +89,6 @@ class FirstStepSavingsNotifiable(FirstStepSavings):
         Return True if household has indicated interest in savings and
         has eligible children aged 0-2
         """
-        # Check if household has expressed interest in savings
-        if not self.screen.needs_savings:
-            return False
 
         # Check for eligible children aged 0-2
         return self._has_eligible_children()
