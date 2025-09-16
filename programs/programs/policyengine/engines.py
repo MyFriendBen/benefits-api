@@ -34,9 +34,9 @@ class ApiSim(Sim):
             res.raise_for_status()
             self.response_json = res.json()
         except requests.RequestException as e:
-            raise RuntimeError(f"{self.method_name} request failed") from e
+            raise RuntimeError(f"{self.method_name} request failed {e}") from e
         except ValueError as e:
-            raise RuntimeError(f"{self.method_name} returned non-JSON") from e
+            raise RuntimeError(f"{self.method_name} returned non-JSON {e}") from e
         if "result" not in self.response_json:
             raise RuntimeError("Missing 'result' key in Policy Engine response")
         self.data = self.response_json["result"]
@@ -92,9 +92,9 @@ class PrivateApiSim(ApiSim):
             res.raise_for_status()
             self.response_json = res.json()
         except requests.RequestException as e:
-            raise RuntimeError(f"{self.method_name} request failed") from e
+            raise RuntimeError(f"{self.method_name} request failed {e}") from e
         except ValueError as e:
-            raise RuntimeError(f"{self.method_name} returned non-JSON") from e
+            raise RuntimeError(f"{self.method_name} returned non-JSON {e}") from e
         if "result" not in self.response_json:
             raise RuntimeError("Missing 'result' key in Policy Engine response")
         self.data = self.response_json["result"]

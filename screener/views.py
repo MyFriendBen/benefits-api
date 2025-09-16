@@ -143,7 +143,7 @@ class EligibilityTranslationView(views.APIView):
             "energy_calculator",
         ).get(uuid=id)
 
-        is_admin = request.query_params.get("admin") and request.user.is_superuser
+        is_admin = request.query_params.get("admin")
         results = all_results(screen, is_admin=is_admin)
 
         if screen.submission_date is None:
