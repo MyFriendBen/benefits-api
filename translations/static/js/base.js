@@ -163,7 +163,8 @@ function initializeAll() {
 }
 
 document.addEventListener("DOMContentLoaded", initializeAll);
+
 document.body.addEventListener("htmx:afterSwap", function() {
-  console.log("HTMX content swapped - calling formatDates");
-  setTimeout(formatDates, 0);
+  console.log("HTMX content swapped - reinitializing all");
+  setTimeout(initializeAll, 0); 
 });
