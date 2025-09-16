@@ -870,14 +870,18 @@ class UrgentNeedManager(models.Manager):
         "link",
         "warning",
         "website_description",
+        "notification_message",
     )
     no_auto_fields = ("link",)
+    no_placeholder_fields = ("notification_message",)
 
     def new_urgent_need(self, white_label: str, name: str, phone_number: str):
         translations = {}
         for field in self.translated_fields:
+            default_message = "" if field in self.no_placeholder_fields else BLANK_TRANSLATION_PLACEHOLDER
             translations[field] = Translation.objects.add_translation(
                 f"urgent_need.{name}_temporary_key-{field}",
+                default_message=default_message,
                 no_auto=(field in self.no_auto_fields),
             )
 
@@ -1111,6 +1115,13 @@ class UrgentNeed(models.Model):
         blank=False,
         null=False,
         on_delete=models.PROTECT,
+    )
+    notification_message = models.ForeignKey(
+        Translation,
+        related_name="urgent_need_notification_message",
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
     )
 
     objects = UrgentNeedManager()

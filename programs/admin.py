@@ -237,6 +237,7 @@ class UrgentNeedAdmin(SecureAdmin):
         "link",
         "warning",
         "website_description",
+        "notification_message",
     ]
     list_editable = ["active"]
 
@@ -288,6 +289,7 @@ class UrgentNeedAdmin(SecureAdmin):
         link = obj.link
         warning = obj.warning
         website_description = obj.website_description
+        notification_message = obj.notification_message
 
         return format_html(
             """
@@ -299,6 +301,7 @@ class UrgentNeedAdmin(SecureAdmin):
                     <a href="{}">Link</a>
                     <a href="{}">Warning</a>
                     <a href="{}">Website Description</a>
+                    <a href="{}">Notification Message</a>
                 </div>
             </div>
             """,
@@ -307,6 +310,7 @@ class UrgentNeedAdmin(SecureAdmin):
             reverse("translation_admin_url", args=[link.id]),
             reverse("translation_admin_url", args=[warning.id]),
             reverse("translation_admin_url", args=[website_description.id]),
+            reverse("translation_admin_url", args=[notification_message.id]),
         )
 
     action_buttons.short_description = "Translate:"

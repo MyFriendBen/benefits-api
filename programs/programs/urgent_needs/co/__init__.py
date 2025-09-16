@@ -16,6 +16,7 @@ from .snap_employment import SnapEmployment
 from .early_intervention import EarlyIntervention
 from .denver_emergency_assistance import DenverEmergencyAssistance
 from .diaper_banks import FamilyResourceCenterAssociation, NationalDiaperBank
+from .first_step_savings import FirstStepSavings, FirstStepSavingsNotifiable
 
 
 co_urgent_need_functions: dict[str, type[UrgentNeedFunction]] = {
@@ -39,4 +40,6 @@ co_urgent_need_functions: dict[str, type[UrgentNeedFunction]] = {
     "deap": DenverEmergencyAssistance,
     "frca": FamilyResourceCenterAssociation,
     "diaper_bank": NationalDiaperBank,
+    "first_step": FirstStepSavings,
+    "first_step_notifiable": FirstStepSavingsNotifiable,
 }
