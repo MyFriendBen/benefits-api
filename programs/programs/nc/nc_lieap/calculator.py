@@ -26,15 +26,15 @@ class NCLieap(ProgramCalculator):
         has_program_expense = self.screen.has_expense(NCLieap.expenses)
         e.condition(has_program_expense)
 
-        # Calculate income and limits 
+        # Calculate income and limits
         gross_income, income_limit = self._calculate_income_and_limit()
-        
+
         e.condition(gross_income <= income_limit, messages.income(gross_income, income_limit))
 
     def household_value(self):
         household_size = self.screen.household_size
-        
-        # Calculate income and limits 
+
+        # Calculate income and limits
         gross_income, income_limit = self._calculate_income_and_limit()
 
         # Determine benefit amount based on household size and income
@@ -49,11 +49,11 @@ class NCLieap(ProgramCalculator):
             elif gross_income <= income_limit:
                 return self.large_household_large_income_value
 
-    def _calculate_income_and_limit(self):        
-        
-        # Calculate gross income and income limit.                
+    def _calculate_income_and_limit(self):
+
+        # Calculate gross income and income limit.
         household_size = self.screen.household_size
-        
+
         # Determine deductions and FPL% based on senior/disabled status
         has_senior_disabled = self._has_senior_or_disabled()
         earned_deduction = 0 if has_senior_disabled else NCLieap.earned_deduction
@@ -84,7 +84,7 @@ class NCLieap(ProgramCalculator):
         """
         Check if any household member is senior (60+) or disabled.
         """
-        for member in self.screen.household_members.all():            
+        for member in self.screen.household_members.all():
             if member.age is not None and member.age >= 60 or member.has_disability():
                 return True
         return False
