@@ -60,12 +60,9 @@ class NCLieap(ProgramCalculator):
         fpl_percent = self.fpl_percent_senior_disabled if has_senior_disabled else self.fpl_percent
         medical_deduction = NCLieap.medical_deduction * 12 if has_senior_disabled else 0
 
-        # Calculate childcare expenses
-        if household_size > 1:
-            childcare_expenses = self.screen.calc_expenses("yearly", ["childCare", "childSupport"])
-        else:
-            childcare_expenses = self.screen.calc_expenses("yearly", ["childSupport"])
-
+        # Calculate childcare expenses        
+        childcare_expenses = self.screen.calc_expenses("yearly", ["childCare", "childSupport"])
+        
         # Calculate income components
         earned_income = self.screen.calc_gross_income("yearly", ["earned"])
         unearned_income = self.screen.calc_gross_income("yearly", ["unearned"])
