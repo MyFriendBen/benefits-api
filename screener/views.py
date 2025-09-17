@@ -227,11 +227,6 @@ def eligibility_results(screen: Screen, batch=False):
             "required_programs",
             "excludes_programs",
             *translations_prefetch_name("", Program.objects.translated_fields),
-            "navigator",
-            "navigator__counties",
-            "navigator__languages",
-            "navigator__primary_navigators",
-            *translations_prefetch_name("navigator__", Navigator.objects.translated_fields),
             "documents",
             *translations_prefetch_name("documents__", Document.objects.translated_fields),
             "warning_messages",
@@ -342,10 +337,17 @@ def eligibility_results(screen: Screen, batch=False):
 
         # don't calculate navigator and warnings for ineligible programs
         if eligibility.eligible:
-            all_navigators = program.navigator.all()
+            # Start from the canonical ordered list; fallback to legacy relation if empty.
+            # Fetch counties/languages per-program to keep queries efficient without breaking sort order.
+            ordered = list(program.navigators_sorted.all().prefetch_related("counties", "languages"))
+            if not ordered:
+                ordered = list(
+                    Navigator.objects.filter(programs=program).order_by("id").prefetch_related("counties", "languages")
+                )
 
+            # Filter by county while preserving order
             county_navigators = []
-            for nav in all_navigators:
+            for nav in ordered:
                 counties = nav.counties.all()
                 if len(counties) == 0 or (
                     screen.county is not None and any(screen.county in county.name for county in counties)
@@ -355,12 +357,9 @@ def eligibility_results(screen: Screen, batch=False):
             if referrer is None:
                 navigators = county_navigators
             else:
-                primary_navigators = referrer.primary_navigators.all()
-                referrer_navigators = [nav for nav in primary_navigators if nav in county_navigators]
-                if len(referrer_navigators) == 0:
-                    navigators = county_navigators
-                else:
-                    navigators = referrer_navigators
+                allowed = set(referrer.primary_navigators.all())
+                referrer_ordered_subset = [nav for nav in county_navigators if nav in allowed]
+                navigators = referrer_ordered_subset if referrer_ordered_subset else county_navigators
 
             for warning in program.warning_messages.all():
                 if warning.calculator not in warning_calculators:
@@ -433,7 +432,6 @@ def eligibility_results(screen: Screen, batch=False):
                     "documents": [serialized_document(document) for document in program.documents.all()],
                     "warning_messages": warnings,
                     "required_programs": [p.id for p in program.required_programs.all()],
-                    "excludes_programs": [p.id for p in program.excludes_programs.all()],
                     "value_format": program.value_format,
                 }
             )

@@ -9,6 +9,7 @@ import requests
 from integrations.util.cache import Cache
 from typing import Optional, TypedDict, Union
 from programs.programs.translation_overrides import warning_calculators
+from sortedm2m.fields import SortedManyToManyField
 
 
 class FplCache(Cache):
@@ -606,6 +607,7 @@ class Program(models.Model):
         on_delete=models.SET_NULL,
     )
     required_programs = models.ManyToManyField("self", related_name="dependent_programs", symmetrical=False, blank=True)
+    navigators_sorted = SortedManyToManyField("Navigator", related_name="programs_sorted", blank=True)
     excludes_programs = models.ManyToManyField(
         "self",
         related_name="excluded_by_programs",
@@ -751,10 +753,6 @@ class UrgentNeedCategory(models.Model):
 
     def __str__(self):
         return f"{self.name}"
-
-
-from typing import TypedDict
-from translations.model_data import ModelDataController
 
 
 class UrgentNeedTypeDataController(ModelDataController["UrgentNeedType"]):
@@ -1222,7 +1220,7 @@ class NavigatorDataController(ModelDataController["Navigator"]):
             "phone_number": (str(navigator.phone_number) if navigator.phone_number is not None else None),
             "counties": self._counties(),
             "languages": self._languages(),
-            "programs": [p.external_name for p in navigator.programs.all()],
+            "programs": [p.external_name for p in navigator.programs_sorted.all()],
             "white_label": navigator.white_label.code,
         }
 
@@ -1263,7 +1261,9 @@ class NavigatorDataController(ModelDataController["Navigator"]):
         for external_name in data["programs"]:
             program_instance = Program.objects.get(external_name=external_name)
             programs.append(program_instance)
-        navigator.programs.set(programs)
+        # Set membership from the reverse side using the sorted relation; order on this
+        # side is irrelevant (ordering is controlled per-Program).
+        navigator.programs_sorted.set(programs)
 
         navigator.save()
 
@@ -1280,7 +1280,6 @@ class Navigator(models.Model):
         blank=False,
         on_delete=models.CASCADE,
     )
-    programs = models.ManyToManyField(Program, related_name="navigator", blank=True)
     external_name = models.CharField(max_length=120, blank=True, null=True, unique=True)
     phone_number = PhoneNumberField(blank=True, null=True)
     counties = models.ManyToManyField(County, related_name="navigator", blank=True)

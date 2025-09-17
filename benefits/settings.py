@@ -96,6 +96,7 @@ INSTALLED_APPS = [
     # optional, if django-simple-history package is used
     "unfold.contrib.simple_history",
     "simple_history",
+    "sortedm2m",
     "authentication.apps.AuthConfig",
     "corsheaders",
     "screener.apps.ScreenerConfig",
@@ -166,6 +167,9 @@ DATABASES = {
         "USER": config("DB_USER"),
         "PASSWORD": config("DB_PASS"),
         "HOST": config("DB_HOST", "localhost"),
+        # Prevent named server-side cursor usage that can lead to InvalidCursorName
+        # errors when widgets render large querysets in admin templates.
+        "DISABLE_SERVER_SIDE_CURSORS": True,
     },
     "migration_source": (
         {

@@ -99,7 +99,8 @@ class Command(BaseCommand):
         ]
         urgent_need_links = [u.link for u in UrgentNeed.objects.filter(active=True, white_label__code=white_label)]
         navigator_links = [
-            n.assistance_link for n in Navigator.objects.filter(programs__isnull=False, white_label__code=white_label)
+            n.assistance_link
+            for n in Navigator.objects.filter(programs_sorted__isnull=False, white_label__code=white_label)
         ]
         translation_override_links = [
             o.translation

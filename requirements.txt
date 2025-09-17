@@ -24,6 +24,7 @@ django-parler-rest==2.2
 django-phonenumber-field==6.3.0
 django-sesame==3.1
 django-simple-history==3.10.1
+django-sortedm2m==3.1.1
 django-unfold==0.62.0
 djangorestframework==3.15.2
 drf-yasg==1.21.7

@@ -62,6 +62,8 @@ class ProgramAdmin(SecureAdmin):
     get_str.admin_order_field = "name"
     get_str.short_description = "Program"
 
+    # Navigators will be automatically scoped to program.white_label by SecureAdmin.get_form
+
     def action_buttons(self, obj):
         name = obj.name
         description = obj.description
@@ -128,8 +130,8 @@ class NavigatorLanguageAdmin(SecureAdmin):
 class NavigatorAdmin(SecureAdmin):
     search_fields = ("name__translations__text",)
     list_display = ["get_str", "external_name", "action_buttons"]
-    white_label_filter_horizontal = ("programs", "counties")
-    filter_horizontal = ("programs", "counties", "languages")
+    white_label_filter_horizontal = ("counties",)
+    filter_horizontal = ("counties", "languages")
     exclude = [
         "name",
         "email",
