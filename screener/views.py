@@ -218,6 +218,7 @@ def eligibility_results(screen: Screen, batch=False):
             "legal_status_required",
             "year",
             "required_programs",
+            "excludes_programs",
             *translations_prefetch_name("", Program.objects.translated_fields),
             "navigator",
             "navigator__counties",
@@ -422,6 +423,7 @@ def eligibility_results(screen: Screen, batch=False):
                     "documents": [serialized_document(document) for document in program.documents.all()],
                     "warning_messages": warnings,
                     "required_programs": [p.id for p in program.required_programs.all()],
+                    "excludes_programs": [p.id for p in program.excludes_programs.all()],
                     "value_format": program.value_format,
                 }
             )
@@ -528,6 +530,7 @@ def urgent_need_results(screen: Screen, data):
         "dental care": screen.needs_dental_care,
         "legal services": screen.needs_legal_services,
         "veteran services": screen.needs_veteran_services,
+        "savings": screen.needs_savings,
     }
 
     missing_dependencies = screen.missing_fields()
@@ -571,6 +574,9 @@ def urgent_need_results(screen: Screen, data):
                 "icon": need.category_type.icon_name,
                 "warning": default_message(need.warning),
                 "phone_number": phone_number,
+                "notification_message": (
+                    default_message(need.notification_message) if need.notification_message else None
+                ),
             }
             eligible_urgent_needs.append(need_data)
 

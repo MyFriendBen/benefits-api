@@ -63,8 +63,12 @@ class Screen(models.Model):
     has_acp = models.BooleanField(default=False, blank=True, null=True)
     has_eitc = models.BooleanField(default=False, blank=True, null=True)
     has_coeitc = models.BooleanField(default=False, blank=True, null=True)
+    has_il_eitc = models.BooleanField(default=False, blank=True, null=True)
     has_nslp = models.BooleanField(default=False, blank=True, null=True)
     has_ctc = models.BooleanField(default=False, blank=True, null=True)
+    has_il_ctc = models.BooleanField(default=False, blank=True, null=True)
+    has_il_transit_reduced_fare = models.BooleanField(default=False, blank=True, null=True)
+    has_il_bap = models.BooleanField(default=False, blank=True, null=True)
     has_medicaid = models.BooleanField(default=False, blank=True, null=True)
     has_rtdlive = models.BooleanField(default=False, blank=True, null=True)
     has_cccap = models.BooleanField(default=False, blank=True, null=True)
@@ -124,6 +128,7 @@ class Screen(models.Model):
     needs_job_resources = models.BooleanField(default=False, blank=True, null=True)
     needs_dental_care = models.BooleanField(default=False, blank=True, null=True)
     needs_legal_services = models.BooleanField(default=False, blank=True, null=True)
+    needs_savings = models.BooleanField(default=False, blank=True, null=True)
     needs_veteran_services = models.BooleanField(default=False, blank=True, null=True)
     utm_id = models.CharField(max_length=64, blank=True, null=True)
     utm_source = models.CharField(max_length=64, blank=True, null=True)
@@ -326,6 +331,7 @@ class Screen(models.Model):
             "tanf": self.has_tanf,
             "nc_tanf": self.has_tanf,
             "co_tanf": self.has_tanf,
+            "il_tanf": self.has_tanf,
             "wic": self.has_wic,
             "co_wic": self.has_wic,
             "nc_wic": self.has_wic,
@@ -333,12 +339,17 @@ class Screen(models.Model):
             "sunbucks": self.has_sunbucks,
             "co_snap": self.has_snap,
             "nc_snap": self.has_snap,
+            "il_snap": self.has_snap,
             "lifeline": self.has_lifeline,
             "acp": self.has_acp,
             "eitc": self.has_eitc,
             "coeitc": self.has_coeitc,
+            "il_eitc": self.has_il_eitc,
             "nslp": self.has_nslp,
             "ctc": self.has_ctc,
+            "il_ctc": self.has_il_ctc,
+            "il_transit_reduced_fare": self.has_il_transit_reduced_fare,
+            "il_bap": self.has_il_bap,
             "rtdlive": self.has_rtdlive,
             "cccap": self.has_cccap,
             "mydenver": self.has_mydenver,

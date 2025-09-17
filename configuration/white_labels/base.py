@@ -129,6 +129,9 @@ class ConfigurationData:
         "zh-hans": "中文 (简体)",
         "ar": "عربي",
         "sw": "Kiswahili",
+        "pl": "Polski",
+        "tl": "Tagalog",
+        "ko": "한국어",
     }
 
     income_options = {
@@ -436,6 +439,7 @@ class ConfigurationData:
             "[REPLACE_ME]": [],
         },
         "featureFlags": {"default": []},
+        "defaultLanguage": {"default": "en-us", "[REPLACE_ME]": ""},
     }
 
     footer_data = {
