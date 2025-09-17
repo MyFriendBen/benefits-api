@@ -6,7 +6,7 @@ class NCLieap(ProgramCalculator):
     fpl_percent = 1.3
     fpl_percent_senior_disabled = 1.5
     earned_deduction = 0.2
-    medical_deduction = 85
+    medical_deduction_senior_disabled = 85
     expenses = ["rent", "mortgage", "heating", "Childcare", "childSupport"]
     dependencies = [
         "income_frequency",
@@ -35,7 +35,8 @@ class NCLieap(ProgramCalculator):
         household_size = self.screen.household_size
 
         # Calculate income and limits
-        gross_income, income_limit = self._calculate_income_and_limit()
+        gross_income = self._calculate_gross_income()
+        income_limit = self._calculate_income_limit()
 
         # Determine benefit amount based on household size and income
         if household_size < self.large_household_size:
@@ -49,16 +50,12 @@ class NCLieap(ProgramCalculator):
             elif gross_income <= income_limit:
                 return self.large_household_large_income_value
 
-    def _calculate_income_and_limit(self):
+    def _calculate_gross_income(self):
 
-        # Calculate gross income and income limit.
-        household_size = self.screen.household_size
-
-        # Determine deductions and FPL% based on senior/disabled status
+        # Determine deductions based on senior/disabled status
         has_senior_disabled = self._has_senior_or_disabled()
         earned_deduction = 0 if has_senior_disabled else NCLieap.earned_deduction
-        fpl_percent = self.fpl_percent_senior_disabled if has_senior_disabled else self.fpl_percent
-        medical_deduction = NCLieap.medical_deduction * 12 if has_senior_disabled else 0
+        medical_deduction_senior_disabled = NCLieap.medical_deduction_senior_disabled * 12 if has_senior_disabled else 0
 
         # Calculate childcare expenses
         childcare_expenses = self.screen.calc_expenses("yearly", ["childCare", "childSupport"])
@@ -69,13 +66,24 @@ class NCLieap(ProgramCalculator):
 
         # Apply earned income deduction only to earned income
         if earned_income > 0:
-            earned_income = earned_income - (earned_income * earned_deduction)
+            earned_income -= earned_income * earned_deduction
 
-        # Calculate final gross income and income limit
-        gross_income = ((earned_income + unearned_income) - childcare_expenses) - medical_deduction
+        # Calculate gross income
+        gross_income = ((earned_income + unearned_income) - childcare_expenses) - medical_deduction_senior_disabled
+
+        return gross_income
+
+    def _calculate_income_limit(self):
+
+        # Determine FPL% based on senior/disabled status
+        has_senior_disabled = self._has_senior_or_disabled()
+        fpl_percent = self.fpl_percent_senior_disabled if has_senior_disabled else self.fpl_percent
+
+        # Calculate income limit
+        household_size = self.screen.household_size
         income_limit = int(fpl_percent * self.program.year.as_dict()[household_size])
 
-        return gross_income, income_limit
+        return income_limit
 
     def _has_senior_or_disabled(self):
         """
