@@ -585,6 +585,9 @@ class Program(models.Model):
     documents = models.ManyToManyField(Document, related_name="program_documents", blank=True)
     active = models.BooleanField(blank=True, default=True)
     low_confidence = models.BooleanField(blank=True, null=False, default=False)
+    show_on_current_benefits = models.BooleanField(
+        default=True, help_text="Display this program on the current benefits page"
+    )
     year = models.ForeignKey(
         FederalPoveryLimit,
         related_name="fpl",
@@ -1071,6 +1074,9 @@ class UrgentNeed(models.Model):
     )
     active = models.BooleanField(blank=True, null=False, default=True)
     low_confidence = models.BooleanField(blank=True, null=False, default=False)
+    show_on_current_benefits = models.BooleanField(
+        default=True, help_text="Display this urgent need on the current benefits page"
+    )
     functions = models.ManyToManyField(UrgentNeedFunction, related_name="function", blank=True)
     year = models.ForeignKey(
         FederalPoveryLimit,
