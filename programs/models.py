@@ -1119,9 +1119,9 @@ class UrgentNeed(models.Model):
     notification_message = models.ForeignKey(
         Translation,
         related_name="urgent_need_notification_message",
-        blank=True,
-        null=True,
-        on_delete=models.SET_NULL,
+        blank=False,
+        null=False,
+        on_delete=models.PROTECT,
     )
 
     objects = UrgentNeedManager()

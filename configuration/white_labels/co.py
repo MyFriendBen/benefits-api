@@ -114,7 +114,7 @@ class CoConfigurationData(ConfigurationData):
             "icon": {"_icon": "Savings", "_classname": "option-card-icon"},
             "text": {
                 "_label": "acuteConditionOptions.savings",
-                "_default_message": "Savings for College",
+                "_default_message": "Saving for college",
             },
         },
     }
