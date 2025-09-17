@@ -749,7 +749,6 @@ class UrgentNeedCategory(models.Model):
         return f"{self.name}"
 
 
-
 class UrgentNeedTypeDataController(ModelDataController["UrgentNeedType"]):
     _model_name = "UrgentNeedType"
 

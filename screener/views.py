@@ -332,9 +332,7 @@ def eligibility_results(screen: Screen, batch=False):
             ordered = list(program.navigators_sorted.all().prefetch_related("counties", "languages"))
             if not ordered:
                 ordered = list(
-                    Navigator.objects.filter(programs=program)
-                    .order_by("id")
-                    .prefetch_related("counties", "languages")
+                    Navigator.objects.filter(programs=program).order_by("id").prefetch_related("counties", "languages")
                 )
 
             # Filter by county while preserving order
