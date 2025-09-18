@@ -53,7 +53,7 @@ class NCLieap(ProgramCalculator):
     def _calculate_gross_income(self):
 
         # Determine deductions based on senior/disabled status
-        has_senior_disabled = self._has_senior_or_disabled()        
+        has_senior_disabled = self._has_senior_or_disabled()
         medical_deduction_senior_disabled = NCLieap.medical_deduction_senior_disabled * 12 if has_senior_disabled else 0
 
         # Calculate childcare expenses
