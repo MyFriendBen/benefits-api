@@ -7,7 +7,7 @@ class NCLieap(ProgramCalculator):
     fpl_percent_senior_disabled = 1.5
     earned_deduction = 0.2
     medical_deduction_senior_disabled = 85
-    expenses = ["rent", "mortgage", "heating", "Childcare", "childSupport"]
+    expenses = ["rent", "mortgage", "heating"]
     dependencies = [
         "income_frequency",
         "income_amount",
