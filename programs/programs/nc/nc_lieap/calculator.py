@@ -53,8 +53,7 @@ class NCLieap(ProgramCalculator):
     def _calculate_gross_income(self):
 
         # Determine deductions based on senior/disabled status
-        has_senior_disabled = self._has_senior_or_disabled()
-        earned_deduction = 0 if has_senior_disabled else NCLieap.earned_deduction
+        has_senior_disabled = self._has_senior_or_disabled()        
         medical_deduction_senior_disabled = NCLieap.medical_deduction_senior_disabled * 12 if has_senior_disabled else 0
 
         # Calculate childcare expenses
@@ -66,7 +65,7 @@ class NCLieap(ProgramCalculator):
 
         # Apply earned income deduction only to earned income
         if earned_income > 0:
-            earned_income -= earned_income * earned_deduction
+            earned_income -= earned_income * NCLieap.earned_deduction
 
         # Calculate gross income
         gross_income = ((earned_income + unearned_income) - childcare_expenses) - medical_deduction_senior_disabled
