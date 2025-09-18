@@ -1,7 +1,9 @@
-// For handing the sorting of tables
+// For handling the safe table sorting (no crash if no .table)
 function initializeTableSorting() {
   let table = document.querySelector(".table");
+  if (!table) return;
   let headers = table.querySelectorAll("th");
+  if (!headers || headers.length === 0) return;
   let currentSortColumn = null;
   let sortDirection = "asc";
 
@@ -63,20 +65,21 @@ function initializeSidebarMenu() {
 
 // For handling the dropdown menu in the tables
 function initializeDropdowns() {
-  let dropdowns = document.querySelectorAll("#" + tableId + " .dropdown");
-  dropdowns.forEach(function (dropdown, index) {
+  let dropdowns = document.querySelectorAll(".dropdown");
+  dropdowns.forEach(function (dropdown) {
     let dropdownButton = dropdown.querySelector(".button");
     let dropdownSpan = dropdown.querySelector(".material-symbols-outlined");
     let dropdownContent = dropdown.querySelector(".dropdown-content");
+    if (!dropdownButton) return;
 
     dropdownButton.addEventListener("click", function (event) {
       event.preventDefault();
       dropdown.classList.toggle("is-active");
       if (dropdown.classList.contains("is-active")) {
-        dropdownSpan.textContent = "expand_less";
+        if (dropdownSpan) dropdownSpan.textContent = "expand_less";
         checkDropdownPosition(dropdown, dropdownContent);
       } else {
-        dropdownSpan.textContent = "expand_more";
+        if (dropdownSpan) dropdownSpan.textContent = "expand_more";
         dropdown.classList.remove("is-top");
       }
     });
@@ -87,7 +90,7 @@ function initializeDropdowns() {
       if (!isClickInside) {
         dropdown.classList.remove("is-active");
         dropdown.classList.remove("is-top");
-        dropdownSpan.textContent = "expand_more";
+        if (dropdownSpan) dropdownSpan.textContent = "expand_more";
       }
     });
 
@@ -95,12 +98,13 @@ function initializeDropdowns() {
     window.addEventListener("scroll", function () {
       dropdown.classList.remove("is-active");
       dropdown.classList.remove("is-top");
-      dropdownSpan.textContent = "expand_more";
+      if (dropdownSpan) dropdownSpan.textContent = "expand_more";
     });
   });
 }
 
 function checkDropdownPosition(dropdown, dropdownContent) {
+  if (!dropdownContent) return;
   let dropdownRect = dropdown.getBoundingClientRect();
   let dropdownContentRect = dropdownContent.getBoundingClientRect();
   let viewportHeight = window.innerHeight;
@@ -112,10 +116,50 @@ function checkDropdownPosition(dropdown, dropdownContent) {
   }
 }
 
-function initializeAll() {
-  initializeTableSorting();
-  initializeSidebarMenu();
-  initializeDropdowns();
+// Convert UTC ISO in data-utc-date to browser timezone
+function formatDates() {  
+  const els = document.querySelectorAll(".utc-date");  
+  
+  if (els.length === 0) {
+    return;
+  }
+  
+  els.forEach(function (el, index) {
+    const iso = el.getAttribute("data-utc-date");    
+    
+    if (!iso || iso === "Never") {
+      return;
+    }
+    
+    try {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) {
+        return;
+      }
+      
+      const formatted = new Intl.DateTimeFormat(navigator.language, {
+        year: "numeric", 
+        month: "short", 
+        day: "numeric",
+        hour: "numeric", 
+        minute: "numeric", 
+        hour12: true, 
+        timeZoneName: "short"
+      }).format(d);
+      
+      el.textContent = formatted;
+    } catch (e) {
+      console.error("Error formatting date:", e);
+    }
+  });
+}
+window.formatDates = formatDates;
+
+function initializeAll() {  
+  try { initializeTableSorting(); } catch (e) { console.warn("initializeTableSorting error:", e); }
+  try { initializeSidebarMenu(); } catch (e) { console.warn("initializeSidebarMenu error:", e); }
+  try { initializeDropdowns(); } catch (e) { console.warn("initializeDropdowns error:", e); }
+  formatDates();
 }
 
 document.addEventListener("DOMContentLoaded", initializeAll);
