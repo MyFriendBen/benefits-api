@@ -143,7 +143,8 @@ class EligibilityTranslationView(views.APIView):
             "energy_calculator",
         ).get(uuid=id)
 
-        results = all_results(screen)
+        is_admin = request.query_params.get("admin")
+        results = all_results(screen, is_admin=is_admin)
 
         if screen.submission_date is None:
             screen.submission_date = datetime.now(timezone.utc)
@@ -180,12 +181,12 @@ class MessageViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         return Response({}, status=status.HTTP_201_CREATED)
 
 
-def all_results(screen: Screen, batch=False):
-    eligibility, missing_programs, categories = eligibility_results(screen, batch)
+def all_results(screen: Screen, batch=False, is_admin: bool = False):
+    eligibility, missing_programs, categories, _pe_data = eligibility_results(screen, batch)
     urgent_needs = urgent_need_results(screen, eligibility)
     validations = ValidationSerializer(screen.validations.all(), many=True).data
 
-    return {
+    results = {
         "programs": eligibility,
         "urgent_needs": urgent_needs,
         "screen_id": screen.id,
@@ -193,7 +194,13 @@ def all_results(screen: Screen, batch=False):
         "missing_programs": missing_programs,
         "validations": validations,
         "program_categories": categories,
+        "pe_data": _pe_data,
     }
+
+    if not is_admin:
+        results.pop("pe_data", None)
+
+    return results
 
 
 def translations_prefetch_name(prefix: str, fields):
@@ -264,7 +271,10 @@ def eligibility_results(screen: Screen, batch=False):
         if program is not None:
             pe_calculators[calculator_name] = Calculator(screen, program, missing_dependencies)
 
-    pe_eligibility = calc_pe_eligibility(screen, pe_calculators)
+    result = calc_pe_eligibility(screen, pe_calculators)
+    pe_eligibility = result["eligibility"]
+    pe_data = result["_pe_data"]
+
     pe_programs = pe_calculators.keys()
 
     def sort_first(program):
@@ -471,7 +481,7 @@ def eligibility_results(screen: Screen, batch=False):
         clean_program["estimated_value"] = math.trunc(clean_program["estimated_value"])
         eligible_programs.append(clean_program)
 
-    return eligible_programs, missing_programs, categories
+    return eligible_programs, missing_programs, categories, pe_data
 
 
 class GetProgramTranslation:
