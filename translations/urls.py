@@ -9,7 +9,6 @@ urlpatterns = [
     path("admin/create", views.create_translation_view),
     path("admin/<int:id>", views.translation_view, name="translation_admin_url"),
     path("admin/<int:id>/<str:lang>", views.edit_translation),
-    path("admin/<int:id>/<str:lang>/auto", views.auto_translate),
     *views.ProgramTranslationAdmin().urls(),
     *views.NavigatorTranslationAdmin().urls(),
     *views.UrgentNeedTranslationAdmin().urls(),
