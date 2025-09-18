@@ -2,40 +2,67 @@ from screener.models import HouseholdMember, Screen
 from .calculators import PolicyEngineCalulator
 from programs.programs.calc import Eligibility
 from .calculators.dependencies.base import DependencyError, Member, TaxUnit
-from typing import List
+from typing import Any, Dict, List, Optional, TypedDict
 from sentry_sdk import capture_exception, capture_message
 from .engines import Sim, pe_engines
 from .calculators.constants import MAIN_TAX_UNIT, SECONDARY_TAX_UNIT
 from django.conf import settings
 
 
+class PEData(TypedDict):
+    request: Optional[Dict[str, Any]]
+    response: Optional[Dict[str, Any]]
+
+
+class EligibilityPEResult(TypedDict):
+    eligibility: Dict[str, Eligibility]
+    _pe_data: PEData
+
+
 def calc_pe_eligibility(
     screen: Screen,
     calculators: dict[str, PolicyEngineCalulator],
-) -> dict[str, Eligibility]:
+) -> EligibilityPEResult:
     valid_programs: dict[str, PolicyEngineCalulator] = {}
 
     for name_abbr, calculator in calculators.items():
         if not calculator.can_calc():
             continue
-
         valid_programs[name_abbr] = calculator
 
-    if len(valid_programs.values()) == 0 or len(screen.household_members.all()) == 0:
-        return {}
+    empty_result: EligibilityPEResult = {
+        "eligibility": {},
+        "_pe_data": {"request": None, "response": None},
+    }
+
+    if not valid_programs or not screen.household_members.all():
+        return empty_result
 
     input_data = pe_input(screen, valid_programs.values())
 
     for Method in pe_engines:
         try:
-            return all_eligibility(Method(input_data), valid_programs)
+            method_instance = Method(input_data)
+            eligibility = all_eligibility(method_instance, valid_programs)
+            result: EligibilityPEResult = {
+                "eligibility": eligibility,
+                "_pe_data": {
+                    "request": getattr(method_instance, "request_payload", None),
+                    "response": getattr(method_instance, "response_json", None),
+                },
+            }
         except Exception as e:
             if settings.DEBUG:
                 print(repr(e))
             capture_exception(e, level="warning")
-            capture_message(f"Failed to calculate eligibility with the {Method.method_name} method", level="warning")
+            capture_message(
+                f"Failed to calculate eligibility with the {Method.method_name} method",
+                level="warning",
+            )
+        else:
+            return result
 
-    raise Exception("Failed to calculate Policy Engine eligibility")
+    return empty_result
 
 
 def all_eligibility(method: Sim, valid_programs: dict[str, PolicyEngineCalulator]):
