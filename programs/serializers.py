@@ -53,7 +53,7 @@ class ProgramCategorySerializer(serializers.ModelSerializer):
         fields = ("id", "name", "icon", "programs")
 
     def get_programs(self, obj: ProgramCategory):
-        return ProgramSerializer(obj.programs.filter(active=True), many=True).data
+        return ProgramSerializer(obj.programs.filter(active=True, show_on_current_benefits=True), many=True).data
 
     def get_icon(self, obj: ProgramCategory):
         return obj.icon.name if obj.icon else "default"
@@ -79,4 +79,4 @@ class UrgentNeedTypeSerializer(serializers.ModelSerializer):
         fields = ("id", "name", "icon", "urgent_needs")
 
     def get_urgent_needs(self, obj: UrgentNeedType):
-        return UrgentNeedSerializer(obj.urgent_needs.filter(active=True), many=True).data
+        return UrgentNeedSerializer(obj.urgent_needs.filter(active=True, show_on_current_benefits=True), many=True).data

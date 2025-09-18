@@ -253,6 +253,7 @@ class UrgentNeedAdmin(SecureAdmin):
                     "category_type",
                     "active",
                     "low_confidence",
+                    "show_on_current_benefits",
                     "year",
                     "functions",
                     "counties",
