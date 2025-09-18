@@ -27,7 +27,8 @@ class NCLieap(ProgramCalculator):
         e.condition(has_program_expense)
 
         # Calculate income and limits
-        gross_income, income_limit = self._calculate_income_and_limit()
+        gross_income = self._calculate_gross_income()
+        income_limit = self._calculate_income_limit()
 
         e.condition(gross_income <= income_limit, messages.income(gross_income, income_limit))
 
