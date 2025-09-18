@@ -163,4 +163,4 @@ function initializeAll() {
 }
 
 document.addEventListener("DOMContentLoaded", initializeAll);
-document.body.addEventListener("htmx:afterSwap", initializeAll)
+document.body.addEventListener("htmx:afterSwap", initializeAll);
