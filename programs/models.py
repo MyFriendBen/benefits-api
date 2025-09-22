@@ -1668,11 +1668,10 @@ class ProgramDurationMultiplier(models.Model):
     Stores simple duration multipliers for each program based on research data.
     Used for lifetime benefit value calculations in Phase 1 (simple multiplier approach).
     """
+
     program = models.ForeignKey(Program, on_delete=models.CASCADE, related_name="duration_multipliers")
     white_label = models.ForeignKey(WhiteLabel, on_delete=models.CASCADE, related_name="program_duration_multipliers")
-    average_duration_months = models.FloatField(
-        help_text="Average duration in months based on research data"
-    )
+    average_duration_months = models.FloatField(help_text="Average duration in months based on research data")
     confidence_range_lower = models.FloatField(
         help_text="Lower bound multiplier for confidence range (e.g., 0.67 for -33%)"
     )
@@ -1680,19 +1679,15 @@ class ProgramDurationMultiplier(models.Model):
         help_text="Upper bound multiplier for confidence range (e.g., 1.33 for +33%)"
     )
     data_source = models.CharField(
-        max_length=256,
-        help_text="Source of the duration data (e.g., 'USDA 2024 SNAP Report')"
+        max_length=256, help_text="Source of the duration data (e.g., 'USDA 2024 SNAP Report')"
     )
     last_updated = models.DateTimeField(auto_now=True)
-    notes = models.TextField(
-        blank=True,
-        help_text="Additional notes about the data source or methodology"
-    )
+    notes = models.TextField(blank=True, help_text="Additional notes about the data source or methodology")
 
     class Meta:
-        unique_together = ['program', 'white_label']
+        unique_together = ["program", "white_label"]
         indexes = [
-            models.Index(fields=['program', 'white_label']),
+            models.Index(fields=["program", "white_label"]),
         ]
 
     def __str__(self):
@@ -1704,7 +1699,8 @@ class LifetimeValuePrediction(models.Model):
     Stores lifetime benefit value predictions for caching and tracking.
     Each prediction represents a calculated estimate for a specific household and program.
     """
-    screen = models.ForeignKey('screener.Screen', on_delete=models.CASCADE, related_name="lifetime_predictions")
+
+    screen = models.ForeignKey("screener.Screen", on_delete=models.CASCADE, related_name="lifetime_predictions")
     program = models.ForeignKey(Program, on_delete=models.CASCADE, related_name="lifetime_predictions")
     prediction_date = models.DateTimeField(auto_now_add=True)
 
@@ -1712,44 +1708,33 @@ class LifetimeValuePrediction(models.Model):
     predicted_duration_months = models.FloatField(
         help_text="Predicted duration in months based on multiplier calculation"
     )
-    confidence_interval_lower = models.FloatField(
-        help_text="Lower bound of duration confidence interval in months"
-    )
-    confidence_interval_upper = models.FloatField(
-        help_text="Upper bound of duration confidence interval in months"
-    )
+    confidence_interval_lower = models.FloatField(help_text="Lower bound of duration confidence interval in months")
+    confidence_interval_upper = models.FloatField(help_text="Upper bound of duration confidence interval in months")
     estimated_lifetime_value = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        help_text="Estimated total lifetime benefit value in dollars"
+        max_digits=10, decimal_places=2, help_text="Estimated total lifetime benefit value in dollars"
     )
 
     # AI-generated explanations
-    explanation_text = models.TextField(
-        help_text="User-friendly explanation of the lifetime projection"
-    )
-    risk_assessment = models.TextField(
-        blank=True,
-        help_text="Risk factors that might affect the duration"
-    )
+    explanation_text = models.TextField(help_text="User-friendly explanation of the lifetime projection")
+    risk_assessment = models.TextField(blank=True, help_text="Risk factors that might affect the duration")
 
     # Metadata
     multiplier_version = models.CharField(
-        max_length=32,
-        default='1.0',
-        help_text="Version of the multiplier calculation used"
+        max_length=32, default="1.0", help_text="Version of the multiplier calculation used"
     )
     calculation_method = models.CharField(
         max_length=64,
-        default='simple_multiplier',
-        help_text="Method used for calculation (e.g., 'simple_multiplier', 'ml_model')"
+        default="simple_multiplier",
+        help_text="Method used for calculation (e.g., 'simple_multiplier', 'ml_model')",
     )
 
     class Meta:
         indexes = [
-            models.Index(fields=['screen', 'program']),
-            models.Index(fields=['prediction_date']),
+            models.Index(fields=["screen", "program"]),
+            models.Index(fields=["prediction_date"]),
         ]
 
     def __str__(self):
-        return f"{self.program.name_abbreviated} prediction for Screen {self.screen.id}: ${self.estimated_lifetime_value}"
+        return (
+            f"{self.program.name_abbreviated} prediction for Screen {self.screen.id}: ${self.estimated_lifetime_value}"
+        )

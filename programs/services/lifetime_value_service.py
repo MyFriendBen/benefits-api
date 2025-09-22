@@ -2,6 +2,7 @@
 Lifetime value service for SNAP benefit estimation.
 Orchestrates lifetime benefit value calculation using simple multiplier approach.
 """
+
 from decimal import Decimal
 from typing import Optional
 from programs.models import Program, LifetimeValuePrediction
@@ -19,10 +20,7 @@ class LifetimeValueService:
         self.duration_service = SimpleDurationService()
 
     def generate_prediction(
-        self,
-        screen: Screen,
-        program: Program,
-        monthly_benefit: Decimal
+        self, screen: Screen, program: Program, monthly_benefit: Decimal
     ) -> LifetimeValuePrediction:
         """
         Generate a complete SNAP lifetime benefit value prediction.
@@ -42,8 +40,8 @@ class LifetimeValueService:
         duration_data = self.duration_service.calculate_duration(program, screen.white_label)
 
         # Calculate lifetime value
-        predicted_duration = duration_data['average_duration_months']
-        confidence_range = duration_data['confidence_range']
+        predicted_duration = duration_data["average_duration_months"]
+        confidence_range = duration_data["confidence_range"]
         estimated_lifetime_value = monthly_benefit * Decimal(str(predicted_duration))
 
         # Generate basic explanation (placeholder for AI service integration)
@@ -52,7 +50,7 @@ class LifetimeValueService:
             duration_months=predicted_duration,
             monthly_benefit=monthly_benefit,
             estimated_lifetime_value=estimated_lifetime_value,
-            data_source=duration_data['data_source']
+            data_source=duration_data["data_source"],
         )
 
         # Generate risk assessment
@@ -68,8 +66,8 @@ class LifetimeValueService:
             estimated_lifetime_value=estimated_lifetime_value,
             explanation_text=explanation_text,
             risk_assessment=risk_assessment,
-            multiplier_version='1.0',
-            calculation_method='simple_multiplier'
+            multiplier_version="1.0",
+            calculation_method="simple_multiplier",
         )
 
         return prediction
@@ -80,7 +78,7 @@ class LifetimeValueService:
         duration_months: float,
         monthly_benefit: Decimal,
         estimated_lifetime_value: Decimal,
-        data_source: str
+        data_source: str,
     ) -> str:
         """
         Generate a basic user-friendly explanation for the lifetime projection.
@@ -115,11 +113,7 @@ class LifetimeValueService:
 
         return risk_assessment
 
-    def get_cached_prediction(
-        self,
-        screen: Screen,
-        program: Program
-    ) -> Optional[LifetimeValuePrediction]:
+    def get_cached_prediction(self, screen: Screen, program: Program) -> Optional[LifetimeValuePrediction]:
         """
         Get most recent cached prediction for a screen/program combination.
 
@@ -131,19 +125,15 @@ class LifetimeValueService:
             Most recent LifetimeValuePrediction or None if no cached prediction exists
         """
         try:
-            return LifetimeValuePrediction.objects.filter(
-                screen=screen,
-                program=program
-            ).order_by('-prediction_date').first()
+            return (
+                LifetimeValuePrediction.objects.filter(screen=screen, program=program)
+                .order_by("-prediction_date")
+                .first()
+            )
         except LifetimeValuePrediction.DoesNotExist:
             return None
 
-    def validate_prediction_inputs(
-        self,
-        screen: Screen,
-        program: Program,
-        monthly_benefit: Decimal
-    ) -> bool:
+    def validate_prediction_inputs(self, screen: Screen, program: Program, monthly_benefit: Decimal) -> bool:
         """
         Validate that inputs for prediction generation are valid.
 

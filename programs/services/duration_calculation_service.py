@@ -2,6 +2,7 @@
 Duration calculation service for SNAP lifetime benefit value estimation.
 Implements simple multiplier-based duration calculation based on research data.
 """
+
 from typing import Dict, Any
 from programs.models import Program, ProgramDurationMultiplier
 from screener.models import WhiteLabel
@@ -31,10 +32,7 @@ class SimpleDurationService:
             ProgramDurationMultiplier.DoesNotExist: If no multiplier exists for the program/white_label
         """
         try:
-            multiplier = ProgramDurationMultiplier.objects.get(
-                program=program,
-                white_label=white_label
-            )
+            multiplier = ProgramDurationMultiplier.objects.get(program=program, white_label=white_label)
         except ProgramDurationMultiplier.DoesNotExist:
             raise ValueError(
                 f"No duration multiplier found for program {program.name_abbreviated} "
@@ -47,9 +45,9 @@ class SimpleDurationService:
         upper_bound = average_duration * multiplier.confidence_range_upper
 
         return {
-            'average_duration_months': average_duration,
-            'confidence_range': (lower_bound, upper_bound),
-            'data_source': multiplier.data_source
+            "average_duration_months": average_duration,
+            "confidence_range": (lower_bound, upper_bound),
+            "data_source": multiplier.data_source,
         }
 
     def get_available_programs(self, white_label: WhiteLabel) -> list[Program]:
@@ -80,8 +78,8 @@ class SimpleDurationService:
             duration_data = self.calculate_duration(program, white_label)
 
             # Basic validation checks
-            avg_duration = duration_data['average_duration_months']
-            confidence_range = duration_data['confidence_range']
+            avg_duration = duration_data["average_duration_months"]
+            confidence_range = duration_data["confidence_range"]
 
             # Duration should be positive and reasonable (1 month to 10 years)
             if not (1 <= avg_duration <= 120):

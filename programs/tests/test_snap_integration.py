@@ -2,6 +2,7 @@
 Integration test for SNAP lifetime benefit value calculation.
 Tests the complete flow from household data to lifetime prediction.
 """
+
 from django.test import TestCase
 from decimal import Decimal
 from programs.models import Program, ProgramDurationMultiplier, LifetimeValuePrediction
@@ -16,8 +17,7 @@ class TestSNAPLifetimeValueIntegration(TestCase):
         """Set up realistic household data for SNAP lifetime value testing"""
         # Get or create Colorado white label
         self.white_label, _ = WhiteLabel.objects.get_or_create(
-            code="co",
-            defaults={"name": "Colorado", "state_code": "CO"}
+            code="co", defaults={"name": "Colorado", "state_code": "CO"}
         )
 
         # Get or create SNAP program
@@ -31,12 +31,12 @@ class TestSNAPLifetimeValueIntegration(TestCase):
             program=self.snap_program,
             white_label=self.white_label,
             defaults={
-                'average_duration_months': 15.0,
-                'confidence_range_lower': 0.67,
-                'confidence_range_upper': 1.33,
-                'data_source': 'USDA 2024 SNAP Participation Report - Working Households with Children',
-                'notes': 'Based on research from snap_research_20241219_143052.csv'
-            }
+                "average_duration_months": 15.0,
+                "confidence_range_lower": 0.67,
+                "confidence_range_upper": 1.33,
+                "data_source": "USDA 2024 SNAP Participation Report - Working Households with Children",
+                "notes": "Based on research from snap_research_20241219_143052.csv",
+            },
         )
 
         # Create realistic household screen
@@ -47,7 +47,7 @@ class TestSNAPLifetimeValueIntegration(TestCase):
             county="Denver County",
             household_size=3,
             household_assets=1500,  # Below SNAP asset limits
-            housing_situation="rent"
+            housing_situation="rent",
         )
 
         # Create household members - working parent with two children
@@ -61,7 +61,7 @@ class TestSNAPLifetimeValueIntegration(TestCase):
             disabled=False,
             veteran=False,
             has_income=True,
-            has_expenses=False
+            has_expenses=False,
         )
 
         self.child1 = HouseholdMember.objects.create(
@@ -74,7 +74,7 @@ class TestSNAPLifetimeValueIntegration(TestCase):
             disabled=False,
             veteran=False,
             has_income=False,
-            has_expenses=False
+            has_expenses=False,
         )
 
         self.child2 = HouseholdMember.objects.create(
@@ -87,7 +87,7 @@ class TestSNAPLifetimeValueIntegration(TestCase):
             disabled=False,
             veteran=False,
             has_income=False,
-            has_expenses=False
+            has_expenses=False,
         )
 
     def test_complete_snap_lifetime_value_flow(self):
@@ -99,9 +99,7 @@ class TestSNAPLifetimeValueIntegration(TestCase):
         # Generate lifetime prediction
         service = LifetimeValueService()
         prediction = service.generate_prediction(
-            screen=self.screen,
-            program=self.snap_program,
-            monthly_benefit=monthly_snap_benefit
+            screen=self.screen, program=self.snap_program, monthly_benefit=monthly_snap_benefit
         )
 
         # Verify prediction data
@@ -141,7 +139,7 @@ class TestSNAPLifetimeValueIntegration(TestCase):
             county="Denver County",
             household_size=2,
             household_assets=3000,
-            housing_situation="own"
+            housing_situation="own",
         )
 
         elderly_member = HouseholdMember.objects.create(
@@ -154,7 +152,7 @@ class TestSNAPLifetimeValueIntegration(TestCase):
             disabled=True,  # Elderly and disabled
             veteran=False,
             has_income=True,
-            has_expenses=False
+            has_expenses=False,
         )
 
         # Update duration multiplier for elderly/disabled (longer duration)
@@ -171,9 +169,7 @@ class TestSNAPLifetimeValueIntegration(TestCase):
 
         service = LifetimeValueService()
         prediction = service.generate_prediction(
-            screen=elderly_screen,
-            program=self.snap_program,
-            monthly_benefit=monthly_benefit
+            screen=elderly_screen, program=self.snap_program, monthly_benefit=monthly_benefit
         )
 
         # Should have longer duration and higher lifetime value
@@ -187,9 +183,7 @@ class TestSNAPLifetimeValueIntegration(TestCase):
 
         # Generate first prediction
         prediction1 = service.generate_prediction(
-            screen=self.screen,
-            program=self.snap_program,
-            monthly_benefit=monthly_benefit
+            screen=self.screen, program=self.snap_program, monthly_benefit=monthly_benefit
         )
 
         # Get cached prediction
@@ -206,41 +200,31 @@ class TestSNAPLifetimeValueIntegration(TestCase):
         # Valid inputs
         self.assertTrue(
             service.validate_prediction_inputs(
-                screen=self.screen,
-                program=self.snap_program,
-                monthly_benefit=Decimal("250.00")
+                screen=self.screen, program=self.snap_program, monthly_benefit=Decimal("250.00")
             )
         )
 
         # Invalid monthly benefit (zero)
         self.assertFalse(
             service.validate_prediction_inputs(
-                screen=self.screen,
-                program=self.snap_program,
-                monthly_benefit=Decimal("0.00")
+                screen=self.screen, program=self.snap_program, monthly_benefit=Decimal("0.00")
             )
         )
 
         # Invalid monthly benefit (negative)
         self.assertFalse(
             service.validate_prediction_inputs(
-                screen=self.screen,
-                program=self.snap_program,
-                monthly_benefit=Decimal("-100.00")
+                screen=self.screen, program=self.snap_program, monthly_benefit=Decimal("-100.00")
             )
         )
 
         # Invalid screen (no household size)
         invalid_screen = Screen.objects.create(
-            white_label=self.white_label,
-            completed=True,
-            household_size=None  # Invalid
+            white_label=self.white_label, completed=True, household_size=None  # Invalid
         )
         self.assertFalse(
             service.validate_prediction_inputs(
-                screen=invalid_screen,
-                program=self.snap_program,
-                monthly_benefit=Decimal("250.00")
+                screen=invalid_screen, program=self.snap_program, monthly_benefit=Decimal("250.00")
             )
         )
 
@@ -253,11 +237,7 @@ class TestSNAPLifetimeValueIntegration(TestCase):
 
         # Should raise ValueError when no duration data exists
         with self.assertRaises(ValueError) as context:
-            service.generate_prediction(
-                screen=self.screen,
-                program=test_program,
-                monthly_benefit=Decimal("250.00")
-            )
+            service.generate_prediction(screen=self.screen, program=test_program, monthly_benefit=Decimal("250.00"))
 
         self.assertIn("No duration multiplier found", str(context.exception))
 
@@ -281,9 +261,7 @@ class TestSNAPLifetimeValueIntegration(TestCase):
 
             service = LifetimeValueService()
             prediction = service.generate_prediction(
-                screen=self.screen,
-                program=self.snap_program,
-                monthly_benefit=case["monthly"]
+                screen=self.screen, program=self.snap_program, monthly_benefit=case["monthly"]
             )
 
             self.assertEqual(prediction.estimated_lifetime_value, case["expected"])

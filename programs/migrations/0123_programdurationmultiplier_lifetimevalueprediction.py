@@ -26,21 +26,15 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "average_duration_months",
-                    models.FloatField(
-                        help_text="Average duration in months based on research data"
-                    ),
+                    models.FloatField(help_text="Average duration in months based on research data"),
                 ),
                 (
                     "confidence_range_lower",
-                    models.FloatField(
-                        help_text="Lower bound multiplier for confidence range (e.g., 0.67 for -33%)"
-                    ),
+                    models.FloatField(help_text="Lower bound multiplier for confidence range (e.g., 0.67 for -33%)"),
                 ),
                 (
                     "confidence_range_upper",
-                    models.FloatField(
-                        help_text="Upper bound multiplier for confidence range (e.g., 1.33 for +33%)"
-                    ),
+                    models.FloatField(help_text="Upper bound multiplier for confidence range (e.g., 1.33 for +33%)"),
                 ),
                 (
                     "data_source",
@@ -99,21 +93,15 @@ class Migration(migrations.Migration):
                 ("prediction_date", models.DateTimeField(auto_now_add=True)),
                 (
                     "predicted_duration_months",
-                    models.FloatField(
-                        help_text="Predicted duration in months based on multiplier calculation"
-                    ),
+                    models.FloatField(help_text="Predicted duration in months based on multiplier calculation"),
                 ),
                 (
                     "confidence_interval_lower",
-                    models.FloatField(
-                        help_text="Lower bound of duration confidence interval in months"
-                    ),
+                    models.FloatField(help_text="Lower bound of duration confidence interval in months"),
                 ),
                 (
                     "confidence_interval_upper",
-                    models.FloatField(
-                        help_text="Upper bound of duration confidence interval in months"
-                    ),
+                    models.FloatField(help_text="Upper bound of duration confidence interval in months"),
                 ),
                 (
                     "estimated_lifetime_value",
@@ -125,9 +113,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "explanation_text",
-                    models.TextField(
-                        help_text="User-friendly explanation of the lifetime projection"
-                    ),
+                    models.TextField(help_text="User-friendly explanation of the lifetime projection"),
                 ),
                 (
                     "risk_assessment",

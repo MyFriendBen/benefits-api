@@ -2,6 +2,7 @@
 Demo script to showcase SNAP lifetime benefit value calculation.
 Shows the complete flow from household setup to lifetime prediction.
 """
+
 from django.core.management.base import BaseCommand
 from decimal import Decimal
 from programs.models import Program, ProgramDurationMultiplier
@@ -10,24 +11,20 @@ from screener.models import Screen, WhiteLabel, HouseholdMember
 
 
 class Command(BaseCommand):
-    help = 'Demonstrate SNAP lifetime benefit value calculation with example households'
+    help = "Demonstrate SNAP lifetime benefit value calculation with example households"
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--white-label',
+            "--white-label",
             type=str,
-            default='co',
-            help='White label code to use for demo (default: co)',
+            default="co",
+            help="White label code to use for demo (default: co)",
         )
 
     def handle(self, *args, **options):
-        white_label_code = options.get('white_label', 'co')
+        white_label_code = options.get("white_label", "co")
 
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"🍎 SNAP Lifetime Benefit Value Calculation Demo"
-            )
-        )
+        self.stdout.write(self.style.SUCCESS(f"🍎 SNAP Lifetime Benefit Value Calculation Demo"))
         self.stdout.write("=" * 60)
 
         try:
@@ -38,8 +35,7 @@ class Command(BaseCommand):
             # Check if duration data exists
             try:
                 duration_multiplier = ProgramDurationMultiplier.objects.get(
-                    program=snap_program,
-                    white_label=white_label
+                    program=snap_program, white_label=white_label
                 )
                 self.stdout.write(f"✅ Found duration data: {duration_multiplier}")
             except ProgramDurationMultiplier.DoesNotExist:
@@ -51,33 +47,33 @@ class Command(BaseCommand):
             # Demo scenarios
             scenarios = [
                 {
-                    'name': 'Working Family with Children',
-                    'household_size': 3,
-                    'monthly_benefit': Decimal('275.00'),
-                    'members': [
-                        {'relationship': 'headOfHousehold', 'age': 32, 'disabled': False},
-                        {'relationship': 'child', 'age': 8, 'disabled': False},
-                        {'relationship': 'child', 'age': 5, 'disabled': False},
-                    ]
+                    "name": "Working Family with Children",
+                    "household_size": 3,
+                    "monthly_benefit": Decimal("275.00"),
+                    "members": [
+                        {"relationship": "headOfHousehold", "age": 32, "disabled": False},
+                        {"relationship": "child", "age": 8, "disabled": False},
+                        {"relationship": "child", "age": 5, "disabled": False},
+                    ],
                 },
                 {
-                    'name': 'Elderly Couple',
-                    'household_size': 2,
-                    'monthly_benefit': Decimal('350.00'),
-                    'members': [
-                        {'relationship': 'headOfHousehold', 'age': 68, 'disabled': True},
-                        {'relationship': 'spouse', 'age': 65, 'disabled': False},
-                    ]
+                    "name": "Elderly Couple",
+                    "household_size": 2,
+                    "monthly_benefit": Decimal("350.00"),
+                    "members": [
+                        {"relationship": "headOfHousehold", "age": 68, "disabled": True},
+                        {"relationship": "spouse", "age": 65, "disabled": False},
+                    ],
                 },
                 {
-                    'name': 'Single Parent with Infant',
-                    'household_size': 2,
-                    'monthly_benefit': Decimal('400.00'),
-                    'members': [
-                        {'relationship': 'headOfHousehold', 'age': 24, 'disabled': False},
-                        {'relationship': 'child', 'age': 1, 'disabled': False},
-                    ]
-                }
+                    "name": "Single Parent with Infant",
+                    "household_size": 2,
+                    "monthly_benefit": Decimal("400.00"),
+                    "members": [
+                        {"relationship": "headOfHousehold", "age": 24, "disabled": False},
+                        {"relationship": "child", "age": 1, "disabled": False},
+                    ],
+                },
             ]
 
             service = LifetimeValueService()
@@ -92,32 +88,30 @@ class Command(BaseCommand):
                     completed=True,
                     zipcode="80205",
                     county="Demo County",
-                    household_size=scenario['household_size'],
+                    household_size=scenario["household_size"],
                     household_assets=1000,
-                    housing_situation="rent"
+                    housing_situation="rent",
                 )
 
                 # Create household members
-                for member_data in scenario['members']:
+                for member_data in scenario["members"]:
                     HouseholdMember.objects.create(
                         screen=screen,
-                        relationship=member_data['relationship'],
-                        age=member_data['age'],
-                        disabled=member_data['disabled'],
-                        student=member_data['age'] >= 5 and member_data['age'] <= 18,
+                        relationship=member_data["relationship"],
+                        age=member_data["age"],
+                        disabled=member_data["disabled"],
+                        student=member_data["age"] >= 5 and member_data["age"] <= 18,
                         pregnant=False,
                         unemployed=False,
                         veteran=False,
-                        has_income=member_data['relationship'] == 'headOfHousehold',
-                        has_expenses=False
+                        has_income=member_data["relationship"] == "headOfHousehold",
+                        has_expenses=False,
                     )
 
                 # Generate lifetime prediction
-                monthly_benefit = scenario['monthly_benefit']
+                monthly_benefit = scenario["monthly_benefit"]
                 prediction = service.generate_prediction(
-                    screen=screen,
-                    program=snap_program,
-                    monthly_benefit=monthly_benefit
+                    screen=screen, program=snap_program, monthly_benefit=monthly_benefit
                 )
 
                 # Display results
@@ -128,28 +122,18 @@ class Command(BaseCommand):
                     f"📈 Confidence Range: {prediction.confidence_interval_lower:.1f} - "
                     f"{prediction.confidence_interval_upper:.1f} months"
                 )
-                self.stdout.write(
-                    f"🎯 Estimated Lifetime Value: ${prediction.estimated_lifetime_value:,.2f}"
-                )
+                self.stdout.write(f"🎯 Estimated Lifetime Value: ${prediction.estimated_lifetime_value:,.2f}")
                 self.stdout.write(f"📝 Explanation: {prediction.explanation_text[:100]}...")
 
         except WhiteLabel.DoesNotExist:
-            self.stdout.write(
-                self.style.ERROR(f"❌ White label '{white_label_code}' not found")
-            )
+            self.stdout.write(self.style.ERROR(f"❌ White label '{white_label_code}' not found"))
         except Program.DoesNotExist:
-            self.stdout.write(
-                self.style.ERROR(f"❌ SNAP program '{white_label_code}_snap' not found")
-            )
+            self.stdout.write(self.style.ERROR(f"❌ SNAP program '{white_label_code}_snap' not found"))
         except Exception as e:
-            self.stdout.write(
-                self.style.ERROR(f"❌ Error running demo: {e}")
-            )
+            self.stdout.write(self.style.ERROR(f"❌ Error running demo: {e}"))
 
         self.stdout.write("\n" + "=" * 60)
-        self.stdout.write(
-            self.style.SUCCESS("✅ SNAP Lifetime Benefit Value Demo Complete!")
-        )
+        self.stdout.write(self.style.SUCCESS("✅ SNAP Lifetime Benefit Value Demo Complete!"))
 
         # Show implementation notes
         self.show_implementation_notes()
