@@ -456,6 +456,7 @@ class ProgramDataController(ModelDataController["Program"]):
             "name_abbreviated": str,
             "active": bool,
             "low_confidence": bool,
+            "show_on_current_benefits": bool,
             "documents": list[str],
             "category": Optional[str],
             "required_programs": list[str],
@@ -480,6 +481,7 @@ class ProgramDataController(ModelDataController["Program"]):
             "legal_status_required": self._legal_statuses(),
             "active": program.active,
             "low_confidence": program.low_confidence,
+            "show_on_current_benefits": program.show_on_current_benefits,
             "name_abbreviated": program.name_abbreviated,
             "documents": [d.external_name for d in program.documents.all()],
             "category": (program.category.external_name if program.category is not None else None),
@@ -496,6 +498,7 @@ class ProgramDataController(ModelDataController["Program"]):
         program.name_abbreviated = data["name_abbreviated"]
         program.active = data["active"]
         program.low_confidence = data["low_confidence"]
+        program.show_on_current_benefits = data.get("show_on_current_benefits", True)
         program.value_format = data["value_format"]
 
         # get or create fpl
@@ -585,6 +588,9 @@ class Program(models.Model):
     documents = models.ManyToManyField(Document, related_name="program_documents", blank=True)
     active = models.BooleanField(blank=True, default=True)
     low_confidence = models.BooleanField(blank=True, null=False, default=False)
+    show_on_current_benefits = models.BooleanField(
+        default=True, help_text="Display this program on the current benefits page"
+    )
     year = models.ForeignKey(
         FederalPoveryLimit,
         related_name="fpl",
@@ -870,14 +876,18 @@ class UrgentNeedManager(models.Manager):
         "link",
         "warning",
         "website_description",
+        "notification_message",
     )
     no_auto_fields = ("link",)
+    no_placeholder_fields = ("notification_message",)
 
     def new_urgent_need(self, white_label: str, name: str, phone_number: str):
         translations = {}
         for field in self.translated_fields:
+            default_message = "" if field in self.no_placeholder_fields else BLANK_TRANSLATION_PLACEHOLDER
             translations[field] = Translation.objects.add_translation(
                 f"urgent_need.{name}_temporary_key-{field}",
+                default_message=default_message,
                 no_auto=(field in self.no_auto_fields),
             )
 
@@ -916,6 +926,7 @@ class UrgentNeedDataController(ModelDataController["UrgentNeed"]):
             "phone_number": Optional[str],
             "active": bool,
             "low_confidence": str,
+            "show_on_current_benefits": bool,
             "category_type": Optional[str],
             "categories": CategoriesType,
             "functions": NeedFunctionsType,
@@ -945,6 +956,7 @@ class UrgentNeedDataController(ModelDataController["UrgentNeed"]):
             "phone_number": (str(need.phone_number) if need.phone_number is not None else None),
             "active": need.active,
             "low_confidence": need.low_confidence,
+            "show_on_current_benefits": need.show_on_current_benefits,
             "category_type": (need.category_type.external_name if need.category_type is not None else None),
             "categories": self._category(),
             "functions": self._functions(),
@@ -958,6 +970,7 @@ class UrgentNeedDataController(ModelDataController["UrgentNeed"]):
         need.phone_number = data["phone_number"]
         need.active = data["active"]
         need.low_confidence = data["low_confidence"]
+        need.show_on_current_benefits = data.get("show_on_current_benefits", True)
 
         # get or create fpl
         fpl = data["fpl"]
@@ -1067,6 +1080,9 @@ class UrgentNeed(models.Model):
     )
     active = models.BooleanField(blank=True, null=False, default=True)
     low_confidence = models.BooleanField(blank=True, null=False, default=False)
+    show_on_current_benefits = models.BooleanField(
+        default=True, help_text="Display this urgent need on the current benefits page"
+    )
     functions = models.ManyToManyField(UrgentNeedFunction, related_name="function", blank=True)
     year = models.ForeignKey(
         FederalPoveryLimit,
@@ -1108,6 +1124,13 @@ class UrgentNeed(models.Model):
     website_description = models.ForeignKey(
         Translation,
         related_name="urgent_website_description",
+        blank=False,
+        null=False,
+        on_delete=models.PROTECT,
+    )
+    notification_message = models.ForeignKey(
+        Translation,
+        related_name="urgent_need_notification_message",
         blank=False,
         null=False,
         on_delete=models.PROTECT,

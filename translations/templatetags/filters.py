@@ -6,7 +6,12 @@ register = template.Library()
 
 @register.filter
 def get_updated_label(updated_dates, lang_code, default="Never"):
-    return updated_dates.get(lang_code, default)
+    if not updated_dates:
+        return default
+    date = updated_dates.get(lang_code, default)
+    if hasattr(date, "isoformat"):
+        return date.isoformat()  # return ISO for JS
+    return date or default
 
 
 @register.filter

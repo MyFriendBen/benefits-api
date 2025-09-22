@@ -110,6 +110,13 @@ class CoConfigurationData(ConfigurationData):
                 "_default_message": "Free or low-cost help with civil legal needs or identity documents",
             },
         },
+        "savings": {
+            "icon": {"_icon": "Savings", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.savings",
+                "_default_message": "Saving for college",
+            },
+        },
     }
 
     sign_up_options = {
