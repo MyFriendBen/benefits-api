@@ -15,20 +15,28 @@
       {% if lang == 'en-us' %}
       <div class="level-item">
         <label class="label">
-          <div class="control">
-            <input type="checkbox" id="auto-translate-check" name="auto_translate_check">
-            Auto-translate to all languages (except excluded)
-          </div>
+          Auto-translate to all languages (except excluded)
         </label>
       </div>
-      {% else %}
       <div class="level-item">
-        <label class="label">
-          <div class="exclude-auto-control control" hidden>
-            <input type="checkbox" name="excluded_languages" value="{{ lang }}">
-            Exclude from auto-translate
+        <div class="control">
+          <input type="checkbox" id="auto-translate-check" name="auto_translate_check">
+        </div>
+      </div>
+      {% else %}
+      <div class="exclude-auto-control" hidden>
+        <div class="level">
+          <div class="level-item">
+            <label class="label">
+              Exclude from auto-translate
+            </label>
           </div>
-        </label>
+          <div class="level-item">
+            <div class="control">
+              <input type="checkbox" name="excluded_languages" value="{{ lang }}">
+            </div>
+          </div>
+        </div>
       </div>
       {% endif %}
     </div>
