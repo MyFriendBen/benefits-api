@@ -50,18 +50,18 @@
             </div>
             <div class="level-right">
               <div class="level-item">
-                {% if updated_dates|get_updated_label:lang == "Never" %}
+                {% if updated_dates|get_datetime_label:lang == "Never" %}
                 <span class="tag is-Warning"><strong>Never Updated</strong></span>
                 {% else %}
-                <span class="tag is-Warning"><strong>
+                <strong><span class="utc-date tag is-Warning" data-utc-date="{{ updated_dates|get_datetime_label:lang }}">
                   {% if translation|get_update_type:lang or lang == "en-us" %}
                     Manual
                   {% else %}
                     Auto
                   {% endif %}
-                  update applied at {{ updated_dates|get_updated_label:lang }}
+                  update applied at {{ updated_dates|get_datetime_label:lang }}
                 {% endif %}
-                </strong></span>
+                </span></strong>
               </div>
             </div>
           </div>

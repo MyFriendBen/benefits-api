@@ -165,7 +165,7 @@ function formatDates() {
         timeZoneName: "short"
       }).format(d);
       
-      el.textContent = formatted;
+      el.textContent = el.textContent.replace(iso, formatted);
     } catch (e) {
       console.error("Error formatting date:", e);
     }
