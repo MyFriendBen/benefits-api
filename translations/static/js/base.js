@@ -103,6 +103,24 @@ function initializeDropdowns() {
   });
 }
 
+function setupAutoTranslateToggle() {
+  const autoCheckbox = document.querySelector('#auto-translate-check');
+  const updateBtn = autoCheckbox?.closest('form')?.querySelector('#lang-submit-btn');
+  const excludeControls = document.querySelectorAll('.exclude-auto-control');
+
+  if (!autoCheckbox || !updateBtn) return;
+
+  autoCheckbox.addEventListener('change', () => {
+    if (autoCheckbox.checked) {
+      excludeControls.forEach(div => div.removeAttribute('hidden'));
+      updateBtn.textContent = 'Update All Texts';
+    } else {
+      excludeControls.forEach(div => div.setAttribute('hidden', ''));
+      updateBtn.textContent = 'Update Text';
+    }
+  });
+}
+
 function checkDropdownPosition(dropdown, dropdownContent) {
   if (!dropdownContent) return;
   let dropdownRect = dropdown.getBoundingClientRect();
@@ -147,7 +165,7 @@ function formatDates() {
         timeZoneName: "short"
       }).format(d);
       
-      el.textContent = formatted;
+      el.textContent = el.textContent.replace(iso, formatted);
     } catch (e) {
       console.error("Error formatting date:", e);
     }
@@ -155,7 +173,8 @@ function formatDates() {
 }
 window.formatDates = formatDates;
 
-function initializeAll() {  
+function initializeAll() {
+  try { setupAutoTranslateToggle(); } catch (e) { console.warn("setupAutoTranslateToggle error:", e); }
   try { initializeTableSorting(); } catch (e) { console.warn("initializeTableSorting error:", e); }
   try { initializeSidebarMenu(); } catch (e) { console.warn("initializeSidebarMenu error:", e); }
   try { initializeDropdowns(); } catch (e) { console.warn("initializeDropdowns error:", e); }

@@ -10,20 +10,18 @@
       </div>
       <div class="level-right">
         <div class="level-item">
-          <label class="label">
-            Last Updated:
-            <span class="utc-date" data-utc-date="{{ updated_dates|get_updated_label:lang }}">
-              {{ updated_dates|get_updated_label:lang }}
-            </span>
-          </label>
-        </div>
-        <div class="level-item">
-          <label class="label">Update Type: {% if translation|get_update_type:lang %}
-            Manual
+          {% if updated_dates|get_datetime_label:lang == "Never" %}
+          <span class="tag is-Warning"><strong>Never Updated</strong></span>
           {% else %}
-            Auto
+          <strong><span class="tag is-Warning utc-date" data-utc-date="{{ updated_dates|get_datetime_label:lang }}">
+            {% if translation|get_update_type:lang or lang == "en-us" %}
+              Manual
+            {% else %}
+              Auto
+            {% endif %}
+            update applied at {{ updated_dates|get_datetime_label:lang }}
           {% endif %}
-          </label>
+          </span></strong>
         </div>
       </div>
     </div>
@@ -32,6 +30,9 @@
       hx-post="{{ translation.id }}/{{ lang }}"
       hx-target="#languages"
       hx-swap="outerHTML"
+      {% if lang == "en-us" %}
+        hx-include="[name='excluded_languages']"
+      {% endif %}
     >
       {% include "./lang_form.html" with lang=lang form=form %}
     </form>

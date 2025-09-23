@@ -5,13 +5,12 @@ register = template.Library()
 
 
 @register.filter
-def get_updated_label(updated_dates, lang_code, default="Never"):
-    if not updated_dates:
+def get_datetime_label(history_date, lang_code=None, default="Never"):
+    if not history_date:
         return default
-    date = updated_dates.get(lang_code, default)
-    if hasattr(date, "isoformat"):
-        return date.isoformat()  # return ISO for JS
-    return date or default
+
+    date = history_date.get(lang_code, default) if lang_code else history_date
+    return date.isoformat() if hasattr(date, "isoformat") else (date or default)
 
 
 @register.filter
