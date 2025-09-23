@@ -25,7 +25,11 @@ def propagate_navigator_order_across_white_label(sender, instance: Program, acti
 
     Guards against recursion using a thread-local flag.
     """
-    if action not in {"post_add", "post_remove", "post_clear"}:
+    if action not in {"post_add", "post_remove"}:
+        return
+    # Do not propagate on clear to avoid wiping siblings.
+    # # Reordering via admin typically triggers add/remove as well.
+    if action == "post_clear":
         return
 
     # Avoid infinite loops if we are updating siblings programmatically
@@ -34,6 +38,7 @@ def propagate_navigator_order_across_white_label(sender, instance: Program, acti
 
     # Determine the canonical ordered list from the instance as it currently is
     ordered_ids = list(instance.navigators_sorted.values_list("id", flat=True))
+    rank = {nid: idx for idx, nid in enumerate(ordered_ids)}
 
     # Propagate to sibling Programs
     try:
@@ -41,9 +46,9 @@ def propagate_navigator_order_across_white_label(sender, instance: Program, acti
         siblings = Program.objects.filter(white_label=instance.white_label).exclude(pk=instance.pk)
         for p in siblings:
             current_ids = list(p.navigators_sorted.values_list("id", flat=True))
-            # Skip if the order is already identical to avoid redundant writes and signal churn
-            if current_ids == ordered_ids:
-                continue
-            p.navigators_sorted.set(ordered_ids)
+            # Reorder only the existing members of p using the canonical order; do not change membership.
+            reordered = sorted(current_ids, key=lambda i: (rank.get(i, 10**9), i))
+            if reordered != current_ids:
+                p.navigators_sorted.set(reordered)
     finally:
         _set_syncing(False)

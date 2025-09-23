@@ -339,7 +339,11 @@ def eligibility_results(screen: Screen, batch=False):
         if eligibility.eligible:
             # Start from the canonical ordered list; fallback to legacy relation if empty.
             # Fetch counties/languages per-program to keep queries efficient without breaking sort order.
-            ordered = list(program.navigators_sorted.all().prefetch_related("counties", "languages"))
+            ordered = list(
+                Navigator.objects.filter(programs_sorted=program)
+                .order_by("id")
+                .prefetch_related("counties", "languages")
+            )
             if not ordered:
                 ordered = list(
                     Navigator.objects.filter(programs=program).order_by("id").prefetch_related("counties", "languages")
@@ -357,9 +361,11 @@ def eligibility_results(screen: Screen, batch=False):
             if referrer is None:
                 navigators = county_navigators
             else:
-                allowed = set(referrer.primary_navigators.all())
-                referrer_ordered_subset = [nav for nav in county_navigators if nav in allowed]
-                navigators = referrer_ordered_subset if referrer_ordered_subset else county_navigators
+                allowed_ids = set(
+                    referrer.primary_navigators.filter(white_label=program.white_label).values_list("id", flat=True)
+                )
+                referrer_ordered_subset = [nav for nav in county_navigators if nav.id in allowed_ids]
+                navigators = referrer_ordered_subset or county_navigators
 
             for warning in program.warning_messages.all():
                 if warning.calculator not in warning_calculators:

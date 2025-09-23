@@ -61,9 +61,9 @@ class SecureAdmin(ModelAdmin):
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
 
-        for field_name in form.base_fields:
-            field = form.base_fields[field_name]
-            if isinstance(field, forms.ModelChoiceField):
+        for field_name, field in form.base_fields.items():
+            # Scope any queryset-backed field (covers ModelChoiceField and ModelMultipleChoiceField)
+            if hasattr(field, "queryset"):
                 self._set_select_queryset(field_name, field, obj, request)
 
         return form
