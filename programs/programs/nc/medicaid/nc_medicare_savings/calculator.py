@@ -1,22 +1,12 @@
-from programs.programs.calc import MemberEligibility, ProgramCalculator
+from programs.programs.calc import MemberEligibility
+from programs.programs.federal.medicare_savings.calculator import MedicareSavings
 from typing import ClassVar
 
 
-class MedicareSavingsNC(ProgramCalculator):
-    eligible_insurance_types: ClassVar[tuple[str, ...]] = (
-        "none",
-        "employer",
-        "private",
-        "medicare",
-    )
+class MedicareSavingsNC(MedicareSavings):
     ineligible_insurance_types: ClassVar[tuple[str, ...]] = ("va", "medicaid")
     asset_limit: ClassVar[dict[str, int]] = {"single": 9_660, "married": 14_470}
-    min_age: ClassVar[int] = 65
     min_income_percent: ClassVar[float] = 1.0
-    max_income_percent: ClassVar[float] = 1.35
-    member_amount: ClassVar[int] = 185 * 12
-    earned_income_disregard: ClassVar[float] = 65
-    general_income_disregard: ClassVar[int] = 20
 
     dependencies: ClassVar[list[str]] = [
         "household_assets",
@@ -28,10 +18,8 @@ class MedicareSavingsNC(ProgramCalculator):
     ]
 
     def member_eligible(self, e: MemberEligibility):
+        super().member_eligible(e)
         member = e.member
-
-        # age
-        e.condition(member.age >= self.min_age)
 
         # not on benefits
         e.condition(not self.screen.has_benefit("aca"))
