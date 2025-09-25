@@ -308,6 +308,8 @@ class NcConfigurationData(ConfigurationData):
         "tl": "Tagalog",
         "ko": "한국어",
         "ur": "اردو",
+        "pt": "português",
+        "ht": "Kreyòl",
     }
 
     income_options = {

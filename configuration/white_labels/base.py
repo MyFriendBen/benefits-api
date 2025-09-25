@@ -132,6 +132,8 @@ class ConfigurationData:
         "pl": "Polski",
         "tl": "Tagalog",
         "ko": "한국어",
+        "pt": "português",
+        "ht": "Kreyòl",
     }
 
     income_options = {
