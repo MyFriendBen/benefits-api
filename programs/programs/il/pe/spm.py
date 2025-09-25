@@ -1,3 +1,4 @@
+from programs.programs.policyengine.calculators.base import PolicyEngineSpmCalulator
 import programs.programs.policyengine.calculators.dependencies as dependency
 from programs.programs.federal.pe.spm import Snap, SchoolLunch, Tanf
 
@@ -48,3 +49,21 @@ class IlTanf(Tanf):
     ]
 
     pe_outputs = [dependency.spm.IlTanf]
+
+
+class IlLiheap(PolicyEngineSpmCalulator):
+    """
+    Illinois Low Income Home Energy Assistance Program (LIHEAP)
+
+    Uses PolicyEngine calculation for accurate LIHEAP benefit determination
+    based on IRS gross income and housing costs.
+    """
+    pe_name = "il_liheap"
+    pe_inputs = [
+        dependency.household.IlStateCodeDependency,
+        dependency.spm.HousingCostDependency,
+        *dependency.irs_gross_income,
+    ]
+    pe_outputs = [dependency.spm.IlLiheap]
+
+    # TODO: Add hard-coded benefit values listed on ticket
