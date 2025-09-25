@@ -223,7 +223,7 @@ LANGUAGES = (
     ("tl", _("Tagalog")),
     ("ko", _("Korean")),
     ("ur", _("Urdu")),
-    ("pt-br", _("Brazilian Portuguese")),
+    ("pt-BR", _("Brazilian Portuguese")),
     ("ht", _("Haitian Creole")),
 )
 
@@ -253,7 +253,7 @@ PARLER_LANGUAGES = {
         {"code": "tl"},
         {"code": "ko"},
         {"code": "ur"},
-        {"code": "pt-br"},
+        {"code": "pt-BR"},
         {"code": "ht"},
     ),
     "default": {

@@ -173,7 +173,7 @@ class MaConfigurationData(ConfigurationData):
         "tl": "Tagalog",
         "ko": "한국어",
         "ur": "اردو",
-        "pt-br": "Português Brasileiro",
+        "pt-BR": "Português Brasileiro",
         "ht": "Kreyòl",
     }
 
