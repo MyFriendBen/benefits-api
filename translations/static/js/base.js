@@ -104,19 +104,21 @@ function initializeDropdowns() {
 }
 
 function setupAutoTranslateToggle() {
-  const autoCheckbox = document.querySelector('#auto-translate-check');
-  const updateBtn = autoCheckbox?.closest('form')?.querySelector('#lang-submit-btn');
-  const excludeControls = document.querySelectorAll('.exclude-auto-control');
+  const autoCheckbox = document.querySelector("#auto-translate-check");
+  const updateBtn = autoCheckbox
+    ?.closest("form")
+    ?.querySelector("#lang-submit-btn");
+  const excludeControls = document.querySelectorAll(".exclude-auto-control");
 
   if (!autoCheckbox || !updateBtn) return;
 
-  autoCheckbox.addEventListener('change', () => {
+  autoCheckbox.addEventListener("change", () => {
     if (autoCheckbox.checked) {
-      excludeControls.forEach(div => div.removeAttribute('hidden'));
-      updateBtn.textContent = 'Update All Texts';
+      excludeControls.forEach((div) => div.removeAttribute("hidden"));
+      updateBtn.textContent = "Update All Texts";
     } else {
-      excludeControls.forEach(div => div.setAttribute('hidden', ''));
-      updateBtn.textContent = 'Update Text';
+      excludeControls.forEach((div) => div.setAttribute("hidden", ""));
+      updateBtn.textContent = "Update Text";
     }
   });
 }
@@ -135,36 +137,36 @@ function checkDropdownPosition(dropdown, dropdownContent) {
 }
 
 // Convert UTC ISO in data-utc-date to browser timezone
-function formatDates() {  
-  const els = document.querySelectorAll(".utc-date");  
-  
+function formatDates() {
+  const els = document.querySelectorAll(".utc-date");
+
   if (els.length === 0) {
     return;
   }
-  
+
   els.forEach(function (el, index) {
-    const iso = el.getAttribute("data-utc-date");    
-    
+    const iso = el.getAttribute("data-utc-date");
+
     if (!iso || iso === "Never") {
       return;
     }
-    
+
     try {
       const d = new Date(iso);
       if (isNaN(d.getTime())) {
         return;
       }
-      
+
       const formatted = new Intl.DateTimeFormat(navigator.language, {
-        year: "numeric", 
-        month: "short", 
+        year: "numeric",
+        month: "short",
         day: "numeric",
-        hour: "numeric", 
-        minute: "numeric", 
-        hour12: true, 
-        timeZoneName: "short"
+        hour: "numeric",
+        minute: "numeric",
+        hour12: true,
+        timeZoneName: "short",
       }).format(d);
-      
+
       el.textContent = el.textContent.replace(iso, formatted);
     } catch (e) {
       console.error("Error formatting date:", e);
@@ -174,10 +176,26 @@ function formatDates() {
 window.formatDates = formatDates;
 
 function initializeAll() {
-  try { setupAutoTranslateToggle(); } catch (e) { console.warn("setupAutoTranslateToggle error:", e); }
-  try { initializeTableSorting(); } catch (e) { console.warn("initializeTableSorting error:", e); }
-  try { initializeSidebarMenu(); } catch (e) { console.warn("initializeSidebarMenu error:", e); }
-  try { initializeDropdowns(); } catch (e) { console.warn("initializeDropdowns error:", e); }
+  try {
+    setupAutoTranslateToggle();
+  } catch (e) {
+    console.warn("setupAutoTranslateToggle error:", e);
+  }
+  try {
+    initializeTableSorting();
+  } catch (e) {
+    console.warn("initializeTableSorting error:", e);
+  }
+  try {
+    initializeSidebarMenu();
+  } catch (e) {
+    console.warn("initializeSidebarMenu error:", e);
+  }
+  try {
+    initializeDropdowns();
+  } catch (e) {
+    console.warn("initializeDropdowns error:", e);
+  }
   formatDates();
 }
 
