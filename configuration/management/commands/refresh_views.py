@@ -1,7 +1,6 @@
-from sqlite3 import DatabaseError
+from django.db.utils import DatabaseError, ProgrammingError
 from django.core.management.base import BaseCommand, CommandError
 from django.db import connection
-from django.db.utils import ProgrammingError
 
 
 VIEWS = [
