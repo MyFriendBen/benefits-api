@@ -5,6 +5,7 @@ from django.db.utils import ProgrammingError
 
 
 VIEWS = [
+    "data_referrer_codes",
     "data",
     "data_current_benefits",
     "data_householdmembers",
