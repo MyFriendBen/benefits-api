@@ -1,3 +1,6 @@
+from programs.programs.nc.medicaid.nc_medicare_savings.calculator import (
+    MedicareSavingsNC,
+)
 from programs.programs.nc.nc_aca.calculator import ACASubsidiesNC
 from .nc_weatherization.calculator import NCWeatherization
 from .nc_lieap.calculator import NCLieap
@@ -15,4 +18,5 @@ nc_calculators: dict[str, type[ProgramCalculator]] = {
     "ncwap": NCWeatherization,
     "nc_aca_mfb_version": ACASubsidiesNC,  # TODO: remove when it is fixed in PE
     "nc_fps": NCFamilyPlanningServices,
+    "nc_medicare_savings": MedicareSavingsNC,
 }
