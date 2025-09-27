@@ -52,16 +52,6 @@
               <div class="level-item">
                 {% if updated_dates|get_datetime_label:lang == "Never" %}
                 <span class="tag is-Warning"><strong>Never Updated</strong></span>
-                <label class="label">
-                Last Updated:
-                  <span class="utc-date" data-utc-date="{{ updated_dates|get_updated_label:lang }}">
-                    {{ updated_dates|get_updated_label:lang }}
-                  </span>
-                </label>                
-              </div>
-              <div class="level-item">
-                <label class="label">Update Type: {% if translation|get_update_type:lang %}
-                  Manual
                 {% else %}
                 <strong><span class="utc-date tag is-Warning" data-utc-date="{{ updated_dates|get_datetime_label:lang }}">
                   {% if translation|get_update_type:lang or lang == "en-us" %}
