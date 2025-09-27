@@ -11,4 +11,5 @@ urlpatterns = [
     path("", include(router.urls)),
     path("api-auth/", include("rest_framework.urls", namespace="rest_framework")),
     path("eligibility/<id>", views.EligibilityTranslationView.as_view(), name="translated screen eligibility endpoint"),
+    path("screens/<uuid:screen_id>/results/benefits/<int:program_id>/", views.ProgramSpecificEligibilityView.as_view(), name="program-specific eligibility endpoint"),
 ]

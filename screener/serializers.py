@@ -443,3 +443,18 @@ class ResultsSerializer(serializers.Serializer):
     validations = ValidationSerializer(many=True)
     program_categories = ProgramCategorySerializer(many=True)
     pe_data = serializers.DictField(required=False, allow_null=True)
+
+
+class ProgramSpecificResultsSerializer(serializers.Serializer):
+    """
+    Serializer for program-specific eligibility results matching API specification.
+    """
+    screen_id = serializers.CharField()
+    program_id = serializers.CharField()
+    calculation_date = serializers.DateTimeField()
+    user_language = serializers.CharField()
+    annual_estimate = EligibilitySerializer()
+    lifetime_projection = serializers.DictField(required=False, allow_null=True)
+    api_version = serializers.CharField(default="2.1")
+    response_time_ms = serializers.IntegerField(required=False)
+    cached_result = serializers.BooleanField(default=False)
