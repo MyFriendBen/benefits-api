@@ -69,7 +69,9 @@ class NCLieap(ProgramCalculator):
             earned_income -= earned_income * NCLieap.earned_deduction
 
         # Calculate gross income
-        gross_income = ((earned_income + unearned_income) - childcare_expenses) - medical_deduction_senior_disabled
+        gross_income = max(
+            0, (earned_income + unearned_income) - childcare_expenses - medical_deduction_senior_disabled
+        )
 
         return gross_income
 
