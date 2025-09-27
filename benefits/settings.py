@@ -223,6 +223,8 @@ LANGUAGES = (
     ("tl", _("Tagalog")),
     ("ko", _("Korean")),
     ("ur", _("Urdu")),
+    ("pt-BR", _("Brazilian Portuguese")),
+    ("ht", _("Haitian Creole")),
 )
 
 TIME_ZONE = "UTC"
@@ -251,6 +253,8 @@ PARLER_LANGUAGES = {
         {"code": "tl"},
         {"code": "ko"},
         {"code": "ur"},
+        {"code": "pt-BR"},
+        {"code": "ht"},
     ),
     "default": {
         "fallbacks": ["en-us"],  # defaults to PARLER_DEFAULT_LANGUAGE_CODE
