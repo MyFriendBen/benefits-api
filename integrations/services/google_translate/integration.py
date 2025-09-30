@@ -45,6 +45,14 @@ class Translate:
         creds = service_account.Credentials.from_service_account_info(info)
         self.client = translate.Client(credentials=creds)
 
+    LANGUAGE_CODE_MAPPING = {
+        "pt-br": "pt",  # Map pt-br to pt for Google Translate
+        "en-us": "en",
+    }
+
+    def _map_language_code(self, lang_code):
+        return self.LANGUAGE_CODE_MAPPING.get(lang_code, lang_code)
+
     def translate(self, lang: str, text: str):
         """
         Translates the text from the default language to the lang param language, preserving paragraph structure.
@@ -59,14 +67,6 @@ class Translate:
         # Delegate to bulk_translate for consistency and DRYness
         result = self.bulk_translate([lang], [text])
         return result[text][lang]
-
-    LANGUAGE_CODE_MAPPING = {       
-        'pt-BR': 'pt',  # Map pt-br to pt for Google Translate
-        'en-us': 'en',    
-    }
-
-    def _map_language_code(self, lang_code):
-        return self.LANGUAGE_CODE_MAPPING.get(lang_code, lang_code)
 
     def bulk_translate(self, langs: list[str], texts: list[str]):
         """
@@ -83,6 +83,7 @@ class Translate:
 
             # Use mapped code for Google Translate
             google_lang = self._map_language_code(lang)
+            google_source = self._map_language_code(Translate.main_language)
 
             # For each text, split into paragraphs, translate, and rejoin
             for text in texts:
@@ -90,7 +91,9 @@ class Translate:
 
                 try:
                     results = self.client.translate(
-                        paragraphs, target_language=google_lang, source_language=self._map_language_code(Translate.main_language)
+                        paragraphs,
+                        target_language=google_lang,
+                        source_language=google_source,
                     )
                 except Exception as e:
                     capture_exception(e, level="error")

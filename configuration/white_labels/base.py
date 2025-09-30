@@ -132,7 +132,7 @@ class ConfigurationData:
         "pl": "Polski",
         "tl": "Tagalog",
         "ko": "한국어",
-        "pt-BR": "Português Brasileiro",
+        "pt-br": "Português Brasileiro",
         "ht": "Kreyòl",
     }
 

@@ -203,7 +203,7 @@ class IlConfigurationData(ConfigurationData):
         "tl": "Tagalog",
         "ko": "한국어",
         "ur": "اردو",
-        "pt-BR": "Português Brasileiro",
+        "pt-br": "Português Brasileiro",
         "ht": "Kreyòl",
     }
 
