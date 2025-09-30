@@ -60,6 +60,14 @@ class Translate:
         result = self.bulk_translate([lang], [text])
         return result[text][lang]
 
+    LANGUAGE_CODE_MAPPING = {       
+        'pt-BR': 'pt',  # Map pt-br to pt for Google Translate
+        'en-us': 'en',    
+    }
+
+    def _map_language_code(self, lang_code):
+        return self.LANGUAGE_CODE_MAPPING.get(lang_code, lang_code)
+
     def bulk_translate(self, langs: list[str], texts: list[str]):
         """
         Translates all of the texts to the target langs, preserving paragraph structure for each text.
@@ -73,13 +81,16 @@ class Translate:
             if lang not in Translate.languages:
                 raise Exception(f"{lang} is not configured in settings, or is the default language")
 
+            # Use mapped code for Google Translate
+            google_lang = self._map_language_code(lang)
+
             # For each text, split into paragraphs, translate, and rejoin
             for text in texts:
                 paragraphs = self.split_paragraphs(text)
 
                 try:
                     results = self.client.translate(
-                        paragraphs, target_language=lang, source_language=Translate.main_language
+                        paragraphs, target_language=google_lang, source_language=self._map_language_code(Translate.main_language)
                     )
                 except Exception as e:
                     capture_exception(e, level="error")
