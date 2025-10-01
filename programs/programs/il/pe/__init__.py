@@ -20,6 +20,7 @@ il_spm_calculators = {
     "il_snap": spm.IlSnap,
     "il_nslp": spm.IlNslp,
     "il_tanf": spm.IlTanf,
+    "il_lifeline": spm.IlLifeline,
 }
 
 il_pe_calculators: dict[str, type[PolicyEngineCalulator]] = {

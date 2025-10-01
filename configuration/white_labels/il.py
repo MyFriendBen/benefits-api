@@ -2316,8 +2316,11 @@ class IlConfigurationData(ConfigurationData):
         },
         "housingAndUtilities": {
             "benefits": {
-                "lifeline": {
-                    "name": {"_label": "housingAndUtilities.lifeline", "_default_message": "Lifeline: "},
+                "il_lifeline": {
+                    "name": {
+                        "_label": "housingAndUtilities.lifeline",
+                        "_default_message": "Lifeline: ",
+                    },
                     "description": {
                         "_label": "housingAndUtilities.lifeline_desc",
                         "_default_message": "Phone or internet discount",
@@ -2372,7 +2375,10 @@ class IlConfigurationData(ConfigurationData):
                     },
                 },
             },
-            "category_name": {"_label": "cashAssistance", "_default_message": "Cash Assistance"},
+            "category_name": {
+                "_label": "cashAssistance",
+                "_default_message": "Cash Assistance",
+            },
         },
         "transportation": {
             "benefits": {
@@ -2397,7 +2403,10 @@ class IlConfigurationData(ConfigurationData):
                     },
                 },
             },
-            "category_name": {"_label": "transportation", "_default_message": "Transportation"},
+            "category_name": {
+                "_label": "transportation",
+                "_default_message": "Transportation",
+            },
         },
         "taxCredits": {
             "benefits": {
@@ -2442,7 +2451,10 @@ class IlConfigurationData(ConfigurationData):
                     },
                 },
             },
-            "category_name": {"_label": "taxCredits", "_default_message": "Tax Credits"},
+            "category_name": {
+                "_label": "taxCredits",
+                "_default_message": "Tax Credits",
+            },
         },
         "healthCare": {
             "benefits": {

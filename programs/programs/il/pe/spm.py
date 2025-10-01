@@ -51,18 +51,21 @@ class IlTanf(Tanf):
 
 
 class IlLifeline(Lifeline):
-    pe_name = "lifeline"
     pe_inputs = [
         dependency.spm.BroadbandCostDependency,
         *dependency.irs_gross_income,
-        dependency.spm.Snap,
     ]
     pe_outputs = [dependency.spm.Lifeline]
 
     def postprocess(self, inputs, outputs):
+        print("IL Lifeline postprocess")
         lifeline = outputs[dependency.spm.Lifeline]
         income = inputs["irs_gross_income"]
         fpl = inputs["fpl"]
-        snap = inputs[dependency.spm.Snap]
 
-        return income <= 1.35 * fpl or snap
+        has_disability = any(m.has_disability() for m in self.screen.household_members.all())
+        fpl_threshold = 2.0 if has_disability else 1.65
+
+        eligible = income <= fpl_threshold * fpl
+
+        return lifeline if eligible else 0
