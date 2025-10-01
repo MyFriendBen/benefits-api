@@ -39,7 +39,7 @@ EXTRA_LANG_INFO = {
         "code": "ht",
         "name": "Haitian Creole",
         "name_local": "Kreyòl ayisyen",
-    }
+    },
 }
 
 DJANGO_LANG_INFO.update(EXTRA_LANG_INFO)
