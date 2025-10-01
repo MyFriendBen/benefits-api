@@ -34,6 +34,12 @@ EXTRA_LANG_INFO = {
         "name": "Somali",
         "name_local": "Soomaali",
     },
+    "ht": {
+        "bidi": False,
+        "code": "ht",
+        "name": "Haitian Creole",
+        "name_local": "Kreyòl ayisyen",
+    }
 }
 
 DJANGO_LANG_INFO.update(EXTRA_LANG_INFO)
