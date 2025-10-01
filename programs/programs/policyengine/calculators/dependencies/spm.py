@@ -156,6 +156,10 @@ class Lifeline(SpmUnit):
     field = "lifeline"
 
 
+class IlLifeline(SpmUnit):
+    field = "il_lifeline"
+
+
 class Tanf(SpmUnit):
     field = "tanf"
 
@@ -223,7 +227,9 @@ class NcTanfCountableGrossUnearnedIncomeDependency(SpmUnit):
     def value(self):
         return int(
             self.screen.calc_gross_income(
-                "yearly", ["unearned"], exclude=["sSI", "gifts", "cashAssistance", "cOSDisability"]
+                "yearly",
+                ["unearned"],
+                exclude=["sSI", "gifts", "cashAssistance", "cOSDisability"],
             )
         )
 
@@ -407,8 +413,8 @@ class MaEaedcNonFinancialCriteria(SpmUnit):
         return False
 
 
-class MaEaedc(SpmUnit):
-    field = "ma_eaedc"
+# class MaEaedc(SpmUnit):
+#     field = "ma_eaedc"
 
 
 class CashAssetsDependency(SpmUnit):

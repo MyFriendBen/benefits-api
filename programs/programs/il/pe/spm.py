@@ -1,5 +1,5 @@
 import programs.programs.policyengine.calculators.dependencies as dependency
-from programs.programs.federal.pe.spm import Snap, SchoolLunch, Tanf
+from programs.programs.federal.pe.spm import Lifeline, Snap, SchoolLunch, Tanf
 
 
 class IlSnap(Snap):
@@ -48,3 +48,24 @@ class IlTanf(Tanf):
     ]
 
     pe_outputs = [dependency.spm.IlTanf]
+
+
+class IlLifeline(Lifeline):
+    pe_inputs = [
+        dependency.spm.BroadbandCostDependency,
+        *dependency.irs_gross_income,
+    ]
+    pe_outputs = [dependency.spm.Lifeline]
+
+    def postprocess(self, inputs, outputs):
+        print("IL Lifeline postprocess")
+        lifeline = outputs[dependency.spm.Lifeline]
+        income = inputs["irs_gross_income"]
+        fpl = inputs["fpl"]
+
+        has_disability = any(m.has_disability() for m in self.screen.household_members.all())
+        fpl_threshold = 2.0 if has_disability else 1.65
+
+        eligible = income <= fpl_threshold * fpl
+
+        return lifeline if eligible else 0
