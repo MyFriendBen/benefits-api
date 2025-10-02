@@ -9,6 +9,7 @@ calculators: dict[str, type[ProgramCalculator]] = {
     **co_calculators,
     **nc_calculators,
     **il_calculators,
+    **tx_calculators,
     **federal_calculators,
     **dev_calculators,
 }
