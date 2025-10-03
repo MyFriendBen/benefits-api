@@ -1,4 +1,5 @@
 from screener.models import WhiteLabel
+from .base import ConfigurationData
 
 
 class TxConfigurationData(ConfigurationData):
@@ -6,7 +7,7 @@ class TxConfigurationData(ConfigurationData):
 
     @classmethod
     def get_white_label(self) -> WhiteLabel:
-        raise NotImplemented()
+        return WhiteLabel.objects.get(code="tx")
 
     state = {"name": "Texas"}
 
@@ -2816,20 +2817,23 @@ class TxConfigurationData(ConfigurationData):
 
     #TODO
     category_benefits = {
-        "[REPLACE_ME]": {
+        "foodAndNutrition": {
             "benefits": {
-                "[REPLACE_ME]": {
+                "snap": {
                     "name": {
-                        "_label": "",
-                        "_default_message": "",
+                        "_label": "foodAndNutritionBenefits.snap",
+                        "_default_message": "Supplemental Nutrition Assistance Program (SNAP): ",
                     },
                     "description": {
-                        "_label": "",
-                        "_default_message": "",
+                        "_label": "foodAndNutritionBenefits.snap_desc",
+                        "_default_message": "Food assistance",
                     },
                 },
             },
-            "category_name": {"_label": "", "_default_message": ""},
+            "category_name": {
+                "_label": "foodAndNutrition",
+                "_default_message": "Food and Nutrition",
+            },
         },
     }
 
@@ -2846,7 +2850,7 @@ class TxConfigurationData(ConfigurationData):
     referrer_data = {
         "theme": {"default": "default"},
         "logoSource": {
-            "default": "MFB_Logo",
+            "default": "MFB_TXLogo",
         },
         "logoAlt": {
             "default": {"id": "referrerHook.logoAlts.default", "defaultMessage": "MyFriendBen home page button"},
