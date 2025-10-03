@@ -118,14 +118,38 @@ class TxConfigurationData(ConfigurationData):
             "_label": "relationshipOptions.fosterChildOrKinshipChild",
             "_default_message": "Foster Child / Kinship Care",
         },
-        "stepChild": {"_label": "relationshipOptions.stepChild", "_default_message": "Step-child"},
-        "grandChild": {"_label": "relationshipOptions.grandChild", "_default_message": "Grandchild"},
-        "spouse": {"_label": "relationshipOptions.spouse", "_default_message": "Spouse"},
-        "parent": {"_label": "relationshipOptions.parent", "_default_message": "Parent"},
-        "fosterParent": {"_label": "relationshipOptions.fosterParent", "_default_message": "Foster Parent"},
-        "stepParent": {"_label": "relationshipOptions.stepParent", "_default_message": "Step-parent"},
-        "grandParent": {"_label": "relationshipOptions.grandParent", "_default_message": "Grandparent"},
-        "sisterOrBrother": {"_label": "relationshipOptions.sisterOrBrother", "_default_message": "Sister/Brother"},
+        "stepChild": {
+            "_label": "relationshipOptions.stepChild",
+            "_default_message": "Step-child",
+        },
+        "grandChild": {
+            "_label": "relationshipOptions.grandChild",
+            "_default_message": "Grandchild",
+        },
+        "spouse": {
+            "_label": "relationshipOptions.spouse",
+            "_default_message": "Spouse",
+        },
+        "parent": {
+            "_label": "relationshipOptions.parent",
+            "_default_message": "Parent",
+        },
+        "fosterParent": {
+            "_label": "relationshipOptions.fosterParent",
+            "_default_message": "Foster Parent",
+        },
+        "stepParent": {
+            "_label": "relationshipOptions.stepParent",
+            "_default_message": "Step-parent",
+        },
+        "grandParent": {
+            "_label": "relationshipOptions.grandParent",
+            "_default_message": "Grandparent",
+        },
+        "sisterOrBrother": {
+            "_label": "relationshipOptions.sisterOrBrother",
+            "_default_message": "Sister/Brother",
+        },
         "stepSisterOrBrother": {
             "_label": "relationshipOptions.stepSisterOrBrother",
             "_default_message": "Step-sister/Step-brother",
@@ -134,8 +158,14 @@ class TxConfigurationData(ConfigurationData):
             "_label": "relationshipOptions.boyfriendOrGirlfriend",
             "_default_message": "Boyfriend/Girlfriend",
         },
-        "domesticPartner": {"_label": "relationshipOptions.domesticPartner", "_default_message": "Domestic Partner"},
-        "relatedOther": {"_label": "relationshipOptions.relatedOther", "_default_message": "Related in some other way"},
+        "domesticPartner": {
+            "_label": "relationshipOptions.domesticPartner",
+            "_default_message": "Domestic Partner",
+        },
+        "relatedOther": {
+            "_label": "relationshipOptions.relatedOther",
+            "_default_message": "Related in some other way",
+        },
     }
 
     referral_options = {
@@ -177,7 +207,10 @@ class TxConfigurationData(ConfigurationData):
     }
 
     income_options = {
-        "wages": {"_label": "incomeOptions.wages", "_default_message": "Wages, salaries, tips"},
+        "wages": {
+            "_label": "incomeOptions.wages",
+            "_default_message": "Wages, salaries, tips",
+        },
         "selfEmployment": {
             "_label": "incomeOptions.selfEmployment",
             "_default_message": "Income from freelance, independent contractor, or self-employment work",
@@ -190,40 +223,70 @@ class TxConfigurationData(ConfigurationData):
             "_label": "incomeOptions.sSRetirement",
             "_default_message": "Social Security Retirement Benefits",
         },
-        "sSI": {"_label": "incomeOptions.sSI", "_default_message": "Supplemental Security Income (SSI)"},
-        "childSupport": {"_label": "incomeOptions.childSupport", "_default_message": "Child Support (Received)"},
+        "sSI": {
+            "_label": "incomeOptions.sSI",
+            "_default_message": "Supplemental Security Income (SSI)",
+        },
+        "childSupport": {
+            "_label": "incomeOptions.childSupport",
+            "_default_message": "Child Support (Received)",
+        },
         "pension": {
             "_label": "incomeOptions.pension",
             "_default_message": "Military, Government, or Private Pension",
         },
-        "veteran": {"_label": "incomeOptions.veteran", "_default_message": "Veteran's Pension or Benefits"},
+        "veteran": {
+            "_label": "incomeOptions.veteran",
+            "_default_message": "Veteran's Pension or Benefits",
+        },
         "sSSurvivor": {
             "_label": "incomeOptions.sSSurvivor",
             "_default_message": "Social Security Survivor's Benefits (Widowed)",
         },
-        "unemployment": {"_label": "incomeOptions.unemployment", "_default_message": "Unemployment Benefits"},
+        "unemployment": {
+            "_label": "incomeOptions.unemployment",
+            "_default_message": "Unemployment Benefits",
+        },
         "sSDependent": {
             "_label": "incomeOptions.sSDependent",
             "_default_message": "Social Security Dependent Benefits (retirement, disability, or survivors)",
         },
-        "cashAssistance": {"_label": "incomeOptions.cashAssistance", "_default_message": "Cash Assistance Grant"},
-        "gifts": {"_label": "incomeOptions.gifts", "_default_message": "Gifts/Contributions (Received)"},
+        "cashAssistance": {
+            "_label": "incomeOptions.cashAssistance.tx",
+            "_default_message": "Government Cash Assistance (including TANF)",
+        },
+        "gifts": {
+            "_label": "incomeOptions.gifts",
+            "_default_message": "Gifts/Contributions (Received)",
+        },
         "investment": {
             "_label": "incomeOptions.investment",
             "_default_message": "Investment Income (interest, dividends, and profit from selling stocks)",
         },
-        "cOSDisability": {
-            "_label": "incomeOptions.cOSDisability",
-            "_default_message": "Colorado State Disability Benefits",
+        "StateDisability": {
+            "_label": "incomeOptions.stateDisability",
+            "_default_message": "State Disability Benefits",
         },
-        "rental": {"_label": "incomeOptions.rental", "_default_message": "Rental Income"},
-        "alimony": {"_label": "incomeOptions.alimony", "_default_message": "Alimony (Received)"},
+        "rental": {
+            "_label": "incomeOptions.rental",
+            "_default_message": "Rental Income",
+        },
+        "alimony": {
+            "_label": "incomeOptions.alimony",
+            "_default_message": "Alimony (Received)",
+        },
         "deferredComp": {
             "_label": "incomeOptions.deferredComp",
             "_default_message": "Withdrawals from Deferred Compensation (IRA, Keogh, etc.)",
         },
-        "workersComp": {"_label": "incomeOptions.workersComp", "_default_message": "Worker's Compensation"},
-        "boarder": {"_label": "incomeOptions.boarder", "_default_message": "Boarder or Lodger"},
+        "workersComp": {
+            "_label": "incomeOptions.workersComp",
+            "_default_message": "Worker's Compensation",
+        },
+        "boarder": {
+            "_label": "incomeOptions.boarder",
+            "_default_message": "Boarder or Lodger",
+        },
     }
 
     health_insurance_options = {
@@ -263,19 +326,12 @@ class TxConfigurationData(ConfigurationData):
                     "_default_message": "Medicare",
                 },
             },
-            #TODO: should this be "chip"?
+            # TODO: should this be "chip"?
             "chp": {
                 "icon": {"_icon": "Chp", "_classname": "option-card-icon"},
                 "text": {
                     "_label": "healthInsuranceOptions.chip",
                     "_default_message": "Children's Health Insurance Program (CHIP)",
-                },
-            },
-            "emergency_medicaid": {
-                "icon": {"_icon": "Emergency_medicaid", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.emergency_medicaid",
-                    "_default_message": "Emergency Medicaid / Reproductive Health",
                 },
             },
             "family_planning": {
@@ -336,13 +392,6 @@ class TxConfigurationData(ConfigurationData):
                     "_default_message": "Children's Health Insurance Program (CHIP)",
                 },
             },
-            "emergency_medicaid": {
-                "icon": {"_icon": "Emergency_medicaid", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.emergency_medicaid",
-                    "_default_message": "Emergency Medicaid / Reproductive Health",
-                },
-            },
             "family_planning": {
                 "icon": {"_icon": "Family_planning", "_classname": "option-card-icon"},
                 "text": {
@@ -361,31 +410,73 @@ class TxConfigurationData(ConfigurationData):
     }
 
     frequency_options = {
-        "weekly": {"_label": "frequencyOptions.weekly", "_default_message": "every week"},
-        "biweekly": {"_label": "frequencyOptions.biweekly", "_default_message": "every 2 weeks"},
-        "semimonthly": {"_label": "frequencyOptions.semimonthly", "_default_message": "twice a month"},
-        "monthly": {"_label": "frequencyOptions.monthly", "_default_message": "every month"},
+        "weekly": {
+            "_label": "frequencyOptions.weekly",
+            "_default_message": "every week",
+        },
+        "biweekly": {
+            "_label": "frequencyOptions.biweekly",
+            "_default_message": "every 2 weeks",
+        },
+        "semimonthly": {
+            "_label": "frequencyOptions.semimonthly",
+            "_default_message": "twice a month",
+        },
+        "monthly": {
+            "_label": "frequencyOptions.monthly",
+            "_default_message": "every month",
+        },
         "hourly": {"_label": "frequencyOptions.hourly", "_default_message": "hourly"},
     }
 
     expense_options = {
         "rent": {"_label": "expenseOptions.rent", "_default_message": "Rent"},
-        "telephone": {"_label": "expenseOptions.telephone", "_default_message": "Telephone"},
-        "internet": {"_label": "expenseOptions.internet", "_default_message": "Internet"},
-        "otherUtilities": {"_label": "expenseOptions.otherUtilities", "_default_message": "Other Utilities"},
+        "telephone": {
+            "_label": "expenseOptions.telephone",
+            "_default_message": "Telephone",
+        },
+        "internet": {
+            "_label": "expenseOptions.internet",
+            "_default_message": "Internet",
+        },
+        "otherUtilities": {
+            "_label": "expenseOptions.otherUtilities",
+            "_default_message": "Other Utilities",
+        },
         "heating": {"_label": "expenseOptions.heating", "_default_message": "Heating"},
-        "mortgage": {"_label": "expenseOptions.mortgage", "_default_message": "Mortgage"},
-        "propertyTax": {"_label": "expenseOptions.propertyTax", "_default_message": "Property Taxes"},
-        "hoa": {"_label": "expenseOptions.hoa", "_default_message": "Homeowners or Condo Association Fees and Dues"},
+        "mortgage": {
+            "_label": "expenseOptions.mortgage",
+            "_default_message": "Mortgage",
+        },
+        "propertyTax": {
+            "_label": "expenseOptions.propertyTax",
+            "_default_message": "Property Taxes",
+        },
+        "hoa": {
+            "_label": "expenseOptions.hoa",
+            "_default_message": "Homeowners or Condo Association Fees and Dues",
+        },
         "homeownersInsurance": {
             "_label": "expenseOptions.homeownersInsurance",
             "_default_message": "Homeowners Insurance",
         },
-        "medical": {"_label": "expenseOptions.medical", "_default_message": "Medical Insurance Premium &/or Bills"},
+        "medical": {
+            "_label": "expenseOptions.medical",
+            "_default_message": "Medical Insurance Premium &/or Bills",
+        },
         "cooling": {"_label": "expenseOptions.cooling", "_default_message": "Cooling"},
-        "childCare": {"_label": "expenseOptions.childCare", "_default_message": "Child Care"},
-        "childSupport": {"_label": "expenseOptions.childSupport", "_default_message": "Child Support (Paid)"},
-        "dependentCare": {"_label": "expenseOptions.dependentCare", "_default_message": "Dependent Care"},
+        "childCare": {
+            "_label": "expenseOptions.childCare",
+            "_default_message": "Child Care",
+        },
+        "childSupport": {
+            "_label": "expenseOptions.childSupport",
+            "_default_message": "Child Support (Paid)",
+        },
+        "dependentCare": {
+            "_label": "expenseOptions.dependentCare",
+            "_default_message": "Dependent Care",
+        },
     }
 
     condition_options = {
@@ -405,7 +496,10 @@ class TxConfigurationData(ConfigurationData):
                 },
             },
             "blindOrVisuallyImpaired": {
-                "icon": {"_icon": "BlindOrVisuallyImpaired", "_classname": "option-card-icon"},
+                "icon": {
+                    "_icon": "BlindOrVisuallyImpaired",
+                    "_classname": "option-card-icon",
+                },
                 "text": {
                     "_label": "conditionOptions.blindOrVisuallyImpaired",
                     "_default_message": "Blind or visually impaired",
@@ -419,7 +513,10 @@ class TxConfigurationData(ConfigurationData):
                 },
             },
             "longTermDisability": {
-                "icon": {"_icon": "LongTermDisability", "_classname": "option-card-icon"},
+                "icon": {
+                    "_icon": "LongTermDisability",
+                    "_classname": "option-card-icon",
+                },
                 "text": {
                     "_label": "conditionOptions.longTermDisability",
                     "_default_message": "Any medical or developmental condition that has lasted, or is expected to last, more than 12 months",
@@ -442,7 +539,10 @@ class TxConfigurationData(ConfigurationData):
                 },
             },
             "blindOrVisuallyImpaired": {
-                "icon": {"_icon": "BlindOrVisuallyImpaired", "_classname": "option-card-icon"},
+                "icon": {
+                    "_icon": "BlindOrVisuallyImpaired",
+                    "_classname": "option-card-icon",
+                },
                 "text": {
                     "_label": "conditionOptions.blindOrVisuallyImpaired",
                     "_default_message": "Blind or visually impaired",
@@ -456,7 +556,10 @@ class TxConfigurationData(ConfigurationData):
                 },
             },
             "longTermDisability": {
-                "icon": {"_icon": "LongTermDisability", "_classname": "option-card-icon"},
+                "icon": {
+                    "_icon": "LongTermDisability",
+                    "_classname": "option-card-icon",
+                },
                 "text": {
                     "_label": "conditionOptions.longTermDisability",
                     "_default_message": "Any medical or developmental condition that has lasted, or is expected to last, more than 12 months",
@@ -582,7 +685,11 @@ class TxConfigurationData(ConfigurationData):
         "75143": {"Henderson": "Henderson", "Kaufman": "Kaufman"},
         "75144": {"Navarro": "Navarro"},
         "75146": {"Dallas": "Dallas", "Ellis": "Ellis"},
-        "75147": {"Henderson": "Henderson", "Kaufman": "Kaufman", "Van Zandt": "Van Zandt"},
+        "75147": {
+            "Henderson": "Henderson",
+            "Kaufman": "Kaufman",
+            "Van Zandt": "Van Zandt",
+        },
         "75148": {"Henderson": "Henderson"},
         "75149": {"Dallas": "Dallas"},
         "75150": {"Dallas": "Dallas"},
@@ -611,7 +718,12 @@ class TxConfigurationData(ConfigurationData):
         "75182": {"Dallas": "Dallas", "Kaufman": "Kaufman"},
         "75185": {"Dallas": "Dallas"},
         "75187": {"Dallas": "Dallas"},
-        "75189": {"Collin": "Collin", "Hunt": "Hunt", "Kaufman": "Kaufman", "Rockwall": "Rockwall"},
+        "75189": {
+            "Collin": "Collin",
+            "Hunt": "Hunt",
+            "Kaufman": "Kaufman",
+            "Rockwall": "Rockwall",
+        },
         "75201": {"Dallas": "Dallas"},
         "75202": {"Dallas": "Dallas"},
         "75203": {"Dallas": "Dallas"},
@@ -769,7 +881,13 @@ class TxConfigurationData(ConfigurationData):
         "75491": {"Collin": "Collin", "Fannin": "Fannin", "Grayson": "Grayson"},
         "75492": {"Fannin": "Fannin"},
         "75493": {"Titus": "Titus"},
-        "75494": {"Camp": "Camp", "Franklin": "Franklin", "Hopkins": "Hopkins", "Upshur": "Upshur", "Wood": "Wood"},
+        "75494": {
+            "Camp": "Camp",
+            "Franklin": "Franklin",
+            "Hopkins": "Hopkins",
+            "Upshur": "Upshur",
+            "Wood": "Wood",
+        },
         "75495": {"Collin": "Collin", "Grayson": "Grayson"},
         "75496": {"Fannin": "Fannin", "Hunt": "Hunt"},
         "75497": {"Hopkins": "Hopkins", "Rains": "Rains", "Wood": "Wood"},
@@ -848,7 +966,12 @@ class TxConfigurationData(ConfigurationData):
         "75683": {"Harrison": "Harrison", "Marion": "Marion", "Upshur": "Upshur"},
         "75684": {"Rusk": "Rusk", "Smith": "Smith"},
         "75685": {"Panola": "Panola"},
-        "75686": {"Camp": "Camp", "Morris": "Morris", "Titus": "Titus", "Upshur": "Upshur"},
+        "75686": {
+            "Camp": "Camp",
+            "Morris": "Morris",
+            "Titus": "Titus",
+            "Upshur": "Upshur",
+        },
         "75687": {"Rusk": "Rusk"},
         "75688": {"Harrison": "Harrison"},
         "75689": {"Rusk": "Rusk"},
@@ -871,7 +994,11 @@ class TxConfigurationData(ConfigurationData):
         "75713": {"Smith": "Smith"},
         "75750": {"Smith": "Smith"},
         "75751": {"Anderson": "Anderson", "Henderson": "Henderson"},
-        "75752": {"Anderson": "Anderson", "Henderson": "Henderson", "Van Zandt": "Van Zandt"},
+        "75752": {
+            "Anderson": "Anderson",
+            "Henderson": "Henderson",
+            "Van Zandt": "Van Zandt",
+        },
         "75754": {"Van Zandt": "Van Zandt"},
         "75755": {"Upshur": "Upshur", "Wood": "Wood"},
         "75756": {"Henderson": "Henderson", "Van Zandt": "Van Zandt"},
@@ -929,7 +1056,12 @@ class TxConfigurationData(ConfigurationData):
         "75859": {"Freestone": "Freestone", "Navarro": "Navarro"},
         "75860": {"Freestone": "Freestone"},
         "75861": {"Anderson": "Anderson"},
-        "75862": {"Houston": "Houston", "San Jacinto": "San Jacinto", "Trinity": "Trinity", "Walker": "Walker"},
+        "75862": {
+            "Houston": "Houston",
+            "San Jacinto": "San Jacinto",
+            "Trinity": "Trinity",
+            "Walker": "Walker",
+        },
         "75865": {"Trinity": "Trinity"},
         "75880": {"Anderson": "Anderson"},
         "75882": {"Anderson": "Anderson"},
@@ -1126,7 +1258,12 @@ class TxConfigurationData(ConfigurationData):
         "76228": {"Clay": "Clay", "Montague": "Montague"},
         "76230": {"Clay": "Clay", "Jack": "Jack", "Montague": "Montague"},
         "76233": {"Cooke": "Cooke", "Grayson": "Grayson"},
-        "76234": {"Cooke": "Cooke", "Denton": "Denton", "Montague": "Montague", "Wise": "Wise"},
+        "76234": {
+            "Cooke": "Cooke",
+            "Denton": "Denton",
+            "Montague": "Montague",
+            "Wise": "Wise",
+        },
         "76238": {"Cooke": "Cooke"},
         "76239": {"Cooke": "Cooke", "Montague": "Montague"},
         "76240": {"Cooke": "Cooke", "Grayson": "Grayson"},
@@ -1193,22 +1330,45 @@ class TxConfigurationData(ConfigurationData):
         "76426": {"Jack": "Jack", "Wise": "Wise"},
         "76427": {"Jack": "Jack", "Young": "Young"},
         "76429": {"Palo Pinto": "Palo Pinto", "Stephens": "Stephens"},
-        "76430": {"Shackelford": "Shackelford", "Stephens": "Stephens", "Throckmorton": "Throckmorton"},
+        "76430": {
+            "Shackelford": "Shackelford",
+            "Stephens": "Stephens",
+            "Throckmorton": "Throckmorton",
+        },
         "76431": {"Jack": "Jack", "Wise": "Wise"},
         "76432": {"Brown": "Brown", "Comanche": "Comanche"},
         "76433": {"Erath": "Erath", "Hood": "Hood", "Somervell": "Somervell"},
         "76435": {"Eastland": "Eastland"},
         "76436": {"Comanche": "Comanche", "Erath": "Erath", "Hamilton": "Hamilton"},
-        "76437": {"Callahan": "Callahan", "Eastland": "Eastland", "Stephens": "Stephens"},
+        "76437": {
+            "Callahan": "Callahan",
+            "Eastland": "Eastland",
+            "Stephens": "Stephens",
+        },
         "76439": {"Parker": "Parker"},
-        "76442": {"Brown": "Brown", "Comanche": "Comanche", "Eastland": "Eastland", "Mills": "Mills"},
-        "76443": {"Brown": "Brown", "Callahan": "Callahan", "Coleman": "Coleman", "Eastland": "Eastland"},
+        "76442": {
+            "Brown": "Brown",
+            "Comanche": "Comanche",
+            "Eastland": "Eastland",
+            "Mills": "Mills",
+        },
+        "76443": {
+            "Brown": "Brown",
+            "Callahan": "Callahan",
+            "Coleman": "Coleman",
+            "Eastland": "Eastland",
+        },
         "76444": {"Comanche": "Comanche", "Eastland": "Eastland", "Erath": "Erath"},
         "76445": {"Comanche": "Comanche", "Eastland": "Eastland", "Erath": "Erath"},
         "76446": {"Comanche": "Comanche", "Erath": "Erath", "Hamilton": "Hamilton"},
         "76448": {"Eastland": "Eastland"},
         "76449": {"Jack": "Jack", "Palo Pinto": "Palo Pinto", "Young": "Young"},
-        "76450": {"Jack": "Jack", "Palo Pinto": "Palo Pinto", "Stephens": "Stephens", "Young": "Young"},
+        "76450": {
+            "Jack": "Jack",
+            "Palo Pinto": "Palo Pinto",
+            "Stephens": "Stephens",
+            "Young": "Young",
+        },
         "76452": {"Comanche": "Comanche"},
         "76453": {"Erath": "Erath", "Palo Pinto": "Palo Pinto"},
         "76454": {"Comanche": "Comanche", "Eastland": "Eastland"},
@@ -1218,9 +1378,19 @@ class TxConfigurationData(ConfigurationData):
         "76459": {"Jack": "Jack"},
         "76460": {"Jack": "Jack", "Young": "Young"},
         "76461": {"Erath": "Erath"},
-        "76462": {"Erath": "Erath", "Hood": "Hood", "Palo Pinto": "Palo Pinto", "Parker": "Parker"},
+        "76462": {
+            "Erath": "Erath",
+            "Hood": "Hood",
+            "Palo Pinto": "Palo Pinto",
+            "Parker": "Parker",
+        },
         "76463": {"Erath": "Erath", "Palo Pinto": "Palo Pinto"},
-        "76464": {"Callahan": "Callahan", "Eastland": "Eastland", "Shackelford": "Shackelford", "Stephens": "Stephens"},
+        "76464": {
+            "Callahan": "Callahan",
+            "Eastland": "Eastland",
+            "Shackelford": "Shackelford",
+            "Stephens": "Stephens",
+        },
         "76465": {"Erath": "Erath"},
         "76466": {"Eastland": "Eastland"},
         "76467": {"Hood": "Hood"},
@@ -1239,7 +1409,11 @@ class TxConfigurationData(ConfigurationData):
         "76486": {"Jack": "Jack", "Palo Pinto": "Palo Pinto", "Parker": "Parker"},
         "76487": {"Jack": "Jack", "Parker": "Parker", "Wise": "Wise"},
         "76490": {"Parker": "Parker"},
-        "76491": {"Stephens": "Stephens", "Throckmorton": "Throckmorton", "Young": "Young"},
+        "76491": {
+            "Stephens": "Stephens",
+            "Throckmorton": "Throckmorton",
+            "Young": "Young",
+        },
         "76501": {"Bell": "Bell"},
         "76502": {"Bell": "Bell"},
         "76503": {"Bell": "Bell"},
@@ -1256,14 +1430,24 @@ class TxConfigurationData(ConfigurationData):
         "76525": {"Coryell": "Coryell", "Hamilton": "Hamilton", "Lampasas": "Lampasas"},
         "76526": {"Coryell": "Coryell"},
         "76527": {"Bell": "Bell", "Burnet": "Burnet", "Williamson": "Williamson"},
-        "76528": {"Bell": "Bell", "Bosque": "Bosque", "Coryell": "Coryell", "Lampasas": "Lampasas"},
+        "76528": {
+            "Bell": "Bell",
+            "Bosque": "Bosque",
+            "Coryell": "Coryell",
+            "Lampasas": "Lampasas",
+        },
         "76530": {"Williamson": "Williamson"},
         "76531": {"Comanche": "Comanche", "Hamilton": "Hamilton", "Mills": "Mills"},
         "76533": {"Bell": "Bell"},
         "76534": {"Bell": "Bell", "Milam": "Milam"},
         "76537": {"Bell": "Bell", "Williamson": "Williamson"},
         "76538": {"Coryell": "Coryell", "Hamilton": "Hamilton"},
-        "76539": {"Bell": "Bell", "Burnet": "Burnet", "Coryell": "Coryell", "Lampasas": "Lampasas"},
+        "76539": {
+            "Bell": "Bell",
+            "Burnet": "Burnet",
+            "Coryell": "Coryell",
+            "Lampasas": "Lampasas",
+        },
         "76540": {"Bell": "Bell"},
         "76541": {"Bell": "Bell"},
         "76542": {"Bell": "Bell"},
@@ -1351,7 +1535,11 @@ class TxConfigurationData(ConfigurationData):
         "76690": {"Bosque": "Bosque", "Erath": "Erath", "Somervell": "Somervell"},
         "76691": {"Hill": "Hill", "McLennan": "McLennan"},
         "76692": {"Hill": "Hill"},
-        "76693": {"Freestone": "Freestone", "Limestone": "Limestone", "Navarro": "Navarro"},
+        "76693": {
+            "Freestone": "Freestone",
+            "Limestone": "Limestone",
+            "Navarro": "Navarro",
+        },
         "76701": {"McLennan": "McLennan"},
         "76702": {"McLennan": "McLennan"},
         "76703": {"McLennan": "McLennan"},
@@ -1398,7 +1586,12 @@ class TxConfigurationData(ConfigurationData):
         "76857": {"Brown": "Brown", "Comanche": "Comanche"},
         "76858": {"Concho": "Concho", "McCulloch": "McCulloch"},
         "76859": {"Kimble": "Kimble", "Menard": "Menard"},
-        "76861": {"Coke": "Coke", "Concho": "Concho", "Runnels": "Runnels", "Tom Green": "Tom Green"},
+        "76861": {
+            "Coke": "Coke",
+            "Concho": "Concho",
+            "Runnels": "Runnels",
+            "Tom Green": "Tom Green",
+        },
         "76862": {"Concho": "Concho"},
         "76864": {"Mills": "Mills"},
         "76865": {"Coke": "Coke", "Runnels": "Runnels"},
@@ -1442,7 +1635,11 @@ class TxConfigurationData(ConfigurationData):
         "76943": {"Crockett": "Crockett", "Pecos": "Pecos", "Sutton": "Sutton"},
         "76945": {"Coke": "Coke", "Tom Green": "Tom Green"},
         "76949": {"Coke": "Coke"},
-        "76950": {"Schleicher": "Schleicher", "Sutton": "Sutton", "Val Verde": "Val Verde"},
+        "76950": {
+            "Schleicher": "Schleicher",
+            "Sutton": "Sutton",
+            "Val Verde": "Val Verde",
+        },
         "76951": {"Sterling": "Sterling"},
         "76953": {"Coke": "Coke"},
         "76955": {"Concho": "Concho", "Tom Green": "Tom Green"},
@@ -1625,11 +1822,24 @@ class TxConfigurationData(ConfigurationData):
         "77315": {"Harris": "Harris"},
         "77316": {"Grimes": "Grimes", "Montgomery": "Montgomery"},
         "77318": {"Montgomery": "Montgomery", "Walker": "Walker"},
-        "77320": {"San Jacinto": "San Jacinto", "Trinity": "Trinity", "Walker": "Walker"},
+        "77320": {
+            "San Jacinto": "San Jacinto",
+            "Trinity": "Trinity",
+            "Walker": "Walker",
+        },
         "77325": {"Harris": "Harris"},
         "77326": {"Polk": "Polk"},
-        "77327": {"Liberty": "Liberty", "Montgomery": "Montgomery", "Polk": "Polk", "San Jacinto": "San Jacinto"},
-        "77328": {"Liberty": "Liberty", "Montgomery": "Montgomery", "San Jacinto": "San Jacinto"},
+        "77327": {
+            "Liberty": "Liberty",
+            "Montgomery": "Montgomery",
+            "Polk": "Polk",
+            "San Jacinto": "San Jacinto",
+        },
+        "77328": {
+            "Liberty": "Liberty",
+            "Montgomery": "Montgomery",
+            "San Jacinto": "San Jacinto",
+        },
         "77331": {"San Jacinto": "San Jacinto"},
         "77332": {"Polk": "Polk"},
         "77333": {"Montgomery": "Montgomery"},
@@ -1651,7 +1861,11 @@ class TxConfigurationData(ConfigurationData):
         "77355": {"Montgomery": "Montgomery", "Waller": "Waller"},
         "77356": {"Grimes": "Grimes", "Montgomery": "Montgomery"},
         "77357": {"Harris": "Harris", "Liberty": "Liberty", "Montgomery": "Montgomery"},
-        "77358": {"Montgomery": "Montgomery", "San Jacinto": "San Jacinto", "Walker": "Walker"},
+        "77358": {
+            "Montgomery": "Montgomery",
+            "San Jacinto": "San Jacinto",
+            "Walker": "Walker",
+        },
         "77359": {"San Jacinto": "San Jacinto"},
         "77360": {"Polk": "Polk"},
         "77362": {"Montgomery": "Montgomery"},
@@ -1668,7 +1882,11 @@ class TxConfigurationData(ConfigurationData):
         "77375": {"Harris": "Harris"},
         "77376": {"Hardin": "Hardin"},
         "77377": {"Harris": "Harris"},
-        "77378": {"Montgomery": "Montgomery", "San Jacinto": "San Jacinto", "Walker": "Walker"},
+        "77378": {
+            "Montgomery": "Montgomery",
+            "San Jacinto": "San Jacinto",
+            "Walker": "Walker",
+        },
         "77379": {"Harris": "Harris"},
         "77380": {"Montgomery": "Montgomery"},
         "77381": {"Montgomery": "Montgomery"},
@@ -1698,7 +1916,11 @@ class TxConfigurationData(ConfigurationData):
         "77417": {"Fort Bend": "Fort Bend"},
         "77418": {"Austin": "Austin"},
         "77419": {"Matagorda": "Matagorda"},
-        "77420": {"Fort Bend": "Fort Bend", "Matagorda": "Matagorda", "Wharton": "Wharton"},
+        "77420": {
+            "Fort Bend": "Fort Bend",
+            "Matagorda": "Matagorda",
+            "Wharton": "Wharton",
+        },
         "77422": {"Brazoria": "Brazoria"},
         "77423": {"Fort Bend": "Fort Bend", "Waller": "Waller"},
         "77426": {"Austin": "Austin", "Washington": "Washington"},
@@ -1709,7 +1931,11 @@ class TxConfigurationData(ConfigurationData):
         "77432": {"Wharton": "Wharton"},
         "77433": {"Harris": "Harris"},
         "77434": {"Colorado": "Colorado", "Wharton": "Wharton"},
-        "77435": {"Colorado": "Colorado", "Fort Bend": "Fort Bend", "Wharton": "Wharton"},
+        "77435": {
+            "Colorado": "Colorado",
+            "Fort Bend": "Fort Bend",
+            "Wharton": "Wharton",
+        },
         "77436": {"Wharton": "Wharton"},
         "77437": {"Matagorda": "Matagorda", "Wharton": "Wharton"},
         "77440": {"Matagorda": "Matagorda"},
@@ -1921,7 +2147,12 @@ class TxConfigurationData(ConfigurationData):
         "77865": {"Leon": "Leon", "Robertson": "Robertson"},
         "77866": {"Brazos": "Brazos"},
         "77867": {"Robertson": "Robertson"},
-        "77868": {"Brazos": "Brazos", "Grimes": "Grimes", "Waller": "Waller", "Washington": "Washington"},
+        "77868": {
+            "Brazos": "Brazos",
+            "Grimes": "Grimes",
+            "Waller": "Waller",
+            "Washington": "Washington",
+        },
         "77870": {"Robertson": "Robertson"},
         "77871": {"Leon": "Leon", "Madison": "Madison"},
         "77872": {"Grimes": "Grimes", "Madison": "Madison"},
@@ -2044,7 +2275,12 @@ class TxConfigurationData(ConfigurationData):
         "78116": {"Karnes": "Karnes"},
         "78117": {"Karnes": "Karnes"},
         "78118": {"Atascosa": "Atascosa", "Karnes": "Karnes"},
-        "78119": {"Bee": "Bee", "Goliad": "Goliad", "Karnes": "Karnes", "Live Oak": "Live Oak"},
+        "78119": {
+            "Bee": "Bee",
+            "Goliad": "Goliad",
+            "Karnes": "Karnes",
+            "Live Oak": "Live Oak",
+        },
         "78121": {"Guadalupe": "Guadalupe", "Wilson": "Wilson"},
         "78122": {"Gonzales": "Gonzales"},
         "78123": {"Guadalupe": "Guadalupe"},
@@ -2163,7 +2399,11 @@ class TxConfigurationData(ConfigurationData):
         "78330": {"Nueces": "Nueces"},
         "78332": {"Duval": "Duval", "Jim Wells": "Jim Wells"},
         "78335": {"San Patricio": "San Patricio"},
-        "78336": {"Aransas": "Aransas", "Nueces": "Nueces", "San Patricio": "San Patricio"},
+        "78336": {
+            "Aransas": "Aransas",
+            "Nueces": "Nueces",
+            "San Patricio": "San Patricio",
+        },
         "78338": {"Kenedy": "Kenedy"},
         "78339": {"Nueces": "Nueces"},
         "78340": {"Refugio": "Refugio"},
@@ -2307,7 +2547,12 @@ class TxConfigurationData(ConfigurationData):
         "78602": {"Bastrop": "Bastrop"},
         "78604": {"Gonzales": "Gonzales"},
         "78605": {"Burnet": "Burnet", "Williamson": "Williamson"},
-        "78606": {"Blanco": "Blanco", "Comal": "Comal", "Hays": "Hays", "Kendall": "Kendall"},
+        "78606": {
+            "Blanco": "Blanco",
+            "Comal": "Comal",
+            "Hays": "Hays",
+            "Kendall": "Kendall",
+        },
         "78607": {"Llano": "Llano"},
         "78608": {"Burnet": "Burnet"},
         "78609": {"Llano": "Llano"},
@@ -2322,10 +2567,21 @@ class TxConfigurationData(ConfigurationData):
         "78618": {"Gillespie": "Gillespie"},
         "78619": {"Hays": "Hays"},
         "78620": {"Blanco": "Blanco", "Hays": "Hays", "Travis": "Travis"},
-        "78621": {"Bastrop": "Bastrop", "Lee": "Lee", "Travis": "Travis", "Williamson": "Williamson"},
+        "78621": {
+            "Bastrop": "Bastrop",
+            "Lee": "Lee",
+            "Travis": "Travis",
+            "Williamson": "Williamson",
+        },
         "78622": {"Caldwell": "Caldwell"},
         "78623": {"Comal": "Comal", "Hays": "Hays"},
-        "78624": {"Gillespie": "Gillespie", "Kendall": "Kendall", "Kerr": "Kerr", "Llano": "Llano", "Mason": "Mason"},
+        "78624": {
+            "Gillespie": "Gillespie",
+            "Kendall": "Kendall",
+            "Kerr": "Kerr",
+            "Llano": "Llano",
+            "Mason": "Mason",
+        },
         "78626": {"Williamson": "Williamson"},
         "78627": {"Williamson": "Williamson"},
         "78628": {"Williamson": "Williamson"},
@@ -2346,7 +2602,11 @@ class TxConfigurationData(ConfigurationData):
         "78644": {"Caldwell": "Caldwell"},
         "78645": {"Travis": "Travis"},
         "78646": {"Williamson": "Williamson"},
-        "78648": {"Caldwell": "Caldwell", "Gonzales": "Gonzales", "Guadalupe": "Guadalupe"},
+        "78648": {
+            "Caldwell": "Caldwell",
+            "Gonzales": "Gonzales",
+            "Guadalupe": "Guadalupe",
+        },
         "78650": {"Bastrop": "Bastrop", "Lee": "Lee"},
         "78651": {"Williamson": "Williamson"},
         "78652": {"Hays": "Hays", "Travis": "Travis"},
@@ -2359,10 +2619,20 @@ class TxConfigurationData(ConfigurationData):
         "78660": {"Travis": "Travis", "Williamson": "Williamson"},
         "78661": {"Caldwell": "Caldwell"},
         "78662": {"Bastrop": "Bastrop", "Caldwell": "Caldwell"},
-        "78663": {"Blanco": "Blanco", "Burnet": "Burnet", "Hays": "Hays", "Travis": "Travis"},
+        "78663": {
+            "Blanco": "Blanco",
+            "Burnet": "Burnet",
+            "Hays": "Hays",
+            "Travis": "Travis",
+        },
         "78664": {"Travis": "Travis", "Williamson": "Williamson"},
         "78665": {"Williamson": "Williamson"},
-        "78666": {"Caldwell": "Caldwell", "Comal": "Comal", "Guadalupe": "Guadalupe", "Hays": "Hays"},
+        "78666": {
+            "Caldwell": "Caldwell",
+            "Comal": "Comal",
+            "Guadalupe": "Guadalupe",
+            "Hays": "Hays",
+        },
         "78667": {"Hays": "Hays"},
         "78669": {"Blanco": "Blanco", "Burnet": "Burnet", "Travis": "Travis"},
         "78670": {"Guadalupe": "Guadalupe"},
@@ -2490,7 +2760,12 @@ class TxConfigurationData(ConfigurationData):
         "78935": {"Colorado": "Colorado"},
         "78938": {"Fayette": "Fayette"},
         "78940": {"Austin": "Austin", "Colorado": "Colorado", "Fayette": "Fayette"},
-        "78941": {"Bastrop": "Bastrop", "Fayette": "Fayette", "Gonzales": "Gonzales", "Lavaca": "Lavaca"},
+        "78941": {
+            "Bastrop": "Bastrop",
+            "Fayette": "Fayette",
+            "Gonzales": "Gonzales",
+            "Lavaca": "Lavaca",
+        },
         "78942": {"Bastrop": "Bastrop", "Fayette": "Fayette", "Lee": "Lee"},
         "78943": {"Colorado": "Colorado"},
         "78944": {"Austin": "Austin"},
@@ -2506,7 +2781,12 @@ class TxConfigurationData(ConfigurationData):
         "78954": {"Austin": "Austin", "Fayette": "Fayette"},
         "78956": {"Colorado": "Colorado", "Fayette": "Fayette", "Lavaca": "Lavaca"},
         "78957": {"Bastrop": "Bastrop", "Fayette": "Fayette"},
-        "78959": {"Bastrop": "Bastrop", "Caldwell": "Caldwell", "Fayette": "Fayette", "Gonzales": "Gonzales"},
+        "78959": {
+            "Bastrop": "Bastrop",
+            "Caldwell": "Caldwell",
+            "Fayette": "Fayette",
+            "Gonzales": "Gonzales",
+        },
         "78960": {"Fayette": "Fayette"},
         "78962": {"Colorado": "Colorado", "Fayette": "Fayette"},
         "78963": {"Fayette": "Fayette"},
@@ -2527,7 +2807,12 @@ class TxConfigurationData(ConfigurationData):
         "79018": {"Hartley": "Hartley", "Moore": "Moore"},
         "79019": {"Armstrong": "Armstrong", "Randall": "Randall"},
         "79021": {"Hale": "Hale"},
-        "79022": {"Dallam": "Dallam", "Hartley": "Hartley", "Moore": "Moore", "Sherman": "Sherman"},
+        "79022": {
+            "Dallam": "Dallam",
+            "Hartley": "Hartley",
+            "Moore": "Moore",
+            "Sherman": "Sherman",
+        },
         "79024": {"Lipscomb": "Lipscomb"},
         "79025": {"Deaf Smith": "Deaf Smith"},
         "79027": {"Castro": "Castro", "Deaf Smith": "Deaf Smith", "Lamb": "Lamb"},
@@ -2541,7 +2826,12 @@ class TxConfigurationData(ConfigurationData):
         "79039": {"Armstrong": "Armstrong", "Carson": "Carson", "Gray": "Gray"},
         "79040": {"Hansford": "Hansford", "Sherman": "Sherman"},
         "79041": {"Hale": "Hale"},
-        "79042": {"Armstrong": "Armstrong", "Castro": "Castro", "Randall": "Randall", "Swisher": "Swisher"},
+        "79042": {
+            "Armstrong": "Armstrong",
+            "Castro": "Castro",
+            "Randall": "Randall",
+            "Swisher": "Swisher",
+        },
         "79043": {"Castro": "Castro", "Hale": "Hale", "Lamb": "Lamb"},
         "79044": {"Hartley": "Hartley"},
         "79045": {"Castro": "Castro", "Deaf Smith": "Deaf Smith"},
@@ -2551,7 +2841,12 @@ class TxConfigurationData(ConfigurationData):
         "79053": {"Parmer": "Parmer"},
         "79054": {"Gray": "Gray"},
         "79056": {"Lipscomb": "Lipscomb"},
-        "79057": {"Collingsworth": "Collingsworth", "Donley": "Donley", "Gray": "Gray", "Wheeler": "Wheeler"},
+        "79057": {
+            "Collingsworth": "Collingsworth",
+            "Donley": "Donley",
+            "Gray": "Gray",
+            "Wheeler": "Wheeler",
+        },
         "79058": {"Moore": "Moore", "Potter": "Potter"},
         "79059": {"Gray": "Gray", "Roberts": "Roberts"},
         "79061": {"Gray": "Gray", "Hemphill": "Hemphill", "Wheeler": "Wheeler"},
@@ -2561,13 +2856,22 @@ class TxConfigurationData(ConfigurationData):
         "79065": {"Donley": "Donley", "Gray": "Gray", "Roberts": "Roberts"},
         "79066": {"Gray": "Gray"},
         "79068": {"Carson": "Carson", "Potter": "Potter"},
-        "79070": {"Lipscomb": "Lipscomb", "Ochiltree": "Ochiltree", "Roberts": "Roberts"},
+        "79070": {
+            "Lipscomb": "Lipscomb",
+            "Ochiltree": "Ochiltree",
+            "Roberts": "Roberts",
+        },
         "79072": {"Hale": "Hale"},
         "79073": {"Hale": "Hale"},
         "79078": {"Hutchinson": "Hutchinson"},
         "79079": {"Collingsworth": "Collingsworth", "Wheeler": "Wheeler"},
         "79080": {"Carson": "Carson", "Hutchinson": "Hutchinson"},
-        "79081": {"Hansford": "Hansford", "Hutchinson": "Hutchinson", "Ochiltree": "Ochiltree", "Roberts": "Roberts"},
+        "79081": {
+            "Hansford": "Hansford",
+            "Hutchinson": "Hutchinson",
+            "Ochiltree": "Ochiltree",
+            "Roberts": "Roberts",
+        },
         "79082": {"Lamb": "Lamb"},
         "79083": {"Hansford": "Hansford", "Hutchinson": "Hutchinson", "Moore": "Moore"},
         "79084": {"Dallam": "Dallam", "Sherman": "Sherman"},
@@ -2582,7 +2886,12 @@ class TxConfigurationData(ConfigurationData):
         "79095": {"Childress": "Childress", "Collingsworth": "Collingsworth"},
         "79096": {"Wheeler": "Wheeler"},
         "79097": {"Carson": "Carson", "Gray": "Gray"},
-        "79098": {"Deaf Smith": "Deaf Smith", "Oldham": "Oldham", "Potter": "Potter", "Randall": "Randall"},
+        "79098": {
+            "Deaf Smith": "Deaf Smith",
+            "Oldham": "Oldham",
+            "Potter": "Potter",
+            "Randall": "Randall",
+        },
         "79101": {"Potter": "Potter"},
         "79102": {"Potter": "Potter"},
         "79103": {"Potter": "Potter", "Randall": "Randall"},
@@ -2603,12 +2912,22 @@ class TxConfigurationData(ConfigurationData):
         "79121": {"Potter": "Potter", "Randall": "Randall"},
         "79124": {"Potter": "Potter", "Randall": "Randall"},
         "79159": {"Potter": "Potter"},
-        "79201": {"Childress": "Childress", "Cottle": "Cottle", "Hall": "Hall", "Motley": "Motley"},
+        "79201": {
+            "Childress": "Childress",
+            "Cottle": "Cottle",
+            "Hall": "Hall",
+            "Motley": "Motley",
+        },
         "79220": {"Dickens": "Dickens"},
         "79221": {"Floyd": "Floyd"},
         "79223": {"Cottle": "Cottle"},
         "79225": {"Hardeman": "Hardeman", "Wilbarger": "Wilbarger"},
-        "79226": {"Armstrong": "Armstrong", "Briscoe": "Briscoe", "Donley": "Donley", "Hall": "Hall"},
+        "79226": {
+            "Armstrong": "Armstrong",
+            "Briscoe": "Briscoe",
+            "Donley": "Donley",
+            "Hall": "Hall",
+        },
         "79227": {"Foard": "Foard", "Knox": "Knox"},
         "79229": {"Dickens": "Dickens"},
         "79230": {"Childress": "Childress", "Collingsworth": "Collingsworth"},
@@ -2623,7 +2942,11 @@ class TxConfigurationData(ConfigurationData):
         "79241": {"Floyd": "Floyd", "Motley": "Motley"},
         "79243": {"Crosby": "Crosby", "Dickens": "Dickens"},
         "79244": {"Motley": "Motley"},
-        "79245": {"Childress": "Childress", "Collingsworth": "Collingsworth", "Hall": "Hall"},
+        "79245": {
+            "Childress": "Childress",
+            "Collingsworth": "Collingsworth",
+            "Hall": "Hall",
+        },
         "79247": {"Hardeman": "Hardeman", "Wilbarger": "Wilbarger"},
         "79248": {"Cottle": "Cottle", "Foard": "Foard", "King": "King"},
         "79250": {"Hale": "Hale"},
@@ -2647,7 +2970,12 @@ class TxConfigurationData(ConfigurationData):
         "79326": {"Lamb": "Lamb"},
         "79329": {"Lubbock": "Lubbock"},
         "79330": {"Garza": "Garza"},
-        "79331": {"Borden": "Borden", "Dawson": "Dawson", "Lynn": "Lynn", "Martin": "Martin"},
+        "79331": {
+            "Borden": "Borden",
+            "Dawson": "Dawson",
+            "Lynn": "Lynn",
+            "Martin": "Martin",
+        },
         "79336": {"Cochran": "Cochran", "Hockley": "Hockley"},
         "79339": {"Hockley": "Hockley", "Lamb": "Lamb"},
         "79342": {"Gaines": "Gaines"},
@@ -2655,18 +2983,33 @@ class TxConfigurationData(ConfigurationData):
         "79344": {"Bailey": "Bailey"},
         "79345": {"Lynn": "Lynn", "Terry": "Terry"},
         "79346": {"Bailey": "Bailey", "Cochran": "Cochran"},
-        "79347": {"Bailey": "Bailey", "Castro": "Castro", "Lamb": "Lamb", "Parmer": "Parmer"},
+        "79347": {
+            "Bailey": "Bailey",
+            "Castro": "Castro",
+            "Lamb": "Lamb",
+            "Parmer": "Parmer",
+        },
         "79350": {"Lubbock": "Lubbock"},
         "79351": {"Borden": "Borden", "Dawson": "Dawson", "Lynn": "Lynn"},
         "79353": {"Hockley": "Hockley"},
         "79355": {"Terry": "Terry", "Yoakum": "Yoakum"},
-        "79356": {"Borden": "Borden", "Crosby": "Crosby", "Garza": "Garza", "Lynn": "Lynn"},
+        "79356": {
+            "Borden": "Borden",
+            "Crosby": "Crosby",
+            "Garza": "Garza",
+            "Lynn": "Lynn",
+        },
         "79357": {"Crosby": "Crosby"},
         "79358": {"Hockley": "Hockley", "Lubbock": "Lubbock"},
         "79359": {"Gaines": "Gaines", "Terry": "Terry", "Yoakum": "Yoakum"},
         "79360": {"Gaines": "Gaines"},
         "79363": {"Hockley": "Hockley", "Lubbock": "Lubbock"},
-        "79364": {"Crosby": "Crosby", "Garza": "Garza", "Lubbock": "Lubbock", "Lynn": "Lynn"},
+        "79364": {
+            "Crosby": "Crosby",
+            "Garza": "Garza",
+            "Lubbock": "Lubbock",
+            "Lynn": "Lynn",
+        },
         "79366": {"Lubbock": "Lubbock"},
         "79367": {"Hockley": "Hockley"},
         "79369": {"Lamb": "Lamb"},
@@ -2741,7 +3084,12 @@ class TxConfigurationData(ConfigurationData):
         "79541": {"Callahan": "Callahan", "Taylor": "Taylor"},
         "79543": {"Fisher": "Fisher"},
         "79544": {"Haskell": "Haskell"},
-        "79545": {"Fisher": "Fisher", "Mitchell": "Mitchell", "Nolan": "Nolan", "Scurry": "Scurry"},
+        "79545": {
+            "Fisher": "Fisher",
+            "Mitchell": "Mitchell",
+            "Nolan": "Nolan",
+            "Scurry": "Scurry",
+        },
         "79546": {"Fisher": "Fisher", "Scurry": "Scurry", "Stonewall": "Stonewall"},
         "79547": {"Haskell": "Haskell"},
         "79548": {"Haskell": "Haskell"},
@@ -2749,13 +3097,23 @@ class TxConfigurationData(ConfigurationData):
         "79553": {"Haskell": "Haskell", "Jones": "Jones"},
         "79556": {"Fisher": "Fisher", "Nolan": "Nolan"},
         "79560": {"Fisher": "Fisher", "Jones": "Jones"},
-        "79561": {"Fisher": "Fisher", "Jones": "Jones", "Nolan": "Nolan", "Taylor": "Taylor"},
+        "79561": {
+            "Fisher": "Fisher",
+            "Jones": "Jones",
+            "Nolan": "Nolan",
+            "Taylor": "Taylor",
+        },
         "79562": {"Taylor": "Taylor"},
         "79563": {"Taylor": "Taylor"},
         "79565": {"Mitchell": "Mitchell"},
         "79566": {"Runnels": "Runnels", "Taylor": "Taylor"},
         "79567": {"Runnels": "Runnels", "Taylor": "Taylor"},
-        "79601": {"Callahan": "Callahan", "Jones": "Jones", "Shackelford": "Shackelford", "Taylor": "Taylor"},
+        "79601": {
+            "Callahan": "Callahan",
+            "Jones": "Jones",
+            "Shackelford": "Shackelford",
+            "Taylor": "Taylor",
+        },
         "79602": {"Callahan": "Callahan", "Taylor": "Taylor"},
         "79603": {"Taylor": "Taylor"},
         "79604": {"Taylor": "Taylor"},
@@ -2900,7 +3258,7 @@ class TxConfigurationData(ConfigurationData):
         "79997": {"El Paso": "El Paso"},
     }
 
-    #TODO
+    # TODO
     category_benefits = {
         "foodAndNutrition": {
             "benefits": {
@@ -2938,7 +3296,10 @@ class TxConfigurationData(ConfigurationData):
             "default": "MFB_TXLogo",
         },
         "logoAlt": {
-            "default": {"id": "referrerHook.logoAlts.default", "defaultMessage": "MyFriendBen home page button"},
+            "default": {
+                "id": "referrerHook.logoAlts.default",
+                "defaultMessage": "MyFriendBen home page button",
+            },
         },
         "logoFooterSource": {"default": "MFB_Logo"},
         "logoFooterAlt": {
@@ -2977,8 +3338,8 @@ class TxConfigurationData(ConfigurationData):
     }
 
     feedback_links = {
-        "email": "hello@myfriendben.org", #TODO: google doc says "new"?
-        "survey": "https://www.myfriendben.org/feedback",
+        "email": "hello@myfriendben.org",  # TODO: google doc says "new"?
+        "survey": "https://docs.google.com/forms/d/e/1FAIpQLSdnfqjvlVSBQkJuUMvhEDUp-t6oD-8tPQi67uRG2iNetXmSfA/viewform?usp=sf_link",
     }
 
     override_text = {}
