@@ -63,7 +63,7 @@ class UtilityBillPay(ProgramCalculator):
 
         # income condition
         counties = counties_from_screen(self.screen)
-
+        size_index = self.screen.household_size - 1
         income_limits = []
         for county in counties:
             county_data = self.income_limits.fetch().get(county)
@@ -71,7 +71,6 @@ class UtilityBillPay(ProgramCalculator):
                 continue
 
             # Validate household_size bounds (1-8)
-            size_index = self.screen.household_size - 1
             if size_index < 0 or size_index >= len(county_data):
                 continue
             income_limits.append(county_data[size_index])
