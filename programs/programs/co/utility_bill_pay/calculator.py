@@ -2,17 +2,22 @@ from integrations.services.sheets import GoogleSheetsCache
 from programs.co_county_zips import counties_from_screen
 from programs.programs.calc import Eligibility, ProgramCalculator
 import programs.programs.messages as messages
+from typing import ClassVar
 
 
 class IncomeLimitsCache(GoogleSheetsCache):
     sheet_id = "1ZzQYhULtiP61crj0pbPjhX62L1TnyAisLcr_dQXbbFg"
     range_name = "A2:K"
-    default = {}
+    default: ClassVar[dict] = {}
 
-    def update(self):
+    def update(self) -> dict[str, list[float]]:
         data = super().update()
-
-        return {self._format_county(r[0]): self._format_amounts(r[1:9]) for r in data}
+        result = {}
+        for r in data:
+            if len(r) < 9:
+                continue
+            result[self._format_county(r[0])] = self._format_amounts(r[1:9])
+        return result
 
     @staticmethod
     def _format_county(county: str):
@@ -20,7 +25,17 @@ class IncomeLimitsCache(GoogleSheetsCache):
 
     @staticmethod
     def _format_amounts(amounts: list[str]):
-        return [float(a.strip().replace("$", "").replace(",", "")) for a in amounts]
+        result = []
+        for a in amounts:
+            cleaned = a.strip().replace("$", "").replace(",", "")
+            if cleaned:
+                try:
+                    result.append(float(cleaned))
+                except ValueError:
+                    result.append(0.0)
+            else:
+                result.append(0.0)
+        return result
 
 
 class UtilityBillPay(ProgramCalculator):
@@ -48,9 +63,22 @@ class UtilityBillPay(ProgramCalculator):
 
         # income condition
         counties = counties_from_screen(self.screen)
+
         income_limits = []
         for county in counties:
-            income_limits.append(self.income_limits.fetch()[county][self.screen.household_size - 1])
+            county_data = self.income_limits.fetch().get(county)
+            if not county_data:
+                continue
+
+            # Validate household_size bounds (1-8)
+            size_index = self.screen.household_size - 1
+            if size_index < 0 or size_index >= len(county_data):
+                continue
+            income_limits.append(county_data[size_index])
+
+        if not income_limits:
+            e.condition(False, messages.income())
+            return
         income_limit = min(income_limits)
 
         income = int(self.screen.calc_gross_income("yearly", ["all"]))
