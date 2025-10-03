@@ -231,8 +231,8 @@ class TxConfigurationData(ConfigurationData):
             "_label": "incomeOptions.childSupport",
             "_default_message": "Child Support (Received)",
         },
-        "pension": {
-            "_label": "incomeOptions.pension",
+        "txPension": {
+            "_label": "incomeOptions.txPension",
             "_default_message": "Military, Government, or Private Pension",
         },
         "veteran": {
