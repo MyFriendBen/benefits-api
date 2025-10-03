@@ -7,4 +7,3 @@ class TxSnap(Snap):
         *Snap.pe_inputs,
         dependency.household.TxStateCodeDependency,
     ]
-
