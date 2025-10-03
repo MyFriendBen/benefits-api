@@ -67,7 +67,7 @@ class UtilityBillPay(ProgramCalculator):
         income_limits = []
         size_index = self.screen.household_size - 1
         for county in counties:
-            county_data = limits_by_county(county)
+            county_data = limits_by_county[county]
             if not county_data:
                 continue
 
