@@ -6,13 +6,11 @@ from programs.programs.policyengine.calculators.base import PolicyEngineCalulato
 
 tx_member_calculators = {}
 
-il_tax_unit_calculators = {}
+tx_tax_unit_calculators = {}
 
-il_spm_calculators = {
-    "tx_snap": spm.TxSnap,
-}
+tx_spm_calculators = {}
 
-il_pe_calculators: dict[str, type[PolicyEngineCalulator]] = {
+tx_pe_calculators: dict[str, type[PolicyEngineCalulator]] = {
     **tx_member_calculators,
     **tx_tax_unit_calculators,
     **tx_spm_calculators,
