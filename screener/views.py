@@ -698,10 +698,13 @@ def _generate_lifetime_projections(screen: Screen, eligibility_data: list) -> di
             if cached_prediction:
                 prediction = cached_prediction
                 logger.info(f"Using cached lifetime projection for {program.name_abbreviated}")
+                print(f"♻️ USING CACHED PREDICTION for {program.name_abbreviated} (prediction_id: {cached_prediction.id})")
             else:
                 # Generate new prediction
+                print(f"🆕 GENERATING NEW PREDICTION for {program.name_abbreviated}")
                 prediction = lifetime_service.generate_prediction(screen, program, monthly_benefit)
                 logger.info(f"Generated new lifetime projection for {program.name_abbreviated}")
+                print(f"✅ NEW PREDICTION GENERATED for {program.name_abbreviated} (prediction_id: {prediction.id})")
 
             # Convert prediction to API format
             projection_data = {

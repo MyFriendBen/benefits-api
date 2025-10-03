@@ -62,14 +62,17 @@ Context:
 - Total estimated value: ${estimated_lifetime_value:,.2f}
 - Data source: {data_source}
 
-Please provide a warm, encouraging explanation that:
-1. Explains what this benefit estimate means in simple terms
+Write a warm, encouraging explanation that:
+1. Explains what this benefit estimate means in simple, clear terms
 2. Mentions that this is based on research data from similar families
 3. Emphasizes this is helpful for planning purposes
-4. Uses accessible language (8th grade reading level)
+4. Uses short sentences and common words (8th grade reading level - avoid jargon, complex terms, or long sentences)
 5. Stays under 150 words
+6. IMPORTANT: Do not include any conversational phrases like "let me know if you have questions" or "I'm here to help" - this is informational content, not a chatbot
 
-Focus on being helpful and supportive, not overwhelming with statistics.""",
+Focus on being helpful and supportive, not overwhelming with statistics. Keep language simple and direct.
+
+OUTPUT ONLY THE EXPLANATION TEXT - no preamble like "Here's an explanation" or "This covers" - start directly with the explanation content.""",
             "es": """Estás ayudando a explicar las estimaciones de duración de beneficios gubernamentales a familias en un lenguaje claro y accesible.
 
 Contexto:
@@ -81,14 +84,17 @@ Contexto:
 - Valor total estimado: ${estimated_lifetime_value:,.2f}
 - Fuente de datos: {data_source}
 
-Por favor proporciona una explicación cálida y alentadora que:
-1. Explique qué significa esta estimación de beneficios en términos simples
+Escribe una explicación cálida y alentadora que:
+1. Explique qué significa esta estimación de beneficios en términos simples y claros
 2. Mencione que esto se basa en datos de investigación de familias similares
 3. Enfatice que esto es útil para propósitos de planificación
-4. Use lenguaje accesible (nivel de lectura de 8vo grado)
+4. Use oraciones cortas y palabras comunes (nivel de lectura de 8vo grado - evita jerga, términos complejos u oraciones largas)
 5. Se mantenga bajo 150 palabras
+6. IMPORTANTE: No incluyas frases conversacionales como "déjame saber si tienes preguntas" o "estoy aquí para ayudar" - este es contenido informativo, no un chatbot
 
-Enfócate en ser útil y de apoyo, no abrumador con estadísticas.""",
+Enfócate en ser útil y de apoyo, no abrumador con estadísticas. Mantén el lenguaje simple y directo.
+
+ESCRIBE SOLO EL TEXTO DE LA EXPLICACIÓN - sin preámbulo como "Aquí está una explicación" o "Esto cubre" - comienza directamente con el contenido de la explicación.""",
         },
         "risk_assessment": {
             "en-us": """You are explaining potential factors that might affect benefit duration to help families understand uncertainty.
@@ -98,14 +104,17 @@ Context:
 - Estimated duration: {duration_months:.0f} months
 - Confidence range: {confidence_range_lower:.0f} to {confidence_range_upper:.0f} months
 
-Please provide a brief, reassuring explanation that:
+Write a brief, reassuring explanation that:
 1. Acknowledges that individual circumstances vary
 2. Mentions 2-3 common factors that might affect duration (income changes, household changes, work status)
 3. Emphasizes that this estimate helps with planning
-4. Uses encouraging tone
+4. Uses encouraging tone and simple language (8th grade reading level - short sentences, common words)
 5. Stays under 100 words
+6. IMPORTANT: Do not include conversational phrases like "let me know" or "I'm here to help" - this is informational content only
 
-Focus on being informative without causing anxiety.""",
+Focus on being informative without causing anxiety. Keep language clear and easy to understand.
+
+OUTPUT ONLY THE EXPLANATION TEXT - no preamble like "Here's what you should know" - start directly with the explanation content.""",
             "es": """Estás explicando factores potenciales que podrían afectar la duración de beneficios para ayudar a las familias a entender la incertidumbre.
 
 Contexto:
@@ -113,14 +122,17 @@ Contexto:
 - Duración estimada: {duration_months:.0f} meses
 - Rango de confianza: {confidence_range_lower:.0f} a {confidence_range_upper:.0f} meses
 
-Por favor proporciona una explicación breve y tranquilizadora que:
+Escribe una explicación breve y tranquilizadora que:
 1. Reconozca que las circunstancias individuales varían
 2. Mencione 2-3 factores comunes que podrían afectar la duración (cambios de ingresos, cambios en el hogar, estado laboral)
 3. Enfatice que esta estimación ayuda con la planificación
-4. Use un tono alentador
+4. Use un tono alentador y lenguaje simple (nivel de lectura de 8vo grado - oraciones cortas, palabras comunes)
 5. Se mantenga bajo 100 palabras
+6. IMPORTANTE: No incluyas frases conversacionales como "déjame saber" o "estoy aquí para ayudar" - este es solo contenido informativo
 
-Enfócate en ser informativo sin causar ansiedad.""",
+Enfócate en ser informativo sin causar ansiedad. Mantén el lenguaje claro y fácil de entender.
+
+ESCRIBE SOLO EL TEXTO DE LA EXPLICACIÓN - sin preámbulo como "Aquí está lo que debes saber" - comienza directamente con el contenido de la explicación.""",
         },
     }
 
@@ -186,21 +198,40 @@ class AICommunicationService:
 
     def _get_openai_client(self):
         """Lazy initialization of OpenAI client."""
+        logger.info(f"🔍 _get_openai_client called: _openai_client={self._openai_client}")
+        logger.info(f"🔍 OPENAI_API_KEY configured: {hasattr(settings, 'OPENAI_API_KEY') and bool(settings.OPENAI_API_KEY)}")
+
         if (
             self._openai_client is None
             and hasattr(settings, "OPENAI_API_KEY")
             and settings.OPENAI_API_KEY
         ):
+            logger.info("🔍 Attempting to initialize OpenAI client...")
             try:
                 import openai
+                logger.info("🔍 OpenAI package imported successfully")
 
-                self._openai_client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
+                # Log API key format (masked for security)
+                api_key = settings.OPENAI_API_KEY
+                if api_key:
+                    logger.info(f"🔍 API key format: {api_key[:7]}...{api_key[-4:]} (length: {len(api_key)})")
+                else:
+                    logger.error("🔍 API key is empty!")
+
+                self._openai_client = openai.OpenAI(api_key=api_key)
+                logger.info("✅ OpenAI client initialized successfully")
             except ImportError:
                 logger.warning(
                     "OpenAI package not installed, OpenAI provider unavailable"
                 )
             except Exception as e:
+                import traceback
                 logger.error(f"Failed to initialize OpenAI client: {e}")
+                logger.error(f"Full traceback:\n{traceback.format_exc()}")
+        else:
+            logger.info(f"🔍 Skipping OpenAI initialization: client_exists={self._openai_client is not None}, has_key={hasattr(settings, 'OPENAI_API_KEY') and bool(settings.OPENAI_API_KEY)}")
+
+        logger.info(f"🔍 Returning OpenAI client: {self._openai_client}")
         return self._openai_client
 
     def _get_anthropic_client(self):
@@ -226,8 +257,11 @@ class AICommunicationService:
 
     def _call_openai(self, prompt: str, max_tokens: int = 200) -> Optional[str]:
         """Make API call to OpenAI."""
+        logger.info("🔍 _call_openai called")
         client = self._get_openai_client()
+        logger.info(f"🔍 OpenAI client after _get_openai_client: {client}")
         if not client:
+            logger.info("🔍 No OpenAI client available, returning None")
             return None
 
         try:
@@ -279,16 +313,16 @@ class AICommunicationService:
         Returns:
             Generated explanation text
         """
-        # Try primary provider (OpenAI)
-        result = self._call_openai(prompt)
-        if result:
-            logger.info("Generated explanation using OpenAI")
-            return result
-
-        # Try secondary provider (Anthropic)
+        # Try primary provider (Anthropic)
         result = self._call_anthropic(prompt)
         if result:
             logger.info("Generated explanation using Anthropic")
+            return result
+
+        # Try secondary provider (OpenAI)
+        result = self._call_openai(prompt)
+        if result:
+            logger.info("Generated explanation using OpenAI")
             return result
 
         # Fallback to basic explanation
