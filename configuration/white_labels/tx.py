@@ -139,7 +139,18 @@ class TxConfigurationData(ConfigurationData):
     }
 
     referral_options = {
-        "[REPLACE_ME]": {"_label": "", "_default_message": ""},
+        "searchEngine": {
+            "_label": "referralOptions.searchEngine",
+            "_default_message": "Google or other search engine",
+        },
+        "socialMedia": {
+            "_label": "referralOptions.socialMedia",
+            "_default_message": "Social Media",
+        },
+        "friend": {
+            "_label": "referralOptions.friend",
+            "_default_message": "Friend / Family / Word of Mouth",
+        },
         "other": {"_label": "referralOptions.other", "_default_message": "Other"},
         "testOrProspect": {
             "_label": "referralOptions.testOrProspect",
@@ -2953,6 +2964,12 @@ class TxConfigurationData(ConfigurationData):
         },
         "featureFlags": {"default": []},
         "defaultLanguage": {"default": "en-us"},
+        "noResultMessage": {
+            "default": {
+                "_label": "noResultMessage",
+                "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. If you indicated need for an immediate resource, please click on the \"Near-Term Benefits\" tab. For additional resources, please click the 'More Help' button below to get the resources you're looking for.",
+            },
+        },
     }
 
     footer_data = {
