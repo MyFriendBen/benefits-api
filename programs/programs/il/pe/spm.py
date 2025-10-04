@@ -62,6 +62,7 @@ class IlLiheap(PolicyEngineSpmCalulator):
     Values based on IL 2025 benefit matrix for natural gas households.
     Source: https://liheapch.acf.gov/docs/2025/benefits-matricies/IL_BenefitMatrix_2025.pdf
     """
+
     pe_name = "il_liheap_income_eligible"  # Use income eligibility check instead of full program
     pe_inputs = [
         dependency.household.IlStateCodeDependency,
