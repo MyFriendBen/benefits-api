@@ -2325,6 +2325,16 @@ class IlConfigurationData(ConfigurationData):
                         "_default_message": "Phone or internet discount",
                     },
                 },
+                "il_liheap": {
+                    "name": {
+                        "_label": "housingAndUtilities.il_liheap",
+                        "_default_message": "Low Income Home Energy Assistance Program (LIHEAP): ",
+                    },
+                    "description": {
+                        "_label": "housingAndUtilities.il_liheap_desc",
+                        "_default_message": "Help paying heating and cooling bills",
+                    },
+                },
             },
             "category_name": {
                 "_label": "housing",

@@ -417,3 +417,11 @@ class CashAssetsDependency(SpmUnit):
     def value(self):
         assets = self.screen.household_assets or 0
         return int(assets)
+
+
+class IlLiheap(SpmUnit):
+    field = "il_liheap"
+
+
+class IlLiheapIncomeEligible(SpmUnit):
+    field = "il_liheap_income_eligible"
