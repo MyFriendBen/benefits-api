@@ -95,6 +95,10 @@ class IlLiheap(PolicyEngineSpmCalulator):
 
         Returns annual benefit amount (not monthly).
         """
+        # Check if user already has IL LIHEAP
+        if self.screen.has_benefit("il_liheap"):
+            return 0
+
         # Check PolicyEngine income eligibility (returns True/False)
         try:
             income_eligible = self.get_variable()  # il_liheap_income_eligible
