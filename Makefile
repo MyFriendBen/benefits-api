@@ -31,6 +31,11 @@ console:  ## opens a one-off console container
    $(DOCKER_IMG) bash
 	@docker rm benefits-api-console
 
+CMD := bash
+.PHONY: login
+login: ## Execute CMD (default: bash shell) in running api container
+	docker exec -it $(DOCKER_CONTAINER_ID) $(CMD)
+
 .PHONY: setup-db
 setup-db:  ## bootstrap the (local) postgresql database
 	psql -U postgres -h localhost -c 'create database benefitsapi'
