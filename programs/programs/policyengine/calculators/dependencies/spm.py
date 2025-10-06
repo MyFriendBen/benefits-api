@@ -419,9 +419,5 @@ class CashAssetsDependency(SpmUnit):
         return int(assets)
 
 
-class IlLiheap(SpmUnit):
-    field = "il_liheap"
-
-
 class IlLiheapIncomeEligible(SpmUnit):
     field = "il_liheap_income_eligible"
