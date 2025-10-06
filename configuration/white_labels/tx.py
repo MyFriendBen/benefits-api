@@ -231,8 +231,8 @@ class TxConfigurationData(ConfigurationData):
             "_label": "incomeOptions.childSupport",
             "_default_message": "Child Support (Received)",
         },
-        "txPension": {
-            "_label": "incomeOptions.txPension",
+        "pension": {
+            "_label": "incomeOptions.pension.tx",
             "_default_message": "Military, Government, or Private Pension",
         },
         "veteran": {
@@ -326,11 +326,10 @@ class TxConfigurationData(ConfigurationData):
                     "_default_message": "Medicare",
                 },
             },
-            # TODO: should this be "chip"?
             "chp": {
                 "icon": {"_icon": "Chp", "_classname": "option-card-icon"},
                 "text": {
-                    "_label": "healthInsuranceOptions.chip",
+                    "_label": "healthInsuranceOptions.chip.tx",
                     "_default_message": "Children's Health Insurance Program (CHIP)",
                 },
             },
@@ -388,7 +387,7 @@ class TxConfigurationData(ConfigurationData):
             "chp": {
                 "icon": {"_icon": "Chp", "_classname": "option-card-icon"},
                 "text": {
-                    "_label": "healthInsuranceOptions.chip",
+                    "_label": "healthInsuranceOptions.chip.tx",
                     "_default_message": "Children's Health Insurance Program (CHIP)",
                 },
             },
@@ -3339,7 +3338,7 @@ class TxConfigurationData(ConfigurationData):
 
     feedback_links = {
         "email": "hello@myfriendben.org",  # TODO: google doc says "new"?
-        "survey": "https://docs.google.com/forms/d/e/1FAIpQLSdnfqjvlVSBQkJuUMvhEDUp-t6oD-8tPQi67uRG2iNetXmSfA/viewform?usp=sf_link",
+        "survey": "",
     }
 
     override_text = {}
