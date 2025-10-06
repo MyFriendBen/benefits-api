@@ -1,6 +1,10 @@
+import logging
+
 from programs.programs.policyengine.calculators.base import PolicyEngineSpmCalulator
 import programs.programs.policyengine.calculators.dependencies as dependency
 from programs.programs.federal.pe.spm import Snap, SchoolLunch, Tanf
+
+logger = logging.getLogger(__name__)
 
 
 class IlSnap(Snap):
@@ -110,6 +114,12 @@ class IlLiheap(PolicyEngineSpmCalulator):
             benefit = self.benefit_amounts.get(size_key, 0)
             return benefit
 
-        except (KeyError, Exception):
-            # If PE doesn't have the variable or throws error, return 0
+        except KeyError as e:
+            logger.warning(f"PolicyEngine missing expected key for IL LIHEAP screen {self.screen.id}: {e}")
+            return 0
+        except (AttributeError, ValueError) as e:
+            logger.warning(f"Error calculating IL LIHEAP for screen {self.screen.id}: {type(e).__name__}: {e}")
+            return 0
+        except RuntimeError as e:
+            logger.warning(f"PolicyEngine API error for IL LIHEAP screen {self.screen.id}: {e}")
             return 0
