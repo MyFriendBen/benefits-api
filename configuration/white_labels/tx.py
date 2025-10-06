@@ -14,7 +14,7 @@ class TxConfigurationData(ConfigurationData):
     public_charge_rule = {
         "link": "https://pifcoalition.org/pc",
         "text": {
-            "_label": "landingPage.publicChargeLinkTX",
+            "_label": "landingPage.publicChargeLink.tx",
             "_default_message": "Protecting Immigrant Families website",
         },
     }
@@ -26,9 +26,9 @@ class TxConfigurationData(ConfigurationData):
                     "_default_message": "211 Texas",
                     "_label": "moreHelp.211.name.tx",
                 },
-                "link": "https://yourtexasbenefits.com/Learn/Home",
+                "link": "https://www.211texas.org/",
                 "phone": {
-                    "_default_message": "Dial 2-1-1",
+                    "_default_message": "Dial 2-1-1 or 877-541-7905",
                     "_label": "moreHelp.211.phone.tx",
                 },
             },
