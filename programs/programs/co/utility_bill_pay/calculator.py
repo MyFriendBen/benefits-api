@@ -67,6 +67,8 @@ class UtilityBillPay(ProgramCalculator):
         income_limits = []
         size_index = self.screen.household_size - 1
         for county in counties:
+            if county not in limits_by_county:
+                continue
             county_data = limits_by_county[county]
             if not county_data:
                 continue
@@ -76,12 +78,12 @@ class UtilityBillPay(ProgramCalculator):
                 continue
             income_limits.append(county_data[size_index])
 
+        income = int(self.screen.calc_gross_income("yearly", ["all"]))
         if not income_limits:
-            e.condition(False, messages.income())
+            e.condition(False, messages.income(income, 0))
             return
         income_limit = min(income_limits)
 
-        income = int(self.screen.calc_gross_income("yearly", ["all"]))
         income_eligible = income <= income_limit
 
         e.condition(income_eligible, messages.income(income, income_limit))
