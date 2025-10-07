@@ -53,26 +53,6 @@ class TxConfigurationData(ConfigurationData):
         },
     }
 
-    language_options = {
-        "en-us": "English",
-        "es": "Español",
-        "vi": "Tiếng Việt",
-        "fr": "Français",
-        "am": "አማርኛ",
-        "so": "Soomaali",
-        "ru": "Русский",
-        "ne": "नेपाली",
-        "my": "မြန်မာဘာသာစကား",
-        "zh-hans": "中文 (简体)",
-        "ar": "عربي",
-        "sw": "Kiswahili",
-        "pl": "Polski",
-        "tl": "Tagalog",
-        "ko": "한국어",
-        "pt-br": "Português Brasileiro",
-        "ht": "Kreyòl",
-    }
-
     income_options = {
         "wages": {
             "_label": "incomeOptions.wages",
