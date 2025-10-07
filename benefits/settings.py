@@ -34,6 +34,12 @@ EXTRA_LANG_INFO = {
         "name": "Somali",
         "name_local": "Soomaali",
     },
+    "ht": {
+        "bidi": False,
+        "code": "ht",
+        "name": "Haitian Creole",
+        "name_local": "Kreyòl ayisyen",
+    },
 }
 
 DJANGO_LANG_INFO.update(EXTRA_LANG_INFO)
@@ -223,6 +229,8 @@ LANGUAGES = (
     ("tl", _("Tagalog")),
     ("ko", _("Korean")),
     ("ur", _("Urdu")),
+    ("pt-br", _("Brazilian Portuguese")),
+    ("ht", _("Haitian Creole")),
 )
 
 TIME_ZONE = "UTC"
@@ -251,6 +259,8 @@ PARLER_LANGUAGES = {
         {"code": "tl"},
         {"code": "ko"},
         {"code": "ur"},
+        {"code": "pt-br"},
+        {"code": "ht"},
     ),
     "default": {
         "fallbacks": ["en-us"],  # defaults to PARLER_DEFAULT_LANGUAGE_CODE

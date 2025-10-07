@@ -1,5 +1,10 @@
+import logging
+
+from programs.programs.policyengine.calculators.base import PolicyEngineSpmCalulator
 import programs.programs.policyengine.calculators.dependencies as dependency
 from programs.programs.federal.pe.spm import Lifeline, Snap, SchoolLunch, Tanf
+
+logger = logging.getLogger(__name__)
 
 
 class IlSnap(Snap):
@@ -48,6 +53,80 @@ class IlTanf(Tanf):
     ]
 
     pe_outputs = [dependency.spm.IlTanf]
+
+
+class IlLiheap(PolicyEngineSpmCalulator):
+    """
+    Illinois Low Income Home Energy Assistance Program (LIHEAP)
+
+    Hard-coded annual benefit values based on household size.
+    Eligibility: Income ≤ higher of (60% SMI or 200% FPL)
+    Application period: October 1 to August 15
+
+    Values based on IL 2025 benefit matrix for natural gas households.
+    Source: https://liheapch.acf.gov/docs/2025/benefits-matricies/IL_BenefitMatrix_2025.pdf
+    """
+
+    pe_name = "il_liheap_income_eligible"  # Use income eligibility check instead of full program
+    pe_inputs = [
+        dependency.household.IlStateCodeDependency,
+        dependency.spm.HasHeatingCoolingExpenseDependency,
+        dependency.spm.HeatingCoolingExpenseDependency,
+        *dependency.irs_gross_income,
+    ]
+    pe_outputs = [dependency.spm.IlLiheapIncomeEligible]
+
+    # Hard-coded annual benefit amounts by household size
+    benefit_amounts = {
+        1: 315,
+        2: 330,
+        3: 340,
+        4: 350,
+        5: 365,
+        6: 375,  # 6+ people
+    }
+
+    def household_value(self) -> int:
+        """
+        Calculate LIHEAP benefit based on hard-coded values by household size.
+
+        Uses PolicyEngine for income eligibility check (60% SMI or 200% FPL),
+        then returns hard-coded benefit amounts.
+
+        Returns annual benefit amount (not monthly).
+        """
+        # Check if user already has IL LIHEAP
+        if self.screen.has_benefit("il_liheap"):
+            return 0
+
+        # Check PolicyEngine income eligibility (returns True/False)
+        try:
+            income_eligible = self.get_variable()  # il_liheap_income_eligible
+
+            # If not income eligible, return 0
+            if not income_eligible:
+                return 0
+
+            # Check if household has heating/cooling expenses
+            has_heating_cooling = self.screen.has_expense(["heating", "cooling"])
+            if not has_heating_cooling:
+                return 0
+
+            # Income eligible and has expenses - return hard-coded benefit
+            household_size = self.screen.household_size
+            size_key = min(household_size, 6)
+            benefit = self.benefit_amounts.get(size_key, 0)
+            return benefit
+
+        except KeyError as e:
+            logger.warning(f"PolicyEngine missing expected key for IL LIHEAP screen {self.screen.id}: {e}")
+            return 0
+        except (AttributeError, ValueError) as e:
+            logger.warning(f"Error calculating IL LIHEAP for screen {self.screen.id}: {type(e).__name__}: {e}")
+            return 0
+        except RuntimeError as e:
+            logger.warning(f"PolicyEngine API error for IL LIHEAP screen {self.screen.id}: {e}")
+            return 0
 
 
 class IlLifeline(Lifeline):
