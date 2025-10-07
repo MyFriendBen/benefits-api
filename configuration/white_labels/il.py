@@ -203,6 +203,8 @@ class IlConfigurationData(ConfigurationData):
         "tl": "Tagalog",
         "ko": "한국어",
         "ur": "اردو",
+        "pt-br": "Português Brasileiro",
+        "ht": "Kreyòl",
     }
 
     income_options = {
@@ -2321,6 +2323,16 @@ class IlConfigurationData(ConfigurationData):
                     "description": {
                         "_label": "housingAndUtilities.lifeline_desc",
                         "_default_message": "Phone or internet discount",
+                    },
+                },
+                "il_liheap": {
+                    "name": {
+                        "_label": "housingAndUtilities.il_liheap",
+                        "_default_message": "Low Income Home Energy Assistance Program (LIHEAP): ",
+                    },
+                    "description": {
+                        "_label": "housingAndUtilities.il_liheap_desc",
+                        "_default_message": "Help paying heating and cooling bills",
                     },
                 },
             },

@@ -150,6 +150,8 @@ class ConfigurationData:
         "pl": "Polski",
         "tl": "Tagalog",
         "ko": "한국어",
+        "pt-br": "Português Brasileiro",
+        "ht": "Kreyòl",
     }
 
     income_options = {
