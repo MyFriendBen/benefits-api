@@ -2372,10 +2372,7 @@ class IlConfigurationData(ConfigurationData):
                     },
                 },
             },
-            "category_name": {
-                "_label": "cashAssistance",
-                "_default_message": "Cash Assistance",
-            },
+            "category_name": {"_label": "cashAssistance", "_default_message": "Cash Assistance"},
         },
         "transportation": {
             "benefits": {

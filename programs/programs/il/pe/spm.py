@@ -65,9 +65,7 @@ class IlLifeline(Lifeline):
 
         fpl_limit = self.program.year.get_limit(self.screen.household_size)
 
-        has_disability = any(
-            m.has_disability() for m in self.screen.household_members.all()
-        )
+        has_disability = any(m.has_disability() for m in self.screen.household_members.all())
 
         fpl_threshold = 2.0 if has_disability else 1.65
 

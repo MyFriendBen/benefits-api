@@ -84,11 +84,7 @@ class UtilityExpenseDependency(SpmUnit):
     field = "utility_expense"
 
     def value(self):
-        return int(
-            self.screen.calc_expenses(
-                "yearly", ["otherUtilities", "heating", "cooling"]
-            )
-        )
+        return int(self.screen.calc_expenses("yearly", ["otherUtilities", "heating", "cooling"]))
 
 
 class HeatingCoolingExpenseDependency(SpmUnit):
