@@ -14,6 +14,13 @@ def income(income, max_income):
     )
 
 
+def county_not_found():
+    """
+    County not found in income limits data
+    """
+    return (translation("county_not_found", 0, "County not found in income limits data"),)
+
+
 def assets(asset_limit):
     """
     Household resources must not exceed ${asset_limit}

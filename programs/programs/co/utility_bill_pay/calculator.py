@@ -80,7 +80,7 @@ class UtilityBillPay(ProgramCalculator):
 
         income = int(self.screen.calc_gross_income("yearly", ["all"]))
         if not income_limits:
-            e.condition(False, messages.income(income, 0))
+            e.condition(False, messages.county_not_found())
             return
         income_limit = min(income_limits)
 
