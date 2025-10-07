@@ -26,7 +26,9 @@ class IlNslp(SchoolLunch):
         num_children = self.screen.num_children(3, 18)
         if self.get_variable() > 0 and num_children > 0:
             if self.get_dependency_value(dependency.spm.SchoolMealTier) != "PAID":
-                countable_income = self.get_dependency_value(dependency.spm.SchoolMealCountableIncomeDependency)
+                countable_income = self.get_dependency_value(
+                    dependency.spm.SchoolMealCountableIncomeDependency
+                )
                 fpl_limit = self.program.year.get_limit(self.screen.household_size)
 
                 if countable_income <= int(self.tier_1_fpl * fpl_limit):
@@ -52,20 +54,25 @@ class IlTanf(Tanf):
 
 class IlLifeline(Lifeline):
     pe_inputs = [
-        dependency.spm.BroadbandCostDependency,
-        *dependency.irs_gross_income,
+        *Lifeline.pe_inputs,
+        dependency.household.IlStateCodeDependency,
     ]
     pe_outputs = [dependency.spm.Lifeline]
 
-    def postprocess(self, inputs, outputs):
+    def household_value(self):
         print("IL Lifeline postprocess")
-        lifeline = outputs[dependency.spm.Lifeline]
-        income = inputs["irs_gross_income"]
-        fpl = inputs["fpl"]
+        lifeline = getattr(self, "lifeline", 0)
+        income = int(self.screen.calc_gross_income("yearly", ["all"]))
+        print("Income:", income)
 
-        has_disability = any(m.has_disability() for m in self.screen.household_members.all())
+        fpl_limit = self.program.year.get_limit(self.screen.household_size)
+
+        has_disability = any(
+            m.has_disability() for m in self.screen.household_members.all()
+        )
+
         fpl_threshold = 2.0 if has_disability else 1.65
 
-        eligible = income <= fpl_threshold * fpl
+        eligible = income <= int(fpl_threshold * fpl_limit)
 
         return lifeline if eligible else 0

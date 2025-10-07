@@ -37,7 +37,9 @@ class HousingCostDependency(SpmUnit):
     field = "housing_cost"
 
     def value(self):
-        return int(self.screen.calc_expenses("yearly", ["rent", "mortgage", "subsidizedRent"]))
+        return int(
+            self.screen.calc_expenses("yearly", ["rent", "mortgage", "subsidizedRent"])
+        )
 
 
 class SnapAssetsDependency(SpmUnit):
@@ -84,7 +86,11 @@ class UtilityExpenseDependency(SpmUnit):
     field = "utility_expense"
 
     def value(self):
-        return int(self.screen.calc_expenses("yearly", ["otherUtilities", "heating", "cooling"]))
+        return int(
+            self.screen.calc_expenses(
+                "yearly", ["otherUtilities", "heating", "cooling"]
+            )
+        )
 
 
 class HeatingCoolingExpenseDependency(SpmUnit):
@@ -156,10 +162,6 @@ class Lifeline(SpmUnit):
     field = "lifeline"
 
 
-class IlLifeline(SpmUnit):
-    field = "il_lifeline"
-
-
 class Tanf(SpmUnit):
     field = "tanf"
 
@@ -201,7 +203,11 @@ class CoTanfCountableGrossUnearnedIncomeDependency(SpmUnit):
     )
 
     def value(self):
-        return int(self.screen.calc_gross_income("yearly", ["unearned"], exclude=["cashAssistance"]))
+        return int(
+            self.screen.calc_gross_income(
+                "yearly", ["unearned"], exclude=["cashAssistance"]
+            )
+        )
 
 
 class NcTanfCountableEarnedIncomeDependency(SpmUnit):
@@ -255,7 +261,11 @@ class IlTanfCountableGrossUnearnedIncomeDependency(SpmUnit):
     )
 
     def value(self):
-        return int(self.screen.calc_gross_income("yearly", ["unearned"], exclude=["cashAssistance"]))
+        return int(
+            self.screen.calc_gross_income(
+                "yearly", ["unearned"], exclude=["cashAssistance"]
+            )
+        )
 
 
 class PreSubsidyChildcareExpensesDependency(SpmUnit):
