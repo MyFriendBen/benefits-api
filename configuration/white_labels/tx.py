@@ -2945,7 +2945,6 @@ class TxConfigurationData(ConfigurationData):
         "79997": {"El Paso": "El Paso"},
     }
 
-    # TODO
     category_benefits = {
         "foodAndNutrition": {
             "benefits": {
@@ -3025,7 +3024,7 @@ class TxConfigurationData(ConfigurationData):
     }
 
     feedback_links = {
-        "email": "hello@myfriendben.org",  # TODO: google doc says "new"?
+        "email": "hello@myfriendben.org",
         "survey": "",
     }
 
