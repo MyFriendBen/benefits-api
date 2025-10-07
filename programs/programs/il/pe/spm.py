@@ -26,9 +26,7 @@ class IlNslp(SchoolLunch):
         num_children = self.screen.num_children(3, 18)
         if self.get_variable() > 0 and num_children > 0:
             if self.get_dependency_value(dependency.spm.SchoolMealTier) != "PAID":
-                countable_income = self.get_dependency_value(
-                    dependency.spm.SchoolMealCountableIncomeDependency
-                )
+                countable_income = self.get_dependency_value(dependency.spm.SchoolMealCountableIncomeDependency)
                 fpl_limit = self.program.year.get_limit(self.screen.household_size)
 
                 if countable_income <= int(self.tier_1_fpl * fpl_limit):
