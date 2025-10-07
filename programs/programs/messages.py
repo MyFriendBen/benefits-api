@@ -16,9 +16,9 @@ def income(income, max_income):
 
 def county_not_found():
     """
-    County not found in income limits data
+    Unable to determine income limits for your household
     """
-    return (translation("county_not_found", 0, "County not found in income limits data"),)
+    return (translation("county_not_found", 0, "Unable to determine income limits for your household"),)
 
 
 def assets(asset_limit):
