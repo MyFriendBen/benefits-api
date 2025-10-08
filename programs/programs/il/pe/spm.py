@@ -70,8 +70,6 @@ class IlLiheap(PolicyEngineSpmCalulator):
     pe_name = "il_liheap_income_eligible"  # Use income eligibility check instead of full program
     pe_inputs = [
         dependency.household.IlStateCodeDependency,
-        dependency.spm.HasHeatingCoolingExpenseDependency,
-        dependency.spm.HeatingCoolingExpenseDependency,
         *dependency.irs_gross_income,
     ]
     pe_outputs = [dependency.spm.IlLiheapIncomeEligible]
@@ -108,7 +106,7 @@ class IlLiheap(PolicyEngineSpmCalulator):
                 return 0
 
             # Check if household has heating/cooling/rent/mortgage expenses
-            has_qualifying_expenses = self.screen.has_expense(["heating", "cooling", "rent", "mortgage"])
+            has_qualifying_expenses = self.screen.has_expense(["rent", "mortgage"])
             if not has_qualifying_expenses:
                 return 0
 
