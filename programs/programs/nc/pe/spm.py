@@ -23,7 +23,7 @@ class NcTanf(Tanf):
 
 
 class NcScca(PolicyEngineSpmCalulator):
-    pe_name = "nc_scca"
+    pe_name = "nc_scca_maximum_payment"
     pe_inputs = [
         dependency.household.NcStateCodeDependency,
         dependency.member.AgeDependency,
