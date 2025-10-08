@@ -2318,7 +2318,7 @@ class IlConfigurationData(ConfigurationData):
         },
         "housingAndUtilities": {
             "benefits": {
-                "lifeline": {
+                "il_lifeline": {
                     "name": {"_label": "housingAndUtilities.lifeline", "_default_message": "Lifeline: "},
                     "description": {
                         "_label": "housingAndUtilities.lifeline_desc",

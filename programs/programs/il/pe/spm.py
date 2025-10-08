@@ -137,15 +137,12 @@ class IlLifeline(Lifeline):
     pe_outputs = [dependency.spm.Lifeline]
 
     def household_value(self):
-        print("IL Lifeline postprocess")
-        lifeline = getattr(self, "lifeline", 0)
+        lifeline = 9.25 * 12  # amount
         income = int(self.screen.calc_gross_income("yearly", ["all"]))
-        print("Income:", income)
-
         fpl_limit = self.program.year.get_limit(self.screen.household_size)
 
+        # if any member has disability, use 200% FPL, else 165% FPL
         has_disability = any(m.has_disability() for m in self.screen.household_members.all())
-
         fpl_threshold = 2.0 if has_disability else 1.65
 
         eligible = income <= int(fpl_threshold * fpl_limit)
