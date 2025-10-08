@@ -207,6 +207,8 @@ class CoConfigurationData(ConfigurationData):
         "tl": "Tagalog",
         "ko": "한국어",
         "ur": "اردو",
+        "pt-br": "Português Brasileiro",
+        "ht": "Kreyòl",
     }
 
     income_options = {
