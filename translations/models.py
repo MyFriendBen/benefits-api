@@ -217,7 +217,7 @@ class Translation(TranslatableModel):
                         latest_history.edit_type = new_edited
                         latest_history.save()
             except Exception as e:
-                print(f"Error processing language {lang_code}: {e}")
+                pass
 
     def _get_reverses(self):
         """
