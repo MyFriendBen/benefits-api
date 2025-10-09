@@ -13,7 +13,7 @@ class IlConfigurationData(ConfigurationData):
         "link": "https://www.icirr.org/ifrp",
         "text": {
             "_label": "landingPage.publicChargeLinkIL",
-            "_default_message": "Illinois Department of Human Services website",
+            "_default_message": "Illinois Department of Human Services",
         },
     }
 
