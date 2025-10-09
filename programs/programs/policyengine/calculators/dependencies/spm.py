@@ -260,7 +260,7 @@ class PreSubsidyChildcareExpensesDependency(SpmUnit):
 
 
 class NcScca(SpmUnit):
-    field = "nc_scca"
+    field = "nc_scca_maximum_payment"
 
 
 class NcSccaCountableIncomeDependency(SpmUnit):
