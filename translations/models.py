@@ -6,6 +6,7 @@ from django.conf import settings
 from dataclasses import dataclass
 from integrations.util.cache import Cache
 from translations.model_data import ModelDataController
+from sentry_sdk import capture_exception
 
 BLANK_TRANSLATION_PLACEHOLDER = "[PLACEHOLDER]"
 
@@ -217,7 +218,7 @@ class Translation(TranslatableModel):
                         latest_history.edit_type = new_edited
                         latest_history.save()
             except Exception as e:
-                pass
+                capture_exception(e, level="warning", extras={"lang_code": lang_code, "translation_id": self.pk})
 
     def _get_reverses(self):
         """
