@@ -6,7 +6,6 @@ import programs.programs.messages as messages
 
 
 class WeatherizationAssistance(ProgramCalculator):
-    # income_limits = IncomeLimitsCache()
     presumptive_eligibility = ("andcs", "ssi", "snap", "leap", "tanf")
     amount = 350
     dependencies = ["household_size", "income_amount", "income_frequency", "county"]
