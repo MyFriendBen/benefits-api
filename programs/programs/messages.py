@@ -14,11 +14,11 @@ def income(income, max_income):
     )
 
 
-def county_not_found():
+def income_limit_lookup_failed():
     """
     Unable to determine income limits for your household
     """
-    return (translation("county_not_found", 0, "Unable to determine income limits for your household"),)
+    return (translation("income_limit_lookup_failed", 0, "Unable to determine income limits for your household"),)
 
 
 def assets(asset_limit):

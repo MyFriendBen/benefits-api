@@ -1,33 +1,19 @@
 from integrations.services.sheets import GoogleSheetsCache
 from programs.co_county_zips import counties_from_screen
 from programs.programs.calc import Eligibility, ProgramCalculator
+from programs.programs.co.income_limits_cache.income_limits_cache import IncomeLimitsCache
 import programs.programs.messages as messages
 
 
-class IncomeLimitsCache(GoogleSheetsCache):
-    sheet_id = "1ZzQYhULtiP61crj0pbPjhX62L1TnyAisLcr_dQXbbFg"
-    range_name = "A2:K"  # WARN: This selects the first tab because the tab name is "(Updated mm/dd/yyyy)"
-    default = {}
-
-    def update(self):
-        data = super().update()
-
-        return {self._format_county(r[0]): self._format_amounts(r[1:9]) for r in data}
-
-    @staticmethod
-    def _format_county(county: str):
-        return county.strip() + " County"
-
-    @staticmethod
-    def _format_amounts(amounts: list[str]):
-        return [float(a.strip().replace("$", "").replace(",", "")) for a in amounts]
-
-
 class WeatherizationAssistance(ProgramCalculator):
-    income_limits = IncomeLimitsCache()
+    # income_limits = IncomeLimitsCache()
     presumptive_eligibility = ("andcs", "ssi", "snap", "leap", "tanf")
     amount = 350
     dependencies = ["household_size", "income_amount", "income_frequency", "county"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.income_limits = IncomeLimitsCache()
 
     def household_eligible(self, e: Eligibility):
         # income condition
