@@ -28,7 +28,7 @@ class WeatherizationAssistance(ProgramCalculator):
                 categorical_eligible = True
                 break
 
-        # Override the income eligibility condition with combined result
+        # Set income and categorical eligibility condition
         e.condition(income_eligible or categorical_eligible, messages.income(income, income_limit))
 
         # rent or mortgage expense

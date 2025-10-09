@@ -37,7 +37,7 @@ class UtilityBillPay(ProgramCalculator):
             # Income validation failed completely
             return
 
-        # Note: income_eligible condition is already set by validate_income_limits
+        # Set income eligibility condition
         e.condition(income_eligible, messages.income(income, income_limit))
 
         # Presumptive eligibility check
