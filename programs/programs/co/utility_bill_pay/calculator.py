@@ -1,7 +1,6 @@
-from integrations.services.sheets import GoogleSheetsCache
-from programs.co_county_zips import counties_from_screen
 from programs.programs.calc import Eligibility, ProgramCalculator
 from programs.programs.co.income_limits_cache.income_limits_cache import IncomeLimitsCache
+from programs.programs.co.energy_programs_shared.income_validation import validate_income_limits
 import programs.programs.messages as messages
 
 
@@ -31,36 +30,17 @@ class UtilityBillPay(ProgramCalculator):
             if any(member.has_benefit(benefit) for member in self.screen.household_members.all()):
                 presumptive_eligible = True
 
-        # income condition
-        counties = counties_from_screen(self.screen)
-        limits_by_county = self.income_limits.fetch()
-        income_limits = []
-        size_index = self.screen.household_size - 1
-        for county in counties:
-            if county not in limits_by_county:
-                continue
-            county_data = limits_by_county.get(county)
-            if county_data is None:
-                continue
+        # income condition - use the shared function
+        income_eligible, income, income_limit = validate_income_limits(self.screen, e, self.income_limits)
 
-            # Validate household_size bounds (1-8)
-            if size_index < 0 or size_index >= len(county_data):
-                continue
-            try:
-                income_limits.append(county_data[size_index])
-            except IndexError:
-                continue
-
-        income = int(self.screen.calc_gross_income("yearly", ["all"]))
-        if not income_limits:
-            e.condition(False, messages.income_limit_lookup_failed())
+        if income_limit is None:
+            # Income validation failed completely
             return
-        income_limit = min(income_limits)
 
-        income_eligible = income <= income_limit
-
+        # Note: income_eligible condition is already set by validate_income_limits
         e.condition(income_eligible, messages.income(income, income_limit))
 
+        # Presumptive eligibility check
         e.condition(presumptive_eligible)
 
         # has rent or mortgage expense

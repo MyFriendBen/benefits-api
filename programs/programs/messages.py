@@ -1,3 +1,6 @@
+from sentry_sdk import capture_message
+
+
 def translation(name, i, message):
     return {"default_message": message, "label": f"eligibility_message.{name}-{i}"}
 
@@ -18,6 +21,20 @@ def income_limit_lookup_failed():
     """
     Unable to determine income limits for your household
     """
+    return (translation("income_limit_lookup_failed", 0, "Unable to determine income limits for your household"),)
+
+
+def income_limit_unknown(reason: str, county: str, size_index: int | None = None):
+    """
+    Log income limit failure to Sentry with a specific reason,
+    but return the same user-facing message.
+    """
+    msg = f"Income limit failure for county={county}. Reason={reason}"
+    if size_index is not None:
+        msg += f" (household_size_index={size_index})"
+
+    capture_message(msg, level="error")
+
     return (translation("income_limit_lookup_failed", 0, "Unable to determine income limits for your household"),)
 
 
