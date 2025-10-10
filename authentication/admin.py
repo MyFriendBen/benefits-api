@@ -119,7 +119,7 @@ class CustomGroupAdmin(SecureAdmin, GroupAdmin):
 
 
 class CustomTokenAdmin(SecureAdmin, TokenAdmin):
-    pass
+    search_fields = ("user__email_or_cell",)
 
 
 admin.site.register(User, CustomUserAdmin)
