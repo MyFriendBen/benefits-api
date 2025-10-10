@@ -241,14 +241,14 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
                 },
             },
             "disabled": {
-                "icon": {"_icon": "Disabled", "_classname": "option-card-icon"},
+                "icon": {"_icon": "Wheelchair", "_classname": "option-card-icon"},
                 "text": {
                     "_label": "eCConditionOptions.disabledYou",
                     "_default_message": "Currently have any disabilities that make you unable to work now or in the future",
                 },
             },
             "medicalEquipment": {
-                "icon": {"_icon": "Dialysis", "_classname": "option-card-icon"},
+                "icon": {"_icon": "HeartRate", "_classname": "option-card-icon"},
                 "text": {
                     "_label": "eCConditionOptions.medicalEquipment",
                     "_default_message": "Have in-home life support / medical equipment that requires high power use",
@@ -264,14 +264,14 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
                 },
             },
             "disabled": {
-                "icon": {"_icon": "Disabled", "_classname": "option-card-icon"},
+                "icon": {"_icon": "Wheelchair", "_classname": "option-card-icon"},
                 "text": {
                     "_label": "eCConditionOptions.disabledThem",
                     "_default_message": "Currently have any disabilities that make them unable to work now or in the future",
                 },
             },
             "medicalEquipment": {
-                "icon": {"_icon": "Dialysis", "_classname": "option-card-icon"},
+                "icon": {"_icon": "HeartRate", "_classname": "option-card-icon"},
                 "text": {
                     "_label": "eCConditionOptions.medicalEquipment",
                     "_default_message": "Have in-home life support / medical equipment that requires high power use",
