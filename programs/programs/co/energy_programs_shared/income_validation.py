@@ -10,7 +10,7 @@ def validate_income_limits(screen, eligibility: Eligibility, income_limits_cache
 
     Args:
         screen: The screening object with household information
-        eligibility: The Eligibility object to record conditions
+        eligibility: The Eligibility object to check eligibility
         income_limits_cache: An instance of IncomeLimitsCache
 
     Returns:
@@ -55,7 +55,5 @@ def validate_income_limits(screen, eligibility: Eligibility, income_limits_cache
     income = int(screen.calc_gross_income("yearly", ["all"]))
     income_limit = min(income_limits)
     income_eligible = income <= income_limit
-
-    # eligibility.condition(income_eligible, messages.income(income, income_limit))
 
     return income_eligible, income, income_limit
