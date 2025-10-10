@@ -10,10 +10,10 @@ class IlConfigurationData(ConfigurationData):
     state = {"name": "Illinois"}
 
     public_charge_rule = {
-        "link": "https://www.dhs.state.il.us/page.aspx?item=118709",
+        "link": "https://www.icirr.org/ifrp",
         "text": {
             "_label": "landingPage.publicChargeLinkIL",
-            "_default_message": "Illinois Department of Human Services website",
+            "_default_message": "Illinois Department of Human Services",
         },
     }
 

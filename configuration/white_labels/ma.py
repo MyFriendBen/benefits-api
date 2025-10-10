@@ -13,7 +13,7 @@ class MaConfigurationData(ConfigurationData):
         "link": "https://www.mass.gov/info-details/information-about-the-public-charge-rule-and-how-it-may-impact-you#information-about-the-public-charge-rule-",
         "text": {
             "_label": "landingPage.publicChargeLinkMA",
-            "_default_message": "Massachusetts Department of Health and Human Services website",
+            "_default_message": "Massachusetts Department of Health and Human Services",
         },
     }
 
