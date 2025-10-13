@@ -1,0 +1,259 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  deploy:
+    name: Deploy Backend to Heroku Staging
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Heroku
+        uses: akhileshns/heroku-deploy@v3.13.15
+        with:
+          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+          heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
+          heroku_email: ${{ secrets.HEROKU_EMAIL }}
+        id: heroku_deploy
+
+      - name: Get commit info
+        id: commit_info
+        run: |
+          echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "message=$(git log -1 --pretty=%B | head -n 1)" >> $GITHUB_OUTPUT
+          echo "author=$(git log -1 --pretty=%an)" >> $GITHUB_OUTPUT
+
+      - name: Send initial deployment notification to Slack
+        if: success()
+        id: slack_notification
+        run: |
+          RESPONSE=$(curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "text": "🚀 Backend Staging Deployment In Progress",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "🚀 Backend Staging Deployment In Progress"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Environment:*\nStaging"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Commit:*\n<https://github.com/${{ github.repository }}/commit/${{ github.sha }}|${{ steps.commit_info.outputs.sha }}>"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Author:*\n${{ steps.commit_info.outputs.author }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*App:*\n<https://${{ secrets.HEROKU_APP_NAME }}.herokuapp.com|View App>"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Commit Message:*\n${{ steps.commit_info.outputs.message }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "_Running post-deployment scripts..._"
+                  }
+                }
+              ]
+            }')
+          echo "slack_response=$RESPONSE" >> $GITHUB_OUTPUT
+
+      - name: Install Heroku CLI
+        if: success()
+        run: curl https://cli-assets.heroku.com/install.sh | sh
+
+      - name: Run database migrations
+        if: success()
+        id: migrations
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          echo "Running migrations..."
+          OUTPUT=$(heroku run -a ${{ secrets.HEROKU_APP_NAME }} "python manage.py migrate" 2>&1)
+          echo "$OUTPUT"
+          echo "migrations_output<<EOF" >> $GITHUB_OUTPUT
+          echo "$OUTPUT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          if echo "$OUTPUT" | grep -q "Conflicting migrations detected"; then
+            echo "Migration conflict detected, attempting merge..."
+            MERGE_OUTPUT=$(heroku run -a ${{ secrets.HEROKU_APP_NAME }} "python manage.py makemigrations --merge --noinput" 2>&1)
+            echo "$MERGE_OUTPUT"
+            echo "Retrying migrations after merge..."
+            RETRY_OUTPUT=$(heroku run -a ${{ secrets.HEROKU_APP_NAME }} "python manage.py migrate" 2>&1)
+            echo "$RETRY_OUTPUT"
+            echo "migrations_output<<EOF" >> $GITHUB_OUTPUT
+            echo "$MERGE_OUTPUT" >> $GITHUB_OUTPUT
+            echo "$RETRY_OUTPUT" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Add configurations
+        if: success()
+        id: add_config
+        continue-on-error: true
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          echo "Adding configurations..."
+          OUTPUT=$(heroku run -a ${{ secrets.HEROKU_APP_NAME }} "python manage.py add_config --all" 2>&1)
+          echo "$OUTPUT"
+          echo "config_output<<EOF" >> $GITHUB_OUTPUT
+          echo "$OUTPUT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Run validations
+        if: success()
+        id: validations
+        continue-on-error: true
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          echo "Running validations..."
+          OUTPUT=$(heroku run -a ${{ secrets.HEROKU_APP_NAME }} "python manage.py validate --sheet-id 1JRsCKm9KeeatVoW3wjsT2YqSy63js53Ib3vivK5NFYY" 2>&1)
+          echo "$OUTPUT"
+          echo "validation_output<<EOF" >> $GITHUB_OUTPUT
+          echo "$OUTPUT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Send final status to Slack
+        if: always()
+        run: |
+          MIGRATIONS_STATUS="${{ steps.migrations.outcome }}"
+          CONFIG_STATUS="${{ steps.add_config.outcome }}"
+          VALIDATIONS_STATUS="${{ steps.validations.outcome }}"
+
+          if [ "$MIGRATIONS_STATUS" == "success" ] && [ "$CONFIG_STATUS" == "success" ] && [ "$VALIDATIONS_STATUS" == "success" ]; then
+            EMOJI="✅"
+            STATUS_TEXT="Backend Staging Deployment Successful"
+          else
+            EMOJI="⚠️"
+            STATUS_TEXT="Backend Staging Deployment Completed with Warnings"
+          fi
+
+          # Escape special characters for JSON
+          MIGRATIONS_OUTPUT=$(echo '${{ steps.migrations.outputs.migrations_output }}' | sed 's/"/\\"/g' | sed 's/$/\\n/' | tr -d '\n' | sed 's/\\n$//')
+          CONFIG_OUTPUT=$(echo '${{ steps.add_config.outputs.config_output }}' | sed 's/"/\\"/g' | sed 's/$/\\n/' | tr -d '\n' | sed 's/\\n$//')
+          VALIDATION_OUTPUT=$(echo '${{ steps.validations.outputs.validation_output }}' | sed 's/"/\\"/g' | sed 's/$/\\n/' | tr -d '\n' | sed 's/\\n$//')
+
+          curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+            -H 'Content-Type: application/json' \
+            -d "{
+              \"text\": \"$EMOJI $STATUS_TEXT\",
+              \"blocks\": [
+                {
+                  \"type\": \"header\",
+                  \"text\": {
+                    \"type\": \"plain_text\",
+                    \"text\": \"$EMOJI $STATUS_TEXT\"
+                  }
+                },
+                {
+                  \"type\": \"section\",
+                  \"text\": {
+                    \"type\": \"mrkdwn\",
+                    \"text\": \"*Post-Deployment Scripts Results:*\"
+                  }
+                },
+                {
+                  \"type\": \"section\",
+                  \"fields\": [
+                    {
+                      \"type\": \"mrkdwn\",
+                      \"text\": \"*Migrations:*\\n$([ '$MIGRATIONS_STATUS' == 'success' ] && echo '✅ Success' || echo '❌ Failed')\"
+                    },
+                    {
+                      \"type\": \"mrkdwn\",
+                      \"text\": \"*Add Config:*\\n$([ '$CONFIG_STATUS' == 'success' ] && echo '✅ Success' || echo '❌ Failed')\"
+                    },
+                    {
+                      \"type\": \"mrkdwn\",
+                      \"text\": \"*Validations:*\\n$([ '$VALIDATIONS_STATUS' == 'success' ] && echo '✅ Success' || echo '❌ Failed')\"
+                    },
+                    {
+                      \"type\": \"mrkdwn\",
+                      \"text\": \"*Workflow:*\\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Logs>\"
+                    }
+                  ]
+                }
+              ]
+            }"
+
+      - name: Send deployment failure notification to Slack
+        if: failure()
+        run: |
+          curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "text": "❌ Backend Staging Deployment Failed",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "❌ Backend Staging Deployment Failed"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Environment:*\nStaging"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Commit:*\n<https://github.com/${{ github.repository }}/commit/${{ github.sha }}|${{ steps.commit_info.outputs.sha }}>"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Author:*\n${{ steps.commit_info.outputs.author }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Workflow:*\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Logs>"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Commit Message:*\n${{ steps.commit_info.outputs.message }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "The deployment to Heroku failed. Please check the workflow logs for details."
+                  }
+                }
+              ]
+            }'
