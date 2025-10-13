@@ -1,7 +1,7 @@
 from programs.programs.calc import Eligibility, ProgramCalculator
-from programs.programs.co.income_limits_cache.income_limits_cache import IncomeLimitsCache
+from programs.programs.co.energy_programs_shared.income_limits_cache import IncomeLimitsCache
 import programs.programs.messages as messages
-from programs.programs.co.energy_programs_shared.income_validation import validate_income_limits
+from programs.programs.co.energy_programs_shared.income_validation import get_income_limit, _get_county_name
 
 
 class WeatherizationAssistance(ProgramCalculator):
@@ -14,22 +14,34 @@ class WeatherizationAssistance(ProgramCalculator):
         self.income_limits = IncomeLimitsCache()
 
     def household_eligible(self, e: Eligibility):
-        # income condition
-        income_eligible, income, income_limit = validate_income_limits(self.screen, e, self.income_limits)
-
-        if income_limit is None:
-            # Income validation failed completely, validation function already set condition
-            return
-
-        # categorical eligibility
+        # Check categorical eligibility first
         categorical_eligible = False
         for program in WeatherizationAssistance.presumptive_eligibility:
             if self.screen.has_benefit(program):
                 categorical_eligible = True
                 break
 
-        # Set income and categorical eligibility condition
-        e.condition(income_eligible or categorical_eligible, messages.income(income, income_limit))
+        # Get income limit (data retrieval only - NO conditions set)
+        income_limit, error_detail = get_income_limit(self.screen, self.income_limits)
+
+        # Handle case where income limit data is missing
+        if income_limit is None:
+            # If categorically eligible, pass anyway (no income check needed)
+            if categorical_eligible:
+                e.condition(True)
+            else:
+                # Not categorically eligible and no income data - fail
+                county = _get_county_name(self.screen)
+                size_index = self.screen.household_size - 1
+                e.condition(False, messages.income_limit_unknown(error_detail, county, size_index))
+                return
+        else:
+            # We have income limit data - check income
+            user_income = int(self.screen.calc_gross_income("yearly", ["all"]))
+            income_eligible = user_income <= income_limit
+
+            # Pass if EITHER income eligible OR categorically eligible
+            e.condition(income_eligible or categorical_eligible, messages.income(user_income, income_limit))
 
         # rent or mortgage expense
         e.condition(self._has_expense())

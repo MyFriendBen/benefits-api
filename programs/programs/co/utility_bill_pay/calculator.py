@@ -1,7 +1,6 @@
 from programs.programs.calc import Eligibility, ProgramCalculator
-from programs.programs.co.income_limits_cache.income_limits_cache import IncomeLimitsCache
-from programs.programs.co.energy_programs_shared.income_validation import validate_income_limits
-import programs.programs.messages as messages
+from programs.programs.co.energy_programs_shared.income_limits_cache import IncomeLimitsCache
+from programs.programs.co.energy_programs_shared.income_validation import validate_income_eligibility
 
 
 class UtilityBillPay(ProgramCalculator):
@@ -30,15 +29,12 @@ class UtilityBillPay(ProgramCalculator):
             if any(member.has_benefit(benefit) for member in self.screen.household_members.all()):
                 presumptive_eligible = True
 
-        # income condition - use the shared function
-        income_eligible, income, income_limit = validate_income_limits(self.screen, e, self.income_limits)
+        # Validate income eligibility (sets condition internally, returns success/failure)
+        income_validation_passed = validate_income_eligibility(self.screen, e, self.income_limits)
 
-        if income_limit is None:
+        if not income_validation_passed:
             # Income validation failed completely
             return
-
-        # Set income eligibility condition
-        e.condition(income_eligible, messages.income(income, income_limit))
 
         # Presumptive eligibility check
         e.condition(presumptive_eligible)
