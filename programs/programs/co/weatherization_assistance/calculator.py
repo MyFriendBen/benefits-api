@@ -26,13 +26,17 @@ class WeatherizationAssistance(ProgramCalculator):
 
         # Handle case where income limit data is missing
         if income_limit is None:
+            # Log to Sentry regardless of categorical eligibility
+            county = _get_county_name(self.screen)
+            size_index = self.screen.household_size - 1
+            # Call income_limit_unknown to log to Sentry (discards the message tuple)
+            messages.income_limit_unknown(error_detail, county, size_index)
+
             # If categorically eligible, pass anyway (no income check needed)
             if categorical_eligible:
                 e.condition(True)
             else:
-                # Not categorically eligible and no income data - fail
-                county = _get_county_name(self.screen)
-                size_index = self.screen.household_size - 1
+                # Not categorically eligible and no income data - fail with message
                 e.condition(False, messages.income_limit_unknown(error_detail, county, size_index))
                 return
         else:
