@@ -9,8 +9,8 @@ class MedicareSavingsNC(MedicareSavings):
     min_income_percent: ClassVar[float] = 1.0
 
     def member_eligible(self, e: MemberEligibility):
-        super().member_eligible(e)
         member = e.member
+        super().member_eligible(e)
 
         # NC-specific: not on benefits
         e.condition(not self.screen.has_benefit("aca"))
@@ -19,13 +19,32 @@ class MedicareSavingsNC(MedicareSavings):
         # insurance
         e.condition(not member.insurance.has_insurance_types(self.ineligible_insurance_types))
 
-        # recompute income using NC-specific thresholds (no SSI)
-        status, spouse = self.get_marital_status(member)
-        earned, unearned, _ = self.get_combined_income(member, spouse, include_ssi=False)
+    def check_income_limits(self, e: MemberEligibility, member, spouse):
+        """
+        NC-specific logic:
+        - SSI is excluded from income
+        - If member has SSI → automatically excluded (skip check)
+        - If spouse has SSI → exclude spouse's SSI from income
+        """
+        if member.calc_gross_income("yearly", ["sSI"]) > 0:
+            # They already qualify for Medicaid/Medicare Savings via SSI
+            e.condition(False)
+            return        
+        
+        spouse_ssi = 0
+        if spouse:
+            spouse_ssi = spouse.calc_gross_income("yearly", ["sSI"])
+
+        if spouse and spouse_ssi > 0:
+            earned, unearned, _ = self.get_combined_income(member, spouse=None, include_ssi=False)
+        else:
+            earned, unearned, _ = self.get_combined_income(member, spouse, include_ssi=False)
+            
         earned, unearned = self.apply_income_disregards(earned, unearned)
         countable_income = earned + unearned
 
-        min_income, max_income = self.get_fpl_limits(self.screen.household_size, self.min_income_percent)
+        household_size = 1 if spouse_ssi > 0 else self.screen.household_size
+        min_income, max_income = self.get_fpl_limits(household_size, self.min_income_percent)
 
         if countable_income is not None and min_income is not None:
             e.condition(countable_income >= min_income)

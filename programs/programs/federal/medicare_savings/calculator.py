@@ -27,7 +27,6 @@ class MedicareSavings(ProgramCalculator):
         return ("married" if is_married["is_married"] else "single"), is_married.get("married_to")
 
     def get_combined_income(self, member, spouse=None, include_ssi=True):
-        """Returns earned, unearned, and optionally SSI yearly income."""
         earned = member.calc_gross_income("yearly", ["earned"])
         unearned = member.calc_gross_income("yearly", ["unearned"], ["sSI"] if include_ssi else [])
         ssi = member.calc_gross_income("yearly", ["sSI"]) if include_ssi else 0
@@ -41,7 +40,6 @@ class MedicareSavings(ProgramCalculator):
         return earned, unearned, ssi
 
     def apply_income_disregards(self, earned, unearned):
-        """Apply $20 general disregard, then $65 earned disregard, then halve earned."""
         if unearned >= self.general_income_disregard:
             unearned -= self.general_income_disregard
         else:
@@ -73,8 +71,12 @@ class MedicareSavings(ProgramCalculator):
         status, spouse = self.get_marital_status(member)
         e.condition(self.screen.household_assets <= self.asset_limit[status])
 
-        # income
-        earned, unearned, ssi = self.get_combined_income(member, spouse)
+        # income limits check (federal logic)
+        self.check_income_limits(e, member, spouse)
+
+    def check_income_limits(self, e: MemberEligibility, member, spouse):
+        """Default federal logic (includes SSI)."""
+        earned, unearned, ssi = self.get_combined_income(member, spouse, include_ssi=True)
         earned, unearned = self.apply_income_disregards(earned, unearned)
 
         countable_income = earned + unearned + ssi
