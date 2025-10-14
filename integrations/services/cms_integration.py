@@ -71,7 +71,7 @@ class HubSpotIntegration(CmsIntegration):
             contact_id = api_response.id
         except HubSpotApiException as e:
             http_body = json.loads(e.body)
-            if http_body["category"] == "CONFLICT":
+            if http_body.get("category") == "CONFLICT":
                 contact_id = self._get_conflict_contact_id(e)
                 self._update_contact(contact_id, data)
             else:
