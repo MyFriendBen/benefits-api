@@ -82,22 +82,9 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
           if [ $STATUS -ne 0 ] && echo "$OUTPUT" | grep -q "Conflicting migrations detected"; then
-            echo "Migration conflict detected, attempting merge..."
-            MERGE_OUTPUT=$(heroku run -a ${{ secrets.HEROKU_APP_NAME }} "python manage.py makemigrations --merge --noinput" 2>&1)
-            echo "$MERGE_OUTPUT"
-            echo "Retrying migrations after merge..."
-            set +e
-            RETRY_OUTPUT=$(heroku run -a ${{ secrets.HEROKU_APP_NAME }} "python manage.py migrate" 2>&1)
-            RETRY_STATUS=$?
-            set -e
-            echo "$RETRY_OUTPUT"
-            echo "migrations_output<<EOF" >> $GITHUB_OUTPUT
-            echo "$MERGE_OUTPUT" >> $GITHUB_OUTPUT
-            echo "$RETRY_OUTPUT" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-            if [ $RETRY_STATUS -ne 0 ]; then
-              exit $RETRY_STATUS
-            fi
+            echo "Migration conflict detected. Auto-merge on Heroku is not supported (slug is read-only)."
+            echo "Please resolve the conflict locally (python manage.py makemigrations --merge), commit, and re-deploy."
+            exit 1
           elif [ $STATUS -ne 0 ]; then
             exit $STATUS
           fi
@@ -131,7 +118,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Send final status to Slack
-        if: always()
+        if: ${{ !failure() }}
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
