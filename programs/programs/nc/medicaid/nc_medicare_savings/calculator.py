@@ -29,8 +29,8 @@ class MedicareSavingsNC(MedicareSavings):
         if member.calc_gross_income("yearly", ["sSI"]) > 0:
             # They already qualify for Medicaid/Medicare Savings via SSI
             e.condition(False)
-            return        
-        
+            return
+
         spouse_ssi = 0
         if spouse:
             spouse_ssi = spouse.calc_gross_income("yearly", ["sSI"])
@@ -39,7 +39,7 @@ class MedicareSavingsNC(MedicareSavings):
             earned, unearned, _ = self.get_combined_income(member, spouse=None, include_ssi=False)
         else:
             earned, unearned, _ = self.get_combined_income(member, spouse, include_ssi=False)
-            
+
         earned, unearned = self.apply_income_disregards(earned, unearned)
         countable_income = earned + unearned
 
