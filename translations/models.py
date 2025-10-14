@@ -6,7 +6,7 @@ from django.conf import settings
 from dataclasses import dataclass
 from integrations.util.cache import Cache
 from translations.model_data import ModelDataController
-
+from sentry_sdk import capture_exception
 
 BLANK_TRANSLATION_PLACEHOLDER = "[PLACEHOLDER]"
 
@@ -177,13 +177,22 @@ class Translation(TranslatableModel):
             try:
                 old_instance = Translation.objects.get(pk=self.pk)
                 for lang_code, _ in settings.LANGUAGES:
-                    try:
-                        old_instance.set_current_language(lang_code)
+                    if old_instance.has_translation(lang_code):
+                        old_text = old_instance.safe_translation_getter(
+                            "text",
+                            language_code=lang_code,
+                            any_language=False,
+                        )
+                        old_edited = old_instance.safe_translation_getter(
+                            "edited",
+                            language_code=lang_code,
+                            any_language=False,
+                        )
                         old_translations[lang_code] = {
-                            "text": old_instance.text,
-                            "edited": old_instance.edited,
+                            "text": old_text,
+                            "edited": old_edited,
                         }
-                    except Exception:
+                    else:
                         old_translations[lang_code] = None
             except Translation.DoesNotExist:
                 pass
@@ -208,8 +217,8 @@ class Translation(TranslatableModel):
                         latest_history.changed_text = new_text
                         latest_history.edit_type = new_edited
                         latest_history.save()
-            except Exception:
-                continue
+            except Exception as e:
+                capture_exception(e, level="warning", extras={"lang_code": lang_code, "translation_id": self.pk})
 
     def _get_reverses(self):
         """
