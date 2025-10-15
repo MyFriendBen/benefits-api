@@ -69,24 +69,30 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             "--views",
-            type=str,
+            nargs="+",
             help="Specify which group of views to refresh (e.g., v1_batch_1). If omitted, refreshes all groups.",
         )
 
     def handle(self, *args, **options):
-        selected_group = options.get("views")
+        selected_groups = options.get("views")
         db_errors = []
         skipped = []
         failures = []
 
         # Determine which views to refresh
-        if selected_group:
-            if selected_group not in VIEWS:
+        if selected_groups:
+            invalid_groups = [g for g in selected_groups if g not in VIEWS]
+
+            if invalid_groups:
                 self.stdout.write(
-                    self.style.ERROR(f"Invalid group '{selected_group}'. Available groups: {', '.join(VIEWS.keys())}")
+                    self.style.ERROR(
+                        f"Invalid group(s): {', '.join(invalid_groups)}. Available groups: {', '.join(VIEWS.keys())}"
+                    )
                 )
                 return
-            groups_to_refresh = {selected_group: VIEWS[selected_group]}
+
+            # Build dictionary of only requested groups
+            groups_to_refresh = {g: VIEWS[g] for g in selected_groups}
         else:
             groups_to_refresh = VIEWS  # Refresh all groups if none specified
 
