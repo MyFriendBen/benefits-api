@@ -17,7 +17,6 @@ class IncomeLimitsCache(GoogleSheetsCache):
     @staticmethod
     def _format_county(county: str):
         return county.strip() + " County"
-        # return county.strip()
 
     @staticmethod
     def _format_amounts(amounts: list[str]):

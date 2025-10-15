@@ -4,8 +4,6 @@ from programs.programs.co.energy_programs_shared.income_limits_cache import (
 from sentry_sdk import capture_message
 from screener.models import Screen
 
-# from income_limits_cache import IncomeLimitsCache
-
 
 def _log_income_limit_error(message: str, county: str | None, **additional_extras) -> None:
     """
