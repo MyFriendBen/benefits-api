@@ -1,105 +1,82 @@
-import programs.programs.messages as messages
-from programs.co_county_zips import counties_from_screen
-from programs.programs.co.energy_programs_shared.income_limits_cache import IncomeLimitsCache
-from programs.programs.calc import Eligibility
+
+from programs.programs.co.energy_programs_shared.income_limits_cache import (
+    IncomeLimitsCache,
+)
+from sentry_sdk import capture_message
+from screener.models import Screen
+from income_limits_cache import IncomeLimitsCache
 
 
-def _get_county_name(screen) -> str:
+def _log_income_limit_error(
+    message: str, county: str | None, **additional_extras
+) -> None:
     """
-    Helper function to get formatted county name from screen.
-    Handles both County objects and strings from zipcode lookup.
+    Helper to log income limit validation errors.
 
-    Returns:
-        str: County name in "County Name County" format, or "unknown" if not found
+    Args:
+        message: Error message
+        county: County name (can be None if not available)
+        **additional_extras: Any additional context fields (e.g., household_size, size_index)
     """
-    counties = counties_from_screen(screen)
-
-    if not counties:
-        return "unknown"
-
-    first_county = counties[0]
-
-    # Handle both county object (has .name) and string (from zipcode lookup)
-    if isinstance(first_county, str):
-        return first_county  # Example: Already "Adams County" from zipcodes dict
-    else:
-        return first_county.name + " County"  # Example: County object with name="Adams"
+    extras = {"county": county}
+    extras.update(additional_extras)
+    capture_message(message, level="error", extras=extras)
 
 
-def get_income_limit(screen, income_limits_cache: IncomeLimitsCache) -> tuple[int | None, str | None]:
+def get_income_limit(
+    screen: Screen) -> int | None:
     """
     Retrieves the income limit for the household's county.
     ONLY retrieves data - does NOT set any eligibility conditions.
 
     Args:
         screen: The screening object with household information
-        income_limits_cache: An instance of IncomeLimitsCache
 
     Returns:
-        tuple: (income_limit, error_detail)
-               - income_limit: The income limit (or None if not found)
-               - error_detail: Error reason string (or None if successful)
+        Optional[int]: The income limit (or None if not found)
     """
-    # Get county from screen (handles both direct county selection and zipcode lookup)
-    counties = counties_from_screen(screen)
-    if not counties:
-        return None, "no_county_provided"
 
-    # Get formatted county name
-    county = _get_county_name(screen)
+    # Get county
+    county = screen.county
 
     # Fetch income limits data (keys are "Adams County", "Alamosa County", etc.)
+    income_limits_cache = IncomeLimitsCache()
     limits_by_county = income_limits_cache.fetch()
-    size_index = screen.household_size - 1
+    size_index = screen.household_size - 1 if screen.household_size else None
 
-    # Check conditions using if/elif (only one condition will be checked)
+    # Check for valid income_limit
     if county not in limits_by_county:
-        return None, "county_not_found"
-    elif limits_by_county.get(county) is None:
-        return None, "county_data_none"
-    elif size_index < 0 or size_index >= len(limits_by_county[county]):
-        return None, "HH_size_out_of_bounds"
-    else:
-        try:
-            limit_value = limits_by_county[county][size_index]
-            if limit_value is None:
-                return None, "income_data_none_or_misformatted"
-            else:
-                return int(limit_value), None
-        except IndexError:
-            return None, "index_error"
+        _log_income_limit_error("County data not found", county=county)
+        return None
 
+    if limits_by_county.get(county) is None:
+        _log_income_limit_error("Data for county is not found", county=county)
+        return None
 
-def validate_income_eligibility(screen, eligibility: Eligibility, income_limits_cache: IncomeLimitsCache) -> bool:
-    """
-    Validates income eligibility and sets eligibility condition.
-    This is the standard validation used by UtilityBillPay.
+    try:
+        income_limit = limits_by_county[county][size_index]
+    except IndexError:
+        _log_income_limit_error(
+            "Invalid HH size given income limit data",
+            county=county,
+            household_size=screen.household_size,
+        )
+        return None
+    except TypeError:
+        _log_income_limit_error(
+            "Invalid HH size",
+            county=county,
+            household_size=screen.household_size,
+        )
+        return None
 
-    Args:
-        screen: The screening object with household information
-        eligibility: The Eligibility object to record conditions
-        income_limits_cache: An instance of IncomeLimitsCache
-
-    Returns:
-        bool: True if validation succeeded (income_limit found), False otherwise
-    """
-    # Get income limit (data retrieval only)
-    income_limit, error_detail = get_income_limit(screen, income_limits_cache)
-
-    # Handle error case
     if income_limit is None:
-        county = _get_county_name(screen)
-        size_index = screen.household_size - 1
-        eligibility.condition(False, messages.income_limit_unknown(error_detail, county, size_index))
-        return False
+        _log_income_limit_error(
+            "Income limit for county and given HH Size is missing or misformatted",
+            county=county,
+            household_size=screen.household_size,
+        )
+        return None
 
-    # Calculate user's income
-    user_income = int(screen.calc_gross_income("yearly", ["all"]))
-
-    # Check income eligibility (business logic)
-    income_eligible = user_income <= income_limit
-
-    # Set ONE eligibility condition
-    eligibility.condition(income_eligible, messages.income(user_income, income_limit))
-
-    return True  # Validation succeeded (data was found)
+    # valid income_limit
+    return int(income_limit)

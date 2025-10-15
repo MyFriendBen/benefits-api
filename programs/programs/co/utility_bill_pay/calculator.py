@@ -1,7 +1,6 @@
 from programs.programs.calc import Eligibility, ProgramCalculator
-from programs.programs.co.energy_programs_shared.income_limits_cache import IncomeLimitsCache
-from programs.programs.co.energy_programs_shared.income_validation import validate_income_eligibility
-
+from programs.programs.co.energy_programs_shared.income_validation import get_income_limit
+import programs.programs.messages as messages
 
 class UtilityBillPay(ProgramCalculator):
     presumptive_eligibility = ("snap", "ssi", "andcs", "tanf", "wic", "chp")
@@ -10,37 +9,40 @@ class UtilityBillPay(ProgramCalculator):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.income_limits = IncomeLimitsCache()
 
     def household_eligible(self, e: Eligibility):
         # has other programs
         presumptive_eligible = False
         for benefit in self.presumptive_eligibility:
-            if self.screen.has_benefit(benefit):
-                presumptive_eligible = True
-                break
-            elif benefit in self.data and self.data[benefit].eligible:
+            if self.screen.has_benefit(benefit) or (benefit in self.data and self.data[benefit].eligible):
                 presumptive_eligible = True
                 break
 
-        for benefit in self.member_presumptive_eligibility:
-            if presumptive_eligible:
-                break
-            if any(member.has_benefit(benefit) for member in self.screen.household_members.all()):
-                presumptive_eligible = True
+        if not presumptive_eligible:
+            for benefit in self.member_presumptive_eligibility:
+                if any(member.has_benefit(benefit) for member in self.screen.household_members.all()):
+                    presumptive_eligible = True
+                    break
+
+         # Presumptive eligibility check
+        e.condition(presumptive_eligible)
 
         # Validate income eligibility (sets condition internally, returns success/failure)
-        income_validation_passed = validate_income_eligibility(self.screen, e, self.income_limits)
+        income_limit = get_income_limit(self.screen)
 
-        if not income_validation_passed:
-            # Income validation failed completely
-            return
+        # Handle missing data
+        if income_limit is None:
+            e.condition(
+                False, messages.income_limit_unknown()
+            )
 
-        # Presumptive eligibility check
-        e.condition(presumptive_eligible)
+        user_income = int(self.screen.calc_gross_income("yearly", ["all"]))
+        income_eligible = user_income <= income_limit
+        e.condition(income_eligible, messages.income(user_income, income_limit))    
 
         # has rent or mortgage expense
         e.condition(self._has_expense())
+
 
     def _has_expense(self):
         return self.screen.has_expense(["rent", "mortgage"])
