@@ -36,6 +36,9 @@ from programs.programs.co.energy_calculator.weatherization_assistance.calculator
     EnergyCalculatorWeatherizationAssistance,
 )
 from programs.programs.co.energy_calculator.energy_ebt.calculator import EnergyCalculatorEnergyEbt
+from programs.programs.co.energy_calculator.assistance_programs.project_cope.calculator import (
+    EnergyCalculatorProjectCOPE,
+)
 
 
 co_energy_calculators: dict[str, type[ProgramCalculator]] = {
@@ -58,4 +61,5 @@ co_energy_calculators: dict[str, type[ProgramCalculator]] = {
     "co_energy_calculator_energy_vec": EnergyCalculatorVehicleExchange,
     "co_energy_calculator_energy_mep": EnergyCalculatorMedicalExemption,
     "co_energy_calculator_mcp": EnergyCalculatorMedicalCertification,
+    "co_energy_calculator_project_cope": EnergyCalculatorProjectCOPE,
 }
