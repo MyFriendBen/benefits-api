@@ -4,7 +4,7 @@ import programs.programs.messages as messages
 
 
 class EnergyCalculatorHomeEfficiencyAssistance(ProgramCalculator):
-    amount = 1
+    amount = 1 # default to 1 since not calculating value
     dependencies = ["household_size", "income_amount", "income_frequency", "county", "energy_calculator"]
     presumptive_eligibility = [
         "co_energy_calculator_leap",
@@ -13,15 +13,16 @@ class EnergyCalculatorHomeEfficiencyAssistance(ProgramCalculator):
     ami_percent = "60%"
 
     def household_eligible(self, e: Eligibility):
-        # eligible for another program
-        has_another_program = False
-        for program in self.presumptive_eligibility:
-            eligible = self.data[program].eligible
-            if eligible:
-                has_another_program = True
+        energy_calculator_screen = self.screen.energy_calculator
+
+        # eligible for presumptive eligbility program
+        has_another_program = any(
+            self.data[program].eligible 
+            for program in self.presumptive_eligibility 
+            if program in self.data
+        )
         e.condition(has_another_program)
 
-        energy_calculator_screen = self.screen.energy_calculator
         # has utility providers
         e.condition(energy_calculator_screen.has_utility_provider(self.utility_providers))
 
