@@ -1,15 +1,13 @@
-
 from programs.programs.co.energy_programs_shared.income_limits_cache import (
     IncomeLimitsCache,
 )
 from sentry_sdk import capture_message
 from screener.models import Screen
-from income_limits_cache import IncomeLimitsCache
+
+# from income_limits_cache import IncomeLimitsCache
 
 
-def _log_income_limit_error(
-    message: str, county: str | None, **additional_extras
-) -> None:
+def _log_income_limit_error(message: str, county: str | None, **additional_extras) -> None:
     """
     Helper to log income limit validation errors.
 
@@ -23,8 +21,7 @@ def _log_income_limit_error(
     capture_message(message, level="error", extras=extras)
 
 
-def get_income_limit(
-    screen: Screen) -> int | None:
+def get_income_limit(screen: Screen) -> int | None:
     """
     Retrieves the income limit for the household's county.
     ONLY retrieves data - does NOT set any eligibility conditions.

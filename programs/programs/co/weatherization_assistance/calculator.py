@@ -20,15 +20,15 @@ class WeatherizationAssistance(ProgramCalculator):
 
         # Must have EITHER income eligible OR presumed eligibility
         if presumed_eligibility:
-            e.condition(presumed_eligibility, messages.presumed_eligibility)
-        else: 
+            e.condition(presumed_eligibility, messages.presumed_eligibility())
+        else:
             # check income limit
             income_limit = get_income_limit(self.screen)
-            if income_limit: 
+            if income_limit:
                 user_income = int(self.screen.calc_gross_income("yearly", ["all"]))
                 income_eligible = user_income <= income_limit
                 e.condition(income_eligible, messages.income(user_income, income_limit))
-            else: 
+            else:
                 # no income limit data
                 e.condition(False, messages.income_limit_unknown())
 
