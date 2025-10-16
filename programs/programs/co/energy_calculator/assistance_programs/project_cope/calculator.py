@@ -6,7 +6,7 @@ class EnergyCalculatorProjectCOPE(ProgramCalculator):
     utility_providers = ["co-colorado-springs-utilities"]
 
     def household_eligible(self, e: Eligibility):
-        # utility provider check (electric or gas)
+        # utility provider checks (electric or gas)
         e.condition(self.screen.energy_calculator.has_utility_provider(self.utility_providers))
 
         # past due or disconnected
