@@ -14,6 +14,20 @@ def income(income, max_income):
     )
 
 
+def income_limit_unknown():
+    """
+    Household income limit lookup failed
+    """
+    return (translation("income_limit_lookup_failed", 0, "Unable to determine income limits for your household"),)
+
+
+def presumed_eligibility():
+    """
+    Household presumed eligible based on other benefits
+    """
+    return (translation("presumptive_eligibility", 0, "Presumed eligibility based on other benefits"),)
+
+
 def assets(asset_limit):
     """
     Household resources must not exceed ${asset_limit}
