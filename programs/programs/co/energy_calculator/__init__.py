@@ -61,5 +61,5 @@ co_energy_calculators: dict[str, type[ProgramCalculator]] = {
     "co_energy_calculator_energy_vec": EnergyCalculatorVehicleExchange,
     "co_energy_calculator_energy_mep": EnergyCalculatorMedicalExemption,
     "co_energy_calculator_mcp": EnergyCalculatorMedicalCertification,
-    "co_energy_calculator_project_cope": EnergyCalculatorProjectCOPE,
+    "co_energy_calculator_cope": EnergyCalculatorProjectCOPE,
 }
