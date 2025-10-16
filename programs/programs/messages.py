@@ -13,6 +13,7 @@ def income(income, max_income):
         f" ${round(max_income)}",
     )
 
+
 def income_limit_unknown():
     """
     Household income limit lookup failed
@@ -25,7 +26,7 @@ def presumed_eligibility():
     Household presumed eligible based on other benefits
     """
     return (translation("presumptive_eligibility", 0, "Presumed eligibility based on other benefits"),)
-    
+
 
 def assets(asset_limit):
     """
