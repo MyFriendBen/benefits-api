@@ -14,13 +14,6 @@ def income(income, max_income):
     )
 
 
-def county_not_found():
-    """
-    Unable to determine income limits for your household
-    """
-    return (translation("county_not_found", 0, "Unable to determine income limits for your household"),)
-
-
 def assets(asset_limit):
     """
     Household resources must not exceed ${asset_limit}
