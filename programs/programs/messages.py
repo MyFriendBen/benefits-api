@@ -96,3 +96,17 @@ def is_pregnant():
     Someone in the household must be pregnant
     """
     return (translation("pregnant", 0, "Someone in the household must be pregnant"),)
+
+
+def has_utility_provider(utility_providers: list[str]):
+    """
+    Household must have one a list of utility providers
+    """
+    return (translation("utility_provider", 0, f"Household must have one of the following utility providers: {', '.join(utility_providers)}"),)
+
+
+def is_home_owners():
+    """
+    Household must by own home
+    """
+    return (translation("home_owner", 0, "Household must own home"),)

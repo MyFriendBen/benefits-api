@@ -23,12 +23,12 @@ class EnergyCalculatorHomeEfficiencyAssistance(ProgramCalculator):
 
         if presumed_eligible:
             # if presumptive eligbility via LEAP, done
-            e.condition(presumed_eligible, )
+            e.condition(presumed_eligible)
         else:
             # otherwise, must meet all 3 conditions
-            e.condition(energy_calculator_screen.has_utility_provider(self.utility_providers))
+            e.condition(energy_calculator_screen.has_utility_provider(self.utility_providers, messages.has_utility_provider(self.utility_providers)))
 
-            e.condition((energy_calculator_screen.is_home_owner))
+            e.condition(energy_calculator_screen.is_home_owner, messages.is_home_owners())
 
             income_limit = ami.get_screen_ami(self.screen, self.ami_percent, self.program.year.period)
             income = int(self.screen.calc_gross_income("yearly", ["all"]))
