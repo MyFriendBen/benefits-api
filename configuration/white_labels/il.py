@@ -2538,9 +2538,4 @@ class IlConfigurationData(ConfigurationData):
         "survey": "https://www.myfriendben.org/feedback",
     }
 
-    override_text = {
-        "landingPage.publicCharge": {
-            "_label": "landingPage.publicCharge.il",
-            "_default_message": "Some benefits are available to Non-U.S. citizens. Non-U.S. citizens planning to apply for legal permanent residency or a visa should consider how applying for any benefits may affect their immigration status. To learn more, please visit the ",
-        },
-    }
+    override_text = {}
