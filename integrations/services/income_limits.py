@@ -1,4 +1,7 @@
-from typing import Literal, Union
+from typing import ClassVar, Literal, Union
+
+from sentry_sdk import capture_message
+
 from integrations.services.sheets.sheets import GoogleSheetsCache
 from screener.models import Screen
 
@@ -16,7 +19,7 @@ class Ami(GoogleSheetsCache):
     IL_PERCENTS = ["80%", "50%", "30%"]
     IL_LIMITS_START_INDEX = 62
 
-    def update(self):
+    def update(self) -> dict[str, dict[str, dict[str, dict[int, int]]]]:  # type: ignore[override]
         data = super().update()
 
         ami: dict[str, dict[str, dict[str, dict[int, int]]]] = {}
@@ -105,7 +108,7 @@ class Smi(GoogleSheetsCache):
     STATE_INDEX = 1
     LIMITS_START_INDEX = 2
 
-    def update(self):
+    def update(self) -> dict[str, dict[str, dict[int, int]]]:  # type: ignore[override]
         data = super().update()
 
         smi = {}
@@ -131,3 +134,112 @@ class Smi(GoogleSheetsCache):
 
 
 smi = Smi()
+
+
+class IncomeLimitsCache(GoogleSheetsCache):
+    """
+    Income Limits data used for
+    - UtilityBillPay
+    - WeatherizationAssistance
+    """
+    sheet_id = "1ZzQYhULtiP61crj0pbPjhX62L1TnyAisLcr_dQXbbFg"
+    range_name = "A2:K"
+    default: ClassVar[dict] = {}
+
+    def update(self) -> dict[str, list[float]]:
+        data = super().update()
+        result = {}
+        for r in data:
+            result[self._format_county(r[0])] = self._format_amounts(r[1:])
+        return result
+
+    @staticmethod
+    def _format_county(county: str):
+        return county.strip() + " County"
+
+    @staticmethod
+    def _format_amounts(amounts: list[str]):
+        result = []
+        for a in amounts:
+            cleaned = a.strip().replace("$", "").replace(",", "")
+            try:
+                result.append(float(cleaned) if cleaned else None)
+            except ValueError:
+                result.append(None)
+
+        return result
+
+    @staticmethod
+    def _log_income_limit_error(
+        message: str, county: str | None, **additional_extras
+    ) -> None:
+        """
+        Helper to log income limit validation errors.
+
+        Args:
+            message: Error message
+            county: County name (can be None if not available)
+            **additional_extras: Any additional context fields (e.g., household_size, size_index)
+        """
+        extras = {"county": county}
+        extras.update(additional_extras)
+        capture_message(message, level="error", extras=extras)
+
+    def get_income_limit(self, screen: Screen) -> int | None:
+        """
+        Retrieves the income limit for the given household size and county.
+        Logs any issues in calculating the income limit
+
+        Args:
+            screen: The screening object with household information
+
+        Returns:
+            Optional[int]: The income limit (or None if not found)
+        """
+
+        # Get county
+        county = screen.county
+
+        # Fetch income limits data (keys are "Adams County", "Alamosa County", etc.)
+        limits_by_county = self.fetch()
+        size_index = screen.household_size - 1 if screen.household_size else None
+
+        # Check for valid income_limit
+        if county not in limits_by_county:
+            self._log_income_limit_error("County data not found", county=county)
+            return None
+
+        if limits_by_county.get(county) is None:
+            self._log_income_limit_error("Data for county is not found", county=county)
+            return None
+
+        try:
+            income_limit = limits_by_county[county][size_index]
+        except IndexError:
+            self._log_income_limit_error(
+                "Invalid HH size given income limit data",
+                county=county,
+                household_size=screen.household_size,
+            )
+            return None
+        except TypeError:
+            self._log_income_limit_error(
+                "Invalid HH size",
+                county=county,
+                household_size=screen.household_size,
+            )
+            return None
+
+        if income_limit is None:
+            self._log_income_limit_error(
+                "Income limit for county and given HH Size is missing or misformatted",
+                county=county,
+                household_size=screen.household_size,
+            )
+            return None
+
+        # valid income_limit
+        return int(income_limit)
+
+
+income_limits_cache = IncomeLimitsCache()

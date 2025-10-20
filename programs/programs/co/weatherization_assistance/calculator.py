@@ -1,6 +1,6 @@
 from programs.programs.calc import Eligibility, ProgramCalculator
 import programs.programs.messages as messages
-from programs.programs.co.energy_programs_shared.income_validation import get_income_limit
+from integrations.services.income_limits import income_limits_cache
 from typing import ClassVar
 
 
@@ -23,7 +23,7 @@ class WeatherizationAssistance(ProgramCalculator):
             e.condition(presumed_eligibility, messages.presumed_eligibility())
         else:
             # check income limit
-            income_limit = get_income_limit(self.screen)
+            income_limit = income_limits_cache.get_income_limit(self.screen)
             if income_limit:
                 user_income = int(self.screen.calc_gross_income("yearly", ["all"]))
                 income_eligible = user_income <= income_limit

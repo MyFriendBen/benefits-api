@@ -1,5 +1,5 @@
 from programs.programs.calc import Eligibility, ProgramCalculator
-from programs.programs.co.energy_programs_shared.income_validation import get_income_limit
+from integrations.services.income_limits import income_limits_cache
 import programs.programs.messages as messages
 
 
@@ -29,7 +29,7 @@ class UtilityBillPay(ProgramCalculator):
         e.condition(presumptive_eligible)
 
         # Get income limit from Google Sheets based on county and household size
-        income_limit = get_income_limit(self.screen)
+        income_limit = income_limits_cache.get_income_limit(self.screen)
 
         # Handle missing data
         if income_limit is None:
