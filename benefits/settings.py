@@ -91,6 +91,9 @@ BREVO_API_KEY = os.getenv("BREVO_API_KEY")
 FRONTEND_DOMAIN = config("FRONTEND_DOMAIN", default="http://localhost:3000")
 EMAIL_FROM = os.getenv("EMAIL_FROM")
 
+# Google Integrations (Translate, Sheets)
+ENABLE_GOOGLE_INTEGRATIONS = config("ENABLE_GOOGLE_INTEGRATIONS", default=True, cast=bool)
+
 # Application definition
 
 INSTALLED_APPS = [

@@ -1,4 +1,5 @@
 from decouple import config
+from django.conf import settings
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
 import json
@@ -6,10 +7,14 @@ from integrations.util.cache import Cache
 
 
 class GoogleSheets:
-    info = json.loads(config("GOOGLE_APPLICATION_CREDENTIALS"))
-    creds = service_account.Credentials.from_service_account_info(info)
-    service = build("sheets", "v4", credentials=creds)
-    sheet = service.spreadsheets()
+    # Initialize at class definition time (only if integrations enabled)
+    if getattr(settings, "ENABLE_GOOGLE_INTEGRATIONS", True):
+        info = json.loads(config("GOOGLE_APPLICATION_CREDENTIALS"))
+        creds = service_account.Credentials.from_service_account_info(info)
+        service = build("sheets", "v4", credentials=creds)
+        sheet = service.spreadsheets()
+    else:
+        sheet = None
 
     class ColumnDoesNotExist(Exception):
         pass

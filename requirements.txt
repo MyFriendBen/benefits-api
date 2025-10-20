@@ -60,6 +60,9 @@ pillow==10.3.0
 platformdirs==3.5.1
 pluggy==1.0.0
 proto-plus==1.22.3
+pytest==7.4.3
+pytest-django==4.7.0
+pytest-cov==4.1.0
 protobuf==4.25.8
 psycopg2==2.9.3
 psycopg2-binary==2.9.3

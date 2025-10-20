@@ -10,14 +10,14 @@ from django.utils import timezone
 
 
 class MessageUser:
-    front_end_domain = config("FRONTEND_DOMAIN")
+    front_end_domain = config("FRONTEND_DOMAIN", default="http://localhost:3000")
 
-    cell_account_sid = config("TWILIO_SID")
-    cell_auth_token = config("TWILIO_TOKEN")
-    cell_from_phone_number = config("TWILIO_PHONE_NUMBER")
+    cell_account_sid = config("TWILIO_SID", default="")
+    cell_auth_token = config("TWILIO_TOKEN", default="")
+    cell_from_phone_number = config("TWILIO_PHONE_NUMBER", default="")
 
-    email_from = config("EMAIL_FROM")
-    email_api_key = config("SENDGRID")
+    email_from = config("EMAIL_FROM", default="")
+    email_api_key = config("SENDGRID", default="")
 
     def __init__(self, screen: Screen, lang: str) -> None:
         self.screen = screen

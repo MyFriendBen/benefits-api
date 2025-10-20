@@ -25,6 +25,9 @@ class TestFirstStepSavings(TestCase):
             "test_urgent_need.first_step.website_description", "Test Website Description"
         )
         warning_translation = Translation.objects.add_translation("test_urgent_need.first_step.warning", "Test Warning")
+        notification_message_translation = Translation.objects.add_translation(
+            "test_urgent_need.first_step.notification_message", "Test Notification"
+        )
 
         # Create a mock urgent need
         self.urgent_need = UrgentNeed.objects.create(
@@ -35,6 +38,7 @@ class TestFirstStepSavings(TestCase):
             link=link_translation,
             website_description=website_description_translation,
             warning=warning_translation,
+            notification_message=notification_message_translation,
         )
 
         # Create a base screen
@@ -208,6 +212,9 @@ class TestFirstStepSavingsNotifiable(TestCase):
         warning_translation = Translation.objects.add_translation(
             "test_urgent_need.first_step_notifiable.warning", "Test Warning"
         )
+        notification_message_translation = Translation.objects.add_translation(
+            "test_urgent_need.first_step_notifiable.notification_message", "Test Notification"
+        )
 
         # Create a mock urgent need
         self.urgent_need = UrgentNeed.objects.create(
@@ -218,6 +225,7 @@ class TestFirstStepSavingsNotifiable(TestCase):
             link=link_translation,
             website_description=website_description_translation,
             warning=warning_translation,
+            notification_message=notification_message_translation,
         )
 
         # Create a base screen
