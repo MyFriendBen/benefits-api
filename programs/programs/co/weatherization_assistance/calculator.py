@@ -22,7 +22,7 @@ class WeatherizationAssistance(ProgramCalculator):
         if presumed_eligibility:
             e.condition(presumed_eligibility, messages.presumed_eligibility())
         else:
-            # check income limit
+            # check income limit, expenses, and utility provider
             income_limit = income_limits_cache.get_income_limit(self.screen)
             if income_limit:
                 user_income = int(self.screen.calc_gross_income("yearly", ["all"]))
@@ -32,11 +32,11 @@ class WeatherizationAssistance(ProgramCalculator):
                 # no income limit data
                 e.condition(False, messages.income_limit_unknown())
 
-        # rent or mortgage expense
-        e.condition(self._has_expense())
+            # rent or mortgage expense
+            e.condition(self._has_expense())
 
-        # utility providers
-        e.condition(self._has_utility_provider())
+            # utility provider
+            e.condition(self._has_utility_provider())
 
     def _has_expense(self):
         return self.screen.has_expense(["rent", "mortgage"])

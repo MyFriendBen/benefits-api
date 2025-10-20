@@ -12,35 +12,34 @@ class UtilityBillPay(ProgramCalculator):
         super().__init__(*args, **kwargs)
 
     def household_eligible(self, e: Eligibility):
-        # has other programs
-        presumptive_eligible = False
+        presumed_eligibility = False
         for benefit in self.presumptive_eligibility:
             if self.screen.has_benefit(benefit) or (benefit in self.data and self.data[benefit].eligible):
-                presumptive_eligible = True
+                presumed_eligibility = True
                 break
 
-        if not presumptive_eligible:
+        if not presumed_eligibility:
             for benefit in self.member_presumptive_eligibility:
                 if any(member.has_benefit(benefit) for member in self.screen.household_members.all()):
-                    presumptive_eligible = True
+                    presumed_eligibility = True
                     break
 
-        # Presumptive eligibility check
-        e.condition(presumptive_eligible)
-
-        # Get income limit from Google Sheets based on county and household size
-        income_limit = income_limits_cache.get_income_limit(self.screen)
-
-        # Handle missing data
-        if income_limit is None:
-            e.condition(False, messages.income_limit_unknown())
-
-        user_income = int(self.screen.calc_gross_income("yearly", ["all"]))
-        income_eligible = user_income <= income_limit
-        e.condition(income_eligible, messages.income(user_income, income_limit))
-
-        # has rent or mortgage expense
-        e.condition(self._has_expense())
+        # Must have EITHER income eligible OR presumed eligibility
+        if presumed_eligibility:
+            e.condition(presumed_eligibility, messages.presumed_eligibility())
+        else:
+            # check income limit and expenses
+            income_limit = income_limits_cache.get_income_limit(self.screen)
+            if income_limit:
+                user_income = int(self.screen.calc_gross_income("yearly", ["all"]))
+                income_eligible = user_income <= income_limit
+                e.condition(income_eligible, messages.income(user_income, income_limit))
+            else:
+                # no income limit data
+                e.condition(False, messages.income_limit_unknown())
+        
+            # has rent or mortgage expense
+            e.condition(self._has_expense())
 
     def _has_expense(self):
         return self.screen.has_expense(["rent", "mortgage"])
