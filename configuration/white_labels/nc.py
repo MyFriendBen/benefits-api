@@ -260,6 +260,7 @@ class NcConfigurationData(ConfigurationData):
             "_label": "referralOptions.sf",
             "_default_message": "Shackle Free",
         },
+        "unch": {"_label": "referralOptions.unch", "_default_message": "UNC Health - Community Health"},
         "unidx": {
             "_label": "referralOptions.unidxWNC",
             "_default_message": "Unidx WNC",

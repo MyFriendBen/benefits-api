@@ -1,0 +1,197 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  deploy:
+    name: Deploy Backend to Heroku Staging
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Heroku CLI
+        run: |
+          curl https://cli-assets.heroku.com/install.sh | sh
+
+      - name: Deploy to Heroku
+        uses: akhileshns/heroku-deploy@v3.13.15
+        with:
+          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+          heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
+          heroku_email: ${{ secrets.HEROKU_EMAIL }}
+        id: heroku_deploy
+
+      - name: Get commit info
+        id: commit_info
+        run: |
+          echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "message=$(git log -1 --pretty=%B | head -n 1)" >> $GITHUB_OUTPUT
+          echo "author=$(git log -1 --pretty=%an)" >> $GITHUB_OUTPUT
+
+      - name: Send initial deployment notification to Slack
+        if: success()
+        id: slack_notification
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          payload=$(jq -n \
+            --arg repo "${{ github.repository }}" \
+            --arg short_sha "${{ steps.commit_info.outputs.sha }}" \
+            --arg full_sha "${{ github.sha }}" \
+            --arg author "${{ steps.commit_info.outputs.author }}" \
+            --arg message "${{ steps.commit_info.outputs.message }}" \
+            --arg app "${{ secrets.HEROKU_APP_NAME }}" \
+            '{
+              text: "🚀 Backend Staging Deployment In Progress",
+              blocks: [
+                {type: "header", text: {type: "plain_text", text: "🚀 Backend Staging Deployment In Progress"}},
+                {type: "section", fields: [
+                  {type: "mrkdwn", text: "*Environment:*\nStaging"},
+                  {type: "mrkdwn", text: "*Commit:*\n<https://github.com/\($repo)/commit/\($full_sha)|\($short_sha)>"},
+                  {type: "mrkdwn", text: "*Author:*\n\($author)"},
+                  {type: "mrkdwn", text: "*App:*\n<https://\($app).herokuapp.com|View App>"}
+                ]},
+                {type: "section", text: {type: "mrkdwn", text: "*Commit Message:*\n\($message)"}},
+                {type: "section", text: {type: "mrkdwn", text: "_Running post-deployment scripts..._"}}
+              ]
+            }')
+          RESPONSE=$(curl -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-Type: application/json' \
+            -d "$payload")
+          echo "slack_response=$RESPONSE" >> $GITHUB_OUTPUT
+
+      - name: Run database migrations
+        if: success()
+        id: migrations
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          echo "Running migrations..."
+          set +e
+          OUTPUT=$(heroku run -a ${{ secrets.HEROKU_APP_NAME }} "python manage.py migrate" 2>&1)
+          STATUS=$?
+          set -e
+          echo "$OUTPUT"
+          echo "migrations_output<<EOF" >> $GITHUB_OUTPUT
+          echo "$OUTPUT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          if [ $STATUS -ne 0 ] && echo "$OUTPUT" | grep -q "Conflicting migrations detected"; then
+            echo "Migration conflict detected. Auto-merge on Heroku is not supported (slug is read-only)."
+            echo "Please resolve the conflict locally (python manage.py makemigrations --merge), commit, and re-deploy."
+            exit 1
+          elif [ $STATUS -ne 0 ]; then
+            exit $STATUS
+          fi
+
+      - name: Add configurations
+        if: success()
+        id: add_config
+        continue-on-error: true
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          echo "Adding configurations..."
+          OUTPUT=$(heroku run -a ${{ secrets.HEROKU_APP_NAME }} "python manage.py add_config --all" 2>&1)
+          echo "$OUTPUT"
+          echo "config_output<<EOF" >> $GITHUB_OUTPUT
+          echo "$OUTPUT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Run validations
+        if: success()
+        id: validations
+        continue-on-error: true
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          echo "Running validations..."
+          OUTPUT=$(heroku run -a ${{ secrets.HEROKU_APP_NAME }} "python manage.py validate --sheet-id 1JRsCKm9KeeatVoW3wjsT2YqSy63js53Ib3vivK5NFYY" 2>&1)
+          echo "$OUTPUT"
+          echo "validation_output<<EOF" >> $GITHUB_OUTPUT
+          echo "$OUTPUT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Send final status to Slack
+        if: ${{ !failure() }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          MIGRATIONS_STATUS="${{ steps.migrations.outcome }}"
+          CONFIG_STATUS="${{ steps.add_config.outcome }}"
+          VALIDATIONS_STATUS="${{ steps.validations.outcome }}"
+
+          if [ "$MIGRATIONS_STATUS" == "success" ] && [ "$CONFIG_STATUS" == "success" ] && [ "$VALIDATIONS_STATUS" == "success" ]; then
+            EMOJI="✅"
+            STATUS_TEXT="Backend Staging Deployment Successful"
+          else
+            EMOJI="⚠️"
+            STATUS_TEXT="Backend Staging Deployment Completed with Warnings"
+          fi
+
+          # Determine status text for each step
+          MIGRATIONS_TEXT=$([ "$MIGRATIONS_STATUS" == "success" ] && echo "✅ Success" || echo "❌ Failed")
+          CONFIG_TEXT=$([ "$CONFIG_STATUS" == "success" ] && echo "✅ Success" || echo "❌ Failed")
+          VALIDATIONS_TEXT=$([ "$VALIDATIONS_STATUS" == "success" ] && echo "✅ Success" || echo "❌ Failed")
+
+          # Build payload with jq for proper escaping
+          payload=$(jq -n \
+            --arg emoji "$EMOJI" \
+            --arg status_text "$STATUS_TEXT" \
+            --arg migrations_text "$MIGRATIONS_TEXT" \
+            --arg config_text "$CONFIG_TEXT" \
+            --arg validations_text "$VALIDATIONS_TEXT" \
+            --arg repo "${{ github.repository }}" \
+            --arg run_id "${{ github.run_id }}" \
+            '{
+              text: "\($emoji) \($status_text)",
+              blocks: [
+                {type: "header", text: {type: "plain_text", text: "\($emoji) \($status_text)"}},
+                {type: "section", text: {type: "mrkdwn", text: "*Post-Deployment Scripts Results:*"}},
+                {type: "section", fields: [
+                  {type: "mrkdwn", text: "*Migrations:*\n\($migrations_text)"},
+                  {type: "mrkdwn", text: "*Add Config:*\n\($config_text)"},
+                  {type: "mrkdwn", text: "*Validations:*\n\($validations_text)"},
+                  {type: "mrkdwn", text: "*Workflow:*\n<https://github.com/\($repo)/actions/runs/\($run_id)|View Logs>"}
+                ]}
+              ]
+            }')
+
+          curl -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-Type: application/json' \
+            -d "$payload"
+
+      - name: Send deployment failure notification to Slack
+        if: failure()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          payload=$(jq -n \
+            --arg repo "${{ github.repository }}" \
+            --arg short_sha "${{ steps.commit_info.outputs.sha }}" \
+            --arg full_sha "${{ github.sha }}" \
+            --arg author "${{ steps.commit_info.outputs.author }}" \
+            --arg message "${{ steps.commit_info.outputs.message }}" \
+            --arg run_id "${{ github.run_id }}" \
+            '{
+              text: "❌ Backend Staging Deployment Failed",
+              blocks: [
+                {type: "header", text: {type: "plain_text", text: "❌ Backend Staging Deployment Failed"}},
+                {type: "section", fields: [
+                  {type: "mrkdwn", text: "*Environment:*\nStaging"},
+                  {type: "mrkdwn", text: "*Commit:*\n<https://github.com/\($repo)/commit/\($full_sha)|\($short_sha)>"},
+                  {type: "mrkdwn", text: "*Author:*\n\($author)"},
+                  {type: "mrkdwn", text: "*Workflow:*\n<https://github.com/\($repo)/actions/runs/\($run_id)|View Logs>"}
+                ]},
+                {type: "section", text: {type: "mrkdwn", text: "*Commit Message:*\n\($message)"}},
+                {type: "section", text: {type: "mrkdwn", text: "The deployment to Heroku failed. Please check the workflow logs for details."}}
+              ]
+            }')
+          curl -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-Type: application/json' \
+            -d "$payload"
