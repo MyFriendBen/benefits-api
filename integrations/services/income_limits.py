@@ -1,6 +1,6 @@
 from typing import ClassVar, Literal, Union
 
-from sentry_sdk import capture_message
+from sentry_sdk import capture_message, new_scope
 
 from integrations.services.sheets.sheets import GoogleSheetsCache
 from screener.models import Screen
@@ -175,18 +175,21 @@ class IncomeLimitsCache(GoogleSheetsCache):
         return result
 
     @staticmethod
-    def _log_income_limit_error(message: str, county: str | None, **additional_extras) -> None:
+    def _log_income_limit_error(message: str, county: str | None = None, **additional_extras) -> None:
         """
-        Helper to log income limit validation errors.
+        Helper to log income limit validation errors to Sentry.
 
         Args:
-            message: Error message
-            county: County name (can be None if not available)
-            **additional_extras: Any additional context fields (e.g., household_size, size_index)
+            message: Error message describing the issue
+            county: County name where the error occurred
+            **additional_extras: Any additional context fields (e.g., household_size)
         """
-        extras = {"county": county}
-        extras.update(additional_extras)
-        capture_message(message, level="error", extras=extras)
+        with new_scope() as scope:
+            if county is not None:
+                scope.set_extra("county", county)
+            for key, value in additional_extras.items():
+                scope.set_extra(key, value)
+            capture_message(message, level="error")
 
     def get_income_limit(self, screen: Screen) -> int | None:
         """
