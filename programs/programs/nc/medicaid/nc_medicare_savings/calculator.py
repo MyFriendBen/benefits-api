@@ -26,20 +26,13 @@ class MedicareSavingsNC(MedicareSavings):
         - If member has SSI → automatically excluded (already qualifies for Medicaid/Medicare)
         - If any household member has SSI → that person is excluded from income & household count
         """
+        # Case 1: the member themselves receives SSI → not eligible for Medicare Savings (gets full Medicare)
         has_ssi = member.calc_gross_income("yearly", ["sSI"]) > 0
         e.condition(not has_ssi)
-        if has_ssi:
-            return
-
-        # Check spouse SSI
-        spouse_ssi = spouse.calc_gross_income("yearly", ["sSI"]) if spouse else 0
 
         # Case 2: collect household members and exclude SSI recipients
         household = list(self.screen.household_members.all())
-        excluded_members = [m for m in household if m.calc_gross_income("yearly", ["sSI"]) > 0]
-
-        # exclude SSI recipients from income and adjust household size
-        included_members = [m for m in household if m not in excluded_members]
+        included_members = [m for m in household if m.calc_gross_income("yearly", ["sSI"]) == 0]
         household_size = len(included_members)
 
         # compute combined income (excluding SSI)
@@ -55,11 +48,5 @@ class MedicareSavingsNC(MedicareSavings):
 
         min_income, max_income = self.get_fpl_limits(household_size, self.min_income_percent)
 
-        if countable_income is not None and min_income is not None:
-            e.condition(countable_income >= min_income)
-        else:
-            e.condition(False)
-        if countable_income is not None and max_income is not None:
-            e.condition(countable_income <= max_income)
-        else:
-            e.condition(False)
+        e.condition(min_income is not None and countable_income >= min_income)
+        e.condition(max_income is not None and countable_income <= max_income)
