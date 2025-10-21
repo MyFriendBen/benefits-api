@@ -20,8 +20,7 @@ class WeatherizationAssistance(ProgramCalculator):
     def household_eligible(self, e: Eligibility):
         # Check presumptive eligibility first
         presumed_eligibility = any(
-            self.screen.has_benefit(program)
-            for program in WeatherizationAssistance.presumptive_eligibility
+            self.screen.has_benefit(program) for program in WeatherizationAssistance.presumptive_eligibility
         )
 
         # Must have EITHER income eligible OR presumed eligibility
