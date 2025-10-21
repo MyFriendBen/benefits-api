@@ -189,7 +189,7 @@ class IncomeLimitsCache(GoogleSheetsCache):
                 scope.set_extra("county", county)
             for key, value in additional_extras.items():
                 scope.set_extra(key, value)
-            capture_message(message, level="error")
+            capture_message(message, level="warning")
 
     def get_income_limit(self, screen: Screen) -> int | None:
         """
