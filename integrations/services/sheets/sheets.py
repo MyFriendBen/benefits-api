@@ -20,6 +20,11 @@ class GoogleSheets:
         pass
 
     def __init__(self, spreadsheet_id: str, cell_range: str) -> None:
+        if self.sheet is None:
+            raise RuntimeError(
+                "Google Sheets integration is disabled. "
+                "Set ENABLE_GOOGLE_INTEGRATIONS=true in your environment to enable it."
+            )
         self.spreadsheet_id = spreadsheet_id
         self.cell_range = cell_range
 
