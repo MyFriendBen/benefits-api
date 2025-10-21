@@ -1,12 +1,11 @@
-name: Run tests and upload coverage
+name: Tests & Coverage
 
 on:
   pull_request:
     branches: [ dev, main ]
 
 jobs:
-  test:
-    name: Run tests and collect coverage
+  test-and-upload-coverage:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
