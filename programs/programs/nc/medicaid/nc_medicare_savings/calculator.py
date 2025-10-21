@@ -24,7 +24,7 @@ class MedicareSavingsNC(MedicareSavings):
         NC-specific logic:
         - SSI is excluded from income
         - If member has SSI → automatically excluded (already qualifies for Medicaid/Medicare)
-        - If spouse has SSI → exclude spouse entirely and reduce household size by 1
+        - If any household member has SSI → that person is excluded from income & household count
         """
         has_ssi = member.calc_gross_income("yearly", ["sSI"]) > 0
         e.condition(not has_ssi)
@@ -34,18 +34,24 @@ class MedicareSavingsNC(MedicareSavings):
         # Check spouse SSI
         spouse_ssi = spouse.calc_gross_income("yearly", ["sSI"]) if spouse else 0
 
-        # If spouse has SSI, exclude spouse entirely
-        if spouse and spouse_ssi > 0:
-            earned, unearned, _ = self.get_combined_income(member, spouse=None, include_ssi=False)
-        else:
-            earned, unearned, _ = self.get_combined_income(member, spouse, include_ssi=False)
+        # Case 2: collect household members and exclude SSI recipients
+        household = list(self.screen.household_members.all())
+        excluded_members = [m for m in household if m.calc_gross_income("yearly", ["sSI"]) > 0]
 
-        earned, unearned = self.apply_income_disregards(earned, unearned)
-        countable_income = earned + unearned
+        # exclude SSI recipients from income and adjust household size
+        included_members = [m for m in household if m not in excluded_members]
+        household_size = len(included_members)
 
-        household_size = self.screen.household_size or 0
-        if spouse_ssi > 0 and household_size > 1:
-            household_size -= 1
+        # compute combined income (excluding SSI)
+        earned_total = 0
+        unearned_total = 0
+        for m in included_members:
+            earned, unearned, _ = self.get_combined_income(m, spouse=None, include_ssi=False)
+            earned_total += earned
+            unearned_total += unearned
+
+        earned_total, unearned_total = self.apply_income_disregards(earned_total, unearned_total)
+        countable_income = earned_total + unearned_total
 
         min_income, max_income = self.get_fpl_limits(household_size, self.min_income_percent)
 
