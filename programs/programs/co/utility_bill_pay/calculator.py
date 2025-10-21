@@ -14,13 +14,18 @@ class UtilityBillPay(ProgramCalculator):
     def household_eligible(self, e: Eligibility):
         presumed_eligibility = False
         for benefit in self.presumptive_eligibility:
-            if self.screen.has_benefit(benefit) or (benefit in self.data and self.data[benefit].eligible):
+            if self.screen.has_benefit(benefit) or (
+                benefit in self.data and self.data[benefit].eligible
+            ):
                 presumed_eligibility = True
                 break
 
         if not presumed_eligibility:
             for benefit in self.member_presumptive_eligibility:
-                if any(member.has_benefit(benefit) for member in self.screen.household_members.all()):
+                if any(
+                    member.has_benefit(benefit)
+                    for member in self.screen.household_members.all()
+                ):
                     presumed_eligibility = True
                     break
 
@@ -37,7 +42,7 @@ class UtilityBillPay(ProgramCalculator):
             else:
                 # no income limit data
                 e.condition(False, messages.income_limit_unknown())
-        
+
             # has rent or mortgage expense
             e.condition(self._has_expense())
 

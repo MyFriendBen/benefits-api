@@ -32,9 +32,15 @@ class Ami(GoogleSheetsCache):
             values = {"mtsp": {}, "il": {}}
             continue_outer = False
             percent = 80
-            for i in range(self.MTSP_LIMITS_START_INDEX, self.MAX_HOUSEHOLD_SIZE * 7, self.MAX_HOUSEHOLD_SIZE):
+            for i in range(
+                self.MTSP_LIMITS_START_INDEX,
+                self.MAX_HOUSEHOLD_SIZE * 7,
+                self.MAX_HOUSEHOLD_SIZE,
+            ):
                 try:
-                    income_limit_values = self._get_income_limits(row[i : i + self.MAX_HOUSEHOLD_SIZE])
+                    income_limit_values = self._get_income_limits(
+                        row[i : i + self.MAX_HOUSEHOLD_SIZE]
+                    )
                 except ValueError:
                     continue_outer = True
                     break
@@ -44,7 +50,9 @@ class Ami(GoogleSheetsCache):
             i = self.IL_LIMITS_START_INDEX
             for percent in self.IL_PERCENTS:
                 try:
-                    income_limit_values = self._get_income_limits(row[i : i + self.MAX_HOUSEHOLD_SIZE])
+                    income_limit_values = self._get_income_limits(
+                        row[i : i + self.MAX_HOUSEHOLD_SIZE]
+                    )
                 except ValueError:
                     continue_outer = True
                     break
@@ -93,7 +101,9 @@ class Ami(GoogleSheetsCache):
         if percent == "100%":
             return self.get_screen_ami(screen, "80%", year) / 0.8
 
-        return data[year][screen.white_label.state_code][screen.county][limit_type][percent][screen.household_size]
+        return data[year][screen.white_label.state_code][screen.county][limit_type][
+            percent
+        ][screen.household_size]
 
 
 ami = Ami()
@@ -142,6 +152,7 @@ class IncomeLimitsCache(GoogleSheetsCache):
     - UtilityBillPay
     - WeatherizationAssistance
     """
+
     sheet_id = "1ZzQYhULtiP61crj0pbPjhX62L1TnyAisLcr_dQXbbFg"
     range_name = "A2:K"
     default: ClassVar[dict] = {}

@@ -7,7 +7,12 @@ from typing import ClassVar
 class WeatherizationAssistance(ProgramCalculator):
     presumptive_eligibility = ("andcs", "ssi", "snap", "leap", "tanf")
     amount = 350
-    dependencies: ClassVar[list[str]] = ["household_size", "income_amount", "income_frequency", "county"]
+    dependencies: ClassVar[list[str]] = [
+        "household_size",
+        "income_amount",
+        "income_frequency",
+        "county",
+    ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -15,7 +20,8 @@ class WeatherizationAssistance(ProgramCalculator):
     def household_eligible(self, e: Eligibility):
         # Check presumptive eligibility first
         presumed_eligibility = any(
-            self.screen.has_benefit(program) for program in WeatherizationAssistance.presumptive_eligibility
+            self.screen.has_benefit(program)
+            for program in WeatherizationAssistance.presumptive_eligibility
         )
 
         # Must have EITHER income eligible OR presumed eligibility
