@@ -52,7 +52,9 @@ class MedicareSavings(ProgramCalculator):
         return earned, unearned
 
     def get_fpl_limits(self, household_size, min_percent=None):
-        fpl = self.program.year.as_dict()[household_size]
+        fpl = self.program.year.as_dict().get(household_size)
+        if fpl is None:
+            return None, None
         min_income = fpl * min_percent if min_percent else None
         max_income = fpl * self.max_income_percent
         return min_income, max_income

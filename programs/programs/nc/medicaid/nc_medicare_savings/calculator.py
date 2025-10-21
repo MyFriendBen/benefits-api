@@ -23,18 +23,18 @@ class MedicareSavingsNC(MedicareSavings):
         """
         NC-specific logic:
         - SSI is excluded from income
-        - If member has SSI → automatically excluded (skip check)
-        - If spouse has SSI → exclude spouse's SSI from income
+        - If member has SSI → automatically excluded (already qualifies for Medicaid/Medicare)
+        - If spouse has SSI → exclude spouse entirely and reduce household size by 1
         """
-        if member.calc_gross_income("yearly", ["sSI"]) > 0:
-            # They already qualify for Medicaid/Medicare Savings via SSI
-            e.condition(False)
+        has_ssi = member.calc_gross_income("yearly", ["sSI"]) > 0
+        e.condition(not has_ssi)
+        if has_ssi:
             return
 
-        spouse_ssi = 0
-        if spouse:
-            spouse_ssi = spouse.calc_gross_income("yearly", ["sSI"])
+        # Check spouse SSI
+        spouse_ssi = spouse.calc_gross_income("yearly", ["sSI"]) if spouse else 0
 
+        # If spouse has SSI, exclude spouse entirely
         if spouse and spouse_ssi > 0:
             earned, unearned, _ = self.get_combined_income(member, spouse=None, include_ssi=False)
         else:
@@ -43,7 +43,10 @@ class MedicareSavingsNC(MedicareSavings):
         earned, unearned = self.apply_income_disregards(earned, unearned)
         countable_income = earned + unearned
 
-        household_size = 1 if spouse_ssi > 0 else self.screen.household_size
+        household_size = self.screen.household_size or 0
+        if spouse_ssi > 0 and household_size > 1:
+            household_size -= 1
+
         min_income, max_income = self.get_fpl_limits(household_size, self.min_income_percent)
 
         if countable_income is not None and min_income is not None:
