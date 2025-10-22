@@ -64,8 +64,8 @@ class MaConfigurationData(ConfigurationData):
                 "_default_message": "A challenge you or your child would like to talk about",
             },
         },
-        "youthDevelopment": {            
-            "icon": {"_icon": "Youth_development", "_classname": "option-card-icon youth-development-icon"},            
+        "youthDevelopment": {
+            "icon": {"_icon": "Youth_development", "_classname": "option-card-icon youth-development-icon"},
             "text": {
                 "_label": "acuteConditionOptions.youthDevelopment",
                 "_default_message": "Concern about your child's development (ages 0 - 21)",
