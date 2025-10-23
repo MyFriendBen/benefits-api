@@ -9,7 +9,7 @@ def populate_expense_types(apps, schema_editor):
     Matches keys from configuration/white_labels/base.py expense_options (lines 348-366)
     """
     ExpenseType = apps.get_model("programs", "ExpenseType")
-    
+
     # These MUST match keys from configuration/white_labels/base.py expense_options
     expense_types = [
         "rent",
@@ -27,7 +27,7 @@ def populate_expense_types(apps, schema_editor):
         "childSupport",
         "dependentCare",
     ]
-    
+
     for exp_type in expense_types:
         ExpenseType.objects.get_or_create(name=exp_type)
 

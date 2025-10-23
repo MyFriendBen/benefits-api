@@ -758,6 +758,7 @@ class ExpenseType(models.Model):
     Represents types of expenses that can be used to filter urgent needs.
     Matches expense types from configuration/white_labels/base.py expense_options
     """
+
     name = models.CharField(max_length=120, unique=True)
 
     class Meta:
