@@ -753,6 +753,20 @@ class UrgentNeedCategory(models.Model):
         return f"{self.name}"
 
 
+class ExpenseType(models.Model):
+    """
+    Represents types of expenses that can be used to filter urgent needs.
+    Matches expense types from configuration/white_labels/base.py expense_options
+    """
+    name = models.CharField(max_length=120, unique=True)
+
+    class Meta:
+        verbose_name_plural = "Expense Types"
+
+    def __str__(self):
+        return f"{self.name}"
+
+
 from typing import TypedDict
 from translations.model_data import ModelDataController
 
@@ -920,6 +934,7 @@ class UrgentNeedDataController(ModelDataController["UrgentNeed"]):
     CategoriesType = list[TypedDict("CategoryType", {"name": str})]
     NeedFunctionsType = list[TypedDict("NeedFunctionType", {"name": str})]
     CountiesType = list[TypedDict("CountyType", {"name": str})]
+    ExpenseTypesType = list[TypedDict("ExpenseTypeType", {"name": str})]
     DataType = TypedDict(
         "DataType",
         {
@@ -933,11 +948,15 @@ class UrgentNeedDataController(ModelDataController["UrgentNeed"]):
             "fpl": Optional[YearDataType],
             "white_label": str,
             "counties": CountiesType,
+            "required_expense_types": ExpenseTypesType,
         },
     )
 
     def _counties(self) -> CountiesType:
         return [{"name": c.name} for c in self.instance.counties.all()]
+
+    def _expense_types(self) -> ExpenseTypesType:
+        return [{"name": e.name} for e in self.instance.required_expense_types.all()]
 
     def _year(self) -> Optional[YearDataType]:
         if self.instance.year is None:
@@ -963,6 +982,7 @@ class UrgentNeedDataController(ModelDataController["UrgentNeed"]):
             "fpl": self._year(),
             "white_label": need.white_label.code,
             "counties": self._counties(),
+            "required_expense_types": self._expense_types(),
         }
 
     def from_model_data(self, data: DataType):
@@ -1035,6 +1055,16 @@ class UrgentNeedDataController(ModelDataController["UrgentNeed"]):
             counties.append(county_instance)
         need.counties.set(counties)
 
+        # get or create expense types
+        expense_types = []
+        for expense_type in data.get("required_expense_types", []):
+            try:
+                exp_type_instance = ExpenseType.objects.get(name=expense_type["name"])
+            except ExpenseType.DoesNotExist:
+                exp_type_instance = ExpenseType.objects.create(name=expense_type["name"])
+            expense_types.append(exp_type_instance)
+        need.required_expense_types.set(expense_types)
+
         need.save()
 
     @classmethod
@@ -1092,6 +1122,12 @@ class UrgentNeed(models.Model):
         on_delete=models.SET_NULL,
     )
     counties = models.ManyToManyField(County, related_name="urgent_need", blank=True)
+    required_expense_types = models.ManyToManyField(
+        ExpenseType,
+        related_name="urgent_needs",
+        blank=True,
+        help_text="If empty, urgent need shown to all users. If selected, user must have at least one of these expense types.",
+    )
 
     name = models.ForeignKey(
         Translation,
@@ -1144,6 +1180,11 @@ class UrgentNeed(models.Model):
     def county_names(self) -> list[str]:
         """List of county names"""
         return [c.name for c in self.counties.all()]
+
+    @property
+    def required_expense_type_names(self) -> list[str]:
+        """List of required expense type names"""
+        return [e.name for e in self.required_expense_types.all()]
 
     def __str__(self):
         white_label_name = f"[{self.white_label.name}] " if self.white_label and self.white_label.name else ""

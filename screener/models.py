@@ -174,6 +174,13 @@ class Screen(models.Model):
                     return True
         return False
 
+    def expense_type_names(self) -> list[str]:
+        """
+        Get list of unique expense types for this screen.
+        Returns empty list if no expenses exist.
+        """
+        return list(self.expenses.values_list("type", flat=True).distinct().filter(type__isnull=False))
+
     def num_children(self, age_min=0, age_max=18, include_pregnant=False, child_relationship=["all"]):
         children = 0
 
