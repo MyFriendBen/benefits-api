@@ -11,12 +11,12 @@ class IlRenterAssistance(UrgentNeedFunction):
         """
         Return True if the household is at or below 80% the income limit for their household size
         """
-        print(f"IlRenterAssistance.eligible() called for screen {self.screen.county}")
+        print(f"IlRenterAssistance.eligible() called for screen {vars(self.screen)}")
         # income_limit = ami.get_screen_ami(
         #     self.screen, self.ami_percent, self.urgent_need.year.period, limit_type="il"
         # )
         income = self.screen.calc_gross_income("yearly", ["all"])
-
+        
         # # Condition 1: Household needs housing/utilities help
         needs_housing_help = self.screen.needs_housing_help
 
