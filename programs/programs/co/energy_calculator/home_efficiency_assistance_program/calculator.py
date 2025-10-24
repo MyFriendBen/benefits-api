@@ -23,7 +23,7 @@ class EnergyCalculatorHomeEfficiencyAssistance(ProgramCalculator):
 
         if presumed_eligible:
             # if presumptive eligbility via LEAP, done
-            e.condition(presumed_eligible)
+            e.condition(presumed_eligible, messages.presumed_eligibility())
         else:
             # otherwise, must meet all 3 conditions
             e.condition(energy_calculator_screen.has_utility_provider(self.utility_providers, messages.has_utility_provider(self.utility_providers)))
