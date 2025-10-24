@@ -523,8 +523,8 @@ class ConfigurationData:
     }
 
     feedback_links = {
-        "email": "",
-        "survey": "",
+        "email": "mailto: hello@myfriendben.org",
+        "survey": "https://myfriendben.fillout.com/report-an-issue",
     }
 
     current_benefits = {

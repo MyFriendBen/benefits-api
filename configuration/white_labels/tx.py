@@ -3023,9 +3023,4 @@ class TxConfigurationData(ConfigurationData):
         "email": "hello@myfriendben.org",
     }
 
-    feedback_links = {
-        "email": "hello@myfriendben.org",
-        "survey": "",
-    }
-
     override_text = {}

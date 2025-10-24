@@ -2366,9 +2366,4 @@ class CoConfigurationData(ConfigurationData):
         "email": "hello@myfriendben.org",
     }
 
-    feedback_links = {
-        "email": "hello@myfriendben.org",
-        "survey": "https://docs.google.com/forms/d/e/1FAIpQLSdnfqjvlVSBQkJuUMvhEDUp-t6oD-8tPQi67uRG2iNetXmSfA/viewform?usp=sf_link",
-    }
-
     override_text = {}

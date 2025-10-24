@@ -2533,9 +2533,4 @@ class IlConfigurationData(ConfigurationData):
         "email": "hello@myfriendben.org",
     }
 
-    feedback_links = {
-        "email": "hello@myfriendben.org",
-        "survey": "https://www.myfriendben.org/feedback",
-    }
-
     override_text = {}

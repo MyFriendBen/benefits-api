@@ -518,7 +518,7 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
         "email": "",
     }
 
-    feedback_links = {  # TODO: add links where the user can provide feedback
+    feedback_links = {  # TODO: updates links where the user can provide feedback IF different from those in ConfigurationData
         "email": "",
         "survey": "",
     }
