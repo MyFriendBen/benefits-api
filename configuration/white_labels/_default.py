@@ -76,11 +76,6 @@ class DefaultConfigurationData(ConfigurationData):
         "ht": "Kreyòl",
     }
 
-    feedback_links = {
-        "email": "mailto: hello@myfriendben.org",
-        "survey": "https://myfriendben.fillout.com/report-an-issue",
-    }
-
     override_text = {}
 
     consent_to_contact = {
