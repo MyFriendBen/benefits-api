@@ -523,7 +523,7 @@ class ConfigurationData:
     }
 
     feedback_links = {
-        "email": "mailto: hello@myfriendben.org",
+        "email": "mailto:hello@myfriendben.org",
         "survey": "https://myfriendben.fillout.com/report-an-issue",
     }
 
