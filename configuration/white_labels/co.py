@@ -12,9 +12,15 @@ class CoConfigurationData(ConfigurationData):
     # System banner messages
     banner_messages = [
         {
-            "id": "co.banner.snap_nov_2025_hold",
-            "title": "Urgent: SNAP Benefits for November 2025 are on Hold",
-            "content": "Because of the federal government shutdown, the U.S. Department of Agriculture (USDA) has not released the funds that states use to pay SNAP (food assistance) benefits. This means Colorado is unable to issue November SNAP benefits to clients until the federal government restores funding.\n\nWe will update this banner as soon as we have new information.\n\nTo find other food resources in your area, please contact:\n\n**Colorado 211:** call 2-1-1 or 866-760-6489 or visit https://www.211colorado.org",
+            "id": "snap_nov_2025_hold",
+            "title": {
+                "_label": "banner.snap_nov_2025_hold.title",
+                "_default_message": "Urgent: SNAP Benefits for November 2025 are on Hold",
+            },
+            "content": {
+                "_label": "banner.snap_nov_2025_hold.content",
+                "_default_message": "Because of the federal government shutdown, the U.S. Department of Agriculture (USDA) has not released the funds that states use to pay SNAP (food assistance) benefits. This means Colorado is unable to issue November SNAP benefits to clients until the federal government restores funding.\n\nWe will update this banner as soon as we have new information.\n\nTo find other food resources in your area, please contact:\n\n**Colorado 211:** call 2-1-1 or 866-760-6489 or visit https://www.211colorado.org",
+            },
             "enabled": True,
             "priority": 1,
         }
