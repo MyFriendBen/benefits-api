@@ -51,6 +51,14 @@ MEDIA_URL = "/media/"
 
 BACKEND_DOMAIN = config("BACKEND_DOMAIN", "http://localhost:8000")
 
+# AI Service Configuration
+OPENAI_API_KEY = config("OPENAI_API_KEY", default=None)
+ANTHROPIC_API_KEY = config("ANTHROPIC_API_KEY", default=None)
+
+# AI Service Settings
+AI_EXPLANATION_ENABLED = config("AI_EXPLANATION_ENABLED", "True") == "True"
+AI_EXPLANATION_TIMEOUT = int(config("AI_EXPLANATION_TIMEOUT", "10"))  # seconds
+
 LOCALE_PATHS = [
     os.path.join(BASE_DIR, "locale"),
 ]
