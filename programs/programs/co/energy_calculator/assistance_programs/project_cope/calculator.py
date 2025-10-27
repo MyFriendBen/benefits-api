@@ -8,7 +8,9 @@ class EnergyCalculatorProjectCOPE(ProgramCalculator):
     def household_eligible(self, e: Eligibility):
         # utility provider check (electric or gas)
         e.condition(self.screen.energy_calculator.has_utility_provider(self.utility_providers))
-
+        print(self.screen.energy_calculator.has_utility_provider(self.utility_providers))
+        print(self.screen.energy_calculator.electricity_is_disconnected)
+        print(self.screen.energy_calculator.has_past_due_energy_bills)
         # past due or disconnected
         e.condition(
             self.screen.energy_calculator.electricity_is_disconnected
