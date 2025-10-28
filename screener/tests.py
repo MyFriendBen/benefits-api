@@ -1,5 +1,5 @@
 from django.test import TestCase
-from screener.models import Screen
+from screener.models import Screen, WhiteLabel
 
 
 class ScreenTestCase(TestCase):
@@ -34,8 +34,15 @@ def create_default_household_member(screen, relationship="headOfHousehold", age=
 # 1900 in monthly expenses between childcare and rent
 # no assets
 def create_single_parent_two_children_household(annual_income):
+    white_label = WhiteLabel.objects.create(name="Test", code="test", state_code="CO")
     screen = Screen.objects.create(
-        household_assets=0, household_size=3, zipcode="80204", agree_to_tos=True, housing_situation="renting"
+        white_label=white_label,
+        household_assets=0,
+        household_size=3,
+        zipcode="80204",
+        agree_to_tos=True,
+        housing_situation="renting",
+        completed=False,
     )
 
     parent = create_default_household_member(screen)
