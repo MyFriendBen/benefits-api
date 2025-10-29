@@ -1,0 +1,33 @@
+{
+  "white_label": {
+    "code": "tx"
+  },
+  "program_category": {
+    "external_name": "tx_food",
+    "name": "Food and Nutrition",
+    "icon": "food"
+  },
+  "program": {
+    "name_abbreviated": "tx_snap",
+    "year": "2025",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "refugee"
+    ],
+    "name": "Supplemental Nutrition Assistance Program (SNAP)",
+    "description_short": "Monthly assistance to buy food",
+    "description": "Benefit to help buy food. SNAP gives you monthly funds through an electronic benefits transfer (EBT) card that you can use for food at approved stores. Some stores double the value of your card. The amount you get depends on how many people are in your family, your income and expenses, and other factors. A local agency will interview you. Special rules may apply to college students, people with disabilities, and adults 60 or older.\n\nWORK RULES: Work rules are changing. Most people between 18 and 64 will need to work or engage in work-related activities for at least 80 hours per month. If you do not follow these rules, you may not get more than 3 months of SNAP benefits in a 3-year period.\n\nTime to Apply is based on submitting an application in Your Texas Benefits. You may save time when you apply for several benefits with one application. SNAP may require an interview.\n\nOn average, it takes 30 days to get approved.",
+    "learn_more_link": "https://www.hhs.texas.gov/services/food/snap-food-benefits",
+    "apply_button_link": "https://yourtexasbenefits.com/Apply/GettingStartedApp?lang=en_US",
+    "apply_button_description": "Apply for TX SNAP",
+    "estimated_application_time": "30 - 60 minutes",
+    "estimated_delivery_time": "30 days",
+    "estimated_value": ""
+  },
+  "warning_message": {
+    "external_name": "tx_snap_mixed_status",
+    "calculator": "_show",
+    "message": "SNAP amounts are based in part on the number of citizens or qualified non-citizens in a household. Your estimated SNAP value may be affected if you have a mixed-status household."
+  }
+}
