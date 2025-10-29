@@ -9,11 +9,28 @@ class CoConfigurationData(ConfigurationData):
 
     state = {"name": "Colorado"}
 
+    # System banner messages
+    banner_messages = [
+        {
+            "id": "co.banner.snap_nov_2025_hold",
+            "title": {
+                "_label": "co.banner.snap_nov_2025_hold.title",
+                "_default_message": "Urgent: SNAP Benefits for November 2025 are on Hold",
+            },
+            "content": {
+                "_label": "co.banner.snap_nov_2025_hold.content",
+                "_default_message": "Because of the federal government shutdown, the U.S. Department of Agriculture (USDA) has not released the funds that states use to pay SNAP (food assistance) benefits. This means Colorado is unable to issue November SNAP benefits to clients until the federal government restores funding.\n\nWe will update this banner as soon as we have new information.\n\nTo find other food resources in your area, please contact:\n\n**Colorado 211:** call 2-1-1 or 866-760-6489 or visit https://www.211colorado.org",
+            },
+            "enabled": True,
+            "priority": 1,
+        }
+    ]
+
     public_charge_rule = {
-        "link": "https://cdhs.colorado.gov/public-charge-rule-and-colorado-immigrants#:~:text=About%20public%20charge&text=The%20test%20looks%20at%20whether,affidavit%20of%20support%20or%20contract.",
+        "link": "https://cdhs.colorado.gov/public-charge-rule-colorado-immigrants#:~:text=About%20public%20charge&text=The%20test%20looks%20at%20whether,affidavit%20of%20support%20or%20contract.",
         "text": {
             "_label": "landingPage.publicChargeLinkCO",
-            "_default_message": "Colorado Department of Human Services Public Charge Rule",
+            "_default_message": "Colorado Department of Human Services",
         },
     }
 
@@ -207,6 +224,8 @@ class CoConfigurationData(ConfigurationData):
         "tl": "Tagalog",
         "ko": "한국어",
         "ur": "اردو",
+        "pt-br": "Português Brasileiro",
+        "ht": "Kreyòl",
     }
 
     income_options = {

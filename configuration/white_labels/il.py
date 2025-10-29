@@ -10,10 +10,10 @@ class IlConfigurationData(ConfigurationData):
     state = {"name": "Illinois"}
 
     public_charge_rule = {
-        "link": "https://www.dhs.state.il.us/page.aspx?item=118709",
+        "link": "https://www.icirr.org/ifrp",
         "text": {
             "_label": "landingPage.publicChargeLinkIL",
-            "_default_message": "Illinois Department of Human Services website",
+            "_default_message": "Illinois Department of Human Services",
         },
     }
 
@@ -203,6 +203,8 @@ class IlConfigurationData(ConfigurationData):
         "tl": "Tagalog",
         "ko": "한국어",
         "ur": "اردو",
+        "pt-br": "Português Brasileiro",
+        "ht": "Kreyòl",
     }
 
     income_options = {
@@ -2323,6 +2325,16 @@ class IlConfigurationData(ConfigurationData):
                         "_default_message": "Phone or internet discount",
                     },
                 },
+                "il_liheap": {
+                    "name": {
+                        "_label": "housingAndUtilities.il_liheap",
+                        "_default_message": "Low Income Home Energy Assistance Program (LIHEAP): ",
+                    },
+                    "description": {
+                        "_label": "housingAndUtilities.il_liheap_desc",
+                        "_default_message": "Help paying heating and cooling bills",
+                    },
+                },
             },
             "category_name": {
                 "_label": "housing",
@@ -2526,9 +2538,4 @@ class IlConfigurationData(ConfigurationData):
         "survey": "https://www.myfriendben.org/feedback",
     }
 
-    override_text = {
-        "landingPage.publicCharge": {
-            "_label": "landingPage.publicCharge.il",
-            "_default_message": "Some benefits are available to Non-U.S. citizens. Non-U.S. citizens planning to apply for legal permanent residency or a visa should consider how applying for any benefits may affect their immigration status. To learn more, please visit the ",
-        },
-    }
+    override_text = {}

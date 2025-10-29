@@ -192,6 +192,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             "has_ede",
             "has_erc",
             "has_leap",
+            "has_il_liheap",
             "has_nc_lieap",
             "has_project_cope",
             "has_oap",

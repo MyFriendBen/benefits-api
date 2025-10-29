@@ -13,7 +13,7 @@ class MaConfigurationData(ConfigurationData):
         "link": "https://www.mass.gov/info-details/information-about-the-public-charge-rule-and-how-it-may-impact-you#information-about-the-public-charge-rule-",
         "text": {
             "_label": "landingPage.publicChargeLinkMA",
-            "_default_message": "Massachusetts Department of Health and Human Services website",
+            "_default_message": "Massachusetts Department of Health and Human Services",
         },
     }
 
@@ -64,11 +64,11 @@ class MaConfigurationData(ConfigurationData):
                 "_default_message": "A challenge you or your child would like to talk about",
             },
         },
-        "childDevelopment": {
-            "icon": {"_icon": "Child_development", "_classname": "option-card-icon"},
+        "youthDevelopment": {
+            "icon": {"_icon": "Youth_development", "_classname": "option-card-icon youth-development-icon"},
             "text": {
-                "_label": "acuteConditionOptions.childDevelopment",
-                "_default_message": "Concern about your child's development",
+                "_label": "acuteConditionOptions.youthDevelopment",
+                "_default_message": "Concern about your child's development (ages 0 - 21)",
             },
         },
         "familyPlanning": {
@@ -173,6 +173,8 @@ class MaConfigurationData(ConfigurationData):
         "tl": "Tagalog",
         "ko": "한국어",
         "ur": "اردو",
+        "pt-br": "Português Brasileiro",
+        "ht": "Kreyòl",
     }
 
     income_options = {
