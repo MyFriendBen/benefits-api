@@ -613,7 +613,18 @@ class Program(models.Model):
         blank=True,
         help_text="Programs that are excluded when eligible for this program.",
     )
-    value_format = models.CharField(max_length=120, blank=True, null=True)
+    VALUE_FORMAT_CHOICES = [
+        (None, "Default (Monthly)"),
+        ("lump_sum", "Lump Sum (One-time payment)"),
+        ("estimated_annual", "Estimated Annual (Average annual savings)"),
+    ]
+    value_format = models.CharField(
+        max_length=120,
+        blank=True,
+        null=True,
+        choices=VALUE_FORMAT_CHOICES,
+        help_text="Configure how the program value is displayed to users."
+    )
 
     description_short = models.ForeignKey(
         Translation,

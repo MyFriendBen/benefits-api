@@ -54,6 +54,20 @@ class ProgramAdmin(SecureAdmin):
     ]
     list_editable = ["active"]
 
+    fields = (
+        "white_label",
+        "name_abbreviated",
+        "external_name",
+        "active",
+        "low_confidence",
+        "category",
+        "legal_status_required",
+        "value_format",
+        "documents",
+        "required_programs",
+        "excludes_programs",
+    )
+
     def has_add_permission(self, request):
         return False
 
