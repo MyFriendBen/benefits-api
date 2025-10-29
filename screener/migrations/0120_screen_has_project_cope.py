@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("screener", "0118_add_needs_savings_field"),
+        ("screener", "0119_add_project_cope_fields"),
     ]
 
     operations = [
