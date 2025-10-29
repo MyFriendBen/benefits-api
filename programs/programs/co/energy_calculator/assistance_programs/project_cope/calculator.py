@@ -7,8 +7,7 @@ class EnergyCalculatorProjectCOPE(ProgramCalculator):
     utility_providers = ["co-colorado-springs-utilities"]
 
     def household_eligible(self, e: Eligibility):
-         # user doesn't already have project cope
-        # e.condition(not self.screen.has_project_cope)
+        # user doesn't already have project cope
         e.condition(not self.screen.has_benefit("project_cop"))
 
         # utility provider checks (electric or gas)
