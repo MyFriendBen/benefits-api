@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("screener", "0119_add_project_cope_fields"),
+        ("screener", "0119_add_has_il_liheap_field"),
     ]
 
     operations = [
