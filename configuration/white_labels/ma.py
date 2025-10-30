@@ -67,7 +67,7 @@ class MaConfigurationData(ConfigurationData):
         "childDevelopment": {
             "icon": {"_icon": "Child_development", "_classname": "option-card-icon youth-development-icon"},
             "text": {
-                "_label": "acuteConditionOptions.childDevelopment",
+                "_label": "acuteConditionOptions.childDevelopment_ma",
                 "_default_message": "Concern about your child's development (ages 0 - 21)",
             },
         },
