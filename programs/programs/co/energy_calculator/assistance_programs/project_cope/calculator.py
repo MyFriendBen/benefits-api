@@ -8,7 +8,7 @@ class EnergyCalculatorProjectCOPE(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility):
         # user doesn't already have project cope
-        e.condition(not self.screen.has_benefit("project_cop"))
+        e.condition(not self.screen.has_benefit("project_cope"))
 
         # utility provider checks (electric or gas)
         e.condition(self.screen.energy_calculator.has_utility_provider(self.utility_providers))
