@@ -2171,6 +2171,16 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
                         "_default_message": "Home energy upgrades",
                     },
                 },
+                "project_cope": {
+                    "name": {
+                        "_label": "housingAndUtilities.project_cope",
+                        "_default_message": "Project COPE: ",
+                    },
+                    "description": {
+                        "_label": "housingAndUtilities.project_cope_desc",
+                        "_default_message": "Emergency help with utility bills (Colorado Springs Utilities)",
+                    },
+                },
             },
             "category_name": {
                 "_label": "housingAndUtilities",
