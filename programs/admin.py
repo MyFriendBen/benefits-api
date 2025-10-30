@@ -253,7 +253,6 @@ class UrgentNeedAdmin(SecureAdmin):
                     "phone_number",
                     "type_short",
                     "category_type",
-                    "value_format",
                     "active",
                     "low_confidence",
                     "show_on_current_benefits",
