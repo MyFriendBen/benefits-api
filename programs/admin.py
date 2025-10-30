@@ -20,6 +20,7 @@ from .models import (
     NavigatorLanguage,
     Document,
     TranslationOverride,
+    ExpenseType,
 )
 
 
@@ -230,6 +231,7 @@ class UrgentNeedAdmin(SecureAdmin):
         "type_short",
         "functions",
         "counties",
+        "required_expense_types",
     )
     exclude = [
         "name",
@@ -257,6 +259,7 @@ class UrgentNeedAdmin(SecureAdmin):
                     "year",
                     "functions",
                     "counties",
+                    "required_expense_types",
                 ),
             },
         ),
@@ -269,7 +272,10 @@ class UrgentNeedAdmin(SecureAdmin):
                     "need. If more than one <i>type_short</i> is selected, the urgent need will be shown in the near-term benefits if either of "
                     "<i>type_short</i> associated tiles is selected.<br>"
                     "<br>"
-                    "<b>Category type:</b> A <i>category_type</i> determines the urgent need's category, name and icon."
+                    "<b>Category type:</b> A <i>category_type</i> determines the urgent need's category, name and icon.<br>"
+                    "<br>"
+                    "<b>Required expense types:</b> If none selected, urgent need is shown to all users. "
+                    "If any are selected, user must have at least one of these expense types to see this urgent need."
                 ),
             },
         ),
@@ -325,6 +331,12 @@ class UrgentNeedCategoryAdmin(SecureAdmin):
 
 
 class UrgentNeedFunctionAdmin(SecureAdmin):
+    always_can_view = True
+    search_fields = ("name",)
+    fields = ("name",)
+
+
+class ExpenseTypeAdmin(SecureAdmin):
     always_can_view = True
     search_fields = ("name",)
     fields = ("name",)
@@ -501,6 +513,7 @@ admin.site.register(WarningMessage, WarningMessageAdmin)
 admin.site.register(UrgentNeed, UrgentNeedAdmin)
 admin.site.register(UrgentNeedCategory, UrgentNeedCategoryAdmin)
 admin.site.register(UrgentNeedFunction, UrgentNeedFunctionAdmin)
+admin.site.register(ExpenseType, ExpenseTypeAdmin)
 admin.site.register(FederalPoveryLimit, FederalPovertyLimitAdmin)
 admin.site.register(Document, DocumentAdmin)
 admin.site.register(Referrer, ReferrerAdmin)

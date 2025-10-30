@@ -1,4 +1,5 @@
 from .community_support_line import CommunitySupportLine
+from .cicrf import Cicrf
 from ..base import UrgentNeedFunction
 from .healthy_baby_healthy_child import HealthyBabyHealthyChild
 from .lawyers_clearinghouse import LawyersClearinghouse
@@ -26,4 +27,5 @@ ma_urgent_need_functions: dict[str, type[UrgentNeedFunction]] = {
     "ma_raft": Raft,
     "ma_rental_voucher": RentalVoucher,
     "ma_community_support_line": CommunitySupportLine,
+    "ma_cicrf": Cicrf,
 }
