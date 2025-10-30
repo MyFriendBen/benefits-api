@@ -64,7 +64,7 @@ class MaConfigurationData(ConfigurationData):
                 "_default_message": "A challenge you or your child would like to talk about",
             },
         },
-        "youthDevelopment": {
+        "childDevelopment": {
             "icon": {"_icon": "Youth_development", "_classname": "option-card-icon youth-development-icon"},
             "text": {
                 "_label": "acuteConditionOptions.youthDevelopment",
