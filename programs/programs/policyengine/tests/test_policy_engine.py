@@ -6,10 +6,13 @@ request payloads from Screen data and calculator configurations.
 """
 
 from django.test import TestCase
-from screener.models import Screen, HouseholdMember, WhiteLabel, Expense
+from screener.models import Screen, HouseholdMember, WhiteLabel, Expense, IncomeStream
 from programs.programs.policyengine.policy_engine import pe_input
-from programs.programs.tx.pe.spm import TxSnap
-from programs.programs.policyengine.calculators.constants import MAIN_TAX_UNIT, SECONDARY_TAX_UNIT
+from programs.programs.tx.pe.spm import TxSnap, TxLifeline
+from programs.programs.policyengine.calculators.constants import (
+    MAIN_TAX_UNIT,
+    SECONDARY_TAX_UNIT,
+)
 
 
 class TestPeInputWithTxSnap(TestCase):
@@ -35,17 +38,69 @@ class TestPeInputWithTxSnap(TestCase):
 
         # Head of household - 35 year old, disabled
         self.head = HouseholdMember.objects.create(
-            screen=self.screen, relationship="headOfHousehold", age=35, disabled=True, student=False
+            screen=self.screen,
+            relationship="headOfHousehold",
+            age=35,
+            disabled=True,
+            student=False,
         )
 
         # Spouse - 32 year old
         self.spouse = HouseholdMember.objects.create(
-            screen=self.screen, relationship="spouse", age=32, disabled=False, student=False
+            screen=self.screen,
+            relationship="spouse",
+            age=32,
+            disabled=False,
+            student=False,
         )
 
         # Child - 8 year old
         self.child = HouseholdMember.objects.create(
-            screen=self.screen, relationship="child", age=8, disabled=False, student=True
+            screen=self.screen,
+            relationship="child",
+            age=8,
+            disabled=False,
+            student=True,
+        )
+
+        # Add income streams for Lifeline tests
+        # Head has employment, self-employment, and rental income
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=self.head,
+            type="wages",
+            amount=30000,
+            frequency="yearly",
+        )
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=self.head,
+            type="selfEmployment",
+            amount=5000,
+            frequency="yearly",
+        )
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=self.head,
+            type="rental",
+            amount=12000,
+            frequency="yearly",
+        )
+
+        # Spouse has pension and social security income
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=self.spouse,
+            type="pension",
+            amount=8000,
+            frequency="yearly",
+        )
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=self.spouse,
+            type="sSRetirement",
+            amount=6000,
+            frequency="yearly",
         )
 
         # Add some expenses
@@ -151,7 +206,11 @@ class TestPeInputWithTxSnap(TestCase):
         """Test that secondary tax unit is kept when it has members."""
         # Create an adult child (not in main tax unit)
         adult_child = HouseholdMember.objects.create(
-            screen=self.screen, relationship="child", age=25, disabled=False, student=False
+            screen=self.screen,
+            relationship="child",
+            age=25,
+            disabled=False,
+            student=False,
         )
 
         result = pe_input(self.screen, [TxSnap])
@@ -204,7 +263,11 @@ class TestPeInputWithTxSnap(TestCase):
         """Test that pe_input returns valid structure even with no members."""
         # Create empty screen
         empty_screen = Screen.objects.create(
-            white_label=self.white_label, zipcode="78701", county="Travis County", household_size=0, completed=False
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Travis County",
+            household_size=0,
+            completed=False,
         )
 
         result = pe_input(empty_screen, [TxSnap])
@@ -325,7 +388,11 @@ class TestPeInputWithTxSnap(TestCase):
         ]
 
         for field in spm_fields_to_check:
-            self.assertIn(field, spm_unit, f"Expected field '{field}' from TxSnap pe_inputs not found in spm_unit")
+            self.assertIn(
+                field,
+                spm_unit,
+                f"Expected field '{field}' from TxSnap pe_inputs not found in spm_unit",
+            )
 
         # Check member-level dependencies from Snap.pe_inputs
         head_id = str(self.head.id)
@@ -340,7 +407,9 @@ class TestPeInputWithTxSnap(TestCase):
 
         for field in member_fields_to_check:
             self.assertIn(
-                field, people[head_id], f"Expected field '{field}' from TxSnap pe_inputs not found in member data"
+                field,
+                people[head_id],
+                f"Expected field '{field}' from TxSnap pe_inputs not found in member data",
             )
 
         # Check TX-specific dependency (added by TxSnap)
@@ -362,7 +431,11 @@ class TestPeInputWithTxSnap(TestCase):
 
         # Check that the snap output field is present
         # This is what PolicyEngine will populate with the calculated benefit amount
-        self.assertIn("snap", spm_unit, "Expected output field 'snap' from TxSnap pe_outputs not found in spm_unit")
+        self.assertIn(
+            "snap",
+            spm_unit,
+            "Expected output field 'snap' from TxSnap pe_outputs not found in spm_unit",
+        )
 
         # Verify it has a period structure
         self.assertIsInstance(spm_unit["snap"], dict, "snap field should be a dict with period keys")
@@ -382,7 +455,9 @@ class TestPeInputWithTxSnap(TestCase):
 
             # Verify snap_assets matches screen.household_assets
             self.assertEqual(
-                spm_unit["snap_assets"][period_key], 5000, "snap_assets should match Screen.household_assets"
+                spm_unit["snap_assets"][period_key],
+                5000,
+                "snap_assets should match Screen.household_assets",
             )
 
         # Verify child support expense is calculated correctly
@@ -421,5 +496,227 @@ class TestPeInputWithTxSnap(TestCase):
         if household_unit["state_code"]:
             period_key = list(household_unit["state_code"].keys())[0]
             self.assertEqual(
-                household_unit["state_code"][period_key], "TX", "TxStateCodeDependency should set state_code='TX'"
+                household_unit["state_code"][period_key],
+                "TX",
+                "TxStateCodeDependency should set state_code='TX'",
             )
+
+    def test_pe_input_includes_all_lifeline_pe_input_fields(self):
+        """
+        Test that pe_input result includes all Lifeline pe_inputs dependencies.
+
+        Lifeline has:
+        - BroadbandCostDependency (SPM level)
+        - 5 IRS gross income dependencies (member level):
+          - employment_income
+          - self_employment_income
+          - rental_income
+          - taxable_pension_income
+          - social_security
+        """
+        result = pe_input(self.screen, [TxLifeline])
+        household = result["household"]
+
+        # Get SPM unit and people
+        spm_unit = household["spm_units"]["spm_unit"]
+        people = household["people"]
+        household_unit = household["households"]["household"]
+
+        # Check SPM-level dependency from Lifeline.pe_inputs
+        self.assertIn(
+            "broadband_cost",
+            spm_unit,
+            "Expected field 'broadband_cost' from BroadbandCostDependency not found in spm_unit",
+        )
+
+        # Check member-level income dependencies from irs_gross_income tuple
+        head_id = str(self.head.id)
+        income_fields_to_check = [
+            "employment_income",
+            "self_employment_income",
+            "rental_income",
+            "taxable_pension_income",
+            "social_security",
+        ]
+
+        for field in income_fields_to_check:
+            self.assertIn(
+                field,
+                people[head_id],
+                f"Expected income field '{field}' from Lifeline pe_inputs not found in member data",
+            )
+
+        # Check TX-specific dependency (added by TxLifeline)
+        self.assertIn(
+            "state_code",
+            household_unit,
+            "Expected field 'state_code' from TxStateCodeDependency not found in household",
+        )
+
+    def test_pe_input_includes_lifeline_pe_output_field(self):
+        """
+        Test that pe_input result includes Lifeline pe_outputs dependency.
+
+        Lifeline.pe_outputs = [dependency.spm.Lifeline] which adds the 'lifeline' field
+        to the spm_unit for PolicyEngine to calculate and return.
+        """
+        result = pe_input(self.screen, [TxLifeline])
+        spm_unit = result["household"]["spm_units"]["spm_unit"]
+
+        # Check that the lifeline output field is present
+        self.assertIn(
+            "lifeline",
+            spm_unit,
+            "Expected output field 'lifeline' from Lifeline pe_outputs not found in spm_unit",
+        )
+
+        # Verify it has a period structure
+        self.assertIsInstance(
+            spm_unit["lifeline"],
+            dict,
+            "lifeline field should be a dict with period keys",
+        )
+
+    def test_pe_input_lifeline_income_values_are_correct(self):
+        """
+        Test that Lifeline income dependency values are correctly populated from HouseholdMember data.
+
+        This verifies the 5 IRS gross income types are properly extracted.
+        """
+        result = pe_input(self.screen, [TxLifeline])
+        people = result["household"]["people"]
+
+        head_id = str(self.head.id)
+        spouse_id = str(self.spouse.id)
+
+        # Get the period key from one of the fields
+        if "employment_income" in people[head_id] and people[head_id]["employment_income"]:
+            period_key = list(people[head_id]["employment_income"].keys())[0]
+
+            # Verify head's income values
+            self.assertEqual(
+                people[head_id]["employment_income"][period_key],
+                30000,
+                "Head employment_income should match HouseholdMember value",
+            )
+            self.assertEqual(
+                people[head_id]["self_employment_income"][period_key],
+                5000,
+                "Head self_employment_income should match HouseholdMember value",
+            )
+            self.assertEqual(
+                people[head_id]["rental_income"][period_key],
+                12000,
+                "Head rental_income should match HouseholdMember value",
+            )
+
+            # Verify spouse's income values
+            self.assertEqual(
+                people[spouse_id]["taxable_pension_income"][period_key],
+                8000,
+                "Spouse taxable_pension_income should match HouseholdMember value",
+            )
+            self.assertEqual(
+                people[spouse_id]["social_security"][period_key],
+                6000,
+                "Spouse social_security should match HouseholdMember value",
+            )
+
+    def test_pe_input_lifeline_broadband_cost_is_populated(self):
+        """
+        Test that Lifeline's BroadbandCostDependency populates the broadband_cost field.
+
+        Currently, BroadbandCostDependency is hardcoded to return 500.
+        This test verifies the field exists and has the expected value.
+        """
+        result = pe_input(self.screen, [TxLifeline])
+        spm_unit = result["household"]["spm_units"]["spm_unit"]
+
+        # Check that broadband_cost is populated
+        self.assertIn(
+            "broadband_cost",
+            spm_unit,
+            "broadband_cost field should be present in spm_unit",
+        )
+
+        # Verify it has a period structure
+        if spm_unit["broadband_cost"]:
+            period_key = list(spm_unit["broadband_cost"].keys())[0]
+            # BroadbandCostDependency.value() currently returns 500
+            self.assertEqual(
+                spm_unit["broadband_cost"][period_key],
+                500,
+                "broadband_cost should be 500 (current hardcoded value from BroadbandCostDependency)",
+            )
+
+    def test_pe_input_lifeline_with_multiple_income_sources(self):
+        """
+        Test that Lifeline correctly handles members with multiple income sources.
+
+        This verifies that all 5 IRS gross income types can coexist on the same member.
+        """
+        # Create a member with all 5 income types
+        multi_income_member = HouseholdMember.objects.create(
+            screen=self.screen,
+            relationship="parent",
+            age=65,
+            disabled=False,
+            student=False,
+        )
+
+        # Add income streams for all 5 IRS gross income types
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=multi_income_member,
+            type="wages",
+            amount=20000,
+            frequency="yearly",
+        )
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=multi_income_member,
+            type="selfEmployment",
+            amount=10000,
+            frequency="yearly",
+        )
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=multi_income_member,
+            type="rental",
+            amount=15000,
+            frequency="yearly",
+        )
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=multi_income_member,
+            type="pension",
+            amount=25000,
+            frequency="yearly",
+        )
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=multi_income_member,
+            type="sSRetirement",
+            amount=18000,
+            frequency="yearly",
+        )
+
+        result = pe_input(self.screen, [TxLifeline])
+        people = result["household"]["people"]
+        member_id = str(multi_income_member.id)
+
+        # Verify all income types are present
+        self.assertIn("employment_income", people[member_id])
+        self.assertIn("self_employment_income", people[member_id])
+        self.assertIn("rental_income", people[member_id])
+        self.assertIn("taxable_pension_income", people[member_id])
+        self.assertIn("social_security", people[member_id])
+
+        # Verify values if populated
+        if people[member_id]["employment_income"]:
+            period_key = list(people[member_id]["employment_income"].keys())[0]
+            self.assertEqual(people[member_id]["employment_income"][period_key], 20000)
+            self.assertEqual(people[member_id]["self_employment_income"][period_key], 10000)
+            self.assertEqual(people[member_id]["rental_income"][period_key], 15000)
+            self.assertEqual(people[member_id]["taxable_pension_income"][period_key], 25000)
+            self.assertEqual(people[member_id]["social_security"][period_key], 18000)
