@@ -38,7 +38,7 @@
       "link_text": ""
     },
     {
-      "external_name": "SNAP doc",
+      "external_name": "snap_doc",
       "text": "A Social Security Number (SSN) for anyone in the household who has one.",
       "link_url": "",
       "link_text": ""
@@ -86,7 +86,7 @@
       "link_text": ""
     },
     {
-      "external_name": "id proof",
+      "external_name": "id_proof",
       "text": "Proof of identity (ex: driver's license, official state ID card)",
       "link_url": "",
       "link_text": ""
