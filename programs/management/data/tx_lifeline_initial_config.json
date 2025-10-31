@@ -21,34 +21,19 @@
     },
     "documents": [
         {
-            "external_name": "tx_home",
-            "text": "Proof of home address (ex: lease, mortgage statement, utility bill)",
-            "link_url": "",
-            "link_text": ""
+            "external_name": "tx_home"
         },
         {
-            "external_name": "earned_income",
-            "text": "Proof of earned income  (ex: pay stubs, tax returns, W-2, 1099) & employer information",
-            "link_url": "",
-            "link_text": ""
+            "external_name": "earned_income"
         },
         {
-            "external_name": "tx_other_program",
-            "text": "Evidence of participation in a qualifying benefits program (if applicable)",
-            "link_url": "",
-            "link_text": ""
+            "external_name": "tx_other_program"
         },
         {
-            "external_name": "id proof",
-            "text": "Proof of identity (ex: driver's license, official state ID card)",
-            "link_url": "",
-            "link_text": ""
+            "external_name": "id proof"
         },
         {
-            "external_name": "tx_unearned_income",
-            "text": "Proof of unearned income (ex: child support, social security, unemployment)",
-            "link_url": "",
-            "link_text": ""
+            "external_name": "tx_unearned_income"
         }
     ]
 }
