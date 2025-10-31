@@ -421,3 +421,14 @@ class CashAssetsDependency(SpmUnit):
 
 class IlLiheapIncomeEligible(SpmUnit):
     field = "il_liheap_income_eligible"
+
+
+class MALiheap(SpmUnit):
+    field = "ma_liheap"
+
+    def value(self):
+        return self.screen.calc_expenses("yearly", ["heating", "cooling"])
+
+
+class MALiheapIncomeEligible(SpmUnit):
+    field = "ma_liheap_income_eligible"
