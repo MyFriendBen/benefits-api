@@ -3,6 +3,9 @@ FROM python:3.10
 # use root to install pip libs
 USER root
 
+RUN apt-get update -y && \
+  apt-get install -y --no-install-recommends postgresql-client
+
 WORKDIR /code
 
 COPY . /code/
