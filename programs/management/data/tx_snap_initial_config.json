@@ -12,8 +12,7 @@
     "year": "2025",
     "legal_status_required": [
       "citizen",
-      "gc_5plus",
-      "refugee"
+      "gc_5plus"
     ],
     "name": "Supplemental Nutrition Assistance Program (SNAP)",
     "description_short": "Monthly assistance to buy food",
