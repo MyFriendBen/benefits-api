@@ -1,7 +1,13 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from translations.models import Translation
-from programs.models import Program, WarningMessage, FederalPoveryLimit, ProgramCategory
+from programs.models import (
+    Program,
+    WarningMessage,
+    FederalPoveryLimit,
+    ProgramCategory,
+    Document,
+)
 from screener.models import WhiteLabel
 from integrations.services.google_translate.integration import Translate
 from django.conf import settings
@@ -14,9 +20,9 @@ class Command(BaseCommand):
     Create a new program from a JSON configuration file.
 
     This command creates a new program, translations, program category, and
-    optionally a warning message. If the program already exists, it will skip the
-    import and display a message. All English translations are automatically
-    translated to all supported languages.
+    optionally a warning message and documents. If the program already exists,
+    it will skip the import and display a message. All English translations are
+    automatically translated to all supported languages.
 
     The JSON file should contain:
     - white_label: REQUIRED - The white label for all entities
@@ -34,6 +40,11 @@ class Command(BaseCommand):
         - external_name: REQUIRED
         - calculator: defaults to "_show"
         - message: The warning text
+    - documents: OPTIONAL - Array of document configurations
+        - external_name: REQUIRED - document identifier
+        - text: REQUIRED - document description text
+        - link_url: OPTIONAL - URL for additional information
+        - link_text: OPTIONAL - text for the link
 
     Example usage:
       python manage.py import_program_config path/to/config.json
@@ -130,6 +141,10 @@ class Command(BaseCommand):
                 if "warning_message" in config:
                     self._import_warning_message(program, config["warning_message"])
 
+                # Step 4: Import documents (after program exists)
+                if "documents" in config:
+                    self._import_documents(program, config["documents"])
+
                 self.stdout.write(
                     self.style.SUCCESS(f"\n✓ Successfully created program: {program_name} (ID: {program.id})\n")
                 )
@@ -212,6 +227,25 @@ class Command(BaseCommand):
             self.stdout.write(f"  external_name: {external_name}")
             self.stdout.write(f"  calculator: {calculator}")
             self.stdout.write(f"  message: {preview}")
+
+        # Documents
+        if "documents" in config:
+            documents = config["documents"]
+            self.stdout.write(f"\n{self.style.SUCCESS('Documents:')}")
+            for i, doc in enumerate(documents, 1):
+                self.stdout.write(f"\n  Document {i}:")
+                external_name = doc.get("external_name", "N/A")
+                text = doc.get("text", "")
+                text_preview = text[:50] + "..." if len(text) > 50 else text
+                link_url = doc.get("link_url", "")
+                link_text = doc.get("link_text", "")
+                self.stdout.write(f"    external_name: {external_name}")
+                self.stdout.write(f"    text: {text_preview}")
+                if link_url:
+                    self.stdout.write(f"    link_url: {link_url}")
+                if link_text:
+                    link_text_preview = link_text[:50] + "..." if len(link_text) > 50 else link_text
+                    self.stdout.write(f"    link_text: {link_text_preview}")
 
         self.stdout.write(self.style.WARNING("\n=== END DRY RUN ===\n"))
 
@@ -520,3 +554,83 @@ class Command(BaseCommand):
         }
 
         self._bulk_update_entity_translations(warning, field_values, "warning", translated_fields)
+
+    def _import_documents(self, program, documents_config):
+        """
+        Import documents for a program.
+
+        For each document:
+        - If a document with the given external_name exists, use it and do not update
+        - Otherwise, create a new document with translations
+
+        Associates all documents with the program using the many-to-many relationship.
+
+        Args:
+            program: The Program instance to associate documents with
+            documents_config: List of document configurations from JSON
+        """
+        self.stdout.write(self.style.SUCCESS("\n[Documents]"))
+
+        if not isinstance(documents_config, list):
+            raise CommandError("'documents' must be an array")
+
+        documents_to_associate = []
+
+        for i, doc_config in enumerate(documents_config, 1):
+            # Validate required fields
+            if "external_name" not in doc_config:
+                raise CommandError(f"Missing required field 'external_name' in documents[{i-1}]")
+
+            if "text" not in doc_config:
+                raise CommandError(
+                    f"Missing required field 'text' in documents[{i-1}] ({doc_config.get('external_name', 'unknown')})"
+                )
+
+            external_name = doc_config["external_name"]
+
+            # Check if document already exists
+            existing_document = Document.objects.filter(external_name=external_name).first()
+
+            if existing_document:
+                self.stdout.write(f"  {i}. Using existing: {external_name} (ID: {existing_document.id})")
+                documents_to_associate.append(existing_document)
+            else:
+                # Create new document
+                document = Document.objects.new_document(
+                    white_label=program.white_label.code,
+                    external_name=external_name,
+                )
+
+                self.stdout.write(f"  {i}. Created: {external_name} (ID: {document.id})")
+
+                # Prepare translations
+                translations = {
+                    "text": doc_config["text"],
+                    "link_url": doc_config.get("link_url", ""),
+                    "link_text": doc_config.get("link_text", ""),
+                }
+
+                # Import translations using the standard method
+                self._import_document_translations(document, translations)
+
+                documents_to_associate.append(document)
+
+        # Associate all documents with the program
+        if documents_to_associate:
+            program.documents.add(*documents_to_associate)
+            self.stdout.write(f"  Associated {len(documents_to_associate)} document(s) with program")
+
+    def _import_document_translations(self, document, translations):
+        """
+        Update translatable fields for a document.
+
+        The document was created by Document.objects.new_document() which already
+        created Translation objects with proper labels (document.{external_name}_{document.id}-{field}).
+        This method updates those existing translations with the provided English text
+        and auto-translates to all supported languages.
+
+        Note: link_url is marked as no_auto, so it will be copied to all languages
+        without machine translation.
+        """
+        translated_fields = Document.objects.translated_fields
+        self._bulk_update_entity_translations(document, translations, "document", translated_fields)
