@@ -48,3 +48,8 @@ setup-db:  ## bootstrap the (local) postgresql database
 .PHONY: clean
 clean:  ## drop database, clean up files
 	psql -U postgres -h localhost -c 'drop database benefitsapi'
+
+.PHONY: db
+db:  ## Open psql console (run inside container)
+	python manage.py dbshell
+
