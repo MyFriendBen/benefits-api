@@ -13,6 +13,7 @@ from integrations.services.google_translate.integration import Translate
 from django.conf import settings
 import argparse
 import json
+from typing import Any, Dict, List, Tuple
 
 
 class Command(BaseCommand):
@@ -50,7 +51,7 @@ class Command(BaseCommand):
       python manage.py import_program_config path/to/config.json
     """
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument(
             "config_file",
             type=argparse.FileType("r", encoding="utf-8"),
@@ -62,7 +63,7 @@ class Command(BaseCommand):
             help="Print what would be created without making any changes",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args: Any, **options: Any) -> None:
         config_file = options["config_file"]
         dry_run = options.get("dry_run", False)
 
@@ -100,7 +101,9 @@ class Command(BaseCommand):
             raise CommandError(f"WhiteLabel with code '{white_label_code}' not found")
 
         # Check if program already exists
-        existing_program = Program.objects.filter(name_abbreviated=program_name, white_label=white_label).first()
+        existing_program = Program.objects.filter(
+            name_abbreviated=program_name, white_label=white_label
+        ).first()
 
         if existing_program:
             self.stdout.write(
@@ -123,11 +126,15 @@ class Command(BaseCommand):
                 self.stdout.write(f"White Label: {white_label_code}\n")
 
                 # Step 1: Import program category (find or create) before program
-                category = self._import_program_category(white_label, config["program_category"])
+                category = self._import_program_category(
+                    white_label, config["program_category"]
+                )
 
                 # Step 2: Create program with all data consolidated
                 # Separate translation fields from configuration fields
-                translations, configuration = self._separate_program_fields(program_config)
+                translations, configuration = self._separate_program_fields(
+                    program_config
+                )
 
                 program = self._import_program(
                     white_label=white_label,
@@ -146,13 +153,22 @@ class Command(BaseCommand):
                     self._import_documents(program, config["documents"])
 
                 self.stdout.write(
-                    self.style.SUCCESS(f"\n✓ Successfully created program: {program_name} (ID: {program.id})\n")
+                    self.style.SUCCESS(
+                        f"\n✓ Successfully created program: {program_name} (ID: {program.id})\n"
+                    )
                 )
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f"\nError during import: {e}\n" f"All changes have been rolled back."))
+            self.stdout.write(
+                self.style.ERROR(
+                    f"\nError during import: {e}\n"
+                    f"All changes have been rolled back."
+                )
+            )
             raise
 
-    def _separate_program_fields(self, program_config):
+    def _separate_program_fields(
+        self, program_config: Dict[str, Any]
+    ) -> Tuple[Dict[str, str], Dict[str, Any]]:
         """
         Separate program fields into translations and configuration.
 
@@ -178,7 +194,9 @@ class Command(BaseCommand):
 
         return translations, configuration
 
-    def _print_dry_run_report(self, config, white_label_code, program_name):
+    def _print_dry_run_report(
+        self, config: Dict[str, Any], white_label_code: str, program_name: str
+    ) -> None:
         """Print a report of what would be created without making changes."""
         self.stdout.write(self.style.WARNING("\n=== DRY RUN MODE ==="))
         self.stdout.write("No changes will be made to the database.\n")
@@ -190,7 +208,9 @@ class Command(BaseCommand):
         # Program category (required)
         category_config = config["program_category"]
         self.stdout.write(f"\n{self.style.SUCCESS('Program Category:')}")
-        self.stdout.write(f"  external_name: {category_config.get('external_name', 'N/A')}")
+        self.stdout.write(
+            f"  external_name: {category_config.get('external_name', 'N/A')}"
+        )
         self.stdout.write(f"  icon: {category_config.get('icon', 'N/A')}")
         if "name" in category_config:
             name_value = category_config["name"]
@@ -213,7 +233,11 @@ class Command(BaseCommand):
         # Show translations
         if translations:
             for field_name, english_text in translations.items():
-                preview = english_text[:50] + "..." if len(english_text) > 50 else english_text
+                preview = (
+                    english_text[:50] + "..."
+                    if len(english_text) > 50
+                    else english_text
+                )
                 self.stdout.write(f"  {field_name}: {preview}")
 
         # Warning message
@@ -244,12 +268,21 @@ class Command(BaseCommand):
                 if link_url:
                     self.stdout.write(f"    link_url: {link_url}")
                 if link_text:
-                    link_text_preview = link_text[:50] + "..." if len(link_text) > 50 else link_text
+                    link_text_preview = (
+                        link_text[:50] + "..." if len(link_text) > 50 else link_text
+                    )
                     self.stdout.write(f"    link_text: {link_text_preview}")
 
         self.stdout.write(self.style.WARNING("\n=== END DRY RUN ===\n"))
 
-    def _import_program(self, white_label, program_name, category, translations, configuration):
+    def _import_program(
+        self,
+        white_label: WhiteLabel,
+        program_name: str,
+        category: ProgramCategory,
+        translations: Dict[str, str],
+        configuration: Dict[str, Any],
+    ) -> Program:
         """
         Create a new program with all data consolidated.
 
@@ -259,7 +292,9 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("\n[Program Details]"))
 
         # Create base program with translations
-        program = Program.objects.new_program(white_label=white_label.code, name_abbreviated=program_name)
+        program = Program.objects.new_program(
+            white_label=white_label.code, name_abbreviated=program_name
+        )
         self.stdout.write(f"  Created: {program_name} (ID: {program.id})")
 
         # Set category if provided
@@ -276,7 +311,9 @@ class Command(BaseCommand):
 
         return program
 
-    def _import_program_category(self, white_label, category_config):
+    def _import_program_category(
+        self, white_label: WhiteLabel, category_config: Dict[str, Any]
+    ) -> ProgramCategory:
         """
         Find or create a program category.
 
@@ -290,13 +327,19 @@ class Command(BaseCommand):
 
         external_name = category_config.get("external_name")
         if not external_name:
-            raise CommandError("Missing required field 'external_name' in program_category")
+            raise CommandError(
+                "Missing required field 'external_name' in program_category"
+            )
 
         # Try to find existing category by external_name
-        existing_category = ProgramCategory.objects.filter(external_name=external_name, white_label=white_label).first()
+        existing_category = ProgramCategory.objects.filter(
+            external_name=external_name, white_label=white_label
+        ).first()
 
         if existing_category:
-            self.stdout.write(f"  Using existing: {external_name} (ID: {existing_category.id})")
+            self.stdout.write(
+                f"  Using existing: {external_name} (ID: {existing_category.id})"
+            )
             return existing_category
         else:
             # For new categories, validate required fields
@@ -342,7 +385,13 @@ class Command(BaseCommand):
 
             return category
 
-    def _bulk_update_entity_translations(self, entity, translations, entity_type, translated_fields):
+    def _bulk_update_entity_translations(
+        self,
+        entity: Any,
+        translations: Dict[str, str],
+        entity_type: str,
+        translated_fields: List[str],
+    ) -> None:
         """
         Reusable method for bulk translation updates across different entity types.
 
@@ -366,7 +415,11 @@ class Command(BaseCommand):
 
         for field_name, english_text in translations.items():
             if field_name not in translated_fields:
-                self.stdout.write(self.style.WARNING(f"  Warning: Unknown {entity_type} field '{field_name}'"))
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"  Warning: Unknown {entity_type} field '{field_name}'"
+                    )
+                )
                 continue
 
             # Get the existing translation object
@@ -379,9 +432,13 @@ class Command(BaseCommand):
 
         # Bulk translate
         if texts_to_translate:
-            self.stdout.write(f"  Translating {len(texts_to_translate)} field(s) to all languages...")
+            self.stdout.write(
+                f"  Translating {len(texts_to_translate)} field(s) to all languages..."
+            )
 
-            bulk_translations = Translate().bulk_translate(Translate.languages, texts_to_translate)
+            bulk_translations = Translate().bulk_translate(
+                Translate.languages, texts_to_translate
+            )
 
             for english_text, translation_obj_list in translation_objects.items():
                 auto_translations = bulk_translations[english_text]
@@ -397,7 +454,9 @@ class Command(BaseCommand):
 
         entity.save()
 
-    def _import_program_category_translations(self, category, translations):
+    def _import_program_category_translations(
+        self, category: ProgramCategory, translations: Dict[str, str]
+    ) -> None:
         """
         Update translatable fields for a program category.
 
@@ -407,9 +466,13 @@ class Command(BaseCommand):
         and auto-translates to all supported languages.
         """
         translated_fields = ProgramCategory.objects.translated_fields
-        self._bulk_update_entity_translations(category, translations, "category", translated_fields)
+        self._bulk_update_entity_translations(
+            category, translations, "category", translated_fields
+        )
 
-    def _import_program_translations(self, program, translations):
+    def _import_program_translations(
+        self, program: Program, translations: Dict[str, str]
+    ) -> None:
         """
         Update translatable fields for a program.
 
@@ -419,9 +482,17 @@ class Command(BaseCommand):
         and auto-translates to all supported languages.
         """
         translated_fields = Program.objects.translated_fields
-        self._bulk_update_entity_translations(program, translations, "program", translated_fields)
+        self._bulk_update_entity_translations(
+            program, translations, "program", translated_fields
+        )
 
-    def _update_translation_all_languages(self, translation_obj, text, texts_to_translate, translation_objects):
+    def _update_translation_all_languages(
+        self,
+        translation_obj: Translation,
+        text: str,
+        texts_to_translate: List[str],
+        translation_objects: Dict[str, List[Translation]],
+    ) -> None:
         """
         Update a translation for all languages.
 
@@ -429,12 +500,16 @@ class Command(BaseCommand):
         and auto_translate_check is True (lines 257-269).
         """
         # Update English translation (manual=True)
-        Translation.objects.edit_translation_by_id(translation_obj.id, settings.LANGUAGE_CODE, text, manual=True)
+        Translation.objects.edit_translation_by_id(
+            translation_obj.id, settings.LANGUAGE_CODE, text, manual=True
+        )
 
         # Handle no_auto fields (copy English to all languages)
         if translation_obj.no_auto:
             for lang in Translate.languages:
-                Translation.objects.edit_translation_by_id(translation_obj.id, lang, text, manual=False)
+                Translation.objects.edit_translation_by_id(
+                    translation_obj.id, lang, text, manual=False
+                )
         else:
             # Store for batch translation (same as views.py logic)
             if text:
@@ -445,7 +520,9 @@ class Command(BaseCommand):
                 # Append this translation object to the list for this text
                 translation_objects[text].append(translation_obj)
 
-    def _import_program_configuration(self, program, configuration):
+    def _import_program_configuration(
+        self, program: Program, configuration: Dict[str, Any]
+    ) -> None:
         """Import non-translatable configuration for a program."""
         # Handle year
         if "year" in configuration:
@@ -455,7 +532,9 @@ class Command(BaseCommand):
                 program.year = year_obj
                 self.stdout.write(f"  Year: {year_value}")
             except FederalPoveryLimit.DoesNotExist:
-                self.stdout.write(self.style.WARNING(f"  Warning: Year '{year_value}' not found"))
+                self.stdout.write(
+                    self.style.WARNING(f"  Warning: Year '{year_value}' not found")
+                )
 
         # Handle legal_status_required
         if "legal_status_required" in configuration:
@@ -467,7 +546,11 @@ class Command(BaseCommand):
                     status = LegalStatus.objects.get(status=status_code)
                     program.legal_status_required.add(status)
                 except LegalStatus.DoesNotExist:
-                    self.stdout.write(self.style.WARNING(f"  Warning: Legal status '{status_code}' not found"))
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"  Warning: Legal status '{status_code}' not found"
+                        )
+                    )
             self.stdout.write(f"  Legal statuses: {', '.join(legal_statuses)}")
 
         # Handle other simple configuration fields
@@ -486,7 +569,9 @@ class Command(BaseCommand):
 
         program.save()
 
-    def _import_warning_message(self, program, warning_config):
+    def _import_warning_message(
+        self, program: Program, warning_config: Dict[str, Any]
+    ) -> None:
         """
         Import a warning message for a new program.
 
@@ -501,7 +586,9 @@ class Command(BaseCommand):
 
         # Validate required fields
         if "external_name" not in warning_config:
-            raise CommandError("Missing required field 'external_name' in warning_messages configuration")
+            raise CommandError(
+                "Missing required field 'external_name' in warning_messages configuration"
+            )
 
         external_name = warning_config.get("external_name")
 
@@ -517,17 +604,23 @@ class Command(BaseCommand):
         calculator = warning_config.get("calculator", "_show")
 
         # Check if warning message already exists for this calculator and white label
-        existing_warning = WarningMessage.objects.filter(calculator=calculator, white_label=program.white_label).first()
+        existing_warning = WarningMessage.objects.filter(
+            calculator=calculator, white_label=program.white_label
+        ).first()
 
         if existing_warning:
             # Check if this program is already associated
             if existing_warning.programs.filter(id=program.id).exists():
-                self.stdout.write(f"  Using existing: {external_name} (already associated)")
+                self.stdout.write(
+                    f"  Using existing: {external_name} (already associated)"
+                )
                 return
             else:
                 # Associate existing warning with this program
                 existing_warning.programs.add(program)
-                self.stdout.write(f"  Associated existing: {external_name} (ID: {existing_warning.id})")
+                self.stdout.write(
+                    f"  Associated existing: {external_name} (ID: {existing_warning.id})"
+                )
                 return
 
         # Create warning message using manager method (creates proper translation labels)
@@ -553,9 +646,13 @@ class Command(BaseCommand):
             "link_url": "",
         }
 
-        self._bulk_update_entity_translations(warning, field_values, "warning", translated_fields)
+        self._bulk_update_entity_translations(
+            warning, field_values, "warning", translated_fields
+        )
 
-    def _import_documents(self, program, documents_config):
+    def _import_documents(
+        self, program: Program, documents_config: List[Dict[str, Any]]
+    ) -> None:
         """
         Import documents for a program.
 
@@ -579,7 +676,9 @@ class Command(BaseCommand):
         for i, doc_config in enumerate(documents_config, 1):
             # Validate required fields
             if "external_name" not in doc_config:
-                raise CommandError(f"Missing required field 'external_name' in documents[{i-1}]")
+                raise CommandError(
+                    f"Missing required field 'external_name' in documents[{i-1}]"
+                )
 
             if "text" not in doc_config:
                 raise CommandError(
@@ -589,10 +688,14 @@ class Command(BaseCommand):
             external_name = doc_config["external_name"]
 
             # Check if document already exists
-            existing_document = Document.objects.filter(external_name=external_name).first()
+            existing_document = Document.objects.filter(
+                external_name=external_name
+            ).first()
 
             if existing_document:
-                self.stdout.write(f"  {i}. Using existing: {external_name} (ID: {existing_document.id})")
+                self.stdout.write(
+                    f"  {i}. Using existing: {external_name} (ID: {existing_document.id})"
+                )
                 documents_to_associate.append(existing_document)
             else:
                 # Create new document
@@ -601,7 +704,9 @@ class Command(BaseCommand):
                     external_name=external_name,
                 )
 
-                self.stdout.write(f"  {i}. Created: {external_name} (ID: {document.id})")
+                self.stdout.write(
+                    f"  {i}. Created: {external_name} (ID: {document.id})"
+                )
 
                 # Prepare translations
                 translations = {
@@ -618,9 +723,13 @@ class Command(BaseCommand):
         # Associate all documents with the program
         if documents_to_associate:
             program.documents.add(*documents_to_associate)
-            self.stdout.write(f"  Associated {len(documents_to_associate)} document(s) with program")
+            self.stdout.write(
+                f"  Associated {len(documents_to_associate)} document(s) with program"
+            )
 
-    def _import_document_translations(self, document, translations):
+    def _import_document_translations(
+        self, document: Document, translations: Dict[str, str]
+    ) -> None:
         """
         Update translatable fields for a document.
 
@@ -633,4 +742,6 @@ class Command(BaseCommand):
         without machine translation.
         """
         translated_fields = Document.objects.translated_fields
-        self._bulk_update_entity_translations(document, translations, "document", translated_fields)
+        self._bulk_update_entity_translations(
+            document, translations, "document", translated_fields
+        )
