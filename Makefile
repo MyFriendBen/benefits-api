@@ -1,5 +1,9 @@
+.PHONY: help
+help:  ## Print this message
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-24s\033[0m %s\n", $$1, $$2}'
+
 .PHONY: format
-format:
+format: ## Run black
 	python -m black . -l 120 --extend-exclude=".*/new_white_label/.*"
 
 COMPOSE_FILE := docker/docker-compose.yml
