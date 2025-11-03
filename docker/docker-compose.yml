@@ -5,8 +5,6 @@ services:
     command: postgres -c 'max_connections=250'
     volumes:
       - postgresdata16:/var/lib/postgresql/data
-    expose:
-      - 5432
     ports:
       - "5432:5432"
     labels:

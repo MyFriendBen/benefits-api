@@ -14,6 +14,7 @@ DOCKER_CONTAINER_ID := docker-is-not-installed
 else
 DOCKER_CONTAINER_ID := $(shell docker ps --filter ancestor=$(DOCKER_IMG) --format "{{.ID}}")
 endif
+DOCKER_NETWORK_NAME := policyengine-api_default
 
 .PHONY: build
 build: ## Build Docker image
@@ -30,7 +31,7 @@ start-db:  ## Start the local postgresql database
 .PHONY: console
 console:  ## opens a one-off console container
 	@docker run -p 8000:8000 -v $(PWD):/code \
-   --network policyengine-api_default \
+   --network $(DOCKER_NETWORK_NAME) \
    --rm --name benefits-api-console -it \
    $(DOCKER_IMG) bash
 	@docker rm benefits-api-console
