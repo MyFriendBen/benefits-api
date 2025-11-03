@@ -14,6 +14,7 @@ class IlRenterAssistance(UrgentNeedFunction):
         income_limit = ami.get_screen_ami(self.screen, self.ami_percent, self.urgent_need.year.period, limit_type="il")
 
         income = self.screen.calc_gross_income("yearly", ["all"])
+
         needs_housing_help = self.screen.needs_housing_help
         has_rent = self.screen.has_expense(["rent"])
 
