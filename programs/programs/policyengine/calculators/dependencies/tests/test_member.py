@@ -359,3 +359,72 @@ class TestSocialSecurityIncomeDependency(TestCase):
         """Test value() returns 0 when member has no social security income."""
         dep = member.SocialSecurityIncomeDependency(self.screen, self.head, {})
         self.assertEqual(dep.value(), 0)
+
+
+class TestPregnancyDependency(TestCase):
+    """Tests for PregnancyDependency class used by WIC calculators."""
+
+    def setUp(self):
+        """Set up test data for pregnancy tests."""
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="78701", county="Test County", household_size=1, completed=False
+        )
+
+        self.pregnant_member = HouseholdMember.objects.create(
+            screen=self.screen, relationship="headOfHousehold", age=25, pregnant=True
+        )
+
+        self.non_pregnant_member = HouseholdMember.objects.create(
+            screen=self.screen, relationship="spouse", age=28, pregnant=False
+        )
+
+    def test_value_returns_true_when_pregnant(self):
+        """Test PregnancyDependency.value() returns True when member is pregnant."""
+        dep = member.PregnancyDependency(self.screen, self.pregnant_member, {})
+        self.assertTrue(dep.value())
+        self.assertEqual(dep.field, "is_pregnant")
+
+    def test_value_returns_false_when_not_pregnant(self):
+        """Test PregnancyDependency.value() returns False when member is not pregnant."""
+        dep = member.PregnancyDependency(self.screen, self.non_pregnant_member, {})
+        self.assertFalse(dep.value())
+
+    def test_value_returns_false_when_pregnant_is_none(self):
+        """Test PregnancyDependency.value() returns False when pregnant field is None."""
+        member_none = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=10, pregnant=None)
+
+        dep = member.PregnancyDependency(self.screen, member_none, {})
+        self.assertFalse(dep.value())
+
+
+class TestExpectedChildrenPregnancyDependency(TestCase):
+    """Tests for ExpectedChildrenPregnancyDependency class used by WIC calculators."""
+
+    def setUp(self):
+        """Set up test data for expected children pregnancy tests."""
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="78701", county="Test County", household_size=1, completed=False
+        )
+
+        self.pregnant_member = HouseholdMember.objects.create(
+            screen=self.screen, relationship="headOfHousehold", age=25, pregnant=True
+        )
+
+        self.non_pregnant_member = HouseholdMember.objects.create(
+            screen=self.screen, relationship="spouse", age=28, pregnant=False
+        )
+
+    def test_value_returns_one_when_pregnant(self):
+        """Test ExpectedChildrenPregnancyDependency.value() returns 1 when member is pregnant."""
+        dep = member.ExpectedChildrenPregnancyDependency(self.screen, self.pregnant_member, {})
+        self.assertEqual(dep.value(), 1)
+        self.assertEqual(dep.field, "current_pregnancies")
+
+    def test_value_returns_zero_when_not_pregnant(self):
+        """Test ExpectedChildrenPregnancyDependency.value() returns 0 when member is not pregnant."""
+        dep = member.ExpectedChildrenPregnancyDependency(self.screen, self.non_pregnant_member, {})
+        self.assertEqual(dep.value(), 0)

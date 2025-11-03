@@ -344,6 +344,7 @@ class Screen(models.Model):
             "wic": self.has_wic,
             "co_wic": self.has_wic,
             "nc_wic": self.has_wic,
+            "tx_wic": self.has_wic,
             "snap": self.has_snap,
             "sunbucks": self.has_sunbucks,
             "co_snap": self.has_snap,
