@@ -93,12 +93,10 @@ class Ami(GoogleSheetsCache):
         limit_type: Union[Literal["mtsp"], Literal["il"]] = "mtsp",
     ):
         data = self.fetch()
-        # print("income limit file data1:",percent)
-        # print("income limit file data2:",data[year])
-        print("income limit file data:",percent)
+
         if percent == "100%":
             return self.get_screen_ami(screen, "80%", year) / 0.8
-        print("income limit file data3:",data[year][screen.white_label.state_code][screen.county][limit_type][percent][screen.household_size])
+
         return data[year][screen.white_label.state_code][screen.county][limit_type][percent][screen.household_size]
 
 
