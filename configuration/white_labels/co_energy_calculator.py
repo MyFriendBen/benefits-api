@@ -2193,13 +2193,13 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
                         "_default_message": "Emergency help with utility bills (Colorado Springs Utilities)",
                     },
                 },
-                "heap": {
+                "cesn_heap": {
                     "name": {
-                        "_label": "housingAndUtilities.heap",
+                        "_label": "housingAndUtilities.cesn_heap",
                         "_default_message": "Home Efficiency Assistance Program (HEAP): ",
                     },
                     "description": {
-                        "_label": "housingAndUtilities.heap_desc",
+                        "_label": "housingAndUtilities.cesn_heap_desc",
                         "_default_message": "Home energy efficiency upgrades (Colorado Springs Utilities)",
                     },
                 },
