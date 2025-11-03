@@ -260,7 +260,7 @@ class PreSubsidyChildcareExpensesDependency(SpmUnit):
 
 
 class NcScca(SpmUnit):
-    field = "nc_scca"
+    field = "nc_scca_maximum_payment"
 
 
 class NcSccaCountableIncomeDependency(SpmUnit):
@@ -417,3 +417,7 @@ class CashAssetsDependency(SpmUnit):
     def value(self):
         assets = self.screen.household_assets or 0
         return int(assets)
+
+
+class IlLiheapIncomeEligible(SpmUnit):
+    field = "il_liheap_income_eligible"

@@ -84,6 +84,7 @@ class Screen(models.Model):
     has_ede = models.BooleanField(default=False, blank=True, null=True)
     has_erc = models.BooleanField(default=False, blank=True, null=True)
     has_leap = models.BooleanField(default=False, blank=True, null=True)
+    has_il_liheap = models.BooleanField(default=False, blank=True, null=True)
     has_nc_lieap = models.BooleanField(default=False, blank=True, null=True)
     has_oap = models.BooleanField(default=False, blank=True, null=True)
     has_nccip = models.BooleanField(default=False, blank=True, null=True)
@@ -118,6 +119,7 @@ class Screen(models.Model):
     has_chp_hi = models.BooleanField(default=None, blank=True, null=True)
     has_no_hi = models.BooleanField(default=None, blank=True, null=True)
     has_va = models.BooleanField(default=None, blank=True, null=True)
+    has_project_cope = models.BooleanField(default=False, blank=True, null=True)
     needs_food = models.BooleanField(default=False, blank=True, null=True)
     needs_baby_supplies = models.BooleanField(default=False, blank=True, null=True)
     needs_housing_help = models.BooleanField(default=False, blank=True, null=True)
@@ -172,6 +174,13 @@ class Screen(models.Model):
                 if expense_type == expense.type:
                     return True
         return False
+
+    def expense_type_names(self) -> list[str]:
+        """
+        Get list of unique expense types for this screen.
+        Returns empty list if no expenses exist.
+        """
+        return list(self.expenses.values_list("type", flat=True).distinct().filter(type__isnull=False))
 
     def num_children(self, age_min=0, age_max=18, include_pregnant=False, child_relationship=["all"]):
         children = 0
@@ -350,6 +359,7 @@ class Screen(models.Model):
             "il_ctc": self.has_il_ctc,
             "il_transit_reduced_fare": self.has_il_transit_reduced_fare,
             "il_bap": self.has_il_bap,
+            "project_cope": self.has_project_cope,
             "rtdlive": self.has_rtdlive,
             "cccap": self.has_cccap,
             "mydenver": self.has_mydenver,
@@ -363,6 +373,7 @@ class Screen(models.Model):
             "ede": self.has_ede,
             "erc": self.has_erc,
             "leap": self.has_leap,
+            "il_liheap": self.has_il_liheap,
             "nc_lieap": self.has_nc_lieap,
             "oap": self.has_oap,
             "nccip": self.has_nccip,

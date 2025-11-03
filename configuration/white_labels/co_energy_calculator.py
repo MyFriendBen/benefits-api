@@ -234,21 +234,21 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
     condition_options = {
         "you": {
             "survivingSpouse": {
-                "icon": {"_icon": "SurvivingSpouse", "_classname": "option-card-icon"},
+                "icon": {"_icon": "SurvivingSpouse", "_classname": "option-card-lucide-icon"},
                 "text": {
                     "_label": "eCConditionOptions.survivingSpouse",
                     "_default_message": "Widowed",
                 },
             },
             "disabled": {
-                "icon": {"_icon": "Disabled", "_classname": "option-card-icon"},
+                "icon": {"_icon": "Wheelchair", "_classname": "option-card-lucide-icon"},
                 "text": {
                     "_label": "eCConditionOptions.disabledYou",
                     "_default_message": "Currently have any disabilities that make you unable to work now or in the future",
                 },
             },
             "medicalEquipment": {
-                "icon": {"_icon": "Dialysis", "_classname": "option-card-icon"},
+                "icon": {"_icon": "HeartRate", "_classname": "option-card-lucide-icon"},
                 "text": {
                     "_label": "eCConditionOptions.medicalEquipment",
                     "_default_message": "Have in-home life support / medical equipment that requires high power use",
@@ -257,21 +257,21 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
         },
         "them": {
             "survivingSpouse": {
-                "icon": {"_icon": "SurvivingSpouse", "_classname": "option-card-icon"},
+                "icon": {"_icon": "SurvivingSpouse", "_classname": "option-card-lucide-icon"},
                 "text": {
                     "_label": "eCConditionOptions.survivingSpouse",
                     "_default_message": "Widowed",
                 },
             },
             "disabled": {
-                "icon": {"_icon": "Disabled", "_classname": "option-card-icon"},
+                "icon": {"_icon": "Wheelchair", "_classname": "option-card-lucide-icon"},
                 "text": {
                     "_label": "eCConditionOptions.disabledThem",
                     "_default_message": "Currently have any disabilities that make them unable to work now or in the future",
                 },
             },
             "medicalEquipment": {
-                "icon": {"_icon": "Dialysis", "_classname": "option-card-icon"},
+                "icon": {"_icon": "HeartRate", "_classname": "option-card-lucide-icon"},
                 "text": {
                     "_label": "eCConditionOptions.medicalEquipment",
                     "_default_message": "Have in-home life support / medical equipment that requires high power use",
@@ -2169,6 +2169,16 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
                     "description": {
                         "_label": "housingAndUtilities.care_desc",
                         "_default_message": "Home energy upgrades",
+                    },
+                },
+                "project_cope": {
+                    "name": {
+                        "_label": "housingAndUtilities.project_cope",
+                        "_default_message": "Project COPE: ",
+                    },
+                    "description": {
+                        "_label": "housingAndUtilities.project_cope_desc",
+                        "_default_message": "Emergency help with utility bills (Colorado Springs Utilities)",
                     },
                 },
             },

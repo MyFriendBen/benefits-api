@@ -34,6 +34,12 @@ EXTRA_LANG_INFO = {
         "name": "Somali",
         "name_local": "Soomaali",
     },
+    "ht": {
+        "bidi": False,
+        "code": "ht",
+        "name": "Haitian Creole",
+        "name_local": "Kreyòl ayisyen",
+    },
 }
 
 DJANGO_LANG_INFO.update(EXTRA_LANG_INFO)
@@ -89,6 +95,9 @@ EMAIL_FROM = os.getenv("EMAIL_FROM")
 POLICY_ENGINE_API_PRIVATE = config("POLICY_ENGINE_API_PRIVATE", False)
 POLICY_ENGINE_API_SIM = config("POLICY_ENGINE_API_SIM", False)
 POLICY_ENGINE_API_UK = config("POLICY_ENGINE_API_UK", False)
+
+# Google Integrations (Translate, Sheets)
+ENABLE_GOOGLE_INTEGRATIONS = config("ENABLE_GOOGLE_INTEGRATIONS", default=True, cast=bool)
 
 # Application definition
 
@@ -229,6 +238,8 @@ LANGUAGES = (
     ("tl", _("Tagalog")),
     ("ko", _("Korean")),
     ("ur", _("Urdu")),
+    ("pt-br", _("Brazilian Portuguese")),
+    ("ht", _("Haitian Creole")),
 )
 
 TIME_ZONE = "UTC"
@@ -257,6 +268,8 @@ PARLER_LANGUAGES = {
         {"code": "tl"},
         {"code": "ko"},
         {"code": "ur"},
+        {"code": "pt-br"},
+        {"code": "ht"},
     ),
     "default": {
         "fallbacks": ["en-us"],  # defaults to PARLER_DEFAULT_LANGUAGE_CODE

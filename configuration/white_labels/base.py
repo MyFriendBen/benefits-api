@@ -10,6 +10,9 @@ class ConfigurationData:
 
     state = {"name": "[REPLACE_ME]"}
 
+    # Banner messages configuration
+    banner_messages = []
+
     public_charge_rule = {"link": ""}
 
     more_help_options = {
@@ -24,49 +27,67 @@ class ConfigurationData:
 
     acute_condition_options = {
         "food": {
-            "icon": {"_name": "Food", "_classname": "option-card-icon"},
-            "_label": "acuteConditionOptions.food",
-            "_default_message": "Food or groceries",
+            "icon": {"_icon": "Food", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.food",
+                "_default_message": "Food or groceries",
+            },
         },
         "babySupplies": {
-            "icon": {"_name": "Baby_supplies", "_classname": "option-card-icon"},
-            "_label": "acuteConditionOptions.babySupplies",
-            "_default_message": "Diapers and other baby supplies",
+            "icon": {"_icon": "Baby_supplies", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.babySupplies",
+                "_default_message": "Diapers and other baby supplies",
+            },
         },
         "housing": {
-            "icon": {"_name": "Housing", "_classname": "option-card-icon"},
-            "_label": "acuteConditionOptions.housing",
-            "_default_message": "Help with managing your mortgage, rent, or utilities",
+            "icon": {"_icon": "Housing", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.housing",
+                "_default_message": "Help with managing your mortgage, rent, or utilities",
+            },
         },
         "support": {
-            "icon": {"_name": "Support", "_classname": "option-card-icon"},
-            "_label": "acuteConditionOptions.support",
-            "_default_message": "A challenge you or your child would like to talk about",
+            "icon": {"_icon": "Support", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.support",
+                "_default_message": "A challenge you or your child would like to talk about",
+            },
         },
         "childDevelopment": {
-            "icon": {"_name": "Child_development", "_classname": "option-card-icon"},
-            "_label": "acuteConditionOptions.childDevelopment",
-            "_default_message": "Concern about your child's development",
+            "icon": {"_icon": "Child_development", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.childDevelopment",
+                "_default_message": "Concern about your child's development",
+            },
         },
         "familyPlanning": {
-            "icon": {"_name": "Family_planning", "_classname": "option-card-icon"},
-            "_label": "acuteConditionOptions.familyPlanning",
-            "_default_message": "Family planning or birth control",
+            "icon": {"_icon": "Family_planning", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.familyPlanning",
+                "_default_message": "Family planning or birth control",
+            },
         },
         "jobResources": {
-            "icon": {"_name": "Job_resources", "_classname": "option-card-icon"},
-            "_label": "acuteConditionOptions.jobResources",
-            "_default_message": "Finding a job",
+            "icon": {"_icon": "Job_resources", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.jobResources",
+                "_default_message": "Finding a job",
+            },
         },
         "dentalCare": {
-            "icon": {"_name": "Dental_care", "_classname": "option-card-icon"},
-            "_label": "acuteConditionOptions.dentalCare",
-            "_default_message": "Low-cost dental care",
+            "icon": {"_icon": "Dental_care", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.dentalCare",
+                "_default_message": "Low-cost dental care",
+            },
         },
         "legalServices": {
-            "icon": {"_name": "Legal_services", "_classname": "option-card-icon"},
-            "_label": "acuteConditionOptions.legalServices",
-            "_default_message": "Free or low-cost help with civil legal needs or identity documents",
+            "icon": {"_icon": "Legal_services", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.legalServices",
+                "_default_message": "Free or low-cost help with civil legal needs or identity documents",
+            },
         },
     }
 
@@ -132,6 +153,8 @@ class ConfigurationData:
         "pl": "Polski",
         "tl": "Tagalog",
         "ko": "한국어",
+        "pt-br": "Português Brasileiro",
+        "ht": "Kreyòl",
     }
 
     income_options = {
@@ -187,96 +210,132 @@ class ConfigurationData:
     health_insurance_options = {
         "you": {
             "none": {
-                "icon": {"_name": "None", "_classname": "option-card-icon"},
-                "_label": "healthInsuranceOptions.none-dont-know-I",
-                "_default_message": "I don't have or know if I have health insurance",
+                "icon": {"_icon": "None", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "healthInsuranceOptions.none-dont-know-I",
+                    "_default_message": "I don't have or know if I have health insurance",
+                },
             },
             "employer": {
-                "icon": {"_name": "Employer", "_classname": "option-card-icon"},
-                "_label": "healthInsuranceOptions.employer",
-                "_default_message": "Employer-provided health insurance",
+                "icon": {"_icon": "Employer", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "healthInsuranceOptions.employer",
+                    "_default_message": "Employer-provided health insurance",
+                },
             },
             "private": {
-                "icon": {"_name": "PrivateInsurance", "_classname": "option-card-icon"},
-                "_label": "healthInsuranceOptions.private",
-                "_default_message": "Private (student or non-employer) health insurance",
+                "icon": {"_icon": "PrivateInsurance", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "healthInsuranceOptions.private",
+                    "_default_message": "Private (student or non-employer) health insurance",
+                },
             },
             "medicaid": {
-                "icon": {"_name": "Medicaid", "_classname": "option-card-icon"},
-                "_label": "healthInsuranceOptions.medicaid",
-                "_default_message": "Health First Colorado (Full Medicaid)",
+                "icon": {"_icon": "Medicaid", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "healthInsuranceOptions.medicaid",
+                    "_default_message": "Health First Colorado (Full Medicaid)",
+                },
             },
             "medicare": {
-                "icon": {"_name": "Medicare", "_classname": "option-card-icon"},
-                "_label": "healthInsuranceOptions.medicare",
-                "_default_message": "Medicare",
+                "icon": {"_icon": "Medicare", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "healthInsuranceOptions.medicare",
+                    "_default_message": "Medicare",
+                },
             },
             "chp": {
-                "icon": {"_name": "Chp", "_classname": "option-card-icon"},
-                "_label": "healthInsuranceOptions.chp",
-                "_default_message": "Child Health Plan Plus (CHP+)",
+                "icon": {"_icon": "Chp", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "healthInsuranceOptions.chp",
+                    "_default_message": "Child Health Plan Plus (CHP+)",
+                },
             },
             "emergency_medicaid": {
-                "icon": {"_name": "Emergency_medicaid", "_classname": "option-card-icon"},
-                "_label": "healthInsuranceOptions.emergency_medicaid",
-                "_default_message": "Emergency Medicaid / Reproductive Health",
+                "icon": {"_icon": "Emergency_medicaid", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "healthInsuranceOptions.emergency_medicaid",
+                    "_default_message": "Emergency Medicaid / Reproductive Health",
+                },
             },
             "family_planning": {
-                "icon": {"_name": "Family_planning", "_classname": "option-card-icon"},
-                "_label": "healthInsuranceOptions.family_planning",
-                "_default_message": "Family Planning Limited Medicaid",
+                "icon": {"_icon": "Family_planning", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "healthInsuranceOptions.family_planning",
+                    "_default_message": "Family Planning Limited Medicaid",
+                },
             },
             "va": {
-                "icon": {"_name": "VA", "_classname": "option-card-icon"},
-                "_label": "healthInsuranceOptions.va",
-                "_default_message": "VA health care benefits",
+                "icon": {"_icon": "VA", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "healthInsuranceOptions.va",
+                    "_default_message": "VA health care benefits",
+                },
             },
         },
         "them": {
             "none": {
-                "icon": {"_name": "None", "_classname": "option-card-icon"},
-                "_label": "healthInsuranceOptions.none-dont-know-they",
-                "_default_message": "They don't have or know if they have health insurance",
+                "icon": {"_icon": "None", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "healthInsuranceOptions.none-dont-know-they",
+                    "_default_message": "They don't have or know if they have health insurance",
+                },
             },
             "employer": {
-                "icon": {"_name": "Employer", "_classname": "option-card-icon"},
-                "_label": "healthInsuranceOptions.employer",
-                "_default_message": "Employer-provided health insurance",
+                "icon": {"_icon": "Employer", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "healthInsuranceOptions.employer",
+                    "_default_message": "Employer-provided health insurance",
+                },
             },
             "private": {
-                "icon": {"_name": "PrivateInsurance", "_classname": "option-card-icon"},
-                "_label": "healthInsuranceOptions.private",
-                "_default_message": "Private (student or non-employer) health insurance",
+                "icon": {"_icon": "PrivateInsurance", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "healthInsuranceOptions.private",
+                    "_default_message": "Private (student or non-employer) health insurance",
+                },
             },
             "medicaid": {
-                "icon": {"_name": "Medicaid", "_classname": "option-card-icon"},
-                "_label": "healthInsuranceOptions.medicaid",
-                "_default_message": "Health First Colorado (Full Medicaid)",
+                "icon": {"_icon": "Medicaid", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "healthInsuranceOptions.medicaid",
+                    "_default_message": "Health First Colorado (Full Medicaid)",
+                },
             },
             "medicare": {
-                "icon": {"_name": "Medicare", "_classname": "option-card-icon"},
-                "_label": "healthInsuranceOptions.medicare",
-                "_default_message": "Medicare",
+                "icon": {"_icon": "Medicare", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "healthInsuranceOptions.medicare",
+                    "_default_message": "Medicare",
+                },
             },
             "chp": {
-                "icon": {"_name": "Chp", "_classname": "option-card-icon"},
-                "_label": "healthInsuranceOptions.chp",
-                "_default_message": "Child Health Plan Plus (CHP+)",
+                "icon": {"_icon": "Chp", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "healthInsuranceOptions.chp",
+                    "_default_message": "Child Health Plan Plus (CHP+)",
+                },
             },
             "emergency_medicaid": {
-                "icon": {"_name": "Emergency_medicaid", "_classname": "option-card-icon"},
-                "_label": "healthInsuranceOptions.emergency_medicaid",
-                "_default_message": "Emergency Medicaid / Reproductive Health",
+                "icon": {"_icon": "Emergency_medicaid", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "healthInsuranceOptions.emergency_medicaid",
+                    "_default_message": "Emergency Medicaid / Reproductive Health",
+                },
             },
             "family_planning": {
-                "icon": {"_name": "Family_planning", "_classname": "option-card-icon"},
-                "_label": "healthInsuranceOptions.family_planning",
-                "_default_message": "Family Planning Limited Medicaid",
+                "icon": {"_icon": "Family_planning", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "healthInsuranceOptions.family_planning",
+                    "_default_message": "Family Planning Limited Medicaid",
+                },
             },
             "va": {
-                "icon": {"_name": "VA", "_classname": "option-card-icon"},
-                "_label": "healthInsuranceOptions.va",
-                "_default_message": "VA health care benefits",
+                "icon": {"_icon": "VA", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "healthInsuranceOptions.va",
+                    "_default_message": "VA health care benefits",
+                },
             },
         },
     }
@@ -312,56 +371,76 @@ class ConfigurationData:
     condition_options = {
         "you": {
             "student": {
-                "icon": {"_name": "Student", "_classname": "option-card-icon"},
-                "_label": "conditionOptions.student",
-                "_default_message": "Student at a college, university, or other post-secondary institution like a job-training program",
+                "icon": {"_icon": "Student", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "conditionOptions.student",
+                    "_default_message": "Student at a college, university, or other post-secondary institution like a job-training program",
+                },
             },
             "pregnant": {
-                "icon": {"_name": "Pregnant", "_classname": "option-card-icon"},
-                "_label": "conditionOptions.pregnant",
-                "_default_message": "Pregnant",
+                "icon": {"_icon": "Pregnant", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "conditionOptions.pregnant",
+                    "_default_message": "Pregnant",
+                },
             },
             "blindOrVisuallyImpaired": {
-                "icon": {"_name": "BlindOrVisuallyImpaired", "_classname": "option-card-icon"},
-                "_label": "conditionOptions.blindOrVisuallyImpaired",
-                "_default_message": "Blind or visually impaired",
+                "icon": {"_icon": "BlindOrVisuallyImpaired", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "conditionOptions.blindOrVisuallyImpaired",
+                    "_default_message": "Blind or visually impaired",
+                },
             },
             "disabled": {
-                "icon": {"_name": "Disabled", "_classname": "option-card-icon"},
-                "_label": "conditionOptions.disabled",
-                "_default_message": "Currently have any disabilities that make you unable to work now or in the future",
+                "icon": {"_icon": "Disabled", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "conditionOptions.disabled",
+                    "_default_message": "Currently have any disabilities that make you unable to work now or in the future",
+                },
             },
             "longTermDisability": {
-                "icon": {"_name": "LongTermDisability", "_classname": "option-card-icon"},
-                "_label": "conditionOptions.longTermDisability",
-                "_default_message": "Any medical or developmental condition that has lasted, or is expected to last, more than 12 months",
+                "icon": {"_icon": "LongTermDisability", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "conditionOptions.longTermDisability",
+                    "_default_message": "Any medical or developmental condition that has lasted, or is expected to last, more than 12 months",
+                },
             },
         },
         "them": {
             "student": {
-                "icon": {"_name": "Student", "_classname": "option-card-icon"},
-                "_label": "conditionOptions.student",
-                "_default_message": "Student at a college, university, or other post-secondary institution like a job-training program",
+                "icon": {"_icon": "Student", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "conditionOptions.student",
+                    "_default_message": "Student at a college, university, or other post-secondary institution like a job-training program",
+                },
             },
             "pregnant": {
-                "icon": {"_name": "Pregnant", "_classname": "option-card-icon"},
-                "_label": "conditionOptions.pregnant",
-                "_default_message": "Pregnant",
+                "icon": {"_icon": "Pregnant", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "conditionOptions.pregnant",
+                    "_default_message": "Pregnant",
+                },
             },
             "blindOrVisuallyImpaired": {
-                "icon": {"_name": "BlindOrVisuallyImpaired", "_classname": "option-card-icon"},
-                "_label": "conditionOptions.blindOrVisuallyImpaired",
-                "_default_message": "Blind or visually impaired",
+                "icon": {"_icon": "BlindOrVisuallyImpaired", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "conditionOptions.blindOrVisuallyImpaired",
+                    "_default_message": "Blind or visually impaired",
+                },
             },
             "disabled": {
-                "icon": {"_name": "Disabled", "_classname": "option-card-icon"},
-                "_label": "conditionOptions.disabled",
-                "_default_message": "Currently have any disabilities that make them unable to work now or in the future",
+                "icon": {"_icon": "Disabled", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "conditionOptions.disabled",
+                    "_default_message": "Currently have any disabilities that make them unable to work now or in the future",
+                },
             },
             "longTermDisability": {
-                "icon": {"_name": "LongTermDisability", "_classname": "option-card-icon"},
-                "_label": "conditionOptions.longTermDisability",
-                "_default_message": "Any medical or developmental condition that has lasted, or is expected to last, more than 12 months",
+                "icon": {"_icon": "LongTermDisability", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "conditionOptions.longTermDisability",
+                    "_default_message": "Any medical or developmental condition that has lasted, or is expected to last, more than 12 months",
+                },
             },
         },
     }

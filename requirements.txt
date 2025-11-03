@@ -59,8 +59,11 @@ pathspec==0.11.1
 phonenumbers==8.12.53
 pillow==10.3.0
 platformdirs==3.5.1
-pluggy==1.0.0
+pluggy==1.6.0
 proto-plus==1.22.3
+pytest==8.4.2
+pytest-django==4.11.1
+pytest-cov==7.0.0
 protobuf==4.25.8
 psycopg2==2.9.3
 psycopg2-binary==2.9.3

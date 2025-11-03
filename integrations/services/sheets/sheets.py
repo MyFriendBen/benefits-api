@@ -1,4 +1,5 @@
 from decouple import config
+from django.conf import settings
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
 import json
@@ -7,20 +8,29 @@ from integrations.util.cache import Cache
 
 
 class GoogleSheets:
-    google_creds = config("GOOGLE_APPLICATION_CREDENTIALS")
-    if os.path.exists(google_creds):
-        fh = open(google_creds)
-        info = json.load(fh)
+    # Initialize at class definition time (only if integrations enabled)
+    if getattr(settings, "ENABLE_GOOGLE_INTEGRATIONS", True):
+        google_creds = config("GOOGLE_APPLICATION_CREDENTIALS")
+        if os.path.exists(google_creds):
+            fh = open(google_creds)
+            info = json.load(fh)
+        else:
+            info = json.loads(google_creds)
+        creds = service_account.Credentials.from_service_account_info(info)
+        service = build("sheets", "v4", credentials=creds)
+        sheet = service.spreadsheets()
     else:
-        info = json.loads(google_creds)
-    creds = service_account.Credentials.from_service_account_info(info)
-    service = build("sheets", "v4", credentials=creds)
-    sheet = service.spreadsheets()
+        sheet = None
 
     class ColumnDoesNotExist(Exception):
         pass
 
     def __init__(self, spreadsheet_id: str, cell_range: str) -> None:
+        if self.sheet is None:
+            raise RuntimeError(
+                "Google Sheets integration is disabled. "
+                "Set ENABLE_GOOGLE_INTEGRATIONS=true in your environment to enable it."
+            )
         self.spreadsheet_id = spreadsheet_id
         self.cell_range = cell_range
 
