@@ -9,15 +9,16 @@ from django.test import TestCase
 from screener.models import Screen, HouseholdMember, WhiteLabel, Expense, IncomeStream
 from programs.programs.policyengine.policy_engine import pe_input
 from programs.programs.tx.pe.spm import TxSnap, TxLifeline
+from programs.programs.tx.pe.member import TxWic
 from programs.programs.policyengine.calculators.constants import (
     MAIN_TAX_UNIT,
     SECONDARY_TAX_UNIT,
 )
 
 
-class TestPeInputWithTxSnap(TestCase):
+class TestPeInput(TestCase):
     """
-    Tests for pe_input() function with TX Screen and TxSnap calculator.
+    Tests for pe_input() function with TX Screen.
 
     This verifies that pe_input() correctly transforms Screen/HouseholdMember
     data into the expected PolicyEngine API request format.
@@ -720,3 +721,263 @@ class TestPeInputWithTxSnap(TestCase):
             self.assertEqual(people[member_id]["rental_income"][period_key], 15000)
             self.assertEqual(people[member_id]["taxable_pension_income"][period_key], 25000)
             self.assertEqual(people[member_id]["social_security"][period_key], 18000)
+
+    def test_pe_input_includes_all_txwic_pe_input_fields(self):
+        """
+        Test that pe_input result includes all TxWic pe_inputs dependencies.
+
+        TxWic inherits from Wic and adds TxStateCodeDependency.
+        This test verifies all input fields from the dependency classes are present.
+        """
+        result = pe_input(self.screen, [TxWic])
+        household = result["household"]
+
+        # Get units for checking fields
+        spm_unit = household["spm_units"]["spm_unit"]
+        people = household["people"]
+        household_unit = household["households"]["household"]
+
+        # Check SPM-level dependencies from Wic.pe_inputs
+        self.assertIn(
+            "school_meal_countable_income",
+            spm_unit,
+            "Expected field 'school_meal_countable_income' from Wic pe_inputs not found in spm_unit",
+        )
+
+        # Check member-level dependencies from Wic.pe_inputs
+        head_id = str(self.head.id)
+        member_fields_to_check = [
+            "is_pregnant",
+            "current_pregnancies",
+            "age",
+        ]
+
+        for field in member_fields_to_check:
+            self.assertIn(
+                field,
+                people[head_id],
+                f"Expected field '{field}' from TxWic pe_inputs not found in member data",
+            )
+
+        # Check TX-specific dependency (added by TxWic)
+        self.assertIn(
+            "state_code",
+            household_unit,
+            "Expected field 'state_code' from TxStateCodeDependency not found in household",
+        )
+
+    def test_pe_input_includes_all_txwic_pe_output_fields(self):
+        """
+        Test that pe_input result includes all TxWic pe_outputs dependencies.
+
+        TxWic.pe_outputs = [dependency.member.Wic, dependency.member.WicCategory]
+        which adds the 'wic' and 'wic_category' fields to each member for PolicyEngine
+        to calculate and return.
+        """
+        result = pe_input(self.screen, [TxWic])
+        people = result["household"]["people"]
+
+        head_id = str(self.head.id)
+        spouse_id = str(self.spouse.id)
+        child_id = str(self.child.id)
+
+        # Check that the wic and wic_category output fields are present for each member
+        for member_id in [head_id, spouse_id, child_id]:
+            self.assertIn(
+                "wic",
+                people[member_id],
+                f"Expected output field 'wic' from TxWic pe_outputs not found for member {member_id}",
+            )
+            self.assertIn(
+                "wic_category",
+                people[member_id],
+                f"Expected output field 'wic_category' from TxWic pe_outputs not found for member {member_id}",
+            )
+
+            # Verify they have period structures
+            self.assertIsInstance(
+                people[member_id]["wic"],
+                dict,
+                f"wic field should be a dict with period keys for member {member_id}",
+            )
+            self.assertIsInstance(
+                people[member_id]["wic_category"],
+                dict,
+                f"wic_category field should be a dict with period keys for member {member_id}",
+            )
+
+    def test_pe_input_txwic_pregnancy_fields(self):
+        """
+        Test that TxWic pregnancy-related dependency values are correctly populated.
+
+        This verifies that pregnancy status and expected children count are properly set.
+        """
+        # Create a pregnant household member
+        pregnant_member = HouseholdMember.objects.create(
+            screen=self.screen,
+            relationship="spouse",
+            age=28,
+            disabled=False,
+            student=False,
+            pregnant=True,
+        )
+
+        result = pe_input(self.screen, [TxWic])
+        people = result["household"]["people"]
+        pregnant_id = str(pregnant_member.id)
+
+        # Verify pregnancy fields are present
+        self.assertIn("is_pregnant", people[pregnant_id])
+        self.assertIn("current_pregnancies", people[pregnant_id])
+
+        # Check values if populated
+        if people[pregnant_id]["is_pregnant"]:
+            period_key = list(people[pregnant_id]["is_pregnant"].keys())[0]
+            self.assertTrue(
+                people[pregnant_id]["is_pregnant"][period_key],
+                "is_pregnant should be True for pregnant member",
+            )
+            self.assertEqual(
+                people[pregnant_id]["current_pregnancies"][period_key],
+                1,
+                "current_pregnancies should be 1 for pregnant member",
+            )
+
+    def test_pe_input_txwic_with_infant(self):
+        """
+        Test that TxWic correctly handles infants in the household.
+
+        Infants (age < 1) are eligible for WIC and should have all required fields.
+        """
+        # Create an infant
+        infant = HouseholdMember.objects.create(
+            screen=self.screen,
+            relationship="child",
+            age=0,
+            disabled=False,
+            student=False,
+        )
+
+        result = pe_input(self.screen, [TxWic])
+        people = result["household"]["people"]
+        infant_id = str(infant.id)
+
+        # Verify infant has all required WIC fields
+        self.assertIn("age", people[infant_id])
+        self.assertIn("wic", people[infant_id])
+        self.assertIn("wic_category", people[infant_id])
+
+        # Check age value
+        if people[infant_id]["age"]:
+            period_key = list(people[infant_id]["age"].keys())[0]
+            self.assertEqual(
+                people[infant_id]["age"][period_key],
+                0,
+                "Infant age should be 0",
+            )
+
+    def test_pe_input_txwic_with_young_child(self):
+        """
+        Test that TxWic correctly handles young children (ages 1-4).
+
+        Young children are eligible for WIC and should have all required fields.
+        """
+        # Create a young child
+        young_child = HouseholdMember.objects.create(
+            screen=self.screen,
+            relationship="child",
+            age=3,
+            disabled=False,
+            student=False,
+        )
+
+        result = pe_input(self.screen, [TxWic])
+        people = result["household"]["people"]
+        child_id = str(young_child.id)
+
+        # Verify child has all required WIC fields
+        self.assertIn("age", people[child_id])
+        self.assertIn("wic", people[child_id])
+        self.assertIn("wic_category", people[child_id])
+
+        # Check age value
+        if people[child_id]["age"]:
+            period_key = list(people[child_id]["age"].keys())[0]
+            self.assertEqual(
+                people[child_id]["age"][period_key],
+                3,
+                "Young child age should be 3",
+            )
+
+    def test_pe_input_txwic_tx_specific_dependency_values(self):
+        """
+        Test that TX-specific dependencies have correct values for WIC.
+
+        TxWic adds TxStateCodeDependency which should set state_code="TX".
+        """
+        result = pe_input(self.screen, [TxWic])
+        household_unit = result["household"]["households"]["household"]
+
+        # Verify state_code is set to "TX"
+        self.assertIn("state_code", household_unit)
+        if household_unit["state_code"]:
+            period_key = list(household_unit["state_code"].keys())[0]
+            self.assertEqual(
+                household_unit["state_code"][period_key],
+                "TX",
+                "TxStateCodeDependency should set state_code='TX' for WIC",
+            )
+
+    def test_pe_input_txwic_school_meal_countable_income(self):
+        """
+        Test that TxWic includes school_meal_countable_income dependency.
+
+        This is inherited from the parent Wic class and should be present in spm_unit.
+        """
+        result = pe_input(self.screen, [TxWic])
+        spm_unit = result["household"]["spm_units"]["spm_unit"]
+
+        # Verify field exists
+        self.assertIn(
+            "school_meal_countable_income",
+            spm_unit,
+            "school_meal_countable_income should be present in spm_unit for WIC",
+        )
+
+        # Verify it has a period structure
+        self.assertIsInstance(
+            spm_unit["school_meal_countable_income"],
+            dict,
+            "school_meal_countable_income should be a dict with period keys",
+        )
+
+    def test_pe_input_with_txwic_and_txsnap_combined(self):
+        """
+        Test that pe_input handles both TxWic and TxSnap calculators together.
+
+        This verifies that dependencies from both calculators are properly merged.
+        """
+        result = pe_input(self.screen, [TxWic, TxSnap])
+        household = result["household"]
+
+        spm_unit = household["spm_units"]["spm_unit"]
+        people = household["people"]
+        household_unit = household["households"]["household"]
+        head_id = str(self.head.id)
+
+        # Verify TxWic fields
+        self.assertIn("school_meal_countable_income", spm_unit)
+        self.assertIn("is_pregnant", people[head_id])
+        self.assertIn("wic", people[head_id])
+
+        # Verify TxSnap fields
+        self.assertIn("snap_assets", spm_unit)
+        self.assertIn("snap_earned_income", spm_unit)
+        self.assertIn("snap", spm_unit)
+
+        # Verify shared TX dependency
+        self.assertIn("state_code", household_unit)
+
+        # Verify structure is valid
+        self.assertIsInstance(household["people"], dict)
+        self.assertIsInstance(household["spm_units"], dict)

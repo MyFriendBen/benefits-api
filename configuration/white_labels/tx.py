@@ -2958,6 +2958,16 @@ class TxConfigurationData(ConfigurationData):
                         "_default_message": "Food assistance",
                     },
                 },
+                "wic": {
+                    "name": {
+                        "_label": "foodAndNutritionBenefits.wic",
+                        "_default_message": "Special Supplemental Nutrition Program for Women, Infants, and Children (WIC): ",
+                    },
+                    "description": {
+                        "_label": "foodAndNutritionBenefits.wic_desc",
+                        "_default_message": "Food and breastfeeding assistance",
+                    },
+                },
             },
             "category_name": {
                 "_label": "foodAndNutrition",

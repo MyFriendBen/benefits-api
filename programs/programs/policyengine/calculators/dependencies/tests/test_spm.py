@@ -255,3 +255,152 @@ class TestBroadbandCostDependency(TestCase):
 
         dep = spm.BroadbandCostDependency(self.screen, None, {})
         self.assertEqual(dep.value(), 500)
+
+
+class TestSchoolMealCountableIncomeDependency(TestCase):
+    """Tests for SchoolMealCountableIncomeDependency class used by WIC calculators."""
+
+    def setUp(self):
+        """Set up test data for school meal countable income tests."""
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="78701", county="Test County", household_size=2, completed=False
+        )
+
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
+
+    def test_value_calculates_annual_income_from_specified_types(self):
+        """Test value() calculates annual income from specific income types used for school meal eligibility."""
+        # Add wages income (included in school meal countable income)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="wages", amount=2000, frequency="monthly"
+        )
+
+        # Add self-employment income (included)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="selfEmployment", amount=500, frequency="monthly"
+        )
+
+        dep = spm.SchoolMealCountableIncomeDependency(self.screen, None, {})
+        self.assertEqual(dep.value(), 30000)  # ($2000 + $500) * 12
+        self.assertEqual(dep.field, "school_meal_countable_income")
+
+    def test_value_includes_social_security_income_types(self):
+        """Test value() includes various social security income types in calculation."""
+        # Add SS Retirement income (included)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="sSRetirement", amount=1500, frequency="monthly"
+        )
+
+        # Add SS Disability income (included)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="sSDisability", amount=1000, frequency="monthly"
+        )
+
+        # Add SS Survivor income (included)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="sSSurvivor", amount=800, frequency="monthly"
+        )
+
+        # Add SS Dependent income (included)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="sSDependent", amount=400, frequency="monthly"
+        )
+
+        dep = spm.SchoolMealCountableIncomeDependency(self.screen, None, {})
+        self.assertEqual(dep.value(), 44400)  # ($1500 + $1000 + $800 + $400) * 12
+
+    def test_value_includes_rental_and_pension_income(self):
+        """Test value() includes rental, pension, and veteran income types."""
+        # Add rental income (included)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="rental", amount=1200, frequency="monthly"
+        )
+
+        # Add pension income (included)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="pension", amount=2000, frequency="monthly"
+        )
+
+        # Add veteran income (included)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="veteran", amount=800, frequency="monthly"
+        )
+
+        dep = spm.SchoolMealCountableIncomeDependency(self.screen, None, {})
+        self.assertEqual(dep.value(), 48000)  # ($1200 + $2000 + $800) * 12
+
+    def test_value_excludes_non_specified_income_types(self):
+        """Test value() excludes income types not in the specified list."""
+        # Add wages income (included)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="wages", amount=2000, frequency="monthly"
+        )
+
+        # Add alimony income (NOT included in school meal countable income)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="alimony", amount=500, frequency="monthly"
+        )
+
+        # Add unemployment income (NOT included)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="unemployment", amount=300, frequency="monthly"
+        )
+
+        dep = spm.SchoolMealCountableIncomeDependency(self.screen, None, {})
+        # Should only include wages, not alimony or unemployment
+        self.assertEqual(dep.value(), 24000)  # $2000 * 12
+
+    def test_value_returns_zero_when_no_countable_income(self):
+        """Test value() returns 0 when household has no school meal countable income."""
+        dep = spm.SchoolMealCountableIncomeDependency(self.screen, None, {})
+        self.assertEqual(dep.value(), 0)
+
+    def test_value_aggregates_income_across_multiple_household_members(self):
+        """Test value() aggregates countable income across all household members."""
+        # Head has wages
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="wages", amount=2000, frequency="monthly"
+        )
+
+        # Spouse has self-employment
+        spouse = HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=32)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=spouse, type="selfEmployment", amount=1500, frequency="monthly"
+        )
+
+        dep = spm.SchoolMealCountableIncomeDependency(self.screen, None, {})
+        # Should include income from both members
+        self.assertEqual(dep.value(), 42000)  # ($2000 + $1500) * 12
+
+    def test_value_uses_screen_calc_gross_income_method(self):
+        """Test value() uses Screen.calc_gross_income() method with correct parameters."""
+        # Add multiple income types
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="wages", amount=3000, frequency="monthly"
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="sSRetirement", amount=1000, frequency="monthly"
+        )
+
+        dep = spm.SchoolMealCountableIncomeDependency(self.screen, None, {})
+
+        # Verify it calls calc_gross_income with the correct income_types list
+        expected_income_types = [
+            "wages",
+            "selfEmployment",
+            "rental",
+            "pension",
+            "veteran",
+            "sSDisability",
+            "sSSurvivor",
+            "sSRetirement",
+            "sSDependent",
+        ]
+
+        # The dependency should have these income types
+        self.assertEqual(dep.income_types, expected_income_types)
+
+        # And the value should match what calc_gross_income returns
+        self.assertEqual(dep.value(), 48000)  # ($3000 + $1000) * 12
