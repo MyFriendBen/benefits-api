@@ -10,6 +10,8 @@ services:
     labels:
       SERVICE_NAME: pg
     environment:
+      # WARNING: trust authentication is for local dev only
+      # Production must use password authentication
       - "POSTGRES_HOST_AUTH_METHOD=trust"
     networks:
       - my_network
