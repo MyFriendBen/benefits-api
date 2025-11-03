@@ -43,7 +43,9 @@ class Command(BaseCommand):
         - message: The warning text
     - documents: OPTIONAL - Array of document configurations
         - external_name: REQUIRED - document identifier
-        - text: REQUIRED - document description text
+        - For existing documents: only external_name is needed
+        - For new documents: must also include text
+        - text: document description text
         - link_url: OPTIONAL - URL for additional information
         - link_text: OPTIONAL - text for the link
 
@@ -237,16 +239,22 @@ class Command(BaseCommand):
                 self.stdout.write(f"\n  Document {i}:")
                 external_name = doc.get("external_name", "N/A")
                 text = doc.get("text", "")
-                text_preview = text[:50] + "..." if len(text) > 50 else text
-                link_url = doc.get("link_url", "")
-                link_text = doc.get("link_text", "")
-                self.stdout.write(f"    external_name: {external_name}")
-                self.stdout.write(f"    text: {text_preview}")
-                if link_url:
-                    self.stdout.write(f"    link_url: {link_url}")
-                if link_text:
-                    link_text_preview = link_text[:50] + "..." if len(link_text) > 50 else link_text
-                    self.stdout.write(f"    link_text: {link_text_preview}")
+
+                # Check if this is referencing an existing document (text not provided)
+                if not text:
+                    self.stdout.write(f"    external_name: {external_name}")
+                    self.stdout.write(f"    (will use existing document if found)")
+                else:
+                    text_preview = text[:50] + "..." if len(text) > 50 else text
+                    link_url = doc.get("link_url", "")
+                    link_text = doc.get("link_text", "")
+                    self.stdout.write(f"    external_name: {external_name}")
+                    self.stdout.write(f"    text: {text_preview}")
+                    if link_url:
+                        self.stdout.write(f"    link_url: {link_url}")
+                    if link_text:
+                        link_text_preview = link_text[:50] + "..." if len(link_text) > 50 else link_text
+                        self.stdout.write(f"    link_text: {link_text_preview}")
 
         self.stdout.write(self.style.WARNING("\n=== END DRY RUN ===\n"))
 
@@ -581,7 +589,9 @@ class Command(BaseCommand):
 
         For each document:
         - If a document with the given external_name exists, use it and do not update
+          (only external_name is required for existing documents)
         - Otherwise, create a new document with translations
+          (external_name and text are required for new documents)
 
         Associates all documents with the program using the many-to-many relationship.
 
@@ -601,11 +611,6 @@ class Command(BaseCommand):
             if "external_name" not in doc_config:
                 raise CommandError(f"Missing required field 'external_name' in documents[{i-1}]")
 
-            if "text" not in doc_config:
-                raise CommandError(
-                    f"Missing required field 'text' in documents[{i-1}] ({doc_config.get('external_name', 'unknown')})"
-                )
-
             external_name = doc_config["external_name"]
 
             # Check if document already exists
@@ -615,6 +620,13 @@ class Command(BaseCommand):
                 self.stdout.write(f"  {i}. Using existing: {external_name} (ID: {existing_document.id})")
                 documents_to_associate.append(existing_document)
             else:
+                # For new documents, validate that 'text' field is present
+                if "text" not in doc_config:
+                    raise CommandError(
+                        f"Missing required field 'text' in documents[{i-1}] ({external_name}). "
+                        f"New documents require 'text' field. If document already exists, only 'external_name' is needed."
+                    )
+
                 # Create new document
                 document = Document.objects.new_document(
                     white_label=program.white_label.code,

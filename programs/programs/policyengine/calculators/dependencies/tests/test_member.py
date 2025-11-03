@@ -1,12 +1,12 @@
 """
-Unit tests for member-level PolicyEngine dependencies used by TxSnap.
+Unit tests for member-level PolicyEngine dependencies used by TxSnap and TxLifeline.
 
 These dependencies calculate individual member values used by PolicyEngine
-to determine TX SNAP eligibility and benefit amounts.
+to determine TX SNAP and Lifeline eligibility and benefit amounts.
 """
 
 from django.test import TestCase
-from screener.models import Screen, HouseholdMember, WhiteLabel, Expense
+from screener.models import Screen, HouseholdMember, WhiteLabel, Expense, IncomeStream
 from programs.programs.policyengine.calculators.dependencies import member
 
 
@@ -141,3 +141,221 @@ class TestSnapIneligibleStudentDependency(TestCase):
         dep = member.SnapIneligibleStudentDependency(self.screen, disabled_student, {})
         # Disabled students are eligible
         self.assertFalse(dep.value())
+
+
+class TestEmploymentIncomeDependency(TestCase):
+    """Tests for EmploymentIncomeDependency class used by TxLifeline calculator."""
+
+    def setUp(self):
+        """Set up test data for employment income tests."""
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="78701", county="Test County", household_size=2, completed=False
+        )
+
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
+
+    def test_value_calculates_annual_wages_income(self):
+        """Test value() calculates annual employment income from wages."""
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="wages", amount=3000, frequency="monthly"
+        )
+
+        dep = member.EmploymentIncomeDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 36000)  # $3000/month * 12
+        self.assertEqual(dep.field, "employment_income")
+
+    def test_value_returns_zero_when_no_employment_income(self):
+        """Test value() returns 0 when member has no employment income."""
+        dep = member.EmploymentIncomeDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 0)
+
+    def test_value_only_includes_wages_income_type(self):
+        """Test value() only includes wages income type, not other types."""
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="wages", amount=2000, frequency="monthly"
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="selfEmployment", amount=1000, frequency="monthly"
+        )
+
+        dep = member.EmploymentIncomeDependency(self.screen, self.head, {})
+        # Should only include wages, not self-employment
+        self.assertEqual(dep.value(), 24000)
+
+
+class TestSelfEmploymentIncomeDependency(TestCase):
+    """Tests for SelfEmploymentIncomeDependency class used by TxLifeline calculator."""
+
+    def setUp(self):
+        """Set up test data for self-employment income tests."""
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="78701", county="Test County", household_size=2, completed=False
+        )
+
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
+
+    def test_value_calculates_annual_self_employment_income(self):
+        """Test value() calculates annual self-employment income."""
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="selfEmployment", amount=4000, frequency="monthly"
+        )
+
+        dep = member.SelfEmploymentIncomeDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 48000)  # $4000/month * 12
+        self.assertEqual(dep.field, "self_employment_income")
+
+    def test_value_returns_zero_when_no_self_employment_income(self):
+        """Test value() returns 0 when member has no self-employment income."""
+        dep = member.SelfEmploymentIncomeDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 0)
+
+
+class TestRentalIncomeDependency(TestCase):
+    """Tests for RentalIncomeDependency class used by TxLifeline calculator."""
+
+    def setUp(self):
+        """Set up test data for rental income tests."""
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="78701", county="Test County", household_size=2, completed=False
+        )
+
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
+
+    def test_value_calculates_annual_rental_income(self):
+        """Test value() calculates annual rental income."""
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="rental", amount=1500, frequency="monthly"
+        )
+
+        dep = member.RentalIncomeDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 18000)  # $1500/month * 12
+        self.assertEqual(dep.field, "rental_income")
+
+    def test_value_returns_zero_when_no_rental_income(self):
+        """Test value() returns 0 when member has no rental income."""
+        dep = member.RentalIncomeDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 0)
+
+
+class TestPensionIncomeDependency(TestCase):
+    """Tests for PensionIncomeDependency class used by TxLifeline calculator."""
+
+    def setUp(self):
+        """Set up test data for pension income tests."""
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="78701", county="Test County", household_size=2, completed=False
+        )
+
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=65)
+
+    def test_value_calculates_annual_pension_income(self):
+        """Test value() calculates annual pension income."""
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="pension", amount=2500, frequency="monthly"
+        )
+
+        dep = member.PensionIncomeDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 30000)  # $2500/month * 12
+        self.assertEqual(dep.field, "taxable_pension_income")
+
+    def test_value_includes_veteran_income(self):
+        """Test value() includes veteran income as part of pension income."""
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="veteran", amount=1000, frequency="monthly"
+        )
+
+        dep = member.PensionIncomeDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 12000)  # $1000/month * 12
+
+    def test_value_combines_pension_and_veteran_income(self):
+        """Test value() combines both pension and veteran income."""
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="pension", amount=2000, frequency="monthly"
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="veteran", amount=500, frequency="monthly"
+        )
+
+        dep = member.PensionIncomeDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 30000)  # ($2000 + $500) * 12
+
+    def test_value_returns_zero_when_no_pension_income(self):
+        """Test value() returns 0 when member has no pension or veteran income."""
+        dep = member.PensionIncomeDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 0)
+
+
+class TestSocialSecurityIncomeDependency(TestCase):
+    """Tests for SocialSecurityIncomeDependency class used by TxLifeline calculator."""
+
+    def setUp(self):
+        """Set up test data for social security income tests."""
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="78701", county="Test County", household_size=2, completed=False
+        )
+
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=67)
+
+    def test_value_calculates_annual_ss_retirement_income(self):
+        """Test value() calculates annual social security retirement income."""
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="sSRetirement", amount=1800, frequency="monthly"
+        )
+
+        dep = member.SocialSecurityIncomeDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 21600)  # $1800/month * 12
+        self.assertEqual(dep.field, "social_security")
+
+    def test_value_calculates_annual_ss_disability_income(self):
+        """Test value() calculates annual social security disability income."""
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="sSDisability", amount=1500, frequency="monthly"
+        )
+
+        dep = member.SocialSecurityIncomeDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 18000)  # $1500/month * 12
+
+    def test_value_calculates_annual_ss_survivor_income(self):
+        """Test value() calculates annual social security survivor income."""
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="sSSurvivor", amount=1200, frequency="monthly"
+        )
+
+        dep = member.SocialSecurityIncomeDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 14400)  # $1200/month * 12
+
+    def test_value_calculates_annual_ss_dependent_income(self):
+        """Test value() calculates annual social security dependent income."""
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="sSDependent", amount=800, frequency="monthly"
+        )
+
+        dep = member.SocialSecurityIncomeDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 9600)  # $800/month * 12
+
+    def test_value_combines_all_social_security_types(self):
+        """Test value() combines all types of social security income."""
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="sSRetirement", amount=1000, frequency="monthly"
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="sSDependent", amount=300, frequency="monthly"
+        )
+
+        dep = member.SocialSecurityIncomeDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 15600)  # ($1000 + $300) * 12
+
+    def test_value_returns_zero_when_no_social_security_income(self):
+        """Test value() returns 0 when member has no social security income."""
+        dep = member.SocialSecurityIncomeDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 0)

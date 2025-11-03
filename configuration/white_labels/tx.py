@@ -2964,6 +2964,24 @@ class TxConfigurationData(ConfigurationData):
                 "_default_message": "Food and Nutrition",
             },
         },
+        "housingAndUtilities": {
+            "benefits": {
+                "lifeline": {
+                    "name": {
+                        "_label": "housingAndUtilities.lifeline",
+                        "_default_message": "Lifeline: ",
+                    },
+                    "description": {
+                        "_label": "housingAndUtilities.lifeline_desc",
+                        "_default_message": "Phone or internet discount",
+                    },
+                },
+            },
+            "category_name": {
+                "_label": "housingAndUtilities",
+                "_default_message": "Housing and Utilities",
+            },
+        },
     }
 
     consent_to_contact = {

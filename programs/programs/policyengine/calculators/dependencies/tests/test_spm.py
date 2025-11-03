@@ -228,3 +228,30 @@ class TestSnapEmergencyAllotmentDependency(TestCase):
         dep = spm.SnapEmergencyAllotmentDependency(self.screen, None, {})
         self.assertEqual(dep.value(), 0)
         self.assertEqual(dep.field, "snap_emergency_allotment")
+
+
+class TestBroadbandCostDependency(TestCase):
+    """Tests for BroadbandCostDependency class used by TxLifeline calculator."""
+
+    def setUp(self):
+        """Set up test data for broadband cost tests."""
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="78701", county="Test County", household_size=2, completed=False
+        )
+
+    def test_value_returns_fixed_broadband_cost(self):
+        """Test value() returns hardcoded broadband cost of 500."""
+        dep = spm.BroadbandCostDependency(self.screen, None, {})
+        self.assertEqual(dep.value(), 500)
+        self.assertEqual(dep.field, "broadband_cost")
+
+    def test_value_returns_constant_regardless_of_household_data(self):
+        """Test value() returns 500 regardless of household characteristics."""
+        # Test with different household size
+        self.screen.household_size = 5
+        self.screen.save()
+
+        dep = spm.BroadbandCostDependency(self.screen, None, {})
+        self.assertEqual(dep.value(), 500)
