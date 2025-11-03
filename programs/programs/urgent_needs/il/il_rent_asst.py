@@ -22,5 +22,5 @@ class IlRenterAssistance(UrgentNeedFunction):
         needs_housing_help = self.screen.needs_housing_help
         has_rent = self.screen.has_expense(["rent"])       
         
-        # return needs_housing_help and has_rent
+        
         return needs_housing_help and has_rent and income <= income_limit
