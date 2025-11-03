@@ -18,21 +18,34 @@ def income_limit_unknown():
     """
     Household income limit lookup failed
     """
-    return (translation("income_limit_lookup_failed", 0, "Unable to determine income limits for your household"),)
+    return (
+        translation(
+            "income_limit_lookup_failed",
+            0,
+            "Unable to determine income limits for your household",
+        ),
+    )
 
 
 def presumed_eligibility():
     """
     Household presumed eligible based on other benefits
     """
-    return (translation("presumptive_eligibility", 0, "Presumed eligibility based on other benefits"),)
+    return (
+        translation(
+            "presumptive_eligibility", 0, "Presumed eligibility based on other benefits"
+        ),
+    )
 
 
 def assets(asset_limit):
     """
     Household resources must not exceed ${asset_limit}
     """
-    return (translation("assets", 0, "Household resources must not exceed"), f" ${round(asset_limit)}")
+    return (
+        translation("assets", 0, "Household resources must not exceed"),
+        f" ${round(asset_limit)}",
+    )
 
 
 def child(min_age=0, max_age=18):
@@ -81,7 +94,10 @@ def must_not_have_benefit(benefit_name):
     """
     Household must not have {benefit_name}
     """
-    return (translation("not_have_benefit", 0, "Household must not have"), f" {benefit_name}")
+    return (
+        translation("not_have_benefit", 0, "Household must not have"),
+        f" {benefit_name}",
+    )
 
 
 def location():
@@ -95,14 +111,20 @@ def has_disability():
     """
     Someone in the household must have a disability
     """
-    return (translation("disability", 0, "Someone in the household must have a disability"),)
+    return (
+        translation("disability", 0, "Someone in the household must have a disability"),
+    )
 
 
 def has_no_insurance():
     """
     Someone in the household must not have health insurance
     """
-    return (translation("no_insurance", 0, "Someone in the household must not have health insurance"),)
+    return (
+        translation(
+            "no_insurance", 0, "Someone in the household must not have health insurance"
+        ),
+    )
 
 
 def is_pregnant():
@@ -116,10 +138,16 @@ def has_utility_provider(utility_providers: list[str]):
     """
     Household must have one a list of utility providers
     """
-    return (translation("utility_provider", 0, f"Household must have one of the following utility providers: {', '.join(utility_providers)}"),)
+    return (
+        translation(
+            "utility_provider",
+            0,
+            f"Household must have one of the following utility providers: {', '.join(utility_providers)}",
+        ),
+    )
 
 
-def is_home_owners():
+def is_home_owner():
     """
     Household must by own home
     """
