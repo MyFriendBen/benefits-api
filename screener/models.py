@@ -35,26 +35,40 @@ class Screen(models.Model):
     completed = models.BooleanField(null=False, blank=False)
     submission_date = models.DateTimeField(blank=True, null=True)
     start_date = models.DateTimeField(blank=True, null=True)
-    referral_source = models.CharField(max_length=320, default=None, blank=True, null=True)
+    referral_source = models.CharField(
+        max_length=320, default=None, blank=True, null=True
+    )
     path = models.CharField(max_length=60, default=None, blank=True, null=True)
-    referrer_code = models.CharField(max_length=320, default=None, blank=True, null=True)
+    referrer_code = models.CharField(
+        max_length=320, default=None, blank=True, null=True
+    )
     agree_to_tos = models.BooleanField(blank=True, null=True)
     is_13_or_older = models.BooleanField(blank=True, null=True)
     zipcode = models.CharField(max_length=5, blank=True, null=True)
     county = models.CharField(max_length=120, default=None, blank=True, null=True)
     household_size = models.IntegerField(blank=True, null=True)
-    last_tax_filing_year = models.CharField(max_length=120, default=None, blank=True, null=True)
-    household_assets = models.DecimalField(decimal_places=2, max_digits=10, default=None, blank=True, null=True)
-    housing_situation = models.CharField(max_length=30, blank=True, null=True, default=None)
+    last_tax_filing_year = models.CharField(
+        max_length=120, default=None, blank=True, null=True
+    )
+    household_assets = models.DecimalField(
+        decimal_places=2, max_digits=10, default=None, blank=True, null=True
+    )
+    housing_situation = models.CharField(
+        max_length=30, blank=True, null=True, default=None
+    )
     last_email_request_date = models.DateTimeField(blank=True, null=True)
     is_test = models.BooleanField(default=False, blank=True)
     is_test_data = models.BooleanField(blank=True, null=True)
     alternate_path = models.CharField(max_length=60, blank=True, null=True)
     is_verified = models.BooleanField(default=False, blank=True)
-    user = models.ForeignKey(User, related_name="screens", on_delete=models.SET_NULL, blank=True, null=True)
+    user = models.ForeignKey(
+        User, related_name="screens", on_delete=models.SET_NULL, blank=True, null=True
+    )
     external_id = models.CharField(max_length=120, blank=True, null=True)
     request_language_code = models.CharField(max_length=12, blank=True, null=True)
-    has_benefits = models.CharField(max_length=32, default="preferNotToAnswer", blank=True, null=True)
+    has_benefits = models.CharField(
+        max_length=32, default="preferNotToAnswer", blank=True, null=True
+    )
     has_tanf = models.BooleanField(default=False, blank=True, null=True)
     has_wic = models.BooleanField(default=False, blank=True, null=True)
     has_snap = models.BooleanField(default=False, blank=True, null=True)
@@ -67,7 +81,9 @@ class Screen(models.Model):
     has_nslp = models.BooleanField(default=False, blank=True, null=True)
     has_ctc = models.BooleanField(default=False, blank=True, null=True)
     has_il_ctc = models.BooleanField(default=False, blank=True, null=True)
-    has_il_transit_reduced_fare = models.BooleanField(default=False, blank=True, null=True)
+    has_il_transit_reduced_fare = models.BooleanField(
+        default=False, blank=True, null=True
+    )
     has_il_bap = models.BooleanField(default=False, blank=True, null=True)
     has_medicaid = models.BooleanField(default=False, blank=True, null=True)
     has_rtdlive = models.BooleanField(default=False, blank=True, null=True)
@@ -120,13 +136,16 @@ class Screen(models.Model):
     has_no_hi = models.BooleanField(default=None, blank=True, null=True)
     has_va = models.BooleanField(default=None, blank=True, null=True)
     has_project_cope = models.BooleanField(default=False, blank=True, null=True)
+    has_cesn_heap = models.BooleanField(default=False, blank=True, null=True)
     needs_food = models.BooleanField(default=False, blank=True, null=True)
     needs_baby_supplies = models.BooleanField(default=False, blank=True, null=True)
     needs_housing_help = models.BooleanField(default=False, blank=True, null=True)
     needs_mental_health_help = models.BooleanField(default=False, blank=True, null=True)
     needs_child_dev_help = models.BooleanField(default=False, blank=True, null=True)
     needs_funeral_help = models.BooleanField(default=False, blank=True, null=True)
-    needs_family_planning_help = models.BooleanField(default=False, blank=True, null=True)
+    needs_family_planning_help = models.BooleanField(
+        default=False, blank=True, null=True
+    )
     needs_job_resources = models.BooleanField(default=False, blank=True, null=True)
     needs_dental_care = models.BooleanField(default=False, blank=True, null=True)
     needs_legal_services = models.BooleanField(default=False, blank=True, null=True)
@@ -148,7 +167,9 @@ class Screen(models.Model):
         gross_income = 0
 
         for household_member in household_members:
-            gross_income += household_member.calc_gross_income(frequency, types, exclude)
+            gross_income += household_member.calc_gross_income(
+                frequency, types, exclude
+            )
         return float(gross_income)
 
     def calc_expenses(self, frequency, types):
@@ -180,15 +201,28 @@ class Screen(models.Model):
         Get list of unique expense types for this screen.
         Returns empty list if no expenses exist.
         """
-        return list(self.expenses.values_list("type", flat=True).distinct().filter(type__isnull=False))
+        return list(
+            self.expenses.values_list("type", flat=True)
+            .distinct()
+            .filter(type__isnull=False)
+        )
 
-    def num_children(self, age_min=0, age_max=18, include_pregnant=False, child_relationship=["all"]):
+    def num_children(
+        self, age_min=0, age_max=18, include_pregnant=False, child_relationship=["all"]
+    ):
         children = 0
 
         household_members = self.household_members.all()
         for household_member in household_members:
-            has_child_relationship = household_member.relationship in child_relationship or "all" in child_relationship
-            if household_member.age >= age_min and household_member.age <= age_max and has_child_relationship:
+            has_child_relationship = (
+                household_member.relationship in child_relationship
+                or "all" in child_relationship
+            )
+            if (
+                household_member.age >= age_min
+                and household_member.age <= age_max
+                and has_child_relationship
+            ):
                 children += 1
             if household_member.pregnant and include_pregnant:
                 children += 1
@@ -224,7 +258,9 @@ class Screen(models.Model):
         for household_member in household_members:
             if hoh_child_exists and household_member.relationship == "spouse":
                 parents += 1
-            elif hoh_child_exists and household_member.relationship == "headOfHousehold":
+            elif (
+                hoh_child_exists and household_member.relationship == "headOfHousehold"
+            ):
                 parents += 1
 
         return parents
@@ -251,7 +287,10 @@ class Screen(models.Model):
 
         all_members = self.household_members.all()
         for member in all_members:
-            if member.id in relationship_map and relationship_map[member.id] is not None:
+            if (
+                member.id in relationship_map
+                and relationship_map[member.id] is not None
+            ):
                 continue
 
             relationship = member.relationship
@@ -267,7 +306,10 @@ class Screen(models.Model):
                         break
             elif relationship in ("spouse", "domesticPartner"):
                 for other_member in all_members:
-                    if other_member.relationship == "headOfHousehold" and other_member.id not in relationship_map:
+                    if (
+                        other_member.relationship == "headOfHousehold"
+                        and other_member.id not in relationship_map
+                    ):
                         probable_spouse = other_member.id
                         break
             elif relationship in (
@@ -361,6 +403,7 @@ class Screen(models.Model):
             "il_transit_reduced_fare": self.has_il_transit_reduced_fare,
             "il_bap": self.has_il_bap,
             "project_cope": self.has_project_cope,
+            "cesn_heap": self.has_cesn_heap,
             "rtdlive": self.has_rtdlive,
             "cccap": self.has_cccap,
             "mydenver": self.has_mydenver,
@@ -422,8 +465,14 @@ class Screen(models.Model):
 
         self.is_test_data = (
             self.is_test
-            or (self.referral_source is not None and self.referral_source.lower() in referral_source_tests)
-            or (self.referrer_code is not None and self.referrer_code.lower() in referral_source_tests)
+            or (
+                self.referral_source is not None
+                and self.referral_source.lower() in referral_source_tests
+            )
+            or (
+                self.referrer_code is not None
+                and self.referrer_code.lower() in referral_source_tests
+            )
         )
         self.save()
 
@@ -477,7 +526,9 @@ class Screen(models.Model):
 class Message(models.Model):
     sent = models.DateTimeField(auto_now=True)
     type = models.CharField(max_length=30)
-    screen = models.ForeignKey(Screen, related_name="messages", on_delete=models.CASCADE)
+    screen = models.ForeignKey(
+        Screen, related_name="messages", on_delete=models.CASCADE
+    )
     content = models.CharField(max_length=320, blank=True, null=True)
     uid = models.IntegerField(blank=True, null=True)
 
@@ -485,7 +536,9 @@ class Message(models.Model):
 # Table of fields specific to individual household members. Parent model is the
 # Screen
 class HouseholdMember(models.Model):
-    screen = models.ForeignKey(Screen, related_name="household_members", on_delete=models.CASCADE)
+    screen = models.ForeignKey(
+        Screen, related_name="household_members", on_delete=models.CASCADE
+    )
     frontend_id = models.UUIDField(default=uuid.uuid4)
     relationship = models.CharField(max_length=30, blank=True, null=True)
     age = models.PositiveIntegerField(blank=True, null=True)
@@ -515,9 +568,18 @@ class HouseholdMember(models.Model):
 
             include_all = "all" in types
             specific_match = income_stream.type in types
-            earned_income_match = "earned" in types and income_stream.type in earned_income_types
-            unearned_income_match = "unearned" in types and income_stream.type not in earned_income_types
-            if include_all or earned_income_match or unearned_income_match or specific_match:
+            earned_income_match = (
+                "earned" in types and income_stream.type in earned_income_types
+            )
+            unearned_income_match = (
+                "unearned" in types and income_stream.type not in earned_income_types
+            )
+            if (
+                include_all
+                or earned_income_match
+                or unearned_income_match
+                or specific_match
+            ):
                 if frequency == "monthly":
                     gross_income += income_stream.monthly()
                 elif frequency == "yearly":
@@ -568,8 +630,15 @@ class HouseholdMember(models.Model):
         is_tax_unit_spouse = self.is_spouse()
         is_tax_unit_head = self.is_head()
         is_tax_unit_dependent = (
-            (self.age <= 18 or (self.student and self.age <= 23) or self.has_disability())
-            and (self.calc_gross_income("yearly", ["all"]) <= self.screen.calc_gross_income("yearly", ["all"]) / 2)
+            (
+                self.age <= 18
+                or (self.student and self.age <= 23)
+                or self.has_disability()
+            )
+            and (
+                self.calc_gross_income("yearly", ["all"])
+                <= self.screen.calc_gross_income("yearly", ["all"]) / 2
+            )
             and (not (is_tax_unit_head or is_tax_unit_spouse))
         )
 
@@ -671,8 +740,12 @@ class HouseholdMember(models.Model):
 
 # HouseholdMember income streams
 class IncomeStream(models.Model):
-    screen = models.ForeignKey(Screen, related_name="income_streams", on_delete=models.CASCADE)
-    household_member = models.ForeignKey(HouseholdMember, related_name="income_streams", on_delete=models.CASCADE)
+    screen = models.ForeignKey(
+        Screen, related_name="income_streams", on_delete=models.CASCADE
+    )
+    household_member = models.ForeignKey(
+        HouseholdMember, related_name="income_streams", on_delete=models.CASCADE
+    )
     type = models.CharField(max_length=30, blank=True, null=True)
     amount = models.DecimalField(decimal_places=2, max_digits=10, blank=True, null=True)
     frequency = models.CharField(max_length=30, blank=True, null=True)
@@ -730,8 +803,12 @@ class IncomeStream(models.Model):
 
 # HouseholdMember expenses
 class Expense(models.Model):
-    screen = models.ForeignKey(Screen, related_name="expenses", on_delete=models.CASCADE)
-    household_member = models.ForeignKey(HouseholdMember, related_name="expenses", on_delete=models.SET_NULL, null=True)
+    screen = models.ForeignKey(
+        Screen, related_name="expenses", on_delete=models.CASCADE
+    )
+    household_member = models.ForeignKey(
+        HouseholdMember, related_name="expenses", on_delete=models.SET_NULL, null=True
+    )
     type = models.CharField(max_length=30, blank=True, null=True)
     amount = models.DecimalField(decimal_places=2, max_digits=10, blank=True, null=True)
     frequency = models.CharField(max_length=30, blank=True, null=True)
@@ -827,15 +904,25 @@ class Insurance(models.Model):
 
 
 class EnergyCalculatorScreen(models.Model):
-    screen = models.OneToOneField(Screen, related_name="energy_calculator", null=False, on_delete=models.CASCADE)
+    screen = models.OneToOneField(
+        Screen, related_name="energy_calculator", null=False, on_delete=models.CASCADE
+    )
     is_home_owner = models.BooleanField(default=False, null=True, blank=True)
     is_renter = models.BooleanField(default=False, null=True, blank=True)
     electric_provider = models.CharField(max_length=200, null=True, blank=True)
-    electric_provider_name = models.CharField(max_length=200, null=True, blank=True)  # The human readable version
+    electric_provider_name = models.CharField(
+        max_length=200, null=True, blank=True
+    )  # The human readable version
     gas_provider = models.CharField(max_length=200, null=True, blank=True)
-    gas_provider_name = models.CharField(max_length=200, null=True, blank=True)  # The human readable version
-    electricity_is_disconnected = models.BooleanField(default=False, null=True, blank=True)
-    has_past_due_energy_bills = models.BooleanField(default=False, null=True, blank=True)
+    gas_provider_name = models.CharField(
+        max_length=200, null=True, blank=True
+    )  # The human readable version
+    electricity_is_disconnected = models.BooleanField(
+        default=False, null=True, blank=True
+    )
+    has_past_due_energy_bills = models.BooleanField(
+        default=False, null=True, blank=True
+    )
     has_old_car = models.BooleanField(default=False, null=True, blank=True)
     needs_water_heater = models.BooleanField(default=False, null=True, blank=True)
     needs_hvac = models.BooleanField(default=False, null=True, blank=True)
@@ -857,12 +944,17 @@ class EnergyCalculatorScreen(models.Model):
         return False
 
     def has_utility_provider(self, providers: list[str]):
-        return self.has_electricity_provider(providers) or self.has_gas_provider(providers)
+        return self.has_electricity_provider(providers) or self.has_gas_provider(
+            providers
+        )
 
 
 class EnergyCalculatorMember(models.Model):
     household_member = models.OneToOneField(
-        HouseholdMember, related_name="energy_calculator", null=False, on_delete=models.CASCADE
+        HouseholdMember,
+        related_name="energy_calculator",
+        null=False,
+        on_delete=models.CASCADE,
     )
     surviving_spouse = models.BooleanField(default=False, null=True, blank=True)
     receives_ssi = models.BooleanField(default=False, null=True, blank=True)
@@ -873,7 +965,9 @@ class EnergyCalculatorMember(models.Model):
 # for a completed screen. This table is currently used primarily for analytics
 # but will eventually drive new benefit update notifications
 class EligibilitySnapshot(models.Model):
-    screen = models.ForeignKey(Screen, related_name="eligibility_snapshots", on_delete=models.CASCADE)
+    screen = models.ForeignKey(
+        Screen, related_name="eligibility_snapshots", on_delete=models.CASCADE
+    )
     submission_date = models.DateTimeField(auto_now=True)
     is_batch = models.BooleanField(default=False)
     had_error = models.BooleanField(default=False)

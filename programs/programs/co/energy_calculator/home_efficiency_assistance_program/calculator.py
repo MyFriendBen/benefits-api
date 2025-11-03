@@ -19,6 +19,9 @@ class EnergyCalculatorHomeEfficiencyAssistance(ProgramCalculator):
     ami_percent = "60%"
 
     def household_eligible(self, e: Eligibility):
+        # user doesn't already have cesn_heap
+        e.condition(not self.screen.has_benefit("cesn_heap"))
+
         energy_calculator_screen = self.screen.energy_calculator
 
         presumed_eligible = any(
