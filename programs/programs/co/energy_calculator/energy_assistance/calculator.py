@@ -10,12 +10,12 @@ class EnergyCalculatorEnergyAssistance(ProgramCalculator):
         "household_size",
         "has_benefit",
     ]
-    # print(f"Checking benefit: {self.screen.has_benefit('co_energy_calculator_leap')}")
+
     def household_eligible(self, e: Eligibility):
-        
-        # does not already have LEAP       
+
+        # does not already have LEAP
         e.condition(not self.screen.has_benefit("leap"))
-        
+
         # user has any expenses
         e.condition(self._has_expense())
 

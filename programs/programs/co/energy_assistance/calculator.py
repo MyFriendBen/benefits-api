@@ -41,7 +41,7 @@ class EnergyAssistance(ProgramCalculator):
 
         # has rent or mortgage expense
         e.condition(self._has_expense())
-        
+
         # does not already have LEAP
         e.condition(not self.screen.has_benefit("leap"))
 
