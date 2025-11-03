@@ -29,7 +29,11 @@ class Ami(GoogleSheetsCache):
             values = {"mtsp": {}, "il": {}}
             continue_outer = False
             percent = 80
-            for i in range(self.MTSP_LIMITS_START_INDEX, self.MAX_HOUSEHOLD_SIZE * 7, self.MAX_HOUSEHOLD_SIZE):
+            for i in range(
+                self.MTSP_LIMITS_START_INDEX,
+                self.MAX_HOUSEHOLD_SIZE * 7,
+                self.MAX_HOUSEHOLD_SIZE,
+            ):
                 try:
                     income_limit_values = self._get_income_limits(row[i : i + self.MAX_HOUSEHOLD_SIZE])
                 except ValueError:

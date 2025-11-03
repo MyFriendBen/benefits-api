@@ -19,8 +19,8 @@ endif
 build: ## Build Docker image
 	docker compose --file $(COMPOSE_FILE) build --force-rm
 
-.PHONY: run
-run:  ## Run the app as docker container
+.PHONY: start
+start:  ## Run the app as docker container
 	docker compose --file $(COMPOSE_FILE) up
 
 .PHONY: start-db
@@ -39,6 +39,10 @@ CMD := bash
 .PHONY: login
 login: ## Execute CMD (default: bash shell) in running api container
 	docker exec -it $(DOCKER_CONTAINER_ID) $(CMD)
+
+.PHONY: run
+run: ## Run django dev server (inside container)
+	python manage.py runserver 0:8000
 
 .PHONY: setup-db
 setup-db:  ## bootstrap the (local) postgresql database
