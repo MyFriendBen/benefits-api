@@ -35,6 +35,10 @@ from .vehicle_exchange.calculator import EnergyCalculatorVehicleExchange
 from .weatherization_assistance.calculator import (
     EnergyCalculatorWeatherizationAssistance,
 )
+from programs.programs.co.energy_calculator.energy_ebt.calculator import EnergyCalculatorEnergyEbt
+from programs.programs.co.energy_calculator.assistance_programs.project_cope.calculator import (
+    EnergyCalculatorProjectCOPE,
+)
 
 
 co_energy_calculators: dict[str, type[ProgramCalculator]] = {
@@ -57,5 +61,5 @@ co_energy_calculators: dict[str, type[ProgramCalculator]] = {
     "co_energy_calculator_energy_vec": EnergyCalculatorVehicleExchange,
     "co_energy_calculator_energy_mep": EnergyCalculatorMedicalExemption,
     "co_energy_calculator_mcp": EnergyCalculatorMedicalCertification,
-    "co_energy_calculator_heap": EnergyCalculatorHomeEfficiencyAssistance,
+    "co_energy_calculator_cope": EnergyCalculatorProjectCOPE,
 }

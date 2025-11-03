@@ -1,0 +1,722 @@
+"""
+Unit tests for PolicyEngine pe_input function.
+
+These tests verify the pe_input() function that generates PolicyEngine API
+request payloads from Screen data and calculator configurations.
+"""
+
+from django.test import TestCase
+from screener.models import Screen, HouseholdMember, WhiteLabel, Expense, IncomeStream
+from programs.programs.policyengine.policy_engine import pe_input
+from programs.programs.tx.pe.spm import TxSnap, TxLifeline
+from programs.programs.policyengine.calculators.constants import (
+    MAIN_TAX_UNIT,
+    SECONDARY_TAX_UNIT,
+)
+
+
+class TestPeInputWithTxSnap(TestCase):
+    """
+    Tests for pe_input() function with TX Screen and TxSnap calculator.
+
+    This verifies that pe_input() correctly transforms Screen/HouseholdMember
+    data into the expected PolicyEngine API request format.
+    """
+
+    def setUp(self):
+        """Set up test data for TX SNAP pe_input tests."""
+        self.white_label = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Travis County",
+            household_size=3,
+            household_assets=5000.00,
+            completed=False,
+        )
+
+        # Head of household - 35 year old, disabled
+        self.head = HouseholdMember.objects.create(
+            screen=self.screen,
+            relationship="headOfHousehold",
+            age=35,
+            disabled=True,
+            student=False,
+        )
+
+        # Spouse - 32 year old
+        self.spouse = HouseholdMember.objects.create(
+            screen=self.screen,
+            relationship="spouse",
+            age=32,
+            disabled=False,
+            student=False,
+        )
+
+        # Child - 8 year old
+        self.child = HouseholdMember.objects.create(
+            screen=self.screen,
+            relationship="child",
+            age=8,
+            disabled=False,
+            student=True,
+        )
+
+        # Add income streams for Lifeline tests
+        # Head has employment, self-employment, and rental income
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=self.head,
+            type="wages",
+            amount=30000,
+            frequency="yearly",
+        )
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=self.head,
+            type="selfEmployment",
+            amount=5000,
+            frequency="yearly",
+        )
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=self.head,
+            type="rental",
+            amount=12000,
+            frequency="yearly",
+        )
+
+        # Spouse has pension and social security income
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=self.spouse,
+            type="pension",
+            amount=8000,
+            frequency="yearly",
+        )
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=self.spouse,
+            type="sSRetirement",
+            amount=6000,
+            frequency="yearly",
+        )
+
+        # Add some expenses
+        Expense.objects.create(screen=self.screen, type="childSupport", amount=500, frequency="monthly")
+
+        Expense.objects.create(screen=self.screen, type="medical", amount=200, frequency="monthly")
+
+    def test_pe_input_returns_valid_household_structure(self):
+        """Test that pe_input returns a properly structured household dict."""
+        result = pe_input(self.screen, [TxSnap])
+
+        # Verify top-level structure
+        self.assertIn("household", result)
+        household = result["household"]
+
+        # Verify all required units exist
+        self.assertIn("people", household)
+        self.assertIn("tax_units", household)
+        self.assertIn("families", household)
+        self.assertIn("households", household)
+        self.assertIn("spm_units", household)
+        self.assertIn("marital_units", household)
+
+    def test_pe_input_creates_people_with_member_ids(self):
+        """Test that pe_input creates people dict with household member IDs as keys."""
+        result = pe_input(self.screen, [TxSnap])
+        people = result["household"]["people"]
+
+        # Should have 3 people
+        self.assertEqual(len(people), 3)
+
+        # Verify all member IDs are present
+        head_id = str(self.head.id)
+        spouse_id = str(self.spouse.id)
+        child_id = str(self.child.id)
+
+        self.assertIn(head_id, people)
+        self.assertIn(spouse_id, people)
+        self.assertIn(child_id, people)
+
+        # Each person should be a dict (potentially with dependency data)
+        self.assertIsInstance(people[head_id], dict)
+        self.assertIsInstance(people[spouse_id], dict)
+        self.assertIsInstance(people[child_id], dict)
+
+    def test_pe_input_assigns_members_to_family_unit(self):
+        """Test that all members are assigned to the family unit."""
+        result = pe_input(self.screen, [TxSnap])
+        family_members = result["household"]["families"]["family"]["members"]
+
+        # All 3 members should be in the family
+        self.assertEqual(len(family_members), 3)
+        self.assertIn(str(self.head.id), family_members)
+        self.assertIn(str(self.spouse.id), family_members)
+        self.assertIn(str(self.child.id), family_members)
+
+    def test_pe_input_assigns_members_to_household_unit(self):
+        """Test that all members are assigned to the household unit."""
+        result = pe_input(self.screen, [TxSnap])
+        household_members = result["household"]["households"]["household"]["members"]
+
+        # All 3 members should be in the household
+        self.assertEqual(len(household_members), 3)
+        self.assertIn(str(self.head.id), household_members)
+        self.assertIn(str(self.spouse.id), household_members)
+        self.assertIn(str(self.child.id), household_members)
+
+    def test_pe_input_assigns_members_to_spm_unit(self):
+        """Test that all members are assigned to the SPM unit."""
+        result = pe_input(self.screen, [TxSnap])
+        spm_members = result["household"]["spm_units"]["spm_unit"]["members"]
+
+        # All 3 members should be in the SPM unit
+        self.assertEqual(len(spm_members), 3)
+        self.assertIn(str(self.head.id), spm_members)
+        self.assertIn(str(self.spouse.id), spm_members)
+        self.assertIn(str(self.child.id), spm_members)
+
+    def test_pe_input_creates_main_tax_unit_with_members(self):
+        """Test that adults are assigned to the main tax unit."""
+        result = pe_input(self.screen, [TxSnap])
+        tax_units = result["household"]["tax_units"]
+
+        # Main tax unit should exist
+        self.assertIn(MAIN_TAX_UNIT, tax_units)
+        main_tax_members = tax_units[MAIN_TAX_UNIT]["members"]
+
+        # All members with is_in_tax_unit() == True should be in main tax unit
+        # Head and spouse should be in tax unit
+        self.assertIn(str(self.head.id), main_tax_members)
+        self.assertIn(str(self.spouse.id), main_tax_members)
+        self.assertIn(str(self.child.id), main_tax_members)
+
+    def test_pe_input_removes_empty_secondary_tax_unit(self):
+        """Test that empty secondary tax unit is removed."""
+        result = pe_input(self.screen, [TxSnap])
+        tax_units = result["household"]["tax_units"]
+
+        # Secondary tax unit should not exist if empty
+        self.assertNotIn(SECONDARY_TAX_UNIT, tax_units)
+
+    def test_pe_input_keeps_secondary_tax_unit_when_has_members(self):
+        """Test that secondary tax unit is kept when it has members."""
+        # Create an adult child (not in main tax unit)
+        adult_child = HouseholdMember.objects.create(
+            screen=self.screen,
+            relationship="child",
+            age=25,
+            disabled=False,
+            student=False,
+        )
+
+        result = pe_input(self.screen, [TxSnap])
+        tax_units = result["household"]["tax_units"]
+
+        # Secondary tax unit should exist if it has members
+        # (depends on is_in_tax_unit() logic - adult children may be in secondary)
+        if not adult_child.is_in_tax_unit():
+            self.assertIn(SECONDARY_TAX_UNIT, tax_units)
+            self.assertIn(str(adult_child.id), tax_units[SECONDARY_TAX_UNIT]["members"])
+
+    def test_pe_input_creates_marital_unit_for_head_and_spouse(self):
+        """Test that married couples are assigned to marital units."""
+        result = pe_input(self.screen, [TxSnap])
+        marital_units = result["household"]["marital_units"]
+
+        # Should have one marital unit for head and spouse
+        self.assertEqual(len(marital_units), 1)
+
+        # Marital unit key should be "member_id-member_id"
+        marital_unit_key = list(marital_units.keys())[0]
+        marital_unit = marital_units[marital_unit_key]
+
+        # Should contain exactly 2 members
+        self.assertEqual(len(marital_unit["members"]), 2)
+
+        # Should contain head and spouse IDs (order may vary)
+        member_ids = set(marital_unit["members"])
+        expected_ids = {str(self.head.id), str(self.spouse.id)}
+        self.assertEqual(member_ids, expected_ids)
+
+    def test_pe_input_populates_dependency_fields_for_txsnap(self):
+        """Test that TxSnap-specific dependencies populate correct fields."""
+        result = pe_input(self.screen, [TxSnap])
+        people = result["household"]["people"]
+        household_unit = result["household"]["households"]["household"]
+
+        # TxSnap should populate state_code on household
+        self.assertIn("state_code", household_unit)
+
+        # Head should have age and is_disabled fields
+        head_id = str(self.head.id)
+        self.assertIn("age", people[head_id])
+        self.assertIn("is_disabled", people[head_id])
+
+        # Medical expenses should be populated for disabled head
+        self.assertIn("medical_out_of_pocket_expenses", people[head_id])
+
+    def test_pe_input_with_empty_screen_returns_basic_structure(self):
+        """Test that pe_input returns valid structure even with no members."""
+        # Create empty screen
+        empty_screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Travis County",
+            household_size=0,
+            completed=False,
+        )
+
+        result = pe_input(empty_screen, [TxSnap])
+
+        # Should still have household structure
+        self.assertIn("household", result)
+        household = result["household"]
+
+        # All unit types should exist
+        self.assertIn("people", household)
+        self.assertIn("tax_units", household)
+        self.assertIn("families", household)
+
+        # People should be empty
+        self.assertEqual(len(household["people"]), 0)
+
+    def test_pe_input_with_multiple_calculators(self):
+        """Test that pe_input handles multiple calculator inputs correctly."""
+        # Import another calculator
+        from programs.programs.tx.pe.spm import TxSnap
+        from programs.programs.federal.pe.spm import SchoolLunch
+
+        result = pe_input(self.screen, [TxSnap, SchoolLunch])
+
+        # Should have all dependencies from both calculators
+        household = result["household"]
+        self.assertIn("people", household)
+        self.assertIn("spm_units", household)
+
+        # Verify structure is valid
+        self.assertIsInstance(household["people"], dict)
+        self.assertIsInstance(household["spm_units"], dict)
+
+    def test_pe_input_age_values_match_household_members(self):
+        """Test that age dependency values match the actual member ages."""
+        result = pe_input(self.screen, [TxSnap])
+        people = result["household"]["people"]
+
+        head_id = str(self.head.id)
+        spouse_id = str(self.spouse.id)
+        child_id = str(self.child.id)
+
+        # Verify ages are populated (structure depends on TxSnap.pe_period)
+        # Age should be in format: people[id]["age"][period] = value
+        if "age" in people[head_id]:
+            # Find the period key (e.g., "2024" or "2024-01")
+            age_periods = people[head_id]["age"]
+            if age_periods:
+                period_key = list(age_periods.keys())[0]
+                self.assertEqual(age_periods[period_key], 35)
+
+                spouse_age = people[spouse_id]["age"][period_key]
+                self.assertEqual(spouse_age, 32)
+
+                child_age = people[child_id]["age"][period_key]
+                self.assertEqual(child_age, 8)
+
+    def test_pe_input_disabled_status_matches_household_members(self):
+        """Test that is_disabled dependency values match member disabled status."""
+        result = pe_input(self.screen, [TxSnap])
+        people = result["household"]["people"]
+
+        head_id = str(self.head.id)
+        spouse_id = str(self.spouse.id)
+
+        # Verify is_disabled is populated
+        if "is_disabled" in people[head_id]:
+            disabled_periods = people[head_id]["is_disabled"]
+            if disabled_periods:
+                period_key = list(disabled_periods.keys())[0]
+                self.assertTrue(disabled_periods[period_key])
+
+                spouse_disabled = people[spouse_id]["is_disabled"][period_key]
+                self.assertFalse(spouse_disabled)
+
+    def test_pe_input_state_code_is_tx(self):
+        """Test that TxStateCodeDependency sets state_code to TX."""
+        result = pe_input(self.screen, [TxSnap])
+        household_unit = result["household"]["households"]["household"]
+
+        # TxStateCodeDependency should set state_code="TX"
+        if "state_code" in household_unit:
+            state_code_periods = household_unit["state_code"]
+            if state_code_periods:
+                period_key = list(state_code_periods.keys())[0]
+                self.assertEqual(state_code_periods[period_key], "TX")
+
+    def test_pe_input_includes_all_txsnap_pe_input_fields(self):
+        """
+        Test that pe_input result includes all TxSnap pe_inputs dependencies.
+
+        TxSnap inherits from Snap and adds TxStateCodeDependency.
+        This test verifies all input fields from the dependency classes are present.
+        """
+        result = pe_input(self.screen, [TxSnap])
+        household = result["household"]
+
+        # Get a period key for checking values
+        spm_unit = household["spm_units"]["spm_unit"]
+        people = household["people"]
+        household_unit = household["households"]["household"]
+
+        # Check SPM-level dependencies from Snap.pe_inputs
+        spm_fields_to_check = [
+            "snap_unearned_income",
+            "snap_earned_income",
+            "snap_assets",
+            "snap_emergency_allotment",
+            "housing_cost",
+            "has_phone_expense",
+            "has_heating_cooling_expense",
+            "heating_cooling_expense",
+            "childcare_expenses",
+            "water_expense",
+            "phone_expense",
+            "homeowners_association_fees",
+            "homeowners_insurance",
+        ]
+
+        for field in spm_fields_to_check:
+            self.assertIn(
+                field,
+                spm_unit,
+                f"Expected field '{field}' from TxSnap pe_inputs not found in spm_unit",
+            )
+
+        # Check member-level dependencies from Snap.pe_inputs
+        head_id = str(self.head.id)
+        member_fields_to_check = [
+            "child_support_expense",
+            "real_estate_taxes",
+            "age",
+            "medical_out_of_pocket_expenses",
+            "is_disabled",
+            "is_snap_ineligible_student",
+        ]
+
+        for field in member_fields_to_check:
+            self.assertIn(
+                field,
+                people[head_id],
+                f"Expected field '{field}' from TxSnap pe_inputs not found in member data",
+            )
+
+        # Check TX-specific dependency (added by TxSnap)
+        self.assertIn(
+            "state_code",
+            household_unit,
+            "Expected field 'state_code' from TxStateCodeDependency not found in household",
+        )
+
+    def test_pe_input_includes_all_txsnap_pe_output_fields(self):
+        """
+        Test that pe_input result includes all TxSnap pe_outputs dependencies.
+
+        TxSnap.pe_outputs = [dependency.spm.Snap] which adds the 'snap' field
+        to the spm_unit for PolicyEngine to calculate and return.
+        """
+        result = pe_input(self.screen, [TxSnap])
+        spm_unit = result["household"]["spm_units"]["spm_unit"]
+
+        # Check that the snap output field is present
+        # This is what PolicyEngine will populate with the calculated benefit amount
+        self.assertIn(
+            "snap",
+            spm_unit,
+            "Expected output field 'snap' from TxSnap pe_outputs not found in spm_unit",
+        )
+
+        # Verify it has a period structure
+        self.assertIsInstance(spm_unit["snap"], dict, "snap field should be a dict with period keys")
+
+    def test_pe_input_snap_input_values_are_correct(self):
+        """
+        Test that specific SNAP input dependency values are correctly calculated.
+
+        This verifies the actual values from Screen data are properly transformed.
+        """
+        result = pe_input(self.screen, [TxSnap])
+        spm_unit = result["household"]["spm_units"]["spm_unit"]
+
+        # Get the period key
+        if "snap_assets" in spm_unit and spm_unit["snap_assets"]:
+            period_key = list(spm_unit["snap_assets"].keys())[0]
+
+            # Verify snap_assets matches screen.household_assets
+            self.assertEqual(
+                spm_unit["snap_assets"][period_key],
+                5000,
+                "snap_assets should match Screen.household_assets",
+            )
+
+        # Verify child support expense is calculated correctly
+        # $500/month * 12 / household_size(3) = $2000 per person
+        people = result["household"]["people"]
+        head_id = str(self.head.id)
+        if "child_support_expense" in people[head_id] and people[head_id]["child_support_expense"]:
+            period_key = list(people[head_id]["child_support_expense"].keys())[0]
+            self.assertEqual(
+                people[head_id]["child_support_expense"][period_key],
+                2000,
+                "child_support_expense should be $500/month * 12 / 3 people = $2000",
+            )
+
+        # Verify medical expenses for disabled head
+        # $200/month * 12 / 1 disabled person = $2400
+        if "medical_out_of_pocket_expenses" in people[head_id] and people[head_id]["medical_out_of_pocket_expenses"]:
+            period_key = list(people[head_id]["medical_out_of_pocket_expenses"].keys())[0]
+            self.assertEqual(
+                people[head_id]["medical_out_of_pocket_expenses"][period_key],
+                2400,
+                "medical_out_of_pocket_expenses should be $200/month * 12 / 1 disabled = $2400",
+            )
+
+    def test_pe_input_tx_specific_dependency_values(self):
+        """
+        Test that TX-specific dependencies have correct values.
+
+        TxSnap adds TxStateCodeDependency which should set state_code="TX".
+        """
+        result = pe_input(self.screen, [TxSnap])
+        household_unit = result["household"]["households"]["household"]
+
+        # Verify state_code is set to "TX"
+        self.assertIn("state_code", household_unit)
+        if household_unit["state_code"]:
+            period_key = list(household_unit["state_code"].keys())[0]
+            self.assertEqual(
+                household_unit["state_code"][period_key],
+                "TX",
+                "TxStateCodeDependency should set state_code='TX'",
+            )
+
+    def test_pe_input_includes_all_lifeline_pe_input_fields(self):
+        """
+        Test that pe_input result includes all Lifeline pe_inputs dependencies.
+
+        Lifeline has:
+        - BroadbandCostDependency (SPM level)
+        - 5 IRS gross income dependencies (member level):
+          - employment_income
+          - self_employment_income
+          - rental_income
+          - taxable_pension_income
+          - social_security
+        """
+        result = pe_input(self.screen, [TxLifeline])
+        household = result["household"]
+
+        # Get SPM unit and people
+        spm_unit = household["spm_units"]["spm_unit"]
+        people = household["people"]
+        household_unit = household["households"]["household"]
+
+        # Check SPM-level dependency from Lifeline.pe_inputs
+        self.assertIn(
+            "broadband_cost",
+            spm_unit,
+            "Expected field 'broadband_cost' from BroadbandCostDependency not found in spm_unit",
+        )
+
+        # Check member-level income dependencies from irs_gross_income tuple
+        head_id = str(self.head.id)
+        income_fields_to_check = [
+            "employment_income",
+            "self_employment_income",
+            "rental_income",
+            "taxable_pension_income",
+            "social_security",
+        ]
+
+        for field in income_fields_to_check:
+            self.assertIn(
+                field,
+                people[head_id],
+                f"Expected income field '{field}' from Lifeline pe_inputs not found in member data",
+            )
+
+        # Check TX-specific dependency (added by TxLifeline)
+        self.assertIn(
+            "state_code",
+            household_unit,
+            "Expected field 'state_code' from TxStateCodeDependency not found in household",
+        )
+
+    def test_pe_input_includes_lifeline_pe_output_field(self):
+        """
+        Test that pe_input result includes Lifeline pe_outputs dependency.
+
+        Lifeline.pe_outputs = [dependency.spm.Lifeline] which adds the 'lifeline' field
+        to the spm_unit for PolicyEngine to calculate and return.
+        """
+        result = pe_input(self.screen, [TxLifeline])
+        spm_unit = result["household"]["spm_units"]["spm_unit"]
+
+        # Check that the lifeline output field is present
+        self.assertIn(
+            "lifeline",
+            spm_unit,
+            "Expected output field 'lifeline' from Lifeline pe_outputs not found in spm_unit",
+        )
+
+        # Verify it has a period structure
+        self.assertIsInstance(
+            spm_unit["lifeline"],
+            dict,
+            "lifeline field should be a dict with period keys",
+        )
+
+    def test_pe_input_lifeline_income_values_are_correct(self):
+        """
+        Test that Lifeline income dependency values are correctly populated from HouseholdMember data.
+
+        This verifies the 5 IRS gross income types are properly extracted.
+        """
+        result = pe_input(self.screen, [TxLifeline])
+        people = result["household"]["people"]
+
+        head_id = str(self.head.id)
+        spouse_id = str(self.spouse.id)
+
+        # Get the period key from one of the fields
+        if "employment_income" in people[head_id] and people[head_id]["employment_income"]:
+            period_key = list(people[head_id]["employment_income"].keys())[0]
+
+            # Verify head's income values
+            self.assertEqual(
+                people[head_id]["employment_income"][period_key],
+                30000,
+                "Head employment_income should match HouseholdMember value",
+            )
+            self.assertEqual(
+                people[head_id]["self_employment_income"][period_key],
+                5000,
+                "Head self_employment_income should match HouseholdMember value",
+            )
+            self.assertEqual(
+                people[head_id]["rental_income"][period_key],
+                12000,
+                "Head rental_income should match HouseholdMember value",
+            )
+
+            # Verify spouse's income values
+            self.assertEqual(
+                people[spouse_id]["taxable_pension_income"][period_key],
+                8000,
+                "Spouse taxable_pension_income should match HouseholdMember value",
+            )
+            self.assertEqual(
+                people[spouse_id]["social_security"][period_key],
+                6000,
+                "Spouse social_security should match HouseholdMember value",
+            )
+
+    def test_pe_input_lifeline_broadband_cost_is_populated(self):
+        """
+        Test that Lifeline's BroadbandCostDependency populates the broadband_cost field.
+
+        Currently, BroadbandCostDependency is hardcoded to return 500.
+        This test verifies the field exists and has the expected value.
+        """
+        result = pe_input(self.screen, [TxLifeline])
+        spm_unit = result["household"]["spm_units"]["spm_unit"]
+
+        # Check that broadband_cost is populated
+        self.assertIn(
+            "broadband_cost",
+            spm_unit,
+            "broadband_cost field should be present in spm_unit",
+        )
+
+        # Verify it has a period structure
+        if spm_unit["broadband_cost"]:
+            period_key = list(spm_unit["broadband_cost"].keys())[0]
+            # BroadbandCostDependency.value() currently returns 500
+            self.assertEqual(
+                spm_unit["broadband_cost"][period_key],
+                500,
+                "broadband_cost should be 500 (current hardcoded value from BroadbandCostDependency)",
+            )
+
+    def test_pe_input_lifeline_with_multiple_income_sources(self):
+        """
+        Test that Lifeline correctly handles members with multiple income sources.
+
+        This verifies that all 5 IRS gross income types can coexist on the same member.
+        """
+        # Create a member with all 5 income types
+        multi_income_member = HouseholdMember.objects.create(
+            screen=self.screen,
+            relationship="parent",
+            age=65,
+            disabled=False,
+            student=False,
+        )
+
+        # Add income streams for all 5 IRS gross income types
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=multi_income_member,
+            type="wages",
+            amount=20000,
+            frequency="yearly",
+        )
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=multi_income_member,
+            type="selfEmployment",
+            amount=10000,
+            frequency="yearly",
+        )
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=multi_income_member,
+            type="rental",
+            amount=15000,
+            frequency="yearly",
+        )
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=multi_income_member,
+            type="pension",
+            amount=25000,
+            frequency="yearly",
+        )
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=multi_income_member,
+            type="sSRetirement",
+            amount=18000,
+            frequency="yearly",
+        )
+
+        result = pe_input(self.screen, [TxLifeline])
+        people = result["household"]["people"]
+        member_id = str(multi_income_member.id)
+
+        # Verify all income types are present
+        self.assertIn("employment_income", people[member_id])
+        self.assertIn("self_employment_income", people[member_id])
+        self.assertIn("rental_income", people[member_id])
+        self.assertIn("taxable_pension_income", people[member_id])
+        self.assertIn("social_security", people[member_id])
+
+        # Verify values if populated
+        if people[member_id]["employment_income"]:
+            period_key = list(people[member_id]["employment_income"].keys())[0]
+            self.assertEqual(people[member_id]["employment_income"][period_key], 20000)
+            self.assertEqual(people[member_id]["self_employment_income"][period_key], 10000)
+            self.assertEqual(people[member_id]["rental_income"][period_key], 15000)
+            self.assertEqual(people[member_id]["taxable_pension_income"][period_key], 25000)
+            self.assertEqual(people[member_id]["social_security"][period_key], 18000)

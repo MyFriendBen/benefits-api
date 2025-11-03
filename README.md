@@ -6,8 +6,6 @@ Taking inspiration from AccessNYC, and connecting with [PolicyEngine's](https://
 
 This is the repository for the backend Python/Django rules engine that takes household demographic data and returns benefits eligibility and estimated values. The frontend repository can be accessed [here](https://github.com/Gary-Community-Ventures/benefits-calculator).
 
-
-## Set Up Benefits-API (back-end part) 
+## Set Up Benefits-API (back-end part)
 
 Setup instructions are located in the [Wiki](https://github.com/Gary-Community-Ventures/benefits-api/wiki/Get-Started).
-

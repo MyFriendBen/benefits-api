@@ -65,10 +65,10 @@ class MaConfigurationData(ConfigurationData):
             },
         },
         "childDevelopment": {
-            "icon": {"_icon": "Child_development", "_classname": "option-card-icon"},
+            "icon": {"_icon": "Youth_development", "_classname": "option-card-icon youth-development-icon"},
             "text": {
-                "_label": "acuteConditionOptions.childDevelopment",
-                "_default_message": "Concern about your child's development",
+                "_label": "acuteConditionOptions.youthDevelopment",
+                "_default_message": "Concern about your child's development (ages 0 - 21)",
             },
         },
         "familyPlanning": {
