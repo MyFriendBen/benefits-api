@@ -1,25 +1,22 @@
 FROM python:3.10
 
-# use root to install pip libs
+# use root to install pip libs. Default user is root,
+# but we make it explicit here for clarity.
 USER root
 
+RUN groupadd benefitsapi && \
+  useradd -g benefitsapi benefitsapi
+
 RUN apt-get update -y && \
-  apt-get install -y --no-install-recommends postgresql-client
+  apt-get install -y --no-install-recommends postgresql-client make
 
 WORKDIR /code
 
-COPY . /code/
+COPY --chown=benefitsapi:benefitsapi . /code/
 
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 RUN pip install -r requirements.txt
-
-# switch to app user
-RUN groupadd benefitsapi && \
-  useradd -g benefitsapi benefitsapi && \
-  apt-get purge -y --auto-remove build-essential && \
-  apt-get -y install make && \
-  chown -R benefitsapi:benefitsapi /code
 
 USER benefitsapi
