@@ -1,7 +1,9 @@
 {
     "white_label": {"code": "tx"},
     "program_category": {
-        "external_name": "tx_food"
+        "external_name": "tx_food",
+        "name": "Food and Nutrition",
+        "icon": "food"
     },
     "program": {
         "name_abbreviated": "tx_nslp",
@@ -18,8 +20,23 @@
         "website_description": "Free or low-cost meals for students and other reduced program fees"
     },
     "documents": [
-        {"external_name": "other program"},
-        {"external_name": "unearned income"},
-        {"external_name": "earned income"}
+        {
+            "external_name": "tx_other_program",
+            "text": "Evidence of participation in a qualifying benefits program (if applicable)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "tx_unearned_income",
+            "text": "Proof of unearned income (ex: child support, social security, unemployment)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "tx_earned_income",
+            "text": "Proof of earned income  (ex: pay stubs, tax returns, W-2, 1099) & employer information",
+            "link_url": "",
+            "link_text": ""
+        }
     ]
 }
