@@ -31,11 +31,7 @@ def presumed_eligibility():
     """
     Household presumed eligible based on other benefits
     """
-    return (
-        translation(
-            "presumptive_eligibility", 0, "Presumed eligibility based on other benefits"
-        ),
-    )
+    return (translation("presumptive_eligibility", 0, "Presumed eligibility based on other benefits"),)
 
 
 def assets(asset_limit):
@@ -111,20 +107,14 @@ def has_disability():
     """
     Someone in the household must have a disability
     """
-    return (
-        translation("disability", 0, "Someone in the household must have a disability"),
-    )
+    return (translation("disability", 0, "Someone in the household must have a disability"),)
 
 
 def has_no_insurance():
     """
     Someone in the household must not have health insurance
     """
-    return (
-        translation(
-            "no_insurance", 0, "Someone in the household must not have health insurance"
-        ),
-    )
+    return (translation("no_insurance", 0, "Someone in the household must not have health insurance"),)
 
 
 def is_pregnant():

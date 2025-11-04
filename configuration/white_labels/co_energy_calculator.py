@@ -2281,12 +2281,8 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
                 "defaultMessage": "Colorado Energy Savings Navigator home page button",
             },
         },
-        "logoFooterSource": {
-            "default": ""
-        },  # NOTE: Handled on FE b/c there are 2 logos
-        "logoFooterAlt": {
-            "default": {"id": "", "": ""}
-        },  # NOTE: Handled on FE b/c there are 2 logos
+        "logoFooterSource": {"default": ""},  # NOTE: Handled on FE b/c there are 2 logos
+        "logoFooterAlt": {"default": {"id": "", "": ""}},  # NOTE: Handled on FE b/c there are 2 logos
         "logoClass": {
             "default": "logo",
         },

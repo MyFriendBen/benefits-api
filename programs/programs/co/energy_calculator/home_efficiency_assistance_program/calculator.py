@@ -26,9 +26,7 @@ class EnergyCalculatorHomeEfficiencyAssistance(ProgramCalculator):
         e.condition(not self.screen.has_benefit("cesn_heap"))
 
         # check if has any of the presumptive eligibility programs
-        presumed_eligible = any(
-            self.screen.has_benefit(program) for program in self.presumptive_eligibility
-        )
+        presumed_eligible = any(self.screen.has_benefit(program) for program in self.presumptive_eligibility)
 
         if presumed_eligible:
             # if presumptive eligibility, done
@@ -36,22 +34,15 @@ class EnergyCalculatorHomeEfficiencyAssistance(ProgramCalculator):
         else:
             # otherwise, must meet all 3 conditions
             energy_calculator_screen = self.screen.energy_calculator
-            has_relevant_provider = energy_calculator_screen.has_utility_provider(
-                self.utility_providers
-            )
+            has_relevant_provider = energy_calculator_screen.has_utility_provider(self.utility_providers)
             e.condition(
                 has_relevant_provider,
                 messages.has_utility_provider(self.utility_providers),
             )
 
-            e.condition(
-                energy_calculator_screen.is_home_owner, messages.is_home_owner()
-            )
+            e.condition(energy_calculator_screen.is_home_owner, messages.is_home_owner())
 
-            income_limit = (
-                smi.get_screen_smi(self.screen, self.program.year.period)
-                * self.smi_percent
-            )
+            income_limit = smi.get_screen_smi(self.screen, self.program.year.period) * self.smi_percent
             income = int(self.screen.calc_gross_income("yearly", ["all"]))
             income_eligible = income <= income_limit
             e.condition(income_eligible, messages.income(income, income_limit))
