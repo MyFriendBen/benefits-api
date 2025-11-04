@@ -1,0 +1,37 @@
+{
+    "white_label": {"code": "tx"},
+    "program_category": {"external_name": "tx_cash", "name": "Cash Assistance", "icon": "cash"},
+    "program": {
+        "name_abbreviated": "tx_ssi",
+        "year": "2025",
+        "legal_status_required": ["citizen", "gc_5plus"],
+        "name": "Supplemental Security Income (SSI)",
+        "description_short": "Federal cash assistance for individuals who are disabled, blind, or 65 years of age or older",
+        "description": "Federal cash assistance for individuals who are disabled, blind, or 65 years of age or older. Supplemental Security Income (SSI) is a needs-based program. SSI may give you cash to help meet your food, shelter, and personal care needs. Adults and children may qualify if they have a disability or are blind. Adults 65 years and older may also qualify.\n\nSSI may affect your household's ability to qualify for TANF. SSI may also affect the value of other cash assistance benefits. It may take up to 6 to 12 months to receive this benefit.",
+        "learn_more_link": "https://www.ssa.gov/ssi",
+        "apply_button_link": "https://www.ssa.gov/apply/ssi",
+        "apply_button_description": "",
+        "estimated_application_time": "90 minutes",
+        "estimated_value": "",
+        "website_description": "Federal cash assistance for individuals who are disabled, blind, or 65 years of age or older"
+    },
+    "warning_messages": [
+        {
+            "external_name": "tx_ssi_ssdi_interaction",
+            "calculator": "_show",
+            "message": "If you get SSDI, the amount of your SSI payment may be lower. In some cases, you may not get SSI if you also get SSDI."
+        },
+        {
+            "external_name": "tx_ssi_approval_time",
+            "calculator": "_show",
+            "message": "It may take 6 to 8 months to get an initial decision. Your claim may be denied at first. Claims are often approved on appeal, but approval can sometimes take up to 3 years."
+        }
+    ],
+    "documents": [
+        {"external_name": "tx_home"},
+        {"external_name": "tx_unearned_income"},
+        {"external_name": "earned_income"},
+        {"external_name": "id_proof"},
+        {"external_name": "tx_us_status"}
+    ]
+}

@@ -2946,6 +2946,24 @@ class TxConfigurationData(ConfigurationData):
     }
 
     category_benefits = {
+        "cash": {
+            "benefits": {
+                "ssi": {
+                    "name": {
+                        "_label": "cashAssistanceBenefits.ssi",
+                        "_default_message": "Supplemental Security Income (SSI): ",
+                    },
+                    "description": {
+                        "_label": "cashAssistanceBenefits.ssi_desc",
+                        "_default_message": "Federal cash assistance for individuals who are disabled, blind, or 65 years of age or older",
+                    },
+                },
+            },
+            "category_name": {
+                "_label": "cashAssistance",
+                "_default_message": "Cash Assistance",
+            },
+        },
         "foodAndNutrition": {
             "benefits": {
                 "snap": {

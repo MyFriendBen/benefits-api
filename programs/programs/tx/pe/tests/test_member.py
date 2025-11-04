@@ -9,11 +9,11 @@ These tests verify TX-specific calculator logic for member-level programs includ
 
 from django.test import TestCase
 
-from programs.programs.federal.pe.member import Wic
+from programs.programs.federal.pe.member import Wic, Ssi
 from programs.programs.policyengine.calculators.dependencies import household
 from programs.programs.policyengine.calculators.dependencies.household import TxStateCodeDependency
 from programs.programs.tx.pe import tx_pe_calculators
-from programs.programs.tx.pe.member import TxWic
+from programs.programs.tx.pe.member import TxWic, TxSsi
 
 
 class TestTxWic(TestCase):
@@ -106,3 +106,110 @@ class TestTxWic(TestCase):
         """Test that TxWic has the same pe_outputs as parent Wic class."""
         # TxWic should use the same outputs as parent
         self.assertEqual(TxWic.pe_outputs, Wic.pe_outputs)
+
+
+class TestTxSsi(TestCase):
+    """Tests for TxSsi calculator class."""
+
+    def test_exists_and_is_subclass_of_ssi(self):
+        """
+        Test that TxSsi calculator class exists and is registered.
+
+        This verifies the calculator has been set up in the codebase.
+        """
+        # Verify TxSsi is a subclass of Ssi
+        self.assertTrue(issubclass(TxSsi, Ssi))
+
+        # Verify it has the expected properties
+        self.assertEqual(TxSsi.pe_name, "ssi")
+        self.assertIsNotNone(TxSsi.pe_inputs)
+        self.assertGreater(len(TxSsi.pe_inputs), 0)
+
+    def test_is_registered_in_tx_pe_calculators(self):
+        """Test that TX SSI is registered in the calculators dictionary."""
+        # Verify tx_ssi is in the calculators dictionary
+        self.assertIn("tx_ssi", tx_pe_calculators)
+
+        # Verify it points to the correct class
+        self.assertEqual(tx_pe_calculators["tx_ssi"], TxSsi)
+
+    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self):
+        """
+        Test that TxSsi has all expected pe_inputs from parent and TX-specific.
+
+        TxSsi should inherit all inputs from parent Ssi class plus add
+        TX-specific dependencies like TxStateCodeDependency.
+        """
+        # TxSsi should have all parent inputs plus TxStateCodeDependency
+        self.assertGreater(len(TxSsi.pe_inputs), len(Ssi.pe_inputs))
+
+        # Verify TxStateCodeDependency is in the list
+        self.assertIn(household.TxStateCodeDependency, TxSsi.pe_inputs)
+
+        # Verify all parent inputs are present
+        for parent_input in Ssi.pe_inputs:
+            self.assertIn(parent_input, TxSsi.pe_inputs)
+
+    def test_pe_inputs_includes_tx_state_code_dependency(self):
+        """
+        Test that TxStateCodeDependency is properly added to TX SSI inputs.
+
+        This is the key TX-specific dependency that sets state_code="TX" for
+        PolicyEngine calculations.
+        """
+        # Verify TxStateCodeDependency is in pe_inputs
+        self.assertIn(TxStateCodeDependency, TxSsi.pe_inputs)
+
+        # Verify it's configured correctly
+        self.assertEqual(TxStateCodeDependency.state, "TX")
+        self.assertEqual(TxStateCodeDependency.field, "state_code")
+
+    def test_pe_inputs_includes_ssi_countable_resources_dependency(self):
+        """Test that TxSsi inherits SsiCountableResourcesDependency from parent Ssi class."""
+        from programs.programs.policyengine.calculators.dependencies.member import (
+            SsiCountableResourcesDependency,
+        )
+
+        self.assertIn(SsiCountableResourcesDependency, TxSsi.pe_inputs)
+
+    def test_pe_inputs_includes_ssi_reported_dependency(self):
+        """Test that TxSsi inherits SsiReportedDependency from parent Ssi class."""
+        from programs.programs.policyengine.calculators.dependencies.member import SsiReportedDependency
+
+        self.assertIn(SsiReportedDependency, TxSsi.pe_inputs)
+
+    def test_pe_inputs_includes_is_blind_dependency(self):
+        """Test that TxSsi inherits IsBlindDependency from parent Ssi class."""
+        from programs.programs.policyengine.calculators.dependencies.member import IsBlindDependency
+
+        self.assertIn(IsBlindDependency, TxSsi.pe_inputs)
+
+    def test_pe_inputs_includes_is_disabled_dependency(self):
+        """Test that TxSsi inherits IsDisabledDependency from parent Ssi class."""
+        from programs.programs.policyengine.calculators.dependencies.member import IsDisabledDependency
+
+        self.assertIn(IsDisabledDependency, TxSsi.pe_inputs)
+
+    def test_pe_inputs_includes_ssi_earned_income_dependency(self):
+        """Test that TxSsi inherits SsiEarnedIncomeDependency from parent Ssi class."""
+        from programs.programs.policyengine.calculators.dependencies.member import SsiEarnedIncomeDependency
+
+        self.assertIn(SsiEarnedIncomeDependency, TxSsi.pe_inputs)
+
+    def test_pe_inputs_includes_ssi_unearned_income_dependency(self):
+        """Test that TxSsi inherits SsiUnearnedIncomeDependency from parent Ssi class."""
+        from programs.programs.policyengine.calculators.dependencies.member import SsiUnearnedIncomeDependency
+
+        self.assertIn(SsiUnearnedIncomeDependency, TxSsi.pe_inputs)
+
+    def test_pe_inputs_includes_age_dependency(self):
+        """Test that TxSsi inherits AgeDependency from parent Ssi class."""
+        from programs.programs.policyengine.calculators.dependencies.member import AgeDependency
+
+        self.assertIn(AgeDependency, TxSsi.pe_inputs)
+        self.assertEqual(AgeDependency.field, "age")
+
+    def test_has_same_pe_outputs_as_parent(self):
+        """Test that TxSsi has the same pe_outputs as parent Ssi class."""
+        # TxSsi should use the same outputs as parent
+        self.assertEqual(TxSsi.pe_outputs, Ssi.pe_outputs)

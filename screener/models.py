@@ -337,6 +337,8 @@ class Screen(models.Model):
         return False
 
     def has_benefit(self, name_abbreviated: str):
+        has_ssi_or_ssi_income = self.has_ssi or self.calc_gross_income("yearly", ("sSI",)) > 0
+
         name_map = {
             "tanf": self.has_tanf,
             "nc_tanf": self.has_tanf,
@@ -370,7 +372,8 @@ class Screen(models.Model):
             "cccap": self.has_cccap,
             "mydenver": self.has_mydenver,
             "ccb": self.has_ccb,
-            "ssi": self.has_ssi or self.calc_gross_income("yearly", ("sSI",)) > 0,
+            "ssi": has_ssi_or_ssi_income,
+            "tx_ssi": has_ssi_or_ssi_income,
             "andcs": self.has_andcs,
             "chs": self.has_chs,
             "cpcr": self.has_cpcr,
