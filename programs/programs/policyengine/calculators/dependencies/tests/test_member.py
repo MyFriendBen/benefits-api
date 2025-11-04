@@ -428,3 +428,68 @@ class TestExpectedChildrenPregnancyDependency(TestCase):
         """Test ExpectedChildrenPregnancyDependency.value() returns 0 when member is not pregnant."""
         dep = member.ExpectedChildrenPregnancyDependency(self.screen, self.non_pregnant_member, {})
         self.assertEqual(dep.value(), 0)
+
+
+class TestTaxUnitDependencies(TestCase):
+    """Tests for TaxUnitHeadDependency, TaxUnitSpouseDependency, and TaxUnitDependentDependency classes."""
+
+    def setUp(self):
+        """Set up test data for tax unit dependency tests."""
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="78701", county="Test County", household_size=4, completed=False
+        )
+
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
+
+        self.spouse = HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=33)
+
+        self.child1 = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=10)
+
+        self.child2 = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=5)
+
+    def test_tax_unit_head_dependency_returns_true_for_head(self):
+        """Test TaxUnitHeadDependency returns True for household head."""
+        dep = member.TaxUnitHeadDependency(self.screen, self.head, {})
+        self.assertTrue(dep.value())
+        self.assertEqual(dep.field, "is_tax_unit_head")
+
+    def test_tax_unit_head_dependency_returns_false_for_non_head(self):
+        """Test TaxUnitHeadDependency returns False for non-head members."""
+        dep_spouse = member.TaxUnitHeadDependency(self.screen, self.spouse, {})
+        self.assertFalse(dep_spouse.value())
+
+        dep_child = member.TaxUnitHeadDependency(self.screen, self.child1, {})
+        self.assertFalse(dep_child.value())
+
+    def test_tax_unit_spouse_dependency_returns_true_for_spouse(self):
+        """Test TaxUnitSpouseDependency returns True for spouse."""
+        dep = member.TaxUnitSpouseDependency(self.screen, self.spouse, {})
+        self.assertTrue(dep.value())
+        self.assertEqual(dep.field, "is_tax_unit_spouse")
+
+    def test_tax_unit_spouse_dependency_returns_false_for_non_spouse(self):
+        """Test TaxUnitSpouseDependency returns False for non-spouse members."""
+        dep_head = member.TaxUnitSpouseDependency(self.screen, self.head, {})
+        self.assertFalse(dep_head.value())
+
+        dep_child = member.TaxUnitSpouseDependency(self.screen, self.child1, {})
+        self.assertFalse(dep_child.value())
+
+    def test_tax_unit_dependent_dependency_returns_true_for_children(self):
+        """Test TaxUnitDependentDependency returns True for child dependents."""
+        dep_child1 = member.TaxUnitDependentDependency(self.screen, self.child1, {})
+        self.assertTrue(dep_child1.value())
+        self.assertEqual(dep_child1.field, "is_tax_unit_dependent")
+
+        dep_child2 = member.TaxUnitDependentDependency(self.screen, self.child2, {})
+        self.assertTrue(dep_child2.value())
+
+    def test_tax_unit_dependent_dependency_returns_false_for_head_and_spouse(self):
+        """Test TaxUnitDependentDependency returns False for head and spouse."""
+        dep_head = member.TaxUnitDependentDependency(self.screen, self.head, {})
+        self.assertFalse(dep_head.value())
+
+        dep_spouse = member.TaxUnitDependentDependency(self.screen, self.spouse, {})
+        self.assertFalse(dep_spouse.value())

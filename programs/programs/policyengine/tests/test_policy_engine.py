@@ -10,6 +10,7 @@ from screener.models import Screen, HouseholdMember, WhiteLabel, Expense, Income
 from programs.programs.policyengine.policy_engine import pe_input
 from programs.programs.tx.pe.spm import TxSnap, TxLifeline
 from programs.programs.tx.pe.member import TxWic
+from programs.programs.tx.pe.tax import TxEitc
 from programs.programs.policyengine.calculators.constants import (
     MAIN_TAX_UNIT,
     SECONDARY_TAX_UNIT,
@@ -981,3 +982,483 @@ class TestPeInput(TestCase):
         # Verify structure is valid
         self.assertIsInstance(household["people"], dict)
         self.assertIsInstance(household["spm_units"], dict)
+
+    def test_pe_input_includes_all_txeitc_pe_input_fields(self):
+        """
+        Test that pe_input result includes all TxEitc pe_inputs dependencies.
+
+        TxEitc inherits from Eitc and adds TxStateCodeDependency.
+        This test verifies all input fields from the dependency classes are present.
+        """
+        result = pe_input(self.screen, [TxEitc])
+        household = result["household"]
+
+        # Get units for checking fields
+        tax_units = household["tax_units"]
+        people = household["people"]
+        household_unit = household["households"]["household"]
+
+        # Check tax unit exists
+        self.assertIn(MAIN_TAX_UNIT, tax_units)
+
+        # Check member-level dependencies from Eitc.pe_inputs
+        head_id = str(self.head.id)
+        spouse_id = str(self.spouse.id)
+        child_id = str(self.child.id)
+
+        # Age dependency (from AgeDependency)
+        self.assertIn(
+            "age",
+            people[head_id],
+            "Expected field 'age' from AgeDependency not found in member data",
+        )
+
+        # Tax unit dependencies (from TaxUnitSpouseDependency and TaxUnitDependentDependency)
+        self.assertIn(
+            "is_tax_unit_spouse",
+            people[spouse_id],
+            "Expected field 'is_tax_unit_spouse' from TaxUnitSpouseDependency not found in spouse data",
+        )
+        self.assertIn(
+            "is_tax_unit_dependent",
+            people[child_id],
+            "Expected field 'is_tax_unit_dependent' from TaxUnitDependentDependency not found in child data",
+        )
+
+        # Income dependencies from irs_gross_income tuple
+        income_fields_to_check = [
+            "employment_income",
+            "self_employment_income",
+            "rental_income",
+            "taxable_pension_income",
+            "social_security",
+        ]
+
+        for field in income_fields_to_check:
+            self.assertIn(
+                field,
+                people[head_id],
+                f"Expected income field '{field}' from irs_gross_income not found in member data",
+            )
+
+        # Check TX-specific dependency (added by TxEitc)
+        self.assertIn(
+            "state_code",
+            household_unit,
+            "Expected field 'state_code' from TxStateCodeDependency not found in household",
+        )
+
+    def test_pe_input_includes_txeitc_pe_output_field(self):
+        """
+        Test that pe_input result includes TxEitc pe_outputs dependency.
+
+        TxEitc.pe_outputs = [dependency.tax.Eitc] which adds the 'eitc' field
+        to the tax_unit for PolicyEngine to calculate and return.
+        """
+        result = pe_input(self.screen, [TxEitc])
+        tax_units = result["household"]["tax_units"]
+
+        # Check that the eitc output field is present in main tax unit
+        self.assertIn(MAIN_TAX_UNIT, tax_units)
+        main_tax_unit = tax_units[MAIN_TAX_UNIT]
+
+        self.assertIn(
+            "eitc",
+            main_tax_unit,
+            "Expected output field 'eitc' from TxEitc pe_outputs not found in tax_unit",
+        )
+
+        # Verify it has a period structure
+        self.assertIsInstance(
+            main_tax_unit["eitc"],
+            dict,
+            "eitc field should be a dict with period keys",
+        )
+
+    def test_pe_input_txeitc_income_values_are_correct(self):
+        """
+        Test that TxEitc income dependency values are correctly populated from HouseholdMember data.
+
+        This verifies the 5 IRS gross income types are properly extracted.
+        """
+        result = pe_input(self.screen, [TxEitc])
+        people = result["household"]["people"]
+
+        head_id = str(self.head.id)
+        spouse_id = str(self.spouse.id)
+
+        # Get the period key from one of the fields
+        if "employment_income" in people[head_id] and people[head_id]["employment_income"]:
+            period_key = list(people[head_id]["employment_income"].keys())[0]
+
+            # Verify head's income values
+            self.assertEqual(
+                people[head_id]["employment_income"][period_key],
+                30000,
+                "Head employment_income should match HouseholdMember value",
+            )
+            self.assertEqual(
+                people[head_id]["self_employment_income"][period_key],
+                5000,
+                "Head self_employment_income should match HouseholdMember value",
+            )
+            self.assertEqual(
+                people[head_id]["rental_income"][period_key],
+                12000,
+                "Head rental_income should match HouseholdMember value",
+            )
+
+            # Verify spouse's income values
+            self.assertEqual(
+                people[spouse_id]["taxable_pension_income"][period_key],
+                8000,
+                "Spouse taxable_pension_income should match HouseholdMember value",
+            )
+            self.assertEqual(
+                people[spouse_id]["social_security"][period_key],
+                6000,
+                "Spouse social_security should match HouseholdMember value",
+            )
+
+    def test_pe_input_txeitc_tax_unit_relationships_are_correct(self):
+        """
+        Test that TxEitc correctly identifies tax unit relationships.
+
+        This verifies that spouse and dependent flags are properly set for EITC calculation.
+        """
+        result = pe_input(self.screen, [TxEitc])
+        people = result["household"]["people"]
+
+        head_id = str(self.head.id)
+        spouse_id = str(self.spouse.id)
+        child_id = str(self.child.id)
+
+        # Check if tax unit relationship fields are populated
+        if "is_tax_unit_spouse" in people[spouse_id] and people[spouse_id]["is_tax_unit_spouse"]:
+            period_key = list(people[spouse_id]["is_tax_unit_spouse"].keys())[0]
+
+            # Spouse should be marked as tax unit spouse
+            self.assertTrue(
+                people[spouse_id]["is_tax_unit_spouse"][period_key],
+                "Spouse should be marked as tax unit spouse",
+            )
+
+        if "is_tax_unit_dependent" in people[child_id] and people[child_id]["is_tax_unit_dependent"]:
+            period_key = list(people[child_id]["is_tax_unit_dependent"].keys())[0]
+
+            # Child should be marked as tax unit dependent
+            self.assertTrue(
+                people[child_id]["is_tax_unit_dependent"][period_key],
+                "Child should be marked as tax unit dependent",
+            )
+
+        # Head should not be marked as spouse or dependent
+        if "is_tax_unit_spouse" in people[head_id] and people[head_id]["is_tax_unit_spouse"]:
+            period_key = list(people[head_id]["is_tax_unit_spouse"].keys())[0]
+            self.assertFalse(
+                people[head_id]["is_tax_unit_spouse"][period_key],
+                "Head of household should not be marked as spouse",
+            )
+
+    def test_pe_input_txeitc_age_values_match_household_members(self):
+        """
+        Test that age dependency values for EITC match the actual member ages.
+
+        This is important for EITC calculation as age affects eligibility and benefit amount.
+        """
+        result = pe_input(self.screen, [TxEitc])
+        people = result["household"]["people"]
+
+        head_id = str(self.head.id)
+        spouse_id = str(self.spouse.id)
+        child_id = str(self.child.id)
+
+        # Verify ages are populated
+        if "age" in people[head_id] and people[head_id]["age"]:
+            period_key = list(people[head_id]["age"].keys())[0]
+
+            self.assertEqual(
+                people[head_id]["age"][period_key],
+                35,
+                "Head age should be 35",
+            )
+            self.assertEqual(
+                people[spouse_id]["age"][period_key],
+                32,
+                "Spouse age should be 32",
+            )
+            self.assertEqual(
+                people[child_id]["age"][period_key],
+                8,
+                "Child age should be 8",
+            )
+
+    def test_pe_input_txeitc_tx_specific_dependency_values(self):
+        """
+        Test that TX-specific dependencies have correct values for EITC.
+
+        TxEitc adds TxStateCodeDependency which should set state_code="TX".
+        """
+        result = pe_input(self.screen, [TxEitc])
+        household_unit = result["household"]["households"]["household"]
+
+        # Verify state_code is set to "TX"
+        self.assertIn("state_code", household_unit)
+        if household_unit["state_code"]:
+            period_key = list(household_unit["state_code"].keys())[0]
+            self.assertEqual(
+                household_unit["state_code"][period_key],
+                "TX",
+                "TxStateCodeDependency should set state_code='TX' for EITC",
+            )
+
+    def test_pe_input_txeitc_with_no_income(self):
+        """
+        Test that TxEitc handles members with no income correctly.
+
+        Members with no income should still have all required fields populated with zero values.
+        """
+        # Create a screen with no income streams
+        no_income_screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Travis County",
+            household_size=2,
+            completed=False,
+        )
+
+        # Head of household with no income
+        no_income_head = HouseholdMember.objects.create(
+            screen=no_income_screen,
+            relationship="headOfHousehold",
+            age=30,
+            disabled=False,
+            student=False,
+        )
+
+        # Child with no income
+        no_income_child = HouseholdMember.objects.create(
+            screen=no_income_screen,
+            relationship="child",
+            age=5,
+            disabled=False,
+            student=False,
+        )
+
+        result = pe_input(no_income_screen, [TxEitc])
+        people = result["household"]["people"]
+        head_id = str(no_income_head.id)
+
+        # Verify income fields exist even with no income
+        income_fields = [
+            "employment_income",
+            "self_employment_income",
+            "rental_income",
+            "taxable_pension_income",
+            "social_security",
+        ]
+
+        for field in income_fields:
+            self.assertIn(
+                field,
+                people[head_id],
+                f"Expected income field '{field}' to be present even with no income",
+            )
+
+        # Verify values are zero or empty
+        if people[head_id]["employment_income"]:
+            period_key = list(people[head_id]["employment_income"].keys())[0]
+            self.assertEqual(
+                people[head_id]["employment_income"][period_key],
+                0,
+                "employment_income should be 0 for member with no income",
+            )
+
+    def test_pe_input_txeitc_with_single_parent(self):
+        """
+        Test that TxEitc handles single parent households correctly.
+
+        Single parents with qualifying children should have all required fields.
+        """
+        # Create a single parent screen
+        single_parent_screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Travis County",
+            household_size=2,
+            completed=False,
+        )
+
+        # Single parent (head of household)
+        single_parent = HouseholdMember.objects.create(
+            screen=single_parent_screen,
+            relationship="headOfHousehold",
+            age=28,
+            disabled=False,
+            student=False,
+        )
+
+        # Add income for the single parent
+        IncomeStream.objects.create(
+            screen=single_parent_screen,
+            household_member=single_parent,
+            type="wages",
+            amount=25000,
+            frequency="yearly",
+        )
+
+        # Child
+        child = HouseholdMember.objects.create(
+            screen=single_parent_screen,
+            relationship="child",
+            age=3,
+            disabled=False,
+            student=False,
+        )
+
+        result = pe_input(single_parent_screen, [TxEitc])
+        household = result["household"]
+        people = household["people"]
+        tax_units = household["tax_units"]
+
+        parent_id = str(single_parent.id)
+        child_id = str(child.id)
+
+        # Verify both members are in the main tax unit
+        self.assertIn(MAIN_TAX_UNIT, tax_units)
+        main_tax_unit_members = tax_units[MAIN_TAX_UNIT]["members"]
+        self.assertIn(parent_id, main_tax_unit_members)
+        self.assertIn(child_id, main_tax_unit_members)
+
+        # Verify parent has income
+        if "employment_income" in people[parent_id] and people[parent_id]["employment_income"]:
+            period_key = list(people[parent_id]["employment_income"].keys())[0]
+            self.assertEqual(
+                people[parent_id]["employment_income"][period_key],
+                25000,
+                "Single parent should have employment income",
+            )
+
+        # Verify child is marked as dependent
+        if "is_tax_unit_dependent" in people[child_id] and people[child_id]["is_tax_unit_dependent"]:
+            period_key = list(people[child_id]["is_tax_unit_dependent"].keys())[0]
+            self.assertTrue(
+                people[child_id]["is_tax_unit_dependent"][period_key],
+                "Child should be marked as tax unit dependent for single parent",
+            )
+
+    def test_pe_input_txeitc_with_multiple_children(self):
+        """
+        Test that TxEitc handles households with multiple qualifying children.
+
+        EITC amount varies based on number of qualifying children, so this is important to test.
+        """
+        # Create a screen with multiple children
+        multi_child_screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Travis County",
+            household_size=5,
+            completed=False,
+        )
+
+        # Parents
+        parent1 = HouseholdMember.objects.create(
+            screen=multi_child_screen,
+            relationship="headOfHousehold",
+            age=35,
+        )
+        parent2 = HouseholdMember.objects.create(
+            screen=multi_child_screen,
+            relationship="spouse",
+            age=33,
+        )
+
+        # Add income
+        IncomeStream.objects.create(
+            screen=multi_child_screen,
+            household_member=parent1,
+            type="wages",
+            amount=40000,
+            frequency="yearly",
+        )
+
+        # Three children
+        child1 = HouseholdMember.objects.create(
+            screen=multi_child_screen,
+            relationship="child",
+            age=10,
+        )
+        child2 = HouseholdMember.objects.create(
+            screen=multi_child_screen,
+            relationship="child",
+            age=7,
+        )
+        child3 = HouseholdMember.objects.create(
+            screen=multi_child_screen,
+            relationship="child",
+            age=4,
+        )
+
+        result = pe_input(multi_child_screen, [TxEitc])
+        household = result["household"]
+        people = household["people"]
+        tax_units = household["tax_units"]
+
+        # Verify all 5 members are in the main tax unit
+        main_tax_unit_members = tax_units[MAIN_TAX_UNIT]["members"]
+        self.assertEqual(len(main_tax_unit_members), 5, "All 5 members should be in main tax unit")
+
+        # Verify all three children are marked as dependents
+        for child in [child1, child2, child3]:
+            child_id = str(child.id)
+            self.assertIn("is_tax_unit_dependent", people[child_id])
+            if people[child_id]["is_tax_unit_dependent"]:
+                period_key = list(people[child_id]["is_tax_unit_dependent"].keys())[0]
+                self.assertTrue(
+                    people[child_id]["is_tax_unit_dependent"][period_key],
+                    f"Child {child.age} should be marked as tax unit dependent",
+                )
+
+        # Verify spouse is marked correctly
+        spouse_id = str(parent2.id)
+        if "is_tax_unit_spouse" in people[spouse_id] and people[spouse_id]["is_tax_unit_spouse"]:
+            period_key = list(people[spouse_id]["is_tax_unit_spouse"].keys())[0]
+            self.assertTrue(
+                people[spouse_id]["is_tax_unit_spouse"][period_key],
+                "Second parent should be marked as spouse",
+            )
+
+    def test_pe_input_with_txeitc_and_txsnap_combined(self):
+        """
+        Test that pe_input handles both TxEitc and TxSnap calculators together.
+
+        This verifies that dependencies from both calculators are properly merged.
+        """
+        result = pe_input(self.screen, [TxEitc, TxSnap])
+        household = result["household"]
+
+        spm_unit = household["spm_units"]["spm_unit"]
+        people = household["people"]
+        tax_units = household["tax_units"]
+        household_unit = household["households"]["household"]
+        head_id = str(self.head.id)
+
+        # Verify TxEitc fields
+        self.assertIn(MAIN_TAX_UNIT, tax_units)
+        self.assertIn("eitc", tax_units[MAIN_TAX_UNIT])
+        self.assertIn("employment_income", people[head_id])
+        self.assertIn("is_tax_unit_spouse", people[str(self.spouse.id)])
+
+        # Verify TxSnap fields
+        self.assertIn("snap_assets", spm_unit)
+        self.assertIn("snap_earned_income", spm_unit)
+        self.assertIn("snap", spm_unit)
+
+        # Verify shared TX dependency
+        self.assertIn("state_code", household_unit)
+
+        # Verify structure is valid
+        self.assertIsInstance(household["people"], dict)
+        self.assertIsInstance(household["spm_units"], dict)
+        self.assertIsInstance(household["tax_units"], dict)

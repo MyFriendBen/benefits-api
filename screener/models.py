@@ -355,6 +355,7 @@ class Screen(models.Model):
             "lifeline": self.has_lifeline,
             "acp": self.has_acp,
             "eitc": self.has_eitc,
+            "tx_eitc": self.has_eitc,
             "coeitc": self.has_coeitc,
             "il_eitc": self.has_il_eitc,
             "nslp": self.has_nslp,
