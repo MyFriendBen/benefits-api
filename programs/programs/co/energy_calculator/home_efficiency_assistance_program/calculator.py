@@ -15,8 +15,11 @@ class EnergyCalculatorHomeEfficiencyAssistance(ProgramCalculator):
     presumptive_eligibility = [
         "leap",
     ]
-    utility_providers = ["co-colorado-springs-utilities"]
-    ami_percent = "60%"
+    utility_providers = [
+        "co-colorado-springs-utilities",
+        "co-colorado-springs-utilities-gas",
+    ]
+    smi_percent = 0.6
 
     def household_eligible(self, e: Eligibility):
         # user doesn't already have cesn_heap
@@ -45,7 +48,10 @@ class EnergyCalculatorHomeEfficiencyAssistance(ProgramCalculator):
                 energy_calculator_screen.is_home_owner, messages.is_home_owner()
             )
 
-            income_limit = smi.get_screen_smi(self.screen, self.program.year.period)
+            income_limit = (
+                smi.get_screen_smi(self.screen, self.program.year.period)
+                * self.smi_percent
+            )
             income = int(self.screen.calc_gross_income("yearly", ["all"]))
             income_eligible = income <= income_limit
             e.condition(income_eligible, messages.income(income, income_limit))
