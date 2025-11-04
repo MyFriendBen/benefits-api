@@ -1,10 +1,26 @@
+import programs.programs.messages as messages
 from integrations.services.income_limits import smi
 from programs.programs.calc import Eligibility, ProgramCalculator
-import programs.programs.messages as messages
 
 
 class EnergyCalculatorHomeEfficiencyAssistance(ProgramCalculator):
-    amount = 1  # default to 1 since not calculating value
+    """
+    Home Efficiency Assistance Program (HEAP) calculator for Colorado Springs Utilities.
+
+    This program provides weatherization and energy efficiency improvements to eligible households
+    in the Colorado Springs Utilities service area.
+
+    Eligibility criteria:
+    - Must not already have CESN HEAP benefits
+    - Either:
+        a) Presumptive eligibility through LEAP participation, OR
+        b) Meet all of the following:
+            - Customer of Colorado Springs Utilities (gas or electric)
+            - Homeowner
+            - Income at or below 60% of State Median Income (SMI)
+    """
+
+    amount = 1  # Benefit amount not calculated; eligibility determination only
     dependencies = [
         "household_size",
         "income_amount",
