@@ -10,7 +10,7 @@ from screener.models import Screen, HouseholdMember, WhiteLabel, Expense, Income
 from programs.programs.policyengine.policy_engine import pe_input
 from programs.programs.tx.pe.spm import TxSnap, TxLifeline
 from programs.programs.tx.pe.member import TxWic
-from programs.programs.tx.pe.tax import TxEitc
+from programs.programs.tx.pe.tax import TxEitc, TxCtc
 from programs.programs.policyengine.calculators.constants import (
     MAIN_TAX_UNIT,
     SECONDARY_TAX_UNIT,
@@ -1462,3 +1462,48 @@ class TestPeInput(TestCase):
         self.assertIsInstance(household["people"], dict)
         self.assertIsInstance(household["spm_units"], dict)
         self.assertIsInstance(household["tax_units"], dict)
+
+    def test_pe_input_with_txctc_populates_tax_unit_fields(self):
+        """Test that TxCtc calculator populates tax unit and member fields correctly."""
+        result = pe_input(self.screen, [TxCtc])
+        household = result["household"]
+        people = household["people"]
+        tax_units = household["tax_units"]
+        household_unit = household["households"]["household"]
+
+        # Verify tax unit structure exists
+        self.assertIn(MAIN_TAX_UNIT, tax_units)
+        main_tax_unit = tax_units[MAIN_TAX_UNIT]
+
+        # Verify all members are in tax unit
+        self.assertIn(str(self.head.id), main_tax_unit["members"])
+        self.assertIn(str(self.spouse.id), main_tax_unit["members"])
+        self.assertIn(str(self.child.id), main_tax_unit["members"])
+
+        # Verify CTC-specific member fields
+        head_id = str(self.head.id)
+        spouse_id = str(self.spouse.id)
+        child_id = str(self.child.id)
+
+        # Age dependency should be populated for all members
+        self.assertIn("age", people[head_id])
+        self.assertIn("age", people[spouse_id])
+        self.assertIn("age", people[child_id])
+
+        # Tax unit role dependencies should be populated
+        self.assertIn("is_tax_unit_dependent", people[head_id])
+        self.assertIn("is_tax_unit_spouse", people[head_id])
+        self.assertIn("is_tax_unit_dependent", people[spouse_id])
+        self.assertIn("is_tax_unit_spouse", people[spouse_id])
+        self.assertIn("is_tax_unit_dependent", people[child_id])
+
+        # Income dependencies should be populated
+        self.assertIn("employment_income", people[head_id])
+        self.assertIn("self_employment_income", people[head_id])
+        self.assertIn("rental_income", people[head_id])
+
+        # TX state code should be populated on household
+        self.assertIn("state_code", household_unit)
+
+        # CTC output field should be in tax unit
+        self.assertIn("ctc_value", main_tax_unit)
