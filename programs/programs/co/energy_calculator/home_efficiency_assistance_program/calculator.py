@@ -22,18 +22,17 @@ class EnergyCalculatorHomeEfficiencyAssistance(ProgramCalculator):
         # user doesn't already have cesn_heap
         e.condition(not self.screen.has_benefit("cesn_heap"))
 
-        energy_calculator_screen = self.screen.energy_calculator
-
-        # Check if user already has any of the presumptive eligibility programs
+        # check if has any of the presumptive eligibility programs
         presumed_eligible = any(
             self.screen.has_benefit(program) for program in self.presumptive_eligibility
         )
 
         if presumed_eligible:
-            # if presumptive eligibility via LEAP, done
+            # if presumptive eligibility, done
             e.condition(presumed_eligible, messages.presumed_eligibility())
         else:
             # otherwise, must meet all 3 conditions
+            energy_calculator_screen = self.screen.energy_calculator
             has_relevant_provider = energy_calculator_screen.has_utility_provider(
                 self.utility_providers
             )
