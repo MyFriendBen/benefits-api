@@ -15,6 +15,7 @@ tx_tax_unit_calculators = {
 tx_spm_calculators = {
     "tx_snap": spm.TxSnap,
     "tx_lifeline": spm.TxLifeline,
+    "tx_nslp": spm.TxNslp,
 }
 
 tx_pe_calculators: dict[str, type[PolicyEngineCalulator]] = {
