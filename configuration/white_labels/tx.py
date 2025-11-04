@@ -2958,11 +2958,54 @@ class TxConfigurationData(ConfigurationData):
                         "_default_message": "Food assistance",
                     },
                 },
+                "wic": {
+                    "name": {
+                        "_label": "foodAndNutritionBenefits.wic",
+                        "_default_message": "Special Supplemental Nutrition Program for Women, Infants, and Children (WIC): ",
+                    },
+                    "description": {
+                        "_label": "foodAndNutritionBenefits.wic_desc",
+                        "_default_message": "Food and breastfeeding assistance",
+                    },
+                },
             },
             "category_name": {
                 "_label": "foodAndNutrition",
                 "_default_message": "Food and Nutrition",
             },
+        },
+        "housingAndUtilities": {
+            "benefits": {
+                "lifeline": {
+                    "name": {
+                        "_label": "housingAndUtilities.lifeline",
+                        "_default_message": "Lifeline: ",
+                    },
+                    "description": {
+                        "_label": "housingAndUtilities.lifeline_desc",
+                        "_default_message": "Phone or internet discount",
+                    },
+                },
+            },
+            "category_name": {
+                "_label": "housingAndUtilities",
+                "_default_message": "Housing and Utilities",
+            },
+        },
+        "taxCredits": {
+            "benefits": {
+                "eitc": {
+                    "name": {
+                        "_label": "taxCreditBenefits.eitc",
+                        "_default_message": "Earned Income Tax Credit (EITC): ",
+                    },
+                    "description": {
+                        "_label": "taxCreditBenefits.eitc_desc",
+                        "_default_message": "Federal tax credit - earned income",
+                    },
+                },
+            },
+            "category_name": {"_label": "taxCredits", "_default_message": "Tax Credits"},
         },
     }
 

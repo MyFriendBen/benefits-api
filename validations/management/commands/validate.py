@@ -3,6 +3,7 @@ from enum import Enum
 from random import randint
 from typing import Optional
 from django.core.management.base import BaseCommand
+from django.conf import settings
 from googleapiclient.errors import HttpError
 from integrations.services.sheets.formatting import color_cell, title_cell, wrap_row
 from screener.views import eligibility_results
@@ -237,6 +238,12 @@ class Command(BaseCommand):
         ]
         for result in results.results:
             row_data.append(result.sheets_row())
+
+        if not settings.ENABLE_GOOGLE_INTEGRATIONS:
+            raise RuntimeError(
+                "Google Sheets integration is disabled. "
+                "Set ENABLE_GOOGLE_INTEGRATIONS=true in your environment to enable it."
+            )
 
         info = json.loads(config("GOOGLE_APPLICATION_CREDENTIALS"))
         creds = service_account.Credentials.from_service_account_info(

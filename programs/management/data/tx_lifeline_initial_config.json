@@ -1,0 +1,39 @@
+{
+    "white_label": {"code": "tx"},
+    "program_category": {
+        "external_name": "tx_housing",
+        "name": "Housing and Utilities",
+        "icon": "housing"
+    },
+    "program": {
+        "name_abbreviated": "tx_lifeline",
+        "year": "2025",
+        "legal_status_required": ["citizen", "refugee", "gc_5plus", "gc_18plus_no5", "gc_under18_no5"],
+        "name": "Lifeline",
+        "description_short": "Phone or internet discount",
+        "description": "Phone or internet discount. Lifeline can give your household a monthly discount on phone or internet service. You may not get a discount on both unless you have a bundled service.\n\nYou may get only one Lifeline benefit per household, and you may not get Lifeline from more than one company.\n\nYou may qualify if your income is below a certain level. You may also qualify if any member of your household gets SNAP, SSI, or Medicaid.\n\nIt may take 2 business days to 2 weeks to receive this benefit.",
+        "learn_more_link": "https://www.lifelinesupport.org/",
+        "apply_button_link": "https://www.texaslifeline.org/",
+        "apply_button_description": "Apply for Lifeline",
+        "estimated_application_time": "30 minutes",
+        "estimated_delivery_time": "2 business days to 2 weeks",
+        "estimated_value": ""
+    },
+    "documents": [
+        {
+            "external_name": "tx_home"
+        },
+        {
+            "external_name": "earned_income"
+        },
+        {
+            "external_name": "tx_other_program"
+        },
+        {
+            "external_name": "id proof"
+        },
+        {
+            "external_name": "tx_unearned_income"
+        }
+    ]
+}

@@ -90,6 +90,13 @@ class Command(BaseCommand):
                 defaults={"data": WhiteLabelData.state, "active": True},
             )
 
+            # Save banner_messages to database
+            Configuration.objects.update_or_create(
+                name="banner_messages",
+                white_label=white_label,
+                defaults={"data": WhiteLabelData.banner_messages, "active": True},
+            )
+
             # Save acute_condition_options to database
             Configuration.objects.update_or_create(
                 name="public_charge_rule",

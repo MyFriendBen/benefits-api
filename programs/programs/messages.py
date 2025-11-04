@@ -18,7 +18,13 @@ def income_limit_unknown():
     """
     Household income limit lookup failed
     """
-    return (translation("income_limit_lookup_failed", 0, "Unable to determine income limits for your household"),)
+    return (
+        translation(
+            "income_limit_lookup_failed",
+            0,
+            "Unable to determine income limits for your household",
+        ),
+    )
 
 
 def presumed_eligibility():
@@ -32,7 +38,10 @@ def assets(asset_limit):
     """
     Household resources must not exceed ${asset_limit}
     """
-    return (translation("assets", 0, "Household resources must not exceed"), f" ${round(asset_limit)}")
+    return (
+        translation("assets", 0, "Household resources must not exceed"),
+        f" ${round(asset_limit)}",
+    )
 
 
 def child(min_age=0, max_age=18):
@@ -81,7 +90,10 @@ def must_not_have_benefit(benefit_name):
     """
     Household must not have {benefit_name}
     """
-    return (translation("not_have_benefit", 0, "Household must not have"), f" {benefit_name}")
+    return (
+        translation("not_have_benefit", 0, "Household must not have"),
+        f" {benefit_name}",
+    )
 
 
 def location():
@@ -110,3 +122,23 @@ def is_pregnant():
     Someone in the household must be pregnant
     """
     return (translation("pregnant", 0, "Someone in the household must be pregnant"),)
+
+
+def has_utility_provider(utility_providers: list[str]):
+    """
+    Household must have one a list of utility providers
+    """
+    return (
+        translation(
+            "utility_provider",
+            0,
+            f"Household must have one of the following utility providers: {', '.join(utility_providers)}",
+        ),
+    )
+
+
+def is_home_owner():
+    """
+    Household must by own home
+    """
+    return (translation("home_owner", 0, "Household must own home"),)

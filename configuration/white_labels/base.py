@@ -10,6 +10,9 @@ class ConfigurationData:
 
     state = {"name": "[REPLACE_ME]"}
 
+    # Banner messages configuration
+    banner_messages = []
+
     public_charge_rule = {"link": ""}
 
     more_help_options = {
