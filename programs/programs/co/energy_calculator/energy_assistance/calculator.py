@@ -4,12 +4,6 @@ from programs.programs.calc import Eligibility, ProgramCalculator
 
 class EnergyCalculatorEnergyAssistance(EnergyAssistance):
     amount = 1000
-    dependencies = [
-        "income_amount",
-        "income_frequency",
-        "household_size",
-        "has_benefit",
-    ]
 
     def household_eligible(self, e: Eligibility):
 
