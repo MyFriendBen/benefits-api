@@ -27,8 +27,8 @@ class MaConfigurationData(ConfigurationData):
             {
                 "name": {"_label": "moreHelp.ma.frc.name", "_default_message": "Family Resource Center"},
                 "description": {
-                    "_default_message": "If you have a child ages 0 to 18, your local family resource center may be able to connect you to other resources and support services. Visit a center near you.",
                     "_label": "moreHelp.ma.resource_description1",
+                    "_default_message": "If you have a child ages 0 to 18, your local family resource center may be able to connect you to other resources and support services. Visit a center near you.",                    
                 },
                 "link": "https://www.frcma.org/",
             },
