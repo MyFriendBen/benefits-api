@@ -15,6 +15,9 @@ import requests
 from sentry_sdk import capture_exception
 from django.core.cache import cache
 
+# Type alias for AMI percentage levels supported by HUD API
+AmiPercent = Literal["20%", "30%", "40%", "50%", "60%", "70%", "80%", "100%"]
+
 
 class HudIncomeClientError(Exception):
     """Base exception for HUD Income Client errors"""
@@ -57,16 +60,7 @@ class HudIncomeClient:
     def get_screen_ami(
         self,
         screen,
-        percent: Union[
-            Literal["20%"],
-            Literal["30%"],
-            Literal["40%"],
-            Literal["50%"],
-            Literal["60%"],
-            Literal["70%"],
-            Literal["80%"],
-            Literal["100%"],
-        ],
+        percent: AmiPercent,
         year: Union[int, str],
     ) -> int:
         """

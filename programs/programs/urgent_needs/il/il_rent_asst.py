@@ -1,10 +1,9 @@
-from typing import Literal
 from ..base import UrgentNeedFunction
-from integrations.clients.hud_income_limits import hud_client
+from integrations.clients.hud_income_limits import hud_client, AmiPercent
 
 
 class IlRenterAssistance(UrgentNeedFunction):
-    ami_percent: Literal["80%"] = "80%"
+    ami_percent: AmiPercent = "80%"
     dependencies = ["income_amount", "income_frequency", "household_size", "county"]
 
     def eligible(self) -> bool:
