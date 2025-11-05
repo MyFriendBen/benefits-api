@@ -364,6 +364,7 @@ class Screen(models.Model):
             "il_transit_reduced_fare": self.has_il_transit_reduced_fare,
             "il_bap": self.has_il_bap,
             "project_cope": self.has_project_cope,
+            "co_energy_calculator_cope": self.has_project_cope,
             "cesn_heap": self.has_cesn_heap,
             "co_energy_calculator_heap": self.has_cesn_heap,
             "rtdlive": self.has_rtdlive,
