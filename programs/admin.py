@@ -72,6 +72,7 @@ class ProgramAdmin(SecureAdmin):
             <div class="dropdown">
                 <span class="dropdown-btn material-symbols-outlined"> menu </span>
                 <div class="dropdown-content">
+                    <a href="{}">Name</a>
                     <a href="{}">Description</a>
                     <a href="{}">Website Description</a>
                     <a href="{}">Apply Button Description</a>
@@ -81,6 +82,7 @@ class ProgramAdmin(SecureAdmin):
                 </div>
             </div>
             """,
+            reverse("translation_admin_url", args=[obj.name.id]),
             reverse("translation_admin_url", args=[obj.description.id]),
             reverse("translation_admin_url", args=[obj.website_description.id]),
             reverse("translation_admin_url", args=[obj.apply_button_description.id]),
