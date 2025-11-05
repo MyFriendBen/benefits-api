@@ -403,6 +403,7 @@ class Screen(models.Model):
             "medicare": self.has_medicare_hi,
             "chp": self.has_chp or self.has_chp_hi,
             "va": self.has_va,
+            "aca": self.has_aca,
             "nc_aca": self.has_aca,
             "ma_aca": self.has_aca,
             "tx_aca": self.has_aca,

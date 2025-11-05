@@ -3063,7 +3063,7 @@ class TxConfigurationData(ConfigurationData):
                         "_default_message": "ACA (Affordable Care Act) Premium Tax Credit: ",
                     },
                     "description": {
-                        "_label": "taxCreditBenefits.aca_desc",
+                        "_label": "healthCareBenefits.aca_desc",
                         "_default_message": "Health insurance marketplace and premium tax credit",
                     },
                 },
