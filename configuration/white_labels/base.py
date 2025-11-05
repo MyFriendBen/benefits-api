@@ -106,7 +106,7 @@ class ConfigurationData:
         },
     }
 
-    # Consent options on sign-up page (rarely needs customization)
+    # Consent options on sign-up page
     sign_up_options = {
         "sendUpdates": {
             "_label": "signUpOptions.sendUpdates",
@@ -118,7 +118,7 @@ class ConfigurationData:
         },
     }
 
-    # Household relationship options (rarely needs customization)
+    # Household relationship options
     relationship_options = {
         "child": {"_label": "relationshipOptions.child", "_default_message": "Child"},
         "fosterChild": {
@@ -361,7 +361,7 @@ class ConfigurationData:
         },
     }
 
-    # Income frequency options (rarely needs customization)
+    # Income frequency options
     frequency_options = {
         "weekly": {"_label": "frequencyOptions.weekly", "_default_message": "every week"},
         "biweekly": {"_label": "frequencyOptions.biweekly", "_default_message": "every 2 weeks"},
@@ -391,7 +391,7 @@ class ConfigurationData:
         "dependentCare": {"_label": "expenseOptions.dependentCare", "_default_message": "Dependent Care"},
     }
 
-    # Household member condition options (rarely needs customization)
+    # Household member condition options
     condition_options = {
         "you": {
             "student": {
@@ -570,7 +570,7 @@ class ConfigurationData:
         "survey": "",
     }
 
-    # Text for "Current Benefits" page (rarely needs customization)
+    # Text for "Current Benefits" page
     current_benefits = {
         "title": {
             "_label": "currentBenefits.pg-header",
