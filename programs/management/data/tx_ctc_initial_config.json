@@ -3,7 +3,9 @@
     "code": "tx"
   },
   "program_category": {
-    "external_name": "tx_tax_credits"
+    "external_name": "tx_tax_credits",
+    "name": "Tax Credits",
+    "icon": "taxCredits"
   },
   "program": {
     "name_abbreviated": "tx_ctc",
@@ -28,13 +30,22 @@
   },
   "documents": [
     {
-      "external_name": "SSN / ITIN"
+      "external_name": "tx_ssn_or_itin",
+      "text": "Social security number or individual taxpayer identification number (ITIN)",
+      "link_url": "",
+      "link_text": ""
     },
     {
-      "external_name": "W2"
+      "external_name": "tx_w2",
+      "text": "Form W-2 for all household members in tax unit",
+      "link_url": "",
+      "link_text": ""
     },
     {
-      "external_name": "1099"
+      "external_name": "tx_1099",
+      "text": "1099 for all household members in tax unit",
+      "link_url": "",
+      "link_text": ""
     }
   ]
 }
