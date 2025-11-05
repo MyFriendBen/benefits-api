@@ -8,10 +8,10 @@ class IlRenterAssistance(UrgentNeedFunction):
 
     def eligible(self) -> bool:
         """
-        Return True if the household is at or below 80% AMI using HUD 2025 income limits
+        Return True if the household is at or below 80% AMI using HUD MTSP income limits
         """
 
-        income_limit = hud_client.get_screen_ami(
+        income_limit = hud_client.get_screen_mtsp_ami(
             self.screen, self.ami_percent, self.urgent_need.year.period if self.urgent_need.year else 2025
         )
         income = self.screen.calc_gross_income("yearly", ["all"])

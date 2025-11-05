@@ -6,7 +6,8 @@ This module provides a simplified Python client for accessing HUD (U.S. Departme
 
 ## Features
 
-- **Drop-in replacement** for `Ami.get_screen_ami()` method
+- **MTSP Income Limits** via `get_screen_mtsp_ami()` method (all percentages: 20%-100%)
+- **Section 8 Income Limits** via `get_screen_il_ami()` placeholder (30%, 50%, 80% only - not yet implemented)
 - **Works nationwide** - supports all U.S. states and counties
 - Support for household sizes 1-8
 - Support for all income percentages (20%, 30%, 40%, 50%, 60%, 70%, 80%, 100% AMI)
@@ -37,15 +38,60 @@ Add your HUD API token to your `.env` file:
 HUD_API_TOKEN=your_token_here
 ```
 
-## Primary Usage: get_screen_ami()
+## Understanding HUD Income Limit Datasets
 
-The main method you'll use is `get_screen_ami()`, which matches the interface of the old `Ami` class:
+HUD provides **two different income limit datasets** with important differences:
+
+### 1. **MTSP (Multifamily Tax Subsidy Project)** - Currently Implemented ✅
+- **Endpoint**: `/mtspil/data/{entity_id}`
+- **Percentages**: 20%, 30%, 40%, 50%, 60%, 70%, 80%, 100% AMI
+- **Purpose**: Low-Income Housing Tax Credit (LIHTC) and tax-exempt bond projects
+- **Key Feature**: "Hold-harmless" provision - limits never decrease year-over-year
+- **Use when**: General AMI eligibility screening, flexible income thresholds needed
+
+### 2. **Standard Income Limits (Section 8)** - Not Yet Implemented ⚠️
+- **Endpoint**: `/il/data/{entity_id}`
+- **Percentages**: Only 30%, 50%, 80% AMI (and median)
+- **Purpose**: HUD Section 8, Public Housing, Housing Choice Vouchers
+- **Key Feature**: Reflects current economic conditions (can go up or down)
+- **Use when**: Program requires "Section 8 eligibility" or federal HUD compliance
+
+### Are the Values the Same?
+
+**Not always!** Key differences:
+
+- **50% AMI**: MTSP starts with Section 8 values but applies hold-harmless (never decreases). In down economies, MTSP may be higher.
+- **30% & 80% AMI**: Usually close but calculated under different statutory requirements
+- **Over time**: Values diverge as MTSP maintains previous highs while Section 8 reflects current median income
+
+**Example Scenario:**
+```
+Year 1: Section 8 50% = $50,000  |  MTSP 50% = $50,000  ✅ Same
+Year 2: Section 8 50% = $48,000  |  MTSP 50% = $50,000  ❌ Different (MTSP held harmless)
+Year 3: Section 8 50% = $52,000  |  MTSP 50% = $52,000  ✅ Same (both updated)
+```
+
+### Which Should You Use?
+
+| Your Program Says... | Use This Dataset |
+|---------------------|------------------|
+| "Households at 80% AMI" or "80% Area Median Income" | ✅ **MTSP** (current implementation) |
+| "Households eligible for Section 8" | ⚠️ **Standard IL** (see note below) |
+| "HUD Section 8 Income Limits" | ⚠️ **Standard IL** (see note below) |
+| "Low-Income Housing Tax Credit eligible" | ✅ **MTSP** |
+| Need 40%, 60%, or 70% AMI thresholds | ✅ **MTSP** (only option) |
+
+**Note**: Standard IL endpoint not yet implemented. Contact team if you need Section 8 compliance.
+
+## Primary Usage: get_screen_mtsp_ami()
+
+The main method uses **MTSP income limits** (all percentages, hold-harmless provisions):
 
 ```python
 from integrations.clients.hud_income_limits import hud_client
 
-# Drop-in replacement for ami.get_screen_ami()
-income_limit = hud_client.get_screen_ami(
+# Get MTSP income limit (recommended for most use cases)
+income_limit = hud_client.get_screen_mtsp_ami(
     screen=screen,
     percent='80%',
     year='2025'
@@ -54,7 +100,7 @@ income_limit = hud_client.get_screen_ami(
 
 ### Migration from Old Ami Class
 
-**Before (Google Sheets):**
+**Before (Google Sheets with MTSP):**
 ```python
 from integrations.services.income_limits import ami
 
@@ -70,14 +116,37 @@ income = ami.get_screen_ami(
 ```python
 from integrations.clients.hud_income_limits import hud_client
 
-income = hud_client.get_screen_ami(
+income = hud_client.get_screen_mtsp_ami(
     screen=screen,
     percent='80%',
     year='2025'
 )
 ```
 
-It's a **one-line import change**! The `limit_type` parameter is no longer needed.
+**Before (Google Sheets with Section 8 IL):**
+```python
+from integrations.services.income_limits import ami
+
+income = ami.get_screen_ami(
+    screen=screen,
+    percent='80%',
+    year='2025',
+    limit_type='il'  # Section 8
+)
+```
+
+**After (HUD API):**
+```python
+from integrations.clients.hud_income_limits import hud_client
+
+# Standard Section 8 IL - not yet implemented!
+# Contact team if you need this for compliance
+income = hud_client.get_screen_il_ami(
+    screen=screen,
+    percent='80%',  # Only 30%, 50%, 80% available
+    year='2025'
+)
+```
 
 ### Supported Parameters
 
@@ -123,18 +192,9 @@ The client raises `HudIncomeClientError` exceptions for various error conditions
 
 All errors are automatically logged to Sentry.
 
-## Benefits Over Google Sheets
-
-- **Real-time data**: Always up-to-date from official HUD source
-- **No manual updates**: No need to maintain Google Sheets
-- **Better reliability**: Official API with SLA
-- **Automatic updates**: HUD publishes new data annually
-- **Historical data**: Access any year's data
-- **Same interface**: Drop-in replacement with minimal code changes
-
 ## Advanced Usage (Optional)
 
-While `get_screen_ami()` is the primary method, the client also exposes lower-level methods if needed:
+While `get_screen_mtsp_ami()` is the primary method, the client also exposes lower-level methods if needed:
 
 ### Direct API Access
 
@@ -215,7 +275,7 @@ class TruaCalculator(ProgramCalculator):
     ami_percent = "80%"
 
     def income_eligible(self):
-        limit = hud_client.get_screen_ami(
+        limit = hud_client.get_screen_mtsp_ami(
             self.screen,
             self.ami_percent,
             self.program.year.period

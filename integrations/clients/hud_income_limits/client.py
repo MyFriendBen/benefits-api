@@ -57,16 +57,24 @@ class HudIncomeClient:
             self._headers = {"Authorization": f"Bearer {token}"}
         return self._headers
 
-    def get_screen_ami(
+    def get_screen_mtsp_ami(
         self,
         screen,
         percent: AmiPercent,
         year: Union[int, str],
     ) -> int:
         """
-        Get income limit for a Screen object.
+        Get MTSP (Multifamily Tax Subsidy Project) income limit for a Screen object.
 
-        Drop-in replacement for Ami.get_screen_ami()
+        Uses HUD's MTSP Income Limits endpoint which provides all percentage levels
+        (20%, 30%, 40%, 50%, 60%, 70%, 80%, 100% AMI) with hold-harmless provisions.
+
+        MTSP limits are designed for Low-Income Housing Tax Credit (LIHTC) projects
+        and never decrease year-over-year, making them suitable for general AMI
+        eligibility screening.
+
+        ⚠️ Note: MTSP values may differ from Standard Section 8 Income Limits,
+        especially for 30% and 50% AMI in years when the economy declines.
 
         Args:
             screen: Screen object with white_label.state_code, county, and household_size
@@ -77,7 +85,7 @@ class HudIncomeClient:
             Income limit in dollars
 
         Example:
-            >>> hud_client.get_screen_ami(screen, "80%", "2025")
+            >>> hud_client.get_screen_mtsp_ami(screen, "80%", "2025")
             89520
         """
         if screen.household_size < 1 or screen.household_size > 8:
@@ -126,6 +134,50 @@ class HudIncomeClient:
                 raise HudIncomeClientError(f"No {percent} AMI data for household size {screen.household_size}")
 
         return int(value)
+
+    def get_screen_il_ami(
+        self,
+        screen,
+        percent: Literal["30%", "50%", "80%"],
+        year: Union[int, str],
+    ) -> int:
+        """
+        Get Standard Section 8 Income Limit for a Screen object.
+
+        ⚠️ NOT YET IMPLEMENTED - This is a placeholder for future implementation.
+
+        Uses HUD's standard Income Limits endpoint used for Section 8, Public Housing,
+        and Housing Choice Vouchers. Only provides 30%, 50%, and 80% AMI levels.
+
+        Standard IL limits reflect current economic conditions and can decrease
+        year-over-year, unlike MTSP which has hold-harmless provisions.
+
+        Use this method when:
+        - Program explicitly requires "Section 8 eligibility"
+        - Federal HUD compliance or audits require standard IL calculations
+        - Program legislation references "HUD Section 8 Income Limits"
+
+        Args:
+            screen: Screen object with white_label.state_code, county, and household_size
+            percent: Income percentage ("30%", "50%", or "80%" only)
+            year: Year for income limits (e.g., 2025 or "2025")
+
+        Returns:
+            Income limit in dollars
+
+        Raises:
+            NotImplementedError: This endpoint is not yet implemented
+
+        Example:
+            >>> hud_client.get_screen_il_ami(screen, "80%", "2025")
+            NotImplementedError: Standard Section 8 IL endpoint not yet implemented
+        """
+        raise NotImplementedError(
+            "Standard Section 8 Income Limits endpoint (/il/data/) not yet implemented. "
+            "Currently only MTSP endpoint is supported via get_screen_mtsp_ami(). "
+            "For 80% AMI, MTSP values are typically sufficient for eligibility screening. "
+            "Contact the team if you require Section 8 compliance for federal reporting."
+        )
 
     def _get_entity_id(self, state_code: str, county_name: str, year: int) -> str:
         """Get FIPS entity ID for a county in any state."""
