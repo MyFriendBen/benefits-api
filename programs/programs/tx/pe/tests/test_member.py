@@ -9,11 +9,11 @@ These tests verify TX-specific calculator logic for member-level programs includ
 
 from django.test import TestCase
 
-from programs.programs.federal.pe.member import Wic, Ssi
+from programs.programs.federal.pe.member import Wic, Ssi, CommoditySupplementalFoodProgram
 from programs.programs.policyengine.calculators.dependencies import household
 from programs.programs.policyengine.calculators.dependencies.household import TxStateCodeDependency
 from programs.programs.tx.pe import tx_pe_calculators
-from programs.programs.tx.pe.member import TxWic, TxSsi
+from programs.programs.tx.pe.member import TxWic, TxSsi, TxCsfp
 
 
 class TestTxWic(TestCase):
@@ -213,3 +213,79 @@ class TestTxSsi(TestCase):
         """Test that TxSsi has the same pe_outputs as parent Ssi class."""
         # TxSsi should use the same outputs as parent
         self.assertEqual(TxSsi.pe_outputs, Ssi.pe_outputs)
+
+
+class TestTxCsfp(TestCase):
+    """Tests for TxCsfp calculator class."""
+
+    def test_exists_and_is_subclass_of_csfp(self):
+        """
+        Test that TxCsfp calculator class exists and is registered.
+
+        This verifies the calculator has been set up in the codebase.
+        """
+        # Verify TxCsfp is a subclass of CommoditySupplementalFoodProgram
+        self.assertTrue(issubclass(TxCsfp, CommoditySupplementalFoodProgram))
+
+        # Verify it has the expected properties
+        self.assertEqual(TxCsfp.pe_name, "commodity_supplemental_food_program")
+        self.assertIsNotNone(TxCsfp.pe_inputs)
+        self.assertGreater(len(TxCsfp.pe_inputs), 0)
+
+    def test_is_registered_in_tx_pe_calculators(self):
+        """Test that TX CSFP is registered in the calculators dictionary."""
+        # Verify tx_csfp is in the calculators dictionary
+        self.assertIn("tx_csfp", tx_pe_calculators)
+
+        # Verify it points to the correct class
+        self.assertEqual(tx_pe_calculators["tx_csfp"], TxCsfp)
+
+    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self):
+        """
+        Test that TxCsfp has all expected pe_inputs from parent and TX-specific.
+
+        TxCsfp should inherit all inputs from parent CommoditySupplementalFoodProgram class plus add
+        TX-specific dependencies like TxStateCodeDependency.
+        """
+        # TxCsfp should have all parent inputs plus TxStateCodeDependency
+        self.assertGreater(len(TxCsfp.pe_inputs), len(CommoditySupplementalFoodProgram.pe_inputs))
+
+        # Verify TxStateCodeDependency is in the list
+        self.assertIn(household.TxStateCodeDependency, TxCsfp.pe_inputs)
+
+        # Verify all parent inputs are present
+        for parent_input in CommoditySupplementalFoodProgram.pe_inputs:
+            self.assertIn(parent_input, TxCsfp.pe_inputs)
+
+    def test_pe_inputs_includes_tx_state_code_dependency(self):
+        """
+        Test that TxStateCodeDependency is properly added to TX CSFP inputs.
+
+        This is the key TX-specific dependency that sets state_code="TX" for
+        PolicyEngine calculations.
+        """
+        # Verify TxStateCodeDependency is in pe_inputs
+        self.assertIn(TxStateCodeDependency, TxCsfp.pe_inputs)
+
+        # Verify it's configured correctly
+        self.assertEqual(TxStateCodeDependency.state, "TX")
+        self.assertEqual(TxStateCodeDependency.field, "state_code")
+
+    def test_pe_inputs_includes_age_dependency(self):
+        """Test that TxCsfp inherits AgeDependency from parent CommoditySupplementalFoodProgram class."""
+        from programs.programs.policyengine.calculators.dependencies.member import AgeDependency
+
+        self.assertIn(AgeDependency, TxCsfp.pe_inputs)
+        self.assertEqual(AgeDependency.field, "age")
+
+    def test_pe_inputs_includes_school_meal_countable_income_dependency(self):
+        """Test that TxCsfp inherits SchoolMealCountableIncomeDependency from parent CommoditySupplementalFoodProgram class."""
+        from programs.programs.policyengine.calculators.dependencies.spm import SchoolMealCountableIncomeDependency
+
+        self.assertIn(SchoolMealCountableIncomeDependency, TxCsfp.pe_inputs)
+        self.assertEqual(SchoolMealCountableIncomeDependency.field, "school_meal_countable_income")
+
+    def test_has_same_pe_outputs_as_parent(self):
+        """Test that TxCsfp has the same pe_outputs as parent CommoditySupplementalFoodProgram class."""
+        # TxCsfp should use the same outputs as parent
+        self.assertEqual(TxCsfp.pe_outputs, CommoditySupplementalFoodProgram.pe_outputs)

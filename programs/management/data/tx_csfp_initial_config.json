@@ -1,0 +1,56 @@
+{
+    "white_label": {"code": "tx"},
+    "program_category": {"external_name": "tx_food", "name": "Food and Nutrition", "icon": "food"},
+    "program": {
+        "name_abbreviated": "tx_csfp",
+        "year": "2025",
+        "legal_status_required": [
+            "citizen",
+            "non_citizen",
+            "gc_5plus",
+            "gc_18plus_no5",
+            "gc_under18_no5",
+            "otherWithWorkPermission"
+        ],
+        "name": "Commodity Supplemental Food Program",
+        "description_short": "Food support for people 60 years of age or older.",
+        "description": "Food support for people 60 years of age or older. The Commodity Supplemental Food Program provides healthy food staples for individuals 60 years of age or older. You can get a monthly package of cereal, canned goods, and dairy products. You can pick up your package at a local food center.",
+        "learn_more_link": "https://squaremeals.org/Programs/Commodity-Supplemental-Food-Program",
+        "apply_button_link": "https://squaremeals.org/Public-Resources/Texas-Food-Banks",
+        "apply_button_description": "Find a Food Bank",
+        "estimated_application_time": "10 minutes",
+        "estimated_value": ""
+    },
+    "documents": [
+        {
+            "external_name": "tx_home",
+            "text": "Proof of home address (ex: lease, mortgage statement, utility bill)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "tx_id_proof",
+            "text": "Proof of identity (ex: driver's license, official state ID card)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "tx_earned_income",
+            "text": "Proof of earned income  (ex: pay stubs, tax returns, W-2, 1099) & employer information",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "tx_unearned_income",
+            "text": "Proof of unearned income (ex: child support, social security, unemployment)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "tx_us_status",
+            "text": "Proof of status in U.S. (ex: birth certificate, green card, work permit)",
+            "link_url": "",
+            "link_text": ""
+        }
+    ]
+}
