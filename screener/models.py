@@ -392,10 +392,10 @@ class Screen(models.Model):
             "fatc": self.has_fatc,
             "section_8": self.has_section_8,
             "cowap": self.has_cowap,
-            "co_energy_calculator_cowap": self.has_cowap,    # Already has "cowap" at line 392
+            "co_energy_calculator_cowap": self.has_cowap,
             "ncwap": self.has_ncwap,
             "ubp": self.has_ubp,
-            "co_energy_calculator_ubp": self.has_ubp, # Already has "ubp" at line 407
+            "co_energy_calculator_ubp": self.has_ubp,
             "medicare": self.has_medicare_hi,
             "chp": self.has_chp or self.has_chp_hi,
             "va": self.has_va,
