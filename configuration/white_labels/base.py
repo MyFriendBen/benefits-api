@@ -145,7 +145,7 @@ class ConfigurationData:
         "relatedOther": {"_label": "relationshipOptions.relatedOther", "_default_message": "Related in some other way"},
     }
 
-    # "How did you hear about us?" options on referral source step (customize for your state)
+    # "How did you hear about us?" options on referral source step
     referral_options = {
         "[REPLACE_ME]": {"_label": "", "_default_message": ""},
         "other": {"_label": "referralOptions.other", "_default_message": "Other"},
