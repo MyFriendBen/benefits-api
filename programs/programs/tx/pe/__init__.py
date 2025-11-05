@@ -7,6 +7,7 @@ from programs.programs.policyengine.calculators.base import PolicyEngineCalulato
 tx_member_calculators = {
     "tx_wic": member.TxWic,
     "tx_ssi": member.TxSsi,
+    "tx_csfp": member.TxCsfp,
 }
 
 tx_tax_unit_calculators = {

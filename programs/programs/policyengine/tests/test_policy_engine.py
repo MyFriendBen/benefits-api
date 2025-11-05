@@ -9,7 +9,7 @@ from django.test import TestCase
 from screener.models import Screen, HouseholdMember, WhiteLabel, Expense, IncomeStream
 from programs.programs.policyengine.policy_engine import pe_input
 from programs.programs.tx.pe.spm import TxSnap, TxLifeline
-from programs.programs.tx.pe.member import TxWic, TxSsi
+from programs.programs.tx.pe.member import TxWic, TxSsi, TxCsfp
 from programs.programs.tx.pe.tax import TxEitc, TxCtc
 from programs.programs.policyengine.calculators.constants import (
     MAIN_TAX_UNIT,
@@ -1682,6 +1682,182 @@ class TestPeInput(TestCase):
         self.assertIn("ssi_countable_resources", people[head_id])
         self.assertIn("is_disabled", people[head_id])
         self.assertIn("ssi", people[head_id])
+
+        # Verify TxSnap fields
+        self.assertIn("snap_assets", spm_unit)
+        self.assertIn("snap_earned_income", spm_unit)
+        self.assertIn("snap", spm_unit)
+
+        # Verify shared TX dependency
+        self.assertIn("state_code", household_unit)
+        state_code_periods = household_unit["state_code"]
+        if state_code_periods:
+            period_key = list(state_code_periods.keys())[0]
+            self.assertEqual(state_code_periods[period_key], "TX")
+
+        # Verify structure is valid
+        self.assertIsInstance(household["people"], dict)
+        self.assertIsInstance(household["spm_units"], dict)
+
+    def test_pe_input_includes_all_txcsfp_pe_input_fields(self):
+        """
+        Test that pe_input result includes all TxCsfp pe_inputs dependencies.
+
+        TxCsfp inherits from CommoditySupplementalFoodProgram and adds TxStateCodeDependency.
+        This test verifies all input fields from the dependency classes are present.
+        """
+        result = pe_input(self.screen, [TxCsfp])
+        household = result["household"]
+
+        # Get units for checking fields
+        spm_unit = household["spm_units"]["spm_unit"]
+        people = household["people"]
+        household_unit = household["households"]["household"]
+
+        # Check SPM-level dependencies from CommoditySupplementalFoodProgram.pe_inputs
+        self.assertIn(
+            "school_meal_countable_income",
+            spm_unit,
+            "Expected field 'school_meal_countable_income' from CSFP pe_inputs not found in spm_unit",
+        )
+
+        # Check member-level dependencies from CommoditySupplementalFoodProgram.pe_inputs
+        head_id = str(self.head.id)
+        self.assertIn(
+            "age",
+            people[head_id],
+            "Expected field 'age' from TxCsfp pe_inputs not found in member data",
+        )
+
+        # Check TX-specific dependency (added by TxCsfp)
+        self.assertIn(
+            "state_code",
+            household_unit,
+            "Expected field 'state_code' from TxStateCodeDependency not found in household",
+        )
+
+    def test_pe_input_includes_all_txcsfp_pe_output_fields(self):
+        """
+        Test that pe_input result includes all TxCsfp pe_outputs dependencies.
+
+        TxCsfp.pe_outputs = [dependency.member.CommoditySupplementalFoodProgram]
+        which adds the 'commodity_supplemental_food_program' field to each member.
+        """
+        result = pe_input(self.screen, [TxCsfp])
+        people = result["household"]["people"]
+
+        head_id = str(self.head.id)
+        spouse_id = str(self.spouse.id)
+        child_id = str(self.child.id)
+
+        # Check that the commodity_supplemental_food_program output field is present for each member
+        for member_id in [head_id, spouse_id, child_id]:
+            self.assertIn(
+                "commodity_supplemental_food_program",
+                people[member_id],
+                f"Expected output field 'commodity_supplemental_food_program' from TxCsfp pe_outputs not found for member {member_id}",
+            )
+
+            # Verify it has period structure
+            self.assertIsInstance(
+                people[member_id]["commodity_supplemental_food_program"],
+                dict,
+                f"commodity_supplemental_food_program field should be a dict with period keys for member {member_id}",
+            )
+
+    def test_pe_input_txcsfp_with_senior_member(self):
+        """
+        Test that TxCsfp correctly handles senior members (60+) in the household.
+
+        Seniors (age >= 60) are the primary eligible group for CSFP.
+        """
+        # Create a senior household member
+        senior = HouseholdMember.objects.create(
+            screen=self.screen,
+            relationship="spouse",
+            age=65,
+            disabled=False,
+            student=False,
+        )
+
+        result = pe_input(self.screen, [TxCsfp])
+        people = result["household"]["people"]
+        senior_id = str(senior.id)
+
+        # Verify senior has all required CSFP fields
+        self.assertIn("age", people[senior_id])
+        self.assertIn("commodity_supplemental_food_program", people[senior_id])
+
+        # Check age value
+        if people[senior_id]["age"]:
+            period_key = list(people[senior_id]["age"].keys())[0]
+            self.assertEqual(
+                people[senior_id]["age"][period_key],
+                65,
+                "Senior age should be 65",
+            )
+
+    def test_pe_input_txcsfp_tx_specific_dependency_values(self):
+        """
+        Test that TX-specific dependencies have correct values for CSFP.
+
+        TxCsfp adds TxStateCodeDependency which should set state_code="TX".
+        """
+        result = pe_input(self.screen, [TxCsfp])
+        household_unit = result["household"]["households"]["household"]
+
+        # Verify state_code is set to "TX"
+        self.assertIn("state_code", household_unit)
+        if household_unit["state_code"]:
+            period_key = list(household_unit["state_code"].keys())[0]
+            self.assertEqual(
+                household_unit["state_code"][period_key],
+                "TX",
+                "TxStateCodeDependency should set state_code='TX' for CSFP",
+            )
+
+    def test_pe_input_txcsfp_school_meal_countable_income(self):
+        """
+        Test that TxCsfp includes school_meal_countable_income dependency.
+
+        This is inherited from the parent CommoditySupplementalFoodProgram class and should be present in spm_unit.
+        """
+        result = pe_input(self.screen, [TxCsfp])
+        spm_unit = result["household"]["spm_units"]["spm_unit"]
+
+        # Verify field exists
+        self.assertIn(
+            "school_meal_countable_income",
+            spm_unit,
+            "school_meal_countable_income should be present in spm_unit for CSFP",
+        )
+
+        # Verify it has a period structure
+        self.assertIsInstance(
+            spm_unit["school_meal_countable_income"],
+            dict,
+            "school_meal_countable_income should be a dict with period keys",
+        )
+
+    def test_pe_input_with_txcsfp_and_txsnap_combined(self):
+        """
+        Test that pe_input handles both TxCsfp and TxSnap calculators together.
+
+        This verifies that dependencies from both calculators are properly merged,
+        which is important since CSFP recipients may also qualify for SNAP.
+        """
+        result = pe_input(self.screen, [TxCsfp, TxSnap])
+        household = result["household"]
+
+        spm_unit = household["spm_units"]["spm_unit"]
+        people = household["people"]
+        household_unit = household["households"]["household"]
+        head_id = str(self.head.id)
+
+        # Verify TxCsfp fields
+        self.assertIn("school_meal_countable_income", spm_unit)
+        self.assertIn("age", people[head_id])
+        self.assertIn("commodity_supplemental_food_program", people[head_id])
 
         # Verify TxSnap fields
         self.assertIn("snap_assets", spm_unit)

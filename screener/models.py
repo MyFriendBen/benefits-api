@@ -375,6 +375,7 @@ class Screen(models.Model):
             "ccb": self.has_ccb,
             "ssi": has_ssi_or_ssi_income,
             "tx_ssi": has_ssi_or_ssi_income,
+            "tx_csfp": self.has_csfp,
             "andcs": self.has_andcs,
             "chs": self.has_chs,
             "cpcr": self.has_cpcr,

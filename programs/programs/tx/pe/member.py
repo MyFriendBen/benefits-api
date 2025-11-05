@@ -1,4 +1,4 @@
-from programs.programs.federal.pe.member import Wic, Ssi
+from programs.programs.federal.pe.member import Wic, Ssi, CommoditySupplementalFoodProgram
 import programs.programs.policyengine.calculators.dependencies as dependency
 from screener.models import HouseholdMember
 
@@ -30,5 +30,17 @@ class TxSsi(Ssi):
 
     pe_inputs = [
         *Ssi.pe_inputs,
+        dependency.household.TxStateCodeDependency,
+    ]
+
+
+class TxCsfp(CommoditySupplementalFoodProgram):
+    """
+    Texas Commodity Supplemental Food Program (CSFP) calculator that uses PolicyEngine's calculations.
+    Extends the federal CSFP calculator with Texas state code dependency.
+    """
+
+    pe_inputs = [
+        *CommoditySupplementalFoodProgram.pe_inputs,
         dependency.household.TxStateCodeDependency,
     ]
