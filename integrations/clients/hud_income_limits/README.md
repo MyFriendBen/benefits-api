@@ -42,7 +42,7 @@ HUD_API_TOKEN=your_token_here
 The main method you'll use is `get_screen_ami()`, which matches the interface of the old `Ami` class:
 
 ```python
-from integrations.services.hud_income_limits import hud_client
+from integrations.clients.hud_income_limits import hud_client
 
 # Drop-in replacement for ami.get_screen_ami()
 income_limit = hud_client.get_screen_ami(
@@ -68,7 +68,7 @@ income = ami.get_screen_ami(
 
 **After (HUD API):**
 ```python
-from integrations.services.hud_income_limits import hud_client
+from integrations.clients.hud_income_limits import hud_client
 
 income = hud_client.get_screen_ami(
     screen=screen,
@@ -209,7 +209,7 @@ class TruaCalculator(ProgramCalculator):
 **After:**
 ```python
 # programs/programs/co/trua/calculator.py
-from integrations.services.hud_income_limits import hud_client
+from integrations.clients.hud_income_limits import hud_client
 
 class TruaCalculator(ProgramCalculator):
     ami_percent = "80%"

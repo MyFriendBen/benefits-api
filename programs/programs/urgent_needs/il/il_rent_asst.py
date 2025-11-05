@@ -1,9 +1,10 @@
+from typing import Literal
 from ..base import UrgentNeedFunction
-from integrations.services.hud_income_limits import hud_client
+from integrations.clients.hud_income_limits import hud_client
 
 
 class IlRenterAssistance(UrgentNeedFunction):
-    ami_percent = "80%"
+    ami_percent: Literal["80%"] = "80%"
     dependencies = ["income_amount", "income_frequency", "household_size", "county"]
 
     def eligible(self) -> bool:
@@ -12,7 +13,7 @@ class IlRenterAssistance(UrgentNeedFunction):
         """
 
         income_limit = hud_client.get_screen_ami(
-            self.screen, self.ami_percent, self.urgent_need.year.period, limit_type="il"
+            self.screen, self.ami_percent, self.urgent_need.year.period if self.urgent_need.year else 2025
         )
 
         income = self.screen.calc_gross_income("yearly", ["all"])
