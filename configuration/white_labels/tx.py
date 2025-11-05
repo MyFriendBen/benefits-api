@@ -3055,6 +3055,24 @@ class TxConfigurationData(ConfigurationData):
             },
             "category_name": {"_label": "taxCredits", "_default_message": "Tax Credits"},
         },
+        "healthCare": {
+            "benefits": {
+                "aca": {
+                    "name": {
+                        "_label": "healthCareBenefits.aca",
+                        "_default_message": "ACA (Affordable Care Act) Premium Tax Credit: ",
+                    },
+                    "description": {
+                        "_label": "taxCreditBenefits.aca_desc",
+                        "_default_message": "Health insurance marketplace and premium tax credit",
+                    },
+                },
+            },
+            "category_name": {
+                "_label": "healthCare",
+                "_default_message": "Health Care",
+            },
+        },
     }
 
     consent_to_contact = {

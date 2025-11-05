@@ -10,7 +10,7 @@ from screener.models import Screen, HouseholdMember, WhiteLabel, Expense, Income
 from programs.programs.policyengine.policy_engine import pe_input
 from programs.programs.tx.pe.spm import TxSnap, TxLifeline
 from programs.programs.tx.pe.member import TxWic, TxSsi, TxCsfp
-from programs.programs.tx.pe.tax import TxEitc, TxCtc
+from programs.programs.tx.pe.tax import TxEitc, TxCtc, TxAca
 from programs.programs.policyengine.calculators.constants import (
     MAIN_TAX_UNIT,
     SECONDARY_TAX_UNIT,
@@ -1736,6 +1736,104 @@ class TestPeInput(TestCase):
             "Expected field 'state_code' from TxStateCodeDependency not found in household",
         )
 
+    def test_pe_input_includes_all_txaca_pe_input_fields(self):
+        """
+        Test that pe_input result includes all TxAca pe_inputs dependencies.
+
+        TxAca inherits from Aca which includes Medicaid inputs plus tax unit and other dependencies.
+        This test verifies all input fields from the dependency classes are present.
+        """
+        result = pe_input(self.screen, [TxAca])
+        household = result["household"]
+
+        # Get units for checking fields
+        tax_units = household["tax_units"]
+        people = household["people"]
+        household_unit = household["households"]["household"]
+
+        # Check tax unit exists
+        self.assertIn(MAIN_TAX_UNIT, tax_units)
+
+        # Check member-level dependencies
+        head_id = str(self.head.id)
+        spouse_id = str(self.spouse.id)
+        child_id = str(self.child.id)
+
+        # Age dependency (from Medicaid.pe_inputs and direct in Aca.pe_inputs)
+        self.assertIn(
+            "age",
+            people[head_id],
+            "Expected field 'age' from AgeDependency not found in member data",
+        )
+
+        # Pregnancy dependency (from Medicaid.pe_inputs)
+        self.assertIn(
+            "is_pregnant",
+            people[head_id],
+            "Expected field 'is_pregnant' from PregnancyDependency not found in member data",
+        )
+
+        # Disability dependency (from both Medicaid.pe_inputs and direct in Aca.pe_inputs)
+        self.assertIn(
+            "is_disabled",
+            people[head_id],
+            "Expected field 'is_disabled' from IsDisabledDependency not found in member data",
+        )
+
+        # SSI countable resources (from Medicaid.pe_inputs)
+        self.assertIn(
+            "ssi_countable_resources",
+            people[head_id],
+            "Expected field 'ssi_countable_resources' from SsiCountableResourcesDependency not found",
+        )
+
+        # Tax unit dependencies (from Aca.pe_inputs)
+        self.assertIn(
+            "is_tax_unit_head",
+            people[head_id],
+            "Expected field 'is_tax_unit_head' from TaxUnitHeadDependency not found in head data",
+        )
+        self.assertIn(
+            "is_tax_unit_spouse",
+            people[spouse_id],
+            "Expected field 'is_tax_unit_spouse' from TaxUnitSpouseDependency not found in spouse data",
+        )
+        self.assertIn(
+            "is_tax_unit_dependent",
+            people[child_id],
+            "Expected field 'is_tax_unit_dependent' from TaxUnitDependentDependency not found in child data",
+        )
+
+        # Income dependencies from irs_gross_income tuple
+        income_fields_to_check = [
+            "employment_income",
+            "self_employment_income",
+            "rental_income",
+            "taxable_pension_income",
+            "social_security",
+        ]
+
+        for field in income_fields_to_check:
+            self.assertIn(
+                field,
+                people[head_id],
+                f"Expected income field '{field}' from irs_gross_income not found in member data",
+            )
+
+        # Zip code dependency (from Aca.pe_inputs via ZipCodeDependency)
+        self.assertIn(
+            "zip_code",
+            household_unit,
+            "Expected field 'zip_code' from ZipCodeDependency not found in household",
+        )
+
+        # Check TX-specific dependency (added by TxAca)
+        self.assertIn(
+            "state_code",
+            household_unit,
+            "Expected field 'state_code' from TxStateCodeDependency not found in household",
+        )
+
     def test_pe_input_includes_all_txcsfp_pe_output_fields(self):
         """
         Test that pe_input result includes all TxCsfp pe_outputs dependencies.
@@ -1764,6 +1862,154 @@ class TestPeInput(TestCase):
                 dict,
                 f"commodity_supplemental_food_program field should be a dict with period keys for member {member_id}",
             )
+
+    def test_pe_input_includes_txaca_pe_output_field(self):
+        """
+        Test that pe_input result includes TxAca pe_outputs dependency.
+
+        TxAca.pe_outputs = [dependency.tax.Aca] which adds the 'aca_ptc' field
+        to the tax unit for calculating the ACA Premium Tax Credit.
+        """
+        result = pe_input(self.screen, [TxAca])
+        household = result["household"]
+        tax_units = household["tax_units"]
+
+        # Check that aca_ptc output field exists in main tax unit
+        self.assertIn(MAIN_TAX_UNIT, tax_units)
+        self.assertIn(
+            "aca_ptc",
+            tax_units[MAIN_TAX_UNIT],
+            "Expected output field 'aca_ptc' from TxAca.pe_outputs not found in tax unit",
+        )
+
+    def test_pe_input_txaca_income_values_are_correct(self):
+        """
+        Test that income values are correctly populated for TxAca calculation.
+
+        This verifies that all income streams are properly mapped to PolicyEngine
+        income fields needed for ACA eligibility and subsidy calculations.
+        """
+        result = pe_input(self.screen, [TxAca])
+        people = result["household"]["people"]
+
+        head_id = str(self.head.id)
+        spouse_id = str(self.spouse.id)
+
+        # Get the period key from one of the fields
+        if "employment_income" in people[head_id] and people[head_id]["employment_income"]:
+            period_key = list(people[head_id]["employment_income"].keys())[0]
+
+            # Head income: $30k wages, $5k self-employment, $12k rental
+            self.assertEqual(people[head_id]["employment_income"][period_key], 30000)
+            self.assertEqual(people[head_id]["self_employment_income"][period_key], 5000)
+            self.assertEqual(people[head_id]["rental_income"][period_key], 12000)
+
+            # Spouse income: $8k pension, $6k social security
+            self.assertEqual(people[spouse_id]["taxable_pension_income"][period_key], 8000)
+            self.assertEqual(people[spouse_id]["social_security"][period_key], 6000)
+
+    def test_pe_input_txaca_tax_unit_relationships_are_correct(self):
+        """
+        Test that tax unit relationships are correctly set for TxAca.
+
+        ACA Premium Tax Credit eligibility depends on tax filing unit, so
+        proper head/spouse/dependent relationships are critical.
+        """
+        result = pe_input(self.screen, [TxAca])
+        people = result["household"]["people"]
+
+        head_id = str(self.head.id)
+        spouse_id = str(self.spouse.id)
+        child_id = str(self.child.id)
+
+        # Check if tax unit relationship fields are populated
+        if "is_tax_unit_head" in people[head_id] and people[head_id]["is_tax_unit_head"]:
+            period_key = list(people[head_id]["is_tax_unit_head"].keys())[0]
+            # Head should be marked as tax unit head
+            self.assertTrue(
+                people[head_id]["is_tax_unit_head"][period_key],
+                "Head should be marked as is_tax_unit_head",
+            )
+
+        if "is_tax_unit_spouse" in people[spouse_id] and people[spouse_id]["is_tax_unit_spouse"]:
+            period_key = list(people[spouse_id]["is_tax_unit_spouse"].keys())[0]
+            # Spouse should be marked as tax unit spouse
+            self.assertTrue(
+                people[spouse_id]["is_tax_unit_spouse"][period_key],
+                "Spouse should be marked as is_tax_unit_spouse",
+            )
+
+        if "is_tax_unit_dependent" in people[child_id] and people[child_id]["is_tax_unit_dependent"]:
+            period_key = list(people[child_id]["is_tax_unit_dependent"].keys())[0]
+            # Child should be marked as tax unit dependent
+            self.assertTrue(
+                people[child_id]["is_tax_unit_dependent"][period_key],
+                "Child should be marked as is_tax_unit_dependent",
+            )
+
+    def test_pe_input_txaca_disability_and_age_values(self):
+        """
+        Test that age and disability status are correctly populated for TxAca.
+
+        ACA calculations need accurate age and disability data for determining
+        premium amounts and eligibility.
+        """
+        result = pe_input(self.screen, [TxAca])
+        people = result["household"]["people"]
+
+        head_id = str(self.head.id)
+        spouse_id = str(self.spouse.id)
+        child_id = str(self.child.id)
+
+        # Verify ages are populated
+        if "age" in people[head_id] and people[head_id]["age"]:
+            period_key = list(people[head_id]["age"].keys())[0]
+            self.assertEqual(people[head_id]["age"][period_key], 35)
+            self.assertEqual(people[spouse_id]["age"][period_key], 32)
+            self.assertEqual(people[child_id]["age"][period_key], 8)
+
+        # Verify disability status
+        if "is_disabled" in people[head_id] and people[head_id]["is_disabled"]:
+            period_key = list(people[head_id]["is_disabled"].keys())[0]
+            self.assertTrue(
+                people[head_id]["is_disabled"][period_key],
+                "Head should be marked as disabled",
+            )
+            self.assertFalse(
+                people[spouse_id]["is_disabled"][period_key],
+                "Spouse should not be marked as disabled",
+            )
+
+    def test_pe_input_txaca_zipcode_is_populated(self):
+        """
+        Test that zipcode is correctly populated for TxAca calculations.
+
+        ACA premium amounts vary by location, so zipcode is essential
+        for accurate subsidy calculations.
+        """
+        result = pe_input(self.screen, [TxAca])
+        household_unit = result["household"]["households"]["household"]
+
+        # Verify zipcode from screen is in the household unit
+        self.assertIn("zip_code", household_unit)
+        if household_unit["zip_code"]:
+            period_key = list(household_unit["zip_code"].keys())[0]
+            self.assertEqual(household_unit["zip_code"][period_key], "78701")
+
+    def test_pe_input_txaca_tx_specific_dependency_values(self):
+        """
+        Test that TX-specific state_code is set correctly for TxAca.
+
+        This is critical for PolicyEngine to use Texas-specific rules.
+        """
+        result = pe_input(self.screen, [TxAca])
+        household_unit = result["household"]["households"]["household"]
+
+        # Verify TX state code
+        self.assertIn("state_code", household_unit)
+        if household_unit["state_code"]:
+            period_key = list(household_unit["state_code"].keys())[0]
+            self.assertEqual(household_unit["state_code"][period_key], "TX")
 
     def test_pe_input_txcsfp_with_senior_member(self):
         """
@@ -1874,3 +2120,38 @@ class TestPeInput(TestCase):
         # Verify structure is valid
         self.assertIsInstance(household["people"], dict)
         self.assertIsInstance(household["spm_units"], dict)
+
+    def test_pe_input_with_txaca_and_txsnap_combined(self):
+        """
+        Test that pe_input handles both TxAca and TxSnap calculators together.
+
+        This verifies that dependencies from both calculators are properly merged.
+        """
+        result = pe_input(self.screen, [TxAca, TxSnap])
+        household = result["household"]
+
+        spm_unit = household["spm_units"]["spm_unit"]
+        people = household["people"]
+        tax_units = household["tax_units"]
+        household_unit = household["households"]["household"]
+        head_id = str(self.head.id)
+
+        # Verify TxAca fields
+        self.assertIn(MAIN_TAX_UNIT, tax_units)
+        self.assertIn("aca_ptc", tax_units[MAIN_TAX_UNIT])
+        self.assertIn("employment_income", people[head_id])
+        self.assertIn("is_tax_unit_spouse", people[str(self.spouse.id)])
+        self.assertIn("zip_code", household_unit)
+
+        # Verify TxSnap fields
+        self.assertIn("snap_assets", spm_unit)
+        self.assertIn("snap_earned_income", spm_unit)
+        self.assertIn("snap", spm_unit)
+
+        # Verify shared TX dependency
+        self.assertIn("state_code", household_unit)
+
+        # Verify structure is valid
+        self.assertIsInstance(household["people"], dict)
+        self.assertIsInstance(household["spm_units"], dict)
+        self.assertIsInstance(household["tax_units"], dict)

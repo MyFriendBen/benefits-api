@@ -405,6 +405,7 @@ class Screen(models.Model):
             "va": self.has_va,
             "nc_aca": self.has_aca,
             "ma_aca": self.has_aca,
+            "tx_aca": self.has_aca,
             "ma_mbta": self.has_ma_mbta,
             "ma_snap": self.has_snap,
             "ma_ccdf": self.has_ccdf,
