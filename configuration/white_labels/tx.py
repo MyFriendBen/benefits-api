@@ -3004,6 +3004,16 @@ class TxConfigurationData(ConfigurationData):
                         "_default_message": "Federal tax credit - earned income",
                     },
                 },
+                "ctc": {
+                    "name": {
+                        "_label": "taxCreditBenefits.ctc",
+                        "_default_message": "Child Tax Credit (CTC): ",
+                    },
+                    "description": {
+                        "_label": "taxCreditBenefits.ctc_desc",
+                        "_default_message": "Federal tax credit",
+                    },
+                },
             },
             "category_name": {"_label": "taxCredits", "_default_message": "Tax Credits"},
         },
