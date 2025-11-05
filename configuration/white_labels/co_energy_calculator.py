@@ -234,14 +234,20 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
     condition_options = {
         "you": {
             "survivingSpouse": {
-                "icon": {"_icon": "SurvivingSpouse", "_classname": "option-card-lucide-icon"},
+                "icon": {
+                    "_icon": "SurvivingSpouse",
+                    "_classname": "option-card-lucide-icon",
+                },
                 "text": {
                     "_label": "eCConditionOptions.survivingSpouse",
                     "_default_message": "Widowed",
                 },
             },
             "disabled": {
-                "icon": {"_icon": "Wheelchair", "_classname": "option-card-lucide-icon"},
+                "icon": {
+                    "_icon": "Wheelchair",
+                    "_classname": "option-card-lucide-icon",
+                },
                 "text": {
                     "_label": "eCConditionOptions.disabledYou",
                     "_default_message": "Currently have any disabilities that make you unable to work now or in the future",
@@ -257,14 +263,20 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
         },
         "them": {
             "survivingSpouse": {
-                "icon": {"_icon": "SurvivingSpouse", "_classname": "option-card-lucide-icon"},
+                "icon": {
+                    "_icon": "SurvivingSpouse",
+                    "_classname": "option-card-lucide-icon",
+                },
                 "text": {
                     "_label": "eCConditionOptions.survivingSpouse",
                     "_default_message": "Widowed",
                 },
             },
             "disabled": {
-                "icon": {"_icon": "Wheelchair", "_classname": "option-card-lucide-icon"},
+                "icon": {
+                    "_icon": "Wheelchair",
+                    "_classname": "option-card-lucide-icon",
+                },
                 "text": {
                     "_label": "eCConditionOptions.disabledThem",
                     "_default_message": "Currently have any disabilities that make them unable to work now or in the future",
@@ -2179,6 +2191,16 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
                     "description": {
                         "_label": "housingAndUtilities.project_cope_desc",
                         "_default_message": "Emergency help with utility bills (Colorado Springs Utilities)",
+                    },
+                },
+                "cesn_heap": {
+                    "name": {
+                        "_label": "housingAndUtilities.cesn_heap",
+                        "_default_message": "Home Efficiency Assistance Program (HEAP): ",
+                    },
+                    "description": {
+                        "_label": "housingAndUtilities.cesn_heap_desc",
+                        "_default_message": "Home energy efficiency upgrades (Colorado Springs Utilities)",
                     },
                 },
             },

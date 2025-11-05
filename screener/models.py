@@ -345,14 +345,17 @@ class Screen(models.Model):
             "wic": self.has_wic,
             "co_wic": self.has_wic,
             "nc_wic": self.has_wic,
+            "tx_wic": self.has_wic,
             "snap": self.has_snap,
             "sunbucks": self.has_sunbucks,
             "co_snap": self.has_snap,
             "nc_snap": self.has_snap,
             "il_snap": self.has_snap,
+            "tx_snap": self.has_snap,
             "lifeline": self.has_lifeline,
             "acp": self.has_acp,
             "eitc": self.has_eitc,
+            "tx_eitc": self.has_eitc,
             "coeitc": self.has_coeitc,
             "il_eitc": self.has_il_eitc,
             "nslp": self.has_nslp,
@@ -361,7 +364,7 @@ class Screen(models.Model):
             "il_transit_reduced_fare": self.has_il_transit_reduced_fare,
             "il_bap": self.has_il_bap,
             "project_cope": self.has_project_cope,
-            "co_energy_calculator_cope": self.has_project_cope,
+            "cesn_heap": self.has_cesn_heap,
             "rtdlive": self.has_rtdlive,
             "cccap": self.has_cccap,
             "mydenver": self.has_mydenver,
@@ -868,7 +871,10 @@ class EnergyCalculatorScreen(models.Model):
 
 class EnergyCalculatorMember(models.Model):
     household_member = models.OneToOneField(
-        HouseholdMember, related_name="energy_calculator", null=False, on_delete=models.CASCADE
+        HouseholdMember,
+        related_name="energy_calculator",
+        null=False,
+        on_delete=models.CASCADE,
     )
     surviving_spouse = models.BooleanField(default=False, null=True, blank=True)
     receives_ssi = models.BooleanField(default=False, null=True, blank=True)
