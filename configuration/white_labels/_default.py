@@ -13,7 +13,7 @@ Purpose:
     - Excluded from white label selection lists in admin interfaces
 
 Note: This is NOT a template for creating new white labels.
-For creating a new white label, see: programs/templates/new_white_label/config.py
+For creating a new white label, see: benefits-api/configuration/white_labels/_template.py
 """
 
 
