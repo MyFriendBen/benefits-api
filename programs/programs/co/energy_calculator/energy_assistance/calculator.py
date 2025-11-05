@@ -15,6 +15,10 @@ class EnergyCalculatorEnergyAssistance(EnergyAssistance):
 
     def _has_expense(self):
         """
-        Check if household has any expenses
+        Check if household has any expenses.
+
+        Returns True by default for CESN (energy calculator) since we don't
+        collect expense information in this flow, unlike the standard Colorado
+        screener which validates rent/mortgage expenses.
         """
         return True
