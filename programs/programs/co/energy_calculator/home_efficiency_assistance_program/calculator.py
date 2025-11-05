@@ -38,9 +38,6 @@ class EnergyCalculatorHomeEfficiencyAssistance(ProgramCalculator):
     smi_percent = 0.6
 
     def household_eligible(self, e: Eligibility):
-        # user doesn't already have cesn_heap
-        e.condition(not self.screen.has_benefit("cesn_heap"))
-
         # check if has any of the presumptive eligibility programs
         presumed_eligible = any(self.screen.has_benefit(program) for program in self.presumptive_eligibility)
 
