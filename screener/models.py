@@ -120,6 +120,7 @@ class Screen(models.Model):
     has_no_hi = models.BooleanField(default=None, blank=True, null=True)
     has_va = models.BooleanField(default=None, blank=True, null=True)
     has_project_cope = models.BooleanField(default=False, blank=True, null=True)
+    has_cesn_heap = models.BooleanField(default=False, blank=True, null=True)
     needs_food = models.BooleanField(default=False, blank=True, null=True)
     needs_baby_supplies = models.BooleanField(default=False, blank=True, null=True)
     needs_housing_help = models.BooleanField(default=False, blank=True, null=True)
@@ -360,6 +361,7 @@ class Screen(models.Model):
             "il_transit_reduced_fare": self.has_il_transit_reduced_fare,
             "il_bap": self.has_il_bap,
             "project_cope": self.has_project_cope,
+            "co_energy_calculator_cope": self.has_project_cope, 
             "rtdlive": self.has_rtdlive,
             "cccap": self.has_cccap,
             "mydenver": self.has_mydenver,
@@ -368,11 +370,14 @@ class Screen(models.Model):
             "andcs": self.has_andcs,
             "chs": self.has_chs,
             "cpcr": self.has_cpcr,
+            "co_energy_calculator_cpcr": self.has_cpcr, 
             "cdhcs": self.has_cdhcs,
             "dpp": self.has_dpp,
             "ede": self.has_ede,
             "erc": self.has_erc,
             "leap": self.has_leap,
+            "co_energy_calculator_leap": self.has_leap,
+            "co_energy_calculator_heap": self.has_cesn_heap,
             "il_liheap": self.has_il_liheap,
             "nc_lieap": self.has_nc_lieap,
             "oap": self.has_oap,
@@ -387,8 +392,10 @@ class Screen(models.Model):
             "fatc": self.has_fatc,
             "section_8": self.has_section_8,
             "cowap": self.has_cowap,
+            "co_energy_calculator_cowap": self.has_cowap,    # Already has "cowap" at line 392
             "ncwap": self.has_ncwap,
             "ubp": self.has_ubp,
+            "co_energy_calculator_ubp": self.has_ubp, # Already has "ubp" at line 407
             "medicare": self.has_medicare_hi,
             "chp": self.has_chp or self.has_chp_hi,
             "va": self.has_va,
