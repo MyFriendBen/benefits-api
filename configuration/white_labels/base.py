@@ -1,5 +1,16 @@
 from screener.models import WhiteLabel
 
+"""
+Base Configuration for MyFriendBen White Labels
+
+This class provides default configuration values that all white labels inherit.
+When creating a new white label, override only the fields you need to customize.
+
+For detailed documentation on how to configure each section, see:
+    configuration/white_labels/_template.py
+    configuration/white_labels/README.md
+"""
+
 
 class ConfigurationData:
     is_default = False
@@ -8,13 +19,16 @@ class ConfigurationData:
     def get_white_label(self) -> WhiteLabel:
         raise NotImplemented()
 
+    # State name for display (override in your white label config)
     state = {"name": "[REPLACE_ME]"}
 
-    # Banner messages configuration
+    # Banner messages displayed at top of screener (optional)
     banner_messages = []
 
+    # Link to public charge information for your state
     public_charge_rule = {"link": ""}
 
+    # Resources shown at bottom of results page (e.g., 2-1-1, state help lines)
     more_help_options = {
         "moreHelpOptions": [
             {
@@ -25,6 +39,7 @@ class ConfigurationData:
         ]
     }
 
+    # Urgent needs shown in "acuteHHConditions" step (customize or set to {} if not used)
     acute_condition_options = {
         "food": {
             "icon": {"_icon": "Food", "_classname": "option-card-icon"},
@@ -91,6 +106,7 @@ class ConfigurationData:
         },
     }
 
+    # Consent options on sign-up page (rarely needs customization)
     sign_up_options = {
         "sendUpdates": {
             "_label": "signUpOptions.sendUpdates",
@@ -102,6 +118,7 @@ class ConfigurationData:
         },
     }
 
+    # Household relationship options (rarely needs customization)
     relationship_options = {
         "child": {"_label": "relationshipOptions.child", "_default_message": "Child"},
         "fosterChild": {
@@ -128,6 +145,7 @@ class ConfigurationData:
         "relatedOther": {"_label": "relationshipOptions.relatedOther", "_default_message": "Related in some other way"},
     }
 
+    # "How did you hear about us?" options on referral source step (customize for your state)
     referral_options = {
         "[REPLACE_ME]": {"_label": "", "_default_message": ""},
         "other": {"_label": "referralOptions.other", "_default_message": "Other"},
@@ -137,6 +155,7 @@ class ConfigurationData:
         },
     }
 
+    # Languages available for translation (add/remove as needed for your state)
     language_options = {
         "en-us": "English",
         "es": "Español",
@@ -157,6 +176,7 @@ class ConfigurationData:
         "ht": "Kreyòl",
     }
 
+    # Types of income to collect (customize for state-specific income types)
     income_options = {
         "wages": {"_label": "incomeOptions.wages", "_default_message": "Wages, salaries, tips"},
         "selfEmployment": {
@@ -207,6 +227,7 @@ class ConfigurationData:
         "boarder": {"_label": "incomeOptions.boarder", "_default_message": "Boarder or Lodger"},
     }
 
+    # Health insurance options (customize for state-specific programs)
     health_insurance_options = {
         "you": {
             "none": {
@@ -340,6 +361,7 @@ class ConfigurationData:
         },
     }
 
+    # Income frequency options (rarely needs customization)
     frequency_options = {
         "weekly": {"_label": "frequencyOptions.weekly", "_default_message": "every week"},
         "biweekly": {"_label": "frequencyOptions.biweekly", "_default_message": "every 2 weeks"},
@@ -348,6 +370,7 @@ class ConfigurationData:
         "hourly": {"_label": "frequencyOptions.hourly", "_default_message": "hourly"},
     }
 
+    # Types of expenses to collect (customize for state-specific needs)
     expense_options = {
         "rent": {"_label": "expenseOptions.rent", "_default_message": "Rent"},
         "telephone": {"_label": "expenseOptions.telephone", "_default_message": "Telephone"},
@@ -368,6 +391,7 @@ class ConfigurationData:
         "dependentCare": {"_label": "expenseOptions.dependentCare", "_default_message": "Dependent Care"},
     }
 
+    # Household member condition options (rarely needs customization)
     condition_options = {
         "you": {
             "student": {
@@ -445,8 +469,18 @@ class ConfigurationData:
         },
     }
 
+    # Mapping of zip codes to counties for your state (required)
+    # Example: {"80202": {"Denver County": "Denver County"}}
     counties_by_zipcode = {}
 
+    # ==================================================================================
+    # CATEGORY BENEFITS - Step 10: "Do you already have any benefits?"
+    # ==================================================================================
+    # Override this in your white label config with benefits available in your state.
+    # For detailed documentation on structure and naming conventions, see:
+    #     configuration/white_labels/_template.py (search for "category_benefits")
+    #     configuration/white_labels/README.md
+    # ==================================================================================
     category_benefits = {
         "[REPLACE_ME]": {
             "benefits": {
@@ -465,16 +499,20 @@ class ConfigurationData:
         },
     }
 
+    # Links to consent/terms pages for each language
     consent_to_contact = {
         "en-us": "",
         "[REPLACE_ME]": "",
     }
 
+    # Links to privacy policy for each language
     privacy_policy = {
         "en-us": "",
         "[REPLACE_ME]": "",
     }
 
+    # Configuration for branding, logos, steps, and feature flags
+    # See template for detailed documentation on each field
     referrer_data = {
         "theme": {"default": "default", "[REPLACE_ME]": ""},
         "logoSource": {
@@ -521,15 +559,18 @@ class ConfigurationData:
         "defaultLanguage": {"default": "en-us", "[REPLACE_ME]": ""},
     }
 
+    # Footer contact information
     footer_data = {
         "email": "",
     }
 
+    # Links for users to provide feedback
     feedback_links = {
         "email": "",
         "survey": "",
     }
 
+    # Text for "Current Benefits" page (rarely needs customization)
     current_benefits = {
         "title": {
             "_label": "currentBenefits.pg-header",
@@ -542,4 +583,6 @@ class ConfigurationData:
         },
     }
 
-    override_text = {"[REPLACE_ME]": {"_label": "[REPLACE_ME]", "_default_message": "[REPLACE_ME]"}}
+    # Custom translation overrides for specific text strings (optional)
+    # should follow format {"[REPLACE_ME]": {"_label": "[REPLACE_ME]", "_default_message": "[REPLACE_ME]"}}
+    override_text = {}

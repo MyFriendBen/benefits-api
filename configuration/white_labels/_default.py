@@ -1,6 +1,21 @@
 from .base import ConfigurationData
 from screener.models import WhiteLabel
 
+"""
+Default White Label Configuration
+
+This is the fallback white label used when no specific state is selected.
+It is used in the frontend when whiteLabel is undefined or set to "_default".
+
+Purpose:
+    - Provides generic MyFriendBen branding and links
+    - Used for direct access to screener.myfriendben.org without a state-specific path
+    - Excluded from white label selection lists in admin interfaces
+
+Note: This is NOT a template for creating new white labels.
+For creating a new white label, see: programs/templates/new_white_label/config.py
+"""
+
 
 class DefaultConfigurationData(ConfigurationData):
     is_default = True
