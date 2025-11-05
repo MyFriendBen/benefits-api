@@ -204,7 +204,16 @@ Most user-facing text uses translation keys:
 }
 ```
 
-Translation keys are defined in the benefits-calculator repo's translation files.
+**Adding New Translation Keys:**
+
+When adding new translation keys (e.g., for new benefits, options, or text), you must add them to the admin portal in both staging and production environments:
+
+1. Log in to the admin portal (staging or prod)
+2. Navigate to the translation management section
+3. Add your new translation key with translations for all supported languages
+4. Repeat for both staging and production environments
+
+This ensures translations are available across all environments and languages.
 
 ### Program Name Abbreviations
 
