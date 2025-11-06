@@ -18,7 +18,11 @@ class TestAgeDependency(TestCase):
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
         self.screen = Screen.objects.create(
-            white_label=self.white_label, zipcode="78701", county="Test County", household_size=1, completed=False
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=1,
+            completed=False,
         )
 
         self.head = HouseholdMember.objects.create(
@@ -46,7 +50,11 @@ class TestMemberExpenseDependency(TestCase):
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
         self.screen = Screen.objects.create(
-            white_label=self.white_label, zipcode="78701", county="Test County", household_size=2, completed=False
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=2,
+            completed=False,
         )
 
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
@@ -109,7 +117,11 @@ class TestSnapIneligibleStudentDependency(TestCase):
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
         self.screen = Screen.objects.create(
-            white_label=self.white_label, zipcode="78701", county="Test County", household_size=2, completed=False
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=2,
+            completed=False,
         )
 
         # Need head of household for relationship_map
@@ -135,7 +147,11 @@ class TestSnapIneligibleStudentDependency(TestCase):
     def test_value_returns_false_for_disabled_student(self):
         """Test value() returns False for disabled student."""
         disabled_student = HouseholdMember.objects.create(
-            screen=self.screen, relationship="child", age=20, student=True, disabled=True
+            screen=self.screen,
+            relationship="child",
+            age=20,
+            student=True,
+            disabled=True,
         )
 
         dep = member.SnapIneligibleStudentDependency(self.screen, disabled_student, {})
@@ -151,7 +167,11 @@ class TestEmploymentIncomeDependency(TestCase):
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
         self.screen = Screen.objects.create(
-            white_label=self.white_label, zipcode="78701", county="Test County", household_size=2, completed=False
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=2,
+            completed=False,
         )
 
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
@@ -159,7 +179,11 @@ class TestEmploymentIncomeDependency(TestCase):
     def test_value_calculates_annual_wages_income(self):
         """Test value() calculates annual employment income from wages."""
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="wages", amount=3000, frequency="monthly"
+            screen=self.screen,
+            household_member=self.head,
+            type="wages",
+            amount=3000,
+            frequency="monthly",
         )
 
         dep = member.EmploymentIncomeDependency(self.screen, self.head, {})
@@ -174,10 +198,18 @@ class TestEmploymentIncomeDependency(TestCase):
     def test_value_only_includes_wages_income_type(self):
         """Test value() only includes wages income type, not other types."""
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="wages", amount=2000, frequency="monthly"
+            screen=self.screen,
+            household_member=self.head,
+            type="wages",
+            amount=2000,
+            frequency="monthly",
         )
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="selfEmployment", amount=1000, frequency="monthly"
+            screen=self.screen,
+            household_member=self.head,
+            type="selfEmployment",
+            amount=1000,
+            frequency="monthly",
         )
 
         dep = member.EmploymentIncomeDependency(self.screen, self.head, {})
@@ -193,7 +225,11 @@ class TestSelfEmploymentIncomeDependency(TestCase):
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
         self.screen = Screen.objects.create(
-            white_label=self.white_label, zipcode="78701", county="Test County", household_size=2, completed=False
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=2,
+            completed=False,
         )
 
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
@@ -201,7 +237,11 @@ class TestSelfEmploymentIncomeDependency(TestCase):
     def test_value_calculates_annual_self_employment_income(self):
         """Test value() calculates annual self-employment income."""
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="selfEmployment", amount=4000, frequency="monthly"
+            screen=self.screen,
+            household_member=self.head,
+            type="selfEmployment",
+            amount=4000,
+            frequency="monthly",
         )
 
         dep = member.SelfEmploymentIncomeDependency(self.screen, self.head, {})
@@ -222,7 +262,11 @@ class TestRentalIncomeDependency(TestCase):
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
         self.screen = Screen.objects.create(
-            white_label=self.white_label, zipcode="78701", county="Test County", household_size=2, completed=False
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=2,
+            completed=False,
         )
 
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
@@ -230,7 +274,11 @@ class TestRentalIncomeDependency(TestCase):
     def test_value_calculates_annual_rental_income(self):
         """Test value() calculates annual rental income."""
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="rental", amount=1500, frequency="monthly"
+            screen=self.screen,
+            household_member=self.head,
+            type="rental",
+            amount=1500,
+            frequency="monthly",
         )
 
         dep = member.RentalIncomeDependency(self.screen, self.head, {})
@@ -251,7 +299,11 @@ class TestPensionIncomeDependency(TestCase):
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
         self.screen = Screen.objects.create(
-            white_label=self.white_label, zipcode="78701", county="Test County", household_size=2, completed=False
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=2,
+            completed=False,
         )
 
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=65)
@@ -259,7 +311,11 @@ class TestPensionIncomeDependency(TestCase):
     def test_value_calculates_annual_pension_income(self):
         """Test value() calculates annual pension income."""
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="pension", amount=2500, frequency="monthly"
+            screen=self.screen,
+            household_member=self.head,
+            type="pension",
+            amount=2500,
+            frequency="monthly",
         )
 
         dep = member.PensionIncomeDependency(self.screen, self.head, {})
@@ -269,7 +325,11 @@ class TestPensionIncomeDependency(TestCase):
     def test_value_includes_veteran_income(self):
         """Test value() includes veteran income as part of pension income."""
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="veteran", amount=1000, frequency="monthly"
+            screen=self.screen,
+            household_member=self.head,
+            type="veteran",
+            amount=1000,
+            frequency="monthly",
         )
 
         dep = member.PensionIncomeDependency(self.screen, self.head, {})
@@ -278,10 +338,18 @@ class TestPensionIncomeDependency(TestCase):
     def test_value_combines_pension_and_veteran_income(self):
         """Test value() combines both pension and veteran income."""
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="pension", amount=2000, frequency="monthly"
+            screen=self.screen,
+            household_member=self.head,
+            type="pension",
+            amount=2000,
+            frequency="monthly",
         )
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="veteran", amount=500, frequency="monthly"
+            screen=self.screen,
+            household_member=self.head,
+            type="veteran",
+            amount=500,
+            frequency="monthly",
         )
 
         dep = member.PensionIncomeDependency(self.screen, self.head, {})
@@ -301,7 +369,11 @@ class TestSocialSecurityIncomeDependency(TestCase):
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
         self.screen = Screen.objects.create(
-            white_label=self.white_label, zipcode="78701", county="Test County", household_size=2, completed=False
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=2,
+            completed=False,
         )
 
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=67)
@@ -309,7 +381,11 @@ class TestSocialSecurityIncomeDependency(TestCase):
     def test_value_calculates_annual_ss_retirement_income(self):
         """Test value() calculates annual social security retirement income."""
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="sSRetirement", amount=1800, frequency="monthly"
+            screen=self.screen,
+            household_member=self.head,
+            type="sSRetirement",
+            amount=1800,
+            frequency="monthly",
         )
 
         dep = member.SocialSecurityIncomeDependency(self.screen, self.head, {})
@@ -319,7 +395,11 @@ class TestSocialSecurityIncomeDependency(TestCase):
     def test_value_calculates_annual_ss_disability_income(self):
         """Test value() calculates annual social security disability income."""
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="sSDisability", amount=1500, frequency="monthly"
+            screen=self.screen,
+            household_member=self.head,
+            type="sSDisability",
+            amount=1500,
+            frequency="monthly",
         )
 
         dep = member.SocialSecurityIncomeDependency(self.screen, self.head, {})
@@ -328,7 +408,11 @@ class TestSocialSecurityIncomeDependency(TestCase):
     def test_value_calculates_annual_ss_survivor_income(self):
         """Test value() calculates annual social security survivor income."""
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="sSSurvivor", amount=1200, frequency="monthly"
+            screen=self.screen,
+            household_member=self.head,
+            type="sSSurvivor",
+            amount=1200,
+            frequency="monthly",
         )
 
         dep = member.SocialSecurityIncomeDependency(self.screen, self.head, {})
@@ -337,7 +421,11 @@ class TestSocialSecurityIncomeDependency(TestCase):
     def test_value_calculates_annual_ss_dependent_income(self):
         """Test value() calculates annual social security dependent income."""
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="sSDependent", amount=800, frequency="monthly"
+            screen=self.screen,
+            household_member=self.head,
+            type="sSDependent",
+            amount=800,
+            frequency="monthly",
         )
 
         dep = member.SocialSecurityIncomeDependency(self.screen, self.head, {})
@@ -346,10 +434,18 @@ class TestSocialSecurityIncomeDependency(TestCase):
     def test_value_combines_all_social_security_types(self):
         """Test value() combines all types of social security income."""
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="sSRetirement", amount=1000, frequency="monthly"
+            screen=self.screen,
+            household_member=self.head,
+            type="sSRetirement",
+            amount=1000,
+            frequency="monthly",
         )
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="sSDependent", amount=300, frequency="monthly"
+            screen=self.screen,
+            household_member=self.head,
+            type="sSDependent",
+            amount=300,
+            frequency="monthly",
         )
 
         dep = member.SocialSecurityIncomeDependency(self.screen, self.head, {})
@@ -369,7 +465,11 @@ class TestPregnancyDependency(TestCase):
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
         self.screen = Screen.objects.create(
-            white_label=self.white_label, zipcode="78701", county="Test County", household_size=1, completed=False
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=1,
+            completed=False,
         )
 
         self.pregnant_member = HouseholdMember.objects.create(
@@ -407,7 +507,11 @@ class TestExpectedChildrenPregnancyDependency(TestCase):
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
         self.screen = Screen.objects.create(
-            white_label=self.white_label, zipcode="78701", county="Test County", household_size=1, completed=False
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=1,
+            completed=False,
         )
 
         self.pregnant_member = HouseholdMember.objects.create(
@@ -430,66 +534,91 @@ class TestExpectedChildrenPregnancyDependency(TestCase):
         self.assertEqual(dep.value(), 0)
 
 
-class TestTaxUnitDependencies(TestCase):
-    """Tests for TaxUnitHeadDependency, TaxUnitSpouseDependency, and TaxUnitDependentDependency classes."""
+class TestTaxUnitHeadDependency(TestCase):
+    """Tests for TaxUnitHeadDependency class used by tax credit calculators."""
 
     def setUp(self):
-        """Set up test data for tax unit dependency tests."""
+        """Set up test data for tax unit head tests."""
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
         self.screen = Screen.objects.create(
-            white_label=self.white_label, zipcode="78701", county="Test County", household_size=4, completed=False
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=2,
+            completed=False,
         )
 
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
-
         self.spouse = HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=33)
 
-        self.child1 = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=10)
-
-        self.child2 = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=5)
-
-    def test_tax_unit_head_dependency_returns_true_for_head(self):
-        """Test TaxUnitHeadDependency returns True for household head."""
+    def test_value_returns_true_for_head_of_household(self):
+        """Test TaxUnitHeadDependency.value() returns True for head of household."""
         dep = member.TaxUnitHeadDependency(self.screen, self.head, {})
         self.assertTrue(dep.value())
         self.assertEqual(dep.field, "is_tax_unit_head")
 
-    def test_tax_unit_head_dependency_returns_false_for_non_head(self):
-        """Test TaxUnitHeadDependency returns False for non-head members."""
-        dep_spouse = member.TaxUnitHeadDependency(self.screen, self.spouse, {})
-        self.assertFalse(dep_spouse.value())
+    def test_value_returns_false_for_spouse(self):
+        """Test TaxUnitHeadDependency.value() returns False for spouse."""
+        dep = member.TaxUnitHeadDependency(self.screen, self.spouse, {})
+        self.assertFalse(dep.value())
 
-        dep_child = member.TaxUnitHeadDependency(self.screen, self.child1, {})
-        self.assertFalse(dep_child.value())
 
-    def test_tax_unit_spouse_dependency_returns_true_for_spouse(self):
-        """Test TaxUnitSpouseDependency returns True for spouse."""
+class TestTaxUnitSpouseDependency(TestCase):
+    """Tests for TaxUnitSpouseDependency class used by tax credit calculators."""
+
+    def setUp(self):
+        """Set up test data for tax unit spouse tests."""
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=2,
+            completed=False,
+        )
+
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
+        self.spouse = HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=33)
+
+    def test_value_returns_true_for_spouse(self):
+        """Test TaxUnitSpouseDependency.value() returns True for spouse."""
         dep = member.TaxUnitSpouseDependency(self.screen, self.spouse, {})
         self.assertTrue(dep.value())
         self.assertEqual(dep.field, "is_tax_unit_spouse")
 
-    def test_tax_unit_spouse_dependency_returns_false_for_non_spouse(self):
-        """Test TaxUnitSpouseDependency returns False for non-spouse members."""
-        dep_head = member.TaxUnitSpouseDependency(self.screen, self.head, {})
-        self.assertFalse(dep_head.value())
+    def test_value_returns_false_for_head_of_household(self):
+        """Test TaxUnitSpouseDependency.value() returns False for head of household."""
+        dep = member.TaxUnitSpouseDependency(self.screen, self.head, {})
+        self.assertFalse(dep.value())
 
-        dep_child = member.TaxUnitSpouseDependency(self.screen, self.child1, {})
-        self.assertFalse(dep_child.value())
 
-    def test_tax_unit_dependent_dependency_returns_true_for_children(self):
-        """Test TaxUnitDependentDependency returns True for child dependents."""
-        dep_child1 = member.TaxUnitDependentDependency(self.screen, self.child1, {})
-        self.assertTrue(dep_child1.value())
-        self.assertEqual(dep_child1.field, "is_tax_unit_dependent")
+class TestTaxUnitDependentDependency(TestCase):
+    """Tests for TaxUnitDependentDependency class used by tax credit calculators."""
 
-        dep_child2 = member.TaxUnitDependentDependency(self.screen, self.child2, {})
-        self.assertTrue(dep_child2.value())
+    def setUp(self):
+        """Set up test data for tax unit dependent tests."""
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
-    def test_tax_unit_dependent_dependency_returns_false_for_head_and_spouse(self):
-        """Test TaxUnitDependentDependency returns False for head and spouse."""
-        dep_head = member.TaxUnitDependentDependency(self.screen, self.head, {})
-        self.assertFalse(dep_head.value())
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=3,
+            completed=False,
+        )
 
-        dep_spouse = member.TaxUnitDependentDependency(self.screen, self.spouse, {})
-        self.assertFalse(dep_spouse.value())
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
+        self.child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=10)
+
+    def test_value_returns_true_for_child(self):
+        """Test TaxUnitDependentDependency.value() returns True for child."""
+        dep = member.TaxUnitDependentDependency(self.screen, self.child, {})
+        self.assertTrue(dep.value())
+        self.assertEqual(dep.field, "is_tax_unit_dependent")
+
+    def test_value_returns_false_for_head_of_household(self):
+        """Test TaxUnitDependentDependency.value() returns False for head of household."""
+        dep = member.TaxUnitDependentDependency(self.screen, self.head, {})
+        self.assertFalse(dep.value())

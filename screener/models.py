@@ -337,6 +337,8 @@ class Screen(models.Model):
         return False
 
     def has_benefit(self, name_abbreviated: str):
+        has_ssi_or_ssi_income = self.has_ssi or self.calc_gross_income("yearly", ("sSI",)) > 0
+
         name_map = {
             "tanf": self.has_tanf,
             "nc_tanf": self.has_tanf,
@@ -359,7 +361,9 @@ class Screen(models.Model):
             "coeitc": self.has_coeitc,
             "il_eitc": self.has_il_eitc,
             "nslp": self.has_nslp,
+            "tx_nslp": self.has_nslp,
             "ctc": self.has_ctc,
+            "tx_ctc": self.has_ctc,
             "il_ctc": self.has_il_ctc,
             "il_transit_reduced_fare": self.has_il_transit_reduced_fare,
             "il_bap": self.has_il_bap,
@@ -371,7 +375,9 @@ class Screen(models.Model):
             "cccap": self.has_cccap,
             "mydenver": self.has_mydenver,
             "ccb": self.has_ccb,
-            "ssi": self.has_ssi or self.calc_gross_income("yearly", ("sSI",)) > 0,
+            "ssi": has_ssi_or_ssi_income,
+            "tx_ssi": has_ssi_or_ssi_income,
+            "tx_csfp": self.has_csfp,
             "andcs": self.has_andcs,
             "chs": self.has_chs,
             "cpcr": self.has_cpcr,
