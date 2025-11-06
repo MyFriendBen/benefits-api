@@ -62,13 +62,13 @@ class MaHeap(PolicyEngineSpmCalulator):
     ]
     pe_outputs = [dependency.spm.MaLiheapIncomeEligible]
 
-    '''
+    """
     benefits_amounts starts with the lowest possible value for a household size of 1 
     using the source document referenced above. We increment up as the household size increases 
     using the pattern established in MA. These are not intended to be accurate but instead provide 
     a low-end estimate while gradually incrementing up to provide more incentive to apply 
     without overestimating.
-    '''
+    """
     benefit_amounts = {
         1: 430,
         2: 445,
