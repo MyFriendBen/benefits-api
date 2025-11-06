@@ -8,6 +8,7 @@ Run integration tests with: pytest -m integration
 Skip integration tests with: pytest -m "not integration"
 """
 
+import time
 import pytest
 from unittest import skipUnless
 from django.test import TestCase
@@ -20,7 +21,7 @@ from screener.models import Screen, WhiteLabel
 
 @pytest.mark.integration
 class TestHudIntegrationMTSP(TestCase):
-    """Integration tests requiring real HUD API access."""
+    """Integration tests for MTSP (Multifamily Tax Subsidy Project) endpoint."""
 
     @classmethod
     def setUpClass(cls):
@@ -113,14 +114,12 @@ class TestHudIntegrationMTSP(TestCase):
 
     @skipUnless(config("HUD_API_TOKEN", default=None), "HUD_API_TOKEN not set")
     def test_real_api_call_caching(self):
-        """Test that caching works with real API calls."""
+        """Test that caching works with real MTSP API calls."""
         screen = Screen.objects.create(
             white_label=self.white_label_il, zipcode="60601", county="Cook", household_size=4, completed=False
         )
 
         # First call - should hit API
-        import time
-
         start = time.time()
         result1 = hud_client.get_screen_mtsp_ami(screen, "80%", 2025)
         first_call_time = time.time() - start
@@ -134,28 +133,11 @@ class TestHudIntegrationMTSP(TestCase):
         self.assertEqual(result1, result2)
 
         # Cached call should be significantly faster
-        # Note: This might be flaky in slow environments
-        print(f"First call: {first_call_time:.3f}s, Second call: {second_call_time:.3f}s")
-
-    @skipUnless(config("HUD_API_TOKEN", default=None), "HUD_API_TOKEN not set")
-    def test_real_api_call_invalid_county(self):
-        """Test that invalid county raises error with real API."""
-        screen = Screen.objects.create(
-            white_label=self.white_label_il,
-            zipcode="00000",
-            county="Nonexistent County",
-            household_size=4,
-            completed=False,
-        )
-
-        with self.assertRaises(HudIncomeClientError) as context:
-            hud_client.get_screen_mtsp_ami(screen, "80%", 2025)
-
-        self.assertIn("County not found", str(context.exception))
+        print(f"MTSP - First call: {first_call_time:.3f}s, Second call: {second_call_time:.3f}s")
 
     @skipUnless(config("HUD_API_TOKEN", default=None), "HUD_API_TOKEN not set")
     def test_real_api_call_historical_year(self):
-        """Test API call with historical year data."""
+        """Test MTSP API call with historical year data."""
         screen = Screen.objects.create(
             white_label=self.white_label_il, zipcode="60601", county="Cook", household_size=4, completed=False
         )
@@ -174,19 +156,232 @@ class TestHudIntegrationMTSP(TestCase):
 
 
 @pytest.mark.integration
-class TestHudIntegrationErrors(TestCase):
-    """Integration tests for error conditions."""
+class TestHudIntegrationStandardIL(TestCase):
+    """Integration tests for Standard Section 8 Income Limits endpoint."""
+
+    @classmethod
+    def setUpClass(cls):
+        """Set up test class - check if HUD_API_TOKEN is available."""
+        super().setUpClass()
+        cls.has_token = config("HUD_API_TOKEN", default=None) is not None
 
     def setUp(self):
         """Set up test data."""
-        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="XX")
+        cache.clear()
+
+        self.white_label_il = WhiteLabel.objects.create(
+            name="Illinois Integration Test IL", code="il_integration_il", state_code="IL"
+        )
+
+        self.white_label_co = WhiteLabel.objects.create(
+            name="Colorado Integration Test IL", code="co_integration_il", state_code="CO"
+        )
 
     @skipUnless(config("HUD_API_TOKEN", default=None), "HUD_API_TOKEN not set")
-    def test_real_api_call_invalid_state(self):
-        """Test that invalid state code raises error with real API."""
+    def test_real_api_call_standard_il_cook_county(self):
+        """Test actual Standard IL API call for Cook County, IL."""
         screen = Screen.objects.create(
-            white_label=self.white_label, zipcode="00000", county="Test County", household_size=4, completed=False
+            white_label=self.white_label_il, zipcode="60601", county="Cook", household_size=4, completed=False
+        )
+
+        # Make real API call to Standard IL endpoint
+        result = hud_client.get_screen_il_ami(screen, "80%", 2025)
+
+        # Verify result is reasonable (Cook County IL should have high AMI)
+        self.assertIsInstance(result, int)
+        self.assertGreater(result, 50000, "Cook County 80% AMI should be > $50k")
+        self.assertLess(result, 200000, "Cook County 80% AMI should be < $200k")
+
+    @skipUnless(config("HUD_API_TOKEN", default=None), "HUD_API_TOKEN not set")
+    def test_real_api_call_standard_il_denver_county(self):
+        """Test actual Standard IL API call for Denver County, CO."""
+        screen = Screen.objects.create(
+            white_label=self.white_label_co, zipcode="80202", county="Denver", household_size=4, completed=False
+        )
+
+        result = hud_client.get_screen_il_ami(screen, "80%", 2025)
+
+        self.assertIsInstance(result, int)
+        self.assertGreater(result, 40000, "Denver County 80% AMI should be > $40k")
+        self.assertLess(result, 200000, "Denver County 80% AMI should be < $200k")
+
+    @skipUnless(config("HUD_API_TOKEN", default=None), "HUD_API_TOKEN not set")
+    def test_real_api_call_standard_il_all_percentages(self):
+        """Test all Standard IL percentage levels (30%, 50%, 80%) with real API."""
+        screen = Screen.objects.create(
+            white_label=self.white_label_il, zipcode="60601", county="Cook", household_size=4, completed=False
+        )
+
+        percentages = ["30%", "50%", "80%"]
+        results = {}
+
+        for percent in percentages:
+            result = hud_client.get_screen_il_ami(screen, percent, 2025)
+            results[percent] = result
+            self.assertIsInstance(result, int)
+            self.assertGreater(result, 0)
+
+        # Verify percentages are in ascending order
+        self.assertLess(results["30%"], results["50%"], "30% should be less than 50%")
+        self.assertLess(results["50%"], results["80%"], "50% should be less than 80%")
+
+    @skipUnless(config("HUD_API_TOKEN", default=None), "HUD_API_TOKEN not set")
+    def test_real_api_call_standard_il_different_household_sizes(self):
+        """Test different household sizes with Standard IL API."""
+        household_sizes = [1, 2, 4, 8]
+        results = {}
+
+        for size in household_sizes:
+            screen = Screen.objects.create(
+                white_label=self.white_label_il, zipcode="60601", county="Cook", household_size=size, completed=False
+            )
+
+            result = hud_client.get_screen_il_ami(screen, "80%", 2025)
+            results[size] = result
+            self.assertIsInstance(result, int)
+            self.assertGreater(result, 0)
+
+        # Verify larger households have higher income limits
+        self.assertLess(results[1], results[2])
+        self.assertLess(results[2], results[4])
+        self.assertLess(results[4], results[8])
+
+    @skipUnless(config("HUD_API_TOKEN", default=None), "HUD_API_TOKEN not set")
+    def test_real_api_call_standard_il_caching(self):
+        """Test that caching works with real Standard IL API calls."""
+        screen = Screen.objects.create(
+            white_label=self.white_label_il, zipcode="60601", county="Cook", household_size=4, completed=False
+        )
+
+        # First call - should hit API
+        start = time.time()
+        result1 = hud_client.get_screen_il_ami(screen, "80%", 2025)
+        first_call_time = time.time() - start
+
+        # Second call - should use cache (much faster)
+        start = time.time()
+        result2 = hud_client.get_screen_il_ami(screen, "80%", 2025)
+        second_call_time = time.time() - start
+
+        # Results should be identical
+        self.assertEqual(result1, result2)
+
+        # Cached call should be significantly faster
+        print(f"Standard IL - First call: {first_call_time:.3f}s, Second call: {second_call_time:.3f}s")
+
+    @skipUnless(config("HUD_API_TOKEN", default=None), "HUD_API_TOKEN not set")
+    def test_real_api_call_standard_il_historical_year(self):
+        """Test Standard IL API call with historical year data."""
+        screen = Screen.objects.create(
+            white_label=self.white_label_il, zipcode="60601", county="Cook", household_size=4, completed=False
+        )
+
+        # Test with 2024 data (should be available)
+        result_2024 = hud_client.get_screen_il_ami(screen, "80%", 2024)
+        result_2025 = hud_client.get_screen_il_ami(screen, "80%", 2025)
+
+        self.assertIsInstance(result_2024, int)
+        self.assertIsInstance(result_2025, int)
+        self.assertGreater(result_2024, 0)
+        self.assertGreater(result_2025, 0)
+
+        # Note: Standard IL can decrease year-over-year (unlike MTSP), so we just verify both are positive
+        # Allow for significant variance between years
+        self.assertGreater(result_2024, 30000)  # Sanity check
+        self.assertGreater(result_2025, 30000)  # Sanity check
+
+    @skipUnless(config("HUD_API_TOKEN", default=None), "HUD_API_TOKEN not set")
+    def test_mtsp_vs_standard_il_comparison(self):
+        """Compare MTSP and Standard IL results to verify they may differ."""
+        screen = Screen.objects.create(
+            white_label=self.white_label_il, zipcode="60601", county="Cook", household_size=4, completed=False
+        )
+
+        # Get both MTSP and Standard IL for same parameters
+        mtsp_result = hud_client.get_screen_mtsp_ami(screen, "80%", 2025)
+        il_result = hud_client.get_screen_il_ami(screen, "80%", 2025)
+
+        # Both should be positive integers
+        self.assertIsInstance(mtsp_result, int)
+        self.assertIsInstance(il_result, int)
+        self.assertGreater(mtsp_result, 0)
+        self.assertGreater(il_result, 0)
+
+        # They may be equal or differ slightly depending on year and economic conditions
+        # Just verify they're in the same ballpark (within 20% of each other)
+        ratio = max(mtsp_result, il_result) / min(mtsp_result, il_result)
+        self.assertLess(ratio, 1.2, "MTSP and Standard IL should be within 20% of each other")
+
+
+@pytest.mark.integration
+class TestHudIntegrationErrors(TestCase):
+    """Integration tests for error conditions across both endpoints."""
+
+    def setUp(self):
+        """Set up test data."""
+        cache.clear()
+
+        self.white_label_invalid = WhiteLabel.objects.create(name="Test State", code="test", state_code="XX")
+        self.white_label_il = WhiteLabel.objects.create(
+            name="Illinois Integration Test Errors", code="il_integration_errors", state_code="IL"
+        )
+
+    @skipUnless(config("HUD_API_TOKEN", default=None), "HUD_API_TOKEN not set")
+    def test_mtsp_invalid_state(self):
+        """Test that invalid state code raises error with real MTSP API."""
+        screen = Screen.objects.create(
+            white_label=self.white_label_invalid,
+            zipcode="00000",
+            county="Test County",
+            household_size=4,
+            completed=False,
         )
 
         with self.assertRaises(HudIncomeClientError):
             hud_client.get_screen_mtsp_ami(screen, "80%", 2025)
+
+    @skipUnless(config("HUD_API_TOKEN", default=None), "HUD_API_TOKEN not set")
+    def test_mtsp_invalid_county(self):
+        """Test that invalid county raises error with real MTSP API."""
+        screen = Screen.objects.create(
+            white_label=self.white_label_il,
+            zipcode="00000",
+            county="Nonexistent County",
+            household_size=4,
+            completed=False,
+        )
+
+        with self.assertRaises(HudIncomeClientError) as context:
+            hud_client.get_screen_mtsp_ami(screen, "80%", 2025)
+
+        self.assertIn("County not found", str(context.exception))
+
+    @skipUnless(config("HUD_API_TOKEN", default=None), "HUD_API_TOKEN not set")
+    def test_standard_il_invalid_state(self):
+        """Test that invalid state code raises error with real Standard IL API."""
+        screen = Screen.objects.create(
+            white_label=self.white_label_invalid,
+            zipcode="00000",
+            county="Test County",
+            household_size=4,
+            completed=False,
+        )
+
+        with self.assertRaises(HudIncomeClientError):
+            hud_client.get_screen_il_ami(screen, "80%", 2025)
+
+    @skipUnless(config("HUD_API_TOKEN", default=None), "HUD_API_TOKEN not set")
+    def test_standard_il_invalid_county(self):
+        """Test that invalid county raises error with real Standard IL API."""
+        screen = Screen.objects.create(
+            white_label=self.white_label_il,
+            zipcode="00000",
+            county="Nonexistent County",
+            household_size=4,
+            completed=False,
+        )
+
+        with self.assertRaises(HudIncomeClientError) as context:
+            hud_client.get_screen_il_ami(screen, "80%", 2025)
+
+        self.assertIn("County not found", str(context.exception))

@@ -23,6 +23,11 @@ Integration tests that make real API calls to HUD. These tests:
 - Verify actual HUD API behavior
 - Should be run in environments with API access
 
+**Test Class Organization:**
+- `TestHudIntegrationMTSP` - MTSP endpoint functionality tests
+- `TestHudIntegrationStandardIL` - Standard Section 8 IL endpoint functionality tests
+- `TestHudIntegrationErrors` - Error handling tests for both endpoints
+
 **Run integration tests only:**
 ```bash
 # Requires HUD_API_TOKEN in .env
@@ -38,22 +43,38 @@ pytest -m "not integration" integrations/clients/hud_income_limits/tests/
 
 ### Unit Tests Cover:
 - ✅ MTSP AMI lookups for all percentages (20%-100%)
-- ✅ Caching behavior (Django cache)
+- ✅ Standard Section 8 IL AMI lookups (30%, 50%, 80%)
+- ✅ Caching behavior (Django cache) for both endpoints
 - ✅ Household size validation (1-8)
 - ✅ County name normalization
 - ✅ Error handling (401, 403, 404, network errors)
-- ✅ Missing data scenarios
-- ✅ Standard IL placeholder (NotImplementedError)
-- ✅ Backward compatibility (`get_screen_ami()` alias)
+- ✅ Missing data scenarios for both MTSP and Standard IL
+- ✅ Type aliases (`MtspAmiPercent`, `Section8AmiPercent`)
+- ✅ County FIPS code lookup with year parameter
 
 ### Integration Tests Cover:
+
+**MTSP Endpoint:**
 - ✅ Real API calls to HUD for Cook County, IL
 - ✅ Real API calls for Denver County, CO
 - ✅ All MTSP percentage levels (20%-100%)
 - ✅ Different household sizes (1, 2, 4, 8)
 - ✅ Caching with real API responses
-- ✅ Invalid county/state error handling
 - ✅ Historical year data (2024, 2025)
+- ✅ Hold-harmless verification (2025 ≥ 2024)
+
+**Standard Section 8 IL Endpoint:**
+- ✅ Real API calls for Cook County, IL
+- ✅ Real API calls for Denver County, CO
+- ✅ All Standard IL percentage levels (30%, 50%, 80%)
+- ✅ Different household sizes (1, 2, 4, 8)
+- ✅ Caching with real API responses
+- ✅ Historical year data (2024, 2025)
+- ✅ Comparison between MTSP and Standard IL results
+
+**Error Handling (Both Endpoints):**
+- ✅ Invalid state code error handling (MTSP & Standard IL)
+- ✅ Invalid county error handling (MTSP & Standard IL)
 
 ## Running All Tests
 
