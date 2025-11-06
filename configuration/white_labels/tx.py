@@ -2950,11 +2950,11 @@ class TxConfigurationData(ConfigurationData):
             "benefits": {
                 "tanf": {
                     "name": {
-                        "_label": "cashBenefits.tx_tanf",
+                        "_label": "cashAssistanceBenefits.tx_tanf",
                         "_default_message": "Temporary Assistance for Needy Families (TANF): ",
                     },
                     "description": {
-                        "_label": "cashBenefits.tx_tanf_desc",
+                        "_label": "cashAssistanceBenefits.tx_tanf_desc",
                         "_default_message": "Cash assistance and support for families",
                     },
                 },
