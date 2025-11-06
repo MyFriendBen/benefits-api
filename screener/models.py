@@ -344,6 +344,7 @@ class Screen(models.Model):
             "nc_tanf": self.has_tanf,
             "co_tanf": self.has_tanf,
             "il_tanf": self.has_tanf,
+            "tx_tanf": self.has_tanf,
             "wic": self.has_wic,
             "co_wic": self.has_wic,
             "nc_wic": self.has_wic,
