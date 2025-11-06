@@ -13,8 +13,9 @@ class MedicareSavingsNC(MedicareSavings):
         super().member_eligible(e)
 
         # NC-specific: not on benefits
-        e.condition(not self.screen.has_benefit("aca"))
-        e.condition(not self.screen.has_benefit("medicaid"))
+        e.condition(not self.screen.has_benefit("nc_aca"))
+        e.condition(not self.screen.has_benefit("ssi"))
+        e.condition(not self.screen.has_benefit("nc_medicare_savings"))
 
         # insurance
         e.condition(not member.insurance.has_insurance_types(self.ineligible_insurance_types))
