@@ -298,6 +298,39 @@ class TestHudIncomeClientMTSP(TestCase):
 
             self.assertIn("household size", str(context.exception))
 
+    def test_empty_mtsp_response(self):
+        """Test that empty MTSP response raises error."""
+        client = HudIncomeClient(api_token="test_token")
+
+        with patch.object(client, "_api_request") as mock_api:
+            mock_api.side_effect = [
+                self.mock_counties_response,
+                {},  # Empty response
+            ]
+
+            with self.assertRaises(HudIncomeClientError) as context:
+                client.get_screen_mtsp_ami(self.screen, "80%", "2025")
+
+            self.assertIn("No income limit data found", str(context.exception))
+
+    def test_missing_median_income_for_100_percent(self):
+        """Test that missing median income for 100% AMI raises error."""
+        client = HudIncomeClient(api_token="test_token")
+
+        incomplete_data = self.mock_mtsp_response.copy()
+        del incomplete_data["data"]["median_income"]
+
+        with patch.object(client, "_api_request") as mock_api:
+            mock_api.side_effect = [
+                self.mock_counties_response,
+                incomplete_data,
+            ]
+
+            with self.assertRaises(HudIncomeClientError) as context:
+                client.get_screen_mtsp_ami(self.screen, "100%", "2025")
+
+            self.assertIn("No median income data available", str(context.exception))
+
 
 class TestHudIncomeClientErrors(TestCase):
     """Test HUD client error handling."""
@@ -368,6 +401,27 @@ class TestHudIncomeClientErrors(TestCase):
         self.assertIn("Data not found", str(context.exception))
 
     @patch("integrations.clients.hud_income_limits.client.requests.get")
+    def test_500_server_error(self, mock_get):
+        """Test 500 server error handling."""
+        import requests
+
+        mock_response = Mock()
+        mock_response.status_code = 500
+        mock_response.text = "Internal Server Error"
+        http_error = requests.exceptions.HTTPError("500 Server Error")
+        http_error.response = mock_response
+        mock_response.raise_for_status.side_effect = http_error
+        mock_get.return_value = mock_response
+
+        client = HudIncomeClient(api_token="test_token")
+
+        with self.assertRaises(HudIncomeClientError) as context:
+            client._api_request("test/endpoint")
+
+        self.assertIn("API request failed (500)", str(context.exception))
+        self.assertIn("Internal Server Error", str(context.exception))
+
+    @patch("integrations.clients.hud_income_limits.client.requests.get")
     def test_network_error_handling(self, mock_get):
         """Test network error handling."""
         import requests
@@ -380,6 +434,18 @@ class TestHudIncomeClientErrors(TestCase):
             client._api_request("test/endpoint")
 
         self.assertIn("Request failed", str(context.exception))
+
+    def test_empty_counties_list(self):
+        """Test that empty counties list raises error."""
+        client = HudIncomeClient(api_token="test_token")
+
+        with patch.object(client, "_api_request") as mock_api:
+            mock_api.return_value = []
+
+            with self.assertRaises(HudIncomeClientError) as context:
+                client._get_entity_id("TS", "Test County", 2025)
+
+            self.assertIn("Could not retrieve counties", str(context.exception))
 
 
 class TestHudIncomeClientStandardIL(TestCase):
