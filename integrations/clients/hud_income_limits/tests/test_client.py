@@ -244,7 +244,7 @@ class TestHudIncomeClientMTSP(TestCase):
             self.assertEqual(result, 103600)
 
     def test_county_lookup_includes_year_parameter(self):
-        """Test that county lookup includes year parameter to ensure FIPS codes match."""
+        """Test that county lookup includes 'updated' parameter to ensure FIPS codes match the year."""
         client = HudIncomeClient(api_token="test_token")
 
         with patch.object(client, "_api_request") as mock_api:
@@ -255,10 +255,10 @@ class TestHudIncomeClientMTSP(TestCase):
 
             client.get_screen_mtsp_ami(self.screen, "80%", 2025)
 
-            # Verify first call (county lookup) includes year parameter
+            # Verify first call (county lookup) includes 'updated' parameter per HUD API spec
             first_call_args = mock_api.call_args_list[0]
             self.assertEqual(first_call_args[0][0], "fmr/listCounties/IL")
-            self.assertEqual(first_call_args[1].get("params"), {"year": "2025"})
+            self.assertEqual(first_call_args[1].get("params"), {"updated": "2025"})
 
     def test_missing_percentage_data_raises_error(self):
         """Test that missing percentage data raises error."""
