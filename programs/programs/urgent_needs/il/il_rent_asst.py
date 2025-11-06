@@ -1,17 +1,20 @@
+from typing import Literal
 from ..base import UrgentNeedFunction
-from integrations.clients.hud_income_limits import hud_client, AmiPercent
+from integrations.clients.hud_income_limits import hud_client
 
 
 class IlRenterAssistance(UrgentNeedFunction):
-    ami_percent: AmiPercent = "80%"
+    ami_percent: Literal["30%", "50%", "80%"] = "80%"
     dependencies = ["income_amount", "income_frequency", "household_size", "county"]
 
     def eligible(self) -> bool:
         """
-        Return True if the household is at or below 80% AMI using HUD MTSP income limits
+        Return True if the household is at or below 80% AMI using HUD Standard Section 8 Income Limits.
+
+        Per CBRAP requirements: https://www.huduser.gov/portal/datasets/il.html
         """
 
-        income_limit = hud_client.get_screen_mtsp_ami(
+        income_limit = hud_client.get_screen_il_ami(
             self.screen, self.ami_percent, self.urgent_need.year.period if self.urgent_need.year else 2025
         )
         income = self.screen.calc_gross_income("yearly", ["all"])

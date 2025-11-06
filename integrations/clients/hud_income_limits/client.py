@@ -144,8 +144,6 @@ class HudIncomeClient:
         """
         Get Standard Section 8 Income Limit for a Screen object.
 
-        ⚠️ NOT YET IMPLEMENTED - This is a placeholder for future implementation.
-
         Uses HUD's standard Income Limits endpoint used for Section 8, Public Housing,
         and Housing Choice Vouchers. Only provides 30%, 50%, and 80% AMI levels.
 
@@ -165,19 +163,45 @@ class HudIncomeClient:
         Returns:
             Income limit in dollars
 
-        Raises:
-            NotImplementedError: This endpoint is not yet implemented
-
         Example:
             >>> hud_client.get_screen_il_ami(screen, "80%", "2025")
-            NotImplementedError: Standard Section 8 IL endpoint not yet implemented
+            89520
         """
-        raise NotImplementedError(
-            "Standard Section 8 Income Limits endpoint (/il/data/) not yet implemented. "
-            "Currently only MTSP endpoint is supported via get_screen_mtsp_ami(). "
-            "For 80% AMI, MTSP values are typically sufficient for eligibility screening. "
-            "Contact the team if you require Section 8 compliance for federal reporting."
-        )
+        if screen.household_size < 1 or screen.household_size > 8:
+            raise HudIncomeClientError("Household size must be between 1 and 8")
+
+        year = int(year) if isinstance(year, str) else year
+
+        # Get entity ID for the county
+        entity_id = self._get_entity_id(screen.white_label.state_code, screen.county, year)
+
+        # Fetch income limit data using Standard IL endpoint
+        cache_key = f"hud_il_{entity_id}_{year}"
+        data = cache.get(cache_key)
+
+        if not data:
+            params = {"year": str(year)} if year else {}
+            data = self._api_request(f"il/data/{entity_id}", params)
+            cache.set(cache_key, data, self.CACHE_TTL)
+
+        # Extract income limits data
+        if not data or "data" not in data:
+            raise HudIncomeClientError(
+                f"No income limit data found for {screen.county}, {screen.white_label.state_code}"
+            )
+
+        area_data = data["data"]
+
+        # Standard IL API structure uses different field names than MTSP
+        # Field format: "l{percent}_{household_size}" (e.g., "l80_4" for 80% AMI, household of 4)
+        percent_num = percent.rstrip("%")
+        field = f"l{percent_num}_{screen.household_size}"
+
+        value = area_data.get(field)
+        if value is None:
+            raise HudIncomeClientError(f"No {percent} AMI data for household size {screen.household_size}")
+
+        return int(value)
 
     def _get_entity_id(self, state_code: str, county_name: str, year: int) -> str:
         """Get FIPS entity ID for a county in any state."""

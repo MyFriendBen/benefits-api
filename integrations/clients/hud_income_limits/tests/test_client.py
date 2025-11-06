@@ -467,23 +467,125 @@ class TestHudIncomeClientStandardIL(TestCase):
     """Test Standard Section 8 Income Limits functionality."""
 
     def setUp(self):
-        """Set up test screen."""
-        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        """Set up test data and mocks."""
+        cache.clear()
+
+        self.white_label = WhiteLabel.objects.create(name="Illinois Test", code="il_test", state_code="IL")
         self.screen = Screen.objects.create(
-            white_label=self.white_label, zipcode="12345", county="Test County", household_size=4, completed=False
+            white_label=self.white_label, zipcode="60601", county="Cook", household_size=4, completed=False
         )
 
-    def test_get_screen_il_ami_not_implemented(self):
-        """Test that Standard IL method raises NotImplementedError."""
+        # Mock Standard IL API response for Cook County, IL
+        self.mock_il_response = {
+            "data": {
+                "l30_1": 27210,
+                "l30_2": 31110,
+                "l30_3": 34980,
+                "l30_4": 38850,
+                "l30_5": 41970,
+                "l30_6": 45090,
+                "l30_7": 48210,
+                "l30_8": 51330,
+                "l50_1": 45350,
+                "l50_2": 51850,
+                "l50_3": 58300,
+                "l50_4": 64750,
+                "l50_5": 69950,
+                "l50_6": 75150,
+                "l50_7": 80350,
+                "l50_8": 85550,
+                "l80_1": 72560,
+                "l80_2": 82960,
+                "l80_3": 93280,
+                "l80_4": 103600,
+                "l80_5": 111920,
+                "l80_6": 120240,
+                "l80_7": 128560,
+                "l80_8": 136880,
+                "median": 90700,
+            }
+        }
+
+        self.mock_counties_response = [
+            {"county_name": "Cook County", "fips_code": "17031"},
+            {"county_name": "DuPage County", "fips_code": "17043"},
+        ]
+
+    def test_get_screen_il_ami_80_percent_success(self):
+        """Test successful Standard IL AMI lookup for 80% AMI."""
         client = HudIncomeClient(api_token="test_token")
 
-        with self.assertRaises(NotImplementedError) as context:
-            client.get_screen_il_ami(self.screen, "80%", "2025")
+        with patch.object(client, "_api_request") as mock_api:
+            mock_api.side_effect = [
+                self.mock_counties_response,
+                self.mock_il_response,
+            ]
 
-        error_msg = str(context.exception)
-        self.assertIn("not yet implemented", error_msg)
-        self.assertIn("get_screen_mtsp_ami", error_msg)
-        self.assertIn("/il/data/", error_msg)
+            result = client.get_screen_il_ami(self.screen, "80%", "2025")
+
+            # Should return 80% AMI for household size 4
+            self.assertEqual(result, 103600)
+            self.assertEqual(mock_api.call_count, 2)
+
+    def test_get_screen_il_ami_all_percentages(self):
+        """Test all supported Standard IL percentage levels (30%, 50%, 80%)."""
+        client = HudIncomeClient(api_token="test_token")
+
+        expected_values = {
+            "30%": 38850,
+            "50%": 64750,
+            "80%": 103600,
+        }
+
+        with patch.object(client, "_api_request") as mock_api:
+            for percent, expected in expected_values.items():
+                mock_api.side_effect = [
+                    self.mock_counties_response,
+                    self.mock_il_response,
+                ]
+
+                result = client.get_screen_il_ami(self.screen, percent, "2025")
+                self.assertEqual(result, expected, f"Failed for {percent}")
+
+                cache.clear()
+
+    def test_get_screen_il_ami_caching(self):
+        """Test that Standard IL API responses are cached properly."""
+        client = HudIncomeClient(api_token="test_token")
+
+        with patch.object(client, "_api_request") as mock_api:
+            mock_api.side_effect = [
+                self.mock_counties_response,
+                self.mock_il_response,
+            ]
+
+            # First call - should hit API
+            result1 = client.get_screen_il_ami(self.screen, "80%", "2025")
+
+            # Second call - should use cache
+            result2 = client.get_screen_il_ami(self.screen, "80%", "2025")
+
+            self.assertEqual(result1, result2)
+            # Should only call API twice (once for counties, once for IL data)
+            self.assertEqual(mock_api.call_count, 2)
+
+    def test_get_screen_il_ami_missing_data(self):
+        """Test that missing IL data raises error."""
+        client = HudIncomeClient(api_token="test_token")
+
+        incomplete_data = self.mock_il_response.copy()
+        del incomplete_data["data"]["l80_4"]
+
+        with patch.object(client, "_api_request") as mock_api:
+            mock_api.side_effect = [
+                self.mock_counties_response,
+                incomplete_data,
+            ]
+
+            with self.assertRaises(HudIncomeClientError) as context:
+                client.get_screen_il_ami(self.screen, "80%", "2025")
+
+            self.assertIn("No 80% AMI data", str(context.exception))
 
 
 # Backward compatibility test removed - get_screen_ami() method was not implemented
