@@ -2948,6 +2948,16 @@ class TxConfigurationData(ConfigurationData):
     category_benefits = {
         "cash": {
             "benefits": {
+                "tanf": {
+                    "name": {
+                        "_label": "cashBenefits.tx_tanf",
+                        "_default_message": "Temporary Assistance for Needy Families (TANF): ",
+                    },
+                    "description": {
+                        "_label": "cashBenefits.tx_tanf_desc",
+                        "_default_message": "Cash assistance and support for families",
+                    },
+                },
                 "ssi": {
                     "name": {
                         "_label": "cashAssistanceBenefits.ssi",

@@ -8,7 +8,7 @@ request payloads from Screen data and calculator configurations.
 from django.test import TestCase
 from screener.models import Screen, HouseholdMember, WhiteLabel, Expense, IncomeStream
 from programs.programs.policyengine.policy_engine import pe_input
-from programs.programs.tx.pe.spm import TxSnap, TxLifeline
+from programs.programs.tx.pe.spm import TxSnap, TxLifeline, TxTanf
 from programs.programs.tx.pe.member import TxWic, TxSsi, TxCsfp
 from programs.programs.tx.pe.tax import TxEitc, TxCtc, TxAca
 from programs.programs.policyengine.calculators.constants import (
@@ -2155,3 +2155,87 @@ class TestPeInput(TestCase):
         self.assertIsInstance(household["people"], dict)
         self.assertIsInstance(household["spm_units"], dict)
         self.assertIsInstance(household["tax_units"], dict)
+
+    def test_pe_input_txtanf_tx_specific_dependency_values(self):
+        """
+        Test that TxTanf includes TX-specific dependencies with correct values.
+
+        TxTanf adds:
+        - TxStateCodeDependency (household level)
+        - TxTanfCountableEarnedIncomeDependency (SPM level)
+        - TxTanfCountableUnearnedIncomeDependency (SPM level)
+        """
+        result = pe_input(self.screen, [TxTanf])
+        household = result["household"]
+        household_unit = household["households"]["household"]
+        spm_unit = household["spm_units"]["spm_unit"]
+
+        # Verify TX state code dependency
+        self.assertIn("state_code", household_unit)
+        if household_unit["state_code"]:
+            period_key = list(household_unit["state_code"].keys())[0]
+            self.assertEqual(
+                household_unit["state_code"][period_key],
+                "TX",
+                "TxStateCodeDependency should set state_code='TX'",
+            )
+
+        # Verify TX TANF income dependencies
+        self.assertIn(
+            "tx_tanf_countable_earned_income",
+            spm_unit,
+            "Expected tx_tanf_countable_earned_income from TxTanfCountableEarnedIncomeDependency",
+        )
+        self.assertIn(
+            "tx_tanf_countable_unearned_income",
+            spm_unit,
+            "Expected tx_tanf_countable_unearned_income from TxTanfCountableUnearnedIncomeDependency",
+        )
+
+    def test_pe_input_includes_txtanf_pe_output_field(self):
+        """
+        Test that pe_input result includes TxTanf pe_outputs dependency.
+
+        TxTanf.pe_outputs = [dependency.spm.TxTanf] which adds the 'tx_tanf' field
+        to the spm_unit for PolicyEngine to calculate and return.
+        """
+        result = pe_input(self.screen, [TxTanf])
+        spm_unit = result["household"]["spm_units"]["spm_unit"]
+
+        # Verify tx_tanf output field exists
+        self.assertIn(
+            "tx_tanf",
+            spm_unit,
+            "Expected 'tx_tanf' output field from TxTanf.pe_outputs not found in spm_unit",
+        )
+
+        # Verify it has a period structure
+        self.assertIsInstance(
+            spm_unit["tx_tanf"],
+            dict,
+            "tx_tanf should be a dict with period keys",
+        )
+
+    def test_pe_input_with_txtanf_includes_parent_tanf_dependencies(self):
+        """
+        Test that TxTanf includes dependencies inherited from parent Tanf class.
+
+        The parent Tanf class includes:
+        - AgeDependency (member level)
+        - FullTimeCollegeStudentDependency (member level)
+        """
+        result = pe_input(self.screen, [TxTanf])
+        people = result["household"]["people"]
+
+        # Check member-level dependencies from parent Tanf class
+        head_id = str(self.head.id)
+        self.assertIn(
+            "age",
+            people[head_id],
+            "Expected 'age' field from AgeDependency (inherited from Tanf) not found",
+        )
+        self.assertIn(
+            "is_full_time_college_student",
+            people[head_id],
+            "Expected 'is_full_time_college_student' field from FullTimeCollegeStudentDependency not found",
+        )

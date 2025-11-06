@@ -252,6 +252,34 @@ class IlTanfCountableGrossUnearnedIncomeDependency(SpmUnit):
         return int(self.screen.calc_gross_income("yearly", ["unearned"], exclude=["cashAssistance"]))
 
 
+class TxTanf(SpmUnit):
+    field = "tx_tanf"
+
+
+class TxTanfCountableEarnedIncomeDependency(SpmUnit):
+    field = "tx_tanf_countable_earned_income"
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
+
+    def value(self):
+        return int(self.screen.calc_gross_income("yearly", ["earned"]))
+
+
+class TxTanfCountableUnearnedIncomeDependency(SpmUnit):
+    field = "tx_tanf_countable_unearned_income"
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
+
+    def value(self):
+        return int(self.screen.calc_gross_income("yearly", ["unearned"], exclude=["cashAssistance"]))
+
+
 class PreSubsidyChildcareExpensesDependency(SpmUnit):
     field = "spm_unit_pre_subsidy_childcare_expenses"
 

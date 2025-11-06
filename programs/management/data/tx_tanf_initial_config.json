@@ -1,0 +1,77 @@
+{
+  "white_label": {
+    "code": "tx"
+  },
+  "program_category": {
+    "external_name": "tx_cash_assistance",
+    "name": "Cash Assistance",
+    "icon": "cash"
+  },
+  "program": {
+    "name_abbreviated": "tx_tanf",
+    "year": "2025",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus"
+    ],
+    "name": "Temporary Assistance for Needy Families (TANF)",
+    "description_short": "Cash assistance and support for families",
+    "description": "TANF provides cash assistance and support for families. Most TANF participants must have a job, look for work, volunteer in the community, or take part in education or job-skills training. To qualify, you must be pregnant or have a dependent child living in your home.\n\nThe maximum grant amount for your household depends on the number of adults and children in the home. To receive TANF, you must cooperate with child support services and assign to the state any rights you have to receive child support. A local agency will conduct an interview with you. Supplemental Security Income (SSI) may affect your household's eligibility for TANF.",
+    "learn_more_link": "https://www.hhs.texas.gov/services/financial/cash/tanf-cash-help",
+    "apply_button_link": "https://www.yourtexasbenefits.com/Learn/Home",
+    "apply_button_description": "",
+    "estimated_application_time": "45 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": ""
+  },
+  "documents": [
+    {
+      "external_name": "tx_home",
+      "text": "Proof of home address (ex: lease, mortgage statement, utility bill)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_id_proof",
+      "text": "Proof of identity (ex: driver's license, official state ID card)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_ssn",
+      "text": "Social security number",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_us_status",
+      "text": "Proof of status in U.S. (ex: birth certificate, green card, work permit)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_earned_income",
+      "text": "Proof of earned income  (ex: pay stubs, tax returns, W-2, 1099) & employer information",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_unearned_income",
+      "text": "Proof of unearned income (ex: child support, social security, unemployment)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_expenses",
+      "text": "Proof of expenses (ex: rent or mortgage, child care, utilities, medical)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_marriage",
+      "text": "Proof of marital status (ex: marriage license, divorce decree, death certificate)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ]
+}
