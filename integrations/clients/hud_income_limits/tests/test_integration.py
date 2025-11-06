@@ -9,7 +9,8 @@ Skip integration tests with: pytest -m "not integration"
 """
 
 import pytest
-from django.test import TestCase, skipUnless
+from unittest import skipUnless
+from django.test import TestCase
 from decouple import config
 from django.core.cache import cache
 
