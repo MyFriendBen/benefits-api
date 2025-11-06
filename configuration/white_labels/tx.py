@@ -2948,6 +2948,16 @@ class TxConfigurationData(ConfigurationData):
     category_benefits = {
         "cash": {
             "benefits": {
+                "tanf": {
+                    "name": {
+                        "_label": "cashAssistanceBenefits.tx_tanf",
+                        "_default_message": "Temporary Assistance for Needy Families (TANF): ",
+                    },
+                    "description": {
+                        "_label": "cashAssistanceBenefits.tx_tanf_desc",
+                        "_default_message": "Cash assistance and support for families",
+                    },
+                },
                 "ssi": {
                     "name": {
                         "_label": "cashAssistanceBenefits.ssi",
@@ -2994,6 +3004,16 @@ class TxConfigurationData(ConfigurationData):
                     "description": {
                         "_label": "foodAndNutritionBenefits.nslp_desc",
                         "_default_message": "Free school meals",
+                    },
+                },
+                "csfp": {
+                    "name": {
+                        "_label": "foodAndNutritionBenefits.csfp",
+                        "_default_message": "Commodity Supplemental Food Program: ",
+                    },
+                    "description": {
+                        "_label": "foodAndNutritionBenefits.csfp_desc",
+                        "_default_message": "Food support for people 60 years of age or older",
                     },
                 },
             },
@@ -3044,6 +3064,24 @@ class TxConfigurationData(ConfigurationData):
                 },
             },
             "category_name": {"_label": "taxCredits", "_default_message": "Tax Credits"},
+        },
+        "healthCare": {
+            "benefits": {
+                "aca": {
+                    "name": {
+                        "_label": "healthCareBenefits.aca",
+                        "_default_message": "ACA (Affordable Care Act) Premium Tax Credit: ",
+                    },
+                    "description": {
+                        "_label": "healthCareBenefits.aca_desc",
+                        "_default_message": "Health insurance marketplace and premium tax credit",
+                    },
+                },
+            },
+            "category_name": {
+                "_label": "healthCare",
+                "_default_message": "Health Care",
+            },
         },
     }
 

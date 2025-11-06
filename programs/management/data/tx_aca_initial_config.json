@@ -1,0 +1,54 @@
+{
+    "white_label": {"code": "tx"},
+    "program_category": {
+        "external_name": "tx_healthcare",
+        "name": "Healthcare",
+        "icon": "health_care"
+    },
+    "program": {
+        "name_abbreviated": "tx_aca",
+        "year": "2025",
+        "legal_status_required": ["citizen", "gc_5plus", "gc_18plus_no5", "gc_under18_no5"],
+        "name": "ACA Premium Tax Credit",
+        "description_short": "Health insurance marketplace and premium tax credit.",
+        "description": "Health insurance marketplace and premium tax credit. The government health insurance marketplace lets you shop for affordable health insurance. You can compare different plans to reduce your out-of-pocket costs.\n\nYou may qualify for two types of government help when you buy health insurance through the marketplace: premium tax credits and cost-sharing savings. A premium tax credit can reduce your monthly premium. This tax credit is refundable. This means you may get it even if it is more than the federal income taxes you owe. But you may not claim premium tax credits if you are eligible for Medicare, full Medicaid, or VA insurance benefits.\n\nYou may enjoy extra health care cost savings if you buy a Silver Plan. The premium you pay for a Silver plan may be higher than the premium you pay for other plans. But a Silver plan may lower your other health care costs.\n\nYou can apply for health insurance through the marketplace between November 1 and January 15. Special life events may let you apply outside of this time frame. Special life events could mean marriage, losing health insurance, divorce, having a baby, moving counties, and more.\n\nYour time to receive this benefit depends on when you apply. You may start receiving it on January 1 or the first day of the month after completing the application and enrolling in health insurance.",
+        "learn_more_link": "https://www.healthcare.gov/",
+        "apply_button_link": "https://www.healthcare.gov/create-account",
+        "apply_button_description": "",
+        "estimated_application_time": "30 minutes",
+        "estimated_value": "",
+        "website_description": "Health insurance marketplace premium tax credit"
+    },
+    "documents": [
+        {
+            "external_name": "tx_home",
+            "text": "Proof of home address (ex: lease, mortgage statement, utility bill)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "tx_unearned_income",
+            "text": "Proof of unearned income (ex: child support, social security, unemployment)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "tx_us_status",
+            "text": "Proof of status in U.S. (ex: birth certificate, green card, work permit)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "earned_income",
+            "text": "Proof of earned income  (ex: pay stubs, tax returns, W-2, 1099) & employer information",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "id_proof",
+            "text": "Proof of identity (ex: driver's license, official state ID card)",
+            "link_url": "",
+            "link_text": ""
+        }
+    ]
+}
