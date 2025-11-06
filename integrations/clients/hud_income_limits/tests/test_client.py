@@ -343,6 +343,21 @@ class TestHudIncomeClientErrors(TestCase):
         )
 
     @patch("integrations.clients.hud_income_limits.client.requests.get")
+    def test_successful_api_request(self, mock_get):
+        """Test successful API request returns JSON data."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"data": "test"}
+        mock_response.raise_for_status = Mock()  # Does nothing on success
+        mock_get.return_value = mock_response
+
+        client = HudIncomeClient(api_token="test_token")
+        result = client._api_request("test/endpoint")
+
+        self.assertEqual(result, {"data": "test"})
+        mock_response.raise_for_status.assert_called_once()
+
+    @patch("integrations.clients.hud_income_limits.client.requests.get")
     def test_401_authentication_error(self, mock_get):
         """Test 401 authentication error handling."""
         import requests
