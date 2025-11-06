@@ -1,17 +1,17 @@
-from typing import Literal
 from ..base import UrgentNeedFunction
 from integrations.clients.hud_income_limits import hud_client
+from integrations.clients.hud_income_limits.client import Section8AmiPercent
 
 
 class IlRenterAssistance(UrgentNeedFunction):
-    ami_percent: Literal["30%", "50%", "80%"] = "80%"
+    ami_percent: Section8AmiPercent = "80%"
     dependencies = ["income_amount", "income_frequency", "household_size", "county"]
 
     def eligible(self) -> bool:
         """
         Return True if the household is at or below 80% AMI using HUD Standard Section 8 Income Limits.
 
-        Per CBRAP requirements: https://www.huduser.gov/portal/datasets/il.html
+        Per CBRAP requirements: https://www.illinoishousinghelp.org/cbrap
         """
 
         income_limit = hud_client.get_screen_il_ami(

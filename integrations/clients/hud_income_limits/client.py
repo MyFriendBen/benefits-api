@@ -15,8 +15,11 @@ import requests
 from sentry_sdk import capture_exception
 from django.core.cache import cache
 
-# Type alias for AMI percentage levels supported by HUD API
-AmiPercent = Literal["20%", "30%", "40%", "50%", "60%", "70%", "80%", "100%"]
+# Type alias for MTSP AMI percentage levels (Multifamily Tax Subsidy Project)
+MtspAmiPercent = Literal["20%", "30%", "40%", "50%", "60%", "70%", "80%", "100%"]
+
+# Type alias for Standard Section 8 AMI percentage levels
+Section8AmiPercent = Literal["30%", "50%", "80%"]
 
 
 class HudIncomeClientError(Exception):
@@ -60,7 +63,7 @@ class HudIncomeClient:
     def get_screen_mtsp_ami(
         self,
         screen,
-        percent: AmiPercent,
+        percent: MtspAmiPercent,
         year: Union[int, str],
     ) -> int:
         """
@@ -88,30 +91,14 @@ class HudIncomeClient:
             >>> hud_client.get_screen_mtsp_ami(screen, "80%", "2025")
             89520
         """
-        if screen.household_size < 1 or screen.household_size > 8:
-            raise HudIncomeClientError("Household size must be between 1 and 8")
-
+        self._validate_household_size(screen.household_size)
         year = int(year) if isinstance(year, str) else year
 
-        # Get entity ID for the county (works for any state)
         entity_id = self._get_entity_id(screen.white_label.state_code, screen.county, year)
 
-        # Fetch income limit data using MTSP endpoint (has all percentages: 20-80%)
         cache_key = f"hud_mtsp_{entity_id}_{year}"
-        data = cache.get(cache_key)
-
-        if not data:
-            params = {"year": str(year)} if year else {}
-            data = self._api_request(f"mtspil/data/{entity_id}", params)
-            cache.set(cache_key, data, self.CACHE_TTL)
-
-        # Extract income limits data
-        if not data or "data" not in data:
-            raise HudIncomeClientError(
-                f"No income limit data found for {screen.county}, {screen.white_label.state_code}"
-            )
-
-        area_data = data["data"]
+        data = self._fetch_cached_data(cache_key, f"mtspil/data/{entity_id}", year)
+        area_data = self._validate_data_response(data, screen.county, screen.white_label.state_code)
 
         # Get the field value based on percent
         # MTSP API structure: {"20percent": {"il20_p1": ...}, "30percent": {...}, ..., "80percent": {...}}
@@ -138,7 +125,7 @@ class HudIncomeClient:
     def get_screen_il_ami(
         self,
         screen,
-        percent: Literal["30%", "50%", "80%"],
+        percent: Section8AmiPercent,
         year: Union[int, str],
     ) -> int:
         """
@@ -167,30 +154,14 @@ class HudIncomeClient:
             >>> hud_client.get_screen_il_ami(screen, "80%", "2025")
             89520
         """
-        if screen.household_size < 1 or screen.household_size > 8:
-            raise HudIncomeClientError("Household size must be between 1 and 8")
-
+        self._validate_household_size(screen.household_size)
         year = int(year) if isinstance(year, str) else year
 
-        # Get entity ID for the county
         entity_id = self._get_entity_id(screen.white_label.state_code, screen.county, year)
 
-        # Fetch income limit data using Standard IL endpoint
         cache_key = f"hud_il_{entity_id}_{year}"
-        data = cache.get(cache_key)
-
-        if not data:
-            params = {"year": str(year)} if year else {}
-            data = self._api_request(f"il/data/{entity_id}", params)
-            cache.set(cache_key, data, self.CACHE_TTL)
-
-        # Extract income limits data
-        if not data or "data" not in data:
-            raise HudIncomeClientError(
-                f"No income limit data found for {screen.county}, {screen.white_label.state_code}"
-            )
-
-        area_data = data["data"]
+        data = self._fetch_cached_data(cache_key, f"il/data/{entity_id}", year)
+        area_data = self._validate_data_response(data, screen.county, screen.white_label.state_code)
 
         # Standard IL API structure uses different field names than MTSP
         # Field format: "l{percent}_{household_size}" (e.g., "l80_4" for 80% AMI, household of 4)
@@ -202,6 +173,28 @@ class HudIncomeClient:
             raise HudIncomeClientError(f"No {percent} AMI data for household size {screen.household_size}")
 
         return int(value)
+
+    def _validate_household_size(self, household_size: int) -> None:
+        """Validate household size is within HUD API bounds (1-8)."""
+        if household_size < 1 or household_size > 8:
+            raise HudIncomeClientError("Household size must be between 1 and 8")
+
+    def _fetch_cached_data(self, cache_key: str, endpoint: str, year: int) -> dict:
+        """Fetch data from cache or API and cache the result."""
+        data = cache.get(cache_key)
+
+        if not data:
+            params = {"year": str(year)} if year else {}
+            data = self._api_request(endpoint, params)
+            cache.set(cache_key, data, self.CACHE_TTL)
+
+        return data
+
+    def _validate_data_response(self, data: dict, county: str, state_code: str) -> dict:
+        """Validate API response contains data and return the data section."""
+        if not data or "data" not in data:
+            raise HudIncomeClientError(f"No income limit data found for {county}, {state_code}")
+        return data["data"]
 
     def _get_entity_id(self, state_code: str, county_name: str, year: int) -> str:
         """Get FIPS entity ID for a county in any state."""
