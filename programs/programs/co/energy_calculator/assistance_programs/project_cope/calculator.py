@@ -4,7 +4,7 @@ from programs.programs.calc import Eligibility, ProgramCalculator
 class EnergyCalculatorProjectCOPE(ProgramCalculator):
     amount = 1
     dependencies = ["energy_calculator"]
-    utility_providers = ["co-colorado-springs-utilities"]
+    utility_providers = ["co-colorado-springs-utilities", "co-colorado-springs-utilities-gas"]
 
     def household_eligible(self, e: Eligibility):
         # user doesn't already have project cope

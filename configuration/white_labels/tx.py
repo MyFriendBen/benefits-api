@@ -2946,6 +2946,24 @@ class TxConfigurationData(ConfigurationData):
     }
 
     category_benefits = {
+        "cash": {
+            "benefits": {
+                "ssi": {
+                    "name": {
+                        "_label": "cashAssistanceBenefits.ssi",
+                        "_default_message": "Supplemental Security Income (SSI): ",
+                    },
+                    "description": {
+                        "_label": "cashAssistanceBenefits.ssi_desc",
+                        "_default_message": "Federal cash assistance for individuals who are disabled, blind, or 65 years of age or older",
+                    },
+                },
+            },
+            "category_name": {
+                "_label": "cashAssistance",
+                "_default_message": "Cash Assistance",
+            },
+        },
         "foodAndNutrition": {
             "benefits": {
                 "snap": {
@@ -2958,11 +2976,84 @@ class TxConfigurationData(ConfigurationData):
                         "_default_message": "Food assistance",
                     },
                 },
+                "wic": {
+                    "name": {
+                        "_label": "foodAndNutritionBenefits.wic",
+                        "_default_message": "Special Supplemental Nutrition Program for Women, Infants, and Children (WIC): ",
+                    },
+                    "description": {
+                        "_label": "foodAndNutritionBenefits.wic_desc",
+                        "_default_message": "Food and breastfeeding assistance",
+                    },
+                },
+                "nslp": {
+                    "name": {
+                        "_label": "foodAndNutritionBenefits.nslp",
+                        "_default_message": "National School Lunch Program: ",
+                    },
+                    "description": {
+                        "_label": "foodAndNutritionBenefits.nslp_desc",
+                        "_default_message": "Free school meals",
+                    },
+                },
+                "csfp": {
+                    "name": {
+                        "_label": "foodAndNutritionBenefits.csfp",
+                        "_default_message": "Commodity Supplemental Food Program: ",
+                    },
+                    "description": {
+                        "_label": "foodAndNutritionBenefits.csfp_desc",
+                        "_default_message": "Food support for people 60 years of age or older",
+                    },
+                },
             },
             "category_name": {
                 "_label": "foodAndNutrition",
                 "_default_message": "Food and Nutrition",
             },
+        },
+        "housingAndUtilities": {
+            "benefits": {
+                "lifeline": {
+                    "name": {
+                        "_label": "housingAndUtilities.lifeline",
+                        "_default_message": "Lifeline: ",
+                    },
+                    "description": {
+                        "_label": "housingAndUtilities.lifeline_desc",
+                        "_default_message": "Phone or internet discount",
+                    },
+                },
+            },
+            "category_name": {
+                "_label": "housingAndUtilities",
+                "_default_message": "Housing and Utilities",
+            },
+        },
+        "taxCredits": {
+            "benefits": {
+                "eitc": {
+                    "name": {
+                        "_label": "taxCreditBenefits.eitc",
+                        "_default_message": "Earned Income Tax Credit (EITC): ",
+                    },
+                    "description": {
+                        "_label": "taxCreditBenefits.eitc_desc",
+                        "_default_message": "Federal tax credit - earned income",
+                    },
+                },
+                "ctc": {
+                    "name": {
+                        "_label": "taxCreditBenefits.ctc",
+                        "_default_message": "Child Tax Credit (CTC): ",
+                    },
+                    "description": {
+                        "_label": "taxCreditBenefits.ctc_desc",
+                        "_default_message": "Federal tax credit",
+                    },
+                },
+            },
+            "category_name": {"_label": "taxCredits", "_default_message": "Tax Credits"},
         },
     }
 

@@ -6,7 +6,7 @@ from django.db import connection
 VIEWS = {
     "v2_dependencies": ["data_referrer_codes", "data"],
     "v2_batch_1": [
-        "data_current_benefits",
+        "data_currentbenefits",
         "data_householdmembers",
         "data_immediate_needs",
         "data_previous_benefits",
