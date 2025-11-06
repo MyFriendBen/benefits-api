@@ -193,8 +193,9 @@ class HudIncomeClient:
         if not counties:
             # Use FMR endpoint to list counties (shared across FMR and IL APIs)
             # Note: This requires FMR dataset API access in addition to IL dataset
-            # Include year parameter to ensure FIPS codes match the requested year
-            params = {"year": str(year)} if year else {}
+            # Include 'updated' parameter to ensure FIPS codes match the requested year
+            # (HUD API uses 'updated' not 'year' per November 2025 guidance)
+            params = {"updated": str(year)} if year else {}
             counties = self._api_request(f"fmr/listCounties/{state_code.upper()}", params)
             cache.set(cache_key, counties, self.CACHE_TTL)
 
