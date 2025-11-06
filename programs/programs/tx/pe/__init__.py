@@ -13,6 +13,7 @@ tx_member_calculators = {
 tx_tax_unit_calculators = {
     "tx_eitc": tax.TxEitc,
     "tx_ctc": tax.TxCtc,
+    "tx_aca": tax.TxAca,
 }
 
 tx_spm_calculators = {
