@@ -337,6 +337,36 @@ class Screen(models.Model):
         return False
 
     def has_benefit(self, name_abbreviated: str):
+        """
+        Maps a program's name_abbreviated to the corresponding has_* field on the Screen model.
+
+        This is used to determine if a user already has a benefit (selected in step 10) so it can be
+        filtered from results on the frontend via the "already_has" flag.
+
+        Map Structure:
+            Key: Program name_abbreviated (from program registration, e.g., co/__init__.py)
+            Value: Boolean field on Screen model indicating user has that benefit
+
+        Common Pattern:
+            Multiple program variants (e.g., different states or screener types) map to the same field:
+            - "snap", "co_snap", "il_snap" → all map to self.has_snap (same real-world benefit)
+            - "leap", "co_energy_calculator_leap" → both map to self.has_leap (same benefit, different flows)
+
+        Adding New Mappings:
+            1. Ensure the benefit key exists in white_label config's category_benefits (e.g., "leap")
+            2. Ensure updateScreen.ts maps formData.benefits.{key} → has_{key}
+            3. Add all program name_abbreviated variants that represent the same benefit
+
+        Example Flow:
+            Config (co.py): "leap": {"name": "LEAP", ...}
+            → User checks LEAP in step 10
+            → Frontend: formData.benefits.leap = true
+            → API (updateScreen.ts): has_leap = formData.benefits.leap
+            → Database: screen.has_leap = True
+            → This method: has_benefit("leap") → returns self.has_leap (True)
+            → Serializer: "already_has": True → Frontend filters out LEAP from results
+        """
+
         has_ssi_or_ssi_income = self.has_ssi or self.calc_gross_income("yearly", ("sSI",)) > 0
 
         name_map = {
