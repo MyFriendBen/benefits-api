@@ -24,7 +24,7 @@ ma_spm_calculators = {
     "ma_snap": spm.MaSnap,
     "ma_tafdc": spm.MaTafdc,
     "ma_eaedc": spm.MaEaedc,
-    "ma_heap": spm.MAHeap,
+    "ma_heap": spm.MaHeap,
 }
 
 ma_pe_calculators: dict[str, type[PolicyEngineCalulator]] = {

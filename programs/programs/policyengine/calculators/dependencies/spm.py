@@ -423,12 +423,12 @@ class IlLiheapIncomeEligible(SpmUnit):
     field = "il_liheap_income_eligible"
 
 
-class MALiheap(SpmUnit):
+class MaLiheap(SpmUnit):
     field = "ma_liheap"
 
     def value(self):
         return self.screen.calc_expenses("yearly", ["heating", "cooling"])
 
 
-class MALiheapIncomeEligible(SpmUnit):
+class MaLiheapIncomeEligible(SpmUnit):
     field = "ma_liheap_income_eligible"

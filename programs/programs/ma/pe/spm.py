@@ -54,35 +54,21 @@ class MaEaedc(PolicyEngineSpmCalulator):
     pe_outputs = [dependency.spm.MaEaedc]
 
 
-class MAHeap(PolicyEngineSpmCalulator):
-    """
-    Massachusetts Home Energy Assistance Program (HEAP)
-
-    Hard-coded annual benefit values based on household size.
-    Eligibility: 60% state median income - current maximum income levels are here:
-        Household Size      2026 Income Limit     2025 Income Limit
-        1-person HH         $51,777               $49,196
-        2                   $67,709               $64,333
-        3                   $83,641               $79,470
-        4                   $99,573               $94,608
-        5                   $115,504              $109,745
-        6                   $131,436              $124,882
-        7                   $134,423
-        8                   $137,410
-    Application period: The online application will open on October 1, 2025,
-        for the upcoming winter heating season (November 1, 2025, to April 30, 2026).
-
-    Values based on MA 2025 benefit matrix for natural gas households.
-    Source: https://liheapch.acf.gov/docs/2025/benefits-matricies/MA_BenefitMatrix_2025.pdf
-    """
-
+class MaHeap(PolicyEngineSpmCalulator):
     pe_name = "ma_liheap_income_eligible"
     pe_inputs = [
         dependency.household.MaStateCodeDependency,
-        dependency.spm.MALiheap,
+        dependency.spm.MaLiheap,
     ]
-    pe_outputs = [dependency.spm.MALiheapIncomeEligible]
+    pe_outputs = [dependency.spm.MaLiheapIncomeEligible]
 
+    '''
+    benefits_amounts starts with the lowest possible value for a household size of 1 
+    using the source document referenced above. We increment up as the household size increases 
+    using the pattern established in MA. These are not intended to be accurate but instead provide 
+    a low-end estimate while gradually incrementing up to provide more incentive to apply 
+    without overestimating.
+    '''
     benefit_amounts = {
         1: 430,
         2: 445,
