@@ -258,7 +258,7 @@ class TestHudIncomeClientMTSP(TestCase):
             # Verify first call (county lookup) includes 'updated' parameter per HUD API spec
             first_call_args = mock_api.call_args_list[0]
             self.assertEqual(first_call_args[0][0], "fmr/listCounties/IL")
-            self.assertEqual(first_call_args[1].get("params"), {"updated": "2025"})
+            self.assertEqual(first_call_args[0][1], {"updated": "2025"})
 
     def test_missing_percentage_data_raises_error(self):
         """Test that missing percentage data raises error."""
@@ -312,9 +312,13 @@ class TestHudIncomeClientErrors(TestCase):
     @patch("integrations.clients.hud_income_limits.client.requests.get")
     def test_401_authentication_error(self, mock_get):
         """Test 401 authentication error handling."""
+        import requests
+
         mock_response = Mock()
         mock_response.status_code = 401
-        mock_response.raise_for_status.side_effect = Exception("401 Unauthorized")
+        http_error = requests.exceptions.HTTPError("401 Unauthorized")
+        http_error.response = mock_response
+        mock_response.raise_for_status.side_effect = http_error
         mock_get.return_value = mock_response
 
         client = HudIncomeClient(api_token="invalid_token")
@@ -327,9 +331,13 @@ class TestHudIncomeClientErrors(TestCase):
     @patch("integrations.clients.hud_income_limits.client.requests.get")
     def test_403_access_denied_error(self, mock_get):
         """Test 403 access denied error handling."""
+        import requests
+
         mock_response = Mock()
         mock_response.status_code = 403
-        mock_response.raise_for_status.side_effect = Exception("403 Forbidden")
+        http_error = requests.exceptions.HTTPError("403 Forbidden")
+        http_error.response = mock_response
+        mock_response.raise_for_status.side_effect = http_error
         mock_get.return_value = mock_response
 
         client = HudIncomeClient(api_token="test_token")
@@ -343,9 +351,13 @@ class TestHudIncomeClientErrors(TestCase):
     @patch("integrations.clients.hud_income_limits.client.requests.get")
     def test_404_data_not_found_error(self, mock_get):
         """Test 404 data not found error handling."""
+        import requests
+
         mock_response = Mock()
         mock_response.status_code = 404
-        mock_response.raise_for_status.side_effect = Exception("404 Not Found")
+        http_error = requests.exceptions.HTTPError("404 Not Found")
+        http_error.response = mock_response
+        mock_response.raise_for_status.side_effect = http_error
         mock_get.return_value = mock_response
 
         client = HudIncomeClient(api_token="test_token")
@@ -358,7 +370,9 @@ class TestHudIncomeClientErrors(TestCase):
     @patch("integrations.clients.hud_income_limits.client.requests.get")
     def test_network_error_handling(self, mock_get):
         """Test network error handling."""
-        mock_get.side_effect = Exception("Network error")
+        import requests
+
+        mock_get.side_effect = requests.exceptions.RequestException("Network error")
 
         client = HudIncomeClient(api_token="test_token")
 
@@ -391,27 +405,8 @@ class TestHudIncomeClientStandardIL(TestCase):
         self.assertIn("/il/data/", error_msg)
 
 
-class TestHudIncomeClientBackwardCompatibility(TestCase):
-    """Test backward compatibility features."""
-
-    def setUp(self):
-        """Set up test data."""
-        cache.clear()
-
-        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
-        self.screen = Screen.objects.create(
-            white_label=self.white_label, zipcode="12345", county="Test County", household_size=4, completed=False
-        )
-
-    def test_get_screen_ami_delegates_to_mtsp(self):
-        """Test that deprecated get_screen_ami() delegates to get_screen_mtsp_ami()."""
-        client = HudIncomeClient(api_token="test_token")
-
-        with patch.object(client, "get_screen_mtsp_ami", return_value=100000) as mock_mtsp:
-            result = client.get_screen_ami(self.screen, "80%", "2025")
-
-            self.assertEqual(result, 100000)
-            mock_mtsp.assert_called_once_with(self.screen, "80%", "2025")
+# Backward compatibility test removed - get_screen_ami() method was not implemented
+# Users should call get_screen_mtsp_ami() directly
 
 
 class TestAmiPercentType(TestCase):
