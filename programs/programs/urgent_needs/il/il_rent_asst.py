@@ -23,6 +23,9 @@ class IlRenterAssistance(UrgentNeedFunction):
         Per CBRAP requirements: https://www.illinoishousinghelp.org/cbrap
         """
 
+        if not self.urgent_need.year:
+            raise ValueError("urgent_need.year must be set for IL rent assistance eligibility")
+
         income_limit = hud_client.get_screen_il_ami(
             self.screen, self.ami_percent, self.urgent_need.year.period if self.urgent_need.year else 2025
         )
