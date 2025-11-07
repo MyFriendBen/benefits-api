@@ -201,7 +201,7 @@ class CoConfigurationData(ConfigurationData):
         "socialMedia": {"_label": "referralOptions.socialMedia", "_default_message": "Social Media"},
         "friend": {"_label": "referralOptions.friend", "_default_message": "Friend / Family / Word of Mouth"},
         "other": {"_label": "referralOptions.other", "_default_message": "Other"},
-        "merit": "Merit America",
+        "merit": {"_label": "referralOptions.merit", "_default_message": "Merit America"},
         "testOrProspect": {
             "_label": "referralOptions.testOrProspect",
             "_default_message": "Test / Prospective Partner",
