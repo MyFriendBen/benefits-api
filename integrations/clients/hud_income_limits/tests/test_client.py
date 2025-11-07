@@ -261,33 +261,40 @@ class TestHudIncomeClientStandardIL(HudClientTestBase):
         super().setUp()
 
         # Mock Standard IL API response for Cook County, IL
+        # Matches actual HUD API structure with nested categories
         self.mock_il_response = {
             "data": {
-                "l30_1": 27210,
-                "l30_2": 31110,
-                "l30_3": 34980,
-                "l30_4": 38850,
-                "l30_5": 41970,
-                "l30_6": 45090,
-                "l30_7": 48210,
-                "l30_8": 51330,
-                "l50_1": 45350,
-                "l50_2": 51850,
-                "l50_3": 58300,
-                "l50_4": 64750,
-                "l50_5": 69950,
-                "l50_6": 75150,
-                "l50_7": 80350,
-                "l50_8": 85550,
-                "l80_1": 72560,
-                "l80_2": 82960,
-                "l80_3": 93280,
-                "l80_4": 103600,
-                "l80_5": 111920,
-                "l80_6": 120240,
-                "l80_7": 128560,
-                "l80_8": 136880,
-                "median": 90700,
+                "median_income": 90700,
+                "extremely_low": {
+                    "il30_p1": 27210,
+                    "il30_p2": 31110,
+                    "il30_p3": 34980,
+                    "il30_p4": 38850,
+                    "il30_p5": 41970,
+                    "il30_p6": 45090,
+                    "il30_p7": 48210,
+                    "il30_p8": 51330,
+                },
+                "very_low": {
+                    "il50_p1": 45350,
+                    "il50_p2": 51850,
+                    "il50_p3": 58300,
+                    "il50_p4": 64750,
+                    "il50_p5": 69950,
+                    "il50_p6": 75150,
+                    "il50_p7": 80350,
+                    "il50_p8": 85550,
+                },
+                "low": {
+                    "il80_p1": 72560,
+                    "il80_p2": 82960,
+                    "il80_p3": 93280,
+                    "il80_p4": 103600,
+                    "il80_p5": 111920,
+                    "il80_p6": 120240,
+                    "il80_p7": 128560,
+                    "il80_p8": 136880,
+                },
             }
         }
 
@@ -348,8 +355,11 @@ class TestHudIncomeClientStandardIL(HudClientTestBase):
         """Test that missing Standard IL field raises error."""
         client = HudIncomeClient(api_token="test_token")
 
-        incomplete_data = self.mock_il_response.copy()
-        del incomplete_data["data"]["l80_4"]
+        # Create a deep copy and remove the 80% field for household size 4
+        import copy
+
+        incomplete_data = copy.deepcopy(self.mock_il_response)
+        del incomplete_data["data"]["low"]["il80_p4"]
 
         with patch.object(client, "_api_request") as mock_api:
             mock_api.side_effect = [
@@ -488,7 +498,7 @@ class TestHudIncomeClientCountyLookup(HudClientTestBase):
             self.assertEqual(result, 103600)
 
     def test_county_lookup_includes_year_parameter(self):
-        """Test that county lookup includes 'updated' parameter per HUD API spec."""
+        """Test that county lookup includes 'year' and 'updated' parameters per HUD API spec."""
         client = HudIncomeClient(api_token="test_token")
 
         with patch.object(client, "_api_request") as mock_api:
@@ -499,10 +509,29 @@ class TestHudIncomeClientCountyLookup(HudClientTestBase):
 
             client.get_screen_mtsp_ami(self.screen, "80%", 2025)
 
-            # Verify first call (county lookup) includes 'updated' parameter
+            # Verify first call (county lookup) includes both 'year' and 'updated' parameters for 2025+
             first_call_args = mock_api.call_args_list[0]
             self.assertEqual(first_call_args[0][0], "fmr/listCounties/IL")
-            self.assertEqual(first_call_args[0][1], {"updated": "2025"})
+            self.assertEqual(first_call_args[0][1], {"year": "2025", "updated": "2025"})
+
+    def test_county_lookup_2024_only_includes_year_not_updated(self):
+        """Test that county lookup for 2024 includes 'year' but NOT 'updated' parameter."""
+        client = HudIncomeClient(api_token="test_token")
+
+        with patch.object(client, "_api_request") as mock_api:
+            mock_api.side_effect = [
+                self.mock_counties_response,
+                self.mock_mtsp_response,
+            ]
+
+            client.get_screen_mtsp_ami(self.screen, "80%", 2024)
+
+            # Verify first call (county lookup) includes ONLY 'year' for pre-2025
+            first_call_args = mock_api.call_args_list[0]
+            self.assertEqual(first_call_args[0][0], "fmr/listCounties/IL")
+            self.assertEqual(first_call_args[0][1], {"year": "2024"})
+            # Explicitly verify 'updated' is NOT present
+            self.assertNotIn("updated", first_call_args[0][1])
 
     def test_empty_counties_list(self):
         """Test that empty counties list raises error."""

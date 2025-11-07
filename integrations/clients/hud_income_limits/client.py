@@ -3,8 +3,9 @@ HUD Income Limits API Client
 
 Drop-in replacement for the Google Sheets-based Ami class.
 
-Uses HUD's Multifamily Tax Subsidy Project (MTSP) Income Limits API which provides
-all income percentage levels (20%, 30%, 40%, 50%, 60%, 70%, 80%, 100% AMI).
+Provides access to two HUD Income Limits datasets:
+1. MTSP (Multifamily Tax Subsidy Project): 20%, 30%, 40%, 50%, 60%, 70%, 80%, 100% AMI
+2. Standard Section 8 Income Limits: 30%, 50%, 80% AMI
 
 API Documentation: https://www.huduser.gov/portal/dataset/fmr-api.html
 """
@@ -32,7 +33,9 @@ class HudIncomeClient:
     """
     HUD Income Limits API client.
 
-    Primary method: get_screen_ami() - matches the old Ami.get_screen_ami() interface
+    Primary methods:
+        - get_screen_mtsp_ami(): MTSP Income Limits (all percentages 20%-100%)
+        - get_screen_il_ami(): Standard Section 8 Income Limits (30%, 50%, 80% only)
 
     Requires:
         - HUD_API_TOKEN environment variable
@@ -41,6 +44,10 @@ class HudIncomeClient:
 
     BASE_URL = "https://www.huduser.gov/hudapi/public"
     CACHE_TTL = 86400  # 24 hours in seconds
+
+    # Standard Section 8 Income Limit category mappings per HUD API spec
+    # Maps AMI percentage to HUD's nested category name
+    SECTION8_CATEGORIES = {"30": "extremely_low", "50": "very_low", "80": "low"}  # 30% AMI  # 50% AMI  # 80% AMI
 
     def __init__(self, api_token: Optional[str] = None):
         """Initialize with HUD API token from environment or parameter."""
@@ -163,12 +170,25 @@ class HudIncomeClient:
         data = self._fetch_cached_data(cache_key, f"il/data/{entity_id}", year)
         area_data = self._validate_data_response(data, screen.county, screen.white_label.state_code)
 
-        # Standard IL API structure uses different field names than MTSP
-        # Field format: "l{percent}_{household_size}" (e.g., "l80_4" for 80% AMI, household of 4)
+        # Standard IL API returns nested structure:
+        # - 30% AMI: data.extremely_low.il30_p{household_size}
+        # - 50% AMI: data.very_low.il50_p{household_size}
+        # - 80% AMI: data.low.il80_p{household_size}
         percent_num = percent.rstrip("%")
-        field = f"l{percent_num}_{screen.household_size}"
 
-        value = area_data.get(field)
+        category = self.SECTION8_CATEGORIES.get(percent_num)
+        if not category:
+            raise HudIncomeClientError(f"Invalid percent for Standard IL: {percent}. Must be 30%, 50%, or 80%.")
+
+        # Get the nested category object
+        category_data = area_data.get(category)
+        if not category_data:
+            raise HudIncomeClientError(f"No {percent} AMI data available")
+
+        # Field format: "il{percent}_p{household_size}" (e.g., "il80_p4")
+        field = f"il{percent_num}_p{screen.household_size}"
+
+        value = category_data.get(field)
         if value is None:
             raise HudIncomeClientError(f"No {percent} AMI data for household size {screen.household_size}")
 
@@ -210,9 +230,14 @@ class HudIncomeClient:
         if not counties:
             # Use FMR endpoint to list counties (shared across FMR and IL APIs)
             # Note: This requires FMR dataset API access in addition to IL dataset
-            # Include 'updated' parameter to ensure FIPS codes match the requested year
-            # (HUD API uses 'updated' not 'year' per November 2025 guidance)
-            params = {"updated": str(year)} if year else {}
+            # Per HUD API docs: https://www.huduser.gov/portal/dataset/fmr-api.html
+            # - 'year' parameter: optional, retrieves data for specific year
+            # - 'updated' parameter: for 2025+, gets refreshed FIPS codes
+            params = {}
+            if year:
+                params["year"] = str(year)
+                if year >= 2025:
+                    params["updated"] = str(year)
             counties = self._api_request(f"fmr/listCounties/{state_code.upper()}", params)
             cache.set(cache_key, counties, self.CACHE_TTL)
 
@@ -221,7 +246,12 @@ class HudIncomeClient:
             raise HudIncomeClientError(f"Could not retrieve counties for {state_code}")
 
         for county in counties:
-            if county.get("county_name", "").lower() == county_name.lower():
+            # HUD API changed field name in 2025 dataset update:
+            # - Without 'updated' param or pre-2025: uses 'county_name'
+            # - With 'updated=2025' param: uses 'cntyname' (shortened field name)
+            # We check both for compatibility across all years
+            name = county.get("county_name") or county.get("cntyname", "")
+            if name.lower() == county_name.lower():
                 return county["fips_code"]
 
         raise HudIncomeClientError(f"County not found: {county_name}, {state_code}")
