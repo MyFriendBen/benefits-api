@@ -70,8 +70,8 @@ class HubSpotIntegration(CmsIntegration):
             contact_id = api_response.id
         except HubSpotApiException as e:
             try:
-                http_body = json.loads(e.body)
-            except (json.JSONDecodeError, AttributeError):
+                http_body = json.loads(e.body) if e.body else {"raw_error": "No error body"}
+            except (json.JSONDecodeError, AttributeError, TypeError):
                 http_body = {"raw_error": str(e)}
 
             if http_body.get("category") == "CONFLICT":
@@ -130,7 +130,11 @@ class HubSpotIntegration(CmsIntegration):
             )
             return api_response
         except HubSpotApiException as e:
-            http_body = json.loads(e.body)
+            try:
+                http_body = json.loads(e.body) if e.body else {"raw_error": "No error body"}
+            except (json.JSONDecodeError, AttributeError, TypeError):
+                http_body = {"raw_error": str(e)}
+
             logger.error(
                 f"HubSpot API error updating contact {contact_id}: {e.status} - {e.reason}",
                 extra={
