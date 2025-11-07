@@ -2822,7 +2822,17 @@ class NcConfigurationData(ConfigurationData):
                         "_label": "taxBenefits.nc_aca_desc",
                         "_default_message": "Health insurance marketplace and premium tax credit.",
                     },
-                }
+                },
+                "nc_medicare_savings": {
+                    "name": {
+                        "_label": "healthCareBenefits.nc_medicare_savings",
+                        "_default_message": "NC Medicare Savings Program: ",
+                    },
+                    "description": {
+                        "_label": "healthCareBenefits.nc_medicare_savings_desc",
+                        "_default_message": "Health coverage for low-income individuals and families",
+                    },
+                },
             },
             "category_name": {
                 "_label": "healthCare",
