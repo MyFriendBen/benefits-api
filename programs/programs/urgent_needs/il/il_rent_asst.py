@@ -5,7 +5,16 @@ from integrations.clients.hud_income_limits.client import Section8AmiPercent
 
 class IlRenterAssistance(UrgentNeedFunction):
     ami_percent: Section8AmiPercent = "80%"
-    dependencies = ["income_amount", "income_frequency", "household_size", "county"]
+from typing import ClassVar
+
+from ..base import UrgentNeedFunction
+from integrations.clients.hud_income_limits import hud_client
+from integrations.clients.hud_income_limits.client import Section8AmiPercent
+
+
+class IlRenterAssistance(UrgentNeedFunction):
+    ami_percent: Section8AmiPercent = "80%"
+    dependencies: ClassVar[list[str]] = ["income_amount", "income_frequency", "household_size", "county"]
 
     def eligible(self) -> bool:
         """
