@@ -1,9 +1,9 @@
 {
     "white_label": {"code": "tx"},
     "program_category": {
-        "external_name": "tx_health",
-        "name": "Health Coverage",
-        "icon": "health"
+        "external_name": "tx_healthcare",
+        "name": "Healthcare",
+        "icon": "health_care"
     },
     "program": {
         "name_abbreviated": "tx_chip",
