@@ -1,45 +1,43 @@
 from programs.programs.calc import ProgramCalculator
-from programs.programs.co.energy_calculator.affordable_residential_energy.calculator import AffordableResidentialEnergy
-from programs.programs.co.energy_calculator.electric_affordability_black_hills.calculator import (
+from .affordable_residential_energy.calculator import AffordableResidentialEnergy
+from .electric_affordability_black_hills.calculator import (
     EnergyCalculatorElectricityAffordabilityBlackHills,
 )
-from programs.programs.co.energy_calculator.electric_affordability_xcel.calculator import (
+from .electric_affordability_xcel.calculator import (
     EnergyCalculatorElectricityAffordabilityXcel,
 )
-from programs.programs.co.energy_calculator.energy_assistance.calculator import EnergyCalculatorEnergyAssistance
-from programs.programs.co.energy_calculator.emergency_assistance.calculator import EnergyCalculatorEmergencyAssistance
-from programs.programs.co.energy_calculator.energy_outreach.calculator import EnergyCalculatorEnergyOutreach
-from programs.programs.co.energy_calculator.energy_outreach_crisis_intervention.calculator import (
+from .emergency_assistance.calculator import EnergyCalculatorEmergencyAssistance
+from .energy_assistance.calculator import EnergyCalculatorEnergyAssistance
+from .energy_ebt.calculator import EnergyCalculatorEnergyEbt
+from .energy_outreach.calculator import EnergyCalculatorEnergyOutreach
+from .energy_outreach_crisis_intervention.calculator import (
     EnergyCalculatorEnergyOutreachCrisisIntervention,
 )
-from programs.programs.co.energy_calculator.energy_outreach_solar.calculator import EnergyOutreachSolar
-from programs.programs.co.energy_calculator.gas_affordability_black_hills.calculator import (
+from .energy_outreach_solar.calculator import EnergyOutreachSolar
+from .gas_affordability_black_hills.calculator import (
     EnergyCalculatorGasAffordabilityBlackHills,
 )
-from programs.programs.co.energy_calculator.gas_affordability_xcel.calculator import (
-    EnergyCalculatorGasAffordabilityXcel,
+from .gas_affordability_xcel.calculator import EnergyCalculatorGasAffordabilityXcel
+from .home_efficiency_assistance_program.calculator import (
+    EnergyCalculatorHomeEfficiencyAssistance,
 )
-from programs.programs.co.energy_calculator.medical_certification.calculator import EnergyCalculatorMedicalCertification
-from programs.programs.co.energy_calculator.medical_exemption.calculator import EnergyCalculatorMedicalExemption
-from programs.programs.co.energy_calculator.natural_gas_bill_assistance.calculator import (
+from .medical_certification.calculator import EnergyCalculatorMedicalCertification
+from .medical_exemption.calculator import EnergyCalculatorMedicalExemption
+from .natural_gas_bill_assistance.calculator import (
     EnergyCalculatorNaturalGasBillAssistance,
 )
-from programs.programs.co.energy_calculator.percentage_of_income_payment_plan.calculator import (
+from .percentage_of_income_payment_plan.calculator import (
     EnergyCalculatorPercentageOfIncomePaymentPlan,
 )
-from programs.programs.co.energy_calculator.property_credit_rebate.calculator import (
-    EnergyCalculatorPropertyCreditRebate,
-)
-from programs.programs.co.energy_calculator.utility_bill_pay.calculator import EnergyCalculatorUtilityBillPay
-from programs.programs.co.energy_calculator.vehicle_exchange.calculator import EnergyCalculatorVehicleExchange
-from programs.programs.co.energy_calculator.weatherization_assistance.calculator import (
+from .property_credit_rebate.calculator import EnergyCalculatorPropertyCreditRebate
+from .utility_bill_pay.calculator import EnergyCalculatorUtilityBillPay
+from .vehicle_exchange.calculator import EnergyCalculatorVehicleExchange
+from .weatherization_assistance.calculator import (
     EnergyCalculatorWeatherizationAssistance,
 )
-from programs.programs.co.energy_calculator.energy_ebt.calculator import EnergyCalculatorEnergyEbt
-from programs.programs.co.energy_calculator.assistance_programs.project_cope.calculator import (
+from .assistance_programs.project_cope.calculator import (
     EnergyCalculatorProjectCOPE,
 )
-
 
 co_energy_calculators: dict[str, type[ProgramCalculator]] = {
     "co_energy_calculator_care": AffordableResidentialEnergy,
@@ -62,4 +60,5 @@ co_energy_calculators: dict[str, type[ProgramCalculator]] = {
     "co_energy_calculator_energy_mep": EnergyCalculatorMedicalExemption,
     "co_energy_calculator_mcp": EnergyCalculatorMedicalCertification,
     "co_energy_calculator_cope": EnergyCalculatorProjectCOPE,
+    "co_energy_calculator_heap": EnergyCalculatorHomeEfficiencyAssistance,
 }

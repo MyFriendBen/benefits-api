@@ -349,6 +349,10 @@ class ChipCategory(Member):
     field = "chip_category"
 
 
+class Chip(Member):
+    field = "chip"
+
+
 class IncomeDependency(Member):
     dependencies = (
         "income_type",
