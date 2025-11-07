@@ -26,7 +26,6 @@ class NcConfigurationData(ConfigurationData):
         }
     ]
 
-
     public_charge_rule = {
         "link": "https://www.ncjustice.org/publications/public-charge-the-law-has-changed/",
         "text": {
