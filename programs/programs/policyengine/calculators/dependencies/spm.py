@@ -426,9 +426,23 @@ class IlLiheapIncomeEligible(SpmUnit):
 class MaLiheap(SpmUnit):
     field = "ma_liheap"
 
-    def value(self):
-        return self.screen.calc_expenses("yearly", ["heating", "cooling"])
-
 
 class MaLiheapIncomeEligible(SpmUnit):
     field = "ma_liheap_income_eligible"
+
+
+class ReceivesHousingAssistance(SpmUnit):
+    field = "receives_housing_assistance"
+
+    def value(self):
+        return True
+
+
+class HeatExpenseIncludedInRent(SpmUnit):
+    field = "heat_expense_included_in_rent"
+
+    def value(self):
+        try:
+            return not bool(self.screen.calc_expenses("yearly", ["heating", "cooling"]))
+        except Exception:
+            return True

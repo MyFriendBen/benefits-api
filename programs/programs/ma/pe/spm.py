@@ -55,45 +55,31 @@ class MaEaedc(PolicyEngineSpmCalulator):
 
 
 class MaHeap(PolicyEngineSpmCalulator):
-    pe_name = "ma_liheap_income_eligible"
+    pe_name = "ma_liheap"
+
     pe_inputs = [
         dependency.household.MaStateCodeDependency,
+        *dependency.irs_gross_income,
+        dependency.spm.MaLiheap,
+        dependency.spm.ReceivesHousingAssistance,
+        dependency.spm.HeatExpenseIncludedInRent,
+    ]
+
+    pe_outputs = [
         dependency.spm.MaLiheap,
     ]
-    pe_outputs = [dependency.spm.MaLiheapIncomeEligible]
-
-    """
-    benefits_amounts starts with the lowest possible value for a household size of 1 
-    using the source document referenced above. We increment up as the household size increases 
-    using the pattern established in MA. These are not intended to be accurate but instead provide 
-    a low-end estimate while gradually incrementing up to provide more incentive to apply 
-    without overestimating.
-    """
-    benefit_amounts = {
-        1: 430,
-        2: 445,
-        3: 455,
-        4: 465,
-        5: 480,
-        6: 490,  # 6+ people
-    }
 
     def household_value(self) -> int:
         if self.screen.has_benefit("ma_heap"):
             return 0
 
         try:
-            income_eligible = self.get_variable()  # ma_liheap_income_eligible
-            if not income_eligible:
+            payment = self.get_variable()
+
+            if payment is None:
                 return 0
 
-            if not self.screen.has_expense(["heating", "cooling"]):
-                return 0
-
-            household_size = self.screen.household_size
-            size_key = min(household_size, 6)
-            benefit = self.benefit_amounts.get(size_key, 0)
-            return benefit
+            return max(0, int(round(payment)))
 
         except KeyError as e:
             logger.warning(f"PolicyEngine missing expected key for MA HEAP screen {self.screen.id}: {e}")
