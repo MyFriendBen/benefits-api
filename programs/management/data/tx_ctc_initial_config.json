@@ -5,7 +5,7 @@
   "program_category": {
     "external_name": "tx_tax_credits",
     "name": "Tax Credits",
-    "icon": "taxCredits"
+    "icon": "tax_credit"
   },
   "program": {
     "name_abbreviated": "tx_ctc",
