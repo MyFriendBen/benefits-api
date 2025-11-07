@@ -62,27 +62,74 @@ Integration tests that make real API calls to HUD. These tests:
 
 ## Running Tests
 
+### Prerequisites
+
+1. **Install test dependencies:**
+   ```bash
+   pip install pytest pytest-django pytest-cov
+   # OR install all project dependencies:
+   pip install -r requirements.txt
+   ```
+
+2. **Set Django settings:**
+   ```bash
+   export DJANGO_SETTINGS_MODULE=benefits.settings
+   ```
+
+3. **For integration tests only** - Add HUD API token to `.env`:
+   ```bash
+   HUD_API_TOKEN=your_token_here
+   ```
+
+### Running Tests
+
+**Note:** If `pytest` command not found, use `python -m pytest` or `python3 -m pytest` instead.
+
 **Run all tests (unit + integration):**
 ```bash
-pytest integrations/clients/hud_income_limits/tests/
+python -m pytest integrations/clients/hud_income_limits/tests/ -v
 ```
 
-**Run only unit tests (no API token required):**
+**Run only unit tests (fast, no API token required):**
 ```bash
-pytest integrations/clients/hud_income_limits/tests/test_client.py
-# OR using markers:
-pytest -m "not integration" integrations/clients/hud_income_limits/tests/
+# By file:
+python -m pytest integrations/clients/hud_income_limits/tests/test_client.py -v
+
+# By marker:
+python -m pytest -m "not integration" integrations/clients/hud_income_limits/tests/ -v
 ```
 
 **Run only integration tests (requires HUD_API_TOKEN in .env):**
 ```bash
-pytest -m integration integrations/clients/hud_income_limits/tests/
+python -m pytest -m integration integrations/clients/hud_income_limits/tests/ -v
 ```
 
-**Run with coverage:**
+**Run specific test:**
 ```bash
-pytest --cov=integrations.clients.hud_income_limits integrations/clients/hud_income_limits/tests/
+# Run one test method:
+python -m pytest integrations/clients/hud_income_limits/tests/test_client.py::TestHudIncomeClientMTSP::test_get_screen_mtsp_ami_80_percent_success -v
+
+# Run one test class:
+python -m pytest integrations/clients/hud_income_limits/tests/test_client.py::TestHudIncomeClientMTSP -v
 ```
+
+**Run with coverage report:**
+```bash
+python -m pytest --cov=integrations.clients.hud_income_limits integrations/clients/hud_income_limits/tests/ -v
+```
+
+**Run with verbose output and show print statements:**
+```bash
+python -m pytest integrations/clients/hud_income_limits/tests/ -vv -s
+```
+
+### Test Execution Summary
+
+| Command | Speed | Requires API Token | Use Case |
+|---------|-------|-------------------|----------|
+| `-m "not integration"` | Fast (~1s) | No | Development, CI/CD |
+| `-m integration` | Slow (~15s) | Yes | Pre-deployment verification |
+| All tests | Medium (~15s) | Yes | Complete validation |
 
 ## CI/CD Configuration
 
@@ -119,16 +166,36 @@ Integration tests use real API calls for:
 
 ## Troubleshooting
 
+**"pytest: command not found":**
+- Use `python -m pytest` or `python3 -m pytest` instead
+- OR install pytest in your environment: `pip install pytest pytest-django`
+- OR add pytest to PATH: `export PATH="$HOME/.pyenv/shims:$PATH"`
+
+**"No module named pytest":**
+- Install test dependencies: `pip install pytest pytest-django pytest-cov`
+- OR install all project dependencies: `pip install -r requirements.txt`
+- Make sure you're in your virtual environment (if using one)
+
+**"python: command not found" (but python3 works):**
+- Use `python3 -m pytest` for all commands
+- OR set python3 as default with pyenv: `pyenv global 3.10.18`
+- OR create alias in `~/.zshrc`: `alias python=python3`
+
 **Integration tests failing with "HUD_API_TOKEN not set":**
-- Add `HUD_API_TOKEN=your_token` to `.env`
+- Add `HUD_API_TOKEN=your_token` to `.env` file in project root
 - Get token at: https://www.huduser.gov/hudapi/public/register
 - Register for both FMR and Income Limits datasets
 
 **Integration tests timing out:**
 - Check internet connection
-- Verify HUD API is accessible
-- Check token has correct dataset permissions
+- Verify HUD API is accessible: `curl https://www.huduser.gov/hudapi/public/`
+- Check token has correct dataset permissions (FMR + Income Limits)
+
+**"DJANGO_SETTINGS_MODULE not set":**
+- Run: `export DJANGO_SETTINGS_MODULE=benefits.settings`
+- OR add to your shell config (`~/.bashrc` or `~/.zshrc`)
 
 **Cache-related test failures:**
 - Tests clear cache in `setUp()` to avoid interference
 - If issues persist, manually clear Django cache
+- Try running with `--cache-clear` flag
