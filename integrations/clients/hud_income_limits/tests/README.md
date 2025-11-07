@@ -11,11 +11,6 @@ Unit tests that mock all external API calls. These tests:
 - Test client logic, error handling, and edge cases
 - Should always pass in CI/CD
 
-**Run unit tests only:**
-```bash
-pytest integrations/clients/hud_income_limits/tests/test_client.py
-```
-
 ### `test_integration.py` - Integration Tests (Real API)
 Integration tests that make real API calls to HUD. These tests:
 - Require valid `HUD_API_TOKEN` environment variable
@@ -27,17 +22,6 @@ Integration tests that make real API calls to HUD. These tests:
 - `TestHudIntegrationMTSP` - MTSP endpoint functionality tests
 - `TestHudIntegrationStandardIL` - Standard Section 8 IL endpoint functionality tests
 - `TestHudIntegrationErrors` - Error handling tests for both endpoints
-
-**Run integration tests only:**
-```bash
-# Requires HUD_API_TOKEN in .env
-pytest -m integration integrations/clients/hud_income_limits/tests/
-```
-
-**Skip integration tests:**
-```bash
-pytest -m "not integration" integrations/clients/hud_income_limits/tests/
-```
 
 ## Test Coverage
 
@@ -76,7 +60,7 @@ pytest -m "not integration" integrations/clients/hud_income_limits/tests/
 - ✅ Invalid state code error handling (MTSP & Standard IL)
 - ✅ Invalid county error handling (MTSP & Standard IL)
 
-## Running All Tests
+## Running Tests
 
 **Run all tests (unit + integration):**
 ```bash
@@ -85,7 +69,14 @@ pytest integrations/clients/hud_income_limits/tests/
 
 **Run only unit tests (no API token required):**
 ```bash
+pytest integrations/clients/hud_income_limits/tests/test_client.py
+# OR using markers:
 pytest -m "not integration" integrations/clients/hud_income_limits/tests/
+```
+
+**Run only integration tests (requires HUD_API_TOKEN in .env):**
+```bash
+pytest -m integration integrations/clients/hud_income_limits/tests/
 ```
 
 **Run with coverage:**
