@@ -157,6 +157,7 @@ class MaConfigurationData(ConfigurationData):
         "bch": "Boston Children's Hospital",
         "socialMedia": {"_label": "referralOptions.socialMedia", "_default_message": "Social Media"},
         "friend": {"_label": "referralOptions.friend", "_default_message": "Friend / Family / Word of Mouth"},
+        "merit": {"_label": "referralOptions.merit", "_default_message": "Merit America"},
         "other": {"_label": "referralOptions.other", "_default_message": "Other"},
         "testOrProspect": {
             "_label": "referralOptions.testOrProspect",
