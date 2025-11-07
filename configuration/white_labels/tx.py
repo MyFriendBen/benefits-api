@@ -46,8 +46,8 @@ class TxConfigurationData(ConfigurationData):
             "_label": "referralOptions.friend",
             "_default_message": "Friend / Family / Word of Mouth",
         },
-        "other": {"_label": "referralOptions.other", "_default_message": "Other"},
         "merit": {"_label": "referralOptions.merit", "_default_message": "Merit America"},
+        "other": {"_label": "referralOptions.other", "_default_message": "Other"},
         "testOrProspect": {
             "_label": "referralOptions.testOrProspect",
             "_default_message": "Test / Prospective Partner",
