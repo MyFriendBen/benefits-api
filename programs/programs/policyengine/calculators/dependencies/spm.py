@@ -427,22 +427,17 @@ class MaLiheap(SpmUnit):
     field = "ma_liheap"
 
 
-class MaLiheapIncomeEligible(SpmUnit):
-    field = "ma_liheap_income_eligible"
-
-
-class ReceivesHousingAssistance(SpmUnit):
+class MaLiheapReceivesHousingAssistance(SpmUnit):
     field = "receives_housing_assistance"
 
+    # Fixed to True: required for MA LIHEAP calculation; True produces conservative benefit estimate
     def value(self):
         return True
 
 
-class HeatExpenseIncludedInRent(SpmUnit):
+class MaLiheapHeatExpenseIncludedInRent(SpmUnit):
     field = "heat_expense_included_in_rent"
 
+    # Fixed to False: required for MA LIHEAP calculation; False produces conservative benefit estimate
     def value(self):
-        try:
-            return not bool(self.screen.calc_expenses("yearly", ["heating", "cooling"]))
-        except Exception:
-            return True
+        return False
