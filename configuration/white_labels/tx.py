@@ -3130,6 +3130,7 @@ class TxConfigurationData(ConfigurationData):
         },
         "featureFlags": {"default": []},
         "defaultLanguage": {"default": "en-us"},
+        "stateName": {"default": "Texas"},
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",

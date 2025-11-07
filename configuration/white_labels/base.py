@@ -519,6 +519,7 @@ class ConfigurationData:
         },
         "featureFlags": {"default": []},
         "defaultLanguage": {"default": "en-us", "[REPLACE_ME]": ""},
+        "stateName": {"default": "", "[REPLACE_ME]": ""},
     }
 
     footer_data = {
