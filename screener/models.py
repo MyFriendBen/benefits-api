@@ -116,6 +116,7 @@ class Screen(models.Model):
     has_private_hi = models.BooleanField(default=None, blank=True, null=True)
     has_medicaid_hi = models.BooleanField(default=None, blank=True, null=True)
     has_medicare_hi = models.BooleanField(default=None, blank=True, null=True)
+    has_nc_medicare_savings = models.BooleanField(default=None, blank=True, null=True)
     has_chp_hi = models.BooleanField(default=None, blank=True, null=True)
     has_no_hi = models.BooleanField(default=None, blank=True, null=True)
     has_va = models.BooleanField(default=None, blank=True, null=True)
@@ -421,6 +422,7 @@ class Screen(models.Model):
             "co_care": self.has_co_care,
             "cfhc": self.has_cfhc,
             "shitc": self.has_shitc,
+            "nc_medicare_savings": self.has_nc_medicare_savings,
         }
 
         if name_abbreviated in name_map:
