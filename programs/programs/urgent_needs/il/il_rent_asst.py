@@ -5,6 +5,8 @@ from integrations.clients.hud_income_limits.client import Section8AmiPercent
 
 class IlRenterAssistance(UrgentNeedFunction):
     ami_percent: Section8AmiPercent = "80%"
+
+
 from typing import ClassVar
 
 from ..base import UrgentNeedFunction
