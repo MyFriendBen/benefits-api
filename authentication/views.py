@@ -6,6 +6,9 @@ from screener.models import Screen
 from rest_framework import viewsets, permissions, mixins
 from rest_framework.response import Response
 from authentication.serializers import UserSerializer, UserOffersSerializer
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class UserViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
@@ -36,8 +39,10 @@ class UserViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
                 message = MessageUser(screen, screen.get_language_code())
 
                 if user and user.external_id:
+                    logger.info(f"Updating existing contact for user {user.id}")
                     integration.update()
                 elif integration.should_add():
+                    logger.info(f"Adding new contact for user {user.id}")
                     external_id = integration.add()
 
                     # don't delete the user if there is an error sending a text/email
@@ -51,12 +56,14 @@ class UserViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
                     finally:
                         user.anonomize(external_id)
                 else:
+                    logger.info(f"Should not add user {user.id} to CMS")
                     if not user.is_staff and not user.is_superuser:
                         # you should not be able to create a user with an admin email,
                         # but just incase you can this prevents admin acounts from being deleted
                         user.delete()
 
             except Exception as e:
+                logger.error(f"Error in user update workflow: {str(e)}", exc_info=True)
                 if not user.is_staff and not user.is_superuser:
                     user.delete()
                 raise e

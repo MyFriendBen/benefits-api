@@ -6,8 +6,11 @@ from hubspot.crm.contacts import BatchInputSimplePublicObjectBatchInput, SimpleP
 from hubspot.crm.contacts.exceptions import ApiException as HubSpotApiException
 from django.conf import settings
 import json
+import logging
 from authentication.models import User
 from screener.models import Screen, WhiteLabel
+
+logger = logging.getLogger(__name__)
 
 
 class CmsIntegration:
@@ -39,16 +42,17 @@ class HubSpotIntegration(CmsIntegration):
             "lastname": self.user.last_name,
             "email": self.user.email,
             "phone": str(self.user.cell),
-            "states": self.STATE,
-            "send_offers": self.user.send_offers,
-            "explicit_tcpa_consent": self.user.explicit_tcpa_consent,
-            "send_updates": self.user.send_updates,
+            # "states": self.STATE,
+            # "send_offers": self.user.send_offers,
+            # "explicit_tcpa_consent": self.user.explicit_tcpa_consent,
+            # "send_updates": self.user.send_updates,
             "hs_language": self.user.language_code,
             "hubspot_owner_id": self.OWNER_ID,
         }
 
         if self.screen:
-            contact["uuid"] = str(self.screen.uuid)
+            # contact["uuid"] = str(self.screen.uuid)
+            pass
 
         return contact
 
@@ -70,11 +74,26 @@ class HubSpotIntegration(CmsIntegration):
             api_response = self._create_contact(data)
             contact_id = api_response.id
         except HubSpotApiException as e:
-            http_body = json.loads(e.body)
+            try:
+                http_body = json.loads(e.body)
+            except (json.JSONDecodeError, AttributeError):
+                http_body = {"raw_error": str(e)}
+
             if http_body.get("category") == "CONFLICT":
                 contact_id = self._get_conflict_contact_id(e)
                 self._update_contact(contact_id, data)
             else:
+                # Log detailed error information
+                logger.error(
+                    f"HubSpot API error creating contact: {e.status} - {e.reason}",
+                    extra={
+                        "error_body": http_body,
+                        "contact_data": data,
+                        "user_id": self.user.id if self.user else None,
+                        "screen_uuid": str(self.screen.uuid) if self.screen else None,
+                        "http_response_headers": dict(e.headers) if hasattr(e, "headers") else {},
+                    },
+                )
                 raise e
 
         return contact_id
@@ -110,10 +129,24 @@ class HubSpotIntegration(CmsIntegration):
 
     def _update_contact(self, contact_id, data):
         simple_public_object_input = SimplePublicObjectInput(properties=data)
-        api_response = self.api_client.crm.contacts.basic_api.update(
-            contact_id, simple_public_object_input=simple_public_object_input
-        )
-        return api_response
+        try:
+            api_response = self.api_client.crm.contacts.basic_api.update(
+                contact_id, simple_public_object_input=simple_public_object_input
+            )
+            return api_response
+        except HubSpotApiException as e:
+            http_body = json.loads(e.body)
+            logger.error(
+                f"HubSpot API error updating contact {contact_id}: {e.status} - {e.reason}",
+                extra={
+                    "error_body": http_body,
+                    "contact_data": data,
+                    "contact_id": contact_id,
+                    "user_id": self.user.id if self.user else None,
+                    "screen_uuid": str(self.screen.uuid) if self.screen else None,
+                },
+            )
+            raise e
 
     @classmethod
     def bulk_update(cls, data):
