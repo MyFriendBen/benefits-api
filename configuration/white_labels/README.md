@@ -49,8 +49,8 @@ This directory contains configuration files for MyFriendBen white labels (state/
 
    - Go to [Fillout Form Editor](https://build.fillout.com/editor/9eJYBZLegxus)
    - Edit the first multiple-choice question about which state the user is reporting feedback for
-   - Add your state name (e.g., "Texas", "Illinois", "North Carolina") as a new option
-   - Save the changes
+   - Add your state name (e.g., "Texas", "Illinois", etc.) as a new option
+   - Publish the changes
 
 8. **Configure HubSpot Integration (Step 1 of 2):**
 
