@@ -43,7 +43,16 @@ This directory contains configuration files for MyFriendBen white labels (state/
    python manage.py add_config
    ```
 
-7. **Configure HubSpot Integration (Step 1 of 2):**
+7. **Update Fillout Feedback Form:**
+
+   Add the new state to the feedback form so users can report issues/feedback for the new white label:
+
+   - Go to [Fillout Form Editor](https://build.fillout.com/editor/9eJYBZLegxus)
+   - Edit the first multiple-choice question about which state the user is reporting feedback for
+   - Add your state name (e.g., "Texas", "Illinois", "North Carolina") as a new option
+   - Save the changes
+
+8. **Configure HubSpot Integration (Step 1 of 2):**
 
    Add the state code to the HubSpot `states` property dropdown to enable texting integration:
 

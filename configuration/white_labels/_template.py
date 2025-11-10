@@ -11,14 +11,16 @@ This template follows the same structure as base.py for easy reference.
 IMPORTANT: Only override fields that need to be different from base.py defaults.
 Commented sections can be uncommented if customization is needed.
 
-SETUP INSTRUCTIONS:
+TEMPLATE USAGE:
 1. Copy this file: cp configuration/white_labels/_template.py configuration/white_labels/{state_code}.py
 2. Rename the class to: {StateCode}ConfigurationData (e.g., CoConfigurationData)
 3. Update the white label code in get_white_label() method
-4. Fill in all uncommented TODO sections
+4. Fill in all uncommented TODO sections below
 5. Uncomment and customize optional sections as needed
-6. Add your new white label to: configuration/white_labels/__init__.py
-7. Run: python manage.py add_config to load configuration into database
+
+COMPLETE SETUP PROCESS:
+For the full white label setup process including database configuration, HubSpot integration,
+and feedback form setup, see: configuration/white_labels/README.md
 
 For reference examples, see: co.py, il.py, nc.py
 For detailed field documentation, see: base.py and README.md
