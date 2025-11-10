@@ -3140,8 +3140,4 @@ class TxConfigurationData(ConfigurationData):
         },
     }
 
-    footer_data = {
-        "email": "hello@myfriendben.org",
-    }
-
     override_text = {}

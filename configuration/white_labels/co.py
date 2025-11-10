@@ -2380,8 +2380,4 @@ class CoConfigurationData(ConfigurationData):
         "defaultLanguage": {"default": "en-us"},
     }
 
-    footer_data = {
-        "email": "hello@myfriendben.org",
-    }
-
     override_text = {}

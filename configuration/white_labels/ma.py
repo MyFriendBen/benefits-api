@@ -1444,10 +1444,6 @@ class MaConfigurationData(ConfigurationData):
         "defaultLanguage": {"default": "en-us"},
     }
 
-    footer_data = {
-        "email": "hello@myfriendben.org",
-    }
-
     override_text = {
         # NOTE: MA uses cities instead of counties
         "questions.zipcode-a": {
