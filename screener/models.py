@@ -85,6 +85,7 @@ class Screen(models.Model):
     has_erc = models.BooleanField(default=False, blank=True, null=True)
     has_leap = models.BooleanField(default=False, blank=True, null=True)
     has_il_liheap = models.BooleanField(default=False, blank=True, null=True)
+    has_ma_heap = models.BooleanField(default=False, blank=True, null=True)
     has_nc_lieap = models.BooleanField(default=False, blank=True, null=True)
     has_oap = models.BooleanField(default=False, blank=True, null=True)
     has_nccip = models.BooleanField(default=False, blank=True, null=True)
@@ -386,6 +387,7 @@ class Screen(models.Model):
             "ede": self.has_ede,
             "erc": self.has_erc,
             "leap": self.has_leap,
+            "ma_heap": self.has_ma_heap,
             "il_liheap": self.has_il_liheap,
             "nc_lieap": self.has_nc_lieap,
             "oap": self.has_oap,
