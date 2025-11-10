@@ -43,6 +43,38 @@ This directory contains configuration files for MyFriendBen white labels (state/
    python manage.py add_config
    ```
 
+7. **Configure HubSpot Integration (Step 1 of 2):**
+
+   Add the state code to the HubSpot `states` property dropdown to enable texting integration:
+
+   - Go to [HubSpot Property Settings](https://app-na2.hubspot.com/property-settings/48436655/properties?type=0-1&search=states&action=edit&property=states)
+   - Add your state code (e.g., "TX", "IL", "NC") to the allowed options
+   - Save the changes
+
+8. **Add HubSpot Integration Class (Step 2 of 2):**
+
+   Create a state-specific HubSpot integration class in `integrations/services/cms_integration.py`:
+
+   ```python
+   class TxHubSpotIntegration(HubSpotIntegration):
+       STATE = "TX"
+       OWNER_ID = "80630223"  # Get the correct owner ID from HubSpot
+   ```
+
+   Then register it in the `CMS_INTEGRATIONS` dictionary:
+
+   ```python
+   CMS_INTEGRATIONS = {
+       "co_hubspot": CoHubSpotIntegration,
+       "nc_hubspot": NcHubSpotIntegration,
+       "ma_hubspot": MaHubSpotIntegration,
+       "il_hubspot": IlHubSpotIntegration,
+       "tx_hubspot": TxHubSpotIntegration,  # Add your new integration
+   }
+   ```
+
+   Finally, set the `cms_method` in the Django admin for your white label to match the key (e.g., `"tx_hubspot"`)
+
 ## File Structure
 
 ### Core Files

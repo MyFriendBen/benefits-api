@@ -380,6 +380,10 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # defaultLanguage: Default language code
     #   - Example: "en-us", "es"
     #   - Must match a key in language_options
+    #
+    # stateName: Name of the state for display in the application
+    #   - Example: "Colorado", "Texas", "Illinois"
+    #   - Used in the header and other UI elements to identify the state
     # ==========================================================================================
 
     # TODO: Configure branding, step flow, and features
@@ -414,6 +418,7 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
             },
         },
         "defaultLanguage": {"default": "en-us"},
+        "stateName": {"default": ""},
     }
 
     # ==========================================================================================
