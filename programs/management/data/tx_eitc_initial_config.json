@@ -1,0 +1,49 @@
+{
+    "white_label": {"code": "tx"},
+    "program_category": {
+        "external_name": "tx_tax_credits",
+        "name": "Tax Credits",
+        "icon": "tax_credit"
+    },
+    "program": {
+        "name_abbreviated": "tx_eitc",
+        "year": "2025",
+        "legal_status_required": ["citizen", "gc_5plus", "gc_5less", "otherWithWorkPermission"],
+        "name": "Federal Earned Income Tax Credit (EITC)",
+        "description_short": "Federal tax credit that reduces what you owe or increases your tax refund",
+        "description": "A tax credit that reduces what you owe or increases your tax refund. You may claim the federal EITC if your earned income and investment income are below certain limits. The amount of your credit may depend on whether you have children or dependents. Other conditions also apply. You have three years to file and claim the EITC from the due date of your tax return. A tax expert can help determine if you may claim the EITC. On average, it takes 21 days after filing to receive this credit.",
+        "learn_more_link": "https://www.irs.gov/credits-deductions/individuals/earned-income-tax-credit/earned-income-and-earned-income-tax-credit-eitc-tables",
+        "apply_button_link": "https://www.getyourrefund.org/en",
+        "apply_button_description": "Ways to File",
+        "estimated_application_time": "45 minutes",
+        "estimated_delivery_time": "21 days after filing",
+        "estimated_value": "",
+        "website_description": "Federal tax credit that reduces what you owe or increases your tax refund"
+    },
+    "documents": [
+        {
+            "external_name": "tx_earned_income",
+            "text": "Proof of earned income  (ex: pay stubs, tax returns, W-2, 1099) & employer information",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "tx_unearned_income",
+            "text": "Proof of unearned income (ex: child support, social security, unemployment)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "tx_id_proof",
+            "text": "Proof of identity (ex: driver's license, official state ID card)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "tx_us_status",
+            "text": "Proof of status in U.S. (ex: birth certificate, green card, work permit)",
+            "link_url": "",
+            "link_text": ""
+        }
+    ]
+}

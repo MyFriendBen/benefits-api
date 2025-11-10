@@ -1,0 +1,59 @@
+{
+    "white_label": {"code": "tx"},
+    "program_category": {
+        "external_name": "tx_healthcare",
+        "name": "Healthcare",
+        "icon": "health_care"
+    },
+    "program": {
+        "name_abbreviated": "tx_chip",
+        "year": "2025",
+        "legal_status_required": ["citizen", "non_citizen", "gc_5plus", "gc_18plus_no5", "gc_under18_no5"],
+        "name": "Children's Health Insurance Program (CHIP)",
+        "description_short": "Low-cost health insurance for children under 18 and pregnant women",
+        "description": "Low-cost health insurance for children and pregnant women. If you do not have private health insurance but earn too much to get Medicaid, you may qualify for CHIP. This insurance covers children 18 and under. It may also cover pregnant women 19 years and older.\n\nCHIP helps pay for check-ups, doctor visits, and emergency care. It also covers immunizations, medicine, and dental care. Pregnant women get prenatal care, labor and delivery, and care for their newborn for the first few months of life. You may pay a small co-pay for some services. Co-pays vary based on income and the number of people in your family.\n\nTime to Apply is based on submitting an application in Your Texas Benefits. You may save time when you apply for several benefits with one application.\n\nOn average, it takes up to 45 days to get approved. Approval time may take up to 90 days if the insurance is for someone with a disability.",
+        "learn_more_link": "https://www.hhs.texas.gov/services/health/medicaid-chip/medicaid-chip-programs-services/programs-children-adults-disabilities/programs-children-families/childrens-medicaid-chip",
+        "apply_button_link": "https://yourtexasbenefits.com/Apply/GettingStartedApp?lang=en_US",
+        "apply_button_description": "",
+        "estimated_application_time": "30 - 60 minutes",
+        "estimated_value": ""
+    },
+    "documents": [
+        {
+            "external_name": "tx_home",
+            "text": "Proof of home address (ex: lease, mortgage statement, utility bill)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "tx_ssn",
+            "text": "Social security number",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "tx_id_proof",
+            "text": "Proof of identity (ex: driver's license, official state ID card)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "tx_us_status",
+            "text": "Proof of status in U.S. (ex: birth certificate, green card, work permit)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "tx_earned_income",
+            "text": "Proof of earned income (ex: pay stubs, tax returns, W-2, 1099) & employer information",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "tx_unearned_income",
+            "text": "Proof of unearned income (ex: child support, social security, unemployment)",
+            "link_url": "",
+            "link_text": ""
+        }
+    ]
+}

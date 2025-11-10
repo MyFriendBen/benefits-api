@@ -25,6 +25,14 @@ class MaConfigurationData(ConfigurationData):
                 "link": "https://mass211.org/",
             },
             {
+                "name": {"_label": "moreHelp.ma.frc.name", "_default_message": "Family Resource Center"},
+                "description": {
+                    "_label": "moreHelp.ma.frc.resource_description1",
+                    "_default_message": "If you have a child ages 0 to 18, your local family resource center may be able to connect you to other resources and support services. Visit a center near you.",
+                },
+                "link": "https://www.frcma.org/",
+            },
+            {
                 "name": {"_label": "moreHelp.ma.masscap.name", "_default_message": "MASSCAP Community Action Agencies"},
                 "description": {
                     "_label": "moreHelp.ma.masscap.phone",
@@ -65,10 +73,10 @@ class MaConfigurationData(ConfigurationData):
             },
         },
         "childDevelopment": {
-            "icon": {"_icon": "Child_development", "_classname": "option-card-icon"},
+            "icon": {"_icon": "Youth_development", "_classname": "option-card-icon youth-development-icon"},
             "text": {
-                "_label": "acuteConditionOptions.childDevelopment",
-                "_default_message": "Concern about your child's development",
+                "_label": "acuteConditionOptions.youthDevelopment",
+                "_default_message": "Concern about your child's development (ages 0 - 21)",
             },
         },
         "familyPlanning": {
@@ -149,6 +157,7 @@ class MaConfigurationData(ConfigurationData):
         "bch": "Boston Children's Hospital",
         "socialMedia": {"_label": "referralOptions.socialMedia", "_default_message": "Social Media"},
         "friend": {"_label": "referralOptions.friend", "_default_message": "Friend / Family / Word of Mouth"},
+        "merit": {"_label": "referralOptions.merit", "_default_message": "Merit America"},
         "other": {"_label": "referralOptions.other", "_default_message": "Other"},
         "testOrProspect": {
             "_label": "referralOptions.testOrProspect",
@@ -1299,6 +1308,16 @@ class MaConfigurationData(ConfigurationData):
                     "description": {
                         "_label": "housingAndUtilities.lifeline_desc",
                         "_default_message": "Phone or internet discount",
+                    },
+                },
+                "ma_heap": {
+                    "name": {
+                        "_label": "housingAndUtilities.ma_heap",
+                        "_default_message": "Home Energy Assistance Program (HEAP): ",
+                    },
+                    "description": {
+                        "_label": "housingAndUtilities.ma_heap_desc",
+                        "_default_message": "Help with energy costs (seasonal)",
                     },
                 },
             },
