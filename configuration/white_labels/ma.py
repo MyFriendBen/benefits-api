@@ -25,6 +25,14 @@ class MaConfigurationData(ConfigurationData):
                 "link": "https://mass211.org/",
             },
             {
+                "name": {"_label": "moreHelp.ma.frc.name", "_default_message": "Family Resource Center"},
+                "description": {
+                    "_label": "moreHelp.ma.frc.resource_description1",
+                    "_default_message": "If you have a child ages 0 to 18, your local family resource center may be able to connect you to other resources and support services. Visit a center near you.",
+                },
+                "link": "https://www.frcma.org/",
+            },
+            {
                 "name": {"_label": "moreHelp.ma.masscap.name", "_default_message": "MASSCAP Community Action Agencies"},
                 "description": {
                     "_label": "moreHelp.ma.masscap.phone",
@@ -149,6 +157,7 @@ class MaConfigurationData(ConfigurationData):
         "bch": "Boston Children's Hospital",
         "socialMedia": {"_label": "referralOptions.socialMedia", "_default_message": "Social Media"},
         "friend": {"_label": "referralOptions.friend", "_default_message": "Friend / Family / Word of Mouth"},
+        "merit": {"_label": "referralOptions.merit", "_default_message": "Merit America"},
         "other": {"_label": "referralOptions.other", "_default_message": "Other"},
         "testOrProspect": {
             "_label": "referralOptions.testOrProspect",

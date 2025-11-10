@@ -116,6 +116,7 @@ class Screen(models.Model):
     has_private_hi = models.BooleanField(default=None, blank=True, null=True)
     has_medicaid_hi = models.BooleanField(default=None, blank=True, null=True)
     has_medicare_hi = models.BooleanField(default=None, blank=True, null=True)
+    has_nc_medicare_savings = models.BooleanField(default=None, blank=True, null=True)
     has_chp_hi = models.BooleanField(default=None, blank=True, null=True)
     has_no_hi = models.BooleanField(default=None, blank=True, null=True)
     has_va = models.BooleanField(default=None, blank=True, null=True)
@@ -337,11 +338,14 @@ class Screen(models.Model):
         return False
 
     def has_benefit(self, name_abbreviated: str):
+        has_ssi_or_ssi_income = self.has_ssi or self.calc_gross_income("yearly", ("sSI",)) > 0
+
         name_map = {
             "tanf": self.has_tanf,
             "nc_tanf": self.has_tanf,
             "co_tanf": self.has_tanf,
             "il_tanf": self.has_tanf,
+            "tx_tanf": self.has_tanf,
             "wic": self.has_wic,
             "co_wic": self.has_wic,
             "nc_wic": self.has_wic,
@@ -359,7 +363,9 @@ class Screen(models.Model):
             "coeitc": self.has_coeitc,
             "il_eitc": self.has_il_eitc,
             "nslp": self.has_nslp,
+            "tx_nslp": self.has_nslp,
             "ctc": self.has_ctc,
+            "tx_ctc": self.has_ctc,
             "il_ctc": self.has_il_ctc,
             "il_transit_reduced_fare": self.has_il_transit_reduced_fare,
             "il_bap": self.has_il_bap,
@@ -369,7 +375,9 @@ class Screen(models.Model):
             "cccap": self.has_cccap,
             "mydenver": self.has_mydenver,
             "ccb": self.has_ccb,
-            "ssi": self.has_ssi or self.calc_gross_income("yearly", ("sSI",)) > 0,
+            "ssi": has_ssi_or_ssi_income,
+            "tx_ssi": has_ssi_or_ssi_income,
+            "tx_csfp": self.has_csfp,
             "andcs": self.has_andcs,
             "chs": self.has_chs,
             "cpcr": self.has_cpcr,
@@ -397,8 +405,10 @@ class Screen(models.Model):
             "medicare": self.has_medicare_hi,
             "chp": self.has_chp or self.has_chp_hi,
             "va": self.has_va,
+            "aca": self.has_aca,
             "nc_aca": self.has_aca,
             "ma_aca": self.has_aca,
+            "tx_aca": self.has_aca,
             "ma_mbta": self.has_ma_mbta,
             "ma_snap": self.has_snap,
             "ma_ccdf": self.has_ccdf,
@@ -412,6 +422,7 @@ class Screen(models.Model):
             "co_care": self.has_co_care,
             "cfhc": self.has_cfhc,
             "shitc": self.has_shitc,
+            "nc_medicare_savings": self.has_nc_medicare_savings,
         }
 
         if name_abbreviated in name_map:

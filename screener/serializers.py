@@ -228,6 +228,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             "has_chp_hi",
             "has_no_hi",
             "has_va",
+            "has_nc_medicare_savings",
             "needs_food",
             "needs_baby_supplies",
             "needs_housing_help",

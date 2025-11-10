@@ -46,6 +46,7 @@ class TxConfigurationData(ConfigurationData):
             "_label": "referralOptions.friend",
             "_default_message": "Friend / Family / Word of Mouth",
         },
+        "merit": {"_label": "referralOptions.merit", "_default_message": "Merit America"},
         "other": {"_label": "referralOptions.other", "_default_message": "Other"},
         "testOrProspect": {
             "_label": "referralOptions.testOrProspect",
@@ -2946,6 +2947,34 @@ class TxConfigurationData(ConfigurationData):
     }
 
     category_benefits = {
+        "cash": {
+            "benefits": {
+                "tanf": {
+                    "name": {
+                        "_label": "cashAssistanceBenefits.tx_tanf",
+                        "_default_message": "Temporary Assistance for Needy Families (TANF): ",
+                    },
+                    "description": {
+                        "_label": "cashAssistanceBenefits.tx_tanf_desc",
+                        "_default_message": "Cash assistance and support for families",
+                    },
+                },
+                "ssi": {
+                    "name": {
+                        "_label": "cashAssistanceBenefits.ssi",
+                        "_default_message": "Supplemental Security Income (SSI): ",
+                    },
+                    "description": {
+                        "_label": "cashAssistanceBenefits.ssi_desc",
+                        "_default_message": "Federal cash assistance for individuals who are disabled, blind, or 65 years of age or older",
+                    },
+                },
+            },
+            "category_name": {
+                "_label": "cashAssistance",
+                "_default_message": "Cash Assistance",
+            },
+        },
         "foodAndNutrition": {
             "benefits": {
                 "snap": {
@@ -2966,6 +2995,26 @@ class TxConfigurationData(ConfigurationData):
                     "description": {
                         "_label": "foodAndNutritionBenefits.wic_desc",
                         "_default_message": "Food and breastfeeding assistance",
+                    },
+                },
+                "nslp": {
+                    "name": {
+                        "_label": "foodAndNutritionBenefits.nslp",
+                        "_default_message": "National School Lunch Program: ",
+                    },
+                    "description": {
+                        "_label": "foodAndNutritionBenefits.nslp_desc",
+                        "_default_message": "Free school meals",
+                    },
+                },
+                "csfp": {
+                    "name": {
+                        "_label": "foodAndNutritionBenefits.csfp",
+                        "_default_message": "Commodity Supplemental Food Program: ",
+                    },
+                    "description": {
+                        "_label": "foodAndNutritionBenefits.csfp_desc",
+                        "_default_message": "Food support for people 60 years of age or older",
                     },
                 },
             },
@@ -3004,8 +3053,36 @@ class TxConfigurationData(ConfigurationData):
                         "_default_message": "Federal tax credit - earned income",
                     },
                 },
+                "ctc": {
+                    "name": {
+                        "_label": "taxCreditBenefits.ctc",
+                        "_default_message": "Child Tax Credit (CTC): ",
+                    },
+                    "description": {
+                        "_label": "taxCreditBenefits.ctc_desc",
+                        "_default_message": "Federal tax credit",
+                    },
+                },
             },
             "category_name": {"_label": "taxCredits", "_default_message": "Tax Credits"},
+        },
+        "healthCare": {
+            "benefits": {
+                "aca": {
+                    "name": {
+                        "_label": "healthCareBenefits.aca",
+                        "_default_message": "ACA (Affordable Care Act) Premium Tax Credit: ",
+                    },
+                    "description": {
+                        "_label": "healthCareBenefits.aca_desc",
+                        "_default_message": "Health insurance marketplace and premium tax credit",
+                    },
+                },
+            },
+            "category_name": {
+                "_label": "healthCare",
+                "_default_message": "Health Care",
+            },
         },
     }
 
@@ -3054,6 +3131,7 @@ class TxConfigurationData(ConfigurationData):
         },
         "featureFlags": {"default": []},
         "defaultLanguage": {"default": "en-us"},
+        "stateName": {"default": "Texas"},
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",
