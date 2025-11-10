@@ -562,13 +562,13 @@ class ConfigurationData:
 
     # Footer contact information
     footer_data = {
-        "email": "",
+        "email": "hello@myfriendben.org",
     }
 
     # Links for users to provide feedback
     feedback_links = {
-        "email": "",
-        "survey": "",
+        "email": "mailto:hello@myfriendben.org",
+        "survey": "https://myfriendben.fillout.com/report-an-issue",
     }
 
     # Text for "Current Benefits" page

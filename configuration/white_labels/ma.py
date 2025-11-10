@@ -1444,15 +1444,6 @@ class MaConfigurationData(ConfigurationData):
         "defaultLanguage": {"default": "en-us"},
     }
 
-    footer_data = {
-        "email": "hello@myfriendben.org",
-    }
-
-    feedback_links = {
-        "email": "hello@myfriendben.org",
-        "survey": "https://docs.google.com/forms/d/e/1FAIpQLSdnfqjvlVSBQkJuUMvhEDUp-t6oD-8tPQi67uRG2iNetXmSfA/viewform?usp=sf_link",
-    }
-
     override_text = {
         # NOTE: MA uses cities instead of counties
         "questions.zipcode-a": {
