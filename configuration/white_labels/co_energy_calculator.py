@@ -2362,6 +2362,6 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
         },
         "questions.hasBenefits-description": {
             "_label": "energyCalculator.hasBenefits.description",
-            "_default_message": "This information will help make sure we don't give you results for benefits you already have.",
+            "_default_message": "You may qualify for some energy programs if someone in your household receives public benefits (for example, SNAP, Medicaid, etc.).",
         },
     }
