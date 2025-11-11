@@ -2360,8 +2360,8 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
             "_label": "energyCalculator.householdSize.helpText",
             "_default_message": "This can include family or non-family members, adults, and children. Please do not count unborn children in this total.",
         },
-        "questions.hasBenefits": {
-            "_label": "energyCalculator.hasBenefits.question",
-            "_default_message": "Does your household currently have any public assistance benefits?",
+        "questions.hasBenefits-description": {
+            "_label": "energyCalculator.hasBenefits.description",
+            "_default_message": "This information will help make sure we don't give you results for benefits you already have.",
         },
     }
