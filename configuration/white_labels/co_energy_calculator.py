@@ -2336,15 +2336,6 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
         "defaultLanguage": {"default": "en-us"},
     }
 
-    footer_data = {
-        "email": "myfriendben@garycommunity.org",
-    }
-
-    feedback_links = {
-        "email": "mailto: myfriendben@garycommunity.org",
-        "survey": "https://docs.google.com/forms/d/e/1FAIpQLSdnfqjvlVSBQkJuUMvhEDUp-t6oD-8tPQi67uRG2iNetXmSfA/viewform?usp=sf_link",
-    }
-
     current_benefits = {
         "title": {
             "_label": "energyCalculator.currentBenefits.title",

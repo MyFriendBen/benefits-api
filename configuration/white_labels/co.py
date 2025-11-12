@@ -200,6 +200,7 @@ class CoConfigurationData(ConfigurationData):
         "searchEngine": {"_label": "referralOptions.searchEngine", "_default_message": "Google or other search engine"},
         "socialMedia": {"_label": "referralOptions.socialMedia", "_default_message": "Social Media"},
         "friend": {"_label": "referralOptions.friend", "_default_message": "Friend / Family / Word of Mouth"},
+        "merit": {"_label": "referralOptions.merit", "_default_message": "Merit America"},
         "other": {"_label": "referralOptions.other", "_default_message": "Other"},
         "testOrProspect": {
             "_label": "referralOptions.testOrProspect",
@@ -2377,15 +2378,6 @@ class CoConfigurationData(ConfigurationData):
             },
         },
         "defaultLanguage": {"default": "en-us"},
-    }
-
-    footer_data = {
-        "email": "hello@myfriendben.org",
-    }
-
-    feedback_links = {
-        "email": "hello@myfriendben.org",
-        "survey": "https://docs.google.com/forms/d/e/1FAIpQLSdnfqjvlVSBQkJuUMvhEDUp-t6oD-8tPQi67uRG2iNetXmSfA/viewform?usp=sf_link",
     }
 
     override_text = {}

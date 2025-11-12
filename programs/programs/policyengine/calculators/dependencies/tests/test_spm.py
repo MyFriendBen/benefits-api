@@ -404,3 +404,124 @@ class TestSchoolMealCountableIncomeDependency(TestCase):
 
         # And the value should match what calc_gross_income returns
         self.assertEqual(dep.value(), 48000)  # ($3000 + $1000) * 12
+
+
+class TestTxTanfDependencies(TestCase):
+    """Tests for TX TANF income dependencies used by TxTanf calculator."""
+
+    def setUp(self):
+        """Set up test data for TX TANF dependency tests."""
+        self.white_label = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="78701", county="Travis", household_size=2, completed=False
+        )
+
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
+
+        # Add earned income
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="wages", amount=1500, frequency="monthly"
+        )
+
+        # Add unearned income
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="childSupport", amount=300, frequency="monthly"
+        )
+
+        # Add cash assistance (should be excluded from unearned income)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="cashAssistance", amount=200, frequency="monthly"
+        )
+
+    def test_tx_tanf_countable_earned_income_dependency(self):
+        """Test TxTanfCountableEarnedIncomeDependency.value() calculates total annual earned income."""
+        dep = spm.TxTanfCountableEarnedIncomeDependency(self.screen, None, {})
+
+        # Should calculate annual earned income
+        self.assertEqual(dep.value(), 18000)  # $1500/month * 12
+        self.assertEqual(dep.field, "tx_tanf_countable_earned_income")
+
+        # Verify dependencies are set
+        self.assertIn("income_type", dep.dependencies)
+        self.assertIn("income_amount", dep.dependencies)
+        self.assertIn("income_frequency", dep.dependencies)
+
+    def test_tx_tanf_countable_unearned_income_dependency(self):
+        """Test TxTanfCountableUnearnedIncomeDependency.value() excludes cash assistance."""
+        dep = spm.TxTanfCountableUnearnedIncomeDependency(self.screen, None, {})
+
+        # Should calculate annual unearned income, excluding cash assistance
+        # $300/month * 12 = $3600 (cash assistance should be excluded)
+        self.assertEqual(dep.value(), 3600)
+        self.assertEqual(dep.field, "tx_tanf_countable_unearned_income")
+
+        # Verify dependencies are set
+        self.assertIn("income_type", dep.dependencies)
+        self.assertIn("income_amount", dep.dependencies)
+        self.assertIn("income_frequency", dep.dependencies)
+
+    def test_tx_tanf_output_dependency(self):
+        """Test TxTanf output dependency has correct field."""
+        dep = spm.TxTanf(self.screen, None, {})
+        self.assertEqual(dep.field, "tx_tanf")
+
+    def test_tx_tanf_earned_income_with_no_earned_income(self):
+        """Test TxTanfCountableEarnedIncomeDependency.value() returns 0 when no earned income."""
+        # Remove earned income
+        IncomeStream.objects.filter(screen=self.screen, type="wages").delete()
+
+        dep = spm.TxTanfCountableEarnedIncomeDependency(self.screen, None, {})
+        self.assertEqual(dep.value(), 0)
+
+    def test_tx_tanf_unearned_income_with_no_unearned_income(self):
+        """Test TxTanfCountableUnearnedIncomeDependency.value() returns 0 when no unearned income."""
+        # Remove all income
+        IncomeStream.objects.filter(screen=self.screen).delete()
+
+        dep = spm.TxTanfCountableUnearnedIncomeDependency(self.screen, None, {})
+        self.assertEqual(dep.value(), 0)
+
+    def test_tx_tanf_multi_member_income_aggregation(self):
+        """Test TX TANF dependencies aggregate earned/unearned income across multiple household members."""
+        # Remove existing income streams
+        IncomeStream.objects.filter(screen=self.screen).delete()
+
+        # Create additional household members
+        spouse = HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=32)
+        child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=10)
+
+        # Add earned income streams for multiple members
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="wages", amount=1500, frequency="monthly"
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=spouse, type="selfEmployment", amount=800, frequency="monthly"
+        )
+
+        # Add unearned income streams for multiple members
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="childSupport", amount=300, frequency="monthly"
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=spouse, type="sSRetirement", amount=500, frequency="monthly"
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=child, type="sSSurvivor", amount=200, frequency="monthly"
+        )
+
+        # Add cash assistance (should be excluded from unearned income)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="cashAssistance", amount=150, frequency="monthly"
+        )
+
+        # Test earned income aggregation
+        earned_dep = spm.TxTanfCountableEarnedIncomeDependency(self.screen, None, {})
+        # $1500 (head wages) + $800 (spouse self-employment) = $2300/month * 12 = $27,600
+        self.assertEqual(earned_dep.value(), 27600)
+
+        # Test unearned income aggregation (excluding cash assistance)
+        unearned_dep = spm.TxTanfCountableUnearnedIncomeDependency(self.screen, None, {})
+        # $300 (head child support) + $500 (spouse SS retirement) + $200 (child SS survivor) = $1000/month * 12 = $12,000
+        # Cash assistance of $150/month should be excluded
+        self.assertEqual(unearned_dep.value(), 12000)

@@ -157,6 +157,7 @@ class MaConfigurationData(ConfigurationData):
         "bch": "Boston Children's Hospital",
         "socialMedia": {"_label": "referralOptions.socialMedia", "_default_message": "Social Media"},
         "friend": {"_label": "referralOptions.friend", "_default_message": "Friend / Family / Word of Mouth"},
+        "merit": {"_label": "referralOptions.merit", "_default_message": "Merit America"},
         "other": {"_label": "referralOptions.other", "_default_message": "Other"},
         "testOrProspect": {
             "_label": "referralOptions.testOrProspect",
@@ -1309,6 +1310,16 @@ class MaConfigurationData(ConfigurationData):
                         "_default_message": "Phone or internet discount",
                     },
                 },
+                "ma_heap": {
+                    "name": {
+                        "_label": "housingAndUtilities.ma_heap",
+                        "_default_message": "Home Energy Assistance Program (HEAP): ",
+                    },
+                    "description": {
+                        "_label": "housingAndUtilities.ma_heap_desc",
+                        "_default_message": "Help with energy costs (seasonal)",
+                    },
+                },
             },
             "category_name": {"_label": "housingAndUtilities", "_default_message": "Housing and Utilities"},
         },
@@ -1431,15 +1442,6 @@ class MaConfigurationData(ConfigurationData):
             },
         },
         "defaultLanguage": {"default": "en-us"},
-    }
-
-    footer_data = {
-        "email": "hello@myfriendben.org",
-    }
-
-    feedback_links = {
-        "email": "hello@myfriendben.org",
-        "survey": "https://docs.google.com/forms/d/e/1FAIpQLSdnfqjvlVSBQkJuUMvhEDUp-t6oD-8tPQi67uRG2iNetXmSfA/viewform?usp=sf_link",
     }
 
     override_text = {

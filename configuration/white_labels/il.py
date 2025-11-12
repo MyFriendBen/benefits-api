@@ -179,6 +179,7 @@ class IlConfigurationData(ConfigurationData):
             "_label": "referralOptions.friend",
             "_default_message": "Friend / Family / Word of Mouth",
         },
+        "merit": {"_label": "referralOptions.merit", "_default_message": "Merit America"},
         "other": {"_label": "referralOptions.other", "_default_message": "Other"},
         "testOrProspect": {
             "_label": "referralOptions.testOrProspect",
@@ -2527,15 +2528,6 @@ class IlConfigurationData(ConfigurationData):
             },
         },
         "defaultLanguage": {"default": "en-us"},
-    }
-
-    footer_data = {
-        "email": "hello@myfriendben.org",
-    }
-
-    feedback_links = {
-        "email": "hello@myfriendben.org",
-        "survey": "https://www.myfriendben.org/feedback",
     }
 
     override_text = {}

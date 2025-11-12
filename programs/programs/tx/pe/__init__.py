@@ -8,6 +8,7 @@ tx_member_calculators = {
     "tx_wic": member.TxWic,
     "tx_ssi": member.TxSsi,
     "tx_csfp": member.TxCsfp,
+    "tx_chip": member.TxChip,
 }
 
 tx_tax_unit_calculators = {
@@ -20,6 +21,7 @@ tx_spm_calculators = {
     "tx_snap": spm.TxSnap,
     "tx_lifeline": spm.TxLifeline,
     "tx_nslp": spm.TxNslp,
+    "tx_tanf": spm.TxTanf,
 }
 
 tx_pe_calculators: dict[str, type[PolicyEngineCalulator]] = {

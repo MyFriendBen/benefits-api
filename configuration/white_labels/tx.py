@@ -46,6 +46,7 @@ class TxConfigurationData(ConfigurationData):
             "_label": "referralOptions.friend",
             "_default_message": "Friend / Family / Word of Mouth",
         },
+        "merit": {"_label": "referralOptions.merit", "_default_message": "Merit America"},
         "other": {"_label": "referralOptions.other", "_default_message": "Other"},
         "testOrProspect": {
             "_label": "referralOptions.testOrProspect",
@@ -2948,6 +2949,16 @@ class TxConfigurationData(ConfigurationData):
     category_benefits = {
         "cash": {
             "benefits": {
+                "tanf": {
+                    "name": {
+                        "_label": "cashAssistanceBenefits.tx_tanf",
+                        "_default_message": "Temporary Assistance for Needy Families (TANF): ",
+                    },
+                    "description": {
+                        "_label": "cashAssistanceBenefits.tx_tanf_desc",
+                        "_default_message": "Cash assistance and support for families",
+                    },
+                },
                 "ssi": {
                     "name": {
                         "_label": "cashAssistanceBenefits.ssi",
@@ -3120,21 +3131,13 @@ class TxConfigurationData(ConfigurationData):
         },
         "featureFlags": {"default": []},
         "defaultLanguage": {"default": "en-us"},
+        "stateName": {"default": "Texas"},
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",
                 "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. If you indicated need for an immediate resource, please click on the \"Near-Term Benefits\" tab. For additional resources, please click the 'More Help' button below to get the resources you're looking for.",
             },
         },
-    }
-
-    footer_data = {
-        "email": "hello@myfriendben.org",
-    }
-
-    feedback_links = {
-        "email": "hello@myfriendben.org",
-        "survey": "",
     }
 
     override_text = {}

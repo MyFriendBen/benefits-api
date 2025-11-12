@@ -85,6 +85,7 @@ class Screen(models.Model):
     has_erc = models.BooleanField(default=False, blank=True, null=True)
     has_leap = models.BooleanField(default=False, blank=True, null=True)
     has_il_liheap = models.BooleanField(default=False, blank=True, null=True)
+    has_ma_heap = models.BooleanField(default=False, blank=True, null=True)
     has_nc_lieap = models.BooleanField(default=False, blank=True, null=True)
     has_oap = models.BooleanField(default=False, blank=True, null=True)
     has_nccip = models.BooleanField(default=False, blank=True, null=True)
@@ -116,6 +117,7 @@ class Screen(models.Model):
     has_private_hi = models.BooleanField(default=None, blank=True, null=True)
     has_medicaid_hi = models.BooleanField(default=None, blank=True, null=True)
     has_medicare_hi = models.BooleanField(default=None, blank=True, null=True)
+    has_nc_medicare_savings = models.BooleanField(default=None, blank=True, null=True)
     has_chp_hi = models.BooleanField(default=None, blank=True, null=True)
     has_no_hi = models.BooleanField(default=None, blank=True, null=True)
     has_va = models.BooleanField(default=None, blank=True, null=True)
@@ -374,6 +376,7 @@ class Screen(models.Model):
             "nc_tanf": self.has_tanf,
             "co_tanf": self.has_tanf,
             "il_tanf": self.has_tanf,
+            "tx_tanf": self.has_tanf,
             "wic": self.has_wic,
             "co_wic": self.has_wic,
             "nc_wic": self.has_wic,
@@ -418,6 +421,7 @@ class Screen(models.Model):
             "erc": self.has_erc,
             "leap": self.has_leap,
             "co_energy_calculator_leap": self.has_leap,
+            "ma_heap": self.has_ma_heap,
             "il_liheap": self.has_il_liheap,
             "nc_lieap": self.has_nc_lieap,
             "oap": self.has_oap,
@@ -456,6 +460,7 @@ class Screen(models.Model):
             "co_care": self.has_co_care,
             "cfhc": self.has_cfhc,
             "shitc": self.has_shitc,
+            "nc_medicare_savings": self.has_nc_medicare_savings,
         }
 
         if name_abbreviated in name_map:

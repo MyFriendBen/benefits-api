@@ -252,6 +252,34 @@ class IlTanfCountableGrossUnearnedIncomeDependency(SpmUnit):
         return int(self.screen.calc_gross_income("yearly", ["unearned"], exclude=["cashAssistance"]))
 
 
+class TxTanf(SpmUnit):
+    field = "tx_tanf"
+
+
+class TxTanfCountableEarnedIncomeDependency(SpmUnit):
+    field = "tx_tanf_countable_earned_income"
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
+
+    def value(self):
+        return int(self.screen.calc_gross_income("yearly", ["earned"]))
+
+
+class TxTanfCountableUnearnedIncomeDependency(SpmUnit):
+    field = "tx_tanf_countable_unearned_income"
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
+
+    def value(self):
+        return int(self.screen.calc_gross_income("yearly", ["unearned"], exclude=["cashAssistance"]))
+
+
 class PreSubsidyChildcareExpensesDependency(SpmUnit):
     field = "spm_unit_pre_subsidy_childcare_expenses"
 
@@ -421,3 +449,23 @@ class CashAssetsDependency(SpmUnit):
 
 class IlLiheapIncomeEligible(SpmUnit):
     field = "il_liheap_income_eligible"
+
+
+class MaLiheap(SpmUnit):
+    field = "ma_liheap"
+
+
+class MaLiheapReceivesHousingAssistance(SpmUnit):
+    field = "receives_housing_assistance"
+
+    # Fixed to True: required for MA LIHEAP calculation; True produces conservative benefit estimate
+    def value(self):
+        return True
+
+
+class MaLiheapHeatExpenseIncludedInRent(SpmUnit):
+    field = "heat_expense_included_in_rent"
+
+    # Fixed to False: required for MA LIHEAP calculation; False produces conservative benefit estimate
+    def value(self):
+        return False
