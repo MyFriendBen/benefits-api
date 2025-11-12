@@ -62,6 +62,7 @@ class MaHeap(PolicyEngineSpmCalulator):
         *dependency.irs_gross_income,
         dependency.spm.MaLiheapReceivesHousingAssistance,
         dependency.spm.MaLiheapHeatExpenseIncludedInRent,
+        dependency.spm.HasHeatingCoolingExpenseDependency,
     ]
 
     pe_outputs = [
