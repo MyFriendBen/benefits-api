@@ -9,7 +9,7 @@ from programs.models import (
     Document,
 )
 from screener.models import WhiteLabel
-from integrations.services.google_translate.integration import Translate
+from integrations.clients.google_translate import Translate
 from django.conf import settings
 import argparse
 import json

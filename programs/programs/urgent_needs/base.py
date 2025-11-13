@@ -25,7 +25,7 @@ class UrgentNeedFunction:
 
         return self.county_eligible() and self.expense_eligible() and self.eligible()
 
-    def eligible(self):
+    def eligible(self) -> bool:
         """
         Returns if the condition is met
         """

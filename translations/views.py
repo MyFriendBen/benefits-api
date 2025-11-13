@@ -30,7 +30,7 @@ from programs.models import (
 from phonenumber_field.formfields import PhoneNumberField
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
-from integrations.services.google_translate.integration import Translate
+from integrations.clients.google_translate import Translate
 from django.urls import path
 
 

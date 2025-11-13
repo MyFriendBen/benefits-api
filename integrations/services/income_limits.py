@@ -7,6 +7,29 @@ from screener.models import Screen
 
 
 class Ami(GoogleSheetsCache):
+    """
+    DEPRECATED: This Google Sheets-based AMI lookup is maintained for backwards compatibility only.
+
+    New code should use the HUD Income Limits API client instead:
+        from integrations.clients.hud_income_limits import hud_client
+
+        # For MTSP (Multifamily Tax Subsidy Project) income limits:
+        income_limit = hud_client.get_screen_mtsp_ami(screen, "80%", 2025)
+
+        # For Standard Section 8 Income Limits:
+        income_limit = hud_client.get_screen_il_ami(screen, "80%", 2025)
+
+    Benefits of using the HUD API client:
+    - Real-time data directly from HUD (no manual Google Sheets updates)
+    - More reliable and accurate
+    - Better error handling
+    - Automatic caching
+    - Support for all AMI percentage levels
+    - Works nationwide (all US states and counties)
+
+    See: integrations/clients/hud_income_limits/README.md
+    """
+
     sheet_id = "1ZnOg_IuT7TYz2HeF31k_FSPcA-nraaMG3RUWJFUIIb8"
     range_name = "current!A2:CH"
     default = {}

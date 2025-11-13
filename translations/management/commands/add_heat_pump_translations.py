@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from integrations.services.google_translate.integration import Translate
+from integrations.clients.google_translate import Translate
 from translations.models import Translation
 
 
