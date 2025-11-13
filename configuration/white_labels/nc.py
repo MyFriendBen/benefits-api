@@ -9,6 +9,23 @@ class NcConfigurationData(ConfigurationData):
 
     state = {"name": "North Carolina"}
 
+    # System banner messages
+    banner_messages = [
+        {
+            "id": "nc.banner.snap_nov_2025_hold",
+            "title": {
+                "_label": "nc.banner.snap_nov_2025_hold.title",
+                "_default_message": "Urgent: SNAP Benefits for November 2025 are on Hold",
+            },
+            "content": {
+                "_label": "nc.banner.snap_nov_2025_hold.content",
+                "_default_message": "The North Carolina SNAP agency said SNAP food help for November 2025 will be decreased and delayed because of the government shutdown.\n\nYou should still apply for SNAP and turn in any required paperwork.\n\nTo find out more about November SNAP, go to the North Carolina Food and Nutrition Services [website](https://www.ncdhhs.gov/divisions/child-and-family-well-being/food-and-nutrition-services-food-stamps). You can use MyFriendBen to see what other programs can help your family and to get help near you.",
+            },
+            "enabled": True,
+            "priority": 1,
+        }
+    ]
+
     public_charge_rule = {
         "link": "https://www.ncjustice.org/publications/public-charge-the-law-has-changed/",
         "text": {

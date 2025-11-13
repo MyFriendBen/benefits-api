@@ -85,6 +85,7 @@ class Screen(models.Model):
     has_erc = models.BooleanField(default=False, blank=True, null=True)
     has_leap = models.BooleanField(default=False, blank=True, null=True)
     has_il_liheap = models.BooleanField(default=False, blank=True, null=True)
+    has_ma_heap = models.BooleanField(default=False, blank=True, null=True)
     has_nc_lieap = models.BooleanField(default=False, blank=True, null=True)
     has_oap = models.BooleanField(default=False, blank=True, null=True)
     has_nccip = models.BooleanField(default=False, blank=True, null=True)
@@ -338,6 +339,36 @@ class Screen(models.Model):
         return False
 
     def has_benefit(self, name_abbreviated: str):
+        """
+        Maps a program's name_abbreviated to the corresponding has_* field on the Screen model.
+
+        This is used to determine if a user already has a benefit (selected in step 10) so it can be
+        filtered from results on the frontend via the "already_has" flag.
+
+        Map Structure:
+            Key: Program name_abbreviated (from program registration, e.g., co/__init__.py)
+            Value: Boolean field on Screen model indicating user has that benefit
+
+        Common Pattern:
+            Multiple program variants (e.g., different states or screener types) map to the same field:
+            - "snap", "co_snap", "il_snap" → all map to self.has_snap (same real-world benefit)
+            - "leap", "co_energy_calculator_leap" → both map to self.has_leap (same benefit, different flows)
+
+        Adding New Mappings:
+            1. Ensure the benefit key exists in white_label config's category_benefits (e.g., "leap")
+            2. Ensure updateScreen.ts maps formData.benefits.{key} → has_{key}
+            3. Add all program name_abbreviated variants that represent the same benefit
+
+        Example Flow:
+            Config (co.py): "leap": {"name": "LEAP", ...}
+            → User checks LEAP in step 10
+            → Frontend: formData.benefits.leap = true
+            → API (updateScreen.ts): has_leap = formData.benefits.leap
+            → Database: screen.has_leap = True
+            → This method: has_benefit("leap") → returns self.has_leap (True)
+            → Serializer: "already_has": True → Frontend filters out LEAP from results
+        """
+
         has_ssi_or_ssi_income = self.has_ssi or self.calc_gross_income("yearly", ("sSI",)) > 0
 
         name_map = {
@@ -370,7 +401,9 @@ class Screen(models.Model):
             "il_transit_reduced_fare": self.has_il_transit_reduced_fare,
             "il_bap": self.has_il_bap,
             "project_cope": self.has_project_cope,
+            "co_energy_calculator_cope": self.has_project_cope,
             "cesn_heap": self.has_cesn_heap,
+            "co_energy_calculator_heap": self.has_cesn_heap,
             "rtdlive": self.has_rtdlive,
             "cccap": self.has_cccap,
             "mydenver": self.has_mydenver,
@@ -381,11 +414,14 @@ class Screen(models.Model):
             "andcs": self.has_andcs,
             "chs": self.has_chs,
             "cpcr": self.has_cpcr,
+            "co_energy_calculator_cpcr": self.has_cpcr,
             "cdhcs": self.has_cdhcs,
             "dpp": self.has_dpp,
             "ede": self.has_ede,
             "erc": self.has_erc,
             "leap": self.has_leap,
+            "co_energy_calculator_leap": self.has_leap,
+            "ma_heap": self.has_ma_heap,
             "il_liheap": self.has_il_liheap,
             "nc_lieap": self.has_nc_lieap,
             "oap": self.has_oap,
@@ -400,8 +436,10 @@ class Screen(models.Model):
             "fatc": self.has_fatc,
             "section_8": self.has_section_8,
             "cowap": self.has_cowap,
+            "co_energy_calculator_cowap": self.has_cowap,
             "ncwap": self.has_ncwap,
             "ubp": self.has_ubp,
+            "co_energy_calculator_ubp": self.has_ubp,
             "medicare": self.has_medicare_hi,
             "chp": self.has_chp or self.has_chp_hi,
             "va": self.has_va,

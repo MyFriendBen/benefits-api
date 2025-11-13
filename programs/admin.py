@@ -27,6 +27,9 @@ from .models import (
 class ProgramAdmin(SecureAdmin):
     search_fields = ("name__translations__text",)
     list_display = ["get_str", "name_abbreviated", "active", "action_buttons"]
+    list_editable = ["active"]
+    list_filter = ["active", "low_confidence", "show_on_current_benefits"]
+
     white_label_filter_horizontal = [
         "documents",
         "required_programs",
@@ -39,43 +42,31 @@ class ProgramAdmin(SecureAdmin):
         "required_programs",
         "excludes_programs",
     )
-    exclude = [
-        "name",
-        "description",
-        "description_short",
-        "learn_more_link",
-        "apply_button_link",
-        "apply_button_description",
-        "estimated_delivery_time",
-        "estimated_application_time",
-        "value_type",
-        "website_description",
-        "estimated_value",
+    fields = [
+        "white_label",
+        "name_abbreviated",
+        "external_name",
+        "year",
+        "value_format",
+        "category",
+        "active",
+        "low_confidence",
+        "show_on_current_benefits",
+        "legal_status_required",
+        "documents",
+        "required_programs",
+        "excludes_programs",
     ]
-    list_editable = ["active"]
 
     def has_add_permission(self, request):
         return False
 
+    @admin.display(ordering="name", description="Program")
     def get_str(self, obj):
         return str(obj) if str(obj).strip() else "unnamed"
 
-    get_str.admin_order_field = "name"
-    get_str.short_description = "Program"
-
+    @admin.display(description="Translations")
     def action_buttons(self, obj):
-        name = obj.name
-        description = obj.description
-        description_short = obj.description_short
-        learn_more_link = obj.learn_more_link
-        apply_button_link = obj.apply_button_link
-        apply_button_description = obj.apply_button_description
-        estimated_delivery_time = obj.estimated_delivery_time
-        estimated_application_time = obj.estimated_application_time
-        value_type = obj.value_type
-        website_description = obj.website_description
-        estimated_value = obj.estimated_value
-
         return format_html(
             """
             <div class="dropdown">
@@ -83,33 +74,22 @@ class ProgramAdmin(SecureAdmin):
                 <div class="dropdown-content">
                     <a href="{}">Name</a>
                     <a href="{}">Description</a>
-                    <a href="{}">Short Description</a>
-                    <a href="{}">Learn More Link</a>
-                    <a href="{}">Apply Button Link</a>
-                    <a href="{}">Apply Button Description</a>
-                    <a href="{}">Estimated Delivery Time</a>
-                    <a href="{}">Estimated Application Time</a>
-                    <a href="{}">Value Type</a>
                     <a href="{}">Website Description</a>
+                    <a href="{}">Apply Button Description</a>
+                    <a href="{}">Apply Button Link</a>
+                    <a href="{}">Estimated Application Time</a>
                     <a href="{}">Estimated Value</a>
                 </div>
             </div>
             """,
-            reverse("translation_admin_url", args=[name.id]),
-            reverse("translation_admin_url", args=[description.id]),
-            reverse("translation_admin_url", args=[description_short.id]),
-            reverse("translation_admin_url", args=[learn_more_link.id]),
-            reverse("translation_admin_url", args=[apply_button_link.id]),
-            reverse("translation_admin_url", args=[apply_button_description.id]),
-            reverse("translation_admin_url", args=[estimated_delivery_time.id]),
-            reverse("translation_admin_url", args=[estimated_application_time.id]),
-            reverse("translation_admin_url", args=[value_type.id]),
-            reverse("translation_admin_url", args=[website_description.id]),
-            reverse("translation_admin_url", args=[estimated_value.id]),
+            reverse("translation_admin_url", args=[obj.name.id]),
+            reverse("translation_admin_url", args=[obj.description.id]),
+            reverse("translation_admin_url", args=[obj.website_description.id]),
+            reverse("translation_admin_url", args=[obj.apply_button_description.id]),
+            reverse("translation_admin_url", args=[obj.apply_button_link.id]),
+            reverse("translation_admin_url", args=[obj.estimated_application_time.id]),
+            reverse("translation_admin_url", args=[obj.estimated_value.id]),
         )
-
-    action_buttons.short_description = "Translate:"
-    action_buttons.allow_tags = True
 
 
 class LegalStatusAdmin(SecureAdmin):

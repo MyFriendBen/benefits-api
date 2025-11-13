@@ -2336,15 +2336,6 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
         "defaultLanguage": {"default": "en-us"},
     }
 
-    footer_data = {
-        "email": "myfriendben@garycommunity.org",
-    }
-
-    feedback_links = {
-        "email": "mailto: myfriendben@garycommunity.org",
-        "survey": "https://docs.google.com/forms/d/e/1FAIpQLSdnfqjvlVSBQkJuUMvhEDUp-t6oD-8tPQi67uRG2iNetXmSfA/viewform?usp=sf_link",
-    }
-
     current_benefits = {
         "title": {
             "_label": "energyCalculator.currentBenefits.title",
@@ -2369,8 +2360,8 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
             "_label": "energyCalculator.householdSize.helpText",
             "_default_message": "This can include family or non-family members, adults, and children. Please do not count unborn children in this total.",
         },
-        "questions.hasBenefits": {
-            "_label": "energyCalculator.hasBenefits.question",
-            "_default_message": "Does your household currently have any public assistance benefits?",
+        "questions.hasBenefits-description": {
+            "_label": "energyCalculator.hasBenefits.description",
+            "_default_message": "You may qualify for some energy programs if someone in your household receives public benefits (for example, SNAP, Medicaid, etc.).",
         },
     }
