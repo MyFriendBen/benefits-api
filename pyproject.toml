@@ -1,7 +1,8 @@
 [tool.black]
 line-length = 120
-exclude = '''
-/(
-    configuration/white_labels/_template\.py
-)/
+extend-exclude = '''
+(
+    _template\.py
+  | programs/templates/new_white_label/
+)
 '''
