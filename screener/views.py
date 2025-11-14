@@ -227,11 +227,11 @@ def eligibility_results(screen: Screen, batch=False):
             "required_programs",
             "excludes_programs",
             *translations_prefetch_name("", Program.objects.translated_fields),
-            "navigator",
-            "navigator__counties",
-            "navigator__languages",
-            "navigator__primary_navigators",
-            *translations_prefetch_name("navigator__", Navigator.objects.translated_fields),
+            "program_navigators",
+            "program_navigators__navigator",
+            "program_navigators__navigator__counties",
+            "program_navigators__navigator__languages",
+            *translations_prefetch_name("program_navigators__navigator__", Navigator.objects.translated_fields),
             "documents",
             *translations_prefetch_name("documents__", Document.objects.translated_fields),
             "warning_messages",
@@ -342,7 +342,10 @@ def eligibility_results(screen: Screen, batch=False):
 
         # don't calculate navigator and warnings for ineligible programs
         if eligibility.eligible:
-            all_navigators = program.navigator.all()
+            # Get navigators through ordered relationship (automatically sorted by order field)
+            # program_navigators uses ProgramNavigator through table with Meta.ordering
+            program_navigators = program.program_navigators.all()
+            all_navigators = [pn.navigator for pn in program_navigators]
 
             county_navigators = []
             for nav in all_navigators:
