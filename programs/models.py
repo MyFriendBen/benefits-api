@@ -1333,7 +1333,20 @@ class Navigator(models.Model):
         blank=False,
         on_delete=models.CASCADE,
     )
-    programs = models.ManyToManyField(Program, related_name="navigator", blank=True)
+    # Old M2M - kept for backward compatibility during migration
+    programs = models.ManyToManyField(
+        Program,
+        related_name="navigator",
+        blank=True,
+        db_table="programs_navigator_programs",
+    )
+    # New M2M with ordering - uses ProgramNavigator through table
+    programs_ordered = models.ManyToManyField(
+        Program,
+        through="ProgramNavigator",
+        related_name="navigators_ordered",
+        blank=True,
+    )
     external_name = models.CharField(max_length=120, blank=True, null=True, unique=True)
     phone_number = PhoneNumberField(blank=True, null=True)
     counties = models.ManyToManyField(County, related_name="navigator", blank=True)
@@ -1375,6 +1388,39 @@ class Navigator(models.Model):
     def __str__(self):
         white_label_name = f"[{self.white_label.name}] " if self.white_label and self.white_label.name else ""
         return f"{white_label_name}{self.name.text}"
+
+
+class ProgramNavigator(models.Model):
+    """
+    Through model for Program-Navigator M2M relationship with ordering support.
+    Enables per-program priority ordering for navigators using drag-and-drop in admin.
+    """
+
+    program = models.ForeignKey(
+        Program,
+        on_delete=models.CASCADE,
+        related_name="program_navigators",
+    )
+    navigator = models.ForeignKey(
+        Navigator,
+        on_delete=models.CASCADE,
+        related_name="program_navigators",
+    )
+    order = models.PositiveIntegerField(
+        default=999,
+        db_index=True,
+        help_text="Lower values appear first. Drag to reorder in admin.",
+    )
+
+    class Meta:
+        ordering = ["order", "id"]
+        unique_together = [["program", "navigator"]]
+        verbose_name = "Program Navigator"
+        verbose_name_plural = "Program Navigators"
+        db_table = "programs_program_navigators_ordered"
+
+    def __str__(self):
+        return f"{self.program.name_abbreviated} - {self.navigator.name.text} (order: {self.order})"
 
 
 class WarningMessageManager(models.Manager):
