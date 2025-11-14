@@ -12,7 +12,8 @@ def populate_navigator_ordering(apps, schema_editor):
     with schema_editor.connection.cursor() as cursor:
         # Copy all existing relationships to new through table
         # No ON CONFLICT needed - old M2M table already has unique constraint
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO programs_program_navigators_ordered 
                 (program_id, navigator_id, "order")
             SELECT 
@@ -20,8 +21,9 @@ def populate_navigator_ordering(apps, schema_editor):
                 navigator_id, 
                 999
             FROM programs_navigator_programs
-        """)
-        
+        """
+        )
+
         rows_copied = cursor.rowcount
         if rows_copied > 0:
             print(f"✓ Copied {rows_copied} navigator relationships with default ordering")
@@ -36,13 +38,13 @@ def reverse_populate(apps, schema_editor):
 class Migration(migrations.Migration):
     """
     Adds navigator ordering functionality using a through table.
-    
+
     This migration:
     1. Creates ProgramNavigator through model with order field
     2. Adds programs_ordered M2M field to Navigator
     3. Keeps existing programs field for backward compatibility
     4. Copies all existing relationships to new table
-    
+
     Both relationships remain active - this is the EXPAND phase.
     Future migration will remove old field (CONTRACT phase).
     """
@@ -98,7 +100,6 @@ class Migration(migrations.Migration):
                 "unique_together": {("program", "navigator")},
             },
         ),
-        
         # Step 2: Make existing programs field explicit (backward compatibility)
         migrations.AlterField(
             model_name="navigator",
@@ -110,7 +111,6 @@ class Migration(migrations.Migration):
                 to="programs.program",
             ),
         ),
-        
         # Step 3: Add new programs_ordered field with through table
         migrations.AddField(
             model_name="navigator",
@@ -122,7 +122,6 @@ class Migration(migrations.Migration):
                 to="programs.program",
             ),
         ),
-        
         # Step 4: Copy existing data to new through table
         migrations.RunPython(
             populate_navigator_ordering,
