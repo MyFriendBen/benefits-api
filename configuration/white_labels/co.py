@@ -19,7 +19,7 @@ class CoConfigurationData(ConfigurationData):
             },
             "content": {
                 "_label": "co.banner.snap_nov_2025_update.content",
-                "_default_message": "The federal government has reopened, and November SNAP (food assistance) benefits will be loaded onto EBT cards starting Thursday, November 14.\n\n**What you need to know:**\n- Full November benefits are being processed now\n- December benefits will come on time as usual\n- You should still apply for SNAP and turn in any paperwork\n\n**Need food help while you wait?**\n- Call Colorado 211: dial 2-1-1 or [866-760-6489](tel:8667606489)\n- Visit: [https://www.211colorado.org](https://www.211colorado.org/)",
+                "_default_message": "The federal government has reopened, and November SNAP (food assistance) benefits will be loaded onto EBT cards starting Friday, November 14.\n\n**What you need to know:**\n- Full November benefits are being processed now\n- December benefits will come on time as usual\n- You should still apply for SNAP and turn in any paperwork\n\n**Need food help while you wait?**\n- Call Colorado 211: dial 2-1-1 or [866-760-6489](tel:8667606489)\n- Visit: [https://www.211colorado.org](https://www.211colorado.org/)",
             },
             "enabled": True,
             "priority": 1,
