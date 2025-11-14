@@ -49,7 +49,7 @@ class ProgramNavigatorInline(TabularInline):
         """
         Auto-assign next sequential order to new navigators.
         Ensures consistent sequential numbering (0, 1, 2, 3...) instead of gaps.
-        
+
         Edge cases handled:
         - New program with no navigators: starts at 0
         - Empty queryset: safely defaults to 0
@@ -57,24 +57,24 @@ class ProgramNavigatorInline(TabularInline):
         - After drag-and-drop renumbering: continues from max
         """
         formset = super().get_formset(request, obj, **kwargs)
-        
+
         if obj:  # Only for existing programs (not new program creation)
             try:
                 # Get the highest current order value from existing navigators
-                max_order_result = obj.program_navigators.aggregate(Max('order'))
-                max_order = max_order_result.get('order__max')
-                
+                max_order_result = obj.program_navigators.aggregate(Max("order"))
+                max_order = max_order_result.get("order__max")
+
                 # Set initial value for new items
                 if max_order is not None:
                     # Continue sequence from highest existing order
-                    formset.form.base_fields['order'].initial = max_order + 1
+                    formset.form.base_fields["order"].initial = max_order + 1
                 else:
                     # First navigator for this program
-                    formset.form.base_fields['order'].initial = 0
+                    formset.form.base_fields["order"].initial = 0
             except (AttributeError, KeyError):
                 # Fallback to 0 if anything goes wrong
-                formset.form.base_fields['order'].initial = 0
-        
+                formset.form.base_fields["order"].initial = 0
+
         return formset
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
