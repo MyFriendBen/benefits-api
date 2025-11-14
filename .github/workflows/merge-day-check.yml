@@ -1,0 +1,33 @@
+name: Merge Day Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+  schedule:
+    # Run every day at 4 AM Eastern (9 AM UTC) to refresh status checks
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+jobs:
+  check-merge-day:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if safe to merge
+        run: |
+          DAY=$(date +%u)  # 1=Monday, 2=Tuesday, 3=Wednesday, ..., 7=Sunday
+
+          # Block merges on Tuesdays (2)
+          if [ "$DAY" -eq 2 ]; then
+            echo "❌ Error: Merging is prohibited on Tuesdays"
+            exit 1
+          fi
+
+          # Warning on Wednesdays (3) - check if Wednesday release has gone out
+          if [ "$DAY" -eq 3 ]; then
+            echo "⚠️ Warning: Please verify that the Wednesday release has gone out before merging"
+            echo "If the release is complete, you may proceed with merging"
+            exit 1
+          fi
+
+          # All other days are safe
+          echo "✅ Safe day for merging"
