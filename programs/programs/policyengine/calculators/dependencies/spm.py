@@ -435,8 +435,8 @@ class MaEaedcNonFinancialCriteria(SpmUnit):
         return False
 
 
-class MaEaedc(SpmUnit):
-    field = "ma_eaedc"
+# class MaEaedc(SpmUnit):
+#     field = "ma_eaedc"
 
 
 class CashAssetsDependency(SpmUnit):

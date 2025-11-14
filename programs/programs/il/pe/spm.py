@@ -2,7 +2,7 @@ import logging
 
 from programs.programs.policyengine.calculators.base import PolicyEngineSpmCalulator
 import programs.programs.policyengine.calculators.dependencies as dependency
-from programs.programs.federal.pe.spm import Snap, SchoolLunch, Tanf
+from programs.programs.federal.pe.spm import Lifeline, Snap, SchoolLunch, Tanf
 
 logger = logging.getLogger(__name__)
 
@@ -125,3 +125,24 @@ class IlLiheap(PolicyEngineSpmCalulator):
         except RuntimeError as e:
             logger.warning(f"PolicyEngine API error for IL LIHEAP screen {self.screen.id}: {e}")
             return 0
+
+
+class IlLifeline(Lifeline):
+    pe_inputs = [
+        *Lifeline.pe_inputs,
+        dependency.household.IlStateCodeDependency,
+    ]
+    pe_outputs = [dependency.spm.Lifeline]
+
+    def household_value(self):
+        lifeline = 9.25 * 12  # amount
+        income = int(self.screen.calc_gross_income("yearly", ["all"]))
+        fpl_limit = self.program.year.get_limit(self.screen.household_size)
+
+        # if any member has disability, use 200% FPL, else 165% FPL
+        has_disability = any(m.has_disability() for m in self.screen.household_members.all())
+        fpl_threshold = 2.0 if has_disability else 1.65
+
+        eligible = income <= int(fpl_threshold * fpl_limit)
+
+        return lifeline if eligible else 0

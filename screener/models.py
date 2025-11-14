@@ -388,6 +388,7 @@ class Screen(models.Model):
             "il_snap": self.has_snap,
             "tx_snap": self.has_snap,
             "lifeline": self.has_lifeline,
+            "il_lifeline": self.has_lifeline,
             "acp": self.has_acp,
             "eitc": self.has_eitc,
             "tx_eitc": self.has_eitc,
