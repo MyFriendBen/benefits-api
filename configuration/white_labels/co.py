@@ -12,14 +12,14 @@ class CoConfigurationData(ConfigurationData):
     # System banner messages
     banner_messages = [
         {
-            "id": "co.banner.snap_nov_2025_hold",
+            "id": "co.banner.snap_nov_2025_update",
             "title": {
-                "_label": "co.banner.snap_nov_2025_hold.title",
-                "_default_message": "Urgent: SNAP Benefits for November 2025 are on Hold",
+                "_label": "co.banner.snap_nov_2025_update.title",
+                "_default_message": "Update: November SNAP Benefits Are Coming",
             },
             "content": {
-                "_label": "co.banner.snap_nov_2025_hold.content",
-                "_default_message": "Because of the federal government shutdown, the U.S. Department of Agriculture (USDA) has not released the funds that states use to pay SNAP (food assistance) benefits. This means Colorado is unable to issue November SNAP benefits to clients until the federal government restores funding.\n\nWe will update this banner as soon as we have new information.\n\nTo find other food resources in your area, please contact:\n\n**Colorado 211:** call 2-1-1 or 866-760-6489 or visit https://www.211colorado.org",
+                "_label": "co.banner.snap_nov_2025_update.content",
+                "_default_message": "The federal government has reopened, and November SNAP (food assistance) benefits will be loaded onto EBT cards starting Thursday, November 14.\n\n**What you need to know:**\n- Full November benefits are being processed now\n- December benefits will come on time as usual\n- You should still apply for SNAP and turn in any paperwork\n\n**Need food help while you wait?**\n- Call Colorado 211: dial 2-1-1 or [866-760-6489](tel:8667606489)\n- Visit: [https://www.211colorado.org](https://www.211colorado.org/)",
             },
             "enabled": True,
             "priority": 1,
