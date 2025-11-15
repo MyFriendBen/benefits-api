@@ -1311,12 +1311,43 @@ class NavigatorDataController(ModelDataController["Navigator"]):
             langs.append(lang_instance)
         navigator.languages.set(langs)
 
-        # get programs
         programs = []
-        for external_name in data["programs"]:
+        program_orders = {}
+        for item in data["programs"]:
+            if isinstance(item, str):
+                external_name = item
+                order_value = None
+            else:
+                external_name = item.get("external_name") or item.get("name")
+                order_value = item.get("order") if isinstance(item, dict) else None
+            if not external_name:
+                continue
             program_instance = Program.objects.get(external_name=external_name)
+            if program_instance.white_label_id != navigator.white_label_id:
+                raise self.DeferCreation()
             programs.append(program_instance)
-        navigator.programs.set(programs)
+            if order_value is not None:
+                program_orders[program_instance.id] = order_value
+
+        seen_program_ids = set()
+        for program in programs:
+            if program.id in seen_program_ids:
+                continue
+            seen_program_ids.add(program.id)
+            defaults = {}
+            if program.id in program_orders:
+                defaults["order"] = program_orders[program.id]
+            ProgramNavigator.objects.update_or_create(
+                program=program,
+                navigator=navigator,
+                defaults=defaults,
+            )
+
+        ProgramNavigator.objects.filter(navigator=navigator).exclude(program__in=programs).delete()
+
+        through = Navigator._meta.get_field("programs").remote_field.through
+        if getattr(through, "__name__", str(through)) != "ProgramNavigator":
+            navigator.programs.set(programs)
 
         navigator.save()
 
