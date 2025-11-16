@@ -34,7 +34,6 @@ console:  ## opens a one-off console container
    --network $(DOCKER_NETWORK_NAME) \
    --rm --name benefits-api-console -it \
    $(DOCKER_IMG) bash
-	@docker rm benefits-api-console
 
 CMD := bash
 .PHONY: login
