@@ -21,7 +21,7 @@ class NcConfigurationData(ConfigurationData):
                 "_label": "nc.banner.snap_nov_2025_hold.content",
                 "_default_message": "The North Carolina SNAP agency said SNAP food help for November 2025 will be decreased and delayed because of the government shutdown.\n\nYou should still apply for SNAP and turn in any required paperwork.\n\nTo find out more about November SNAP, go to the North Carolina Food and Nutrition Services [website](https://www.ncdhhs.gov/divisions/child-and-family-well-being/food-and-nutrition-services-food-stamps). You can use MyFriendBen to see what other programs can help your family and to get help near you.",
             },
-            "enabled": True,
+            "enabled": False,
             "priority": 1,
         }
     ]
