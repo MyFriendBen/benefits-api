@@ -37,7 +37,6 @@ class NCLieap(ProgramCalculator):
 
         # Calculate income and limits
         gross_income = self._calculate_gross_income()
-        income_limit = self._calculate_income_limit()
         base_income_limit = self.program.year.as_dict()[household_size]
 
         # Determine benefit amount based on household size and income
