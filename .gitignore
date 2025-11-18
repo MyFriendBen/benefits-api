@@ -35,3 +35,4 @@ tasks/todo.md
 
 # AI tooling
 .claude/projects/
+.claude/settings.local.json
