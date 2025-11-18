@@ -87,6 +87,7 @@ class NCLieap(ProgramCalculator):
         # Calculate income limit
         household_size = self.screen.household_size
         income_limit = int(fpl_percent * self.program.year.as_dict()[household_size])
+
         return income_limit
 
     def _has_senior_or_disabled(self):
