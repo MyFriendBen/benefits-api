@@ -540,7 +540,7 @@ def urgent_need_results(screen: Screen, data):
         "dental care": screen.needs_dental_care,
         "legal services": screen.needs_legal_services,
         "veteran services": screen.needs_veteran_services,
-        "savings": screen.needs_savings,
+        "savings": screen.needs_college_savings,
     }
 
     missing_dependencies = screen.missing_fields()
