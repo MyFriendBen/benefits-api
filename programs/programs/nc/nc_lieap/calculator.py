@@ -4,7 +4,6 @@ import programs.programs.messages as messages
 
 class NCLieap(ProgramCalculator):
     fpl_percent = 1.3
-    # fpl_percent = 0.5
     fpl_percent_senior_disabled = 1.5
     earned_deduction = 0.2
     medical_deduction_senior_disabled = 85
