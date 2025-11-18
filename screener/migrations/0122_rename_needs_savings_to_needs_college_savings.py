@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("screener", "0120_screen_has_project_cope"),
+        ("screener", "0121_screen_has_heap"),
     ]
 
     operations = [
