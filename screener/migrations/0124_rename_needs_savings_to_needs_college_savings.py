@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("screener", "0121_screen_has_heap"),
+        ("screener", "0123_merge_20251110_2243"),
     ]
 
     operations = [
