@@ -4,6 +4,7 @@ import programs.programs.messages as messages
 
 class NCLieap(ProgramCalculator):
     fpl_percent = 1.3
+    # fpl_percent = 0.5
     fpl_percent_senior_disabled = 1.5
     earned_deduction = 0.2
     medical_deduction_senior_disabled = 85
@@ -38,18 +39,20 @@ class NCLieap(ProgramCalculator):
         # Calculate income and limits
         gross_income = self._calculate_gross_income()
         income_limit = self._calculate_income_limit()
+        base_income_limit = self.program.year.as_dict()[household_size]
 
-        # Determine benefit amount based on household size and income
-        if household_size < self.large_household_size:
-            if gross_income <= income_limit * self.max_value_fpl_percent:
-                return self.small_household_low_income_value
-            elif gross_income <= income_limit:
-                return self.small_household_large_income_value
-        else:
-            if gross_income <= income_limit * self.max_value_fpl_percent:
-                return self.large_household_low_income_value
-            elif gross_income <= income_limit:
-                return self.large_household_large_income_value
+        if household_size < self.large_household_size:  # 1-3 person household
+            if gross_income <= base_income_limit * self.max_value_fpl_percent:  # 0-50% FPL
+                return self.small_household_low_income_value  # $400/month
+            elif gross_income <= base_income_limit:  # 51%+ FPL
+                return self.small_household_large_income_value  # $300/month
+        else:  # 4+ person household
+            if gross_income <= base_income_limit * self.max_value_fpl_percent:  # 0-50% FPL
+                return self.large_household_low_income_value  # $500/month
+            elif gross_income <= base_income_limit:  # 51%+ FPL
+                return self.large_household_large_income_value  # $400/month
+
+        return 0
 
     def _calculate_gross_income(self):
 
@@ -84,7 +87,6 @@ class NCLieap(ProgramCalculator):
         # Calculate income limit
         household_size = self.screen.household_size
         income_limit = int(fpl_percent * self.program.year.as_dict()[household_size])
-
         return income_limit
 
     def _has_senior_or_disabled(self):
