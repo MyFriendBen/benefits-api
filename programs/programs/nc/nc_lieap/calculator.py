@@ -40,6 +40,7 @@ class NCLieap(ProgramCalculator):
         income_limit = self._calculate_income_limit()
         base_income_limit = self.program.year.as_dict()[household_size]
 
+        # Determine benefit amount based on household size and income
         if household_size < self.large_household_size:  # 1-3 person household
             if gross_income <= base_income_limit * self.max_value_fpl_percent:  # 0-50% FPL
                 return self.small_household_low_income_value  # $400/month
@@ -50,7 +51,6 @@ class NCLieap(ProgramCalculator):
                 return self.large_household_low_income_value  # $500/month
             elif gross_income <= base_income_limit:  # 51%+ FPL
                 return self.large_household_large_income_value  # $400/month
-
         return 0
 
     def _calculate_gross_income(self):
