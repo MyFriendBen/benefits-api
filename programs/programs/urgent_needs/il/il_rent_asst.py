@@ -32,9 +32,7 @@ class IlRenterAssistance(UrgentNeedFunction):
         if not self.urgent_need.year:
             raise ValueError("urgent_need.year must be set for IL rent assistance eligibility")
 
-        income_limit = hud_client.get_screen_il_ami(
-            self.screen, self.ami_percent, self.urgent_need.year.period if self.urgent_need.year else 2025
-        )
+        income_limit = hud_client.get_screen_il_ami(self.screen, self.ami_percent, self.urgent_need.year.period)
         income = self.screen.calc_gross_income("yearly", ["all"])
         below_income_limit = income <= income_limit
 
