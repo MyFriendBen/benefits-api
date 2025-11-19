@@ -13,8 +13,11 @@ API Documentation: https://www.huduser.gov/portal/dataset/fmr-api.html
 from typing import Union, Literal, Optional
 from decouple import config
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from sentry_sdk import capture_exception
 from django.core.cache import cache
+from screener.models import Screen
 
 # Type alias for MTSP AMI percentage levels (Multifamily Tax Subsidy Project)
 MtspAmiPercent = Literal["20%", "30%", "40%", "50%", "60%", "70%", "80%", "100%"]
@@ -49,10 +52,54 @@ class HudIncomeClient:
     # Maps AMI percentage to HUD's nested category name
     SECTION8_CATEGORIES = {"30": "extremely_low", "50": "very_low", "80": "low"}  # 30% AMI  # 50% AMI  # 80% AMI
 
-    def __init__(self, api_token: Optional[str] = None):
-        """Initialize with HUD API token from environment or parameter."""
+    def __init__(self, api_token: Optional[str] = None, max_retries: int = 3):
+        """
+        Initialize with HUD API token from environment or parameter.
+
+        Args:
+            api_token: Optional API token (defaults to HUD_API_TOKEN env var)
+            max_retries: Maximum number of retry attempts for transient errors (default: 3)
+        """
         self._api_token = api_token
         self._headers = None
+        self._session = self._create_session_with_retries(max_retries)
+
+    def _create_session_with_retries(self, max_retries: int) -> requests.Session:
+        """
+        Create a requests session with automatic retry logic.
+
+        Retries on:
+        - Connection errors (network issues)
+        - Timeout errors
+        - 429 (Too Many Requests) - with exponential backoff
+        - 500, 502, 503, 504 (Server errors) - transient issues
+
+        Does NOT retry on:
+        - 4xx client errors (except 429) - these are permanent
+        - Successful responses (2xx, 3xx)
+
+        Args:
+            max_retries: Maximum number of retry attempts
+
+        Returns:
+            Configured requests Session
+        """
+        session = requests.Session()
+
+        # Configure retry strategy
+        retry_strategy = Retry(
+            total=max_retries,
+            backoff_factor=1,  # Wait 1s, 2s, 4s, 8s between retries
+            status_forcelist=[429, 500, 502, 503, 504],  # HTTP codes to retry
+            allowed_methods=["GET"],  # Only retry safe methods
+            raise_on_status=False,  # Let us handle status codes
+        )
+
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
+
+        return session
 
     @property
     def headers(self):
@@ -69,7 +116,7 @@ class HudIncomeClient:
 
     def get_screen_mtsp_ami(
         self,
-        screen,
+        screen: Screen,
         percent: MtspAmiPercent,
         year: Union[int, str],
     ) -> int:
@@ -257,9 +304,26 @@ class HudIncomeClient:
         raise HudIncomeClientError(f"County not found: {county_name}, {state_code}")
 
     def _api_request(self, endpoint: str, params: Optional[dict] = None) -> dict:
-        """Make an API request to HUD."""
+        """
+        Make an API request to HUD with automatic retry logic.
+
+        Retries are handled automatically by the session for:
+        - Network errors (connection failures, timeouts)
+        - Rate limiting (429)
+        - Server errors (500, 502, 503, 504)
+
+        Args:
+            endpoint: API endpoint path
+            params: Optional query parameters
+
+        Returns:
+            JSON response as dict
+
+        Raises:
+            HudIncomeClientError: On authentication, authorization, or data errors
+        """
         try:
-            response = requests.get(f"{self.BASE_URL}/{endpoint}", headers=self.headers, params=params, timeout=30)
+            response = self._session.get(f"{self.BASE_URL}/{endpoint}", headers=self.headers, params=params, timeout=30)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.HTTPError as e:
@@ -276,8 +340,18 @@ class HudIncomeClient:
                 raise HudIncomeClientError(
                     f"Data not found for endpoint: {endpoint}. " "Check that the state/county exists and year is valid."
                 )
+            elif status_code == 429:
+                raise HudIncomeClientError("Rate limit exceeded. Please wait before making more requests.")
             else:
                 raise HudIncomeClientError(f"API request failed ({status_code}): {e.response.text}")
+        except requests.exceptions.Timeout as e:
+            capture_exception(e)
+            raise HudIncomeClientError(
+                "Request timeout after multiple retries. The HUD API may be experiencing issues."
+            )
+        except requests.exceptions.ConnectionError as e:
+            capture_exception(e)
+            raise HudIncomeClientError("Connection failed. Please check your network connection or try again later.")
         except requests.exceptions.RequestException as e:
             capture_exception(e)
             raise HudIncomeClientError(f"Request failed: {str(e)}")

@@ -1,0 +1,166 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.32.5
+    method: GET
+    uri: https://www.huduser.gov/hudapi/public/fmr/listCounties/CO?updated=2025&year=2025
+  response:
+    body:
+      string: '[{"state_code":"CO","fips_code":"0800199999","cntyname":"Adams County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0800399999","cntyname":"Alamosa
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0800599999","cntyname":"Arapahoe
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0800799999","cntyname":"Archuleta
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0800999999","cntyname":"Baca
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0801199999","cntyname":"Bent
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0801399999","cntyname":"Boulder
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0801499999","cntyname":"Broomfield
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0801599999","cntyname":"Chaffee
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0801799999","cntyname":"Cheyenne
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0801999999","cntyname":"Clear
+        Creek County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0802199999","cntyname":"Conejos
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0802399999","cntyname":"Costilla
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0802599999","cntyname":"Crowley
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0802799999","cntyname":"Custer
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0802999999","cntyname":"Delta
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0803199999","cntyname":"Denver
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0803399999","cntyname":"Dolores
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0803599999","cntyname":"Douglas
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0803799999","cntyname":"Eagle
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0804199999","cntyname":"El
+        Paso County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0803999999","cntyname":"Elbert
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0804399999","cntyname":"Fremont
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0804599999","cntyname":"Garfield
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0804799999","cntyname":"Gilpin
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0804999999","cntyname":"Grand
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0805199999","cntyname":"Gunnison
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0805399999","cntyname":"Hinsdale
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0805599999","cntyname":"Huerfano
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0805799999","cntyname":"Jackson
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0805999999","cntyname":"Jefferson
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0806199999","cntyname":"Kiowa
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0806399999","cntyname":"Kit
+        Carson County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0806799999","cntyname":"La
+        Plata County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0806599999","cntyname":"Lake
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0806999999","cntyname":"Larimer
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0807199999","cntyname":"Las
+        Animas County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0807399999","cntyname":"Lincoln
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0807599999","cntyname":"Logan
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0807799999","cntyname":"Mesa
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0807999999","cntyname":"Mineral
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0808199999","cntyname":"Moffat
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0808399999","cntyname":"Montezuma
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0808599999","cntyname":"Montrose
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0808799999","cntyname":"Morgan
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0808999999","cntyname":"Otero
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0809199999","cntyname":"Ouray
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0809399999","cntyname":"Park
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0809599999","cntyname":"Phillips
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0809799999","cntyname":"Pitkin
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0809999999","cntyname":"Prowers
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0810199999","cntyname":"Pueblo
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0810399999","cntyname":"Rio
+        Blanco County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0810599999","cntyname":"Rio
+        Grande County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0810799999","cntyname":"Routt
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0810999999","cntyname":"Saguache
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0811199999","cntyname":"San
+        Juan County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0811399999","cntyname":"San
+        Miguel County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0811599999","cntyname":"Sedgwick
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0811799999","cntyname":"Summit
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0811999999","cntyname":"Teller
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0812199999","cntyname":"Washington
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0812399999","cntyname":"Weld
+        County","town_name":"","category":"County"},{"state_code":"CO","fips_code":"0812599999","cntyname":"Yuma
+        County","town_name":"","category":"County"}]'
+    headers:
+      Access-Control-Allow-Headers:
+      - Origin, X-Requested-With, Content-Type, Accept, Authorization
+      Access-Control-Allow-Origin:
+      - '*'
+      Cache-Control:
+      - no-cache, private
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '6908'
+      Content-Security-Policy:
+      - form-action 'self';
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 19 Nov 2025 22:57:56 GMT
+      Set-Cookie:
+      - REDACTED
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-RateLimit-Limit:
+      - '100'
+      X-RateLimit-Remaining:
+      - '95'
+      X-XSS-Protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.32.5
+    method: GET
+    uri: https://www.huduser.gov/hudapi/public/mtspil/data/0803199999?year=2025
+  response:
+    body:
+      string: '{"data":{"county_name":"Denver County, CO","counties_msa":"","town_name":"","metro_status":"1.0","metro_name":"Denver-Aurora-Centennial,
+        CO","area_name":"Denver-Aurora-Lakewood, CO MSA","year":"2025","median_income":140100,"80percent":{"il80_p1":78480,"il80_p2":89680,"il80_p3":100880,"il80_p4":112080,"il80_p5":121120,"il80_p6":130080,"il80_p7":139040,"il80_p8":148000},"70percent":{"il70_p1":68670,"il70_p2":78470,"il70_p3":88270,"il70_p4":98070,"il70_p5":105980,"il70_p6":113820,"il70_p7":121660,"il70_p8":129500},"60percent":{"il60_p1":58860,"il60_p2":67260,"il60_p3":75660,"il60_p4":84060,"il60_p5":90840,"il60_p6":97560,"il60_p7":104280,"il60_p8":111000},"50percent":{"il50_p1":49050,"il50_p2":56050,"il50_p3":63050,"il50_p4":70050,"il50_p5":75700,"il50_p6":81300,"il50_p7":86900,"il50_p8":92500},"40percent":{"il40_p1":39240,"il40_p2":44840,"il40_p3":50440,"il40_p4":56040,"il40_p5":60560,"il40_p6":65040,"il40_p7":69520,"il40_p8":74000},"30percent":{"il30_p1":29430,"il30_p2":33630,"il30_p3":37830,"il30_p4":42030,"il30_p5":45420,"il30_p6":48780,"il30_p7":52140,"il30_p8":55500},"20percent":{"il20_p1":19620,"il20_p2":22420,"il20_p3":25220,"il20_p4":28020,"il20_p5":30280,"il20_p6":32520,"il20_p7":34760,"il20_p8":37000},"hera_special_50percent":{},"hera_special_60percent":{}}}'
+    headers:
+      Access-Control-Allow-Headers:
+      - Origin, X-Requested-With, Content-Type, Accept, Authorization
+      Access-Control-Allow-Origin:
+      - '*'
+      Cache-Control:
+      - no-cache, private
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1286'
+      Content-Security-Policy:
+      - form-action 'self';
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 19 Nov 2025 22:57:56 GMT
+      Set-Cookie:
+      - REDACTED
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-RateLimit-Limit:
+      - '100'
+      X-RateLimit-Remaining:
+      - '94'
+      X-XSS-Protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+version: 1

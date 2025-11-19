@@ -556,23 +556,22 @@ class TestHudIncomeClientHTTPErrors(TestCase):
             white_label=self.white_label, zipcode="12345", county="Test County", household_size=4, completed=False
         )
 
-    @patch("integrations.clients.hud_income_limits.client.requests.get")
-    def test_successful_api_request(self, mock_get):
+    def test_successful_api_request(self):
         """Test successful API request returns JSON data."""
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"data": "test"}
         mock_response.raise_for_status = Mock()
-        mock_get.return_value = mock_response
 
         client = HudIncomeClient(api_token="test_token")
-        result = client._api_request("test/endpoint")
 
-        self.assertEqual(result, {"data": "test"})
-        mock_response.raise_for_status.assert_called_once()
+        with patch.object(client._session, "get", return_value=mock_response):
+            result = client._api_request("test/endpoint")
 
-    @patch("integrations.clients.hud_income_limits.client.requests.get")
-    def test_401_authentication_error(self, mock_get):
+            self.assertEqual(result, {"data": "test"})
+            mock_response.raise_for_status.assert_called_once()
+
+    def test_401_authentication_error(self):
         """Test 401 authentication error handling."""
         import requests
 
@@ -581,17 +580,16 @@ class TestHudIncomeClientHTTPErrors(TestCase):
         http_error = requests.exceptions.HTTPError("401 Unauthorized")
         http_error.response = mock_response
         mock_response.raise_for_status.side_effect = http_error
-        mock_get.return_value = mock_response
 
         client = HudIncomeClient(api_token="invalid_token")
 
-        with self.assertRaises(HudIncomeClientError) as context:
-            client._api_request("test/endpoint")
+        with patch.object(client._session, "get", return_value=mock_response):
+            with self.assertRaises(HudIncomeClientError) as context:
+                client._api_request("test/endpoint")
 
-        self.assertIn("Authentication failed", str(context.exception))
+            self.assertIn("Authentication failed", str(context.exception))
 
-    @patch("integrations.clients.hud_income_limits.client.requests.get")
-    def test_403_access_denied_error(self, mock_get):
+    def test_403_access_denied_error(self):
         """Test 403 access denied error handling."""
         import requests
 
@@ -600,18 +598,17 @@ class TestHudIncomeClientHTTPErrors(TestCase):
         http_error = requests.exceptions.HTTPError("403 Forbidden")
         http_error.response = mock_response
         mock_response.raise_for_status.side_effect = http_error
-        mock_get.return_value = mock_response
 
         client = HudIncomeClient(api_token="test_token")
 
-        with self.assertRaises(HudIncomeClientError) as context:
-            client._api_request("test/endpoint")
+        with patch.object(client._session, "get", return_value=mock_response):
+            with self.assertRaises(HudIncomeClientError) as context:
+                client._api_request("test/endpoint")
 
-        self.assertIn("Access denied", str(context.exception))
-        self.assertIn("FMR and Income Limits", str(context.exception))
+            self.assertIn("Access denied", str(context.exception))
+            self.assertIn("FMR and Income Limits", str(context.exception))
 
-    @patch("integrations.clients.hud_income_limits.client.requests.get")
-    def test_404_data_not_found_error(self, mock_get):
+    def test_404_data_not_found_error(self):
         """Test 404 data not found error handling."""
         import requests
 
@@ -620,17 +617,16 @@ class TestHudIncomeClientHTTPErrors(TestCase):
         http_error = requests.exceptions.HTTPError("404 Not Found")
         http_error.response = mock_response
         mock_response.raise_for_status.side_effect = http_error
-        mock_get.return_value = mock_response
 
         client = HudIncomeClient(api_token="test_token")
 
-        with self.assertRaises(HudIncomeClientError) as context:
-            client._api_request("test/endpoint")
+        with patch.object(client._session, "get", return_value=mock_response):
+            with self.assertRaises(HudIncomeClientError) as context:
+                client._api_request("test/endpoint")
 
-        self.assertIn("Data not found", str(context.exception))
+            self.assertIn("Data not found", str(context.exception))
 
-    @patch("integrations.clients.hud_income_limits.client.requests.get")
-    def test_500_server_error(self, mock_get):
+    def test_500_server_error(self):
         """Test 500 server error handling."""
         import requests
 
@@ -640,29 +636,116 @@ class TestHudIncomeClientHTTPErrors(TestCase):
         http_error = requests.exceptions.HTTPError("500 Server Error")
         http_error.response = mock_response
         mock_response.raise_for_status.side_effect = http_error
-        mock_get.return_value = mock_response
 
         client = HudIncomeClient(api_token="test_token")
 
-        with self.assertRaises(HudIncomeClientError) as context:
-            client._api_request("test/endpoint")
+        with patch.object(client._session, "get", return_value=mock_response):
+            with self.assertRaises(HudIncomeClientError) as context:
+                client._api_request("test/endpoint")
 
-        self.assertIn("API request failed (500)", str(context.exception))
-        self.assertIn("Internal Server Error", str(context.exception))
+            self.assertIn("API request failed (500)", str(context.exception))
+            self.assertIn("Internal Server Error", str(context.exception))
 
-    @patch("integrations.clients.hud_income_limits.client.requests.get")
-    def test_network_error_handling(self, mock_get):
+    def test_network_error_handling(self):
         """Test network error handling."""
         import requests
 
-        mock_get.side_effect = requests.exceptions.RequestException("Network error")
+        client = HudIncomeClient(api_token="test_token")
+
+        with patch.object(client._session, "get", side_effect=requests.exceptions.RequestException("Network error")):
+            with self.assertRaises(HudIncomeClientError) as context:
+                client._api_request("test/endpoint")
+
+            self.assertIn("Request failed", str(context.exception))
+
+    def test_retry_configuration(self):
+        """Test that client is configured with retry strategy."""
+        client = HudIncomeClient(api_token="test_token", max_retries=3)
+
+        # Verify session exists and has retry adapters
+        self.assertIsNotNone(client._session)
+
+        # Check that adapters are mounted for both http and https
+        self.assertIn("http://", client._session.adapters)
+        self.assertIn("https://", client._session.adapters)
+
+        # Verify the adapter has a retry configuration
+        https_adapter = client._session.get_adapter("https://")
+        self.assertIsNotNone(https_adapter.max_retries)
+
+    def test_connection_error_propagates_after_retries(self):
+        """Test that connection errors are caught and wrapped properly."""
+        import requests
+
+        client = HudIncomeClient(api_token="test_token", max_retries=2)
+
+        with patch.object(client._session, "get") as mock_session_get:
+            # Simulate connection error
+            mock_session_get.side_effect = requests.exceptions.ConnectionError("Connection failed")
+
+            with self.assertRaises(HudIncomeClientError) as context:
+                client._api_request("test/endpoint")
+
+            self.assertIn("Connection failed", str(context.exception))
+
+    def test_max_retries_parameter(self):
+        """Test that max_retries parameter configures retry behavior."""
+        # Test with 0 retries
+        client_no_retry = HudIncomeClient(api_token="test_token", max_retries=0)
+        https_adapter = client_no_retry._session.get_adapter("https://")
+        self.assertEqual(https_adapter.max_retries.total, 0)
+
+        # Test with 5 retries
+        client_five_retries = HudIncomeClient(api_token="test_token", max_retries=5)
+        https_adapter = client_five_retries._session.get_adapter("https://")
+        self.assertEqual(https_adapter.max_retries.total, 5)
+
+    def test_429_rate_limit_error(self):
+        """Test 429 rate limit error handling."""
+        import requests
+
+        mock_response = Mock()
+        mock_response.status_code = 429
+        http_error = requests.exceptions.HTTPError("429 Too Many Requests")
+        http_error.response = mock_response
+        mock_response.raise_for_status.side_effect = http_error
 
         client = HudIncomeClient(api_token="test_token")
 
-        with self.assertRaises(HudIncomeClientError) as context:
-            client._api_request("test/endpoint")
+        with patch.object(client._session, "get", return_value=mock_response):
+            with self.assertRaises(HudIncomeClientError) as context:
+                client._api_request("test/endpoint")
 
-        self.assertIn("Request failed", str(context.exception))
+            self.assertIn("Rate limit exceeded", str(context.exception))
+
+    def test_timeout_error_handling(self):
+        """Test timeout error handling."""
+        import requests
+
+        client = HudIncomeClient(api_token="test_token", max_retries=2)
+
+        with patch.object(client._session, "get") as mock_session_get:
+            # All attempts timeout
+            mock_session_get.side_effect = requests.exceptions.Timeout("Request timed out")
+
+            with self.assertRaises(HudIncomeClientError) as context:
+                client._api_request("test/endpoint")
+
+            self.assertIn("Request timeout", str(context.exception))
+
+    def test_retry_strategy_configuration(self):
+        """Test retry strategy is configured correctly."""
+        from urllib3.util.retry import Retry
+
+        client = HudIncomeClient(api_token="test_token", max_retries=3)
+        https_adapter = client._session.get_adapter("https://")
+
+        # Verify retry strategy properties
+        retry_config: Retry = https_adapter.max_retries
+        self.assertEqual(retry_config.total, 3)
+        self.assertEqual(retry_config.backoff_factor, 1)
+        self.assertEqual(retry_config.status_forcelist, [429, 500, 502, 503, 504])
+        self.assertIn("GET", retry_config.allowed_methods)
 
 
 class TestAmiPercentTypes(TestCase):

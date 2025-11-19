@@ -5,13 +5,12 @@ This module configures VCR (Video Cassette Recorder) to record and replay
 HTTP interactions during tests. It automatically scrubs sensitive information
 from cassettes to prevent accidental credential leaks.
 
-Integration tests run with real API calls when:
-- RUN_REAL_INTEGRATION_TESTS environment variable is set
-- Running locally with actual credentials
+VCR behavior by environment:
+- CI: Uses existing cassettes only (record_mode='none'), never makes real API calls
+- Locally: Records new cassettes if missing, replays existing ones (record_mode='once')
+- With RUN_REAL_INTEGRATION_TESTS=true: Forces re-recording all cassettes (record_mode='all')
 
-Integration tests use VCR cassettes when:
-- Running in CI without RUN_REAL_INTEGRATION_TESTS flag
-- Running locally without credentials
+All integration tests marked with @pytest.mark.integration automatically use VCR.
 """
 
 import os
@@ -29,8 +28,10 @@ def scrub_sensitive_data(response):
     - Authorization headers
     - API keys in headers
     - API keys in request/response bodies
-    - Tokens in URLs and bodies
-    - Any HUD API specific credentials
+    - Tokens in URLs and bodies (access, refresh, ID tokens)
+    - Client secrets and credentials
+    - Sensitive data in error responses
+    - Email addresses and PII in error messages
 
     Args:
         response: VCR response object
@@ -68,17 +69,39 @@ def scrub_sensitive_data(response):
         else:
             body_str = body
 
-        # Replace common patterns for tokens/keys in bodies
+        # Enhanced patterns for tokens/keys in bodies
         patterns = [
+            # API keys and tokens
             (r'"api_key"\s*:\s*"[^"]*"', '"api_key": "REDACTED"'),
             (r'"apiKey"\s*:\s*"[^"]*"', '"apiKey": "REDACTED"'),
             (r'"token"\s*:\s*"[^"]*"', '"token": "REDACTED"'),
             (r'"access_token"\s*:\s*"[^"]*"', '"access_token": "REDACTED"'),
+            (r'"refresh_token"\s*:\s*"[^"]*"', '"refresh_token": "REDACTED"'),
+            (r'"id_token"\s*:\s*"[^"]*"', '"id_token": "REDACTED"'),
             (r'"authorization"\s*:\s*"[^"]*"', '"authorization": "REDACTED"'),
+            (r'"client_secret"\s*:\s*"[^"]*"', '"client_secret": "REDACTED"'),
+            (r'"secret"\s*:\s*"[^"]*"', '"secret": "REDACTED"'),
+            (r'"password"\s*:\s*"[^"]*"', '"password": "REDACTED"'),
+            # Bearer tokens in various formats
+            (r"Bearer\s+[A-Za-z0-9\-._~+/]+=*", "Bearer REDACTED"),
+            # Email addresses (PII in error messages)
+            (r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", "user@REDACTED.com"),
+            # IP addresses in error messages
+            (r"\b(?:\d{1,3}\.){3}\d{1,3}\b", "XXX.XXX.XXX.XXX"),
         ]
 
         for pattern, replacement in patterns:
             body_str = re.sub(pattern, replacement, body_str, flags=re.IGNORECASE)
+
+        # Sanitize error response bodies (preserve error structure but remove sensitive details)
+        # Check if this is an error response (status >= 400)
+        if "status" in response and "code" in response["status"]:
+            status_code = response["status"]["code"]
+            if status_code >= 400:
+                # Scrub stack traces and internal paths from error responses
+                body_str = re.sub(r'File "([^"]*)"', 'File "REDACTED"', body_str)
+                # Scrub internal server paths
+                body_str = re.sub(r"(/[a-zA-Z0-9_\-./]+/[a-zA-Z0-9_\-./]+)", "REDACTED_PATH", body_str)
 
         # Convert back to bytes if original was bytes
         if isinstance(body, bytes):
@@ -206,13 +229,14 @@ def vcr_instance(vcr_config):
 @pytest.fixture(autouse=True)
 def auto_vcr(request, vcr_instance):
     """
-    Automatically apply VCR to integration tests in CI mode.
+    Automatically apply VCR to integration tests.
 
     This fixture:
     - Detects if a test is marked with @pytest.mark.integration
-    - In CI (without RUN_REAL_INTEGRATION_TESTS), uses VCR cassettes
-    - Outside CI or with RUN_REAL_INTEGRATION_TESTS, makes real API calls
-    - Creates cassette files in a 'cassettes' directory next to the test file
+    - Always uses VCR to record/replay HTTP interactions
+    - In CI: Uses cassettes in playback mode (requires cassettes to exist)
+    - Locally: Records new cassettes if missing, replays if they exist
+    - With RUN_REAL_INTEGRATION_TESTS: Forces re-recording of all cassettes
 
     Cassettes are stored in: <test_dir>/cassettes/<test_name>.yaml
     For example: integrations/clients/hud_income_limits/tests/cassettes/test_real_api_call_cook_county_il.yaml
@@ -228,19 +252,21 @@ def auto_vcr(request, vcr_instance):
         yield
         return
 
-    # Check if we should use real API calls
-    use_real_calls = not os.getenv("CI") or os.getenv(  # Not in CI
-        "RUN_REAL_INTEGRATION_TESTS"
-    )  # Explicit flag to use real calls
-
-    if use_real_calls:
-        # Run test with real API calls
-        yield
+    # Determine VCR record mode based on environment
+    if os.getenv("RUN_REAL_INTEGRATION_TESTS"):
+        # Force re-record all cassettes (overwrites existing)
+        record_mode = "all"
+    elif os.getenv("CI"):
+        # In CI: only use existing cassettes, never record
+        record_mode = "none"
     else:
-        # Use VCR cassette - named after the test
-        cassette_name = f"{request.node.name}.yaml"
-        with vcr_instance.use_cassette(cassette_name):
-            yield
+        # Locally: record once if missing, then replay
+        record_mode = "once"
+
+    # Use VCR cassette - named after the test
+    cassette_name = f"{request.node.name}.yaml"
+    with vcr_instance.use_cassette(cassette_name, record_mode=record_mode):
+        yield
 
 
 @pytest.fixture
