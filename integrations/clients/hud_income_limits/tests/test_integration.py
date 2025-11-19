@@ -1,11 +1,16 @@
 """
-Integration tests for HUD API client (requires HUD_API_TOKEN).
+Integration tests for HUD API client.
 
-These tests make real API calls to HUD and should only run in
-environments with valid API credentials.
+These tests use VCR to record/replay HTTP interactions:
+- In CI: Uses VCR cassettes (no credentials needed)
+- Locally with HUD_API_TOKEN: Makes real API calls and updates cassettes
+- Locally without credentials: Uses existing VCR cassettes
+
+VCR automatically scrubs all sensitive data (API keys, tokens, etc.) from cassettes.
 
 Run integration tests with: pytest -m integration
 Skip integration tests with: pytest -m "not integration"
+Force real API calls: RUN_REAL_INTEGRATION_TESTS=true pytest -m integration
 """
 
 import time
