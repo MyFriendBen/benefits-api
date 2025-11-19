@@ -8,6 +8,9 @@ jobs:
   deploy:
     name: Deploy Backend to Heroku Production
     runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://cobenefits-api.herokuapp.com
 
     steps:
       - name: Checkout release tag
