@@ -45,9 +45,10 @@ jobs:
           STATUS=$?
           set -e
           echo "$OUTPUT"
-          echo "migrations_output<<EOF" >> $GITHUB_OUTPUT
+          DELIMITER="EOF_$(date +%s)"
+          echo "migrations_output<<${DELIMITER}" >> $GITHUB_OUTPUT
           echo "$OUTPUT" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "${DELIMITER}" >> $GITHUB_OUTPUT
 
           if [ $STATUS -ne 0 ] && echo "$OUTPUT" | grep -q "Conflicting migrations detected"; then
             echo "Migration conflict detected. Auto-merge on Heroku is not supported (slug is read-only)."
@@ -67,9 +68,10 @@ jobs:
           echo "Adding configurations..."
           OUTPUT=$(heroku run -a ${{ secrets.HEROKU_STAGING_APP_NAME }} "python manage.py add_config --all" 2>&1)
           echo "$OUTPUT"
-          echo "config_output<<EOF" >> $GITHUB_OUTPUT
+          DELIMITER="EOF_$(date +%s)"
+          echo "config_output<<${DELIMITER}" >> $GITHUB_OUTPUT
           echo "$OUTPUT" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "${DELIMITER}" >> $GITHUB_OUTPUT
 
       - name: Run validations
         if: success()
@@ -79,11 +81,12 @@ jobs:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: |
           echo "Running validations..."
-          OUTPUT=$(heroku run -a ${{ secrets.HEROKU_STAGING_APP_NAME }} "python manage.py validate --sheet-id 1JRsCKm9KeeatVoW3wjsT2YqSy63js53Ib3vivK5NFYY" 2>&1)
+          OUTPUT=$(heroku run -a ${{ secrets.HEROKU_STAGING_APP_NAME }} "python manage.py validate --sheet-id ${{ secrets.VALIDATION_SHEET_ID }}" 2>&1)
           echo "$OUTPUT"
-          echo "validation_output<<EOF" >> $GITHUB_OUTPUT
+          DELIMITER="EOF_$(date +%s)"
+          echo "validation_output<<${DELIMITER}" >> $GITHUB_OUTPUT
           echo "$OUTPUT" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "${DELIMITER}" >> $GITHUB_OUTPUT
 
       - name: Send deployment failure notification to Slack
         if: failure()

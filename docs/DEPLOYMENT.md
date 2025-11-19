@@ -94,7 +94,7 @@ heroku releases -a cobenefits-api-staging
 
 #### Via GitHub UI 
 
-1. Go to [Releases page](https://github.com/Gary-Community-Ventures/benefits-api/releases)
+1. Go to [Releases page](https://github.com/MyFriendBen/benefits-api/releases)
 2. Click **"Draft a new release"**
 3. Click **"Choose a tag"** → Type new version (e.g., `v1.2.3`)
 4. Click **"Create new tag: v1.2.3 on publish"**
@@ -227,6 +227,22 @@ This is a hotfix release to address a critical issue in production.
 
 If something goes wrong in production, you have multiple rollback options:
 
+### ⚠️ Important: Database Migration Limitations
+
+**Critical**: Heroku rollbacks only roll back application code, **NOT database migrations**.
+
+If your deployment included database migrations:
+- The migrations will remain applied even after rollback
+- You may need to manually revert schema changes
+- Consider the data compatibility when rolling back code
+- Test rollback scenarios in staging first
+
+**Migration conflicts cannot be resolved on Heroku** (read-only slug). All migration issues must be fixed locally:
+1. Pull the latest code
+2. Resolve conflicts with `python manage.py makemigrations --merge`
+3. Commit and push changes
+4. Deploy through normal workflow
+
 ### Option 1: Heroku Rollback (Fastest - ~30 seconds)
 
 ```bash
@@ -240,12 +256,12 @@ heroku rollback -a cobenefits-api
 heroku rollback v123 -a cobenefits-api
 ```
 
-**⚠️ Note**: This only rolls back the app code, NOT database migrations. If migrations were run, you may need to handle data issues separately.
+**Best for**: Quick rollback when no database migrations were included in the deployment.
 
 ### Option 2: Re-deploy Previous Release (Clean - ~5 minutes)
 
 #### Via GitHub UI:
-1. Go to [Releases page](https://github.com/Gary-Community-Ventures/benefits-api/releases)
+1. Go to [Releases page](https://github.com/MyFriendBen/benefits-api/releases)
 2. Find the previous good release (e.g., `v1.2.2`)
 3. Click **"Edit release"**
 4. Check **"Set as the latest release"**
@@ -386,15 +402,17 @@ gh run rerun <RUN_ID>
 
 These secrets are configured in the repository settings and used by the deployment workflows:
 
-**Location**: `https://github.com/Gary-Community-Ventures/benefits-api/settings/secrets/actions`
+**Location**: `https://github.com/MyFriendBen/benefits-api/settings/secrets/actions`
 
 ### Current Secrets
 - `HEROKU_API_KEY` - Heroku authentication token
 - `HEROKU_STAGING_APP_NAME` - Set to `cobenefits-api-staging`
 - `HEROKU_PROD_APP_NAME` - Set to `cobenefits-api`
+- `HEROKU_STAGING_URL` - Set to `https://cobenefits-api-staging.herokuapp.com`
 - `HEROKU_EMAIL` - Email associated with Heroku account
 - `SLACK_WEBHOOK_URL` - Webhook for deployment notifications
 - `TRANSLATIONS_REPO_TOKEN` - GitHub Personal Access Token with repo permissions for `mfb-translations`
+- `VALIDATION_SHEET_ID` - Google Sheets ID for validation results (e.g., `1JRsCKm9KeeatVoW3wjsT2YqSy63js53Ib3vivK5NFYY`)
 
 ### Verifying Secrets
 
@@ -412,15 +430,40 @@ If you need to regenerate the `TRANSLATIONS_REPO_TOKEN`:
 
 1. Go to: `https://github.com/settings/tokens/new`
 2. Set **Token name**: `benefits-api-translations-sync`
-3. Set **Expiration**: 1 year (or as per org policy)
+3. Set **Expiration**: **Minimum 1 year** (recommended for production automation)
+   - Shorter expirations require more frequent rotation
+   - Set calendar reminder 2 weeks before expiration
 4. Select scopes:
    - ✅ `repo` (Full control of private repositories)
+   - Required for both read and write access to `mfb-translations` repository
 5. Click **"Generate token"**
 6. Copy the token immediately (you won't see it again)
-7. Add it as a secret:
+7. **Store securely**: Save token in your team's password manager
+8. Add it as a secret:
    ```bash
    gh secret set TRANSLATIONS_REPO_TOKEN --body "<paste-token-here>"
    ```
+
+### Token Lifecycle & Rotation
+
+**Expiration Impact:**
+- Production deployments will fail if `TRANSLATIONS_REPO_TOKEN` expires
+- Translation sync step will error, but deployment will still complete
+- Set up monitoring/alerts for token expiration
+
+**Rotation Schedule:**
+- Review token annually (or per org security policy)
+- Rotate immediately if:
+  - Token may have been compromised
+  - Team member with access leaves
+  - Security audit requires it
+
+**Rotation Process:**
+1. Generate new token with same scopes
+2. Update GitHub secret with new token
+3. Test with a production deployment
+4. Delete old token from GitHub
+5. Update team password manager
 
 ---
 
