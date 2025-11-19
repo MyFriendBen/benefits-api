@@ -92,7 +92,7 @@ heroku releases -a cobenefits-api-staging
 
 **How to release**:
 
-#### Option A: Via GitHub UI (Recommended)
+#### Via GitHub UI 
 
 1. Go to [Releases page](https://github.com/Gary-Community-Ventures/benefits-api/releases)
 2. Click **"Draft a new release"**
@@ -102,32 +102,6 @@ heroku releases -a cobenefits-api-staging
 6. Click **"Generate release notes"** (auto-generates changelog from PRs)
 7. Edit notes as needed, add highlights or important changes
 8. Click **"Publish release"**
-
-#### Option B: Via CLI
-
-```bash
-# Get the latest release to determine next version
-gh release list --limit 1
-
-# Create release with auto-generated notes
-gh release create v1.2.3 \
-  --title "Release v1.2.3" \
-  --generate-notes \
-  --latest
-
-# Or create with custom notes
-gh release create v1.2.3 \
-  --title "Release v1.2.3" \
-  --notes "
-## What's Changed
-- Feature: Added new program eligibility rules
-- Fix: Resolved income calculation bug
-- Chore: Updated dependencies
-
-**Full Changelog**: https://github.com/Gary-Community-Ventures/benefits-api/compare/v1.2.2...v1.2.3
-" \
-  --latest
-```
 
 ### What Happens Automatically
 
@@ -370,22 +344,83 @@ heroku logs --tail -a cobenefits-api
 gh run list --limit 10
 ```
 
+### Verifying Heroku Configuration
+
+```bash
+# Check staging app info
+heroku apps:info -a cobenefits-api-staging
+
+# Check production app info
+heroku apps:info -a cobenefits-api
+
+# Verify CLI authentication
+heroku auth:whoami
+```
+
+### Translation Sync Issues
+
+```bash
+# Check if token has correct permissions
+# Token needs 'repo' scope for mfb-translations repository
+
+# Test token manually
+git clone https://x-access-token:YOUR_TOKEN@github.com/Gary-Community-Ventures/mfb-translations.git /tmp/test-clone
+```
+
+### Workflow Doesn't Trigger
+
+```bash
+# Check workflow syntax
+gh workflow list
+
+# View workflow runs
+gh run list --workflow=deploy-production.yml
+
+# Re-run failed workflow
+gh run rerun <RUN_ID>
+```
+
 ---
 
 ## Required GitHub Secrets
 
 These secrets are configured in the repository settings and used by the deployment workflows:
 
-- `HEROKU_API_KEY` - Heroku authentication
-- `HEROKU_STAGING_APP_NAME` - `cobenefits-api-staging`
-- `HEROKU_PROD_APP_NAME` - `cobenefits-api`
-- `HEROKU_EMAIL` - Heroku account email
-- `SLACK_WEBHOOK_URL` - For deployment notifications
+**Location**: `https://github.com/Gary-Community-Ventures/benefits-api/settings/secrets/actions`
 
-To verify secrets are set:
+### Current Secrets
+- `HEROKU_API_KEY` - Heroku authentication token
+- `HEROKU_STAGING_APP_NAME` - Set to `cobenefits-api-staging`
+- `HEROKU_PROD_APP_NAME` - Set to `cobenefits-api`
+- `HEROKU_EMAIL` - Email associated with Heroku account
+- `SLACK_WEBHOOK_URL` - Webhook for deployment notifications
+- `TRANSLATIONS_REPO_TOKEN` - GitHub Personal Access Token with repo permissions for `mfb-translations`
+
+### Verifying Secrets
+
 ```bash
+# List all secrets
 gh secret list
+
+# Add a new secret (if needed)
+gh secret set SECRET_NAME --body "secret-value"
 ```
+
+### Creating GitHub Personal Access Token for Translations
+
+If you need to regenerate the `TRANSLATIONS_REPO_TOKEN`:
+
+1. Go to: `https://github.com/settings/tokens/new`
+2. Set **Token name**: `benefits-api-translations-sync`
+3. Set **Expiration**: 1 year (or as per org policy)
+4. Select scopes:
+   - ✅ `repo` (Full control of private repositories)
+5. Click **"Generate token"**
+6. Copy the token immediately (you won't see it again)
+7. Add it as a secret:
+   ```bash
+   gh secret set TRANSLATIONS_REPO_TOKEN --body "<paste-token-here>"
+   ```
 
 ---
 
