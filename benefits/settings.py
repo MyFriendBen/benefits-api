@@ -312,7 +312,7 @@ django_heroku.settings(locals())
 # Heroku Redis automatically sets REDIS_URL when the add-on is provisioned
 REDIS_URL = config("REDIS_URL", default=None)
 
-if REDIS_URL:
+if REDIS_URL:  # pragma: no cover
     # Use Redis cache when REDIS_URL is available (production/staging)
     CACHES = {
         "default": {
@@ -332,7 +332,7 @@ if REDIS_URL:
             "TIMEOUT": 300,  # Default timeout: 5 minutes (override per cache.set() call)
         }
     }
-else:
+else:  # pragma: no cover
     # Fallback to in-memory cache for local development without Redis
     CACHES = {
         "default": {
