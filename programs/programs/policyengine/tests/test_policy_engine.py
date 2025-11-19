@@ -9,7 +9,7 @@ from django.test import TestCase
 from screener.models import Screen, HouseholdMember, WhiteLabel, Expense, IncomeStream
 from programs.programs.policyengine.policy_engine import pe_input
 from programs.programs.tx.pe.spm import TxSnap, TxLifeline, TxTanf
-from programs.programs.tx.pe.member import TxWic, TxSsi, TxCsfp
+from programs.programs.tx.pe.member import TxWic, TxSsi, TxCsfp, TxChip
 from programs.programs.tx.pe.tax import TxEitc, TxCtc, TxAca
 from programs.programs.policyengine.calculators.constants import (
     MAIN_TAX_UNIT,
@@ -2239,3 +2239,310 @@ class TestPeInput(TestCase):
             people[head_id],
             "Expected 'is_full_time_college_student' field from FullTimeCollegeStudentDependency not found",
         )
+
+    def test_pe_input_includes_all_txchip_pe_input_fields(self):
+        """
+        Test that pe_input result includes all TxChip pe_inputs dependencies.
+
+        TxChip inherits from PolicyEngineMembersCalculator and uses Medicaid inputs
+        plus age, pregnancy, and TxStateCodeDependency.
+        """
+        result = pe_input(self.screen, [TxChip])
+        household = result["household"]
+
+        # Get units for checking fields
+        people = household["people"]
+        household_unit = household["households"]["household"]
+
+        # Check member-level dependencies
+        head_id = str(self.head.id)
+        spouse_id = str(self.spouse.id)
+        child_id = str(self.child.id)
+
+        # Age dependency (from TxChip.pe_inputs)
+        self.assertIn(
+            "age",
+            people[head_id],
+            "Expected field 'age' from AgeDependency not found in member data",
+        )
+
+        # Pregnancy dependency (from TxChip.pe_inputs)
+        self.assertIn(
+            "is_pregnant",
+            people[head_id],
+            "Expected field 'is_pregnant' from PregnancyDependency not found in member data",
+        )
+
+        # Medicaid-related dependencies (from TxChip.pe_inputs via Medicaid.pe_inputs)
+        self.assertIn(
+            "is_disabled",
+            people[head_id],
+            "Expected field 'is_disabled' from IsDisabledDependency not found in member data",
+        )
+
+        self.assertIn(
+            "ssi_countable_resources",
+            people[head_id],
+            "Expected field 'ssi_countable_resources' from SsiCountableResourcesDependency not found",
+        )
+
+        # Income dependencies from irs_gross_income tuple
+        income_fields_to_check = [
+            "employment_income",
+            "self_employment_income",
+            "rental_income",
+            "taxable_pension_income",
+            "social_security",
+        ]
+
+        for field in income_fields_to_check:
+            self.assertIn(
+                field,
+                people[head_id],
+                f"Expected income field '{field}' from irs_gross_income not found in member data",
+            )
+
+        # Check TX-specific dependency (added by TxChip)
+        self.assertIn(
+            "state_code",
+            household_unit,
+            "Expected field 'state_code' from TxStateCodeDependency not found in household",
+        )
+
+    def test_pe_input_includes_txchip_pe_output_field(self):
+        """
+        Test that pe_input result includes TxChip pe_outputs dependency.
+
+        TxChip.pe_outputs = [dependency.member.Chip] which adds the 'chip' field
+        to each member for PolicyEngine to calculate and return.
+        """
+        result = pe_input(self.screen, [TxChip])
+        people = result["household"]["people"]
+
+        head_id = str(self.head.id)
+        spouse_id = str(self.spouse.id)
+        child_id = str(self.child.id)
+
+        # Check that the chip output field is present for each member
+        for member_id in [head_id, spouse_id, child_id]:
+            self.assertIn(
+                "chip",
+                people[member_id],
+                f"Expected output field 'chip' from TxChip pe_outputs not found for member {member_id}",
+            )
+
+            # Verify it has period structure
+            self.assertIsInstance(
+                people[member_id]["chip"],
+                dict,
+                f"chip field should be a dict with period keys for member {member_id}",
+            )
+
+    def test_pe_input_txchip_age_values_match_household_members(self):
+        """
+        Test that age dependency values for CHIP match the actual member ages.
+
+        This is important for CHIP calculation as age affects eligibility.
+        """
+        result = pe_input(self.screen, [TxChip])
+        people = result["household"]["people"]
+
+        head_id = str(self.head.id)
+        spouse_id = str(self.spouse.id)
+        child_id = str(self.child.id)
+
+        # Verify ages are populated
+        if "age" in people[head_id] and people[head_id]["age"]:
+            period_key = list(people[head_id]["age"].keys())[0]
+
+            self.assertEqual(
+                people[head_id]["age"][period_key],
+                35,
+                "Head age should be 35",
+            )
+            self.assertEqual(
+                people[spouse_id]["age"][period_key],
+                32,
+                "Spouse age should be 32",
+            )
+            self.assertEqual(
+                people[child_id]["age"][period_key],
+                8,
+                "Child age should be 8",
+            )
+
+    def test_pe_input_txchip_pregnancy_fields(self):
+        """
+        Test that TxChip pregnancy-related dependency values are correctly populated.
+
+        This verifies that pregnancy status is properly set for pregnant members.
+        """
+        # Create a pregnant household member
+        pregnant_member = HouseholdMember.objects.create(
+            screen=self.screen,
+            relationship="spouse",
+            age=28,
+            disabled=False,
+            student=False,
+            pregnant=True,
+        )
+
+        result = pe_input(self.screen, [TxChip])
+        people = result["household"]["people"]
+        pregnant_id = str(pregnant_member.id)
+
+        # Verify pregnancy fields are present
+        self.assertIn("is_pregnant", people[pregnant_id])
+
+        # Check values if populated
+        if people[pregnant_id]["is_pregnant"]:
+            period_key = list(people[pregnant_id]["is_pregnant"].keys())[0]
+            self.assertTrue(
+                people[pregnant_id]["is_pregnant"][period_key],
+                "is_pregnant should be True for pregnant member",
+            )
+
+    def test_pe_input_txchip_disability_fields(self):
+        """
+        Test that pe_input correctly populates disability-related fields for TxChip.
+
+        CHIP eligibility can be affected by disability status.
+        """
+        result = pe_input(self.screen, [TxChip])
+        household = result["household"]
+        people = household["people"]
+
+        # Head is disabled (from setUp)
+        head_id = str(self.head.id)
+        head = people[head_id]
+        self.assertIn("is_disabled", head)
+        self.assertIsInstance(head["is_disabled"], dict)
+
+        # Spouse is not disabled (from setUp)
+        spouse_id = str(self.spouse.id)
+        spouse = people[spouse_id]
+        self.assertIn("is_disabled", spouse)
+        self.assertIsInstance(spouse["is_disabled"], dict)
+
+    def test_pe_input_txchip_income_values_are_correct(self):
+        """
+        Test that TxChip income dependency values are correctly populated from HouseholdMember data.
+
+        This verifies the 5 IRS gross income types are properly extracted.
+        """
+        result = pe_input(self.screen, [TxChip])
+        people = result["household"]["people"]
+
+        head_id = str(self.head.id)
+        spouse_id = str(self.spouse.id)
+
+        # Get the period key from one of the fields
+        if "employment_income" in people[head_id] and people[head_id]["employment_income"]:
+            period_key = list(people[head_id]["employment_income"].keys())[0]
+
+            # Verify head's income values
+            self.assertEqual(
+                people[head_id]["employment_income"][period_key],
+                30000,
+                "Head employment_income should match HouseholdMember value",
+            )
+            self.assertEqual(
+                people[head_id]["self_employment_income"][period_key],
+                5000,
+                "Head self_employment_income should match HouseholdMember value",
+            )
+            self.assertEqual(
+                people[head_id]["rental_income"][period_key],
+                12000,
+                "Head rental_income should match HouseholdMember value",
+            )
+
+            # Verify spouse's income values
+            self.assertEqual(
+                people[spouse_id]["taxable_pension_income"][period_key],
+                8000,
+                "Spouse taxable_pension_income should match HouseholdMember value",
+            )
+            self.assertEqual(
+                people[spouse_id]["social_security"][period_key],
+                6000,
+                "Spouse social_security should match HouseholdMember value",
+            )
+
+    def test_pe_input_txchip_tx_specific_dependency_values(self):
+        """
+        Test that TX-specific dependencies have correct values for TxChip.
+
+        TxChip adds TxStateCodeDependency which should set state_code="TX".
+        """
+        result = pe_input(self.screen, [TxChip])
+        household_unit = result["household"]["households"]["household"]
+
+        # Verify state_code is set to "TX"
+        self.assertIn("state_code", household_unit)
+        if household_unit["state_code"]:
+            period_key = list(household_unit["state_code"].keys())[0]
+            self.assertEqual(
+                household_unit["state_code"][period_key],
+                "TX",
+                "TxStateCodeDependency should set state_code='TX' for CHIP",
+            )
+
+    def test_pe_input_txchip_with_children(self):
+        """
+        Test that TxChip correctly handles children in the household.
+
+        Children (typically under 19) are the primary eligible group for CHIP.
+        """
+        result = pe_input(self.screen, [TxChip])
+        people = result["household"]["people"]
+        child_id = str(self.child.id)
+
+        # Verify child has all required CHIP fields
+        self.assertIn("age", people[child_id])
+        self.assertIn("chip", people[child_id])
+
+        # Check age value
+        if people[child_id]["age"]:
+            period_key = list(people[child_id]["age"].keys())[0]
+            self.assertEqual(
+                people[child_id]["age"][period_key],
+                8,
+                "Child age should be 8",
+            )
+
+    def test_pe_input_with_txchip_and_txsnap_combined(self):
+        """
+        Test that pe_input handles both TxChip and TxSnap calculators together.
+
+        This verifies that dependencies from both calculators are properly merged,
+        which is important since CHIP recipients may also qualify for SNAP.
+        """
+        result = pe_input(self.screen, [TxChip, TxSnap])
+        household = result["household"]
+
+        spm_unit = household["spm_units"]["spm_unit"]
+        people = household["people"]
+        household_unit = household["households"]["household"]
+        head_id = str(self.head.id)
+
+        # Verify TxChip fields
+        self.assertIn("age", people[head_id])
+        self.assertIn("is_pregnant", people[head_id])
+        self.assertIn("chip", people[head_id])
+
+        # Verify TxSnap fields
+        self.assertIn("snap_assets", spm_unit)
+        self.assertIn("snap_earned_income", spm_unit)
+        self.assertIn("snap", spm_unit)
+
+        # Verify shared TX dependency
+        self.assertIn("state_code", household_unit)
+        state_code_periods = household_unit["state_code"]
+        if state_code_periods:
+            period_key = list(state_code_periods.keys())[0]
+            self.assertEqual(state_code_periods[period_key], "TX")
+
+        # Verify structure is valid
+        self.assertIsInstance(household["people"], dict)
+        self.assertIsInstance(household["spm_units"], dict)

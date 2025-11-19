@@ -8,6 +8,7 @@ tx_member_calculators = {
     "tx_wic": member.TxWic,
     "tx_ssi": member.TxSsi,
     "tx_csfp": member.TxCsfp,
+    "tx_chip": member.TxChip,
 }
 
 tx_tax_unit_calculators = {

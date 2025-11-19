@@ -449,3 +449,23 @@ class CashAssetsDependency(SpmUnit):
 
 class IlLiheapIncomeEligible(SpmUnit):
     field = "il_liheap_income_eligible"
+
+
+class MaLiheap(SpmUnit):
+    field = "ma_liheap"
+
+
+class MaLiheapReceivesHousingAssistance(SpmUnit):
+    field = "receives_housing_assistance"
+
+    # Fixed to True: required for MA LIHEAP calculation; True produces conservative benefit estimate
+    def value(self):
+        return True
+
+
+class MaLiheapHeatExpenseIncludedInRent(SpmUnit):
+    field = "heat_expense_included_in_rent"
+
+    # Fixed to False: required for MA LIHEAP calculation; False produces conservative benefit estimate
+    def value(self):
+        return False

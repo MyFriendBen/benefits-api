@@ -42,13 +42,23 @@ class TranslationManager(TranslatableManager):
             parent.no_auto = no_auto
             parent.save()
 
-        parent.create_translation(default_lang, text=default_message, edited=True)
+        # Check if translation exists before creating
+        if parent.has_translation(default_lang):
+            # Update existing translation
+            parent.set_current_language(default_lang)
+            parent.text = default_message
+            parent.edited = True
+            parent.save()
+        else:
+            parent.create_translation(default_lang, text=default_message, edited=True)
 
         for lang in self.all_langs:
             if lang == default_lang:
                 continue
 
-            parent.create_translation(lang, text="", edited=False)
+            # Check if translation exists before creating
+            if not parent.has_translation(lang):
+                parent.create_translation(lang, text="", edited=False)
         self.translation_cache.invalid = True
         return parent
 
