@@ -138,7 +138,8 @@ When you publish a GitHub Release:
 3. **Configuration updates** - `python manage.py add_config --all`
 4. **Pull validations** - `python manage.py pull_validations` from staging
 5. **Run validations** - `python manage.py validate`
-6. **Slack notifications** - Status updates sent to team
+6. **Sync translations** - Export from production → Save to `mfb-translations` repo → Import to staging
+7. **Slack notifications** - Status updates sent to team
 
 **Workflow file**: [`.github/workflows/deploy-production.yml`](../.github/workflows/deploy-production.yml)
 

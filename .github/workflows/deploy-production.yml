@@ -125,6 +125,45 @@ jobs:
           echo "$OUTPUT" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
+      - name: Sync translations to staging
+        if: success()
+        id: sync_translations
+        continue-on-error: true
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Syncing translations from production to staging..."
+
+          # Export translations from production
+          EXPORT_OUTPUT=$(heroku run -a ${{ secrets.HEROKU_PROD_APP_NAME }} "python manage.py bulk_export" 2>&1)
+
+          # Remove the last line (Heroku adds connection info)
+          TRANSLATIONS=$(echo "$EXPORT_OUTPUT" | sed '$ d')
+
+          # Clone translations repo
+          git clone https://x-access-token:${{ secrets.TRANSLATIONS_REPO_TOKEN }}@github.com/Gary-Community-Ventures/mfb-translations.git /tmp/mfb-translations
+          cd /tmp/mfb-translations
+
+          # Save translations with date
+          DATE=$(date +%Y-%m-%d)
+          echo "$TRANSLATIONS" > translations/${DATE}.json
+
+          # Commit and push
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add translations/${DATE}.json
+          git commit -m "Export translations from production - ${DATE} (Release ${{ github.event.release.tag_name }})" || echo "No changes to commit"
+          git push origin main || echo "Nothing to push"
+
+          # Import to staging
+          echo "Importing translations to staging..."
+          heroku run --no-tty -a ${{ secrets.HEROKU_STAGING_APP_NAME }} "python manage.py bulk_import" < translations/${DATE}.json 2>&1 || echo "Translation import completed with warnings"
+
+          echo "sync_translations_output<<EOF" >> $GITHUB_OUTPUT
+          echo "Translations synced: ${DATE}.json" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Send final status to Slack
         if: ${{ !failure() }}
         env:
@@ -134,8 +173,9 @@ jobs:
           CONFIG_STATUS="${{ steps.add_config.outcome }}"
           PULL_VALIDATIONS_STATUS="${{ steps.pull_validations.outcome }}"
           VALIDATIONS_STATUS="${{ steps.validations.outcome }}"
+          SYNC_TRANSLATIONS_STATUS="${{ steps.sync_translations.outcome }}"
 
-          if [ "$MIGRATIONS_STATUS" == "success" ] && [ "$CONFIG_STATUS" == "success" ] && [ "$PULL_VALIDATIONS_STATUS" == "success" ] && [ "$VALIDATIONS_STATUS" == "success" ]; then
+          if [ "$MIGRATIONS_STATUS" == "success" ] && [ "$CONFIG_STATUS" == "success" ] && [ "$PULL_VALIDATIONS_STATUS" == "success" ] && [ "$VALIDATIONS_STATUS" == "success" ] && [ "$SYNC_TRANSLATIONS_STATUS" == "success" ]; then
             EMOJI="✅"
             STATUS_TEXT="Production Deployment Successful"
           else
@@ -148,6 +188,7 @@ jobs:
           CONFIG_TEXT=$([ "$CONFIG_STATUS" == "success" ] && echo "✅ Success" || echo "❌ Failed")
           PULL_VALIDATIONS_TEXT=$([ "$PULL_VALIDATIONS_STATUS" == "success" ] && echo "✅ Success" || echo "❌ Failed")
           VALIDATIONS_TEXT=$([ "$VALIDATIONS_STATUS" == "success" ] && echo "✅ Success" || echo "❌ Failed")
+          SYNC_TRANSLATIONS_TEXT=$([ "$SYNC_TRANSLATIONS_STATUS" == "success" ] && echo "✅ Success" || echo "❌ Failed")
 
           # Build payload with jq for proper escaping
           payload=$(jq -n \
@@ -157,6 +198,7 @@ jobs:
             --arg config_text "$CONFIG_TEXT" \
             --arg pull_validations_text "$PULL_VALIDATIONS_TEXT" \
             --arg validations_text "$VALIDATIONS_TEXT" \
+            --arg sync_translations_text "$SYNC_TRANSLATIONS_TEXT" \
             --arg repo "${{ github.repository }}" \
             --arg run_id "${{ github.run_id }}" \
             --arg tag "${{ github.event.release.tag_name }}" \
@@ -170,12 +212,14 @@ jobs:
                   {type: "mrkdwn", text: "*Migrations:*\n\($migrations_text)"},
                   {type: "mrkdwn", text: "*Add Config:*\n\($config_text)"},
                   {type: "mrkdwn", text: "*Pull Validations:*\n\($pull_validations_text)"},
-                  {type: "mrkdwn", text: "*Validations:*\n\($validations_text)"}
+                  {type: "mrkdwn", text: "*Validations:*\n\($validations_text)"},
+                  {type: "mrkdwn", text: "*Sync Translations:*\n\($sync_translations_text)"}
                 ]},
                 {type: "section", fields: [
                   {type: "mrkdwn", text: "*Release:*\n<\($release_url)|\($tag)>"},
                   {type: "mrkdwn", text: "*Workflow:*\n<https://github.com/\($repo)/actions/runs/\($run_id)|View Logs>"}
-                ]}
+                ]},
+                {type: "section", text: {type: "mrkdwn", text: "*Validation Results:*\n<https://docs.google.com/spreadsheets/d/1JRsCKm9KeeatVoW3wjsT2YqSy63js53Ib3vivK5NFYY|View Validation Spreadsheet> • <https://github.com/\($repo)/actions/runs/\($run_id)|View Full Logs>"}}
               ]
             }')
 
