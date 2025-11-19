@@ -5,8 +5,13 @@ These tests mock HUD API responses to test client logic without
 requiring actual API credentials or network calls.
 """
 
+import copy
+import pytest
+import requests
+from contextlib import contextmanager
+from typing import Any
 from django.test import TestCase
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 from django.core.cache import cache
 
 from integrations.clients.hud_income_limits.client import (
@@ -23,7 +28,7 @@ class HudClientTestBase(TestCase):
     """Base test class with shared mock data fixtures."""
 
     @classmethod
-    def setUpTestData(cls):
+    def setUpTestData(cls) -> None:
         """Set up shared mock data for all HUD client tests."""
         # Mock counties response used across all tests
         cls.mock_counties_response = [
@@ -31,7 +36,7 @@ class HudClientTestBase(TestCase):
             {"county_name": "DuPage County", "fips_code": "17043"},
         ]
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test screen and white label."""
         cache.clear()
 
@@ -39,6 +44,21 @@ class HudClientTestBase(TestCase):
         self.screen = Screen.objects.create(
             white_label=self.white_label, zipcode="60601", county="Cook", household_size=4, completed=False
         )
+
+    @contextmanager
+    def mock_api_responses(self, client: HudIncomeClient, *responses: Any):
+        """
+        Helper to mock sequential API responses.
+
+        Args:
+            client: HudIncomeClient instance
+            *responses: Sequence of mock responses to return
+
+        Yields:
+            Mock object for additional assertions if needed
+        """
+        with patch.object(client, "_api_request", side_effect=responses) as mock_api:
+            yield mock_api
 
 
 class TestHudIncomeClientMTSP(HudClientTestBase):
@@ -125,22 +145,15 @@ class TestHudIncomeClientMTSP(HudClientTestBase):
             }
         }
 
-    def test_get_screen_mtsp_ami_80_percent_success(self):
+    def test_get_screen_mtsp_ami_80_percent_success(self) -> None:
         """Test successful MTSP AMI lookup for 80% AMI."""
         client = HudIncomeClient(api_token="test_token")
 
-        with patch.object(client, "_api_request") as mock_api:
-            mock_api.side_effect = [
-                self.mock_counties_response,
-                self.mock_mtsp_response,
-            ]
-
+        with self.mock_api_responses(client, self.mock_counties_response, self.mock_mtsp_response):
             result = client.get_screen_mtsp_ami(self.screen, "80%", "2025")
-
             self.assertEqual(result, 103600)
-            self.assertEqual(mock_api.call_count, 2)
 
-    def test_get_screen_mtsp_ami_all_percentages(self):
+    def test_get_screen_mtsp_ami_all_percentages(self) -> None:
         """Test all supported MTSP percentage levels (20% through 100%)."""
         client = HudIncomeClient(api_token="test_token")
 
@@ -155,102 +168,63 @@ class TestHudIncomeClientMTSP(HudClientTestBase):
             ("100%", 90700),  # median_income
         ]
 
-        with patch.object(client, "_api_request") as mock_api:
-            for percent, expected in test_cases:
-                mock_api.side_effect = [
-                    self.mock_counties_response,
-                    self.mock_mtsp_response,
-                ]
-
+        for percent, expected in test_cases:
+            with self.mock_api_responses(client, self.mock_counties_response, self.mock_mtsp_response):
                 result = client.get_screen_mtsp_ami(self.screen, percent, "2025")
                 self.assertEqual(result, expected, f"Failed for {percent}")
+            cache.clear()
 
-                cache.clear()
-
-    def test_get_screen_mtsp_ami_caching(self):
+    def test_get_screen_mtsp_ami_caching(self) -> None:
         """Test that MTSP API responses are cached properly."""
         client = HudIncomeClient(api_token="test_token")
 
-        with patch.object(client, "_api_request") as mock_api:
-            mock_api.side_effect = [
-                self.mock_counties_response,
-                self.mock_mtsp_response,
-            ]
-
+        with self.mock_api_responses(client, self.mock_counties_response, self.mock_mtsp_response) as mock_api:
             result1 = client.get_screen_mtsp_ami(self.screen, "80%", "2025")
             result2 = client.get_screen_mtsp_ami(self.screen, "80%", "2025")
 
             self.assertEqual(result1, result2)
             self.assertEqual(mock_api.call_count, 2)
 
-    def test_missing_percentage_data_raises_error(self):
+    def test_missing_percentage_data_raises_error(self) -> None:
         """Test that missing MTSP percentage category raises error."""
         client = HudIncomeClient(api_token="test_token")
 
         incomplete_data = self.mock_mtsp_response.copy()
         del incomplete_data["data"]["80percent"]
 
-        with patch.object(client, "_api_request") as mock_api:
-            mock_api.side_effect = [
-                self.mock_counties_response,
-                incomplete_data,
-            ]
-
-            with self.assertRaises(HudIncomeClientError) as context:
+        with self.mock_api_responses(client, self.mock_counties_response, incomplete_data):
+            with self.assertRaisesRegex(HudIncomeClientError, r"80%"):
                 client.get_screen_mtsp_ami(self.screen, "80%", "2025")
 
-            self.assertIn("80%", str(context.exception))
-
-    def test_missing_household_size_data_raises_error(self):
+    def test_missing_household_size_data_raises_error(self) -> None:
         """Test that missing household size field in MTSP data raises error."""
         client = HudIncomeClient(api_token="test_token")
 
         incomplete_data = self.mock_mtsp_response.copy()
         del incomplete_data["data"]["80percent"]["il80_p4"]
 
-        with patch.object(client, "_api_request") as mock_api:
-            mock_api.side_effect = [
-                self.mock_counties_response,
-                incomplete_data,
-            ]
-
-            with self.assertRaises(HudIncomeClientError) as context:
+        with self.mock_api_responses(client, self.mock_counties_response, incomplete_data):
+            with self.assertRaisesRegex(HudIncomeClientError, r"household size"):
                 client.get_screen_mtsp_ami(self.screen, "80%", "2025")
 
-            self.assertIn("household size", str(context.exception))
-
-    def test_missing_median_income_for_100_percent(self):
+    def test_missing_median_income_for_100_percent(self) -> None:
         """Test that missing median income for 100% AMI raises error."""
         client = HudIncomeClient(api_token="test_token")
 
         incomplete_data = self.mock_mtsp_response.copy()
         del incomplete_data["data"]["median_income"]
 
-        with patch.object(client, "_api_request") as mock_api:
-            mock_api.side_effect = [
-                self.mock_counties_response,
-                incomplete_data,
-            ]
-
-            with self.assertRaises(HudIncomeClientError) as context:
+        with self.mock_api_responses(client, self.mock_counties_response, incomplete_data):
+            with self.assertRaisesRegex(HudIncomeClientError, r"No median income data available"):
                 client.get_screen_mtsp_ami(self.screen, "100%", "2025")
 
-            self.assertIn("No median income data available", str(context.exception))
-
-    def test_empty_mtsp_response(self):
+    def test_empty_mtsp_response(self) -> None:
         """Test that empty MTSP response raises error."""
         client = HudIncomeClient(api_token="test_token")
 
-        with patch.object(client, "_api_request") as mock_api:
-            mock_api.side_effect = [
-                self.mock_counties_response,
-                {},
-            ]
-
-            with self.assertRaises(HudIncomeClientError) as context:
+        with self.mock_api_responses(client, self.mock_counties_response, {}):
+            with self.assertRaisesRegex(HudIncomeClientError, r"No income limit data found"):
                 client.get_screen_mtsp_ami(self.screen, "80%", "2025")
-
-            self.assertIn("No income limit data found", str(context.exception))
 
 
 class TestHudIncomeClientStandardIL(HudClientTestBase):
@@ -298,22 +272,15 @@ class TestHudIncomeClientStandardIL(HudClientTestBase):
             }
         }
 
-    def test_get_screen_il_ami_80_percent_success(self):
+    def test_get_screen_il_ami_80_percent_success(self) -> None:
         """Test successful Standard IL AMI lookup for 80% AMI."""
         client = HudIncomeClient(api_token="test_token")
 
-        with patch.object(client, "_api_request") as mock_api:
-            mock_api.side_effect = [
-                self.mock_counties_response,
-                self.mock_il_response,
-            ]
-
+        with self.mock_api_responses(client, self.mock_counties_response, self.mock_il_response):
             result = client.get_screen_il_ami(self.screen, "80%", "2025")
-
             self.assertEqual(result, 103600)
-            self.assertEqual(mock_api.call_count, 2)
 
-    def test_get_screen_il_ami_all_percentages(self):
+    def test_get_screen_il_ami_all_percentages(self) -> None:
         """Test all supported Standard IL percentage levels (30%, 50%, 80%)."""
         client = HudIncomeClient(api_token="test_token")
 
@@ -323,140 +290,109 @@ class TestHudIncomeClientStandardIL(HudClientTestBase):
             ("80%", 103600),
         ]
 
-        with patch.object(client, "_api_request") as mock_api:
-            for percent, expected in test_cases:
-                mock_api.side_effect = [
-                    self.mock_counties_response,
-                    self.mock_il_response,
-                ]
-
+        for percent, expected in test_cases:
+            with self.mock_api_responses(client, self.mock_counties_response, self.mock_il_response):
                 result = client.get_screen_il_ami(self.screen, percent, "2025")
                 self.assertEqual(result, expected, f"Failed for {percent}")
+            cache.clear()
 
-                cache.clear()
-
-    def test_get_screen_il_ami_caching(self):
+    def test_get_screen_il_ami_caching(self) -> None:
         """Test that Standard IL API responses are cached properly."""
         client = HudIncomeClient(api_token="test_token")
 
-        with patch.object(client, "_api_request") as mock_api:
-            mock_api.side_effect = [
-                self.mock_counties_response,
-                self.mock_il_response,
-            ]
-
+        with self.mock_api_responses(client, self.mock_counties_response, self.mock_il_response) as mock_api:
             result1 = client.get_screen_il_ami(self.screen, "80%", "2025")
             result2 = client.get_screen_il_ami(self.screen, "80%", "2025")
 
             self.assertEqual(result1, result2)
             self.assertEqual(mock_api.call_count, 2)
 
-    def test_get_screen_il_ami_missing_field(self):
+    def test_get_screen_il_ami_missing_field(self) -> None:
         """Test that missing Standard IL field raises error."""
         client = HudIncomeClient(api_token="test_token")
-
-        # Create a deep copy and remove the 80% field for household size 4
-        import copy
 
         incomplete_data = copy.deepcopy(self.mock_il_response)
         del incomplete_data["data"]["low"]["il80_p4"]
 
-        with patch.object(client, "_api_request") as mock_api:
-            mock_api.side_effect = [
-                self.mock_counties_response,
-                incomplete_data,
-            ]
-
-            with self.assertRaises(HudIncomeClientError) as context:
+        with self.mock_api_responses(client, self.mock_counties_response, incomplete_data):
+            with self.assertRaisesRegex(HudIncomeClientError, r"No 80% AMI data"):
                 client.get_screen_il_ami(self.screen, "80%", "2025")
 
-            self.assertIn("No 80% AMI data", str(context.exception))
-
-    def test_empty_il_response(self):
-        """Test that empty Standard IL response raises error."""
+    def test_empty_il_response_empty_dict(self) -> None:
+        """Test that empty dict Standard IL response raises error."""
         client = HudIncomeClient(api_token="test_token")
 
-        with patch.object(client, "_api_request") as mock_api:
-            # Test empty dict
-            mock_api.side_effect = [
-                self.mock_counties_response,
-                {},
-            ]
-
-            with self.assertRaises(HudIncomeClientError) as context:
+        with self.mock_api_responses(client, self.mock_counties_response, {}):
+            with self.assertRaisesRegex(HudIncomeClientError, r"No income limit data found"):
                 client.get_screen_il_ami(self.screen, "80%", "2025")
-            self.assertIn("No income limit data found", str(context.exception))
 
-            cache.clear()
+    def test_empty_il_response_none(self) -> None:
+        """Test that None Standard IL response raises error."""
+        client = HudIncomeClient(api_token="test_token")
 
-            # Test None response
-            mock_api.side_effect = [
-                self.mock_counties_response,
-                None,
-            ]
-
-            with self.assertRaises(HudIncomeClientError) as context:
+        with self.mock_api_responses(client, self.mock_counties_response, None):
+            with self.assertRaisesRegex(HudIncomeClientError, r"No income limit data found"):
                 client.get_screen_il_ami(self.screen, "80%", "2025")
-            self.assertIn("No income limit data found", str(context.exception))
 
-            cache.clear()
+    def test_empty_il_response_missing_data_key(self) -> None:
+        """Test that Standard IL response without 'data' key raises error."""
+        client = HudIncomeClient(api_token="test_token")
 
-            # Test response without 'data' key
-            mock_api.side_effect = [
-                self.mock_counties_response,
-                {"error": "some error"},
-            ]
-
-            with self.assertRaises(HudIncomeClientError) as context:
+        with self.mock_api_responses(client, self.mock_counties_response, {"error": "some error"}):
+            with self.assertRaisesRegex(HudIncomeClientError, r"No income limit data found"):
                 client.get_screen_il_ami(self.screen, "80%", "2025")
-            self.assertIn("No income limit data found", str(context.exception))
+
+    def test_standard_il_empty_category_data(self) -> None:
+        """Test Standard IL when category exists but contains empty dict."""
+        client = HudIncomeClient(api_token="test_token")
+
+        incomplete_data = copy.deepcopy(self.mock_il_response)
+        incomplete_data["data"]["low"] = {}  # Category exists but empty
+
+        with self.mock_api_responses(client, self.mock_counties_response, incomplete_data):
+            with self.assertRaisesRegex(HudIncomeClientError, r"No 80% AMI data"):
+                client.get_screen_il_ami(self.screen, "80%", "2025")
 
 
 class TestHudIncomeClientValidation(HudClientTestBase):
     """Test shared validation logic across both endpoints."""
 
-    def test_household_size_validation_too_small(self):
+    def test_household_size_validation_too_small(self) -> None:
         """Test that household size < 1 raises error for both endpoints."""
         self.screen.household_size = 0
         client = HudIncomeClient(api_token="test_token")
 
-        with self.assertRaises(HudIncomeClientError) as context:
+        with self.assertRaisesRegex(HudIncomeClientError, r"between 1 and 8"):
             client.get_screen_mtsp_ami(self.screen, "80%", "2025")
-        self.assertIn("between 1 and 8", str(context.exception))
 
-        with self.assertRaises(HudIncomeClientError) as context:
+        with self.assertRaisesRegex(HudIncomeClientError, r"between 1 and 8"):
             client.get_screen_il_ami(self.screen, "80%", "2025")
-        self.assertIn("between 1 and 8", str(context.exception))
 
-    def test_household_size_validation_too_large(self):
+    def test_household_size_validation_too_large(self) -> None:
         """Test that household size > 8 raises error for both endpoints."""
         self.screen.household_size = 9
         client = HudIncomeClient(api_token="test_token")
 
-        with self.assertRaises(HudIncomeClientError) as context:
+        with self.assertRaisesRegex(HudIncomeClientError, r"between 1 and 8"):
             client.get_screen_mtsp_ami(self.screen, "80%", "2025")
-        self.assertIn("between 1 and 8", str(context.exception))
 
-        with self.assertRaises(HudIncomeClientError) as context:
+        with self.assertRaisesRegex(HudIncomeClientError, r"between 1 and 8"):
             client.get_screen_il_ami(self.screen, "80%", "2025")
-        self.assertIn("between 1 and 8", str(context.exception))
 
-    def test_missing_api_token_raises_error(self):
+    def test_missing_api_token_raises_error(self) -> None:
         """Test that missing API token raises descriptive error."""
         with patch("integrations.clients.hud_income_limits.client.config") as mock_config:
             mock_config.return_value = None
             client = HudIncomeClient()
 
-            with self.assertRaises(HudIncomeClientError) as context:
+            with self.assertRaisesRegex(HudIncomeClientError, r"HUD_API_TOKEN"):
                 _ = client.headers
-
-            self.assertIn("HUD_API_TOKEN", str(context.exception))
 
 
 class TestHudIncomeClientCountyLookup(HudClientTestBase):
     """Test county FIPS code lookup functionality."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up minimal mock MTSP response for county lookup tests."""
         super().setUp()
 
@@ -468,45 +404,31 @@ class TestHudIncomeClientCountyLookup(HudClientTestBase):
             }
         }
 
-    def test_county_not_found_raises_error(self):
+    def test_county_not_found_raises_error(self) -> None:
         """Test that invalid county raises error."""
         client = HudIncomeClient(api_token="test_token")
         self.screen.county = "Nonexistent"
 
-        with patch.object(client, "_api_request") as mock_api:
-            mock_api.return_value = self.mock_counties_response
-
-            with self.assertRaises(HudIncomeClientError) as context:
+        with self.mock_api_responses(client, self.mock_counties_response):
+            with self.assertRaisesRegex(HudIncomeClientError, r"County not found"):
                 client.get_screen_mtsp_ami(self.screen, "80%", "2025")
 
-            self.assertIn("County not found", str(context.exception))
-
-    def test_county_name_normalization(self):
+    def test_county_name_normalization(self) -> None:
         """Test that county names are normalized correctly (adds 'County' suffix)."""
         client = HudIncomeClient(api_token="test_token")
 
         # Test without " County" suffix
         self.screen.county = "Cook"
 
-        with patch.object(client, "_api_request") as mock_api:
-            mock_api.side_effect = [
-                self.mock_counties_response,
-                self.mock_mtsp_response,
-            ]
-
+        with self.mock_api_responses(client, self.mock_counties_response, self.mock_mtsp_response):
             result = client.get_screen_mtsp_ami(self.screen, "80%", "2025")
             self.assertEqual(result, 103600)
 
-    def test_county_lookup_includes_year_parameter(self):
+    def test_county_lookup_includes_year_parameter(self) -> None:
         """Test that county lookup includes 'year' and 'updated' parameters per HUD API spec."""
         client = HudIncomeClient(api_token="test_token")
 
-        with patch.object(client, "_api_request") as mock_api:
-            mock_api.side_effect = [
-                self.mock_counties_response,
-                self.mock_mtsp_response,
-            ]
-
+        with self.mock_api_responses(client, self.mock_counties_response, self.mock_mtsp_response) as mock_api:
             client.get_screen_mtsp_ami(self.screen, "80%", 2025)
 
             # Verify first call (county lookup) includes both 'year' and 'updated' parameters for 2025+
@@ -514,16 +436,11 @@ class TestHudIncomeClientCountyLookup(HudClientTestBase):
             self.assertEqual(first_call_args[0][0], "fmr/listCounties/IL")
             self.assertEqual(first_call_args[0][1], {"year": "2025", "updated": "2025"})
 
-    def test_county_lookup_2024_only_includes_year_not_updated(self):
+    def test_county_lookup_2024_only_includes_year_not_updated(self) -> None:
         """Test that county lookup for 2024 includes 'year' but NOT 'updated' parameter."""
         client = HudIncomeClient(api_token="test_token")
 
-        with patch.object(client, "_api_request") as mock_api:
-            mock_api.side_effect = [
-                self.mock_counties_response,
-                self.mock_mtsp_response,
-            ]
-
+        with self.mock_api_responses(client, self.mock_counties_response, self.mock_mtsp_response) as mock_api:
             client.get_screen_mtsp_ami(self.screen, "80%", 2024)
 
             # Verify first call (county lookup) includes ONLY 'year' for pre-2025
@@ -533,30 +450,19 @@ class TestHudIncomeClientCountyLookup(HudClientTestBase):
             # Explicitly verify 'updated' is NOT present
             self.assertNotIn("updated", first_call_args[0][1])
 
-    def test_empty_counties_list(self):
+    def test_empty_counties_list(self) -> None:
         """Test that empty counties list raises error."""
         client = HudIncomeClient(api_token="test_token")
 
-        with patch.object(client, "_api_request") as mock_api:
-            mock_api.return_value = []
-
-            with self.assertRaises(HudIncomeClientError) as context:
+        with self.mock_api_responses(client, []):
+            with self.assertRaisesRegex(HudIncomeClientError, r"Could not retrieve counties"):
                 client._get_entity_id("TS", "Test County", 2025)
-
-            self.assertIn("Could not retrieve counties", str(context.exception))
 
 
 class TestHudIncomeClientHTTPErrors(TestCase):
     """Test HTTP and network error handling."""
 
-    def setUp(self):
-        """Set up test screen."""
-        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
-        self.screen = Screen.objects.create(
-            white_label=self.white_label, zipcode="12345", county="Test County", household_size=4, completed=False
-        )
-
-    def test_successful_api_request(self):
+    def test_successful_api_request(self) -> None:
         """Test successful API request returns JSON data."""
         mock_response = Mock()
         mock_response.status_code = 200
@@ -571,10 +477,8 @@ class TestHudIncomeClientHTTPErrors(TestCase):
             self.assertEqual(result, {"data": "test"})
             mock_response.raise_for_status.assert_called_once()
 
-    def test_401_authentication_error(self):
+    def test_401_authentication_error(self) -> None:
         """Test 401 authentication error handling."""
-        import requests
-
         mock_response = Mock()
         mock_response.status_code = 401
         http_error = requests.exceptions.HTTPError("401 Unauthorized")
@@ -584,15 +488,11 @@ class TestHudIncomeClientHTTPErrors(TestCase):
         client = HudIncomeClient(api_token="invalid_token")
 
         with patch.object(client._session, "get", return_value=mock_response):
-            with self.assertRaises(HudIncomeClientError) as context:
+            with self.assertRaisesRegex(HudIncomeClientError, r"Authentication failed"):
                 client._api_request("test/endpoint")
 
-            self.assertIn("Authentication failed", str(context.exception))
-
-    def test_403_access_denied_error(self):
+    def test_403_access_denied_error(self) -> None:
         """Test 403 access denied error handling."""
-        import requests
-
         mock_response = Mock()
         mock_response.status_code = 403
         http_error = requests.exceptions.HTTPError("403 Forbidden")
@@ -602,16 +502,11 @@ class TestHudIncomeClientHTTPErrors(TestCase):
         client = HudIncomeClient(api_token="test_token")
 
         with patch.object(client._session, "get", return_value=mock_response):
-            with self.assertRaises(HudIncomeClientError) as context:
+            with self.assertRaisesRegex(HudIncomeClientError, r"Access denied.*FMR and Income Limits"):
                 client._api_request("test/endpoint")
 
-            self.assertIn("Access denied", str(context.exception))
-            self.assertIn("FMR and Income Limits", str(context.exception))
-
-    def test_404_data_not_found_error(self):
+    def test_404_data_not_found_error(self) -> None:
         """Test 404 data not found error handling."""
-        import requests
-
         mock_response = Mock()
         mock_response.status_code = 404
         http_error = requests.exceptions.HTTPError("404 Not Found")
@@ -621,15 +516,11 @@ class TestHudIncomeClientHTTPErrors(TestCase):
         client = HudIncomeClient(api_token="test_token")
 
         with patch.object(client._session, "get", return_value=mock_response):
-            with self.assertRaises(HudIncomeClientError) as context:
+            with self.assertRaisesRegex(HudIncomeClientError, r"Data not found"):
                 client._api_request("test/endpoint")
 
-            self.assertIn("Data not found", str(context.exception))
-
-    def test_500_server_error(self):
+    def test_500_server_error(self) -> None:
         """Test 500 server error handling."""
-        import requests
-
         mock_response = Mock()
         mock_response.status_code = 500
         mock_response.text = "Internal Server Error"
@@ -640,25 +531,18 @@ class TestHudIncomeClientHTTPErrors(TestCase):
         client = HudIncomeClient(api_token="test_token")
 
         with patch.object(client._session, "get", return_value=mock_response):
-            with self.assertRaises(HudIncomeClientError) as context:
+            with self.assertRaisesRegex(HudIncomeClientError, r"API request failed \(500\).*Internal Server Error"):
                 client._api_request("test/endpoint")
 
-            self.assertIn("API request failed (500)", str(context.exception))
-            self.assertIn("Internal Server Error", str(context.exception))
-
-    def test_network_error_handling(self):
+    def test_network_error_handling(self) -> None:
         """Test network error handling."""
-        import requests
-
         client = HudIncomeClient(api_token="test_token")
 
         with patch.object(client._session, "get", side_effect=requests.exceptions.RequestException("Network error")):
-            with self.assertRaises(HudIncomeClientError) as context:
+            with self.assertRaisesRegex(HudIncomeClientError, r"Request failed"):
                 client._api_request("test/endpoint")
 
-            self.assertIn("Request failed", str(context.exception))
-
-    def test_retry_configuration(self):
+    def test_retry_configuration(self) -> None:
         """Test that client is configured with retry strategy."""
         client = HudIncomeClient(api_token="test_token", max_retries=3)
 
@@ -673,22 +557,18 @@ class TestHudIncomeClientHTTPErrors(TestCase):
         https_adapter = client._session.get_adapter("https://")
         self.assertIsNotNone(https_adapter.max_retries)
 
-    def test_connection_error_propagates_after_retries(self):
+    def test_connection_error_propagates_after_retries(self) -> None:
         """Test that connection errors are caught and wrapped properly."""
-        import requests
-
         client = HudIncomeClient(api_token="test_token", max_retries=2)
 
         with patch.object(client._session, "get") as mock_session_get:
             # Simulate connection error
             mock_session_get.side_effect = requests.exceptions.ConnectionError("Connection failed")
 
-            with self.assertRaises(HudIncomeClientError) as context:
+            with self.assertRaisesRegex(HudIncomeClientError, r"Connection failed"):
                 client._api_request("test/endpoint")
 
-            self.assertIn("Connection failed", str(context.exception))
-
-    def test_max_retries_parameter(self):
+    def test_max_retries_parameter(self) -> None:
         """Test that max_retries parameter configures retry behavior."""
         # Test with 0 retries
         client_no_retry = HudIncomeClient(api_token="test_token", max_retries=0)
@@ -700,10 +580,8 @@ class TestHudIncomeClientHTTPErrors(TestCase):
         https_adapter = client_five_retries._session.get_adapter("https://")
         self.assertEqual(https_adapter.max_retries.total, 5)
 
-    def test_429_rate_limit_error(self):
+    def test_429_rate_limit_error(self) -> None:
         """Test 429 rate limit error handling."""
-        import requests
-
         mock_response = Mock()
         mock_response.status_code = 429
         http_error = requests.exceptions.HTTPError("429 Too Many Requests")
@@ -713,27 +591,21 @@ class TestHudIncomeClientHTTPErrors(TestCase):
         client = HudIncomeClient(api_token="test_token")
 
         with patch.object(client._session, "get", return_value=mock_response):
-            with self.assertRaises(HudIncomeClientError) as context:
+            with self.assertRaisesRegex(HudIncomeClientError, r"Rate limit exceeded"):
                 client._api_request("test/endpoint")
 
-            self.assertIn("Rate limit exceeded", str(context.exception))
-
-    def test_timeout_error_handling(self):
+    def test_timeout_error_handling(self) -> None:
         """Test timeout error handling."""
-        import requests
-
         client = HudIncomeClient(api_token="test_token", max_retries=2)
 
         with patch.object(client._session, "get") as mock_session_get:
             # All attempts timeout
             mock_session_get.side_effect = requests.exceptions.Timeout("Request timed out")
 
-            with self.assertRaises(HudIncomeClientError) as context:
+            with self.assertRaisesRegex(HudIncomeClientError, r"Request timeout"):
                 client._api_request("test/endpoint")
 
-            self.assertIn("Request timeout", str(context.exception))
-
-    def test_retry_strategy_configuration(self):
+    def test_retry_strategy_configuration(self) -> None:
         """Test retry strategy is configured correctly."""
         from urllib3.util.retry import Retry
 
@@ -746,23 +618,3 @@ class TestHudIncomeClientHTTPErrors(TestCase):
         self.assertEqual(retry_config.backoff_factor, 1)
         self.assertEqual(retry_config.status_forcelist, [429, 500, 502, 503, 504])
         self.assertIn("GET", retry_config.allowed_methods)
-
-
-class TestAmiPercentTypes(TestCase):
-    """Test AMI percentage type aliases."""
-
-    def test_mtsp_ami_percent_accepts_valid_values(self):
-        """Test that valid MTSP percentage strings are accepted."""
-        valid_percents: list[MtspAmiPercent] = ["20%", "30%", "40%", "50%", "60%", "70%", "80%", "100%"]
-
-        # Type checker will validate at static analysis time
-        # This test documents the valid values
-        self.assertEqual(len(valid_percents), 8)
-
-    def test_section8_ami_percent_accepts_valid_values(self):
-        """Test that valid Section 8 percentage strings are accepted."""
-        valid_percents: list[Section8AmiPercent] = ["30%", "50%", "80%"]
-
-        # Type checker will validate at static analysis time
-        # This test documents the valid values
-        self.assertEqual(len(valid_percents), 3)
