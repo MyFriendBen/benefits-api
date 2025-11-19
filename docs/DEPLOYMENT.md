@@ -387,7 +387,7 @@ heroku auth:whoami
 # Token needs 'repo' scope for mfb-translations repository
 
 # Test token manually
-git clone https://x-access-token:YOUR_TOKEN@github.com/Gary-Community-Ventures/mfb-translations.git /tmp/test-clone
+git clone https://x-access-token:YOUR_TOKEN@github.com/MyFriendBen/mfb-translations.git /tmp/test-clone
 ```
 
 ### Workflow Doesn't Trigger
