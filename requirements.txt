@@ -18,7 +18,6 @@ django-extensions==3.2.3
 django-filter==21.1
 django-heroku==0.3.1
 django-import-export==3.3.8
-django-redis==5.4.0
 django-json-widget==2.0.1
 django-parler==2.3
 django-parler-rest==2.2

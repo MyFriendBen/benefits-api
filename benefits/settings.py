@@ -307,27 +307,6 @@ if config("SENTRY_DSN", None) is not None:
 
 django_heroku.settings(locals())
 
-# Cache Configuration
-# Redis cache backend for Heroku
-# Heroku Redis automatically sets REDIS_URL when the add-on is provisioned
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": config("REDIS_URL", default="redis://127.0.0.1:6379/1"),
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            # Connection pool settings (good for production with multiple dynos)
-            "CONNECTION_POOL_KWARGS": {
-                "max_connections": 50,
-                "retry_on_timeout": True,
-            },
-            "SOCKET_CONNECT_TIMEOUT": 5,  # seconds
-            "SOCKET_TIMEOUT": 5,  # seconds
-        },
-        "KEY_PREFIX": "benefits",  # Namespace for all cache keys
-        "TIMEOUT": 300,  # Default timeout: 5 minutes (override per cache.set() call)
-    }
-}
 
 # UNFOLD SETTINGS
 UNFOLD = {
