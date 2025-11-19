@@ -22,10 +22,12 @@
 
 ## Deployment
 
-<!-- Steps needed AFTER merging to get this live -->
+<!--
+Steps needed AFTER merging to main (which automatically deploys to Staging)
+-->
 
-- Run script:
-- Update production config:
+- Post-deployment scripts needed:
+- Production config updates:
 - Admin updates needed:
 - Notify team/users of:
 

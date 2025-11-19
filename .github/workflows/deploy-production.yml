@@ -1,69 +1,64 @@
-name: Deploy to Staging
+name: Deploy to Production
 
 on:
-  push:
-    branches:
-      - main
+  release:
+    types: [published]
 
 jobs:
   deploy:
-    name: Deploy Backend to Heroku Staging
+    name: Deploy Backend to Heroku Production
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout release tag
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
 
       - name: Install Heroku CLI
         run: |
           curl https://cli-assets.heroku.com/install.sh | sh
 
-      - name: Deploy to Heroku
+      - name: Deploy to Heroku Production
         uses: akhileshns/heroku-deploy@v3.13.15
         with:
           heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
-          heroku_app_name: ${{ secrets.HEROKU_STAGING_APP_NAME }}
+          heroku_app_name: ${{ secrets.HEROKU_PROD_APP_NAME }}
           heroku_email: ${{ secrets.HEROKU_EMAIL }}
         id: heroku_deploy
 
-      - name: Get commit info
-        id: commit_info
+      - name: Get release info
+        id: release_info
         run: |
-          echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-          echo "message=$(git log -1 --pretty=%B | head -n 1)" >> $GITHUB_OUTPUT
-          echo "author=$(git log -1 --pretty=%an)" >> $GITHUB_OUTPUT
+          echo "tag=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+          echo "name=${{ github.event.release.name }}" >> $GITHUB_OUTPUT
 
-      - name: Send initial deployment notification to Slack
+      - name: Send deployment notification to Slack
         if: success()
-        id: slack_notification
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
           payload=$(jq -n \
-            --arg repo "${{ github.repository }}" \
-            --arg short_sha "${{ steps.commit_info.outputs.sha }}" \
-            --arg full_sha "${{ github.sha }}" \
-            --arg author "${{ steps.commit_info.outputs.author }}" \
-            --arg message "${{ steps.commit_info.outputs.message }}" \
-            --arg app "${{ secrets.HEROKU_STAGING_APP_NAME }}" \
+            --arg tag "${{ steps.release_info.outputs.tag }}" \
+            --arg name "${{ steps.release_info.outputs.name }}" \
+            --arg app "${{ secrets.HEROKU_PROD_APP_NAME }}" \
+            --arg release_url "${{ github.event.release.html_url }}" \
             '{
-              text: "🚀 Backend Staging Deployment In Progress",
+              text: "🚀 Production Deployment In Progress",
               blocks: [
-                {type: "header", text: {type: "plain_text", text: "🚀 Backend Staging Deployment In Progress"}},
+                {type: "header", text: {type: "plain_text", text: "🚀 Production Deployment In Progress"}},
                 {type: "section", fields: [
-                  {type: "mrkdwn", text: "*Environment:*\nStaging"},
-                  {type: "mrkdwn", text: "*Commit:*\n<https://github.com/\($repo)/commit/\($full_sha)|\($short_sha)>"},
-                  {type: "mrkdwn", text: "*Author:*\n\($author)"},
+                  {type: "mrkdwn", text: "*Environment:*\nProduction"},
+                  {type: "mrkdwn", text: "*Release:*\n<\($release_url)|\($tag)>"},
+                  {type: "mrkdwn", text: "*Name:*\n\($name)"},
                   {type: "mrkdwn", text: "*App:*\n<https://\($app).herokuapp.com|View App>"}
                 ]},
-                {type: "section", text: {type: "mrkdwn", text: "*Commit Message:*\n\($message)"}},
                 {type: "section", text: {type: "mrkdwn", text: "_Running post-deployment scripts..._"}}
               ]
             }')
-          RESPONSE=$(curl -X POST "$SLACK_WEBHOOK_URL" \
+          curl -X POST "$SLACK_WEBHOOK_URL" \
             -H 'Content-Type: application/json' \
-            -d "$payload")
-          echo "slack_response=$RESPONSE" >> $GITHUB_OUTPUT
+            -d "$payload"
 
       - name: Run database migrations
         if: success()
@@ -73,7 +68,7 @@ jobs:
         run: |
           echo "Running migrations..."
           set +e
-          OUTPUT=$(heroku run -a ${{ secrets.HEROKU_STAGING_APP_NAME }} "python manage.py migrate" 2>&1)
+          OUTPUT=$(heroku run -a ${{ secrets.HEROKU_PROD_APP_NAME }} "python manage.py migrate" 2>&1)
           STATUS=$?
           set -e
           echo "$OUTPUT"
@@ -82,8 +77,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
           if [ $STATUS -ne 0 ] && echo "$OUTPUT" | grep -q "Conflicting migrations detected"; then
-            echo "Migration conflict detected. Auto-merge on Heroku is not supported (slug is read-only)."
-            echo "Please resolve the conflict locally (python manage.py makemigrations --merge), commit, and re-deploy."
+            echo "Migration conflict detected. Please resolve the conflict and create a new release."
             exit 1
           elif [ $STATUS -ne 0 ]; then
             exit $STATUS
@@ -97,9 +91,23 @@ jobs:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: |
           echo "Adding configurations..."
-          OUTPUT=$(heroku run -a ${{ secrets.HEROKU_STAGING_APP_NAME }} "python manage.py add_config --all" 2>&1)
+          OUTPUT=$(heroku run -a ${{ secrets.HEROKU_PROD_APP_NAME }} "python manage.py add_config --all" 2>&1)
           echo "$OUTPUT"
           echo "config_output<<EOF" >> $GITHUB_OUTPUT
+          echo "$OUTPUT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Pull validations from staging
+        if: success()
+        id: pull_validations
+        continue-on-error: true
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          echo "Pulling validations from staging..."
+          OUTPUT=$(heroku run -a ${{ secrets.HEROKU_PROD_APP_NAME }} "python manage.py pull_validations https://cobenefits-api-staging.herokuapp.com" 2>&1)
+          echo "$OUTPUT"
+          echo "pull_validations_output<<EOF" >> $GITHUB_OUTPUT
           echo "$OUTPUT" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
@@ -111,7 +119,7 @@ jobs:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: |
           echo "Running validations..."
-          OUTPUT=$(heroku run -a ${{ secrets.HEROKU_STAGING_APP_NAME }} "python manage.py validate --sheet-id 1JRsCKm9KeeatVoW3wjsT2YqSy63js53Ib3vivK5NFYY" 2>&1)
+          OUTPUT=$(heroku run -a ${{ secrets.HEROKU_PROD_APP_NAME }} "python manage.py validate --sheet-id 1JRsCKm9KeeatVoW3wjsT2YqSy63js53Ib3vivK5NFYY" 2>&1)
           echo "$OUTPUT"
           echo "validation_output<<EOF" >> $GITHUB_OUTPUT
           echo "$OUTPUT" >> $GITHUB_OUTPUT
@@ -124,19 +132,21 @@ jobs:
         run: |
           MIGRATIONS_STATUS="${{ steps.migrations.outcome }}"
           CONFIG_STATUS="${{ steps.add_config.outcome }}"
+          PULL_VALIDATIONS_STATUS="${{ steps.pull_validations.outcome }}"
           VALIDATIONS_STATUS="${{ steps.validations.outcome }}"
 
-          if [ "$MIGRATIONS_STATUS" == "success" ] && [ "$CONFIG_STATUS" == "success" ] && [ "$VALIDATIONS_STATUS" == "success" ]; then
+          if [ "$MIGRATIONS_STATUS" == "success" ] && [ "$CONFIG_STATUS" == "success" ] && [ "$PULL_VALIDATIONS_STATUS" == "success" ] && [ "$VALIDATIONS_STATUS" == "success" ]; then
             EMOJI="✅"
-            STATUS_TEXT="Backend Staging Deployment Successful"
+            STATUS_TEXT="Production Deployment Successful"
           else
             EMOJI="⚠️"
-            STATUS_TEXT="Backend Staging Deployment Completed with Warnings"
+            STATUS_TEXT="Production Deployment Completed with Warnings"
           fi
 
           # Determine status text for each step
           MIGRATIONS_TEXT=$([ "$MIGRATIONS_STATUS" == "success" ] && echo "✅ Success" || echo "❌ Failed")
           CONFIG_TEXT=$([ "$CONFIG_STATUS" == "success" ] && echo "✅ Success" || echo "❌ Failed")
+          PULL_VALIDATIONS_TEXT=$([ "$PULL_VALIDATIONS_STATUS" == "success" ] && echo "✅ Success" || echo "❌ Failed")
           VALIDATIONS_TEXT=$([ "$VALIDATIONS_STATUS" == "success" ] && echo "✅ Success" || echo "❌ Failed")
 
           # Build payload with jq for proper escaping
@@ -145,9 +155,12 @@ jobs:
             --arg status_text "$STATUS_TEXT" \
             --arg migrations_text "$MIGRATIONS_TEXT" \
             --arg config_text "$CONFIG_TEXT" \
+            --arg pull_validations_text "$PULL_VALIDATIONS_TEXT" \
             --arg validations_text "$VALIDATIONS_TEXT" \
             --arg repo "${{ github.repository }}" \
             --arg run_id "${{ github.run_id }}" \
+            --arg tag "${{ github.event.release.tag_name }}" \
+            --arg release_url "${{ github.event.release.html_url }}" \
             '{
               text: "\($emoji) \($status_text)",
               blocks: [
@@ -156,7 +169,11 @@ jobs:
                 {type: "section", fields: [
                   {type: "mrkdwn", text: "*Migrations:*\n\($migrations_text)"},
                   {type: "mrkdwn", text: "*Add Config:*\n\($config_text)"},
-                  {type: "mrkdwn", text: "*Validations:*\n\($validations_text)"},
+                  {type: "mrkdwn", text: "*Pull Validations:*\n\($pull_validations_text)"},
+                  {type: "mrkdwn", text: "*Validations:*\n\($validations_text)"}
+                ]},
+                {type: "section", fields: [
+                  {type: "mrkdwn", text: "*Release:*\n<\($release_url)|\($tag)>"},
                   {type: "mrkdwn", text: "*Workflow:*\n<https://github.com/\($repo)/actions/runs/\($run_id)|View Logs>"}
                 ]}
               ]
@@ -173,23 +190,19 @@ jobs:
         run: |
           payload=$(jq -n \
             --arg repo "${{ github.repository }}" \
-            --arg short_sha "${{ steps.commit_info.outputs.sha }}" \
-            --arg full_sha "${{ github.sha }}" \
-            --arg author "${{ steps.commit_info.outputs.author }}" \
-            --arg message "${{ steps.commit_info.outputs.message }}" \
+            --arg tag "${{ github.event.release.tag_name }}" \
+            --arg release_url "${{ github.event.release.html_url }}" \
             --arg run_id "${{ github.run_id }}" \
             '{
-              text: "❌ Backend Staging Deployment Failed",
+              text: "❌ Production Deployment Failed",
               blocks: [
-                {type: "header", text: {type: "plain_text", text: "❌ Backend Staging Deployment Failed"}},
+                {type: "header", text: {type: "plain_text", text: "❌ Production Deployment Failed"}},
                 {type: "section", fields: [
-                  {type: "mrkdwn", text: "*Environment:*\nStaging"},
-                  {type: "mrkdwn", text: "*Commit:*\n<https://github.com/\($repo)/commit/\($full_sha)|\($short_sha)>"},
-                  {type: "mrkdwn", text: "*Author:*\n\($author)"},
+                  {type: "mrkdwn", text: "*Environment:*\nProduction"},
+                  {type: "mrkdwn", text: "*Release:*\n<\($release_url)|\($tag)>"},
                   {type: "mrkdwn", text: "*Workflow:*\n<https://github.com/\($repo)/actions/runs/\($run_id)|View Logs>"}
                 ]},
-                {type: "section", text: {type: "mrkdwn", text: "*Commit Message:*\n\($message)"}},
-                {type: "section", text: {type: "mrkdwn", text: "The deployment to Heroku failed. Please check the workflow logs for details."}}
+                {type: "section", text: {type: "mrkdwn", text: "The deployment to Heroku Production failed. Please check the workflow logs for details."}}
               ]
             }')
           curl -X POST "$SLACK_WEBHOOK_URL" \
