@@ -72,12 +72,14 @@ jobs:
           STATUS=$?
           set -e
           echo "$OUTPUT"
-          echo "migrations_output<<EOF" >> $GITHUB_OUTPUT
+          DELIMITER="EOF_$(date +%s)"
+          echo "migrations_output<<${DELIMITER}" >> $GITHUB_OUTPUT
           echo "$OUTPUT" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "${DELIMITER}" >> $GITHUB_OUTPUT
 
           if [ $STATUS -ne 0 ] && echo "$OUTPUT" | grep -q "Conflicting migrations detected"; then
-            echo "Migration conflict detected. Please resolve the conflict and create a new release."
+            echo "Migration conflict detected. Auto-merge on Heroku is not supported (slug is read-only)."
+            echo "Please resolve the conflict locally (python manage.py makemigrations --merge), commit, and create a new release."
             exit 1
           elif [ $STATUS -ne 0 ]; then
             exit $STATUS
@@ -93,9 +95,10 @@ jobs:
           echo "Adding configurations..."
           OUTPUT=$(heroku run -a ${{ secrets.HEROKU_PROD_APP_NAME }} "python manage.py add_config --all" 2>&1)
           echo "$OUTPUT"
-          echo "config_output<<EOF" >> $GITHUB_OUTPUT
+          DELIMITER="EOF_$(date +%s)"
+          echo "config_output<<${DELIMITER}" >> $GITHUB_OUTPUT
           echo "$OUTPUT" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "${DELIMITER}" >> $GITHUB_OUTPUT
 
       - name: Pull validations from staging
         if: success()
@@ -105,11 +108,12 @@ jobs:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: |
           echo "Pulling validations from staging..."
-          OUTPUT=$(heroku run -a ${{ secrets.HEROKU_PROD_APP_NAME }} "python manage.py pull_validations https://cobenefits-api-staging.herokuapp.com" 2>&1)
+          OUTPUT=$(heroku run -a ${{ secrets.HEROKU_PROD_APP_NAME }} "python manage.py pull_validations ${{ secrets.HEROKU_STAGING_URL }}" 2>&1)
           echo "$OUTPUT"
-          echo "pull_validations_output<<EOF" >> $GITHUB_OUTPUT
+          DELIMITER="EOF_$(date +%s)"
+          echo "pull_validations_output<<${DELIMITER}" >> $GITHUB_OUTPUT
           echo "$OUTPUT" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "${DELIMITER}" >> $GITHUB_OUTPUT
 
       - name: Run validations
         if: success()
@@ -119,11 +123,12 @@ jobs:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: |
           echo "Running validations..."
-          OUTPUT=$(heroku run -a ${{ secrets.HEROKU_PROD_APP_NAME }} "python manage.py validate --sheet-id 1JRsCKm9KeeatVoW3wjsT2YqSy63js53Ib3vivK5NFYY" 2>&1)
+          OUTPUT=$(heroku run -a ${{ secrets.HEROKU_PROD_APP_NAME }} "python manage.py validate --sheet-id ${{ secrets.VALIDATION_SHEET_ID }}" 2>&1)
           echo "$OUTPUT"
-          echo "validation_output<<EOF" >> $GITHUB_OUTPUT
+          DELIMITER="EOF_$(date +%s)"
+          echo "validation_output<<${DELIMITER}" >> $GITHUB_OUTPUT
           echo "$OUTPUT" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "${DELIMITER}" >> $GITHUB_OUTPUT
 
       - name: Sync translations to staging
         if: success()
@@ -142,7 +147,7 @@ jobs:
           TRANSLATIONS=$(echo "$EXPORT_OUTPUT" | sed '$ d')
 
           # Clone translations repo
-          git clone https://x-access-token:${{ secrets.TRANSLATIONS_REPO_TOKEN }}@github.com/Gary-Community-Ventures/mfb-translations.git /tmp/mfb-translations
+          git clone https://x-access-token:${{ secrets.TRANSLATIONS_REPO_TOKEN }}@github.com/MyFriendBen/mfb-translations.git /tmp/mfb-translations
           cd /tmp/mfb-translations
 
           # Save translations with date
@@ -160,9 +165,10 @@ jobs:
           echo "Importing translations to staging..."
           heroku run --no-tty -a ${{ secrets.HEROKU_STAGING_APP_NAME }} "python manage.py bulk_import" < translations/${DATE}.json 2>&1 || echo "Translation import completed with warnings"
 
-          echo "sync_translations_output<<EOF" >> $GITHUB_OUTPUT
+          DELIMITER="EOF_$(date +%s)"
+          echo "sync_translations_output<<${DELIMITER}" >> $GITHUB_OUTPUT
           echo "Translations synced: ${DATE}.json" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "${DELIMITER}" >> $GITHUB_OUTPUT
 
       - name: Send final status to Slack
         if: ${{ !failure() }}
