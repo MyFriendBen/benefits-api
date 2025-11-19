@@ -62,11 +62,15 @@ gh workflow view "Deploy to Staging"
 **Trigger**: Automatically when code is merged to `main`
 
 **What happens automatically**:
-1. Code is deployed to Heroku Staging
-2. Database migrations run (`python manage.py migrate`)
-3. Configurations are added (`python manage.py add_config --all`)
-4. Validations run (`python manage.py validate`)
-5. Slack notification sent with deployment status
+1. **Tests run** - Full test suite with pytest
+2. **Linting checks** - Code formatting validated with Black
+3. **Code deploys to Heroku Staging** (only if tests pass)
+4. Database migrations run (`python manage.py migrate`)
+5. Configurations are added (`python manage.py add_config --all`)
+6. Validations run (`python manage.py validate`)
+7. Slack notification sent with deployment status
+
+**Important**: Deployment will NOT proceed if tests or linting fail. Fix the issues and push again.
 
 **Workflow file**: [`.github/workflows/deploy-staging.yml`](../.github/workflows/deploy-staging.yml)
 
@@ -107,13 +111,16 @@ heroku releases -a cobenefits-api-staging
 
 When you publish a GitHub Release:
 
-1. **Code deployment** - Exact code from the release tag is deployed to Heroku Production
-2. **Database migrations** - `python manage.py migrate`
-3. **Configuration updates** - `python manage.py add_config --all`
-4. **Pull validations** - `python manage.py pull_validations` from staging
-5. **Run validations** - `python manage.py validate`
-6. **Sync translations** - Export from production → Save to `mfb-translations` repo → Import to staging
-7. **Slack notifications** - Status updates sent to team
+1. **Manual approval required** - A designated team member must approve the deployment
+2. **Code deployment** - Exact code from the release tag is deployed to Heroku Production
+3. **Database migrations** - `python manage.py migrate`
+4. **Configuration updates** - `python manage.py add_config --all`
+5. **Pull validations** - `python manage.py pull_validations` from staging
+6. **Run validations** - `python manage.py validate`
+7. **Sync translations** - Export from production → Save to `mfb-translations` repo → Import to staging
+8. **Slack notifications** - Status updates sent to team
+
+**Important**: Production deployments require manual approval from a designated reviewer before proceeding. This provides a safety gate to review the release before it goes live.
 
 **Workflow file**: [`.github/workflows/deploy-production.yml`](../.github/workflows/deploy-production.yml)
 
@@ -423,6 +430,27 @@ gh secret list
 # Add a new secret (if needed)
 gh secret set SECRET_NAME --body "secret-value"
 ```
+
+### Production Environment Protection
+
+The production deployment workflow uses GitHub Environments with required approvals for added safety.
+
+**Setup (one-time)**:
+
+1. Go to: `https://github.com/MyFriendBen/benefits-api/settings/environments`
+2. Click **"New environment"**
+3. Name: `production`
+4. Check **"Required reviewers"**
+5. Add team members who can approve production deployments
+6. Optionally set a deployment delay (e.g., 5 minutes to allow cancellation)
+7. Click **"Save protection rules"**
+
+**How it works**:
+- When a release is published, the workflow will pause and request approval
+- Designated reviewers will receive a notification
+- Reviewer can view the release notes and approve or reject
+- Only after approval will the deployment proceed
+- All approval activity is logged for audit purposes
 
 ### Creating GitHub Personal Access Token for Translations
 
