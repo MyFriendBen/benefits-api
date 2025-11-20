@@ -50,10 +50,10 @@ Controlled by the `VCR_MODE` environment variable:
 
 | Environment | VCR_MODE | Behavior | API Calls |
 |------------|----------|----------|-----------|
-| **PRs** | `none` | Uses existing cassettes only | ❌ No |
-| **Push to main** | `new_episodes` | Makes real API calls, updates cassettes | ✅ Yes |
+| **PRs** | `new_episodes` | Records new interactions only, replays existing cassettes | Only for new interactions |
+| **Push to main** | `all` | Re-records ALL cassettes to verify API interface | ✅ Yes (overwrites all) |
 | **Local (default)** | `once` | Uses cassettes, records if missing | Only if cassette missing |
-| **Force re-record** | `all` | Re-records all cassettes | ✅ Yes (overwrites) |
+| **Strict playback** | `none` | Uses cassettes only, no recording at all | ❌ No |
 
 ### Running Integration Tests Locally
 
@@ -133,25 +133,27 @@ git diff integrations/**/cassettes/*.yaml
 
 ## CI/CD Testing Strategy
 
-### Pull Requests (VCR_MODE=none)
+### Pull Requests (VCR_MODE=new_episodes)
 ```yaml
-- Uses VCR cassettes only
-- No real API calls
-- Fast feedback (~30 seconds)
-- No API credentials needed
-```
-
-**If cassettes are missing**: Test will fail, prompting you to record them locally.
-
-### Push to Main (VCR_MODE=new_episodes)
-```yaml
-- Makes real API calls
-- Updates cassettes with new data
-- Validates actual API integrations
+- Records new interactions only
+- Replays existing cassettes
+- Fast feedback for existing tests
+- Only makes API calls for new test scenarios
 - Requires HUD_API_TOKEN secret
 ```
 
-**Purpose**: Catch API breaking changes before production deployment.
+**If new tests added**: New cassettes will be recorded automatically in CI.
+
+### Push to Main (VCR_MODE=all)
+```yaml
+- Re-records ALL cassettes
+- Makes real API calls for every test
+- Validates actual API integrations
+- Ensures API interface hasn't changed
+- Requires HUD_API_TOKEN secret
+```
+
+**Purpose**: Catch API breaking changes and verify cassettes are up-to-date before merging to main.
 
 ---
 

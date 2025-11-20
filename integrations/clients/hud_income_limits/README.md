@@ -248,10 +248,10 @@ Controlled by the `VCR_MODE` environment variable:
 
 | Environment | VCR_MODE | Behavior |
 |------------|----------|----------|
-| **CI (PRs)** | `none` | Uses VCR cassettes only (no real API calls) |
-| **CI (push to main)** | `new_episodes` | Makes real API calls, validates integrations |
+| **CI (PRs)** | `new_episodes` | Records new interactions only, replays existing cassettes |
+| **CI (push to main)** | `all` | Re-records ALL cassettes to verify API interface |
 | **Local (default)** | `once` | Uses cassettes, records new ones if missing |
-| **Force re-record** | `all` | Re-records all cassettes |
+| **Strict playback** | `none` | Uses cassettes only, no recording at all |
 
 ### Cassettes
 
