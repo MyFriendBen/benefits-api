@@ -1,12 +1,12 @@
 name: Tests & Coverage
 
-# This workflow runs tests with different strategies based on the target branch:
-# - PRs to dev: Unit tests only (no integration tests)
+# This workflow runs tests with different strategies based on the trigger:
+# - PRs to dev: All tests including integration tests with VCR cassettes
 # - PRs to main: All tests including integration tests with VCR cassettes
-# - Pushes to main: All tests including integration tests with VCR cassettes
+# - Pushes to main: All tests including integration tests WITH REAL API CALLS
 #
-# Integration tests use VCR (Video Cassette Recorder) to replay recorded HTTP
-# interactions, so no real API calls are made and no credentials are needed.
+# VCR (Video Cassette Recorder) replays recorded HTTP interactions for fast,
+# deterministic tests. Real API calls verify integration health in production scenarios.
 
 on:
   pull_request:
@@ -28,7 +28,8 @@ jobs:
       DB_HOST: localhost
       DB_PORT: 5432
       ENABLE_GOOGLE_INTEGRATIONS: false
-      CI: true  # Ensures VCR uses cassettes instead of real API calls
+      # CI=true uses VCR cassettes; CI=false makes real API calls
+      CI: ${{ !(github.event_name == 'push' && github.ref == 'refs/heads/main') }}
 
     services:
       postgres:
@@ -69,20 +70,17 @@ jobs:
       - name: Run migrations
         run: python manage.py migrate --noinput
 
-      - name: Run tests (unit tests only for PRs to dev)
-        if: github.event_name == 'pull_request' && github.base_ref == 'dev'
-        run: pytest -m "not integration" --cov --cov-branch --cov-report=xml --verbosity=2
-
-      - name: Run tests (all tests including integration with VCR for PRs to main)
-        if: github.event_name == 'pull_request' && github.base_ref == 'main'
+      - name: Run tests (all tests with VCR cassettes for PRs)
+        if: github.event_name == 'pull_request'
         run: |
-          echo "Running integration tests with VCR cassettes (no real API calls)"
+          echo "Running all tests including integration tests with VCR cassettes (no real API calls)"
           pytest --cov --cov-branch --cov-report=xml --verbosity=2
 
-      - name: Run tests (all tests including integration with VCR for pushes to main)
+      - name: Run tests (all tests with REAL API calls for push to main)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          echo "Running integration tests with VCR cassettes (no real API calls)"
+          echo "Running all tests including integration tests with REAL API CALLS"
+          echo "Note: CI env var is set to false, which triggers real API calls in tests"
           pytest --cov --cov-branch --cov-report=xml --verbosity=2
 
       - name: Upload results to Codecov
