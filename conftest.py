@@ -21,6 +21,19 @@ import vcr as vcrpy
 from decouple import config
 
 
+# Sensitive headers to redact in VCR cassettes
+SENSITIVE_HEADERS = [
+    "authorization",
+    "x-api-key",
+    "api-key",
+    "apikey",
+    "x-auth-token",
+    "auth-token",
+    "cookie",
+    "set-cookie",
+]
+
+
 def scrub_sensitive_data(response):
     """
     Scrub sensitive data from VCR cassettes.
@@ -41,26 +54,10 @@ def scrub_sensitive_data(response):
         Modified response with sensitive data redacted
     """
     # Scrub headers
-    sensitive_headers = [
-        "authorization",
-        "x-api-key",
-        "api-key",
-        "apikey",
-        "x-auth-token",
-        "auth-token",
-        "cookie",
-        "set-cookie",
-    ]
-
     if "headers" in response:
-        for header in sensitive_headers:
-            # Check both lowercase and original case
-            if header in response["headers"]:
+        for header in response["headers"]:
+            if header.lower() in SENSITIVE_HEADERS:
                 response["headers"][header] = ["REDACTED"]
-            # Also check capitalized versions
-            header_title = header.title()
-            if header_title in response["headers"]:
-                response["headers"][header_title] = ["REDACTED"]
 
     # Scrub body content (if it's a string)
     if "body" in response and "string" in response["body"]:
@@ -131,22 +128,10 @@ def scrub_request(request):
         )
 
     # Scrub headers
-    sensitive_headers = [
-        "authorization",
-        "x-api-key",
-        "api-key",
-        "apikey",
-        "x-auth-token",
-        "auth-token",
-    ]
-
     if hasattr(request, "headers"):
-        for header in sensitive_headers:
-            if header in request.headers:
+        for header in request.headers:
+            if header.lower() in SENSITIVE_HEADERS:
                 request.headers[header] = "REDACTED"
-            header_title = header.title()
-            if header_title in request.headers:
-                request.headers[header_title] = "REDACTED"
 
     # Scrub body if present
     if hasattr(request, "body") and request.body:
@@ -197,13 +182,7 @@ def vcr_config(request):
         "cassette_library_dir": cassette_dir,
         "record_mode": "once",  # Record once, then replay. Use 'new_episodes' to add new interactions
         "match_on": ["method", "scheme", "host", "port", "path", "query"],
-        "filter_headers": [
-            "authorization",
-            "x-api-key",
-            "api-key",
-            "cookie",
-            "set-cookie",
-        ],
+        "filter_headers": SENSITIVE_HEADERS,
         "filter_query_parameters": [
             "api_key",
             "apikey",
