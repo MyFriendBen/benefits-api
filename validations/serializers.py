@@ -15,6 +15,7 @@ class ValidationSerializer(serializers.ModelSerializer):
             "program_name",
             "eligible",
             "value",
+            "notes",
             "created_date",
         )
         read_only_field = ("created_date", "id")
