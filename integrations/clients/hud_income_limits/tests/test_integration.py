@@ -2,8 +2,8 @@
 Integration tests for HUD API client.
 
 These tests use VCR to record/replay HTTP interactions:
-- In CI (PRs): Uses VCR cassettes only (VCR_MODE=none, no credentials needed)
-- In CI (push to main): Makes real API calls (VCR_MODE=new_episodes, validates integrations)
+- In CI (PRs): Records new interactions only (VCR_MODE=new_episodes)
+- In CI (push to main): Re-records ALL cassettes to verify API interface (VCR_MODE=all)
 - Locally: Uses cassettes by default (VCR_MODE=once), records new ones if missing
 - Force re-record all: VCR_MODE=all pytest -m integration
 
@@ -13,11 +13,9 @@ Run integration tests with: pytest -m integration
 Skip integration tests with: pytest -m "not integration"
 """
 
-import os
 import time
 import pytest
 from django.test import TestCase
-from decouple import config
 from django.core.cache import cache
 
 from integrations.clients.hud_income_limits import hud_client, HudIncomeClientError
@@ -28,21 +26,9 @@ from screener.models import Screen, WhiteLabel
 class TestHudIntegrationMTSP(TestCase):
     """Integration tests for MTSP (Multifamily Tax Subsidy Project) endpoint."""
 
-    @classmethod
-    def setUpClass(cls):
-        """Set up test class."""
-        super().setUpClass()
-        # Check if we're using real API calls (VCR_MODE is "new_episodes" or "all")
-        vcr_mode = os.getenv("VCR_MODE", "once").lower()
-        cls.using_real_api = vcr_mode in ["new_episodes", "all"]
-        cls.has_token = config("HUD_API_TOKEN", default=None) is not None
-
     def setUp(self):
         """Set up test data."""
         cache.clear()
-        # Skip test if real API calls are needed but token is missing
-        if self.using_real_api and not self.has_token:
-            pytest.skip("Real API call requested but HUD_API_TOKEN not set")
 
         self.white_label_il = WhiteLabel.objects.create(
             name="Illinois Integration Test", code="il_integration", state_code="IL"
@@ -164,21 +150,9 @@ class TestHudIntegrationMTSP(TestCase):
 class TestHudIntegrationStandardIL(TestCase):
     """Integration tests for Standard Section 8 Income Limits endpoint."""
 
-    @classmethod
-    def setUpClass(cls):
-        """Set up test class."""
-        super().setUpClass()
-        # Check if we're using real API calls (VCR_MODE is "new_episodes" or "all")
-        vcr_mode = os.getenv("VCR_MODE", "once").lower()
-        cls.using_real_api = vcr_mode in ["new_episodes", "all"]
-        cls.has_token = config("HUD_API_TOKEN", default=None) is not None
-
     def setUp(self):
         """Set up test data."""
         cache.clear()
-        # Skip test if real API calls are needed but token is missing
-        if self.using_real_api and not self.has_token:
-            pytest.skip("Real API call requested but HUD_API_TOKEN not set")
 
         self.white_label_il = WhiteLabel.objects.create(
             name="Illinois Integration Test IL", code="il_integration_il", state_code="IL"
