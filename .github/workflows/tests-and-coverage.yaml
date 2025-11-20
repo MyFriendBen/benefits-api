@@ -1,12 +1,12 @@
 name: Tests & Coverage
 
 # This workflow runs tests with different strategies based on the trigger:
-# - PRs to dev: All tests including integration tests with VCR cassettes
-# - PRs to main: All tests including integration tests with VCR cassettes
-# - Pushes to main: All tests including integration tests WITH REAL API CALLS
+# - PRs to dev/main: VCR_MODE=new_episodes (records new interactions, replays existing cassettes)
+# - Pushes to main: VCR_MODE=all (re-records ALL cassettes to verify API interface)
 #
 # VCR (Video Cassette Recorder) replays recorded HTTP interactions for fast,
-# deterministic tests. Real API calls verify integration health in production scenarios.
+# deterministic tests. Re-recording all cassettes on push to main ensures the
+# API interface hasn't changed unexpectedly.
 
 on:
   pull_request:
@@ -28,8 +28,8 @@ jobs:
       DB_HOST: localhost
       DB_PORT: 5432
       ENABLE_GOOGLE_INTEGRATIONS: false
-      # VCR mode: "none" for PRs (cassettes only), "new_episodes" for push to main (real API calls)
-      VCR_MODE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'new_episodes' || 'none' }}
+      # VCR mode: "new_episodes" for PRs (records new interactions), "all" for push to main (re-records everything)
+      VCR_MODE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'all' || 'new_episodes' }}
       # Real token for all test runs (VCR intercepts on PRs, real calls on push to main)
       HUD_API_TOKEN: ${{ secrets.HUD_API_TOKEN }}
 
@@ -72,18 +72,18 @@ jobs:
       - name: Run migrations
         run: python manage.py migrate --noinput
 
-      - name: Run tests (all tests with VCR cassettes for PRs)
+      - name: Run tests (PRs - records new interactions only)
         if: github.event_name == 'pull_request'
         run: |
-          echo "Running all tests including integration tests with VCR cassettes (no real API calls)"
-          echo "VCR_MODE=none: Cassettes only, test will fail if cassette missing"
+          echo "Running all tests including integration tests with VCR"
+          echo "VCR_MODE=new_episodes: Records only new interactions, replays existing cassettes"
           pytest --cov --cov-branch --cov-report=xml --verbosity=2
 
-      - name: Run tests (all tests with REAL API calls for push to main)
+      - name: Run tests (Push to main - re-records ALL cassettes)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          echo "Running all tests including integration tests with REAL API CALLS"
-          echo "VCR_MODE=new_episodes: Makes real API calls and updates cassettes with new data"
+          echo "Running all tests with REAL API CALLS - verifying API interface"
+          echo "VCR_MODE=all: Re-records ALL cassettes to verify API hasn't changed"
           pytest --cov --cov-branch --cov-report=xml --verbosity=2
 
       - name: Upload results to Codecov

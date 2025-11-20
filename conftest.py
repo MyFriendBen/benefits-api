@@ -6,10 +6,10 @@ HTTP interactions during tests. It automatically scrubs sensitive information
 from cassettes to prevent accidental credential leaks.
 
 VCR behavior controlled by VCR_MODE environment variable:
-- VCR_MODE=none (PRs): Uses existing cassettes only, no real API calls
-- VCR_MODE=new_episodes (push to main): Makes real API calls and updates cassettes
+- VCR_MODE=new_episodes (PRs): Records new interactions only, replays existing cassettes
+- VCR_MODE=all (push to main): Re-records ALL cassettes to verify API interface
 - VCR_MODE=once (local default): Records new cassettes if missing, replays existing
-- VCR_MODE=all (force re-record): Forces re-recording ALL cassettes
+- VCR_MODE=none (strict playback): Uses existing cassettes only, no real API calls
 
 All integration tests marked with @pytest.mark.integration automatically use VCR.
 """
@@ -235,10 +235,10 @@ def auto_vcr(request, vcr_instance):
 
     # Determine VCR record mode based on VCR_MODE environment variable
     # Possible values:
-    #   - "none": Cassettes only, no recording (PRs in CI)
-    #   - "new_episodes": Record new interactions, replay existing (push to main in CI)
-    #   - "all": Force re-record all cassettes (local override)
+    #   - "new_episodes": Record new interactions only, replay existing (PRs in CI)
+    #   - "all": Re-record all cassettes to verify API interface (push to main in CI)
     #   - "once" (default): Record if missing, replay otherwise (local dev)
+    #   - "none": Strict playback only, no recording at all
     vcr_mode = os.getenv("VCR_MODE", "once").lower()
 
     # Validate and use the mode
