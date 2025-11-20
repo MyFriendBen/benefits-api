@@ -1,0 +1,381 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://myfriendben.org/schemas/test-case-v1.json",
+  "title": "Screen Test Case",
+  "description": "Schema for test cases that import Screens and Validations into the MyFriendBen system",
+  "type": "object",
+  "required": ["notes", "household", "expected_results"],
+  "properties": {
+    "notes": {
+      "type": "string",
+      "description": "Human-readable description of what this test case validates (e.g., 'TX ACA - Ineligible due to household income above 400% FPL')"
+    },
+    "household": {
+      "type": "object",
+      "description": "Screen payload that maps to ScreenSerializer",
+      "required": ["white_label", "household_members"],
+      "properties": {
+        "white_label": {
+          "type": "string",
+          "description": "White label code (e.g., 'co', 'tx', 'nc', 'ma', 'il')",
+          "enum": ["co", "tx", "nc", "ma", "il"]
+        },
+        "completed": {
+          "type": "boolean",
+          "default": false
+        },
+        "is_test": {
+          "type": "boolean",
+          "description": "Marks screen as test data (create-only field)",
+          "default": true
+        },
+        "start_date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 datetime (e.g., '2024-11-20T10:00:00Z')"
+        },
+        "agree_to_tos": {
+          "type": "boolean"
+        },
+        "is_13_or_older": {
+          "type": "boolean"
+        },
+        "zipcode": {
+          "type": "string",
+          "maxLength": 5,
+          "pattern": "^[0-9]{5}$"
+        },
+        "county": {
+          "type": "string"
+        },
+        "referral_source": {
+          "type": "string"
+        },
+        "referrer_code": {
+          "type": "string",
+          "description": "Create-only field"
+        },
+        "external_id": {
+          "type": "string",
+          "description": "External reference ID (create-only field)"
+        },
+        "path": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "household_size": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "household_assets": {
+          "type": "number",
+          "minimum": 0
+        },
+        "last_tax_filing_year": {
+          "type": "string",
+          "pattern": "^[0-9]{4}$"
+        },
+        "request_language_code": {
+          "type": "string",
+          "maxLength": 12
+        },
+        "household_members": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/householdMember"
+          }
+        },
+        "expenses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/expense"
+          }
+        },
+        "energy_calculator": {
+          "$ref": "#/definitions/energyCalculatorScreen"
+        },
+        "has_tanf": { "type": "boolean" },
+        "has_wic": { "type": "boolean" },
+        "has_snap": { "type": "boolean" },
+        "has_sunbucks": { "type": "boolean" },
+        "has_lifeline": { "type": "boolean" },
+        "has_acp": { "type": "boolean" },
+        "has_eitc": { "type": "boolean" },
+        "has_coeitc": { "type": "boolean" },
+        "has_nslp": { "type": "boolean" },
+        "has_ctc": { "type": "boolean" },
+        "has_il_eitc": { "type": "boolean" },
+        "has_il_ctc": { "type": "boolean" },
+        "has_medicaid": { "type": "boolean" },
+        "has_rtdlive": { "type": "boolean" },
+        "has_cccap": { "type": "boolean" },
+        "has_chp": { "type": "boolean" },
+        "has_ssi": { "type": "boolean" },
+        "has_ssdi": { "type": "boolean" },
+        "has_aca": { "type": "boolean" },
+        "has_section_8": { "type": "boolean" },
+        "needs_food": { "type": "boolean" },
+        "needs_baby_supplies": { "type": "boolean" },
+        "needs_housing_help": { "type": "boolean" },
+        "needs_mental_health_help": { "type": "boolean" },
+        "needs_child_dev_help": { "type": "boolean" },
+        "needs_funeral_help": { "type": "boolean" },
+        "needs_family_planning_help": { "type": "boolean" },
+        "needs_job_resources": { "type": "boolean" },
+        "needs_dental_care": { "type": "boolean" },
+        "needs_legal_services": { "type": "boolean" },
+        "needs_savings": { "type": "boolean" },
+        "needs_veteran_services": { "type": "boolean" },
+        "has_employer_hi": { "type": "boolean" },
+        "has_private_hi": { "type": "boolean" },
+        "has_medicaid_hi": { "type": "boolean" },
+        "has_medicare_hi": { "type": "boolean" },
+        "has_chp_hi": { "type": "boolean" },
+        "has_no_hi": { "type": "boolean" },
+        "utm_id": { "type": "string" },
+        "utm_source": { "type": "string" },
+        "utm_medium": { "type": "string" },
+        "utm_campaign": { "type": "string" },
+        "utm_content": { "type": "string" },
+        "utm_term": { "type": "string" }
+      }
+    },
+    "expected_results": {
+      "oneOf": [
+        {
+          "type": "object",
+          "description": "Single program validation",
+          "required": ["program_name", "eligible"],
+          "properties": {
+            "program_name": {
+              "type": "string",
+              "description": "Program name_abbreviated (e.g., 'snap', 'tanf', 'tx_aca')"
+            },
+            "eligible": {
+              "type": "boolean",
+              "description": "Whether household is eligible for the program"
+            },
+            "value": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Expected benefit value (monthly amount unless program specifies otherwise)"
+            }
+          }
+        },
+        {
+          "type": "array",
+          "description": "Multiple program validations",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["program_name", "eligible"],
+            "properties": {
+              "program_name": {
+                "type": "string",
+                "description": "Program name_abbreviated (e.g., 'snap', 'tanf', 'tx_aca')"
+              },
+              "eligible": {
+                "type": "boolean",
+                "description": "Whether household is eligible for the program"
+              },
+              "value": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Expected benefit value (monthly amount unless program specifies otherwise)"
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "definitions": {
+    "householdMember": {
+      "type": "object",
+      "required": ["relationship", "age"],
+      "properties": {
+        "frontend_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Auto-generated UUID if not provided"
+        },
+        "relationship": {
+          "type": "string",
+          "enum": [
+            "headOfHousehold",
+            "spouse",
+            "child",
+            "parent",
+            "fosterChild",
+            "fosterParent",
+            "stepParent",
+            "grandParent",
+            "domesticPartner",
+            "other"
+          ]
+        },
+        "age": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 150
+        },
+        "birth_year": {
+          "type": "integer",
+          "description": "Year of birth (YYYY). Used with birth_month to create birth_year_month"
+        },
+        "birth_month": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12,
+          "description": "Month of birth (1-12). Used with birth_year to create birth_year_month"
+        },
+        "student": { "type": "boolean", "default": false },
+        "student_full_time": { "type": "boolean", "default": false },
+        "pregnant": { "type": "boolean", "default": false },
+        "unemployed": { "type": "boolean", "default": false },
+        "worked_in_last_18_mos": { "type": "boolean", "default": false },
+        "visually_impaired": { "type": "boolean", "default": false },
+        "disabled": { "type": "boolean", "default": false },
+        "long_term_disability": { "type": "boolean", "default": false },
+        "veteran": { "type": "boolean", "default": false },
+        "medicaid": { "type": "boolean", "default": false },
+        "disability_medicaid": { "type": "boolean", "default": false },
+        "has_income": { "type": "boolean", "default": false },
+        "has_expenses": { "type": "boolean", "default": false },
+        "income_streams": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/incomeStream"
+          }
+        },
+        "insurance": {
+          "$ref": "#/definitions/insurance"
+        },
+        "energy_calculator": {
+          "$ref": "#/definitions/energyCalculatorMember"
+        }
+      }
+    },
+    "incomeStream": {
+      "type": "object",
+      "required": ["type", "amount", "frequency"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Income type",
+          "enum": [
+            "wages",
+            "selfEmployment",
+            "sSI",
+            "alimony",
+            "cashAssistance",
+            "childSupport",
+            "unemployment",
+            "workersCompensation",
+            "pension",
+            "socialSecurity",
+            "veteransBenefits",
+            "rentalIncome",
+            "investment",
+            "other"
+          ]
+        },
+        "amount": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Income amount in the specified frequency"
+        },
+        "frequency": {
+          "type": "string",
+          "enum": ["monthly", "weekly", "biweekly", "semimonthly", "yearly", "hourly"]
+        },
+        "hours_worked": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Required if frequency is 'hourly'"
+        }
+      },
+      "if": {
+        "properties": { "frequency": { "const": "hourly" } }
+      },
+      "then": {
+        "required": ["hours_worked"]
+      }
+    },
+    "expense": {
+      "type": "object",
+      "required": ["type", "amount", "frequency"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Expense type identifier"
+        },
+        "amount": {
+          "type": "number",
+          "minimum": 0
+        },
+        "frequency": {
+          "type": "string",
+          "enum": ["monthly", "weekly", "biweekly", "semimonthly", "yearly"]
+        }
+      }
+    },
+    "insurance": {
+      "type": "object",
+      "properties": {
+        "dont_know": { "type": "boolean", "default": false },
+        "none": { "type": "boolean", "default": true },
+        "employer": { "type": "boolean", "default": false },
+        "private": { "type": "boolean", "default": false },
+        "chp": { "type": "boolean", "default": false },
+        "medicaid": { "type": "boolean", "default": false },
+        "medicare": { "type": "boolean", "default": false },
+        "emergency_medicaid": { "type": "boolean", "default": false },
+        "family_planning": { "type": "boolean", "default": false },
+        "va": { "type": "boolean", "default": false },
+        "mass_health": { "type": "boolean", "default": false }
+      }
+    },
+    "energyCalculatorScreen": {
+      "type": "object",
+      "properties": {
+        "is_home_owner": { "type": "boolean", "default": false },
+        "is_renter": { "type": "boolean", "default": false },
+        "electricity_is_disconnected": { "type": "boolean", "default": false },
+        "has_past_due_energy_bills": { "type": "boolean", "default": false },
+        "has_old_car": { "type": "boolean", "default": false },
+        "needs_water_heater": { "type": "boolean", "default": false },
+        "needs_hvac": { "type": "boolean", "default": false },
+        "needs_stove": { "type": "boolean", "default": false },
+        "needs_dryer": { "type": "boolean", "default": false },
+        "electric_provider": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "electric_provider_name": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Human-readable provider name"
+        },
+        "gas_provider": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "gas_provider_name": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Human-readable provider name"
+        }
+      }
+    },
+    "energyCalculatorMember": {
+      "type": "object",
+      "properties": {
+        "surviving_spouse": { "type": "boolean", "default": false },
+        "receives_ssi": { "type": "boolean", "default": false },
+        "medical_equipment": { "type": "boolean", "default": false }
+      }
+    }
+  }
+}
