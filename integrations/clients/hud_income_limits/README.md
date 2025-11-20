@@ -224,6 +224,42 @@ If you need more advanced functionality, HUD provides additional endpoints:
 
 These are not currently implemented in this client but can be added if needed.
 
+## Testing
+
+This client includes comprehensive integration tests that use VCR (Video Cassette Recorder) to record and replay HTTP interactions.
+
+### Running Tests
+
+```bash
+# Run all integration tests (uses VCR cassettes)
+pytest -m integration integrations/clients/hud_income_limits/
+
+# Run specific test
+pytest integrations/clients/hud_income_limits/tests/test_integration.py::TestHudIntegrationMTSP::test_real_api_call_cook_county_il -v
+
+# Force real API calls (update cassettes)
+export HUD_API_TOKEN=your_token
+RUN_REAL_INTEGRATION_TESTS=true pytest -m integration integrations/clients/hud_income_limits/
+```
+
+### Test Behavior
+
+| Environment | Behavior |
+|------------|----------|
+| **CI (PRs)** | Uses VCR cassettes only (no real API calls) |
+| **CI (push to main)** | Makes real API calls, validates integrations |
+| **Local** | Uses cassettes, records new ones if HUD_API_TOKEN is set |
+
+### Cassettes
+
+VCR cassettes are stored in `tests/cassettes/` and automatically scrub sensitive data (API keys, tokens, etc.). They're safe to commit to git.
+
+For more details, see:
+- [General Testing Guide](../../../docs/TESTING.md)
+- [Test Files](./tests/)
+
+---
+
 ## Example Migration
 
 Here's a real example from the codebase:

@@ -8,7 +8,7 @@ This directory contains VCR cassette files that record HTTP interactions with th
 
 For complete information about integration testing and VCR cassettes, see:
 
-**[docs/INTEGRATION_TESTING.md](../../../../docs/INTEGRATION_TESTING.md)**
+**[docs/TESTING.md](../../../../docs/TESTING.md)**
 
 ## Quick Reference
 

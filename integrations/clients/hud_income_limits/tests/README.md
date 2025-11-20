@@ -11,12 +11,14 @@ Unit tests that mock all external API calls. These tests:
 - Test client logic, error handling, and edge cases
 - Should always pass in CI/CD
 
-### `test_integration.py` - Integration Tests (Real API)
-Integration tests that make real API calls to HUD. These tests:
-- Require valid `HUD_API_TOKEN` environment variable
-- Make real network requests (slower)
-- Verify actual HUD API behavior
-- Should be run in environments with API access
+### `test_integration.py` - Integration Tests (VCR Cassettes)
+Integration tests that verify HUD API behavior. These tests:
+- **Default**: Use VCR cassettes (fast, no API token needed)
+- **CI (PRs)**: Replay cassettes only
+- **CI (push to main)**: Make real API calls to validate integrations
+- **Local with token**: Can record new/update cassettes
+
+See **[docs/TESTING.md](../../../docs/TESTING.md)** for complete VCR documentation.
 
 **Test Class Organization:**
 - `TestHudIntegrationMTSP` - MTSP endpoint functionality tests
@@ -64,22 +66,9 @@ Integration tests that make real API calls to HUD. These tests:
 
 ### Prerequisites
 
-1. **Install test dependencies:**
-   ```bash
-   pip install pytest pytest-django pytest-cov
-   # OR install all project dependencies:
-   pip install -r requirements.txt
-   ```
-
-2. **Set Django settings:**
-   ```bash
-   export DJANGO_SETTINGS_MODULE=benefits.settings
-   ```
-
-3. **For integration tests only** - Add HUD API token to `.env`:
-   ```bash
-   HUD_API_TOKEN=your_token_here
-   ```
+1. **Install dependencies:** `pip install -r requirements.txt`
+2. **Set Django settings:** `export DJANGO_SETTINGS_MODULE=benefits.settings`
+3. **For recording cassettes** (optional): Add `HUD_API_TOKEN=your_token` to `.env`
 
 ### Running Tests
 
@@ -99,7 +88,7 @@ python -m pytest integrations/clients/hud_income_limits/tests/test_client.py -v
 python -m pytest -m "not integration" integrations/clients/hud_income_limits/tests/ -v
 ```
 
-**Run only integration tests (requires HUD_API_TOKEN in .env):**
+**Run only integration tests (uses VCR cassettes):**
 ```bash
 python -m pytest -m integration integrations/clients/hud_income_limits/tests/ -v
 ```
@@ -127,21 +116,13 @@ python -m pytest integrations/clients/hud_income_limits/tests/ -vv -s
 
 | Command | Speed | Requires API Token | Use Case |
 |---------|-------|-------------------|----------|
-| `-m "not integration"` | Fast (~1s) | No | Development, CI/CD |
-| `-m integration` | Slow (~15s) | Yes | Pre-deployment verification |
-| All tests | Medium (~15s) | Yes | Complete validation |
+| `-m "not integration"` | Fast (~1s) | No | Development, quick validation |
+| `-m integration` | Fast (~1s) | No (uses cassettes) | Full validation |
+| All tests | Fast (~2s) | No | Complete validation |
 
 ## CI/CD Configuration
 
-For CI/CD pipelines:
-
-```yaml
-# Run unit tests (fast, no API token)
-- pytest -m "not integration" integrations/clients/hud_income_limits/tests/
-
-# Optionally run integration tests if HUD_API_TOKEN is available
-- pytest -m integration integrations/clients/hud_income_limits/tests/
-```
+Integration tests automatically use VCR cassettes in CI. See **[docs/TESTING.md](../../../docs/TESTING.md)** for complete CI/CD strategy.
 
 ## Adding New Tests
 
@@ -181,15 +162,11 @@ Integration tests use real API calls for:
 - OR set python3 as default with pyenv: `pyenv global 3.10.18`
 - OR create alias in `~/.zshrc`: `alias python=python3`
 
-**Integration tests failing with "HUD_API_TOKEN not set":**
-- Add `HUD_API_TOKEN=your_token` to `.env` file in project root
+**Integration tests failing:**
+- Should work without API token (uses VCR cassettes)
+- If cassettes missing: Add `HUD_API_TOKEN=your_token` to `.env` to record them
 - Get token at: https://www.huduser.gov/hudapi/public/register
-- Register for both FMR and Income Limits datasets
-
-**Integration tests timing out:**
-- Check internet connection
-- Verify HUD API is accessible: `curl https://www.huduser.gov/hudapi/public/`
-- Check token has correct dataset permissions (FMR + Income Limits)
+- See **[docs/TESTING.md](../../../docs/TESTING.md)** for VCR troubleshooting
 
 **"DJANGO_SETTINGS_MODULE not set":**
 - Run: `export DJANGO_SETTINGS_MODULE=benefits.settings`

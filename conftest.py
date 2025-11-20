@@ -6,9 +6,10 @@ HTTP interactions during tests. It automatically scrubs sensitive information
 from cassettes to prevent accidental credential leaks.
 
 VCR behavior by environment:
-- CI: Uses existing cassettes only (record_mode='none'), never makes real API calls
-- Locally: Records new cassettes if missing, replays existing ones (record_mode='once')
-- With RUN_REAL_INTEGRATION_TESTS=true: Forces re-recording all cassettes (record_mode='all')
+- CI=true (PRs): Uses existing cassettes only (record_mode='none'), no real API calls
+- CI=false (push to main): Makes real API calls and updates cassettes (record_mode='new_episodes')
+- Locally (default): Records new cassettes if missing, replays existing (record_mode='once')
+- RUN_REAL_INTEGRATION_TESTS=true: Forces re-recording ALL cassettes (record_mode='all')
 
 All integration tests marked with @pytest.mark.integration automatically use VCR.
 """
@@ -233,13 +234,14 @@ def auto_vcr(request, vcr_instance):
 
     This fixture:
     - Detects if a test is marked with @pytest.mark.integration
-    - Always uses VCR to record/replay HTTP interactions
-    - In CI: Uses cassettes in playback mode (requires cassettes to exist)
-    - Locally: Records new cassettes if missing, replays if they exist
-    - With RUN_REAL_INTEGRATION_TESTS: Forces re-recording of all cassettes
+    - Automatically uses VCR to record/replay HTTP interactions
+    - CI=true (PRs): Playback-only mode, uses existing cassettes
+    - CI=false (push to main): Makes real API calls, updates cassettes with new data
+    - Locally: Records new cassettes if missing, replays existing ones
+    - RUN_REAL_INTEGRATION_TESTS=true: Forces complete re-recording
 
     Cassettes are stored in: <test_dir>/cassettes/<test_name>.yaml
-    For example: integrations/clients/hud_income_limits/tests/cassettes/test_real_api_call_cook_county_il.yaml
+    Example: integrations/clients/hud_income_limits/tests/cassettes/test_real_api_call_cook_county_il.yaml
 
     Args:
         request: pytest request object
@@ -256,9 +258,12 @@ def auto_vcr(request, vcr_instance):
     if os.getenv("RUN_REAL_INTEGRATION_TESTS"):
         # Force re-record all cassettes (overwrites existing)
         record_mode = "all"
-    elif os.getenv("CI"):
-        # In CI: only use existing cassettes, never record
+    elif os.getenv("CI", "").lower() == "true":
+        # In CI with CI=true: only use existing cassettes, never record
         record_mode = "none"
+    elif os.getenv("CI", "").lower() == "false":
+        # In CI with CI=false (push to main): record new interactions (for updating cassettes)
+        record_mode = "new_episodes"
     else:
         # Locally: record once if missing, then replay
         record_mode = "once"
