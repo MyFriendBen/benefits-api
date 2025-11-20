@@ -31,7 +31,7 @@ jobs:
       # VCR mode: "new_episodes" for PRs (records new interactions), "all" for push to main (re-records everything)
       VCR_MODE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'all' || 'new_episodes' }}
       # Real token for all test runs (VCR intercepts on PRs, real calls on push to main)
-      HUD_API_TOKEN: ${{ secrets.HUD_API_TOKEN }}
+      HUD_API_TOKEN: ${{ secrets.HUD_API_KEY }}
 
     services:
       postgres:
