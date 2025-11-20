@@ -2,10 +2,10 @@
 Integration tests for HUD API client.
 
 These tests use VCR to record/replay HTTP interactions:
-- In CI (PRs): Uses VCR cassettes only (CI=true, no credentials needed)
-- In CI (push to main): Makes real API calls (CI=false, validates integrations)
-- Locally: Uses cassettes by default, records new ones if HUD_API_TOKEN is set
-- Force real API calls: RUN_REAL_INTEGRATION_TESTS=true pytest -m integration
+- In CI (PRs): Uses VCR cassettes only (VCR_MODE=none, no credentials needed)
+- In CI (push to main): Makes real API calls (VCR_MODE=new_episodes, validates integrations)
+- Locally: Uses cassettes by default (VCR_MODE=once), records new ones if missing
+- Force re-record all: VCR_MODE=all pytest -m integration
 
 VCR automatically scrubs all sensitive data (API keys, tokens, etc.) from cassettes.
 
@@ -32,8 +32,9 @@ class TestHudIntegrationMTSP(TestCase):
     def setUpClass(cls):
         """Set up test class."""
         super().setUpClass()
-        # Check if we're using real API calls (CI=false or RUN_REAL_INTEGRATION_TESTS=true)
-        cls.using_real_api = not os.getenv("CI", "true").lower() == "true" or os.getenv("RUN_REAL_INTEGRATION_TESTS")
+        # Check if we're using real API calls (VCR_MODE is "new_episodes" or "all")
+        vcr_mode = os.getenv("VCR_MODE", "once").lower()
+        cls.using_real_api = vcr_mode in ["new_episodes", "all"]
         cls.has_token = config("HUD_API_TOKEN", default=None) is not None
 
     def setUp(self):
@@ -167,8 +168,9 @@ class TestHudIntegrationStandardIL(TestCase):
     def setUpClass(cls):
         """Set up test class."""
         super().setUpClass()
-        # Check if we're using real API calls (CI=false or RUN_REAL_INTEGRATION_TESTS=true)
-        cls.using_real_api = not os.getenv("CI", "true").lower() == "true" or os.getenv("RUN_REAL_INTEGRATION_TESTS")
+        # Check if we're using real API calls (VCR_MODE is "new_episodes" or "all")
+        vcr_mode = os.getenv("VCR_MODE", "once").lower()
+        cls.using_real_api = vcr_mode in ["new_episodes", "all"]
         cls.has_token = config("HUD_API_TOKEN", default=None) is not None
 
     def setUp(self):

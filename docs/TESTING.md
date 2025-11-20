@@ -46,12 +46,14 @@ pytest -m integration
 
 ### Test Behavior by Environment
 
-| Environment | Behavior | VCR Mode | API Calls |
+Controlled by the `VCR_MODE` environment variable:
+
+| Environment | VCR_MODE | Behavior | API Calls |
 |------------|----------|----------|-----------|
-| **PRs (CI=true)** | Uses existing cassettes only | `none` | ❌ No |
-| **Push to main (CI=false)** | Makes real API calls, updates cassettes | `new_episodes` | ✅ Yes |
-| **Local (default)** | Uses cassettes, records if missing | `once` | Only if cassette missing |
-| **Force re-record** | Re-records all cassettes | `all` | ✅ Yes (overwrites) |
+| **PRs** | `none` | Uses existing cassettes only | ❌ No |
+| **Push to main** | `new_episodes` | Makes real API calls, updates cassettes | ✅ Yes |
+| **Local (default)** | `once` | Uses cassettes, records if missing | Only if cassette missing |
+| **Force re-record** | `all` | Re-records all cassettes | ✅ Yes (overwrites) |
 
 ### Running Integration Tests Locally
 
@@ -72,7 +74,7 @@ pytest -m integration
 ```bash
 # Useful when API responses change
 export HUD_API_TOKEN=your_token_here
-RUN_REAL_INTEGRATION_TESTS=true pytest -m integration
+VCR_MODE=all pytest -m integration
 ```
 
 #### Run Specific Test
@@ -108,7 +110,7 @@ Update cassettes when:
 **How to update**:
 ```bash
 export HUD_API_TOKEN=your_token_here
-RUN_REAL_INTEGRATION_TESTS=true pytest -m integration
+VCR_MODE=all pytest -m integration
 git add integrations/**/cassettes/*.yaml
 git commit -m "Update VCR cassettes for API changes"
 ```
@@ -131,7 +133,7 @@ git diff integrations/**/cassettes/*.yaml
 
 ## CI/CD Testing Strategy
 
-### Pull Requests (CI=true)
+### Pull Requests (VCR_MODE=none)
 ```yaml
 - Uses VCR cassettes only
 - No real API calls
@@ -141,7 +143,7 @@ git diff integrations/**/cassettes/*.yaml
 
 **If cassettes are missing**: Test will fail, prompting you to record them locally.
 
-### Push to Main (CI=false)
+### Push to Main (VCR_MODE=new_episodes)
 ```yaml
 - Makes real API calls
 - Updates cassettes with new data
@@ -169,8 +171,9 @@ class TestYourIntegration(TestCase):
     def setUpClass(cls):
         """Set up test class."""
         super().setUpClass()
-        # Check if we're using real API calls
-        cls.using_real_api = not os.getenv("CI", "true").lower() == "true" or os.getenv("RUN_REAL_INTEGRATION_TESTS")
+        # Check if we're using real API calls (VCR_MODE is "new_episodes" or "all")
+        vcr_mode = os.getenv("VCR_MODE", "once").lower()
+        cls.using_real_api = vcr_mode in ["new_episodes", "all"]
         cls.has_token = config("YOUR_API_TOKEN", default=None) is not None
 
     def setUp(self):
@@ -232,7 +235,7 @@ git push
 ```bash
 # Re-record cassettes with updated API responses
 export HUD_API_TOKEN=your_token_here
-RUN_REAL_INTEGRATION_TESTS=true pytest -m integration
+VCR_MODE=all pytest -m integration
 git add integrations/**/cassettes/*.yaml
 git commit -m "Update cassettes for API changes"
 ```
@@ -240,8 +243,8 @@ git commit -m "Update cassettes for API changes"
 ### Need to test against real API
 
 ```bash
-# Temporarily disable VCR for debugging
-RUN_REAL_INTEGRATION_TESTS=true pytest -m integration -v
+# Force re-record mode for debugging
+VCR_MODE=all pytest -m integration -v
 ```
 
 ---
@@ -299,7 +302,7 @@ gh secret list
 | Run unit tests only | `pytest -m "not integration"` |
 | Run integration tests | `pytest -m integration` |
 | Record new cassettes | `HUD_API_TOKEN=token pytest -m integration` |
-| Force re-record all | `HUD_API_TOKEN=token RUN_REAL_INTEGRATION_TESTS=true pytest -m integration` |
+| Force re-record all | `HUD_API_TOKEN=token VCR_MODE=all pytest -m integration` |
 | Run with coverage | `pytest --cov --cov-report=html` |
 | Run specific test | `pytest path/to/test.py::TestClass::test_method` |
 | View coverage report | `open htmlcov/index.html` |

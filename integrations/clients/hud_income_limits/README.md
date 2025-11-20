@@ -239,16 +239,19 @@ pytest integrations/clients/hud_income_limits/tests/test_integration.py::TestHud
 
 # Force real API calls (update cassettes)
 export HUD_API_TOKEN=your_token
-RUN_REAL_INTEGRATION_TESTS=true pytest -m integration integrations/clients/hud_income_limits/
+VCR_MODE=all pytest -m integration integrations/clients/hud_income_limits/
 ```
 
 ### Test Behavior
 
-| Environment | Behavior |
-|------------|----------|
-| **CI (PRs)** | Uses VCR cassettes only (no real API calls) |
-| **CI (push to main)** | Makes real API calls, validates integrations |
-| **Local** | Uses cassettes, records new ones if HUD_API_TOKEN is set |
+Controlled by the `VCR_MODE` environment variable:
+
+| Environment | VCR_MODE | Behavior |
+|------------|----------|----------|
+| **CI (PRs)** | `none` | Uses VCR cassettes only (no real API calls) |
+| **CI (push to main)** | `new_episodes` | Makes real API calls, validates integrations |
+| **Local (default)** | `once` | Uses cassettes, records new ones if missing |
+| **Force re-record** | `all` | Re-records all cassettes |
 
 ### Cassettes
 

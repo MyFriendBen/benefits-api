@@ -5,11 +5,11 @@ This module configures VCR (Video Cassette Recorder) to record and replay
 HTTP interactions during tests. It automatically scrubs sensitive information
 from cassettes to prevent accidental credential leaks.
 
-VCR behavior by environment:
-- CI=true (PRs): Uses existing cassettes only (record_mode='none'), no real API calls
-- CI=false (push to main): Makes real API calls and updates cassettes (record_mode='new_episodes')
-- Locally (default): Records new cassettes if missing, replays existing (record_mode='once')
-- RUN_REAL_INTEGRATION_TESTS=true: Forces re-recording ALL cassettes (record_mode='all')
+VCR behavior controlled by VCR_MODE environment variable:
+- VCR_MODE=none (PRs): Uses existing cassettes only, no real API calls
+- VCR_MODE=new_episodes (push to main): Makes real API calls and updates cassettes
+- VCR_MODE=once (local default): Records new cassettes if missing, replays existing
+- VCR_MODE=all (force re-record): Forces re-recording ALL cassettes
 
 All integration tests marked with @pytest.mark.integration automatically use VCR.
 """
@@ -235,10 +235,10 @@ def auto_vcr(request, vcr_instance):
     This fixture:
     - Detects if a test is marked with @pytest.mark.integration
     - Automatically uses VCR to record/replay HTTP interactions
-    - CI=true (PRs): Playback-only mode, uses existing cassettes
-    - CI=false (push to main): Makes real API calls, updates cassettes with new data
-    - Locally: Records new cassettes if missing, replays existing ones
-    - RUN_REAL_INTEGRATION_TESTS=true: Forces complete re-recording
+    - VCR_MODE=none (PRs): Playback-only mode, uses existing cassettes
+    - VCR_MODE=new_episodes (push to main): Makes real API calls, updates cassettes with new data
+    - VCR_MODE=once (local default): Records new cassettes if missing, replays existing ones
+    - VCR_MODE=all (force re-record): Forces complete re-recording
 
     Cassettes are stored in: <test_dir>/cassettes/<test_name>.yaml
     Example: integrations/clients/hud_income_limits/tests/cassettes/test_real_api_call_cook_county_il.yaml
@@ -254,19 +254,17 @@ def auto_vcr(request, vcr_instance):
         yield
         return
 
-    # Determine VCR record mode based on environment
-    if os.getenv("RUN_REAL_INTEGRATION_TESTS"):
-        # Force re-record all cassettes (overwrites existing)
-        record_mode = "all"
-    elif os.getenv("CI", "").lower() == "true":
-        # In CI with CI=true: only use existing cassettes, never record
-        record_mode = "none"
-    elif os.getenv("CI", "").lower() == "false":
-        # In CI with CI=false (push to main): record new interactions (for updating cassettes)
-        record_mode = "new_episodes"
-    else:
-        # Locally: record once if missing, then replay
-        record_mode = "once"
+    # Determine VCR record mode based on VCR_MODE environment variable
+    # Possible values:
+    #   - "none": Cassettes only, no recording (PRs in CI)
+    #   - "new_episodes": Record new interactions, replay existing (push to main in CI)
+    #   - "all": Force re-record all cassettes (local override)
+    #   - "once" (default): Record if missing, replay otherwise (local dev)
+    vcr_mode = os.getenv("VCR_MODE", "once").lower()
+
+    # Validate and use the mode
+    valid_modes = ["none", "new_episodes", "all", "once"]
+    record_mode = vcr_mode if vcr_mode in valid_modes else "once"
 
     # Use VCR cassette - named after the test
     cassette_name = f"{request.node.name}.yaml"
