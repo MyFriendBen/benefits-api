@@ -42,6 +42,7 @@ class ValidationResult:
         value: int = 0,
         expected_eligibility: bool = False,
         eligibility: bool = False,
+        notes: str = "",
     ):
         self.white_label = white_label
         self.uuid = uuid
@@ -52,6 +53,7 @@ class ValidationResult:
         self.value = value
         self.expected_eligibility = expected_eligibility
         self.eligibility = eligibility
+        self.notes = notes
 
     def format_url(self):
         front_end_domain = config("FRONTEND_DOMAIN")
@@ -75,7 +77,7 @@ class ValidationResult:
         ]
 
         if self.result == Result.SKIPPED:
-            return wrap_row(link_and_name + [self.sheets_cell("")] * 4)
+            return wrap_row(link_and_name + [self.sheets_cell("")] * 4 + [self.sheets_cell(self.notes)])
 
         return wrap_row(
             link_and_name
@@ -84,6 +86,7 @@ class ValidationResult:
                 self.sheets_cell(self.value, "numberValue"),
                 self.sheets_cell(self.expected_eligibility, "boolValue"),
                 self.sheets_cell(self.eligibility, "boolValue"),
+                self.sheets_cell(self.notes),
             ]
         )
 
@@ -95,9 +98,9 @@ class ValidationResults:
         self.skipped = 0
         self.results: list[ValidationResult] = []
 
-    def skip(self, white_label: str, uuid: str, program_name: str):
+    def skip(self, white_label: str, uuid: str, program_name: str, notes: str = ""):
         self.skipped += 1
-        self.results.append(ValidationResult(white_label, uuid, program_name, Result.SKIPPED))
+        self.results.append(ValidationResult(white_label, uuid, program_name, Result.SKIPPED, notes=notes))
 
     def test(
         self,
@@ -109,6 +112,7 @@ class ValidationResults:
         value: int,
         expected_eligibility: bool,
         eligibility: bool,
+        notes: str = "",
     ):
         if expected_value == value and expected_eligibility == eligibility:
             self.passed += 1
@@ -128,6 +132,7 @@ class ValidationResults:
                 value,
                 expected_eligibility,
                 eligibility,
+                notes,
             )
         )
 
@@ -180,7 +185,7 @@ class Command(BaseCommand):
                 program = self._find_program(validation, results)
 
                 if program is None:
-                    validation_results.skip(white_label, screen.uuid, validation.program_name)
+                    validation_results.skip(white_label, screen.uuid, validation.program_name, validation.notes)
                     continue
 
                 validation_results.test(
@@ -192,6 +197,7 @@ class Command(BaseCommand):
                     program["estimated_value"],
                     validation.eligible,
                     program["eligible"],
+                    validation.notes,
                 )
         validation_results.results.sort(key=lambda r: r.white_label)
 
@@ -208,12 +214,18 @@ class Command(BaseCommand):
         for result in results.results:
             url_and_name = f"{result.format_url()} {result.white_label} {result.program_name}"
             text = f"{url_and_name} {result.format_value_change()}"
+            if result.notes:
+                text = f"{text} | Notes: {result.notes}"
+
             if result.result == Result.PASSED:
                 self.stdout.write(self.style.SUCCESS(text))
             if result.result == Result.FAILED:
                 self.stdout.write(self.style.ERROR(text))
             if result.result == Result.SKIPPED and not hide_skipped:
-                self.stdout.write(f"{url_and_name} Skipped")
+                skipped_text = f"{url_and_name} Skipped"
+                if result.notes:
+                    skipped_text = f"{skipped_text} | Notes: {result.notes}"
+                self.stdout.write(skipped_text)
 
         self.stdout.write(self.style.SUCCESS(f"\nPassed: {results.passed}"))
         self.stdout.write(self.style.ERROR(f"Failed: {results.failed}"))
@@ -221,7 +233,7 @@ class Command(BaseCommand):
             self.stdout.write(f"Skipped: {results.skipped}")
 
     def _google_sheet_display(self, results: ValidationResults, google_sheet_id: str, hide_skipped: bool):
-        column_count = 8
+        column_count = 9
         row_data = [
             wrap_row(
                 [
@@ -233,6 +245,7 @@ class Command(BaseCommand):
                     title_cell("Actual Value"),
                     title_cell("Expected Eligibility"),
                     title_cell("Actual Eligibility"),
+                    title_cell("Notes"),
                 ]
             )
         ]
