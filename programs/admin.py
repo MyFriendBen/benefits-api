@@ -1,11 +1,14 @@
 from django.contrib import admin
+from django.db.models import Max
 from django.urls import reverse
 from django.utils.html import format_html
+from unfold.admin import TabularInline
 from authentication.admin import SecureAdmin
 from .models import (
     LegalStatus,
     Program,
     ProgramCategory,
+    ProgramNavigator,
     UrgentNeed,
     UrgentNeedType,
     CategoryIconName,
@@ -22,6 +25,69 @@ from .models import (
     TranslationOverride,
     ExpenseType,
 )
+
+
+class ProgramNavigatorInline(TabularInline):
+    """
+    Sortable inline for managing Navigator ordering within a Program.
+    Uses Unfold's drag-and-drop sortable functionality.
+    """
+
+    model = ProgramNavigator
+    extra = 0
+    ordering_field = "order"
+    hide_ordering_field = False
+    fields = ["navigator", "order"]
+    autocomplete_fields = ["navigator"]
+
+    def get_queryset(self, request):
+        """Optimize queries with select_related"""
+        qs = super().get_queryset(request)
+        return qs.select_related("navigator", "program")
+
+    def get_formset(self, request, obj=None, **kwargs):
+        """
+        Auto-assign next sequential order to new navigators.
+        Ensures consistent sequential numbering (0, 1, 2, 3...) instead of gaps.
+
+        Edge cases handled:
+        - New program with no navigators: starts at 0
+        - Empty queryset: safely defaults to 0
+        - Multiple concurrent adds: each gets incremented initial value
+        - After drag-and-drop renumbering: continues from max
+        """
+        formset = super().get_formset(request, obj, **kwargs)
+
+        if obj:  # Only for existing programs (not new program creation)
+            try:
+                # Get the highest current order value from existing navigators
+                max_order_result = obj.program_navigators.aggregate(Max("order"))
+                max_order = max_order_result.get("order__max")
+
+                # Set initial value for new items
+                if max_order is not None:
+                    # Continue sequence from highest existing order
+                    formset.form.base_fields["order"].initial = max_order + 1
+                else:
+                    # First navigator for this program
+                    formset.form.base_fields["order"].initial = 0
+            except (AttributeError, KeyError):
+                # Fallback to 0 if anything goes wrong
+                formset.form.base_fields["order"].initial = 0
+
+        return formset
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        """Filter navigators by the program's white label"""
+        if db_field.name == "navigator":
+            obj_id = request.resolver_match.kwargs.get("object_id")
+            if obj_id:
+                try:
+                    program = Program.objects.get(pk=obj_id)
+                    kwargs["queryset"] = Navigator.objects.filter(white_label=program.white_label)
+                except Program.DoesNotExist:
+                    pass
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class ProgramAdmin(SecureAdmin):
@@ -57,6 +123,7 @@ class ProgramAdmin(SecureAdmin):
         "required_programs",
         "excludes_programs",
     ]
+    inlines = [ProgramNavigatorInline]
 
     def has_add_permission(self, request):
         return False
@@ -109,14 +176,17 @@ class NavigatorLanguageAdmin(SecureAdmin):
 class NavigatorAdmin(SecureAdmin):
     search_fields = ("name__translations__text",)
     list_display = ["get_str", "external_name", "action_buttons"]
-    white_label_filter_horizontal = ("programs", "counties")
-    filter_horizontal = ("programs", "counties", "languages")
+    white_label_filter_horizontal = ("counties",)
+    filter_horizontal = ("counties", "languages")
     exclude = [
         "name",
         "email",
         "assistance_link",
         "description",
+        "programs",
+        "programs_ordered",
     ]
+    readonly_fields = ["get_associated_programs"]
 
     def has_add_permission(self, request):
         return False
@@ -126,6 +196,15 @@ class NavigatorAdmin(SecureAdmin):
 
     get_str.admin_order_field = "name"
     get_str.short_description = "Navigator"
+
+    @admin.display(description="Associated Programs")
+    def get_associated_programs(self, obj):
+        """Display programs this navigator is associated with (read-only)"""
+        if not obj.pk:
+            return "-"
+        program_navs = obj.program_navigators.select_related("program").order_by("order")
+        programs = [f"{pn.program.name_abbreviated} (order: {pn.order})" for pn in program_navs]
+        return ", ".join(programs) if programs else "No programs associated"
 
     def action_buttons(self, obj):
         name = obj.name
