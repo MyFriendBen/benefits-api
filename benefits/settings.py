@@ -324,6 +324,9 @@ if REDIS_URL:  # pragma: no cover
                 "CONNECTION_POOL_KWARGS": {
                     "max_connections": 50,
                     "retry_on_timeout": True,
+                    # Disable SSL certificate verification for Heroku Redis
+                    # Heroku Redis uses self-signed certificates
+                    "ssl_cert_reqs": None,
                 },
                 "SOCKET_CONNECT_TIMEOUT": 5,  # seconds
                 "SOCKET_TIMEOUT": 5,  # seconds
