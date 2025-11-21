@@ -1311,12 +1311,43 @@ class NavigatorDataController(ModelDataController["Navigator"]):
             langs.append(lang_instance)
         navigator.languages.set(langs)
 
-        # get programs
         programs = []
-        for external_name in data["programs"]:
+        program_orders = {}
+        for item in data["programs"]:
+            if isinstance(item, str):
+                external_name = item
+                order_value = None
+            else:
+                external_name = item.get("external_name") or item.get("name")
+                order_value = item.get("order") if isinstance(item, dict) else None
+            if not external_name:
+                continue
             program_instance = Program.objects.get(external_name=external_name)
+            if program_instance.white_label_id != navigator.white_label_id:
+                raise self.DeferCreation()
             programs.append(program_instance)
-        navigator.programs.set(programs)
+            if order_value is not None:
+                program_orders[program_instance.id] = order_value
+
+        seen_program_ids = set()
+        for program in programs:
+            if program.id in seen_program_ids:
+                continue
+            seen_program_ids.add(program.id)
+            defaults = {}
+            if program.id in program_orders:
+                defaults["order"] = program_orders[program.id]
+            ProgramNavigator.objects.update_or_create(
+                program=program,
+                navigator=navigator,
+                defaults=defaults,
+            )
+
+        ProgramNavigator.objects.filter(navigator=navigator).exclude(program__in=programs).delete()
+
+        through = Navigator._meta.get_field("programs").remote_field.through
+        if getattr(through, "__name__", str(through)) != "ProgramNavigator":
+            navigator.programs.set(programs)
 
         navigator.save()
 
@@ -1333,7 +1364,20 @@ class Navigator(models.Model):
         blank=False,
         on_delete=models.CASCADE,
     )
-    programs = models.ManyToManyField(Program, related_name="navigator", blank=True)
+    # Old M2M - kept for backward compatibility during migration
+    programs = models.ManyToManyField(
+        Program,
+        related_name="navigator",
+        blank=True,
+        db_table="programs_navigator_programs",
+    )
+    # New M2M with ordering - uses ProgramNavigator through table
+    programs_ordered = models.ManyToManyField(
+        Program,
+        through="ProgramNavigator",
+        related_name="navigators_ordered",
+        blank=True,
+    )
     external_name = models.CharField(max_length=120, blank=True, null=True, unique=True)
     phone_number = PhoneNumberField(blank=True, null=True)
     counties = models.ManyToManyField(County, related_name="navigator", blank=True)
@@ -1375,6 +1419,39 @@ class Navigator(models.Model):
     def __str__(self):
         white_label_name = f"[{self.white_label.name}] " if self.white_label and self.white_label.name else ""
         return f"{white_label_name}{self.name.text}"
+
+
+class ProgramNavigator(models.Model):
+    """
+    Through model for Program-Navigator M2M relationship with ordering support.
+    Enables per-program priority ordering for navigators using drag-and-drop in admin.
+    """
+
+    program = models.ForeignKey(
+        Program,
+        on_delete=models.CASCADE,
+        related_name="program_navigators",
+    )
+    navigator = models.ForeignKey(
+        Navigator,
+        on_delete=models.CASCADE,
+        related_name="program_navigators",
+    )
+    order = models.PositiveIntegerField(
+        default=999,
+        db_index=True,
+        help_text="Lower values appear first. Drag to reorder in admin.",
+    )
+
+    class Meta:
+        ordering = ["order", "id"]
+        unique_together = [["program", "navigator"]]
+        verbose_name = "Program Navigator"
+        verbose_name_plural = "Program Navigators"
+        db_table = "programs_program_navigators_ordered"
+
+    def __str__(self):
+        return f"{self.program.name_abbreviated} - {self.navigator.name.text} (order: {self.order})"
 
 
 class WarningMessageManager(models.Manager):
