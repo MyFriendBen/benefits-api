@@ -96,7 +96,7 @@ heroku releases -a cobenefits-api-staging
 
 **How to release**:
 
-#### Via GitHub UI 
+#### Via GitHub UI (Recommended)
 
 1. Go to [Releases page](https://github.com/MyFriendBen/benefits-api/releases)
 2. Click **"Draft a new release"**
@@ -105,39 +105,95 @@ heroku releases -a cobenefits-api-staging
 5. Set release title: `Release v1.2.3` or descriptive name
 6. Click **"Generate release notes"** (auto-generates changelog from PRs)
 7. Edit notes as needed, add highlights or important changes
-8. Click **"Publish release"**
+8. **Check "Set as a pre-release" if this is a beta/RC**
+9. Click **"Save draft"** (DO NOT click "Publish release" yet)
+
+#### Via GitHub CLI
+
+```bash
+# Create a draft release
+gh release create v1.2.3 \
+  --draft \
+  --title "Release v1.2.3" \
+  --generate-notes
+
+# Or with custom notes
+gh release create v1.2.3 \
+  --draft \
+  --title "Release v1.2.3" \
+  --notes "Description of changes"
+```
 
 ### What Happens Automatically
 
-When you publish a GitHub Release:
+When you create a draft release, the following automated process begins:
 
-1. **Manual approval required** - A designated team member must approve the deployment
+#### Stage 1: Pre-Deployment Validation (runs on draft creation)
+1. **Comprehensive test suite runs with REAL API calls** (`VCR_MODE=all`)
+   - All integration tests make actual calls to external APIs (HUD, Policy Engine, etc.)
+   - Validates that API contracts haven't changed
+   - Ensures all external dependencies are working
+   - Takes 5-10 minutes to complete
+2. **Slack notification sent with test results**
+   - ✅ If tests PASS: "Pre-Release Tests Passed - Ready to publish manually"
+   - ❌ If tests FAIL: "Pre-Release Tests Failed - Review logs and fix issues"
+3. **Release stays as DRAFT** regardless of test results
+4. **You manually review and publish** when ready
+
+#### Stage 2: Production Deployment (runs when you manually publish)
+1. **You click "Publish release"** in GitHub UI (after reviewing test results)
 2. **Code deployment** - Exact code from the release tag is deployed to Heroku Production
 3. **Database migrations** - `python manage.py migrate`
 4. **Configuration updates** - `python manage.py add_config --all`
 5. **Pull validations** - `python manage.py pull_validations` from staging
 6. **Run validations** - `python manage.py validate`
 7. **Sync translations** - Export from production → Save to `mfb-translations` repo → Import to staging
-8. **Slack notifications** - Status updates sent to team
+8. **Slack notifications** - Status updates sent to team at each stage
 
-**Important**: Production deployments require manual approval from a designated reviewer before proceeding. This provides a safety gate to review the release before it goes live.
+**Important**:
+- Tests run automatically on draft creation, but **do not block** manual publishing
+- You have full control over when to publish the release
+- Tests use real API credentials to ensure production-like validation
+- If tests fail, you can still manually publish (not recommended), or fix issues and create a new draft
+- Publishing the release triggers the production deployment
 
 **Workflow file**: [`.github/workflows/deploy-production.yml`](../.github/workflows/deploy-production.yml)
 
 ### Monitoring Production Deployments
 
 ```bash
-# Watch the production deployment
-gh workflow view "Deploy to Production" --web
+# Watch the pre-release tests (after creating draft)
+gh run list --workflow=deploy-production.yml --limit 1
+gh run watch  # Watch the latest run
 
-# Check workflow status
-gh run list --workflow=deploy-production.yml --limit 5
-
-# View logs
+# View test results
 gh run view <RUN_ID> --log
+
+# After manually publishing, watch the deployment
+gh workflow view "Deploy to Production" --web
 
 # Verify on Heroku
 heroku releases -a cobenefits-api
+```
+
+### How to Publish a Release
+
+After creating a draft release and reviewing test results:
+
+**Via GitHub UI:**
+1. Go to the draft release on GitHub
+2. Review the test results notification in Slack
+3. Click **"Edit release"**
+4. Click **"Publish release"**
+5. Deployment to production begins automatically
+
+**Via GitHub CLI:**
+```bash
+# Publish a draft release
+gh release edit v1.2.3 --draft=false
+
+# Or mark as latest and publish
+gh release edit v1.2.3 --draft=false --latest
 ```
 
 ---
@@ -216,16 +272,24 @@ gh pr merge --squash
 # Verify fix on staging
 open https://cobenefits-api-staging.herokuapp.com
 
-# Create patch release immediately
+# Create DRAFT release for testing
 gh release create v1.2.4 \
+  --draft \
   --title "Hotfix v1.2.4" \
   --notes "
 ## Hotfix
 - Fixed critical bug in eligibility calculation
 
 This is a hotfix release to address a critical issue in production.
-" \
-  --latest
+"
+
+# Monitor the pre-deployment tests
+gh run watch
+
+# After tests pass, manually publish the release
+gh release edit v1.2.4 --draft=false
+
+# If extremely urgent and tests are failing, you can publish anyway (not recommended)
 ```
 
 ---
@@ -302,6 +366,111 @@ gh release create v1.2.4 \
   --notes "Reverts changes from v1.2.3 due to production issues" \
   --latest
 ```
+
+---
+
+## Integration Testing Strategy (VCR)
+
+### Overview
+
+The codebase uses [VCR.py](https://vcrpy.readthedocs.io/) to record and replay HTTP interactions with external APIs (HUD, Policy Engine, etc.). This provides:
+- **Fast test execution** by replaying recorded API responses (cassettes)
+- **Cost savings** by reducing actual API calls
+- **Deterministic tests** that work offline
+- **API contract validation** when re-recording cassettes
+
+### VCR Modes Across Workflows
+
+Different workflows use different VCR modes based on their validation needs:
+
+| Workflow | VCR Mode | Uses Real APIs? | Purpose |
+|----------|----------|-----------------|---------|
+| **PR Tests** | `new_episodes` (default) | Only for new tests | Fast feedback on PRs |
+| **Staging Deploy** | `new_episodes` (default) | Only for new tests | Quick validation before staging |
+| **Production Deploy** | `all` | ✅ YES - All tests | Comprehensive validation |
+
+### What Happens in Each Mode
+
+#### `new_episodes` Mode (PR & Staging)
+- Uses existing cassette recordings when available
+- Only makes real API calls if:
+  - A cassette doesn't exist yet
+  - A new test scenario is added
+- **Fast**: Typically 1-2 minutes for full test suite
+- **Cost-effective**: Minimal API usage
+
+#### `all` Mode (Production Pre-Deployment)
+- **Re-records ALL cassettes** with real API calls
+- Validates that external API contracts haven't changed
+- Catches breaking changes from third-party APIs
+- **Slower**: 5-10 minutes for full test suite
+- **Thorough**: Production-level validation
+
+### When Tests Fail
+
+#### PR/Staging Test Failures
+If tests fail during PR or staging deployment:
+1. Fix the code issue
+2. Push changes
+3. Tests automatically re-run with cassettes
+
+#### Production Pre-Deployment Test Failures
+If real API tests fail during draft release creation:
+1. **Release stays in draft** - not published
+2. **Deployment does NOT proceed** - production is protected
+3. Investigate the failure:
+   - Check workflow logs: `gh run view <RUN_ID> --log`
+   - Look for API authentication errors
+   - Check for API contract changes
+4. Fix the issue and create a new draft release
+
+Common reasons for production test failures:
+- External API is down or rate-limiting
+- API credentials expired or invalid
+- API contract changed (breaking change from provider)
+- Test environment configuration issue
+
+### Updating VCR Cassettes
+
+When external APIs change or new integration tests are added, cassettes need updating:
+
+```bash
+# Run tests locally with VCR_MODE=all to re-record all cassettes
+VCR_MODE=all pytest
+
+# Or record only new episodes
+pytest  # Uses new_episodes mode by default
+
+# Commit updated cassettes
+git add tests/cassettes/
+git commit -m "chore: update VCR cassettes for API changes"
+```
+
+**Important**: Cassettes automatically scrub sensitive data (tokens, API keys) before being committed to the repository.
+
+### Required API Credentials for Production Tests
+
+The production pre-deployment workflow requires these API credentials to be set as GitHub secrets:
+
+- `HUD_API_TOKEN` - Required for HUD API integration tests
+- Add additional API tokens as your integration tests grow
+
+Without these tokens, production pre-deployment tests will fail.
+
+### Troubleshooting VCR Issues
+
+**"No cassette found" errors**:
+- Run tests locally to generate cassette: `pytest path/to/test.py`
+- Commit the new cassette file
+
+**"Cassette has no matching request" errors**:
+- API request changed (URL, headers, body)
+- Re-record cassette: `VCR_MODE=all pytest path/to/test.py`
+
+**Production tests failing with authentication errors**:
+- Verify GitHub secret is set: `gh secret list`
+- Check token hasn't expired
+- Verify token has correct API permissions
 
 ---
 
@@ -412,14 +581,24 @@ These secrets are configured in the repository settings and used by the deployme
 **Location**: `https://github.com/MyFriendBen/benefits-api/settings/secrets/actions`
 
 ### Current Secrets
+
+#### Heroku Deployment
 - `HEROKU_API_KEY` - Heroku authentication token
 - `HEROKU_STAGING_APP_NAME` - Set to `cobenefits-api-staging`
 - `HEROKU_PROD_APP_NAME` - Set to `cobenefits-api`
 - `HEROKU_STAGING_URL` - Set to `https://cobenefits-api-staging.herokuapp.com`
 - `HEROKU_EMAIL` - Email associated with Heroku account
+
+#### Notifications & Monitoring
 - `SLACK_WEBHOOK_URL` - Webhook for deployment notifications
-- `TRANSLATIONS_REPO_TOKEN` - GitHub Personal Access Token with repo permissions for `mfb-translations`
 - `VALIDATION_SHEET_ID` - Google Sheets ID for validation results (e.g., `1JRsCKm9KeeatVoW3wjsT2YqSy63js53Ib3vivK5NFYY`)
+
+#### External API Integrations (for production pre-deployment tests)
+- `HUD_API_TOKEN` - HUD API authentication token (required for real API integration tests)
+- Add other API tokens as needed for integration tests
+
+#### Translations
+- `TRANSLATIONS_REPO_TOKEN` - GitHub Personal Access Token with repo permissions for `mfb-translations`
 
 ### Verifying Secrets
 
@@ -512,6 +691,7 @@ If you need to regenerate the `TRANSLATIONS_REPO_TOKEN`:
 - [ ] Correct semantic version chosen
 - [ ] Database migration plan reviewed (if needed)
 - [ ] Rollback plan ready
+- [ ] VCR cassettes updated if API contracts changed (tests will validate)
 
 ### After Production Deployment
 - [ ] Verify app is running: `heroku ps -a cobenefits-api`
