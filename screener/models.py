@@ -726,6 +726,7 @@ class HouseholdMember(models.Model):
 class IncomeStream(models.Model):
     screen = models.ForeignKey(Screen, related_name="income_streams", on_delete=models.CASCADE)
     household_member = models.ForeignKey(HouseholdMember, related_name="income_streams", on_delete=models.CASCADE)
+    category = models.CharField(max_length=30, blank=True, null=True)
     type = models.CharField(max_length=30, blank=True, null=True)
     amount = models.DecimalField(decimal_places=2, max_digits=10, blank=True, null=True)
     frequency = models.CharField(max_length=30, blank=True, null=True)

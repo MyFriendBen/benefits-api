@@ -139,6 +139,13 @@ class Command(BaseCommand):
                 defaults={"data": WhiteLabelData.referral_options, "active": True},
             )
 
+            # Save income_categories to database
+            Configuration.objects.update_or_create(
+                name="income_categories",
+                white_label=white_label,
+                defaults={"data": WhiteLabelData.income_categories, "active": True},
+            )
+
             # Save income_options to database
             Configuration.objects.update_or_create(
                 name="income_options",
