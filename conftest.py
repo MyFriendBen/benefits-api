@@ -3,7 +3,7 @@ Pytest configuration for integration tests with VCR.
 
 This module configures VCR (Video Cassette Recorder) to record and replay
 HTTP interactions during tests. It automatically scrubs sensitive information
-from cassettes to prevent accidental credential leaks.
+from cassettes using VCR's built-in filtering capabilities.
 
 VCR behavior controlled by VCR_MODE environment variable:
 - VCR_MODE=new_episodes (PRs): Records new interactions only, replays existing cassettes
@@ -14,11 +14,14 @@ VCR behavior controlled by VCR_MODE environment variable:
 All integration tests marked with @pytest.mark.integration automatically use VCR.
 """
 
+import logging
 import os
 import re
 import pytest
 import vcr as vcrpy
 from decouple import config
+
+logger = logging.getLogger(__name__)
 
 
 # Sensitive headers to redact in VCR cassettes
@@ -33,131 +36,87 @@ SENSITIVE_HEADERS = [
     "set-cookie",
 ]
 
+# Sensitive query parameters to redact
+SENSITIVE_QUERY_PARAMS = [
+    "api_key",
+    "apikey",
+    "token",
+    "auth",
+    "api-key",
+]
 
-def scrub_sensitive_data(response):
+# Sensitive POST data parameters to redact
+SENSITIVE_POST_PARAMS = [
+    "api_key",
+    "apiKey",
+    "token",
+    "access_token",
+    "refresh_token",
+    "id_token",
+    "client_secret",
+    "secret",
+    "password",
+]
+
+
+def scrub_response_body(response):
     """
-    Scrub sensitive data from VCR cassettes.
+    Scrub sensitive data from response bodies that VCR can't auto-detect.
 
-    This function redacts:
-    - Authorization headers
-    - API keys in headers
-    - API keys in request/response bodies
-    - Tokens in URLs and bodies (access, refresh, ID tokens)
-    - Client secrets and credentials
-    - Sensitive data in error responses
-    - Email addresses and PII in error messages
+    This handles dynamic patterns in response bodies:
+    - Bearer tokens in Authorization header values within JSON
+    - Email addresses (PII) in error messages
+    - IP addresses in error messages
+    - File paths and stack traces in error responses
+
+    VCR's built-in filters already handle:
+    - Headers (via filter_headers)
+    - Query parameters (via filter_query_parameters)
+    - POST data (via filter_post_data_parameters)
 
     Args:
         response: VCR response object
 
     Returns:
-        Modified response with sensitive data redacted
+        Modified response with sensitive data redacted, or None to skip recording
     """
-    # Scrub headers
-    if "headers" in response:
-        for header in response["headers"]:
-            if header.lower() in SENSITIVE_HEADERS:
-                response["headers"][header] = ["REDACTED"]
+    if "body" not in response or "string" not in response["body"]:
+        return response
 
-    # Scrub body content (if it's a string)
-    if "body" in response and "string" in response["body"]:
-        body = response["body"]["string"]
-        if isinstance(body, bytes):
-            body_str = body.decode("utf-8", errors="ignore")
-        else:
-            body_str = body
+    body = response["body"]["string"]
+    if isinstance(body, bytes):
+        body_str = body.decode("utf-8", errors="ignore")
+    else:
+        body_str = body
 
-        # Enhanced patterns for tokens/keys in bodies
-        patterns = [
-            # API keys and tokens
-            (r'"api_key"\s*:\s*"[^"]*"', '"api_key": "REDACTED"'),
-            (r'"apiKey"\s*:\s*"[^"]*"', '"apiKey": "REDACTED"'),
-            (r'"token"\s*:\s*"[^"]*"', '"token": "REDACTED"'),
-            (r'"access_token"\s*:\s*"[^"]*"', '"access_token": "REDACTED"'),
-            (r'"refresh_token"\s*:\s*"[^"]*"', '"refresh_token": "REDACTED"'),
-            (r'"id_token"\s*:\s*"[^"]*"', '"id_token": "REDACTED"'),
-            (r'"authorization"\s*:\s*"[^"]*"', '"authorization": "REDACTED"'),
-            (r'"client_secret"\s*:\s*"[^"]*"', '"client_secret": "REDACTED"'),
-            (r'"secret"\s*:\s*"[^"]*"', '"secret": "REDACTED"'),
-            (r'"password"\s*:\s*"[^"]*"', '"password": "REDACTED"'),
-            # Bearer tokens in various formats
-            (r"Bearer\s+[A-Za-z0-9\-._~+/]+=*", "Bearer REDACTED"),
-            # Email addresses (PII in error messages)
-            (r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", "user@REDACTED.com"),
-            # IP addresses in error messages
-            (r"\b(?:\d{1,3}\.){3}\d{1,3}\b", "XXX.XXX.XXX.XXX"),
-        ]
+    # Only scrub patterns that VCR can't handle with built-in filters
+    patterns = [
+        # Bearer tokens embedded in response bodies (e.g., JSON with auth info)
+        (r"Bearer\s+[A-Za-z0-9\-._~+/]+=*", "Bearer REDACTED"),
+        # Email addresses (PII in error messages)
+        (r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", "user@REDACTED.com"),
+        # IP addresses in error messages
+        (r"\b(?:\d{1,3}\.){3}\d{1,3}\b", "XXX.XXX.XXX.XXX"),
+    ]
 
-        for pattern, replacement in patterns:
-            body_str = re.sub(pattern, replacement, body_str, flags=re.IGNORECASE)
+    for pattern, replacement in patterns:
+        body_str = re.sub(pattern, replacement, body_str, flags=re.IGNORECASE)
 
-        # Sanitize error response bodies (preserve error structure but remove sensitive details)
-        # Check if this is an error response (status >= 400)
-        if "status" in response and "code" in response["status"]:
-            status_code = response["status"]["code"]
-            if status_code >= 400:
-                # Scrub stack traces and internal paths from error responses
-                body_str = re.sub(r'File "([^"]*)"', 'File "REDACTED"', body_str)
-                # Scrub internal server paths
-                body_str = re.sub(r"(/[a-zA-Z0-9_\-./]+/[a-zA-Z0-9_\-./]+)", "REDACTED_PATH", body_str)
+    # Scrub error response details (status >= 400)
+    if "status" in response and "code" in response["status"]:
+        status_code = response["status"]["code"]
+        if status_code >= 400:
+            # Scrub stack traces and internal paths
+            body_str = re.sub(r'File "([^"]*)"', 'File "REDACTED"', body_str)
+            body_str = re.sub(r"(/[a-zA-Z0-9_\-./]+/[a-zA-Z0-9_\-./]+)", "REDACTED_PATH", body_str)
 
-        # Convert back to bytes if original was bytes
-        if isinstance(body, bytes):
-            response["body"]["string"] = body_str.encode("utf-8")
-        else:
-            response["body"]["string"] = body_str
+    # Convert back to original type
+    if isinstance(body, bytes):
+        response["body"]["string"] = body_str.encode("utf-8")
+    else:
+        response["body"]["string"] = body_str
 
     return response
-
-
-def scrub_request(request):
-    """
-    Scrub sensitive data from VCR request recordings.
-
-    Args:
-        request: VCR request object
-
-    Returns:
-        Modified request with sensitive data redacted
-    """
-    # Scrub query parameters that might contain keys from URI
-    if hasattr(request, "uri"):
-        # Remove API keys from query strings
-        request.uri = re.sub(
-            r"([?&])(api[_-]?key|token|auth)=[^&]*", r"\1\2=REDACTED", request.uri, flags=re.IGNORECASE
-        )
-
-    # Scrub headers
-    if hasattr(request, "headers"):
-        for header in request.headers:
-            if header.lower() in SENSITIVE_HEADERS:
-                request.headers[header] = "REDACTED"
-
-    # Scrub body if present
-    if hasattr(request, "body") and request.body:
-        body = request.body
-        if isinstance(body, bytes):
-            body_str = body.decode("utf-8", errors="ignore")
-        elif isinstance(body, str):
-            body_str = body
-        else:
-            return request
-
-        # Replace tokens in body
-        patterns = [
-            (r'"api_key"\s*:\s*"[^"]*"', '"api_key": "REDACTED"'),
-            (r'"token"\s*:\s*"[^"]*"', '"token": "REDACTED"'),
-        ]
-
-        for pattern, replacement in patterns:
-            body_str = re.sub(pattern, replacement, body_str, flags=re.IGNORECASE)
-
-        if isinstance(body, bytes):
-            request.body = body_str.encode("utf-8")
-        else:
-            request.body = body_str
-
-    return request
 
 
 @pytest.fixture(scope="module")
@@ -182,32 +141,18 @@ def vcr_config(request):
         "cassette_library_dir": cassette_dir,
         "record_mode": "once",  # Record once, then replay. Use 'new_episodes' to add new interactions
         "match_on": ["method", "scheme", "host", "port", "path", "query"],
+        # Use VCR's built-in filtering for headers, query params, and POST data
         "filter_headers": SENSITIVE_HEADERS,
-        "filter_query_parameters": [
-            "api_key",
-            "apikey",
-            "token",
-            "auth",
-        ],
-        "before_record_request": scrub_request,
-        "before_record_response": scrub_sensitive_data,
+        "filter_query_parameters": SENSITIVE_QUERY_PARAMS,
+        "filter_post_data_parameters": SENSITIVE_POST_PARAMS,
+        # Only use custom scrubbing for response body patterns VCR can't auto-detect
+        "before_record_response": scrub_response_body,
         "decode_compressed_response": True,  # Auto-decompress gzipped responses
     }
 
 
-@pytest.fixture(scope="module")
-def vcr_instance(vcr_config):
-    """
-    Create a VCR instance with our configuration.
-
-    Returns:
-        VCR: Configured VCR instance
-    """
-    return vcrpy.VCR(**vcr_config)
-
-
 @pytest.fixture(autouse=True)
-def auto_vcr(request, vcr_instance):
+def auto_vcr(request, vcr_config):
     """
     Automatically apply VCR to integration tests.
 
@@ -224,7 +169,7 @@ def auto_vcr(request, vcr_instance):
 
     Args:
         request: pytest request object
-        vcr_instance: Configured VCR instance
+        vcr_config: VCR configuration dict
     """
     marker = request.node.get_closest_marker("integration")
 
@@ -245,9 +190,13 @@ def auto_vcr(request, vcr_instance):
     valid_modes = ["none", "new_episodes", "all", "once"]
     record_mode = vcr_mode if vcr_mode in valid_modes else "once"
 
-    # Use VCR cassette - named after the test
+    # Log VCR configuration for visibility in CI
+    logger.info(f"VCR mode: {record_mode} | Test: {request.node.name}")
+
+    # Create VCR instance and use cassette
+    vcr = vcrpy.VCR(**vcr_config)
     cassette_name = f"{request.node.name}.yaml"
-    with vcr_instance.use_cassette(cassette_name, record_mode=record_mode):
+    with vcr.use_cassette(cassette_name, record_mode=record_mode):
         yield
 
 
