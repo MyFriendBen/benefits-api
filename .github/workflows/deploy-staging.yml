@@ -3,10 +3,76 @@ name: Deploy to Staging
 on:
   push:
     branches:
-      - dev
+      - main
 
 jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      SECRET_KEY: django-insecure-test-key-ci-github-actions-only
+      DJANGO_SETTINGS_MODULE: benefits.settings
+      DB_NAME: test_benefits_db
+      DB_USER: postgres
+      DB_PASS: postgres
+      DB_HOST: localhost
+      DB_PORT: 5432
+      ENABLE_GOOGLE_INTEGRATIONS: false
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: test_benefits_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d test_benefits_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Django system checks
+        run: python manage.py check --fail-level WARNING
+
+      - name: Run migrations
+        run: python manage.py migrate --noinput
+
+      - name: Run tests
+        run: pytest --cov --cov-branch --verbosity=2
+
+  lint:
+    name: Check Formatting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: psf/black@stable
+        with:
+          options: --check --verbose
+          src: .
+
   deploy:
+    needs: [test, lint]
     name: Deploy Backend to Heroku Staging
     runs-on: ubuntu-latest
 
@@ -77,9 +143,10 @@ jobs:
           STATUS=$?
           set -e
           echo "$OUTPUT"
-          echo "migrations_output<<EOF" >> $GITHUB_OUTPUT
+          DELIMITER="EOF_$(date +%s)"
+          echo "migrations_output<<${DELIMITER}" >> $GITHUB_OUTPUT
           echo "$OUTPUT" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "${DELIMITER}" >> $GITHUB_OUTPUT
 
           if [ $STATUS -ne 0 ] && echo "$OUTPUT" | grep -q "Conflicting migrations detected"; then
             echo "Migration conflict detected. Auto-merge on Heroku is not supported (slug is read-only)."
@@ -99,9 +166,10 @@ jobs:
           echo "Adding configurations..."
           OUTPUT=$(heroku run -a ${{ secrets.HEROKU_STAGING_APP_NAME }} "python manage.py add_config --all" 2>&1)
           echo "$OUTPUT"
-          echo "config_output<<EOF" >> $GITHUB_OUTPUT
+          DELIMITER="EOF_$(date +%s)"
+          echo "config_output<<${DELIMITER}" >> $GITHUB_OUTPUT
           echo "$OUTPUT" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "${DELIMITER}" >> $GITHUB_OUTPUT
 
       - name: Run validations
         if: success()
@@ -111,11 +179,12 @@ jobs:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: |
           echo "Running validations..."
-          OUTPUT=$(heroku run -a ${{ secrets.HEROKU_STAGING_APP_NAME }} "python manage.py validate --sheet-id 1JRsCKm9KeeatVoW3wjsT2YqSy63js53Ib3vivK5NFYY" 2>&1)
+          OUTPUT=$(heroku run -a ${{ secrets.HEROKU_STAGING_APP_NAME }} "python manage.py validate --sheet-id ${{ secrets.VALIDATION_SHEET_ID }}" 2>&1)
           echo "$OUTPUT"
-          echo "validation_output<<EOF" >> $GITHUB_OUTPUT
+          DELIMITER="EOF_$(date +%s)"
+          echo "validation_output<<${DELIMITER}" >> $GITHUB_OUTPUT
           echo "$OUTPUT" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "${DELIMITER}" >> $GITHUB_OUTPUT
 
       - name: Send final status to Slack
         if: ${{ !failure() }}
