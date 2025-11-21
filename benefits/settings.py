@@ -307,6 +307,40 @@ if config("SENTRY_DSN", None) is not None:
 
 django_heroku.settings(locals())
 
+# Cache Configuration
+# Redis cache backend for Heroku with fallback to in-memory cache
+# Heroku Redis automatically sets REDIS_URL when the add-on is provisioned
+REDIS_URL = config("REDIS_URL", default=None)
+
+if REDIS_URL:  # pragma: no cover
+    # Use Redis cache when REDIS_URL is available (production/staging)
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_URL,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                # Connection pool settings (good for production with multiple dynos)
+                "CONNECTION_POOL_KWARGS": {
+                    "max_connections": 50,
+                    "retry_on_timeout": True,
+                },
+                "SOCKET_CONNECT_TIMEOUT": 5,  # seconds
+                "SOCKET_TIMEOUT": 5,  # seconds
+            },
+            "KEY_PREFIX": "benefits",  # Namespace for all cache keys
+            "TIMEOUT": 300,  # Default timeout: 5 minutes (override per cache.set() call)
+        }
+    }
+else:  # pragma: no cover
+    # Fallback to in-memory cache for local development without Redis
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "benefits-cache",
+            "TIMEOUT": 300,
+        }
+    }
 
 # UNFOLD SETTINGS
 UNFOLD = {
