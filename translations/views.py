@@ -16,6 +16,8 @@ from django.http import (
 )
 from django.db.models import ProtectedError
 from django.db import models
+from sentry_sdk import capture_exception
+import traceback
 from programs.models import (
     Program,
     Navigator,
@@ -39,12 +41,38 @@ class TranslationView(views.APIView):
         language = request.query_params.get("lang")
         all_langs = [lang["code"] for lang in settings.PARLER_LANGUAGES[None]]
 
-        if language in all_langs:
-            translations = Translation.objects.all_translations([language])
-        else:
-            translations = Translation.objects.all_translations()
+        try:
+            if language in all_langs:
+                translations = Translation.objects.all_translations([language])
+            else:
+                translations = Translation.objects.all_translations()
 
-        return Response(translations)
+            return Response(translations)
+        except Exception as _:
+            # Cache is likely empty or corrupted, force rebuild and retry once
+            Translation.objects.translation_cache.invalid = True
+            try:
+                if language in all_langs:
+                    translations = Translation.objects.all_translations([language])
+                else:
+                    translations = Translation.objects.all_translations()
+                return Response(translations)
+            except Exception as retry_error:
+                # Capture the exception to Sentry for monitoring
+                capture_exception(retry_error)
+
+                # Return appropriate error response
+                error_response = {
+                    "error": "Translations temporarily unavailable",
+                    "error_type": type(retry_error).__name__,
+                    "message": str(retry_error),
+                }
+
+                # Add traceback in debug mode
+                if settings.DEBUG:
+                    error_response["traceback"] = traceback.format_exc()
+
+                return Response(error_response, status=503)
 
 
 class NewTranslationForm(forms.Form):
