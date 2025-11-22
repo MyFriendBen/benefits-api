@@ -1,0 +1,20 @@
+# VCR Cassettes - Safe to commit (sensitive data is automatically scrubbed)
+#
+# These cassettes contain recorded HTTP interactions with sensitive
+# information automatically redacted by our conftest.py configuration.
+#
+# We commit cassettes to:
+# - Speed up CI (no need for API credentials)
+# - Allow tests to run without external API access
+# - Provide reproducible test results
+
+# By default, include all cassette files
+!*.yaml
+!*.json
+
+# If you need to regenerate cassettes:
+# 1. Delete the cassette file
+# 2. Set HUD_API_TOKEN in your .env
+# 3. Run: pytest -m integration <path_to_test>
+# 4. Review the new cassette to ensure no sensitive data leaked
+# 5. Commit the updated cassette

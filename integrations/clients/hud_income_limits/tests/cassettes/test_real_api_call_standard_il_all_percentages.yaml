@@ -1,0 +1,204 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.32.5
+    method: GET
+    uri: https://www.huduser.gov/hudapi/public/fmr/listCounties/IL?updated=2025&year=2025
+  response:
+    body:
+      string: '[{"state_code":"IL","fips_code":"1700199999","cntyname":"Adams County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1700399999","cntyname":"Alexander
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1700599999","cntyname":"Bond
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1700799999","cntyname":"Boone
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1700999999","cntyname":"Brown
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1701199999","cntyname":"Bureau
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1701399999","cntyname":"Calhoun
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1701599999","cntyname":"Carroll
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1701799999","cntyname":"Cass
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1701999999","cntyname":"Champaign
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1702199999","cntyname":"Christian
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1702399999","cntyname":"Clark
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1702599999","cntyname":"Clay
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1702799999","cntyname":"Clinton
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1702999999","cntyname":"Coles
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1703199999","cntyname":"Cook
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1703399999","cntyname":"Crawford
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1703599999","cntyname":"Cumberland
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1703999999","cntyname":"De
+        Witt County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1703799999","cntyname":"DeKalb
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1704199999","cntyname":"Douglas
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1704399999","cntyname":"DuPage
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1704599999","cntyname":"Edgar
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1704799999","cntyname":"Edwards
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1704999999","cntyname":"Effingham
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1705199999","cntyname":"Fayette
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1705399999","cntyname":"Ford
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1705599999","cntyname":"Franklin
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1705799999","cntyname":"Fulton
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1705999999","cntyname":"Gallatin
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1706199999","cntyname":"Greene
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1706399999","cntyname":"Grundy
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1706599999","cntyname":"Hamilton
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1706799999","cntyname":"Hancock
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1706999999","cntyname":"Hardin
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1707199999","cntyname":"Henderson
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1707399999","cntyname":"Henry
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1707599999","cntyname":"Iroquois
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1707799999","cntyname":"Jackson
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1707999999","cntyname":"Jasper
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1708199999","cntyname":"Jefferson
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1708399999","cntyname":"Jersey
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1708599999","cntyname":"Jo
+        Daviess County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1708799999","cntyname":"Johnson
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1708999999","cntyname":"Kane
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1709199999","cntyname":"Kankakee
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1709399999","cntyname":"Kendall
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1709599999","cntyname":"Knox
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1709999999","cntyname":"La
+        Salle County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1709799999","cntyname":"Lake
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1710199999","cntyname":"Lawrence
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1710399999","cntyname":"Lee
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1710599999","cntyname":"Livingston
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1710799999","cntyname":"Logan
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1711599999","cntyname":"Macon
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1711799999","cntyname":"Macoupin
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1711999999","cntyname":"Madison
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1712199999","cntyname":"Marion
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1712399999","cntyname":"Marshall
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1712599999","cntyname":"Mason
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1712799999","cntyname":"Massac
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1710999999","cntyname":"McDonough
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1711199999","cntyname":"McHenry
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1711399999","cntyname":"McLean
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1712999999","cntyname":"Menard
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1713199999","cntyname":"Mercer
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1713399999","cntyname":"Monroe
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1713599999","cntyname":"Montgomery
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1713799999","cntyname":"Morgan
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1713999999","cntyname":"Moultrie
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1714199999","cntyname":"Ogle
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1714399999","cntyname":"Peoria
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1714599999","cntyname":"Perry
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1714799999","cntyname":"Piatt
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1714999999","cntyname":"Pike
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1715199999","cntyname":"Pope
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1715399999","cntyname":"Pulaski
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1715599999","cntyname":"Putnam
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1715799999","cntyname":"Randolph
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1715999999","cntyname":"Richland
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1716199999","cntyname":"Rock
+        Island County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1716599999","cntyname":"Saline
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1716799999","cntyname":"Sangamon
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1716999999","cntyname":"Schuyler
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1717199999","cntyname":"Scott
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1717399999","cntyname":"Shelby
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1716399999","cntyname":"St.
+        Clair County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1717599999","cntyname":"Stark
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1717799999","cntyname":"Stephenson
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1717999999","cntyname":"Tazewell
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1718199999","cntyname":"Union
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1718399999","cntyname":"Vermilion
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1718599999","cntyname":"Wabash
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1718799999","cntyname":"Warren
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1718999999","cntyname":"Washington
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1719199999","cntyname":"Wayne
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1719399999","cntyname":"White
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1719599999","cntyname":"Whiteside
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1719799999","cntyname":"Will
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1719999999","cntyname":"Williamson
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1720199999","cntyname":"Winnebago
+        County","town_name":"","category":"County"},{"state_code":"IL","fips_code":"1720399999","cntyname":"Woodford
+        County","town_name":"","category":"County"}]'
+    headers:
+      Access-Control-Allow-Headers:
+      - Origin, X-Requested-With, Content-Type, Accept, Authorization
+      Access-Control-Allow-Origin:
+      - '*'
+      Cache-Control:
+      - no-cache, private
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '10985'
+      Content-Security-Policy:
+      - form-action 'self';
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 19 Nov 2025 22:58:00 GMT
+      Set-Cookie:
+      - REDACTED
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-RateLimit-Limit:
+      - '100'
+      X-RateLimit-Remaining:
+      - '84'
+      X-XSS-Protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.32.5
+    method: GET
+    uri: https://www.huduser.gov/hudapi/public/il/data/1703199999?year=2025
+  response:
+    body:
+      string: '{"data":{"county_name":"Cook County, IL","counties_msa":"","town_name":"","metro_status":"1.0","metro_name":"Chicago-Naperville-Elgin,
+        IL-IN","area_name":"Chicago-Joliet-Naperville, IL HUD Metro FMR Area","year":"2025","median_income":119900,"very_low":{"il50_p1":42000,"il50_p2":48000,"il50_p3":54000,"il50_p4":59950,"il50_p5":64750,"il50_p6":69550,"il50_p7":74350,"il50_p8":79150},"extremely_low":{"il30_p1":25200,"il30_p2":28800,"il30_p3":32400,"il30_p4":35950,"il30_p5":38850,"il30_p6":43150,"il30_p7":48650,"il30_p8":54150},"low":{"il80_p1":67150,"il80_p2":76750,"il80_p3":86350,"il80_p4":95900,"il80_p5":103600,"il80_p6":111250,"il80_p7":118950,"il80_p8":126600}}}'
+    headers:
+      Access-Control-Allow-Headers:
+      - Origin, X-Requested-With, Content-Type, Accept, Authorization
+      Access-Control-Allow-Origin:
+      - '*'
+      Cache-Control:
+      - no-cache, private
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '670'
+      Content-Security-Policy:
+      - form-action 'self';
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 19 Nov 2025 22:58:01 GMT
+      Set-Cookie:
+      - REDACTED
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-RateLimit-Limit:
+      - '100'
+      X-RateLimit-Remaining:
+      - '83'
+      X-XSS-Protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+version: 1
