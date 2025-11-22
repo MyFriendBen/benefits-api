@@ -49,7 +49,7 @@ class TestFirstStepSavings(TestCase):
             county="Denver County",
             household_size=3,
             household_assets=0,
-            needs_savings=True,  # Household interested in savings
+            needs_college_savings=True,  # Household interested in savings
             completed=False,
         )
 
@@ -122,8 +122,8 @@ class TestFirstStepSavings(TestCase):
 
     def test_not_eligible_no_savings_interest(self):
         """Test ineligibility when household hasn't expressed interest in savings"""
-        # Set needs_savings to False
-        self.screen.needs_savings = False
+        # Set needs_college_savings to False
+        self.screen.needs_college_savings = False
         self.screen.save()
 
         # Add an eligible child
@@ -236,7 +236,7 @@ class TestFirstStepSavingsNotifiable(TestCase):
             county="Denver County",
             household_size=3,
             household_assets=0,
-            needs_savings=True,
+            needs_college_savings=True,
             completed=False,
         )
 
