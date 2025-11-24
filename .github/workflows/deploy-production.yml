@@ -65,48 +65,6 @@ jobs:
       - name: Run tests with real API calls
         run: pytest --cov --cov-branch --verbosity=2
 
-      - name: Send test results notification to Slack
-        if: always()
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        run: |
-          if [ "${{ job.status }}" == "success" ]; then
-            EMOJI="✅"
-            STATUS_TEXT="Pre-Release Tests Passed"
-            MESSAGE="All tests passed with real API calls. The draft release is ready to be published manually."
-          else
-            EMOJI="❌"
-            STATUS_TEXT="Pre-Release Tests Failed"
-            MESSAGE="Tests failed. Please review the logs, fix issues, and create a new draft release."
-          fi
-
-          payload=$(jq -n \
-            --arg emoji "$EMOJI" \
-            --arg status_text "$STATUS_TEXT" \
-            --arg message "$MESSAGE" \
-            --arg tag "${{ github.event.release.tag_name }}" \
-            --arg name "${{ github.event.release.name }}" \
-            --arg release_url "${{ github.event.release.html_url }}" \
-            --arg repo "${{ github.repository }}" \
-            --arg run_id "${{ github.run_id }}" \
-            '{
-              text: "\($emoji) \($status_text)",
-              blocks: [
-                {type: "header", text: {type: "plain_text", text: "\($emoji) \($status_text)"}},
-                {type: "section", fields: [
-                  {type: "mrkdwn", text: "*Draft Release:*\n<\($release_url)|\($tag)>"},
-                  {type: "mrkdwn", text: "*Name:*\n\($name)"}
-                ]},
-                {type: "section", text: {type: "mrkdwn", text: "\($message)"}},
-                {type: "section", fields: [
-                  {type: "mrkdwn", text: "*Workflow Logs:*\n<https://github.com/\($repo)/actions/runs/\($run_id)|View Details>"}
-                ]}
-              ]
-            }')
-          curl -X POST "$SLACK_WEBHOOK_URL" \
-            -H 'Content-Type: application/json' \
-            -d "$payload"
-
   deploy:
     if: github.event.action == 'published'
     name: Deploy Backend to Heroku Production
