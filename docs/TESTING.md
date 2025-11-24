@@ -50,10 +50,10 @@ Controlled by the `VCR_MODE` environment variable:
 
 | Environment | VCR_MODE | Behavior | API Calls |
 |------------|----------|----------|-----------|
-| **PRs** | `new_episodes` | Records new interactions only, replays existing cassettes | Only for new interactions |
-| **Push to main** | `all` | Re-records ALL cassettes to verify API interface | ✅ Yes (overwrites all) |
-| **Local (default)** | `once` | Uses cassettes, records if missing | Only if cassette missing |
-| **Strict playback** | `none` | Uses cassettes only, no recording at all | ❌ No |
+| **PRs** | `new_episodes` | **Flexible:** Replays existing interactions. Records new HTTP requests not yet in cassette. | ✅ Yes (only for new HTTP requests) |
+| **Push to main** | `all` | **Fresh start:** Never replays. Re-records ALL cassettes from scratch. | ✅ Yes (overwrites everything) |
+| **Local (default)** | `once` | **Strict:** Replays existing cassettes. **Errors if test makes new HTTP request not in cassette.** | Only if entire cassette file missing |
+| **Strict playback** | `none` | **Read-only:** Replays only. Never records. Errors on any new HTTP requests. | ❌ No (never records) |
 
 ### Running Integration Tests Locally
 

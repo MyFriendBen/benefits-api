@@ -6,10 +6,10 @@ HTTP interactions during tests. It automatically scrubs sensitive information
 from cassettes using VCR's built-in filtering capabilities.
 
 VCR behavior controlled by VCR_MODE environment variable:
-- VCR_MODE=new_episodes (PRs): Records new interactions only, replays existing cassettes
-- VCR_MODE=all (push to main): Re-records ALL cassettes to verify API interface
-- VCR_MODE=once (local default): Records new cassettes if missing, replays existing
-- VCR_MODE=none (strict playback): Uses existing cassettes only, no real API calls
+- VCR_MODE=new_episodes (PRs): Replays existing interactions, records NEW HTTP requests not in cassette
+- VCR_MODE=all (push to main): Never replays, re-records ALL cassettes from scratch
+- VCR_MODE=once (local default): Replays existing interactions, ERRORS if cassette missing new HTTP request
+- VCR_MODE=none (strict playback): Replays only, never records, errors on any new HTTP requests
 
 All integration tests marked with @pytest.mark.integration automatically use VCR.
 """
@@ -159,10 +159,10 @@ def auto_vcr(request, vcr_config):
     This fixture:
     - Detects if a test is marked with @pytest.mark.integration
     - Automatically uses VCR to record/replay HTTP interactions
-    - VCR_MODE=none (PRs): Playback-only mode, uses existing cassettes
-    - VCR_MODE=new_episodes (push to main): Makes real API calls, updates cassettes with new data
-    - VCR_MODE=once (local default): Records new cassettes if missing, replays existing ones
-    - VCR_MODE=all (force re-record): Forces complete re-recording
+    - VCR_MODE=new_episodes (PRs): Flexible - replays existing, records new HTTP requests not yet in cassette
+    - VCR_MODE=all (push to main): Fresh start - never replays, re-records all cassettes from scratch
+    - VCR_MODE=once (local default): Strict - replays existing cassettes, errors if test makes new HTTP request
+    - VCR_MODE=none (strict playback): Read-only - replays only, never records, errors on new HTTP requests
 
     Cassettes are stored in: <test_dir>/cassettes/<test_name>.yaml
     Example: integrations/clients/hud_income_limits/tests/cassettes/test_real_api_call_cook_county_il.yaml
@@ -180,10 +180,10 @@ def auto_vcr(request, vcr_config):
 
     # Determine VCR record mode based on VCR_MODE environment variable
     # Possible values:
-    #   - "new_episodes": Record new interactions only, replay existing (PRs in CI)
-    #   - "all": Re-record all cassettes to verify API interface (push to main in CI)
-    #   - "once" (default): Record if missing, replay otherwise (local dev)
-    #   - "none": Strict playback only, no recording at all
+    #   - "new_episodes": Flexible - replays existing, records new HTTP requests (PRs in CI)
+    #   - "all": Fresh start - never replays, re-records everything from scratch (push to main in CI)
+    #   - "once" (default): Strict - replays existing, errors if cassette missing new HTTP request (local dev)
+    #   - "none": Read-only - replays only, never records, errors on new HTTP requests (strict mode)
     vcr_mode = os.getenv("VCR_MODE", "once").lower()
 
     # Validate and use the mode
