@@ -1,8 +1,18 @@
 name: Tests & Coverage
 
+# This workflow runs tests with different strategies based on the trigger:
+# - PRs to dev/main: VCR_MODE=new_episodes (replays existing, appends new interactions to cassettes)
+# - Pushes to main: VCR_MODE=all (never replays, re-records ALL cassettes from scratch)
+#
+# VCR (Video Cassette Recorder) replays recorded HTTP interactions for fast,
+# deterministic tests. Re-recording all cassettes on push to main ensures the
+# API interface hasn't changed unexpectedly.
+
 on:
   pull_request:
     branches: [ dev, main ]
+  push:
+    branches: [ main ]
 
 jobs:
   test-and-upload-coverage:
@@ -18,6 +28,10 @@ jobs:
       DB_HOST: localhost
       DB_PORT: 5432
       ENABLE_GOOGLE_INTEGRATIONS: false
+      # VCR mode: "new_episodes" for PRs (appends new interactions), "all" for push to main (re-records from scratch)
+      VCR_MODE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'all' || 'new_episodes' }}
+      # Real token for all test runs (VCR intercepts on PRs, real calls on push to main)
+      HUD_API_TOKEN: ${{ secrets.HUD_API_TOKEN }}
 
     services:
       postgres:
@@ -58,8 +72,19 @@ jobs:
       - name: Run migrations
         run: python manage.py migrate --noinput
 
-      - name: Run tests
-        run: pytest --cov --cov-branch --cov-report=xml --verbosity=2
+      - name: Run tests (PRs - replays existing, records new)
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "Running all tests including integration tests with VCR"
+          echo "VCR_MODE=new_episodes: Replays existing interactions, appends new ones to cassettes"
+          pytest --cov --cov-branch --cov-report=xml --verbosity=2 --log-cli-level=INFO
+
+      - name: Run tests (Push to main - re-record from scratch)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "Running all tests with REAL API CALLS - verifying API interface"
+          echo "VCR_MODE=all: Never replays, re-records ALL cassettes from scratch to verify API hasn't changed"
+          pytest --cov --cov-branch --cov-report=xml --verbosity=2 --log-cli-level=INFO
 
       - name: Upload results to Codecov
         uses: codecov/codecov-action@v5
