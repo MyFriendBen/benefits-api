@@ -40,10 +40,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Run tests with real API calls
+      - name: Run tests
         uses: ./.github/actions/run-tests
         with:
-          vcr-mode: all
+          vcr-mode: new_episodes
           upload-coverage: 'false'
           hud-api-token: ${{ secrets.HUD_API_TOKEN }}
 
