@@ -20,6 +20,16 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Validate coverage inputs
+      if: inputs.upload-coverage == 'true'
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.codecov-token }}" ]; then
+          echo "ERROR: codecov-token is required when upload-coverage is true"
+          echo "Please provide a Codecov token to upload coverage results"
+          exit 1
+        fi
+
     - name: Setup Python and Django
       uses: ./.github/actions/setup-python-django
 
