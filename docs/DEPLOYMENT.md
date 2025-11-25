@@ -11,6 +11,54 @@ We use a **trunk-based development** workflow with automated deployments:
 
 ---
 
+## Composite Actions Architecture
+
+Our deployment workflows use **composite actions** to maintain DRY (Don't Repeat Yourself) principles and ensure consistency across all workflows.
+
+### Available Composite Actions
+
+All composite actions are located in `.github/actions/`:
+
+1. **setup-python-django** - Sets up Python 3.10 with pip caching and installs dependencies from `requirements.txt`
+2. **run-django-checks** - Runs Django system checks and database migrations
+3. **deploy-to-heroku** - Installs Heroku CLI and deploys using `akhileshns/heroku-deploy@v3.14.15`
+4. **heroku-post-deploy** - Runs post-deployment scripts (migrations, config, validations)
+5. **slack-notify** - Sends deployment notifications with status (success/failure/in-progress/completed-with-warnings)
+6. **run-tests** - Configurable test execution with VCR modes and optional Codecov upload
+
+### Benefits
+
+- **Consistency**: Same setup steps across all workflows
+- **Maintainability**: Update action logic in one place
+- **Reduced duplication**: Workflows reduced by 36-43% in line count
+- **Reusability**: Actions can be composed together for different workflows
+
+### Workflow Structure
+
+**PR Validation** (`pr-validation.yaml`):
+- Triggers on PRs to `main`
+- Runs tests with VCR `new_episodes` mode
+- Uploads coverage to Codecov
+- Uses: `setup-python-django`, `run-django-checks`, `run-tests`
+
+**Staging Deployment** (`deploy-staging.yml`):
+- Triggers on push to `main`
+- Runs tests with VCR `new_episodes` mode
+- Deploys to Heroku staging
+- Sends Slack notification on failure only
+- Uses: `setup-python-django`, `run-django-checks`, `run-tests`, `deploy-to-heroku`, `slack-notify`
+
+**Production Deployment** (`deploy-production.yml`):
+- Triggers on GitHub Release publication
+- Runs tests with VCR `all` mode (real API calls)
+- Deploys to Heroku production with 30-minute timeout
+- Runs post-deployment scripts
+- Syncs translations to staging
+- Sends comprehensive Slack notifications
+- Uses: All composite actions
+
+---
+
 ## Development Workflow
 
 ### 1. Create Feature Branch
@@ -39,6 +87,24 @@ gh pr create --base main --title "Add new feature" --fill
 # Or use GitHub UI
 ```
 
+**What happens automatically when PR is created**:
+1. **PR Validation workflow runs** (`.github/workflows/pr-validation.yaml`)
+2. **Tests execute** with VCR `new_episodes` mode (uses cached API responses)
+3. **Code coverage uploaded** to Codecov for review
+4. **Status checks must pass** before PR can be merged
+
+**Workflow file**: [`.github/workflows/pr-validation.yaml`](../.github/workflows/pr-validation.yaml)
+
+**Monitoring PR validation**:
+```bash
+# View PR check status
+gh pr checks
+
+# View detailed logs
+gh run list --workflow=pr-validation.yaml --limit 5
+gh run view <RUN_ID> --log
+```
+
 ### 4. Review & Merge
 
 - Get approval from team members
@@ -62,13 +128,13 @@ gh workflow view "Deploy to Staging"
 **Trigger**: Automatically when code is merged to `main`
 
 **What happens automatically**:
-1. **Tests run** - Full test suite with pytest
-2. **Linting checks** - Code formatting validated with Black
+1. **Tests run** - Full test suite with pytest (VCR `new_episodes` mode - uses cached API responses)
+2. **Linting checks** - Code formatting validated with Black (line-length = 120)
 3. **Code deploys to Heroku Staging** (only if tests pass)
 4. Database migrations run (`python manage.py migrate`)
 5. Configurations are added (`python manage.py add_config --all`)
 6. Validations run (`python manage.py validate`)
-7. Slack notification sent with deployment status
+7. Slack notification sent on failure only
 
 **Important**: Deployment will NOT proceed if tests or linting fail. Fix the issues and push again.
 
@@ -142,13 +208,13 @@ When you create a draft release, the following automated process begins:
 
 #### Stage 2: Production Deployment (runs when you manually publish)
 1. **You click "Publish release"** in GitHub UI (after reviewing test results)
-2. **Code deployment** - Exact code from the release tag is deployed to Heroku Production
+2. **Code deployment** - Exact code from the release tag is deployed to Heroku Production (30-minute timeout)
 3. **Database migrations** - `python manage.py migrate`
 4. **Configuration updates** - `python manage.py add_config --all`
 5. **Pull validations** - `python manage.py pull_validations` from staging
 6. **Run validations** - `python manage.py validate`
-7. **Sync translations** - Export from production → Save to `mfb-translations` repo → Import to staging
-8. **Slack notifications** - Status updates sent to team at each stage
+7. **Sync translations** - Export from production → Validate JSON → Save to `mfb-translations` repo → Import to staging
+8. **Slack notifications** - Status updates sent to team at each stage (in-progress, success/warnings, or failure)
 
 **Important**:
 - Tests run automatically on draft creation, but **do not block** manual publishing
@@ -551,13 +617,31 @@ heroku auth:whoami
 
 ### Translation Sync Issues
 
-```bash
-# Check if token has correct permissions
-# Token needs 'repo' scope for mfb-translations repository
+The translation sync process now includes comprehensive error handling and validation:
 
-# Test token manually
+**Error Detection:**
+- Export failures are properly detected and reported
+- JSON validation ensures data integrity before processing
+- Import failures are captured and logged
+- All errors fail the step visibly (no silent failures)
+
+**Monitoring translation sync:**
+```bash
+# Check production deployment logs for translation sync step
+gh run view <RUN_ID> --log | grep -A 20 "Sync translations"
+
+# Verify translations were committed to mfb-translations repo
+gh repo view MyFriendBen/mfb-translations
+
+# Test token manually if sync is failing
 git clone https://x-access-token:YOUR_TOKEN@github.com/MyFriendBen/mfb-translations.git /tmp/test-clone
 ```
+
+**Common Issues:**
+- **Token expired**: Regenerate `TRANSLATIONS_REPO_TOKEN` with `repo` scope
+- **Export failed**: Check production Heroku logs for `bulk_export` errors
+- **JSON invalid**: Review export output format, may indicate data corruption
+- **Import failed**: Check staging Heroku logs for `bulk_import` errors
 
 ### Workflow Doesn't Trigger
 
@@ -596,6 +680,9 @@ These secrets are configured in the repository settings and used by the deployme
 #### External API Integrations (for production pre-deployment tests)
 - `HUD_API_TOKEN` - HUD API authentication token (required for real API integration tests)
 - Add other API tokens as needed for integration tests
+
+#### Code Coverage & Quality
+- `CODECOV_TOKEN` - Codecov authentication token (required for PR validation coverage uploads)
 
 #### Translations
 - `TRANSLATIONS_REPO_TOKEN` - GitHub Personal Access Token with repo permissions for `mfb-translations`
