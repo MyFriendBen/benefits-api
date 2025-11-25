@@ -1,0 +1,206 @@
+name: Deploy to Production
+
+on:
+  release:
+    types: [created, published]
+
+jobs:
+  test:
+    name: Run Tests with Real API Calls
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.event.release.draft == true
+
+    env:
+      SECRET_KEY: django-insecure-test-key-ci-github-actions-only
+      DJANGO_SETTINGS_MODULE: benefits.settings
+      DB_NAME: test_benefits_db
+      DB_USER: postgres
+      DB_PASS: postgres
+      DB_HOST: localhost
+      DB_PORT: 5432
+      ENABLE_GOOGLE_INTEGRATIONS: false
+      VCR_MODE: all
+      HUD_API_TOKEN: ${{ secrets.HUD_API_TOKEN }}
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: test_benefits_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d test_benefits_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Run tests with real API calls
+        uses: ./.github/actions/run-tests
+        with:
+          vcr-mode: all
+          upload-coverage: 'false'
+          hud-api-token: ${{ secrets.HUD_API_TOKEN }}
+
+  deploy:
+    if: github.event.action == 'published'
+    name: Deploy Backend to Heroku Production
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: production
+      url: https://cobenefits-api.herokuapp.com
+
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Deploy to Heroku
+        uses: ./.github/actions/deploy-to-heroku
+        with:
+          heroku-api-key: ${{ secrets.HEROKU_API_KEY }}
+          heroku-app-name: ${{ secrets.HEROKU_PROD_APP_NAME }}
+          heroku-email: ${{ secrets.HEROKU_EMAIL }}
+
+      - name: Get release info
+        id: release_info
+        run: |
+          echo "tag=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+          echo "name=${{ github.event.release.name }}" >> $GITHUB_OUTPUT
+
+      - name: Send deployment in-progress notification to Slack
+        if: success()
+        uses: ./.github/actions/slack-notify
+        with:
+          slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          status: in-progress
+          environment: production
+          release-tag: ${{ steps.release_info.outputs.tag }}
+          release-name: ${{ steps.release_info.outputs.name }}
+          release-url: ${{ github.event.release.html_url }}
+          heroku-app-name: ${{ secrets.HEROKU_PROD_APP_NAME }}
+
+      - name: Run post-deployment scripts
+        if: success()
+        id: post_deploy
+        uses: ./.github/actions/heroku-post-deploy
+        with:
+          heroku-api-key: ${{ secrets.HEROKU_API_KEY }}
+          heroku-app-name: ${{ secrets.HEROKU_PROD_APP_NAME }}
+          validation-sheet-id: ${{ secrets.VALIDATION_SHEET_ID }}
+          run-pull-validations: 'true'
+          staging-url: ${{ secrets.HEROKU_STAGING_URL }}
+
+      - name: Sync translations to staging
+        if: success()
+        id: sync_translations
+        continue-on-error: true
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e  # Exit on any error (but step continues due to continue-on-error)
+          echo "Syncing translations from production to staging..."
+
+          # Export translations from production - check for failures
+          echo "Exporting translations..."
+          EXPORT_OUTPUT=$(heroku run -a ${{ secrets.HEROKU_PROD_APP_NAME }} "python manage.py bulk_export" 2>&1)
+          EXPORT_STATUS=$?
+
+          if [ $EXPORT_STATUS -ne 0 ]; then
+            echo "ERROR: Translation export failed with status $EXPORT_STATUS"
+            echo "$EXPORT_OUTPUT"
+            exit 1
+          fi
+
+          # Remove the last line (Heroku adds connection info)
+          TRANSLATIONS=$(echo "$EXPORT_OUTPUT" | sed '$ d')
+
+          # Validate we got JSON (basic check)
+          if ! echo "$TRANSLATIONS" | jq empty 2>/dev/null; then
+            echo "ERROR: Export did not produce valid JSON"
+            echo "$TRANSLATIONS"
+            exit 1
+          fi
+
+          # Clone translations repo
+          git clone https://x-access-token:${{ secrets.TRANSLATIONS_REPO_TOKEN }}@github.com/MyFriendBen/mfb-translations.git /tmp/mfb-translations
+          cd /tmp/mfb-translations
+
+          # Save translations with date
+          DATE=$(date +%Y-%m-%d)
+          echo "$TRANSLATIONS" > translations/${DATE}.json
+
+          # Commit and push
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add translations/${DATE}.json
+
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Export translations from production - ${DATE} (Release ${{ github.event.release.tag_name }})"
+            git push origin main
+          fi
+
+          # Import to staging - check for failures
+          echo "Importing translations to staging..."
+          heroku run --no-tty -a ${{ secrets.HEROKU_STAGING_APP_NAME }} "python manage.py bulk_import" < translations/${DATE}.json
+
+          DELIMITER="EOF_$(date +%s)"
+          echo "sync_translations_output<<${DELIMITER}" >> $GITHUB_OUTPUT
+          echo "Translations synced: ${DATE}.json" >> $GITHUB_OUTPUT
+          echo "${DELIMITER}" >> $GITHUB_OUTPUT
+
+      - name: Determine final status
+        if: ${{ !failure() }}
+        id: final_status
+        run: |
+          MIGRATIONS_STATUS="${{ steps.post_deploy.outputs.migrations-status }}"
+          CONFIG_STATUS="${{ steps.post_deploy.outputs.config-status }}"
+          PULL_VALIDATIONS_STATUS="${{ steps.post_deploy.outputs.pull-validations-status }}"
+          VALIDATIONS_STATUS="${{ steps.post_deploy.outputs.validations-status }}"
+          SYNC_TRANSLATIONS_STATUS="${{ steps.sync_translations.outcome }}"
+
+          if [ "$MIGRATIONS_STATUS" == "success" ] && [ "$CONFIG_STATUS" == "success" ] && [ "$PULL_VALIDATIONS_STATUS" == "success" ] && [ "$VALIDATIONS_STATUS" == "success" ] && [ "$SYNC_TRANSLATIONS_STATUS" == "success" ]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+          else
+            echo "status=completed-with-warnings" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send final status to Slack
+        if: ${{ !failure() }}
+        uses: ./.github/actions/slack-notify
+        with:
+          slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          status: ${{ steps.final_status.outputs.status }}
+          environment: production
+          release-tag: ${{ steps.release_info.outputs.tag }}
+          release-url: ${{ github.event.release.html_url }}
+          migrations-status: ${{ steps.post_deploy.outputs.migrations-status }}
+          config-status: ${{ steps.post_deploy.outputs.config-status }}
+          pull-validations-status: ${{ steps.post_deploy.outputs.pull-validations-status }}
+          validations-status: ${{ steps.post_deploy.outputs.validations-status }}
+          sync-translations-status: ${{ steps.sync_translations.outcome }}
+          validation-sheet-id: ${{ secrets.VALIDATION_SHEET_ID }}
+
+      - name: Send deployment failure notification to Slack
+        if: failure()
+        uses: ./.github/actions/slack-notify
+        with:
+          slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          status: failure
+          environment: production
+          release-tag: ${{ steps.release_info.outputs.tag }}
+          release-url: ${{ github.event.release.html_url }}
