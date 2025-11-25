@@ -55,6 +55,7 @@ jobs:
     if: github.event.action == 'published'
     name: Deploy Backend to Heroku Production
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     environment:
       name: production
       url: https://cobenefits-api.herokuapp.com
@@ -109,13 +110,29 @@ jobs:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -e  # Exit on any error (but step continues due to continue-on-error)
           echo "Syncing translations from production to staging..."
 
-          # Export translations from production
+          # Export translations from production - check for failures
+          echo "Exporting translations..."
           EXPORT_OUTPUT=$(heroku run -a ${{ secrets.HEROKU_PROD_APP_NAME }} "python manage.py bulk_export" 2>&1)
+          EXPORT_STATUS=$?
+
+          if [ $EXPORT_STATUS -ne 0 ]; then
+            echo "ERROR: Translation export failed with status $EXPORT_STATUS"
+            echo "$EXPORT_OUTPUT"
+            exit 1
+          fi
 
           # Remove the last line (Heroku adds connection info)
           TRANSLATIONS=$(echo "$EXPORT_OUTPUT" | sed '$ d')
+
+          # Validate we got JSON (basic check)
+          if ! echo "$TRANSLATIONS" | jq empty 2>/dev/null; then
+            echo "ERROR: Export did not produce valid JSON"
+            echo "$TRANSLATIONS"
+            exit 1
+          fi
 
           # Clone translations repo
           git clone https://x-access-token:${{ secrets.TRANSLATIONS_REPO_TOKEN }}@github.com/MyFriendBen/mfb-translations.git /tmp/mfb-translations
@@ -129,12 +146,17 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add translations/${DATE}.json
-          git commit -m "Export translations from production - ${DATE} (Release ${{ github.event.release.tag_name }})" || echo "No changes to commit"
-          git push origin main || echo "Nothing to push"
 
-          # Import to staging
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Export translations from production - ${DATE} (Release ${{ github.event.release.tag_name }})"
+            git push origin main
+          fi
+
+          # Import to staging - check for failures
           echo "Importing translations to staging..."
-          heroku run --no-tty -a ${{ secrets.HEROKU_STAGING_APP_NAME }} "python manage.py bulk_import" < translations/${DATE}.json 2>&1 || echo "Translation import completed with warnings"
+          heroku run --no-tty -a ${{ secrets.HEROKU_STAGING_APP_NAME }} "python manage.py bulk_import" < translations/${DATE}.json
 
           DELIMITER="EOF_$(date +%s)"
           echo "sync_translations_output<<${DELIMITER}" >> $GITHUB_OUTPUT
