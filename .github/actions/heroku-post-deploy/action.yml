@@ -99,8 +99,18 @@ runs:
         HEROKU_API_KEY: ${{ inputs.heroku-api-key }}
       run: |
         echo "Pulling validations from staging..."
-        OUTPUT=$(heroku run -a ${{ inputs.heroku-app-name }} "python manage.py pull_validations ${{ inputs.staging-url }}" 2>&1)
-        echo "$OUTPUT"
+        set +e
+        OUTPUT=$(timeout 600 heroku run -a ${{ inputs.heroku-app-name }} "python manage.py pull_validations ${{ inputs.staging-url }}" 2>&1)
+        TIMEOUT_STATUS=$?
+        set -e
+
+        if [ $TIMEOUT_STATUS -eq 124 ]; then
+          OUTPUT="ERROR: Pull validations timed out after 10 minutes"
+          echo "$OUTPUT"
+        else
+          echo "$OUTPUT"
+        fi
+
         DELIMITER="EOF_$(date +%s)"
         echo "pull_validations_output<<${DELIMITER}" >> $GITHUB_OUTPUT
         echo "$OUTPUT" >> $GITHUB_OUTPUT
@@ -115,8 +125,18 @@ runs:
         HEROKU_API_KEY: ${{ inputs.heroku-api-key }}
       run: |
         echo "Running validations..."
-        OUTPUT=$(heroku run -a ${{ inputs.heroku-app-name }} "python manage.py validate --sheet-id ${{ inputs.validation-sheet-id }}" 2>&1)
-        echo "$OUTPUT"
+        set +e
+        OUTPUT=$(timeout 600 heroku run -a ${{ inputs.heroku-app-name }} "python manage.py validate --sheet-id ${{ inputs.validation-sheet-id }}" 2>&1)
+        TIMEOUT_STATUS=$?
+        set -e
+
+        if [ $TIMEOUT_STATUS -eq 124 ]; then
+          OUTPUT="ERROR: Validations timed out after 10 minutes"
+          echo "$OUTPUT"
+        else
+          echo "$OUTPUT"
+        fi
+
         DELIMITER="EOF_$(date +%s)"
         echo "validation_output<<${DELIMITER}" >> $GITHUB_OUTPUT
         echo "$OUTPUT" >> $GITHUB_OUTPUT
