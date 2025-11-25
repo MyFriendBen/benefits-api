@@ -193,6 +193,7 @@ jobs:
           pull-validations-status: ${{ steps.post_deploy.outputs.pull-validations-status }}
           validations-status: ${{ steps.post_deploy.outputs.validations-status }}
           sync-translations-status: ${{ steps.sync_translations.outcome }}
+          validation-sheet-id: ${{ secrets.VALIDATION_SHEET_ID }}
 
       - name: Send deployment failure notification to Slack
         if: failure()

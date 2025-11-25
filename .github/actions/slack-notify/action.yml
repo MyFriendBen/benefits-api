@@ -47,6 +47,10 @@ inputs:
   sync-translations-status:
     description: 'Status of sync translations step'
     required: false
+  validation-sheet-id:
+    description: 'Google Sheets validation results spreadsheet ID'
+    required: false
+    default: '1JRsCKm9KeeatVoW3wjsT2YqSy63js53Ib3vivK5NFYY'
 
 runs:
   using: 'composite'
@@ -69,6 +73,7 @@ runs:
         PULL_VALIDATIONS_STATUS: ${{ inputs.pull-validations-status }}
         VALIDATIONS_STATUS: ${{ inputs.validations-status }}
         SYNC_TRANSLATIONS_STATUS: ${{ inputs.sync-translations-status }}
+        VALIDATION_SHEET_ID: ${{ inputs.validation-sheet-id }}
       run: |
         # Determine emoji and title based on status
         case "$STATUS" in
@@ -188,6 +193,7 @@ runs:
               --arg run_id "${{ github.run_id }}" \
               --arg tag "$RELEASE_TAG" \
               --arg release_url "$RELEASE_URL" \
+              --arg validation_sheet_id "$VALIDATION_SHEET_ID" \
               '{
                 text: "\($emoji) \($title)",
                 blocks: [
@@ -204,7 +210,7 @@ runs:
                     {type: "mrkdwn", text: "*Release:*\n<\($release_url)|\($tag)>"},
                     {type: "mrkdwn", text: "*Workflow:*\n<https://github.com/\($repo)/actions/runs/\($run_id)|View Logs>"}
                   ]},
-                  {type: "section", text: {type: "mrkdwn", text: "*Validation Results:*\n<https://docs.google.com/spreadsheets/d/1JRsCKm9KeeatVoW3wjsT2YqSy63js53Ib3vivK5NFYY|View Validation Spreadsheet> • <https://github.com/\($repo)/actions/runs/\($run_id)|View Full Logs>"}}
+                  {type: "section", text: {type: "mrkdwn", text: "*Validation Results:*\n<https://docs.google.com/spreadsheets/d/\($validation_sheet_id)|View Validation Spreadsheet> • <https://github.com/\($repo)/actions/runs/\($run_id)|View Full Logs>"}}
                 ]
               }')
           else
