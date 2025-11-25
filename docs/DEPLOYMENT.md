@@ -302,9 +302,13 @@ gh release list --limit 1
 
 ## Hotfix Workflow
 
-When a critical bug is found in production:
+When a critical bug is found in production, choose the appropriate workflow based on whether `main` is production-ready:
 
-### 1. Create Hotfix Branch
+### Scenario 1: Main Branch is Production-Ready (Standard Flow)
+
+**Use this when**: `main` has only changes that are ready for production.
+
+#### 1. Create Hotfix Branch
 
 ```bash
 # Start from main
@@ -313,7 +317,7 @@ git pull origin main
 git checkout -b hotfix/critical-bug-fix
 ```
 
-### 2. Make the Fix
+#### 2. Make the Fix
 
 ```bash
 # Fix the bug
@@ -322,7 +326,7 @@ git commit -m "hotfix: fix critical bug in eligibility calculation"
 git push origin hotfix/critical-bug-fix
 ```
 
-### 3. Create PR and Merge
+#### 3. Create PR and Merge
 
 ```bash
 # Create PR against main
@@ -332,7 +336,7 @@ gh pr create --base main --title "Hotfix: Critical bug in eligibility calculatio
 gh pr merge --squash
 ```
 
-### 4. Test on Staging & Release Immediately
+#### 4. Test on Staging & Release Immediately
 
 ```bash
 # Verify fix on staging
@@ -354,9 +358,72 @@ gh run watch
 
 # After tests pass, manually publish the release
 gh release edit v1.2.4 --draft=false
-
-# If extremely urgent and tests are failing, you can publish anyway (not recommended)
 ```
+
+### Scenario 2: Main Branch Has Unreleased Work (Emergency Hotfix)
+
+**Use this when**: `main` contains commits that are NOT ready for production.
+
+⚠️ **Important**: This should be rare in trunk-based development. Ideally, use feature flags to keep `main` always production-ready (planned for future implementation).
+
+#### 1. Create Hotfix Branch from Last Production Release
+
+```bash
+# Find the current production version
+gh release list --limit 1
+
+# Create hotfix branch from the production tag (NOT from main)
+git fetch --tags
+git checkout v1.2.3  # Replace with actual production version
+git checkout -b hotfix/critical-bug-fix
+```
+
+#### 2. Make the Fix
+
+```bash
+# Fix the bug
+git add .
+git commit -m "hotfix: fix critical bug in eligibility calculation"
+git push origin hotfix/critical-bug-fix
+```
+
+#### 3. Create Release Directly from Hotfix Branch
+
+```bash
+# Create release targeting the hotfix branch (bypasses main)
+gh release create v1.2.4 \
+  --target hotfix/critical-bug-fix \
+  --title "Hotfix v1.2.4" \
+  --notes "
+## Hotfix
+- Fixed critical bug in eligibility calculation
+
+This is an emergency hotfix released directly from a hotfix branch.
+
+**Note**: This hotfix bypassed main branch due to unreleased work in main.
+"
+
+# Monitor and approve deployment
+gh run watch
+```
+
+#### 4. Backport Fix to Main
+
+```bash
+# After production deployment succeeds, backport to main
+gh pr create \
+  --base main \
+  --head hotfix/critical-bug-fix \
+  --title "Backport: Hotfix v1.2.4" \
+  --body "Backporting production hotfix to main branch"
+
+# Merge after review
+gh pr merge --squash
+```
+
+### Future Improvement: Feature Flags
+
+**Planned Enhancement**: We plan to implement feature flagging to ensure `main` is always production-ready. This will eliminate Scenario 2 by allowing incomplete features to be merged to `main` behind feature flags, ensuring emergency hotfixes can always follow the standard workflow.
 
 ---
 
