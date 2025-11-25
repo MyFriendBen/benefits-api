@@ -1,0 +1,63 @@
+name: 'Run Django Tests'
+description: 'Sets up environment and runs Django test suite with configurable VCR mode and coverage options'
+
+inputs:
+  vcr-mode:
+    description: 'VCR mode: "new_episodes" (replays existing, records new), "all" (re-records everything), or "none" (uses cassettes only)'
+    required: false
+    default: 'new_episodes'
+  upload-coverage:
+    description: 'Whether to upload coverage results to Codecov'
+    required: false
+    default: 'false'
+  codecov-token:
+    description: 'Codecov token (required if upload-coverage is true)'
+    required: false
+  hud-api-token:
+    description: 'HUD API token for real API calls'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate coverage inputs
+      if: inputs.upload-coverage == 'true'
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.codecov-token }}" ]; then
+          echo "ERROR: codecov-token is required when upload-coverage is true"
+          echo "Please provide a Codecov token to upload coverage results"
+          exit 1
+        fi
+
+    - name: Setup Python and Django
+      uses: ./.github/actions/setup-python-django
+
+    - name: Django checks and migrations
+      uses: ./.github/actions/run-django-checks
+
+    - name: Run tests
+      shell: bash
+      env:
+        VCR_MODE: ${{ inputs.vcr-mode }}
+        HUD_API_TOKEN: ${{ inputs.hud-api-token }}
+      run: |
+        if [ "${{ inputs.vcr-mode }}" = "all" ]; then
+          echo "Running tests with REAL API CALLS - VCR_MODE=all (re-records all cassettes)"
+        elif [ "${{ inputs.vcr-mode }}" = "new_episodes" ]; then
+          echo "Running tests with VCR - VCR_MODE=new_episodes (replays existing, records new)"
+        else
+          echo "Running tests with VCR - VCR_MODE=${{ inputs.vcr-mode }}"
+        fi
+
+        if [ "${{ inputs.upload-coverage }}" = "true" ]; then
+          pytest --cov --cov-branch --cov-report=xml --verbosity=2 --log-cli-level=INFO
+        else
+          pytest --cov --cov-branch --verbosity=2
+        fi
+
+    - name: Upload coverage to Codecov
+      if: inputs.upload-coverage == 'true'
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ inputs.codecov-token }}
