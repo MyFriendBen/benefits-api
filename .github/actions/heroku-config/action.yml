@@ -1,0 +1,33 @@
+name: 'Add Heroku Configurations'
+description: 'Runs Django add_config management command on Heroku'
+
+inputs:
+  heroku-api-key:
+    description: 'Heroku API key'
+    required: true
+  heroku-app-name:
+    description: 'Heroku application name'
+    required: true
+
+outputs:
+  config-output:
+    description: 'Output from add_config command'
+    value: ${{ steps.add_config.outputs.config_output }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Add configurations
+      id: add_config
+      continue-on-error: true
+      shell: bash
+      env:
+        HEROKU_API_KEY: ${{ inputs.heroku-api-key }}
+      run: |
+        echo "Adding configurations..."
+        OUTPUT=$(heroku run -a ${{ inputs.heroku-app-name }} "python manage.py add_config --all" 2>&1)
+        echo "$OUTPUT"
+        DELIMITER="EOF_$(date +%s)"
+        echo "config_output<<${DELIMITER}" >> $GITHUB_OUTPUT
+        echo "$OUTPUT" >> $GITHUB_OUTPUT
+        echo "${DELIMITER}" >> $GITHUB_OUTPUT

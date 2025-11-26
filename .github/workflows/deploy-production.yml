@@ -91,16 +91,30 @@ jobs:
           release-url: ${{ github.event.release.html_url }}
           heroku-app-name: ${{ secrets.HEROKU_PROD_APP_NAME }}
 
-      - name: Run post-deployment scripts
+      - name: Run database migrations
         if: success()
-        id: post_deploy
-        uses: ./.github/actions/heroku-post-deploy
+        id: migrations
+        uses: ./.github/actions/heroku-migrations
+        with:
+          heroku-api-key: ${{ secrets.HEROKU_API_KEY }}
+          heroku-app-name: ${{ secrets.HEROKU_PROD_APP_NAME }}
+
+      - name: Add configurations
+        if: success()
+        id: config
+        uses: ./.github/actions/heroku-config
+        with:
+          heroku-api-key: ${{ secrets.HEROKU_API_KEY }}
+          heroku-app-name: ${{ secrets.HEROKU_PROD_APP_NAME }}
+
+      - name: Run validations
+        if: success()
+        id: validations
+        uses: ./.github/actions/heroku-validations
         with:
           heroku-api-key: ${{ secrets.HEROKU_API_KEY }}
           heroku-app-name: ${{ secrets.HEROKU_PROD_APP_NAME }}
           validation-sheet-id: ${{ secrets.VALIDATION_SHEET_ID }}
-          run-pull-validations: 'false'
-          staging-url: ${{ secrets.HEROKU_STAGING_URL }}
 
       - name: Sync translations to staging
         if: success()
@@ -167,13 +181,12 @@ jobs:
         if: ${{ !failure() }}
         id: final_status
         run: |
-          MIGRATIONS_STATUS="${{ steps.post_deploy.outputs.migrations-status }}"
-          CONFIG_STATUS="${{ steps.post_deploy.outputs.config-status }}"
-          PULL_VALIDATIONS_STATUS="${{ steps.post_deploy.outputs.pull-validations-status }}"
-          VALIDATIONS_STATUS="${{ steps.post_deploy.outputs.validations-status }}"
+          MIGRATIONS_STATUS="${{ steps.migrations.outcome }}"
+          CONFIG_STATUS="${{ steps.config.outcome }}"
+          VALIDATIONS_STATUS="${{ steps.validations.outcome }}"
           SYNC_TRANSLATIONS_STATUS="${{ steps.sync_translations.outcome }}"
 
-          if [ "$MIGRATIONS_STATUS" == "success" ] && [ "$CONFIG_STATUS" == "success" ] && [ "$PULL_VALIDATIONS_STATUS" == "success" ] && [ "$VALIDATIONS_STATUS" == "success" ] && [ "$SYNC_TRANSLATIONS_STATUS" == "success" ]; then
+          if [ "$MIGRATIONS_STATUS" == "success" ] && [ "$CONFIG_STATUS" == "success" ] && [ "$VALIDATIONS_STATUS" == "success" ] && [ "$SYNC_TRANSLATIONS_STATUS" == "success" ]; then
             echo "status=success" >> $GITHUB_OUTPUT
           else
             echo "status=completed-with-warnings" >> $GITHUB_OUTPUT
@@ -188,10 +201,10 @@ jobs:
           environment: production
           release-tag: ${{ steps.release_info.outputs.tag }}
           release-url: ${{ github.event.release.html_url }}
-          migrations-status: ${{ steps.post_deploy.outputs.migrations-status }}
-          config-status: ${{ steps.post_deploy.outputs.config-status }}
-          pull-validations-status: ${{ steps.post_deploy.outputs.pull-validations-status }}
-          validations-status: ${{ steps.post_deploy.outputs.validations-status }}
+          migrations-status: ${{ steps.migrations.outcome }}
+          config-status: ${{ steps.config.outcome }}
+          pull-validations-status: skipped
+          validations-status: ${{ steps.validations.outcome }}
           sync-translations-status: ${{ steps.sync_translations.outcome }}
           validation-sheet-id: ${{ secrets.VALIDATION_SHEET_ID }}
 

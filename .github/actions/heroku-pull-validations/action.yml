@@ -1,0 +1,46 @@
+name: 'Pull Validations from Staging'
+description: 'Pulls validation data from staging environment to production'
+
+inputs:
+  heroku-api-key:
+    description: 'Heroku API key'
+    required: true
+  heroku-app-name:
+    description: 'Heroku application name'
+    required: true
+  staging-url:
+    description: 'Staging URL to pull validations from'
+    required: true
+
+outputs:
+  pull-validations-output:
+    description: 'Output from pull_validations command'
+    value: ${{ steps.pull_validations.outputs.pull_validations_output }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Pull validations from staging
+      id: pull_validations
+      continue-on-error: true
+      shell: bash
+      env:
+        HEROKU_API_KEY: ${{ inputs.heroku-api-key }}
+      run: |
+        echo "Pulling validations from staging..."
+        set +e
+        OUTPUT=$(timeout 600 heroku run -a ${{ inputs.heroku-app-name }} "python manage.py pull_validations ${{ inputs.staging-url }}" 2>&1)
+        TIMEOUT_STATUS=$?
+        set -e
+
+        if [ $TIMEOUT_STATUS -eq 124 ]; then
+          OUTPUT="ERROR: Pull validations timed out after 10 minutes"
+          echo "$OUTPUT"
+        else
+          echo "$OUTPUT"
+        fi
+
+        DELIMITER="EOF_$(date +%s)"
+        echo "pull_validations_output<<${DELIMITER}" >> $GITHUB_OUTPUT
+        echo "$OUTPUT" >> $GITHUB_OUTPUT
+        echo "${DELIMITER}" >> $GITHUB_OUTPUT

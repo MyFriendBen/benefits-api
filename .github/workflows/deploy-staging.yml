@@ -80,10 +80,26 @@ jobs:
           echo "message=$(git log -1 --pretty=%B | head -n 1)" >> $GITHUB_OUTPUT
           echo "author=$(git log -1 --pretty=%an)" >> $GITHUB_OUTPUT
 
-      - name: Run post-deployment scripts
+      - name: Run database migrations
         if: success()
-        id: post_deploy
-        uses: ./.github/actions/heroku-post-deploy
+        id: migrations
+        uses: ./.github/actions/heroku-migrations
+        with:
+          heroku-api-key: ${{ secrets.HEROKU_API_KEY }}
+          heroku-app-name: ${{ secrets.HEROKU_STAGING_APP_NAME }}
+
+      - name: Add configurations
+        if: success()
+        id: config
+        uses: ./.github/actions/heroku-config
+        with:
+          heroku-api-key: ${{ secrets.HEROKU_API_KEY }}
+          heroku-app-name: ${{ secrets.HEROKU_STAGING_APP_NAME }}
+
+      - name: Run validations
+        if: success()
+        id: validations
+        uses: ./.github/actions/heroku-validations
         with:
           heroku-api-key: ${{ secrets.HEROKU_API_KEY }}
           heroku-app-name: ${{ secrets.HEROKU_STAGING_APP_NAME }}
