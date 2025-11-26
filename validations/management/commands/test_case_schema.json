@@ -46,7 +46,8 @@
           "pattern": "^[0-9]{5}$"
         },
         "county": {
-          "type": "string"
+          "type": "string",
+          "description": "County name. IMPORTANT: Must include 'County' suffix for CO, NC, IL (e.g., 'Denver County', 'Wake County', 'Cook County'). For TX, use county name without 'County' (e.g., 'Travis', 'Harris'). See programs/co_county_zips.py for valid Colorado county names."
         },
         "referral_source": {
           "type": "string"

@@ -42,7 +42,7 @@ The complete household data that will be submitted to create a Screen. This obje
 - `agree_to_tos` (boolean)
 - `is_13_or_older` (boolean)
 - `zipcode` (string, 5 digits)
-- `county` (string)
+- `county` (string) - See [County Naming Conventions](#county-naming-conventions) below
 - `household_size` (integer)
 - `household_assets` (number)
 - `last_tax_filing_year` (string, YYYY format)
@@ -329,25 +329,100 @@ When household member earns **hourly wages**:
 }
 ```
 
+## County Naming Conventions
+
+**CRITICAL:** County names must follow specific formatting rules by state to ensure proper data lookups and prevent `KeyError` exceptions during program eligibility calculations.
+
+### States Requiring "County" Suffix
+
+For these states, **ALWAYS include " County"** after the county name:
+
+- **Colorado (CO)**: `"Denver County"`, `"Arapahoe County"`, `"Jefferson County"`, `"Adams County"`
+- **North Carolina (NC)**: `"Wake County"`, `"Durham County"`, `"Alamance County"`
+- **Illinois (IL)**: `"Cook County"`, `"DuPage County"`, `"Rock Island County"`
+- **Massachusetts (MA)**: `"Suffolk County"`, `"Middlesex County"`, `"Essex County"`
+
+### States WITHOUT "County" Suffix
+
+For these states, use **ONLY the county name** (no " County"):
+
+- **Texas (TX)**: `"Travis"`, `"Harris"`, `"Dallas"`, `"Tarrant"`
+
+### Examples
+
+✅ **Correct:**
+```json
+{
+  "white_label": "co",
+  "zipcode": "80202",
+  "county": "Denver County"
+}
+```
+
+```json
+{
+  "white_label": "tx",
+  "zipcode": "78701",
+  "county": "Travis"
+}
+```
+
+❌ **Incorrect:**
+```json
+{
+  "white_label": "co",
+  "zipcode": "80202",
+  "county": "Denver"  // Missing "County" suffix!
+}
+```
+
+```json
+{
+  "white_label": "tx",
+  "zipcode": "78701",
+  "county": "Travis County"  // Should not have "County" suffix!
+}
+```
+
+### Why This Matters
+
+County names are used to:
+1. Look up Area Median Income (AMI) data from HUD and Google Sheets services
+2. Determine geographic eligibility for county-specific programs (e.g., Denver Property Tax Relief)
+3. Match household data with external APIs (PolicyEngine, HUD Income Limits)
+
+**Using incorrect county names will cause:**
+- `KeyError` exceptions during eligibility calculations
+- Failed test case validations
+- Incorrect benefit estimates or program ineligibility
+
+### Valid County Names Reference
+
+For Colorado counties, see: [`programs/co_county_zips.py`](../../programs/co_county_zips.py)
+
+For other states, consult the HUD Income Limits API documentation or state-specific county reference files.
+
 ## Important Constraints
 
 1. **White Label Must Exist** - The `white_label` code must reference an existing white label configuration in the database
 
-2. **Birth Date Validation** - If providing both `birth_year` and `birth_month`, they cannot represent a future date
+2. **County Names Must Follow Conventions** - See [County Naming Conventions](#county-naming-conventions) above to avoid `KeyError` exceptions
 
-3. **Hourly Income Requires Hours** - If an income stream has `frequency: "hourly"`, the `hours_worked` field is required
+3. **Birth Date Validation** - If providing both `birth_year` and `birth_month`, they cannot represent a future date
 
-4. **Frozen Screens** - Once validations are added to a screen, the screen becomes frozen (read-only)
+4. **Hourly Income Requires Hours** - If an income stream has `frequency: "hourly"`, the `hours_worked` field is required
 
-5. **Create-Only Fields** - These fields can only be set during creation:
+5. **Frozen Screens** - Once validations are added to a screen, the screen becomes frozen (read-only)
+
+6. **Create-Only Fields** - These fields can only be set during creation:
    - `is_test`
    - `external_id`
    - `referrer_code`
    - UTM fields (`utm_id`, `utm_source`, etc.)
 
-6. **Program Names** - Use the program's `name_abbreviated` field, not the full name or display name
+7. **Program Names** - Use the program's `name_abbreviated` field, not the full name or display name
 
-7. **Value Amounts** - By default, benefit values are monthly amounts unless the program's `value_format` specifies otherwise (e.g., `"lump_sum"` or `"estimated_annual"`)
+8. **Value Amounts** - By default, benefit values are monthly amounts unless the program's `value_format` specifies otherwise (e.g., `"lump_sum"` or `"estimated_annual"`)
 
 ## Schema Validation
 

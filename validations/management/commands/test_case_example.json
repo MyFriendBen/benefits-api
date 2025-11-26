@@ -72,7 +72,7 @@
       "agree_to_tos": true,
       "is_13_or_older": true,
       "zipcode": "80202",
-      "county": "Denver",
+      "county": "Denver County",
       "household_size": 4,
       "household_assets": 2000.00,
       "household_members": [
@@ -154,7 +154,7 @@
       "agree_to_tos": true,
       "is_13_or_older": true,
       "zipcode": "27601",
-      "county": "Wake",
+      "county": "Wake County",
       "household_size": 1,
       "household_assets": 1500.00,
       "household_members": [
@@ -238,7 +238,7 @@
       "agree_to_tos": true,
       "is_13_or_older": true,
       "zipcode": "02108",
-      "county": "Suffolk",
+      "county": "Suffolk County",
       "household_size": 3,
       "household_assets": 5000.00,
       "last_tax_filing_year": "2024",
@@ -319,7 +319,7 @@
       "agree_to_tos": true,
       "is_13_or_older": true,
       "zipcode": "60601",
-      "county": "Cook",
+      "county": "Cook County",
       "household_size": 2,
       "household_assets": 500.00,
       "household_members": [
