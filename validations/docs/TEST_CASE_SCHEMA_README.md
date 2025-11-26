@@ -35,6 +35,7 @@ The complete household data that will be submitted to create a Screen. This obje
 **Required Fields:**
 - `white_label` (string) - One of: `"co"`, `"tx"`, `"nc"`, `"ma"`, `"il"`
 - `household_members` (array) - At least one household member
+- `expenses` (array) - Array of expense objects (use empty array `[]` if no expenses)
 
 **Commonly Used Fields:**
 - `is_test` (boolean, default: true) - Should be true for test data
@@ -103,6 +104,7 @@ Each member in the `household_members` array should include:
 - `relationship` (string) - One of:
   - `"headOfHousehold"`, `"spouse"`, `"child"`, `"parent"`, `"fosterChild"`, `"fosterParent"`, `"stepParent"`, `"grandParent"`, `"domesticPartner"`, `"other"`
 - `age` (integer, 0-150)
+- `insurance` (object) - Health insurance coverage object (see below). Minimum: `{"none": true}`
 
 **Optional Demographic Fields:**
 - `birth_year` (integer, YYYY) - Used with `birth_month` for precise age calculation
@@ -176,6 +178,17 @@ Each member in the `household_members` array should include:
 
 **Frequency Values:**
 - `"monthly"`, `"weekly"`, `"biweekly"`, `"semimonthly"`, `"yearly"`
+
+**Example with no expenses:**
+```json
+{
+  "household": {
+    "white_label": "tx",
+    "household_members": [...],
+    "expenses": []
+  }
+}
+```
 
 ### Energy Calculator (Screen Level)
 
