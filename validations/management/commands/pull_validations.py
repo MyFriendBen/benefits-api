@@ -34,7 +34,7 @@ class Command(BaseCommand):
             if not api_key:
                 api_key = getpass("API key: ")
 
-        response = requests.get(f"{domain}/api/validations")
+        response = requests.get(f"{domain}/api/validations", timeout=120)
 
         validations = response.json()
 
@@ -84,6 +84,6 @@ class Command(BaseCommand):
         header = {
             "Authorization": f"Token {api_key}",
         }
-        response = requests.get(f"{domain}/api/screens/{uuid}", headers=header)
+        response = requests.get(f"{domain}/api/screens/{uuid}", headers=header, timeout=120)
 
         return response.json()

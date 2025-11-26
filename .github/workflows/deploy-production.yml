@@ -99,7 +99,7 @@ jobs:
           heroku-api-key: ${{ secrets.HEROKU_API_KEY }}
           heroku-app-name: ${{ secrets.HEROKU_PROD_APP_NAME }}
           validation-sheet-id: ${{ secrets.VALIDATION_SHEET_ID }}
-          run-pull-validations: 'true'
+          run-pull-validations: 'false'
           staging-url: ${{ secrets.HEROKU_STAGING_URL }}
 
       - name: Sync translations to staging
