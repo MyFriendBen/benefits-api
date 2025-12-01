@@ -47,7 +47,7 @@ hubspot-api-client==9.0.0
 idna==3.7
 inflection==0.5.1
 iniconfig==1.1.1
-jsonschema==4.17.3
+jsonschema==4.25.1
 kiwisolver==1.4.4
 MarkupPy==1.14
 mypy-extensions==1.0.0
