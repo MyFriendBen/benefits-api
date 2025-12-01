@@ -1,5 +1,5 @@
 asgiref==3.7.2
-attrs==21.4.0
+attrs==22.2.0
 Babel==2.15.0
 beautifulsoup4==4.12.2
 black==24.3.0
