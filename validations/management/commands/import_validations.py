@@ -99,55 +99,44 @@ class Command(BaseCommand):
         for test_case in test_cases:
             result = {
                 "notes": test_case["notes"],
-                "success": False,
                 "screen_uuid": None,
                 "screen_url": None,
                 "validations_created": [],
-                "errors": [],
             }
 
-            try:
-                # Create screen
-                screen = self._create_screen(test_case["household"])
-                result["screen_uuid"] = str(screen.uuid)
+            # Create screen
+            screen = self._create_screen(test_case["household"])
+            result["screen_uuid"] = str(screen.uuid)
 
-                # Generate screen URL
-                white_label = screen.white_label.code
-                frontend_domain = config("FRONTEND_DOMAIN", default="http://localhost:3000")
-                result["screen_url"] = (
-                    f"{frontend_domain}/{white_label}/{screen.uuid}/results/benefits"
+            # Generate screen URL
+            white_label = screen.white_label.code
+            frontend_domain = config("FRONTEND_DOMAIN", default="http://localhost:3000")
+            result["screen_url"] = (
+                f"{frontend_domain}/{white_label}/{screen.uuid}/results/benefits"
+            )
+
+            # Create validations
+            expected_results = test_case["expected_results"]
+            if isinstance(expected_results, dict):
+                results_list = [expected_results]
+            else:
+                results_list = expected_results
+
+            for expected in results_list:
+                validation = self._create_validation(
+                    screen=screen,
+                    program_name=expected["program_name"],
+                    eligible=expected["eligible"],
+                    value=expected.get("value", 0),
+                    notes=test_case["notes"],
                 )
-
-                # Create validations
-                expected_results = test_case["expected_results"]
-                if isinstance(expected_results, dict):
-                    results_list = [expected_results]
-                else:
-                    results_list = expected_results
-
-                for expected in results_list:
-                    try:
-                        validation = self._create_validation(
-                            screen=screen,
-                            program_name=expected["program_name"],
-                            eligible=expected["eligible"],
-                            value=expected.get("value", 0),
-                            notes=test_case["notes"],
-                        )
-                        result["validations_created"].append(
-                            {
-                                "program_name": validation.program_name,
-                                "eligible": validation.eligible,
-                                "value": str(validation.value),
-                            }
-                        )
-                    except Exception as e:
-                        result["errors"].append(f"Failed to create validation: {str(e)}")
-
-                result["success"] = len(result["errors"]) == 0
-
-            except Exception as e:
-                result["errors"].append(f"Failed to process test case: {str(e)}")
+                result["validations_created"].append(
+                    {
+                        "program_name": validation.program_name,
+                        "eligible": validation.eligible,
+                        "value": str(validation.value),
+                    }
+                )
 
             results.append(result)
 
@@ -208,13 +197,9 @@ class Command(BaseCommand):
         self.stdout.write("=" * 80 + "\n")
 
         total = len(results)
-        successful = sum(1 for r in results if r["success"])
-        failed = total - successful
 
         self.stdout.write(f"Total test cases: {total}")
-        self.stdout.write(self.style.SUCCESS(f"Successful: {successful}"))
-        if failed > 0:
-            self.stdout.write(self.style.ERROR(f"Failed: {failed}"))
+        self.stdout.write(self.style.SUCCESS(f"All {total} test cases imported successfully"))
         self.stdout.write(f"Screens created: {total}")
         self.stdout.write("")
 
@@ -222,11 +207,6 @@ class Command(BaseCommand):
         for i, result in enumerate(results, 1):
             self.stdout.write(f"\n{i}. {result['notes']}")
             self.stdout.write("-" * 80)
-
-            if result["success"]:
-                self.stdout.write(self.style.SUCCESS("✓ SUCCESS"))
-            else:
-                self.stdout.write(self.style.ERROR("✗ FAILED"))
 
             if result["screen_uuid"]:
                 self.stdout.write(f"Screen UUID: {result['screen_uuid']}")
@@ -242,10 +222,5 @@ class Command(BaseCommand):
                         f"  - {validation['program_name']}: {eligible_str} "
                         f"(Value: ${validation['value']})"
                     )
-
-            if result["errors"]:
-                self.stdout.write(self.style.ERROR("Errors:"))
-                for error in result["errors"]:
-                    self.stdout.write(self.style.ERROR(f"  - {error}"))
 
         self.stdout.write("\n" + "=" * 80)
