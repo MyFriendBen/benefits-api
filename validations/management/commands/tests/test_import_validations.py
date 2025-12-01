@@ -24,18 +24,9 @@ class ImportValidationsCommandTest(TestCase):
         cls.tx_white_label = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")
 
         # Create test programs using the manager method
-        cls.snap_program = Program.objects.new_program(
-            white_label="co",
-            name_abbreviated="snap"
-        )
-        cls.lifeline_program = Program.objects.new_program(
-            white_label="co",
-            name_abbreviated="lifeline"
-        )
-        cls.tx_aca_program = Program.objects.new_program(
-            white_label="tx",
-            name_abbreviated="tx_aca"
-        )
+        cls.snap_program = Program.objects.new_program(white_label="co", name_abbreviated="snap")
+        cls.lifeline_program = Program.objects.new_program(white_label="co", name_abbreviated="lifeline")
+        cls.tx_aca_program = Program.objects.new_program(white_label="tx", name_abbreviated="tx_aca")
 
     def setUp(self):
         """Set up for each test"""
@@ -67,9 +58,7 @@ class ImportValidationsCommandTest(TestCase):
                         "relationship": "headOfHousehold",
                         "age": 30,
                         "has_income": True,
-                        "income_streams": [
-                            {"type": "wages", "amount": 1500.00, "frequency": "monthly"}
-                        ],
+                        "income_streams": [{"type": "wages", "amount": 1500.00, "frequency": "monthly"}],
                         "insurance": {"none": True},
                     }
                 ],
@@ -148,9 +137,7 @@ class ImportValidationsCommandTest(TestCase):
                             "relationship": "headOfHousehold",
                             "age": 40,
                             "has_income": True,
-                            "income_streams": [
-                                {"type": "wages", "amount": 5000.00, "frequency": "monthly"}
-                            ],
+                            "income_streams": [{"type": "wages", "amount": 5000.00, "frequency": "monthly"}],
                             "insurance": {"none": False, "employer": True},
                         }
                     ],
@@ -281,7 +268,6 @@ class ImportValidationsCommandTest(TestCase):
             call_command("import_validations", "/nonexistent/file.json")
 
         self.assertIn("File not found", str(cm.exception))
-
 
     def test_output_summary(self):
         """Test that command outputs a comprehensive summary"""

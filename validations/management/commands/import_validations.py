@@ -111,9 +111,7 @@ class Command(BaseCommand):
             # Generate screen URL
             white_label = screen.white_label.code
             frontend_domain = config("FRONTEND_DOMAIN", default="http://localhost:3000")
-            result["screen_url"] = (
-                f"{frontend_domain}/{white_label}/{screen.uuid}/results/benefits"
-            )
+            result["screen_url"] = f"{frontend_domain}/{white_label}/{screen.uuid}/results/benefits"
 
             # Create validations
             expected_results = test_case["expected_results"]
@@ -219,8 +217,7 @@ class Command(BaseCommand):
                 for validation in result["validations_created"]:
                     eligible_str = "✓ Eligible" if validation["eligible"] else "✗ Not Eligible"
                     self.stdout.write(
-                        f"  - {validation['program_name']}: {eligible_str} "
-                        f"(Value: ${validation['value']})"
+                        f"  - {validation['program_name']}: {eligible_str} " f"(Value: ${validation['value']})"
                     )
 
         self.stdout.write("\n" + "=" * 80)
