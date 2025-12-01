@@ -185,7 +185,7 @@ class ImportValidationsCommandTest(TestCase):
             },
             "expected_results": [
                 {"program_name": "snap", "eligible": True, "value": 250.00},
-                {"program_name": "tx_aca", "eligible": False, "value": 0},
+                {"program_name": "lifeline", "eligible": False, "value": 0},
             ],
         }
 

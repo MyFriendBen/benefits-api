@@ -142,11 +142,13 @@ class Command(BaseCommand):
 
     def _create_screen(self, household_data: Dict[str, Any]) -> Screen:
         """Create a screen from household data."""
-        # Ensure is_test is set to True
-        household_data["is_test"] = True
+        # Create a shallow copy to avoid mutating the caller's data
+        new_data = {**household_data}
+        # Ensure is_test_data is set to True
+        new_data["is_test_data"] = True
 
         # Create new screen
-        serializer = ScreenSerializer(data=household_data)
+        serializer = ScreenSerializer(data=new_data)
         serializer.is_valid(raise_exception=True)
         screen = serializer.save()
 
