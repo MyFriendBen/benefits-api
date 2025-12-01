@@ -50,7 +50,7 @@ class ImportValidationsCommandTest(TestCase):
                 "agree_to_tos": True,
                 "is_13_or_older": True,
                 "zipcode": "80202",
-                "county": "Denver",
+                "county": "Denver County",
                 "household_size": 2,
                 "household_assets": 1000.00,
                 "household_members": [
