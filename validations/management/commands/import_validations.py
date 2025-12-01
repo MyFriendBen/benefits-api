@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import jsonschema
+from decouple import config
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
@@ -112,8 +113,9 @@ class Command(BaseCommand):
 
                 # Generate screen URL
                 white_label = screen.white_label.code
+                frontend_domain = config("FRONTEND_DOMAIN", default="http://localhost:3000")
                 result["screen_url"] = (
-                    f"http://localhost:3000/{white_label}/{screen.uuid}/results/benefits"
+                    f"{frontend_domain}/{white_label}/{screen.uuid}/results/benefits"
                 )
 
                 # Create validations
