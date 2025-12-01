@@ -1,0 +1,13 @@
+name: 'Run Django System Checks and Migrations'
+description: 'Runs Django system checks and database migrations'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Django system checks
+      shell: bash
+      run: python manage.py check --fail-level WARNING
+
+    - name: Run migrations
+      shell: bash
+      run: python manage.py migrate --noinput

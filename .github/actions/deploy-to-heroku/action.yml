@@ -1,0 +1,28 @@
+name: 'Deploy to Heroku'
+description: 'Installs Heroku CLI and deploys application to Heroku'
+
+inputs:
+  heroku-api-key:
+    description: 'Heroku API key'
+    required: true
+  heroku-app-name:
+    description: 'Heroku application name'
+    required: true
+  heroku-email:
+    description: 'Heroku account email'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install Heroku CLI
+      shell: bash
+      run: |
+        curl https://cli-assets.heroku.com/install.sh | sh
+
+    - name: Deploy to Heroku
+      uses: akhileshns/heroku-deploy@v3.14.15
+      with:
+        heroku_api_key: ${{ inputs.heroku-api-key }}
+        heroku_app_name: ${{ inputs.heroku-app-name }}
+        heroku_email: ${{ inputs.heroku-email }}

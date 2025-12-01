@@ -1,0 +1,143 @@
+name: "Heroku Post-Deployment Scripts"
+description: "Runs migrations, configuration setup, and validations on Heroku"
+
+inputs:
+  heroku-api-key:
+    description: "Heroku API key"
+    required: true
+  heroku-app-name:
+    description: "Heroku application name"
+    required: true
+  validation-sheet-id:
+    description: "Google Sheet ID for validations"
+    required: false
+    default: "1JRsCKm9KeeatVoW3wjsT2YqSy63js53Ib3vivK5NFYY"
+  run-pull-validations:
+    description: "Whether to pull validations from staging (production only)"
+    required: false
+    default: "false"
+  staging-url:
+    description: "Staging URL to pull validations from (required if run-pull-validations is true)"
+    required: false
+
+outputs:
+  migrations-output:
+    description: "Output from database migrations"
+    value: ${{ steps.migrations.outputs.migrations_output }}
+  migrations-status:
+    description: "Status of migrations step"
+    value: ${{ steps.migrations.outcome }}
+  config-output:
+    description: "Output from add_config command"
+    value: ${{ steps.add_config.outputs.config_output }}
+  config-status:
+    description: "Status of add_config step"
+    value: ${{ steps.add_config.outcome }}
+  pull-validations-output:
+    description: "Output from pull_validations command"
+    value: ${{ steps.pull_validations.outputs.pull_validations_output }}
+  pull-validations-status:
+    description: "Status of pull_validations step"
+    value: ${{ steps.pull_validations.outcome }}
+  validations-output:
+    description: "Output from validate command"
+    value: ${{ steps.validations.outputs.validation_output }}
+  validations-status:
+    description: "Status of validations step"
+    value: ${{ steps.validations.outcome }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Run database migrations
+      id: migrations
+      shell: bash
+      env:
+        HEROKU_API_KEY: ${{ inputs.heroku-api-key }}
+      run: |
+        echo "Running migrations..."
+        set +e
+        OUTPUT=$(heroku run -a ${{ inputs.heroku-app-name }} "python manage.py migrate" 2>&1)
+        STATUS=$?
+        set -e
+        echo "$OUTPUT"
+        DELIMITER="EOF_$(date +%s)"
+        echo "migrations_output<<${DELIMITER}" >> $GITHUB_OUTPUT
+        echo "$OUTPUT" >> $GITHUB_OUTPUT
+        echo "${DELIMITER}" >> $GITHUB_OUTPUT
+
+        if [ $STATUS -ne 0 ] && echo "$OUTPUT" | grep -q "Conflicting migrations detected"; then
+          echo "Migration conflict detected. Auto-merge on Heroku is not supported (slug is read-only)."
+          echo "Please resolve the conflict locally (python manage.py makemigrations --merge), commit, and re-deploy."
+          exit 1
+        elif [ $STATUS -ne 0 ]; then
+          exit $STATUS
+        fi
+
+    - name: Add configurations
+      if: success()
+      id: add_config
+      continue-on-error: true
+      shell: bash
+      env:
+        HEROKU_API_KEY: ${{ inputs.heroku-api-key }}
+      run: |
+        echo "Adding configurations..."
+        OUTPUT=$(heroku run -a ${{ inputs.heroku-app-name }} "python manage.py add_config --all" 2>&1)
+        echo "$OUTPUT"
+        DELIMITER="EOF_$(date +%s)"
+        echo "config_output<<${DELIMITER}" >> $GITHUB_OUTPUT
+        echo "$OUTPUT" >> $GITHUB_OUTPUT
+        echo "${DELIMITER}" >> $GITHUB_OUTPUT
+
+    - name: Pull validations from staging
+      if: success() && inputs.run-pull-validations == 'true'
+      id: pull_validations
+      continue-on-error: true
+      shell: bash
+      env:
+        HEROKU_API_KEY: ${{ inputs.heroku-api-key }}
+      run: |
+        echo "Pulling validations from staging..."
+        set +e
+        OUTPUT=$(timeout 600 heroku run -a ${{ inputs.heroku-app-name }} "python manage.py pull_validations ${{ inputs.staging-url }}" 2>&1)
+        TIMEOUT_STATUS=$?
+        set -e
+
+        if [ $TIMEOUT_STATUS -eq 124 ]; then
+          OUTPUT="ERROR: Pull validations timed out after 10 minutes"
+          echo "$OUTPUT"
+        else
+          echo "$OUTPUT"
+        fi
+
+        DELIMITER="EOF_$(date +%s)"
+        echo "pull_validations_output<<${DELIMITER}" >> $GITHUB_OUTPUT
+        echo "$OUTPUT" >> $GITHUB_OUTPUT
+        echo "${DELIMITER}" >> $GITHUB_OUTPUT
+
+    - name: Run validations
+      if: success()
+      id: validations
+      continue-on-error: true
+      shell: bash
+      env:
+        HEROKU_API_KEY: ${{ inputs.heroku-api-key }}
+      run: |
+        echo "Running validations..."
+        set +e
+        OUTPUT=$(timeout 600 heroku run -a ${{ inputs.heroku-app-name }} "python manage.py validate --sheet-id ${{ inputs.validation-sheet-id }}" 2>&1)
+        TIMEOUT_STATUS=$?
+        set -e
+
+        if [ $TIMEOUT_STATUS -eq 124 ]; then
+          OUTPUT="ERROR: Validations timed out after 10 minutes"
+          echo "$OUTPUT"
+        else
+          echo "$OUTPUT"
+        fi
+
+        DELIMITER="EOF_$(date +%s)"
+        echo "validation_output<<${DELIMITER}" >> $GITHUB_OUTPUT
+        echo "$OUTPUT" >> $GITHUB_OUTPUT
+        echo "${DELIMITER}" >> $GITHUB_OUTPUT

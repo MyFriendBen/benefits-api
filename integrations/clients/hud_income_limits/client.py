@@ -1,0 +1,361 @@
+"""
+HUD Income Limits API Client
+
+Drop-in replacement for the Google Sheets-based Ami class.
+
+Provides access to two HUD Income Limits datasets:
+1. MTSP (Multifamily Tax Subsidy Project): 20%, 30%, 40%, 50%, 60%, 70%, 80%, 100% AMI
+2. Standard Section 8 Income Limits: 30%, 50%, 80% AMI
+
+API Documentation: https://www.huduser.gov/portal/dataset/fmr-api.html
+"""
+
+from typing import Union, Literal, Optional
+from decouple import config
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+from sentry_sdk import capture_exception
+from django.core.cache import cache
+from screener.models import Screen
+
+# Type alias for MTSP AMI percentage levels (Multifamily Tax Subsidy Project)
+MtspAmiPercent = Literal["20%", "30%", "40%", "50%", "60%", "70%", "80%", "100%"]
+
+# Type alias for Standard Section 8 AMI percentage levels
+Section8AmiPercent = Literal["30%", "50%", "80%"]
+
+
+class HudIncomeClientError(Exception):
+    """Base exception for HUD Income Client errors"""
+
+    pass
+
+
+class HudIncomeClient:
+    """
+    HUD Income Limits API client.
+
+    Primary methods:
+        - get_screen_mtsp_ami(): MTSP Income Limits (all percentages 20%-100%)
+        - get_screen_il_ami(): Standard Section 8 Income Limits (30%, 50%, 80% only)
+
+    Requires:
+        - HUD_API_TOKEN environment variable
+        - API registration for both FMR and Income Limits datasets
+    """
+
+    BASE_URL = "https://www.huduser.gov/hudapi/public"
+    CACHE_TTL = 86400  # 24 hours in seconds
+
+    # Standard Section 8 Income Limit category mappings per HUD API spec
+    # Maps AMI percentage to HUD's nested category name
+    SECTION8_CATEGORIES = {"30": "extremely_low", "50": "very_low", "80": "low"}  # 30% AMI  # 50% AMI  # 80% AMI
+
+    def __init__(self, api_token: Optional[str] = None, max_retries: int = 3):
+        """
+        Initialize with HUD API token from environment or parameter.
+
+        Args:
+            api_token: Optional API token (defaults to HUD_API_TOKEN env var)
+            max_retries: Maximum number of retry attempts for transient errors (default: 3)
+        """
+        self._api_token = api_token
+        self._headers = None
+        self._session = self._create_session_with_retries(max_retries)
+
+    def _create_session_with_retries(self, max_retries: int) -> requests.Session:
+        """
+        Create a requests session with automatic retry logic.
+
+        Retries on:
+        - Connection errors (network issues)
+        - Timeout errors
+        - 429 (Too Many Requests) - with exponential backoff
+        - 500, 502, 503, 504 (Server errors) - transient issues
+
+        Does NOT retry on:
+        - 4xx client errors (except 429) - these are permanent
+        - Successful responses (2xx, 3xx)
+
+        Args:
+            max_retries: Maximum number of retry attempts
+
+        Returns:
+            Configured requests Session
+        """
+        session = requests.Session()
+
+        # Configure retry strategy
+        retry_strategy = Retry(
+            total=max_retries,
+            backoff_factor=1,  # Wait 1s, 2s, 4s, 8s between retries
+            status_forcelist=[429, 500, 502, 503, 504],  # HTTP codes to retry
+            allowed_methods=["GET"],  # Only retry safe methods
+            raise_on_status=False,  # Let us handle status codes
+        )
+
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
+
+        return session
+
+    @property
+    def headers(self):
+        """Lazy-load headers with API token."""
+        if self._headers is None:
+            token = self._api_token or config("HUD_API_TOKEN", default=None)
+            if not token:
+                raise HudIncomeClientError(
+                    "HUD_API_TOKEN environment variable required. "
+                    "Get your token at: https://www.huduser.gov/hudapi/public/register"
+                )
+            self._headers = {"Authorization": f"Bearer {token}"}
+        return self._headers
+
+    def get_screen_mtsp_ami(
+        self,
+        screen: Screen,
+        percent: MtspAmiPercent,
+        year: Union[int, str],
+    ) -> int:
+        """
+        Get MTSP (Multifamily Tax Subsidy Project) income limit for a Screen object.
+
+        Uses HUD's MTSP Income Limits endpoint which provides all percentage levels
+        (20%, 30%, 40%, 50%, 60%, 70%, 80%, 100% AMI) with hold-harmless provisions.
+
+        MTSP limits are designed for Low-Income Housing Tax Credit (LIHTC) projects
+        and never decrease year-over-year, making them suitable for general AMI
+        eligibility screening.
+
+        ⚠️ Note: MTSP values may differ from Standard Section 8 Income Limits,
+        especially for 30% and 50% AMI in years when the economy declines.
+
+        Args:
+            screen: Screen object with white_label.state_code, county, and household_size
+            percent: Income percentage ("20%", "30%", "40%", "50%", "60%", "70%", "80%", "100%")
+            year: Year for income limits (e.g., 2025 or "2025")
+
+        Returns:
+            Income limit in dollars
+
+        Example:
+            >>> hud_client.get_screen_mtsp_ami(screen, "80%", "2025")
+            89520
+        """
+        self._validate_household_size(screen.household_size)
+        year = int(year) if isinstance(year, str) else year
+
+        entity_id = self._get_entity_id(screen.white_label.state_code, screen.county, year)
+
+        cache_key = f"hud_mtsp_{entity_id}_{year}"
+        data = self._fetch_cached_data(cache_key, f"mtspil/data/{entity_id}", year)
+        area_data = self._validate_data_response(data, screen.county, screen.white_label.state_code)
+
+        # Get the field value based on percent
+        # MTSP API structure: {"20percent": {"il20_p1": ...}, "30percent": {...}, ..., "80percent": {...}}
+        if percent == "100%":
+            value = area_data.get("median_income")
+            if value is None:
+                raise HudIncomeClientError("No median income data available")
+        else:
+            # MTSP endpoint provides 20%, 30%, 40%, 50%, 60%, 70%, 80%
+            percent_num = percent.rstrip("%")
+            category = f"{percent_num}percent"
+
+            if category not in area_data:
+                raise HudIncomeClientError(f"No {percent} AMI data available")
+
+            field = f"il{percent_num}_p{screen.household_size}"
+            value = area_data[category].get(field)
+
+            if value is None:
+                raise HudIncomeClientError(f"No {percent} AMI data for household size {screen.household_size}")
+
+        return int(value)
+
+    def get_screen_il_ami(
+        self,
+        screen,
+        percent: Section8AmiPercent,
+        year: Union[int, str],
+    ) -> int:
+        """
+        Get Standard Section 8 Income Limit for a Screen object.
+
+        Uses HUD's standard Income Limits endpoint used for Section 8, Public Housing,
+        and Housing Choice Vouchers. Only provides 30%, 50%, and 80% AMI levels.
+
+        Standard IL limits reflect current economic conditions and can decrease
+        year-over-year, unlike MTSP which has hold-harmless provisions.
+
+        Use this method when:
+        - Program explicitly requires "Section 8 eligibility"
+        - Federal HUD compliance or audits require standard IL calculations
+        - Program legislation references "HUD Section 8 Income Limits"
+
+        Args:
+            screen: Screen object with white_label.state_code, county, and household_size
+            percent: Income percentage ("30%", "50%", or "80%" only)
+            year: Year for income limits (e.g., 2025 or "2025")
+
+        Returns:
+            Income limit in dollars
+
+        Example:
+            >>> hud_client.get_screen_il_ami(screen, "80%", "2025")
+            89520
+        """
+        self._validate_household_size(screen.household_size)
+        year = int(year) if isinstance(year, str) else year
+
+        entity_id = self._get_entity_id(screen.white_label.state_code, screen.county, year)
+
+        cache_key = f"hud_il_{entity_id}_{year}"
+        data = self._fetch_cached_data(cache_key, f"il/data/{entity_id}", year)
+        area_data = self._validate_data_response(data, screen.county, screen.white_label.state_code)
+
+        # Standard IL API returns nested structure:
+        # - 30% AMI: data.extremely_low.il30_p{household_size}
+        # - 50% AMI: data.very_low.il50_p{household_size}
+        # - 80% AMI: data.low.il80_p{household_size}
+        percent_num = percent.rstrip("%")
+
+        category = self.SECTION8_CATEGORIES.get(percent_num)
+        if not category:
+            raise HudIncomeClientError(f"Invalid percent for Standard IL: {percent}. Must be 30%, 50%, or 80%.")
+
+        # Get the nested category object
+        category_data = area_data.get(category)
+        if not category_data:
+            raise HudIncomeClientError(f"No {percent} AMI data available")
+
+        # Field format: "il{percent}_p{household_size}" (e.g., "il80_p4")
+        field = f"il{percent_num}_p{screen.household_size}"
+
+        value = category_data.get(field)
+        if value is None:
+            raise HudIncomeClientError(f"No {percent} AMI data for household size {screen.household_size}")
+
+        return int(value)
+
+    def _validate_household_size(self, household_size: int) -> None:
+        """Validate household size is within HUD API bounds (1-8)."""
+        if household_size < 1 or household_size > 8:
+            raise HudIncomeClientError("Household size must be between 1 and 8")
+
+    def _fetch_cached_data(self, cache_key: str, endpoint: str, year: int) -> dict:
+        """Fetch data from cache or API and cache the result."""
+        data = cache.get(cache_key)
+
+        if not data:
+            params = {"year": str(year)} if year else {}
+            data = self._api_request(endpoint, params)
+            cache.set(cache_key, data, self.CACHE_TTL)
+
+        return data
+
+    def _validate_data_response(self, data: dict, county: str, state_code: str) -> dict:
+        """Validate API response contains data and return the data section."""
+        if not data or "data" not in data:
+            raise HudIncomeClientError(f"No income limit data found for {county}, {state_code}")
+        return data["data"]
+
+    def _get_entity_id(self, state_code: str, county_name: str, year: int) -> str:
+        """Get FIPS entity ID for a county in any state."""
+        # Normalize county name
+        county_name = county_name.strip()
+        if not county_name.lower().endswith("county"):
+            county_name = f"{county_name} County"
+
+        # Check cache
+        cache_key = f"hud_counties_{state_code}_{year or 'latest'}"
+        counties = cache.get(cache_key)
+
+        if not counties:
+            # Use FMR endpoint to list counties (shared across FMR and IL APIs)
+            # Note: This requires FMR dataset API access in addition to IL dataset
+            # Per HUD API docs: https://www.huduser.gov/portal/dataset/fmr-api.html
+            # - 'year' parameter: optional, retrieves data for specific year
+            # - 'updated' parameter: for 2025+, gets refreshed FIPS codes
+            params = {}
+            if year:
+                params["year"] = str(year)
+                if year >= 2025:
+                    params["updated"] = str(year)
+            counties = self._api_request(f"fmr/listCounties/{state_code.upper()}", params)
+            cache.set(cache_key, counties, self.CACHE_TTL)
+
+        # Find matching county (FMR API returns array directly, not wrapped in data object)
+        if not counties or not isinstance(counties, list):
+            raise HudIncomeClientError(f"Could not retrieve counties for {state_code}")
+
+        for county in counties:
+            # HUD API changed field name in 2025 dataset update:
+            # - Without 'updated' param or pre-2025: uses 'county_name'
+            # - With 'updated=2025' param: uses 'cntyname' (shortened field name)
+            # We check both for compatibility across all years
+            name = county.get("county_name") or county.get("cntyname", "")
+            if name.lower() == county_name.lower():
+                return county["fips_code"]
+
+        raise HudIncomeClientError(f"County not found: {county_name}, {state_code}")
+
+    def _api_request(self, endpoint: str, params: Optional[dict] = None) -> dict:
+        """
+        Make an API request to HUD with automatic retry logic.
+
+        Retries are handled automatically by the session for:
+        - Network errors (connection failures, timeouts)
+        - Rate limiting (429)
+        - Server errors (500, 502, 503, 504)
+
+        Args:
+            endpoint: API endpoint path
+            params: Optional query parameters
+
+        Returns:
+            JSON response as dict
+
+        Raises:
+            HudIncomeClientError: On authentication, authorization, or data errors
+        """
+        try:
+            response = self._session.get(f"{self.BASE_URL}/{endpoint}", headers=self.headers, params=params, timeout=30)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.HTTPError as e:
+            capture_exception(e)
+            status_code = e.response.status_code
+            if status_code == 401:
+                raise HudIncomeClientError("Authentication failed. Check HUD_API_TOKEN is set and valid.")
+            elif status_code == 403:
+                raise HudIncomeClientError(
+                    "Access denied. Ensure your HUD API account is registered for both "
+                    "FMR and Income Limits datasets at https://www.huduser.gov/hudapi/public/register"
+                )
+            elif status_code == 404:
+                raise HudIncomeClientError(
+                    f"Data not found for endpoint: {endpoint}. " "Check that the state/county exists and year is valid."
+                )
+            elif status_code == 429:
+                raise HudIncomeClientError("Rate limit exceeded. Please wait before making more requests.")
+            else:
+                raise HudIncomeClientError(f"API request failed ({status_code}): {e.response.text}")
+        except requests.exceptions.Timeout as e:
+            capture_exception(e)
+            raise HudIncomeClientError(
+                "Request timeout after multiple retries. The HUD API may be experiencing issues."
+            )
+        except requests.exceptions.ConnectionError as e:
+            capture_exception(e)
+            raise HudIncomeClientError("Connection failed. Please check your network connection or try again later.")
+        except requests.exceptions.RequestException as e:
+            capture_exception(e)
+            raise HudIncomeClientError(f"Request failed: {str(e)}")
+
+
+# Default client instance
+hud_client = HudIncomeClient()

@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from django.conf import settings
 from django.db.models import Q, OuterRef, Exists
 from translations.models import Translation
-from integrations.services.google_translate.integration import Translate
+from integrations.clients.google_translate import Translate
 
 
 class Command(BaseCommand):

@@ -9,3 +9,25 @@ This is the repository for the backend Python/Django rules engine that takes hou
 ## Set Up Benefits-API (back-end part)
 
 Setup instructions are located in the [Wiki](https://github.com/Gary-Community-Ventures/benefits-api/wiki/Get-Started).
+
+## Testing
+
+We use pytest for testing with two types of tests:
+
+- **Unit tests**: Fast, mocked tests that don't require external services
+- **Integration tests**: Tests that verify integration with real external APIs using VCR
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# Run only unit tests (skip integration tests)
+pytest -m "not integration"
+
+# Run only integration tests
+pytest -m integration
+```
+
+For detailed information about writing and maintaining integration tests, see [docs/INTEGRATION_TESTING.md](docs/INTEGRATION_TESTING.md).
