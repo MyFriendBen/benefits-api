@@ -30,16 +30,16 @@ class Command(BaseCommand):
         # Load test cases from JSON file
         try:
             test_cases = self._load_test_cases(json_file_path)
-        except FileNotFoundError:
-            raise CommandError(f"File not found: {json_file_path}")
+        except FileNotFoundError as e:
+            raise CommandError(f"File not found: {json_file_path}") from e
         except json.JSONDecodeError as e:
-            raise CommandError(f"Invalid JSON file: {e}")
+            raise CommandError(f"Invalid JSON file: {e}") from e
 
         # Validate JSON against schema
         try:
             self._validate_against_schema(test_cases)
         except jsonschema.ValidationError as e:
-            raise CommandError(f"JSON validation failed: {e.message}")
+            raise CommandError(f"JSON validation failed: {e.message}") from e
 
         # Validate that all programs exist
         self._validate_programs_exist(test_cases)
@@ -162,20 +162,18 @@ class Command(BaseCommand):
         notes: str,
     ) -> Validation:
         """Create a validation record"""
-        # Check if validation already exists with matching values
+        # Check if validation already exists using the unique constraint fields
         existing = Validation.objects.filter(
             screen=screen,
             program_name=program_name,
-            eligible=eligible,
-            value=Decimal(str(value)),
         ).first()
 
         if existing:
-            # Skip - validation already exists with same values
-            self.stdout.write(
-                self.style.WARNING(f"Skipped existing validation for {program_name} (already exists with same values)")
+            raise CommandError(
+                f"Validation already exists for screen {screen.uuid} and program '{program_name}'. "
+                f"Existing values: eligible={existing.eligible}, value={existing.value}. "
+                f"Attempted values: eligible={eligible}, value={value}"
             )
-            return existing
 
         # Create new validation
         validation = Validation.objects.create(
