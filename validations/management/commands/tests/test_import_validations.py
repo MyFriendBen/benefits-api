@@ -306,7 +306,7 @@ class ImportValidationsCommandTest(TestCase):
             # Verify summary components
             self.assertIn("IMPORT SUMMARY", output)
             self.assertIn("Total test cases:", output)
-            self.assertIn("Successful:", output)
+            self.assertIn("test cases imported successfully", output)
             self.assertIn("Screens created:", output)
             self.assertIn("Screen UUID:", output)
             self.assertIn("Screen URL:", output)
