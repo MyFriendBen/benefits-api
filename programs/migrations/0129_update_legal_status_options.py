@@ -5,7 +5,9 @@ from django.db import migrations
 def update_legal_status_options(apps, schema_editor):
     """
     Remove legacy 'green_card' and 'other' legal status options.
-    Add new options if they don't exist: 'gc_5plus', 'gc_5less', 'otherWithWorkPermission'.
+    Ensure current legal status options exist: 'gc_5plus', 'gc_5less', etc.
+
+    Note: 'other' represented people without work permission - not a valid eligibility category.
     """
     LegalStatus = apps.get_model("programs", "LegalStatus")
 
@@ -14,19 +16,19 @@ def update_legal_status_options(apps, schema_editor):
     deleted_other = LegalStatus.objects.filter(status="other").delete()
 
     print(f"🗑️  Removed legacy LegalStatus options:")
-    print(f"   - green_card: {deleted_green_card[0]} rows")
-    print(f"   - other: {deleted_other[0]} rows")
+    print(f"   - green_card: {deleted_green_card[0]} rows (replaced by gc_5plus/gc_5less)")
+    print(f"   - other: {deleted_other[0]} rows (people without work permission - invalid)")
 
-    # Add new options if they don't exist
-    new_statuses = ["gc_5plus", "gc_5less", "otherWithWorkPermission", "citizen", "non_citizen", "refugee"]
+    # Ensure all current legal status options exist
+    current_statuses = ["gc_5plus", "gc_5less", "otherWithWorkPermission", "citizen", "non_citizen", "refugee"]
     created_count = 0
 
-    for status_name in new_statuses:
+    for status_name in current_statuses:
         _, created = LegalStatus.objects.get_or_create(status=status_name)
         if created:
             created_count += 1
 
-    print(f"✅ Ensured {len(new_statuses)} legal status options exist ({created_count} newly created)")
+    print(f"✅ Ensured {len(current_statuses)} legal status options exist ({created_count} newly created)")
 
 
 def reverse_migration(apps, schema_editor):

@@ -10,24 +10,39 @@ def migrate_green_card_to_subtypes(apps, schema_editor):
     had to choose a subtype. This migration ensures program data matches frontend behavior.
     """
     Program = apps.get_model("programs", "Program")
+    LegalStatus = apps.get_model("programs", "LegalStatus")
 
     programs_updated = 0
 
+    # Get LegalStatus objects for lookup
+    try:
+        green_card = LegalStatus.objects.get(status="green_card")
+    except LegalStatus.DoesNotExist:
+        print("⚠️  'green_card' status not found - skipping migration")
+        return
+
+    gc_5plus, _ = LegalStatus.objects.get_or_create(status="gc_5plus")
+    gc_5less, _ = LegalStatus.objects.get_or_create(status="gc_5less")
+
     for program in Program.objects.all():
-        legal_statuses = list(program.legal_status_required)
+        current_statuses = program.legal_status_required.all()
+        status_names = [s.status for s in current_statuses]
 
-        if "green_card" in legal_statuses:
+        if "green_card" in status_names:
             # Remove the legacy 'green_card' value
-            legal_statuses.remove("green_card")
+            program.legal_status_required.remove(green_card)
 
-            # Add both subtypes if not already present
-            if "gc_5plus" not in legal_statuses:
-                legal_statuses.append("gc_5plus")
-            if "gc_5less" not in legal_statuses:
-                legal_statuses.append("gc_5less")
+            # Only add both subtypes if NEITHER is already present
+            # If one subtype is already specified, keep just that one
+            has_gc_5plus = "gc_5plus" in status_names
+            has_gc_5less = "gc_5less" in status_names
 
-            program.legal_status_required = legal_statuses
-            program.save(update_fields=["legal_status_required"])
+            if not has_gc_5plus and not has_gc_5less:
+                # Neither subtype present, add both
+                program.legal_status_required.add(gc_5plus)
+                program.legal_status_required.add(gc_5less)
+            # If one or both subtypes already present, leave them as-is
+
             programs_updated += 1
 
     print(f"✅ Migrated {programs_updated} programs: 'green_card' → ['gc_5plus', 'gc_5less']")
@@ -35,29 +50,28 @@ def migrate_green_card_to_subtypes(apps, schema_editor):
 
 def reverse_migration(apps, schema_editor):
     """
-    Reverse migration: Replace 'gc_5plus' AND 'gc_5less' back with 'green_card'.
-    Only replaces if BOTH are present.
+    Reverse migration: Cannot reliably reverse without knowing original state.
+
+    The forward migration removes 'green_card' and conditionally adds subtypes.
+    We can't determine which subtypes were added by migration vs. already present.
+
+    Possible original states:
+    - green_card only → adds both subtypes
+    - green_card + gc_5plus → keeps gc_5plus only
+    - green_card + gc_5less → keeps gc_5less only
+    - green_card + both → keeps both
+
+    Safe no-op: Re-add 'green_card' option to LegalStatus table for manual cleanup.
+    Admins should manually review programs and adjust as needed.
     """
-    Program = apps.get_model("programs", "Program")
+    LegalStatus = apps.get_model("programs", "LegalStatus")
 
-    programs_updated = 0
+    # Just restore the green_card option to the LegalStatus table
+    LegalStatus.objects.get_or_create(status="green_card")
 
-    for program in Program.objects.all():
-        legal_statuses = list(program.legal_status_required)
-
-        # Only reverse if both subtypes are present
-        if "gc_5plus" in legal_statuses and "gc_5less" in legal_statuses:
-            legal_statuses.remove("gc_5plus")
-            legal_statuses.remove("gc_5less")
-
-            if "green_card" not in legal_statuses:
-                legal_statuses.append("green_card")
-
-            program.legal_status_required = legal_statuses
-            program.save(update_fields=["legal_status_required"])
-            programs_updated += 1
-
-    print(f"⏪ Reversed {programs_updated} programs: ['gc_5plus', 'gc_5less'] → 'green_card'")
+    print("⚠️  Reverse migration: 'green_card' restored to LegalStatus table.")
+    print("⚠️  Programs not automatically reverted - manual review required.")
+    print("⚠️  Cannot determine original subtype configuration without data loss.")
 
 
 class Migration(migrations.Migration):

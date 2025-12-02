@@ -1,57 +1,44 @@
-# Generated migration to replace legacy 'other' value with 'otherWithWorkPermission'
+# Generated migration to remove legacy 'other' value (people without work permission)
 from django.db import migrations
 
 
-def migrate_other_to_other_with_work_permission(apps, schema_editor):
+def remove_other_status(apps, schema_editor):
     """
-    Replace 'other' in legal_status_required with 'otherWithWorkPermission'.
+    Remove 'other' from legal_status_required.
 
-    Background: The frontend now uses the more specific 'otherWithWorkPermission'
-    to clearly indicate lawfully present noncitizens with authorization.
+    Background: The 'other' status represented people without work permission,
+    which is not a valid eligibility category. Programs should not use this status.
     """
     Program = apps.get_model("programs", "Program")
+    LegalStatus = apps.get_model("programs", "LegalStatus")
 
     programs_updated = 0
 
-    for program in Program.objects.all():
-        legal_statuses = list(program.legal_status_required)
-
-        if "other" in legal_statuses:
-            # Replace 'other' with 'otherWithWorkPermission'
-            legal_statuses.remove("other")
-
-            if "otherWithWorkPermission" not in legal_statuses:
-                legal_statuses.append("otherWithWorkPermission")
-
-            program.legal_status_required = legal_statuses
-            program.save(update_fields=["legal_status_required"])
-            programs_updated += 1
-
-    print(f"✅ Migrated {programs_updated} programs: 'other' → 'otherWithWorkPermission'")
-
-
-def reverse_migration(apps, schema_editor):
-    """
-    Reverse migration: Replace 'otherWithWorkPermission' back with 'other'.
-    """
-    Program = apps.get_model("programs", "Program")
-
-    programs_updated = 0
+    try:
+        other = LegalStatus.objects.get(status="other")
+    except LegalStatus.DoesNotExist:
+        print("⚠️  'other' status not found - skipping migration")
+        return
 
     for program in Program.objects.all():
-        legal_statuses = list(program.legal_status_required)
+        current_statuses = program.legal_status_required.all()
+        status_names = [s.status for s in current_statuses]
 
-        if "otherWithWorkPermission" in legal_statuses:
-            legal_statuses.remove("otherWithWorkPermission")
-
-            if "other" not in legal_statuses:
-                legal_statuses.append("other")
-
-            program.legal_status_required = legal_statuses
-            program.save(update_fields=["legal_status_required"])
+        if "other" in status_names:
+            # Remove 'other' without replacement (it was for people without work permission)
+            program.legal_status_required.remove(other)
             programs_updated += 1
 
-    print(f"⏪ Reversed {programs_updated} programs: 'otherWithWorkPermission' → 'other'")
+    print(f"✅ Removed 'other' status from {programs_updated} programs (represented people without work permission)")
+
+
+def reverse_migration(_apps, _schema_editor):
+    """
+    Reverse migration: Add back 'other' status to programs.
+    """
+    # This is a safe no-op reverse - we can't know which programs should get 'other' back
+    # since it represented people without work permission (not a valid eligibility category)
+    print("⏪ Reverse migration: 'other' status not restored (represented invalid eligibility)")
 
 
 class Migration(migrations.Migration):
@@ -61,5 +48,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(migrate_other_to_other_with_work_permission, reverse_migration),
+        migrations.RunPython(remove_other_status, reverse_migration),
     ]
