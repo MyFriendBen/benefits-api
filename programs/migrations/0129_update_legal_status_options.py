@@ -52,7 +52,7 @@ def reverse_migration(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("programs", "0128_migrate_other_legal_status"),
+        ("programs", "0128_remove_other_legal_status"),
     ]
 
     operations = [
