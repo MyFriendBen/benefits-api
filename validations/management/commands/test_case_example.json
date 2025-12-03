@@ -1,0 +1,394 @@
+[
+  {
+    "notes": "TX ACA - Ineligible due to household income above 400% FPL",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_size": 3,
+      "household_assets": 10000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 40,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 8000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 38,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 10,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_aca": false
+    },
+    "expected_results": {
+      "program_name": "tx_aca",
+      "eligible": false,
+      "value": 0
+    }
+  },
+  {
+    "notes": "CO SNAP - Eligible low-income household with children",
+    "household": {
+      "white_label": "co",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "80202",
+      "county": "Denver County",
+      "household_size": 4,
+      "household_assets": 2000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 32,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1800.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 8,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "chp": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 5,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "chp": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 2,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        }
+      ],
+      "expenses": [
+        {
+          "type": "childcare",
+          "amount": 400.00,
+          "frequency": "monthly"
+        },
+        {
+          "type": "rent",
+          "amount": 1200.00,
+          "frequency": "monthly"
+        }
+      ],
+      "has_snap": false,
+      "needs_food": true
+    },
+    "expected_results": {
+      "program_name": "snap",
+      "eligible": true,
+      "value": 600.00
+    }
+  },
+  {
+    "notes": "NC Multiple Programs - Senior with SSI and veteran status",
+    "household": {
+      "white_label": "nc",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "27601",
+      "county": "Wake County",
+      "household_size": 1,
+      "household_assets": 1500.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 68,
+          "veteran": true,
+          "disabled": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSI",
+              "amount": 914.00,
+              "frequency": "monthly"
+            },
+            {
+              "type": "socialSecurity",
+              "amount": 1200.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicare": true,
+            "va": true
+          },
+          "energy_calculator": {
+            "surviving_spouse": false,
+            "receives_ssi": true,
+            "medical_equipment": true
+          }
+        }
+      ],
+      "expenses": [
+        {
+          "type": "rent",
+          "amount": 800.00,
+          "frequency": "monthly"
+        },
+        {
+          "type": "medical",
+          "amount": 150.00,
+          "frequency": "monthly"
+        }
+      ],
+      "energy_calculator": {
+        "is_home_owner": false,
+        "is_renter": true,
+        "electric_provider": "duke_energy",
+        "electric_provider_name": "Duke Energy",
+        "has_past_due_energy_bills": true
+      },
+      "has_ssi": true,
+      "has_snap": false,
+      "needs_housing_help": true,
+      "needs_veteran_services": true
+    },
+    "expected_results": [
+      {
+        "program_name": "snap",
+        "eligible": true,
+        "value": 281.00
+      },
+      {
+        "program_name": "nc_medicaid",
+        "eligible": true,
+        "value": 0
+      },
+      {
+        "program_name": "nc_energy_assistance",
+        "eligible": true,
+        "value": 350.00
+      }
+    ]
+  },
+  {
+    "notes": "MA EITC - Working family with self-employment income",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02108",
+      "county": "Suffolk County",
+      "household_size": 3,
+      "household_assets": 5000.00,
+      "last_tax_filing_year": "2024",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "selfEmployment",
+              "amount": 3200.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "private": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 33,
+          "unemployed": true,
+          "worked_in_last_18_mos": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "unemployment",
+              "amount": 500.00,
+              "frequency": "weekly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 6,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        }
+      ],
+      "expenses": [
+        {
+          "type": "childcare",
+          "amount": 1200.00,
+          "frequency": "monthly"
+        }
+      ],
+      "has_eitc": false
+    },
+    "expected_results": [
+      {
+        "program_name": "eitc",
+        "eligible": true,
+        "value": 3618.00
+      },
+      {
+        "program_name": "ctc",
+        "eligible": true,
+        "value": 2000.00
+      }
+    ]
+  },
+  {
+    "notes": "IL Hourly Worker - Single parent with hourly wage and childcare expenses",
+    "household": {
+      "white_label": "il",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "60601",
+      "county": "Cook County",
+      "household_size": 2,
+      "household_assets": 500.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 28,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 15.50,
+              "frequency": "hourly",
+              "hours_worked": 35
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 3,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        }
+      ],
+      "expenses": [
+        {
+          "type": "childcare",
+          "amount": 800.00,
+          "frequency": "monthly"
+        },
+        {
+          "type": "rent",
+          "amount": 950.00,
+          "frequency": "monthly"
+        }
+      ],
+      "has_medicaid": false,
+      "has_snap": false,
+      "has_il_eitc": false,
+      "needs_baby_supplies": true,
+      "needs_childcare": true
+    },
+    "expected_results": [
+      {
+        "program_name": "snap",
+        "eligible": true,
+        "value": 450.00
+      },
+      {
+        "program_name": "il_eitc",
+        "eligible": true,
+        "value": 680.00
+      },
+      {
+        "program_name": "wic",
+        "eligible": true,
+        "value": 50.00
+      },
+      {
+        "program_name": "medicaid",
+        "eligible": true,
+        "value": 0
+      }
+    ]
+  }
+]
