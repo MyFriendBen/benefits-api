@@ -15,7 +15,7 @@ def update_legal_status_options(apps, schema_editor):
     deleted_green_card = LegalStatus.objects.filter(status="green_card").delete()
     deleted_other = LegalStatus.objects.filter(status="other").delete()
 
-    print(f"🗑️  Removed legacy LegalStatus options:")
+    print("🗑️  Removed legacy LegalStatus options:")
     print(f"   - green_card: {deleted_green_card[0]} rows (replaced by gc_5plus/gc_5less)")
     print(f"   - other: {deleted_other[0]} rows (people without work permission - invalid)")
 
@@ -33,20 +33,19 @@ def update_legal_status_options(apps, schema_editor):
 
 def reverse_migration(apps, schema_editor):
     """
-    Reverse migration: Add back 'green_card' and 'other', remove new subtypes.
+    Reverse migration: Add back 'green_card', keep 'other' removed (consistent with 0128).
     """
     LegalStatus = apps.get_model("programs", "LegalStatus")
 
-    # Add back legacy options
+    # Add back 'green_card' only (0128's reverse does NOT restore 'other')
     LegalStatus.objects.get_or_create(status="green_card")
-    LegalStatus.objects.get_or_create(status="other")
 
     # Optionally remove the new subtypes (commented out to be safe)
     # LegalStatus.objects.filter(status='gc_5plus').delete()
     # LegalStatus.objects.filter(status='gc_5less').delete()
     # LegalStatus.objects.filter(status='otherWithWorkPermission').delete()
 
-    print("⏪ Restored legacy legal status options: 'green_card', 'other'")
+    print("⏪ Restored 'green_card' status ('other' not restored - see 0128)")
 
 
 class Migration(migrations.Migration):
