@@ -643,9 +643,7 @@ class TestHeadStartDependency(TestCase):
             screen=self.screen, relationship="headOfHousehold", age=30, has_income=True
         )
 
-        self.child = HouseholdMember.objects.create(
-            screen=self.screen, relationship="child", age=4, has_income=False
-        )
+        self.child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=4, has_income=False)
 
     def test_head_start_dependency_exists(self):
         """Test that HeadStart dependency class exists and has correct field."""
