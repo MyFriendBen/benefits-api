@@ -2802,7 +2802,7 @@ class NcConfigurationData(ConfigurationData):
                         "_label": "housingBenefits.ncwap_desc",
                         "_default_message": "Helps low-income homeowners and renters save money by improving home energy efficiency",
                     },
-                },                
+                },
                 "lifeline": {
                     "name": {
                         "_label": "housingBenefits.lifeline",
