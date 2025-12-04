@@ -1,6 +1,21 @@
 from .base import ConfigurationData
 from screener.models import WhiteLabel
 
+"""
+Default White Label Configuration
+
+This is the fallback white label used when no specific state is selected.
+It is used in the frontend when whiteLabel is undefined or set to "_default".
+
+Purpose:
+    - Provides generic MyFriendBen branding and links
+    - Used for direct access to screener.myfriendben.org without a state-specific path
+    - Excluded from white label selection lists in admin interfaces
+
+Note: This is NOT a template for creating new white labels.
+For creating a new white label, see: benefits-api/configuration/white_labels/_template.py
+"""
+
 
 class DefaultConfigurationData(ConfigurationData):
     is_default = True
@@ -68,11 +83,12 @@ class DefaultConfigurationData(ConfigurationData):
         "zh-hans": "中文 (简体)",
         "ar": "عربي",
         "sw": "Kiswahili",
-    }
-
-    feedback_links = {
-        "email": "hello@myfriendben.org",
-        "survey": "https://docs.google.com/forms/d/e/1FAIpQLSdnfqjvlVSBQkJuUMvhEDUp-t6oD-8tPQi67uRG2iNetXmSfA/viewform?usp=sf_link",
+        "pl": "Polski",
+        "tl": "Tagalog",
+        "ko": "한국어",
+        "ur": "اردو",
+        "pt-br": "Português Brasileiro",
+        "ht": "Kreyòl",
     }
 
     override_text = {}

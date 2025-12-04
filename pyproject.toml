@@ -1,0 +1,9 @@
+[tool.black]
+line-length = 120
+extend-exclude = '''
+(
+    _template\.py
+  | programs/templates/new_white_label/
+  | migrations/\d{4}.*\.py
+)
+'''

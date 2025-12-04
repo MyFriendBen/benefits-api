@@ -34,6 +34,12 @@ EXTRA_LANG_INFO = {
         "name": "Somali",
         "name_local": "Soomaali",
     },
+    "ht": {
+        "bidi": False,
+        "code": "ht",
+        "name": "Haitian Creole",
+        "name_local": "Kreyòl ayisyen",
+    },
 }
 
 DJANGO_LANG_INFO.update(EXTRA_LANG_INFO)
@@ -84,6 +90,9 @@ CONTACT_SERVICE = os.getenv("CONTACT_SERVICE", "hubspot")
 BREVO_API_KEY = os.getenv("BREVO_API_KEY")
 FRONTEND_DOMAIN = config("FRONTEND_DOMAIN", default="http://localhost:3000")
 EMAIL_FROM = os.getenv("EMAIL_FROM")
+
+# Google Integrations (Translate, Sheets)
+ENABLE_GOOGLE_INTEGRATIONS = config("ENABLE_GOOGLE_INTEGRATIONS", default=True, cast=bool)
 
 # Application definition
 
@@ -219,6 +228,12 @@ LANGUAGES = (
     ("zh-hans", _("Simplified Chinese")),
     ("ar", _("Arabic")),
     ("sw", _("Kiswahili")),
+    ("pl", _("Polish")),
+    ("tl", _("Tagalog")),
+    ("ko", _("Korean")),
+    ("ur", _("Urdu")),
+    ("pt-br", _("Brazilian Portuguese")),
+    ("ht", _("Haitian Creole")),
 )
 
 TIME_ZONE = "UTC"
@@ -243,12 +258,28 @@ PARLER_LANGUAGES = {
         {"code": "zh-hans"},
         {"code": "ar"},
         {"code": "sw"},
+        {"code": "pl"},
+        {"code": "tl"},
+        {"code": "ko"},
+        {"code": "ur"},
+        {"code": "pt-br"},
+        {"code": "ht"},
     ),
     "default": {
         "fallbacks": ["en-us"],  # defaults to PARLER_DEFAULT_LANGUAGE_CODE
         # the default; let .active_translations() return fallbacks too.
         "hide_untranslated": True,
     },
+}
+
+# Add custom language info for languages not in Django's built-in LANG_INFO
+from django.conf.locale import LANG_INFO
+
+LANG_INFO["tl"] = {
+    "bidi": False,
+    "code": "tl",
+    "name": "Tagalog",
+    "name_local": "Tagalog",
 }
 
 # Static files (CSS, JavaScript, Images)
@@ -276,6 +307,46 @@ if config("SENTRY_DSN", None) is not None:
 
 django_heroku.settings(locals())
 
+# Cache Configuration
+# Multiple cache backends for different use cases
+# Heroku Redis automatically sets REDIS_URL when the add-on is provisioned
+REDIS_URL = config("REDIS_URL", default=None)
+
+# Always provide both cache backends
+CACHES = {
+    "default": {
+        # Use in-memory cache for Parler translations by default
+        # This avoids Redis connection issues and keeps translations fast
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "parler-translations",
+        "TIMEOUT": 300,
+        "OPTIONS": {
+            "MAX_ENTRIES": 10000,
+        },
+    },
+}
+
+# Add Redis cache backend if REDIS_URL is available
+if REDIS_URL:  # pragma: no cover
+    CACHES["redis"] = {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_URL,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            # Connection pool settings (good for production with multiple dynos)
+            "CONNECTION_POOL_KWARGS": {
+                "max_connections": 50,
+                "retry_on_timeout": True,
+            },
+            "SOCKET_CONNECT_TIMEOUT": 5,  # seconds
+            "SOCKET_TIMEOUT": 5,  # seconds
+        },
+        "KEY_PREFIX": "benefits",  # Namespace for all cache keys
+        "TIMEOUT": 300,  # Default timeout: 5 minutes
+    }
+
+# Configure Parler to use the default (LocMemCache) backend
+PARLER_CACHE_BACKEND = "default"
 
 # UNFOLD SETTINGS
 UNFOLD = {

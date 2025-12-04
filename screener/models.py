@@ -63,8 +63,12 @@ class Screen(models.Model):
     has_acp = models.BooleanField(default=False, blank=True, null=True)
     has_eitc = models.BooleanField(default=False, blank=True, null=True)
     has_coeitc = models.BooleanField(default=False, blank=True, null=True)
+    has_il_eitc = models.BooleanField(default=False, blank=True, null=True)
     has_nslp = models.BooleanField(default=False, blank=True, null=True)
     has_ctc = models.BooleanField(default=False, blank=True, null=True)
+    has_il_ctc = models.BooleanField(default=False, blank=True, null=True)
+    has_il_transit_reduced_fare = models.BooleanField(default=False, blank=True, null=True)
+    has_il_bap = models.BooleanField(default=False, blank=True, null=True)
     has_medicaid = models.BooleanField(default=False, blank=True, null=True)
     has_rtdlive = models.BooleanField(default=False, blank=True, null=True)
     has_cccap = models.BooleanField(default=False, blank=True, null=True)
@@ -80,6 +84,8 @@ class Screen(models.Model):
     has_ede = models.BooleanField(default=False, blank=True, null=True)
     has_erc = models.BooleanField(default=False, blank=True, null=True)
     has_leap = models.BooleanField(default=False, blank=True, null=True)
+    has_il_liheap = models.BooleanField(default=False, blank=True, null=True)
+    has_ma_heap = models.BooleanField(default=False, blank=True, null=True)
     has_nc_lieap = models.BooleanField(default=False, blank=True, null=True)
     has_oap = models.BooleanField(default=False, blank=True, null=True)
     has_nccip = models.BooleanField(default=False, blank=True, null=True)
@@ -111,9 +117,12 @@ class Screen(models.Model):
     has_private_hi = models.BooleanField(default=None, blank=True, null=True)
     has_medicaid_hi = models.BooleanField(default=None, blank=True, null=True)
     has_medicare_hi = models.BooleanField(default=None, blank=True, null=True)
+    has_nc_medicare_savings = models.BooleanField(default=None, blank=True, null=True)
     has_chp_hi = models.BooleanField(default=None, blank=True, null=True)
     has_no_hi = models.BooleanField(default=None, blank=True, null=True)
     has_va = models.BooleanField(default=None, blank=True, null=True)
+    has_project_cope = models.BooleanField(default=False, blank=True, null=True)
+    has_cesn_heap = models.BooleanField(default=False, blank=True, null=True)
     needs_food = models.BooleanField(default=False, blank=True, null=True)
     needs_baby_supplies = models.BooleanField(default=False, blank=True, null=True)
     needs_housing_help = models.BooleanField(default=False, blank=True, null=True)
@@ -124,6 +133,7 @@ class Screen(models.Model):
     needs_job_resources = models.BooleanField(default=False, blank=True, null=True)
     needs_dental_care = models.BooleanField(default=False, blank=True, null=True)
     needs_legal_services = models.BooleanField(default=False, blank=True, null=True)
+    needs_college_savings = models.BooleanField(default=False, blank=True, null=True)
     needs_veteran_services = models.BooleanField(default=False, blank=True, null=True)
     utm_id = models.CharField(max_length=64, blank=True, null=True)
     utm_source = models.CharField(max_length=64, blank=True, null=True)
@@ -167,6 +177,13 @@ class Screen(models.Model):
                 if expense_type == expense.type:
                     return True
         return False
+
+    def expense_type_names(self) -> list[str]:
+        """
+        Get list of unique expense types for this screen.
+        Returns empty list if no expenses exist.
+        """
+        return list(self.expenses.values_list("type", flat=True).distinct().filter(type__isnull=False))
 
     def num_children(self, age_min=0, age_max=18, include_pregnant=False, child_relationship=["all"]):
         children = 0
@@ -322,37 +339,90 @@ class Screen(models.Model):
         return False
 
     def has_benefit(self, name_abbreviated: str):
+        """
+        Maps a program's name_abbreviated to the corresponding has_* field on the Screen model.
+
+        This is used to determine if a user already has a benefit (selected in step 10) so it can be
+        filtered from results on the frontend via the "already_has" flag.
+
+        Map Structure:
+            Key: Program name_abbreviated (from program registration, e.g., co/__init__.py)
+            Value: Boolean field on Screen model indicating user has that benefit
+
+        Common Pattern:
+            Multiple program variants (e.g., different states or screener types) map to the same field:
+            - "snap", "co_snap", "il_snap" → all map to self.has_snap (same real-world benefit)
+            - "leap", "co_energy_calculator_leap" → both map to self.has_leap (same benefit, different flows)
+
+        Adding New Mappings:
+            1. Ensure the benefit key exists in white_label config's category_benefits (e.g., "leap")
+            2. Ensure updateScreen.ts maps formData.benefits.{key} → has_{key}
+            3. Add all program name_abbreviated variants that represent the same benefit
+
+        Example Flow:
+            Config (co.py): "leap": {"name": "LEAP", ...}
+            → User checks LEAP in step 10
+            → Frontend: formData.benefits.leap = true
+            → API (updateScreen.ts): has_leap = formData.benefits.leap
+            → Database: screen.has_leap = True
+            → This method: has_benefit("leap") → returns self.has_leap (True)
+            → Serializer: "already_has": True → Frontend filters out LEAP from results
+        """
+
+        has_ssi_or_ssi_income = self.has_ssi or self.calc_gross_income("yearly", ("sSI",)) > 0
+
         name_map = {
             "tanf": self.has_tanf,
             "nc_tanf": self.has_tanf,
             "co_tanf": self.has_tanf,
             "il_tanf": self.has_tanf,
+            "tx_tanf": self.has_tanf,
             "wic": self.has_wic,
             "co_wic": self.has_wic,
             "nc_wic": self.has_wic,
+            "tx_wic": self.has_wic,
             "snap": self.has_snap,
             "sunbucks": self.has_sunbucks,
             "co_snap": self.has_snap,
             "nc_snap": self.has_snap,
+            "il_snap": self.has_snap,
+            "tx_snap": self.has_snap,
             "lifeline": self.has_lifeline,
             "acp": self.has_acp,
             "eitc": self.has_eitc,
+            "tx_eitc": self.has_eitc,
             "coeitc": self.has_coeitc,
+            "il_eitc": self.has_il_eitc,
             "nslp": self.has_nslp,
+            "tx_nslp": self.has_nslp,
             "ctc": self.has_ctc,
+            "tx_ctc": self.has_ctc,
+            "il_ctc": self.has_il_ctc,
+            "il_transit_reduced_fare": self.has_il_transit_reduced_fare,
+            "il_bap": self.has_il_bap,
+            "project_cope": self.has_project_cope,
+            "co_energy_calculator_cope": self.has_project_cope,
+            "cesn_heap": self.has_cesn_heap,
+            "co_energy_calculator_heap": self.has_cesn_heap,
             "rtdlive": self.has_rtdlive,
             "cccap": self.has_cccap,
             "mydenver": self.has_mydenver,
             "ccb": self.has_ccb,
-            "ssi": self.has_ssi or self.calc_gross_income("yearly", ("sSI",)) > 0,
+            "ssi": has_ssi_or_ssi_income,
+            "tx_ssi": has_ssi_or_ssi_income,
+            "tx_csfp": self.has_csfp,
             "andcs": self.has_andcs,
             "chs": self.has_chs,
             "cpcr": self.has_cpcr,
+            "co_energy_calculator_cpcr": self.has_cpcr,
             "cdhcs": self.has_cdhcs,
             "dpp": self.has_dpp,
             "ede": self.has_ede,
             "erc": self.has_erc,
             "leap": self.has_leap,
+            "co_energy_calculator_leap": self.has_leap,
+            "ma_heap": self.has_ma_heap,
+            "il_liheap": self.has_il_liheap,
             "nc_lieap": self.has_nc_lieap,
             "oap": self.has_oap,
             "nccip": self.has_nccip,
@@ -366,13 +436,17 @@ class Screen(models.Model):
             "fatc": self.has_fatc,
             "section_8": self.has_section_8,
             "cowap": self.has_cowap,
+            "co_energy_calculator_cowap": self.has_cowap,
             "ncwap": self.has_ncwap,
             "ubp": self.has_ubp,
+            "co_energy_calculator_ubp": self.has_ubp,
             "medicare": self.has_medicare_hi,
             "chp": self.has_chp or self.has_chp_hi,
             "va": self.has_va,
+            "aca": self.has_aca,
             "nc_aca": self.has_aca,
             "ma_aca": self.has_aca,
+            "tx_aca": self.has_aca,
             "ma_mbta": self.has_ma_mbta,
             "ma_snap": self.has_snap,
             "ma_ccdf": self.has_ccdf,
@@ -386,6 +460,7 @@ class Screen(models.Model):
             "co_care": self.has_co_care,
             "cfhc": self.has_cfhc,
             "shitc": self.has_shitc,
+            "nc_medicare_savings": self.has_nc_medicare_savings,
         }
 
         if name_abbreviated in name_map:
@@ -840,7 +915,10 @@ class EnergyCalculatorScreen(models.Model):
 
 class EnergyCalculatorMember(models.Model):
     household_member = models.OneToOneField(
-        HouseholdMember, related_name="energy_calculator", null=False, on_delete=models.CASCADE
+        HouseholdMember,
+        related_name="energy_calculator",
+        null=False,
+        on_delete=models.CASCADE,
     )
     surviving_spouse = models.BooleanField(default=False, null=True, blank=True)
     receives_ssi = models.BooleanField(default=False, null=True, blank=True)

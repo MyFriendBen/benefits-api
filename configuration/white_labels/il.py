@@ -10,10 +10,10 @@ class IlConfigurationData(ConfigurationData):
     state = {"name": "Illinois"}
 
     public_charge_rule = {
-        "link": "https://www.dhs.state.il.us/page.aspx?item=118709",
+        "link": "https://www.icirr.org/ifrp",
         "text": {
             "_label": "landingPage.publicChargeLinkIL",
-            "_default_message": "Illinois Department of Human Services website",
+            "_default_message": "Illinois Department of Human Services",
         },
     }
 
@@ -167,10 +167,6 @@ class IlConfigurationData(ConfigurationData):
     }
 
     referral_options = {
-        "socialServices": {
-            "_label": "referralOptions.gcfd.il",
-            "_default_message": "Greater Chicago Food Depository",
-        },
         "searchEngine": {
             "_label": "referralOptions.searchEngine",
             "_default_message": "Google or other search engine",
@@ -183,6 +179,7 @@ class IlConfigurationData(ConfigurationData):
             "_label": "referralOptions.friend",
             "_default_message": "Friend / Family / Word of Mouth",
         },
+        "merit": {"_label": "referralOptions.merit", "_default_message": "Merit America"},
         "other": {"_label": "referralOptions.other", "_default_message": "Other"},
         "testOrProspect": {
             "_label": "referralOptions.testOrProspect",
@@ -203,6 +200,12 @@ class IlConfigurationData(ConfigurationData):
         "zh-hans": "中文 (简体)",
         "ar": "عربي",
         "sw": "Kiswahili",
+        "pl": "Polski",
+        "tl": "Tagalog",
+        "ko": "한국어",
+        "ur": "اردو",
+        "pt-br": "Português Brasileiro",
+        "ht": "Kreyòl",
     }
 
     income_options = {
@@ -2278,7 +2281,7 @@ class IlConfigurationData(ConfigurationData):
     category_benefits = {
         "foodAndNutrition": {
             "benefits": {
-                "il_snap": {
+                "snap": {
                     "name": {
                         "_label": "foodAndNutritionBenefits.snap",
                         "_default_message": "Supplemental Nutrition Assistance Program (SNAP): ",
@@ -2323,6 +2326,16 @@ class IlConfigurationData(ConfigurationData):
                         "_default_message": "Phone or internet discount",
                     },
                 },
+                "il_liheap": {
+                    "name": {
+                        "_label": "housingAndUtilities.il_liheap",
+                        "_default_message": "Low Income Home Energy Assistance Program (LIHEAP): ",
+                    },
+                    "description": {
+                        "_label": "housingAndUtilities.il_liheap_desc",
+                        "_default_message": "Help paying heating and cooling bills",
+                    },
+                },
             },
             "category_name": {
                 "_label": "housing",
@@ -2351,26 +2364,6 @@ class IlConfigurationData(ConfigurationData):
                         "_default_message": "Federal cash assistance for individuals who are disabled, blind, or 65 years of age or older",
                     },
                 },
-                "il_bap": {
-                    "name": {
-                        "_label": "cashAssistanceBenefits.il_bap",
-                        "_default_message": "Benefits Access Program (BAP): ",
-                    },
-                    "description": {
-                        "_label": "cashAssistanceBenefits.il_bap_desc",
-                        "_default_message": "Transportation benefits for eligible individuals",
-                    },
-                },
-                "il_transit_reduced_fare": {
-                    "name": {
-                        "_label": "cashAssistanceBenefits.il_transit_reduced_fare",
-                        "_default_message": "Local Transit Reduced Fare: ",
-                    },
-                    "description": {
-                        "_label": "cashAssistanceBenefits.il_transit_reduced_fare_desc",
-                        "_default_message": "Reduced fare for public transit",
-                    },
-                },
                 "il_tanf": {
                     "name": {
                         "_label": "cashAssistanceBenefits.il_tanf",
@@ -2394,6 +2387,31 @@ class IlConfigurationData(ConfigurationData):
             },
             "category_name": {"_label": "cashAssistance", "_default_message": "Cash Assistance"},
         },
+        "transportation": {
+            "benefits": {
+                "il_bap": {
+                    "name": {
+                        "_label": "transportationBenefits.il_bap",
+                        "_default_message": "Benefits Access Program (BAP): ",
+                    },
+                    "description": {
+                        "_label": "transportationBenefits.il_bap_desc",
+                        "_default_message": "Transportation benefits for eligible individuals",
+                    },
+                },
+                "il_transit_reduced_fare": {
+                    "name": {
+                        "_label": "transportationBenefits.il_transit_reduced_fare",
+                        "_default_message": "Local Transit Reduced Fare: ",
+                    },
+                    "description": {
+                        "_label": "transportationBenefits.il_transit_reduced_fare_desc",
+                        "_default_message": "Reduced fare for public transit",
+                    },
+                },
+            },
+            "category_name": {"_label": "transportation", "_default_message": "Transportation"},
+        },
         "taxCredits": {
             "benefits": {
                 "eitc": {
@@ -2414,6 +2432,26 @@ class IlConfigurationData(ConfigurationData):
                     "description": {
                         "_label": "taxCreditBenefits.ctc_desc",
                         "_default_message": "Federal tax credit",
+                    },
+                },
+                "il_eitc": {
+                    "name": {
+                        "_label": "taxCreditBenefits.il_eitc",
+                        "_default_message": "Illinois Earned Income Tax Credit (IL EITC): ",
+                    },
+                    "description": {
+                        "_label": "taxCreditBenefits.il_eitc_desc",
+                        "_default_message": "Illinois state tax credit - earned income",
+                    },
+                },
+                "il_ctc": {
+                    "name": {
+                        "_label": "taxCreditBenefits.il_ctc",
+                        "_default_message": "Illinois Child Tax Credit: ",
+                    },
+                    "description": {
+                        "_label": "taxCreditBenefits.il_ctc_desc",
+                        "_default_message": "Illinois state tax credit for children",
                     },
                 },
             },
@@ -2492,18 +2530,4 @@ class IlConfigurationData(ConfigurationData):
         "defaultLanguage": {"default": "en-us"},
     }
 
-    footer_data = {
-        "email": "hello@myfriendben.org",
-    }
-
-    feedback_links = {
-        "email": "hello@myfriendben.org",
-        "survey": "https://www.myfriendben.org/feedback",
-    }
-
-    override_text = {
-        "landingPage.publicCharge": {
-            "_label": "landingPage.publicCharge.il",
-            "_default_message": "Some benefits are available to Non-U.S. citizens. Non-U.S. citizens planning to apply for legal permanent residency or a visa should consider how applying for any benefits may affect their immigration status. To learn more, please visit the ",
-        },
-    }
+    override_text = {}

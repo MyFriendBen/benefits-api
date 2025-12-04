@@ -1,36 +1,49 @@
-from programs.programs.il.bap.calculator import IlBenefitAccess
-from programs.programs.calc import Eligibility
+from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
+from programs.programs.mixins import IlTransportationMixin
 
 
-class IlTransitReducedFare(IlBenefitAccess):
-    county_benefit_amounts = {
-        # Chicago Area counties - $40/month ($480/year)
-        "cook": 480,
-        "dupage": 480,
-        "kane": 480,
-        "lake": 480,
-        "mchenry": 480,
-        "will": 480,
-        # Other counties
-        "madison": 240,
-        "peoria": 240,
-        "sangamon": 228,
-        "jackson": 120,
+class IlTransitReducedFare(IlTransportationMixin, ProgramCalculator):
+    dependencies = ["age", "visually_impaired", "disabled", "county"]
+    eligible_counties = [
+        "Cook",
+        "DeKalb",
+        "DuPage",
+        "Jackson",
+        "Kane",
+        "Lake",
+        "Madison",
+        "McHenry",
+        "Peoria",
+        "Rock Island",
+        "Sangamon",
+        "Will",
+    ]
+    minimum_age_by_county = {
+        "Rock Island": 60,
     }
 
     def household_eligible(self, e: Eligibility):
-        # Check presumptive eligibility
-        presumptive_eligible = self.screen.has_benefit_from_list(
-            self.presumptive_eligibility_programs
-        ) or self.screen.has_insurance_types(self.presumptive_eligibility_insurances)
+        e.condition(not self.screen.has_benefit("il_transit_reduced_fare"))
 
-        # Check income eligibility
-        household_size = self.screen.household_size
-        income_limit = self.income_by_household_size.get(min(household_size, 3), self.income_by_household_size[3])
+        # Note: SSI/SSDI presumptive eligibility is not checked here because
+        # there are currently no eligibility requirements to bypass. County eligibility is the
+        # only household-level requirement. Medicare eligibility is checked
+        # at the member level instead.
 
-        gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
+        e.condition(self.screen.county in self.eligible_counties)
 
-        # Income must be above the Benefit Access limit
-        income_eligible = gross_income > income_limit
+    def member_eligible(self, e: MemberEligibility):
+        member = e.member
+        county = self.screen.county
 
-        e.condition(presumptive_eligible or income_eligible)
+        age_eligible = member.age >= self.minimum_age_by_county.get(county, self.minimum_age)
+
+        has_minimum_age_with_disability = member.age >= self.minimum_age_with_disability
+        has_eligible_disability = member.visually_impaired or member.disabled
+        disability_eligible = has_minimum_age_with_disability and has_eligible_disability
+
+        # Check for Medicare as presumptive eligibility
+        has_medicare = member.insurance.has_insurance_types(["medicare"])
+
+        # Member is eligible if they have Medicare OR meet age/disability requirements
+        e.condition(has_medicare or age_eligible or disability_eligible)

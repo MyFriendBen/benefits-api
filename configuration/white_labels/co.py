@@ -9,11 +9,28 @@ class CoConfigurationData(ConfigurationData):
 
     state = {"name": "Colorado"}
 
+    # System banner messages
+    banner_messages = [
+        {
+            "id": "co.banner.snap_nov_2025_hold",
+            "title": {
+                "_label": "co.banner.snap_nov_2025_hold.title",
+                "_default_message": "Update: November SNAP Benefits Are Coming",
+            },
+            "content": {
+                "_label": "co.banner.snap_nov_2025_hold.content",
+                "_default_message": "The federal government has reopened, and November SNAP (food assistance) benefits will be loaded onto EBT cards starting Friday, November 14.\n\n**What you need to know:**\n- Full November benefits are being processed now\n- December benefits will come on time as usual\n- You should still apply for SNAP and turn in any paperwork\n\n**Need food help while you wait?**\n- Call Colorado 211: dial 2-1-1 or 866-760-6489\n- Visit: https://www.211colorado.org",
+            },
+            "enabled": True,
+            "priority": 1,
+        }
+    ]
+
     public_charge_rule = {
-        "link": "https://cdhs.colorado.gov/public-charge-rule-and-colorado-immigrants#:~:text=About%20public%20charge&text=The%20test%20looks%20at%20whether,affidavit%20of%20support%20or%20contract.",
+        "link": "https://cdhs.colorado.gov/public-charge-rule-colorado-immigrants#:~:text=About%20public%20charge&text=The%20test%20looks%20at%20whether,affidavit%20of%20support%20or%20contract.",
         "text": {
             "_label": "landingPage.publicChargeLinkCO",
-            "_default_message": "Colorado Department of Human Services Public Charge Rule",
+            "_default_message": "Colorado Department of Human Services",
         },
     }
 
@@ -110,6 +127,13 @@ class CoConfigurationData(ConfigurationData):
                 "_default_message": "Free or low-cost help with civil legal needs or identity documents",
             },
         },
+        "savings": {
+            "icon": {"_icon": "Savings", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.savings",
+                "_default_message": "Saving for college",
+            },
+        },
     }
 
     sign_up_options = {
@@ -176,6 +200,7 @@ class CoConfigurationData(ConfigurationData):
         "searchEngine": {"_label": "referralOptions.searchEngine", "_default_message": "Google or other search engine"},
         "socialMedia": {"_label": "referralOptions.socialMedia", "_default_message": "Social Media"},
         "friend": {"_label": "referralOptions.friend", "_default_message": "Friend / Family / Word of Mouth"},
+        "merit": {"_label": "referralOptions.merit", "_default_message": "Merit America"},
         "other": {"_label": "referralOptions.other", "_default_message": "Other"},
         "testOrProspect": {
             "_label": "referralOptions.testOrProspect",
@@ -196,6 +221,12 @@ class CoConfigurationData(ConfigurationData):
         "zh-hans": "中文 (简体)",
         "ar": "عربي",
         "sw": "Kiswahili",
+        "pl": "Polski",
+        "tl": "Tagalog",
+        "ko": "한국어",
+        "ur": "اردو",
+        "pt-br": "Português Brasileiro",
+        "ht": "Kreyòl",
     }
 
     income_options = {
@@ -2347,15 +2378,6 @@ class CoConfigurationData(ConfigurationData):
             },
         },
         "defaultLanguage": {"default": "en-us"},
-    }
-
-    footer_data = {
-        "email": "hello@myfriendben.org",
-    }
-
-    feedback_links = {
-        "email": "hello@myfriendben.org",
-        "survey": "https://docs.google.com/forms/d/e/1FAIpQLSdnfqjvlVSBQkJuUMvhEDUp-t6oD-8tPQi67uRG2iNetXmSfA/viewform?usp=sf_link",
     }
 
     override_text = {}

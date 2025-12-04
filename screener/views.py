@@ -143,7 +143,8 @@ class EligibilityTranslationView(views.APIView):
             "energy_calculator",
         ).get(uuid=id)
 
-        results = all_results(screen)
+        is_admin = request.query_params.get("admin")
+        results = all_results(screen, is_admin=is_admin)
 
         if screen.submission_date is None:
             screen.submission_date = datetime.now(timezone.utc)
@@ -180,12 +181,12 @@ class MessageViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         return Response({}, status=status.HTTP_201_CREATED)
 
 
-def all_results(screen: Screen, batch=False):
-    eligibility, missing_programs, categories = eligibility_results(screen, batch)
+def all_results(screen: Screen, batch=False, is_admin: bool = False):
+    eligibility, missing_programs, categories, _pe_data = eligibility_results(screen, batch)
     urgent_needs = urgent_need_results(screen, eligibility)
     validations = ValidationSerializer(screen.validations.all(), many=True).data
 
-    return {
+    results = {
         "programs": eligibility,
         "urgent_needs": urgent_needs,
         "screen_id": screen.id,
@@ -193,7 +194,13 @@ def all_results(screen: Screen, batch=False):
         "missing_programs": missing_programs,
         "validations": validations,
         "program_categories": categories,
+        "pe_data": _pe_data,
     }
+
+    if not is_admin:
+        results.pop("pe_data", None)
+
+    return results
 
 
 def translations_prefetch_name(prefix: str, fields):
@@ -218,12 +225,13 @@ def eligibility_results(screen: Screen, batch=False):
             "legal_status_required",
             "year",
             "required_programs",
+            "excludes_programs",
             *translations_prefetch_name("", Program.objects.translated_fields),
-            "navigator",
-            "navigator__counties",
-            "navigator__languages",
-            "navigator__primary_navigators",
-            *translations_prefetch_name("navigator__", Navigator.objects.translated_fields),
+            "program_navigators",
+            "program_navigators__navigator",
+            "program_navigators__navigator__counties",
+            "program_navigators__navigator__languages",
+            *translations_prefetch_name("program_navigators__navigator__", Navigator.objects.translated_fields),
             "documents",
             *translations_prefetch_name("documents__", Document.objects.translated_fields),
             "warning_messages",
@@ -263,7 +271,10 @@ def eligibility_results(screen: Screen, batch=False):
         if program is not None:
             pe_calculators[calculator_name] = Calculator(screen, program, missing_dependencies)
 
-    pe_eligibility = calc_pe_eligibility(screen, pe_calculators)
+    result = calc_pe_eligibility(screen, pe_calculators)
+    pe_eligibility = result["eligibility"]
+    pe_data = result["_pe_data"]
+
     pe_programs = pe_calculators.keys()
 
     def sort_first(program):
@@ -331,7 +342,10 @@ def eligibility_results(screen: Screen, batch=False):
 
         # don't calculate navigator and warnings for ineligible programs
         if eligibility.eligible:
-            all_navigators = program.navigator.all()
+            # Get navigators through ordered relationship (automatically sorted by order field)
+            # program_navigators uses ProgramNavigator through table with Meta.ordering
+            program_navigators = program.program_navigators.all()
+            all_navigators = [pn.navigator for pn in program_navigators]
 
             county_navigators = []
             for nav in all_navigators:
@@ -422,6 +436,7 @@ def eligibility_results(screen: Screen, batch=False):
                     "documents": [serialized_document(document) for document in program.documents.all()],
                     "warning_messages": warnings,
                     "required_programs": [p.id for p in program.required_programs.all()],
+                    "excludes_programs": [p.id for p in program.excludes_programs.all()],
                     "value_format": program.value_format,
                 }
             )
@@ -469,7 +484,7 @@ def eligibility_results(screen: Screen, batch=False):
         clean_program["estimated_value"] = math.trunc(clean_program["estimated_value"])
         eligible_programs.append(clean_program)
 
-    return eligible_programs, missing_programs, categories
+    return eligible_programs, missing_programs, categories, pe_data
 
 
 class GetProgramTranslation:
@@ -528,6 +543,7 @@ def urgent_need_results(screen: Screen, data):
         "dental care": screen.needs_dental_care,
         "legal services": screen.needs_legal_services,
         "veteran services": screen.needs_veteran_services,
+        "savings": screen.needs_college_savings,
     }
 
     missing_dependencies = screen.missing_fields()
@@ -571,6 +587,9 @@ def urgent_need_results(screen: Screen, data):
                 "icon": need.category_type.icon_name,
                 "warning": default_message(need.warning),
                 "phone_number": phone_number,
+                "notification_message": (
+                    default_message(need.notification_message) if need.notification_message else None
+                ),
             }
             eligible_urgent_needs.append(need_data)
 

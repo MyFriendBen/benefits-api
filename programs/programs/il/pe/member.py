@@ -48,6 +48,7 @@ class IlAca(tax.Aca):
     pe_inputs = [
         *tax.Aca.pe_inputs,
         hh_dependency.IlStateCodeDependency,
+        hh_dependency.IlCountyDependency,
     ]
 
 
@@ -61,5 +62,6 @@ class IlAabd(PolicyEngineMembersCalculator):
         member_dependency.IlAabdGrossEarnedIncomeDependency,
         member_dependency.IlAabdGrossUnearnedIncomeDependency,
         hh_dependency.IlStateCodeDependency,
+        hh_dependency.IlCountyDependency,
     ]
     pe_outputs = [member_dependency.IlAabd]

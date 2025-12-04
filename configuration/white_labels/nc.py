@@ -9,6 +9,23 @@ class NcConfigurationData(ConfigurationData):
 
     state = {"name": "North Carolina"}
 
+    # System banner messages
+    banner_messages = [
+        {
+            "id": "nc.banner.snap_nov_2025_hold",
+            "title": {
+                "_label": "nc.banner.snap_nov_2025_hold.title",
+                "_default_message": "Urgent: SNAP Benefits for November 2025 are on Hold",
+            },
+            "content": {
+                "_label": "nc.banner.snap_nov_2025_hold.content",
+                "_default_message": "The North Carolina SNAP agency said SNAP food help for November 2025 will be decreased and delayed because of the government shutdown.\n\nYou should still apply for SNAP and turn in any required paperwork.\n\nTo find out more about November SNAP, go to the North Carolina Food and Nutrition Services [website](https://www.ncdhhs.gov/divisions/child-and-family-well-being/food-and-nutrition-services-food-stamps). You can use MyFriendBen to see what other programs can help your family and to get help near you.",
+            },
+            "enabled": False,
+            "priority": 1,
+        }
+    ]
+
     public_charge_rule = {
         "link": "https://www.ncjustice.org/publications/public-charge-the-law-has-changed/",
         "text": {
@@ -260,6 +277,7 @@ class NcConfigurationData(ConfigurationData):
             "_label": "referralOptions.sf",
             "_default_message": "Shackle Free",
         },
+        "unch": {"_label": "referralOptions.unch", "_default_message": "UNC Health - Community Health"},
         "unidx": {
             "_label": "referralOptions.unidxWNC",
             "_default_message": "Unidx WNC",
@@ -284,6 +302,7 @@ class NcConfigurationData(ConfigurationData):
             "_label": "referralOptions.socialMedia",
             "_default_message": "Social Media",
         },
+        "merit": {"_label": "referralOptions.merit", "_default_message": "Merit America"},
         "other": {"_label": "referralOptions.other", "_default_message": "Other"},
         "testOrProspect": {
             "_label": "referralOptions.testOrProspect",
@@ -304,6 +323,12 @@ class NcConfigurationData(ConfigurationData):
         "zh-hans": "中文 (简体)",
         "ar": "عربي",
         "sw": "Kiswahili",
+        "pl": "Polski",
+        "tl": "Tagalog",
+        "ko": "한국어",
+        "ur": "اردو",
+        "pt-br": "Português Brasileiro",
+        "ht": "Kreyòl",
     }
 
     income_options = {
@@ -2815,7 +2840,17 @@ class NcConfigurationData(ConfigurationData):
                         "_label": "taxBenefits.nc_aca_desc",
                         "_default_message": "Health insurance marketplace and premium tax credit.",
                     },
-                }
+                },
+                "nc_medicare_savings": {
+                    "name": {
+                        "_label": "healthCareBenefits.nc_medicare_savings",
+                        "_default_message": "NC Medicare Savings Program: ",
+                    },
+                    "description": {
+                        "_label": "healthCareBenefits.nc_medicare_savings_desc",
+                        "_default_message": "Health coverage for low-income individuals and families",
+                    },
+                },
             },
             "category_name": {
                 "_label": "healthCare",

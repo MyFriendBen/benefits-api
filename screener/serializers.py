@@ -174,6 +174,10 @@ class ScreenSerializer(serializers.ModelSerializer):
             "has_coeitc",
             "has_nslp",
             "has_ctc",
+            "has_il_eitc",
+            "has_il_ctc",
+            "has_il_transit_reduced_fare",
+            "has_il_bap",
             "has_medicaid",
             "has_rtdlive",
             "has_cccap",
@@ -188,7 +192,11 @@ class ScreenSerializer(serializers.ModelSerializer):
             "has_ede",
             "has_erc",
             "has_leap",
+            "has_il_liheap",
+            "has_ma_heap",
             "has_nc_lieap",
+            "has_project_cope",
+            "has_cesn_heap",
             "has_oap",
             "has_nccip",
             "has_coctc",
@@ -221,6 +229,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             "has_chp_hi",
             "has_no_hi",
             "has_va",
+            "has_nc_medicare_savings",
             "needs_food",
             "needs_baby_supplies",
             "needs_housing_help",
@@ -231,6 +240,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             "needs_job_resources",
             "needs_dental_care",
             "needs_legal_services",
+            "needs_college_savings",
             "needs_veteran_services",
             "utm_id",
             "utm_source",
@@ -437,3 +447,4 @@ class ResultsSerializer(serializers.Serializer):
     missing_programs = serializers.BooleanField()
     validations = ValidationSerializer(many=True)
     program_categories = ProgramCategorySerializer(many=True)
+    pe_data = serializers.DictField(required=False, allow_null=True)

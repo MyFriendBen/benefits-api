@@ -107,6 +107,15 @@ class Medicaid(Member):
 
 class Ssi(Member):
     field = "ssi"
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
+
+    def value(self):
+        ssi = self.member.calc_gross_income("yearly", ["sSI"])
+        return None if ssi == 0 else ssi
 
 
 class IsDisabledDependency(Member):
@@ -345,6 +354,10 @@ class MaStateSupplementProgram(Member):
 
 class ChipCategory(Member):
     field = "chip_category"
+
+
+class Chip(Member):
+    field = "chip"
 
 
 class IncomeDependency(Member):

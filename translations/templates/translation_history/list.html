@@ -30,7 +30,10 @@
         {% else %}
         <td>Auto</td>
         {% endif %}
-        <td>{{ record.history_date }}</td>
+        <td
+          class="utc-date"
+          data-utc-date="{{ record.history_date|get_datetime_label:None }}"
+        >{{ record.history_date|get_datetime_label:None }}</td>
         <td>{{ record.history_user }}</td>
         <td>
           <form method="post" action="{% url 'revert_translation' record.history_id %}">

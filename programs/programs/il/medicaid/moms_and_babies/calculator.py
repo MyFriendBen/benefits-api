@@ -1,10 +1,10 @@
 from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility, HouseholdMember
 from programs.programs.helpers import medicaid_eligible
 import programs.programs.messages as messages
-from programs.programs.mixins import FplIncomeCheckMixin
+from programs.programs.mixins import IlMedicaidFplIncomeCheckMixin
 
 
-class MomsAndBabies(ProgramCalculator, FplIncomeCheckMixin):
+class MomsAndBabies(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
     adult_member_amount = 474 * 12  # $474/month for adults
     newborn_member_amount = 284 * 12  # $284/month for newborns
     fpl_percent = 2.13  # 213% FPL
@@ -28,11 +28,6 @@ class MomsAndBabies(ProgramCalculator, FplIncomeCheckMixin):
         return any(self._is_eligible_adult(member) for member in members)
 
     def household_eligible(self, e: Eligibility):
-        # Must NOT be eligible for FamilyCare
-        family_care_eligible = "il_family_care" in self.data and self.data["il_family_care"].eligible
-
-        e.condition(not family_care_eligible, messages.must_not_have_benefit("FamilyCare"))
-
         # Income must be at or below 213% FPL
         self.check_fpl_income(e, self.fpl_percent)
 

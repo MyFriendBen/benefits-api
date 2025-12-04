@@ -456,9 +456,11 @@ class ProgramDataController(ModelDataController["Program"]):
             "name_abbreviated": str,
             "active": bool,
             "low_confidence": bool,
+            "show_on_current_benefits": bool,
             "documents": list[str],
             "category": Optional[str],
             "required_programs": list[str],
+            "excludes_programs": list[str],
             "value_format": Optional[str],
             "white_label": str,
         },
@@ -479,10 +481,12 @@ class ProgramDataController(ModelDataController["Program"]):
             "legal_status_required": self._legal_statuses(),
             "active": program.active,
             "low_confidence": program.low_confidence,
+            "show_on_current_benefits": program.show_on_current_benefits,
             "name_abbreviated": program.name_abbreviated,
             "documents": [d.external_name for d in program.documents.all()],
             "category": (program.category.external_name if program.category is not None else None),
             "required_programs": [p.external_name for p in program.required_programs.all()],
+            "excludes_programs": [p.external_name for p in program.excludes_programs.all()],
             "value_format": program.value_format,
             "white_label": program.white_label.code,
         }
@@ -494,6 +498,7 @@ class ProgramDataController(ModelDataController["Program"]):
         program.name_abbreviated = data["name_abbreviated"]
         program.active = data["active"]
         program.low_confidence = data["low_confidence"]
+        program.show_on_current_benefits = data.get("show_on_current_benefits", True)
         program.value_format = data["value_format"]
 
         # get or create fpl
@@ -543,6 +548,16 @@ class ProgramDataController(ModelDataController["Program"]):
             required_programs.append(required_program)
         program.required_programs.set(required_programs)
 
+        # add excluded programs
+        excluded_programs = []
+        for excluded_program_name in data.get("excludes_programs", []):
+            try:
+                excluded_program = Program.objects.get(external_name=excluded_program_name)
+            except Program.DoesNotExist:
+                raise self.DeferCreation()  # wait until the program gets created
+            excluded_programs.append(excluded_program)
+        program.excludes_programs.set(excluded_programs)
+
         try:
             white_label = WhiteLabel.objects.get(code=data["white_label"])
         except WhiteLabel.DoesNotExist:
@@ -573,6 +588,9 @@ class Program(models.Model):
     documents = models.ManyToManyField(Document, related_name="program_documents", blank=True)
     active = models.BooleanField(blank=True, default=True)
     low_confidence = models.BooleanField(blank=True, null=False, default=False)
+    show_on_current_benefits = models.BooleanField(
+        default=True, help_text="Display this program on the current benefits page"
+    )
     year = models.ForeignKey(
         FederalPoveryLimit,
         related_name="fpl",
@@ -588,7 +606,25 @@ class Program(models.Model):
         on_delete=models.SET_NULL,
     )
     required_programs = models.ManyToManyField("self", related_name="dependent_programs", symmetrical=False, blank=True)
-    value_format = models.CharField(max_length=120, blank=True, null=True)
+    excludes_programs = models.ManyToManyField(
+        "self",
+        related_name="excluded_by_programs",
+        symmetrical=False,
+        blank=True,
+        help_text="Programs that are excluded when eligible for this program.",
+    )
+    VALUE_FORMAT_CHOICES = [
+        (None, "Default (Monthly)"),
+        ("lump_sum", "Lump Sum (One-time payment)"),
+        ("estimated_annual", "Estimated Annual (Average annual savings)"),
+    ]
+    value_format = models.CharField(
+        max_length=120,
+        blank=True,
+        null=True,
+        choices=VALUE_FORMAT_CHOICES,
+        help_text="Configure how the program value is displayed to users.",
+    )
 
     description_short = models.ForeignKey(
         Translation,
@@ -728,6 +764,21 @@ class UrgentNeedCategory(models.Model):
         return f"{self.name}"
 
 
+class ExpenseType(models.Model):
+    """
+    Represents types of expenses that can be used to filter urgent needs.
+    Matches expense types from configuration/white_labels/base.py expense_options
+    """
+
+    name = models.CharField(max_length=120, unique=True)
+
+    class Meta:
+        verbose_name_plural = "Expense Types"
+
+    def __str__(self):
+        return f"{self.name}"
+
+
 from typing import TypedDict
 from translations.model_data import ModelDataController
 
@@ -851,14 +902,18 @@ class UrgentNeedManager(models.Manager):
         "link",
         "warning",
         "website_description",
+        "notification_message",
     )
     no_auto_fields = ("link",)
+    no_placeholder_fields = ("notification_message",)
 
     def new_urgent_need(self, white_label: str, name: str, phone_number: str):
         translations = {}
         for field in self.translated_fields:
+            default_message = "" if field in self.no_placeholder_fields else BLANK_TRANSLATION_PLACEHOLDER
             translations[field] = Translation.objects.add_translation(
                 f"urgent_need.{name}_temporary_key-{field}",
+                default_message=default_message,
                 no_auto=(field in self.no_auto_fields),
             )
 
@@ -891,23 +946,29 @@ class UrgentNeedDataController(ModelDataController["UrgentNeed"]):
     CategoriesType = list[TypedDict("CategoryType", {"name": str})]
     NeedFunctionsType = list[TypedDict("NeedFunctionType", {"name": str})]
     CountiesType = list[TypedDict("CountyType", {"name": str})]
+    ExpenseTypesType = list[TypedDict("ExpenseTypeType", {"name": str})]
     DataType = TypedDict(
         "DataType",
         {
             "phone_number": Optional[str],
             "active": bool,
             "low_confidence": str,
+            "show_on_current_benefits": bool,
             "category_type": Optional[str],
             "categories": CategoriesType,
             "functions": NeedFunctionsType,
             "fpl": Optional[YearDataType],
             "white_label": str,
             "counties": CountiesType,
+            "required_expense_types": ExpenseTypesType,
         },
     )
 
     def _counties(self) -> CountiesType:
         return [{"name": c.name} for c in self.instance.counties.all()]
+
+    def _expense_types(self) -> ExpenseTypesType:
+        return [{"name": e.name} for e in self.instance.required_expense_types.all()]
 
     def _year(self) -> Optional[YearDataType]:
         if self.instance.year is None:
@@ -926,12 +987,14 @@ class UrgentNeedDataController(ModelDataController["UrgentNeed"]):
             "phone_number": (str(need.phone_number) if need.phone_number is not None else None),
             "active": need.active,
             "low_confidence": need.low_confidence,
+            "show_on_current_benefits": need.show_on_current_benefits,
             "category_type": (need.category_type.external_name if need.category_type is not None else None),
             "categories": self._category(),
             "functions": self._functions(),
             "fpl": self._year(),
             "white_label": need.white_label.code,
             "counties": self._counties(),
+            "required_expense_types": self._expense_types(),
         }
 
     def from_model_data(self, data: DataType):
@@ -939,6 +1002,7 @@ class UrgentNeedDataController(ModelDataController["UrgentNeed"]):
         need.phone_number = data["phone_number"]
         need.active = data["active"]
         need.low_confidence = data["low_confidence"]
+        need.show_on_current_benefits = data.get("show_on_current_benefits", True)
 
         # get or create fpl
         fpl = data["fpl"]
@@ -1003,6 +1067,16 @@ class UrgentNeedDataController(ModelDataController["UrgentNeed"]):
             counties.append(county_instance)
         need.counties.set(counties)
 
+        # get or create expense types
+        expense_types = []
+        for expense_type in data.get("required_expense_types", []):
+            try:
+                exp_type_instance = ExpenseType.objects.get(name=expense_type["name"])
+            except ExpenseType.DoesNotExist:
+                exp_type_instance = ExpenseType.objects.create(name=expense_type["name"])
+            expense_types.append(exp_type_instance)
+        need.required_expense_types.set(expense_types)
+
         need.save()
 
     @classmethod
@@ -1048,6 +1122,9 @@ class UrgentNeed(models.Model):
     )
     active = models.BooleanField(blank=True, null=False, default=True)
     low_confidence = models.BooleanField(blank=True, null=False, default=False)
+    show_on_current_benefits = models.BooleanField(
+        default=True, help_text="Display this urgent need on the current benefits page"
+    )
     functions = models.ManyToManyField(UrgentNeedFunction, related_name="function", blank=True)
     year = models.ForeignKey(
         FederalPoveryLimit,
@@ -1057,6 +1134,12 @@ class UrgentNeed(models.Model):
         on_delete=models.SET_NULL,
     )
     counties = models.ManyToManyField(County, related_name="urgent_need", blank=True)
+    required_expense_types = models.ManyToManyField(
+        ExpenseType,
+        related_name="urgent_needs",
+        blank=True,
+        help_text="If empty, urgent need shown to all users. If selected, user must have at least one of these expense types.",
+    )
 
     name = models.ForeignKey(
         Translation,
@@ -1093,6 +1176,13 @@ class UrgentNeed(models.Model):
         null=False,
         on_delete=models.PROTECT,
     )
+    notification_message = models.ForeignKey(
+        Translation,
+        related_name="urgent_need_notification_message",
+        blank=False,
+        null=False,
+        on_delete=models.PROTECT,
+    )
 
     objects = UrgentNeedManager()
 
@@ -1102,6 +1192,11 @@ class UrgentNeed(models.Model):
     def county_names(self) -> list[str]:
         """List of county names"""
         return [c.name for c in self.counties.all()]
+
+    @property
+    def required_expense_type_names(self) -> list[str]:
+        """List of required expense type names"""
+        return [e.name for e in self.required_expense_types.all()]
 
     def __str__(self):
         white_label_name = f"[{self.white_label.name}] " if self.white_label and self.white_label.name else ""
@@ -1216,12 +1311,43 @@ class NavigatorDataController(ModelDataController["Navigator"]):
             langs.append(lang_instance)
         navigator.languages.set(langs)
 
-        # get programs
         programs = []
-        for external_name in data["programs"]:
+        program_orders = {}
+        for item in data["programs"]:
+            if isinstance(item, str):
+                external_name = item
+                order_value = None
+            else:
+                external_name = item.get("external_name") or item.get("name")
+                order_value = item.get("order") if isinstance(item, dict) else None
+            if not external_name:
+                continue
             program_instance = Program.objects.get(external_name=external_name)
+            if program_instance.white_label_id != navigator.white_label_id:
+                raise self.DeferCreation()
             programs.append(program_instance)
-        navigator.programs.set(programs)
+            if order_value is not None:
+                program_orders[program_instance.id] = order_value
+
+        seen_program_ids = set()
+        for program in programs:
+            if program.id in seen_program_ids:
+                continue
+            seen_program_ids.add(program.id)
+            defaults = {}
+            if program.id in program_orders:
+                defaults["order"] = program_orders[program.id]
+            ProgramNavigator.objects.update_or_create(
+                program=program,
+                navigator=navigator,
+                defaults=defaults,
+            )
+
+        ProgramNavigator.objects.filter(navigator=navigator).exclude(program__in=programs).delete()
+
+        through = Navigator._meta.get_field("programs").remote_field.through
+        if getattr(through, "__name__", str(through)) != "ProgramNavigator":
+            navigator.programs.set(programs)
 
         navigator.save()
 
@@ -1238,7 +1364,20 @@ class Navigator(models.Model):
         blank=False,
         on_delete=models.CASCADE,
     )
-    programs = models.ManyToManyField(Program, related_name="navigator", blank=True)
+    # Old M2M - kept for backward compatibility during migration
+    programs = models.ManyToManyField(
+        Program,
+        related_name="navigator",
+        blank=True,
+        db_table="programs_navigator_programs",
+    )
+    # New M2M with ordering - uses ProgramNavigator through table
+    programs_ordered = models.ManyToManyField(
+        Program,
+        through="ProgramNavigator",
+        related_name="navigators_ordered",
+        blank=True,
+    )
     external_name = models.CharField(max_length=120, blank=True, null=True, unique=True)
     phone_number = PhoneNumberField(blank=True, null=True)
     counties = models.ManyToManyField(County, related_name="navigator", blank=True)
@@ -1280,6 +1419,39 @@ class Navigator(models.Model):
     def __str__(self):
         white_label_name = f"[{self.white_label.name}] " if self.white_label and self.white_label.name else ""
         return f"{white_label_name}{self.name.text}"
+
+
+class ProgramNavigator(models.Model):
+    """
+    Through model for Program-Navigator M2M relationship with ordering support.
+    Enables per-program priority ordering for navigators using drag-and-drop in admin.
+    """
+
+    program = models.ForeignKey(
+        Program,
+        on_delete=models.CASCADE,
+        related_name="program_navigators",
+    )
+    navigator = models.ForeignKey(
+        Navigator,
+        on_delete=models.CASCADE,
+        related_name="program_navigators",
+    )
+    order = models.PositiveIntegerField(
+        default=999,
+        db_index=True,
+        help_text="Lower values appear first. Drag to reorder in admin.",
+    )
+
+    class Meta:
+        ordering = ["order", "id"]
+        unique_together = [["program", "navigator"]]
+        verbose_name = "Program Navigator"
+        verbose_name_plural = "Program Navigators"
+        db_table = "programs_program_navigators_ordered"
+
+    def __str__(self):
+        return f"{self.program.name_abbreviated} - {self.navigator.name.text} (order: {self.order})"
 
 
 class WarningMessageManager(models.Manager):

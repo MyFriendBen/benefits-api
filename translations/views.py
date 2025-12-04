@@ -16,6 +16,8 @@ from django.http import (
 )
 from django.db.models import ProtectedError
 from django.db import models
+from sentry_sdk import capture_exception
+import traceback
 from programs.models import (
     Program,
     Navigator,
@@ -30,7 +32,7 @@ from programs.models import (
 from phonenumber_field.formfields import PhoneNumberField
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
-from integrations.services.google_translate.integration import Translate
+from integrations.clients.google_translate import Translate
 from django.urls import path
 
 
@@ -39,12 +41,38 @@ class TranslationView(views.APIView):
         language = request.query_params.get("lang")
         all_langs = [lang["code"] for lang in settings.PARLER_LANGUAGES[None]]
 
-        if language in all_langs:
-            translations = Translation.objects.all_translations([language])
-        else:
-            translations = Translation.objects.all_translations()
+        try:
+            if language in all_langs:
+                translations = Translation.objects.all_translations([language])
+            else:
+                translations = Translation.objects.all_translations()
 
-        return Response(translations)
+            return Response(translations)
+        except Exception as _:
+            # Cache is likely empty or corrupted, force rebuild and retry once
+            Translation.objects.translation_cache.invalid = True
+            try:
+                if language in all_langs:
+                    translations = Translation.objects.all_translations([language])
+                else:
+                    translations = Translation.objects.all_translations()
+                return Response(translations)
+            except Exception as retry_error:
+                # Capture the exception to Sentry for monitoring
+                capture_exception(retry_error)
+
+                # Return appropriate error response
+                error_response = {
+                    "error": "Translations temporarily unavailable",
+                    "error_type": type(retry_error).__name__,
+                    "message": str(retry_error),
+                }
+
+                # Add traceback in debug mode
+                if settings.DEBUG:
+                    error_response["traceback"] = traceback.format_exc()
+
+                return Response(error_response, status=503)
 
 
 class NewTranslationForm(forms.Form):
@@ -142,9 +170,9 @@ class TranslationForm(forms.Form):
 
 
 class LabelForm(forms.Form):
-    label = forms.CharField(max_length=128, widget=forms.TextInput(attrs={"class": "input"}))
+    label = forms.CharField(max_length=128, widget=forms.TextInput(attrs={"class": "input"}), label="Label Title")
     active = forms.BooleanField(required=False)
-    no_auto = forms.BooleanField(required=False)
+    no_auto = forms.BooleanField(required=False, label="Exclude all from auto-translate")
 
 
 def has_translation_access(translation: Translation, user: User) -> bool:
@@ -176,7 +204,13 @@ def translation_view(request, id=0):
     if request.method == "GET":
         langs = [lang["code"] for lang in settings.PARLER_LANGUAGES[None]]
 
-        translations = {t.language_code: TranslationForm({"text": t.text}) for t in translation.translations.all()}
+        # sorted in the order of settings.LANGUAGES
+        translations = {
+            lang_code: TranslationForm(
+                {"text": next((t.text for t in translation.translations.all() if t.language_code == lang_code), "")}
+            )
+            for lang_code, _ in settings.LANGUAGES
+        }
 
         all_history = translation.history.all().order_by("history_date")
 
@@ -239,17 +273,28 @@ def edit_translation(request, id=0, lang="en-us"):
 
     if request.method == "POST":
         form = TranslationForm(request.POST)
+        auto_translate_check = request.POST.get("auto_translate_check", False)
+        excluded_langs = request.POST.getlist("excluded_languages", [])
+
+        languages = [l for l in Translate.languages if l not in excluded_langs]
+
         if form.is_valid():
             text = form["text"].value()
             translation = Translation.objects.edit_translation_by_id(id, lang, text)
 
             if lang == settings.LANGUAGE_CODE:
-                if not translation.no_auto:
-                    translations = Translate().bulk_translate(["__all__"], [text])[text]
+                if translation.no_auto:
+                    for language in Translate.languages:
+                        Translation.objects.edit_translation_by_id(id, language, text, False)
 
-                for language in Translate.languages:
-                    translated_text = text if translation.no_auto else translations[language]
-                    Translation.objects.edit_translation_by_id(id, language, translated_text, False)
+                else:
+                    if not auto_translate_check:
+                        Translation.objects.edit_translation_by_id(id, lang, text, False)
+                    else:
+                        translations = Translate().bulk_translate(languages, [text])[text]
+                        for language in languages:
+                            translated_text = text if translation.no_auto else translations[language]
+                            Translation.objects.edit_translation_by_id(id, language, translated_text, False)
 
             parent = Translation.objects.get(pk=id)
             all_history = parent.history.all().order_by("history_date")
@@ -258,38 +303,19 @@ def edit_translation(request, id=0, lang="en-us"):
                 if record.changed_text:
                     updated_dates[record.affected_language] = record.history_date
 
-            forms = {t.language_code: TranslationForm({"text": t.text}) for t in parent.translations.all()}
+            # sorted in the order of settings.LANGUAGES
+            forms = {
+                lang_code: TranslationForm(
+                    {"text": next((t.text for t in parent.translations.all() if t.language_code == lang_code), "")}
+                )
+                for lang_code, _ in settings.LANGUAGES
+            }
             context = {
                 "translation": parent,
                 "langs": forms,
                 "updated_dates": updated_dates,
             }
             return render(request, "edit/langs.html", context)
-
-
-@login_required(login_url="/admin/login")
-@staff_member_required
-def auto_translate(request, id=0, lang="en-us"):
-    translation = Translation.objects.language(settings.LANGUAGE_CODE).get(pk=id)
-
-    if not has_translation_access(translation, request.user):
-        return HttpResponseRedirect("/api/translations/admin/programs")
-
-    if request.method == "POST":
-
-        auto = Translate().translate(lang, translation.text)
-
-        # Set text to manualy edited initially in order to update, and then set it to not edited
-        new_translation = Translation.objects.edit_translation_by_id(translation.id, lang, auto)
-        new_translation.edited = False
-        new_translation.save()
-
-        context = {
-            "form": TranslationForm({"text": new_translation.text}),
-            "lang": lang,
-            "translation": translation,
-        }
-        return render(request, "edit/lang_form.html", context)
 
 
 def get_white_label_choices():
