@@ -2774,7 +2774,17 @@ class NcConfigurationData(ConfigurationData):
                         "_label": "childCareBenefits.nc_scca_desc",
                         "_default_message": "Help with child care costs",
                     },
-                }
+                },
+                "nc_head_start": {
+                    "name": {
+                        "_label": "housingBenefits.nc_head_start",
+                        "_default_message": "NC Head Start Program: ",
+                    },
+                    "description": {
+                        "_label": "housingBenefits.nc_head_start_desc",
+                        "_default_message": "Comprehensive early childhood education, health, nutrition, and parent involvement services to low-income children and families",
+                    },
+                },
             },
             "category_name": {
                 "_label": "childCareYouthAndEducation",
@@ -2792,17 +2802,7 @@ class NcConfigurationData(ConfigurationData):
                         "_label": "housingBenefits.ncwap_desc",
                         "_default_message": "Helps low-income homeowners and renters save money by improving home energy efficiency",
                     },
-                },
-                "nc_head_start": {
-                    "name": {
-                        "_label": "housingBenefits.nc_head_start",
-                        "_default_message": "NC Head Start Program: ",
-                    },
-                    "description": {
-                        "_label": "housingBenefits.nc_head_start_desc",
-                        "_default_message": "Comprehensive early childhood education, health, nutrition, and parent involvement services to low-income children and families",
-                    },
-                },
+                },                
                 "lifeline": {
                     "name": {
                         "_label": "housingBenefits.lifeline",
