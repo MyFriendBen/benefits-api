@@ -201,6 +201,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             "has_nccip",
             "has_coctc",
             "has_ncscca",
+            "has_nc_head_start",
             "has_upk",
             "has_ssdi",
             "has_cowap",
