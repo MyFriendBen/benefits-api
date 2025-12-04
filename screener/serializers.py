@@ -221,6 +221,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             "has_ma_maeitc",
             "has_ma_macfc",
             "has_head_start",
+            "has_early_head_start",
             "has_co_andso",
             "has_co_care",
             "has_employer_hi",

@@ -1,0 +1,53 @@
+{
+    "white_label": {"code": "ma"},
+    "program_category": {
+        "external_name": "ma_child_care",
+        "name": "Child Care",
+        "icon": "child_care"
+    },
+    "program": {
+        "name_abbreviated": "ma_early_head_start",
+        "year": "2025",
+        "legal_status_required": ["citizen", "non_citizen", "gc_5plus", "gc_18plus_no5", "gc_under18_no5", "otherWithWorkPermission"],
+        "name": "Early Head Start",
+        "description": "Child care and family support for families meeting income guidelines. Massachusetts Early Head Start helps low-income families with infants and toddlers under age 3. This program provides free early learning, health care, healthy meals, and family support. Families also get help with parenting, job training, and community resources.\n\nEarly Head Start is run by local agencies, so services may vary by location. To apply, contact your local Head Start center to check eligibility and enroll your child.\n\nChildren in foster care, those experiencing homelessness, and families receiving SNAP, TANF, or SSI are eligible regardless of income.\n\nNote: There may be a waitlist in some areas, including Boston.",
+        "learn_more_link": "https://www.mass.gov/guides/head-start-early-head-start",
+        "apply_button_link": "https://headstart.gov/center-locator?state=MA&radius=50",
+        "apply_button_description": "Find your local Early Head Start agency",
+        "estimated_application_time": "30 minutes",
+        "estimated_value": "",
+        "website_description": "Free child care and family support for families with infants and toddlers under age 3"
+    },
+    "documents": [
+        {
+            "external_name": "ma_early_head_start_birth_certificate",
+            "text": "Child's birth certificate or proof of age",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "ma_early_head_start_proof_income",
+            "text": "Proof of income (tax returns, pay stubs, W-2, 1099, etc.)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "ma_early_head_start_address",
+            "text": "Proof of address (lease, utility bill, etc.)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "ma_early_head_start_medical",
+            "text": "Medical and dental records (if available)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "ma_early_head_start_immunization",
+            "text": "Immunization records",
+            "link_url": "",
+            "link_text": ""
+        }
+    ]
+}

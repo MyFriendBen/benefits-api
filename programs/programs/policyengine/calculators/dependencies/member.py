@@ -445,3 +445,7 @@ class IlAabd(Member):
 
 class HeadStart(Member):
     field = "head_start"
+
+
+class EarlyHeadStart(Member):
+    field = "early_head_start"
