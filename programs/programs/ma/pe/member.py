@@ -154,3 +154,13 @@ class MaHeadStart(PolicyEngineMembersCalculator):
         *dependency.irs_gross_income,
     ]
     pe_outputs = [dependency.member.HeadStart]
+
+
+class MaEarlyHeadStart(PolicyEngineMembersCalculator):
+    pe_name = "early_head_start"
+    pe_inputs = [
+        dependency.member.AgeDependency,
+        dependency.household.MaStateCodeDependency,
+        *dependency.irs_gross_income,
+    ]
+    pe_outputs = [dependency.member.EarlyHeadStart]

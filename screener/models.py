@@ -110,6 +110,7 @@ class Screen(models.Model):
     has_ma_maeitc = models.BooleanField(default=False, blank=True, null=True)
     has_ma_macfc = models.BooleanField(default=False, blank=True, null=True)
     has_head_start = models.BooleanField(default=False, blank=True, null=True)
+    has_early_head_start = models.BooleanField(default=False, blank=True, null=True)
     has_co_andso = models.BooleanField(default=False, blank=True, null=True)
     has_co_care = models.BooleanField(default=False, blank=True, null=True)
     has_cfhc = models.BooleanField(default=False, blank=True, null=True)
@@ -458,6 +459,7 @@ class Screen(models.Model):
             "ma_tafdc": self.has_tanf,
             "ma_mass_health": self.has_medicaid or self.has_medicaid_hi,
             "ma_head_start": self.has_head_start,
+            "ma_early_head_start": self.has_early_head_start,
             "co_andso": self.has_co_andso,
             "co_care": self.has_co_care,
             "cfhc": self.has_cfhc,

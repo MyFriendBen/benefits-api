@@ -12,6 +12,7 @@ ma_member_calculators = {
     "ma_mbta": member.MaMbta,
     "ma_ssp": member.MaStateSupplementProgram,
     "ma_head_start": member.MaHeadStart,
+    "ma_early_head_start": member.MaEarlyHeadStart,
 }
 
 ma_tax_unit_calculators = {
