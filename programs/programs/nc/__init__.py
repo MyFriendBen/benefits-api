@@ -20,6 +20,5 @@ nc_calculators: dict[str, type[ProgramCalculator]] = {
     "nc_aca_mfb_version": ACASubsidiesNC,  # TODO: remove when it is fixed in PE
     "nc_fps": NCFamilyPlanningServices,
     "nc_medicare_savings": MedicareSavingsNC,
-    "nc_head_start": NCHeadStart
-,  
+    "nc_head_start": NCHeadStart,
 }
