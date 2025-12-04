@@ -448,3 +448,17 @@ class IlAabdGrossUnearnedIncomeDependency(Member):
 
 class IlAabd(Member):
     field = "il_aabd_person"
+
+
+class RentDependency(Member):
+    field = "rent"
+
+    def value(self):
+        int(self.screen.calc_expenses("yearly", ["rent"]))
+
+
+class PropertyTaxDependency(Member):
+    field = "real_estate_taxes"
+
+    def value(self):
+        int(self.screen.calc_expenses("yearly", ["propertyTax"]))

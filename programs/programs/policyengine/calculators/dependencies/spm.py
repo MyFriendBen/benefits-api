@@ -2,7 +2,7 @@ from screener.models import HouseholdMember
 from .base import SpmUnit
 
 
-class SnapDependentCareDeductionDependency(SpmUnit):
+class ChildCareDependency(SpmUnit):
     field = "childcare_expenses"
 
     def value(self):
@@ -469,3 +469,24 @@ class MaLiheapHeatExpenseIncludedInRent(SpmUnit):
     # Fixed to False: required for MA LIHEAP calculation; False produces conservative benefit estimate
     def value(self):
         return False
+
+
+class MortgageDependency(SpmUnit):
+    field = "mortgage_payments"
+
+    def value(self):
+        int(self.screen.calc_expenses("yearly", ["mortgage"]))
+
+
+class HOADependency(SpmUnit):
+    field = "homeowners_association_fees"
+
+    def value(self):
+        int(self.screen.calc_expenses("yearly", ["hoa"]))
+
+
+class HomeownersInsuranceDependency(SpmUnit):
+    field = "homeowners_insurance"
+
+    def value(self):
+        int(self.screen.calc_expenses("yearly", ["homeowners_insurance"]))
