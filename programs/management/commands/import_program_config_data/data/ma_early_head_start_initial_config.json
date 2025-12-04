@@ -20,31 +20,31 @@
     },
     "documents": [
         {
-            "external_name": "ma_early_head_start_birth_certificate",
+            "external_name": "ma_birth_certificate",
             "text": "Child's birth certificate or proof of age",
             "link_url": "",
             "link_text": ""
         },
         {
-            "external_name": "ma_early_head_start_proof_income",
+            "external_name": "ma_proof_income",
             "text": "Proof of income (tax returns, pay stubs, W-2, 1099, etc.)",
             "link_url": "",
             "link_text": ""
         },
         {
-            "external_name": "ma_early_head_start_address",
+            "external_name": "ma_proof_address",
             "text": "Proof of address (lease, utility bill, etc.)",
             "link_url": "",
             "link_text": ""
         },
         {
-            "external_name": "ma_early_head_start_medical",
+            "external_name": "ma_medical_records",
             "text": "Medical and dental records (if available)",
             "link_url": "",
             "link_text": ""
         },
         {
-            "external_name": "ma_early_head_start_immunization",
+            "external_name": "ma_immunization_records",
             "text": "Immunization records",
             "link_url": "",
             "link_text": ""
