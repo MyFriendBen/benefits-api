@@ -8,7 +8,7 @@
         "year": "2025",
         "legal_status_required": ["citizen", "refugee", "gc_5plus", "gc_5less", "otherWithWorkPermission", "non_citizen"],
         "name": "Commodity Supplemental Food Program (CSFP)",
-        "description": "CSFP helps low-income seniors eat healthier by giving them free food each month. The food packages include items like cereal, pasta, rice, peanut butter, cheese, canned meat, fruits, vegetables, and juice. These packages aren't meant to be a full diet. Instead, they add important nutrients that older adults often don't get enough of, like vitamins A and C, calcium, and iron. Seniors in the program also get recipes and tips for healthy eating.",
+        "description": "CSFP is a senior food box program that provides a package of nutritious foods specifically selected to support the nutritional needs of older adults. CSFP food boxes are distributed monthly at participating program sites. CSFP food boxes have a retail value of about $50 per month and may include cereal, grits, powdered milk, pasta, cheese, rice, canned meat, peanut butter, canned fruit, canned vegetables, fruit juice, dry beans, and oats.",
         "apply_button_link": "https://wegotyouillinois.org/csfp/",
         "apply_button_description": "Learn More and Apply Here",
         "estimated_application_time": "Varies",
