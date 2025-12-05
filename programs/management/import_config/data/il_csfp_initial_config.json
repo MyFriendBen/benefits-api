@@ -35,5 +35,37 @@
             "link_url": "",
             "link_text": ""
         }
+    ],
+    "navigators": [
+        {
+            "external_name": "greater_chicago_food_depository",
+            "name": "Greater Chicago Food Depository",
+            "email": "olderadults@gcfd.org",
+            "description": "If you would like to apply for CSFP, contact Greater Chicago Food Depository who will help you get started",
+            "assistance_link": "https://www.chicagofoodbank.org/get-help/",
+            "phone_number": "773-247-3663",
+            "counties": ["Cook"],
+            "languages": []
+        },
+        {
+            "external_name": "st_louis_area_foodbank",
+            "name": "St. Louis Area Foodbank",
+            "email": "",
+            "description": "If you would like to apply for CSFP, contact St. Louis Area Foodbank who will help you get started",
+            "assistance_link": "https://stlfoodbank.org/contact/",
+            "phone_number": "314-292-6262",
+            "counties": ["Clinton", "Franklin", "Jackson", "Jersey", "Madison", "Randolph", "St. Clair", "Washington", "Williamson"],
+            "languages": []
+        },
+        {
+            "external_name": "tri_state_foodbank",
+            "name": "Tri-State Foodbank",
+            "email": "N/A",
+            "description": "If you would like to apply for CSFP, contact Tri-State Foodbank who will help you get started",
+            "assistance_link": "https://www.tristatefoodbank.org/find-help/programs-services-illinois-clients",
+            "phone_number": "812-425-0775",
+            "counties": ["Alexander", "Edwards", "Hamilton", "Hardin", "Johnson", "Massac", "Pope", "Pulaski", "Richland", "Saline", "Union", "Wabash", "and White"],
+            "languages": []
+        }
     ]
 }
