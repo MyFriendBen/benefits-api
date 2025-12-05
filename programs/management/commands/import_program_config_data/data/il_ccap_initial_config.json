@@ -1,0 +1,72 @@
+{
+    "white_label": {
+        "code": "il"
+    },
+    "program_category": {
+        "external_name": "il_child_care_youth_education"
+    },
+    "program": {
+        "name_abbreviated": "il_ccap",
+        "year": "2025",
+        "legal_status_required": [],
+        "name": "Child Care Assistance Program (CCAP)",
+        "description": "CCAP helps low-income families pay for child care while parents are working or going to school. The program covers care for children under 13 years old (or up to 19 with special needs). Eligible families receive subsidies to help pay for licensed child care providers, including daycare centers, home-based care, and after-school programs. The amount of assistance depends on family size, income, and where you live in Illinois.",
+        "apply_button_link": "https://www.inccrra.org/about/sdasearch",
+        "apply_button_description": "Find Child Care & Apply",
+        "estimated_application_time": "45-60 minutes",
+        "website_description": "Child care subsidies for working families and students",
+        "estimated_value": "",
+        "external_name": "il_ccap"
+    },
+    "warning_message": {
+        "external_name": "il_ccap_copayment",
+        "calculator": "_show",
+        "message": "The estimated value represents the state subsidy amount. Families are required to pay a monthly copayment based on income and family size. The copayment is per family, not per child.",
+        "link_text": "View Payment Rates (PDF)",
+        "link_url": "https://www.dhs.state.il.us/onenetlibrary/12/documents/Forms/444343-202506_STA.pdf"
+    },
+    "documents": [
+        {
+            "external_name": "il_home",
+            "text": "Proof of home address (ex: lease, mortgage statement, utility bill)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "id_proof",
+            "text": "Proof of identity for each household member (ex: driver's license, state ID, Social Security number)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "earned_income",
+            "text": "Proof of earned income (ex: 2 recent pay stubs, employer letter, or self-employment form with receipts)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "il_ccap_provider_certification",
+            "text": "Child care provider information and certification (included in CCAP application)",
+            "link_url": "https://www.dhs.state.il.us/onenetlibrary/27897/documents/Forms/IL444-3455.pdf",
+            "link_text": "CCAP Application Form (PDF)"
+        },
+        {
+            "external_name": "il_ccap_activity_verification",
+            "text": "Proof of eligible activity: employment verification or school enrollment documentation",
+            "link_url": "",
+            "link_text": ""
+        }
+    ],
+    "navigators": [
+        {
+            "external_name": "illinois_child_care_resource_referral",
+            "name": "Illinois Network of Child Care Resource & Referral Agencies (INCCRRA)",
+            "email": "",
+            "description": "INCCRRA can help you find licensed child care providers and apply for CCAP assistance. Use their search tool to find your local Child Care Resource & Referral Agency.",
+            "assistance_link": "https://www.inccrra.org/about/sdasearch",
+            "phone_number": "217-528-4409",
+            "counties": [],
+            "languages": []
+        }
+    ]
+}
