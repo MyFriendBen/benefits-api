@@ -2291,7 +2291,7 @@ class IlConfigurationData(ConfigurationData):
                         "_default_message": "Food assistance",
                     },
                 },
-                "il_wic": {
+                "wic": {
                     "name": {
                         "_label": "foodAndNutritionBenefits.il_wic",
                         "_default_message": "Special Supplemental Nutrition Program for Women, Infants, and Children (WIC): ",
@@ -2311,7 +2311,7 @@ class IlConfigurationData(ConfigurationData):
                         "_default_message": "Free school meals",
                     },
                 },
-                "il_csfp": {
+                "csfp": {
                     "name": {
                         "_label": "foodAndNutritionBenefits.il_csfp",
                         "_default_message": "Commodity Supplemental Food Program (CSFP): ",
@@ -2374,7 +2374,7 @@ class IlConfigurationData(ConfigurationData):
                         "_default_message": "Federal cash assistance for individuals who are disabled, blind, or 65 years of age or older",
                     },
                 },
-                "il_tanf": {
+                "tanf": {
                     "name": {
                         "_label": "cashAssistanceBenefits.il_tanf",
                         "_default_message": "Temporary Assistance for Needy Families (TANF): ",
