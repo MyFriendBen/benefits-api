@@ -125,13 +125,6 @@ class IsDisabledDependency(Member):
         return self.member.disabled or self.member.long_term_disability
 
 
-class IsSSIDisabledDependency(Member):
-    field = "is_ssi_disabled"
-
-    def value(self):
-        return self.member.disabled
-
-
 # The Member class runs once per each household member, to ensure that the medical expenses
 # are only counted once and only if a member is elderly or disabled; the medical expense is divided
 # by the total number of elderly or disabled members.
@@ -173,8 +166,7 @@ class SsiReportedDependency(Member):
     field = "ssi_reported"
 
     def value(self):
-        # Policy Engine uses this value for is_ssi_disabled, but it does not apply to MFB
-        return 0
+        return int(self.member.calc_gross_income("yearly", ["sSI"]))
 
 
 class SsiCountableResourcesDependency(Member):
@@ -454,11 +446,4 @@ class RentDependency(Member):
     field = "rent"
 
     def value(self):
-        int(self.screen.calc_expenses("yearly", ["rent"]))
-
-
-class PropertyTaxDependency(Member):
-    field = "real_estate_taxes"
-
-    def value(self):
-        int(self.screen.calc_expenses("yearly", ["propertyTax"]))
+        return int(self.screen.calc_expenses("yearly", ["rent"]))

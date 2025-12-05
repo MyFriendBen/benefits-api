@@ -53,7 +53,6 @@ class IlAca(tax.Aca):
 
 
 # TODO: may need to add metered_gas_expense and electricity_expense if PE continues to incorporate expenses
-# TODO: send components of IsSSIDisabledDependency instead of IsSSIDisabledDependency
 class IlAabd(PolicyEngineMembersCalculator):
     pe_name = "il_aabd_person"
     pe_inputs = [
@@ -65,10 +64,10 @@ class IlAabd(PolicyEngineMembersCalculator):
         member_dependency.IlAabdGrossEarnedIncomeDependency,
         member_dependency.IlAabdGrossUnearnedIncomeDependency,
         member_dependency.RentDependency,
-        member_dependency.PropertyTaxDependency,
+        member_dependency.PropertyTaxExpenseDependency,
         spm_dependency.MortgageDependency,
-        spm_dependency.HOADependency,
-        spm_dependency.HomeownersInsuranceDependency,
+        spm_dependency.HoaFeesExpenseDependency,
+        spm_dependency.HomeownersInsuranceExpenseDependency,
         spm_dependency.CashAssetsDependency,
         spm_dependency.ChildCareDependency,
         hh_dependency.IlStateCodeDependency,

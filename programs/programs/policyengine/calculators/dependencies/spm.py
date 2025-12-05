@@ -119,7 +119,7 @@ class HoaFeesExpenseDependency(SpmUnit):
     field = "homeowners_association_fees"
 
     def value(self):
-        return self.screen.calc_expenses("yearly", ["hoa"])
+        return int(self.screen.calc_expenses("yearly", ["hoa"]))
 
 
 class HomeownersInsuranceExpenseDependency(SpmUnit):
@@ -475,18 +475,4 @@ class MortgageDependency(SpmUnit):
     field = "mortgage_payments"
 
     def value(self):
-        int(self.screen.calc_expenses("yearly", ["mortgage"]))
-
-
-class HOADependency(SpmUnit):
-    field = "homeowners_association_fees"
-
-    def value(self):
-        int(self.screen.calc_expenses("yearly", ["hoa"]))
-
-
-class HomeownersInsuranceDependency(SpmUnit):
-    field = "homeowners_insurance"
-
-    def value(self):
-        int(self.screen.calc_expenses("yearly", ["homeowners_insurance"]))
+        return int(self.screen.calc_expenses("yearly", ["mortgage"]))
