@@ -251,6 +251,24 @@ class TestScreen(TestCase):
 
         self.assertFalse(self.screen.has_benefit("tx_snap"))
 
+    def test_has_benefit_returns_true_for_ma_head_start_when_user_has_head_start(self):
+        """
+        Test that has_benefit('ma_head_start') returns True when user has Head Start.
+        """
+        self.screen.has_head_start = True
+        self.screen.save()
+
+        self.assertTrue(self.screen.has_benefit("ma_head_start"))
+
+    def test_has_benefit_returns_false_for_ma_head_start_when_user_does_not_have_head_start(self):
+        """
+        Test that has_benefit('ma_head_start') returns False when user does not have Head Start.
+        """
+        self.screen.has_head_start = False
+        self.screen.save()
+
+        self.assertFalse(self.screen.has_benefit("ma_head_start"))
+
     # Tests for Screen.other_tax_unit_structure() method
 
     def test_other_tax_unit_structure_empty_when_all_in_primary_unit(self):

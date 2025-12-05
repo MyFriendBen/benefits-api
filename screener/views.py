@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from integrations.services.communications import MessageUser
 from programs.programs.helpers import STATE_MEDICAID_OPTIONS
-from programs.programs.policyengine.calculators import all_calculators
+from programs.programs.policyengine.calculators.registry import all_calculators
 from programs.programs.urgent_needs.base import UrgentNeedFunction
 from screener.models import (
     Screen,
