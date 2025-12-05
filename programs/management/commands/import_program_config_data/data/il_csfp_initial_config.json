@@ -59,11 +59,11 @@
         {
             "external_name": "tri_state_foodbank",
             "name": "Tri-State Foodbank",
-            "email": "N/A",
+            "email": "",
             "description": "If you would like to apply for CSFP, contact Tri-State Foodbank who will help you get started",
             "assistance_link": "https://www.tristatefoodbank.org/find-help/programs-services-illinois-clients",
             "phone_number": "812-425-0775",
-            "counties": ["Alexander", "Edwards", "Hamilton", "Hardin", "Johnson", "Massac", "Pope", "Pulaski", "Richland", "Saline", "Union", "Wabash", "and White"],
+            "counties": ["Alexander", "Edwards", "Hamilton", "Hardin", "Johnson", "Massac", "Pope", "Pulaski", "Richland", "Saline", "Union", "Wabash", "White"],
             "languages": []
         }
     ]
