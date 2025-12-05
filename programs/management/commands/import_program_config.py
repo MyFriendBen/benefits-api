@@ -3,6 +3,7 @@ from django.db import transaction
 from translations.models import Translation
 from programs.models import (
     Program,
+    ProgramNavigator,
     WarningMessage,
     FederalPoveryLimit,
     ProgramCategory,
@@ -789,9 +790,14 @@ class Command(BaseCommand):
 
                 navigators_to_associate.append(navigator)
 
-        # Associate all navigators with the program
+        # Associate all navigators with the program using through model
         if navigators_to_associate:
-            program.navigators_ordered.add(*navigators_to_associate)
+            for idx, navigator in enumerate(navigators_to_associate):
+                ProgramNavigator.objects.get_or_create(
+                    program=program,
+                    navigator=navigator,
+                    defaults={"order": idx},
+                )
             self.stdout.write(f"  Associated {len(navigators_to_associate)} navigator(s) with program")
 
     def _import_navigator_translations(self, navigator: Navigator, translations: Dict[str, str]) -> None:
