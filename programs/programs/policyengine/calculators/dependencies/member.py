@@ -201,6 +201,14 @@ class FamilyAffordabilityTaxCredit(Member):
     field = "co_family_affordability_credit"
 
 
+class CareWorkerEligibleDependency(Member):
+    field = "co_care_worker_credit_eligible_care_worker"
+    dependencies = ("is_care_worker",)
+
+    def value(self):
+        return self.member.is_care_worker or False
+
+
 class PellGrant(Member):
     field = "pell_grant"
 
