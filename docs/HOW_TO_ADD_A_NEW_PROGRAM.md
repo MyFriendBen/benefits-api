@@ -339,7 +339,7 @@ Edit `configuration/white_labels/{state_code}.py`:
 category_benefits = {
     "food": {
         "benefits": {
-            "il_csfp": {  # ← This key creates the naming chain!
+            "csfp": {  # ← Use canonical name (no state prefix)!
                 "name": {
                     "_label": "foodAndNutritionBenefits.il_csfp",
                     "_default_message": "Commodity Supplemental Food Program (CSFP)"
@@ -348,6 +348,13 @@ category_benefits = {
                     "_label": "foodAndNutritionBenefits.il_csfp_desc",
                     "_default_message": "Monthly food packages for seniors"
                 }
+            },
+            "snap": {  # Another example - canonical name
+                "name": {
+                    "_label": "foodAndNutritionBenefits.snap",
+                    "_default_message": "Supplemental Nutrition Assistance Program (SNAP)"
+                },
+                # ...
             },
             # ... other benefits
         },
@@ -361,33 +368,42 @@ category_benefits = {
 
 ### 4.2 Understanding the Naming Chain
 
-The benefit key (e.g., `"il_csfp"`) creates a critical chain:
+**IMPORTANT**: For programs that exist in multiple states (SNAP, CSFP, WIC, TANF, Medicaid, etc.), use the **canonical name** in the config (without state prefix), even though the program's `name_abbreviated` has a state prefix.
 
-1. **Config Key** → `"il_csfp"` in `category_benefits`
-2. **Frontend Field** → `formData.benefits.il_csfp`
-3. **API Mapping** → `has_csfp: formData.benefits.il_csfp` (in updateScreen.ts)
-4. **Database Field** → `Screen.has_csfp` (shared field)
-5. **Backend Mapping** → `has_benefit("il_csfp")` returns `self.has_csfp`
+Example for IL CSFP:
+
+1. **Config Key** → `"csfp"` in `category_benefits` ⚠️ NO state prefix!
+2. **Frontend Field** → `formData.benefits.csfp`
+3. **API Mapping** → `has_csfp: formData.benefits.csfp` (in updateScreen.ts)
+4. **Database Field** → `Screen.has_csfp` (shared across all states)
+5. **Program Name** → `name_abbreviated = "il_csfp"` (HAS state prefix)
+6. **Backend Mapping** → `has_benefit("il_csfp")` returns `self.has_csfp`
+
+**Why this pattern?**
+- Config keys use canonical names (`snap`, `csfp`, `wic`) so all states share the same frontend code
+- Program `name_abbreviated` uses state prefix (`il_csfp`, `tx_csfp`) for uniqueness
+- Backend `has_benefit()` maps both to the same database field
 
 **Multiple Programs, Same Benefit**:
-Federal programs that exist across states (e.g., SNAP, CSFP, Medicaid) should all map to the **same** `has_*` field:
+Programs that exist in multiple states (e.g., SNAP, CSFP, Medicaid) should all map to the **same** `has_*` field:
 
 ```python
 # screener/models.py - has_benefit() method
 name_map = {
     "snap": self.has_snap,
-    "co_snap": self.has_snap,           # Same field!
-    "federal_snap": self.has_snap,      # Same field!
-    "tx_snap": self.has_snap,           # Same field!
-    "csfp": self.has_csfp,
-    "tx_csfp": self.has_csfp,           # Same field!
-    "il_csfp": self.has_csfp,           # Same field!
+    "co_snap": self.has_snap,           # Different program, same field
+    "tx_snap": self.has_snap,           # Different program, same field
+    "tx_csfp": self.has_csfp,           # Different program, same field
+    "il_csfp": self.has_csfp,           # Different program, same field
+    "wic": self.has_wic,
+    "co_wic": self.has_wic,             # Different program, same field
+    "il_wic": self.has_wic,             # Different program, same field
 }
 ```
 
 **When to create a new field vs. reuse existing**:
-- **Reuse**: Federal programs available in multiple states (SNAP, CSFP, Medicaid, EITC, CTC, etc.)
-- **Create new**: State-specific programs that don't exist elsewhere (e.g., `has_il_bap`, `has_co_care`)
+- **Reuse**: Programs available in multiple states (SNAP, CSFP, Medicaid, EITC, CTC, etc.)
+- **Create new**: State-specific programs that only exist in one state (e.g., `has_il_bap`, `has_co_care`)
 
 ---
 
