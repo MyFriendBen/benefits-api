@@ -3,10 +3,14 @@ from django.db import transaction
 from translations.models import Translation
 from programs.models import (
     Program,
+    ProgramNavigator,
     WarningMessage,
     FederalPoveryLimit,
     ProgramCategory,
     Document,
+    Navigator,
+    County,
+    NavigatorLanguage,
 )
 from screener.models import WhiteLabel
 from integrations.clients.google_translate import Translate
@@ -18,39 +22,18 @@ from typing import Any, Dict, List, Tuple
 
 class Command(BaseCommand):
     help = """
-    Create a new program from a JSON configuration file.
+    Import a new program from a JSON configuration file.
 
-    This command creates a new program, translations, program category, and
-    optionally a warning message and documents. If the program already exists,
-    it will skip the import and display a message. All English translations are
-    automatically translated to all supported languages.
+    Creates programs with automatic translation to all supported languages.
+    Supports creating new entities or referencing existing ones.
+    All operations run in a transaction (rollback on error).
 
-    The JSON file should contain:
-    - white_label: REQUIRED - The white label for all entities
-        - code: REQUIRED - white label code (e.g., "tx", "co")
-    - program_category: REQUIRED - The program category configuration (flat structure)
-        - external_name: REQUIRED - category identifier
-        - For existing categories: only external_name is needed
-        - For new categories: must also include icon and name (at top level)
-        - tax_category: optional (defaults to false)
-    - program: REQUIRED - The program configuration (flat structure)
-        - name_abbreviated: REQUIRED
-        - All translatable fields (name, description, etc.)
-        - All configuration fields (year, legal_status_required, etc.)
-    - warning_message: OPTIONAL - Single warning message configuration
-        - external_name: REQUIRED
-        - calculator: defaults to "_show"
-        - message: The warning text
-    - documents: OPTIONAL - Array of document configurations
-        - external_name: REQUIRED - document identifier
-        - For existing documents: only external_name is needed
-        - For new documents: must also include text
-        - text: document description text
-        - link_url: OPTIONAL - URL for additional information
-        - link_text: OPTIONAL - text for the link
+    Usage:
+      python manage.py import_program_config <path/to/config.json>
+      python manage.py import_program_config <path/to/config.json> --dry-run
 
-    Example usage:
-      python manage.py import_program_config path/to/config.json
+    For detailed documentation on JSON configuration format and examples,
+    see: programs/management/commands/import_program_config_data/README.md
     """
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
@@ -147,6 +130,10 @@ class Command(BaseCommand):
                 # Step 4: Import documents (after program exists)
                 if "documents" in config:
                     self._import_documents(program, config["documents"])
+
+                # Step 5: Import navigators (after program exists)
+                if "navigators" in config:
+                    self._import_navigators(program, config["navigators"])
 
                 self.stdout.write(
                     self.style.SUCCESS(f"\n✓ Successfully created program: {program_name} (ID: {program.id})\n")
@@ -255,6 +242,44 @@ class Command(BaseCommand):
                     if link_text:
                         link_text_preview = link_text[:50] + "..." if len(link_text) > 50 else link_text
                         self.stdout.write(f"    link_text: {link_text_preview}")
+
+        # Navigators
+        if "navigators" in config:
+            navigators = config["navigators"]
+            self.stdout.write(f"\n{self.style.SUCCESS('Navigators:')}")
+            for i, nav in enumerate(navigators, 1):
+                self.stdout.write(f"\n  Navigator {i}:")
+                external_name = nav.get("external_name", "N/A")
+                name = nav.get("name", "")
+
+                # Check if this is referencing an existing navigator (name not provided)
+                if not name:
+                    self.stdout.write(f"    external_name: {external_name}")
+                    self.stdout.write(f"    (will use existing navigator if found)")
+                else:
+                    name_preview = name[:50] + "..." if len(name) > 50 else name
+                    email = nav.get("email", "")
+                    description = nav.get("description", "")
+                    assistance_link = nav.get("assistance_link", "")
+                    phone_number = nav.get("phone_number", "")
+                    counties = nav.get("counties", [])
+                    languages = nav.get("languages", [])
+
+                    self.stdout.write(f"    external_name: {external_name}")
+                    self.stdout.write(f"    name: {name_preview}")
+                    if email:
+                        self.stdout.write(f"    email: {email}")
+                    if description:
+                        desc_preview = description[:50] + "..." if len(description) > 50 else description
+                        self.stdout.write(f"    description: {desc_preview}")
+                    if assistance_link:
+                        self.stdout.write(f"    assistance_link: {assistance_link}")
+                    if phone_number:
+                        self.stdout.write(f"    phone_number: {phone_number}")
+                    if counties:
+                        self.stdout.write(f"    counties: {', '.join(counties)}")
+                    if languages:
+                        self.stdout.write(f"    languages: {', '.join(languages)}")
 
         self.stdout.write(self.style.WARNING("\n=== END DRY RUN ===\n"))
 
@@ -666,3 +691,126 @@ class Command(BaseCommand):
         """
         translated_fields = Document.objects.translated_fields
         self._bulk_update_entity_translations(document, translations, "document", translated_fields)
+
+    def _import_navigators(self, program: Program, navigators_config: List[Dict[str, Any]]) -> None:
+        """
+        Import navigators for a program.
+
+        For each navigator:
+        - If a navigator with the given external_name exists, use it and do not update
+          (only external_name is required for existing navigators)
+        - Otherwise, create a new navigator with translations
+          (external_name, name, email, description, and assistance_link are required for new navigators)
+
+        Associates all navigators with the program using the many-to-many relationship.
+
+        Args:
+            program: The Program instance to associate navigators with
+            navigators_config: List of navigator configurations from JSON
+        """
+        self.stdout.write(self.style.SUCCESS("\n[Navigators]"))
+
+        if not isinstance(navigators_config, list):
+            raise CommandError("'navigators' must be an array")
+
+        navigators_to_associate = []
+
+        for i, nav_config in enumerate(navigators_config, 1):
+            # Validate required fields
+            if "external_name" not in nav_config:
+                raise CommandError(f"Missing required field 'external_name' in navigators[{i-1}]")
+
+            external_name = nav_config["external_name"]
+
+            # Check if navigator already exists
+            existing_navigator = Navigator.objects.filter(external_name=external_name).first()
+
+            if existing_navigator:
+                self.stdout.write(f"  {i}. Using existing: {external_name} (ID: {existing_navigator.id})")
+                navigators_to_associate.append(existing_navigator)
+            else:
+                # For new navigators, validate that required fields are present
+                required_fields = ["name", "email", "description", "assistance_link"]
+                missing_fields = [field for field in required_fields if field not in nav_config]
+
+                if missing_fields:
+                    raise CommandError(
+                        f"Missing required fields in navigators[{i-1}] ({external_name}): {', '.join(missing_fields)}. "
+                        f"New navigators require these fields. If navigator already exists, only 'external_name' is needed."
+                    )
+
+                # Get phone number (optional)
+                phone_number = nav_config.get("phone_number")
+
+                # Create new navigator - use external_name as the label parameter
+                navigator = Navigator.objects.new_navigator(
+                    white_label=program.white_label.code,
+                    name=external_name,
+                    phone_number=phone_number,
+                )
+
+                self.stdout.write(f"  {i}. Created: {external_name} (ID: {navigator.id})")
+
+                # Set external_name if it doesn't conflict
+                if not Navigator.objects.filter(external_name=external_name).exclude(id=navigator.id).exists():
+                    navigator.external_name = external_name
+                    navigator.save()
+
+                # Handle counties (optional)
+                if "counties" in nav_config and nav_config["counties"]:
+                    counties_to_add = []
+                    for county_name in nav_config["counties"]:
+                        county, created = County.objects.get_or_create(
+                            name=county_name,
+                            white_label=program.white_label,
+                        )
+                        counties_to_add.append(county)
+                    navigator.counties.set(counties_to_add)
+                    self.stdout.write(f"     Counties: {', '.join(nav_config['counties'])}")
+
+                # Handle languages (optional)
+                if "languages" in nav_config and nav_config["languages"]:
+                    languages_to_add = []
+                    for lang_code in nav_config["languages"]:
+                        language, created = NavigatorLanguage.objects.get_or_create(code=lang_code)
+                        languages_to_add.append(language)
+                    navigator.languages.set(languages_to_add)
+                    self.stdout.write(f"     Languages: {', '.join(nav_config['languages'])}")
+
+                # Prepare translations
+                translations = {
+                    "name": nav_config["name"],
+                    "email": nav_config["email"],
+                    "description": nav_config["description"],
+                    "assistance_link": nav_config["assistance_link"],
+                }
+
+                # Import translations using the standard method
+                self._import_navigator_translations(navigator, translations)
+
+                navigators_to_associate.append(navigator)
+
+        # Associate all navigators with the program using through model
+        if navigators_to_associate:
+            for idx, navigator in enumerate(navigators_to_associate):
+                ProgramNavigator.objects.get_or_create(
+                    program=program,
+                    navigator=navigator,
+                    defaults={"order": idx},
+                )
+            self.stdout.write(f"  Associated {len(navigators_to_associate)} navigator(s) with program")
+
+    def _import_navigator_translations(self, navigator: Navigator, translations: Dict[str, str]) -> None:
+        """
+        Update translatable fields for a navigator.
+
+        The navigator was created by Navigator.objects.new_navigator() which already
+        created Translation objects with proper labels (navigator.{name}_{navigator.id}-{field}).
+        This method updates those existing translations with the provided English text
+        and auto-translates to all supported languages.
+
+        Note: assistance_link is marked as no_auto, so it will be copied to all languages
+        without machine translation.
+        """
+        translated_fields = Navigator.objects.translated_fields
+        self._bulk_update_entity_translations(navigator, translations, "navigator", translated_fields)
