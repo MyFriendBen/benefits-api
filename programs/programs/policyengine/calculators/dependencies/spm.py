@@ -119,7 +119,7 @@ class HoaFeesExpenseDependency(SpmUnit):
     field = "homeowners_association_fees"
 
     def value(self):
-        return int(self.screen.calc_expenses("yearly", ["hoa"]))
+        return self.screen.calc_expenses("yearly", ["hoa"])
 
 
 class HomeownersInsuranceExpenseDependency(SpmUnit):
