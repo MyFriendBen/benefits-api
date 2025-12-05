@@ -18,6 +18,10 @@ class Coctc(TaxUnit):
     field = "co_ctc"
 
 
+class CoCareWorkerCredit(TaxUnit):
+    field = "co_care_worker_credit"
+
+
 class Maeitc(TaxUnit):
     field = "ma_eitc"
 
