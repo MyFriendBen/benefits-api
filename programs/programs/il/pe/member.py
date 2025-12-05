@@ -1,7 +1,8 @@
 import programs.programs.federal.pe.member as member
 import programs.programs.federal.pe.tax as tax
-import programs.programs.policyengine.calculators.dependencies.household as dependency
+import programs.programs.policyengine.calculators.dependencies.household as hh_dependency
 import programs.programs.policyengine.calculators.dependencies.member as member_dependency
+import programs.programs.policyengine.calculators.dependencies.spm as spm_dependency
 from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
 
 
@@ -23,7 +24,7 @@ class IlMedicaid(member.Medicaid):
     }
     pe_inputs = [
         *member.Medicaid.pe_inputs,
-        dependency.IlStateCodeDependency,
+        hh_dependency.IlStateCodeDependency,
     ]
 
 
@@ -38,7 +39,7 @@ class IlWic(member.Wic):
     }
     pe_inputs = [
         *member.Wic.pe_inputs,
-        dependency.IlStateCodeDependency,
+        hh_dependency.IlStateCodeDependency,
     ]
 
 
@@ -46,19 +47,30 @@ class IlAca(tax.Aca):
     pe_name = "aca_ptc"
     pe_inputs = [
         *tax.Aca.pe_inputs,
-        dependency.IlStateCodeDependency,
-        dependency.IlCountyDependency,
+        hh_dependency.IlStateCodeDependency,
+        hh_dependency.IlCountyDependency,
     ]
 
 
+# TODO: may need to add metered_gas_expense and electricity_expense if PE continues to incorporate expenses
 class IlAabd(PolicyEngineMembersCalculator):
     pe_name = "il_aabd_person"
     pe_inputs = [
         member_dependency.AgeDependency,
-        member_dependency.IsDisabledDependency,
         member_dependency.IsBlindDependency,
+        member_dependency.IsDisabledDependency,
+        member_dependency.SsiEarnedIncomeDependency,
+        member_dependency.SsiReportedDependency,
         member_dependency.IlAabdGrossEarnedIncomeDependency,
         member_dependency.IlAabdGrossUnearnedIncomeDependency,
-        dependency.IlStateCodeDependency,
+        member_dependency.RentDependency,
+        member_dependency.PropertyTaxExpenseDependency,
+        spm_dependency.MortgageDependency,
+        spm_dependency.HoaFeesExpenseDependency,
+        spm_dependency.HomeownersInsuranceExpenseDependency,
+        spm_dependency.CashAssetsDependency,
+        spm_dependency.ChildCareDependency,
+        hh_dependency.IlStateCodeDependency,
+        hh_dependency.IlCountyDependency,
     ]
     pe_outputs = [member_dependency.IlAabd]

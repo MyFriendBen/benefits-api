@@ -166,8 +166,7 @@ class SsiReportedDependency(Member):
     field = "ssi_reported"
 
     def value(self):
-        # Policy Engine uses this value for is_ssi_disabled, but it does not apply to MFB
-        return 0
+        return int(self.member.calc_gross_income("yearly", ["sSI"]))
 
 
 class SsiCountableResourcesDependency(Member):
@@ -441,3 +440,10 @@ class IlAabdGrossUnearnedIncomeDependency(Member):
 
 class IlAabd(Member):
     field = "il_aabd_person"
+
+
+class RentDependency(Member):
+    field = "rent"
+
+    def value(self):
+        return int(self.screen.calc_expenses("yearly", ["rent"]))

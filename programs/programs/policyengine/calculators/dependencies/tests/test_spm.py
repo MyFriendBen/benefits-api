@@ -167,7 +167,7 @@ class TestUtilityExpenseDependency(TestCase):
 
 
 class TestOtherExpenseDependency(TestCase):
-    """Tests for other expense dependency classes: SnapDependentCareDeductionDependency, HoaFeesExpenseDependency, and HomeownersInsuranceExpenseDependency."""
+    """Tests for other expense dependency classes: ChildCareDependency, HoaFeesExpenseDependency, and HomeownersInsuranceExpenseDependency."""
 
     def setUp(self):
         """Set up test data for other expense tests."""
@@ -178,10 +178,10 @@ class TestOtherExpenseDependency(TestCase):
         )
 
     def test_value_calculates_annual_childcare(self):
-        """Test SnapDependentCareDeductionDependency.value() calculates annual childcare costs."""
+        """Test ChildCareDependency.value() calculates annual childcare costs."""
         Expense.objects.create(screen=self.screen, type="childCare", amount=400, frequency="monthly")
 
-        dep = spm.SnapDependentCareDeductionDependency(self.screen, None, {})
+        dep = spm.ChildCareDependency(self.screen, None, {})
         self.assertEqual(dep.value(), 4800)  # $400 * 12
         self.assertEqual(dep.field, "childcare_expenses")
 
