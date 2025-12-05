@@ -1,9 +1,9 @@
 {
     "white_label": {"code": "il"},
     "program_category": {
-        "external_name": "tx_healthcare",
-        "name": "Healthcare",
-        "icon": "health_care"
+        "external_name": "il_food_nutrition",
+        "name": "Food & Nutrition",
+        "icon": "food"
     },
     "program": {
         "name_abbreviated": "il_csfp",

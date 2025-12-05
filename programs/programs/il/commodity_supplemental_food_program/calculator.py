@@ -32,6 +32,7 @@ class IlCommoditySupplementalFoodProgram(ProgramCalculator):
     ]
     minimum_age = 60
     fpl_percent = 1.50
+    member_amount = 50 * 12  # $50/month - estimated value of food package
 
     def household_eligible(self, e: Eligibility):
         e.condition(not self.screen.has_benefit("il_csfp"))
@@ -49,3 +50,6 @@ class IlCommoditySupplementalFoodProgram(ProgramCalculator):
 
         # 3. age eligible
         e.condition(member.age >= self.minimum_age)
+
+    def member_value(self, _):
+        return self.member_amount
