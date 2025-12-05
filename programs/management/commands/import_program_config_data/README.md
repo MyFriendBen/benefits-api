@@ -29,7 +29,7 @@ The `import_program_config` Django management command allows you to create new p
 ### Basic Command
 
 ```bash
-python manage.py import_program_config programs/management/commands/import_new_program/data/<config_file>.json
+python manage.py import_program_config programs/management/commands/import_program_config_data/data/<config_file>.json
 ```
 
 ### Dry Run Mode
@@ -37,17 +37,17 @@ python manage.py import_program_config programs/management/commands/import_new_p
 Preview what will be created without making any changes:
 
 ```bash
-python manage.py import_program_config programs/management/commands/import_new_program/data/<config_file>.json --dry-run
+python manage.py import_program_config programs/management/commands/import_program_config_data/data/<config_file>.json --dry-run
 ```
 
 ### Example
 
 ```bash
 # Preview the IL CSFP program import
-python manage.py import_program_config programs/management/commands/import_new_program/data/il_csfp_initial_config.json --dry-run
+python manage.py import_program_config programs/management/commands/import_program_config_data/data/il_csfp_initial_config.json --dry-run
 
 # Actually import the program
-python manage.py import_program_config programs/management/commands/import_new_program/data/il_csfp_initial_config.json
+python manage.py import_program_config programs/management/commands/import_program_config_data/data/il_csfp_initial_config.json
 ```
 
 ## JSON Configuration Format
