@@ -281,12 +281,12 @@ il_calculators: dict[str, type[ProgramCalculator]] = {
 
 1. Run with `--dry-run` to validate:
    ```bash
-   python manage.py import_program_config programs/management/import_config/data/your_config.json --dry-run
+   python manage.py import_program_config programs/management/commands/import_new_program/data/your_config.json --dry-run
    ```
 2. Review the output carefully - check all fields
 3. Run without `--dry-run` to actually import:
    ```bash
-   python manage.py import_program_config programs/management/import_config/data/your_config.json
+   python manage.py import_program_config programs/management/commands/import_new_program/data/your_config.json
    ```
 
 ### Important Notes
