@@ -365,12 +365,12 @@ The benefit key (e.g., `"il_csfp"`) creates a critical chain:
 
 1. **Config Key** → `"il_csfp"` in `category_benefits`
 2. **Frontend Field** → `formData.benefits.il_csfp`
-3. **API Mapping** → `has_il_csfp: formData.benefits.il_csfp` (in updateScreen.ts)
-4. **Database Field** → `Screen.has_il_csfp` (added in Step 5)
-5. **Backend Mapping** → `has_benefit("il_csfp")` returns `self.has_il_csfp`
+3. **API Mapping** → `has_csfp: formData.benefits.il_csfp` (in updateScreen.ts)
+4. **Database Field** → `Screen.has_csfp` (shared field)
+5. **Backend Mapping** → `has_benefit("il_csfp")` returns `self.has_csfp`
 
 **Multiple Programs, Same Benefit**:
-If you have multiple variants of the same program (e.g., `snap`, `co_snap`, `federal_snap`), they should all map to the **same** `has_*` field:
+Federal programs that exist across states (e.g., SNAP, CSFP, Medicaid) should all map to the **same** `has_*` field:
 
 ```python
 # screener/models.py - has_benefit() method
@@ -379,16 +379,38 @@ name_map = {
     "co_snap": self.has_snap,           # Same field!
     "federal_snap": self.has_snap,      # Same field!
     "tx_snap": self.has_snap,           # Same field!
+    "csfp": self.has_csfp,
+    "tx_csfp": self.has_csfp,           # Same field!
+    "il_csfp": self.has_csfp,           # Same field!
 }
 ```
+
+**When to create a new field vs. reuse existing**:
+- **Reuse**: Federal programs available in multiple states (SNAP, CSFP, Medicaid, EITC, CTC, etc.)
+- **Create new**: State-specific programs that don't exist elsewhere (e.g., `has_il_bap`, `has_co_care`)
 
 ---
 
 ## Step 5: Create Database Migration
 
-> **⚠️ Note**: This step is **only required if you completed Step 4** (updating white label configuration). If your program doesn't need to appear in the "Current Benefits" step, skip this step.
+> **⚠️ Note**: This step is **only required if you completed Step 4** AND your program needs a **new** database field. If you're reusing an existing field (e.g., `has_csfp` for a CSFP program in a new state), skip this step.
 
-### 5.1 Add Field to Screen Model
+### 5.1 Check for Existing Fields
+
+First, check if a field already exists for your program type:
+
+```python
+# screener/models.py - Look for existing fields like:
+has_snap = models.BooleanField(...)      # Used by all SNAP variants
+has_csfp = models.BooleanField(...)      # Used by all CSFP variants
+has_medicaid = models.BooleanField(...)  # Used by all Medicaid variants
+```
+
+**If a field exists**: Skip to Step 5.4 to add the mapping.
+
+**If no field exists**: Continue with 5.2.
+
+### 5.2 Add Field to Screen Model (New Fields Only)
 
 Add the database field for the "already have" checkbox:
 
@@ -397,28 +419,33 @@ Add the database field for the "already have" checkbox:
 class Screen(models.Model):
     # ... existing fields ...
 
-    has_il_csfp = models.BooleanField(default=False)
+    has_my_new_program = models.BooleanField(default=False, blank=True, null=True)
 ```
 
-### 5.2 Generate Migration
+### 5.3 Generate and Run Migration
 
 ```bash
 python manage.py makemigrations screener
+python manage.py migrate screener
 ```
 
-This creates: `screener/migrations/XXXX_screen_has_il_csfp.py`
+### 5.4 Add Backend Mapping
 
-### 5.3 Run Migration
+Update the `has_benefit()` method in `screener/models.py` to map your program to the field:
 
-```bash
-python manage.py migrate screener
+```python
+# screener/models.py - has_benefit() method
+name_map = {
+    # ... existing mappings ...
+    "il_csfp": self.has_csfp,  # Map to existing shared field
+}
 ```
 
 ---
 
 ## Step 6: Update Serializer
 
-> **⚠️ Note**: This step is **only required if you completed Steps 4-5**. If your program doesn't need to appear in the "Current Benefits" step, skip this step.
+> **⚠️ Note**: This step is **only required if you added a NEW field in Step 5**. If you're reusing an existing field, it's already in the serializer.
 
 Add the new field to the Screen serializer:
 
@@ -429,11 +456,11 @@ class ScreenSerializer(serializers.ModelSerializer):
         model = Screen
         fields = [
             # ... existing fields ...
-            'has_il_csfp',
+            'has_my_new_program',
         ]
 ```
 
-This allows the API to accept the `has_il_csfp` field when creating/updating screens.
+This allows the API to accept the field when creating/updating screens.
 
 ---
 
@@ -478,12 +505,52 @@ print(f"Value: {eligibility.value}")
 1. In the screener, select your program in "Current Benefits" step
 2. Complete the screener
 3. Verify the program does NOT appear in results
-4. Check `screen.has_il_csfp == True` in database
+4. Check the appropriate `has_*` field is `True` in database (e.g., `screen.has_csfp == True`)
 
 **Note**: If the program doesn't appear in the "Current Benefits" step, verify:
-- Frontend has `il_csfp` in `Benefits` type (FormData.ts)
+- Frontend has the program key in `Benefits` type (FormData.ts)
 - Frontend has mapping in `updateScreen.ts`
-- Backend white label config has `il_csfp` in `category_benefits`
+- Backend white label config has the program in `category_benefits`
+
+### Import Validations (PolicyEngine Programs)
+
+For programs using PolicyEngine, you should create validation test cases to surface discrepancies between PolicyEngine's return values and your research during development.
+
+#### Create Validation Test Cases
+
+Create a JSON file with test scenarios:
+
+```json
+[
+  {
+    "name": "IL CSFP - Eligible senior in Cook County",
+    "screen": {
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_members": [
+        {"age": 65, "income_amount": 1000, "income_frequency": "monthly"}
+      ]
+    },
+    "expected_results": {
+      "il_csfp": {"eligible": true, "value": 600}
+    }
+  }
+]
+```
+
+#### Import Validations
+
+```bash
+python manage.py import_validations path/to/your_validations.json
+```
+
+This helps catch:
+- Discrepancies between PolicyEngine calculations and expected values
+- Edge cases in eligibility logic
+- Regressions when PolicyEngine updates their models
+
+See `validations/management/commands/import_validations.py` for the full schema and options.
 
 ---
 
@@ -522,11 +589,13 @@ Before submitting your PR:
 - [ ] JSON config validated with `--dry-run`
 - [ ] Program imported successfully
 - [ ] White label config updated (if program has "already have" checkbox)
-- [ ] Database migration created and run (if needed)
-- [ ] Serializer updated (if needed)
+- [ ] Backend mapping added in `has_benefit()` (reuse existing field for federal programs)
+- [ ] Database migration created and run (only if new field needed)
+- [ ] Serializer updated (only if new field needed)
 - [ ] Calculator logic tested
 - [ ] Program appears in API eligibility results
 - [ ] "Already have" functionality tested (if applicable)
+- [ ] Validation test cases created and imported (for PolicyEngine programs)
 - [ ] Frontend changes made (see [benefits-calculator/HOW_TO_ADD_A_NEW_PROGRAM.md](../benefits-calculator/HOW_TO_ADD_A_NEW_PROGRAM.md))
 
 ---
