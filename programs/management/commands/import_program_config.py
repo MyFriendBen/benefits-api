@@ -21,50 +21,18 @@ from typing import Any, Dict, List, Tuple
 
 class Command(BaseCommand):
     help = """
-    Create a new program from a JSON configuration file.
+    Import a new program from a JSON configuration file.
 
-    This command creates a new program, translations, program category, and
-    optionally a warning message and documents. If the program already exists,
-    it will skip the import and display a message. All English translations are
-    automatically translated to all supported languages.
+    Creates programs with automatic translation to all supported languages.
+    Supports creating new entities or referencing existing ones.
+    All operations run in a transaction (rollback on error).
 
-    The JSON file should contain:
-    - white_label: REQUIRED - The white label for all entities
-        - code: REQUIRED - white label code (e.g., "tx", "co")
-    - program_category: REQUIRED - The program category configuration (flat structure)
-        - external_name: REQUIRED - category identifier
-        - For existing categories: only external_name is needed
-        - For new categories: must also include icon and name (at top level)
-        - tax_category: optional (defaults to false)
-    - program: REQUIRED - The program configuration (flat structure)
-        - name_abbreviated: REQUIRED
-        - All translatable fields (name, description, etc.)
-        - All configuration fields (year, legal_status_required, etc.)
-    - warning_message: OPTIONAL - Single warning message configuration
-        - external_name: REQUIRED
-        - calculator: defaults to "_show"
-        - message: The warning text
-    - documents: OPTIONAL - Array of document configurations
-        - external_name: REQUIRED - document identifier
-        - For existing documents: only external_name is needed
-        - For new documents: must also include text
-        - text: document description text
-        - link_url: OPTIONAL - URL for additional information
-        - link_text: OPTIONAL - text for the link
-    - navigators: OPTIONAL - Array of navigator configurations
-        - external_name: REQUIRED - navigator identifier
-        - For existing navigators: only external_name is needed
-        - For new navigators: must also include name, email, description, assistance_link
-        - name: navigator name text
-        - email: navigator email
-        - description: description text
-        - assistance_link: URL for assistance
-        - phone_number: OPTIONAL - phone number
-        - counties: OPTIONAL - array of county names
-        - languages: OPTIONAL - array of language codes
+    Usage:
+      python manage.py import_program_config <path/to/config.json>
+      python manage.py import_program_config <path/to/config.json> --dry-run
 
-    Example usage:
-      python manage.py import_program_config path/to/config.json
+    For detailed documentation on JSON configuration format and examples,
+    see: programs/management/commands/import_program_config_data/README.md
     """
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:

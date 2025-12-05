@@ -6,16 +6,13 @@ This directory contains utilities for importing new program configurations into 
 
 ```
 programs/management/commands/
-├── import_program_config.py         # Django command wrapper
-└── import_new_program/              # Implementation and data
+├── import_program_config.py         # Django management command
+└── import_program_config_data/      # Documentation and data
     ├── README.md                    # This file
-    ├── import_program_config.py     # Main implementation script
     └── data/                        # JSON configuration files
         ├── il_csfp_initial_config.json
         └── ... (other program configs)
 ```
-
-The Django management command wrapper (`import_program_config.py`) allows Django's command discovery to work, while the actual implementation and data files are organized in this subdirectory.
 
 ## Overview
 
