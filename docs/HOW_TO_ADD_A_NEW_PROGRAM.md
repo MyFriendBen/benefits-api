@@ -403,7 +403,10 @@ name_map = {
 
 **When to create a new field vs. reuse existing**:
 - **Reuse**: Programs available in multiple states (SNAP, CSFP, Medicaid, EITC, CTC, etc.)
+  - Example: Adding `il_csfp` when `tx_csfp` exists → reuse `has_csfp`
+  - **Skip Step 5 entirely** - just add to config (Step 4) and has_benefit() mapping (Step 5.4)
 - **Create new**: State-specific programs that only exist in one state (e.g., `has_il_bap`, `has_co_care`)
+  - Must complete full Step 5 (create migration, add field, etc.)
 
 ---
 
