@@ -1,9 +1,7 @@
 {
     "white_label": {"code": "il"},
     "program_category": {
-        "external_name": "il_food_nutrition",
-        "name": "Food & Nutrition",
-        "icon": "food"
+        "external_name": "il_food"
     },
     "program": {
         "name_abbreviated": "il_csfp",
@@ -14,7 +12,8 @@
         "apply_button_link": "https://www.dhs.state.il.us/page.aspx?item=31874",
         "apply_button_description": "Learn More Here",
         "estimated_application_time": "TBD",
-        "website_description": "Monthly food packages for eligible seniors"
+        "website_description": "Monthly food packages for eligible seniors",
+        "estimated_value": ""
     },
     "documents": [
         {

@@ -1,19 +1,21 @@
-# Program Configuration Import Tool
+# Import New Program Tool
 
-This directory contains utilities for importing program configurations into the benefits-api system using JSON configuration files.
+This directory contains utilities for importing new program configurations into the benefits-api system using JSON configuration files.
 
 ## Directory Structure
 
 ```
-import_config/
-├── README.md                        # This file
-├── import_program_config.py         # Main implementation script
-└── data/                            # JSON configuration files
-    ├── il_csfp_initial_config.json
-    └── ... (other program configs)
+programs/management/commands/
+├── import_program_config.py         # Django command wrapper
+└── import_new_program/              # Implementation and data
+    ├── README.md                    # This file
+    ├── import_program_config.py     # Main implementation script
+    └── data/                        # JSON configuration files
+        ├── il_csfp_initial_config.json
+        └── ... (other program configs)
 ```
 
-**Note**: The Django management command wrapper is located at `programs/management/commands/import_program_config.py` to allow Django's command discovery to work, but the actual implementation lives in this directory.
+The Django management command wrapper (`import_program_config.py`) allows Django's command discovery to work, while the actual implementation and data files are organized in this subdirectory.
 
 ## Overview
 
@@ -30,7 +32,7 @@ The `import_program_config` Django management command allows you to create new p
 ### Basic Command
 
 ```bash
-python manage.py import_program_config programs/management/import_config/data/<config_file>.json
+python manage.py import_program_config programs/management/commands/import_new_program/data/<config_file>.json
 ```
 
 ### Dry Run Mode
@@ -38,17 +40,17 @@ python manage.py import_program_config programs/management/import_config/data/<c
 Preview what will be created without making any changes:
 
 ```bash
-python manage.py import_program_config programs/management/import_config/data/<config_file>.json --dry-run
+python manage.py import_program_config programs/management/commands/import_new_program/data/<config_file>.json --dry-run
 ```
 
 ### Example
 
 ```bash
 # Preview the IL CSFP program import
-python manage.py import_program_config programs/management/import_config/data/il_csfp_initial_config.json --dry-run
+python manage.py import_program_config programs/management/commands/import_new_program/data/il_csfp_initial_config.json --dry-run
 
 # Actually import the program
-python manage.py import_program_config programs/management/import_config/data/il_csfp_initial_config.json
+python manage.py import_program_config programs/management/commands/import_new_program/data/il_csfp_initial_config.json
 ```
 
 ## JSON Configuration Format
