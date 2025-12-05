@@ -572,6 +572,7 @@ class HouseholdMember(models.Model):
     disability_medicaid = models.BooleanField(blank=True, null=True)
     has_income = models.BooleanField(blank=True, null=True)
     has_expenses = models.BooleanField(blank=True, null=True)
+    is_care_worker = models.BooleanField(blank=True, null=True)
 
     def calc_gross_income(self, frequency, types, exclude=[]):
         gross_income = 0

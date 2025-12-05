@@ -1,4 +1,3 @@
-import json
 from integrations.util.cache import Cache
 from decouple import config
 import requests
