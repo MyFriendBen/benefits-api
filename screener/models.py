@@ -69,6 +69,7 @@ class Screen(models.Model):
     has_il_ctc = models.BooleanField(default=False, blank=True, null=True)
     has_il_transit_reduced_fare = models.BooleanField(default=False, blank=True, null=True)
     has_il_bap = models.BooleanField(default=False, blank=True, null=True)
+    has_il_csfp = models.BooleanField(default=False, blank=True, null=True)
     has_medicaid = models.BooleanField(default=False, blank=True, null=True)
     has_rtdlive = models.BooleanField(default=False, blank=True, null=True)
     has_cccap = models.BooleanField(default=False, blank=True, null=True)
@@ -400,6 +401,7 @@ class Screen(models.Model):
             "il_ctc": self.has_il_ctc,
             "il_transit_reduced_fare": self.has_il_transit_reduced_fare,
             "il_bap": self.has_il_bap,
+            "il_csfp": self.has_il_csfp,
             "project_cope": self.has_project_cope,
             "co_energy_calculator_cope": self.has_project_cope,
             "cesn_heap": self.has_cesn_heap,

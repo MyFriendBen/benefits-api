@@ -2311,6 +2311,16 @@ class IlConfigurationData(ConfigurationData):
                         "_default_message": "Free school meals",
                     },
                 },
+                "il_csfp": {
+                    "name": {
+                        "_label": "foodAndNutritionBenefits.il_csfp",
+                        "_default_message": "Commodity Supplemental Food Program (CSFP): ",
+                    },
+                    "description": {
+                        "_label": "foodAndNutritionBenefits.il_csfp_desc",
+                        "_default_message": "Monthly food packages for seniors",
+                    },
+                },
             },
             "category_name": {
                 "_label": "foodAndNutrition",
