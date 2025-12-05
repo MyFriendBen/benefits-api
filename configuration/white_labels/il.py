@@ -275,7 +275,7 @@ class IlConfigurationData(ConfigurationData):
         },
         "alimony": {
             "_label": "incomeOptions.alimony",
-            "_default_message": "Alimony (Received)",
+            "_default_message": "Alimony/spousal maintenance (Received)",
         },
         "deferredComp": {
             "_label": "incomeOptions.deferredComp",
