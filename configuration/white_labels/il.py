@@ -2485,6 +2485,24 @@ class IlConfigurationData(ConfigurationData):
                 "_default_message": "Health Care",
             },
         },
+        "childCareYouthEducation": {
+            "benefits": {
+                "il_ccap": {
+                    "name": {
+                        "_label": "childCareYouthEducationBenefits.il_ccap",
+                        "_default_message": "Child Care Assistance Program (CCAP): ",
+                    },
+                    "description": {
+                        "_label": "childCareYouthEducationBenefits.il_ccap_desc",
+                        "_default_message": "Child care subsidies for working families and students",
+                    },
+                },
+            },
+            "category_name": {
+                "_label": "childCareYouthEducation",
+                "_default_message": "Child Care, Youth & Education",
+            },
+        },
     }
 
     consent_to_contact = {

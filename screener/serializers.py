@@ -180,7 +180,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             "has_il_bap",
             "has_medicaid",
             "has_rtdlive",
-            "has_cccap",
+            "has_ccap",
             "has_mydenver",
             "has_chp",
             "has_ssi",
