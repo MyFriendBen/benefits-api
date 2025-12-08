@@ -17,14 +17,18 @@ class NcHeadStartMarketRatesCache(GoogleSheetsCache):
             if len(row) < 6:
                 continue
             county_name = row[0].strip()
-            # Convert market rate strings to integers, removing commas
-            rates[county_name] = {
-                "infant": int(row[1].replace(",", "")) if row[1] else 0,  # 0-1 years
-                "toddler": int(row[2].replace(",", "")) if row[2] else 0,  # 2 years
-                "preschool": int(row[3].replace(",", "")) if row[3] else 0,  # 3-5 years
-                "school_age": int(row[4].replace(",", "")) if row[4] else 0,  # 6-12 years
-                "teen_disabled": int(row[5].replace(",", "")) if row[5] else 0,  # 12-17 with disabilities
-            }
+
+            try:
+                # Convert market rate strings to integers, removing commas
+                rates[county_name] = {
+                    "infant": int(row[1].replace(",", "")) if row[1] else 0,  # 0-1 years
+                    "toddler": int(row[2].replace(",", "")) if row[2] else 0,  # 2 years
+                    "preschool": int(row[3].replace(",", "")) if row[3] else 0,  # 3-5 years
+                    "school_age": int(row[4].replace(",", "")) if row[4] else 0,  # 6-12 years
+                    "teen_disabled": int(row[5].replace(",", "")) if row[5] else 0,  # 12-17 with disabilities
+                }
+            except ValueError:
+                continue  # Skip rows with malformed rate values
 
         return rates
 
@@ -70,8 +74,7 @@ class NCHeadStart(ProgramCalculator):
             income_limit = int(fpl[household_size] * NCHeadStart.fpl_percent)
 
             # Calculate gross countable income (only specific income types count)
-            gross_income = int(self.screen.calc_gross_income("yearly", NCHeadStart.countable_income_types))
-            # print(f"NC Head Start gross countable income: {gross_income}, Income limit (130% FPL): {income_limit}")
+            gross_income = int(self.screen.calc_gross_income("yearly", NCHeadStart.countable_income_types))            
 
             # If income is over 130% FPL, check for housing cost adjustment
             countable_income = gross_income
