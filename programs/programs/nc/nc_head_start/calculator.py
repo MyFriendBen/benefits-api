@@ -74,7 +74,7 @@ class NCHeadStart(ProgramCalculator):
             income_limit = int(fpl[household_size] * NCHeadStart.fpl_percent)
 
             # Calculate gross countable income (only specific income types count)
-            gross_income = int(self.screen.calc_gross_income("yearly", NCHeadStart.countable_income_types))            
+            gross_income = int(self.screen.calc_gross_income("yearly", NCHeadStart.countable_income_types))
 
             # If income is over 130% FPL, check for housing cost adjustment
             countable_income = gross_income
