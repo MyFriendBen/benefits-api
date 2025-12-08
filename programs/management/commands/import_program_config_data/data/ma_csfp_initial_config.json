@@ -1,0 +1,57 @@
+{
+    "white_label": {"code": "ma"},
+    "program_category": {"external_name": "ma_food"},
+    "program": {
+        "name_abbreviated": "ma_csfp",
+        "year": "2025",
+        "legal_status_required": [
+            "citizen",
+            "non_citizen",
+            "refugee",
+            "gc_5plus",
+            "gc_18plus_no5",
+            "gc_under18_no5",
+            "otherWithWorkPermission"
+        ],
+        "name": "Commodity Supplemental Food Program (CSFP)",
+        "description_short": "Food support for people 60 years of age or older.",
+        "description": "Food support for people 60 years of age or older. The Commodity Supplemental Food Program provides healthy food staples for individuals 60 years of age or older. You can get a monthly package of cereal, canned goods, and dairy products. You can pick up your package at a local food center.",
+        "learn_more_link": "https://www.fns.usda.gov/csfp/commodity-supplemental-food-program",
+        "apply_button_link": "https://www.gbfb.org/what-we-do/our-programs/commodity-supplemental-food-program/",
+        "apply_button_description": "",
+        "estimated_application_time": "10 minutes",
+        "estimated_value": ""
+    },
+    "documents": [
+        {
+            "external_name": "ma_proof_address",
+            "text": "Proof of address (lease, utility bill, etc.)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "ma_id_proof",
+            "text": "Proof of identity (ex: driver's license, official state ID card)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "ma_proof_income",
+            "text": "Proof of income (tax returns, pay stubs, W-2, 1099, etc.)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "ma_unearned_income",
+            "text": "Proof of unearned income (ex: child support, social security, unemployment)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "ma_us_status",
+            "text": "Proof of status in U.S. (ex: birth certificate, green card, work permit)",
+            "link_url": "",
+            "link_text": ""
+        }
+    ]
+}

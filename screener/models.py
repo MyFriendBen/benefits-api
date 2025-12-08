@@ -461,6 +461,7 @@ class Screen(models.Model):
             "ma_tafdc": self.has_tanf,
             "ma_mass_health": self.has_medicaid or self.has_medicaid_hi,
             "ma_head_start": self.has_head_start,
+            "ma_csfp": self.has_csfp,
             "co_andso": self.has_co_andso,
             "co_care": self.has_co_care,
             "cfhc": self.has_cfhc,

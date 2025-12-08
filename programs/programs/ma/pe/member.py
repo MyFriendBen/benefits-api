@@ -1,6 +1,6 @@
 from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
 import programs.programs.policyengine.calculators.dependencies as dependency
-from programs.programs.federal.pe.member import Ccdf, Chip, Medicaid, Wic, Ssi
+from programs.programs.federal.pe.member import Ccdf, Chip, Medicaid, Wic, Ssi, CommoditySupplementalFoodProgram
 from .spm import MaSnap, MaTafdc, MaEaedc
 from screener.models import HouseholdMember
 
@@ -154,3 +154,33 @@ class MaHeadStart(PolicyEngineMembersCalculator):
         *dependency.irs_gross_income,
     ]
     pe_outputs = [dependency.member.HeadStart]
+
+
+class MaCsfp(CommoditySupplementalFoodProgram):
+    """
+    Massachusetts Commodity Supplemental Food Program (CSFP) calculator.
+    Extends the federal CSFP calculator with MA state code dependency and county filtering.
+    Only available in specific MA counties served by Greater Boston Food Bank.
+    """
+
+    eligible_counties = [
+        "Bristol",
+        "Essex",
+        "Middlesex",
+        "Norfolk",
+        "Plymouth",
+        "Suffolk",
+        "Worcester",
+    ]
+
+    pe_inputs = [
+        *CommoditySupplementalFoodProgram.pe_inputs,
+        dependency.household.MaStateCodeDependency,
+    ]
+
+    def member_value(self, member: HouseholdMember):
+        # County filtering - return 0 if not in eligible county
+        if self.screen.county not in self.eligible_counties:
+            return 0
+
+        return super().member_value(member)
