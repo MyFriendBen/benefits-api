@@ -21,9 +21,9 @@
     "warning_message": {
         "external_name": "il_ccap_copayment",
         "calculator": "_show",
-        "message": "The estimated value represents the state subsidy amount. Families are required to pay a monthly copayment based on income and family size. The copayment is per family, not per child.",
-        "link_text": "View Payment Rates (PDF)",
-        "link_url": "https://www.dhs.state.il.us/OneNetLibrary/27897/documents/Forms/443455B%20CCAP%20Income%20and%20Copay%20Chart%20Eff%207.1.25.pdf"
+        "message": "The estimated value represents the state subsidy amount minus the monthly copayment. Copayment amounts shown are for first-time applications only and are based on income and family size. The copayment is per family, not per child. Some families may qualify for reduced or $0 copayments: families receiving TANF ($0), experiencing homelessness or in protective services ($0), child care workers ($1/month), or families with all school-age children in part-time care during the school year (50% off copayment).",
+        "link_text": "View Full Payment Details",
+        "link_url": "https://www.dhs.state.il.us/page.aspx?item=54862"
     },
     "documents": [
         {

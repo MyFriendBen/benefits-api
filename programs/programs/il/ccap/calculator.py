@@ -1,5 +1,6 @@
 from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
 import programs.programs.messages as messages
+from .rate_data import SUBSIDY_RATE_TABLE, COPAYMENT_TABLE_A
 
 
 class IlChildCareAssistanceProgram(ProgramCalculator):
@@ -28,9 +29,8 @@ class IlChildCareAssistanceProgram(ProgramCalculator):
     # - The child's dependent blood-related and adoptive siblings
     child_relationships = ["child", "stepChild", "fosterChild", "grandChild", "sisterOrBrother", "stepSisterOrBrother"]
 
-    # County groups for rate determination
+    # County groups for rate determination - if not in Group 1A or Group 1B, automatically in Group 2
     county_group_1a = ["Cook", "DeKalb", "DuPage", "Kane", "Kendall", "Lake", "McHenry"]
-
     county_group_1b = [
         "Boone",
         "Champaign",
@@ -48,26 +48,6 @@ class IlChildCareAssistanceProgram(ProgramCalculator):
         "Will",
         "Winnebago",
         "Woodford",
-    ]
-
-    # All other Illinois counties are Group II (handled in get_county_group method)
-
-    # Monthly rates by county group and age range (from PDF)
-    # Format: (county_group, (min_age_months, max_age_months), monthly_rate)
-    # Annual value calculated as monthly_rate * 12
-    RATE_TABLE = [
-        ("GROUP_1A", (0, 23), 1474),  # Infants (0-23 months)
-        ("GROUP_1A", (24, 35), 1188),  # Twos (24-35 months)
-        ("GROUP_1A", (36, 71), 1012),  # Preschool (36-71 months / 3-5 years)
-        ("GROUP_1A", (72, 156), 506),  # School age (6-13 years)
-        ("GROUP_1B", (0, 23), 1408),  # Infants
-        ("GROUP_1B", (24, 35), 1122),  # Twos
-        ("GROUP_1B", (36, 71), 946),  # Preschool
-        ("GROUP_1B", (72, 156), 484),  # School age
-        ("GROUP_2", (0, 23), 1254),  # Infants
-        ("GROUP_2", (24, 35), 1012),  # Twos
-        ("GROUP_2", (36, 71), 880),  # Preschool
-        ("GROUP_2", (72, 156), 440),  # School age
     ]
 
     # Income eligibility
@@ -116,6 +96,59 @@ class IlChildCareAssistanceProgram(ProgramCalculator):
         else:
             e.condition(member.age < 13)
 
+    def calculate_monthly_copayment(self) -> int:
+        """
+        Calculate the monthly copayment based on family size and income.
+
+        Uses standard copayment rates for first-time applications.
+
+        Returns monthly copayment in dollars.
+
+        Special cases handled:
+        - Income at or below 100% FPL: $1/month
+
+        Special cases NOT handled (mentioned in warning message):
+        - Families receiving TANF: $0/month (exempt)
+        - Protective services (homeless, military deployment, etc.): $0/month (exempt)
+        - Parent/guardian working in child care: $1/month
+        - Part-time school-age care: 50% reduced copayment (September-May)
+        """
+        if self.screen.household_size is None or self.program.year is None:
+            return 0
+
+        family_size = self.screen.household_size
+        monthly_income = int(self.screen.calc_gross_income("monthly", ["all"]))
+
+        # Special case: Income at or below 100% FPL = $1 copayment
+        fpl_100_limit = self.program.year.get_limit(family_size)
+        if monthly_income * 12 <= fpl_100_limit:
+            return 1
+
+        # Look up copayment in Table A
+        if family_size in COPAYMENT_TABLE_A:
+            for (min_income, max_income), copayment in COPAYMENT_TABLE_A[family_size]:
+                if min_income <= monthly_income <= max_income:
+                    return copayment
+
+        # If no match found in table, return 0
+        # This shouldn't happen for eligible families, but provides a safe default
+        return 0
+
+    def household_value(self) -> int:
+        """
+        Override household value to return net benefit (subsidy minus copayment).
+
+        The household value is calculated as the total subsidy for all children
+        minus the family's annual copayment.
+
+        Note: This overrides the base class method to provide net benefit calculation.
+        """
+        # Total subsidy is calculated by summing member values
+        # (member_value is called separately by the base class for each eligible member)
+        # So we return the negative copayment here to offset the total
+        annual_copayment = self.calculate_monthly_copayment() * 12
+        return -annual_copayment
+
     def member_value(self, member) -> int:
         """
         Calculate the annual subsidy value for an eligible child.
@@ -124,14 +157,14 @@ class IlChildCareAssistanceProgram(ProgramCalculator):
         1. County group (IA, IB, or II)
         2. Child's age in months
         """
-        if member.age is None:
+        if member.age is None or self.screen.county is None:
             return 0
 
         county_group = self.get_county_group(self.screen.county)
         age_months = member.age * 12
 
         # Find matching rate in table
-        for group, (min_age, max_age), monthly_rate in self.RATE_TABLE:
+        for group, (min_age, max_age), monthly_rate in SUBSIDY_RATE_TABLE:
             if group == county_group and min_age <= age_months <= max_age:
                 return monthly_rate * 12
 
