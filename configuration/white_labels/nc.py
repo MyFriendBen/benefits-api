@@ -2777,11 +2777,11 @@ class NcConfigurationData(ConfigurationData):
                 },
                 "nc_head_start": {
                     "name": {
-                        "_label": "housingBenefits.nc_head_start",
+                        "_label": "childCareBenefits.nc_head_start",
                         "_default_message": "NC Head Start Program: ",
                     },
                     "description": {
-                        "_label": "housingBenefits.nc_head_start_desc",
+                        "_label": "childCareBenefits.nc_head_start_desc",
                         "_default_message": "Comprehensive early childhood education, health, nutrition, and parent involvement services to low-income children and families",
                     },
                 },
