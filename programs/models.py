@@ -153,8 +153,28 @@ class LegalStatus(models.Model):
         on_delete=models.SET_NULL,
     )
 
+    @property
+    def is_user_selected(self):
+        """
+        Check if this is a basic user-selected status (not auto-calculated).
+
+        User-selected statuses are the core citizenship categories that users
+        directly choose from. All other statuses are auto-calculated filters.
+        """
+        user_selected_statuses = [
+            "citizen",
+            "non_citizen",
+            "gc_5plus",
+            "gc_5less",
+            "refugee",
+            "otherWithWorkPermission",
+        ]
+        return self.status in user_selected_statuses
+
     def __str__(self):
-        return self.status
+        if self.is_user_selected:
+            return f"{self.status}"
+        return f"[auto-calculated] {self.status}"
 
 
 class CategoryIconName(models.Model):
@@ -584,7 +604,13 @@ class Program(models.Model):
     )
     name_abbreviated = models.CharField(max_length=120)
     external_name = models.CharField(max_length=120, blank=True, null=True, unique=True)
-    legal_status_required = models.ManyToManyField(LegalStatus, related_name="programs", blank=True)
+    legal_status_required = models.ManyToManyField(
+        LegalStatus,
+        related_name="programs",
+        blank=True,
+        verbose_name="Legal status required",
+        help_text="User must match at least one of the selected statuses to be eligible for this program.",
+    )
     documents = models.ManyToManyField(Document, related_name="program_documents", blank=True)
     active = models.BooleanField(blank=True, default=True)
     low_confidence = models.BooleanField(blank=True, null=False, default=False)
