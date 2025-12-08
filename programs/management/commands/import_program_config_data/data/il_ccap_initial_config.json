@@ -3,9 +3,7 @@
         "code": "il"
     },
     "program_category": {
-        "external_name": "il_child_care_youth_education",
-        "name": "Child Care, Youth & Education",
-        "icon": 16
+        "external_name": "il_child_care"
     },
     "program": {
         "name_abbreviated": "il_ccap",
@@ -25,7 +23,7 @@
         "calculator": "_show",
         "message": "The estimated value represents the state subsidy amount. Families are required to pay a monthly copayment based on income and family size. The copayment is per family, not per child.",
         "link_text": "View Payment Rates (PDF)",
-        "link_url": "https://www.dhs.state.il.us/onenetlibrary/12/documents/Forms/444343-202506_STA.pdf"
+        "link_url": "https://www.dhs.state.il.us/OneNetLibrary/27897/documents/Forms/443455B%20CCAP%20Income%20and%20Copay%20Chart%20Eff%207.1.25.pdf"
     },
     "documents": [
         {
