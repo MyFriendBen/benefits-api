@@ -3,7 +3,9 @@
         "code": "il"
     },
     "program_category": {
-        "external_name": "il_child_care_youth_education"
+        "external_name": "il_child_care_youth_education",
+        "name": "Child Care, Youth & Education",
+        "icon": 16
     },
     "program": {
         "name_abbreviated": "il_ccap",
