@@ -56,18 +56,18 @@ class IlChildCareAssistanceProgram(ProgramCalculator):
     # Format: (county_group, (min_age_months, max_age_months), monthly_rate)
     # Annual value calculated as monthly_rate * 12
     RATE_TABLE = [
-        ("GROUP_1A", (0, 23), 1474),      # Infants (0-23 months)
-        ("GROUP_1A", (24, 35), 1188),     # Twos (24-35 months)
-        ("GROUP_1A", (36, 71), 1012),     # Preschool (36-71 months / 3-5 years)
-        ("GROUP_1A", (72, 156), 506),     # School age (6-13 years)
-        ("GROUP_1B", (0, 23), 1408),      # Infants
-        ("GROUP_1B", (24, 35), 1122),     # Twos
-        ("GROUP_1B", (36, 71), 946),      # Preschool
-        ("GROUP_1B", (72, 156), 484),     # School age
-        ("GROUP_2", (0, 23), 1254),       # Infants
-        ("GROUP_2", (24, 35), 1012),      # Twos
-        ("GROUP_2", (36, 71), 880),       # Preschool
-        ("GROUP_2", (72, 156), 440),      # School age
+        ("GROUP_1A", (0, 23), 1474),  # Infants (0-23 months)
+        ("GROUP_1A", (24, 35), 1188),  # Twos (24-35 months)
+        ("GROUP_1A", (36, 71), 1012),  # Preschool (36-71 months / 3-5 years)
+        ("GROUP_1A", (72, 156), 506),  # School age (6-13 years)
+        ("GROUP_1B", (0, 23), 1408),  # Infants
+        ("GROUP_1B", (24, 35), 1122),  # Twos
+        ("GROUP_1B", (36, 71), 946),  # Preschool
+        ("GROUP_1B", (72, 156), 484),  # School age
+        ("GROUP_2", (0, 23), 1254),  # Infants
+        ("GROUP_2", (24, 35), 1012),  # Twos
+        ("GROUP_2", (36, 71), 880),  # Preschool
+        ("GROUP_2", (72, 156), 440),  # School age
     ]
 
     # Income eligibility
@@ -81,7 +81,6 @@ class IlChildCareAssistanceProgram(ProgramCalculator):
             return "GROUP_1B"
         else:
             return "GROUP_2"  # All other Illinois counties
-
 
     def household_eligible(self, e: Eligibility):
         """Check household-level eligibility conditions"""

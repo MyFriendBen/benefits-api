@@ -106,7 +106,6 @@ class TestIlChildCareAssistanceProgram(TestCase):
         self.assertEqual(calc.get_county_group("Effingham"), "GROUP_2")
         self.assertEqual(calc.get_county_group("Random County"), "GROUP_2")
 
-
     # Household Eligibility Tests
     def test_household_eligible_with_employed_parent(self):
         """Test household is eligible when parent is employed"""
