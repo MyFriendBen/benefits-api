@@ -513,13 +513,278 @@ class TestIlChildCareAssistanceProgram(TestCase):
         eligibility = calc.eligible()
         calc.value(eligibility)  # Calculate values for eligible members
 
-        # Calculate expected total
+        # Calculate expected total (subsidy - copayment)
+        # Subsidy:
         # Infant: $1474 * 12 = $17,688
         # Preschooler: $1012 * 12 = $12,144
         # School-age: $506 * 12 = $6,072
-        expected_total = (1474 * 12) + (1012 * 12) + (506 * 12)
+        # Total subsidy: $35,904
+        # Copayment: $2000/month income, family of 4 = $48/month * 12 = $576/year
+        # Net benefit: $35,904 - $576 = $35,328
+        expected_subsidy = (1474 * 12) + (1012 * 12) + (506 * 12)
+        expected_copayment = 48 * 12
+        expected_net = expected_subsidy - expected_copayment
 
         self.assertTrue(eligibility.eligible)
         eligible_count = sum(1 for m in eligibility.eligible_members if m.eligible)
         self.assertEqual(eligible_count, 3)
-        self.assertEqual(eligibility.value, expected_total)
+        self.assertEqual(eligibility.value, expected_net)
+
+    # Copayment Calculation Tests
+    def test_copayment_at_100_percent_fpl(self):
+        """Test copayment is $1/month for families at or below 100% FPL"""
+        screen = Screen.objects.create(
+            agree_to_tos=True,
+            zipcode="60601",
+            county="Cook",
+            household_size=2,
+            white_label=self.il_white_label,
+            completed=False,
+        )
+        parent = HouseholdMember.objects.create(
+            screen=screen,
+            relationship="headOfHousehold",
+            age=30,
+            student=False,
+            has_income=True,
+        )
+        # Income at 100% FPL for family of 2 (approximately $1,580/month in 2025)
+        IncomeStream.objects.create(
+            screen=screen,
+            household_member=parent,
+            type="wages",
+            amount=1500,
+            frequency="monthly",
+        )
+        child = HouseholdMember.objects.create(screen=screen, relationship="child", age=3, has_income=False)
+
+        calc = self.create_calculator(screen)
+        copayment = calc.calculate_monthly_copayment()
+        self.assertEqual(copayment, 1)
+
+    def test_copayment_just_above_100_percent_fpl(self):
+        """Test copayment follows table for income just above 100% FPL"""
+        screen = Screen.objects.create(
+            agree_to_tos=True,
+            zipcode="60601",
+            county="Cook",
+            household_size=2,
+            white_label=self.il_white_label,
+            completed=False,
+        )
+        parent = HouseholdMember.objects.create(
+            screen=screen,
+            relationship="headOfHousehold",
+            age=30,
+            student=False,
+            has_income=True,
+        )
+        # $1,800/month - above 100% FPL, should use table
+        IncomeStream.objects.create(
+            screen=screen,
+            household_member=parent,
+            type="wages",
+            amount=1800,
+            frequency="monthly",
+        )
+        child = HouseholdMember.objects.create(screen=screen, relationship="child", age=3, has_income=False)
+
+        calc = self.create_calculator(screen)
+        copayment = calc.calculate_monthly_copayment()
+        # $1800 falls in bracket ((1764, 2055), 37)
+        self.assertEqual(copayment, 37)
+
+    def test_copayment_mid_income_family_of_4(self):
+        """Test copayment for mid-income family of 4"""
+        screen = Screen.objects.create(
+            agree_to_tos=True,
+            zipcode="60601",
+            county="Cook",
+            household_size=4,
+            white_label=self.il_white_label,
+            completed=False,
+        )
+        parent = HouseholdMember.objects.create(
+            screen=screen,
+            relationship="headOfHousehold",
+            age=30,
+            student=False,
+            has_income=True,
+        )
+        # $3,000/month income
+        IncomeStream.objects.create(
+            screen=screen,
+            household_member=parent,
+            type="wages",
+            amount=3000,
+            frequency="monthly",
+        )
+        child1 = HouseholdMember.objects.create(screen=screen, relationship="child", age=3, has_income=False)
+        child2 = HouseholdMember.objects.create(screen=screen, relationship="child", age=5, has_income=False)
+
+        calc = self.create_calculator(screen)
+        copayment = calc.calculate_monthly_copayment()
+        # $3000 falls in bracket ((2780, 3174), 95)
+        self.assertEqual(copayment, 95)
+
+    def test_copayment_at_bracket_boundary_lower(self):
+        """Test copayment at lower boundary of income bracket"""
+        screen = Screen.objects.create(
+            agree_to_tos=True,
+            zipcode="60601",
+            county="Cook",
+            household_size=3,
+            white_label=self.il_white_label,
+            completed=False,
+        )
+        parent = HouseholdMember.objects.create(
+            screen=screen,
+            relationship="headOfHousehold",
+            age=30,
+            student=False,
+            has_income=True,
+        )
+        # Exactly at bracket minimum: ((1985, 2312), 42)
+        IncomeStream.objects.create(
+            screen=screen,
+            household_member=parent,
+            type="wages",
+            amount=1985,
+            frequency="monthly",
+        )
+        child = HouseholdMember.objects.create(screen=screen, relationship="child", age=3, has_income=False)
+
+        calc = self.create_calculator(screen)
+        copayment = calc.calculate_monthly_copayment()
+        self.assertEqual(copayment, 42)
+
+    def test_copayment_at_bracket_boundary_upper(self):
+        """Test copayment at upper boundary of income bracket"""
+        screen = Screen.objects.create(
+            agree_to_tos=True,
+            zipcode="60601",
+            county="Cook",
+            household_size=3,
+            white_label=self.il_white_label,
+            completed=False,
+        )
+        parent = HouseholdMember.objects.create(
+            screen=screen,
+            relationship="headOfHousehold",
+            age=30,
+            student=False,
+            has_income=True,
+        )
+        # Exactly at bracket maximum: ((1985, 2312), 42)
+        IncomeStream.objects.create(
+            screen=screen,
+            household_member=parent,
+            type="wages",
+            amount=2312,
+            frequency="monthly",
+        )
+        child = HouseholdMember.objects.create(screen=screen, relationship="child", age=3, has_income=False)
+
+        calc = self.create_calculator(screen)
+        copayment = calc.calculate_monthly_copayment()
+        self.assertEqual(copayment, 42)
+
+    def test_copayment_highest_bracket(self):
+        """Test copayment at highest income bracket"""
+        screen = Screen.objects.create(
+            agree_to_tos=True,
+            zipcode="60601",
+            county="Cook",
+            household_size=10,
+            white_label=self.il_white_label,
+            completed=False,
+        )
+        parent = HouseholdMember.objects.create(
+            screen=screen,
+            relationship="headOfHousehold",
+            age=30,
+            student=False,
+            has_income=True,
+        )
+        # At highest bracket for family of 10
+        IncomeStream.objects.create(
+            screen=screen,
+            household_member=parent,
+            type="wages",
+            amount=13000,
+            frequency="monthly",
+        )
+        child = HouseholdMember.objects.create(screen=screen, relationship="child", age=3, has_income=False)
+
+        calc = self.create_calculator(screen)
+        copayment = calc.calculate_monthly_copayment()
+        self.assertEqual(copayment, 836)
+
+    def test_household_value_returns_negative_copayment(self):
+        """Test household_value returns negative annual copayment"""
+        screen = Screen.objects.create(
+            agree_to_tos=True,
+            zipcode="60601",
+            county="Cook",
+            household_size=2,
+            white_label=self.il_white_label,
+            completed=False,
+        )
+        parent = HouseholdMember.objects.create(
+            screen=screen,
+            relationship="headOfHousehold",
+            age=30,
+            student=False,
+            has_income=True,
+        )
+        IncomeStream.objects.create(
+            screen=screen,
+            household_member=parent,
+            type="wages",
+            amount=2000,
+            frequency="monthly",
+        )
+        child = HouseholdMember.objects.create(screen=screen, relationship="child", age=3, has_income=False)
+
+        calc = self.create_calculator(screen)
+        household_value = calc.household_value()
+        # $2000/month, family of 2: copayment = $37/month
+        # household_value should be -$37 * 12 = -$444
+        self.assertEqual(household_value, -37 * 12)
+
+    def test_net_benefit_calculation(self):
+        """Test that total value correctly calculates net benefit (subsidy - copayment)"""
+        screen = Screen.objects.create(
+            agree_to_tos=True,
+            zipcode="60601",
+            county="Cook",
+            household_size=2,
+            white_label=self.il_white_label,
+            completed=False,
+        )
+        parent = HouseholdMember.objects.create(
+            screen=screen,
+            relationship="headOfHousehold",
+            age=30,
+            student=False,
+            has_income=True,
+        )
+        IncomeStream.objects.create(
+            screen=screen,
+            household_member=parent,
+            type="wages",
+            amount=2000,
+            frequency="monthly",
+        )
+        # Infant in Cook County
+        infant = HouseholdMember.objects.create(screen=screen, relationship="child", age=1, has_income=False)
+
+        calc = self.create_calculator(screen)
+        eligibility = calc.eligible()
+        calc.value(eligibility)
+
+        # Subsidy: $1474 * 12 = $17,688
+        # Copayment: $37 * 12 = $444
+        # Net benefit: $17,688 - $444 = $17,244
+        expected_net = (1474 * 12) - (37 * 12)
+        self.assertEqual(eligibility.value, expected_net)
