@@ -2469,6 +2469,16 @@ class IlConfigurationData(ConfigurationData):
                         "_default_message": "Health insurance marketplace and premium tax credit.",
                     },
                 },
+                "il_hbwd": {
+                    "name": {
+                        "_label": "healthCareBenefits.il_hbwd",
+                        "_default_message": "Health Benefits for Workers with Disabilities (HBWD): ",
+                    },
+                    "description": {
+                        "_label": "healthCareBenefits.il_hbwd_desc",
+                        "_default_message": "Medicaid buy-in program for working individuals with disabilities",
+                    },
+                },
             },
             "category_name": {
                 "_label": "healthCare",

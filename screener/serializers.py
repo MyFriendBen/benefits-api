@@ -178,6 +178,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             "has_il_ctc",
             "has_il_transit_reduced_fare",
             "has_il_bap",
+            "has_il_hbwd",
             "has_medicaid",
             "has_rtdlive",
             "has_cccap",

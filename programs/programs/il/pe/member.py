@@ -2,6 +2,7 @@ import programs.programs.federal.pe.member as member
 import programs.programs.federal.pe.tax as tax
 import programs.programs.policyengine.calculators.dependencies.household as dependency
 import programs.programs.policyengine.calculators.dependencies.member as member_dependency
+import programs.programs.policyengine.calculators.dependencies.spm as spm_dependency
 from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
 
 
@@ -62,3 +63,53 @@ class IlAabd(PolicyEngineMembersCalculator):
         dependency.IlStateCodeDependency,
     ]
     pe_outputs = [member_dependency.IlAabd]
+
+
+class IlHbwd(PolicyEngineMembersCalculator):
+    """
+    Illinois Health Benefits for Workers with Disabilities (HBWD).
+
+    HBWD is a Medicaid buy-in program for working individuals with disabilities.
+
+    PolicyEngine calculates eligibility based on:
+    - Age (16-64 years via monthly_age)
+    - Disability (is_ssi_disabled OR social_security_disability > 0)
+    - Employment (il_hbwd_gross_earned_income > 0 as FICA proxy)
+    - Income (il_hbwd_countable_income vs spm_unit_fpg threshold)
+    - Assets (spm_unit_cash_assets + il_aabd_countable_vehicle_value < $25,000)
+    - Immigration (immigration_status = citizen or qualifying noncitizen)
+
+    Returns: il_hbwd_person = -il_hbwd_premium (negative premium = cost to individual)
+
+    TODO: Add missing dependencies once created in member.py:
+          - is_ssi_disabled
+          - immigration_status
+          - spm_unit_fpg (may exist in spm.py)
+          - spm_unit_cash_assets (exists in spm.py)
+          - il_aabd_countable_vehicle_value
+    """
+    pe_name = "il_hbwd_person"
+    pe_inputs = [
+        # age eligible
+        member_dependency.AgeDependency,
+        # disability eligible (used to calculate "is_ssi_disabled")
+        member_dependency.IsBlindDependency,
+        member_dependency.SsiReportedDependency,
+        member_dependency.IsDisabledDependency,
+        member_dependency.SsiEarnedIncomeDependency,
+        member_dependency.SsdiReportedDependency,
+        # employment eligible
+        member_dependency.IlHbwdGrossEarnedIncomeDependency,
+        # income eligible
+        member_dependency.IlAabdGrossEarnedIncomeDependency,
+        member_dependency.IlAabdGrossUnearnedIncomeDependency,
+        member_dependency.IlHbwdGrossUnearnedIncomeDependency
+        # asset eligibility
+        spm_dependency.CashAssetsDependency,
+        # state requirement
+        dependency.IlStateCodeDependency,
+    ]
+    pe_outputs = [member_dependency.IlHbwdEligible, member_dependency.IlHbwdPremium]
+
+    # Note: il_hbwd_person returns -premium (negative = cost, positive = benefit value)
+    # The default member_value() will return PolicyEngine's calculated value

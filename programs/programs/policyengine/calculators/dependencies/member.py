@@ -166,9 +166,16 @@ class SsiReportedDependency(Member):
     field = "ssi_reported"
 
     def value(self):
-        # Policy Engine uses this value for is_ssi_disabled, but it does not apply to MFB
-        return 0
+        return int(self.member.calc_gross_income("yearly", ["sSI"]))
+    
 
+class SsdiReportedDependency(Member):
+    # Receives "Social Security disability benefits (SSDI)"
+    field = "social_security_disability"
+
+    def value(self):
+        return int(self.member.calc_gross_income("yearly", ["sSDisability"]))
+    
 
 class SsiCountableResourcesDependency(Member):
     field = "ssi_countable_resources"
@@ -424,8 +431,8 @@ class IlAabdGrossEarnedIncomeDependency(Member):
     )
 
     def value(self):
-        return int(self.member.calc_gross_income("yearly", ["earned"]))
-
+        return int(self.member.calc_gross_income("monthly", ["earned"]))
+    
 
 class IlAabdGrossUnearnedIncomeDependency(Member):
     field = "il_aabd_gross_unearned_income"
@@ -436,8 +443,47 @@ class IlAabdGrossUnearnedIncomeDependency(Member):
     )
 
     def value(self):
-        return int(self.member.calc_gross_income("yearly", ["unearned"], exclude=["cashAssistance"]))
-
+        return int(self.member.calc_gross_income("monthly", ["unearned"], exclude=["cashAssistance", "sSI", "childSupport", "gifts"]))
+    
 
 class IlAabd(Member):
     field = "il_aabd_person"
+
+
+class IlHbwdGrossEarnedIncomeDependency(Member):
+    field = "il_hbwd_gross_earned_income"
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
+
+    def value(self):
+        return int(self.member.calc_gross_income("monthly", ["earned"]))
+    
+
+class IlHbwdGrossUnearnedIncomeDependency(Member):
+    field = "il_hbwd_countable_unearned_income"
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
+
+    def value(self):
+        return int(self.member.calc_gross_income("monthly", ["unearned"], exclude=["cashAssistance", "sSI", "childSupport", "gifts"]))
+
+
+class IlHbwdEligible(Member):
+    """Illinois HBWD eligibility determination (boolean)."""
+    field = "il_hbwd_eligible"
+
+
+class IlHbwdPremium(Member):
+    """
+    Illinois HBWD monthly premium amount (negative value).
+
+    This represents the PREMIUM that the user will pay for HBWD insurance,
+    not the value of the benefit itself. Will be a negative number.
+    """
+    field = "il_hbwd_person"
