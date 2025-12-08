@@ -569,8 +569,8 @@ class Command(BaseCommand):
 
         calculator = warning_config.get("calculator", "_show")
 
-        # Check if warning message already exists for this calculator and white label
-        existing_warning = WarningMessage.objects.filter(calculator=calculator, white_label=program.white_label).first()
+        # Check if warning message already exists by external_name
+        existing_warning = WarningMessage.objects.filter(external_name=external_name).first()
 
         if existing_warning:
             # Check if this program is already associated
@@ -599,11 +599,10 @@ class Command(BaseCommand):
         translated_fields = WarningMessage.objects.translated_fields
 
         # Map config fields to model fields
-        # Only "message" is expected from config; other fields get empty defaults
         field_values = {
             "message": warning_config.get("message", ""),
-            "link_text": "",
-            "link_url": "",
+            "link_text": warning_config.get("link_text", ""),
+            "link_url": warning_config.get("link_url", ""),
         }
 
         self._bulk_update_entity_translations(warning, field_values, "warning", translated_fields)

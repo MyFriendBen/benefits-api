@@ -10,9 +10,9 @@
     "program": {
         "name_abbreviated": "il_ccap",
         "year": "2025",
-        "legal_status_required": [],
+        "legal_status_required": ["citizen", "refugee", "gc_5plus", "non_citizen", "otherWithWorkPermission", "gc_5less"],
         "name": "Child Care Assistance Program (CCAP)",
-        "description": "CCAP helps low-income families pay for child care while parents are working or going to school. The program covers care for children under 13 years old (or up to 19 with special needs). Eligible families receive subsidies to help pay for licensed child care providers, including daycare centers, home-based care, and after-school programs. The amount of assistance depends on family size, income, and where you live in Illinois.",
+        "description": "CCAP helps families pay for child care while parents are working or going to school. The program covers care for children under 13 years old (or up to 19 with special needs). Eligible families receive subsidies to help pay for licensed child care providers, including daycare centers, home-based care, and after-school programs. The amount of assistance depends on family size, income, and where you live in Illinois.",
         "apply_button_link": "https://www.inccrra.org/about/sdasearch",
         "apply_button_description": "Find Child Care & Apply",
         "estimated_application_time": "45-60 minutes",
