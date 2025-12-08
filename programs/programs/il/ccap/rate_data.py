@@ -24,14 +24,17 @@ SUBSIDY_RATE_TABLE = [
     ("GROUP_1A", (24, 35), 1188),  # Twos (24-35 months)
     ("GROUP_1A", (36, 71), 1012),  # Preschool (36-71 months / 3-5 years)
     ("GROUP_1A", (72, 156), 506),  # School age (6-13 years)
+    ("GROUP_1A", (157, 228), 506),  # Disabled youth (13-19 years) - uses school-age rate
     ("GROUP_1B", (0, 23), 1408),  # Infants
     ("GROUP_1B", (24, 35), 1122),  # Twos
     ("GROUP_1B", (36, 71), 946),  # Preschool
     ("GROUP_1B", (72, 156), 484),  # School age
+    ("GROUP_1B", (157, 228), 484),  # Disabled youth (13-19 years) - uses school-age rate
     ("GROUP_2", (0, 23), 1254),  # Infants
     ("GROUP_2", (24, 35), 1012),  # Twos
     ("GROUP_2", (36, 71), 880),  # Preschool
     ("GROUP_2", (72, 156), 440),  # School age
+    ("GROUP_2", (157, 228), 440),  # Disabled youth (13-19 years) - uses school-age rate
 ]
 
 # ==============================================================================
