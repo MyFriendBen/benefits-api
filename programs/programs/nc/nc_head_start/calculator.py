@@ -150,10 +150,10 @@ class NCHeadStart(ProgramCalculator):
                 monthly_rate = county_rates["toddler"]
             elif 3 <= member.age <= 5:
                 monthly_rate = county_rates["preschool"]
+            elif 12 <= member.age <= 17 and member.has_disability():
+                monthly_rate = county_rates["teen_disabled"]
             elif 6 <= member.age <= 12:
                 monthly_rate = county_rates["school_age"]
-            elif 12 < member.age <= 17 and member.has_disability():
-                monthly_rate = county_rates["teen_disabled"]
 
             # Annual rate (monthly * 12)
             total_annual_rate += monthly_rate * 12
