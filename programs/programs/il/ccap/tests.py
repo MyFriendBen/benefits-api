@@ -73,9 +73,9 @@ class TestIlChildCareAssistanceProgram(TestCase):
     def test_get_county_group_ia(self):
         """Test county group IA (highest rate counties)"""
         calc = self.create_calculator(self.eligible_screen)
-        self.assertEqual(calc.get_county_group("Cook"), "IA")
-        self.assertEqual(calc.get_county_group("DuPage"), "IA")
-        self.assertEqual(calc.get_county_group("Lake"), "IA")
+        self.assertEqual(calc.get_county_group("Cook"), "GROUP_1A")
+        self.assertEqual(calc.get_county_group("DuPage"), "GROUP_1A")
+        self.assertEqual(calc.get_county_group("Lake"), "GROUP_1A")
 
     def test_get_county_group_ib(self):
         """Test county group IB (medium rate counties)"""
@@ -88,9 +88,9 @@ class TestIlChildCareAssistanceProgram(TestCase):
             completed=False,
         )
         calc = self.create_calculator(screen)
-        self.assertEqual(calc.get_county_group("Champaign"), "IB")
-        self.assertEqual(calc.get_county_group("Peoria"), "IB")
-        self.assertEqual(calc.get_county_group("Will"), "IB")
+        self.assertEqual(calc.get_county_group("Champaign"), "GROUP_1B")
+        self.assertEqual(calc.get_county_group("Peoria"), "GROUP_1B")
+        self.assertEqual(calc.get_county_group("Will"), "GROUP_1B")
 
     def test_get_county_group_ii(self):
         """Test county group II (all other Illinois counties)"""
@@ -103,40 +103,9 @@ class TestIlChildCareAssistanceProgram(TestCase):
             completed=False,
         )
         calc = self.create_calculator(screen)
-        self.assertEqual(calc.get_county_group("Effingham"), "II")
-        self.assertEqual(calc.get_county_group("Random County"), "II")
+        self.assertEqual(calc.get_county_group("Effingham"), "GROUP_2")
+        self.assertEqual(calc.get_county_group("Random County"), "GROUP_2")
 
-    # Age Bracket Tests
-    def test_get_age_bracket_infant(self):
-        """Test age bracket for infants (0-23 months)"""
-        calc = self.create_calculator(self.eligible_screen)
-        self.assertEqual(calc.get_age_bracket(0), "0-23_months")
-        self.assertEqual(calc.get_age_bracket(1), "0-23_months")
-
-    def test_get_age_bracket_twos(self):
-        """Test age bracket for twos (24-35 months)"""
-        calc = self.create_calculator(self.eligible_screen)
-        self.assertEqual(calc.get_age_bracket(2), "24-35_months")
-
-    def test_get_age_bracket_preschool(self):
-        """Test age bracket for preschool (36-71 months / 3-5 years)"""
-        calc = self.create_calculator(self.eligible_screen)
-        self.assertEqual(calc.get_age_bracket(3), "36-71_months")
-        self.assertEqual(calc.get_age_bracket(4), "36-71_months")
-        self.assertEqual(calc.get_age_bracket(5), "36-71_months")
-
-    def test_get_age_bracket_school_age(self):
-        """Test age bracket for school age (6-13 years)"""
-        calc = self.create_calculator(self.eligible_screen)
-        self.assertEqual(calc.get_age_bracket(6), "6-13_years")
-        self.assertEqual(calc.get_age_bracket(10), "6-13_years")
-        self.assertEqual(calc.get_age_bracket(13), "6-13_years")
-
-    def test_get_age_bracket_too_old(self):
-        """Test age bracket returns None for children over 13"""
-        calc = self.create_calculator(self.eligible_screen)
-        self.assertIsNone(calc.get_age_bracket(14))
-        self.assertIsNone(calc.get_age_bracket(18))
 
     # Household Eligibility Tests
     def test_household_eligible_with_employed_parent(self):

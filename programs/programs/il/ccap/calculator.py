@@ -29,9 +29,9 @@ class IlChildCareAssistanceProgram(ProgramCalculator):
     child_relationships = ["child", "stepChild", "fosterChild", "grandChild", "sisterOrBrother", "stepSisterOrBrother"]
 
     # County groups for rate determination
-    county_group_ia = ["Cook", "DeKalb", "DuPage", "Kane", "Kendall", "Lake", "McHenry"]
+    county_group_1a = ["Cook", "DeKalb", "DuPage", "Kane", "Kendall", "Lake", "McHenry"]
 
-    county_group_ib = [
+    county_group_1b = [
         "Boone",
         "Champaign",
         "Kankakee",
@@ -52,63 +52,36 @@ class IlChildCareAssistanceProgram(ProgramCalculator):
 
     # All other Illinois counties are Group II (handled in get_county_group method)
 
-    # Monthly rates by county group and age (from PDF)
-    # Multiplied by 12 to get annual value
-    rates = {
-        "IA": {
-            "0-23_months": 1474 * 12,  # Infants (0-23 months)
-            "24-35_months": 1188 * 12,  # Twos (24-35 months)
-            "36-71_months": 1012 * 12,  # Preschool (36-71 months / 3-5 years)
-            "6-13_years": 506 * 12,  # School age (6-13 years)
-        },
-        "IB": {
-            "0-23_months": 1408 * 12,
-            "24-35_months": 1122 * 12,
-            "36-71_months": 946 * 12,
-            "6-13_years": 484 * 12,
-        },
-        "II": {
-            "0-23_months": 1254 * 12,
-            "24-35_months": 1012 * 12,
-            "36-71_months": 880 * 12,
-            "6-13_years": 440 * 12,
-        },
-    }
+    # Monthly rates by county group and age range (from PDF)
+    # Format: (county_group, (min_age_months, max_age_months), monthly_rate)
+    # Annual value calculated as monthly_rate * 12
+    RATE_TABLE = [
+        ("GROUP_1A", (0, 23), 1474),      # Infants (0-23 months)
+        ("GROUP_1A", (24, 35), 1188),     # Twos (24-35 months)
+        ("GROUP_1A", (36, 71), 1012),     # Preschool (36-71 months / 3-5 years)
+        ("GROUP_1A", (72, 156), 506),     # School age (6-13 years)
+        ("GROUP_1B", (0, 23), 1408),      # Infants
+        ("GROUP_1B", (24, 35), 1122),     # Twos
+        ("GROUP_1B", (36, 71), 946),      # Preschool
+        ("GROUP_1B", (72, 156), 484),     # School age
+        ("GROUP_2", (0, 23), 1254),       # Infants
+        ("GROUP_2", (24, 35), 1012),      # Twos
+        ("GROUP_2", (36, 71), 880),       # Preschool
+        ("GROUP_2", (72, 156), 440),      # School age
+    ]
 
     # Income eligibility
     fpl_percent = 2.25  # 225% FPL for initial applications
 
     def get_county_group(self, county: str) -> str:
         """Determine the county group (IA, IB, or II) for rate calculation"""
-        if county in self.county_group_ia:
-            return "IA"
-        elif county in self.county_group_ib:
-            return "IB"
+        if county in self.county_group_1a:
+            return "GROUP_1A"
+        elif county in self.county_group_1b:
+            return "GROUP_1B"
         else:
-            return "II"  # All other Illinois counties
+            return "GROUP_2"  # All other Illinois counties
 
-    def get_age_bracket(self, age: int) -> str:
-        """
-        Determine the age bracket for rate calculation.
-
-        Age brackets (in months):
-        - 0-23 months (0-1 years)
-        - 24-35 months (2 years)
-        - 36-71 months (3-5 years)
-        - 72-156 months (6-13 years)
-        """
-        age_months = age * 12  # Convert years to months
-
-        if age_months <= 23:
-            return "0-23_months"
-        elif age_months <= 35:
-            return "24-35_months"
-        elif age_months <= 71:
-            return "36-71_months"
-        elif age_months <= 156:  # 13 years * 12 months
-            return "6-13_years"
-        else:
-            return None  # Not eligible (too old)
 
     def household_eligible(self, e: Eligibility):
         """Check household-level eligibility conditions"""
@@ -150,13 +123,17 @@ class IlChildCareAssistanceProgram(ProgramCalculator):
 
         Value depends on:
         1. County group (IA, IB, or II)
-        2. Child's age bracket
+        2. Child's age in months
         """
+        if member.age is None:
+            return 0
+
         county_group = self.get_county_group(self.screen.county)
-        age_bracket = self.get_age_bracket(member.age)
+        age_months = member.age * 12
 
-        if age_bracket is None:
-            return 0  # Child is too old
+        # Find matching rate in table
+        for group, (min_age, max_age), monthly_rate in self.RATE_TABLE:
+            if group == county_group and min_age <= age_months <= max_age:
+                return monthly_rate * 12
 
-        # Get the annual rate for this county group and age bracket
-        return self.rates[county_group][age_bracket]
+        return 0  # No matching rate found (child too old or other reason)
