@@ -104,25 +104,15 @@ class IlChildCareAssistanceProgram(ProgramCalculator):
 
         Returns monthly copayment in dollars.
 
-        Special cases handled:
-        - Income at or below 100% FPL: $1/month
-
-        Special cases NOT handled (mentioned in warning message):
-        - Families receiving TANF: $0/month (exempt)
-        - Protective services (homeless, military deployment, etc.): $0/month (exempt)
-        - Parent/guardian working in child care: $1/month
-        - Part-time school-age care: 50% reduced copayment (September-May)
+        Note: The copayment table already includes the $1/month copayment for low-income families.
+        Other copayment exemptions and reductions (TANF, homelessness, part-time care, etc.)
+        are detailed in the program description and not calculated here.
         """
         if self.screen.household_size is None or self.program.year is None:
             return 0
 
         family_size = self.screen.household_size
         monthly_income = int(self.screen.calc_gross_income("monthly", ["all"]))
-
-        # Special case: Income at or below 100% FPL = $1 copayment
-        fpl_100_limit = self.program.year.get_limit(family_size)
-        if monthly_income * 12 <= fpl_100_limit:
-            return 1
 
         # Look up copayment in Table A
         if family_size in COPAYMENT_TABLE_A:
@@ -156,8 +146,15 @@ class IlChildCareAssistanceProgram(ProgramCalculator):
         Value depends on:
         1. County group (IA, IB, or II)
         2. Child's age in months
+
+        Note: Children 13-19 years old must have a disability to receive subsidy.
+        This check is also in member_eligible(), but included here as a defensive check.
         """
         if member.age is None or self.screen.county is None:
+            return 0
+
+        # Defensive check: Children over 13 must have disability to be eligible for subsidy
+        if member.age >= 13 and not member.has_disability():
             return 0
 
         county_group = self.get_county_group(self.screen.county)

@@ -45,22 +45,10 @@ SUBSIDY_RATE_TABLE = [
 # URL: https://www.dhs.state.il.us/OneNetLibrary/27897/documents/Forms/443455B%20CCAP%20Income%20and%20Copay%20Chart%20Eff%207.1.25.pdf
 #
 # This calculator uses standard copayment rates for first-time applications.
+# The table includes $1/month copayment for low-income families in the first bracket.
 #
-# Note: Illinois offers reduced copayments (50% off) for families with ALL children:
-#   - School-age (5+ years and enrolled in school)
-#   - Approved for part-time care (less than 5 hours/day)
-#   - During the school year (September-May)
-# This reduced rate is NOT implemented in this calculator as we cannot detect these
-# conditions from screen data. See warning message for details.
-#
-# Special Copayment Cases:
-#   Handled in calculator:
-#     - Income at/below 100% FPL: $1/month copayment
-#
-#   NOT handled in calculator (mentioned in warning message):
-#     - Families receiving TANF: $0/month (exempt)
-#     - Protective services (homeless, military deployment, etc.): $0/month (exempt)
-#     - Parent/guardian working in child care: $1/month
+# Note: Other copayment exemptions and reductions (TANF, homelessness, part-time care, etc.)
+# are detailed in the program description and not calculated here.
 #
 # Format: {family_size: [((min_monthly_income, max_monthly_income), monthly_copayment), ...]}
 

@@ -519,10 +519,10 @@ class TestIlChildCareAssistanceProgram(TestCase):
         # Preschooler: $1012 * 12 = $12,144
         # School-age: $506 * 12 = $6,072
         # Total subsidy: $35,904
-        # Copayment: $2000/month income, family of 4 = $48/month * 12 = $576/year
-        # Net benefit: $35,904 - $576 = $35,328
+        # Copayment: $2000/month income, family of 4 falls in bracket ((0, 2384), 1) = $1/month * 12 = $12/year
+        # Net benefit: $35,904 - $12 = $35,892
         expected_subsidy = (1474 * 12) + (1012 * 12) + (506 * 12)
-        expected_copayment = 48 * 12
+        expected_copayment = 1 * 12
         expected_net = expected_subsidy - expected_copayment
 
         self.assertTrue(eligibility.eligible)
