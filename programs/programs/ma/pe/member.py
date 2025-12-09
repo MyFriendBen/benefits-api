@@ -184,3 +184,13 @@ class MaCsfp(CommoditySupplementalFoodProgram):
             return 0
 
         return super().member_value(member)
+
+
+class MaEarlyHeadStart(PolicyEngineMembersCalculator):
+    pe_name = "early_head_start"
+    pe_inputs = [
+        dependency.member.AgeDependency,
+        dependency.household.MaStateCodeDependency,
+        *dependency.irs_gross_income,
+    ]
+    pe_outputs = [dependency.member.EarlyHeadStart]
