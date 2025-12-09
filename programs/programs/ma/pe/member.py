@@ -144,3 +144,13 @@ class MaStateSupplementProgram(PolicyEngineMembersCalculator):
         *Ssi.pe_inputs,
     ]
     pe_outputs = [dependency.member.MaStateSupplementProgram]
+
+
+class MaHeadStart(PolicyEngineMembersCalculator):
+    pe_name = "head_start"
+    pe_inputs = [
+        dependency.member.AgeDependency,
+        dependency.household.MaStateCodeDependency,
+        *dependency.irs_gross_income,
+    ]
+    pe_outputs = [dependency.member.HeadStart]
