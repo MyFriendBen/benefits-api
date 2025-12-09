@@ -229,6 +229,18 @@ class CoConfigurationData(ConfigurationData):
         "ht": "Kreyòl",
     }
 
+    # Override cashAssistance to include Colorado-specific text
+    income_options = {
+        **ConfigurationData.income_options,
+        "government": {
+            **ConfigurationData.income_options["government"],
+            "cashAssistance": {
+                "_label": "incomeOptions.cashAssistance",
+                "_default_message": "Government Cash Assistance (including Colorado Works/TANF)",
+            },
+        },
+    }
+
     health_insurance_options = {
         "you": {
             "none": {
