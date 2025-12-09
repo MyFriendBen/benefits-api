@@ -167,7 +167,7 @@ class SsiReportedDependency(Member):
 
     def value(self):
         return int(self.member.calc_gross_income("yearly", ["sSI"]))
-    
+
 
 class SsdiReportedDependency(Member):
     # Receives "Social Security disability benefits (SSDI)"
@@ -175,7 +175,7 @@ class SsdiReportedDependency(Member):
 
     def value(self):
         return int(self.member.calc_gross_income("yearly", ["sSDisability"]))
-    
+
 
 class SsiCountableResourcesDependency(Member):
     field = "ssi_countable_resources"
@@ -432,7 +432,7 @@ class IlAabdGrossEarnedIncomeDependency(Member):
 
     def value(self):
         return int(self.member.calc_gross_income("monthly", ["earned"]))
-    
+
 
 class IlAabdGrossUnearnedIncomeDependency(Member):
     field = "il_aabd_gross_unearned_income"
@@ -443,8 +443,12 @@ class IlAabdGrossUnearnedIncomeDependency(Member):
     )
 
     def value(self):
-        return int(self.member.calc_gross_income("monthly", ["unearned"], exclude=["cashAssistance", "sSI", "childSupport", "gifts"]))
-    
+        return int(
+            self.member.calc_gross_income(
+                "monthly", ["unearned"], exclude=["cashAssistance", "sSI", "childSupport", "gifts"]
+            )
+        )
+
 
 class IlAabd(Member):
     field = "il_aabd_person"
@@ -460,7 +464,7 @@ class IlHbwdGrossEarnedIncomeDependency(Member):
 
     def value(self):
         return int(self.member.calc_gross_income("monthly", ["earned"]))
-    
+
 
 class IlHbwdGrossUnearnedIncomeDependency(Member):
     field = "il_hbwd_countable_unearned_income"
@@ -471,11 +475,16 @@ class IlHbwdGrossUnearnedIncomeDependency(Member):
     )
 
     def value(self):
-        return int(self.member.calc_gross_income("monthly", ["unearned"], exclude=["cashAssistance", "sSI", "childSupport", "gifts"]))
+        return int(
+            self.member.calc_gross_income(
+                "monthly", ["unearned"], exclude=["cashAssistance", "sSI", "childSupport", "gifts"]
+            )
+        )
 
 
 class IlHbwdEligible(Member):
     """Illinois HBWD eligibility determination (boolean)."""
+
     field = "il_hbwd_eligible"
 
 
@@ -486,4 +495,5 @@ class IlHbwdPremium(Member):
     This represents the PREMIUM that the user will pay for HBWD insurance,
     not the value of the benefit itself. Will be a negative number.
     """
+
     field = "il_hbwd_person"

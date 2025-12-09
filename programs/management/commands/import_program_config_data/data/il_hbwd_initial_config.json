@@ -13,12 +13,10 @@
         "apply_button_description": "Learn More and Apply Here",
         "estimated_application_time": "30-45 minutes",
         "website_description": "Health coverage for working individuals with disabilities",
-        "estimated_value": "",
+        "estimated_value": "Varies",
         "external_name": "il_hbwd",
-        "active": true,
         "low_confidence": false,
-        "show_on_current_benefits": true,
-        "value_format": null
+        "show_on_current_benefits": true
     },
     "documents": [
         {
