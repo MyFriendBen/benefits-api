@@ -104,7 +104,7 @@ class IlHbwd(PolicyEngineMembersCalculator):
         # income eligible
         member_dependency.IlAabdGrossEarnedIncomeDependency,
         member_dependency.IlAabdGrossUnearnedIncomeDependency,
-        member_dependency.IlHbwdGrossUnearnedIncomeDependency
+        member_dependency.IlHbwdGrossUnearnedIncomeDependency,
         # asset eligibility
         spm_dependency.CashAssetsDependency,
         # state requirement
