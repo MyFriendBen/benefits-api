@@ -3,6 +3,7 @@ import programs.programs.federal.pe.tax as tax
 import programs.programs.policyengine.calculators.dependencies.household as dependency
 import programs.programs.policyengine.calculators.dependencies.member as member_dependency
 import programs.programs.policyengine.calculators.dependencies.spm as spm_dependency
+from programs.programs.calc import MemberEligibility
 from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
 
 
@@ -111,5 +112,35 @@ class IlHbwd(PolicyEngineMembersCalculator):
     ]
     pe_outputs = [member_dependency.IlHbwdEligible, member_dependency.IlHbwdPremium]
 
-    # Note: il_hbwd_person returns -premium (negative = cost, positive = benefit value)
-    # The default member_value() will return PolicyEngine's calculated value
+    def member_eligible(self, e: MemberEligibility):
+        member = e.member
+
+        # Use il_hbwd_eligible for eligibility determination (not il_hbwd_person)
+        is_eligible = self.get_member_dependency_value(member_dependency.IlHbwdEligible, member.id)
+        e.condition(is_eligible)
+
+        # Call member_value() to set the value
+        member_value = self.member_value(member)
+        e.value = member_value
+
+    def member_value(self, _):
+        """
+        HBWD provides access to health coverage but we don't quantify its dollar value.
+
+        NOTE: Do not use il_hbwd_person - it returns a negative premium which represents
+        the cost to the individual, not the benefit value. We do not have the estimated value.
+        """
+        return 0
+
+    def get_member_variable(self, _: int):
+        """
+        Override to prevent accidental usage of il_hbwd_person.
+
+        This calculator uses il_hbwd_eligible and il_hbwd_premium from pe_outputs
+        instead of the il_hbwd_person pe_name variable to avoid confusion with
+        negative premium values.
+        """
+        raise NotImplementedError(
+            "Do not use get_member_variable() for IlHbwd. "
+            "We only have the premium (IlHbwdPremium) and not the estimated value of the coverage."
+        )
