@@ -185,7 +185,8 @@ class ConfigurationData:
         "investment": {"_label": "incomeCategories.investment", "_default_message": "Investment & Retirement"},
     }
 
-    income_options = {
+    # Nested income options organized by category (for future use with categorized UI)
+    income_options_by_category = {
         "employment": {
             "wages": {"_label": "incomeOptions.wages", "_default_message": "Wages, salaries, tips"},
             "selfEmployment": {
@@ -240,6 +241,58 @@ class ConfigurationData:
                 "_label": "incomeOptions.deferredComp",
                 "_default_message": "Withdrawals from Deferred Compensation (IRA, Keogh, etc.)",
             },
+        },
+    }
+
+    # Flattened income options (backward compatible with current FE)
+    # This is what the FE currently expects - a simple flat dictionary
+    income_options = {
+        "wages": {"_label": "incomeOptions.wages", "_default_message": "Wages, salaries, tips"},
+        "selfEmployment": {
+            "_label": "incomeOptions.selfEmployment",
+            "_default_message": "Income from freelance, independent contractor, or self-employment work",
+        },
+        "sSDisability": {
+            "_label": "incomeOptions.sSDisability",
+            "_default_message": "Social Security Disability Benefits",
+        },
+        "sSRetirement": {
+            "_label": "incomeOptions.sSRetirement",
+            "_default_message": "Social Security Retirement Benefits",
+        },
+        "sSI": {"_label": "incomeOptions.sSI", "_default_message": "Supplemental Security Income (SSI)"},
+        "sSSurvivor": {
+            "_label": "incomeOptions.sSSurvivor",
+            "_default_message": "Social Security Survivor's Benefits (Widowed)",
+        },
+        "sSDependent": {
+            "_label": "incomeOptions.sSDependent",
+            "_default_message": "Social Security Dependent Benefits (retirement, disability, or survivors)",
+        },
+        "unemployment": {"_label": "incomeOptions.unemployment", "_default_message": "Unemployment Benefits"},
+        "cashAssistance": {"_label": "incomeOptions.cashAssistance", "_default_message": "Cash Assistance Grant"},
+        "cOSDisability": {
+            "_label": "incomeOptions.cOSDisability",
+            "_default_message": "Colorado State Disability Benefits",
+        },
+        "workersComp": {"_label": "incomeOptions.workersComp", "_default_message": "Worker's Compensation"},
+        "veteran": {"_label": "incomeOptions.veteran", "_default_message": "Veteran's Pension or Benefits"},
+        "childSupport": {"_label": "incomeOptions.childSupport", "_default_message": "Child Support (Received)"},
+        "alimony": {"_label": "incomeOptions.alimony", "_default_message": "Alimony (Received)"},
+        "gifts": {"_label": "incomeOptions.gifts", "_default_message": "Gifts/Contributions (Received)"},
+        "boarder": {"_label": "incomeOptions.boarder", "_default_message": "Boarder or Lodger"},
+        "pension": {
+            "_label": "incomeOptions.pension",
+            "_default_message": "Military, Government, or Private Pension (including PERA)",
+        },
+        "investment": {
+            "_label": "incomeOptions.investment",
+            "_default_message": "Investment Income (interest, dividends, and profit from selling stocks)",
+        },
+        "rental": {"_label": "incomeOptions.rental", "_default_message": "Rental Income"},
+        "deferredComp": {
+            "_label": "incomeOptions.deferredComp",
+            "_default_message": "Withdrawals from Deferred Compensation (IRA, Keogh, etc.)",
         },
     }
 
