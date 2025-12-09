@@ -65,7 +65,7 @@ def reverse_backfill(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("screener", "0124_rename_needs_savings_to_needs_college_savings"),
+        ("screener", "0125_rename_has_cccap_screen_has_ccap"),
     ]
 
     operations = [
