@@ -28,8 +28,7 @@ def backfill_income_categories(apps, schema_editor):
         "workersComp": "government",
         "veteran": "government",
         # State-specific disability income types
-        "StateDisability": "government",  # TX
-        "stateDisability": "government",  # MA
+        "stateDisability": "government",  # TX, MA
         "iLStateDisability": "government",  # IL
         # Support and gifts
         "childSupport": "support",

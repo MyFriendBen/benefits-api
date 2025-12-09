@@ -63,7 +63,7 @@ class TxConfigurationData(ConfigurationData):
                 "_label": "incomeOptions.cashAssistance.tx",
                 "_default_message": "Government Cash Assistance (including TANF)",
             },
-            "StateDisability": {
+            "stateDisability": {
                 "_label": "incomeOptions.stateDisability",
                 "_default_message": "State Disability Benefits",
             },
