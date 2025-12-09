@@ -44,8 +44,8 @@ def backfill_income_categories(apps, schema_editor):
     # Update each income stream with its category
     updated_count = 0
     for income_stream in IncomeStream.objects.all():
-        if income_stream.income_type in INCOME_TYPE_TO_CATEGORY:
-            income_stream.category = INCOME_TYPE_TO_CATEGORY[income_stream.income_type]
+        if income_stream.type in INCOME_TYPE_TO_CATEGORY:
+            income_stream.category = INCOME_TYPE_TO_CATEGORY[income_stream.type]
             income_stream.save(update_fields=["category"])
             updated_count += 1
 
