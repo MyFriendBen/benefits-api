@@ -16,7 +16,6 @@ def backfill_income_categories(apps, schema_editor):
         # Employment income types
         "wages": "employment",
         "selfEmployment": "employment",
-
         # Government benefit types
         "sSDisability": "government",
         "sSRetirement": "government",
@@ -32,13 +31,11 @@ def backfill_income_categories(apps, schema_editor):
         "StateDisability": "government",  # TX
         "stateDisability": "government",  # MA
         "iLStateDisability": "government",  # IL
-
         # Support and gifts
         "childSupport": "support",
         "alimony": "support",
         "gifts": "support",
         "boarder": "support",
-
         # Investment and retirement
         "pension": "investment",
         "investment": "investment",

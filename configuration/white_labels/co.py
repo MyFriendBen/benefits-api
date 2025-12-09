@@ -244,9 +244,9 @@ class CoConfigurationData(ConfigurationData):
     income_options = {
         **ConfigurationData.income_options,
         "cashAssistance": {
-                "_label": "incomeOptions.cashAssistance",
-                "_default_message": "Government Cash Assistance (including Colorado Works/TANF)",
-            },
+            "_label": "incomeOptions.cashAssistance",
+            "_default_message": "Government Cash Assistance (including Colorado Works/TANF)",
+        },
     }
 
     health_insurance_options = {
