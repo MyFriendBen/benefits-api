@@ -123,6 +123,7 @@ class HouseholdMemberSerializer(serializers.ModelSerializer):
             "birth_year",
             "birth_month",
             "energy_calculator",
+            "is_care_worker",
         )
         read_only_fields = ("screen", "id")
 

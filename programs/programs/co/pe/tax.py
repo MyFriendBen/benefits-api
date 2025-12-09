@@ -19,3 +19,16 @@ class Coctc(PolicyEngineTaxUnitCalulator):
         dependency.household.CoStateCodeDependency,
     ]
     pe_outputs = [dependency.tax.Coctc]
+
+
+class CoCareWorkerCredit(PolicyEngineTaxUnitCalulator):
+    pe_name = "co_care_worker_credit"
+    pe_inputs = [
+        dependency.member.CareWorkerEligibleDependency,
+        dependency.member.AgeDependency,
+        dependency.member.TaxUnitHeadDependency,
+        dependency.member.TaxUnitSpouseDependency,
+        dependency.household.CoStateCodeDependency,
+        *dependency.irs_gross_income,
+    ]
+    pe_outputs = [dependency.tax.CoCareWorkerCredit]
