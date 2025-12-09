@@ -54,86 +54,43 @@ class TxConfigurationData(ConfigurationData):
         },
     }
 
+    # Nested income options organized by category (for future use with categorized UI)
+    income_options_by_category = {
+        **ConfigurationData.income_options_by_category,
+        "government": {
+            **ConfigurationData.income_options_by_category["government"],
+            "cashAssistance": {
+                "_label": "incomeOptions.cashAssistance.tx",
+                "_default_message": "Government Cash Assistance (including TANF)",
+            },
+            "StateDisability": {
+                "_label": "incomeOptions.stateDisability",
+                "_default_message": "State Disability Benefits",
+            },
+        },
+        "investment": {
+            **ConfigurationData.income_options_by_category["investment"],
+            "pension": {
+                "_label": "incomeOptions.pension.tx",
+                "_default_message": "Military, Government, or Private Pension",
+            },
+        },
+    }
+
+    # Flattened income options (backward compatible with current FE)
     income_options = {
-        "wages": {
-            "_label": "incomeOptions.wages",
-            "_default_message": "Wages, salaries, tips",
-        },
-        "selfEmployment": {
-            "_label": "incomeOptions.selfEmployment",
-            "_default_message": "Income from freelance, independent contractor, or self-employment work",
-        },
-        "sSDisability": {
-            "_label": "incomeOptions.sSDisability",
-            "_default_message": "Social Security Disability Benefits",
-        },
-        "sSRetirement": {
-            "_label": "incomeOptions.sSRetirement",
-            "_default_message": "Social Security Retirement Benefits",
-        },
-        "sSI": {
-            "_label": "incomeOptions.sSI",
-            "_default_message": "Supplemental Security Income (SSI)",
-        },
-        "childSupport": {
-            "_label": "incomeOptions.childSupport",
-            "_default_message": "Child Support (Received)",
-        },
+        **ConfigurationData.income_options,
         "pension": {
             "_label": "incomeOptions.pension.tx",
             "_default_message": "Military, Government, or Private Pension",
-        },
-        "veteran": {
-            "_label": "incomeOptions.veteran",
-            "_default_message": "Veteran's Pension or Benefits",
-        },
-        "sSSurvivor": {
-            "_label": "incomeOptions.sSSurvivor",
-            "_default_message": "Social Security Survivor's Benefits (Widowed)",
-        },
-        "unemployment": {
-            "_label": "incomeOptions.unemployment",
-            "_default_message": "Unemployment Benefits",
-        },
-        "sSDependent": {
-            "_label": "incomeOptions.sSDependent",
-            "_default_message": "Social Security Dependent Benefits (retirement, disability, or survivors)",
         },
         "cashAssistance": {
             "_label": "incomeOptions.cashAssistance.tx",
             "_default_message": "Government Cash Assistance (including TANF)",
         },
-        "gifts": {
-            "_label": "incomeOptions.gifts",
-            "_default_message": "Gifts/Contributions (Received)",
-        },
-        "investment": {
-            "_label": "incomeOptions.investment",
-            "_default_message": "Investment Income (interest, dividends, and profit from selling stocks)",
-        },
         "StateDisability": {
             "_label": "incomeOptions.stateDisability",
             "_default_message": "State Disability Benefits",
-        },
-        "rental": {
-            "_label": "incomeOptions.rental",
-            "_default_message": "Rental Income",
-        },
-        "alimony": {
-            "_label": "incomeOptions.alimony",
-            "_default_message": "Alimony (Received)",
-        },
-        "deferredComp": {
-            "_label": "incomeOptions.deferredComp",
-            "_default_message": "Withdrawals from Deferred Compensation (IRA, Keogh, etc.)",
-        },
-        "workersComp": {
-            "_label": "incomeOptions.workersComp",
-            "_default_message": "Worker's Compensation",
-        },
-        "boarder": {
-            "_label": "incomeOptions.boarder",
-            "_default_message": "Boarder or Lodger",
         },
     }
 

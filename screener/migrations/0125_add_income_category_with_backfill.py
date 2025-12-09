@@ -11,6 +11,7 @@ def backfill_income_categories(apps, schema_editor):
     IncomeStream = apps.get_model("screener", "IncomeStream")
 
     # Category mapping based on income_options structure in configuration/white_labels/base.py
+    # Includes state-specific income types from TX, MA, and IL
     INCOME_TYPE_TO_CATEGORY = {
         # Employment income types
         "wages": "employment",
@@ -27,6 +28,10 @@ def backfill_income_categories(apps, schema_editor):
         "cOSDisability": "government",
         "workersComp": "government",
         "veteran": "government",
+        # State-specific disability income types
+        "StateDisability": "government",  # TX
+        "stateDisability": "government",  # MA
+        "iLStateDisability": "government",  # IL
 
         # Support and gifts
         "childSupport": "support",
