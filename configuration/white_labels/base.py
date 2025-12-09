@@ -177,6 +177,75 @@ class ConfigurationData:
     }
 
     # Types of income to collect (customize for state-specific income types)
+    # Organized by category for two-level dropdown selection
+    income_categories = {
+        "employment": {"_label": "incomeCategories.employment", "_default_message": "Employment Income"},
+        "government": {"_label": "incomeCategories.government", "_default_message": "Government Benefits"},
+        "support": {"_label": "incomeCategories.support", "_default_message": "Support & Gifts"},
+        "investment": {"_label": "incomeCategories.investment", "_default_message": "Investment & Retirement"},
+    }
+
+    # Nested income options organized by category (for future use with categorized UI)
+    income_options_by_category = {
+        "employment": {
+            "wages": {"_label": "incomeOptions.wages", "_default_message": "Wages, salaries, tips"},
+            "selfEmployment": {
+                "_label": "incomeOptions.selfEmployment",
+                "_default_message": "Income from freelance, independent contractor, or self-employment work",
+            },
+        },
+        "government": {
+            "sSDisability": {
+                "_label": "incomeOptions.sSDisability",
+                "_default_message": "Social Security Disability Benefits",
+            },
+            "sSRetirement": {
+                "_label": "incomeOptions.sSRetirement",
+                "_default_message": "Social Security Retirement Benefits",
+            },
+            "sSI": {"_label": "incomeOptions.sSI", "_default_message": "Supplemental Security Income (SSI)"},
+            "sSSurvivor": {
+                "_label": "incomeOptions.sSSurvivor",
+                "_default_message": "Social Security Survivor's Benefits (Widowed)",
+            },
+            "sSDependent": {
+                "_label": "incomeOptions.sSDependent",
+                "_default_message": "Social Security Dependent Benefits (retirement, disability, or survivors)",
+            },
+            "unemployment": {"_label": "incomeOptions.unemployment", "_default_message": "Unemployment Benefits"},
+            "cashAssistance": {"_label": "incomeOptions.cashAssistance", "_default_message": "Cash Assistance Grant"},
+            "cOSDisability": {
+                "_label": "incomeOptions.cOSDisability",
+                "_default_message": "Colorado State Disability Benefits",
+            },
+            "workersComp": {"_label": "incomeOptions.workersComp", "_default_message": "Worker's Compensation"},
+            "veteran": {"_label": "incomeOptions.veteran", "_default_message": "Veteran's Pension or Benefits"},
+        },
+        "support": {
+            "childSupport": {"_label": "incomeOptions.childSupport", "_default_message": "Child Support (Received)"},
+            "alimony": {"_label": "incomeOptions.alimony", "_default_message": "Alimony (Received)"},
+            "gifts": {"_label": "incomeOptions.gifts", "_default_message": "Gifts/Contributions (Received)"},
+            "boarder": {"_label": "incomeOptions.boarder", "_default_message": "Boarder or Lodger"},
+        },
+        "investment": {
+            "pension": {
+                "_label": "incomeOptions.pension",
+                "_default_message": "Military, Government, or Private Pension (including PERA)",
+            },
+            "investment": {
+                "_label": "incomeOptions.investment",
+                "_default_message": "Investment Income (interest, dividends, and profit from selling stocks)",
+            },
+            "rental": {"_label": "incomeOptions.rental", "_default_message": "Rental Income"},
+            "deferredComp": {
+                "_label": "incomeOptions.deferredComp",
+                "_default_message": "Withdrawals from Deferred Compensation (IRA, Keogh, etc.)",
+            },
+        },
+    }
+
+    # Flattened income options (backward compatible with current FE)
+    # This is what the FE currently expects - a simple flat dictionary
     income_options = {
         "wages": {"_label": "incomeOptions.wages", "_default_message": "Wages, salaries, tips"},
         "selfEmployment": {
@@ -192,39 +261,39 @@ class ConfigurationData:
             "_default_message": "Social Security Retirement Benefits",
         },
         "sSI": {"_label": "incomeOptions.sSI", "_default_message": "Supplemental Security Income (SSI)"},
-        "childSupport": {"_label": "incomeOptions.childSupport", "_default_message": "Child Support (Received)"},
-        "pension": {
-            "_label": "incomeOptions.pension",
-            "_default_message": "Military, Government, or Private Pension (including PERA)",
-        },
-        "veteran": {"_label": "incomeOptions.veteran", "_default_message": "Veteran's Pension or Benefits"},
         "sSSurvivor": {
             "_label": "incomeOptions.sSSurvivor",
             "_default_message": "Social Security Survivor's Benefits (Widowed)",
         },
-        "unemployment": {"_label": "incomeOptions.unemployment", "_default_message": "Unemployment Benefits"},
         "sSDependent": {
             "_label": "incomeOptions.sSDependent",
             "_default_message": "Social Security Dependent Benefits (retirement, disability, or survivors)",
         },
+        "unemployment": {"_label": "incomeOptions.unemployment", "_default_message": "Unemployment Benefits"},
         "cashAssistance": {"_label": "incomeOptions.cashAssistance", "_default_message": "Cash Assistance Grant"},
-        "gifts": {"_label": "incomeOptions.gifts", "_default_message": "Gifts/Contributions (Received)"},
-        "investment": {
-            "_label": "incomeOptions.investment",
-            "_default_message": "Investment Income (interest, dividends, and profit from selling stocks)",
-        },
         "cOSDisability": {
             "_label": "incomeOptions.cOSDisability",
             "_default_message": "Colorado State Disability Benefits",
         },
-        "rental": {"_label": "incomeOptions.rental", "_default_message": "Rental Income"},
+        "workersComp": {"_label": "incomeOptions.workersComp", "_default_message": "Worker's Compensation"},
+        "veteran": {"_label": "incomeOptions.veteran", "_default_message": "Veteran's Pension or Benefits"},
+        "childSupport": {"_label": "incomeOptions.childSupport", "_default_message": "Child Support (Received)"},
         "alimony": {"_label": "incomeOptions.alimony", "_default_message": "Alimony (Received)"},
+        "gifts": {"_label": "incomeOptions.gifts", "_default_message": "Gifts/Contributions (Received)"},
+        "boarder": {"_label": "incomeOptions.boarder", "_default_message": "Boarder or Lodger"},
+        "pension": {
+            "_label": "incomeOptions.pension",
+            "_default_message": "Military, Government, or Private Pension (including PERA)",
+        },
+        "investment": {
+            "_label": "incomeOptions.investment",
+            "_default_message": "Investment Income (interest, dividends, and profit from selling stocks)",
+        },
+        "rental": {"_label": "incomeOptions.rental", "_default_message": "Rental Income"},
         "deferredComp": {
             "_label": "incomeOptions.deferredComp",
             "_default_message": "Withdrawals from Deferred Compensation (IRA, Keogh, etc.)",
         },
-        "workersComp": {"_label": "incomeOptions.workersComp", "_default_message": "Worker's Compensation"},
-        "boarder": {"_label": "incomeOptions.boarder", "_default_message": "Boarder or Lodger"},
     }
 
     # Health insurance options (customize for state-specific programs)
@@ -363,10 +432,10 @@ class ConfigurationData:
 
     # Income frequency options
     frequency_options = {
-        "weekly": {"_label": "frequencyOptions.weekly", "_default_message": "every week"},
-        "biweekly": {"_label": "frequencyOptions.biweekly", "_default_message": "every 2 weeks"},
-        "semimonthly": {"_label": "frequencyOptions.semimonthly", "_default_message": "twice a month"},
         "monthly": {"_label": "frequencyOptions.monthly", "_default_message": "every month"},
+        "semimonthly": {"_label": "frequencyOptions.semimonthly", "_default_message": "twice a month"},
+        "biweekly": {"_label": "frequencyOptions.biweekly", "_default_message": "every 2 weeks"},
+        "weekly": {"_label": "frequencyOptions.weekly", "_default_message": "every week"},
         "hourly": {"_label": "frequencyOptions.hourly", "_default_message": "hourly"},
     }
 
