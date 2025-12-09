@@ -2203,7 +2203,7 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
                         "_default_message": "Home energy efficiency upgrades (Colorado Springs Utilities)",
                     },
                 },
-                 "ubp": {
+                "ubp": {
                     "name": {
                         "_label": "housingAndUtilities.ubp",
                         "_default_message": "Colorado Utility Bill Help Program: ",
