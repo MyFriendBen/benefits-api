@@ -1,0 +1,51 @@
+{
+    "white_label": {
+        "code": "il"
+    },
+    "program_category": {
+        "external_name": "il_health_insurance"
+    },
+    "program": {
+        "name_abbreviated": "il_ibccp",
+        "year": "2025",
+        "legal_status_required": ["citizen", "refugee", "gc_5plus", "gc_5less", "non_citizen", "otherWithWorkPermission"],
+        "name": "Illinois Breast and Cervical Cancer Program (IBCCP)",
+        "description": "The Illinois Breast and Cervical Cancer Program (IBCCP) provides free breast and cervical cancer screening services, including mammograms, clinical breast exams, pelvic exams, and Pap tests for eligible women. The program helps ensure that cost is not a barrier to early detection of breast and cervical cancer.\n\nEligibility for screening services:\n\t• You must be female\n\t• Under 65 years old\n\t• Not currently enrolled in Medicaid, All Kids, or other HFS insurance programs\n\nImportant: If screening results in a diagnosis of breast or cervical cancer or certain precancerous conditions (CIN III, severe cervical dysplasia, HGSIL, or AGC with adenocarcinoma suspicion), you may qualify for additional treatment coverage through this program. Treatment eligibility includes:\n\t• Confirmed medical diagnosis with pathology documentation\n\t• Illinois resident under 65 years old\n\t• Uninsured or underinsured (coverage excludes cancer treatment, lifetime benefit caps met, or limited specialized coverage)\n\t• U.S. citizen or qualified immigrant\n\t• Not eligible for other HFS medical programs (with certain exceptions)",
+        "apply_button_link": "https://www.dhs.state.il.us/page.aspx?item=33528",
+        "apply_button_description": "Learn More & Apply",
+        "estimated_application_time": "15-20 minutes",
+        "website_description": "Free breast and cervical cancer screening and potential treatment coverage",
+        "estimated_value": "",
+        "external_name": "il_ibccp",
+        "active": true,
+        "low_confidence": false,
+        "show_on_current_benefits": false,
+        "value_format": null
+    },
+    "documents": [
+        {
+            "external_name": "il_home",
+            "text": "Proof of Illinois residency (ex: lease, mortgage statement, utility bill)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "id_proof",
+            "text": "Proof of identity (ex: driver's license, state ID, passport)",
+            "link_url": "",
+            "link_text": ""
+        }
+    ],
+    "navigators": [
+        {
+            "external_name": "illinois_department_human_services",
+            "name": "Illinois Department of Human Services",
+            "email": "",
+            "description": "Contact the Illinois Department of Human Services to learn more about the Breast and Cervical Cancer Program and how to apply.",
+            "assistance_link": "https://www.dhs.state.il.us/page.aspx?item=33528",
+            "phone_number": "1-800-226-0768",
+            "counties": [],
+            "languages": []
+        }
+    ]
+}

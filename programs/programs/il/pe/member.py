@@ -62,3 +62,34 @@ class IlAabd(PolicyEngineMembersCalculator):
         dependency.IlStateCodeDependency,
     ]
     pe_outputs = [member_dependency.IlAabd]
+
+
+class IlBreastCervicalCancerProgram(PolicyEngineMembersCalculator):
+    """
+    Illinois Breast and Cervical Cancer Program (IBCCP)
+
+    This program provides health insurance coverage for breast and cervical cancer
+    screening services for eligible Illinois residents. Note: This program also
+    covers cancer treatment for individuals diagnosed with breast or cervical cancer
+    or certain precancerous conditions. For treatment eligibility, additional criteria
+    apply including medical diagnosis and pathology documentation.
+
+    Eligibility criteria for screening:
+    - Female
+    - Under 65 years old
+    - Not eligible for Medicaid, All Kids, or other HFS insurance
+    """
+
+    pe_name = "il_bcc_eligible"
+    pe_category = "people"
+
+    pe_inputs = [
+        member_dependency.IlBccFemaleDependency,
+        member_dependency.AgeDependency,
+        member_dependency.IlBccInsuranceEligibleDependency,
+        dependency.IlStateCodeDependency,
+    ]
+
+    pe_outputs = [
+        member_dependency.IlBccEligible,
+    ]

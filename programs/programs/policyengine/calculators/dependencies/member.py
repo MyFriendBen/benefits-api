@@ -449,3 +449,28 @@ class HeadStart(Member):
 
 class EarlyHeadStart(Member):
     field = "early_head_start"
+
+
+class IlBccFemaleDependency(Member):
+    field = "is_female"
+
+    def value(self):
+        # Hardcode to True so that all households are shown the IBCCP program in results
+        # We'd rather assume yes and show the program than filter it out incorrectly
+        # Users can determine their own eligibility when applying
+        return True
+
+
+class IlBccInsuranceEligibleDependency(Member):
+    field = "il_bcc_insurance_eligible"
+    dependencies = ("medicaid",)
+
+    def value(self):
+        # Not eligible for insurance if member has medicaid, all_kids, or other HFS insurance
+        has_medicaid = self.member.medicaid or False
+        # Additional checks can be added for all_kids and other HFS insurance as needed
+        return not has_medicaid
+
+
+class IlBccEligible(Member):
+    field = "il_bcc_eligible"
