@@ -64,7 +64,7 @@ class IlAabd(PolicyEngineMembersCalculator):
     pe_outputs = [member_dependency.IlAabd]
 
 
-class IlBreastCervicalCancerProgram(PolicyEngineMembersCalculator):
+class IlBccp(PolicyEngineMembersCalculator):
     """
     Illinois Breast and Cervical Cancer Program (IBCCP)
 
