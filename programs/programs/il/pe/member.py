@@ -93,3 +93,16 @@ class IlBccp(PolicyEngineMembersCalculator):
     pe_outputs = [
         member_dependency.IlBccEligible,
     ]
+
+    def member_value(self, member):
+        """
+        2025 Value Estimate - out-of-pocket costs without coverage:
+            Screening mammogram: $100–$250
+            Diagnostic mammogram: $250–$450
+            Breast biopsy: $700–$2,000+
+            Pap + HPV cotest: $100–$200
+
+        Return average for screening services only
+        """
+
+        return 400

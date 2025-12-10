@@ -455,9 +455,8 @@ class IlBccFemaleDependency(Member):
     field = "is_female"
 
     def value(self):
+        # We don't collect sex
         # Hardcode to True so that all households are shown the IBCCP program in results
-        # We'd rather assume yes and show the program than filter it out incorrectly
-        # Users can determine their own eligibility when applying
         return True
 
 
@@ -466,11 +465,12 @@ class IlBccInsuranceEligibleDependency(Member):
     dependencies = ("medicaid",)
 
     def value(self):
-        # Not eligible for insurance if member has medicaid or other HFS insurance
-        has_medicaid = self.member.medicaid
-        # Additional checks can be added for other HFS insurance as needed
-        # Not checking for HFS program all_kids since IL BCC is for grown women
-        return not has_medicaid
+        # Not eligible if member has Medicaid or All Kids/CHP (HFS insurance programs)
+        has_medicaid = self.member.medicaid or False
+        has_all_kids = hasattr(self.member, "insurance") and self.member.insurance.chp  # type: ignore
+
+        # Return True if they DON'T have HFS insurance (i.e., they're eligible for IBCCP)
+        return not (has_medicaid or has_all_kids)
 
 
 class IlBccEligible(Member):
