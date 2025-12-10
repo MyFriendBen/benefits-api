@@ -461,16 +461,31 @@ class IlBccFemaleDependency(Member):
 
 
 class IlBccInsuranceEligibleDependency(Member):
+    """
+    Whether the member is insurance-eligible for IBCCP.
+    Returns True if they DON'T have Medicaid, All Kids/CHP, or other HFS insurance.
+    This matches PolicyEngine's il_bcc_insurance_eligible formula:
+        ~(is_medicaid_eligible | has_bcc_qualifying_coverage)
+    """
+
     field = "il_bcc_insurance_eligible"
-    dependencies = ("medicaid",)
 
     def value(self):
-        # Not eligible if member has Medicaid or All Kids/CHP (HFS insurance programs)
-        has_medicaid = self.member.medicaid or False
-        has_all_kids = hasattr(self.member, "insurance") and self.member.insurance.chp  # type: ignore
+        # Check if member has insurance object
+        has_insurance_obj = hasattr(self.member, "insurance")
+        if not has_insurance_obj:
+            # No insurance = eligible for IBCCP
+            return True
 
-        # Return True if they DON'T have HFS insurance (i.e., they're eligible for IBCCP)
-        return not (has_medicaid or has_all_kids)
+        # Check for Medicaid or All Kids/CHP (HFS insurance programs)
+        has_medicaid = self.member.insurance.medicaid or False  # type: ignore
+        has_all_kids = self.member.insurance.chp or False  # type: ignore
+
+        # Not eligible if they have any HFS insurance or qualifying coverage
+        has_disqualifying_insurance = has_medicaid or has_all_kids
+
+        # Return True if they DON'T have disqualifying insurance (i.e., they're eligible for IBCCP)
+        return not has_disqualifying_insurance
 
 
 class IlBccEligible(Member):

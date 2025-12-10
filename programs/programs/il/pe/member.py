@@ -96,13 +96,22 @@ class IlBccp(PolicyEngineMembersCalculator):
 
     def member_value(self, member):
         """
+        Calculate benefit value based on PolicyEngine eligibility.
+
         2025 Value Estimate - out-of-pocket costs without coverage:
             Screening mammogram: $100–$250
             Diagnostic mammogram: $250–$450
             Breast biopsy: $700–$2,000+
             Pap + HPV cotest: $100–$200
 
-        Return average for screening services only
+        Return average for screening services only if eligible, 0 otherwise.
         """
+        # Get PolicyEngine's eligibility determination
+        is_eligible = super().member_value(member)
 
-        return 400
+        # If PolicyEngine says eligible (returns True/1), return estimated value
+        # Otherwise return 0
+        if is_eligible:
+            return 400
+
+        return 0
