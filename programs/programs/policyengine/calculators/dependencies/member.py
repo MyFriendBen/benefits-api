@@ -466,9 +466,10 @@ class IlBccInsuranceEligibleDependency(Member):
     dependencies = ("medicaid",)
 
     def value(self):
-        # Not eligible for insurance if member has medicaid, all_kids, or other HFS insurance
-        has_medicaid = self.member.medicaid or False
-        # Additional checks can be added for all_kids and other HFS insurance as needed
+        # Not eligible for insurance if member has medicaid or other HFS insurance
+        has_medicaid = self.member.medicaid
+        # Additional checks can be added for other HFS insurance as needed
+        # Not checking for HFS program all_kids since IL BCC is for grown women
         return not has_medicaid
 
 
