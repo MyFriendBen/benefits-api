@@ -188,6 +188,7 @@ class NcConfigurationData(ConfigurationData):
     }
 
     referral_options = {
+        "ctd": {"_label": "referralOptions.ctd", "_default_message": "Code the Dream"},
         "211nc": {
             "_label": "referralOptions.211nc",
             "_default_message": "2-1-1 North Carolina",
