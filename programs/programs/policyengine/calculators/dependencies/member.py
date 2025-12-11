@@ -471,13 +471,8 @@ class IlBccInsuranceEligibleDependency(Member):
     field = "il_bcc_insurance_eligible"
 
     def value(self):
-        # Check if member has Medicaid or All Kids/CHP (HFS insurance programs)
-        insurance = getattr(self.member, "insurance", None)
-        has_medicaid = getattr(insurance, "medicaid", False)
-        has_all_kids = getattr(insurance, "chp", False)
-
         # Return True if they DON'T have HFS insurance (i.e., eligible for IBCCP)
-        return not (has_medicaid or has_all_kids)
+        return not self.member.insurance.has_insurance_types("medicaid", "chp")
 
 
 class IlBccEligible(Member):
