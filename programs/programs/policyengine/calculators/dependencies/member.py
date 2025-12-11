@@ -502,3 +502,11 @@ class IlHbwdPremium(Member):
     """
 
     field = "il_hbwd_person"
+
+    
+class HeadStart(Member):
+    field = "head_start"
+
+
+class EarlyHeadStart(Member):
+    field = "early_head_start"
