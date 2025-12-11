@@ -14,45 +14,45 @@
         "estimated_value": "Varies",
         "external_name": "il_hbwd",
         "low_confidence": false,
-        "show_on_current_benefits": true,
+        "show_on_current_benefits": true
     },
     "documents": [
         {
             "external_name": "id_proof",
             "text": "Proof of identity - name and date of birth verification (ex: driver's license, state ID, birth certificate)",
             "link_url": "",
-            "link_text": "",
+            "link_text": ""
         },
         {
             "external_name": "disability_proof",
             "text": "Proof of disability (ex: Social Security disability determination, medical documentation)",
             "link_url": "",
-            "link_text": "",
+            "link_text": ""
         },
         {
             "external_name": "employment_proof",
             "text": "Proof of employment (ex: pay stubs, letter from employer, self-employment records)",
             "link_url": "",
-            "link_text": "",
+            "link_text": ""
         },
         {
             "external_name": "income_proof",
             "text": "Proof of income (ex: pay stubs, tax returns, benefit statements showing all earned and unearned income)",
             "link_url": "",
-            "link_text": "",
+            "link_text": ""
         },
         {
             "external_name": "asset_proof",
             "text": "Proof of assets (ex: bank statements, investment statements, vehicle registration)",
             "link_url": "",
-            "link_text": "",
+            "link_text": ""
         },
         {
             "external_name": "il_home",
             "text": "Proof of Illinois residency (ex: driver's license, utility bill, or mail with your name and address)",
             "link_url": "",
-            "link_text": "",
-        },
+            "link_text": ""
+        }
     ],
     "navigators": [
         {
@@ -63,7 +63,7 @@
             "assistance_link": "https://www.illinois.gov/hfs/MedicalPrograms/HBWD/Pages/default.aspx",
             "phone_number": "1-866-468-7543",
             "counties": [],
-            "languages": [],
+            "languages": []
         }
-    ],
+    ]
 }

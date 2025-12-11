@@ -164,6 +164,11 @@ class IsBlindDependency(Member):
 
 class SsiReportedDependency(Member):
     field = "ssi_reported"
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
 
     def value(self):
         return self.member.calc_gross_income("yearly", ["sSI"])
@@ -172,6 +177,11 @@ class SsiReportedDependency(Member):
 class SsdiReportedDependency(Member):
     # Receives "Social Security disability benefits (SSDI)"
     field = "social_security_disability"
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
 
     def value(self):
         return self.member.calc_gross_income("yearly", ["sSDisability"])

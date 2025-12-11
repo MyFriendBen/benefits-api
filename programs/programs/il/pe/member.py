@@ -3,9 +3,7 @@ import programs.programs.federal.pe.tax as tax
 import programs.programs.policyengine.calculators.dependencies.household as dependency
 import programs.programs.policyengine.calculators.dependencies.member as member_dependency
 import programs.programs.policyengine.calculators.dependencies.spm as spm_dependency
-from programs.programs.calc import MemberEligibility
 from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
-from screener.models import HouseholdMember
 
 
 class IlMedicaid(member.Medicaid):
