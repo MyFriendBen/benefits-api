@@ -145,6 +145,6 @@ class IlFamilyPlanningProgram(PolicyEngineMembersCalculator):
 
         if has_disqualifying_insurance or not is_eligible:
             return 0
-        
+
         # Return 1 if eligible. We display "Varies" for the estimated value in the UI
         return 1
