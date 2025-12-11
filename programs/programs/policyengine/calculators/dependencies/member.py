@@ -472,7 +472,7 @@ class IlBccInsuranceEligibleDependency(Member):
 
     def value(self):
         # Return True if they DON'T have HFS insurance (i.e., eligible for IBCCP)
-        return not self.member.insurance.has_insurance_types("medicaid", "chp")
+        return not self.member.insurance.has_insurance_types(["medicaid", "chp"])
 
 
 class IlBccEligible(Member):
