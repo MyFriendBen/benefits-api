@@ -166,7 +166,7 @@ class SsiReportedDependency(Member):
     field = "ssi_reported"
 
     def value(self):
-        return int(self.member.calc_gross_income("yearly", ["sSI"]))
+        return self.member.calc_gross_income("yearly", ["sSI"])
 
 
 class SsdiReportedDependency(Member):
@@ -174,7 +174,7 @@ class SsdiReportedDependency(Member):
     field = "social_security_disability"
 
     def value(self):
-        return int(self.member.calc_gross_income("yearly", ["sSDisability"]))
+        return self.member.calc_gross_income("yearly", ["sSDisability"])
 
 
 class SsiCountableResourcesDependency(Member):
@@ -423,6 +423,7 @@ class SsiUnearnedIncomeDependency(IncomeDependency):
 
 
 class IlAabdGrossEarnedIncomeDependency(Member):
+    # policyengine_us/parameters/gov/states/il/dhs/aabd/income/sources/earned.yaml
     field = "il_aabd_gross_earned_income"
     dependencies = (
         "income_type",
@@ -431,10 +432,12 @@ class IlAabdGrossEarnedIncomeDependency(Member):
     )
 
     def value(self):
-        return int(self.member.calc_gross_income("monthly", ["earned"]))
+        # IL AABD treats rental/boarder income as earned income when actively managing property
+        return int(self.member.calc_gross_income("monthly", ["earned", "rental", "boarder"]))
 
 
 class IlAabdGrossUnearnedIncomeDependency(Member):
+    # policyengine_us/parameters/gov/states/il/dhs/aabd/income/sources/unearned.yaml
     field = "il_aabd_gross_unearned_income"
     dependencies = (
         "income_type",
@@ -445,7 +448,9 @@ class IlAabdGrossUnearnedIncomeDependency(Member):
     def value(self):
         return int(
             self.member.calc_gross_income(
-                "monthly", ["unearned"], exclude=["cashAssistance", "sSI", "childSupport", "gifts"]
+                "monthly",
+                ["unearned"],
+                exclude=["cashAssistance", "sSI", "childSupport", "gifts", "pension", "veteran", "rental", "boarder"]
             )
         )
 

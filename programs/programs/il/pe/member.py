@@ -81,21 +81,16 @@ class IlHbwd(PolicyEngineMembersCalculator):
     - Assets (spm_unit_cash_assets + il_aabd_countable_vehicle_value < $25,000)
     - Immigration (immigration_status = citizen or qualifying noncitizen)
 
-    Returns: il_hbwd_person = -il_hbwd_premium (negative premium = cost to individual)
-
-    TODO: Add missing dependencies once created in member.py:
-          - is_ssi_disabled
-          - immigration_status
-          - spm_unit_fpg (may exist in spm.py)
-          - spm_unit_cash_assets (exists in spm.py)
-          - il_aabd_countable_vehicle_value
+    Returns: 
+        - il_hbwd_person = -il_hbwd_premium (negative premium = cost to individual)
+        - il_hbwd_eligible
     """
 
     pe_name = "il_hbwd_person"
     pe_inputs = [
         # age eligible
         member_dependency.AgeDependency,
-        # disability eligible (used to calculate "is_ssi_disabled")
+        # disability eligible (is_ssi_disabled + social_security_disability)
         member_dependency.IsBlindDependency,
         member_dependency.SsiReportedDependency,
         member_dependency.IsDisabledDependency,
@@ -104,32 +99,27 @@ class IlHbwd(PolicyEngineMembersCalculator):
         # employment eligible
         member_dependency.IlHbwdGrossEarnedIncomeDependency,
         # income eligible
+        # not providing il_aabd_expense_exemption_person - includes details we don't have
+        # conservative estimate by excluding it (since subtracted from income)
         member_dependency.IlAabdGrossEarnedIncomeDependency,
         member_dependency.IlAabdGrossUnearnedIncomeDependency,
         member_dependency.IlHbwdGrossUnearnedIncomeDependency,
         # asset eligibility
+        # not including il_aabd_countable_vehicle_value since we don't have
         spm_dependency.CashAssetsDependency,
         # state requirement
         dependency.IlStateCodeDependency,
     ]
     pe_outputs = [member_dependency.IlHbwdEligible, member_dependency.IlHbwdPremium]
 
-    def member_eligible(self, e: MemberEligibility):
-        member = e.member
-
-        # Use il_hbwd_eligible for eligibility determination (not il_hbwd_person)
-        is_eligible = self.get_member_dependency_value(member_dependency.IlHbwdEligible, member.id)
-        e.condition(is_eligible)
-
-    def member_value(self, _: HouseholdMember) -> int:
+    def member_value(self, member) -> int:
         """
-        HBWD provides access to Medicaid health coverage for workers with disabilities.
-        The actual value varies by individual healthcare needs.
-
-        Returns 1 to enable the Program.value_type translation override,
-        which should be set to display "Access to health coverage" or similar.
-
-        NOTE: Do not use il_hbwd_person - it returns a negative premium which represents
+        Do not use IlHbwdPremium - it returns a negative premium which represents
         the cost to the individual, not the benefit value.
         """
-        return 1
+        is_eligible = self.get_member_dependency_value(member_dependency.IlHbwdEligible, member.id)
+        if is_eligible:
+            # >0 member_value indicates eligible
+            return 1
+        
+        return 0
