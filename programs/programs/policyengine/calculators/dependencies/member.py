@@ -450,7 +450,7 @@ class IlAabdGrossUnearnedIncomeDependency(Member):
             self.member.calc_gross_income(
                 "monthly",
                 ["unearned"],
-                exclude=["cashAssistance", "sSI", "childSupport", "gifts", "pension", "veteran", "rental", "boarder"]
+                exclude=["cashAssistance", "sSI", "childSupport", "gifts", "pension", "veteran", "rental", "boarder"],
             )
         )
 
@@ -503,7 +503,7 @@ class IlHbwdPremium(Member):
 
     field = "il_hbwd_person"
 
-    
+
 class HeadStart(Member):
     field = "head_start"
 

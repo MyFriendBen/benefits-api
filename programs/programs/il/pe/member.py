@@ -81,7 +81,7 @@ class IlHbwd(PolicyEngineMembersCalculator):
     - Assets (spm_unit_cash_assets + il_aabd_countable_vehicle_value < $25,000)
     - Immigration (immigration_status = citizen or qualifying noncitizen)
 
-    Returns: 
+    Returns:
         - il_hbwd_person = -il_hbwd_premium (negative premium = cost to individual)
         - il_hbwd_eligible
     """
@@ -121,5 +121,5 @@ class IlHbwd(PolicyEngineMembersCalculator):
         if is_eligible:
             # >0 member_value indicates eligible
             return 1
-        
+
         return 0
