@@ -136,12 +136,15 @@ class IlFamilyPlanningProgram(PolicyEngineMembersCalculator):
         member_dependency.TaxUnitSpouseDependency,
         household_dependency.IlStateCodeDependency,
         member_dependency.PregnancyDependency,
-        member_dependency.IsFppMedicaidEligibleDependency,
     ]
     pe_outputs = [member_dependency.IlFppEligible]
 
     def member_value(self, member):
-        # Return 1 if eligible, 0 if not. We display "Varies" for the estimated value in the UI
         is_eligible = self.get_member_variable(member.id)
+        has_disqualifying_insurance = self.member.has_insurance_types(("medicaid", "family_planning"), strict=False)
 
-        return int(is_eligible)
+        if has_disqualifying_insurance or not is_eligible:
+            return 0
+        
+        # Return 1 if eligible. We display "Varies" for the estimated value in the UI
+        return 1

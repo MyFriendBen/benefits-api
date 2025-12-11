@@ -3,7 +3,7 @@ Unit tests for IL member-level PolicyEngine calculator classes.
 
 These tests verify IL-specific calculator logic for member-level programs including:
 - IlFamilyPlanningProgram calculator registration and configuration
-- IL-specific pe_inputs (IlStateCodeDependency, IsFppMedicaidEligibleDependency)
+- IL-specific pe_inputs (IlStateCodeDependency)
 - Behavior differences from base PolicyEngineMembersCalculator
 """
 
@@ -90,11 +90,6 @@ class TestIlFamilyPlanningProgram(TestCase):
         self.assertIn(member.PregnancyDependency, IlFamilyPlanningProgram.pe_inputs)
         self.assertEqual(member.PregnancyDependency.field, "is_pregnant")
 
-    def test_pe_inputs_includes_is_fpp_medicaid_eligible_dependency(self):
-        """Test that IlFamilyPlanningProgram includes IsFppMedicaidEligibleDependency in pe_inputs."""
-        self.assertIn(member.IsFppMedicaidEligibleDependency, IlFamilyPlanningProgram.pe_inputs)
-        self.assertEqual(member.IsFppMedicaidEligibleDependency.field, "is_medicaid_eligible")
-
     def test_pe_inputs_includes_irs_gross_income_dependencies(self):
         """
         Test that IlFamilyPlanningProgram includes all irs_gross_income dependencies.
@@ -112,18 +107,6 @@ class TestIlFamilyPlanningProgram(TestCase):
         """Test that IlFamilyPlanningProgram has IlFppEligible dependency in pe_outputs."""
         self.assertIn(member.IlFppEligible, IlFamilyPlanningProgram.pe_outputs)
         self.assertEqual(member.IlFppEligible.field, "il_fpp_eligible")
-
-
-class TestIsFppMedicaidEligibleDependency(TestCase):
-    """Tests for IsFppMedicaidEligibleDependency class."""
-
-    def test_field_is_is_medicaid_eligible(self):
-        """Test that the dependency field is correctly set."""
-        self.assertEqual(member.IsFppMedicaidEligibleDependency.field, "is_medicaid_eligible")
-
-    def test_dependencies_includes_insurance(self):
-        """Test that the dependency requires insurance data."""
-        self.assertIn("insurance", member.IsFppMedicaidEligibleDependency.dependencies)
 
 
 class TestIlFppEligible(TestCase):
