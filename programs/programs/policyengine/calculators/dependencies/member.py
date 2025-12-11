@@ -175,7 +175,7 @@ class SsiReportedDependency(Member):
 
 
 class SsdiReportedDependency(Member):
-    # Receives "Social Security disability benefits (SSDI)"
+    # Amount in "Social Security disability benefits (SSDI)"
     field = "social_security_disability"
     dependencies = (
         "income_type",
