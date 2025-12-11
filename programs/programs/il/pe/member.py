@@ -141,7 +141,7 @@ class IlFamilyPlanningProgram(PolicyEngineMembersCalculator):
 
     def member_value(self, member):
         is_eligible = self.get_member_variable(member.id)
-        has_disqualifying_insurance = self.member.has_insurance_types(("medicaid", "family_planning"), strict=False)
+        has_disqualifying_insurance = member.has_insurance_types(("medicaid", "family_planning"), strict=False)
 
         if has_disqualifying_insurance or not is_eligible:
             return 0
