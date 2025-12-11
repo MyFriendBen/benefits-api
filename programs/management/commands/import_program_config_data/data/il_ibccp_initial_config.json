@@ -19,7 +19,7 @@
         "external_name": "il_ibccp",
         "active": true,
         "low_confidence": false,
-        "show_on_current_benefits": false,
+        "show_on_current_benefits": true,
         "value_format": "estimated_annual"
     },
     "documents": [
