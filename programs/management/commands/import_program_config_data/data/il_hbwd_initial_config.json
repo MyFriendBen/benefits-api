@@ -1,14 +1,14 @@
 {
     "white_label": {"code": "il"},
-    "program_category": {"external_name": "il_health_care"},
+    "program_category": {"external_name": "il_health"},
     "program": {
         "name_abbreviated": "il_hbwd",
         "year": "2025",
         "legal_status_required": ["citizen", "refugee", "gc_5plus", "gc_5less", "otherWithWorkPermission"],
         "name": "Health Benefits for Workers with Disabilities (HBWD)",
-        "description": "HBWD is a Medicaid buy-in program that provides health coverage to working individuals with disabilities. This program helps people with disabilities maintain their Medicaid coverage while they work and earn income. Eligibility includes age requirements, disability status, employment, income limits, and asset limits.",
-        "apply_button_link": "https://www.illinois.gov/hfs/MedicalPrograms/HBWD/Pages/default.aspx",
-        "apply_button_description": "Learn More and Apply Here",
+        "description": "HBWD is a program that helps people with disabilities get Medicaid health insurance while they have a job. Sometimes, when people earn money from working, they can lose their Medicaid coverage. HBWD helps solve this by letting people with disabilities keep their Medicaid while they work. Members pay a small monthly fee based on how much they earn.\n\nTo apply, click 'Apply Now' above to apply online, download an application to fill out by hand, or call to have one sent to you.",
+        "apply_button_link": "https://hfs.illinois.gov/medicalprograms/hbwd/application.html",
+        "apply_button_description": "",
         "estimated_application_time": "30-45 minutes",
         "website_description": "Health coverage for working individuals with disabilities",
         "estimated_value": "Varies",
@@ -56,12 +56,22 @@
     ],
     "navigators": [
         {
-            "external_name": "il_department_of_healthcare_and_family_services",
-            "name": "Illinois Department of Healthcare and Family Services",
+            "external_name": "get_covered_illinois",
+            "name": "Get Covered Illinois",
             "email": "",
-            "description": "For questions about HBWD eligibility and application process, contact the Illinois Department of Healthcare and Family Services",
-            "assistance_link": "https://www.illinois.gov/hfs/MedicalPrograms/HBWD/Pages/default.aspx",
-            "phone_number": "1-866-468-7543",
+            "description": "Get Covered Illinois offers free help with your HBWD application. Trained helpers can meet with you online, in person, or by phone. They speak over 250 languages.",
+            "assistance_link": "https://getcovered.illinois.gov/get-free-help/find-local-help.html",
+            "phone_number": "1-866-311-1119",
+            "counties": [],
+            "languages": ["ALL"]
+        },
+        {
+            "external_name": "il_assistive_technology_program_wipa",
+            "name": "Illinois Assistive Technology Program (IATP) - Work Incentives Planning",
+            "email": "",
+            "description": "IATP gives free advice to people with disabilities who want to work. Their experts can help you understand how getting a job will affect your Medicaid and other benefits. They can also help you apply for HBWD.",
+            "assistance_link": "https://iltech.org/services/work-incentives-planning-and-assistance/",
+            "phone_number": "1-800-852-5110",
             "counties": [],
             "languages": []
         }
