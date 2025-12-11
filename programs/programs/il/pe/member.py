@@ -89,6 +89,7 @@ class IlHbwd(PolicyEngineMembersCalculator):
         # age eligible
         member_dependency.AgeDependency,
         # disability eligible (is_ssi_disabled + social_security_disability)
+        member_dependency.IsSsiDisabledDependency,
         member_dependency.IsBlindDependency,
         member_dependency.SsiReportedDependency,
         member_dependency.IsDisabledDependency,
