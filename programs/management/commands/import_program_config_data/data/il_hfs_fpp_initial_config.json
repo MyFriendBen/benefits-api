@@ -6,7 +6,7 @@
         "year": "2025",
         "legal_status_required": ["citizen", "gc_5plus", "gc_5less", "refugee"],
         "name": "HFS Family Planning Program",
-        "description": "The HFS Family Planning Program provides family planning services to eligible individuals who are not currently enrolled in Medicaid or other comprehensive health coverage. Services include contraception, family planning counseling, STI testing, and related care.",
+        "description": "The HFS Family Planning Program offers services like birth control, advice, and testing. To qualify, you must not receive Medicaid. You may still be eligible if you have private health insurance.",
         "apply_button_link": "https://abe.illinois.gov/abe/access/",
         "apply_button_description": "",
         "estimated_application_time": "45 minutes",
