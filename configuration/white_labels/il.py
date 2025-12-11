@@ -2436,16 +2436,6 @@ class IlConfigurationData(ConfigurationData):
                         "_default_message": "Health insurance marketplace and premium tax credit.",
                     },
                 },
-                "family_planning": {
-                    "name": {
-                        "_label": "healthCareBenefits.il_family_planning",
-                        "_default_message": "Family Planning Program: ",
-                    },
-                    "description": {
-                        "_label": "healthCareBenefits.il_family_planning_desc",
-                        "_default_message": "Reproductive health and family planning related services",
-                    },
-                },
             },
             "category_name": {
                 "_label": "healthCare",
