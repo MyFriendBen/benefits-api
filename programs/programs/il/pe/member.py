@@ -62,3 +62,31 @@ class IlAabd(PolicyEngineMembersCalculator):
         dependency.IlStateCodeDependency,
     ]
     pe_outputs = [member_dependency.IlAabd]
+
+
+class IlMpe(PolicyEngineMembersCalculator):
+    # name = "Medicaid Presumptive Eligibility (Pregnancy)"
+    pe_name = "il_mpe_eligible"
+    pe_category = "people"
+
+    pe_inputs = [
+        member_dependency.AgeDependency,
+        member_dependency.IlMpeIncomeEligibleDependency,
+        dependency.IlStateCodeDependency,
+        member_dependency.PregnancyDependency,
+    ]
+
+    pe_outputs = [
+        member_dependency.IlMpeEligible,
+    ]
+
+    def member_value(self, member):
+        is_eligible = super().member_value(member)
+        is_pregnant = member.pregnant
+
+        insurance = getattr(member, "insurance", None)
+        has_medicaid = getattr(insurance, "medicaid", False)
+        if has_medicaid:
+            return False
+
+        return is_eligible and is_pregnant
