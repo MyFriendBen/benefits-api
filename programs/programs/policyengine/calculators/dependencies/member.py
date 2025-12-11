@@ -471,7 +471,7 @@ class IlHbwdGrossEarnedIncomeDependency(Member):
         return int(self.member.calc_gross_income("monthly", ["earned"]))
 
 
-class IlHbwdGrossUnearnedIncomeDependency(Member):
+class IlHbwdCountableUnearnedIncomeDependency(Member):
     field = "il_hbwd_countable_unearned_income"
     dependencies = (
         "income_type",

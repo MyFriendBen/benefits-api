@@ -103,7 +103,7 @@ class IlHbwd(PolicyEngineMembersCalculator):
         # conservative estimate by excluding it (since subtracted from income)
         member_dependency.IlAabdGrossEarnedIncomeDependency,
         member_dependency.IlAabdGrossUnearnedIncomeDependency,
-        member_dependency.IlHbwdGrossUnearnedIncomeDependency,
+        member_dependency.IlHbwdCountableUnearnedIncomeDependency,
         # asset eligibility
         # not including il_aabd_countable_vehicle_value since we don't have
         spm_dependency.CashAssetsDependency,
