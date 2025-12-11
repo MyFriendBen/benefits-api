@@ -478,3 +478,27 @@ class IlBccInsuranceEligibleDependency(Member):
 
 class IlBccEligible(Member):
     field = "il_bcc_eligible"
+
+
+class IsFppMedicaidEligibleDependency(Member):
+    """
+    Dependency for is_medicaid_eligible used by IL Family Planning Program.
+
+    This checks if the member is enrolled in full-time Medicaid or other
+    full coverage state medical program, which makes them ineligible for FPP.
+    """
+
+    field = "is_medicaid_eligible"
+    dependencies = ("insurance",)
+
+    def value(self):
+        # Check if member has Medicaid or family_planning insurance coverage
+        if hasattr(self.member, "insurance"):
+            return self.member.insurance.has_insurance_types(("medicaid", "family_planning"), strict=False)
+        return False
+
+
+class IlFppEligible(Member):
+    """Output dependency for IL Family Planning Program eligibility."""
+
+    field = "il_fpp_eligible"

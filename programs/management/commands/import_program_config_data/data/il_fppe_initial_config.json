@@ -1,0 +1,24 @@
+{
+    "white_label": {"code": "il"},
+    "program_category": {"external_name": "il_health"},
+    "program": {
+        "name_abbreviated": "il_fppe",
+        "year": "2025",
+        "legal_status_required": [
+            "citizen",
+            "non_citizen",
+            "gc_5plus",
+            "gc_5less",
+            "refugee",
+            "otherWithWorkPermission",
+        ],
+        "name": "Family Planning Presumptive Eligibility (FPPE)",
+        "description": "Family Planning Presumptive Eligibility (FPPE) provides immediate, temporary coverage for family planning services. To enroll, visit a Family Planning provider who will evaluate your eligibility based on Illinois residency, income, and non-pregnancy status. No documentation is required, just verbal statements. Coverage begins the day the provider submits your information and extends through the end of the following month. Services include contraception, STI/HIV testing and treatment, cervical cancer screening, and related care.",
+        "apply_button_link": "https://hfs.illinois.gov/medicalclients/familyplanning/familyplanningproviderpage.html",
+        "apply_button_description": "Find a Provider",
+        "estimated_application_time": "15 minutes",
+        "website_description": "Immediate temporary reproductive health and family planning coverage",
+        "estimated_value": "Varies",
+        "learn_more_link": "https://hfs.illinois.gov/medicalclients/familyplanning.html",
+    },
+}

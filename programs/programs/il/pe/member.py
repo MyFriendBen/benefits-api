@@ -1,6 +1,7 @@
 import programs.programs.federal.pe.member as member
 import programs.programs.federal.pe.tax as tax
-import programs.programs.policyengine.calculators.dependencies.household as dependency
+import programs.programs.policyengine.calculators.dependencies as pe_dependency
+import programs.programs.policyengine.calculators.dependencies.household as household_dependency
 import programs.programs.policyengine.calculators.dependencies.member as member_dependency
 from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
 
@@ -23,7 +24,7 @@ class IlMedicaid(member.Medicaid):
     }
     pe_inputs = [
         *member.Medicaid.pe_inputs,
-        dependency.IlStateCodeDependency,
+        household_dependency.IlStateCodeDependency,
     ]
 
 
@@ -38,7 +39,7 @@ class IlWic(member.Wic):
     }
     pe_inputs = [
         *member.Wic.pe_inputs,
-        dependency.IlStateCodeDependency,
+        household_dependency.IlStateCodeDependency,
     ]
 
 
@@ -46,8 +47,8 @@ class IlAca(tax.Aca):
     pe_name = "aca_ptc"
     pe_inputs = [
         *tax.Aca.pe_inputs,
-        dependency.IlStateCodeDependency,
-        dependency.IlCountyDependency,
+        household_dependency.IlStateCodeDependency,
+        household_dependency.IlCountyDependency,
     ]
 
 
@@ -59,7 +60,7 @@ class IlAabd(PolicyEngineMembersCalculator):
         member_dependency.IsBlindDependency,
         member_dependency.IlAabdGrossEarnedIncomeDependency,
         member_dependency.IlAabdGrossUnearnedIncomeDependency,
-        dependency.IlStateCodeDependency,
+        household_dependency.IlStateCodeDependency,
     ]
     pe_outputs = [member_dependency.IlAabd]
 
@@ -115,3 +116,32 @@ class IlBccp(PolicyEngineMembersCalculator):
             return 400
 
         return 0
+
+
+class IlFamilyPlanningProgram(PolicyEngineMembersCalculator):
+    """
+    Illinois Family Planning Program (FPP) eligibility calculator.
+
+    This calculator is used for both:
+    - HFS Family Planning Program (il_hfs_fpp) - requires qualified immigration status
+    - Family Planning Presumptive Eligibility (il_fppe) - no immigration status required
+
+    Both programs share the same eligibility logic through PolicyEngine's il_fpp_eligible variable.
+    """
+
+    pe_name = "il_fpp_eligible"
+    pe_inputs = [
+        *pe_dependency.irs_gross_income,
+        member_dependency.TaxUnitHeadDependency,
+        member_dependency.TaxUnitSpouseDependency,
+        household_dependency.IlStateCodeDependency,
+        member_dependency.PregnancyDependency,
+        member_dependency.IsFppMedicaidEligibleDependency,
+    ]
+    pe_outputs = [member_dependency.IlFppEligible]
+
+    def member_value(self, member):
+        # Return 1 if eligible, 0 if not. We display "Varies" for the estimated value in the UI
+        is_eligible = self.get_member_variable(member.id)
+
+        return int(is_eligible)
