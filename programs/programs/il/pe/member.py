@@ -88,7 +88,7 @@ class IlBccp(PolicyEngineMembersCalculator):
         member_dependency.IlBccFemaleDependency,
         member_dependency.AgeDependency,
         member_dependency.IlBccInsuranceEligibleDependency,
-        dependency.IlStateCodeDependency,
+        household_dependency.IlStateCodeDependency,
     ]
 
     pe_outputs = [
