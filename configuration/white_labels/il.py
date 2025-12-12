@@ -354,7 +354,7 @@ class IlConfigurationData(ConfigurationData):
                 "icon": {"_icon": "Family_planning", "_classname": "option-card-icon"},
                 "text": {
                     "_label": "healthInsuranceOptions.family_planning.il",
-                    "_default_message": "Family Planning Presumptive Eligibility",
+                    "_default_message": "Family Planning (including Presumptive Eligibility)",
                 },
             },
             "va": {
