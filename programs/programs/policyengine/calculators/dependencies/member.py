@@ -478,3 +478,9 @@ class IlBccInsuranceEligibleDependency(Member):
 
 class IlBccEligible(Member):
     field = "il_bcc_eligible"
+
+
+class IlFppEligible(Member):
+    """Output dependency for IL Family Planning Program eligibility."""
+
+    field = "il_fpp_eligible"

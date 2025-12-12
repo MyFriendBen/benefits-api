@@ -1,0 +1,24 @@
+{
+    "white_label": {"code": "il"},
+    "program_category": {"external_name": "il_health"},
+    "program": {
+        "name_abbreviated": "il_fppe",
+        "year": "2025",
+        "legal_status_required": [
+            "citizen",
+            "non_citizen",
+            "gc_5plus",
+            "gc_5less",
+            "refugee",
+            "otherWithWorkPermission"
+        ],
+        "name": "Family Planning Presumptive Eligibility (FPPE)",
+        "description": "Family Planning Presumptive Eligibility (FPPE) provides immediate, temporary coverage for family planning services. Services include birth control, advice, and testing. To sign up, visit a Family Planning (FP) provider and answer a few questions.  They will ask about your residency, income, and pregnancy status. No documentation required, only verbal statements. You do not have to be a citizen or legal immigrant to receive coverage. You do not need a social security number.\n\nApply for the HFS Family Planning Program for ongoing coverage.",
+        "apply_button_link": "https://hfs.illinois.gov/medicalclients/familyplanning/familyplanningproviderpage.html",
+        "apply_button_description": "Find a Provider",
+        "estimated_application_time": "15 minutes",
+        "website_description": "Immediate temporary reproductive health and family planning coverage",
+        "estimated_value": "Varies",
+        "learn_more_link": "https://hfs.illinois.gov/medicalclients/familyplanning.html"
+    }
+}
