@@ -2203,6 +2203,26 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
                         "_default_message": "Home energy efficiency upgrades (Colorado Springs Utilities)",
                     },
                 },
+                "ubp": {
+                    "name": {
+                        "_label": "housingAndUtilities.ubp",
+                        "_default_message": "Colorado Utility Bill Help Program: ",
+                    },
+                    "description": {
+                        "_label": "housingAndUtilities.ubp_desc",
+                        "_default_message": "Help paying utility bills",
+                    },
+                },
+                "coPropTaxRentHeatCreditRebate": {
+                    "name": {
+                        "_label": "cashAssistanceBenefits.coPropTaxRentHeatCreditRebate",
+                        "_default_message": "Colorado Property Tax/Rent/Heat Credit Rebate: ",
+                    },
+                    "description": {
+                        "_label": "cashAssistanceBenefits.coPropTaxRentHeatCreditRebate_desc",
+                        "_default_message": "Cash to pay property tax, rent, and heat bills",
+                    },
+                },
             },
             "category_name": {
                 "_label": "housingAndUtilities",
