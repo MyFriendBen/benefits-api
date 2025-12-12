@@ -486,17 +486,5 @@ class IlFppEligible(Member):
     field = "il_fpp_eligible"
 
 
-# class IlMpeIncomeEligibleDependency(Member):
-#     field = "il_mpe_income_eligible"
-#     dependencies = (
-#         "income_type",
-#         "income_amount",
-#         "income_frequency",
-# )
-
-# def value(self):
-#     return int(self.member.calc_gross_income("yearly", ["all"]) or 1)
-
-
 class IlMpeEligible(Member):
     field = "il_mpe_eligible"
