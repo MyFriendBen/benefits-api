@@ -151,7 +151,17 @@ class IlFamilyPlanningProgram(PolicyEngineMembersCalculator):
 
 
 class IlMpe(PolicyEngineMembersCalculator):
-    # name = "Medicaid Presumptive Eligibility (Pregnancy)"
+    """
+    Illinois Medicaid Presumptive Eligibility (Pregnancy)
+
+    Eligibility criteria:
+        - Illinois resident
+        - Pregnant
+        - Meets income requirements for Medicaid Presumptive Eligibility
+        (as determined by PolicyEngine using the Medicaid income level - 
+        approximately 200% of the FPL)
+        - Not already enrolled in Medicaid for the eligible individual
+    """
     pe_name = "il_mpe_eligible"
     pe_category = "people"
 
