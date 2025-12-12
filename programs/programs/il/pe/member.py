@@ -157,7 +157,8 @@ class IlMpe(PolicyEngineMembersCalculator):
 
     pe_inputs = [
         member_dependency.AgeDependency,
-        member_dependency.IlMpeIncomeEligibleDependency,
+        *pe_dependency.irs_gross_income,
+        member_dependency.ExpectedChildrenPregnancyDependency,
         household_dependency.IlStateCodeDependency,
         member_dependency.PregnancyDependency,
     ]
