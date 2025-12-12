@@ -484,3 +484,7 @@ class IlFppEligible(Member):
     """Output dependency for IL Family Planning Program eligibility."""
 
     field = "il_fpp_eligible"
+
+
+class IlMpeEligible(Member):
+    field = "il_mpe_eligible"
