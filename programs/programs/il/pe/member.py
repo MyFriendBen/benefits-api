@@ -170,9 +170,8 @@ class IlMpe(PolicyEngineMembersCalculator):
         is_eligible = super().member_value(member)
         is_pregnant = member.pregnant
 
-        insurance = getattr(member, "insurance", None)
-        has_medicaid = getattr(insurance, "medicaid", False)
-        if has_medicaid:
-            return False
+        has_medicaid = member.has_insurance_types(("medicaid",), strict=False)
+        if has_medicaid or not is_pregnant or not is_eligible:
+            return 0
 
-        return is_eligible and is_pregnant
+        return 1
