@@ -68,6 +68,10 @@ class IlChildCareAssistanceProgram(ProgramCalculator):
         # Check: User hasn't already selected this benefit
         e.condition(not self.screen.has_benefit("il_ccap"))
 
+        # Check: Asset limit ($1,000,000)
+        if self.screen.household_assets is not None:
+            e.condition(self.screen.household_assets < 1_000_000)
+
         # Check: Income eligibility (225% of FPL for initial applications)
         gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
         income_limit = int(self.fpl_percent * self.program.year.get_limit(self.screen.household_size))

@@ -1982,7 +1982,7 @@ class CoConfigurationData(ConfigurationData):
         },
         "childCare": {
             "benefits": {
-                "cccap": {
+                "ccap": {
                     "name": {
                         "_label": "childCareBenefits.cccap",
                         "_default_message": "Colorado Child Care Assistance Program (CCCAP): ",
