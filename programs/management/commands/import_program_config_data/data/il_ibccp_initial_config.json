@@ -1,0 +1,51 @@
+{
+    "white_label": {
+        "code": "il"
+    },
+    "program_category": {
+        "external_name": "il_health"
+    },
+    "program": {
+        "name_abbreviated": "il_ibccp",
+        "year": "2025",
+        "legal_status_required": ["citizen", "refugee", "gc_5plus", "non_citizen", "otherWithWorkPermission", "gc_5less"],
+        "name": "Illinois Breast and Cervical Cancer Program (IBCCP)",
+        "description": "The Illinois Breast & Cervical Cancer Program (IBCCP) helps women get important health check-ups for free. These check-ups look for signs of breast cancer and cervical cancer early, when they're easier to treat.\n\nWomen in Illinois who are under 65 and don't have health insurance (or whose insurance doesn't cover these tests) can qualify. The program covers:\n\n\t• Mammograms (special X-rays that check for breast cancer)\n\t• Pap tests (tests that check for cervical cancer)\n\t• Follow-up tests if doctors find something they need to look at more closely\n\nIf cancer is found, IBCCP can also help with coverage for treatment.\n\nTo sign up, call the Women's Health Line at 888-522-1282. If you're deaf or hard of hearing, call 800-547-0466. You can also call your local IBCCP agency (find one by selecting the 'Find your local agency' button above).",
+        "apply_button_link": "https://dph.illinois.gov/content/dam/soi/en/web/idph/publications/idph/topics-and-services/life-stages-populations/women%27s-health-services/ibccp/ibccp-directory-en-2024.pdf",
+        "apply_button_description": "Find your local agency",
+        "estimated_application_time": "5-10 minutes",
+        "website_description": "Free breast and cervical cancer screening services for Illinois residents",
+        "estimated_value": "",
+        "external_name": "il_ibccp",
+        "active": true,
+        "low_confidence": false,
+        "show_on_current_benefits": true,
+        "value_format": "estimated_annual"
+    },
+    "documents": [
+        {
+            "external_name": "il_home",
+            "text": "Proof of Illinois residency",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "insurance_status",
+            "text": "Insurance status (uninsured or underinsured)",
+            "link_url": "",
+            "link_text": ""
+        }
+    ],
+    "navigators": [
+        {
+            "external_name": "ibccp_womens_health_line",
+            "name": "Women's Health Line",
+            "email": "",
+            "description": "To sign up for IBCCP, call the Women's Health Line. The staff will explain if you qualify and what to expect during your screening.",
+            "assistance_link": "https://dph.illinois.gov/topics-services/life-stages-populations/womens-health-services/ibccp.html",
+            "phone_number": "888-522-1282",
+            "counties": [],
+            "languages": []
+        }
+    ]
+}
