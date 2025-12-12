@@ -158,10 +158,11 @@ class IlMpe(PolicyEngineMembersCalculator):
         - Illinois resident
         - Pregnant
         - Meets income requirements for Medicaid Presumptive Eligibility
-        (as determined by PolicyEngine using the Medicaid income level - 
+        (as determined by PolicyEngine using the Medicaid income level -
         approximately 200% of the FPL)
         - Not already enrolled in Medicaid for the eligible individual
     """
+
     pe_name = "il_mpe_eligible"
     pe_category = "people"
 
