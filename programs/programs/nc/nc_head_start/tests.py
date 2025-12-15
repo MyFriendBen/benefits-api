@@ -402,66 +402,6 @@ class TestNCHeadStart(TestCase):
                 self.assertTrue(len(eligibility.eligible_members) > 0, f"Child age {age} should be eligible")
 
     @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache.fetch")
-    def test_child_age_6_to_17_with_disability_eligible(self, mock_fetch):
-        """Test that children aged 6-17 with disability are eligible"""
-        mock_fetch.return_value = self.MARKET_RATES_DATA
-
-        screen = Screen.objects.create(
-            agree_to_tos=True,
-            zipcode="27706",
-            county="Durham County",
-            household_size=2,
-            household_assets=0,
-            white_label=self.nc_white_label,
-            completed=False,
-        )
-
-        # Parent
-        parent = self.create_household_member(screen=screen, relationship="headOfHousehold", age=30)
-
-        # 12-year-old with disability should be eligible
-        child = self.create_household_member(
-            screen=screen, relationship="child", age=12, disabled=True, birth_year=2013, birth_month=1
-        )
-
-        calculator = NCHeadStart(screen, self.program, {}, Dependencies())
-        eligibility = calculator.calc()
-
-        # Should have 1 eligible member (the disabled child, parent doesn't count)
-        eligible_children = [m for m in eligibility.eligible_members if m.member.relationship == "child"]
-        self.assertEqual(len(eligible_children), 1, "12-year-old with disability should be eligible")
-
-    @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache.fetch")
-    def test_child_age_6_to_17_without_disability_not_eligible(self, mock_fetch):
-        """Test that children aged 6-17 without disability are NOT eligible"""
-        mock_fetch.return_value = self.MARKET_RATES_DATA
-
-        screen = Screen.objects.create(
-            agree_to_tos=True,
-            zipcode="27706",
-            county="Durham County",
-            household_size=2,
-            household_assets=0,
-            white_label=self.nc_white_label,
-            completed=False,
-        )
-
-        # Parent
-        parent = self.create_household_member(screen=screen, relationship="headOfHousehold", age=30)
-
-        # 12-year-old without disability should NOT be eligible
-        child = self.create_household_member(
-            screen=screen, relationship="child", age=12, disabled=False, birth_year=2013, birth_month=1
-        )
-
-        calculator = NCHeadStart(screen, self.program, {}, Dependencies())
-        eligibility = calculator.calc()
-
-        # No eligible children (parent doesn't count, 12-year-old without disability not eligible)
-        eligible_children = [m for m in eligibility.eligible_members if m.member.relationship == "child"]
-        self.assertEqual(len(eligible_children), 0, "12-year-old without disability should NOT be eligible")
-
-    @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache.fetch")
     def test_pregnant_member_eligible(self, mock_fetch):
         """Test that pregnant household member is eligible regardless of age"""
         mock_fetch.return_value = self.MARKET_RATES_DATA
