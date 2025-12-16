@@ -43,9 +43,7 @@ class MaHomeBridge(ProgramCalculator):
 
         # Income eligibility - 60% to 120% AMI
         try:
-            ami_60 = hud_client.get_screen_mtsp_ami(
-                self.screen, "60%", self.ami_year, county_override=self.hud_county
-            )
+            ami_60 = hud_client.get_screen_mtsp_ami(self.screen, "60%", self.ami_year, county_override=self.hud_county)
             ami_100 = hud_client.get_screen_mtsp_ami(
                 self.screen, "100%", self.ami_year, county_override=self.hud_county
             )

@@ -24,7 +24,7 @@
     "warning_message": {
         "external_name": "ma_homebridge_warning",
         "calculator": "_show",
-        "message": "Funds and eligible homes are limited. Buyers must follow City restrictions and resale rules."
+        "message": "Funds and eligible homes are limited. Buyers must follow city restrictions and resale rules."
     },
     "documents": [
         {
