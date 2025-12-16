@@ -359,7 +359,7 @@ class TestNCHeadStart(TestCase):
 
         # Value should be preschool rate * 12
         # Durham County preschool rate: $1,167/month (1000 in MARKET_RATES_DATA)
-        self.assertEqual(eligibility.value, 1167 * 12, "Estimated value should be $12,000 (preschool rate × 12)")
+        self.assertEqual(eligibility.value, 1167 * 12, "Estimated value should be $14,004 (preschool rate × 12)")
 
     # ============================================================================
     # ADDITIONAL TESTS: Age Eligibility
