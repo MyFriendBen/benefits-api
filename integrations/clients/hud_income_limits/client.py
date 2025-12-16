@@ -119,6 +119,7 @@ class HudIncomeClient:
         screen: Screen,
         percent: MtspAmiPercent,
         year: Union[int, str],
+        county_override: Optional[str] = None,
     ) -> int:
         """
         Get MTSP (Multifamily Tax Subsidy Project) income limit for a Screen object.
@@ -137,6 +138,9 @@ class HudIncomeClient:
             screen: Screen object with white_label.state_code, county, and household_size
             percent: Income percentage ("20%", "30%", "40%", "50%", "60%", "70%", "80%", "100%")
             year: Year for income limits (e.g., 2025 or "2025")
+            county_override: Optional county name to use instead of screen.county
+                (useful when screen.county stores city names instead of county names,
+                e.g., MA stores "Cambridge" but HUD needs "Middlesex")
 
         Returns:
             Income limit in dollars
@@ -144,15 +148,18 @@ class HudIncomeClient:
         Example:
             >>> hud_client.get_screen_mtsp_ami(screen, "80%", "2025")
             89520
+            >>> hud_client.get_screen_mtsp_ami(screen, "60%", "2025", county_override="Middlesex")
+            54960
         """
         self._validate_household_size(screen.household_size)
         year = int(year) if isinstance(year, str) else year
 
-        entity_id = self._get_entity_id(screen.white_label.state_code, screen.county, year)
+        county = county_override if county_override else screen.county
+        entity_id = self._get_entity_id(screen.white_label.state_code, county, year)
 
         cache_key = f"hud_mtsp_{entity_id}_{year}"
         data = self._fetch_cached_data(cache_key, f"mtspil/data/{entity_id}", year)
-        area_data = self._validate_data_response(data, screen.county, screen.white_label.state_code)
+        area_data = self._validate_data_response(data, county, screen.white_label.state_code)
 
         # Get the field value based on percent
         # MTSP API structure: {"20percent": {"il20_p1": ...}, "30percent": {...}, ..., "80percent": {...}}
