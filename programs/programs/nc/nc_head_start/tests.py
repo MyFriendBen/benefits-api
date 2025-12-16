@@ -5,6 +5,7 @@ from programs.models import Program, FederalPoveryLimit
 from programs.util import Dependencies
 from unittest.mock import patch
 from datetime import datetime
+from typing import ClassVar
 
 
 class TestNCHeadStart(TestCase):
@@ -21,7 +22,7 @@ class TestNCHeadStart(TestCase):
     """
 
     # 2025 Market rates from Google Sheet for 4-star child care centers
-    MARKET_RATES_DATA = {
+    MARKET_RATES_DATA: ClassVar[dict] = {
         "Alamance County": {
             "infant": 956,  # 0-1 years
             "toddler": 942,  # 2 years
@@ -79,7 +80,7 @@ class TestNCHeadStart(TestCase):
         pregnant=False,
         disabled=False,
         has_income=False,
-        insurance_type=None,
+        # insurance_type=None,
         birth_year=None,
         birth_month=None,
     ):
@@ -312,8 +313,8 @@ class TestNCHeadStart(TestCase):
         - Person 3 (age 3): ELIGIBLE (preschool age)
 
         Value calculation:
-        - Only Person 3 is eligible: preschool rate = $1,000/month
-        - Estimated savings: $1,000 × 12 = $12,000/year
+        - Only Person 3 is eligible: preschool rate = $1,167/month
+        - Estimated savings: $1,167 × 12 = $14,004/year
         """
         mock_fetch.return_value = self.MARKET_RATES_DATA
 
@@ -379,7 +380,7 @@ class TestNCHeadStart(TestCase):
             5: "preschool",
         }
 
-        for age, age_category in ages_to_test.items():
+        for age, _ in ages_to_test.items():
             with self.subTest(age=age):
                 screen = Screen.objects.create(
                     agree_to_tos=True,
