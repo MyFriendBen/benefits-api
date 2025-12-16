@@ -359,7 +359,7 @@ class TestNCHeadStart(TestCase):
         self.assertEqual(len(eligible_children), 1, "Should have 1 eligible child (3-year-old)")
 
         # Value should be preschool rate * 12
-        # Durham County preschool rate: $1,167/month (1000 in MARKET_RATES_DATA)
+        # Durham County preschool rate: $1,167/month (1167 in MARKET_RATES_DATA)
         self.assertEqual(eligibility.value, 1167 * 12, "Estimated value should be $14,004 (preschool rate × 12)")
 
     # ============================================================================
