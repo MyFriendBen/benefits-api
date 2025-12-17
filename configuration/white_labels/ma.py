@@ -1337,6 +1337,16 @@ class MaConfigurationData(ConfigurationData):
                         "_default_message": "First-time homebuyer assistance for Cambridge residents",
                     },
                 },
+                "section_8": {
+                    "name": {
+                        "_label": "housingAndUtilities.section_8",
+                        "_default_message": "Housing Choice Voucher: ",
+                    },
+                    "description": {
+                        "_label": "housingAndUtilities.section_8_desc",
+                        "_default_message": "Rent Subsidy (formerly Section 8)",
+                    },
+                },
             },
             "category_name": {"_label": "housingAndUtilities", "_default_message": "Housing and Utilities"},
         },
