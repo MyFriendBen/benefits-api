@@ -1327,6 +1327,16 @@ class MaConfigurationData(ConfigurationData):
                         "_default_message": "Help with energy costs (seasonal)",
                     },
                 },
+                "ma_homebridge": {
+                    "name": {
+                        "_label": "housingAndUtilities.ma_homebridge",
+                        "_default_message": "Cambridge HomeBridge Program: ",
+                    },
+                    "description": {
+                        "_label": "housingAndUtilities.ma_homebridge_desc",
+                        "_default_message": "First-time homebuyer assistance for Cambridge residents",
+                    },
+                },
             },
             "category_name": {"_label": "housingAndUtilities", "_default_message": "Housing and Utilities"},
         },

@@ -1,0 +1,61 @@
+{
+    "white_label": {"code": "ma"},
+    "program_category": {
+        "external_name": "ma_housing",
+        "name": "Housing",
+        "icon": "housing"
+    },
+    "program": {
+        "name_abbreviated": "ma_homebridge",
+        "year": "2025",
+        "legal_status_required": ["citizen"],
+        "name": "HomeBridge",
+        "description_short": "First-time homebuyer assistance in Cambridge",
+        "description": "HomeBridge helps first-time homebuyers in Cambridge purchase a home with city assistance covering a large portion of the purchase price.\n\nTo qualify, you must:\n- Be a first-time homebuyer\n- Have household income between 60% and 120% of Area Median Income (AMI)\n- Be a current Cambridge resident\n- Complete a CHAPA-certified first-time homebuyer class\n- Obtain a conventional, fixed-rate mortgage that meets City affordability rules (monthly housing costs between 25% and 33% of gross monthly income)\n- Have sufficient assets for down payment and closing costs, and contribute any liquid assets above $40,000 to the purchase (higher threshold for households where all adults are 62+)\n\nCity assistance can cover up to 50%, 60%, or 65% of the purchase price depending on the number of bedrooms, subject to program rules and price limits.\n\nNote: Funds and eligible homes are limited. Buyers must follow City restrictions and resale rules. Approval typically takes about 1 month after application.",
+        "learn_more_link": "https://www.cambridgema.gov/cdd/housing/forhomebuyers/homebridge",
+        "apply_button_link": "https://cambridgema.portal.opengov.com/categories/1132/record-types/6874",
+        "apply_button_description": "",
+        "estimated_application_time": "90 minutes",
+        "estimated_delivery_time": "About 1 month",
+        "estimated_value": "Varies",
+        "website_description": "First-time homebuyer assistance covering up to 50-65% of purchase price",
+        "low_confidence": false
+    },
+    "warning_message": {
+        "external_name": "ma_homebridge_warning",
+        "calculator": "_show",
+        "message": "Funds and eligible homes are limited. Buyers must follow city restrictions and resale rules."
+    },
+    "documents": [
+        {
+            "external_name": "ma_proof_income",
+            "text": "Proof of income (tax returns, pay stubs, W-2, 1099, etc.)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "ma_proof_assets",
+            "text": "Proof of assets (bank statements, investment accounts)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "ma_chapa_certificate",
+            "text": "CHAPA-certified homebuyer class certificate",
+            "link_url": "https://www.chapa.org/housing-courses",
+            "link_text": "Find CHAPA courses"
+        },
+        {
+            "external_name": "ma_cambridge_residency",
+            "text": "Proof of Cambridge residency (lease, utility bill)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "ma_id_proof",
+            "text": "Proof of identity (ex: driver's license, official state ID card)",
+            "link_url": "",
+            "link_text": ""
+        }
+    ]
+}

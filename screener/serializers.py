@@ -220,6 +220,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             "has_ma_mbta",
             "has_ma_maeitc",
             "has_ma_macfc",
+            "has_ma_homebridge",
             "has_head_start",
             "has_early_head_start",
             "has_co_andso",
