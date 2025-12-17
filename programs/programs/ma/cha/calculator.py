@@ -27,8 +27,9 @@ class Cha(ProgramCalculator):
     eligible_city = "Cambridge"
     # Cambridge is a city in Middlesex County - used for HUD AMI lookups
     hud_county = "Middlesex"
-    # Use 50% AMI as primary threshold (vouchers are more common than public housing)
-    ami_percent = "50%"
+    # Use 80% AMI as threshold (covers Family Housing and Senior/Disabled Housing)
+    max_ami_percent = "80%"
+    min_head_of_household_age = 18
     dependencies = ["income_amount", "income_frequency", "household_size", "county"]
 
     def household_eligible(self, e: Eligibility):
@@ -37,12 +38,16 @@ class Cha(ProgramCalculator):
         is_cambridge = self.screen.county == self.eligible_city
         e.condition(is_cambridge, messages.location())
 
-        # Income test: ≤50% AMI for vouchers (most common program)
-        # Using Standard Section 8 Income Limits (appropriate for housing vouchers)
+        # Age: Head of household must be at least 18 years old
+        head_of_household = self.screen.get_head()
+        e.condition(head_of_household.age >= self.min_head_of_household_age, messages.older_than(18))
+
+        # Income test: ≤80% AMI for Family Housing and Senior/Disabled Housing
+        # Using Standard Section 8 Income Limits
         try:
             income = self.screen.calc_gross_income("yearly", ["all"])
             income_limit = hud_client.get_screen_il_ami(
-                self.screen, self.ami_percent, self.program.year.period, county_override=self.hud_county
+                self.screen, self.max_ami_percent, self.program.year.period, county_override=self.hud_county
             )
             e.condition(income <= income_limit, messages.income(income, income_limit))
         except HudIncomeClientError:
