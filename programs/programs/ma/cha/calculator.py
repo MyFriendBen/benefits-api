@@ -12,7 +12,7 @@ class Cha(ProgramCalculator):
     rental vouchers or locations.
 
     Eligibility:
-    - Income: ≤80% AMI for public housing, ≤50% AMI for vouchers/SRO
+    - Income: ≤80% AMI (covers Family Housing and Senior/Disabled Housing)
     - Must be a U.S. citizen or eligible immigrant
     - Must be able to pass background check
     - Cambridge resident/work preferences may apply for waitlist ordering

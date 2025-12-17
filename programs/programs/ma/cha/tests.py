@@ -61,7 +61,7 @@ class TestCha(TestCase):
         eligibility = calc.eligible()
 
         self.assertTrue(eligibility.eligible)
-        mock_hud_client.get_screen_il_ami.assert_called_once_with(self.eligible_screen, "50%", "2025")
+        mock_hud_client.get_screen_il_ami.assert_called_once_with(self.eligible_screen, "80%", "2025", county_override="Middlesex")
 
     @patch("programs.programs.ma.cha.calculator.hud_client")
     def test_household_ineligible_outside_cambridge(self, mock_hud_client):
@@ -97,8 +97,8 @@ class TestCha(TestCase):
 
     @patch("programs.programs.ma.cha.calculator.hud_client")
     def test_household_ineligible_income_too_high(self, mock_hud_client):
-        """Test household is ineligible when income exceeds 50% AMI"""
-        mock_hud_client.get_screen_il_ami.return_value = 50000
+        """Test household is ineligible when income exceeds 80% AMI"""
+        mock_hud_client.get_screen_il_ami.return_value = 80000  # 80% AMI limit
 
         screen = Screen.objects.create(
             agree_to_tos=True,
@@ -114,12 +114,12 @@ class TestCha(TestCase):
             age=35,
             has_income=True,
         )
-        # Income above 50% AMI
+        # Income above 80% AMI
         IncomeStream.objects.create(
             screen=screen,
             household_member=head,
             type="wages",
-            amount=5000,  # $60,000/year - above limit
+            amount=7000,  # $84,000/year - above limit
             frequency="monthly",
         )
 
@@ -130,8 +130,8 @@ class TestCha(TestCase):
 
     @patch("programs.programs.ma.cha.calculator.hud_client")
     def test_household_eligible_income_at_limit(self, mock_hud_client):
-        """Test household is eligible when income equals 50% AMI exactly"""
-        mock_hud_client.get_screen_il_ami.return_value = 36000  # Set limit to match income
+        """Test household is eligible when income equals 80% AMI exactly"""
+        mock_hud_client.get_screen_il_ami.return_value = 36000  # Set limit to match income ($36,000/year)
 
         calc = self.create_calculator(self.eligible_screen)
         eligibility = calc.eligible()
