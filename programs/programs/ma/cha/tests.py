@@ -61,9 +61,7 @@ class TestCha(TestCase):
         eligibility = calc.eligible()
 
         self.assertTrue(eligibility.eligible)
-        mock_hud_client.get_screen_il_ami.assert_called_once_with(
-            self.eligible_screen, "50%", "2025"
-        )
+        mock_hud_client.get_screen_il_ami.assert_called_once_with(self.eligible_screen, "50%", "2025")
 
     @patch("programs.programs.ma.cha.calculator.hud_client")
     def test_household_ineligible_outside_cambridge(self, mock_hud_client):
