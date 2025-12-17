@@ -8,7 +8,7 @@
     "program": {
         "name_abbreviated": "ma_homebridge",
         "year": "2025",
-        "legal_status_required": ["citizen"],
+        "legal_status_required": ["citizen", "gc_5plus", "gc_5less", "refugee", "otherWithWorkPermission", "non_citizen"],
         "name": "HomeBridge",
         "description_short": "First-time homebuyer assistance in Cambridge",
         "description": "HomeBridge helps first-time homebuyers in Cambridge purchase a home with city assistance covering a large portion of the purchase price.\n\nTo qualify, you must:\n- Be a first-time homebuyer\n- Have household income between 60% and 120% of Area Median Income (AMI)\n- Be a current Cambridge resident\n- Complete a CHAPA-certified first-time homebuyer class\n- Obtain a conventional, fixed-rate mortgage that meets City affordability rules (monthly housing costs between 25% and 33% of gross monthly income)\n- Have sufficient assets for down payment and closing costs, and contribute any liquid assets above $40,000 to the purchase (higher threshold for households where all adults are 62+)\n\nCity assistance can cover up to 50%, 60%, or 65% of the purchase price depending on the number of bedrooms, subject to program rules and price limits.\n\nNote: Funds and eligible homes are limited. Buyers must follow City restrictions and resale rules. Approval typically takes about 1 month after application.",
