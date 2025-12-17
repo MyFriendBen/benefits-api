@@ -37,7 +37,7 @@ class TestCha(TestCase):
             has_income=True,
         )
 
-        # Income below 50% AMI (approx $50,000/year for 2-person household)
+        # Income below 80% AMI
         IncomeStream.objects.create(
             screen=self.eligible_screen,
             household_member=self.head,
@@ -54,8 +54,8 @@ class TestCha(TestCase):
 
     @patch("programs.programs.ma.cha.calculator.hud_client")
     def test_household_eligible_in_cambridge_below_income_limit(self, mock_hud_client):
-        """Test household is eligible when in Cambridge and below 50% AMI"""
-        mock_hud_client.get_screen_il_ami.return_value = 50000  # 50% AMI limit
+        """Test household is eligible when in Cambridge and below 80% AMI"""
+        mock_hud_client.get_screen_il_ami.return_value = 50000  # 80% AMI limit
 
         calc = self.create_calculator(self.eligible_screen)
         eligibility = calc.eligible()
