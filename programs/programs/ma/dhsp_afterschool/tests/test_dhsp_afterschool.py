@@ -415,11 +415,9 @@ class TestMaDhspAfterschoolValueMultipleChildren(TestCase):
         # Index 1 is age 3 - not eligible
         # Index 2 is age 8 - eligible
         # Index 3 is age 16 - not eligible
-        member_ages_and_eligibility = [
-            (m.member.age, m.eligible) for m in eligibility.eligible_members
-        ]
+        member_ages_and_eligibility = [(m.member.age, m.eligible) for m in eligibility.eligible_members]
 
         self.assertIn((35, False), member_ages_and_eligibility)  # Parent
-        self.assertIn((3, False), member_ages_and_eligibility)   # Too young
-        self.assertIn((8, True), member_ages_and_eligibility)    # Eligible
+        self.assertIn((3, False), member_ages_and_eligibility)  # Too young
+        self.assertIn((8, True), member_ages_and_eligibility)  # Eligible
         self.assertIn((16, False), member_ages_and_eligibility)  # Too old
