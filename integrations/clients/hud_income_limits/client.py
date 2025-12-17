@@ -188,6 +188,7 @@ class HudIncomeClient:
         screen,
         percent: Section8AmiPercent,
         year: Union[int, str],
+        county_override: Optional[str] = None,
     ) -> int:
         """
         Get Standard Section 8 Income Limit for a Screen object.
@@ -207,6 +208,9 @@ class HudIncomeClient:
             screen: Screen object with white_label.state_code, county, and household_size
             percent: Income percentage ("30%", "50%", or "80%" only)
             year: Year for income limits (e.g., 2025 or "2025")
+            county_override: Optional county name to use instead of screen.county
+                (useful when screen.county stores city names instead of county names,
+                e.g., MA stores "Cambridge" but HUD needs "Middlesex")
 
         Returns:
             Income limit in dollars
@@ -218,11 +222,12 @@ class HudIncomeClient:
         self._validate_household_size(screen.household_size)
         year = int(year) if isinstance(year, str) else year
 
-        entity_id = self._get_entity_id(screen.white_label.state_code, screen.county, year)
+        county = county_override if county_override else screen.county
+        entity_id = self._get_entity_id(screen.white_label.state_code, county, year)
 
         cache_key = f"hud_il_{entity_id}_{year}"
         data = self._fetch_cached_data(cache_key, f"il/data/{entity_id}", year)
-        area_data = self._validate_data_response(data, screen.county, screen.white_label.state_code)
+        area_data = self._validate_data_response(data, county, screen.white_label.state_code)
 
         # Standard IL API returns nested structure:
         # - 30% AMI: data.extremely_low.il30_p{household_size}
