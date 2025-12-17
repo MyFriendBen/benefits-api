@@ -241,9 +241,185 @@ class TestMaDhspAfterschoolHasBenefit(TestCase):
 
 
 class TestMaDhspAfterschoolValue(TestCase):
-    """Tests for benefit value calculation."""
+    """Tests for benefit value calculation via the value() method."""
 
-    def test_amount_is_annual_childcare_savings(self):
-        """Test that amount represents annual childcare savings (~$900/month)."""
+    def setUp(self):
+        """Set up test fixtures."""
+        self.mock_program = Mock()
+        self.mock_data = {}
+        self.mock_missing_deps = Mock()
+        self.mock_missing_deps.has.return_value = False
+
+    def _create_mock_member(self, age, member_id=None):
+        """Helper to create a mock household member."""
+        mock_member = Mock()
+        mock_member.age = age
+        mock_member.id = member_id if member_id is not None else age  # Use age as id if not specified
+        return mock_member
+
+    def _create_calculator(self, children_ages, county="Cambridge", has_benefit=False):
+        """Helper to create a calculator with mocked screen."""
+        mock_screen = Mock()
+        mock_screen.county = county
+        mock_screen.household_size = 1 + len(children_ages)
+        mock_screen.has_benefit = Mock(return_value=has_benefit)
+
+        # Create mock household members (parent + children)
+        members = [self._create_mock_member(35, member_id=0)]  # Parent
+        for idx, age in enumerate(children_ages, start=1):
+            members.append(self._create_mock_member(age, member_id=idx))
+        mock_screen.household_members.all.return_value = members
+
+        return MaDhspAfterschool(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
+
+    def test_value_sets_household_value_for_one_eligible_child(self):
+        """Test that value() sets household_value to expected annual amount for one eligible child."""
+        calculator = self._create_calculator([8])  # One 8-year-old child
+        eligibility = calculator.eligible()
+
+        # Call value() to populate value fields
+        calculator.value(eligibility)
+
         expected_annual = 900 * 12  # $10,800
-        self.assertEqual(MaDhspAfterschool.amount, expected_annual)
+        self.assertEqual(eligibility.household_value, expected_annual)
+
+    def test_value_returns_eligibility_with_eligible_status(self):
+        """Test that value() calculation returns eligibility indicating the household is eligible."""
+        calculator = self._create_calculator([10])  # One eligible child
+        eligibility = calculator.eligible()
+
+        # Verify eligibility is True before value calculation
+        self.assertTrue(eligibility.eligible)
+
+        # Call value() - should not change eligibility status
+        calculator.value(eligibility)
+
+        self.assertTrue(eligibility.eligible)
+
+    def test_value_assigns_zero_per_member_value_by_default(self):
+        """Test that per-member value is 0 by default (uses base class member_amount)."""
+        calculator = self._create_calculator([6, 10])  # Two eligible children
+        eligibility = calculator.eligible()
+
+        calculator.value(eligibility)
+
+        # Find eligible children members (not the parent)
+        eligible_children = [m for m in eligibility.eligible_members if m.eligible and m.member.age != 35]
+
+        # Default member_amount is 0, so each eligible child should have value 0
+        for member_eligibility in eligible_children:
+            self.assertEqual(member_eligibility.value, 0)
+
+    def test_value_does_not_set_values_when_ineligible(self):
+        """Test that value() does not set values when household is ineligible."""
+        calculator = self._create_calculator([8], county="Boston")  # Non-Cambridge resident
+        eligibility = calculator.eligible()
+
+        # Should be ineligible
+        self.assertFalse(eligibility.eligible)
+
+        calculator.value(eligibility)
+
+        # household_value should remain 0 when ineligible
+        self.assertEqual(eligibility.household_value, 0)
+
+
+class TestMaDhspAfterschoolValueMultipleChildren(TestCase):
+    """Tests for household value scaling with multiple eligible children."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.mock_program = Mock()
+        self.mock_data = {}
+        self.mock_missing_deps = Mock()
+        self.mock_missing_deps.has.return_value = False
+
+    def _create_mock_member(self, age, member_id=None):
+        """Helper to create a mock household member."""
+        mock_member = Mock()
+        mock_member.age = age
+        mock_member.id = member_id if member_id is not None else age
+        return mock_member
+
+    def _create_calculator(self, children_ages, county="Cambridge", has_benefit=False):
+        """Helper to create a calculator with mocked screen."""
+        mock_screen = Mock()
+        mock_screen.county = county
+        mock_screen.household_size = 1 + len(children_ages)
+        mock_screen.has_benefit = Mock(return_value=has_benefit)
+
+        # Create mock household members (parent + children)
+        members = [self._create_mock_member(35, member_id=0)]  # Parent
+        for idx, age in enumerate(children_ages, start=1):
+            members.append(self._create_mock_member(age, member_id=idx))
+        mock_screen.household_members.all.return_value = members
+
+        return MaDhspAfterschool(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
+
+    def test_household_value_same_for_multiple_eligible_children(self):
+        """Test that household_value is the same regardless of number of eligible children.
+
+        The base class household_value() returns self.amount, which is a fixed annual value.
+        This tests the current behavior - household_value does not scale with child count.
+        """
+        expected_annual = 900 * 12  # $10,800
+
+        # Test with 1 eligible child
+        calc_1_child = self._create_calculator([8])
+        elig_1_child = calc_1_child.eligible()
+        calc_1_child.value(elig_1_child)
+
+        # Test with 3 eligible children
+        calc_3_children = self._create_calculator([5, 10, 14])
+        elig_3_children = calc_3_children.eligible()
+        calc_3_children.value(elig_3_children)
+
+        # household_value is fixed at self.amount, not multiplied by child count
+        self.assertEqual(elig_1_child.household_value, expected_annual)
+        self.assertEqual(elig_3_children.household_value, expected_annual)
+
+    def test_total_value_equals_household_value_with_default_member_amount(self):
+        """Test that total value equals household_value when member_amount is 0."""
+        calculator = self._create_calculator([6, 9, 12])  # Three eligible children
+        eligibility = calculator.eligible()
+        calculator.value(eligibility)
+
+        expected_annual = 900 * 12
+
+        # Total value should equal household_value since member values are 0
+        self.assertEqual(eligibility.value, expected_annual)
+        self.assertEqual(eligibility.household_value, expected_annual)
+
+    def test_eligible_members_tracked_correctly_for_multiple_children(self):
+        """Test that all eligible children are tracked in eligible_members."""
+        calculator = self._create_calculator([5, 10, 14])  # 3 eligible children (ages 5, 10, 14)
+        eligibility = calculator.eligible()
+        calculator.value(eligibility)
+
+        # Should have 4 member eligibilities: 1 parent + 3 children
+        self.assertEqual(len(eligibility.eligible_members), 4)
+
+        # Count eligible members (children in K-8 range)
+        eligible_count = sum(1 for m in eligibility.eligible_members if m.eligible)
+        self.assertEqual(eligible_count, 3)  # All 3 children are eligible
+
+    def test_mixed_ages_only_k8_children_eligible(self):
+        """Test that only K-8 age children (5-14) are marked as eligible members."""
+        # Mix of ages: 3 (too young), 8 (eligible), 16 (too old)
+        calculator = self._create_calculator([3, 8, 16])
+        eligibility = calculator.eligible()
+        calculator.value(eligibility)
+
+        # Check member eligibility statuses
+        # Index 0 is parent (age 35) - not eligible
+        # Index 1 is age 3 - not eligible
+        # Index 2 is age 8 - eligible
+        # Index 3 is age 16 - not eligible
+        member_ages_and_eligibility = [
+            (m.member.age, m.eligible) for m in eligibility.eligible_members
+        ]
+
+        self.assertIn((35, False), member_ages_and_eligibility)  # Parent
+        self.assertIn((3, False), member_ages_and_eligibility)   # Too young
+        self.assertIn((8, True), member_ages_and_eligibility)    # Eligible
+        self.assertIn((16, False), member_ages_and_eligibility)  # Too old
