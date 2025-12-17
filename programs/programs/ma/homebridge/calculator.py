@@ -43,13 +43,16 @@ class MaHomeBridge(ProgramCalculator):
 
         # Income eligibility - 60% to 120% AMI
         try:
-            ami_60 = hud_client.get_screen_mtsp_ami(self.screen, "60%", self.ami_year, county_override=self.hud_county)
+            min_ami_str = f"{int(self.min_ami_percent * 100)}%"
+            ami_min = hud_client.get_screen_mtsp_ami(
+                self.screen, min_ami_str, self.ami_year, county_override=self.hud_county
+            )
             ami_100 = hud_client.get_screen_mtsp_ami(
                 self.screen, "100%", self.ami_year, county_override=self.hud_county
             )
-            ami_120 = ami_100 * self.max_ami_percent
+            ami_max = ami_100 * self.max_ami_percent
             gross_income = self.screen.calc_gross_income("yearly", ["all"])
-            income_eligible = ami_60 <= gross_income <= ami_120
-            e.condition(income_eligible, messages.income(gross_income, ami_120))
+            income_eligible = ami_min <= gross_income <= ami_max
+            e.condition(income_eligible, messages.income(gross_income, ami_max))
         except HudIncomeClientError:
             e.condition(False, messages.income_limit_unknown())
