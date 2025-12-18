@@ -15,6 +15,8 @@ class MaDoorToDoor(ProgramCalculator):
 
     Value: Not a fixed dollar benefit; value is access to rides for key needs.
     We return 1 to indicate eligibility; frontend displays "Varies".
+
+    Source: https://www.scmtransportation.org/services-by-city.html
     """
 
     amount = 1
