@@ -63,10 +63,9 @@ class NCHeadStart(ProgramCalculator):
 
         # Automatic eligibility for households receiving SNAP, TANF, or SSI
         has_presumptive_benefit = self.screen.has_benefit_from_list(NCHeadStart.presumptive_eligibility)
-        e.condition(has_presumptive_benefit, messages.presumed_eligibility())
-
-        # Income check only runs if they don't have presumptive benefits
-        if not has_presumptive_benefit:
+        if has_presumptive_benefit:
+            e.passed(messages.presumed_eligibility())
+        else:
             # income - 130% FPL with housing cost adjustment
             household_size = self.screen.household_size
             base_limit = self.program.year.get_limit(household_size)
