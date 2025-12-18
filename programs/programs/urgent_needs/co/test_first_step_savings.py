@@ -149,7 +149,7 @@ class TestFirstStepSavings(TestCase):
 
         calculator = FirstStepSavings(self.screen, self.urgent_need, Dependencies(), {})
 
-        # FirstStepSavings should be ineligible because household has child aged 0-2
+        # FirstStepSavings should be ineligible because household has child aged 0-5
         self.assertFalse(calculator.eligible())
 
     def test_eligible_with_children_6_to_7(self):
