@@ -5,7 +5,6 @@ class BabyUniversity(UrgentNeedFunction):
     """
     Baby University (Baby U)
 
-    Free classes and support for parents/caregivers of babies and toddlers.
     Cambridge city program; families with children 3 and younger. Cohort-based with limited spots.
     """
 
