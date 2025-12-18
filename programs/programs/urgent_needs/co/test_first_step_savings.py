@@ -143,7 +143,6 @@ class TestFirstStepSavings(TestCase):
         self.assertFalse(calculator.eligible())
 
     def test_not_eligible_with_children_0_to_5(self):
-        """Test FirstStepSavings is NOT eligible when household has children aged 0-5"""
         # Add a 1-year-old child (should make NotFirstStepSavings eligible, and FirstStepSavings ineligible)
         baby = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=1)
 
@@ -153,7 +152,6 @@ class TestFirstStepSavings(TestCase):
         self.assertFalse(calculator.eligible())
 
     def test_eligible_with_children_6_to_7(self):
-        """Test FirstStepSavings IS eligible when household has children aged 6-7 (no 0-5 children)"""
         # Add a 6-year-old child (eligible for FirstStepSavings but not NotFirstStepSavings)
         child = HouseholdMember.objects.create(
             screen=self.screen, relationship="child", age=6, birth_year_month=date(2019, 6, 1)
@@ -226,7 +224,6 @@ class TestFirstStepSavingsNotifiable(TestCase):
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=30)
 
     def test_notification_shows_for_age_0_to_5(self):
-        """Test notification shows for children aged 0-5"""
         # Add a 1-year-old child
         baby = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=1)
 
@@ -235,7 +232,6 @@ class TestFirstStepSavingsNotifiable(TestCase):
         self.assertTrue(calculator.eligible())
 
     def test_notification_not_shown_for_age_6_plus(self):
-        """Test notification doesn't show for children aged 3+"""
         # Add a 6-year-old child
         child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=6)
 

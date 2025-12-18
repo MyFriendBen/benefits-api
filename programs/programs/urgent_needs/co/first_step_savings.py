@@ -1,4 +1,3 @@
-from datetime import datetime
 from ..base import UrgentNeedFunction
 
 NOTIFICATION_MAX_AGE = 5
