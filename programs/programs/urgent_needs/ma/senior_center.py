@@ -2,7 +2,7 @@ from ..base import UrgentNeedFunction
 
 
 class CambridgeSeniorCenter(UrgentNeedFunction):
-    dependencies = ["age", "county"]
+    dependencies = ["age", "county", "needs_legal_services"]
     min_age = 60
     eligible_city = "Cambridge"
 
@@ -15,7 +15,7 @@ class CambridgeSeniorCenter(UrgentNeedFunction):
         Eligibility:
         - Age: 60+
         - Location: Cambridge residents
-        - Needs: Legal services or food assistance
+        - Needs: Legal services
         """
 
         # Condition 1: Household needs legal services
