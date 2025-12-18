@@ -154,7 +154,7 @@ class TestFirstStepSavings(TestCase):
 
     def test_eligible_with_children_6_to_7(self):
         """Test FirstStepSavings IS eligible when household has children aged 6-7 (no 0-5 children)"""
-        # Add a 5-year-old child (eligible for FirstStepSavings but not NotFirstStepSavings)
+        # Add a 6-year-old child (eligible for FirstStepSavings but not NotFirstStepSavings)
         child = HouseholdMember.objects.create(
             screen=self.screen, relationship="child", age=6, birth_year_month=date(2019, 6, 1)
         )
@@ -163,6 +163,13 @@ class TestFirstStepSavings(TestCase):
 
         # FirstStepSavings should be eligible because child is 6-7 and no children 0-5
         self.assertTrue(calculator.eligible())
+
+    def test_not_eligible_no_eligible_children_at_all(self):
+        """Test ineligibility when household has no children in any eligible relationship"""
+
+        calculator = FirstStepSavings(self.screen, self.urgent_need, Dependencies(), {})
+
+        self.assertFalse(calculator.eligible())
 
 
 class TestFirstStepSavingsNotifiable(TestCase):
@@ -229,7 +236,7 @@ class TestFirstStepSavingsNotifiable(TestCase):
 
     def test_notification_not_shown_for_age_6_plus(self):
         """Test notification doesn't show for children aged 3+"""
-        # Add a 3-year-old child
+        # Add a 6-year-old child
         child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=6)
 
         calculator = FirstStepSavingsNotifiable(self.screen, self.urgent_need, Dependencies(), {})
@@ -248,6 +255,13 @@ class TestFirstStepSavingsNotifiable(TestCase):
         # Clean up and test with 6-year-old (should not show)
         five_year_old.delete()
         six_year_old = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=6)
+
+        calculator = FirstStepSavingsNotifiable(self.screen, self.urgent_need, Dependencies(), {})
+
+        self.assertFalse(calculator.eligible())
+
+    def test_notification_not_shown_no_eligible_children(self):
+        """Test notification doesn't show when no children exist"""
 
         calculator = FirstStepSavingsNotifiable(self.screen, self.urgent_need, Dependencies(), {})
 
