@@ -1,0 +1,42 @@
+{
+    "white_label": {"code": "ma"},
+    "program_category": {
+        "external_name": "ma_transportation",
+        "name": "Transportation",
+        "icon": "transportation"
+    },
+    "program": {
+        "name_abbreviated": "ma_door_to_door",
+        "year": "2025",
+        "legal_status_required": ["citizen", "gc_5plus", "gc_5less", "refugee", "otherWithWorkPermission", "non_citizen"],
+        "name": "Door2Door Transportation (SCM)",
+        "description_short": "On-demand transportation for Cambridge seniors and people with mobility impairments",
+        "description": "Door2Door Transportation provides on-demand rides to medical appointments and grocery stores for eligible Cambridge residents.\n\nTo qualify, you must:\n- Be a Cambridge resident\n- Be age 60 or older, OR have a mobility impairment\n\nDoor2Door is also piloting a weekly shuttle service to Target on Somerville Ave. in Somerville.\n\nNote: Service capacity may be limited. Reservations are required.",
+        "learn_more_link": "https://www.cambridgema.gov/Departments/commissionforpersonswithdisabilities/Transportation",
+        "apply_button_link": "https://www.scmtransportation.org/services-by-city.html",
+        "apply_button_description": "Call Door2Door by SCM to schedule/register",
+        "estimated_application_time": "5 minutes",
+        "estimated_value": "Varies",
+        "website_description": "On-demand transportation for eligible older adults and people with mobility impairments",
+        "low_confidence": false
+    },
+    "warning_message": {
+        "external_name": "ma_door_to_door_warning",
+        "calculator": "_show",
+        "message": "Service capacity may be limited. Reservations are required. Trip purposes may be limited to medical appointments and grocery shopping."
+    },
+    "documents": [
+        {
+            "external_name": "ma_cambridge_residency",
+            "text": "Proof of Cambridge residency (lease, utility bill)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "ma_age_or_disability_proof",
+            "text": "Proof of age (60+) or documentation of mobility impairment",
+            "link_url": "",
+            "link_text": ""
+        }
+    ]
+}

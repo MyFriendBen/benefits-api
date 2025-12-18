@@ -1371,7 +1371,17 @@ class MaConfigurationData(ConfigurationData):
                         "_label": "transportationBenefits.ma_mbta_desc",
                         "_default_message": "Discounted MBTA fares",
                     },
-                }
+                },
+                "ma_door_to_door": {
+                    "name": {
+                        "_label": "transportationBenefits.ma_door_to_door",
+                        "_default_message": "Door2Door Transportation (SCM): ",
+                    },
+                    "description": {
+                        "_label": "transportationBenefits.ma_door_to_door_desc",
+                        "_default_message": "On-demand transportation for Cambridge seniors and people with mobility impairments",
+                    },
+                },
             },
             "category_name": {"_label": "transportation", "_default_message": "Transportation"},
         },
