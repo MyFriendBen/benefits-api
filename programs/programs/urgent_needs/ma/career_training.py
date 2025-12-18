@@ -16,7 +16,6 @@ class CareerTrainingAndWorkforce(UrgentNeedFunction):
         is_adult = self.screen.num_adults(age_max=self.min_age) > 0
 
         # Condition 2: income less than 200% FPL
-        # income_limit = self.urgent_need.year.as_dict()[self.screen.household_size] * self.fpl_percent
         income_limit = int(self.urgent_need.year.get_limit(self.screen.household_size) * self.fpl_percent)
         income = self.screen.calc_gross_income("yearly", ["all"])
         income_eligible = income <= income_limit
