@@ -57,8 +57,9 @@ class TestMaDoorToDoorLocationEligibility(TestCase):
         self.mock_missing_deps = Mock()
         self.mock_missing_deps.has.return_value = False
 
-    def _create_calculator(self, county, age=65, disabled=False, visually_impaired=False,
-                           long_term_disability=False, has_benefit=False):
+    def _create_calculator(
+        self, county, age=65, disabled=False, visually_impaired=False, long_term_disability=False, has_benefit=False
+    ):
         """Helper to create a calculator with mocked screen. Returns (calculator, member_eligibility)."""
         mock_member = Mock()
         mock_member.age = age
@@ -116,8 +117,9 @@ class TestMaDoorToDoorAgeEligibility(TestCase):
         self.mock_missing_deps = Mock()
         self.mock_missing_deps.has.return_value = False
 
-    def _create_calculator(self, age, disabled=False, visually_impaired=False,
-                           long_term_disability=False, has_benefit=False):
+    def _create_calculator(
+        self, age, disabled=False, visually_impaired=False, long_term_disability=False, has_benefit=False
+    ):
         """Helper to create a calculator with specified age. Returns (calculator, member_eligibility)."""
         mock_member = Mock()
         mock_member.age = age
@@ -178,8 +180,9 @@ class TestMaDoorToDoorDisabilityEligibility(TestCase):
         self.mock_missing_deps = Mock()
         self.mock_missing_deps.has.return_value = False
 
-    def _create_calculator(self, age, disabled=False, visually_impaired=False,
-                           long_term_disability=False, has_benefit=False):
+    def _create_calculator(
+        self, age, disabled=False, visually_impaired=False, long_term_disability=False, has_benefit=False
+    ):
         """Helper to create a calculator with disability status. Returns (calculator, member_eligibility)."""
         mock_member = Mock()
         mock_member.age = age
