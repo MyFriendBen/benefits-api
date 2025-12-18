@@ -1302,6 +1302,16 @@ class MaConfigurationData(ConfigurationData):
                         "_default_message": "Free child care and family support for families with infants and toddlers under age 3",
                     },
                 },
+                "ma_dhsp_afterschool": {
+                    "name": {
+                        "_label": "childCareBenefits.ma_dhsp_afterschool",
+                        "_default_message": "DHSP Afterschool Programs Lottery (K-8): ",
+                    },
+                    "description": {
+                        "_label": "childCareBenefits.ma_dhsp_afterschool_desc",
+                        "_default_message": "Affordable afterschool care for Cambridge children K-8",
+                    },
+                },
             },
             "category_name": {
                 "_label": "childCareYouthAndEducation",
