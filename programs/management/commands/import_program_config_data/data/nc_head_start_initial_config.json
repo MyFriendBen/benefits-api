@@ -1,0 +1,51 @@
+{
+    "white_label": {"code": "nc"},
+    "program_category": {"external_name": "nc_head_start", "name": "Child Care", "icon": "child_care"},
+    "program": {
+        "name_abbreviated": "nc_head_start",
+        "year": "2025",
+        "legal_status_required": [
+            "citizen",
+            "non_citizen",
+            "refugee",
+            "gc_18plus_no5",
+            "gc_under18_no5",
+            "otherWithWorkPermission",
+        ],
+        "name": "NC Head Start",
+        "description": "Head Start and Early Head Start offer free early childhood care and preschool. North Carolina Head Start helps support school readiness for children from ages 3 to 5. If you are pregnant or have a child younger than 3, you may qualify for Early Head Start. \n\nChildren in Head Start enjoy healthy meals and snacks. They may also get some free medical and dental care. \n\nYou need to apply at a local Head Start center. Seats may be limited. On average, it may take 60 days to be approved for Head Start. But after your application is approved, you may need to wait until the next school year to enroll your child.",
+        "learn_more_link": "https://headstart.gov/ersea/article/housing-cost-adjustment-calculator-faqs",
+        "apply_button_link": "https://headstart.gov/how-apply",
+        "apply_button_description": "Find your local Head Start agency",
+        "estimated_application_time": "45 minutes",
+        "estimated_value": "",
+        "website_description": "North Carolina Head Start helps support school readiness for children from ages 3 to 5. If you are pregnant or have a child younger than 3, you may qualify for Early Head Start.",
+    },
+    "documents": [
+        {
+            "external_name": "nc_birth_certificate",
+            "text": "Child's birth certificate or proof of age",
+            "link_url": "",
+            "link_text": "",
+        },
+        {
+            "external_name": "nc_proof_income",
+            "text": "Proof of income (tax returns, pay stubs, W-2, 1099, etc.)",
+            "link_url": "",
+            "link_text": "",
+        },
+        {
+            "external_name": "nc_proof_address",
+            "text": "Proof of address (lease, utility bill, etc.)",
+            "link_url": "",
+            "link_text": "",
+        },
+        {
+            "external_name": "nc_medical_records",
+            "text": "Medical and dental records (if available)",
+            "link_url": "",
+            "link_text": "",
+        },
+        {"external_name": "nc_immunization_records", "text": "Immunization records", "link_url": "", "link_text": ""},
+    ],
+}
