@@ -1,0 +1,454 @@
+[
+  {
+    "notes": "MA Early Head Start - Eligible family with infant (age 1) and income below 100% FPL",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Middlesex",
+      "household_size": 3,
+      "household_assets": 5000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 28,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1800.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 27,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 1,
+          "birth_year": 2024,
+          "birth_month": 1,
+          "student": false,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_early_head_start": false,
+      "needs_child_dev_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_early_head_start",
+      "eligible": true,
+      "value": 22112
+    }
+  },
+  {
+    "notes": "MA Early Head Start - Eligible pregnant woman with income below 100% FPL",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02108",
+      "county": "Suffolk",
+      "household_size": 2,
+      "household_assets": 2000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 30,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 26,
+          "pregnant": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_early_head_start": false,
+      "needs_child_dev_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_early_head_start",
+      "eligible": true,
+      "value": 22112
+    }
+  },
+  {
+    "notes": "MA Early Head Start - Eligible family with toddler (age 2) receiving SNAP (categorical eligibility)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "01104",
+      "county": "Hampden",
+      "household_size": 2,
+      "household_assets": 3000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 25,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 2,
+          "birth_year": 2023,
+          "birth_month": 1,
+          "student": false,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_snap": true,
+      "has_early_head_start": false,
+      "needs_child_dev_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_early_head_start",
+      "eligible": true,
+      "value": 22112
+    }
+  },
+  {
+    "notes": "MA Early Head Start - Eligible homeless family with infant (categorical eligibility regardless of income)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02116",
+      "county": "Suffolk",
+      "household_size": 2,
+      "household_assets": 500.00,
+      "is_homeless": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 22,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2800.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 0,
+          "birth_year": 2025,
+          "birth_month": 6,
+          "student": false,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_early_head_start": false,
+      "needs_child_dev_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_early_head_start",
+      "eligible": true,
+      "value": 22112
+    }
+  },
+  {
+    "notes": "MA Early Head Start - Ineligible due to child too old (age 3)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Middlesex",
+      "household_size": 2,
+      "household_assets": 3000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 30,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 3,
+          "birth_year": 2022,
+          "birth_month": 1,
+          "student": false,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_early_head_start": false,
+      "needs_child_dev_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_early_head_start",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA Early Head Start - Ineligible due to income above 100% FPL and no categorical eligibility",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02140",
+      "county": "Middlesex",
+      "household_size": 3,
+      "household_assets": 20000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 33,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 2,
+          "birth_year": 2023,
+          "birth_month": 1,
+          "student": false,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_early_head_start": false,
+      "needs_child_dev_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_early_head_start",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA Early Head Start - Ineligible household with no children under 3 and no pregnant member",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02138",
+      "county": "Middlesex",
+      "household_size": 3,
+      "household_assets": 5000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1800.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 33,
+          "pregnant": false,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 5,
+          "birth_year": 2020,
+          "birth_month": 1,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_early_head_start": false,
+      "needs_child_dev_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_early_head_start",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA Early Head Start - Eligible family receiving SSI (categorical eligibility)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02703",
+      "county": "Bristol",
+      "household_size": 2,
+      "household_assets": 2000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 32,
+          "has_disability": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSI",
+              "amount": 943.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 2,
+          "birth_year": 2023,
+          "birth_month": 1,
+          "student": false,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ssi": true,
+      "has_early_head_start": false,
+      "needs_child_dev_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_early_head_start",
+      "eligible": true,
+      "value": 22112
+    }
+  }
+]
