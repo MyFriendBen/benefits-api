@@ -31,5 +31,5 @@ ma_urgent_need_functions: dict[str, type[UrgentNeedFunction]] = {
     "ma_community_support_line": CommunitySupportLine,
     "ma_cicrf": Cicrf,
     "ma_affordable_housing_services": AffordableHousingServices,
-    "ma_free_tax_help":FreeTaxHelp
+    "ma_free_tax_help": FreeTaxHelp,
 }
