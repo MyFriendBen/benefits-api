@@ -2444,7 +2444,7 @@ class IlConfigurationData(ConfigurationData):
         },
         "childCareYouthEducation": {
             "benefits": {
-                "il_ccap": {
+                "ccap": {
                     "name": {
                         "_label": "childCareYouthEducationBenefits.il_ccap",
                         "_default_message": "Child Care Assistance Program (CCAP): ",

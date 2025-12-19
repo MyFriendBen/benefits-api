@@ -117,6 +117,7 @@
         "has_aca": { "type": "boolean" },
         "has_section_8": { "type": "boolean" },
         "has_ma_homebridge": { "type": "boolean" },
+        "has_ma_door_to_door": { "type": "boolean" },
         "needs_food": { "type": "boolean" },
         "needs_baby_supplies": { "type": "boolean" },
         "needs_housing_help": { "type": "boolean" },

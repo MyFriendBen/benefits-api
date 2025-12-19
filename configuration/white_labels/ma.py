@@ -1302,6 +1302,16 @@ class MaConfigurationData(ConfigurationData):
                         "_default_message": "Free child care and family support for families with infants and toddlers under age 3",
                     },
                 },
+                "ma_dhsp_afterschool": {
+                    "name": {
+                        "_label": "childCareBenefits.ma_dhsp_afterschool",
+                        "_default_message": "DHSP Afterschool Programs Lottery (K-8): ",
+                    },
+                    "description": {
+                        "_label": "childCareBenefits.ma_dhsp_afterschool_desc",
+                        "_default_message": "Affordable afterschool care for Cambridge children K-8",
+                    },
+                },
             },
             "category_name": {
                 "_label": "childCareYouthAndEducation",
@@ -1361,7 +1371,17 @@ class MaConfigurationData(ConfigurationData):
                         "_label": "transportationBenefits.ma_mbta_desc",
                         "_default_message": "Discounted MBTA fares",
                     },
-                }
+                },
+                "ma_door_to_door": {
+                    "name": {
+                        "_label": "transportationBenefits.ma_door_to_door",
+                        "_default_message": "Door2Door Transportation (SCM): ",
+                    },
+                    "description": {
+                        "_label": "transportationBenefits.ma_door_to_door_desc",
+                        "_default_message": "On-demand transportation for Cambridge seniors and people with mobility impairments",
+                    },
+                },
             },
             "category_name": {"_label": "transportation", "_default_message": "Transportation"},
         },

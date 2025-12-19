@@ -1,0 +1,545 @@
+[
+  {
+    "notes": "MA DHSP Afterschool - Eligible Cambridge family with K-age child (age 5)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 3,
+      "household_assets": 10000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 5000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 5,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_dhsp_afterschool": false,
+      "needs_child_dev_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_dhsp_afterschool",
+      "eligible": true,
+      "value": 10800
+    }
+  },
+  {
+    "notes": "MA DHSP Afterschool - Eligible Cambridge family with 8th grade child (age 14)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02140",
+      "county": "Cambridge",
+      "household_size": 2,
+      "household_assets": 15000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 42,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 14,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_dhsp_afterschool": false,
+      "needs_child_dev_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_dhsp_afterschool",
+      "eligible": true,
+      "value": 10800
+    }
+  },
+  {
+    "notes": "MA DHSP Afterschool - Eligible Cambridge family with multiple K-8 children",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02138",
+      "county": "Cambridge",
+      "household_size": 5,
+      "household_assets": 20000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 38,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 36,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 6,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 9,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 12,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_dhsp_afterschool": false,
+      "needs_child_dev_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_dhsp_afterschool",
+      "eligible": true,
+      "value": 10800
+    }
+  },
+  {
+    "notes": "MA DHSP Afterschool - Ineligible due to non-Cambridge location (Boston)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02108",
+      "county": "Boston",
+      "household_size": 3,
+      "household_assets": 10000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 5000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 8,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_dhsp_afterschool": false,
+      "needs_child_dev_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_dhsp_afterschool",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA DHSP Afterschool - Ineligible due to child too young (age 4, pre-K)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 2,
+      "household_assets": 8000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 30,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 4,
+          "student": false,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_dhsp_afterschool": false,
+      "needs_child_dev_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_dhsp_afterschool",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA DHSP Afterschool - Ineligible due to child too old (age 15, high school)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02140",
+      "county": "Cambridge",
+      "household_size": 2,
+      "household_assets": 12000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 45,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 6000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 15,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_dhsp_afterschool": false,
+      "needs_child_dev_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_dhsp_afterschool",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA DHSP Afterschool - Ineligible because household already has the benefit",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 3,
+      "household_assets": 10000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 5000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 7,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_dhsp_afterschool": true,
+      "needs_child_dev_help": false
+    },
+    "expected_results": {
+      "program_name": "ma_dhsp_afterschool",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA DHSP Afterschool - Ineligible household with no children",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 2,
+      "household_assets": 25000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 5500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 33,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_dhsp_afterschool": false,
+      "needs_child_dev_help": false
+    },
+    "expected_results": {
+      "program_name": "ma_dhsp_afterschool",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA DHSP Afterschool - Eligible single parent with middle-school child (age 11)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02141",
+      "county": "Cambridge",
+      "household_size": 2,
+      "household_assets": 5000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 40,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 11,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        }
+      ],
+      "expenses": [
+        {
+          "type": "childcare",
+          "amount": 800.00,
+          "frequency": "monthly"
+        }
+      ],
+      "has_ma_dhsp_afterschool": false,
+      "needs_child_dev_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_dhsp_afterschool",
+      "eligible": true,
+      "value": 10800
+    }
+  },
+  {
+    "notes": "MA DHSP Afterschool - Ineligible non-Cambridge location (Somerville - adjacent city)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02143",
+      "county": "Somerville",
+      "household_size": 3,
+      "household_assets": 10000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 38,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 5000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 10,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_dhsp_afterschool": false,
+      "needs_child_dev_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_dhsp_afterschool",
+      "eligible": false
+    }
+  }
+]

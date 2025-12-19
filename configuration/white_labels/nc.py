@@ -2728,7 +2728,17 @@ class NcConfigurationData(ConfigurationData):
                         "_label": "childCareBenefits.nc_scca_desc",
                         "_default_message": "Help with child care costs",
                     },
-                }
+                },
+                "nc_head_start": {
+                    "name": {
+                        "_label": "childCareBenefits.nc_head_start",
+                        "_default_message": "NC Head Start Program: ",
+                    },
+                    "description": {
+                        "_label": "childCareBenefits.nc_head_start_desc",
+                        "_default_message": "Comprehensive early childhood education, health, nutrition, and parent involvement services to low-income children and families",
+                    },
+                },
             },
             "category_name": {
                 "_label": "childCareYouthAndEducation",

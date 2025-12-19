@@ -1,0 +1,41 @@
+{
+    "white_label": {"code": "ma"},
+    "program_category": {
+        "external_name": "ma_child_care"
+    },
+    "program": {
+        "name_abbreviated": "ma_dhsp_afterschool",
+        "year": "2025",
+        "legal_status_required": ["citizen", "gc_5plus", "gc_5less", "refugee", "otherWithWorkPermission", "non_citizen"],
+        "name": "DHSP Afterschool Programs Lottery (K-8)",
+        "description_short": "Affordable afterschool care for Cambridge children K-8",
+        "description": "DHSP Afterschool Programs Lottery provides affordable afterschool care and enrichment for Cambridge children in grades K-8, with tuition based on what families can afford.\n\nThe program uses a lottery system for placements, and tuition is set on a sliding scale based on household size and income. Some programs are free for eligible grades (e.g., free tuition for 6-8th graders enrolled in CYP afterschool).\n\nTo qualify, you must:\n- Be a Cambridge resident\n- Have children entering grades K-8\n\nNote: This is a lottery-based program. Applying does not guarantee a slot. Applications for Fall must be complete by May 1.",
+        "learn_more_link": "https://www.finditcambridge.org/programs/dhsp-afterschool-programs-lottery",
+        "apply_button_link": "https://cambridgema.portal.opengov.com/categories/1131/record-types/7018",
+        "apply_button_description": "",
+        "estimated_application_time": "30 minutes",
+        "estimated_delivery_time": "About 2 weeks",
+        "estimated_value": "",
+        "website_description": "Affordable afterschool care for Cambridge children K-8 with sliding-scale tuition",
+        "low_confidence": false
+    },
+    "warning_message": {
+        "external_name": "ma_dhsp_afterschool_warning",
+        "calculator": "_show",
+        "message": "This is a lottery-based program. Applying does not guarantee a slot. Applications for Fall must be complete by May 1."
+    },
+    "documents": [
+        {
+            "external_name": "ma_child_info",
+            "text": "Child's information (name, date of birth, grade level)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "ma_cambridge_residency"
+        },
+        {
+            "external_name": "ma_proof_income"
+        }
+    ]
+}
