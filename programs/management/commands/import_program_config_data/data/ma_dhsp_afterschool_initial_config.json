@@ -26,7 +26,10 @@
     },
     "documents": [
         {
-            "external_name": "ma_child_info"
+            "external_name": "ma_child_info",
+            "text": "Child's information (name, date of birth, grade level)",
+            "link_url": "",
+            "link_text": ""
         },
         {
             "external_name": "ma_cambridge_residency"
