@@ -435,6 +435,7 @@ class Screen(models.Model):
             "oap": self.has_oap,
             "nccip": self.has_nccip,
             "nc_scca": self.has_ncscca,
+            "nc_head_start": self.has_head_start,
             "coctc": self.has_coctc,
             "upk": self.has_upk,
             "ssdi": self.has_ssdi,
