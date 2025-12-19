@@ -3,7 +3,7 @@ from ..base import UrgentNeedFunction
 
 class FreeTaxHelp(UrgentNeedFunction):
     """
-    CEOC – Free Tax Help (VITA)
+    CEOC - Free Tax Help (VITA)
     Free tax preparation to help residents file returns and claim credits.
     Cambridge resident or income-eligible. Generally ≤ $60,000 annual income
 
@@ -18,7 +18,7 @@ class FreeTaxHelp(UrgentNeedFunction):
         # Condition 1: Cambridge residents
         is_cambridge = self.screen.county == self.eligible_city
 
-        # Condition 1: Cambridge residents
+        # Condition 2: Income-based eligibility
         income = self.screen.calc_gross_income("yearly", ["all"])
         is_income_eligible = income <= self.income_limit
 
