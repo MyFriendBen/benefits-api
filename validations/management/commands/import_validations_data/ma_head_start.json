@@ -1,0 +1,649 @@
+[
+  {
+    "notes": "MA Head Start - Eligible low-income family with 3-year-old child",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 3,
+      "household_assets": 5000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 30,
+          "birth_year": 1995,
+          "birth_month": 6,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 28,
+          "birth_year": 1997,
+          "birth_month": 3,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 3,
+          "birth_year": 2022,
+          "birth_month": 6,
+          "student": false,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_head_start": false
+    },
+    "expected_results": {
+      "program_name": "ma_head_start",
+      "eligible": true,
+      "value": 16972
+    }
+  },
+  {
+    "notes": "MA Head Start - Eligible low-income family with 4-year-old child",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02108",
+      "county": "Boston",
+      "household_size": 2,
+      "household_assets": 3000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "birth_year": 1990,
+          "birth_month": 4,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 4,
+          "birth_year": 2021,
+          "birth_month": 8,
+          "student": false,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_head_start": false
+    },
+    "expected_results": {
+      "program_name": "ma_head_start",
+      "eligible": true,
+      "value": 16972
+    }
+  },
+  {
+    "notes": "MA Head Start - Ineligible due to child age 5 (PolicyEngine considers 3-4 eligible)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "01103",
+      "county": "Springfield",
+      "household_size": 3,
+      "household_assets": 2000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 32,
+          "birth_year": 1993,
+          "birth_month": 5,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2200.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 30,
+          "birth_year": 1995,
+          "birth_month": 9,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 5,
+          "birth_year": 2020,
+          "birth_month": 10,
+          "student": false,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_head_start": false
+    },
+    "expected_results": {
+      "program_name": "ma_head_start",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA Head Start - Ineligible due to child too young (age 2)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 2,
+      "household_assets": 5000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 28,
+          "birth_year": 1997,
+          "birth_month": 7,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 2,
+          "birth_year": 2023,
+          "birth_month": 5,
+          "student": false,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_head_start": false
+    },
+    "expected_results": {
+      "program_name": "ma_head_start",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA Head Start - Ineligible due to child too old (age 6, school-age)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02108",
+      "county": "Boston",
+      "household_size": 3,
+      "household_assets": 8000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "birth_year": 1990,
+          "birth_month": 2,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 33,
+          "birth_year": 1992,
+          "birth_month": 8,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 6,
+          "birth_year": 2019,
+          "birth_month": 4,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_head_start": false
+    },
+    "expected_results": {
+      "program_name": "ma_head_start",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA Head Start - Ineligible due to income over 100% FPL (family of 3, income > $26,650/year)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 3,
+      "household_assets": 50000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 40,
+          "birth_year": 1985,
+          "birth_month": 3,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 5000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 38,
+          "birth_year": 1987,
+          "birth_month": 11,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 4,
+          "birth_year": 2021,
+          "birth_month": 6,
+          "student": false,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_head_start": false
+    },
+    "expected_results": {
+      "program_name": "ma_head_start",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA Head Start - Ineligible household with no children",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 2,
+      "household_assets": 10000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 30,
+          "birth_year": 1995,
+          "birth_month": 1,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 28,
+          "birth_year": 1997,
+          "birth_month": 10,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_head_start": false
+    },
+    "expected_results": {
+      "program_name": "ma_head_start",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA Head Start - Eligible family with multiple children (only age-eligible 4yo counted)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "01040",
+      "county": "Holyoke",
+      "household_size": 5,
+      "household_assets": 3000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 38,
+          "birth_year": 1987,
+          "birth_month": 4,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 36,
+          "birth_year": 1989,
+          "birth_month": 7,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 1,
+          "birth_year": 2024,
+          "birth_month": 2,
+          "student": false,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 4,
+          "birth_year": 2021,
+          "birth_month": 5,
+          "student": false,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 8,
+          "birth_year": 2017,
+          "birth_month": 1,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_head_start": false
+    },
+    "expected_results": {
+      "program_name": "ma_head_start",
+      "eligible": true,
+      "value": 16972
+    }
+  },
+  {
+    "notes": "MA Head Start - Eligible single parent with 3-year-old at poverty threshold",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02301",
+      "county": "Brockton",
+      "household_size": 2,
+      "household_assets": 1000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 25,
+          "birth_year": 2000,
+          "birth_month": 8,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1700.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 3,
+          "birth_year": 2022,
+          "birth_month": 3,
+          "student": false,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        }
+      ],
+      "expenses": [
+        {
+          "type": "rent",
+          "amount": 1200.00,
+          "frequency": "monthly"
+        }
+      ],
+      "has_head_start": false
+    },
+    "expected_results": {
+      "program_name": "ma_head_start",
+      "eligible": true,
+      "value": 16972
+    }
+  },
+  {
+    "notes": "MA Head Start - Eligible family with two age-eligible children (3yo and 4yo)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 4,
+      "household_assets": 5000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "birth_year": 1990,
+          "birth_month": 3,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 33,
+          "birth_year": 1992,
+          "birth_month": 7,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 3,
+          "birth_year": 2022,
+          "birth_month": 4,
+          "student": false,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 4,
+          "birth_year": 2021,
+          "birth_month": 2,
+          "student": false,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_head_start": false
+    },
+    "expected_results": {
+      "program_name": "ma_head_start",
+      "eligible": true,
+      "value": 33944
+    }
+  }
+]
