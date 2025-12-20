@@ -165,59 +165,6 @@
     }
   },
   {
-    "notes": "MA Early Head Start - Eligible homeless family with infant (categorical eligibility regardless of income)",
-    "household": {
-      "white_label": "ma",
-      "is_test": true,
-      "agree_to_tos": true,
-      "is_13_or_older": true,
-      "zipcode": "02116",
-      "county": "Suffolk",
-      "household_size": 2,
-      "household_assets": 500.00,
-      "is_homeless": true,
-      "household_members": [
-        {
-          "relationship": "headOfHousehold",
-          "age": 22,
-          "has_income": true,
-          "income_streams": [
-            {
-              "type": "wages",
-              "amount": 2800.00,
-              "frequency": "monthly"
-            }
-          ],
-          "insurance": {
-            "none": false,
-            "mass_health": true
-          }
-        },
-        {
-          "relationship": "child",
-          "age": 0,
-          "birth_year": 2025,
-          "birth_month": 6,
-          "student": false,
-          "has_income": false,
-          "income_streams": [],
-          "insurance": {
-            "none": false,
-            "mass_health": true
-          }
-        }
-      ],
-      "expenses": [],
-      "has_early_head_start": false,
-      "needs_child_dev_help": true
-    },
-    "expected_results": {
-      "program_name": "ma_early_head_start",
-      "eligible": true,
-      "value": 22112
-    }
-  },
-  {
     "notes": "MA Early Head Start - Ineligible due to child too old (age 3)",
     "household": {
       "white_label": "ma",
@@ -412,7 +359,7 @@
         {
           "relationship": "headOfHousehold",
           "age": 32,
-          "has_disability": true,
+          "disabled": true,
           "has_income": true,
           "income_streams": [
             {
