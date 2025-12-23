@@ -125,17 +125,6 @@ class IsDisabledDependency(Member):
         return self.member.disabled or self.member.long_term_disability
 
 
-class IsSsiDisabledDependency(Member):
-    """
-    Maps screener disability status to SSI's definition of disability.
-    Used for programs that require SSI disability determination.
-    """
-    field = "is_ssi_disabled"
-
-    def value(self):
-        return self.member.disabled or self.member.long_term_disability
-
-
 # The Member class runs once per each household member, to ensure that the medical expenses
 # are only counted once and only if a member is elderly or disabled; the medical expense is divided
 # by the total number of elderly or disabled members.

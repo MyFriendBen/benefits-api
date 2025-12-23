@@ -74,10 +74,10 @@ class IlHbwd(PolicyEngineMembersCalculator):
 
     PolicyEngine calculates eligibility based on:
     - Age (16-64 years via monthly_age)
-    - Disability (is_ssi_disabled OR social_security_disability > 0)
+    - Disability (is_disabled OR social_security_disability > 0)
     - Employment (il_hbwd_gross_earned_income > 0 as FICA proxy)
     - Income (il_hbwd_countable_income vs spm_unit_fpg threshold)
-    - Assets (spm_unit_cash_assets < $25,000; vehicle value currently not included)
+    - Assets (spm_unit_cash_assets < $25,000; vehicle value not sent since we don't have)
     - Immigration (immigration_status = citizen or qualifying noncitizen)
 
     Returns:
@@ -90,12 +90,8 @@ class IlHbwd(PolicyEngineMembersCalculator):
     pe_inputs = [
         # age eligible
         member_dependency.AgeDependency,
-        # disability eligible (is_ssi_disabled + social_security_disability)
-        member_dependency.IsSsiDisabledDependency,
-        member_dependency.IsBlindDependency,
-        member_dependency.SsiReportedDependency,
+        # disability eligible
         member_dependency.IsDisabledDependency,
-        member_dependency.SsiEarnedIncomeDependency,
         member_dependency.SsdiReportedDependency,
         # employment eligible
         member_dependency.IlHbwdGrossEarnedIncomeDependency,
@@ -104,12 +100,13 @@ class IlHbwd(PolicyEngineMembersCalculator):
         # conservative estimate by excluding it (since subtracted from income)
         member_dependency.IlAabdGrossEarnedIncomeDependency,
         member_dependency.IlAabdGrossUnearnedIncomeDependency,
+        member_dependency.IsBlindDependency,
         member_dependency.IlHbwdCountableUnearnedIncomeDependency,
         # asset eligibility
         # not including il_aabd_countable_vehicle_value since we don't have
         spm_dependency.CashAssetsDependency,
         # state requirement
-        dependency.IlStateCodeDependency,
+        household_dependency.IlStateCodeDependency,
     ]
     pe_outputs = [member_dependency.IlHbwdEligible, member_dependency.IlHbwdPremium]
 
@@ -125,7 +122,7 @@ class IlHbwd(PolicyEngineMembersCalculator):
 
         return 0
     
-    
+
 class IlBccp(PolicyEngineMembersCalculator):
     """
     Illinois Breast and Cervical Cancer Program (IBCCP)
