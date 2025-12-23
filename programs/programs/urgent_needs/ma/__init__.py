@@ -36,5 +36,5 @@ ma_urgent_need_functions: dict[str, type[UrgentNeedFunction]] = {
     "ma_baby_university": BabyUniversity,
     "ma_cambridge_senior_center": CambridgeSeniorCenter,
     "ma_career_training_and_workforce": CareerTrainingAndWorkforce,
-    "ma_college_and_fafsa_support": CollegeAndFafsaSupport
+    "ma_college_and_fafsa_support": CollegeAndFafsaSupport,
 }
