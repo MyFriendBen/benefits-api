@@ -44,6 +44,9 @@
     ],
     "navigators": [        
         {
+            "external_name": "get_covered_illinois"
+        },
+        {
             "external_name": "all_kids_hotline",
             "name": "All Kids Hotline",
             "email": "",
