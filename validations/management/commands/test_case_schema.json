@@ -35,10 +35,12 @@
           "description": "ISO 8601 datetime (e.g., '2024-11-20T10:00:00Z')"
         },
         "agree_to_tos": {
-          "type": "boolean"
+          "type": "boolean",
+          "default": true
         },
         "is_13_or_older": {
-          "type": "boolean"
+          "type": "boolean",
+          "default": true
         },
         "zipcode": {
           "type": "string",
@@ -47,7 +49,7 @@
         },
         "county": {
           "type": "string",
-          "description": "County name. IMPORTANT: Must include 'County' suffix for CO, NC, IL (e.g., 'Denver County', 'Wake County', 'Cook County'). For TX, use county name without 'County' (e.g., 'Travis', 'Harris'). See programs/co_county_zips.py for valid Colorado county names."
+          "description": "County name. IMPORTANT: Must include 'County' suffix for CO, NC (e.g., 'Denver County', 'Wake County'). For TX and IL, use county name without 'County' (e.g., 'Travis', 'Harris', 'Cook', 'Madison'). For MA, use city names instead of counties (e.g., 'Boston', 'Cambridge', 'Somerville'). See programs/co_county_zips.py for valid Colorado county names."
         },
         "referral_source": {
           "type": "string"
@@ -118,6 +120,7 @@
         "has_section_8": { "type": "boolean" },
         "has_ma_homebridge": { "type": "boolean" },
         "has_ma_door_to_door": { "type": "boolean" },
+        "has_csfp": { "type": "boolean" },
         "needs_food": { "type": "boolean" },
         "needs_baby_supplies": { "type": "boolean" },
         "needs_housing_help": { "type": "boolean" },

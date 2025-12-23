@@ -339,14 +339,19 @@ For these states, **ALWAYS include " County"** after the county name:
 
 - **Colorado (CO)**: `"Denver County"`, `"Arapahoe County"`, `"Jefferson County"`, `"Adams County"`
 - **North Carolina (NC)**: `"Wake County"`, `"Durham County"`, `"Alamance County"`
-- **Illinois (IL)**: `"Cook County"`, `"DuPage County"`, `"Rock Island County"`
-- **Massachusetts (MA)**: `"Suffolk County"`, `"Middlesex County"`, `"Essex County"`
 
 ### States WITHOUT "County" Suffix
 
 For these states, use **ONLY the county name** (no " County"):
 
 - **Texas (TX)**: `"Travis"`, `"Harris"`, `"Dallas"`, `"Tarrant"`
+- **Illinois (IL)**: `"Cook"`, `"Madison"`, `"St. Clair"`, `"Jackson"`
+
+### States Using City Names
+
+For these states, use **city names** instead of county names (MA benefits are city-based):
+
+- **Massachusetts (MA)**: `"Boston"`, `"Cambridge"`, `"Somerville"`, `"Worcester"`
 
 ### Examples
 
