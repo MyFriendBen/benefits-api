@@ -76,12 +76,13 @@ class IlHbwd(PolicyEngineMembersCalculator):
     - Disability (is_ssi_disabled OR social_security_disability > 0)
     - Employment (il_hbwd_gross_earned_income > 0 as FICA proxy)
     - Income (il_hbwd_countable_income vs spm_unit_fpg threshold)
-    - Assets (spm_unit_cash_assets + il_aabd_countable_vehicle_value < $25,000)
+    - Assets (spm_unit_cash_assets < $25,000; vehicle value currently not included)
     - Immigration (immigration_status = citizen or qualifying noncitizen)
 
     Returns:
-        - il_hbwd_person = -il_hbwd_premium (negative premium = cost to individual)
-        - il_hbwd_eligible
+        - il_hbwd_eligible (boolean eligibility flag)
+        - il_hbwd_premium (negative premium = cost to the individual, surfaced but
+          not used as the program's member_value)
     """
 
     pe_name = "il_hbwd_person"
