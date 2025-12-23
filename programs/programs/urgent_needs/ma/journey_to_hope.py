@@ -1,5 +1,6 @@
 from ..base import UrgentNeedFunction
 
+
 class JourneyToHopeCEOC(UrgentNeedFunction):
     dependencies = []
 
@@ -13,4 +14,3 @@ class JourneyToHopeCEOC(UrgentNeedFunction):
         # This program should appear for those who selected mental health on Additional Resources step
 
         return True
-    
