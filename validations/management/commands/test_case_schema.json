@@ -35,10 +35,12 @@
           "description": "ISO 8601 datetime (e.g., '2024-11-20T10:00:00Z')"
         },
         "agree_to_tos": {
-          "type": "boolean"
+          "type": "boolean",
+          "default": true
         },
         "is_13_or_older": {
-          "type": "boolean"
+          "type": "boolean",
+          "default": true
         },
         "zipcode": {
           "type": "string",
