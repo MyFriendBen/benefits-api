@@ -13,8 +13,7 @@ class FreeTaxHelp(UrgentNeedFunction):
     eligible_city = "Cambridge"
     income_limit = 60000
 
-    def eligible(self):
-
+    def eligible(self) -> bool:
         # Condition 1: Cambridge residents
         is_cambridge = self.screen.county == self.eligible_city
 
