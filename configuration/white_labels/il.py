@@ -296,7 +296,7 @@ class IlConfigurationData(ConfigurationData):
                 "icon": {"_icon": "Family_planning", "_classname": "option-card-icon"},
                 "text": {
                     "_label": "healthInsuranceOptions.family_planning.il",
-                    "_default_message": "Family Planning Presumptive Eligibility",
+                    "_default_message": "Family Planning (including Presumptive Eligibility)",
                 },
             },
             "va": {
@@ -354,7 +354,7 @@ class IlConfigurationData(ConfigurationData):
                 "icon": {"_icon": "Family_planning", "_classname": "option-card-icon"},
                 "text": {
                     "_label": "healthInsuranceOptions.family_planning.il",
-                    "_default_message": "Family Planning Presumptive Eligibility",
+                    "_default_message": "Family Planning (including Presumptive Eligibility)",
                 },
             },
             "va": {
@@ -2454,7 +2454,7 @@ class IlConfigurationData(ConfigurationData):
         },
         "childCareYouthEducation": {
             "benefits": {
-                "il_ccap": {
+                "ccap": {
                     "name": {
                         "_label": "childCareYouthEducationBenefits.il_ccap",
                         "_default_message": "Child Care Assistance Program (CCAP): ",

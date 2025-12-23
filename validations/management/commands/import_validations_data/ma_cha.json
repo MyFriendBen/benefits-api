@@ -1,0 +1,460 @@
+[
+  {
+    "notes": "MA CHA - Eligible Cambridge resident with income at 50% AMI (qualifies for HCV/Section 8)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_assets": 5000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 30,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_cha": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_cha",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "MA CHA - Eligible Cambridge family of 4 with income at 80% AMI (qualifies for Family Housing)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02138",
+      "county": "Cambridge",
+      "household_size": 4,
+      "household_assets": 10000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 5000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 33,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 10,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 7,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_cha": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_cha",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "MA CHA - Eligible senior (58+) in Cambridge with low income (qualifies for Senior Housing)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02140",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_assets": 8000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 62,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "socialSecurity",
+              "amount": 1800.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicare": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_cha": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_cha",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "MA CHA - Eligible single parent in Cambridge with income under 80% AMI",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02141",
+      "county": "Cambridge",
+      "household_size": 2,
+      "household_assets": 3000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 28,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 5,
+          "student": false,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        }
+      ],
+      "expenses": [
+        {
+          "type": "childcare",
+          "amount": 800.00,
+          "frequency": "monthly"
+        }
+      ],
+      "has_ma_cha": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_cha",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "MA CHA - Ineligible due to income above 80% AMI",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_assets": 50000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 8500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_cha": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_cha",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA CHA - Ineligible due to non-Cambridge location (Boston resident)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02108",
+      "county": "Boston",
+      "household_size": 1,
+      "household_assets": 5000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 30,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_cha": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_cha",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA CHA - Ineligible due to non-Cambridge location (Somerville - adjacent city)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02143",
+      "county": "Somerville",
+      "household_size": 2,
+      "household_assets": 5000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 40,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 38,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_cha": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_cha",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA CHA - Ineligible due to head of household under 18",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_assets": 1000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 17,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_cha": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_cha",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA CHA - Eligible Cambridge resident near 80% AMI threshold",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02140",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_assets": 10000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 45,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 6000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_cha": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_cha",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "MA CHA - Eligible disabled individual in Cambridge with very low income",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02142",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_assets": 2000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 45,
+          "has_disability": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "socialSecurity",
+              "amount": 1400.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicare": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_cha": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_cha",
+      "eligible": true,
+      "value": 1
+    }
+  }
+]

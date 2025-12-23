@@ -42,7 +42,7 @@
             "link_text": ""
         }
     ],
-    "navigators": [
+    "navigators": [        
         {
             "external_name": "get_covered_illinois"
         },

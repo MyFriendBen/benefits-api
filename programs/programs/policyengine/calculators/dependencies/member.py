@@ -531,3 +531,42 @@ class HeadStart(Member):
 
 class EarlyHeadStart(Member):
     field = "early_head_start"
+
+
+class IlBccFemaleDependency(Member):
+    field = "is_female"
+
+    def value(self):
+        # We don't collect sex
+        # Hardcode to True so that all households are shown the IBCCP program in results
+        return True
+
+
+class IlBccInsuranceEligibleDependency(Member):
+    """
+    Whether the member is insurance-eligible for IBCCP.
+    Returns True if they DON'T have Medicaid, All Kids/CHP, or other HFS insurance.
+    This matches PolicyEngine's il_bcc_insurance_eligible formula:
+        ~(is_medicaid_eligible | has_bcc_qualifying_coverage)
+    """
+
+    field = "il_bcc_insurance_eligible"
+
+    def value(self):
+        # Return True if they DON'T have HFS insurance (i.e., eligible for IBCCP)
+        has_hfs_insurance = self.member.has_insurance_types(("medicaid", "chp"))
+        return not has_hfs_insurance
+
+
+class IlBccEligible(Member):
+    field = "il_bcc_eligible"
+
+
+class IlFppEligible(Member):
+    """Output dependency for IL Family Planning Program eligibility."""
+
+    field = "il_fpp_eligible"
+
+
+class IlMpeEligible(Member):
+    field = "il_mpe_eligible"

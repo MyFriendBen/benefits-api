@@ -10,6 +10,10 @@ il_member_calculators = {
     "il_aca": member.IlAca,
     "il_aabd": member.IlAabd,
     "il_hbwd": member.IlHbwd,
+    "il_ibccp": member.IlBccp,
+    "il_hfs_fpp": member.IlFamilyPlanningProgram,
+    "il_fppe": member.IlFamilyPlanningProgram,
+    "il_mpe": member.IlMpe,
 }
 
 il_tax_unit_calculators = {

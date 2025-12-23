@@ -1,0 +1,334 @@
+[
+  {
+    "notes": "MA Door2Door - Eligible Cambridge resident age 60+",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 65,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "medicare": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_door_to_door": false
+    },
+    "expected_results": {
+      "program_name": "ma_door_to_door",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "MA Door2Door - Eligible Cambridge resident with mobility impairment (under 60)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02140",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 45,
+          "disabled": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSI",
+              "amount": 1500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_door_to_door": false
+    },
+    "expected_results": {
+      "program_name": "ma_door_to_door",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "MA Door2Door - Eligible Cambridge resident with visual impairment (under 60)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02138",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 50,
+          "visually_impaired": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_door_to_door": false
+    },
+    "expected_results": {
+      "program_name": "ma_door_to_door",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "MA Door2Door - Eligible Cambridge resident exactly at age 60",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02141",
+      "county": "Cambridge",
+      "household_size": 2,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 60,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "socialSecurity",
+              "amount": 2000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicare": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 58,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "medicare": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_door_to_door": false
+    },
+    "expected_results": {
+      "program_name": "ma_door_to_door",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "MA Door2Door - Ineligible due to non-Cambridge location (Boston)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02108",
+      "county": "Boston",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 70,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "socialSecurity",
+              "amount": 1800.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicare": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_door_to_door": false
+    },
+    "expected_results": {
+      "program_name": "ma_door_to_door",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA Door2Door - Ineligible due to non-Cambridge location (Somerville - adjacent city)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02143",
+      "county": "Somerville",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 65,
+          "disabled": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "medicare": true,
+            "medicaid": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_door_to_door": false
+    },
+    "expected_results": {
+      "program_name": "ma_door_to_door",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA Door2Door - Ineligible due to age under 60 and no disability",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 55,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 5000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_door_to_door": false
+    },
+    "expected_results": {
+      "program_name": "ma_door_to_door",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA Door2Door - Ineligible because household already has the benefit",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 68,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "socialSecurity",
+              "amount": 2200.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicare": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_door_to_door": true
+    },
+    "expected_results": {
+      "program_name": "ma_door_to_door",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA Door2Door - Eligible Cambridge resident with long-term disability (under 60)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02142",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "long_term_disability": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSI",
+              "amount": 1200.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_door_to_door": false
+    },
+    "expected_results": {
+      "program_name": "ma_door_to_door",
+      "eligible": true,
+      "value": 1
+    }
+  }
+]

@@ -1,0 +1,43 @@
+{
+    "white_label": {"code": "il"},
+    "program_category": {"external_name": "il_health"},
+    "program": {
+        "name_abbreviated": "il_hfs_fpp",
+        "year": "2025",
+        "legal_status_required": ["citizen", "gc_5plus", "gc_5less", "refugee"],
+        "name": "HFS Family Planning Program",
+        "description": "The HFS Family Planning Program offers services like birth control, advice, and testing. To qualify, you must not receive Medicaid. You may still be eligible if you have private health insurance.",
+        "apply_button_link": "https://abe.illinois.gov/abe/access/",
+        "apply_button_description": "",
+        "estimated_application_time": "45 minutes",
+        "website_description": "Reproductive health and family planning related services",
+        "estimated_value": "Varies",
+        "learn_more_link": "https://hfs.illinois.gov/medicalclients/familyplanning.html"
+    },
+    "documents": [
+        {
+            "external_name": "il_home",
+            "text": "Proof of Illinois residency (ex: lease, utility bill, state ID)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "id_proof",
+            "text": "Proof of identity (ex: driver's license, state ID)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "earned_income",
+            "text": "Proof of individual income (ex: pay stubs, employer letter)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "il_us_status",
+            "text": "Proof of status in U.S. (ex: birth certificate, green card, work permit)",
+            "link_url": "",
+            "link_text": ""
+        }
+    ]
+}
