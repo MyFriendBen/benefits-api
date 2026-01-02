@@ -442,13 +442,13 @@ class IlAabd(Member):
     field = "il_aabd_person"
 
 
-<<<<<<< HEAD
 class RentDependency(Member):
     field = "rent"
 
     def value(self):
         return int(self.screen.calc_expenses("yearly", ["rent"]))
-=======
+    
+    
 class HeadStart(Member):
     field = "head_start"
 
@@ -494,4 +494,3 @@ class IlFppEligible(Member):
 
 class IlMpeEligible(Member):
     field = "il_mpe_eligible"
->>>>>>> main

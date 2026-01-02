@@ -53,7 +53,6 @@ class IlAca(tax.Aca):
     ]
 
 
-# TODO: may need to add metered_gas_expense and electricity_expense if PE continues to incorporate expenses
 class IlAabd(PolicyEngineMembersCalculator):
     pe_name = "il_aabd_person"
     pe_inputs = [
@@ -62,13 +61,17 @@ class IlAabd(PolicyEngineMembersCalculator):
         member_dependency.IsDisabledDependency,
         member_dependency.SsiEarnedIncomeDependency,
         member_dependency.SsiReportedDependency,
+        # il_aabd_countable_income
         member_dependency.IlAabdGrossEarnedIncomeDependency,
         member_dependency.IlAabdGrossUnearnedIncomeDependency,
+        # il_aabd_shelter_allowance
         member_dependency.RentDependency,
         member_dependency.PropertyTaxExpenseDependency,
         spm_dependency.MortgageDependency,
         spm_dependency.HoaFeesExpenseDependency,
         spm_dependency.HomeownersInsuranceExpenseDependency,
+        # il_aabd_countable_assets
+        # excluding il_aabd_countable_vehicle_value since we don't ask
         spm_dependency.CashAssetsDependency,
         spm_dependency.ChildCareDependency,
         household_dependency.IlCountyDependency,
