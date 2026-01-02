@@ -3,6 +3,7 @@ import programs.programs.federal.pe.tax as tax
 import programs.programs.policyengine.calculators.dependencies as pe_dependency
 import programs.programs.policyengine.calculators.dependencies.household as household_dependency
 import programs.programs.policyengine.calculators.dependencies.member as member_dependency
+import programs.programs.policyengine.calculators.dependencies.spm as spm_dependency
 from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
 
 
@@ -53,13 +54,49 @@ class IlAca(tax.Aca):
 
 
 class IlAabd(PolicyEngineMembersCalculator):
+    """
+    Illinois Aid to the Aged, Blind, or Disabled (AABD)
+
+    AABD provides monthly cash assistance to eligible Illinois residents who are
+    aged (65+), blind, or disabled and have limited income and assets.
+
+    Eligibility criteria:
+    - SSI-eligible (aged 65+, blind, or disabled)
+    - Meets income limits (countable income ≤ need standard)
+    - Meets asset limits
+    - Illinois resident
+    - U.S. citizen or qualified immigrant
+
+    Value: Monthly cash benefit = need standard - countable income.
+    Need standard includes personal allowance, shelter allowance, and utility allowance
+    based on household circumstances and IL AABD area (1-8).
+    """
+
     pe_name = "il_aabd_person"
     pe_inputs = [
+        # is_ssi_eligible
         member_dependency.AgeDependency,
-        member_dependency.IsDisabledDependency,
         member_dependency.IsBlindDependency,
+        member_dependency.IsDisabledDependency,
+        member_dependency.SsiEarnedIncomeDependency,
+        member_dependency.SsiReportedDependency,
+        member_dependency.SsiCountableResourcesDependency,
+        # il_aabd_countable_income
         member_dependency.IlAabdGrossEarnedIncomeDependency,
         member_dependency.IlAabdGrossUnearnedIncomeDependency,
+        # il_aabd_shelter_allowance
+        member_dependency.RentDependency,
+        member_dependency.PropertyTaxExpenseDependency,
+        spm_dependency.MortgageDependency,
+        spm_dependency.HoaFeesExpenseDependency,
+        spm_dependency.HomeownersInsuranceExpenseDependency,
+        # il_aabd_countable_assets
+        # excluding il_aabd_countable_vehicle_value since we don't ask
+        spm_dependency.CashAssetsDependency,
+        # NOTE: Not including utility expenses (electricity, gas, water, etc.)
+        # so utility allowance portion of need standard will be $0.
+        # This may slightly underestimate the benefit for households paying utilities.
+        household_dependency.IlCountyDependency,
         household_dependency.IlStateCodeDependency,
     ]
     pe_outputs = [member_dependency.IlAabd]

@@ -716,6 +716,37 @@ class TestHeadStartDependency(TestCase):
         self.assertEqual(dep.field, "head_start")
 
 
+class TestRentDependency(TestCase):
+    """Tests for RentDependency class used by IL AABD calculator."""
+
+    def setUp(self):
+        """Set up test data for rent dependency tests."""
+        self.white_label = WhiteLabel.objects.create(name="Illinois", code="il", state_code="IL")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="60601",
+            county="Cook",
+            household_size=1,
+            completed=False,
+        )
+
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=70)
+
+    def test_value_calculates_annual_rent(self):
+        """Test RentDependency.value() calculates annual rent expense."""
+        Expense.objects.create(screen=self.screen, type="rent", amount=500, frequency="monthly")
+
+        dep = member.RentDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 6000)  # $500/month * 12
+        self.assertEqual(dep.field, "rent")
+
+    def test_value_returns_zero_when_no_rent(self):
+        """Test RentDependency.value() returns 0 when no rent expense exists."""
+        dep = member.RentDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 0)
+
+
 class TestEarlyHeadStartDependency(TestCase):
     """Tests for EarlyHeadStart dependency class."""
 
