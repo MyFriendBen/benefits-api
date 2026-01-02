@@ -166,6 +166,31 @@ class TestUtilityExpenseDependency(TestCase):
         self.assertEqual(dep.field, "water_expense")
 
 
+class TestMortgageDependency(TestCase):
+    """Tests for MortgageDependency class used by IL AABD calculator."""
+
+    def setUp(self):
+        """Set up test data for mortgage dependency tests."""
+        self.white_label = WhiteLabel.objects.create(name="Illinois", code="il", state_code="IL")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="60601", county="Cook", household_size=1, completed=False
+        )
+
+    def test_value_calculates_annual_mortgage(self):
+        """Test MortgageDependency.value() calculates annual mortgage expense."""
+        Expense.objects.create(screen=self.screen, type="mortgage", amount=1200, frequency="monthly")
+
+        dep = spm.MortgageDependency(self.screen, None, {})
+        self.assertEqual(dep.value(), 14400)  # $1200/month * 12
+        self.assertEqual(dep.field, "mortgage_payments")
+
+    def test_value_returns_zero_when_no_mortgage(self):
+        """Test MortgageDependency.value() returns 0 when no mortgage expense exists."""
+        dep = spm.MortgageDependency(self.screen, None, {})
+        self.assertEqual(dep.value(), 0)
+
+
 class TestOtherExpenseDependency(TestCase):
     """Tests for other expense dependency classes: ChildCareDependency, HoaFeesExpenseDependency, and HomeownersInsuranceExpenseDependency."""
 
