@@ -229,6 +229,13 @@ class IlConfigurationData(ConfigurationData):
                 "_default_message": "Military, Government, or Private Pension",
             },
         },
+        "support": {
+            **ConfigurationData.income_options_by_category["support"],
+            "alimony": {
+                "_label": "incomeOptions.alimony.il",
+                "_default_message": "Alimony/spousal maintenance (Received)",
+            },
+        },
     }
 
     # Flattened income options (backward compatible with current FE)
