@@ -447,8 +447,8 @@ class RentDependency(Member):
 
     def value(self):
         return int(self.screen.calc_expenses("yearly", ["rent"]))
-    
-    
+
+
 class HeadStart(Member):
     field = "head_start"
 
