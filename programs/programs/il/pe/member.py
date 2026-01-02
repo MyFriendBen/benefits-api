@@ -54,13 +54,33 @@ class IlAca(tax.Aca):
 
 
 class IlAabd(PolicyEngineMembersCalculator):
+    """
+    Illinois Aid to the Aged, Blind, or Disabled (AABD)
+
+    AABD provides monthly cash assistance to eligible Illinois residents who are
+    aged (65+), blind, or disabled and have limited income and assets.
+
+    Eligibility criteria:
+    - SSI-eligible (aged 65+, blind, or disabled)
+    - Meets income limits (countable income ≤ need standard)
+    - Meets asset limits
+    - Illinois resident
+    - U.S. citizen or qualified immigrant
+
+    Value: Monthly cash benefit = need standard - countable income.
+    Need standard includes personal allowance, shelter allowance, and utility allowance
+    based on household circumstances and IL AABD area (1-8).
+    """
+
     pe_name = "il_aabd_person"
     pe_inputs = [
+        # is_ssi_eligible
         member_dependency.AgeDependency,
         member_dependency.IsBlindDependency,
         member_dependency.IsDisabledDependency,
         member_dependency.SsiEarnedIncomeDependency,
         member_dependency.SsiReportedDependency,
+        member_dependency.SsiCountableResourcesDependency,
         # il_aabd_countable_income
         member_dependency.IlAabdGrossEarnedIncomeDependency,
         member_dependency.IlAabdGrossUnearnedIncomeDependency,
@@ -73,7 +93,9 @@ class IlAabd(PolicyEngineMembersCalculator):
         # il_aabd_countable_assets
         # excluding il_aabd_countable_vehicle_value since we don't ask
         spm_dependency.CashAssetsDependency,
-        spm_dependency.ChildCareDependency,
+        # NOTE: Not including utility expenses (electricity, gas, water, etc.)
+        # so utility allowance portion of need standard will be $0.
+        # This may slightly underestimate the benefit for households paying utilities.
         household_dependency.IlCountyDependency,
         household_dependency.IlStateCodeDependency,
     ]
