@@ -1,0 +1,79 @@
+{
+    "white_label": {"code": "il"},
+    "program_category": {"external_name": "il_health"},
+    "program": {
+        "name_abbreviated": "il_hbwd",
+        "year": "2025",
+        "legal_status_required": ["citizen", "refugee", "gc_5plus", "gc_5less", "otherWithWorkPermission"],
+        "name": "Health Benefits for Workers with Disabilities (HBWD)",
+        "description": "HBWD is a program that helps people with disabilities get Medicaid health insurance while they have a job. Sometimes, when people earn money from working, they can lose their Medicaid coverage. HBWD helps solve this by letting people with disabilities keep their Medicaid while they work. \n\nMembers pay a small monthly fee (a premium) based on how much they earn. For example, if you make $2,000-$3,000/month: you pay $50-$75. If you make $3,000-$4,000/month: you pay $75-$100. The maximum premium if earning $10,000+ a month is $500. Premiums are lower for income from work than from other sources like disability payments. \n\nClick 'Apply Online' to apply online, download an application to fill out by hand, or call to have one sent to you.",
+        "apply_button_link": "https://hfs.illinois.gov/medicalprograms/hbwd/application.html",
+        "apply_button_description": "",
+        "estimated_application_time": "30-45 minutes",
+        "website_description": "Health coverage for working individuals with disabilities",
+        "estimated_value": "Varies",
+        "external_name": "il_hbwd",
+        "low_confidence": false,
+        "show_on_current_benefits": true
+    },
+    "documents": [
+        {
+            "external_name": "id_proof",
+            "text": "Proof of identity - name and date of birth verification (ex: driver's license, state ID, birth certificate)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "disability_proof",
+            "text": "Proof of disability (ex: Social Security disability determination, medical documentation)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "employment_proof",
+            "text": "Proof of employment (ex: pay stubs, letter from employer, self-employment records)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "income_proof",
+            "text": "Proof of income (ex: pay stubs, tax returns, benefit statements showing all earned and unearned income)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "asset_proof",
+            "text": "Proof of assets (ex: bank statements, investment statements, vehicle registration)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "il_home",
+            "text": "Proof of Illinois residency (ex: driver's license, utility bill, or mail with your name and address)",
+            "link_url": "",
+            "link_text": ""
+        }
+    ],
+    "navigators": [
+        {
+            "external_name": "get_covered_illinois",
+            "name": "Get Covered Illinois",
+            "email": "",
+            "description": "Get Covered Illinois offers free help with your HBWD application. Trained helpers can meet with you online, in person, or by phone. They speak over 250 languages.",
+            "assistance_link": "https://getcovered.illinois.gov/get-free-help/find-local-help.html",
+            "phone_number": "1-866-311-1119",
+            "counties": [],
+            "languages": ["ALL"]
+        },
+        {
+            "external_name": "il_assistive_technology_program_wipa",
+            "name": "Illinois Assistive Technology Program (IATP) - Work Incentives Planning",
+            "email": "",
+            "description": "IATP gives free advice to people with disabilities who want to work. Their experts can help you understand how getting a job will affect your Medicaid and other benefits. They can also help you apply for HBWD.",
+            "assistance_link": "https://iltech.org/services/work-incentives-planning-and-assistance/",
+            "phone_number": "1-800-852-5110",
+            "counties": [],
+            "languages": []
+        }
+    ]
+}
