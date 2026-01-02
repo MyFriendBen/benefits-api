@@ -71,7 +71,7 @@ class Screen(models.Model):
     has_il_bap = models.BooleanField(default=False, blank=True, null=True)
     has_medicaid = models.BooleanField(default=False, blank=True, null=True)
     has_rtdlive = models.BooleanField(default=False, blank=True, null=True)
-    has_cccap = models.BooleanField(default=False, blank=True, null=True)
+    has_ccap = models.BooleanField(default=False, blank=True, null=True)
     has_mydenver = models.BooleanField(default=False, blank=True, null=True)
     has_chp = models.BooleanField(default=False, blank=True, null=True)
     has_ccb = models.BooleanField(default=False, blank=True, null=True)
@@ -109,6 +109,11 @@ class Screen(models.Model):
     has_ma_mbta = models.BooleanField(default=False, blank=True, null=True)
     has_ma_maeitc = models.BooleanField(default=False, blank=True, null=True)
     has_ma_macfc = models.BooleanField(default=False, blank=True, null=True)
+    has_ma_homebridge = models.BooleanField(default=False, blank=True, null=True)
+    has_ma_dhsp_afterschool = models.BooleanField(default=False, blank=True, null=True)
+    has_ma_door_to_door = models.BooleanField(default=False, blank=True, null=True)
+    has_head_start = models.BooleanField(default=False, blank=True, null=True)
+    has_early_head_start = models.BooleanField(default=False, blank=True, null=True)
     has_co_andso = models.BooleanField(default=False, blank=True, null=True)
     has_co_care = models.BooleanField(default=False, blank=True, null=True)
     has_cfhc = models.BooleanField(default=False, blank=True, null=True)
@@ -379,6 +384,7 @@ class Screen(models.Model):
             "tx_tanf": self.has_tanf,
             "wic": self.has_wic,
             "co_wic": self.has_wic,
+            "il_wic": self.has_wic,
             "nc_wic": self.has_wic,
             "tx_wic": self.has_wic,
             "snap": self.has_snap,
@@ -400,12 +406,14 @@ class Screen(models.Model):
             "il_ctc": self.has_il_ctc,
             "il_transit_reduced_fare": self.has_il_transit_reduced_fare,
             "il_bap": self.has_il_bap,
+            "il_csfp": self.has_csfp,
+            "il_ccap": self.has_ccap,
             "project_cope": self.has_project_cope,
             "co_energy_calculator_cope": self.has_project_cope,
             "cesn_heap": self.has_cesn_heap,
             "co_energy_calculator_heap": self.has_cesn_heap,
             "rtdlive": self.has_rtdlive,
-            "cccap": self.has_cccap,
+            "cccap": self.has_ccap,
             "mydenver": self.has_mydenver,
             "ccb": self.has_ccb,
             "ssi": has_ssi_or_ssi_income,
@@ -427,6 +435,7 @@ class Screen(models.Model):
             "oap": self.has_oap,
             "nccip": self.has_nccip,
             "nc_scca": self.has_ncscca,
+            "nc_head_start": self.has_head_start,
             "coctc": self.has_coctc,
             "upk": self.has_upk,
             "ssdi": self.has_ssdi,
@@ -435,6 +444,7 @@ class Screen(models.Model):
             "nfp": self.has_nfp,
             "fatc": self.has_fatc,
             "section_8": self.has_section_8,
+            "ma_cha": self.has_section_8,
             "cowap": self.has_cowap,
             "co_energy_calculator_cowap": self.has_cowap,
             "ncwap": self.has_ncwap,
@@ -454,8 +464,14 @@ class Screen(models.Model):
             "ma_eaedc": self.has_ma_eaedc,
             "ma_maeitc": self.has_ma_maeitc,
             "ma_macfc": self.has_ma_macfc,
+            "ma_homebridge": self.has_ma_homebridge,
+            "ma_dhsp_afterschool": self.has_ma_dhsp_afterschool,
+            "ma_door_to_door": self.has_ma_door_to_door,
             "ma_tafdc": self.has_tanf,
             "ma_mass_health": self.has_medicaid or self.has_medicaid_hi,
+            "ma_head_start": self.has_head_start,
+            "ma_csfp": self.has_csfp,
+            "ma_early_head_start": self.has_early_head_start,
             "co_andso": self.has_co_andso,
             "co_care": self.has_co_care,
             "cfhc": self.has_cfhc,
@@ -726,6 +742,7 @@ class HouseholdMember(models.Model):
 class IncomeStream(models.Model):
     screen = models.ForeignKey(Screen, related_name="income_streams", on_delete=models.CASCADE)
     household_member = models.ForeignKey(HouseholdMember, related_name="income_streams", on_delete=models.CASCADE)
+    category = models.CharField(max_length=30, blank=True, null=True)
     type = models.CharField(max_length=30, blank=True, null=True)
     amount = models.DecimalField(decimal_places=2, max_digits=10, blank=True, null=True)
     frequency = models.CharField(max_length=30, blank=True, null=True)

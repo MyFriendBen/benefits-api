@@ -8,6 +8,7 @@ from .medicaid.emergency_medicaid.calculator import EmergencyMedicaid
 from .sun_bucks.calculator import SunBucks
 from .nc_crisis_intervention.calculator import NCCrisisIntervention
 from .medicaid.family_planning_services.calculator import NCFamilyPlanningServices
+from .nc_head_start.calculator import NCHeadStart
 from ..calc import ProgramCalculator
 
 nc_calculators: dict[str, type[ProgramCalculator]] = {
@@ -19,4 +20,5 @@ nc_calculators: dict[str, type[ProgramCalculator]] = {
     "nc_aca_mfb_version": ACASubsidiesNC,  # TODO: remove when it is fixed in PE
     "nc_fps": NCFamilyPlanningServices,
     "nc_medicare_savings": MedicareSavingsNC,
+    "nc_head_start": NCHeadStart,
 }

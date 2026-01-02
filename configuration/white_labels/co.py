@@ -21,7 +21,7 @@ class CoConfigurationData(ConfigurationData):
                 "_label": "co.banner.snap_nov_2025_hold.content",
                 "_default_message": "The federal government has reopened, and November SNAP (food assistance) benefits will be loaded onto EBT cards starting Friday, November 14.\n\n**What you need to know:**\n- Full November benefits are being processed now\n- December benefits will come on time as usual\n- You should still apply for SNAP and turn in any paperwork\n\n**Need food help while you wait?**\n- Call Colorado 211: dial 2-1-1 or 866-760-6489\n- Visit: https://www.211colorado.org",
             },
-            "enabled": True,
+            "enabled": False,
             "priority": 1,
         }
     ]
@@ -229,57 +229,24 @@ class CoConfigurationData(ConfigurationData):
         "ht": "Kreyòl",
     }
 
+    # Override cashAssistance to include Colorado-specific text
+    income_options_by_category = {
+        **ConfigurationData.income_options_by_category,
+        "government": {
+            **ConfigurationData.income_options_by_category["government"],
+            "cashAssistance": {
+                "_label": "incomeOptions.cashAssistance",
+                "_default_message": "Government Cash Assistance (including Colorado Works/TANF)",
+            },
+        },
+    }
+
     income_options = {
-        "wages": {"_label": "incomeOptions.wages", "_default_message": "Wages, salaries, tips"},
-        "selfEmployment": {
-            "_label": "incomeOptions.selfEmployment",
-            "_default_message": "Income from freelance, independent contractor, or self-employment work",
-        },
-        "sSDisability": {
-            "_label": "incomeOptions.sSDisability",
-            "_default_message": "Social Security Disability Benefits",
-        },
-        "sSRetirement": {
-            "_label": "incomeOptions.sSRetirement",
-            "_default_message": "Social Security Retirement Benefits",
-        },
-        "sSI": {"_label": "incomeOptions.sSI", "_default_message": "Supplemental Security Income (SSI)"},
-        "childSupport": {"_label": "incomeOptions.childSupport", "_default_message": "Child Support (Received)"},
-        "pension": {
-            "_label": "incomeOptions.pension",
-            "_default_message": "Military, Government, or Private Pension (including PERA)",
-        },
-        "veteran": {"_label": "incomeOptions.veteran", "_default_message": "Veteran's Pension or Benefits"},
-        "sSSurvivor": {
-            "_label": "incomeOptions.sSSurvivor",
-            "_default_message": "Social Security Survivor's Benefits (Widowed)",
-        },
-        "unemployment": {"_label": "incomeOptions.unemployment", "_default_message": "Unemployment Benefits"},
-        "sSDependent": {
-            "_label": "incomeOptions.sSDependent",
-            "_default_message": "Social Security Dependent Benefits (retirement, disability, or survivors)",
-        },
+        **ConfigurationData.income_options,
         "cashAssistance": {
             "_label": "incomeOptions.cashAssistance",
             "_default_message": "Government Cash Assistance (including Colorado Works/TANF)",
         },
-        "gifts": {"_label": "incomeOptions.gifts", "_default_message": "Gifts/Contributions (Received)"},
-        "investment": {
-            "_label": "incomeOptions.investment",
-            "_default_message": "Investment Income (interest, dividends, and profit from selling stocks)",
-        },
-        "cOSDisability": {
-            "_label": "incomeOptions.cOSDisability",
-            "_default_message": "Colorado State Disability Benefits",
-        },
-        "rental": {"_label": "incomeOptions.rental", "_default_message": "Rental Income"},
-        "alimony": {"_label": "incomeOptions.alimony", "_default_message": "Alimony (Received)"},
-        "deferredComp": {
-            "_label": "incomeOptions.deferredComp",
-            "_default_message": "Withdrawals from Deferred Compensation (IRA, Keogh, etc.)",
-        },
-        "workersComp": {"_label": "incomeOptions.workersComp", "_default_message": "Worker's Compensation"},
-        "boarder": {"_label": "incomeOptions.boarder", "_default_message": "Boarder or Lodger"},
     }
 
     health_insurance_options = {
@@ -413,14 +380,6 @@ class CoConfigurationData(ConfigurationData):
                 },
             },
         },
-    }
-
-    frequency_options = {
-        "weekly": {"_label": "frequencyOptions.weekly", "_default_message": "every week"},
-        "biweekly": {"_label": "frequencyOptions.biweekly", "_default_message": "every 2 weeks"},
-        "semimonthly": {"_label": "frequencyOptions.semimonthly", "_default_message": "twice a month"},
-        "monthly": {"_label": "frequencyOptions.monthly", "_default_message": "every month"},
-        "hourly": {"_label": "frequencyOptions.hourly", "_default_message": "hourly"},
     }
 
     expense_options = {
@@ -2023,7 +1982,7 @@ class CoConfigurationData(ConfigurationData):
         },
         "childCare": {
             "benefits": {
-                "cccap": {
+                "ccap": {
                     "name": {
                         "_label": "childCareBenefits.cccap",
                         "_default_message": "Colorado Child Care Assistance Program (CCCAP): ",

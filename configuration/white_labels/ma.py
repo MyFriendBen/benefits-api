@@ -186,57 +186,44 @@ class MaConfigurationData(ConfigurationData):
         "ht": "Kreyòl",
     }
 
+    # Nested income options organized by category (for future use with categorized UI)
+    income_options_by_category = {
+        **ConfigurationData.income_options_by_category,
+        "government": {
+            **ConfigurationData.income_options_by_category["government"],
+            "cashAssistance": {
+                "_label": "incomeOptions.cashAssistance.ma",
+                "_default_message": "Government Cash Assistance (including TAFDC and EAEDC)",
+            },
+            "stateDisability": {
+                "_label": "incomeOptions.stateDisability.ma",
+                "_default_message": "State Disability Benefits",
+            },
+        },
+        "investment": {
+            **ConfigurationData.income_options_by_category["investment"],
+            "pension": {
+                "_label": "incomeOptions.pension.ma",
+                "_default_message": "Military, Government, or Private Pension",
+            },
+        },
+    }
+
+    # Flattened income options (backward compatible with current FE)
     income_options = {
-        "wages": {"_label": "incomeOptions.wages", "_default_message": "Wages, salaries, tips"},
-        "selfEmployment": {
-            "_label": "incomeOptions.selfEmployment",
-            "_default_message": "Income from freelance, independent contractor, or self-employment work",
-        },
-        "sSDisability": {
-            "_label": "incomeOptions.sSDisability",
-            "_default_message": "Social Security Disability Benefits",
-        },
-        "sSRetirement": {
-            "_label": "incomeOptions.sSRetirement",
-            "_default_message": "Social Security Retirement Benefits",
-        },
-        "sSI": {"_label": "incomeOptions.sSI", "_default_message": "Supplemental Security Income (SSI)"},
-        "childSupport": {"_label": "incomeOptions.childSupport", "_default_message": "Child Support (Received)"},
+        **ConfigurationData.income_options,
         "pension": {
             "_label": "incomeOptions.pension.ma",
             "_default_message": "Military, Government, or Private Pension",
-        },
-        "veteran": {"_label": "incomeOptions.veteran", "_default_message": "Veteran's Pension or Benefits"},
-        "sSSurvivor": {
-            "_label": "incomeOptions.sSSurvivor",
-            "_default_message": "Social Security Survivor's Benefits (Widowed)",
-        },
-        "unemployment": {"_label": "incomeOptions.unemployment", "_default_message": "Unemployment Benefits"},
-        "sSDependent": {
-            "_label": "incomeOptions.sSDependent",
-            "_default_message": "Social Security Dependent Benefits (retirement, disability, or survivors)",
         },
         "cashAssistance": {
             "_label": "incomeOptions.cashAssistance.ma",
             "_default_message": "Government Cash Assistance (including TAFDC and EAEDC)",
         },
-        "gifts": {"_label": "incomeOptions.gifts", "_default_message": "Gifts/Contributions (Received)"},
-        "investment": {
-            "_label": "incomeOptions.investment",
-            "_default_message": "Investment Income (interest, dividends, and profit from selling stocks)",
-        },
         "stateDisability": {
             "_label": "incomeOptions.stateDisability.ma",
             "_default_message": "State Disability Benefits",
         },
-        "rental": {"_label": "incomeOptions.rental", "_default_message": "Rental Income"},
-        "alimony": {"_label": "incomeOptions.alimony", "_default_message": "Alimony (Received)"},
-        "deferredComp": {
-            "_label": "incomeOptions.deferredComp",
-            "_default_message": "Withdrawals from Deferred Compensation (IRA, Keogh, etc.)",
-        },
-        "workersComp": {"_label": "incomeOptions.workersComp", "_default_message": "Worker's Compensation"},
-        "boarder": {"_label": "incomeOptions.boarder", "_default_message": "Boarder or Lodger"},
     }
 
     health_insurance_options = {
@@ -1295,6 +1282,36 @@ class MaConfigurationData(ConfigurationData):
                         "_default_message": "Help with child care costs",
                     },
                 },
+                "head_start": {
+                    "name": {
+                        "_label": "childCareBenefits.ma_head_start",
+                        "_default_message": "Head Start: ",
+                    },
+                    "description": {
+                        "_label": "childCareBenefits.ma_head_start_desc",
+                        "_default_message": "Free child care and family support for families with children ages 3 to 5",
+                    },
+                },
+                "early_head_start": {
+                    "name": {
+                        "_label": "childCareBenefits.ma_early_head_start",
+                        "_default_message": "Early Head Start: ",
+                    },
+                    "description": {
+                        "_label": "childCareBenefits.ma_early_head_start_desc",
+                        "_default_message": "Free child care and family support for families with infants and toddlers under age 3",
+                    },
+                },
+                "ma_dhsp_afterschool": {
+                    "name": {
+                        "_label": "childCareBenefits.ma_dhsp_afterschool",
+                        "_default_message": "DHSP Afterschool Programs Lottery (K-8): ",
+                    },
+                    "description": {
+                        "_label": "childCareBenefits.ma_dhsp_afterschool_desc",
+                        "_default_message": "Affordable afterschool care for Cambridge children K-8",
+                    },
+                },
             },
             "category_name": {
                 "_label": "childCareYouthAndEducation",
@@ -1320,6 +1337,26 @@ class MaConfigurationData(ConfigurationData):
                         "_default_message": "Help with energy costs (seasonal)",
                     },
                 },
+                "ma_homebridge": {
+                    "name": {
+                        "_label": "housingAndUtilities.ma_homebridge",
+                        "_default_message": "Cambridge HomeBridge Program: ",
+                    },
+                    "description": {
+                        "_label": "housingAndUtilities.ma_homebridge_desc",
+                        "_default_message": "First-time homebuyer assistance for Cambridge residents",
+                    },
+                },
+                "section_8": {
+                    "name": {
+                        "_label": "housingAndUtilities.section_8",
+                        "_default_message": "Housing Choice Voucher: ",
+                    },
+                    "description": {
+                        "_label": "housingAndUtilities.section_8_desc",
+                        "_default_message": "Rent Subsidy (formerly Section 8)",
+                    },
+                },
             },
             "category_name": {"_label": "housingAndUtilities", "_default_message": "Housing and Utilities"},
         },
@@ -1334,7 +1371,17 @@ class MaConfigurationData(ConfigurationData):
                         "_label": "transportationBenefits.ma_mbta_desc",
                         "_default_message": "Discounted MBTA fares",
                     },
-                }
+                },
+                "ma_door_to_door": {
+                    "name": {
+                        "_label": "transportationBenefits.ma_door_to_door",
+                        "_default_message": "Door2Door Transportation (SCM): ",
+                    },
+                    "description": {
+                        "_label": "transportationBenefits.ma_door_to_door_desc",
+                        "_default_message": "On-demand transportation for Cambridge seniors and people with mobility impairments",
+                    },
+                },
             },
             "category_name": {"_label": "transportation", "_default_message": "Transportation"},
         },
