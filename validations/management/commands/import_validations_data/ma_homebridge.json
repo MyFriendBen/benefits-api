@@ -1,0 +1,501 @@
+[
+  {
+    "notes": "MA HomeBridge - Eligible Cambridge resident with income at 60% AMI (lower bound)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_assets": 30000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 30,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 5790.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "private": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_homebridge": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_homebridge",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "MA HomeBridge - Eligible Cambridge resident with income at 120% AMI (upper bound)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02140",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_assets": 35000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 9166.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_homebridge": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_homebridge",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "MA HomeBridge - Eligible Cambridge family of 4 with income in middle range (90% AMI)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02138",
+      "county": "Cambridge",
+      "household_size": 4,
+      "household_assets": 25000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 38,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 5000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 36,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 10,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 7,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_homebridge": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_homebridge",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "MA HomeBridge - Ineligible due to income below 60% AMI (too low)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_assets": 5000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 28,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_homebridge": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_homebridge",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA HomeBridge - Ineligible due to income above 120% AMI (too high)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02140",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_assets": 50000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 40,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 16100.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_homebridge": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_homebridge",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA HomeBridge - Ineligible due to non-Cambridge location (Boston resident)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02108",
+      "county": "Boston",
+      "household_size": 1,
+      "household_assets": 30000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 32,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 6000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_homebridge": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_homebridge",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA HomeBridge - Ineligible due to non-Cambridge location (Somerville - adjacent city)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02143",
+      "county": "Somerville",
+      "household_size": 2,
+      "household_assets": 28000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 34,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 5500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 32,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_homebridge": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_homebridge",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA HomeBridge - Ineligible because household already has the benefit",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 2,
+      "household_assets": 20000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 42,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 5000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 40,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_homebridge": true,
+      "needs_housing_help": false
+    },
+    "expected_results": {
+      "program_name": "ma_homebridge",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA HomeBridge - Eligible single parent household in Cambridge with income at 75% AMI",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02141",
+      "county": "Cambridge",
+      "household_size": 2,
+      "household_assets": 15000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 10056.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 8,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "mass_health": true
+          }
+        }
+      ],
+      "expenses": [
+        {
+          "type": "childcare",
+          "amount": 1000.00,
+          "frequency": "monthly"
+        }
+      ],
+      "has_ma_homebridge": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_homebridge",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "MA HomeBridge - Eligible household with mixed income sources (wages + self-employment)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02142",
+      "county": "Cambridge",
+      "household_size": 3,
+      "household_assets": 38000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 45,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 43,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "selfEmployment",
+              "amount": 3500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "private": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 15,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_homebridge": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_homebridge",
+      "eligible": true,
+      "value": 1
+    }
+  }
+]

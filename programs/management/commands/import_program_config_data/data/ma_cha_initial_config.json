@@ -1,0 +1,46 @@
+{
+    "white_label": {"code": "ma"},
+    "program_category": {
+        "external_name": "ma_housing",
+        "name": "Housing",
+        "icon": "housing"
+    },
+    "program": {
+        "name_abbreviated": "ma_cha",
+        "year": "2025",
+        "legal_status_required": ["citizen"],
+        "name": "Cambridge Housing Authority (CHA) Housing and Rental Assistance",
+        "description": "CHA administers rental housing and rental assistance for families in need. Depending on meeting family and income standards, households can receive rental vouchers or public housing locations.\n\nVoucher holders typically pay about 30% of income toward rent, with the subsidy covering the rest up to a cap.\n\nNote: These are waitlists. Submitting an application does not guarantee housing or a voucher. Wait times can be long (often months or years).",
+        "learn_more_link": "https://cambridge-housing.org/applicants/",
+        "apply_button_link": "https://cha.myhousing.com/?abandon=False",
+        "apply_button_description": "",
+        "estimated_application_time": "60 minutes",
+        "estimated_value": "Varies",
+        "website_description": "Affordable housing options and rental assistance for Cambridge residents"
+    },
+    "warning_message": {
+        "external_name": "ma_cha_warning",
+        "calculator": "_show",
+        "message": "These are waitlists; submitting an application does not guarantee housing or a voucher. Wait times can be long."
+    },
+    "documents": [
+        {
+            "external_name": "ma_household_info",
+            "text": "Household member names and dates of birth",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "ma_proof_income",
+            "text": "Proof of income (tax returns, pay stubs, W-2, 1099, etc.)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "ma_id_proof",
+            "text": "Proof of identity (ex: driver's license, official state ID card)",
+            "link_url": "",
+            "link_text": ""
+        }
+    ]
+}

@@ -622,3 +622,162 @@ class TestTaxUnitDependentDependency(TestCase):
         """Test TaxUnitDependentDependency.value() returns False for head of household."""
         dep = member.TaxUnitDependentDependency(self.screen, self.head, {})
         self.assertFalse(dep.value())
+
+
+class TestHeadStartDependency(TestCase):
+    """Tests for HeadStart dependency class."""
+
+    def setUp(self):
+        """Set up test data for Head Start dependency tests."""
+        self.white_label = WhiteLabel.objects.create(name="Massachusetts", code="ma", state_code="MA")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="02101",
+            county="Boston",
+            household_size=2,
+            completed=False,
+        )
+
+        self.parent = HouseholdMember.objects.create(
+            screen=self.screen, relationship="headOfHousehold", age=30, has_income=True
+        )
+
+        self.child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=4, has_income=False)
+
+    def test_head_start_dependency_exists(self):
+        """Test that HeadStart dependency class exists and has correct field."""
+        self.assertTrue(hasattr(member, "HeadStart"))
+        self.assertEqual(member.HeadStart.field, "head_start")
+
+    def test_head_start_is_member_dependency(self):
+        """Test that HeadStart inherits from Member dependency base class."""
+        from programs.programs.policyengine.calculators.dependencies.base import Member
+
+        self.assertTrue(issubclass(member.HeadStart, Member))
+
+    def test_head_start_can_be_instantiated(self):
+        """Test that HeadStart can be instantiated with screen and member."""
+        dep = member.HeadStart(self.screen, self.child, {})
+        self.assertIsNotNone(dep)
+        self.assertEqual(dep.screen, self.screen)
+        self.assertEqual(dep.member, self.child)
+
+    def test_head_start_has_correct_field_name(self):
+        """Test that HeadStart has the correct PolicyEngine field name for benefit value."""
+        dep = member.HeadStart(self.screen, self.child, {})
+        self.assertEqual(dep.field, "head_start")
+
+    def test_head_start_has_correct_unit(self):
+        """Test that HeadStart dependency has the correct unit field for PolicyEngine."""
+        dep = member.HeadStart(self.screen, self.child, {})
+
+        # Should be member-level (people) dependency
+        self.assertEqual(dep.unit, "people")
+
+    def test_head_start_works_with_different_ages(self):
+        """Test that HeadStart can be instantiated with children of different ages."""
+        # Test with age 3 (minimum eligible age for Head Start)
+        child_3 = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=3)
+        dep_3 = member.HeadStart(self.screen, child_3, {})
+        self.assertEqual(dep_3.member.age, 3)
+        self.assertEqual(dep_3.field, "head_start")
+
+        # Test with age 5 (maximum eligible age for Head Start)
+        child_5 = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=5)
+        dep_5 = member.HeadStart(self.screen, child_5, {})
+        self.assertEqual(dep_5.member.age, 5)
+
+        # Test with age outside range (should still create dependency, PE determines eligibility)
+        child_6 = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=6)
+        dep_6 = member.HeadStart(self.screen, child_6, {})
+        self.assertEqual(dep_6.member.age, 6)
+
+    def test_head_start_works_with_different_members(self):
+        """Test that HeadStart value dependency can be created for different household members."""
+        # Test with child (typical case)
+        child_dep = member.HeadStart(self.screen, self.child, {})
+        self.assertEqual(child_dep.member, self.child)
+        self.assertEqual(child_dep.field, "head_start")
+
+        # Test with parent (would not be eligible, but dependency should still work)
+        parent_dep = member.HeadStart(self.screen, self.parent, {})
+        self.assertEqual(parent_dep.member, self.parent)
+        self.assertEqual(parent_dep.field, "head_start")
+
+    def test_head_start_works_with_relationship_map(self):
+        """Test that HeadStart dependency works with relationship_map parameter."""
+        relationship_map = {self.parent.id: self.child.id}
+
+        dep = member.HeadStart(self.screen, self.child, relationship_map)
+
+        self.assertIsNotNone(dep)
+        self.assertEqual(dep.member, self.child)
+        self.assertEqual(dep.field, "head_start")
+
+
+class TestEarlyHeadStartDependency(TestCase):
+    """Tests for EarlyHeadStart dependency class."""
+
+    def setUp(self):
+        """Set up test data for Early Head Start dependency tests."""
+        self.white_label = WhiteLabel.objects.create(name="Massachusetts", code="ma_ehs", state_code="MA")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="02101",
+            county="Boston",
+            household_size=2,
+            completed=False,
+        )
+
+        self.parent = HouseholdMember.objects.create(
+            screen=self.screen, relationship="headOfHousehold", age=30, has_income=True
+        )
+
+        self.child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=1, has_income=False)
+
+    def test_early_head_start_dependency_exists(self):
+        """Test that EarlyHeadStart dependency class exists and has correct field."""
+        self.assertTrue(hasattr(member, "EarlyHeadStart"))
+        self.assertEqual(member.EarlyHeadStart.field, "early_head_start")
+
+    def test_early_head_start_is_member_dependency(self):
+        """Test that EarlyHeadStart inherits from Member dependency base class."""
+        from programs.programs.policyengine.calculators.dependencies.base import Member
+
+        self.assertTrue(issubclass(member.EarlyHeadStart, Member))
+
+    def test_early_head_start_can_be_instantiated(self):
+        """Test that EarlyHeadStart can be instantiated with screen and member."""
+        dep = member.EarlyHeadStart(self.screen, self.child, {})
+
+        self.assertIsNotNone(dep)
+        self.assertEqual(dep.member, self.child)
+
+    def test_early_head_start_has_correct_field_name(self):
+        """Test that EarlyHeadStart has the correct PolicyEngine field name for benefit value."""
+        dep = member.EarlyHeadStart(self.screen, self.child, {})
+        self.assertEqual(dep.field, "early_head_start")
+
+    def test_early_head_start_works_with_different_ages(self):
+        """Test that EarlyHeadStart can be instantiated with children of different ages."""
+        # Test with infant (0 years)
+        infant = HouseholdMember.objects.create(screen=self.screen, age=0, relationship="child")
+        dep_infant = member.EarlyHeadStart(self.screen, infant, {})
+        self.assertEqual(dep_infant.field, "early_head_start")
+
+        # Test with 2 year old
+        child_2 = HouseholdMember.objects.create(screen=self.screen, age=2, relationship="child")
+        dep_2 = member.EarlyHeadStart(self.screen, child_2, {})
+        self.assertEqual(dep_2.field, "early_head_start")
+
+    def test_early_head_start_works_with_relationship_map(self):
+        """Test that EarlyHeadStart dependency works with relationship_map parameter."""
+        relationship_map = {self.parent.id: self.child.id}
+
+        dep = member.EarlyHeadStart(self.screen, self.child, relationship_map)
+
+        self.assertIsNotNone(dep)
+        self.assertEqual(dep.member, self.child)
+        self.assertEqual(dep.field, "early_head_start")
