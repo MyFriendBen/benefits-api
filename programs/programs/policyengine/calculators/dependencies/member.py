@@ -122,7 +122,8 @@ class IsDisabledDependency(Member):
     field = "is_disabled"
 
     def value(self):
-        return self.member.disabled or self.member.long_term_disability
+        # per discussion with PolicyEngine 01/02/2026, should include blindness in is_disabled
+        return self.member.disabled or self.member.long_term_disability or self.member.visually_impaired
 
 
 # The Member class runs once per each household member, to ensure that the medical expenses
