@@ -146,15 +146,28 @@ class MedicalExpenseDependency(Member):
 
 
 class PropertyTaxExpenseDependency(Member):
-    # PE treats as a person-level field because heavily used in state tax calculations, which are filed by individual
+    """
+    Property tax expense for PolicyEngine tax calculations.
+
+    PE treats this as a person-level field for state tax calculations.
+    We split the household's total property tax between head and spouse only
+    (the tax filers), not all adults, since this is used for tax filing purposes.
+    """
+
     field = "real_estate_taxes"
-    dependencies = ["age"]
 
     def value(self):
-        if self.member.age >= 18:
-            return self.screen.calc_expenses("yearly", ["propertyTax"]) / self.screen.num_adults(18)
+        # Only assign to head and spouse (tax filers)
+        if not (self.member.is_head() or self.member.is_spouse()):
+            return 0
 
-        return 0
+        total_property_tax = self.screen.calc_expenses("yearly", ["propertyTax"])
+
+        # If married/joint filing, split between head and spouse
+        if self.screen.is_joint():
+            return int(total_property_tax / 2)
+
+        return int(total_property_tax)
 
 
 class IsBlindDependency(Member):
@@ -480,11 +493,28 @@ class IlAabd(Member):
 
 
 class RentDependency(Member):
-    # PE treats as a person-level field because heavily used in state tax calculations, which are filed by individual
+    """
+    Rent expense for PolicyEngine tax calculations.
+
+    PE treats this as a person-level field for state tax calculations.
+    We split the household's total rent between head and spouse only
+    (the tax filers), not all adults, since this is used for tax filing purposes.
+    """
+
     field = "rent"
 
     def value(self):
-        return int(self.screen.calc_expenses("yearly", ["rent"]))
+        # Only assign to head and spouse (tax filers)
+        if not (self.member.is_head() or self.member.is_spouse()):
+            return 0
+
+        total_rent = self.screen.calc_expenses("yearly", ["rent"])
+
+        # If married/joint filing, split between head and spouse
+        if self.screen.is_joint():
+            return int(total_rent / 2)
+
+        return int(total_rent)
 
 
 class IlHbwdGrossEarnedIncomeDependency(Member):
