@@ -1,0 +1,27 @@
+{
+    "white_label": {"code": "tx"},
+    "program_category": {
+        "external_name": "tx_healthcare"
+    },
+    "program": {
+        "name_abbreviated": "tx_medicaid_for_children",
+        "year": "2025",
+        "legal_status_required": ["citizen", "gc_5plus", "gc_under18_no5", "refugee"],
+        "name": "Medicaid for Children",
+        "description_short": "Free health insurance for children under 19",
+        "description": "Free public health insurance for children. This insurance covers children 18 and under. \n\nMedicaid helps pay for check-ups, doctor visits, and emergency care. It also covers immunizations, medicine, and dental care. \n\nIf you qualify, you will likely choose a STAR managed health care program.\n\nTime to Apply is based on submitting an application in Your Texas Benefits. You may save time when you apply for several benefits with one application.\n\nOn average, it takes up to 45 days to get approved.",
+        "learn_more_link": "https://www.hhs.texas.gov/services/health/medicaid-chip/medicaid-chip-programs-services/programs-children-adults-disabilities/programs-children-families/childrens-medicaid-chip",
+        "apply_button_link": "https://yourtexasbenefits.com/Apply/GettingStartedApp",
+        "apply_button_description": "",
+        "estimated_application_time": "30 - 60 minutes",
+        "estimated_value": ""
+    },
+    "documents": [
+        {"external_name": "tx_home"},
+        {"external_name": "tx_ssn"},
+        {"external_name": "tx_id_proof"},
+        {"external_name": "tx_us_status"},
+        {"external_name": "tx_earned_income"},
+        {"external_name": "tx_unearned_income"}
+    ]
+}
