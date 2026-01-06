@@ -27,7 +27,6 @@ class SNAPApplicationAssistance(UrgentNeedFunction):
         is_snap_eligible = False
 
         for program in self.data:
-            print(program["name_abbreviated"], program["eligible"])
             if program["name_abbreviated"] != "ma_snap":
                 continue
 
