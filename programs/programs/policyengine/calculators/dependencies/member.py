@@ -485,7 +485,7 @@ class RentDependency(Member):
 
     def value(self):
         return int(self.screen.calc_expenses("yearly", ["rent"]))
-    
+
 
 class IlHbwdGrossEarnedIncomeDependency(Member):
     field = "il_hbwd_gross_earned_income"
