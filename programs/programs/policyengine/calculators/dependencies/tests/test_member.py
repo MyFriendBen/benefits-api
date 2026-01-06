@@ -79,17 +79,6 @@ class TestMemberExpenseDependency(TestCase):
         self.assertEqual(dep.value(), 0)
         self.assertEqual(dep.field, "real_estate_taxes")
 
-    def test_value_calculates_annual_per_adult(self):
-        """Test PropertyTaxExpenseDependency.value() calculates annual property tax divided by number of adults."""
-        Expense.objects.create(screen=self.screen, type="propertyTax", amount=300, frequency="monthly")
-
-        # Add second adult to test per-adult division
-        HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=30)
-
-        dep = member.PropertyTaxExpenseDependency(self.screen, self.head, {})
-        # $300/month * 12 / 2 adults
-        self.assertEqual(dep.value(), 1800)
-
     def test_value_calculates_annual_for_elderly_member(self):
         """Test MedicalExpenseDependency.value() calculates annual medical expenses for elderly member."""
         elderly_member = HouseholdMember.objects.create(screen=self.screen, relationship="parent", age=65)
@@ -716,8 +705,75 @@ class TestHeadStartDependency(TestCase):
         self.assertEqual(dep.field, "head_start")
 
 
+class TestPropertyTaxExpenseDependencyTaxFiling(TestCase):
+    """Tests for PropertyTaxExpenseDependency head/spouse splitting logic for tax filing."""
+
+    def setUp(self):
+        """Set up test data for property tax dependency tests."""
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test_pt", state_code="TS")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=1,
+            completed=False,
+        )
+
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=45)
+
+    def test_value_returns_full_amount_for_single_head(self):
+        """Test PropertyTaxExpenseDependency.value() returns full amount for single head of household."""
+        Expense.objects.create(screen=self.screen, type="propertyTax", amount=300, frequency="monthly")
+
+        dep = member.PropertyTaxExpenseDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 3600)  # $300/month * 12
+
+    def test_value_splits_between_head_and_spouse(self):
+        """Test PropertyTaxExpenseDependency.value() splits evenly between head and spouse when married."""
+        spouse = HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=42)
+        Expense.objects.create(screen=self.screen, type="propertyTax", amount=400, frequency="monthly")
+
+        head_dep = member.PropertyTaxExpenseDependency(self.screen, self.head, {})
+        spouse_dep = member.PropertyTaxExpenseDependency(self.screen, spouse, {})
+
+        # $400/month * 12 / 2 = $2400 each
+        self.assertEqual(head_dep.value(), 2400)
+        self.assertEqual(spouse_dep.value(), 2400)
+
+    def test_value_returns_zero_for_non_head_non_spouse(self):
+        """Test PropertyTaxExpenseDependency.value() returns 0 for children and other members."""
+        child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=16)
+        parent = HouseholdMember.objects.create(screen=self.screen, relationship="parent", age=75)
+        Expense.objects.create(screen=self.screen, type="propertyTax", amount=500, frequency="monthly")
+
+        child_dep = member.PropertyTaxExpenseDependency(self.screen, child, {})
+        parent_dep = member.PropertyTaxExpenseDependency(self.screen, parent, {})
+
+        self.assertEqual(child_dep.value(), 0)
+        self.assertEqual(parent_dep.value(), 0)
+
+    def test_value_full_amount_to_head_when_no_spouse(self):
+        """Test PropertyTaxExpenseDependency.value() assigns full amount to head when no spouse."""
+        # Add adult child but no spouse
+        adult_child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=25)
+        Expense.objects.create(screen=self.screen, type="propertyTax", amount=600, frequency="monthly")
+
+        head_dep = member.PropertyTaxExpenseDependency(self.screen, self.head, {})
+        child_dep = member.PropertyTaxExpenseDependency(self.screen, adult_child, {})
+
+        # Full amount to head, nothing to adult child
+        self.assertEqual(head_dep.value(), 7200)  # $600 * 12
+        self.assertEqual(child_dep.value(), 0)
+
+    def test_value_returns_zero_when_no_property_tax(self):
+        """Test PropertyTaxExpenseDependency.value() returns 0 when no property tax expense exists."""
+        dep = member.PropertyTaxExpenseDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 0)
+
+
 class TestRentDependency(TestCase):
-    """Tests for RentDependency class used by IL AABD calculator."""
+    """Tests for RentDependency class used for tax calculations."""
 
     def setUp(self):
         """Set up test data for rent dependency tests."""
@@ -733,8 +789,8 @@ class TestRentDependency(TestCase):
 
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=70)
 
-    def test_value_calculates_annual_rent(self):
-        """Test RentDependency.value() calculates annual rent expense."""
+    def test_value_calculates_annual_rent_for_single_head(self):
+        """Test RentDependency.value() returns full annual rent for single head of household."""
         Expense.objects.create(screen=self.screen, type="rent", amount=500, frequency="monthly")
 
         dep = member.RentDependency(self.screen, self.head, {})
@@ -745,6 +801,43 @@ class TestRentDependency(TestCase):
         """Test RentDependency.value() returns 0 when no rent expense exists."""
         dep = member.RentDependency(self.screen, self.head, {})
         self.assertEqual(dep.value(), 0)
+
+    def test_value_splits_rent_between_head_and_spouse(self):
+        """Test RentDependency.value() splits rent evenly between head and spouse when married."""
+        spouse = HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=68)
+        Expense.objects.create(screen=self.screen, type="rent", amount=1000, frequency="monthly")
+
+        head_dep = member.RentDependency(self.screen, self.head, {})
+        spouse_dep = member.RentDependency(self.screen, spouse, {})
+
+        # $1000/month * 12 / 2 = $6000 each
+        self.assertEqual(head_dep.value(), 6000)
+        self.assertEqual(spouse_dep.value(), 6000)
+
+    def test_value_returns_zero_for_non_head_non_spouse(self):
+        """Test RentDependency.value() returns 0 for children and other household members."""
+        child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=16)
+        parent = HouseholdMember.objects.create(screen=self.screen, relationship="parent", age=75)
+        Expense.objects.create(screen=self.screen, type="rent", amount=1000, frequency="monthly")
+
+        child_dep = member.RentDependency(self.screen, child, {})
+        parent_dep = member.RentDependency(self.screen, parent, {})
+
+        self.assertEqual(child_dep.value(), 0)
+        self.assertEqual(parent_dep.value(), 0)
+
+    def test_value_full_amount_to_head_when_no_spouse(self):
+        """Test RentDependency.value() assigns full rent to head when there's no spouse."""
+        # Add a child but no spouse
+        child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=10)
+        Expense.objects.create(screen=self.screen, type="rent", amount=800, frequency="monthly")
+
+        head_dep = member.RentDependency(self.screen, self.head, {})
+        child_dep = member.RentDependency(self.screen, child, {})
+
+        # Full amount to head, nothing to child
+        self.assertEqual(head_dep.value(), 9600)  # $800 * 12
+        self.assertEqual(child_dep.value(), 0)
 
 
 class TestEarlyHeadStartDependency(TestCase):
