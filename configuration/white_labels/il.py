@@ -229,6 +229,13 @@ class IlConfigurationData(ConfigurationData):
                 "_default_message": "Military, Government, or Private Pension",
             },
         },
+        "support": {
+            **ConfigurationData.income_options_by_category["support"],
+            "alimony": {
+                "_label": "incomeOptions.alimony.il",
+                "_default_message": "Alimony/spousal maintenance (Received)",
+            },
+        },
     }
 
     # Flattened income options (backward compatible with current FE)
@@ -245,6 +252,10 @@ class IlConfigurationData(ConfigurationData):
         "iLStateDisability": {
             "_label": "incomeOptions.stateDisability",
             "_default_message": "State Disability Benefits",
+        },
+        "alimony": {
+            "_label": "incomeOptions.alimony.il",
+            "_default_message": "Alimony/spousal maintenance (Received)",
         },
     }
 
@@ -2434,6 +2445,16 @@ class IlConfigurationData(ConfigurationData):
                     "description": {
                         "_label": "healthCareBenefits.il_aca_desc",
                         "_default_message": "Health insurance marketplace and premium tax credit.",
+                    },
+                },
+                "il_hbwd": {
+                    "name": {
+                        "_label": "healthCareBenefits.il_hbwd",
+                        "_default_message": "Health Benefits for Workers with Disabilities (HBWD): ",
+                    },
+                    "description": {
+                        "_label": "healthCareBenefits.il_hbwd_desc",
+                        "_default_message": "Medicaid buy-in program for working individuals with disabilities",
                     },
                 },
             },

@@ -812,3 +812,50 @@ class TestEarlyHeadStartDependency(TestCase):
         self.assertIsNotNone(dep)
         self.assertEqual(dep.member, self.child)
         self.assertEqual(dep.field, "early_head_start")
+
+
+class TestCareWorkerEligibleDependency(TestCase):
+    """Tests for CareWorkerEligibleDependency class used by Colorado Care Worker Tax Credit calculator."""
+
+    def setUp(self):
+        """Set up test data for care worker eligibility tests."""
+        self.white_label = WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="80202",
+            county="Denver",
+            household_size=2,
+            completed=False,
+        )
+        self.head = HouseholdMember.objects.create(
+            screen=self.screen, relationship="headOfHousehold", age=35, is_care_worker=True
+        )
+        self.spouse = HouseholdMember.objects.create(
+            screen=self.screen, relationship="spouse", age=33, is_care_worker=False
+        )
+
+    def test_value_returns_true_when_is_care_worker(self):
+        """Test CareWorkerEligibleDependency.value() returns True when member is a care worker."""
+        dep = member.CareWorkerEligibleDependency(self.screen, self.head, {})
+        self.assertTrue(dep.value())
+        self.assertEqual(dep.field, "co_care_worker_credit_eligible_care_worker")
+
+    def test_value_returns_false_when_not_care_worker(self):
+        """Test CareWorkerEligibleDependency.value() returns False when member is not a care worker."""
+        dep = member.CareWorkerEligibleDependency(self.screen, self.spouse, {})
+        self.assertFalse(dep.value())
+
+    def test_value_returns_false_when_is_care_worker_is_none(self):
+        """Test CareWorkerEligibleDependency.value() returns False when is_care_worker field is None."""
+        member_none = HouseholdMember.objects.create(
+            screen=self.screen, relationship="child", age=10, is_care_worker=None
+        )
+
+        dep = member.CareWorkerEligibleDependency(self.screen, member_none, {})
+        self.assertFalse(dep.value())
+
+    def test_dependencies_includes_is_care_worker(self):
+        """Test CareWorkerEligibleDependency.dependencies includes is_care_worker field."""
+        dep = member.CareWorkerEligibleDependency(self.screen, self.head, {})
+        self.assertIn("is_care_worker", dep.dependencies)

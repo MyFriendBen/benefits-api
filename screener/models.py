@@ -69,6 +69,7 @@ class Screen(models.Model):
     has_il_ctc = models.BooleanField(default=False, blank=True, null=True)
     has_il_transit_reduced_fare = models.BooleanField(default=False, blank=True, null=True)
     has_il_bap = models.BooleanField(default=False, blank=True, null=True)
+    has_il_hbwd = models.BooleanField(default=False, blank=True, null=True)
     has_medicaid = models.BooleanField(default=False, blank=True, null=True)
     has_rtdlive = models.BooleanField(default=False, blank=True, null=True)
     has_ccap = models.BooleanField(default=False, blank=True, null=True)
@@ -407,6 +408,7 @@ class Screen(models.Model):
             "il_transit_reduced_fare": self.has_il_transit_reduced_fare,
             "il_bap": self.has_il_bap,
             "il_csfp": self.has_csfp,
+            "il_hbwd": self.has_il_hbwd,
             "il_ccap": self.has_ccap,
             "project_cope": self.has_project_cope,
             "co_energy_calculator_cope": self.has_project_cope,
@@ -572,6 +574,7 @@ class HouseholdMember(models.Model):
     disability_medicaid = models.BooleanField(blank=True, null=True)
     has_income = models.BooleanField(blank=True, null=True)
     has_expenses = models.BooleanField(blank=True, null=True)
+    is_care_worker = models.BooleanField(blank=True, null=True)
 
     def calc_gross_income(self, frequency, types, exclude=[]):
         gross_income = 0

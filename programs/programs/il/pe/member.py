@@ -102,6 +102,63 @@ class IlAabd(PolicyEngineMembersCalculator):
     pe_outputs = [member_dependency.IlAabd]
 
 
+class IlHbwd(PolicyEngineMembersCalculator):
+    """
+    Illinois Health Benefits for Workers with Disabilities (HBWD).
+
+    HBWD is a Medicaid buy-in program for working individuals with disabilities.
+
+    PolicyEngine calculates eligibility based on:
+    - Age (16-64 years via monthly_age)
+    - Disability (is_disabled OR social_security_disability > 0)
+    - Employment (il_hbwd_gross_earned_income > 0 as FICA proxy)
+    - Income (il_hbwd_countable_income vs spm_unit_fpg threshold)
+    - Assets (spm_unit_cash_assets < $25,000; vehicle value not sent since we don't have)
+    - Immigration (immigration_status = citizen or qualifying noncitizen)
+
+    Returns:
+        - il_hbwd_eligible (boolean eligibility flag)
+        - il_hbwd_premium (negative premium = cost to the individual, surfaced but
+          not used as the program's member_value)
+    """
+
+    pe_name = "il_hbwd_person"
+    pe_inputs = [
+        # age eligible
+        member_dependency.AgeDependency,
+        # disability eligible
+        member_dependency.IsDisabledDependency,
+        member_dependency.SsdiReportedDependency,
+        # employment eligible
+        member_dependency.IlHbwdGrossEarnedIncomeDependency,
+        # income eligible
+        # not providing il_aabd_expense_exemption_person - includes details we don't have
+        # conservative estimate by excluding it (since subtracted from income)
+        member_dependency.IlAabdGrossEarnedIncomeDependency,
+        member_dependency.IlAabdGrossUnearnedIncomeDependency,
+        member_dependency.IsBlindDependency,
+        member_dependency.IlHbwdCountableUnearnedIncomeDependency,
+        # asset eligibility
+        # not including il_aabd_countable_vehicle_value since we don't have
+        spm_dependency.CashAssetsDependency,
+        # state requirement
+        household_dependency.IlStateCodeDependency,
+    ]
+    pe_outputs = [member_dependency.IlHbwdEligible, member_dependency.IlHbwdPremium]
+
+    def member_value(self, member) -> int:
+        """
+        Do not use IlHbwdPremium - it returns a negative premium which represents
+        the cost to the individual, not the benefit value.
+        """
+        is_eligible = self.get_member_dependency_value(member_dependency.IlHbwdEligible, member.id)
+        if is_eligible:
+            # >0 member_value indicates eligible
+            return 1
+
+        return 0
+
+
 class IlBccp(PolicyEngineMembersCalculator):
     """
     Illinois Breast and Cervical Cancer Program (IBCCP)
