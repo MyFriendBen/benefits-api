@@ -122,7 +122,8 @@ class IsDisabledDependency(Member):
     field = "is_disabled"
 
     def value(self):
-        return self.member.disabled or self.member.long_term_disability
+        # per discussion with PolicyEngine 01/02/2026, should include blindness in is_disabled
+        return self.member.disabled or self.member.long_term_disability or self.member.visually_impaired
 
 
 # The Member class runs once per each household member, to ensure that the medical expenses
@@ -164,10 +165,27 @@ class IsBlindDependency(Member):
 
 class SsiReportedDependency(Member):
     field = "ssi_reported"
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
 
     def value(self):
-        # Policy Engine uses this value for is_ssi_disabled, but it does not apply to MFB
-        return 0
+        return self.member.calc_gross_income("yearly", ["sSI"])
+
+
+class SsdiReportedDependency(Member):
+    # Amount in "Social Security disability benefits (SSDI)"
+    field = "social_security_disability"
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
+
+    def value(self):
+        return self.member.calc_gross_income("yearly", ["sSDisability"])
 
 
 class SsiCountableResourcesDependency(Member):
@@ -424,6 +442,7 @@ class SsiUnearnedIncomeDependency(IncomeDependency):
 
 
 class IlAabdGrossEarnedIncomeDependency(Member):
+    # policyengine_us/parameters/gov/states/il/dhs/aabd/income/sources/earned.yaml
     field = "il_aabd_gross_earned_income"
     dependencies = (
         "income_type",
@@ -432,10 +451,12 @@ class IlAabdGrossEarnedIncomeDependency(Member):
     )
 
     def value(self):
-        return int(self.member.calc_gross_income("yearly", ["earned"]))
+        # IL AABD treats rental/boarder income as earned income when actively managing property
+        return int(self.member.calc_gross_income("monthly", ["earned", "rental", "boarder"]))
 
 
 class IlAabdGrossUnearnedIncomeDependency(Member):
+    # policyengine_us/parameters/gov/states/il/dhs/aabd/income/sources/unearned.yaml
     field = "il_aabd_gross_unearned_income"
     dependencies = (
         "income_type",
@@ -444,11 +465,62 @@ class IlAabdGrossUnearnedIncomeDependency(Member):
     )
 
     def value(self):
-        return int(self.member.calc_gross_income("yearly", ["unearned"], exclude=["cashAssistance"]))
+        return int(
+            self.member.calc_gross_income(
+                "monthly",
+                ["unearned"],
+                exclude=["cashAssistance", "sSI", "childSupport", "gifts", "pension", "veteran", "rental", "boarder"],
+            )
+        )
 
 
 class IlAabd(Member):
     field = "il_aabd_person"
+
+
+class IlHbwdGrossEarnedIncomeDependency(Member):
+    field = "il_hbwd_gross_earned_income"
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
+
+    def value(self):
+        return int(self.member.calc_gross_income("monthly", ["earned"]))
+
+
+class IlHbwdCountableUnearnedIncomeDependency(Member):
+    field = "il_hbwd_countable_unearned_income"
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
+
+    def value(self):
+        return int(
+            self.member.calc_gross_income(
+                "monthly", ["unearned"], exclude=["cashAssistance", "sSI", "childSupport", "gifts"]
+            )
+        )
+
+
+class IlHbwdEligible(Member):
+    """Illinois HBWD eligibility determination (boolean)."""
+
+    field = "il_hbwd_eligible"
+
+
+class IlHbwdPremium(Member):
+    """
+    Illinois HBWD monthly premium amount (negative value).
+
+    This represents the PREMIUM that the user will pay for HBWD insurance,
+    not the value of the benefit itself. Will be a negative number.
+    """
+
+    field = "il_hbwd_person"
 
 
 class HeadStart(Member):
