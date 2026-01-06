@@ -146,6 +146,7 @@ class MedicalExpenseDependency(Member):
 
 
 class PropertyTaxExpenseDependency(Member):
+    # PE treats as a person-level field because heavily used in state tax calculations, which are filed by individual
     field = "real_estate_taxes"
     dependencies = ["age"]
 
@@ -479,12 +480,13 @@ class IlAabd(Member):
 
 
 class RentDependency(Member):
+    # PE treats as a person-level field because heavily used in state tax calculations, which are filed by individual
     field = "rent"
 
     def value(self):
         return int(self.screen.calc_expenses("yearly", ["rent"]))
     
-    
+
 class IlHbwdGrossEarnedIncomeDependency(Member):
     field = "il_hbwd_gross_earned_income"
     dependencies = (
