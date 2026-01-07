@@ -1002,9 +1002,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         self.assertIn("tx_medicaid_for_parents_and_caretakers", tx_pe_calculators)
 
         # Verify it points to the correct class
-        self.assertEqual(
-            tx_pe_calculators["tx_medicaid_for_parents_and_caretakers"], TxMedicaidForParentsAndCaretakers
-        )
+        self.assertEqual(tx_pe_calculators["tx_medicaid_for_parents_and_caretakers"], TxMedicaidForParentsAndCaretakers)
 
     def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self):
         """
