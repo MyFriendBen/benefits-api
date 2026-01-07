@@ -11,6 +11,7 @@ tx_member_calculators = {
     "tx_chip": member.TxChip,
     "tx_medicaid_for_children": member.TxMedicaidForChildren,
     "tx_medicaid_for_pregnant_women": member.TxMedicaidForPregnantWomen,
+    "tx_medicaid_for_parents_and_caretakers": member.TxMedicaidForParentsAndCaretakers,
 }
 
 tx_tax_unit_calculators = {

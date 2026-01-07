@@ -963,7 +963,7 @@ class ProgramEligibilitySnapshot(models.Model):
     )
     new = models.BooleanField(default=False)
     name = models.CharField(max_length=320)
-    name_abbreviated = models.CharField(max_length=32)
+    name_abbreviated = models.CharField(max_length=120)
     value_type = models.CharField(max_length=120)
     estimated_value = models.DecimalField(decimal_places=2, max_digits=10)
     estimated_delivery_time = models.CharField(max_length=120, blank=True, null=True)
