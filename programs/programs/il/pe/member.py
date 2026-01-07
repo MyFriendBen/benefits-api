@@ -74,6 +74,9 @@ class IlAabd(PolicyEngineMembersCalculator):
 
     pe_name = "il_aabd_person"
     pe_inputs = [
+        # NOTE: Not including utility expenses (electricity, gas, water, etc.)
+        # so utility allowance portion of need standard will be $0.
+        # This may slightly underestimate the benefit for households paying utilities.
         # is_ssi_eligible
         member_dependency.AgeDependency,
         member_dependency.IsBlindDependency,
@@ -81,9 +84,23 @@ class IlAabd(PolicyEngineMembersCalculator):
         member_dependency.SsiEarnedIncomeDependency,
         member_dependency.SsiReportedDependency,
         member_dependency.SsiCountableResourcesDependency,
-        # il_aabd_countable_income
-        member_dependency.IlAabdGrossEarnedIncomeDependency,
-        member_dependency.IlAabdGrossUnearnedIncomeDependency,
+        # il_aabd_countable_income - unearned income types
+        member_dependency.SocialSecurityIncomeDependency,
+        member_dependency.SsdiReportedDependency,
+        member_dependency.WorkersCompensationDependency,
+        member_dependency.UnemploymentIncomeDependency,
+        member_dependency.RetirementDistributionsDependency,
+        member_dependency.AlimonyIncomeDependency,
+        member_dependency.InvestmentIncomeDependency,  # covers dividend_income, interest_income, and capital_gains (combined)
+        #   farm_income - not collected
+        #   farm_rent_income - not collected
+        #   debt_relief (cancellation_of_debt) - not collected
+        #   illicit_income - not collected
+        member_dependency.MiscellaneousIncomeDependency,
+        # il_aabd_countable_income - earned income types
+        member_dependency.EmploymentIncomeDependency,
+        member_dependency.SelfEmploymentIncomeDependency,
+        member_dependency.RentalIncomeDependency,
         # il_aabd_shelter_allowance
         member_dependency.RentDependency,
         member_dependency.PropertyTaxExpenseDependency,
@@ -91,11 +108,8 @@ class IlAabd(PolicyEngineMembersCalculator):
         spm_dependency.HoaFeesExpenseDependency,
         spm_dependency.HomeownersInsuranceExpenseDependency,
         # il_aabd_countable_assets
-        # excluding il_aabd_countable_vehicle_value since we don't ask
         spm_dependency.CashAssetsDependency,
-        # NOTE: Not including utility expenses (electricity, gas, water, etc.)
-        # so utility allowance portion of need standard will be $0.
-        # This may slightly underestimate the benefit for households paying utilities.
+        #   il_aabd_countable_vehicle_value - not collected
         household_dependency.IlCountyDependency,
         household_dependency.IlStateCodeDependency,
     ]
@@ -129,17 +143,24 @@ class IlHbwd(PolicyEngineMembersCalculator):
         # disability eligible
         member_dependency.IsDisabledDependency,
         member_dependency.SsdiReportedDependency,
-        # employment eligible
-        member_dependency.IlHbwdGrossEarnedIncomeDependency,
-        # income eligible
-        # not providing il_aabd_expense_exemption_person - includes details we don't have
-        # conservative estimate by excluding it (since subtracted from income)
-        member_dependency.IlAabdGrossEarnedIncomeDependency,
-        member_dependency.IlAabdGrossUnearnedIncomeDependency,
+        # income eligible - unearned income types
+        member_dependency.SocialSecurityIncomeDependency,
+        member_dependency.WorkersCompensationDependency,
+        member_dependency.UnemploymentIncomeDependency,
+        member_dependency.RetirementDistributionsDependency,
+        member_dependency.AlimonyIncomeDependency,
+        member_dependency.InvestmentIncomeDependency,  # covers dividend_income, interest_income, and capital_gains (combined)
+        #   farm_income - not collected
+        #   farm_rent_income - not collected
+        #   debt_relief (cancellation_of_debt) - not collected
+        #   illicit_income - not collected
+        member_dependency.MiscellaneousIncomeDependency,
+        # employment/income eligible - earned income types
+        member_dependency.EmploymentIncomeDependency,
+        member_dependency.SelfEmploymentIncomeDependency,
         member_dependency.IsBlindDependency,
-        member_dependency.IlHbwdCountableUnearnedIncomeDependency,
         # asset eligibility
-        # not including il_aabd_countable_vehicle_value since we don't have
+        #   il_aabd_countable_vehicle_value - not collected
         spm_dependency.CashAssetsDependency,
         # state requirement
         household_dependency.IlStateCodeDependency,

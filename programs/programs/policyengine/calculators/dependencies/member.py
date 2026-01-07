@@ -445,6 +445,21 @@ class UnemploymentIncomeDependency(IncomeDependency):
     income_types = ["unemployment"]
 
 
+class WorkersCompensationDependency(IncomeDependency):
+    field = "workers_compensation"
+    income_types = ["workersComp"]
+
+
+class AlimonyIncomeDependency(IncomeDependency):
+    field = "alimony_income"
+    income_types = ["alimony"]
+
+
+class RetirementDistributionsDependency(IncomeDependency):
+    field = "taxable_ira_distributions"
+    income_types = ["deferredComp"]
+
+
 class SsiEarnedIncomeDependency(IncomeDependency):
     field = "ssi_earned_income"
     income_types = ["earned"]
@@ -453,39 +468,6 @@ class SsiEarnedIncomeDependency(IncomeDependency):
 class SsiUnearnedIncomeDependency(IncomeDependency):
     field = "ssi_unearned_income"
     income_types = ["unearned"]
-
-
-class IlAabdGrossEarnedIncomeDependency(Member):
-    # policyengine_us/parameters/gov/states/il/dhs/aabd/income/sources/earned.yaml
-    field = "il_aabd_gross_earned_income"
-    dependencies = (
-        "income_type",
-        "income_amount",
-        "income_frequency",
-    )
-
-    def value(self):
-        # IL AABD treats rental/boarder income as earned income when actively managing property
-        return int(self.member.calc_gross_income("monthly", ["earned", "rental", "boarder"]))
-
-
-class IlAabdGrossUnearnedIncomeDependency(Member):
-    # policyengine_us/parameters/gov/states/il/dhs/aabd/income/sources/unearned.yaml
-    field = "il_aabd_gross_unearned_income"
-    dependencies = (
-        "income_type",
-        "income_amount",
-        "income_frequency",
-    )
-
-    def value(self):
-        return int(
-            self.member.calc_gross_income(
-                "monthly",
-                ["unearned"],
-                exclude=["cashAssistance", "sSI", "childSupport", "gifts", "pension", "veteran", "rental", "boarder"],
-            )
-        )
 
 
 class IlAabd(Member):
@@ -515,34 +497,6 @@ class RentDependency(Member):
             return int(total_rent / 2)
 
         return int(total_rent)
-
-
-class IlHbwdGrossEarnedIncomeDependency(Member):
-    field = "il_hbwd_gross_earned_income"
-    dependencies = (
-        "income_type",
-        "income_amount",
-        "income_frequency",
-    )
-
-    def value(self):
-        return int(self.member.calc_gross_income("monthly", ["earned"]))
-
-
-class IlHbwdCountableUnearnedIncomeDependency(Member):
-    field = "il_hbwd_countable_unearned_income"
-    dependencies = (
-        "income_type",
-        "income_amount",
-        "income_frequency",
-    )
-
-    def value(self):
-        return int(
-            self.member.calc_gross_income(
-                "monthly", ["unearned"], exclude=["cashAssistance", "sSI", "childSupport", "gifts"]
-            )
-        )
 
 
 class IlHbwdEligible(Member):
