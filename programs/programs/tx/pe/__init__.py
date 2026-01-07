@@ -9,6 +9,7 @@ tx_member_calculators = {
     "tx_ssi": member.TxSsi,
     "tx_csfp": member.TxCsfp,
     "tx_chip": member.TxChip,
+    "tx_medicaid_for_children": member.TxMedicaidForChildren,
 }
 
 tx_tax_unit_calculators = {
