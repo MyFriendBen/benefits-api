@@ -87,6 +87,7 @@ class TxMedicaidForChildren(Medicaid):
         # Return PolicyEngine-calculated value
         return self.get_member_variable(member.id)
 
+
 class TxMedicaidForPregnantWomen(Medicaid):
     """
     Texas Medicaid for Pregnant Women calculator that uses PolicyEngine's calculated benefit amounts.
