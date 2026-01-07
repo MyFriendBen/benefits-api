@@ -114,16 +114,7 @@ class IlAabd(PolicyEngineMembersCalculator):
         household_dependency.IlCountyDependency,
         household_dependency.IlStateCodeDependency,
     ]
-    pe_outputs = [
-        member_dependency.IlAabd,
-        # DEBUG: Temporary outputs to diagnose eligibility
-        member_dependency.IlAabdEligiblePerson,
-        member_dependency.IlAabdFinancialEligiblePerson,
-        member_dependency.IlAabdNonFinancialEligiblePerson,
-        member_dependency.IsSsiEligible,
-        member_dependency.IlAabdCountableIncome,
-        member_dependency.IlAabdNeedStandardPerson,
-    ]
+    pe_outputs = [member_dependency.IlAabd]
 
 
 class IlHbwd(PolicyEngineMembersCalculator):
