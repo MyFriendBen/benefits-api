@@ -1,0 +1,16 @@
+from ..base import UrgentNeedFunction
+
+
+class FeedingTexas(UrgentNeedFunction):
+    """
+    Feeding Texas
+
+    Helps families locate their nearest local food bank by ZIP code,
+    connecting them to free, nutritious food and meal programs.
+    """
+
+    dependencies = []
+
+    def eligible(self):
+        # All TX counties; eligibility varies
+        return True
