@@ -3,7 +3,7 @@ from ..base import UrgentNeedFunction
 
 class EarlyIntervention(UrgentNeedFunction):
     dependencies = ["age", "county"]
-    max_age = 5
+    max_age = 4
 
     def eligible(self):
         # age under 5
