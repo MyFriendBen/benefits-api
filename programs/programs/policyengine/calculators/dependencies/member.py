@@ -106,6 +106,15 @@ class Medicaid(Member):
 
 
 class Ssi(Member):
+    """
+    SSI as both PE input and output.
+
+    - If user reports SSI: use reported value
+    - If no reported SSI: return None so PE calculates eligibility
+
+    Warning: When PE calculates SSI, the value sometimes counts as unearned
+    income for downstream calculations (e.g., IL AABD).
+    """
     field = "ssi"
     dependencies = (
         "income_type",
@@ -472,6 +481,31 @@ class SsiUnearnedIncomeDependency(IncomeDependency):
 
 class IlAabd(Member):
     field = "il_aabd_person"
+
+
+# DEBUG: Temporary classes to diagnose IL AABD eligibility
+class IlAabdEligiblePerson(Member):
+    field = "il_aabd_eligible_person"
+
+
+class IlAabdFinancialEligiblePerson(Member):
+    field = "il_aabd_financial_eligible_person"
+
+
+class IlAabdNonFinancialEligiblePerson(Member):
+    field = "il_aabd_non_financial_eligible_person"
+
+
+class IsSsiEligible(Member):
+    field = "is_ssi_eligible"
+
+
+class IlAabdCountableIncome(Member):
+    field = "il_aabd_countable_income"
+
+
+class IlAabdNeedStandardPerson(Member):
+    field = "il_aabd_need_standard_person"
 
 
 class RentDependency(Member):
