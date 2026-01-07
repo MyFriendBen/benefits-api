@@ -1235,8 +1235,8 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         calculator.screen = mock_screen
 
         # Mock PolicyEngine values - child qualifies (> 0), adult also qualifies
-        calculator.get_member_variable = Mock(return_value=300)
         calculator.get_member_dependency_value = Mock(return_value=250)  # Child qualifies for Medicaid
+        calculator.get_member_variable = Mock(return_value=300)  # Adult's value
 
         # Create a mock eligible adult caretaker
         member_obj = Mock()
@@ -1474,3 +1474,4 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
 
         # Should return True
         self.assertTrue(result)
+        calculator.get_member_dependency_value.assert_called_once()
