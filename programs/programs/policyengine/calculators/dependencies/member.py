@@ -115,6 +115,7 @@ class Ssi(Member):
     Warning: When PE calculates SSI, the value sometimes counts as unearned
     income for downstream calculations (e.g., IL AABD).
     """
+
     field = "ssi"
     dependencies = (
         "income_type",
