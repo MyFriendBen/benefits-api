@@ -31,6 +31,7 @@ import os
 from collections import defaultdict
 from datetime import datetime
 from django.core.management.base import BaseCommand, CommandError
+from django.utils import timezone
 from screener.models import (
     Screen,
     HouseholdMember,
@@ -74,8 +75,8 @@ class Command(BaseCommand):
         parser.add_argument(
             "--start-date",
             type=str,
-            required=True,
-            help="Start date for export range (YYYY-MM-DD)",
+            required=False,
+            help="Start date for export range (YYYY-MM-DD). If not provided, exports from the beginning.",
         )
         parser.add_argument(
             "--end-date",
@@ -99,21 +100,24 @@ class Command(BaseCommand):
         parser.add_argument(
             "--white-label",
             type=str,
+            nargs="+",
             required=False,
-            help="Filter by white label code (e.g., 'co', 'nc')",
+            help="Filter by white label code(s) (e.g., --white-label co nc)",
         )
 
     def handle(self, *args, **options):
         # Parse dates
-        try:
-            start_date = datetime.strptime(options["start_date"], "%Y-%m-%d")
-        except ValueError:
-            raise CommandError("Invalid start date format. Use YYYY-MM-DD.")
+        start_date = None
+        if options["start_date"]:
+            try:
+                start_date = timezone.make_aware(datetime.strptime(options["start_date"], "%Y-%m-%d"))
+            except ValueError:
+                raise CommandError("Invalid start date format. Use YYYY-MM-DD.")
 
         end_date = None
         if options["end_date"]:
             try:
-                end_date = datetime.strptime(options["end_date"], "%Y-%m-%d")
+                end_date = timezone.make_aware(datetime.strptime(options["end_date"], "%Y-%m-%d"))
             except ValueError:
                 raise CommandError("Invalid end date format. Use YYYY-MM-DD.")
 
@@ -135,14 +139,16 @@ class Command(BaseCommand):
             agree_to_tos=True,
             is_test=False,
             is_test_data=False,
-            submission_date__gte=start_date,
         )
+
+        if start_date:
+            screens = screens.filter(submission_date__gte=start_date)
 
         if end_date:
             screens = screens.filter(submission_date__lte=end_date)
 
         if white_label:
-            screens = screens.filter(white_label__code=white_label)
+            screens = screens.filter(white_label__code__in=white_label)
 
         screens = screens.order_by("submission_date")
 
