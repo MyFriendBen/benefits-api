@@ -10,6 +10,7 @@ tx_member_calculators = {
     "tx_csfp": member.TxCsfp,
     "tx_chip": member.TxChip,
     "tx_medicaid_for_children": member.TxMedicaidForChildren,
+    "tx_medicaid_for_pregnant_women": member.TxMedicaidForPregnantWomen,
 }
 
 tx_tax_unit_calculators = {
