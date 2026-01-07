@@ -54,7 +54,6 @@ class TxConfigurationData(ConfigurationData):
         },
     }
 
-
     # Nested income options organized by category (for future use with categorized UI)
     income_options_by_category = {
         **ConfigurationData.income_options_by_category,
