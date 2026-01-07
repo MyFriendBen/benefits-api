@@ -16,7 +16,14 @@ from programs.programs.policyengine.calculators.base import PolicyEngineMembersC
 from programs.programs.policyengine.calculators.dependencies import household, member
 from programs.programs.policyengine.calculators.dependencies.household import TxStateCodeDependency
 from programs.programs.tx.pe import tx_pe_calculators
-from programs.programs.tx.pe.member import TxWic, TxSsi, TxCsfp, TxChip, TxMedicaidForChildren, TxMedicaidForPregnantWomen
+from programs.programs.tx.pe.member import (
+    TxWic,
+    TxSsi,
+    TxCsfp,
+    TxChip,
+    TxMedicaidForChildren,
+    TxMedicaidForPregnantWomen,
+)
 
 
 class TestTxWic(TestCase):
