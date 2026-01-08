@@ -348,7 +348,7 @@ class Command(BaseCommand):
             "screen.external_id": "External system identifier from partner",
             "screen.energy_calculator": "Foreign key to energy calculator screen data (one-to-one)",
             "screen.path": "User type for screener flow (e.g., 'default', 'renter')",
-            "screen.last_tax_filing_year": "Most recent year user filed taxes (user-reported)",
+            "screen.last_tax_filing_year": "Tax filing year field (currently unused)",
             "screen.last_email_request_date": "Timestamp when results email was last sent to user",
             "screen.alternate_path": "Secondary screener flow identifier (currently unused)",
             "screen.is_verified": "Whether user identity has been verified (currently unused)",
