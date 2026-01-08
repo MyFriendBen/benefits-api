@@ -206,6 +206,36 @@ class TxMedicaidForParentsAndCaretakers(Medicaid):
         return False
 
 
+class TxEmergencyMedicaid(Medicaid):
+    """
+    Texas Emergency Medicaid for Non-Citizens calculator that uses PolicyEngine's calculated benefit amounts.
+
+    This program provides limited public health insurance that covers only emergency health care costs.
+    It helps people who cannot get standard Medicaid because of their immigration status.
+
+    Eligibility requirements:
+    - Must have a life-threatening or serious medical condition requiring urgent care
+    - Immigration status makes them ineligible for standard Medicaid
+    - Covers emergency services including emergency labor and delivery
+    - Only covers services needed to stabilize the condition, not ongoing care
+
+    Note: The citizenship eligibility is handled at the program configuration level
+    (legal_status_required), not in this calculator.
+    """
+
+    pe_inputs = [
+        *Medicaid.pe_inputs,
+        dependency.household.TxStateCodeDependency,
+    ]
+
+    def member_value(self, member: HouseholdMember):
+        """
+        Returns the PolicyEngine-calculated Medicaid value for this member.
+        """
+        return self.get_member_variable(member.id)
+
+
+
 class TxChip(PolicyEngineMembersCalculator):
     """
     Texas CHIP calculator that uses PolicyEngine's calculated benefit amounts
