@@ -16,6 +16,6 @@ class LawHelp(UrgentNeedFunction):
         # All TX counties; 125% of the federal poverty line.
 
         income = self.screen.calc_gross_income("yearly", ["all"])
-        income_limit = self.urgent_need.year.as_dict()[self.screen.household_size] * self.fpl_percent
+        income_limit = int(self.urgent_need.year.get_limit(self.screen.household_size) * self.fpl_percent)
 
         return income <= income_limit
