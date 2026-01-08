@@ -58,6 +58,7 @@ class Command(BaseCommand):
 
     # Fields to exclude from export (test flags, internal fields, etc.)
     EXCLUDED_FIELDS = {"is_test", "is_test_data", "frontend_id", "user", "uid", "content"}
+    CHUNK_SIZE = 5000
 
     def _get_model_fields(self, model):
         """Get exportable field names from a model, excluding reverse relations and specified fields."""
@@ -126,9 +127,7 @@ class Command(BaseCommand):
         if options["end_date"]:
             try:
                 # Add one day to make end date inclusive (covers entire day)
-                end_date = timezone.make_aware(
-                    datetime.strptime(options["end_date"], "%Y-%m-%d")
-                ) + timedelta(days=1)
+                end_date = timezone.make_aware(datetime.strptime(options["end_date"], "%Y-%m-%d")) + timedelta(days=1)
             except ValueError:
                 raise CommandError("Invalid end date format. Use YYYY-MM-DD.")
 
@@ -184,7 +183,8 @@ class Command(BaseCommand):
 
     def _export(self, screens, output_dir):
         """Export data as separate CSV files, one per table."""
-        screen_ids = list(screens.values_list("id", flat=True))
+        # Use subqueries instead of loading all IDs into memory
+        screen_ids_subquery = screens.values("id")
 
         # Get field lists dynamically
         screen_fields = self._get_model_fields(Screen)
@@ -202,8 +202,8 @@ class Command(BaseCommand):
         self.stdout.write(f"  Exported {screens.count()} screens")
 
         # Export household members
-        household_members = HouseholdMember.objects.filter(screen_id__in=screen_ids)
-        member_ids = list(household_members.values_list("id", flat=True))
+        household_members = HouseholdMember.objects.filter(screen_id__in=screen_ids_subquery)
+        member_ids_subquery = household_members.values("id")
         self._write_csv(
             os.path.join(output_dir, "household_members.csv"),
             household_member_fields,
@@ -212,7 +212,7 @@ class Command(BaseCommand):
         self.stdout.write(f"  Exported {household_members.count()} household members")
 
         # Export income streams
-        income_streams = IncomeStream.objects.filter(screen_id__in=screen_ids)
+        income_streams = IncomeStream.objects.filter(screen_id__in=screen_ids_subquery)
         self._write_csv(
             os.path.join(output_dir, "income_streams.csv"),
             income_stream_fields,
@@ -221,7 +221,7 @@ class Command(BaseCommand):
         self.stdout.write(f"  Exported {income_streams.count()} income streams")
 
         # Export expenses
-        expenses = Expense.objects.filter(screen_id__in=screen_ids)
+        expenses = Expense.objects.filter(screen_id__in=screen_ids_subquery)
         self._write_csv(
             os.path.join(output_dir, "expenses.csv"),
             expense_fields,
@@ -230,7 +230,7 @@ class Command(BaseCommand):
         self.stdout.write(f"  Exported {expenses.count()} expenses")
 
         # Export insurance (linked via household_member_id)
-        insurance_records = Insurance.objects.filter(household_member_id__in=member_ids)
+        insurance_records = Insurance.objects.filter(household_member_id__in=member_ids_subquery)
         self._write_csv(
             os.path.join(output_dir, "insurance.csv"),
             insurance_fields,
@@ -239,7 +239,7 @@ class Command(BaseCommand):
         self.stdout.write(f"  Exported {insurance_records.count()} insurance records")
 
         # Export program eligibility (merged table with screen_id, only most recent snapshot per screen)
-        self._export_program_eligibility(screen_ids, output_dir)
+        self._export_program_eligibility(screen_ids_subquery, output_dir)
 
         # Export white label lookup table
         self._export_white_labels(screens, output_dir)
@@ -247,19 +247,19 @@ class Command(BaseCommand):
         # Export data dictionary
         self._export_data_dictionary(output_dir)
 
-    def _export_program_eligibility(self, screen_ids, output_dir):
+    def _export_program_eligibility(self, screen_ids_subquery, output_dir):
         """Export merged eligibility data with screen_id, only the most recent snapshot per screen."""
-        # Get the most recent snapshot ID for each screen
-        latest_snapshot_ids = list(
-            EligibilitySnapshot.objects.filter(screen_id__in=screen_ids)
+        # Get the most recent snapshot ID for each screen using subquery
+        latest_snapshots = (
+            EligibilitySnapshot.objects.filter(screen_id__in=screen_ids_subquery)
             .values("screen_id")
             .annotate(latest_id=Max("id"))
-            .values_list("latest_id", flat=True)
         )
+        latest_snapshot_ids_subquery = latest_snapshots.values("latest_id")
 
-        # Build a mapping of snapshot_id -> screen_id
+        # Build a mapping of snapshot_id -> screen_id (this is bounded by number of screens, not records)
         snapshot_to_screen = dict(
-            EligibilitySnapshot.objects.filter(id__in=latest_snapshot_ids).values_list("id", "screen_id")
+            EligibilitySnapshot.objects.filter(id__in=latest_snapshot_ids_subquery).values_list("id", "screen_id")
         )
 
         # Get program eligibility fields, excluding the snapshot FK
@@ -269,30 +269,34 @@ class Command(BaseCommand):
         # Add screen_id as the first column
         headers = ["screen_id"] + program_fields
 
-        # Get the program snapshots for the latest snapshots only using .values()
+        # Get the program snapshots for the latest snapshots only
         program_snapshots = ProgramEligibilitySnapshot.objects.filter(
-            eligibility_snapshot_id__in=latest_snapshot_ids
+            eligibility_snapshot_id__in=latest_snapshot_ids_subquery
         ).order_by("eligibility_snapshot_id", "id")
 
-        # Write the merged CSV
+        # Write the merged CSV with iterator for memory efficiency
         output_path = os.path.join(output_dir, "program_eligibility.csv")
+        count = 0
         with open(output_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=headers)
             writer.writeheader()
 
-            for row in program_snapshots.values("eligibility_snapshot_id", *program_fields):
+            for row in program_snapshots.values("eligibility_snapshot_id", *program_fields).iterator(
+                chunk_size=self.CHUNK_SIZE
+            ):
                 screen_id = snapshot_to_screen.get(row.pop("eligibility_snapshot_id"))
                 row["screen_id"] = screen_id
                 writer.writerow(row)
+                count += 1
 
-        self.stdout.write(f"  Exported {program_snapshots.count()} program eligibility records")
+        self.stdout.write(f"  Exported {count} program eligibility records")
 
     def _export_white_labels(self, screens, output_dir):
         """Export white label lookup table for the exported screens."""
         white_label_ids = screens.values_list("white_label_id", flat=True).distinct()
         white_labels = WhiteLabel.objects.filter(id__in=white_label_ids)
 
-        headers = ["id", "code", "name"]
+        headers = ["id", "code", "name", "state_code"]
         self._write_csv(
             os.path.join(output_dir, "white_labels.csv"),
             headers,
@@ -544,12 +548,14 @@ class Command(BaseCommand):
                 if not description:
                     missing_descriptions.append(key)
 
-                dictionary.append({
-                    "table": table_name,
-                    "field": field_name,
-                    "type": field_type,
-                    "description": description,
-                })
+                dictionary.append(
+                    {
+                        "table": table_name,
+                        "field": field_name,
+                        "type": field_type,
+                        "description": description,
+                    }
+                )
 
         return dictionary, missing_descriptions
 
@@ -586,27 +592,30 @@ class Command(BaseCommand):
 
     def _dry_run(self, screens):
         """Show counts without exporting any data."""
-        screen_ids = list(screens.values_list("id", flat=True))
+        # Use subqueries instead of loading all IDs into memory
+        screen_ids_subquery = screens.values("id")
 
         self.stdout.write("\nDry run - no files will be created:\n")
         self.stdout.write(f"  Screens: {screens.count()}")
 
-        household_members = HouseholdMember.objects.filter(screen_id__in=screen_ids)
-        member_ids = list(household_members.values_list("id", flat=True))
+        household_members = HouseholdMember.objects.filter(screen_id__in=screen_ids_subquery)
+        member_ids_subquery = household_members.values("id")
         self.stdout.write(f"  Household members: {household_members.count()}")
 
-        self.stdout.write(f"  Income streams: {IncomeStream.objects.filter(screen_id__in=screen_ids).count()}")
-        self.stdout.write(f"  Expenses: {Expense.objects.filter(screen_id__in=screen_ids).count()}")
-        self.stdout.write(f"  Insurance records: {Insurance.objects.filter(household_member_id__in=member_ids).count()}")
+        self.stdout.write(f"  Income streams: {IncomeStream.objects.filter(screen_id__in=screen_ids_subquery).count()}")
+        self.stdout.write(f"  Expenses: {Expense.objects.filter(screen_id__in=screen_ids_subquery).count()}")
+        self.stdout.write(
+            f"  Insurance records: {Insurance.objects.filter(household_member_id__in=member_ids_subquery).count()}"
+        )
 
-        latest_snapshot_ids = list(
-            EligibilitySnapshot.objects.filter(screen_id__in=screen_ids)
+        latest_snapshot_ids_subquery = (
+            EligibilitySnapshot.objects.filter(screen_id__in=screen_ids_subquery)
             .values("screen_id")
             .annotate(latest_id=Max("id"))
-            .values_list("latest_id", flat=True)
+            .values("latest_id")
         )
         program_count = ProgramEligibilitySnapshot.objects.filter(
-            eligibility_snapshot_id__in=latest_snapshot_ids
+            eligibility_snapshot_id__in=latest_snapshot_ids_subquery
         ).count()
         self.stdout.write(f"  Program eligibility records: {program_count}")
 
@@ -624,10 +633,10 @@ class Command(BaseCommand):
 
         self.stdout.write(f"  Created compressed archive: {zip_path}")
 
-    def _write_csv(self, filepath, headers, data):
-        """Write a queryset to a CSV file."""
+    def _write_csv(self, filepath, headers, queryset):
+        """Write a queryset to a CSV file using iterator for memory efficiency."""
         with open(filepath, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=headers)
             writer.writeheader()
-            for row in data:
+            for row in queryset.iterator(chunk_size=self.CHUNK_SIZE):
                 writer.writerow(row)
