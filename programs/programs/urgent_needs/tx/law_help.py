@@ -11,7 +11,7 @@ class LawHelp(UrgentNeedFunction):
     dependencies = ["income_amount", "income_frequency", "household_size"]
     fpl_percent = 1.25
 
-    def eligible(self):
+    def eligible(self) -> bool:
 
         # All TX counties; 125% of the federal poverty line.
 
