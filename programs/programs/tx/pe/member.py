@@ -219,8 +219,12 @@ class TxEmergencyMedicaid(Medicaid):
     - Covers emergency services including emergency labor and delivery
     - Only covers services needed to stabilize the condition, not ongoing care
 
-    Note: The citizenship eligibility is handled at the program configuration level
-    (legal_status_required), not in this calculator.
+    Notes:
+    - The citizenship eligibility is handled at the program configuration level
+      (legal_status_required), not in this calculator.
+    - We do not ask users whether they have an emergency medical condition in the screener.
+      Instead, this requirement is communicated in the program's description so users understand
+      they must have a qualifying condition to receive benefits.
     """
 
     pe_inputs = [
@@ -230,9 +234,13 @@ class TxEmergencyMedicaid(Medicaid):
 
     def member_value(self, member: HouseholdMember):
         """
-        Returns the PolicyEngine-calculated Medicaid value for this member.
+        Returns 1 if the member is eligible for Emergency Medicaid, 0 otherwise.
+
+        The actual benefit value varies based on the emergency care needed, so we return
+        a nominal value of 1 to indicate eligibility rather than a specific dollar amount.
         """
-        return self.get_member_variable(member.id)
+        pe_value = self.get_member_variable(member.id)
+        return 1 if pe_value > 0 else 0
 
 
 
