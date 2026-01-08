@@ -18,7 +18,6 @@ class NationalDiaperBankNetwork(UrgentNeedFunction):
 
     def eligible(self):
         is_eligible_county = self.screen.county in self.eligible_counties
-        print(f"County: {self.screen.county}, Eligible: {is_eligible_county}")
         if not is_eligible_county:
             return False
 
