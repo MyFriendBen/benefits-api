@@ -7,30 +7,27 @@ Exports completed screener data from the following tables:
 - IncomeStream
 - Expense
 - Insurance
-- EligibilitySnapshot
-- ProgramEligibilitySnapshot
+- ProgramEligibility (merged from EligibilitySnapshot + ProgramEligibilitySnapshot,
+  only the most recent snapshot per screen to match current screen data)
 
 Note: Test data (is_test=True or is_test_data=True) is always excluded from exports.
 
 Usage:
-    # Export as separate CSV files (default)
-    python manage.py export_screener_data --start-date 2024-01-01 --output-dir /path/to/exports
+    # Export CSV files
+    python manage.py export_screener_data --output-dir /path/to/exports
 
-    # Export with end date
+    # Export with date range
     python manage.py export_screener_data --start-date 2024-01-01 --end-date 2024-12-31 --output-dir /path/to/exports
 
-    # Export as single flattened CSV
-    python manage.py export_screener_data --start-date 2024-01-01 --output-dir /path/to/exports --format flat
-
     # Filter by white label
-    python manage.py export_screener_data --start-date 2024-01-01 --output-dir /path/to/exports --white-label co
+    python manage.py export_screener_data --output-dir /path/to/exports --white-label co nc
 """
 
 import csv
 import os
-from collections import defaultdict
 from datetime import datetime
 from django.core.management.base import BaseCommand, CommandError
+from django.db.models import Max
 from django.utils import timezone
 from screener.models import (
     Screen,
@@ -46,9 +43,7 @@ from screener.models import (
 class Command(BaseCommand):
     help = """
     Export screener data to CSV files for completed screeners within a date range.
-    Test data is always excluded. Supports two formats:
-    - 'separate' (default): One CSV file per table with foreign keys for joining
-    - 'flat': Single denormalized CSV with one row per screen
+    Test data is always excluded.
     """
 
     # Fields to exclude from export (test flags, internal fields, etc.)
@@ -91,13 +86,6 @@ class Command(BaseCommand):
             help="Directory to save CSV files",
         )
         parser.add_argument(
-            "--format",
-            type=str,
-            choices=["separate", "flat"],
-            default="separate",
-            help="Export format: 'separate' (one CSV per table) or 'flat' (single denormalized CSV). Default: separate",
-        )
-        parser.add_argument(
             "--white-label",
             type=str,
             nargs="+",
@@ -122,7 +110,6 @@ class Command(BaseCommand):
                 raise CommandError("Invalid end date format. Use YYYY-MM-DD.")
 
         output_dir = options["output_dir"]
-        export_format = options["format"]
         white_label = options.get("white_label")
 
         # Validate output directory
@@ -159,14 +146,11 @@ class Command(BaseCommand):
 
         self.stdout.write(f"Found {screen_count} screens to export.")
 
-        if export_format == "separate":
-            self._export_separate(screens, output_dir)
-        else:
-            self._export_flat(screens, output_dir)
+        self._export(screens, output_dir)
 
         self.stdout.write(self.style.SUCCESS(f"Export completed to {output_dir}"))
 
-    def _export_separate(self, screens, output_dir):
+    def _export(self, screens, output_dir):
         """Export data as separate CSV files, one per table."""
         screen_ids = list(screens.values_list("id", flat=True))
 
@@ -176,8 +160,6 @@ class Command(BaseCommand):
         income_stream_fields = self._get_model_fields(IncomeStream)
         expense_fields = self._get_model_fields(Expense)
         insurance_fields = self._get_model_fields(Insurance)
-        eligibility_snapshot_fields = self._get_model_fields(EligibilitySnapshot)
-        program_eligibility_snapshot_fields = self._get_model_fields(ProgramEligibilitySnapshot)
 
         # Export screens
         self._write_csv(
@@ -224,234 +206,50 @@ class Command(BaseCommand):
         )
         self.stdout.write(f"  Exported {insurance_records.count()} insurance records")
 
-        # Export eligibility snapshots
-        eligibility_snapshots = EligibilitySnapshot.objects.filter(screen_id__in=screen_ids)
-        snapshot_ids = list(eligibility_snapshots.values_list("id", flat=True))
-        self._write_csv(
-            os.path.join(output_dir, "eligibility_snapshots.csv"),
-            eligibility_snapshot_fields,
-            eligibility_snapshots.values(*eligibility_snapshot_fields),
+        # Export program eligibility (merged table with screen_id, only most recent snapshot per screen)
+        self._export_program_eligibility(screen_ids, output_dir)
+
+    def _export_program_eligibility(self, screen_ids, output_dir):
+        """Export merged eligibility data with screen_id, only the most recent snapshot per screen."""
+        # Get the most recent snapshot ID for each screen
+        latest_snapshot_ids = (
+            EligibilitySnapshot.objects.filter(screen_id__in=screen_ids)
+            .values("screen_id")
+            .annotate(latest_id=Max("id"))
+            .values_list("latest_id", flat=True)
         )
-        self.stdout.write(f"  Exported {eligibility_snapshots.count()} eligibility snapshots")
 
-        # Export program eligibility snapshots
-        program_snapshots = ProgramEligibilitySnapshot.objects.filter(eligibility_snapshot_id__in=snapshot_ids)
-        self._write_csv(
-            os.path.join(output_dir, "program_eligibility_snapshots.csv"),
-            program_eligibility_snapshot_fields,
-            program_snapshots.values(*program_eligibility_snapshot_fields),
+        # Build a mapping of snapshot_id -> screen_id
+        snapshot_to_screen = dict(
+            EligibilitySnapshot.objects.filter(id__in=latest_snapshot_ids).values_list("id", "screen_id")
         )
-        self.stdout.write(f"  Exported {program_snapshots.count()} program eligibility snapshots")
 
-    def _export_flat(self, screens, output_dir):
-        """Export data as a single denormalized CSV with one row per screen."""
-        screen_ids = list(screens.values_list("id", flat=True))
+        # Get program eligibility fields, excluding the snapshot FK
+        program_fields = self._get_model_fields(ProgramEligibilitySnapshot)
+        program_fields = [f for f in program_fields if f != "eligibility_snapshot_id"]
 
-        # Get field lists dynamically
-        screen_fields = self._get_model_fields(Screen)
-        household_member_fields = self._get_model_fields(HouseholdMember)
-        income_stream_fields = self._get_model_fields(IncomeStream)
-        expense_fields = self._get_model_fields(Expense)
-        insurance_fields = self._get_model_fields(Insurance)
-        eligibility_snapshot_fields = self._get_model_fields(EligibilitySnapshot)
-        program_eligibility_snapshot_fields = self._get_model_fields(ProgramEligibilitySnapshot)
+        # Add screen_id as the first column
+        headers = ["screen_id"] + program_fields
 
-        # First pass: determine maximum counts for dynamic columns
-        max_members = 0
-        max_income_streams_per_member = defaultdict(int)
-        max_expenses_per_screen = 0
-        max_eligibility_snapshots = 0
-        max_programs_per_snapshot = 0
+        # Get the program snapshots for the latest snapshots only
+        program_snapshots = ProgramEligibilitySnapshot.objects.filter(
+            eligibility_snapshot_id__in=latest_snapshot_ids
+        ).order_by("eligibility_snapshot_id", "id")
 
-        # Collect all related data
-        all_members = {}
-        all_income_streams = defaultdict(list)
-        all_expenses = defaultdict(list)
-        all_insurance = {}
-        all_snapshots = defaultdict(list)
-        all_program_snapshots = defaultdict(list)
-
-        # Load household members
-        for member in HouseholdMember.objects.filter(screen_id__in=screen_ids).order_by("id"):
-            if member.screen_id not in all_members:
-                all_members[member.screen_id] = []
-            all_members[member.screen_id].append(member)
-
-        # Load income streams
-        for income in IncomeStream.objects.filter(screen_id__in=screen_ids).order_by("id"):
-            all_income_streams[income.household_member_id].append(income)
-
-        # Load expenses
-        for expense in Expense.objects.filter(screen_id__in=screen_ids).order_by("id"):
-            all_expenses[expense.screen_id].append(expense)
-
-        # Load insurance
-        member_ids = list(HouseholdMember.objects.filter(screen_id__in=screen_ids).values_list("id", flat=True))
-        for ins in Insurance.objects.filter(household_member_id__in=member_ids):
-            all_insurance[ins.household_member_id] = ins
-
-        # Load eligibility snapshots
-        for snapshot in EligibilitySnapshot.objects.filter(screen_id__in=screen_ids).order_by("id"):
-            all_snapshots[snapshot.screen_id].append(snapshot)
-
-        # Load program eligibility snapshots
-        snapshot_ids = list(EligibilitySnapshot.objects.filter(screen_id__in=screen_ids).values_list("id", flat=True))
-        for prog in ProgramEligibilitySnapshot.objects.filter(eligibility_snapshot_id__in=snapshot_ids).order_by("id"):
-            all_program_snapshots[prog.eligibility_snapshot_id].append(prog)
-
-        # Calculate maximums
-        for screen_id in screen_ids:
-            members = all_members.get(screen_id, [])
-            max_members = max(max_members, len(members))
-
-            for i, member in enumerate(members):
-                income_count = len(all_income_streams.get(member.id, []))
-                max_income_streams_per_member[i] = max(max_income_streams_per_member[i], income_count)
-
-            max_expenses_per_screen = max(max_expenses_per_screen, len(all_expenses.get(screen_id, [])))
-
-            snapshots = all_snapshots.get(screen_id, [])
-            max_eligibility_snapshots = max(max_eligibility_snapshots, len(snapshots))
-
-            for snapshot in snapshots:
-                prog_count = len(all_program_snapshots.get(snapshot.id, []))
-                max_programs_per_snapshot = max(max_programs_per_snapshot, prog_count)
-
-        # Build dynamic headers
-        headers = list(screen_fields)
-
-        # Add household member columns
-        member_base_fields = [f for f in household_member_fields if f not in ["id", "screen_id"]]
-        insurance_base_fields = [f for f in insurance_fields if f not in ["id", "household_member_id"]]
-        income_base_fields = [f for f in income_stream_fields if f not in ["id", "screen_id", "household_member_id"]]
-
-        for m in range(max_members):
-            prefix = f"member_{m + 1}_"
-            headers.append(f"{prefix}id")
-            for field in member_base_fields:
-                headers.append(f"{prefix}{field}")
-            # Insurance for this member
-            for field in insurance_base_fields:
-                headers.append(f"{prefix}insurance_{field}")
-            # Income streams for this member
-            for i in range(max_income_streams_per_member.get(m, 0)):
-                income_prefix = f"{prefix}income_{i + 1}_"
-                for field in income_base_fields:
-                    headers.append(f"{income_prefix}{field}")
-
-        # Add expense columns
-        expense_base_fields = [f for f in expense_fields if f not in ["id", "screen_id", "household_member_id"]]
-        for e in range(max_expenses_per_screen):
-            prefix = f"expense_{e + 1}_"
-            headers.append(f"{prefix}household_member_id")
-            for field in expense_base_fields:
-                headers.append(f"{prefix}{field}")
-
-        # Add eligibility snapshot columns
-        snapshot_base_fields = [f for f in eligibility_snapshot_fields if f not in ["id", "screen_id"]]
-        program_base_fields = [
-            f for f in program_eligibility_snapshot_fields if f not in ["id", "eligibility_snapshot_id"]
-        ]
-
-        for s in range(max_eligibility_snapshots):
-            prefix = f"snapshot_{s + 1}_"
-            headers.append(f"{prefix}id")
-            for field in snapshot_base_fields:
-                headers.append(f"{prefix}{field}")
-            # Program snapshots
-            for p in range(max_programs_per_snapshot):
-                prog_prefix = f"{prefix}program_{p + 1}_"
-                for field in program_base_fields:
-                    headers.append(f"{prog_prefix}{field}")
-
-        # Write the flat CSV
-        output_path = os.path.join(output_dir, "screener_data_flat.csv")
+        # Write the merged CSV
+        output_path = os.path.join(output_dir, "program_eligibility.csv")
         with open(output_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
             writer.writerow(headers)
 
-            for screen in screens:
-                row = []
-
-                # Screen fields
-                for field in screen_fields:
-                    row.append(getattr(screen, field, ""))
-
-                # Household members
-                members = all_members.get(screen.id, [])
-                for m in range(max_members):
-                    if m < len(members):
-                        member = members[m]
-                        row.append(member.id)
-                        for field in member_base_fields:
-                            row.append(getattr(member, field, ""))
-                        # Insurance
-                        ins = all_insurance.get(member.id)
-                        for field in insurance_base_fields:
-                            row.append(getattr(ins, field, "") if ins else "")
-                        # Income streams
-                        incomes = all_income_streams.get(member.id, [])
-                        for i in range(max_income_streams_per_member.get(m, 0)):
-                            if i < len(incomes):
-                                income = incomes[i]
-                                for field in income_base_fields:
-                                    row.append(getattr(income, field, ""))
-                            else:
-                                for _ in income_base_fields:
-                                    row.append("")
-                    else:
-                        # Empty member slot
-                        row.append("")  # id
-                        for _ in member_base_fields:
-                            row.append("")
-                        for _ in insurance_base_fields:
-                            row.append("")
-                        for i in range(max_income_streams_per_member.get(m, 0)):
-                            for _ in income_base_fields:
-                                row.append("")
-
-                # Expenses
-                expenses = all_expenses.get(screen.id, [])
-                for e in range(max_expenses_per_screen):
-                    if e < len(expenses):
-                        expense = expenses[e]
-                        row.append(expense.household_member_id or "")
-                        for field in expense_base_fields:
-                            row.append(getattr(expense, field, ""))
-                    else:
-                        row.append("")  # household_member_id
-                        for _ in expense_base_fields:
-                            row.append("")
-
-                # Eligibility snapshots
-                snapshots = all_snapshots.get(screen.id, [])
-                for s in range(max_eligibility_snapshots):
-                    if s < len(snapshots):
-                        snapshot = snapshots[s]
-                        row.append(snapshot.id)
-                        for field in snapshot_base_fields:
-                            row.append(getattr(snapshot, field, ""))
-                        # Program snapshots
-                        programs = all_program_snapshots.get(snapshot.id, [])
-                        for p in range(max_programs_per_snapshot):
-                            if p < len(programs):
-                                prog = programs[p]
-                                for field in program_base_fields:
-                                    row.append(getattr(prog, field, ""))
-                            else:
-                                for _ in program_base_fields:
-                                    row.append("")
-                    else:
-                        row.append("")  # id
-                        for _ in snapshot_base_fields:
-                            row.append("")
-                        for p in range(max_programs_per_snapshot):
-                            for _ in program_base_fields:
-                                row.append("")
-
+            for prog in program_snapshots:
+                screen_id = snapshot_to_screen.get(prog.eligibility_snapshot_id)
+                row = [screen_id]
+                for field in program_fields:
+                    row.append(getattr(prog, field, ""))
                 writer.writerow(row)
 
-        self.stdout.write(f"  Exported {screens.count()} screens to flat CSV")
+        self.stdout.write(f"  Exported {program_snapshots.count()} program eligibility records")
 
     def _write_csv(self, filepath, headers, data):
         """Write a queryset to a CSV file."""
