@@ -239,6 +239,10 @@ class TxEmergencyMedicaid(Medicaid):
         The actual benefit value varies based on the emergency care needed, so we return
         a nominal value of 1 to indicate eligibility rather than a specific dollar amount.
         """
+        # Must not have other health insurance
+        if not member.has_insurance_types(("none",)):
+            return 0
+
         pe_value = self.get_member_variable(member.id)
         return 1 if pe_value > 0 else 0
 
