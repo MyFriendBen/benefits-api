@@ -2,7 +2,7 @@ from ..base import UrgentNeedFunction
 
 
 class SNAPApplicationAssistance(UrgentNeedFunction):
-    dependencies = ["county", "income_amount", "income_frequency", "household_size"]
+    dependencies = ["county"]
     eligible_city = "Cambridge"
 
     def eligible(self) -> bool:
