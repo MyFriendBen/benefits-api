@@ -14,6 +14,7 @@ il_member_calculators = {
     "il_hfs_fpp": member.IlFamilyPlanningProgram,
     "il_fppe": member.IlFamilyPlanningProgram,
     "il_mpe": member.IlMpe,
+    "il_emergency_medicaid": member.IlEmergencyMedicaid,
 }
 
 il_tax_unit_calculators = {

@@ -1,0 +1,44 @@
+{
+    "white_label": {"code": "il"},
+    "program_category": {"external_name": "il_health"},
+    "program": {
+        "name_abbreviated": "il_emergency_medicaid",
+        "year": "2025",
+        "legal_status_required": ["non_citizen"],
+        "name": "Emergency Medicaid",
+        "description": "Emergency Medicaid provides health coverage for emergency medical conditions to individuals who meet most Medicaid requirements but are not eligible due to immigration status.\n\nThis program covers treatment for emergency medical conditions, which are conditions that could seriously harm your health if not treated right away. Examples include severe pain, serious injuries, labor and delivery, and conditions that need immediate hospital care.\n\nEmergency Medicaid does NOT cover routine doctor visits, preventive care, or non-emergency treatments.\n\nYou do not apply ahead of time. When you go to a hospital or emergency room with a medical emergency, the hospital will help determine if you qualify for Emergency Medicaid coverage for that visit.",
+        "apply_button_link": "https://www.dhs.state.il.us/page.aspx?item=27262",
+        "apply_button_description": "Learn More",
+        "estimated_application_time": "Determined at point of care",
+        "website_description": "Health coverage for emergency medical conditions",
+        "estimated_value": "",
+        "external_name": "il_emergency_medicaid",
+        "low_confidence": false,
+        "show_on_current_benefits": false
+    },
+    "documents": [
+        {
+            "external_name": "id_proof",
+            "text": "Proof of identity (ex: driver's license, state ID, passport, consular ID)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "income_proof",
+            "text": "Proof of income (ex: pay stubs, tax returns, benefit statements showing all household income)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "il_home",
+            "text": "Proof of Illinois residency (ex: driver's license, utility bill, or mail with your name and address)",
+            "link_url": "",
+            "link_text": ""
+        }
+    ],
+    "navigators": [
+        {
+            "external_name": "get_covered_illinois"
+        }
+    ]
+}

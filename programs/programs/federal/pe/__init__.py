@@ -9,6 +9,7 @@ federal_member_calculators = {
     "pell_grant": member.PellGrant,
     "ssi": member.Ssi,
     "csfp": member.CommoditySupplementalFoodProgram,
+    "emergency_medicaid": member.EmergencyMedicaid,
 }
 
 federal_spm_unit_calculators = {
