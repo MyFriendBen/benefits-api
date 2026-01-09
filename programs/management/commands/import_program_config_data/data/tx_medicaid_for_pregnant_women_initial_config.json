@@ -8,7 +8,7 @@
         "year": "2025",
         "legal_status_required": ["citizen", "gc_5plus", "gc_under5", "refugee"],
         "name": "Medicaid for Pregnant Women",
-        "description_short": "Free public health insurance for pregnant women",
+        "website_description": "Free public health insurance for pregnant women",
         "description": "Free public health insurance for pregnant women. \n\nIf you qualify for this program, you will have full Medicaid benefits during pregnancy and for the first 12 months of the baby's life. You may get prenatal care like doctor visits and vitamins. You may also get benefits to cover the cost of labor and delivery.\n\nYour baby will qualify for check-ups and care for the first 12 months of life. \n\nMedicaid helps pay for check-ups, doctor visits, and emergency care. It also covers immunizations, medicine, and dental care. \n\nIf you qualify, you will likely choose a STAR managed health care program.\n\nTime to Apply is based on submitting an application in Your Texas Benefits. You may save time when you apply for several benefits with one application.\n\nOn average, it takes up to 45 days to get approved.",
         "learn_more_link": "https://www.hhs.texas.gov/services/health/medicaid-chip/medicaid-chip-programs-services/medicaid-pregnant-women-chip-perinatal",
         "apply_button_link": "https://yourtexasbenefits.com/Apply/GettingStartedApp?lang=en_US",
