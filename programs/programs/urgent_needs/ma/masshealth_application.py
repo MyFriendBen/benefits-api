@@ -3,7 +3,7 @@ from ..base import UrgentNeedFunction
 
 class MassHealthApplication(UrgentNeedFunction):
     """
-    CEOC – MassHealth Application Assistance
+    CEOC - MassHealth Application Assistance
 
     Helps residents apply for free or low-cost health insurance.
     """
