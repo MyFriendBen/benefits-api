@@ -571,3 +571,29 @@ class IlFppEligible(Member):
 
 class IlMpeEligible(Member):
     field = "il_mpe_eligible"
+
+
+class EmergencyMedicaidEligible(Member):
+    """
+    Federal Emergency Medicaid eligibility for undocumented immigrants.
+    Based on 42 USC 1396b(v) - covers emergency medical conditions only.
+    """
+
+    field = "is_emergency_medicaid_eligible"
+
+
+class HasEmergencyMedicalCondition(Member):
+    """
+    Input dependency for Emergency Medicaid - indicates whether a person
+    has a qualifying emergency medical condition.
+
+    For screening purposes, we assume True to show potential eligibility.
+    Actual eligibility is determined at the point of care.
+    """
+
+    field = "has_emergency_medical_condition"
+
+    def value(self):
+        # Always return True for screening - the actual emergency condition
+        # is verified at the healthcare provider, not during benefits screening
+        return True

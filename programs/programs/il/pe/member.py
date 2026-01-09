@@ -1,4 +1,4 @@
-import programs.programs.federal.pe.member as member
+import programs.programs.federal.pe.member as federal_member
 import programs.programs.federal.pe.tax as tax
 import programs.programs.policyengine.calculators.dependencies as pe_dependency
 import programs.programs.policyengine.calculators.dependencies.household as household_dependency
@@ -7,7 +7,7 @@ import programs.programs.policyengine.calculators.dependencies.spm as spm_depend
 from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
 
 
-class IlMedicaid(member.Medicaid):
+class IlMedicaid(federal_member.Medicaid):
     """Base Illinois Medicaid eligibility through PolicyEngine"""
 
     medicaid_categories = {
@@ -24,12 +24,12 @@ class IlMedicaid(member.Medicaid):
         "DISABLED": 474,
     }
     pe_inputs = [
-        *member.Medicaid.pe_inputs,
+        *federal_member.Medicaid.pe_inputs,
         household_dependency.IlStateCodeDependency,
     ]
 
 
-class IlWic(member.Wic):
+class IlWic(federal_member.Wic):
     wic_categories = {
         "NONE": 0,
         "INFANT": 130,
@@ -39,7 +39,7 @@ class IlWic(member.Wic):
         "BREASTFEEDING": 121,
     }
     pe_inputs = [
-        *member.Wic.pe_inputs,
+        *federal_member.Wic.pe_inputs,
         household_dependency.IlStateCodeDependency,
     ]
 
@@ -302,3 +302,25 @@ class IlMpe(PolicyEngineMembersCalculator):
             return 0
 
         return 1
+
+
+class IlEmergencyMedicaid(federal_member.EmergencyMedicaid):
+    """
+    Illinois Emergency Medicaid for undocumented immigrants.
+
+    Federal Emergency Medicaid (42 USC 1396b(v)) provides coverage for emergency
+    medical conditions to individuals who meet Medicaid requirements but are
+    ineligible due to immigration status.
+
+    For screening purposes, we assume has_emergency_medical_condition=True since
+    the actual emergency is verified at the point of care.
+    """
+
+    pe_inputs = [
+        *federal_member.EmergencyMedicaid.pe_inputs,
+        household_dependency.IlStateCodeDependency,
+    ]
+
+    # Monthly value estimate based on IL Medicaid rates
+    # Using same value as IL Medicaid adult category
+    amount = 474 * 12
