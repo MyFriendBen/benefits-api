@@ -34,9 +34,4 @@ class SNAPApplicationAssistance(UrgentNeedFunction):
                 is_snap_eligible = True
                 break
 
-        # Condition 4: Income
-        gross_income = self.screen.calc_gross_income("yearly", ["all"])
-        income_limit = int(self.fpl_percent * self.urgent_need.year.get_limit(self.screen.household_size))
-        is_income_eligible = gross_income <= income_limit
-
-        return is_cambridge and is_snap_eligible and is_income_eligible and not has_snap
+        return is_cambridge and is_snap_eligible and not has_snap
