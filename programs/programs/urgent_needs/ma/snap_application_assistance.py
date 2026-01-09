@@ -4,7 +4,6 @@ from ..base import UrgentNeedFunction
 class SNAPApplicationAssistance(UrgentNeedFunction):
     dependencies = ["county", "income_amount", "income_frequency", "household_size"]
     eligible_city = "Cambridge"
-    fpl_percent = 2
 
     def eligible(self) -> bool:
         """
@@ -26,11 +25,14 @@ class SNAPApplicationAssistance(UrgentNeedFunction):
         # Condition 3: SNAP Eligible
         is_snap_eligible = False
 
-        for program in self.data:
-            if program["name_abbreviated"] != "ma_snap":
+        for program in (self.data or []):
+            if not isinstance(program, dict):
                 continue
 
-            if program["eligible"]:
+            if program.get("name_abbreviated") != "ma_snap":
+                continue
+
+            if program.get("eligible"):
                 is_snap_eligible = True
                 break
 
