@@ -323,4 +323,5 @@ class IlEmergencyMedicaid(federal_member.EmergencyMedicaid):
 
     # Monthly value estimate based on IL Medicaid rates
     # Using same value as IL Medicaid adult category
+    # TODO: don't have this hardcoded
     amount = 474 * 12

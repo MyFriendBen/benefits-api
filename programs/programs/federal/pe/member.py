@@ -191,12 +191,8 @@ class EmergencyMedicaid(PolicyEngineMembersCalculator):
 
     pe_name = "is_emergency_medicaid_eligible"
     pe_inputs = [
-        dependency.member.AgeDependency,
-        dependency.member.PregnancyDependency,
-        dependency.member.SsiCountableResourcesDependency,
-        dependency.member.IsDisabledDependency,
+        *Medicaid.pe_inputs,
         dependency.member.HasEmergencyMedicalCondition,
-        *dependency.irs_gross_income,
     ]
     pe_outputs = [
         dependency.member.EmergencyMedicaidEligible,
