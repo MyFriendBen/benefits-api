@@ -8,7 +8,7 @@
         "year": "2025",
         "legal_status_required": ["gc_5plus", "gc_5less"],
         "name": "Emergency Medicaid for Non-Citizens",
-        "description_short": "Limited public health insurance for emergency health services for Texans whose immigration status makes them ineligible for standard Medicaid",
+        "website_description": "Limited public health insurance for emergency health services for Texans whose immigration status makes them ineligible for standard Medicaid",
         "description": "Limited public health insurance. Emergency Medicaid covers only emergency health care costs. It helps people who cannot get standard Medicaid because of their immigration status.\n\nTo get this coverage, you must have a life-threatening or serious medical condition that requires urgent care. This includes emergency labor and delivery.\n\nThis program covers only the cost of services needed to stabilize your condition. It does not pay for ongoing care.\n\nThe value varies based on the care you need.",
         "learn_more_link": "",
         "apply_button_link": "https://yourtexasbenefits.com/Apply/GettingStartedApp?lang=en_US",
