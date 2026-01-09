@@ -1,0 +1,513 @@
+[
+  {
+    "notes": "TX Medicaid for Parents and Caretakers - Eligible head of household with child on Medicaid at 10% FPL",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_size": 3,
+      "household_assets": 1500.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 32,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 200.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 8,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 5,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_parents_and_caretakers",
+      "eligible": true,
+      "value": 5818
+    }
+  },
+  {
+    "notes": "TX Medicaid for Parents and Caretakers - Eligible senior head of household with child on Medicaid at 10% FPL",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75001",
+      "county": "Collin",
+      "household_size": 2,
+      "household_assets": 1000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 62,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 150.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 10,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_parents_and_caretakers",
+      "eligible": true,
+      "value": 5818
+    }
+  },
+  {
+    "notes": "TX Medicaid for Parents and Caretakers - Eligible spouse when child qualifies for Medicaid at 10% FPL",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "77001",
+      "county": "Harris",
+      "household_size": 3,
+      "household_assets": 800.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 30,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 200.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 28,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 3,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_parents_and_caretakers",
+      "eligible": true,
+      "value": 5818
+    }
+  },
+  {
+    "notes": "TX Medicaid for Parents and Caretakers - Eligible adult head of household caretaker of younger sibling with Medicaid at 10% FPL",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75201",
+      "county": "Dallas",
+      "household_size": 2,
+      "household_assets": 600.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 24,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 150.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 12,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_parents_and_caretakers",
+      "eligible": true,
+      "value": 5818
+    }
+  },
+  {
+    "notes": "TX Medicaid for Parents and Caretakers - Eligible 19-year-old head of household (minimum age boundary) with child sibling on Medicaid at 10% FPL",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_size": 2,
+      "household_assets": 500.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 19,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 150.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 10,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_parents_and_caretakers",
+      "eligible": true,
+      "value": 5818
+    }
+  },
+  {
+    "notes": "TX Medicaid for Parents and Caretakers - Ineligible 18-year-old (too young, must be 19+)",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75001",
+      "county": "Collin",
+      "household_size": 3,
+      "household_assets": 700.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 40,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 200.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 18,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 8,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_parents_and_caretakers",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "TX Medicaid for Parents and Caretakers - Ineligible adult with employer insurance despite low income",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "77001",
+      "county": "Harris",
+      "household_size": 2,
+      "household_assets": 900.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 150.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 7,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_parents_and_caretakers",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "TX Medicaid for Parents and Caretakers - Ineligible household with no child under 19",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75201",
+      "county": "Dallas",
+      "household_size": 2,
+      "household_assets": 500.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 45,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 150.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 22,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_parents_and_caretakers",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "TX Medicaid for Parents and Caretakers - Ineligible due to income above 10% FPL threshold",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_size": 3,
+      "household_assets": 5000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 38,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 36,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 10,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_parents_and_caretakers",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "TX Medicaid for Parents and Caretakers - Ineligible non-caretaker relationship (unrelated housemate)",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75001",
+      "county": "Collin",
+      "household_size": 3,
+      "household_assets": 800.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 30,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 200.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "other",
+          "age": 28,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 6,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_parents_and_caretakers",
+      "eligible": false
+    }
+  }
+]
