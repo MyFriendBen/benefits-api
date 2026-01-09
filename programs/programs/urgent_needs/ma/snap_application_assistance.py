@@ -25,7 +25,7 @@ class SNAPApplicationAssistance(UrgentNeedFunction):
         # Condition 3: SNAP Eligible
         is_snap_eligible = False
 
-        for program in (self.data or []):
+        for program in self.data or []:
             if not isinstance(program, dict):
                 continue
 
