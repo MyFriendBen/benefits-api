@@ -180,6 +180,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             "has_il_transit_reduced_fare",
             "has_il_bap",
             "has_il_hbwd",
+            "has_harris_county_rides",
             "has_medicaid",
             "has_rtdlive",
             "has_ccap",
