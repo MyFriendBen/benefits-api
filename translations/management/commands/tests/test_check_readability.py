@@ -42,13 +42,13 @@ class ReadabilityCheckerTest(TestCase):
         text = "This is a simple sentence. It is easy to read. Anyone can understand it."
         scores = self.checker.analyze_english(text)
 
-        self.assertIn('flesch_reading_ease', scores)
-        self.assertIn('flesch_kincaid_grade', scores)
-        self.assertIn('smog_index', scores)
-        self.assertIn('automated_readability_index', scores)
-        
+        self.assertIn("flesch_reading_ease", scores)
+        self.assertIn("flesch_kincaid_grade", scores)
+        self.assertIn("smog_index", scores)
+        self.assertIn("automated_readability_index", scores)
+
         # Simple text should have low grade level
-        self.assertLess(scores['flesch_kincaid_grade'], 10)
+        self.assertLess(scores["flesch_kincaid_grade"], 10)
 
     def test_analyze_english_complex_text(self):
         """Test analyzing complex English text."""
@@ -59,18 +59,18 @@ class ReadabilityCheckerTest(TestCase):
         facilitates optimal performance characteristics in enterprise-grade applications.
         """
         scores = self.checker.analyze_english(text)
-        
+
         # Complex text should have higher grade level
-        self.assertGreater(scores['flesch_kincaid_grade'], 10)
+        self.assertGreater(scores["flesch_kincaid_grade"], 10)
 
     def test_analyze_spanish_text(self):
         """Test analyzing Spanish text."""
         text = "Esta es una oración simple. Es fácil de leer. Cualquiera puede entenderla."
         scores = self.checker.analyze_spanish(text)
 
-        self.assertIn('fernandez_huerta', scores)
-        self.assertIn('szigriszt_pazos', scores)
-        self.assertIn('crawford', scores)
+        self.assertIn("fernandez_huerta", scores)
+        self.assertIn("szigriszt_pazos", scores)
+        self.assertIn("crawford", scores)
 
     def test_check_english_passing(self):
         """Test that simple English text passes readability check."""
@@ -132,7 +132,7 @@ class ReadabilityCheckerTest(TestCase):
         result = self.checker.check("test.label", text, "es")
 
         self.assertEqual(result.language, "es")
-        self.assertIn('fernandez_huerta', result.scores)
+        self.assertIn("fernandez_huerta", result.scores)
         # Threshold comparison is opposite for Spanish (higher is better)
         self.assertEqual(result.threshold, 60.0)
 
@@ -152,7 +152,7 @@ class CheckReadabilityCommandTest(TestCase):
         self.out = StringIO()
         self.err = StringIO()
 
-    @patch('translations.management.commands.check_readability.Translation')
+    @patch("translations.management.commands.check_readability.Translation")
     def test_command_runs_without_error(self, mock_translation_class):
         """Test that the command runs without errors."""
         # Set up mock
@@ -163,12 +163,12 @@ class CheckReadabilityCommandTest(TestCase):
         mock_queryset.__iter__ = lambda self: iter([])
         mock_translation_class.objects = mock_queryset
 
-        call_command('check_readability', stdout=self.out, stderr=self.err)
+        call_command("check_readability", stdout=self.out, stderr=self.err)
 
         output = self.out.getvalue()
-        self.assertIn('READABILITY ANALYSIS REPORT', output)
+        self.assertIn("READABILITY ANALYSIS REPORT", output)
 
-    @patch('translations.management.commands.check_readability.Translation')
+    @patch("translations.management.commands.check_readability.Translation")
     def test_command_with_language_option(self, mock_translation_class):
         """Test that the command respects the language option."""
         mock_queryset = MagicMock()
@@ -178,13 +178,13 @@ class CheckReadabilityCommandTest(TestCase):
         mock_queryset.__iter__ = lambda self: iter([])
         mock_translation_class.objects = mock_queryset
 
-        call_command('check_readability', '--language', 'es', stdout=self.out)
+        call_command("check_readability", "--language", "es", stdout=self.out)
 
         output = self.out.getvalue()
-        self.assertIn('Language: es', output)
-        self.assertIn('Fernández-Huerta', output)
+        self.assertIn("Language: es", output)
+        self.assertIn("Fernández-Huerta", output)
 
-    @patch('translations.management.commands.check_readability.Translation')
+    @patch("translations.management.commands.check_readability.Translation")
     def test_command_with_threshold_option(self, mock_translation_class):
         """Test that the command respects custom threshold."""
         mock_queryset = MagicMock()
@@ -194,28 +194,28 @@ class CheckReadabilityCommandTest(TestCase):
         mock_queryset.__iter__ = lambda self: iter([])
         mock_translation_class.objects = mock_queryset
 
-        call_command('check_readability', '--threshold', '6.0', stdout=self.out)
+        call_command("check_readability", "--threshold", "6.0", stdout=self.out)
 
         output = self.out.getvalue()
-        self.assertIn('Threshold: <= 6.0', output)
+        self.assertIn("Threshold: <= 6.0", output)
 
-    @patch('translations.management.commands.check_readability.WhiteLabel')
-    @patch('translations.management.commands.check_readability.Program')
-    @patch('translations.management.commands.check_readability.Translation')
+    @patch("translations.management.commands.check_readability.WhiteLabel")
+    @patch("translations.management.commands.check_readability.Program")
+    @patch("translations.management.commands.check_readability.Translation")
     def test_command_with_whitelabel_option(self, mock_translation_class, mock_program_class, mock_whitelabel_class):
         """Test that the command respects the whitelabel option."""
         # Set up white label mock
         mock_wl = MagicMock()
         mock_whitelabel_class.objects.get.return_value = mock_wl
         mock_whitelabel_class.DoesNotExist = Exception
-        
+
         # Set up program mock with translation field
         mock_translation = MagicMock()
-        mock_translation.label = 'program.test_1-name'
+        mock_translation.label = "program.test_1-name"
         mock_program = MagicMock()
         mock_program.name = mock_translation
         mock_program_class.objects.filter.return_value = [mock_program]
-        
+
         # Set up translation mock
         mock_queryset = MagicMock()
         mock_queryset.filter.return_value = mock_queryset
@@ -224,17 +224,17 @@ class CheckReadabilityCommandTest(TestCase):
         mock_queryset.__iter__ = lambda self: iter([])
         mock_translation_class.objects = mock_queryset
 
-        call_command('check_readability', '--whitelabel', 'co', stdout=self.out)
+        call_command("check_readability", "--whitelabel", "co", stdout=self.out)
 
         output = self.out.getvalue()
-        self.assertIn('White Label: co', output)
+        self.assertIn("White Label: co", output)
 
-    @patch('translations.management.commands.check_readability.Translation')
+    @patch("translations.management.commands.check_readability.Translation")
     def test_command_fail_on_error_with_failures(self, mock_translation_class):
         """Test that --fail-on-error raises CommandError when there are failures."""
         # Create a mock translation with complex text that will fail
         mock_translation = MagicMock()
-        mock_translation.label = 'test.complex'
+        mock_translation.label = "test.complex"
         mock_translation.text = """
         The implementation of sophisticated algorithmic methodologies necessitates 
         a comprehensive understanding of computational complexity theory and 
@@ -252,9 +252,9 @@ class CheckReadabilityCommandTest(TestCase):
         mock_translation_class.objects = mock_queryset
 
         with self.assertRaises(CommandError) as context:
-            call_command('check_readability', '--fail-on-error', stdout=self.out)
+            call_command("check_readability", "--fail-on-error", stdout=self.out)
 
-        self.assertIn('failed readability check', str(context.exception))
+        self.assertIn("failed readability check", str(context.exception))
 
 
 class ReadabilityResultTest(TestCase):
@@ -266,11 +266,11 @@ class ReadabilityResultTest(TestCase):
             label="test.label",
             text="Test text",
             language="en-us",
-            scores={'flesch_kincaid_grade': 5.0},
+            scores={"flesch_kincaid_grade": 5.0},
             passes=True,
             primary_score=5.0,
             threshold=8.0,
-            word_count=2
+            word_count=2,
         )
 
         self.assertEqual(result.label, "test.label")
