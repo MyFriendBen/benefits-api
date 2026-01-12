@@ -31,3 +31,35 @@ pytest -m integration
 ```
 
 For detailed information about writing and maintaining integration tests, see [docs/INTEGRATION_TESTING.md](docs/INTEGRATION_TESTING.md).
+
+## Readability Check
+
+We use a readability check tool to ensure translation content is accessible to users with varying reading levels. The tool analyzes text using industry-standard metrics:
+
+- **English**: Flesch-Kincaid Grade Level (target: 8th grade or below)
+- **Spanish**: Fernández-Huerta score (target: 60+ for good readability)
+
+### Running Readability Checks
+
+```bash
+# Check all English translations
+python manage.py check_readability --language en-us
+
+# Check English for specific white-label (Colorado)
+python manage.py check_readability --language en --whitelabel co
+
+# Check Spanish translations
+python manage.py check_readability --language es --whitelabel co
+
+# With custom threshold (6th grade level)
+python manage.py check_readability --language en --whitelabel co --threshold 6
+
+# Show detailed scores for each translation
+python manage.py check_readability --language en --whitelabel co --detailed
+
+# CI/CD mode - exit with error code if failures found
+python manage.py check_readability --language en --whitelabel co --fail-on-error
+
+# Also show passing translations
+python manage.py check_readability --language en --whitelabel co --show-passing
+```
