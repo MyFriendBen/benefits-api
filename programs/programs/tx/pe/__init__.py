@@ -14,6 +14,7 @@ tx_member_calculators = {
     "tx_medicaid_for_parents_and_caretakers": member.TxMedicaidForParentsAndCaretakers,
     "tx_harris_rides": member.TxHarrisCountyRides,
     "tx_emergency_medicaid": member.TxEmergencyMedicaid,
+    "tx_dart": member.TxDart,
 }
 
 tx_tax_unit_calculators = {
