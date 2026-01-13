@@ -53,7 +53,11 @@ class CountyDependency(Household):
         county_token = re.sub(r"\s+", "_", county_token.strip())  # Replace whitespace with underscores
         county_token = county_token.upper()  # Uppercase
 
-        return f"{county_token}_{state_code}"
+        # Don't append COUNTY if it's already in the county token
+        if county_token.endswith("COUNTY"):
+            return f"{county_token}_{state_code}"
+
+        return f"{county_token}_COUNTY_{state_code}"
 
 
 class NcCountyDependency(CountyDependency):
@@ -62,6 +66,10 @@ class NcCountyDependency(CountyDependency):
 
 class IlCountyDependency(CountyDependency):
     state_dependency_class = IlStateCodeDependency
+
+
+class TxCountyDependency(CountyDependency):
+    state_dependency_class = TxStateCodeDependency
 
 
 class ZipCodeDependency(Household):

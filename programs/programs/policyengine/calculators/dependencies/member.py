@@ -571,3 +571,7 @@ class IlFppEligible(Member):
 
 class IlMpeEligible(Member):
     field = "il_mpe_eligible"
+
+
+class TxHarrisRidesEligible(Member):
+    field = "tx_harris_rides_eligible"

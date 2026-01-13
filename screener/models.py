@@ -70,6 +70,7 @@ class Screen(models.Model):
     has_il_transit_reduced_fare = models.BooleanField(default=False, blank=True, null=True)
     has_il_bap = models.BooleanField(default=False, blank=True, null=True)
     has_il_hbwd = models.BooleanField(default=False, blank=True, null=True)
+    has_harris_county_rides = models.BooleanField(default=False, blank=True, null=True)
     has_medicaid = models.BooleanField(default=False, blank=True, null=True)
     has_rtdlive = models.BooleanField(default=False, blank=True, null=True)
     has_ccap = models.BooleanField(default=False, blank=True, null=True)
@@ -421,6 +422,7 @@ class Screen(models.Model):
             "ssi": has_ssi_or_ssi_income,
             "tx_ssi": has_ssi_or_ssi_income,
             "tx_csfp": self.has_csfp,
+            "tx_harris_rides": self.has_harris_county_rides,
             "andcs": self.has_andcs,
             "chs": self.has_chs,
             "cpcr": self.has_cpcr,
