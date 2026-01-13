@@ -23,14 +23,13 @@
     "warning_message": {
         "external_name": "jeffco_student_benefits_warning",
         "calculator": "_show",
-        "message": "Families can apply online through the student portal or with this document at their child's school."
+        "message": "Families can apply online through the student portal, or download and submit the paper application at their child's school.",
+        "link_url": "https://jeffcok12cous.sharepoint.com/sites/Dept-FoodandNutritionServices/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FDept%2DFoodandNutritionServices%2FShared%20Documents%2FProject%20Coordinator%2FWebsites%2F24%2D25%20CEP%20and%20Student%20Benefits%2FStudent%20Benefits%20Instructions%5FEN%2Epdf&parent=%2Fsites%2FDept%2DFoodandNutritionServices%2FShared%20Documents%2FProject%20Coordinator%2FWebsites%2F24%2D25%20CEP%20and%20Student%20Benefits&p=true&ga=1",
+        "link_text": "Download paper application"
     },
     "documents": [
         {
-            "external_name": "co_jeffco_proof_of_address",
-            "text": "Proof of address",
-            "link_url": "",
-            "link_text": ""
+            "external_name": "home"
         }
     ]
 }
