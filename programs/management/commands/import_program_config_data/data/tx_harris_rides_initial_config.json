@@ -7,7 +7,7 @@
     },
     "program": {
         "name_abbreviated": "tx_harris_rides",
-        "year": "2025",
+        "year": "2026",
         "legal_status_required": ["citizen", "gc_5plus"],
         "name": "Harris County RIDES",
         "website_description": "Discounted rides on public transit for seniors and people with disabilities",
