@@ -576,7 +576,7 @@ class IlMpeEligible(Member):
 class TxHarrisRidesEligible(Member):
     field = "tx_harris_rides_eligible"
 
-    
+
 class IsVeteranDependency(Member):
     """
     Veteran status for PolicyEngine calculations.
