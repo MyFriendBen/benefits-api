@@ -247,7 +247,6 @@ class TxEmergencyMedicaid(Medicaid):
         return 1 if pe_value > 0 else 0
 
 
-
 class TxChip(PolicyEngineMembersCalculator):
     """
     Texas CHIP calculator that uses PolicyEngine's calculated benefit amounts
