@@ -13,6 +13,7 @@ tx_member_calculators = {
     "tx_medicaid_for_pregnant_women": member.TxMedicaidForPregnantWomen,
     "tx_medicaid_for_parents_and_caretakers": member.TxMedicaidForParentsAndCaretakers,
     "tx_harris_rides": member.TxHarrisCountyRides,
+    "tx_emergency_medicaid": member.TxEmergencyMedicaid,
 }
 
 tx_tax_unit_calculators = {
