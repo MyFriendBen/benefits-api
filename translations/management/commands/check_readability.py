@@ -260,16 +260,16 @@ class Command(BaseCommand):
         labels: Set[str] = set()
         translation_fields = [
             "name",
-            "name_short",
             "description",
             "description_short",
             "learn_more_link",
             "apply_button_link",
             "apply_button_description",
-            "value_description",
+            "value_type",
             "estimated_delivery_time",
             "estimated_application_time",
-            "category",
+            "estimated_value",
+            "website_description",
         ]
 
         for program in programs:
