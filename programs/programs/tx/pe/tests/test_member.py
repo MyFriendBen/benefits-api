@@ -1981,6 +1981,29 @@ class TestTxFpp(TestCase):
         self.assertEqual(TxStateCodeDependency.state, "TX")
         self.assertEqual(TxStateCodeDependency.field, "state_code")
 
+    def test_pe_inputs_includes_irs_gross_income_dependencies(self):
+        """
+        Test that TxFpp includes all irs_gross_income dependencies.
+
+        FPP eligibility requires income at or below 250% FPL. PolicyEngine's
+        tx_fpp_income_eligible formula uses spm_unit_net_income which derives
+        from market_income, so we need to provide income inputs.
+        """
+        from programs.programs.policyengine.calculators.dependencies.member import (
+            EmploymentIncomeDependency,
+            SelfEmploymentIncomeDependency,
+            RentalIncomeDependency,
+            PensionIncomeDependency,
+            SocialSecurityIncomeDependency,
+        )
+
+        # Verify all irs_gross_income dependencies are present
+        self.assertIn(EmploymentIncomeDependency, TxFpp.pe_inputs)
+        self.assertIn(SelfEmploymentIncomeDependency, TxFpp.pe_inputs)
+        self.assertIn(RentalIncomeDependency, TxFpp.pe_inputs)
+        self.assertIn(PensionIncomeDependency, TxFpp.pe_inputs)
+        self.assertIn(SocialSecurityIncomeDependency, TxFpp.pe_inputs)
+
     def test_pe_outputs_includes_tx_fpp_dependency(self):
         """Test that TxFpp has TxFpp dependency in pe_outputs."""
         from programs.programs.policyengine.calculators.dependencies.member import TxFpp as TxFppDependency

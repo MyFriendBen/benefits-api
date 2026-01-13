@@ -383,6 +383,7 @@ class TxFpp(PolicyEngineMembersCalculator):
     pe_inputs = [
         dependency.member.AgeDependency,
         dependency.household.TxStateCodeDependency,
+        *dependency.irs_gross_income,
     ]
     pe_outputs = [dependency.member.TxFpp]
 
