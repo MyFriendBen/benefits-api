@@ -52,11 +52,17 @@ class ReadabilityChecker:
     SPANISH_THRESHOLD = 60.0  # Minimum Fernández-Huerta score
 
     # Minimum word count for meaningful analysis
-    MIN_WORD_COUNT = 10
+    DEFAULT_MIN_WORD_COUNT = 10
 
-    def __init__(self, en_threshold: Optional[float] = None, es_threshold: Optional[float] = None):
+    def __init__(
+        self,
+        en_threshold: Optional[float] = None,
+        es_threshold: Optional[float] = None,
+        min_words: Optional[int] = None,
+    ):
         self.en_threshold = en_threshold if en_threshold is not None else self.ENGLISH_THRESHOLD
         self.es_threshold = es_threshold if es_threshold is not None else self.SPANISH_THRESHOLD
+        self.min_word_count = min_words if min_words is not None else self.DEFAULT_MIN_WORD_COUNT
 
     def analyze_english(self, text: str) -> Dict[str, float]:
         """Analyze English text using multiple readability metrics."""
@@ -100,7 +106,7 @@ class ReadabilityChecker:
         word_count = self.get_word_count(text)
 
         # Skip analysis for very short texts
-        if not text or word_count < self.MIN_WORD_COUNT:
+        if not text or word_count < self.min_word_count:
             return ReadabilityResult(
                 label=label,
                 text=text or "",
@@ -145,7 +151,7 @@ class Command(BaseCommand):
             "-l",
             type=str,
             default="en-us",
-            help="Language code to check (default: en-us). Options: en-us, es, vi",
+            help="Language code to check (default: en-us). Options: en-us, es, etc.",
         )
         parser.add_argument(
             "--whitelabel", "-w", type=str, help='White label code to filter by (e.g., "colorado", "co")'
@@ -180,8 +186,8 @@ class Command(BaseCommand):
         checker = ReadabilityChecker(
             en_threshold=threshold if language.startswith("en") else None,
             es_threshold=threshold if language.startswith("es") else None,
+            min_words=min_words,
         )
-        checker.MIN_WORD_COUNT = min_words
 
         # Fetch translations
         self.stdout.write(f"\nFetching translations for language: {language}")
@@ -303,10 +309,10 @@ class Command(BaseCommand):
             self.stdout.write(f"White Label: {whitelabel}")
 
         if language.startswith("es"):
-            self.stdout.write(f"Metric: Fernández-Huerta (higher is better)")
+            self.stdout.write("Metric: Fernández-Huerta (higher is better)")
             self.stdout.write(f"Threshold: >= {checker.es_threshold}")
         else:
-            self.stdout.write(f"Metric: Flesch-Kincaid Grade Level (lower is better)")
+            self.stdout.write("Metric: Flesch-Kincaid Grade Level (lower is better)")
             self.stdout.write(f"Threshold: <= {checker.en_threshold} (8th grade)")
 
         self.stdout.write(f"\nTotal analyzed: {total}")
@@ -354,7 +360,6 @@ class Command(BaseCommand):
 
     def _print_result(self, result: ReadabilityResult, detailed: bool, is_failing: bool):
         """Print details for a single translation result."""
-        style = self.style.ERROR if is_failing else self.style.SUCCESS
         icon = "❌" if is_failing else "✅"
 
         self.stdout.write(f"\n{icon} {result.label}")
