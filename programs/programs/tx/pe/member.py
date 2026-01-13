@@ -372,7 +372,7 @@ class TxFpp(PolicyEngineMembersCalculator):
     a parent. Services may include birth control, pregnancy testing, and health care screenings.
 
     Eligibility requirements (handled by PolicyEngine):
-    - Age eligibility (15-44 years old per tx_fpp_age_eligible)
+    - Age eligibility (64 or younger per tx_fpp_age_eligible)
     - Income at or below 250% of Federal Poverty Level (per tx_fpp_income_eligible)
 
     Additional eligibility requirements (handled in member_value):
