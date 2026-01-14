@@ -3059,6 +3059,24 @@ class TxConfigurationData(ConfigurationData):
                 "_default_message": "Transportation",
             },
         },
+        "childCare": {
+            "benefits": {
+                "ccs": {
+                    "name": {
+                        "_label": "childCareBenefits.tx_ccs",
+                        "_default_message": "Child Care Services (CCS): ",
+                    },
+                    "description": {
+                        "_label": "childCareBenefits.tx_ccs_desc",
+                        "_default_message": "Subsidized child care assistance for eligible families",
+                    },
+                },
+            },
+            "category_name": {
+                "_label": "childCare",
+                "_default_message": "Child Care",
+            },
+        },
     }
 
     consent_to_contact = {

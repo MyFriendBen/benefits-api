@@ -476,3 +476,7 @@ class MortgageDependency(SpmUnit):
 
     def value(self):
         return int(self.screen.calc_expenses("yearly", ["mortgage"]))
+
+
+class TxCcs(SpmUnit):
+    field = "tx_ccs"
