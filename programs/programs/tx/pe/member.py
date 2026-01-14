@@ -362,3 +362,42 @@ class TxDart(PolicyEngineMembersCalculator):
         We return the PolicyEngine-calculated value directly.
         """
         return self.get_member_variable(member.id)
+
+
+class TxFpp(PolicyEngineMembersCalculator):
+    """
+    Texas Family Planning Program (FPP) calculator using PolicyEngine.
+
+    This program provides family planning benefits to help individuals choose when to become
+    a parent. Services may include birth control, pregnancy testing, and health care screenings.
+
+    Eligibility requirements (handled by PolicyEngine):
+    - Age eligibility (64 or younger per tx_fpp_age_eligible)
+    - Income at or below 250% of Federal Poverty Level (per tx_fpp_income_eligible)
+
+    Additional eligibility requirements (handled in member_value):
+    - Must not have other health insurance (program is for those who earn too much for Medicaid)
+    """
+
+    pe_name = "tx_fpp_benefit"
+    pe_inputs = [
+        dependency.member.AgeDependency,
+        dependency.household.TxStateCodeDependency,
+        *dependency.irs_gross_income,
+    ]
+    pe_outputs = [dependency.member.TxFpp]
+
+    def member_value(self, member: HouseholdMember):
+        """
+        Returns the FPP benefit value for this member.
+
+        PolicyEngine calculates age and income eligibility. We additionally check
+        that the member does not have other health insurance, as FPP is designed
+        for those who earn too much for regular Medicaid benefits.
+        """
+        # Must not have other health insurance (FPP is for those without Medicaid coverage)
+        if not member.has_insurance_types(("none",)):
+            return 0
+
+        # Return PolicyEngine-calculated value (handles age and income eligibility)
+        return self.get_member_variable(member.id)

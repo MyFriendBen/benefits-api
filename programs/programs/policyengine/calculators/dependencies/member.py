@@ -597,3 +597,9 @@ class TxDartBenefitPerson(Member):
     """
 
     field = "tx_dart_benefit_person"
+
+
+class TxFpp(Member):
+    """Output dependency for TX Family Planning Program benefit."""
+
+    field = "tx_fpp_benefit"
