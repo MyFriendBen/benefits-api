@@ -1,8 +1,6 @@
 {
     "white_label": {"code": "il"},
-    "program_category": {
-        "external_name": "il_cash"
-    },
+    "program_category": {"external_name": "il_cash"},
     "program": {
         "name_abbreviated": "il_aabd",
         "year": "2025",
@@ -18,7 +16,7 @@
     "warning_message": {
         "external_name": "il_aabd_ssi_repayment",
         "calculator": "_show",
-        "message": "If you already get SSI, your AABD payment will be much smaller (rarely over $70) because SSI counts as income.\n\nIf you applied for SSI but are still waiting, you can get the full AABD amount now. If SSI approves you, your first check will pay you back for all the months you waited. They'll subtract any AABD you received during that time—so you won't lose money, you just won't get paid twice."
+        "message": "If you already get SSI, your AABD payment will rarely be over $70, because SSI counts as income.\n\nIf you applied for SSI but are still waiting, you can get the full AABD amount now. If SSI approves you, your first check will pay you back for all the months you waited. They'll subtract any AABD you received during that time—so you won't lose money, you just won't get paid twice."
     },
     "documents": [
         {

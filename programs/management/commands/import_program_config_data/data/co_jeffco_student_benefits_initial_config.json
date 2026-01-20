@@ -1,0 +1,35 @@
+{
+    "white_label": {"code": "co"},
+    "program_category": {
+        "external_name": "food"
+    },
+    "program": {
+        "name_abbreviated": "jeffco_student_benefits",
+        "year": "2025",
+        "legal_status_required": ["citizen", "non_citizen", "refugee", "gc_5plus", "gc_under18_no5", "gc_5less", "otherWithWorkPermission"],
+        "name": "Jeffco Student Benefits",
+        "description_short": "Jeffco Student Benefits helps students and families get the support they need to do well in school and stay healthy, pay for school programs, materials, or resources and possibly attain additional funding and resources from the school district.",
+        "description": "All Jeffco students can eat healthy school meals for free through Healthy School Meals for All, no matter your family's income. Families who qualify should still fill out the Student Benefits Application each year because it can give students free access to additional resources and some district programs, athletics, events, and may help waive certain school, district, or program fees",
+        "learn_more_link": "https://www.jeffcopublicschools.org/services/food-nutrition-services/student-benefits",
+        "apply_button_link": "https://www.schoolcafe.com/jeffcosd",
+        "apply_button_description": "Click here to apply through your Jeffco student portal.",
+        "estimated_application_time": "2 weeks",
+        "estimated_delivery_time": "",
+        "estimated_value": "$500",
+        "value_type": "reduced expenses",
+        "website_description": "Jeffco Student Benefits helps students and families get the support they need to do well in school and stay healthy, pay for school programs, materials, or resources and possibly attain additional funding and resources from the school district.",
+        "low_confidence": false
+    },
+    "warning_message": {
+        "external_name": "jeffco_student_benefits_warning",
+        "calculator": "_show",
+        "message": "Families can apply online through the student portal, or download and submit the paper application at their child's school.",
+        "link_url": "https://jeffcok12cous.sharepoint.com/sites/Dept-FoodandNutritionServices/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FDept%2DFoodandNutritionServices%2FShared%20Documents%2FProject%20Coordinator%2FWebsites%2F24%2D25%20CEP%20and%20Student%20Benefits%2FStudent%20Benefits%20Instructions%5FEN%2Epdf&parent=%2Fsites%2FDept%2DFoodandNutritionServices%2FShared%20Documents%2FProject%20Coordinator%2FWebsites%2F24%2D25%20CEP%20and%20Student%20Benefits&p=true&ga=1",
+        "link_text": "Download paper application"
+    },
+    "documents": [
+        {
+            "external_name": "home"
+        }
+    ]
+}
