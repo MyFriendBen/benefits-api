@@ -11,6 +11,6 @@ class FeedingTexas(UrgentNeedFunction):
 
     dependencies = []
 
-    def eligible(self):
+    def eligible(self) -> bool:
         # All TX counties; eligibility varies
         return True
