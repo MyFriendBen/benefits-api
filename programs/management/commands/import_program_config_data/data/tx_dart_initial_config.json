@@ -1,0 +1,42 @@
+{
+    "white_label": {"code": "tx"},
+    "program_category": {
+        "external_name": "tx_transportation",
+        "name": "Transportation",
+        "icon": "transportation"
+    },
+    "program": {
+        "name_abbreviated": "tx_dart",
+        "year": "2026",
+        "legal_status_required": ["citizen", "gc_5plus", "gc_5less", "refugee"],
+        "name": "DART",
+        "description": "DART (Dallas Area Rapid Transit) has a Discount / Reduced-Fare GoPass Tap Card program. Anyone already receiving public benefits (or meet income/age/disability rules) pay about half price for buses and trains in the Dallas area.\n\nTo qualify, you may need to show proof of participation in a qualifying benefits program, meet income guidelines, or demonstrate eligibility based on age or disability status.\n\nAfter applying, it typically takes about 1 week to receive your GoPass Tap Card.",
+        "learn_more_link": "https://www.gopass.org/gopasstap/about",
+        "apply_button_link": "https://www.dart.org/fare/general-fares-and-overview/reduced-fares",
+        "apply_button_description": "",
+        "estimated_application_time": "30 minutes",
+        "estimated_delivery_time": "1 week",
+        "estimated_value": "",
+        "website_description": "Half-price transit fares for eligible riders on DART buses and trains"
+    },
+    "documents": [
+        {
+            "external_name": "tx_id_proof",
+            "text": "Proof of identity (ex: driver's license, official state ID card)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "tx_other_program",
+            "text": "Evidence of participation in a qualifying benefits program (if applicable)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "tx_home",
+            "text": "Proof of home address (ex: lease, mortgage statement, utility bill)",
+            "link_url": "",
+            "link_text": ""
+        }
+    ]
+}

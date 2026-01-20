@@ -1,0 +1,35 @@
+{
+    "white_label": {"code": "tx"},
+    "program_category": {
+        "external_name": "tx_transportation",
+        "name": "Transportation",
+        "icon": "transportation"
+    },
+    "program": {
+        "name_abbreviated": "tx_harris_rides",
+        "year": "2026",
+        "legal_status_required": ["citizen", "gc_5plus"],
+        "name": "Harris County RIDES",
+        "website_description": "Discounted rides on public transit for seniors and people with disabilities",
+        "description": "Discounted rides on public transit. If you're 65 or older or have a disability and/or unable to access METRO services, you may qualify for subsidized shared rides and taxi fares through the use of a fare card. There is no limit for qualified individuals.\n\nGet an electronic fare card from a sponsoring agency or the RIDES office. For every $3 loaded, $6 is available on the fare card.",
+        "learn_more_link": "https://rides.harriscountytx.gov/Registration/Registration-Information",
+        "apply_button_link": "https://rides.harriscountytx.gov/registration/registration-form",
+        "apply_button_description": "",
+        "estimated_application_time": "20 minutes",
+        "estimated_value": "Varies"
+    },
+    "documents": [
+        {
+            "external_name": "tx_id_proof",
+            "text": "Proof of identity (ex: driver's license, official state ID card)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "tx_snap_disability",
+            "text": "Proof of disability determination (if applicable)",
+            "link_url": "",
+            "link_text": ""
+        }
+    ]
+}
