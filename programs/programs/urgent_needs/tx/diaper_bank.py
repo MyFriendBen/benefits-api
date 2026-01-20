@@ -3,7 +3,7 @@ from ..base import UrgentNeedFunction
 
 class NationalDiaperBankNetwork(UrgentNeedFunction):
     """Texas Diaper Bank Program via the National Diaper Bank Network.
-    
+
     Provides diaper assistance to families with young children in specific counties.
     Eligibility criteria include having a child under 5 years old, needing baby supplies,
     and having child support expenses.
