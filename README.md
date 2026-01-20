@@ -62,4 +62,12 @@ python manage.py check_readability --language en --whitelabel co --fail-on-error
 
 # Also show passing translations
 python manage.py check_readability --language en --whitelabel co --show-passing
+
+# Export report to a file (format auto-detected from extension)
+python manage.py check_readability --language es --whitelabel co --output report.json
+python manage.py check_readability --language es --whitelabel co --output report.csv
+python manage.py check_readability --language es --whitelabel co --output report.txt
+
+# Specify format explicitly
+python manage.py check_readability --language es --whitelabel co --output report --format json
 ```

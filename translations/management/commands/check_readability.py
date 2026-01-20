@@ -10,10 +10,15 @@ Usage:
     python manage.py check_readability --language en --whitelabel colorado
     python manage.py check_readability --language es --threshold 60
     python manage.py check_readability --fail-on-error
+    python manage.py check_readability --language es --whitelabel co --output report.json
+    python manage.py check_readability --language es --whitelabel co --output report.csv
 """
 
+import csv
+import json
 import textstat
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
+from pathlib import Path
 from typing import Dict, List, Optional, Set
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
@@ -171,6 +176,19 @@ class Command(BaseCommand):
         parser.add_argument("--min-words", type=int, default=10, help="Minimum word count for analysis (default: 10)")
         parser.add_argument("--label-filter", type=str, help='Filter translations by label prefix (e.g., "program.")')
         parser.add_argument("--show-passing", action="store_true", help="Also show passing translations in output")
+        parser.add_argument(
+            "--output",
+            "-o",
+            type=str,
+            help="Output file path (e.g., report.txt, report.json, report.csv)",
+        )
+        parser.add_argument(
+            "--format",
+            "-f",
+            type=str,
+            choices=["text", "json", "csv"],
+            help="Output format (default: auto-detected from file extension, or text)",
+        )
 
     def handle(self, *args, **options):
         language = options["language"]
@@ -181,6 +199,18 @@ class Command(BaseCommand):
         min_words = options["min_words"]
         label_filter = options.get("label_filter")
         show_passing = options["show_passing"]
+        output_file = options.get("output")
+        output_format = options.get("format")
+
+        # Auto-detect format from file extension if not specified
+        if output_file and not output_format:
+            ext = Path(output_file).suffix.lower()
+            if ext == ".json":
+                output_format = "json"
+            elif ext == ".csv":
+                output_format = "csv"
+            else:
+                output_format = "text"
 
         # Set up the checker
         checker = ReadabilityChecker(
@@ -240,6 +270,19 @@ class Command(BaseCommand):
             passing_results, failing_results, skipped_count, language, checker, detailed, show_passing, whitelabel
         )
 
+        # Export to file if requested
+        if output_file:
+            self._export_report(
+                output_file,
+                output_format or "text",
+                passing_results,
+                failing_results,
+                skipped_count,
+                language,
+                checker,
+                whitelabel,
+            )
+
         # Exit with error if requested and there are failures
         if fail_on_error and failing_results:
             raise CommandError(f"{len(failing_results)} translation(s) failed readability check")
@@ -285,6 +328,189 @@ class Command(BaseCommand):
                     labels.add(translation.label)
 
         return labels
+
+    def _export_report(
+        self,
+        output_file: str,
+        output_format: str,
+        passing: List[ReadabilityResult],
+        failing: List[ReadabilityResult],
+        skipped: int,
+        language: str,
+        checker: ReadabilityChecker,
+        whitelabel: Optional[str] = None,
+    ):
+        """Export the readability report to a file."""
+        total = len(passing) + len(failing)
+
+        if output_format == "json":
+            self._export_json(output_file, passing, failing, skipped, language, checker, whitelabel)
+        elif output_format == "csv":
+            self._export_csv(output_file, passing, failing)
+        else:
+            self._export_text(output_file, passing, failing, skipped, language, checker, whitelabel)
+
+        self.stdout.write(self.style.SUCCESS(f"\n📄 Report saved to: {output_file}"))
+
+    def _export_json(
+        self,
+        output_file: str,
+        passing: List[ReadabilityResult],
+        failing: List[ReadabilityResult],
+        skipped: int,
+        language: str,
+        checker: ReadabilityChecker,
+        whitelabel: Optional[str] = None,
+    ):
+        """Export report as JSON."""
+        total = len(passing) + len(failing)
+
+        report = {
+            "summary": {
+                "language": language,
+                "whitelabel": whitelabel,
+                "threshold": checker.es_threshold if language.startswith("es") else checker.en_threshold,
+                "metric": "fernandez_huerta" if language.startswith("es") else "flesch_kincaid_grade",
+                "total_analyzed": total,
+                "skipped": skipped,
+                "passing_count": len(passing),
+                "failing_count": len(failing),
+                "passing_percentage": round(100 * len(passing) / total, 1) if total > 0 else 0,
+            },
+            "failing": [
+                {
+                    "label": r.label,
+                    "score": round(r.primary_score, 1),
+                    "threshold": r.threshold,
+                    "word_count": r.word_count,
+                    "text": r.text[:200] + "..." if len(r.text) > 200 else r.text,
+                    "all_scores": {k: round(v, 2) for k, v in r.scores.items()},
+                }
+                for r in sorted(failing, key=lambda x: x.primary_score)
+            ],
+            "passing": [
+                {
+                    "label": r.label,
+                    "score": round(r.primary_score, 1),
+                    "word_count": r.word_count,
+                }
+                for r in sorted(passing, key=lambda x: x.primary_score, reverse=language.startswith("es"))
+            ],
+        }
+
+        with open(output_file, "w", encoding="utf-8") as f:
+            json.dump(report, f, indent=2, ensure_ascii=False)
+
+    def _export_csv(
+        self,
+        output_file: str,
+        passing: List[ReadabilityResult],
+        failing: List[ReadabilityResult],
+    ):
+        """Export report as CSV."""
+        all_results = [(r, "FAIL") for r in failing] + [(r, "PASS") for r in passing]
+
+        with open(output_file, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow(["Status", "Label", "Score", "Threshold", "Word Count", "Text Preview"])
+
+            for result, status in sorted(all_results, key=lambda x: (x[1], x[0].label)):
+                text_preview = result.text[:100].replace("\n", " ") if result.text else ""
+                writer.writerow(
+                    [
+                        status,
+                        result.label,
+                        round(result.primary_score, 1),
+                        result.threshold,
+                        result.word_count,
+                        text_preview,
+                    ]
+                )
+
+    def _export_text(
+        self,
+        output_file: str,
+        passing: List[ReadabilityResult],
+        failing: List[ReadabilityResult],
+        skipped: int,
+        language: str,
+        checker: ReadabilityChecker,
+        whitelabel: Optional[str] = None,
+    ):
+        """Export report as plain text."""
+        total = len(passing) + len(failing)
+
+        lines = [
+            "=" * 60,
+            "READABILITY ANALYSIS REPORT",
+            "=" * 60,
+            "",
+            f"Language: {language}",
+        ]
+
+        if whitelabel:
+            lines.append(f"White Label: {whitelabel}")
+
+        if language.startswith("es"):
+            lines.append("Metric: Fernández-Huerta (higher is better)")
+            lines.append(f"Threshold: >= {checker.es_threshold}")
+        else:
+            lines.append("Metric: Flesch-Kincaid Grade Level (lower is better)")
+            lines.append(f"Threshold: <= {checker.en_threshold}")
+
+        lines.extend(
+            [
+                "",
+                f"Total analyzed: {total}",
+                f"Skipped (too short): {skipped}",
+                f"Passing: {len(passing)} ({100 * len(passing) / total:.1f}%)" if total > 0 else "Passing: 0",
+                f"Failing: {len(failing)} ({100 * len(failing) / total:.1f}%)" if total > 0 else "Failing: 0",
+                "",
+                "-" * 60,
+                "FAILING TRANSLATIONS:",
+                "-" * 60,
+            ]
+        )
+
+        for result in sorted(failing, key=lambda x: x.primary_score):
+            display_text = (
+                result.text[:100].replace("\n", " ") + "..."
+                if len(result.text) > 100
+                else result.text.replace("\n", " ")
+            )
+            lines.extend(
+                [
+                    "",
+                    f"❌ {result.label}",
+                    f"   Score: {result.primary_score:.1f} (threshold: {result.threshold})",
+                    f"   Words: {result.word_count}",
+                    f'   Text: "{display_text}"',
+                ]
+            )
+
+        lines.extend(
+            [
+                "",
+                "-" * 60,
+                "PASSING TRANSLATIONS:",
+                "-" * 60,
+            ]
+        )
+
+        for result in sorted(passing, key=lambda x: x.primary_score, reverse=language.startswith("es")):
+            lines.extend(
+                [
+                    "",
+                    f"✅ {result.label}",
+                    f"   Score: {result.primary_score:.1f}",
+                    f"   Words: {result.word_count}",
+                ]
+            )
+
+        lines.append("\n" + "=" * 60)
+
+        with open(output_file, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines))
 
     def _print_summary(
         self,
