@@ -2,7 +2,7 @@ name: black-action
 on:
   push:
     branches: [main]
-  pull_request:
+  workflow_call:
 
 jobs:
   linter_name:
