@@ -9,11 +9,11 @@ class CollegeAndFafsaSupport(UrgentNeedFunction):
     """
 
     dependencies = ["county", "student"]
-    eligible_city = "Cambridge"
+    eligible_county = "Cambridge"
 
     def eligible(self) -> bool:
         # Condition 1:  Cambridge residents
-        is_cambridge = self.screen.county == self.eligible_city
+        is_cambridge = self.screen.county == self.eligible_county
 
         # Condition 2:  Student
         is_student = self.screen.household_members.filter(student=True).exists()
