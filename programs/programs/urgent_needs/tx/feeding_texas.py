@@ -5,7 +5,7 @@ class FeedingTexas(UrgentNeedFunction):
     """
     Feeding Texas
 
-    Helps families locate their nearest local food bank by ZIP code,
+    Helps families locate their neariest local food bank by ZIP code,
     connecting them to free, nutritious food and meal programs.
     """
 
