@@ -1,0 +1,21 @@
+{
+    "white_label": {"code": "co_tax_calculator"},
+    "program_category": {
+        "external_name": "tax_credit_calculator"
+    },
+    "program": {
+        "name_abbreviated": "co_tax_credit_care_worker",
+        "year": "2025",
+        "legal_status_required": [],
+        "name": "Colorado Care Worker Tax Credit",
+        "description_short": "Colorado tax credit for care workers who support children and families",
+        "description": "A Colorado state tax credit for care workers including child care providers, home health aides, personal care aides, and nursing assistants. This also includes family members, friends, or neighbors who regularly care for children age 5 or younger (720+ hours per year).",
+        "learn_more_link": "https://cdec.colorado.gov/care-worker-tax-credit",
+        "apply_button_link": "",
+        "apply_button_description": "",
+        "estimated_application_time": "",
+        "estimated_delivery_time": "",
+        "estimated_value": "",
+        "website_description": "Colorado tax credit for care workers who support children and families"
+    }
+}

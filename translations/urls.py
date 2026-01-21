@@ -1,7 +1,6 @@
 from django.urls import path
 from . import views
 
-
 urlpatterns = [
     path("", views.TranslationView.as_view()),
     path("admin", views.admin_view, name="translations_api_url"),

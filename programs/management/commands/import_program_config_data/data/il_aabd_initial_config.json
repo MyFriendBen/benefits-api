@@ -1,0 +1,59 @@
+{
+    "white_label": {"code": "il"},
+    "program_category": {"external_name": "il_cash"},
+    "program": {
+        "name_abbreviated": "il_aabd",
+        "year": "2025",
+        "legal_status_required": ["citizen", "refugee", "gc_5plus", "gc_5less", "otherWithWorkPermission"],
+        "name": "Aid to the Aged, Blind, or Disabled (AABD)",
+        "description": "AABD gives cash each month to people in Illinois who are 65 or older, blind, or disabled. You must have low income and few assets to qualify. The cash can help pay for food, housing, clothes, and other needs.\n\nYou can apply online, in person, by phone, or by mail. Select \"Apply Now\" to see all options. \n\nThe estimated value assumes you have less than $2,000 in assets if single, or $3,000 if a couple. Add $50 more for each extra person in your home. Cars worth over $4,500 may count toward this limit. If you cannot get out of bed or a chair for 3 or more months, you may get a higher amount. If you live in a nursing home or care facility, your care is covered, but you'll only keep a small personal allowance (around $30–90/month).",
+        "apply_button_link": "https://www.dhs.state.il.us/page.aspx?item=33698",
+        "apply_button_description": "Apply Now",
+        "estimated_application_time": "45 minutes",
+        "website_description": "Cash assistance for aged, blind, or disabled individuals",
+        "estimated_value": ""
+    },
+    "warning_message": {
+        "external_name": "il_aabd_ssi_repayment",
+        "calculator": "_show",
+        "message": "If you already get SSI, your AABD payment will rarely be over $70, because SSI counts as income.\n\nIf you applied for SSI but are still waiting, you can get the full AABD amount now. If SSI approves you, your first check will pay you back for all the months you waited. They'll subtract any AABD you received during that time—so you won't lose money, you just won't get paid twice."
+    },
+    "documents": [
+        {
+            "external_name": "il_home",
+            "text": "Proof of home address (ex: driver's license, utility bill, or mail with your name and address)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "id_proof",
+            "text": "Proof of identity - name and date of birth verification",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "il_us_status",
+            "text": "Proof of status in U.S. (ex: birth certificate, green card, work permit)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "il_proof_income",
+            "text": "Proof of income (ex: pay stubs, tax returns, Social Security statements)",
+            "link_url": "",
+            "link_text": ""
+        }
+    ],
+    "navigators": [
+        {
+            "external_name": "il_fcrc",
+            "name": "IDHS Family Community Resource Center",
+            "email": "",
+            "description": "Visit your local Family Community Resource Center to apply in person or get help with your AABD application",
+            "assistance_link": "https://www.dhs.state.il.us/page.aspx?module=12",
+            "phone_number": "1-800-843-6154",
+            "counties": [],
+            "languages": []
+        }
+    ]
+}

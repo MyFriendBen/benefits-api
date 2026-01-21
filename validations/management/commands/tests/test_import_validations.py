@@ -315,3 +315,42 @@ class ImportValidationsCommandTest(TestCase):
 
         finally:
             Path(file_path).unlink()
+
+    def test_is_test_data_set_without_is_test_in_input(self):
+        """Test that is_test_data is set to True even when is_test is not in input JSON"""
+        test_case = {
+            "notes": "Test without is_test flag",
+            "household": {
+                "white_label": "co",
+                # Note: is_test is intentionally NOT included here
+                "agree_to_tos": True,
+                "is_13_or_older": True,
+                "zipcode": "80202",
+                "household_size": 1,
+                "household_members": [
+                    {
+                        "relationship": "headOfHousehold",
+                        "age": 30,
+                        "has_income": False,
+                        "income_streams": [],
+                        "insurance": {"none": True},
+                    }
+                ],
+                "expenses": [],
+            },
+            "expected_results": {"program_name": "snap", "eligible": True, "value": 250.00},
+        }
+
+        file_path = self._create_test_case_file([test_case])
+
+        try:
+            call_command("import_validations", file_path, stdout=self.out, stderr=self.err)
+
+            # Verify screen was created with is_test_data=True
+            self.assertEqual(Screen.objects.count(), 1)
+            screen = Screen.objects.first()
+            self.assertTrue(screen.is_test, "is_test should be True (set by import command)")
+            self.assertTrue(screen.is_test_data, "is_test_data should be True (set via set_screen_is_test)")
+
+        finally:
+            Path(file_path).unlink()
