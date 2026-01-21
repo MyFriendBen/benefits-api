@@ -3,7 +3,6 @@ import programs.programs.il.pe.spm as spm
 import programs.programs.il.pe.member as member
 from programs.programs.policyengine.calculators.base import PolicyEngineCalulator
 
-
 il_member_calculators = {
     "il_medicaid": member.IlMedicaid,
     "il_wic": member.IlWic,

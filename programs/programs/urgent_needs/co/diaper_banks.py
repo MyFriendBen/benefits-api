@@ -1,6 +1,5 @@
 from ..base import UrgentNeedFunction
 
-
 DIAPER_BANK_COUNTIES = [
     "Adams County",
     "Arapahoe County",
