@@ -70,6 +70,7 @@ class Screen(models.Model):
     has_il_transit_reduced_fare = models.BooleanField(default=False, blank=True, null=True)
     has_il_bap = models.BooleanField(default=False, blank=True, null=True)
     has_il_hbwd = models.BooleanField(default=False, blank=True, null=True)
+    has_harris_county_rides = models.BooleanField(default=False, blank=True, null=True)
     has_medicaid = models.BooleanField(default=False, blank=True, null=True)
     has_rtdlive = models.BooleanField(default=False, blank=True, null=True)
     has_ccap = models.BooleanField(default=False, blank=True, null=True)
@@ -129,6 +130,7 @@ class Screen(models.Model):
     has_va = models.BooleanField(default=None, blank=True, null=True)
     has_project_cope = models.BooleanField(default=False, blank=True, null=True)
     has_cesn_heap = models.BooleanField(default=False, blank=True, null=True)
+    has_tx_dart = models.BooleanField(default=False, blank=True, null=True)
     needs_food = models.BooleanField(default=False, blank=True, null=True)
     needs_baby_supplies = models.BooleanField(default=False, blank=True, null=True)
     needs_housing_help = models.BooleanField(default=False, blank=True, null=True)
@@ -421,6 +423,7 @@ class Screen(models.Model):
             "ssi": has_ssi_or_ssi_income,
             "tx_ssi": has_ssi_or_ssi_income,
             "tx_csfp": self.has_csfp,
+            "tx_harris_rides": self.has_harris_county_rides,
             "andcs": self.has_andcs,
             "chs": self.has_chs,
             "cpcr": self.has_cpcr,
@@ -479,6 +482,7 @@ class Screen(models.Model):
             "cfhc": self.has_cfhc,
             "shitc": self.has_shitc,
             "nc_medicare_savings": self.has_nc_medicare_savings,
+            "tx_dart": self.has_tx_dart,
         }
 
         if name_abbreviated in name_map:

@@ -24,6 +24,10 @@ from programs.programs.tx.pe.member import (
     TxMedicaidForChildren,
     TxMedicaidForPregnantWomen,
     TxMedicaidForParentsAndCaretakers,
+    TxHarrisCountyRides,
+    TxEmergencyMedicaid,
+    TxDart,
+    TxFpp,
 )
 
 
@@ -1475,3 +1479,697 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Should return True
         self.assertTrue(result)
         calculator.get_member_dependency_value.assert_called_once()
+
+
+class TestTxHarrisCountyRides(TestCase):
+    """Tests for TxHarrisCountyRides calculator class."""
+
+    def test_exists_and_is_subclass_of_policy_engine_members_calculator(self):
+        """
+        Test that TxHarrisCountyRides calculator class exists and inherits from PolicyEngineMembersCalculator.
+
+        This verifies the calculator has been set up in the codebase and follows the
+        correct inheritance pattern for member-level calculators.
+        """
+        # Verify TxHarrisCountyRides is a subclass of PolicyEngineMembersCalculator
+        self.assertTrue(issubclass(TxHarrisCountyRides, PolicyEngineMembersCalculator))
+
+        # Verify it has the expected properties
+        self.assertEqual(TxHarrisCountyRides.pe_name, "tx_harris_rides_eligible")
+        self.assertIsNotNone(TxHarrisCountyRides.pe_inputs)
+        self.assertGreater(len(TxHarrisCountyRides.pe_inputs), 0)
+
+    def test_is_registered_in_tx_pe_calculators(self):
+        """Test that TX Harris County RIDES is registered in the calculators dictionary."""
+        # Verify tx_harris_rides is in the calculators dictionary
+        self.assertIn("tx_harris_rides", tx_pe_calculators)
+
+        # Verify it points to the correct class
+        self.assertEqual(tx_pe_calculators["tx_harris_rides"], TxHarrisCountyRides)
+
+    def test_pe_name_is_tx_harris_rides_eligible(self):
+        """Test that TxHarrisCountyRides has the correct pe_name for PolicyEngine API calls."""
+        self.assertEqual(TxHarrisCountyRides.pe_name, "tx_harris_rides_eligible")
+
+    def test_pe_inputs_includes_age_dependency(self):
+        """Test that TxHarrisCountyRides includes AgeDependency in pe_inputs."""
+        from programs.programs.policyengine.calculators.dependencies.member import AgeDependency
+
+        self.assertIn(AgeDependency, TxHarrisCountyRides.pe_inputs)
+        self.assertEqual(AgeDependency.field, "age")
+
+    def test_pe_inputs_includes_is_disabled_dependency(self):
+        """Test that TxHarrisCountyRides includes IsDisabledDependency in pe_inputs."""
+        from programs.programs.policyengine.calculators.dependencies.member import IsDisabledDependency
+
+        self.assertIn(IsDisabledDependency, TxHarrisCountyRides.pe_inputs)
+        self.assertEqual(IsDisabledDependency.field, "is_disabled")
+
+    def test_pe_inputs_includes_is_blind_dependency(self):
+        """Test that TxHarrisCountyRides includes IsBlindDependency in pe_inputs."""
+        from programs.programs.policyengine.calculators.dependencies.member import IsBlindDependency
+
+        self.assertIn(IsBlindDependency, TxHarrisCountyRides.pe_inputs)
+        self.assertEqual(IsBlindDependency.field, "is_blind")
+
+    def test_pe_inputs_includes_tx_state_code_dependency(self):
+        """
+        Test that TxStateCodeDependency is properly added to TX Harris County RIDES inputs.
+
+        This is the key TX-specific dependency that sets state_code="TX" for
+        PolicyEngine calculations.
+        """
+        # Verify TxStateCodeDependency is in pe_inputs
+        self.assertIn(TxStateCodeDependency, TxHarrisCountyRides.pe_inputs)
+
+        # Verify it's configured correctly
+        self.assertEqual(TxStateCodeDependency.state, "TX")
+        self.assertEqual(TxStateCodeDependency.field, "state_code")
+
+    def test_has_county_dependency(self):
+        """Test that TxHarrisCountyRides has county dependency configured."""
+        self.assertIn("county", TxHarrisCountyRides.dependencies)
+
+    def test_member_value_returns_one_when_eligible(self):
+        """
+        Test that member_value returns 1 when PolicyEngine indicates eligibility.
+
+        When PolicyEngine returns True for tx_harris_rides_eligible (which includes
+        the county check), the calculator should return 1 to indicate eligibility.
+        """
+        # Create a mock screen
+        mock_screen = Mock()
+        mock_screen.has_benefit = Mock(return_value=False)
+
+        # Create a mock TxHarrisCountyRides calculator instance
+        calculator = TxHarrisCountyRides(mock_screen, Mock(), Mock())
+        calculator._sim = MagicMock()
+
+        # Mock the get_member_variable method to return True (eligible)
+        calculator.get_member_variable = Mock(return_value=True)
+
+        # Create a mock member
+        member_obj = Mock()
+        member_obj.id = 1
+
+        # Call member_value
+        result = calculator.member_value(member_obj)
+
+        # Verify the result is 1
+        self.assertEqual(result, 1)
+        calculator.get_member_variable.assert_called_once_with(1)
+
+    def test_member_value_returns_zero_when_not_eligible(self):
+        """
+        Test that member_value returns 0 when PolicyEngine indicates ineligibility.
+
+        When PolicyEngine returns False for tx_harris_rides_eligible (which includes
+        county check), the calculator should return 0 to indicate the member is not eligible.
+        """
+        # Create a mock screen
+        mock_screen = Mock()
+        mock_screen.has_benefit = Mock(return_value=False)
+
+        # Create a mock TxHarrisCountyRides calculator instance
+        calculator = TxHarrisCountyRides(mock_screen, Mock(), Mock())
+        calculator._sim = MagicMock()
+
+        # Mock the get_member_variable method to return False (not eligible)
+        calculator.get_member_variable = Mock(return_value=False)
+
+        # Create a mock member
+        member_obj = Mock()
+        member_obj.id = 2
+
+        # Call member_value
+        result = calculator.member_value(member_obj)
+
+        # Verify the result is 0
+        self.assertEqual(result, 0)
+        calculator.get_member_variable.assert_called_once_with(2)
+
+    def test_member_value_calls_get_member_variable_with_member_id(self):
+        """
+        Test that member_value calls get_member_variable with the correct member ID.
+
+        This verifies that the PolicyEngine eligibility value is fetched for the right member.
+        """
+        # Create a mock screen
+        mock_screen = Mock()
+        mock_screen.has_benefit = Mock(return_value=False)
+
+        # Create a mock TxHarrisCountyRides calculator instance
+        calculator = TxHarrisCountyRides(mock_screen, Mock(), Mock())
+        calculator._sim = MagicMock()
+
+        # Mock the get_member_variable method
+        calculator.get_member_variable = Mock(return_value=True)
+
+        # Create a mock member with specific ID
+        member_obj = Mock()
+        member_obj.id = 42
+
+        # Call member_value
+        calculator.member_value(member_obj)
+
+        # Verify get_member_variable was called with the correct member ID
+        calculator.get_member_variable.assert_called_once_with(42)
+
+    def test_member_value_returns_zero_for_falsy_pe_value(self):
+        """
+        Test that member_value returns 0 for any falsy PolicyEngine value.
+
+        This covers cases where PolicyEngine might return 0, None, or empty values.
+        """
+        # Create a mock screen
+        mock_screen = Mock()
+        mock_screen.has_benefit = Mock(return_value=False)
+
+        # Create a mock TxHarrisCountyRides calculator instance
+        calculator = TxHarrisCountyRides(mock_screen, Mock(), Mock())
+        calculator._sim = MagicMock()
+
+        member_obj = Mock()
+        member_obj.id = 1
+
+        # Test with 0
+        calculator.get_member_variable = Mock(return_value=0)
+        self.assertEqual(calculator.member_value(member_obj), 0)
+
+        # Test with None
+        calculator.get_member_variable = Mock(return_value=None)
+        self.assertEqual(calculator.member_value(member_obj), 0)
+
+        # Test with empty string
+        calculator.get_member_variable = Mock(return_value="")
+        self.assertEqual(calculator.member_value(member_obj), 0)
+
+    def test_member_value_returns_one_for_truthy_pe_value(self):
+        """
+        Test that member_value returns 1 for any truthy PolicyEngine value.
+
+        This covers cases where PolicyEngine might return 1, True, or other truthy values.
+        """
+        # Create a mock screen
+        mock_screen = Mock()
+        mock_screen.has_benefit = Mock(return_value=False)
+
+        # Create a mock TxHarrisCountyRides calculator instance
+        calculator = TxHarrisCountyRides(mock_screen, Mock(), Mock())
+        calculator._sim = MagicMock()
+
+        member_obj = Mock()
+        member_obj.id = 1
+
+        # Test with 1
+        calculator.get_member_variable = Mock(return_value=1)
+        self.assertEqual(calculator.member_value(member_obj), 1)
+
+        # Test with True
+        calculator.get_member_variable = Mock(return_value=True)
+        self.assertEqual(calculator.member_value(member_obj), 1)
+
+
+class TestTxEmergencyMedicaid(TestCase):
+    """Tests for TxEmergencyMedicaid calculator class."""
+
+    def test_exists_and_is_subclass_of_medicaid(self):
+        """
+        Test that TxEmergencyMedicaid calculator class exists and is a subclass of Medicaid.
+
+        This verifies the calculator has been set up in the codebase.
+        """
+        # Verify TxEmergencyMedicaid is a subclass of Medicaid
+        self.assertTrue(issubclass(TxEmergencyMedicaid, Medicaid))
+
+        # Verify it has the expected properties
+        self.assertEqual(TxEmergencyMedicaid.pe_name, "medicaid")
+        self.assertIsNotNone(TxEmergencyMedicaid.pe_inputs)
+        self.assertGreater(len(TxEmergencyMedicaid.pe_inputs), 0)
+
+    def test_is_registered_in_tx_pe_calculators(self):
+        """Test that TX Emergency Medicaid is registered in the calculators dictionary."""
+        # Verify tx_emergency_medicaid is in the calculators dictionary
+        self.assertIn("tx_emergency_medicaid", tx_pe_calculators)
+
+        # Verify it points to the correct class
+        self.assertEqual(tx_pe_calculators["tx_emergency_medicaid"], TxEmergencyMedicaid)
+
+    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self):
+        """
+        Test that TxEmergencyMedicaid has all expected pe_inputs from parent and TX-specific.
+
+        TxEmergencyMedicaid should inherit all inputs from parent Medicaid class plus add
+        TX-specific dependencies like TxStateCodeDependency.
+        """
+        # TxEmergencyMedicaid should have all parent inputs plus TxStateCodeDependency
+        self.assertGreater(len(TxEmergencyMedicaid.pe_inputs), len(Medicaid.pe_inputs))
+
+        # Verify TxStateCodeDependency is in the list
+        self.assertIn(household.TxStateCodeDependency, TxEmergencyMedicaid.pe_inputs)
+
+        # Verify all parent inputs are present
+        for parent_input in Medicaid.pe_inputs:
+            self.assertIn(parent_input, TxEmergencyMedicaid.pe_inputs)
+
+    def test_pe_inputs_includes_tx_state_code_dependency(self):
+        """
+        Test that TxStateCodeDependency is properly added to TX Emergency Medicaid inputs.
+
+        This is the key TX-specific dependency that sets state_code="TX" for
+        PolicyEngine calculations.
+        """
+        # Verify TxStateCodeDependency is in pe_inputs
+        self.assertIn(TxStateCodeDependency, TxEmergencyMedicaid.pe_inputs)
+
+        # Verify it's configured correctly
+        self.assertEqual(TxStateCodeDependency.state, "TX")
+        self.assertEqual(TxStateCodeDependency.field, "state_code")
+
+    def test_has_same_pe_outputs_as_parent(self):
+        """Test that TxEmergencyMedicaid has the same pe_outputs as parent Medicaid class."""
+        # TxEmergencyMedicaid should use the same outputs as parent
+        self.assertEqual(TxEmergencyMedicaid.pe_outputs, Medicaid.pe_outputs)
+
+
+class TestTxDart(TestCase):
+    """Tests for TxDart calculator class."""
+
+    def test_exists_and_is_subclass_of_policy_engine_members_calculator(self):
+        """
+        Test that TxDart calculator class exists and inherits from PolicyEngineMembersCalculator.
+
+        This verifies the calculator has been set up in the codebase and follows the
+        correct inheritance pattern for member-level calculators.
+        """
+        # Verify TxDart is a subclass of PolicyEngineMembersCalculator
+        self.assertTrue(issubclass(TxDart, PolicyEngineMembersCalculator))
+
+        # Verify it has the expected properties
+        self.assertEqual(TxDart.pe_name, "tx_dart_benefit_person")
+        self.assertIsNotNone(TxDart.pe_inputs)
+        self.assertGreater(len(TxDart.pe_inputs), 0)
+
+    def test_is_registered_in_tx_pe_calculators(self):
+        """Test that TX DART is registered in the calculators dictionary."""
+        # Verify tx_dart is in the calculators dictionary
+        self.assertIn("tx_dart", tx_pe_calculators)
+
+        # Verify it points to the correct class
+        self.assertEqual(tx_pe_calculators["tx_dart"], TxDart)
+
+    def test_pe_name_is_tx_dart_benefit_person(self):
+        """Test that TxDart has the correct pe_name for PolicyEngine API calls."""
+        self.assertEqual(TxDart.pe_name, "tx_dart_benefit_person")
+
+    def test_pe_inputs_includes_age_dependency(self):
+        """Test that TxDart includes AgeDependency in pe_inputs."""
+        self.assertIn(member.AgeDependency, TxDart.pe_inputs)
+        self.assertEqual(member.AgeDependency.field, "age")
+
+    def test_pe_inputs_includes_is_disabled_dependency(self):
+        """Test that TxDart includes IsDisabledDependency in pe_inputs."""
+        self.assertIn(member.IsDisabledDependency, TxDart.pe_inputs)
+        self.assertEqual(member.IsDisabledDependency.field, "is_disabled")
+
+    def test_pe_inputs_includes_is_veteran_dependency(self):
+        """Test that TxDart includes IsVeteranDependency in pe_inputs."""
+        self.assertIn(member.IsVeteranDependency, TxDart.pe_inputs)
+        self.assertEqual(member.IsVeteranDependency.field, "is_veteran")
+
+    def test_pe_inputs_includes_full_time_college_student_dependency(self):
+        """Test that TxDart includes FullTimeCollegeStudentDependency in pe_inputs."""
+        self.assertIn(member.FullTimeCollegeStudentDependency, TxDart.pe_inputs)
+        self.assertEqual(member.FullTimeCollegeStudentDependency.field, "is_full_time_college_student")
+
+    def test_pe_inputs_includes_tx_state_code_dependency(self):
+        """
+        Test that TxStateCodeDependency is properly added to TX DART inputs.
+
+        This is the key TX-specific dependency that sets state_code="TX" for
+        PolicyEngine calculations.
+        """
+        # Verify TxStateCodeDependency is in pe_inputs
+        self.assertIn(TxStateCodeDependency, TxDart.pe_inputs)
+
+        # Verify it's configured correctly
+        self.assertEqual(TxStateCodeDependency.state, "TX")
+        self.assertEqual(TxStateCodeDependency.field, "state_code")
+
+    def test_pe_inputs_includes_medicaid_inputs(self):
+        """
+        Test that TxDart includes all Medicaid pe_inputs.
+
+        DART eligibility can be based on enrollment in Medicaid and other
+        assistance programs, so the calculator includes Medicaid dependencies.
+        """
+        # Verify all Medicaid inputs are present in TxDart
+        for medicaid_input in Medicaid.pe_inputs:
+            self.assertIn(medicaid_input, TxDart.pe_inputs)
+
+    def test_pe_outputs_includes_tx_dart_benefit_person_dependency(self):
+        """Test that TxDart has TxDartBenefitPerson dependency in pe_outputs."""
+        self.assertIn(member.TxDartBenefitPerson, TxDart.pe_outputs)
+
+    def test_member_value_returns_pe_value_directly(self):
+        """
+        Test that member_value returns PolicyEngine value directly.
+
+        DART eligibility is fully determined by PolicyEngine, so we return
+        the calculated value without additional business logic.
+        """
+        # Create a mock TxDart calculator instance
+        calculator = TxDart(Mock(), Mock(), Mock())
+        calculator._sim = MagicMock()
+
+        # Mock the get_member_variable method to return a value
+        pe_value = 756  # Reduced fare annual benefit
+        calculator.get_member_variable = Mock(return_value=pe_value)
+
+        # Create a mock member
+        mock_member = Mock()
+        mock_member.id = 1
+
+        # Call member_value
+        result = calculator.member_value(mock_member)
+
+        # Verify the result is the PolicyEngine value
+        self.assertEqual(result, pe_value)
+        calculator.get_member_variable.assert_called_once_with(1)
+
+    def test_member_value_returns_free_ride_value(self):
+        """
+        Test that member_value can return the free ride benefit value.
+
+        Children under 5 are eligible for free rides ($1,512/year).
+        """
+        # Create a mock TxDart calculator instance
+        calculator = TxDart(Mock(), Mock(), Mock())
+        calculator._sim = MagicMock()
+
+        # Mock the get_member_variable method to return free ride value
+        pe_value = 1512  # Free ride annual benefit
+        calculator.get_member_variable = Mock(return_value=pe_value)
+
+        # Create a mock member (child under 5)
+        mock_member = Mock()
+        mock_member.id = 2
+
+        # Call member_value
+        result = calculator.member_value(mock_member)
+
+        # Verify the result is the free ride value
+        self.assertEqual(result, pe_value)
+        calculator.get_member_variable.assert_called_once_with(2)
+
+    def test_member_value_returns_zero_for_ineligible_member(self):
+        """
+        Test that member_value returns 0 for ineligible members.
+
+        If PolicyEngine determines a member is ineligible, it returns 0.
+        """
+        # Create a mock TxDart calculator instance
+        calculator = TxDart(Mock(), Mock(), Mock())
+        calculator._sim = MagicMock()
+
+        # Mock the get_member_variable method to return 0
+        calculator.get_member_variable = Mock(return_value=0)
+
+        # Create a mock member who doesn't qualify
+        mock_member = Mock()
+        mock_member.id = 3
+
+        # Call member_value
+        result = calculator.member_value(mock_member)
+
+        # Verify the result is 0
+        self.assertEqual(result, 0)
+        calculator.get_member_variable.assert_called_once_with(3)
+
+    def test_member_value_calls_get_member_variable_with_correct_member_id(self):
+        """
+        Test that member_value calls get_member_variable with the correct member ID.
+
+        This verifies that the PolicyEngine value is fetched for the right member.
+        """
+        # Create a mock TxDart calculator instance
+        calculator = TxDart(Mock(), Mock(), Mock())
+        calculator._sim = MagicMock()
+
+        # Mock the get_member_variable method
+        calculator.get_member_variable = Mock(return_value=756)
+
+        # Create a mock member with a specific ID
+        mock_member = Mock()
+        mock_member.id = 42
+
+        # Call member_value
+        calculator.member_value(mock_member)
+
+        # Verify get_member_variable was called with the correct member ID
+        calculator.get_member_variable.assert_called_once_with(42)
+
+
+class TestTxFpp(TestCase):
+    """Tests for TxFpp (Texas Family Planning Program) calculator class."""
+
+    def test_exists_and_is_subclass_of_policy_engine_members_calculator(self):
+        """
+        Test that TxFpp calculator class exists and inherits from PolicyEngineMembersCalculator.
+
+        This verifies the calculator has been set up in the codebase and follows the
+        correct inheritance pattern for member-level calculators.
+        """
+        # Verify TxFpp is a subclass of PolicyEngineMembersCalculator
+        self.assertTrue(issubclass(TxFpp, PolicyEngineMembersCalculator))
+
+        # Verify it has the expected properties
+        self.assertEqual(TxFpp.pe_name, "tx_fpp_benefit")
+        self.assertIsNotNone(TxFpp.pe_inputs)
+        self.assertGreater(len(TxFpp.pe_inputs), 0)
+
+    def test_is_registered_in_tx_pe_calculators(self):
+        """Test that TX FPP is registered in the calculators dictionary."""
+        # Verify tx_fpp is in the calculators dictionary
+        self.assertIn("tx_fpp", tx_pe_calculators)
+
+        # Verify it points to the correct class
+        self.assertEqual(tx_pe_calculators["tx_fpp"], TxFpp)
+
+    def test_pe_name_is_tx_fpp_benefit(self):
+        """Test that TxFpp has the correct pe_name for PolicyEngine API calls."""
+        self.assertEqual(TxFpp.pe_name, "tx_fpp_benefit")
+
+    def test_pe_inputs_includes_age_dependency(self):
+        """Test that TxFpp includes AgeDependency in pe_inputs."""
+        from programs.programs.policyengine.calculators.dependencies.member import AgeDependency
+
+        self.assertIn(AgeDependency, TxFpp.pe_inputs)
+        self.assertEqual(AgeDependency.field, "age")
+
+    def test_pe_inputs_includes_tx_state_code_dependency(self):
+        """
+        Test that TxStateCodeDependency is properly added to TX FPP inputs.
+
+        This is the key TX-specific dependency that sets state_code="TX" for
+        PolicyEngine calculations.
+        """
+        # Verify TxStateCodeDependency is in pe_inputs
+        self.assertIn(TxStateCodeDependency, TxFpp.pe_inputs)
+
+        # Verify it's configured correctly
+        self.assertEqual(TxStateCodeDependency.state, "TX")
+        self.assertEqual(TxStateCodeDependency.field, "state_code")
+
+    def test_pe_inputs_includes_irs_gross_income_dependencies(self):
+        """
+        Test that TxFpp includes all irs_gross_income dependencies.
+
+        FPP eligibility requires income at or below 250% FPL. PolicyEngine's
+        tx_fpp_income_eligible formula uses spm_unit_net_income which derives
+        from market_income, so we need to provide income inputs.
+        """
+        from programs.programs.policyengine.calculators.dependencies.member import (
+            EmploymentIncomeDependency,
+            SelfEmploymentIncomeDependency,
+            RentalIncomeDependency,
+            PensionIncomeDependency,
+            SocialSecurityIncomeDependency,
+        )
+
+        # Verify all irs_gross_income dependencies are present
+        self.assertIn(EmploymentIncomeDependency, TxFpp.pe_inputs)
+        self.assertIn(SelfEmploymentIncomeDependency, TxFpp.pe_inputs)
+        self.assertIn(RentalIncomeDependency, TxFpp.pe_inputs)
+        self.assertIn(PensionIncomeDependency, TxFpp.pe_inputs)
+        self.assertIn(SocialSecurityIncomeDependency, TxFpp.pe_inputs)
+
+    def test_pe_outputs_includes_tx_fpp_dependency(self):
+        """Test that TxFpp has TxFpp dependency in pe_outputs."""
+        from programs.programs.policyengine.calculators.dependencies.member import TxFpp as TxFppDependency
+
+        self.assertIn(TxFppDependency, TxFpp.pe_outputs)
+        self.assertEqual(TxFppDependency.field, "tx_fpp_benefit")
+
+    def test_member_value_returns_pe_value_when_member_has_no_insurance(self):
+        """
+        Test that member_value returns PolicyEngine value when member has no insurance.
+
+        When a member has no insurance (insurance type 'none'), they should be eligible
+        for FPP and the full PolicyEngine-calculated value should be returned.
+        """
+        # Create a mock TxFpp calculator instance
+        calculator = TxFpp(Mock(), Mock(), Mock())
+        calculator._sim = MagicMock()
+
+        # Mock the get_member_variable method to return a value
+        pe_value = 431
+        calculator.get_member_variable = Mock(return_value=pe_value)
+
+        # Create a mock member with no insurance
+        member_obj = Mock()
+        member_obj.id = 1
+        member_obj.has_insurance_types = Mock(return_value=True)  # has_insurance_types(("none",)) returns True
+
+        # Call member_value
+        result = calculator.member_value(member_obj)
+
+        # Verify the result is the PolicyEngine value
+        self.assertEqual(result, pe_value)
+        member_obj.has_insurance_types.assert_called_once_with(("none",))
+
+    def test_member_value_returns_zero_when_member_has_insurance(self):
+        """
+        Test that member_value returns 0 when member has insurance.
+
+        If a member has any insurance type other than 'none', they are not eligible
+        for FPP (which is designed for those without Medicaid coverage) and
+        member_value should return 0.
+        """
+        # Create a mock TxFpp calculator instance
+        calculator = TxFpp(Mock(), Mock(), Mock())
+        calculator._sim = MagicMock()
+
+        # Mock the get_member_variable method to return a value
+        pe_value = 431
+        calculator.get_member_variable = Mock(return_value=pe_value)
+
+        # Create a mock member with insurance
+        member_obj = Mock()
+        member_obj.id = 1
+        member_obj.has_insurance_types = Mock(return_value=False)  # has_insurance_types(("none",)) returns False
+
+        # Call member_value
+        result = calculator.member_value(member_obj)
+
+        # Verify the result is 0
+        self.assertEqual(result, 0)
+        member_obj.has_insurance_types.assert_called_once_with(("none",))
+
+    def test_member_value_calls_get_member_variable_with_member_id(self):
+        """
+        Test that member_value calls get_member_variable with the correct member ID.
+
+        This verifies that the PolicyEngine value is fetched for the right member.
+        """
+        # Create a mock TxFpp calculator instance
+        calculator = TxFpp(Mock(), Mock(), Mock())
+        calculator._sim = MagicMock()
+
+        # Mock the get_member_variable method
+        calculator.get_member_variable = Mock(return_value=431)
+
+        # Create a mock member
+        member_obj = Mock()
+        member_obj.id = 42
+        member_obj.has_insurance_types = Mock(return_value=True)
+
+        # Call member_value
+        calculator.member_value(member_obj)
+
+        # Verify get_member_variable was called with the correct member ID
+        calculator.get_member_variable.assert_called_once_with(42)
+
+    def test_member_value_insurance_check_happens_before_pe_lookup(self):
+        """
+        Test that insurance eligibility check occurs before PolicyEngine lookup.
+
+        If a member has insurance, we should return 0 without needing to look up
+        the PolicyEngine value.
+        """
+        # Create a mock TxFpp calculator instance
+        calculator = TxFpp(Mock(), Mock(), Mock())
+        calculator._sim = MagicMock()
+
+        # Mock get_member_variable - should NOT be called
+        calculator.get_member_variable = Mock(return_value=500)
+
+        # Create a mock member with insurance (not eligible)
+        member_obj = Mock()
+        member_obj.id = 1
+        member_obj.has_insurance_types = Mock(return_value=False)
+
+        # Call member_value
+        result = calculator.member_value(member_obj)
+
+        # Should return 0
+        self.assertEqual(result, 0)
+
+        # Verify insurance check was performed
+        member_obj.has_insurance_types.assert_called_once_with(("none",))
+
+        # Verify get_member_variable was NOT called (optimization)
+        calculator.get_member_variable.assert_not_called()
+
+    def test_member_value_with_zero_pe_value_and_no_insurance(self):
+        """
+        Test that member_value returns 0 when PolicyEngine returns 0, even without insurance.
+
+        If PolicyEngine determines no benefit value (e.g., due to age or income ineligibility),
+        it should be returned as-is.
+        """
+        # Create a mock TxFpp calculator instance
+        calculator = TxFpp(Mock(), Mock(), Mock())
+        calculator._sim = MagicMock()
+
+        # Mock zero PolicyEngine value
+        calculator.get_member_variable = Mock(return_value=0)
+
+        # Create a mock member with no insurance
+        member_obj = Mock()
+        member_obj.id = 1
+        member_obj.has_insurance_types = Mock(return_value=True)
+
+        # Call member_value
+        result = calculator.member_value(member_obj)
+
+        # Should return 0 (PE says not eligible - likely due to age/income)
+        self.assertEqual(result, 0)
+
+    def test_member_value_with_high_pe_value_but_has_insurance(self):
+        """
+        Test that insurance eligibility check occurs regardless of PolicyEngine value.
+
+        Even if PolicyEngine returns a high value, the insurance check should still
+        determine the final eligibility.
+        """
+        # Create a mock TxFpp calculator instance
+        calculator = TxFpp(Mock(), Mock(), Mock())
+        calculator._sim = MagicMock()
+
+        # Mock high PolicyEngine value
+        calculator.get_member_variable = Mock(return_value=500)
+
+        # Create a mock member with insurance (not eligible)
+        member_obj = Mock()
+        member_obj.id = 1
+        member_obj.has_insurance_types = Mock(return_value=False)
+
+        # Call member_value
+        result = calculator.member_value(member_obj)
+
+        # Should return 0 despite high PE value
+        self.assertEqual(result, 0)
+
+        # Verify insurance check was performed
+        member_obj.has_insurance_types.assert_called_once_with(("none",))

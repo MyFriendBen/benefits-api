@@ -206,6 +206,47 @@ class TxMedicaidForParentsAndCaretakers(Medicaid):
         return False
 
 
+class TxEmergencyMedicaid(Medicaid):
+    """
+    Texas Emergency Medicaid for Non-Citizens calculator that uses PolicyEngine's calculated benefit amounts.
+
+    This program provides limited public health insurance that covers only emergency health care costs.
+    It helps people who cannot get standard Medicaid because of their immigration status.
+
+    Eligibility requirements:
+    - Must have a life-threatening or serious medical condition requiring urgent care
+    - Immigration status makes them ineligible for standard Medicaid
+    - Covers emergency services including emergency labor and delivery
+    - Only covers services needed to stabilize the condition, not ongoing care
+
+    Notes:
+    - The citizenship eligibility is handled at the program configuration level
+      (legal_status_required), not in this calculator.
+    - We do not ask users whether they have an emergency medical condition in the screener.
+      Instead, this requirement is communicated in the program's description so users understand
+      they must have a qualifying condition to receive benefits.
+    """
+
+    pe_inputs = [
+        *Medicaid.pe_inputs,
+        dependency.household.TxStateCodeDependency,
+    ]
+
+    def member_value(self, member: HouseholdMember):
+        """
+        Returns 1 if the member is eligible for Emergency Medicaid, 0 otherwise.
+
+        The actual benefit value varies based on the emergency care needed, so we return
+        a nominal value of 1 to indicate eligibility rather than a specific dollar amount.
+        """
+        # Must not have other health insurance
+        if not member.has_insurance_types(("none",)):
+            return 0
+
+        pe_value = self.get_member_variable(member.id)
+        return 1 if pe_value > 0 else 0
+
+
 class TxChip(PolicyEngineMembersCalculator):
     """
     Texas CHIP calculator that uses PolicyEngine's calculated benefit amounts
@@ -238,3 +279,125 @@ class TxChip(PolicyEngineMembersCalculator):
             return pe_value
 
         return 0
+
+
+class TxHarrisCountyRides(PolicyEngineMembersCalculator):
+    """
+    Texas Harris County RIDES program calculator.
+
+    Provides discounted rides on public transit for individuals who are 65 or older
+    or have a disability and are unable to access METRO services.
+
+    The pe_name is "tx_harris_rides_eligible" which returns a boolean from PolicyEngine.
+    When eligible, we return 1 to indicate eligibility (the actual value will be
+    overridden to "Varies" in the admin console).
+
+    PolicyEngine handles all eligibility requirements
+    """
+
+    pe_name = "tx_harris_rides_eligible"
+    pe_outputs = [dependency.member.TxHarrisRidesEligible]
+    pe_inputs = [
+        dependency.member.AgeDependency,
+        dependency.member.IsDisabledDependency,
+        dependency.member.IsBlindDependency,
+        dependency.household.TxStateCodeDependency,
+        dependency.household.TxCountyDependency,
+    ]
+    dependencies = ["county"]
+
+    def member_value(self, member):
+        # Check if household already has the benefit
+        if self.screen.has_benefit("tx_harris_rides"):
+            return 0
+
+        pe_eligible = self.get_member_variable(member.id)
+
+        return 1 if pe_eligible else 0
+
+
+class TxDart(PolicyEngineMembersCalculator):
+    """
+    Texas Dallas Area Rapid Transit (DART) reduced fare program calculator.
+
+    DART provides transit benefits to Dallas area residents:
+    - Free Ride: Children under 5 ride free
+    - Reduced Fare available to:
+      - Seniors (65+) or children ages 5-14
+      - Disabled individuals
+      - Veterans
+      - Full-time students
+      - People enrolled in qualifying programs (SNAP, Medicaid, Medicare, CHIP, WIC, TANF)
+
+    PolicyEngine returns the maximum of free ride and reduced fare benefits.
+
+    Reference: https://www.dart.org/fare/general-fares-and-overview/reduced-fares
+    """
+
+    pe_name = "tx_dart_benefit_person"
+    pe_inputs = [
+        # Core demographics
+        dependency.member.AgeDependency,
+        dependency.member.IsDisabledDependency,
+        dependency.member.IsVeteranDependency,
+        dependency.member.FullTimeCollegeStudentDependency,
+        # TX state code for state-specific calculations
+        dependency.household.TxStateCodeDependency,
+        # Income dependencies for program eligibility calculations
+        *Medicaid.pe_inputs,
+    ]
+    pe_outputs = [dependency.member.TxDartBenefitPerson]
+
+    def member_value(self, member: HouseholdMember):
+        """
+        Returns the DART benefit value for this member.
+
+        PolicyEngine handles all eligibility logic including:
+        - Age-based eligibility (free for under 5, reduced for 5-14 or 65+)
+        - Disability status
+        - Veteran status
+        - Student status
+        - Enrollment in qualifying assistance programs
+
+        We return the PolicyEngine-calculated value directly.
+        """
+        return self.get_member_variable(member.id)
+
+
+class TxFpp(PolicyEngineMembersCalculator):
+    """
+    Texas Family Planning Program (FPP) calculator using PolicyEngine.
+
+    This program provides family planning benefits to help individuals choose when to become
+    a parent. Services may include birth control, pregnancy testing, and health care screenings.
+
+    Eligibility requirements (handled by PolicyEngine):
+    - Age eligibility (64 or younger per tx_fpp_age_eligible)
+    - Income at or below 250% of Federal Poverty Level (per tx_fpp_income_eligible)
+
+    Additional eligibility requirements (handled in member_value):
+    - Must not have other health insurance (program is for those who earn too much for Medicaid)
+    """
+
+    pe_name = "tx_fpp_benefit"
+    pe_inputs = [
+        dependency.member.AgeDependency,
+        dependency.household.TxStateCodeDependency,
+        *dependency.irs_gross_income,
+    ]
+    pe_outputs = [dependency.member.TxFpp]
+
+    def member_value(self, member: HouseholdMember):
+        """
+        Returns the FPP benefit value for this member.
+
+        PolicyEngine calculates age and income eligibility. We additionally check
+        that the member does not have other health insurance, as FPP is designed
+        for those who earn too much for regular Medicaid benefits.
+        """
+        # Must not have other health insurance (FPP is for those without Medicaid coverage)
+        if not member.has_insurance_types(("none",)):
+            return 0
+
+        # Return PolicyEngine-calculated value (handles age and income eligibility)
+        return self.get_member_variable(member.id)

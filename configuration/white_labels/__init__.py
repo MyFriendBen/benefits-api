@@ -9,7 +9,6 @@ from configuration.white_labels.co_energy_calculator import (
     CoEnergyCalculatorConfigurationData,
 )
 
-
 white_label_config: dict[str, ConfigurationData] = {
     "_default": DefaultConfigurationData,
     "co": CoConfigurationData,

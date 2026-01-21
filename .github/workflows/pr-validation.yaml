@@ -56,10 +56,4 @@ jobs:
 
   lint:
     name: Check Formatting
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: psf/black@stable
-        with:
-          options: --check --verbose
-          src: .
+    uses: ./.github/workflows/format.yaml
