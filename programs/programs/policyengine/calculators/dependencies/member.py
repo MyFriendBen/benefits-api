@@ -542,11 +542,13 @@ class IlBccFemaleDependency(Member):
         # Hardcode to True so that all households are shown the IBCCP program in results
         return True
 
+
 class ReceivesMedicaidDependency(Member):
     """
     Sends whether the member currently receives Medicaid (based on user selection).
     Matches PolicyEngine's receives_medicaid input variable.
     """
+
     field = "receives_medicaid"
 
     def value(self):
@@ -560,12 +562,14 @@ class HasBccQualifyingCoverageDependency(Member):
     This should exclude Medicaid (handled separately) and possibly CHP if treated differently.
     Matches PolicyEngine's has_bcc_qualifying_coverage input variable.
     """
+
     field = "has_bcc_qualifying_coverage"
 
     def value(self):
         # Include CHP and any other non-Medicaid disqualifying insurances your app tracks
         # Adjust the tuple based on what counts as "qualifying coverage" in PolicyEngine/IBCCP rules
         return not self.member.has_insurance_types(("none", "private", "employer", "medicare"))
+
 
 class IlBccEligible(Member):
     field = "il_bcc_eligible"

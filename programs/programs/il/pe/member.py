@@ -209,7 +209,7 @@ class IlBccp(PolicyEngineMembersCalculator):
     pe_inputs = [
         member_dependency.IlBccFemaleDependency,
         member_dependency.AgeDependency,
-        member_dependency.ReceivesMedicaidDependency,          # New
+        member_dependency.ReceivesMedicaidDependency,  # New
         member_dependency.HasBccQualifyingCoverageDependency,
         household_dependency.IlStateCodeDependency,
     ]
@@ -233,7 +233,7 @@ class IlBccp(PolicyEngineMembersCalculator):
         age = member.age
         uninsured = not member.has_insurance_types(("medicaid", "medicare", "employer", "private", "chp"))
         eligible_for_cervical = uninsured and (age is not None and age >= 21)
-        eligible_for_breast   = uninsured and (age is not None and age >= 40)
+        eligible_for_breast = uninsured and (age is not None and age >= 40)
 
         is_eligible = eligible_for_cervical or eligible_for_breast
 
