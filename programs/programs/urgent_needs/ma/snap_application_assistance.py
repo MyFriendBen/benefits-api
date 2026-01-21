@@ -3,7 +3,6 @@ from ..base import UrgentNeedFunction
 
 class SNAPApplicationAssistance(UrgentNeedFunction):
     dependencies = ["county"]
-    eligible_city = "Cambridge"
 
     def eligible(self) -> bool:
         """
@@ -16,8 +15,7 @@ class SNAPApplicationAssistance(UrgentNeedFunction):
         -Cambridge resident
         """
 
-        # Condition 1: Cambridge residents
-        is_cambridge = self.screen.county == self.eligible_city
+        # Condition 1: Cambridge residents --managed by admin panel
 
         # Condition 2: Not receiving SNAP
         has_snap = self.screen.has_benefit("ma_snap")
@@ -36,4 +34,4 @@ class SNAPApplicationAssistance(UrgentNeedFunction):
                 is_snap_eligible = True
                 break
 
-        return is_cambridge and is_snap_eligible and not has_snap
+        return is_snap_eligible and not has_snap

@@ -33,7 +33,6 @@ from .denver_sidewalk_rebate.calculator import DenverSidewalkRebate
 from .senior_housing_tax_credit.calculator import SeniorHousingIncomeTaxCredit
 from ..calc import ProgramCalculator
 
-
 co_calculators: dict[str, type[ProgramCalculator]] = {
     "rtdlive": RtdLive,
     "cccap": ChildCareAssistance,

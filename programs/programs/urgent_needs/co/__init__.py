@@ -18,7 +18,6 @@ from .denver_emergency_assistance import DenverEmergencyAssistance
 from .diaper_banks import FamilyResourceCenterAssociation, NationalDiaperBank
 from .first_step_savings import FirstStepSavings, FirstStepSavingsNotifiable
 
-
 co_urgent_need_functions: dict[str, type[UrgentNeedFunction]] = {
     "denver": LivesInDenver,
     "child": Child,
