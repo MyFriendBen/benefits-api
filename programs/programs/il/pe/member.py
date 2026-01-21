@@ -195,6 +195,12 @@ class IlBccp(PolicyEngineMembersCalculator):
     - Female
     - Under 65 years old
     - Not eligible for Medicaid, All Kids, or other HFS insurance
+
+    - Ages 21–39 → cervical only (35-39 ???)
+    - 40+ → both
+    - <21 → none
+    - High income → still eligible
+    - Multi-person household → per-person evaluation (show if any member qualifies)
     """
 
     pe_name = "il_bcc_eligible"
@@ -203,7 +209,8 @@ class IlBccp(PolicyEngineMembersCalculator):
     pe_inputs = [
         member_dependency.IlBccFemaleDependency,
         member_dependency.AgeDependency,
-        member_dependency.IlBccInsuranceEligibleDependency,
+        member_dependency.ReceivesMedicaidDependency,          # New
+        member_dependency.HasBccQualifyingCoverageDependency,
         household_dependency.IlStateCodeDependency,
     ]
 
@@ -223,15 +230,21 @@ class IlBccp(PolicyEngineMembersCalculator):
 
         Return average for screening services only if eligible, 0 otherwise.
         """
-        # Get PolicyEngine's eligibility determination
-        is_eligible = super().member_value(member)
+        age = member.age
+        uninsured = not member.has_insurance_types(("medicaid", "medicare", "employer", "private", "chp"))
+        eligible_for_cervical = uninsured and (age is not None and age >= 21)
+        eligible_for_breast   = uninsured and (age is not None and age >= 40)
 
-        # If PolicyEngine says eligible (returns True/1), return estimated value
-        # Otherwise return 0
-        if is_eligible:
-            return 400
+        is_eligible = eligible_for_cervical or eligible_for_breast
 
-        return 0
+        if not is_eligible:
+            return 0
+
+        # Return estimated value (e.g., average avoided out-of-pocket cost for screenings)
+        # Could differentiate: e.g., 250 if cervical only, 400 if both, etc.
+        if eligible_for_breast:
+            return 400  # both
+        return 250  # cervical only
 
 
 class IlFamilyPlanningProgram(PolicyEngineMembersCalculator):
@@ -252,12 +265,14 @@ class IlFamilyPlanningProgram(PolicyEngineMembersCalculator):
         member_dependency.TaxUnitSpouseDependency,
         household_dependency.IlStateCodeDependency,
         member_dependency.PregnancyDependency,
+        member_dependency.ReceivesMedicaidDependency,
     ]
     pe_outputs = [member_dependency.IlFppEligible]
 
     def member_value(self, member):
         is_eligible = self.get_member_variable(member.id)
-        has_disqualifying_insurance = member.has_insurance_types(("medicaid", "family_planning"), strict=False)
+
+        has_disqualifying_insurance = member.has_insurance_types(("family_planning",), strict=False)
 
         if has_disqualifying_insurance or not is_eligible:
             return 0
