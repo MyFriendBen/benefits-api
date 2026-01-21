@@ -170,7 +170,7 @@ class Ccdf(PolicyEngineMembersCalculator):
         return self.child_care_cost(member)
 
 
-class EmergencyMedicaid(PolicyEngineMembersCalculator):
+class EmergencyMedicaid(Medicaid):
     """
     Federal Emergency Medicaid eligibility for undocumented immigrants.
 
@@ -186,7 +186,7 @@ class EmergencyMedicaid(PolicyEngineMembersCalculator):
     For screening purposes, we assume has_emergency_medical_condition=True since
     the actual emergency is verified at the point of care.
 
-    State-specific implementations should set appropriate benefit amounts.
+    State-specific implementations should override medicaid_categories with their values.
     """
 
     pe_name = "is_emergency_medicaid_eligible"
@@ -197,14 +197,3 @@ class EmergencyMedicaid(PolicyEngineMembersCalculator):
     pe_outputs = [
         dependency.member.EmergencyMedicaidEligible,
     ]
-
-    # Default amount - states should override with their specific values
-    amount = 0
-
-    def member_value(self, member: HouseholdMember):
-        is_eligible = self.get_member_variable(member.id)
-
-        if is_eligible:
-            return self.amount
-
-        return 0

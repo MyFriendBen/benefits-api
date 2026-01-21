@@ -29,6 +29,26 @@ class IlMedicaid(federal_member.Medicaid):
     ]
 
 
+class IlEmergencyMedicaid(federal_member.EmergencyMedicaid):
+    """
+    Illinois Emergency Medicaid for undocumented immigrants.
+
+    Federal Emergency Medicaid (42 USC 1396b(v)) provides coverage for emergency
+    medical conditions to individuals who meet Medicaid requirements but are
+    ineligible due to immigration status.
+
+    For screening purposes, we assume has_emergency_medical_condition=True since
+    the actual emergency is verified at the point of care. Immigration status
+    filtering is handled in the frontend.
+    """
+
+    medicaid_categories = IlMedicaid.medicaid_categories
+    pe_inputs = [
+        *federal_member.EmergencyMedicaid.pe_inputs,
+        household_dependency.IlStateCodeDependency,
+    ]
+
+
 class IlWic(federal_member.Wic):
     wic_categories = {
         "NONE": 0,
@@ -303,25 +323,3 @@ class IlMpe(PolicyEngineMembersCalculator):
 
         return 1
 
-
-class IlEmergencyMedicaid(federal_member.EmergencyMedicaid):
-    """
-    Illinois Emergency Medicaid for undocumented immigrants.
-
-    Federal Emergency Medicaid (42 USC 1396b(v)) provides coverage for emergency
-    medical conditions to individuals who meet Medicaid requirements but are
-    ineligible due to immigration status.
-
-    For screening purposes, we assume has_emergency_medical_condition=True since
-    the actual emergency is verified at the point of care.
-    """
-
-    pe_inputs = [
-        *federal_member.EmergencyMedicaid.pe_inputs,
-        household_dependency.IlStateCodeDependency,
-    ]
-
-    # Monthly value estimate based on IL Medicaid rates
-    # Using same value as IL Medicaid adult category
-    # TODO: don't have this hardcoded
-    amount = 474 * 12
