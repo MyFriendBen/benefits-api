@@ -6,6 +6,7 @@ from .law_help import LawHelp
 from .central_foodbank import CentralFoodbank
 from .feeding_texas import FeedingTexas
 from .rewiring_america import RewiringAmerica
+from .diaper_bank import NationalDiaperBankNetwork
 
 tx_urgent_need_functions: dict[str, type[UrgentNeedFunction]] = {
     "tx_early_intervention": EarlyIntervention,
@@ -15,4 +16,5 @@ tx_urgent_need_functions: dict[str, type[UrgentNeedFunction]] = {
     "tx_central_foodbank": CentralFoodbank,
     "tx_feeding_texas": FeedingTexas,
     "tx_rewiring_america": RewiringAmerica,
+    "tx_diaper_bank": NationalDiaperBankNetwork,
 }

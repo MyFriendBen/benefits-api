@@ -21,6 +21,9 @@ Usage:
     # Export with date range (end date is inclusive)
     python manage.py export_screener_data --start-date 2024-01-01 --end-date 2024-12-31 --output-dir /path/to/exports
 
+    # Include incomplete surveys (still requires agree_to_tos=True)
+    python manage.py export_screener_data --output-dir /path/to/exports --include-incomplete
+
     # Filter by white label
     python manage.py export_screener_data --output-dir /path/to/exports --white-label co nc
 
@@ -113,6 +116,11 @@ class Command(BaseCommand):
             action="store_true",
             help="Create a compressed .zip archive of the export",
         )
+        parser.add_argument(
+            "--include-incomplete",
+            action="store_true",
+            help="Include incomplete surveys in the export (though agree_to_tos must still be true)",
+        )
 
     def handle(self, *args, **options):
         # Parse dates
@@ -135,6 +143,7 @@ class Command(BaseCommand):
         white_label = options.get("white_label")
         dry_run = options.get("dry_run", False)
         compress = options.get("compress", False)
+        include_incomplete = options.get("include_incomplete", False)
 
         # Validate output directory (skip for dry run)
         if not dry_run and not os.path.exists(output_dir):
@@ -146,11 +155,13 @@ class Command(BaseCommand):
 
         # Build the queryset
         screens = Screen.objects.filter(
-            completed=True,
             agree_to_tos=True,
             is_test=False,
             is_test_data=False,
         )
+
+        if not include_incomplete:
+            screens = screens.filter(completed=True)
 
         if start_date:
             screens = screens.filter(submission_date__gte=start_date)
