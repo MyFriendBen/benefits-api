@@ -243,6 +243,7 @@ class Command(BaseCommand):
         skipped_count = 0
 
         for translation in translations:
+
             # Skip if not in allowed labels (when filtering by whitelabel)
             if allowed_labels is not None and translation.label not in allowed_labels:
                 continue
