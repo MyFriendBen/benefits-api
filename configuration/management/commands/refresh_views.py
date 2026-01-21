@@ -2,7 +2,6 @@ from django.db.utils import DatabaseError, ProgrammingError
 from django.core.management.base import BaseCommand, CommandError
 from django.db import connection
 
-
 VIEWS = {
     "v2_dependencies": ["data_referrer_codes", "data"],
     "v2_batch_1": [

@@ -4,7 +4,6 @@ import programs.programs.co.pe.member as member
 import programs.programs.co.pe.spm as spm
 from programs.programs.policyengine.calculators.base import PolicyEngineCalulator
 
-
 co_member_calculators = {
     "co_medicaid": member.CoMedicaid,
     "andcs": member.AidToTheNeedyAndDisabled,
