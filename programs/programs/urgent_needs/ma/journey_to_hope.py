@@ -10,7 +10,6 @@ class JourneyToHopeCEOC(UrgentNeedFunction):
         Provides short-term financial help and case management during crises.
         """
 
-        # Specific eligibility (Cambridge residency) managed via admin configuration
-        # This program should appear for those who selected mental health on Additional Resources step
+        # Eligibility is managed via the admin portal (Cambridge residency and mental health category selection).
 
         return True
