@@ -5,7 +5,6 @@ from .co import co_warning_calculators
 from .co_energy_calculator import co_energy_calculator_warning_calculators
 from .ma import ma_warning_calculators
 
-
 general_calculators: dict[str, type[WarningCalculator]] = {
     "_show": WarningCalculator,
     "_dont_show": DontShow,

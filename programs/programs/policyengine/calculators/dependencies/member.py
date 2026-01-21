@@ -571,3 +571,35 @@ class IlFppEligible(Member):
 
 class IlMpeEligible(Member):
     field = "il_mpe_eligible"
+
+
+class TxHarrisRidesEligible(Member):
+    field = "tx_harris_rides_eligible"
+
+
+class IsVeteranDependency(Member):
+    """
+    Veteran status for PolicyEngine calculations.
+    Used by DART and other programs that provide benefits to veterans.
+    """
+
+    field = "is_veteran"
+    dependencies = ("veteran",)
+
+    def value(self):
+        return self.member.veteran or False
+
+
+class TxDartBenefitPerson(Member):
+    """
+    Output dependency for TX DART benefit value per person.
+    Returns the annual dollar value of the DART transit benefit.
+    """
+
+    field = "tx_dart_benefit_person"
+
+
+class TxFpp(Member):
+    """Output dependency for TX Family Planning Program benefit."""
+
+    field = "tx_fpp_benefit"
