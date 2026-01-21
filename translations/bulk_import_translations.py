@@ -15,7 +15,6 @@ from django.conf import settings
 from tqdm import trange
 from decouple import config
 
-
 TRANSLATED_MODEL_MAP = {
     "Program": Program,
     "UrgentNeed": UrgentNeed,

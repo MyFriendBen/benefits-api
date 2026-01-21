@@ -1,12 +1,41 @@
 name: black-action
-on: [push, pull_request]
+on:
+  push:
+    branches: [main]
+  workflow_call:
+
 jobs:
   linter_name:
     name: runner / black formatter
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed Python files
+        id: changed-files
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            FILES=$(git diff --name-only --diff-filter=ACMRT ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep '\.py$' | tr '\n' ' ' | xargs || true)
+          else
+            FILES="."
+          fi
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+          echo "Changed Python files: $FILES"
+
+      - name: Check if there are Python files to check
+        id: check-files
+        run: |
+          if [ -z "${{ steps.changed-files.outputs.files }}" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "No Python files changed, skipping Black"
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - uses: psf/black@stable
+        if: steps.check-files.outputs.skip != 'true'
         with:
           options: --check --verbose
-          src: .
+          src: ${{ steps.changed-files.outputs.files }}

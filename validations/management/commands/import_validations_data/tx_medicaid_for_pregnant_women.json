@@ -1,0 +1,417 @@
+[
+  {
+    "notes": "TX Medicaid for Pregnant Women - Eligible pregnant woman at lower income with no insurance",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75001",
+      "county": "Collin",
+      "household_size": 1,
+      "household_assets": 800.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 24,
+          "pregnant": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2200.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_pregnant_women",
+      "eligible": true,
+      "value": 5818
+    }
+  },
+  {
+    "notes": "TX Medicaid for Pregnant Women - Eligible pregnant woman with spouse and child, no insurance",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "77001",
+      "county": "Harris",
+      "household_size": 3,
+      "household_assets": 2000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 32,
+          "pregnant": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2800.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 3,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_pregnant_women",
+      "eligible": true,
+      "value": 5818
+    }
+  },
+  {
+    "notes": "TX Medicaid for Pregnant Women - Ineligible pregnant woman with employer insurance",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_size": 2,
+      "household_assets": 1200.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 29,
+          "pregnant": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 31,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_pregnant_women",
+      "eligible": false,
+      "value": 0
+    }
+  },
+  {
+    "notes": "TX Medicaid for Pregnant Women - Ineligible pregnant woman with Medicaid insurance",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75201",
+      "county": "Dallas",
+      "household_size": 1,
+      "household_assets": 500.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 22,
+          "pregnant": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1800.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_pregnant_women",
+      "eligible": false,
+      "value": 0
+    }
+  },
+  {
+    "notes": "TX Medicaid for Pregnant Women - Ineligible non-pregnant woman despite low income and no insurance",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "77001",
+      "county": "Harris",
+      "household_size": 1,
+      "household_assets": 600.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 26,
+          "pregnant": false,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_pregnant_women",
+      "eligible": false,
+      "value": 0
+    }
+  },
+  {
+    "notes": "TX Medicaid for Pregnant Women - Ineligible pregnant woman above income threshold with no insurance",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75001",
+      "county": "Collin",
+      "household_size": 2,
+      "household_assets": 8000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 30,
+          "pregnant": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 6500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 32,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 5000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_pregnant_women",
+      "eligible": false,
+      "value": 0
+    }
+  },
+  {
+    "notes": "TX Medicaid for Pregnant Women - Eligible pregnant woman with CHIP insurance on spouse",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_size": 2,
+      "household_assets": 1000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 27,
+          "pregnant": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2400.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 29,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "chp": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_pregnant_women",
+      "eligible": true,
+      "value": 5818
+    }
+  },
+  {
+    "notes": "TX Medicaid for Pregnant Women - Eligible pregnant woman receiving unemployment benefits with no insurance",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75201",
+      "county": "Dallas",
+      "household_size": 1,
+      "household_assets": 300.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 25,
+          "pregnant": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "unemployment",
+              "amount": 1500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_pregnant_women",
+      "eligible": true,
+      "value": 5818
+    }
+  },
+  {
+    "notes": "TX Medicaid for Pregnant Women - Eligible pregnant woman with disabled spouse receiving SSI",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "77001",
+      "county": "Harris",
+      "household_size": 2,
+      "household_assets": 900.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 33,
+          "pregnant": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 35,
+          "disabled": true,
+          "long_term_disability": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSI",
+              "amount": 950.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_pregnant_women",
+      "eligible": true,
+      "value": 5818
+    }
+  }
+]
