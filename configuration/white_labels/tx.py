@@ -3041,6 +3041,24 @@ class TxConfigurationData(ConfigurationData):
                 "_default_message": "Health Care",
             },
         },
+        "transportation": {
+            "benefits": {
+                "harris_county_rides": {
+                    "name": {
+                        "_label": "transportationBenefits.harris_county_rides",
+                        "_default_message": "Harris County RIDES: ",
+                    },
+                    "description": {
+                        "_label": "transportationBenefits.harris_county_rides_desc",
+                        "_default_message": "Discounted rides on public transit for seniors and people with disabilities",
+                    },
+                },
+            },
+            "category_name": {
+                "_label": "transportation",
+                "_default_message": "Transportation",
+            },
+        },
     }
 
     consent_to_contact = {

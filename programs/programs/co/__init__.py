@@ -31,6 +31,7 @@ from .nurturing_futures.calculator import NurturingFutures
 from .energy_calculator import co_energy_calculators
 from .denver_sidewalk_rebate.calculator import DenverSidewalkRebate
 from .senior_housing_tax_credit.calculator import SeniorHousingIncomeTaxCredit
+from .jeffco_student_benefits.calculator import JeffcoStudentBenefits
 from ..calc import ProgramCalculator
 
 co_calculators: dict[str, type[ProgramCalculator]] = {
@@ -66,5 +67,6 @@ co_calculators: dict[str, type[ProgramCalculator]] = {
     "nf": NurturingFutures,
     "dsr": DenverSidewalkRebate,
     "shitc": SeniorHousingIncomeTaxCredit,
+    "jeffco_student_benefits": JeffcoStudentBenefits,
     **co_energy_calculators,
 }

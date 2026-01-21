@@ -1,0 +1,274 @@
+[
+    {
+        "notes": "TX Emergency Medicaid - Ineligible able-bodied adult (TX didn't expand Medicaid)",
+        "household": {
+            "white_label": "tx",
+            "is_test": true,
+            "agree_to_tos": true,
+            "is_13_or_older": true,
+            "zipcode": "78701",
+            "county": "Travis",
+            "household_size": 1,
+            "household_assets": 1000.00,
+            "household_members": [
+                {
+                    "relationship": "headOfHousehold",
+                    "age": 35,
+                    "has_income": true,
+                    "income_streams": [{"type": "wages", "amount": 1500.00, "frequency": "monthly"}],
+                    "insurance": {"none": true}
+                }
+            ],
+            "expenses": []
+        },
+        "expected_results": {"program_name": "tx_emergency_medicaid", "eligible": false, "value": 0}
+    },
+    {
+        "notes": "TX Emergency Medicaid - Eligible pregnant woman and child at moderate income",
+        "household": {
+            "white_label": "tx",
+            "is_test": true,
+            "agree_to_tos": true,
+            "is_13_or_older": true,
+            "zipcode": "75201",
+            "county": "Dallas",
+            "household_size": 2,
+            "household_assets": 800.00,
+            "household_members": [
+                {
+                    "relationship": "headOfHousehold",
+                    "age": 28,
+                    "pregnant": true,
+                    "has_income": true,
+                    "income_streams": [{"type": "wages", "amount": 2000.00, "frequency": "monthly"}],
+                    "insurance": {"none": true}
+                },
+                {
+                    "relationship": "child",
+                    "age": 5,
+                    "has_income": false,
+                    "income_streams": [],
+                    "insurance": {"none": true}
+                }
+            ],
+            "expenses": []
+        },
+        "expected_results": {"program_name": "tx_emergency_medicaid", "eligible": true, "value": 2}
+    },
+    {
+        "notes": "TX Emergency Medicaid - Ineligible elderly non-citizen (65+ typically on Medicare)",
+        "household": {
+            "white_label": "tx",
+            "is_test": true,
+            "agree_to_tos": true,
+            "is_13_or_older": true,
+            "zipcode": "77001",
+            "county": "Harris",
+            "household_size": 1,
+            "household_assets": 500.00,
+            "household_members": [
+                {
+                    "relationship": "headOfHousehold",
+                    "age": 68,
+                    "has_income": true,
+                    "income_streams": [{"type": "socialSecurity", "amount": 1200.00, "frequency": "monthly"}],
+                    "insurance": {"none": true}
+                }
+            ],
+            "expenses": []
+        },
+        "expected_results": {"program_name": "tx_emergency_medicaid", "eligible": false, "value": 0}
+    },
+    {
+        "notes": "TX Emergency Medicaid - Eligible disabled non-citizen at low income",
+        "household": {
+            "white_label": "tx",
+            "is_test": true,
+            "agree_to_tos": true,
+            "is_13_or_older": true,
+            "zipcode": "78701",
+            "county": "Travis",
+            "household_size": 1,
+            "household_assets": 600.00,
+            "household_members": [
+                {
+                    "relationship": "headOfHousehold",
+                    "age": 45,
+                    "disabled": true,
+                    "long_term_disability": true,
+                    "has_income": true,
+                    "income_streams": [{"type": "sSI", "amount": 950.00, "frequency": "monthly"}],
+                    "insurance": {"none": true}
+                }
+            ],
+            "expenses": []
+        },
+        "expected_results": {"program_name": "tx_emergency_medicaid", "eligible": true, "value": 1}
+    },
+    {
+        "notes": "TX Emergency Medicaid - Eligible family with child (parent as caretaker)",
+        "household": {
+            "white_label": "tx",
+            "is_test": true,
+            "agree_to_tos": true,
+            "is_13_or_older": true,
+            "zipcode": "75001",
+            "county": "Collin",
+            "household_size": 3,
+            "household_assets": 1200.00,
+            "household_members": [
+                {
+                    "relationship": "headOfHousehold",
+                    "age": 32,
+                    "has_income": true,
+                    "income_streams": [{"type": "wages", "amount": 2500.00, "frequency": "monthly"}],
+                    "insurance": {"none": true}
+                },
+                {
+                    "relationship": "spouse",
+                    "age": 30,
+                    "has_income": false,
+                    "income_streams": [],
+                    "insurance": {"none": true}
+                },
+                {
+                    "relationship": "child",
+                    "age": 3,
+                    "has_income": false,
+                    "income_streams": [],
+                    "insurance": {"none": true}
+                }
+            ],
+            "expenses": []
+        },
+        "expected_results": {"program_name": "tx_emergency_medicaid", "eligible": true, "value": 1}
+    },
+    {
+        "notes": "TX Emergency Medicaid - Ineligible due to income above Medicaid threshold",
+        "household": {
+            "white_label": "tx",
+            "is_test": true,
+            "agree_to_tos": true,
+            "is_13_or_older": true,
+            "zipcode": "78701",
+            "county": "Travis",
+            "household_size": 1,
+            "household_assets": 5000.00,
+            "household_members": [
+                {
+                    "relationship": "headOfHousehold",
+                    "age": 40,
+                    "has_income": true,
+                    "income_streams": [{"type": "wages", "amount": 6000.00, "frequency": "monthly"}],
+                    "insurance": {"none": true}
+                }
+            ],
+            "expenses": []
+        },
+        "expected_results": {"program_name": "tx_emergency_medicaid", "eligible": false, "value": 0}
+    },
+    {
+        "notes": "TX Emergency Medicaid - Ineligible due to high household income for family",
+        "household": {
+            "white_label": "tx",
+            "is_test": true,
+            "agree_to_tos": true,
+            "is_13_or_older": true,
+            "zipcode": "75201",
+            "county": "Dallas",
+            "household_size": 4,
+            "household_assets": 10000.00,
+            "household_members": [
+                {
+                    "relationship": "headOfHousehold",
+                    "age": 38,
+                    "has_income": true,
+                    "income_streams": [{"type": "wages", "amount": 8000.00, "frequency": "monthly"}],
+                    "insurance": {"none": true}
+                },
+                {
+                    "relationship": "spouse",
+                    "age": 36,
+                    "has_income": true,
+                    "income_streams": [{"type": "wages", "amount": 4000.00, "frequency": "monthly"}],
+                    "insurance": {"none": true}
+                },
+                {
+                    "relationship": "child",
+                    "age": 10,
+                    "student": true,
+                    "has_income": false,
+                    "income_streams": [],
+                    "insurance": {"none": true}
+                },
+                {
+                    "relationship": "child",
+                    "age": 6,
+                    "student": true,
+                    "has_income": false,
+                    "income_streams": [],
+                    "insurance": {"none": true}
+                }
+            ],
+            "expenses": []
+        },
+        "expected_results": {"program_name": "tx_emergency_medicaid", "eligible": false, "value": 0}
+    },
+    {
+        "notes": "TX Emergency Medicaid - Ineligible young adult (19) able-bodied (TX didn't expand Medicaid)",
+        "household": {
+            "white_label": "tx",
+            "is_test": true,
+            "agree_to_tos": true,
+            "is_13_or_older": true,
+            "zipcode": "77001",
+            "county": "Harris",
+            "household_size": 1,
+            "household_assets": 400.00,
+            "household_members": [
+                {
+                    "relationship": "headOfHousehold",
+                    "age": 19,
+                    "student": true,
+                    "has_income": true,
+                    "income_streams": [{"type": "wages", "amount": 800.00, "frequency": "monthly"}],
+                    "insurance": {"none": true}
+                }
+            ],
+            "expenses": []
+        },
+        "expected_results": {"program_name": "tx_emergency_medicaid", "eligible": false, "value": 0}
+    },
+    {
+        "notes": "TX Emergency Medicaid - Ineligible child when parent income too high",
+        "household": {
+            "white_label": "tx",
+            "is_test": true,
+            "agree_to_tos": true,
+            "is_13_or_older": true,
+            "zipcode": "78701",
+            "county": "Travis",
+            "household_size": 2,
+            "household_assets": 700.00,
+            "household_members": [
+                {
+                    "relationship": "headOfHousehold",
+                    "age": 40,
+                    "has_income": true,
+                    "income_streams": [{"type": "wages", "amount": 2800.00, "frequency": "monthly"}],
+                    "insurance": {"none": false, "employer": true}
+                },
+                {
+                    "relationship": "child",
+                    "age": 12,
+                    "student": true,
+                    "has_income": false,
+                    "income_streams": [],
+                    "insurance": {"none": true}
+                }
+            ],
+            "expenses": []
+        },
+        "expected_results": {"program_name": "tx_emergency_medicaid", "eligible": false, "value": 0}
+    }
+]

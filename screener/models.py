@@ -69,6 +69,8 @@ class Screen(models.Model):
     has_il_ctc = models.BooleanField(default=False, blank=True, null=True)
     has_il_transit_reduced_fare = models.BooleanField(default=False, blank=True, null=True)
     has_il_bap = models.BooleanField(default=False, blank=True, null=True)
+    has_il_hbwd = models.BooleanField(default=False, blank=True, null=True)
+    has_harris_county_rides = models.BooleanField(default=False, blank=True, null=True)
     has_medicaid = models.BooleanField(default=False, blank=True, null=True)
     has_rtdlive = models.BooleanField(default=False, blank=True, null=True)
     has_ccap = models.BooleanField(default=False, blank=True, null=True)
@@ -128,6 +130,7 @@ class Screen(models.Model):
     has_va = models.BooleanField(default=None, blank=True, null=True)
     has_project_cope = models.BooleanField(default=False, blank=True, null=True)
     has_cesn_heap = models.BooleanField(default=False, blank=True, null=True)
+    has_tx_dart = models.BooleanField(default=False, blank=True, null=True)
     needs_food = models.BooleanField(default=False, blank=True, null=True)
     needs_baby_supplies = models.BooleanField(default=False, blank=True, null=True)
     needs_housing_help = models.BooleanField(default=False, blank=True, null=True)
@@ -407,6 +410,7 @@ class Screen(models.Model):
             "il_transit_reduced_fare": self.has_il_transit_reduced_fare,
             "il_bap": self.has_il_bap,
             "il_csfp": self.has_csfp,
+            "il_hbwd": self.has_il_hbwd,
             "il_ccap": self.has_ccap,
             "project_cope": self.has_project_cope,
             "co_energy_calculator_cope": self.has_project_cope,
@@ -419,6 +423,7 @@ class Screen(models.Model):
             "ssi": has_ssi_or_ssi_income,
             "tx_ssi": has_ssi_or_ssi_income,
             "tx_csfp": self.has_csfp,
+            "tx_harris_rides": self.has_harris_county_rides,
             "andcs": self.has_andcs,
             "chs": self.has_chs,
             "cpcr": self.has_cpcr,
@@ -477,6 +482,7 @@ class Screen(models.Model):
             "cfhc": self.has_cfhc,
             "shitc": self.has_shitc,
             "nc_medicare_savings": self.has_nc_medicare_savings,
+            "tx_dart": self.has_tx_dart,
         }
 
         if name_abbreviated in name_map:
@@ -961,7 +967,7 @@ class ProgramEligibilitySnapshot(models.Model):
     )
     new = models.BooleanField(default=False)
     name = models.CharField(max_length=320)
-    name_abbreviated = models.CharField(max_length=32)
+    name_abbreviated = models.CharField(max_length=120)
     value_type = models.CharField(max_length=120)
     estimated_value = models.DecimalField(decimal_places=2, max_digits=10)
     estimated_delivery_time = models.CharField(max_length=120, blank=True, null=True)
