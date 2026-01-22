@@ -6,15 +6,15 @@
         "year": "2025",
         "legal_status_required": ["non_citizen"],
         "name": "Emergency Medicaid",
-        "description": "Emergency Medicaid provides health coverage for emergency medical conditions to individuals who meet most Medicaid requirements but are not eligible due to immigration status.\n\nThis program covers treatment for emergency medical conditions, which are conditions that could seriously harm your health if not treated right away. Examples include severe pain, serious injuries, labor and delivery, and conditions that need immediate hospital care.\n\nEmergency Medicaid does NOT cover routine doctor visits, preventive care, or non-emergency treatments.\n\nYou do not apply ahead of time. When you go to a hospital or emergency room with a medical emergency, the hospital will help determine if you qualify for Emergency Medicaid coverage for that visit.",
+        "description": "Emergency Medicaid helps pay for emergency medical care for people who cannot get regular Medicaid because of their immigration status.\n\nThis program only covers medical emergencies. A medical emergency is when something happens suddenly that could seriously hurt your health if you don't get help right away. Examples include a bad injury, severe chest pain, or trouble breathing.\n\nEmergency Medicaid does NOT cover regular doctor checkups, shots and vaccines, or medical care that can wait.\n\nYou don't need to apply before you have an emergency. If you go to the hospital or emergency room with a medical emergency, the hospital staff will help you find out if Emergency Medicaid can pay for that visit.",
         "apply_button_link": "https://www.dhs.state.il.us/page.aspx?item=27262",
         "apply_button_description": "Learn More",
-        "estimated_application_time": "Determined at point of care",
+        "estimated_application_time": "N/A",
         "website_description": "Health coverage for emergency medical conditions",
         "estimated_value": "",
         "external_name": "il_emergency_medicaid",
         "low_confidence": false,
-        "show_on_current_benefits": false
+        "show_on_current_benefits": true
     },
     "documents": [
         {

@@ -3,8 +3,9 @@ from programs.programs.helpers import medicaid_eligible
 import programs.programs.messages as messages
 
 
-class CoEmergencyMedicaid(ProgramCalculator):
-    amount = 9_540
+class IlEmergencyMedicaid(ProgramCalculator):
+    # Monthly value from IL Medicaid categories (ADULT: 474), annualized
+    member_amount = 474 * 12
     insurance_types = ["none"]
     dependencies = ["insurance"]
 
@@ -16,4 +17,4 @@ class CoEmergencyMedicaid(ProgramCalculator):
         member = e.member
 
         # insurance
-        e.condition(member.insurance.has_insurance_types(CoEmergencyMedicaid.insurance_types))
+        e.condition(member.insurance.has_insurance_types(IlEmergencyMedicaid.insurance_types))

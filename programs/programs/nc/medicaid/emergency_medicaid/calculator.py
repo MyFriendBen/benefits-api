@@ -3,7 +3,7 @@ from programs.programs.helpers import medicaid_eligible
 import programs.programs.messages as messages
 
 
-class EmergencyMedicaid(ProgramCalculator):
+class NcEmergencyMedicaid(ProgramCalculator):
     # $6,268/yr | ~$522/mo
     member_amount = 6268
     max_age = 64
@@ -17,7 +17,7 @@ class EmergencyMedicaid(ProgramCalculator):
     ]
 
     def household_eligible(self, e: Eligibility):
-        fpl_percent = EmergencyMedicaid.fpl_percent
+        fpl_percent = NcEmergencyMedicaid.fpl_percent
 
         for member in self.screen.household_members.all():
             # Pregnant and under 18 years old have a different FPL percentage
@@ -38,4 +38,4 @@ class EmergencyMedicaid(ProgramCalculator):
         member = e.member
 
         # age
-        e.condition(not member.age >= EmergencyMedicaid.max_age)
+        e.condition(not member.age >= NcEmergencyMedicaid.max_age)

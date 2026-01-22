@@ -17,7 +17,7 @@ from .my_spark.calculator import MySpark
 from .low_wage_covid_relief.calculator import LowWageCovidRelief
 from .medicaid.child_with_disability.calculator import MedicaidChildWithDisability
 from .medicaid.adult_with_disability.calculator import MedicaidAdultWithDisability
-from .medicaid.emergency.calculator import EmergencyMedicaid
+from .medicaid.emergency.calculator import CoEmergencyMedicaid
 from .basic_cash_assistance.calculator import BasicCashAssistance
 from .weatherization_assistance.calculator import WeatherizationAssistance
 from .tabor.calculator import Tabor
@@ -53,7 +53,7 @@ co_calculators: dict[str, type[ProgramCalculator]] = {
     "lwcr": LowWageCovidRelief,
     "cwd_medicaid": MedicaidChildWithDisability,
     "awd_medicaid": MedicaidAdultWithDisability,
-    "emergency_medicaid": EmergencyMedicaid,
+    "emergency_medicaid": CoEmergencyMedicaid,
     "bca": BasicCashAssistance,
     "cowap": WeatherizationAssistance,
     "tabor": Tabor,

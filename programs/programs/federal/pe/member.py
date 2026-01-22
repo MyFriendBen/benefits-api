@@ -168,32 +168,3 @@ class Ccdf(PolicyEngineMembersCalculator):
             return 0
 
         return self.child_care_cost(member)
-
-
-class EmergencyMedicaid(Medicaid):
-    """
-    Federal Emergency Medicaid eligibility for undocumented immigrants.
-
-    Based on 42 USC 1396b(v), Emergency Medicaid provides coverage for emergency
-    medical conditions to individuals who would otherwise qualify for Medicaid
-    but are ineligible due to immigration status.
-
-    Eligibility requires:
-    1. Immigration ineligibility for regular Medicaid
-    2. Meeting all other Medicaid requirements (income, categorical eligibility)
-    3. Having a qualifying emergency medical condition
-
-    For screening purposes, we assume has_emergency_medical_condition=True since
-    the actual emergency is verified at the point of care.
-
-    State-specific implementations should override medicaid_categories with their values.
-    """
-
-    pe_name = "is_emergency_medicaid_eligible"
-    pe_inputs = [
-        *Medicaid.pe_inputs,
-        dependency.member.HasEmergencyMedicalCondition,
-    ]
-    pe_outputs = [
-        dependency.member.EmergencyMedicaidEligible,
-    ]
