@@ -47,6 +47,17 @@ class FplCache(Cache):
             8: 54_150,
             "additional": 5_500,
         },
+        "2026": {
+            1: 15_960,
+            2: 21_640,
+            3: 27_320,
+            4: 33_000,
+            5: 38_680,
+            6: 44_360,
+            7: 50_040,
+            8: 55_720,
+            "additional": 5_680,
+        },
     }
     api_url = "https://aspe.hhs.gov/topics/poverty-economic-mobility/poverty-guidelines/api/"
     max_household_size = 8

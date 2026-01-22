@@ -1,0 +1,27 @@
+{
+    "white_label": {"code": "tx"},
+    "program_category": {
+        "external_name": "tx_healthcare"
+    },
+    "program": {
+        "name_abbreviated": "tx_fpp",
+        "year": "2026",
+        "legal_status_required": ["citizen", "gc_5plus", "gc_5less", "refugee"],
+        "name": "Family Planning Program",
+        "website_description": "Family planning benefits",
+        "description": "Family planning benefits. The Family Planning Program helps you choose when to become a parent. Services can help you prevent, delay, or plan for a pregnancy. Benefits may include birth control, pregnancy testing, and health care screenings.\n\nYou may be eligible for these benefits if you earn too much money to qualify for regular Medicaid benefits. Even if you qualify, you must renew coverage every year. You may owe a modest copay for services.\n\nIf you apply in person, you may get services the same day.",
+        "learn_more_link": "https://www.healthytexaswomen.org/healthcare-programs/family-planning-program",
+        "apply_button_link": "https://yourtexasbenefits.com/Apply/GettingStartedApp?lang=en_US",
+        "apply_button_description": "",
+        "estimated_application_time": "30 - 60 minutes",
+        "estimated_value": ""
+    },
+    "documents": [
+        {"external_name": "tx_home"},
+        {"external_name": "tx_ssn"},
+        {"external_name": "tx_id_proof"},
+        {"external_name": "tx_us_status"},
+        {"external_name": "tx_earned_income"},
+        {"external_name": "tx_unearned_income"}
+    ]
+}

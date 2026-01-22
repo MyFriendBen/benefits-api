@@ -3,7 +3,6 @@ import programs.programs.federal.pe.spm as spm
 import programs.programs.federal.pe.member as member
 from programs.programs.policyengine.calculators.base import PolicyEngineCalulator
 
-
 federal_member_calculators = {
     "wic": member.Wic,
     "pell_grant": member.PellGrant,

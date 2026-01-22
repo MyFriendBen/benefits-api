@@ -106,6 +106,16 @@ class Medicaid(Member):
 
 
 class Ssi(Member):
+    """
+    SSI as both PE input and output.
+
+    - If user reports SSI: use reported value
+    - If no reported SSI: return None so PE calculates eligibility
+
+    Warning: When PE calculates SSI, the value sometimes counts as unearned
+    income for downstream calculations (e.g., IL AABD).
+    """
+
     field = "ssi"
     dependencies = (
         "income_type",
@@ -122,7 +132,8 @@ class IsDisabledDependency(Member):
     field = "is_disabled"
 
     def value(self):
-        return self.member.disabled or self.member.long_term_disability
+        # per discussion with PolicyEngine 01/02/2026, should include blindness in is_disabled
+        return self.member.disabled or self.member.long_term_disability or self.member.visually_impaired
 
 
 # The Member class runs once per each household member, to ensure that the medical expenses
@@ -145,14 +156,28 @@ class MedicalExpenseDependency(Member):
 
 
 class PropertyTaxExpenseDependency(Member):
+    """
+    Property tax expense for PolicyEngine tax calculations.
+
+    PE treats this as a person-level field for state tax calculations.
+    We split the household's total property tax between head and spouse only
+    (the tax filers), not all adults, since this is used for tax filing purposes.
+    """
+
     field = "real_estate_taxes"
-    dependencies = ["age"]
 
     def value(self):
-        if self.member.age >= 18:
-            return self.screen.calc_expenses("yearly", ["propertyTax"]) / self.screen.num_adults(18)
+        # Only assign to head and spouse (tax filers)
+        if not (self.member.is_head() or self.member.is_spouse()):
+            return 0
 
-        return 0
+        total_property_tax = self.screen.calc_expenses("yearly", ["propertyTax"])
+
+        # If married/joint filing, split between head and spouse
+        if self.screen.is_joint():
+            return int(total_property_tax / 2)
+
+        return int(total_property_tax)
 
 
 class IsBlindDependency(Member):
@@ -164,10 +189,27 @@ class IsBlindDependency(Member):
 
 class SsiReportedDependency(Member):
     field = "ssi_reported"
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
 
     def value(self):
-        # Policy Engine uses this value for is_ssi_disabled, but it does not apply to MFB
-        return 0
+        return self.member.calc_gross_income("yearly", ["sSI"])
+
+
+class SsdiReportedDependency(Member):
+    # Amount in "Social Security disability benefits (SSDI)"
+    field = "social_security_disability"
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
+
+    def value(self):
+        return self.member.calc_gross_income("yearly", ["sSDisability"])
 
 
 class SsiCountableResourcesDependency(Member):
@@ -199,6 +241,14 @@ class Oap(Member):
 
 class FamilyAffordabilityTaxCredit(Member):
     field = "co_family_affordability_credit"
+
+
+class CareWorkerEligibleDependency(Member):
+    field = "co_care_worker_credit_eligible_care_worker"
+    dependencies = ("is_care_worker",)
+
+    def value(self):
+        return self.member.is_care_worker or False
 
 
 class PellGrant(Member):
@@ -405,6 +455,21 @@ class UnemploymentIncomeDependency(IncomeDependency):
     income_types = ["unemployment"]
 
 
+class WorkersCompensationDependency(IncomeDependency):
+    field = "workers_compensation"
+    income_types = ["workersComp"]
+
+
+class AlimonyIncomeDependency(IncomeDependency):
+    field = "alimony_income"
+    income_types = ["alimony"]
+
+
+class RetirementDistributionsDependency(IncomeDependency):
+    field = "taxable_ira_distributions"
+    income_types = ["deferredComp"]
+
+
 class SsiEarnedIncomeDependency(IncomeDependency):
     field = "ssi_earned_income"
     income_types = ["earned"]
@@ -415,32 +480,50 @@ class SsiUnearnedIncomeDependency(IncomeDependency):
     income_types = ["unearned"]
 
 
-class IlAabdGrossEarnedIncomeDependency(Member):
-    field = "il_aabd_gross_earned_income"
-    dependencies = (
-        "income_type",
-        "income_amount",
-        "income_frequency",
-    )
-
-    def value(self):
-        return int(self.member.calc_gross_income("yearly", ["earned"]))
-
-
-class IlAabdGrossUnearnedIncomeDependency(Member):
-    field = "il_aabd_gross_unearned_income"
-    dependencies = (
-        "income_type",
-        "income_amount",
-        "income_frequency",
-    )
-
-    def value(self):
-        return int(self.member.calc_gross_income("yearly", ["unearned"], exclude=["cashAssistance"]))
-
-
 class IlAabd(Member):
     field = "il_aabd_person"
+
+
+class RentDependency(Member):
+    """
+    Rent expense for PolicyEngine tax calculations.
+
+    PE treats this as a person-level field for state tax calculations.
+    We split the household's total rent between head and spouse only
+    (the tax filers), not all adults, since this is used for tax filing purposes.
+    """
+
+    field = "rent"
+
+    def value(self):
+        # Only assign to head and spouse (tax filers)
+        if not (self.member.is_head() or self.member.is_spouse()):
+            return 0
+
+        total_rent = self.screen.calc_expenses("yearly", ["rent"])
+
+        # If married/joint filing, split between head and spouse
+        if self.screen.is_joint():
+            return int(total_rent / 2)
+
+        return int(total_rent)
+
+
+class IlHbwdEligible(Member):
+    """Illinois HBWD eligibility determination (boolean)."""
+
+    field = "il_hbwd_eligible"
+
+
+class IlHbwdPremium(Member):
+    """
+    Illinois HBWD monthly premium amount (negative value).
+
+    This represents the PREMIUM that the user will pay for HBWD insurance,
+    not the value of the benefit itself. Will be a negative number.
+    """
+
+    field = "il_hbwd_person"
 
 
 class HeadStart(Member):
@@ -488,3 +571,35 @@ class IlFppEligible(Member):
 
 class IlMpeEligible(Member):
     field = "il_mpe_eligible"
+
+
+class TxHarrisRidesEligible(Member):
+    field = "tx_harris_rides_eligible"
+
+
+class IsVeteranDependency(Member):
+    """
+    Veteran status for PolicyEngine calculations.
+    Used by DART and other programs that provide benefits to veterans.
+    """
+
+    field = "is_veteran"
+    dependencies = ("veteran",)
+
+    def value(self):
+        return self.member.veteran or False
+
+
+class TxDartBenefitPerson(Member):
+    """
+    Output dependency for TX DART benefit value per person.
+    Returns the annual dollar value of the DART transit benefit.
+    """
+
+    field = "tx_dart_benefit_person"
+
+
+class TxFpp(Member):
+    """Output dependency for TX Family Planning Program benefit."""
+
+    field = "tx_fpp_benefit"

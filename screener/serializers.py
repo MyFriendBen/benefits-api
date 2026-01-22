@@ -123,6 +123,7 @@ class HouseholdMemberSerializer(serializers.ModelSerializer):
             "birth_year",
             "birth_month",
             "energy_calculator",
+            "is_care_worker",
         )
         read_only_fields = ("screen", "id")
 
@@ -178,6 +179,8 @@ class ScreenSerializer(serializers.ModelSerializer):
             "has_il_ctc",
             "has_il_transit_reduced_fare",
             "has_il_bap",
+            "has_il_hbwd",
+            "has_harris_county_rides",
             "has_medicaid",
             "has_rtdlive",
             "has_ccap",
@@ -235,6 +238,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             "has_no_hi",
             "has_va",
             "has_nc_medicare_savings",
+            "has_tx_dart",
             "needs_food",
             "needs_baby_supplies",
             "needs_housing_help",
