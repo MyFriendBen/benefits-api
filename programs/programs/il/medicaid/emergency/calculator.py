@@ -1,10 +1,10 @@
 from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
 from programs.programs.helpers import medicaid_eligible
-from programs.programs.il.pe.member import IlMedicaid
 
 
 class IlEmergencyMedicaid(ProgramCalculator):
-    member_amount = IlMedicaid.medicaid_categories["ADULT"] * 12
+    # 474 comes from IlMedicaid.medicaid_categories["ADULT"]
+    member_amount = 474 * 12
     insurance_types = ["none"]
     dependencies = ["insurance"]
 
