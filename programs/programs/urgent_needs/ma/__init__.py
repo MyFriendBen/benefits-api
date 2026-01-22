@@ -19,6 +19,7 @@ from .career_training import CareerTrainingAndWorkforce
 from .college_and_fafsa_support import CollegeAndFafsaSupport
 from .journey_to_hope import JourneyToHopeCEOC
 from .center_for_families import CenterForFamilies
+from .multi_service_center import MultiServiceCenter
 
 ma_urgent_need_functions: dict[str, type[UrgentNeedFunction]] = {
     "ma_family_shelter": FamilyShelter,
@@ -41,4 +42,5 @@ ma_urgent_need_functions: dict[str, type[UrgentNeedFunction]] = {
     "ma_college_and_fafsa_support": CollegeAndFafsaSupport,
     "ma_journey_to_hope": JourneyToHopeCEOC,
     "ma_center_for_families": CenterForFamilies,
+    "ma_multi_service_center": MultiServiceCenter,
 }
