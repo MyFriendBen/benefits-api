@@ -10,7 +10,7 @@ class CenterForFamilies(UrgentNeedFunction):
     dependencies = ["age"]
     max_age = 8
 
-    def eligible(self):
+    def eligible(self) -> bool:
         # Provides parenting education and support programs for Cambridge families with children from birth to age 8.
 
         # Must have a child 8 years old or younger
