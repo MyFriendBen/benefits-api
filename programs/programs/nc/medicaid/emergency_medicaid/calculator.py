@@ -17,7 +17,7 @@ class NcEmergencyMedicaid(ProgramCalculator):
     ]
 
     def household_eligible(self, e: Eligibility):
-        fpl_percent = NcEmergencyMedicaid.fpl_percent
+        fpl_percent = self.fpl_percent
 
         for member in self.screen.household_members.all():
             # Pregnant and under 18 years old have a different FPL percentage
@@ -38,4 +38,4 @@ class NcEmergencyMedicaid(ProgramCalculator):
         member = e.member
 
         # age
-        e.condition(not member.age >= NcEmergencyMedicaid.max_age)
+        e.condition(not member.age >= self.max_age)
