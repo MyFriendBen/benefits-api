@@ -3,7 +3,6 @@ import programs.programs.ma.pe.member as member
 import programs.programs.ma.pe.spm as spm
 from programs.programs.policyengine.calculators.base import PolicyEngineCalulator
 
-
 ma_member_calculators = {
     "ma_wic": member.MaWic,
     "ma_ccdf": member.MaCcdf,
