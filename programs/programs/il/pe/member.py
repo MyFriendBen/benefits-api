@@ -302,4 +302,3 @@ class IlMpe(PolicyEngineMembersCalculator):
             return 0
 
         return 1
-

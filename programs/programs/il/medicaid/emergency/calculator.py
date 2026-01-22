@@ -1,7 +1,6 @@
 from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
 from programs.programs.helpers import medicaid_eligible
 from programs.programs.il.pe.member import IlMedicaid
-import programs.programs.messages as messages
 
 
 class IlEmergencyMedicaid(ProgramCalculator):
