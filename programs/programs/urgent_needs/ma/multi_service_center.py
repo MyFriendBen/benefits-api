@@ -10,7 +10,7 @@ class MultiServiceCenter(UrgentNeedFunction):
 
     dependencies = []
 
-    def eligible(self):
+    def eligible(self) -> bool:
         # All users selecting housing as acute condition are eligible
         # Specific eligibility (Cambridge residency, housing instability) managed via admin configuration
         return True
