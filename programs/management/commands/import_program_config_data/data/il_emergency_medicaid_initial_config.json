@@ -12,6 +12,7 @@
         "estimated_application_time": "N/A",
         "website_description": "Health coverage for emergency medical conditions",
         "estimated_value": "",
+        "value_format": "lump_sum",
         "external_name": "il_emergency_medicaid",
         "low_confidence": false,
         "show_on_current_benefits": true
@@ -34,11 +35,6 @@
             "text": "Proof of Illinois residency (ex: driver's license, utility bill, or mail with your name and address)",
             "link_url": "",
             "link_text": ""
-        }
-    ],
-    "navigators": [
-        {
-            "external_name": "get_covered_illinois"
         }
     ]
 }

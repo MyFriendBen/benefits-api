@@ -3,8 +3,9 @@ from programs.programs.helpers import medicaid_eligible
 
 
 class IlEmergencyMedicaid(ProgramCalculator):
-    # 474 comes from IlMedicaid.medicaid_categories["ADULT"]
-    member_amount = 474 * 12
+    # Average ER visit cost in Illinois for uninsured, moderate-to-severe visit
+    # Source: https://www.talktomira.com/post/how-much-does-an-er-visit-cost
+    member_amount = 2_000
     insurance_types = ["none"]
     dependencies = ["insurance"]
 
