@@ -17,4 +17,4 @@ class IlEmergencyMedicaid(ProgramCalculator):
         member = e.member
 
         # insurance
-        e.condition(member.insurance.has_insurance_types(IlEmergencyMedicaid.insurance_types))
+        e.condition(member.insurance.has_insurance_types(self.insurance_types))
