@@ -6,10 +6,10 @@
         "year": "2026",
         "legal_status_required": ["citizen", "non_citizen", "refugee", "gc_5plus", "gc_5less", "gc_18plus_no5", "gc_under18_no5", "otherWithWorkPermission"],
         "name": "Nurse-Family Partnership (NFP)",
-        "description": "Help for first-time parents. The Nurse-Family Partnership partners first-time parents with a free personal nurse. This nurse can offer personal pregnancy and postpartum care and support. You will get tools and information to give your baby a healthy start. Nurses may also help you create a job and education plan.\n\nYour nurse will support you up to your baby's second birthday. You should apply during pregnancy but may be able to enroll for up to 30 days after your baby's birth. A nurse will call you within about 7 business days after you apply.",
+        "description": "Help for first-time parents. NFP partners first-time parents with a free personal nurse for regular in-home visits. This nurse can offer personal pregnancy and postpartum care and support. You will get tools and information to give your baby a healthy start. Nurses may also help you create a job and education plan.\n\nYour nurse will support you up to your baby's second birthday. You should apply during pregnancy but may be able to enroll for up to 30 days after your baby's birth.",
         "apply_button_link": "https://form.jotform.com/240804592255154",
         "apply_button_description": "",
-        "estimated_application_time": "5-10 minutes",
+        "estimated_application_time": "10 minutes",
         "website_description": "Personalized support for first-time parents",
         "estimated_value": "",
         "value_format": "estimated_annual"
