@@ -15,11 +15,21 @@
     },
     "navigators": [
         {
+            "external_name": "nurse_family_partnership_co",
+            "name": "Nurse-Family Partnership",
+            "email": "",
+            "description": "Nurse-Family Partnership can help first-time moms apply for this benefit. They can refer you to a program near you.",
+            "assistance_link": "https://iik.org/programs/nurse-family-partnership/",
+            "phone_number": "720-865-6236",
+            "counties": [],
+            "languages": []
+        },
+        {
             "external_name": "adams_county_health_department_nfp",
             "name": "Adams County Health Department",
             "email": "nfpreferrals@adcogov.org",
-            "description": "Contact Adams County Health Department to apply for NFP if you live in Adams County.",
-            "assistance_link": "",
+            "description": "NFP provider for Adams County.",
+            "assistance_link": "https://adamscountyhealthdepartment.org/nurse-family-partnership",
             "phone_number": "303-255-6246",
             "counties": ["Adams"],
             "languages": []
@@ -28,8 +38,8 @@
             "external_name": "arapahoe_county_health_nfp",
             "name": "Arapahoe County Health Nurse-Family Partnership",
             "email": "nursefamilyreferrals@arapahoegov.com",
-            "description": "Contact Arapahoe County Health to apply for NFP if you live in Arapahoe, Douglas, or Elbert County.",
-            "assistance_link": "",
+            "description": "NFP provider for Arapahoe, Douglas, and Elbert County.",
+            "assistance_link": "https://www.arapahoeco.gov/your_county/county_departments/public_health_department/community_health/parent_child_health/nurse_family_partnership.php",
             "phone_number": "303-795-4584",
             "counties": ["Arapahoe", "Douglas", "Elbert"],
             "languages": []
@@ -38,8 +48,8 @@
             "external_name": "beth_el_nfp",
             "name": "Beth-El Nurse-Family Partnership",
             "email": "nfp@uccs.edu",
-            "description": "Contact Beth-El Nurse-Family Partnership to apply for NFP if you live in El Paso or Teller County.",
-            "assistance_link": "",
+            "description": "NFP provider for El Paso and Teller County.",
+            "assistance_link": "https://healthcircle.uccs.edu/nurse-family-partnership",
             "phone_number": "719-255-8045",
             "counties": ["El Paso", "Teller"],
             "languages": []
@@ -48,8 +58,8 @@
             "external_name": "boulder_county_nfp",
             "name": "Boulder County NFP",
             "email": "lpatrick@bouldercounty.org",
-            "description": "Contact Boulder County NFP to apply for NFP if you live in Boulder County.",
-            "assistance_link": "",
+            "description": "NFP provider for Boulder County.",
+            "assistance_link": "https://www.bouldercounty.org/families/pregnancy/nurse-families-partnership-program/",
             "phone_number": "303-413-7554",
             "counties": ["Boulder"],
             "languages": []
@@ -58,8 +68,8 @@
             "external_name": "denver_health_nfp",
             "name": "Denver Health NFP",
             "email": "NurseFamilyPartnership@dhha.org",
-            "description": "Contact Denver Health NFP to apply for NFP if you live in Denver.",
-            "assistance_link": "",
+            "description": "NFP provider for Denver.",
+            "assistance_link": "https://www.denverhealth.org/services/community-health/nurse-family-partnership",
             "phone_number": "303-602-8986",
             "counties": ["Denver"],
             "languages": []
@@ -68,8 +78,8 @@
             "external_name": "eagle_county_nfp",
             "name": "Eagle County NFP",
             "email": "shannon.wagner@eaglecounty.us",
-            "description": "Contact Eagle County NFP to apply for NFP if you live in Eagle County.",
-            "assistance_link": "",
+            "description": "NFP provider for Eagle County.",
+            "assistance_link": "https://www.eaglecounty.us/departments___services/public_health/healthy_families.php",
             "phone_number": "970-471-3437",
             "counties": ["Eagle"],
             "languages": []
@@ -78,8 +88,8 @@
             "external_name": "el_paso_county_nfp",
             "name": "El Paso County NFP",
             "email": "karahamby@elpasoco.com",
-            "description": "Contact El Paso County NFP to apply for NFP if you live in El Paso or Teller County.",
-            "assistance_link": "",
+            "description": "NFP provider for El Paso and Teller County.",
+            "assistance_link": "https://www.elpasocountyhealth.org/service/nurse-family-partnership",
             "phone_number": "719-575-8991",
             "counties": ["El Paso", "Teller"],
             "languages": []
@@ -88,20 +98,10 @@
             "external_name": "family_visitor_programs_nfp",
             "name": "Family Visitor Programs NFP",
             "email": "",
-            "description": "Contact Family Visitor Programs NFP to apply for NFP if you live in Eagle (El Jebel and Basalt only), Garfield, or Pitkin County.",
-            "assistance_link": "",
+            "description": "NFP provider for Eagle County (El Jebel and Basalt only), Garfield, and Pitkin County.",
+            "assistance_link": "https://greatexpectations.co/our-programs/#first",
             "phone_number": "970-945-1234",
             "counties": ["Eagle", "Garfield", "Pitkin"],
-            "languages": []
-        },
-        {
-            "external_name": "nurse_family_partnership_co",
-            "name": "Nurse-Family Partnership",
-            "email": "",
-            "description": "Nurse-Family Partnership can help first-time moms apply for this benefit. They can refer you to a program near you.",
-            "assistance_link": "https://iik.org/programs/nurse-family-partnership/",
-            "phone_number": "720-865-6236",
-            "counties": [],
             "languages": []
         }
     ]
