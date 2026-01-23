@@ -1,4 +1,4 @@
-import programs.programs.federal.pe.member as member
+import programs.programs.federal.pe.member as federal_member
 import programs.programs.federal.pe.tax as tax
 import programs.programs.policyengine.calculators.dependencies as pe_dependency
 import programs.programs.policyengine.calculators.dependencies.household as household_dependency
@@ -7,7 +7,7 @@ import programs.programs.policyengine.calculators.dependencies.spm as spm_depend
 from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
 
 
-class IlMedicaid(member.Medicaid):
+class IlMedicaid(federal_member.Medicaid):
     """Base Illinois Medicaid eligibility through PolicyEngine"""
 
     medicaid_categories = {
@@ -24,12 +24,12 @@ class IlMedicaid(member.Medicaid):
         "DISABLED": 474,
     }
     pe_inputs = [
-        *member.Medicaid.pe_inputs,
+        *federal_member.Medicaid.pe_inputs,
         household_dependency.IlStateCodeDependency,
     ]
 
 
-class IlWic(member.Wic):
+class IlWic(federal_member.Wic):
     wic_categories = {
         "NONE": 0,
         "INFANT": 130,
@@ -39,7 +39,7 @@ class IlWic(member.Wic):
         "BREASTFEEDING": 121,
     }
     pe_inputs = [
-        *member.Wic.pe_inputs,
+        *federal_member.Wic.pe_inputs,
         household_dependency.IlStateCodeDependency,
     ]
 
