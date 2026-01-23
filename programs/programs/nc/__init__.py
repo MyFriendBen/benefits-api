@@ -4,7 +4,7 @@ from programs.programs.nc.medicaid.nc_medicare_savings.calculator import (
 from programs.programs.nc.nc_aca.calculator import ACASubsidiesNC
 from .nc_weatherization.calculator import NCWeatherization
 from .nc_lieap.calculator import NCLieap
-from .medicaid.emergency_medicaid.calculator import EmergencyMedicaid
+from .medicaid.emergency_medicaid.calculator import NcEmergencyMedicaid
 from .sun_bucks.calculator import SunBucks
 from .nc_crisis_intervention.calculator import NCCrisisIntervention
 from .medicaid.family_planning_services.calculator import NCFamilyPlanningServices
@@ -12,7 +12,7 @@ from .nc_head_start.calculator import NCHeadStart
 from ..calc import ProgramCalculator
 
 nc_calculators: dict[str, type[ProgramCalculator]] = {
-    "nc_emergency_medicaid": EmergencyMedicaid,
+    "nc_emergency_medicaid": NcEmergencyMedicaid,
     "sunbucks": SunBucks,
     "nc_lieap": NCLieap,
     "nccip": NCCrisisIntervention,

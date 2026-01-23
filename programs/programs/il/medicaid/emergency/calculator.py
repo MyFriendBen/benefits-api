@@ -1,19 +1,20 @@
 from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
 from programs.programs.helpers import medicaid_eligible
-import programs.programs.messages as messages
 
 
-class CoEmergencyMedicaid(ProgramCalculator):
-    amount = 9_540
+class IlEmergencyMedicaid(ProgramCalculator):
+    # Average ER visit cost in Illinois for uninsured, moderate-to-severe visit
+    # Source: https://www.talktomira.com/post/how-much-does-an-er-visit-cost
+    member_amount = 2_000
     insurance_types = ["none"]
     dependencies = ["insurance"]
 
     def household_eligible(self, e: Eligibility):
-        # Does qualify for Medicaid
-        e.condition(medicaid_eligible(self.data), messages.must_have_benefit("Medicaid"))
+        # Must qualify for Medicaid
+        e.condition(medicaid_eligible(self.data))
 
     def member_eligible(self, e: MemberEligibility):
         member = e.member
 
-        # insurance
+        # No insurance
         e.condition(member.insurance.has_insurance_types(self.insurance_types))
