@@ -9,9 +9,10 @@
         "description": "NFP gives expectant parents a free personal nurse to help them through pregnancy and their baby's first years. Your nurse will teach you about pregnancy, labor, your baby's growth, healthy eating, shots your baby needs, and resources in your community. This help has been shown to improve children's health and development, reduce premature births and low birthweight babies, and strengthen the bond between parents and babies.\n\nNFP is typically for first-time moms who are pregnant 28 weeks or less, but requirements (including income eligibility) vary by location. If you're pregnant, it's still worth reaching out to see if you qualify: call or text (844) 637-6667 or email newmoms@changent.org.",
         "apply_button_link": "https://changent.org/nfp-moms/",
         "apply_button_description": "Learn More",
-        "estimated_application_time": "Varies",
+        "estimated_application_time": "5-10 minutes",
         "website_description": "Pairing first-time pregnant women with registered nurses who provide support from early pregnancy through the child's second birthday.",
-        "estimated_value": "Varies"
+        "estimated_value": "",
+        "value_format": "estimated_annual"
     },
     "navigators": [
         {

@@ -61,7 +61,7 @@ co_calculators: dict[str, type[ProgramCalculator]] = {
     "ubp": UtilityBillPay,
     "rag": RentalAssistanceGrant,
     "erap": EmergencyRentalAssistance,
-    "nfp": CoNurseFamilyPartnership,
+    "co_nfp": CoNurseFamilyPartnership,
     "dtr": DenverTrashRebate,
     "dptr": DenverPropertyTaxRelief,
     "nf": NurturingFutures,

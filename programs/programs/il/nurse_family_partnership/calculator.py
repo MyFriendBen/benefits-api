@@ -16,16 +16,28 @@ class IlNurseFamilyPartnership(ProgramCalculator):
     in practice. We use a higher cutoff (300% FPL) and note in descriptions that
     requirements vary by location.
 
+    Value estimate ($4,500):
+    - ~60 visits over 2.5 years (weekly first month, bi-weekly until birth, weekly 6 weeks
+      postpartum, bi-weekly until 20 months, monthly until 2nd birthday)
+    - 60-minute visits (reasonable estimate)
+    - $75/visit (mid-range for in-home specialized RN visit)
+    - Source: 
+        - https://www.cebc4cw.org/program/nurse-family-partnership/
+        - https://arhomecare.com/how-much-does-private-home-care-really-cost-your-2025-price-guide 
+
+
     References:
     - https://changent.org/what-we-do/nurse-family-partnership/
     - https://changent.org/nfp-moms/
     - https://changent.org/locations/
+    - https://www.cebc4cw.org/program/nurse-family-partnership/
     - CEDA (Community and Economic Development Association of Cook County) WIC Program
     """
 
     fpl_percent = 3
     child_relationships = ["child"]
-    amount = 0
+    # annual amt = total value divided by length of program (2.5 years)
+    amount = 4_500 / 2.5
     dependencies = [
         "relationship",
         "income_frequency",
@@ -36,8 +48,8 @@ class IlNurseFamilyPartnership(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility):
         # income eligibility: 300% FPL or has WIC (presumed eligibility)
-        income_limit = self.program.year.as_dict()[2] * self.fpl_percent
-        gross_income = self.screen.calc_gross_income("yearly", ["all"])
+        income_limit = int(self.fpl_percent * self.program.year.get_limit(self.screen.household_size))
+        gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
         is_income_eligible = gross_income <= income_limit
 
         has_wic = self.screen.has_benefit("wic")
