@@ -1,0 +1,48 @@
+{
+    "white_label": {"code": "il"},
+    "program_category": {"external_name": "il_health"},
+    "program": {
+        "name_abbreviated": "il_nfp",
+        "year": "2026",
+        "legal_status_required": ["citizen", "non_citizen", "refugee", "gc_5plus", "gc_5less", "gc_18plus_no5", "gc_under18_no5", "otherWithWorkPermission"],
+        "name": "Nurse-Family Partnership (NFP)",
+        "description": "NFP gives expectant parents a free personal nurse to help them through pregnancy and their baby's first years. Your nurse will teach you about pregnancy, labor, your baby's growth, healthy eating, shots your baby needs, and resources in your community. This help has been shown to improve children's health and development, reduce premature births and low birthweight babies, and strengthen the bond between parents and babies. This program is for first-time pregnancies only. Further income requirements may apply.",
+        "apply_button_link": "https://changent.org/nfp-moms/",
+        "apply_button_description": "",
+        "estimated_application_time": "Varies",
+        "website_description": "Pairing first-time pregnant women with registered nurses who provide support from early pregnancy through the child's second birthday.",
+        "estimated_value": "Varies"
+    },
+    "navigators": [
+        {
+            "external_name": "carle_healthy_beginnings",
+            "name": "Carle Healthy Beginnings",
+            "email": "",
+            "description": "",
+            "assistance_link": "https://carle.org/services/healthy-beginnings",
+            "phone_number": "217-902-3130",
+            "counties": ["Champaign-Urbana", "Vermilion"],
+            "languages": []
+        },
+        {
+            "external_name": "kane_kares",
+            "name": "Kane Kares",
+            "email": "",
+            "description": "",
+            "assistance_link": "https://www.kanehealth.com/Pages/Kane-Kares",
+            "phone_number": "847-888-6457",
+            "counties": ["Kane"],
+            "languages": []
+        },
+        {
+            "external_name": "metropolitan_family_services",
+            "name": "Metropolitan Family Services",
+            "email": "",
+            "description": "Call or Text (312) 965-4363 to apply for NFP with Metropolitan Family Services",
+            "assistance_link": "https://www.metrofamily.org/community-center",
+            "phone_number": "312-965-4363",
+            "counties": ["Cook"],
+            "languages": []
+        }
+    ]
+}
