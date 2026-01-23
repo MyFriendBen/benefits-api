@@ -603,3 +603,15 @@ class TxFpp(Member):
     """Output dependency for TX Family Planning Program benefit."""
 
     field = "tx_fpp_benefit"
+
+
+class MspEligible(Member):
+    """Output dependency for Medicare Savings Program eligibility."""
+
+    field = "msp_eligible"
+
+
+class MspCategory(Member):
+    """Output dependency for Medicare Savings Program category (QMB, SLMB, QI, or NONE)."""
+
+    field = "msp_category"

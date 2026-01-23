@@ -302,3 +302,49 @@ class IlMpe(PolicyEngineMembersCalculator):
             return 0
 
         return 1
+
+
+class IlMsp(PolicyEngineMembersCalculator):
+    """
+    Illinois Medicare Savings Program (MSP)
+
+    MSP helps pay Medicare premiums, deductibles, and coinsurance for
+    individuals with limited income and assets who are Medicare-eligible.
+
+    Categories (determined by PolicyEngine):
+        - QMB (Qualified Medicare Beneficiary): income ≤ 100% FPL
+        - SLMB (Specified Low-Income Medicare Beneficiary): income 100-120% FPL
+        - QI (Qualifying Individual): income 120-135% FPL
+
+    Eligibility criteria:
+        - Medicare eligible (age 65+ OR receiving SSDI for 24+ months)
+        - Meets income limits (using SSI methodology per 42 U.S.C. 1396d(p)(1)(B))
+        - Meets asset limits (state-dependent; IL has eliminated asset test)
+        - Illinois resident
+    """
+
+    pe_name = "msp"
+    pe_inputs = [
+        # is_medicare_eligible
+        member_dependency.AgeDependency,
+        member_dependency.SsdiReportedDependency,
+        # months_receiving_social_security_disability - not collected
+        # msp_countable_income (uses SSI methodology)
+        member_dependency.SsiEarnedIncomeDependency,
+        member_dependency.SsiUnearnedIncomeDependency,
+        # msp_asset_eligible
+        spm_dependency.CashAssetsDependency,
+        # state
+        household_dependency.IlStateCodeDependency,
+    ]
+    pe_outputs = [
+        member_dependency.MspEligible,
+        member_dependency.MspCategory,
+    ]
+
+    def member_value(self, member):
+        # msp returns monthly benefit value in USD
+        monthly_benefit = self.get_member_variable(member.id)
+
+        # Convert monthly to yearly
+        return int(monthly_benefit * 12)
