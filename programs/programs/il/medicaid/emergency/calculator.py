@@ -16,5 +16,5 @@ class IlEmergencyMedicaid(ProgramCalculator):
     def member_eligible(self, e: MemberEligibility):
         member = e.member
 
-        # insurance
+        # No insurance
         e.condition(member.insurance.has_insurance_types(self.insurance_types))
