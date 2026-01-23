@@ -42,7 +42,6 @@ from programs.programs.tx.pe import (
     tx_tax_unit_calculators,
 )
 
-
 all_member_calculators: dict[str, type[PolicyEngineMembersCalculator]] = {
     **co_member_calculators,
     **federal_member_calculators,
