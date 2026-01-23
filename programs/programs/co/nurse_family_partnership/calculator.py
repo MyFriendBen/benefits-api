@@ -21,7 +21,7 @@ class CoNurseFamilyPartnership(ProgramCalculator):
     - $100/visit (mid-range for in-home specialized RN visit)
     - Source:
         - https://www.cebc4cw.org/program/nurse-family-partnership/
-        - https://arhomecare.com/how-much-does-private-home-care-really-cost-your-2025-price-guide 
+        - https://arhomecare.com/how-much-does-private-home-care-really-cost-your-2025-price-guide
 
     References:
     - https://www.cebc4cw.org/program/nurse-family-partnership/

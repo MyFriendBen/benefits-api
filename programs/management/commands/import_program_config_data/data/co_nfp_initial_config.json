@@ -71,7 +71,7 @@
             "description": "NFP provider for Denver.",
             "assistance_link": "https://www.denverhealth.org/services/community-health/nurse-family-partnership",
             "phone_number": "303-602-8986",
-            "counties": ["Denver"],
+            "counties": ["Denver", "Denver County"],
             "languages": []
         },
         {
