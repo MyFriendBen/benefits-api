@@ -11,8 +11,7 @@
         "apply_button_description": "",
         "estimated_application_time": "10 minutes",
         "website_description": "Personalized support for first-time parents",
-        "estimated_value": "",
-        "value_format": "estimated_annual"
+        "estimated_value": ""
     },
     "navigators": [
         {
@@ -93,6 +92,16 @@
             "assistance_link": "",
             "phone_number": "970-945-1234",
             "counties": ["Eagle", "Garfield", "Pitkin"],
+            "languages": []
+        },
+        {
+            "external_name": "nurse_family_partnership_co",
+            "name": "Nurse-Family Partnership",
+            "email": "",
+            "description": "Nurse-Family Partnership can help first-time moms apply for this benefit. They can refer you to a program near you.",
+            "assistance_link": "https://iik.org/programs/nurse-family-partnership/",
+            "phone_number": "720-865-6236",
+            "counties": [],
             "languages": []
         }
     ]

@@ -14,12 +14,12 @@ class CoNurseFamilyPartnership(ProgramCalculator):
     - No other children in household
     - Income <= 200% FPL OR has Medicaid/emergency Medicaid OR has WIC (only Mother's income considered)
 
-    Value estimate ($4,500):
+    Value estimate ($6,000):
     - ~60 visits over 2.5 years (weekly first month, bi-weekly until birth, weekly 6 weeks
       postpartum, bi-weekly until 20 months, monthly until 2nd birthday)
     - 60-minute visits (reasonable estimate)
-    - $75/visit (mid-range for in-home specialized RN visit)
-    - Source: 
+    - $100/visit (mid-range for in-home specialized RN visit)
+    - Source:
         - https://www.cebc4cw.org/program/nurse-family-partnership/
         - https://arhomecare.com/how-much-does-private-home-care-really-cost-your-2025-price-guide 
 
@@ -35,7 +35,7 @@ class CoNurseFamilyPartnership(ProgramCalculator):
     income_household_size = 2
     child_relationships = ["child"]
     # annual amt = total value divided by length of program (2.5 years)
-    amount = 4_500 / 2.5
+    amount = 6_000 / 2.5
     dependencies = [
         "relationship",
         "income_frequency",
