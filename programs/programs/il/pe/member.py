@@ -312,15 +312,40 @@ class IlMsp(PolicyEngineMembersCalculator):
     individuals with limited income and assets who are Medicare-eligible.
 
     Categories (determined by PolicyEngine):
-        - QMB (Qualified Medicare Beneficiary): income ≤ 100% FPL
-        - SLMB (Specified Low-Income Medicare Beneficiary): income 100-120% FPL
-        - QI (Qualifying Individual): income 120-135% FPL
+        - QMB (Qualified Medicare Beneficiary)
+          Eligibility: income ≤ 100% FPL
+          Benefit coverage includes:
+            - Part A premium
+            - Part B premium
+            - Deductibles
+            - Coinsurance
+        - SLMB (Specified Low-Income Medicare Beneficiary)
+          Eligibility: income 100-120% FPL
+          Benefit coverage includes:
+            - Part B premium only
+        - QI (Qualifying Individual)
+          Eligibility: income 120-135% FPL
+          Benefit coverage includes:
+            - Part B premium only
 
     Eligibility criteria:
         - Medicare eligible (age 65+ OR receiving SSDI for 24+ months)
         - Meets income limits (using SSI methodology per 42 U.S.C. 1396d(p)(1)(B))
-        - Meets asset limits (state-dependent; IL has eliminated asset test)
+        - Meets asset limits ($9,660 individual / $14,470 couple for 2025)
         - Illinois resident
+
+    Note on benefit value:
+        PolicyEngine's `msp` variable returns monthly premium savings only
+        (Part A + Part B premiums). For QMB, this underestimates the true value
+        because it excludes deductible coverage (~$1,933/year in 2025: $1,676
+        Part A inpatient deductible + $257 Part B deductible) and coinsurance.
+
+        QMB coverage of deductibles/coinsurance is required by federal law:
+        - 42 U.S.C. § 1396d(p)(3)(A): https://www.law.cornell.edu/uscode/text/42/1396d#p_3_A
+        - Medicare.gov MSP overview: https://www.medicare.gov/basics/costs/help/medicare-savings-programs
+
+        2025 Medicare costs from CMS:
+        https://www.cms.gov/newsroom/fact-sheets/2025-medicare-parts-b-premiums-and-deductibles
     """
 
     pe_name = "msp"

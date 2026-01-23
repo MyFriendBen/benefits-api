@@ -1,0 +1,71 @@
+{
+    "white_label": {"code": "il"},
+    "program_category": {"external_name": "il_health"},
+    "program": {
+        "name_abbreviated": "il_msp",
+        "year": "2025",
+        "legal_status_required": ["citizen", "refugee", "gc_5plus", "gc_5less", "otherWithWorkPermission"],
+        "name": "Medicare Savings Program (MSP)",
+        "description": "Medicare is health insurance for people 65 and older, or younger people with certain disabilities. It has two main parts: Part A covers hospital stays, and Part B covers doctor visits and other medical services. Most people pay a premium (a monthly fee) to keep their Medicare coverage.\n\nThe Medicare Savings Program (MSP) helps pay these premiums for you if you have a low income.\n\nHow much help you get depends on your income:\n- If your income is very low, MSP pays your Part A premium, Part B premium, and some of your medical bills.\n- If your income is a little higher, MSP pays your Part B premium only.\n\nNote: If you qualify for the lowest income level, MSP may also cover your deductibles (the amount you pay out of pocket before Medicare starts paying). This extra help is not included in the estimated value shown above.\n\nTo apply, you must already be enrolled in Medicare. Click 'Apply Now' to see how to apply online, by paper, by phone, or at a local Family Community Resource Center.",
+        "apply_button_link": "https://www.dhs.state.il.us/?item=33698",
+        "apply_button_description": "",
+        "estimated_application_time": "30-45 minutes",
+        "website_description": "Help paying Medicare premiums and costs",
+        "estimated_value": "",
+        "external_name": "il_msp",
+        "low_confidence": false,
+        "show_on_current_benefits": true
+    },
+    "documents": [
+        {
+            "external_name": "id_proof",
+            "text": "Proof of identity (ex: driver's license, state ID, birth certificate)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "il_home",
+            "text": "Proof of residence (ex: utility bill, lease, or mail with your name and address)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "ssn_proof",
+            "text": "Social Security numbers for all people on your application",
+            "link_url": "",
+            "link_text": ""
+        }
+    ],
+    "navigators": [
+        {
+            "external_name": "il_fcrc",
+            "name": "IDHS Family Community Resource Center",
+            "email": "",
+            "description": "Visit your local Family Community Resource Center to apply in person or get help with your MSP application. Use the link to find an office near you: select 'Family Community Resource Center' as the office type, then select your county.",
+            "assistance_link": "https://www.dhs.state.il.us/page.aspx?module=12",
+            "phone_number": "1-800-843-6154",
+            "counties": [],
+            "languages": []
+        },
+        {
+            "external_name": "get_covered_illinois",
+            "name": "Get Covered Illinois",
+            "email": "",
+            "description": "Get Covered Illinois offers free help with your MSP application. Trained helpers can meet with you online, in person, or by phone. They speak over 250 languages.",
+            "assistance_link": "https://getcovered.illinois.gov/get-free-help/find-local-help.html",
+            "phone_number": "1-866-311-1119",
+            "counties": [],
+            "languages": ["ALL"]
+        },
+        {
+            "external_name": "il_ship",
+            "name": "Illinois SHIP (Senior Health Insurance Program)",
+            "email": "",
+            "description": "SHIP provides free Medicare counseling and can help you understand and apply for Medicare Savings Programs. Counselors are trained volunteers who can assist by phone or in person.",
+            "assistance_link": "https://ilaging.illinois.gov/programs/ship.html",
+            "phone_number": "1-800-252-8966",
+            "counties": [],
+            "languages": []
+        }
+    ]
+}
