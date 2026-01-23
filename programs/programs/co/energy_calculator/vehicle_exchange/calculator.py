@@ -3,7 +3,7 @@ from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalcul
 
 """
 As of January 21, 2026, the EnergyCalculatorVehicleExchange program has been set to inactive in CESN
-since we switched to retrieving the details via the Rewiring America API.”
+since we switched to retrieving the details via the Rewiring America API.
 """
 
 
