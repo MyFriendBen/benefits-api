@@ -230,7 +230,7 @@ class IlBccp(PolicyEngineMembersCalculator):
 
         if is_eligible:
             return 400
-        return 0       
+        return 0
 
 
 class IlFamilyPlanningProgram(PolicyEngineMembersCalculator):
