@@ -193,9 +193,7 @@ class IlBccp(PolicyEngineMembersCalculator):
 
     Eligibility criteria for screening:
     - Female
-    - Ages under 65 years old (less than 40 → cervical only, 40+ → both)
-    - Not eligible for Medicaid, All Kids, or other HFS insurance
-    - High income → still eligible
+    - under 65 years old
     - Multi-person household → per-person evaluation (show if any member qualifies)
     """
 
@@ -262,9 +260,7 @@ class IlFamilyPlanningProgram(PolicyEngineMembersCalculator):
     def member_value(self, member):
         is_eligible = self.get_member_variable(member.id)
 
-        has_disqualifying_insurance = member.has_insurance_types(("family_planning",), strict=False)
-
-        if has_disqualifying_insurance or not is_eligible:
+        if not is_eligible:
             return 0
 
         # Return 1 if eligible. We display "Varies" for the estimated value in the UI

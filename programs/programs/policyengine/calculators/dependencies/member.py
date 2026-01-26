@@ -552,25 +552,30 @@ class ReceivesMedicaidDependency(Member):
     field = "receives_medicaid"
 
     def value(self):
-        # Adjust based on your project's exact logic for user-selected Medicaid
+        # Medicaid or CHIP/CHP counts as receiving Medicaid for BCC eligibility purposes
         return self.member.has_insurance_types(("medicaid", "chp"))
 
 
 class HasBccQualifyingCoverageDependency(Member):
     """
-    Sends whether the member has other BCC-qualifying (disqualifying) coverage.
-    This should exclude Medicaid (handled separately) and possibly CHP if treated differently.
+    Determines whether the member has disqualifying insurance coverage for IL BCC program.
     Matches PolicyEngine's has_bcc_qualifying_coverage input variable.
     """
 
     field = "has_bcc_qualifying_coverage"
 
     def value(self):
-        # Include CHP and any other non-Medicaid disqualifying insurances your app tracks
-        # Adjust the tuple based on what counts as "qualifying coverage" in PolicyEngine/IBCCP rules
+        # Should include everything except for family planning, emergency medicaid, and none/dont know
         return self.member.has_insurance_types(
-            ("private", "employer", "medicare", "emergency_medicaid", "family_planning", "va"),
-            strict=False,
+            (
+                "employer",
+                "private",
+                "medicaid",
+                "medicare",
+                "chp",
+                "mass_health",
+                "va",
+            )
         )
 
 
