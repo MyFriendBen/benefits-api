@@ -193,8 +193,8 @@ class IlBccp(PolicyEngineMembersCalculator):
 
     Eligibility criteria for screening:
     - Female
-    - under 65 years old
-    - Multi-person household → per-person evaluation (show if any member qualifies)
+     - Under 65 years old
+    - Not eligible for Medicaid, All Kids, or other HFS insurance
     """
 
     pe_name = "il_bcc_eligible"
