@@ -334,12 +334,18 @@ class IlMsp(PolicyEngineMembersCalculator):
         - Meets asset limits ($9,660 individual / $14,470 couple for 2025)
         - Illinois resident
 
-    Implementation limitation:
-        We do not collect months_receiving_social_security_disability, so PolicyEngine
-        cannot determine Medicare eligibility via the SSDI pathway (24+ months on SSDI).
-        In our implementation, users can only qualify for MSP through the age requirement
-        (65+). This may exclude eligible individuals under 65 who have been on SSDI for
-        24+ months.
+    Implementation limitations:
+        1. We do not collect months_receiving_social_security_disability, so PolicyEngine
+           cannot determine Medicare eligibility via the SSDI pathway (24+ months on SSDI).
+           In our implementation, users can only qualify for MSP through the age requirement
+           (65+). This may exclude eligible individuals under 65 who have been on SSDI for
+           24+ months.
+
+        2. We do not collect quarters of work history, so PolicyEngine assumes Part A is
+           free (which is true for most people with 40+ quarters). For individuals who
+           pay a Part A premium (<40 quarters of work history), the benefit value will be
+           underestimated by up to $6,216/year ($518/month full premium) or $3,420/year
+           ($285/month reduced premium).
 
     Note on benefit value:
         PolicyEngine's `msp` variable returns monthly premium savings only
@@ -360,7 +366,7 @@ class IlMsp(PolicyEngineMembersCalculator):
         # is_medicare_eligible
         member_dependency.AgeDependency,
         member_dependency.SsdiReportedDependency,
-        # months_receiving_social_security_disability - not collected
+        # months_receiving_social_security_disability - not collected (see limitation #1)
         # msp_countable_income (uses SSI methodology)
         member_dependency.SsiEarnedIncomeDependency,
         member_dependency.SsiUnearnedIncomeDependency,
@@ -368,6 +374,8 @@ class IlMsp(PolicyEngineMembersCalculator):
         spm_dependency.CashAssetsDependency,
         # state
         household_dependency.IlStateCodeDependency,
+        # msp_standard_part_a_premium (for benefit value calculation)
+        # medicare_part_a_premium_quarters - not collected, assumes Part A is free (see limitation #2)
     ]
     pe_outputs = [
         member_dependency.MspEligible,
