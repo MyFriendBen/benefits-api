@@ -226,10 +226,14 @@ class IlBccp(PolicyEngineMembersCalculator):
 
         Return average for screening services only if eligible, 0 otherwise.
         """
+        # Get PolicyEngine's eligibility determination
         is_eligible = super().member_value(member)
 
+        # If PolicyEngine says eligible (returns True/1), return estimated value
+        # Otherwise return 0
         if is_eligible:
             return 400
+
         return 0
 
 
