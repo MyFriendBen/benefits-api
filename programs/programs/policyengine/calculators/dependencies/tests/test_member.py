@@ -952,3 +952,62 @@ class TestCareWorkerEligibleDependency(TestCase):
         """Test CareWorkerEligibleDependency.dependencies includes is_care_worker field."""
         dep = member.CareWorkerEligibleDependency(self.screen, self.head, {})
         self.assertIn("is_care_worker", dep.dependencies)
+
+
+class TestChildcareAttendingDaysPerMonthDependency(TestCase):
+    """Tests for ChildcareAttendingDaysPerMonthDependency class used by childcare subsidy calculators."""
+
+    def setUp(self):
+        """Set up test data for childcare attending days tests."""
+        self.white_label = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Travis",
+            household_size=2,
+            completed=False,
+        )
+
+        self.parent = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=30)
+        self.child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=3)
+
+    def test_value_returns_default_20_days(self):
+        """Test ChildcareAttendingDaysPerMonthDependency.value() returns default of 20 days per month."""
+        dep = member.ChildcareAttendingDaysPerMonthDependency(self.screen, self.child, {})
+        self.assertEqual(dep.value(), 20)
+
+    def test_field_name_is_correct(self):
+        """Test that field name matches PolicyEngine's childcare_attending_days_per_month variable."""
+        dep = member.ChildcareAttendingDaysPerMonthDependency(self.screen, self.child, {})
+        self.assertEqual(dep.field, "childcare_attending_days_per_month")
+
+    def test_is_member_level_dependency(self):
+        """Test that ChildcareAttendingDaysPerMonthDependency is a member-level (per-child) dependency."""
+        from programs.programs.policyengine.calculators.dependencies.base import Member
+
+        self.assertTrue(issubclass(member.ChildcareAttendingDaysPerMonthDependency, Member))
+
+    def test_value_same_for_all_children(self):
+        """Test that all children get the same default value of 20 days."""
+        child2 = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=5)
+
+        dep1 = member.ChildcareAttendingDaysPerMonthDependency(self.screen, self.child, {})
+        dep2 = member.ChildcareAttendingDaysPerMonthDependency(self.screen, child2, {})
+
+        self.assertEqual(dep1.value(), 20)
+        self.assertEqual(dep2.value(), 20)
+
+    def test_works_with_relationship_map(self):
+        """Test that dependency works correctly with relationship_map parameter."""
+        relationship_map = {self.parent.id: self.child.id}
+
+        dep = member.ChildcareAttendingDaysPerMonthDependency(self.screen, self.child, relationship_map)
+
+        self.assertIsNotNone(dep)
+        self.assertEqual(dep.value(), 20)
+
+    def test_has_correct_unit(self):
+        """Test that dependency has correct unit (people) for PolicyEngine."""
+        dep = member.ChildcareAttendingDaysPerMonthDependency(self.screen, self.child, {})
+        self.assertEqual(dep.unit, "people")
