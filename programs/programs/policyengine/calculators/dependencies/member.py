@@ -568,7 +568,10 @@ class HasBccQualifyingCoverageDependency(Member):
     def value(self):
         # Include CHP and any other non-Medicaid disqualifying insurances your app tracks
         # Adjust the tuple based on what counts as "qualifying coverage" in PolicyEngine/IBCCP rules
-        return not self.member.has_insurance_types(("none", "private", "employer", "medicare"))
+        return self.member.has_insurance_types(
+            ("private", "employer", "medicare", "emergency_medicaid", "family_planning", "va"),
+            strict=False,
+        )
 
 
 class IlBccEligible(Member):

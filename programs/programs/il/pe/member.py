@@ -193,12 +193,8 @@ class IlBccp(PolicyEngineMembersCalculator):
 
     Eligibility criteria for screening:
     - Female
-    - Under 65 years old
+    - Ages under 65 years old (less than 40 → cervical only, 40+ → both)
     - Not eligible for Medicaid, All Kids, or other HFS insurance
-
-    - Ages 21–39 → cervical only (35-39 ???)
-    - 40+ → both
-    - <21 → none
     - High income → still eligible
     - Multi-person household → per-person evaluation (show if any member qualifies)
     """
@@ -209,7 +205,7 @@ class IlBccp(PolicyEngineMembersCalculator):
     pe_inputs = [
         member_dependency.IlBccFemaleDependency,
         member_dependency.AgeDependency,
-        member_dependency.ReceivesMedicaidDependency,  # New
+        member_dependency.ReceivesMedicaidDependency,
         member_dependency.HasBccQualifyingCoverageDependency,
         household_dependency.IlStateCodeDependency,
     ]
@@ -230,21 +226,11 @@ class IlBccp(PolicyEngineMembersCalculator):
 
         Return average for screening services only if eligible, 0 otherwise.
         """
-        age = member.age
-        uninsured = not member.has_insurance_types(("medicaid", "medicare", "employer", "private", "chp"))
-        eligible_for_cervical = uninsured and (age is not None and age >= 21)
-        eligible_for_breast = uninsured and (age is not None and age >= 40)
+        is_eligible = super().member_value(member)
 
-        is_eligible = eligible_for_cervical or eligible_for_breast
-
-        if not is_eligible:
-            return 0
-
-        # Return estimated value (e.g., average avoided out-of-pocket cost for screenings)
-        # Could differentiate: e.g., 250 if cervical only, 400 if both, etc.
-        if eligible_for_breast:
-            return 400  # both
-        return 250  # cervical only
+        if is_eligible:
+            return 400
+        return 0       
 
 
 class IlFamilyPlanningProgram(PolicyEngineMembersCalculator):
