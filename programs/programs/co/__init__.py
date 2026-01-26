@@ -17,7 +17,7 @@ from .my_spark.calculator import MySpark
 from .low_wage_covid_relief.calculator import LowWageCovidRelief
 from .medicaid.child_with_disability.calculator import MedicaidChildWithDisability
 from .medicaid.adult_with_disability.calculator import MedicaidAdultWithDisability
-from .medicaid.emergency.calculator import EmergencyMedicaid
+from .medicaid.emergency.calculator import CoEmergencyMedicaid
 from .basic_cash_assistance.calculator import BasicCashAssistance
 from .weatherization_assistance.calculator import WeatherizationAssistance
 from .tabor.calculator import Tabor
@@ -31,8 +31,8 @@ from .nurturing_futures.calculator import NurturingFutures
 from .energy_calculator import co_energy_calculators
 from .denver_sidewalk_rebate.calculator import DenverSidewalkRebate
 from .senior_housing_tax_credit.calculator import SeniorHousingIncomeTaxCredit
+from .jeffco_student_benefits.calculator import JeffcoStudentBenefits
 from ..calc import ProgramCalculator
-
 
 co_calculators: dict[str, type[ProgramCalculator]] = {
     "rtdlive": RtdLive,
@@ -53,7 +53,7 @@ co_calculators: dict[str, type[ProgramCalculator]] = {
     "lwcr": LowWageCovidRelief,
     "cwd_medicaid": MedicaidChildWithDisability,
     "awd_medicaid": MedicaidAdultWithDisability,
-    "emergency_medicaid": EmergencyMedicaid,
+    "emergency_medicaid": CoEmergencyMedicaid,
     "bca": BasicCashAssistance,
     "cowap": WeatherizationAssistance,
     "tabor": Tabor,
@@ -67,5 +67,6 @@ co_calculators: dict[str, type[ProgramCalculator]] = {
     "nf": NurturingFutures,
     "dsr": DenverSidewalkRebate,
     "shitc": SeniorHousingIncomeTaxCredit,
+    "jeffco_student_benefits": JeffcoStudentBenefits,
     **co_energy_calculators,
 }
