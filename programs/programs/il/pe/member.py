@@ -334,6 +334,13 @@ class IlMsp(PolicyEngineMembersCalculator):
         - Meets asset limits ($9,660 individual / $14,470 couple for 2025)
         - Illinois resident
 
+    Implementation limitation:
+        We do not collect months_receiving_social_security_disability, so PolicyEngine
+        cannot determine Medicare eligibility via the SSDI pathway (24+ months on SSDI).
+        In our implementation, users can only qualify for MSP through the age requirement
+        (65+). This may exclude eligible individuals under 65 who have been on SSDI for
+        24+ months.
+
     Note on benefit value:
         PolicyEngine's `msp` variable returns monthly premium savings only
         (Part A + Part B premiums). For QMB, this underestimates the true value
