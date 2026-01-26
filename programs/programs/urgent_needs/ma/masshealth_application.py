@@ -10,11 +10,12 @@ class MassHealthApplication(UrgentNeedFunction):
 
     dependencies = []
 
-    def eligible(self):
+    def eligible(self) -> bool:
 
         # Check eligibility for MassHealth
         is_masshealth_eligible = any(
-            program["name_abbreviated"] == "ma_mass_health" and program["eligible"] for program in self.data
+            program.get("name_abbreviated") == "ma_mass_health" and program.get("eligible")
+            for program in (self.data or [])
         )
 
         return is_masshealth_eligible
