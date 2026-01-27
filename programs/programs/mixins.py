@@ -22,7 +22,7 @@ class IlMedicaidFplIncomeCheckMixin:
 
         # Calculate income limit using adjusted household size
         fpl = self.program.year
-        income_limit = int(fpl_percent * fpl.get_limit(adjusted_household_size))
+        income_limit = round(fpl_percent * fpl.get_limit(adjusted_household_size))
 
         # Calculate gross income
         gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
