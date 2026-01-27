@@ -131,6 +131,7 @@ class Screen(models.Model):
     has_project_cope = models.BooleanField(default=False, blank=True, null=True)
     has_cesn_heap = models.BooleanField(default=False, blank=True, null=True)
     has_tx_dart = models.BooleanField(default=False, blank=True, null=True)
+    has_ccs = models.BooleanField(default=False, blank=True, null=True)
     needs_food = models.BooleanField(default=False, blank=True, null=True)
     needs_baby_supplies = models.BooleanField(default=False, blank=True, null=True)
     needs_housing_help = models.BooleanField(default=False, blank=True, null=True)
@@ -447,6 +448,8 @@ class Screen(models.Model):
             "pell_grant": self.has_pell_grant,
             "rag": self.has_rag,
             "nfp": self.has_nfp,
+            "co_nfp": self.has_nfp,
+            "il_nfp": self.has_nfp,
             "fatc": self.has_fatc,
             "section_8": self.has_section_8,
             "ma_cha": self.has_section_8,
@@ -483,6 +486,8 @@ class Screen(models.Model):
             "shitc": self.has_shitc,
             "nc_medicare_savings": self.has_nc_medicare_savings,
             "tx_dart": self.has_tx_dart,
+            "ccs": self.has_ccs,
+            "tx_ccs": self.has_ccs,
         }
 
         if name_abbreviated in name_map:

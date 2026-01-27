@@ -391,6 +391,25 @@ class CcdfReasonCareEligibleDependency(Member):
         return True
 
 
+class ChildcareAttendingDaysPerMonthDependency(Member):
+    """
+    Number of days per month a child attends childcare.
+
+    Default: 20 days/month (typical full-time childcare for working parents).
+
+    This represents standard full-time childcare usage (5 days/week × ~4 weeks/month).
+    Used by childcare subsidy programs to calculate benefit amounts.
+
+    Note: 20 days is a reasonable default for families seeking childcare subsidies,
+    as they typically need care to support full-time work.
+    """
+
+    field = "childcare_attending_days_per_month"
+
+    def value(self):
+        return 20
+
+
 class MaStateSupplementProgram(Member):
     field = "ma_state_supplement"
 
