@@ -35,7 +35,6 @@ class IlNurseFamilyPartnership(ProgramCalculator):
     """
 
     fpl_percent = 3
-    child_relationships = ["child"]
     # annual amt = total value divided by length of program (2.5 years)
     amount = 6_000 / 2.5
     dependencies = [

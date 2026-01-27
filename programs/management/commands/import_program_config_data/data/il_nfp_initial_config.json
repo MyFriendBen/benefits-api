@@ -6,7 +6,7 @@
         "year": "2026",
         "legal_status_required": ["citizen", "non_citizen", "refugee", "gc_5plus", "gc_5less", "gc_18plus_no5", "gc_under18_no5", "otherWithWorkPermission"],
         "name": "Nurse-Family Partnership (NFP)",
-        "description": "NFP gives expectant parents a free personal nurse to help them through pregnancy and their baby's first years. Your nurse will teach you about pregnancy, labor, your baby's growth, healthy eating, shots your baby needs, and resources in your community. This help has been shown to improve children's health and development, reduce premature births and low birthweight babies, and strengthen the bond between parents and babies.\n\nNFP is typically for first-time moms who are pregnant 28 weeks or less, but requirements (including income eligibility) vary by location. If you're pregnant, it's still worth reaching out to see if you qualify: call or text (844) 637-6667 or email newmoms@changent.org.",
+        "description": "NFP (Nurse-Family Partnership) gives you a free personal nurse if you're going to have a baby. Your nurse will help you during your pregnancy and your baby's first two years. She will teach you about:\n\n- What happens during pregnancy and when you have your baby\n- How your baby grows and learns\n- Healthy foods to eat\n- Shots your baby needs to stay healthy\n- Help you can get in your community\n\nThis program has been shown to help kids grow up healthier, reduce the number of babies born too early or too small, and help parents feel closer to their babies.\n\nNFP is usually for moms having their first baby who are 28 weeks pregnant or less. The rules are different depending on where you live, and some places have income limits. If you're pregnant, you can still reach out to see if you qualify.\n\nTo learn more, call or text (844) 637-6667 or email newmoms@changent.org.",
         "apply_button_link": "https://changent.org/nfp-moms/",
         "apply_button_description": "Learn More",
         "estimated_application_time": "5-10 minutes",
@@ -21,7 +21,7 @@
             "description": "Contact Carle Healthy Beginnings to apply for NFP if you live in Champaign-Urbana or Vermilion County.",
             "assistance_link": "https://carle.org/services/healthy-beginnings",
             "phone_number": "217-902-3130",
-            "counties": ["Champaign-Urbana", "Vermilion"],
+            "counties": ["Champaign", "Vermilion"],
             "languages": []
         },
         {
