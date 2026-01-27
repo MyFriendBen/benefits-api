@@ -2112,7 +2112,7 @@ class CoConfigurationData(ConfigurationData):
                     "name": {"_label": "healthCareBenefits.nfp", "_default_message": "Nurse-Family Partnership: "},
                     "description": {
                         "_label": "healthCareBenefits.nfp_desc",
-                        "_default_message": "Personalized support for first-time parents",
+                        "_default_message": "Free nurse home visits for first-time pregnant parents",
                     },
                 },
                 "cfhc": {

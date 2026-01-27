@@ -448,6 +448,8 @@ class Screen(models.Model):
             "pell_grant": self.has_pell_grant,
             "rag": self.has_rag,
             "nfp": self.has_nfp,
+            "co_nfp": self.has_nfp,
+            "il_nfp": self.has_nfp,
             "fatc": self.has_fatc,
             "section_8": self.has_section_8,
             "ma_cha": self.has_section_8,
