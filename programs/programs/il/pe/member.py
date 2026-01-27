@@ -380,11 +380,16 @@ class IlMsp(PolicyEngineMembersCalculator):
     pe_outputs = [
         member_dependency.MspEligible,
         member_dependency.MspCategory,
+        member_dependency.Msp,
     ]
 
     def member_value(self, member):
-        # msp returns monthly benefit value in USD
-        monthly_benefit = self.get_member_variable(member.id)
+        if member_dependency.MspEligible:
+            # msp returns monthly benefit value in USD
+            monthly_benefit = self.get_member_variable(member.id)
+            print("monthly_benefit", monthly_benefit)
+            return 10
 
-        # Convert monthly to yearly
-        return int(monthly_benefit * 12)
+            # Convert monthly to yearly
+            return int(monthly_benefit * 12)
+        return 0

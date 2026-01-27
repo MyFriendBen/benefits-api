@@ -615,3 +615,9 @@ class MspCategory(Member):
     """Output dependency for Medicare Savings Program category (QMB, SLMB, QI, or NONE)."""
 
     field = "msp_category"
+
+
+class Msp(Member):
+    """Benefit value for Medicare Savings Programs"""
+
+    field = "msp"
