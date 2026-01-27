@@ -341,11 +341,11 @@ class IlMsp(PolicyEngineMembersCalculator):
            (65+). This may exclude eligible individuals under 65 who have been on SSDI for
            24+ months.
 
-        2. We do not collect quarters of work history, so PolicyEngine assumes Part A is
-           free (which is true for most people with 40+ quarters). For individuals who
-           pay a Part A premium (<40 quarters of work history), the benefit value will be
-           underestimated by up to $6,216/year ($518/month full premium) or $3,420/year
-           ($285/month reduced premium).
+        2. We assume 40 quarters of Medicare-covered employment (Part A is free) since
+           approximately 99% of Medicare beneficiaries meet this threshold.
+           Source: https://www.cms.gov/newsroom/fact-sheets/2026-medicare-parts-b-premiums-deductibles
+           For the ~1% of individuals who pay a Part A premium (<40 quarters), the benefit
+           value may be underestimated.
 
     Note on benefit value:
         PolicyEngine's `msp` variable returns monthly premium savings only
@@ -375,7 +375,7 @@ class IlMsp(PolicyEngineMembersCalculator):
         # state
         household_dependency.IlStateCodeDependency,
         # msp_standard_part_a_premium (for benefit value calculation)
-        # medicare_part_a_premium_quarters - not collected, assumes Part A is free (see limitation #2)
+        member_dependency.MedicareQuartersOfCoverageDependency,
     ]
     pe_outputs = [
         member_dependency.MspEligible,
@@ -387,8 +387,6 @@ class IlMsp(PolicyEngineMembersCalculator):
         if member_dependency.MspEligible:
             # msp returns monthly benefit value in USD
             monthly_benefit = self.get_member_variable(member.id)
-            print("monthly_benefit", monthly_benefit)
-            return 10
 
             # Convert monthly to yearly
             return int(monthly_benefit * 12)

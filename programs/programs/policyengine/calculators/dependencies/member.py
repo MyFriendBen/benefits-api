@@ -640,3 +640,20 @@ class Msp(Member):
     """Benefit value for Medicare Savings Programs"""
 
     field = "msp"
+
+
+class MedicareQuartersOfCoverageDependency(Member):
+    """
+    Number of quarters of Medicare-covered employment for Part A premium calculation.
+
+    Approximately 99% of Medicare beneficiaries do not have a Part A premium since they
+    have at least 40 quarters of Medicare-covered employment, as determined by the
+    Social Security Administration.
+
+    Source: https://www.cms.gov/newsroom/fact-sheets/2026-medicare-parts-b-premiums-deductibles
+    """
+
+    field = "medicare_quarters_of_coverage"
+
+    def value(self):
+        return 40
