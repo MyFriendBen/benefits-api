@@ -57,9 +57,7 @@ class TestMedicaidSeniorEligibility(TestCase):
         self.assertEqual(result, 474 * 12)
 
         # Should have checked the aged/disabled pathway
-        calculator.get_member_dependency_value.assert_called_once_with(
-            member_dependency.MedicaidSeniorOrDisabled, 1
-        )
+        calculator.get_member_dependency_value.assert_called_once_with(member_dependency.MedicaidSeniorOrDisabled, 1)
 
     def test_senior_who_fails_aged_pathway_returns_zero(self):
         """
