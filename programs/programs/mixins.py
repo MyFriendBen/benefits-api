@@ -21,8 +21,10 @@ class IlMedicaidFplIncomeCheckMixin:
         adjusted_household_size = self.screen.household_size + pregnant_count
 
         # Calculate income limit using adjusted household size
+        # Round to match IL DHS published tables (WAG 25-03-02 Medical FPLs)
+        # Source: https://ilaging.illinois.gov/content/dam/soi/en/web/aging/ship/documents/medicaidincomeassetlimits.pdf
         fpl = self.program.year
-        income_limit = int(fpl_percent * fpl.get_limit(adjusted_household_size))
+        income_limit = round(fpl_percent * fpl.get_limit(adjusted_household_size))
 
         # Calculate gross income
         gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
