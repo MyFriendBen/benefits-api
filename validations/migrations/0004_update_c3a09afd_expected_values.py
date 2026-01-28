@@ -101,9 +101,9 @@ def reverse_migration(apps, schema_editor):
 
     # Original values (before unemployment was included in irs_gross_income)
     original_values = {
-        "il_federal_eitc": {"eligible": True, "value": Decimal("3848.00")},
-        "il_eitc": {"eligible": True, "value": Decimal("769.00")},
-        "il_ctc": {"eligible": True, "value": Decimal("307.00")},
+        "il_federal_eitc": {"eligible": True, "value": Decimal("3848.00"), "notes": ""},
+        "il_eitc": {"eligible": True, "value": Decimal("769.00"), "notes": ""},
+        "il_ctc": {"eligible": True, "value": Decimal("307.00"), "notes": ""},
     }
 
     try:
@@ -119,6 +119,7 @@ def reverse_migration(apps, schema_editor):
             validation = Validation.objects.get(screen=screen, program_name=program_name)
             validation.eligible = old_values["eligible"]
             validation.value = old_values["value"]
+            validation.notes = old_values["notes"]
             validation.save()
             updated_count += 1
         except Validation.DoesNotExist:
