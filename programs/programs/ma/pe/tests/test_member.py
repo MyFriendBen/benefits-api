@@ -390,10 +390,10 @@ class TestMaEarlyHeadStart(TestCase):
         """
         Test that MaEarlyHeadStart has the expected number of pe_inputs.
 
-        Should have: 1 AgeDependency + 1 MaStateCodeDependency + 6 IRS income dependencies = 8 total
+        Should have: 1 AgeDependency + 1 MaStateCodeDependency + 8 IRS income dependencies = 10 total
         """
         # Count expected inputs
-        # 1 Age + 1 State + 6 IRS income types (including UnemploymentIncomeDependency)
-        expected_count = 8
+        # 1 Age + 1 State + 8 IRS income types (unemployment, investment, retirement distributions)
+        expected_count = 10
 
         self.assertEqual(len(MaEarlyHeadStart.pe_inputs), expected_count)
