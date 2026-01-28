@@ -22,6 +22,7 @@ from .center_for_families import CenterForFamilies
 from .multi_service_center import MultiServiceCenter
 from .snap_application_assistance import SNAPApplicationAssistance
 from .free_tax_help import FreeTaxHelp
+from .masshealth_application import MassHealthApplication
 
 ma_urgent_need_functions: dict[str, type[UrgentNeedFunction]] = {
     "ma_family_shelter": FamilyShelter,
@@ -47,4 +48,5 @@ ma_urgent_need_functions: dict[str, type[UrgentNeedFunction]] = {
     "ma_multi_service_center": MultiServiceCenter,
     "ma_snap_application_assistance": SNAPApplicationAssistance,
     "ma_free_tax_help": FreeTaxHelp,
+    "ma_masshealth_application": MassHealthApplication,
 }
