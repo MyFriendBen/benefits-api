@@ -302,3 +302,99 @@ class IlMpe(PolicyEngineMembersCalculator):
             return 0
 
         return 1
+
+
+class IlMsp(PolicyEngineMembersCalculator):
+    """
+    Illinois Medicare Savings Program (MSP)
+
+    MSP helps pay Medicare premiums, deductibles, and coinsurance for
+    individuals with limited income and assets who are Medicare-eligible.
+
+    Categories (determined by PolicyEngine):
+        - QMB (Qualified Medicare Beneficiary)
+          Eligibility: income ≤ 100% FPL
+          Benefit coverage includes:
+            - Part A premium
+            - Part B premium
+            - Deductibles
+            - Coinsurance
+        - SLMB (Specified Low-Income Medicare Beneficiary)
+          Eligibility: income 100-120% FPL
+          Benefit coverage includes:
+            - Part B premium only
+        - QI (Qualifying Individual)
+          Eligibility: income 120-135% FPL
+          Benefit coverage includes:
+            - Part B premium only
+
+    Eligibility criteria:
+        - Medicare eligible (age 65+ OR receiving SSDI for 24+ months)
+        - Meets income limits (using SSI methodology per 42 U.S.C. 1396d(p)(1)(B))
+        - Meets asset limits ($9,660 individual / $14,470 couple for 2025)
+        - Illinois resident
+
+    Implementation limitations:
+        1. We do not collect months_receiving_social_security_disability, so PolicyEngine
+           cannot determine Medicare eligibility via the SSDI pathway (24+ months on SSDI).
+           In our implementation, users can only qualify for MSP through the age requirement
+           (65+). This may exclude eligible individuals under 65 who have been on SSDI for
+           24+ months.
+
+        2. We assume 40 quarters of Medicare-covered employment (Part A is free) since
+           approximately 99% of Medicare beneficiaries meet this threshold.
+           Source: https://www.cms.gov/newsroom/fact-sheets/2026-medicare-parts-b-premiums-deductibles
+           For the ~1% of individuals who pay a Part A premium (<40 quarters), the benefit
+           value may be underestimated.
+
+    Note on benefit value:
+        PolicyEngine's `msp` variable returns monthly premium savings only
+        (Part A + Part B premiums). For QMB, this underestimates the true value
+        because it excludes deductible coverage (~$1,933/year in 2025: $1,676
+        Part A inpatient deductible + $257 Part B deductible) and coinsurance.
+
+        QMB coverage of deductibles/coinsurance is required by federal law:
+        - 42 U.S.C. § 1396d(p)(3)(A): https://www.law.cornell.edu/uscode/text/42/1396d#p_3_A
+        - Medicare.gov MSP overview: https://www.medicare.gov/basics/costs/help/medicare-savings-programs
+
+        2025 Medicare costs from CMS:
+        https://www.cms.gov/newsroom/fact-sheets/2025-medicare-parts-b-premiums-and-deductibles
+
+    References:
+        - IL DHS MSP Application Info: https://www.dhs.state.il.us/?item=33698
+        - IL SHIP Program: https://ilaging.illinois.gov/ship.html
+        - Get Covered Illinois: https://getcovered.illinois.gov/get-free-help/find-local-help.html
+        - IL FCRC Locator: https://www.dhs.state.il.us/page.aspx?module=12
+    """
+
+    pe_name = "msp"
+    pe_inputs = [
+        # is_medicare_eligible
+        member_dependency.AgeDependency,
+        member_dependency.SsdiReportedDependency,
+        # months_receiving_social_security_disability - not collected (see limitation #1)
+        # msp_countable_income (uses SSI methodology)
+        member_dependency.SsiEarnedIncomeDependency,
+        member_dependency.SsiUnearnedIncomeDependency,
+        # msp_asset_eligible
+        spm_dependency.CashAssetsDependency,
+        # state
+        household_dependency.IlStateCodeDependency,
+        # msp_standard_part_a_premium (for benefit value calculation)
+        member_dependency.MedicareQuartersOfCoverageDependency,
+    ]
+    pe_outputs = [
+        member_dependency.MspEligible,
+        member_dependency.MspCategory,
+        member_dependency.Msp,
+    ]
+
+    def member_value(self, member):
+        is_eligible = self.get_member_dependency_value(member_dependency.MspEligible, member.id)
+        if is_eligible:
+            # msp returns monthly benefit value in USD
+            monthly_benefit = self.get_member_variable(member.id)
+
+            # Convert monthly to yearly
+            return int(monthly_benefit * 12)
+        return 0

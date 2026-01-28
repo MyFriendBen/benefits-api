@@ -1,0 +1,71 @@
+{
+    "white_label": {"code": "il"},
+    "program_category": {"external_name": "il_health"},
+    "program": {
+        "name_abbreviated": "il_msp",
+        "year": "2025",
+        "legal_status_required": ["citizen", "refugee", "gc_5plus", "gc_5less", "otherWithWorkPermission"],
+        "name": "Medicare Savings Program (MSP)",
+        "description": "People pay a monthly fee called a premium to keep their Medicare. MSP helps pay these premiums if you have a low income.\n\nHow much help you get depends on your income:\n- Very low income: MSP pays your premium, plus your deductibles (the amount you pay before Medicare starts paying) and the copayments and coinsurance you pay when you get care.\n- A little higher income: MSP pays your premium only.\n\nThe estimated savings shown above only includes what you save on premiums. Your actual savings could be much higher if you qualify for the very low income level, which also covers your deductibles and other costs when you get care.\n\nThe estimated savings assumes you or your spouse worked at least 10 years. If not, your savings may be slightly lower.\n\nTo apply, you must already be enrolled in Medicare. Click 'Apply Now' to learn how to apply online, by mail, by phone, or in person.",
+        "apply_button_link": "https://www.dhs.state.il.us/?item=33698",
+        "apply_button_description": "",
+        "estimated_application_time": "30-45 minutes",
+        "website_description": "Help paying Medicare premiums and costs",
+        "estimated_value": "",
+        "external_name": "il_msp",
+        "low_confidence": false,
+        "show_on_current_benefits": true
+    },
+    "documents": [
+        {
+            "external_name": "id_proof",
+            "text": "Proof of identity (ex: driver's license, state ID, birth certificate)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "il_home",
+            "text": "Proof of residence (ex: utility bill, lease, or mail with your name and address)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "ssn_proof",
+            "text": "Social Security numbers for all people on your application",
+            "link_url": "",
+            "link_text": ""
+        }
+    ],
+    "navigators": [
+        {
+            "external_name": "il_fcrc",
+            "name": "IDHS Family Community Resource Center",
+            "email": "",
+            "description": "Visit your local Family Community Resource Center to apply in person or get help with your MSP application. Use the link to find an office near you: select 'Family Community Resource Center' as the office type, then select your county.",
+            "assistance_link": "https://www.dhs.state.il.us/page.aspx?module=12",
+            "phone_number": "1-800-843-6154",
+            "counties": [],
+            "languages": []
+        },
+        {
+            "external_name": "get_covered_illinois",
+            "name": "Get Covered Illinois",
+            "email": "",
+            "description": "Get Covered Illinois offers free help with your MSP application. Trained helpers can meet with you online, in person, or by phone. They speak over 250 languages.",
+            "assistance_link": "https://getcovered.illinois.gov/get-free-help/find-local-help.html",
+            "phone_number": "1-866-311-1119",
+            "counties": [],
+            "languages": ["ALL"]
+        },
+        {
+            "external_name": "il_ship",
+            "name": "Illinois SHIP (Senior Health Insurance Program)",
+            "email": "",
+            "description": "SHIP provides free Medicare counseling and can help you understand and apply for Medicare Savings Programs. Counselors are trained volunteers who can assist by phone or in person.",
+            "assistance_link": "https://ilaging.illinois.gov/ship.html",
+            "phone_number": "1-800-252-8966",
+            "counties": [],
+            "languages": []
+        }
+    ]
+}

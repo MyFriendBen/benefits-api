@@ -622,3 +622,37 @@ class TxFpp(Member):
     """Output dependency for TX Family Planning Program benefit."""
 
     field = "tx_fpp_benefit"
+
+
+class MspEligible(Member):
+    """Output dependency for Medicare Savings Program eligibility."""
+
+    field = "msp_eligible"
+
+
+class MspCategory(Member):
+    """Output dependency for Medicare Savings Program category (QMB, SLMB, QI, or NONE)."""
+
+    field = "msp_category"
+
+
+class Msp(Member):
+    """Benefit value for Medicare Savings Programs"""
+
+    field = "msp"
+
+
+class MedicareQuartersOfCoverageDependency(Member):
+    """
+    Number of quarters of Medicare-covered employment for Part A premium calculation.
+
+    We return 40 quarters because approximately 99% of Medicare beneficiaries have at least
+    40 quarters of Medicare-covered employment, which makes Part A premium-free.
+
+    Source: https://www.cms.gov/newsroom/fact-sheets/2026-medicare-parts-b-premiums-deductibles
+    """
+
+    field = "medicare_quarters_of_coverage"
+
+    def value(self):
+        return 40

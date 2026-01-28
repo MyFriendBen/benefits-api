@@ -167,9 +167,9 @@ class Command(BaseCommand):
         program_name = program.name_abbreviated
 
         # Delete navigators and documents specified in config
-        for entity_type, model, config_key in [
-            ("navigator", Navigator, "navigators"),
-            ("document", Document, "documents"),
+        for entity_type, model, config_key, related_name in [
+            ("navigator", Navigator, "navigators", "programs"),
+            ("document", Document, "documents", "program_documents"),
         ]:
             for item_config in config.get(config_key, []):
                 external_name = item_config.get("external_name")
@@ -178,7 +178,7 @@ class Command(BaseCommand):
                 entity = model.objects.filter(external_name=external_name).first()
                 if not entity:
                     continue
-                if entity.programs.exclude(id=program.id).exists():
+                if getattr(entity, related_name).exclude(id=program.id).exists():
                     self.stdout.write(f"  Keeping {entity_type} '{external_name}' (used by other programs)")
                 else:
                     entity.delete()
