@@ -111,7 +111,7 @@ This directory contains configuration files for MyFriendBen white labels (state/
 - `ma.py` - Massachusetts
 - `nc.py` - North Carolina
 - `tx.py` - Texas
-- `cesn.py` - Colorado Energy Calculator (specialized flow)
+- `cesn.py` - Colorado Energy Savings Navigator (specialized flow)
 
 ## Key Configuration Sections
 
