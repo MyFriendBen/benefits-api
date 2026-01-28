@@ -1,0 +1,238 @@
+[
+  {
+    "notes": "IL IBCCP - Eligible: Woman 45 uninsured for breast cancer screening",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 45,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 2500, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_ibccp",
+      "eligible": true,
+      "value": 400
+    }
+  },
+  {
+    "notes": "IL IBCCP - Eligible: Woman 40 at minimum breast screening age, uninsured",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 40,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 1800, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_ibccp",
+      "eligible": true,
+      "value": 400
+    }
+  },
+  {
+    "notes": "IL IBCCP - Eligible: Woman 64 at maximum age, uninsured",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 64,
+          "has_income": true,
+          "income_streams": [
+            { "type": "socialSecurity", "amount": 1500, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_ibccp",
+      "eligible": true,
+      "value": 400
+    }
+  },
+  {
+    "notes": "IL IBCCP - Ineligible: Woman 65 over maximum age (should be on Medicare)",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 65,
+          "has_income": true,
+          "income_streams": [
+            { "type": "socialSecurity", "amount": 1600, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_ibccp",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "IL IBCCP - Ineligible: Woman has Medicaid (disqualifying insurance)",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 50,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 1200, "frequency": "monthly" }
+          ],
+          "insurance": { "medicaid": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_ibccp",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "IL IBCCP - Eligible: Woman 21 for cervical cancer screening only",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 21,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 1500, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_ibccp",
+      "eligible": true,
+      "value": 400
+    }
+  },
+  {
+    "notes": "IL IBCCP - Ineligible: Woman 20 below cervical screening age",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 20,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 1200, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_ibccp",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "IL IBCCP - Eligible: Woman 55 with zero income, uninsured",
+    "household": {
+      "white_label": "il",
+      "zipcode": "62002",
+      "county": "Madison",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 55,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_ibccp",
+      "eligible": true,
+      "value": 400
+    }
+  },
+  {
+    "notes": "IL IBCCP - Eligible: Household with eligible woman as spouse",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 2,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 50,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 3000, "frequency": "monthly" }
+          ],
+          "insurance": { "employer": true }
+        },
+        {
+          "relationship": "spouse",
+          "age": 48,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_ibccp",
+      "eligible": true,
+      "value": 400
+    }
+  }
+]
