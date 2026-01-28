@@ -19,7 +19,6 @@
 from decimal import Decimal
 from django.db import migrations
 
-
 SCREEN_UUID = "c3a09afd-8e0a-4e3a-9d26-df3c46809302"
 
 # New expected values calculated with unemployment income included in irs_gross_income.
