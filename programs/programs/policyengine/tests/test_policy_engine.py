@@ -382,7 +382,7 @@ class TestPeInput(TestCase):
             "has_phone_expense",
             "has_heating_cooling_expense",
             "heating_cooling_expense",
-            "childcare_expenses",
+            "spm_unit_pre_subsidy_childcare_expenses",
             "water_expense",
             "phone_expense",
             "homeowners_association_fees",
