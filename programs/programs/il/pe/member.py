@@ -369,7 +369,8 @@ class IlMsp(PolicyEngineMembersCalculator):
 
     pe_name = "msp"
     pe_inputs = [
-        # is_medicare_eligible
+        # is_medicare_eligible - override PE's calculation when user has Medicare selected
+        member_dependency.IsMedicareEligibleDependency,
         member_dependency.AgeDependency,
         member_dependency.SsdiReportedDependency,
         # months_receiving_social_security_disability - not collected (see limitation #1)

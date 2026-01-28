@@ -1011,3 +1011,84 @@ class TestChildcareAttendingDaysPerMonthDependency(TestCase):
         """Test that dependency has correct unit (people) for PolicyEngine."""
         dep = member.ChildcareAttendingDaysPerMonthDependency(self.screen, self.child, {})
         self.assertEqual(dep.unit, "people")
+
+
+class TestIsMedicareEligibleDependency(TestCase):
+    """Tests for IsMedicareEligibleDependency class used by IL MSP calculator.
+
+    This dependency overrides PolicyEngine's is_medicare_eligible calculation
+    when we know the user has Medicare selected, fixing the disabled under-65
+    pathway issue (Test 13 in IL MSP QA).
+    """
+
+    def setUp(self):
+        """Set up test data for Medicare eligibility tests."""
+        from screener.models import Insurance
+
+        self.white_label = WhiteLabel.objects.create(name="Illinois", code="il", state_code="IL")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="60601",
+            county="Cook",
+            household_size=1,
+            completed=False,
+        )
+
+        # Member with Medicare
+        self.member_with_medicare = HouseholdMember.objects.create(
+            screen=self.screen, relationship="headOfHousehold", age=55, disabled=True
+        )
+        Insurance.objects.create(household_member=self.member_with_medicare, medicare=True, none=False)
+
+        # Member without Medicare (no insurance record)
+        self.member_without_insurance = HouseholdMember.objects.create(
+            screen=self.screen, relationship="spouse", age=68
+        )
+
+    def test_value_returns_true_when_member_has_medicare(self):
+        """Test IsMedicareEligibleDependency.value() returns True when member has Medicare selected."""
+        dep = member.IsMedicareEligibleDependency(self.screen, self.member_with_medicare, {})
+        self.assertTrue(dep.value())
+
+    def test_value_returns_none_when_member_has_no_insurance_record(self):
+        """Test IsMedicareEligibleDependency.value() returns None when member has no insurance record."""
+        dep = member.IsMedicareEligibleDependency(self.screen, self.member_without_insurance, {})
+        self.assertIsNone(dep.value())
+
+    def test_value_returns_none_when_member_has_other_insurance_only(self):
+        """Test IsMedicareEligibleDependency.value() returns None when member has non-Medicare insurance."""
+        from screener.models import Insurance
+
+        member_with_medicaid = HouseholdMember.objects.create(
+            screen=self.screen, relationship="child", age=30
+        )
+        Insurance.objects.create(household_member=member_with_medicaid, medicaid=True, medicare=False, none=False)
+
+        dep = member.IsMedicareEligibleDependency(self.screen, member_with_medicaid, {})
+        self.assertIsNone(dep.value())
+
+    def test_field_name_is_correct(self):
+        """Test that field name matches PolicyEngine's is_medicare_eligible variable."""
+        dep = member.IsMedicareEligibleDependency(self.screen, self.member_with_medicare, {})
+        self.assertEqual(dep.field, "is_medicare_eligible")
+
+    def test_is_member_level_dependency(self):
+        """Test that IsMedicareEligibleDependency is a member-level dependency."""
+        from programs.programs.policyengine.calculators.dependencies.base import Member
+
+        self.assertTrue(issubclass(member.IsMedicareEligibleDependency, Member))
+
+    def test_disabled_under_65_with_medicare_returns_true(self):
+        """Test that disabled individual under 65 with Medicare returns True.
+
+        This is the key fix for Test 13: disabled 55yo with Medicare should
+        be eligible for MSP. Previously, PolicyEngine would calculate
+        is_medicare_eligible=False because we don't send
+        months_receiving_social_security_disability.
+        """
+        dep = member.IsMedicareEligibleDependency(self.screen, self.member_with_medicare, {})
+        # Member is 55, disabled, and has Medicare - should return True
+        self.assertEqual(self.member_with_medicare.age, 55)
+        self.assertTrue(self.member_with_medicare.disabled)
+        self.assertTrue(dep.value())
