@@ -308,68 +308,41 @@ class IlMsp(PolicyEngineMembersCalculator):
     """
     Illinois Medicare Savings Program (MSP)
 
-    MSP helps pay Medicare premiums, deductibles, and coinsurance for
-    individuals with limited income and assets who are Medicare-eligible.
+    Helps pay Medicare premiums, deductibles, and coinsurance for low-income
+    Medicare-eligible individuals.
 
-    Categories (determined by PolicyEngine):
-        - QMB (Qualified Medicare Beneficiary)
-          Eligibility: income ≤ 100% FPL
-          Benefit coverage includes:
-            - Part A premium
-            - Part B premium
-            - Deductibles
-            - Coinsurance
-        - SLMB (Specified Low-Income Medicare Beneficiary)
-          Eligibility: income 100-120% FPL
-          Benefit coverage includes:
-            - Part B premium only
-        - QI (Qualifying Individual)
-          Eligibility: income 120-135% FPL
-          Benefit coverage includes:
-            - Part B premium only
-
-    Eligibility criteria:
-        - Medicare eligible (age 65+ OR receiving SSDI for 24+ months)
-        - Meets income limits (using SSI methodology per 42 U.S.C. 1396d(p)(1)(B))
+    Eligibility:
+        - Medicare eligible (age 65+ or SSDI for 24+ months)
+        - Meets income limits (SSI methodology)
         - Meets asset limits ($9,660 individual / $14,470 couple for 2025)
         - Illinois resident
 
-    Implementation limitations:
-        1. We do not collect months_receiving_social_security_disability, so PolicyEngine
-           cannot determine Medicare eligibility via the SSDI pathway (24+ months on SSDI).
-           In our implementation, users can only qualify for MSP through the age requirement
-           (65+). This may exclude eligible individuals under 65 who have been on SSDI for
-           24+ months.
+    Categories (determined by PolicyEngine):
+        - QMB (≤100% FPL): Part A/B premiums, deductibles, coinsurance
+        - SLMB (100-120% FPL): Part B premium only
+        - QI (120-135% FPL, no other Medicaid): Part B premium only
 
-        2. We assume 40 quarters of Medicare-covered employment (Part A is free) since
-           approximately 99% of Medicare beneficiaries meet this threshold.
-           Source: https://www.cms.gov/newsroom/fact-sheets/2026-medicare-parts-b-premiums-deductibles
-           For the ~1% of individuals who pay a Part A premium (<40 quarters), the benefit
-           value may be underestimated.
+    Limitations:
+        - SSDI pathway partially supported: we don't collect months on SSDI, but
+          we override Medicare eligibility for users who have Medicare selected
+        - Assumes 40 quarters of Medicare-covered employment (Part A is free);
+          ~99% of beneficiaries meet this threshold (per CMS)
+        - Benefit value is premium savings only; QMB deductible/coinsurance
+          coverage (~$1,933/year) is not included in the Policy Engine calculation
 
-    Note on benefit value:
-        PolicyEngine's `msp` variable returns monthly premium savings only
-        (Part A + Part B premiums). For QMB, this underestimates the true value
-        because it excludes deductible coverage (~$1,933/year in 2025: $1,676
-        Part A inpatient deductible + $257 Part B deductible) and coinsurance.
-
-        QMB coverage of deductibles/coinsurance is required by federal law:
-        - 42 U.S.C. § 1396d(p)(3)(A): https://www.law.cornell.edu/uscode/text/42/1396d#p_3_A
-        - Medicare.gov MSP overview: https://www.medicare.gov/basics/costs/help/medicare-savings-programs
-
-        2025 Medicare costs from CMS:
-        https://www.cms.gov/newsroom/fact-sheets/2025-medicare-parts-b-premiums-and-deductibles
+    Note: Includes IlMedicaid.pe_inputs because QI requires checking that the
+    individual is not eligible for other Medicaid benefits.
 
     References:
-        - IL DHS MSP Application Info: https://www.dhs.state.il.us/?item=33698
-        - IL SHIP Program: https://ilaging.illinois.gov/ship.html
-        - Get Covered Illinois: https://getcovered.illinois.gov/get-free-help/find-local-help.html
-        - IL FCRC Locator: https://www.dhs.state.il.us/page.aspx?module=12
+        - IL DHS MSP: https://www.dhs.state.il.us/?item=33698
+        - Medicare.gov MSP: https://www.medicare.gov/basics/costs/help/medicare-savings-programs
+        - 2025 Medicare costs: https://www.cms.gov/newsroom/fact-sheets/2025-medicare-parts-b-premiums-and-deductibles
     """
 
     pe_name = "msp"
     pe_inputs = [
-        # is_medicare_eligible
+        # is_medicare_eligible - override PE's calculation when user has Medicare selected
+        member_dependency.IsMedicareEligibleDependency,
         member_dependency.AgeDependency,
         member_dependency.SsdiReportedDependency,
         # months_receiving_social_security_disability - not collected (see limitation #1)
@@ -382,6 +355,8 @@ class IlMsp(PolicyEngineMembersCalculator):
         household_dependency.IlStateCodeDependency,
         # msp_standard_part_a_premium (for benefit value calculation)
         member_dependency.MedicareQuartersOfCoverageDependency,
+        # Medicaid dependencies (for is_medicaid_eligible check in MSP)
+        *IlMedicaid.pe_inputs,
     ]
     pe_outputs = [
         member_dependency.MspEligible,

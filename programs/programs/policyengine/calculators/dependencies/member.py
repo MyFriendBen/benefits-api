@@ -656,3 +656,26 @@ class MedicareQuartersOfCoverageDependency(Member):
 
     def value(self):
         return 40
+
+
+class IsMedicareEligibleDependency(Member):
+    """
+    Override PolicyEngine's is_medicare_eligible calculation when we know the user has Medicare.
+
+    PolicyEngine calculates Medicare eligibility based on age (65+) or disability pathway
+    (SSDI for 24+ months). However, we don't collect months_receiving_social_security_disability,
+    so disabled individuals under 65 with Medicare would fail PolicyEngine's check.
+
+    This dependency:
+    - Returns True if the member has Medicare selected (they are definitionally Medicare eligible)
+    - Returns None if they don't have Medicare, letting PolicyEngine calculate eligibility
+      based on age (which may show MSP to age-eligible users who don't actually have Medicare yet)
+    """
+
+    field = "is_medicare_eligible"
+
+    def value(self):
+        has_medicare = self.member.has_insurance_types(("medicare",), strict=False)
+        if has_medicare:
+            return True
+        return None
