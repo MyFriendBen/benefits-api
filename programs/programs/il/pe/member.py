@@ -359,6 +359,12 @@ class IlMsp(PolicyEngineMembersCalculator):
 
         2025 Medicare costs from CMS:
         https://www.cms.gov/newsroom/fact-sheets/2025-medicare-parts-b-premiums-and-deductibles
+
+    References:
+        - IL DHS MSP Application Info: https://www.dhs.state.il.us/?item=33698
+        - IL SHIP Program: https://ilaging.illinois.gov/ship.html
+        - Get Covered Illinois: https://getcovered.illinois.gov/get-free-help/find-local-help.html
+        - IL FCRC Locator: https://www.dhs.state.il.us/page.aspx?module=12
     """
 
     pe_name = "msp"
@@ -384,7 +390,8 @@ class IlMsp(PolicyEngineMembersCalculator):
     ]
 
     def member_value(self, member):
-        if member_dependency.MspEligible:
+        is_eligible = self.get_member_dependency_value(member_dependency.MspEligible, member.id)
+        if is_eligible:
             # msp returns monthly benefit value in USD
             monthly_benefit = self.get_member_variable(member.id)
 

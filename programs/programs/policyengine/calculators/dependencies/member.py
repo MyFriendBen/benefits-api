@@ -646,9 +646,8 @@ class MedicareQuartersOfCoverageDependency(Member):
     """
     Number of quarters of Medicare-covered employment for Part A premium calculation.
 
-    Approximately 99% of Medicare beneficiaries do not have a Part A premium since they
-    have at least 40 quarters of Medicare-covered employment, as determined by the
-    Social Security Administration.
+    We return 40 quarters because approximately 99% of Medicare beneficiaries have at least
+    40 quarters of Medicare-covered employment, which makes Part A premium-free.
 
     Source: https://www.cms.gov/newsroom/fact-sheets/2026-medicare-parts-b-premiums-deductibles
     """
