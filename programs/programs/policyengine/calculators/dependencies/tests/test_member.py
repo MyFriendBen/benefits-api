@@ -1060,9 +1060,7 @@ class TestIsMedicareEligibleDependency(TestCase):
         """Test IsMedicareEligibleDependency.value() returns None when member has non-Medicare insurance."""
         from screener.models import Insurance
 
-        member_with_medicaid = HouseholdMember.objects.create(
-            screen=self.screen, relationship="child", age=30
-        )
+        member_with_medicaid = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=30)
         Insurance.objects.create(household_member=member_with_medicaid, medicaid=True, medicare=False, none=False)
 
         dep = member.IsMedicareEligibleDependency(self.screen, member_with_medicaid, {})

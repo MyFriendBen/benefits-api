@@ -324,7 +324,7 @@ class IlMsp(PolicyEngineMembersCalculator):
           Benefit coverage includes:
             - Part B premium only
         - QI (Qualifying Individual)
-          Eligibility: income 120-135% FPL
+          Eligibility: income 120-135% FPL, AND not eligible for any other Medicaid benefits
           Benefit coverage includes:
             - Part B premium only
 
@@ -333,6 +333,13 @@ class IlMsp(PolicyEngineMembersCalculator):
         - Meets income limits (using SSI methodology per 42 U.S.C. 1396d(p)(1)(B))
         - Meets asset limits ($9,660 individual / $14,470 couple for 2025)
         - Illinois resident
+        - For QI only: must not be eligible for any other Medicaid benefits
+
+    Note on Medicaid dependencies:
+        QI eligibility requires that the individual is not eligible for any other
+        Medicaid benefits. PolicyEngine checks is_medicaid_eligible when determining
+        QI eligibility, so we include all Medicaid dependencies (via IlMedicaid.pe_inputs)
+        to ensure accurate QI determinations.
 
     Implementation limitations:
         1. We do not collect months_receiving_social_security_disability, so PolicyEngine
@@ -383,6 +390,8 @@ class IlMsp(PolicyEngineMembersCalculator):
         household_dependency.IlStateCodeDependency,
         # msp_standard_part_a_premium (for benefit value calculation)
         member_dependency.MedicareQuartersOfCoverageDependency,
+        # Medicaid dependencies (for is_medicaid_eligible check in MSP)
+        *IlMedicaid.pe_inputs,
     ]
     pe_outputs = [
         member_dependency.MspEligible,
