@@ -1,0 +1,221 @@
+[
+  {
+    "notes": "IL MPE - Eligible: Pregnant woman 25 with income below 200% FPL, no Medicaid",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 25,
+          "pregnant": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 2000, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_mpe",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "IL MPE - Eligible: Pregnant teen 18 with very low income",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 18,
+          "pregnant": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 800, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_mpe",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "IL MPE - Ineligible: Not pregnant",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 25,
+          "pregnant": false,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 1500, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_mpe",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "IL MPE - Ineligible: Already has Medicaid",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 28,
+          "pregnant": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 1800, "frequency": "monthly" }
+          ],
+          "insurance": { "medicaid": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_mpe",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "IL MPE - Ineligible: Income above 200% FPL",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 30,
+          "pregnant": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 4000, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_mpe",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "IL MPE - Eligible: Pregnant woman with zero income",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 22,
+          "pregnant": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_mpe",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "IL MPE - Eligible: Pregnant spouse in household (household income test)",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 2,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 32,
+          "pregnant": false,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 2500, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "spouse",
+          "age": 28,
+          "pregnant": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_mpe",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "IL MPE - Eligible: Pregnant woman 38 at higher end of childbearing age",
+    "household": {
+      "white_label": "il",
+      "zipcode": "62002",
+      "county": "Madison",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 38,
+          "pregnant": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 2200, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_mpe",
+      "eligible": true,
+      "value": 1
+    }
+  }
+]
