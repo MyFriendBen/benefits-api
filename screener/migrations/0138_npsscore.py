@@ -25,6 +25,15 @@ class Migration(migrations.Migration):
                         ]
                     ),
                 ),
+                (
+                    "variant",
+                    models.CharField(
+                        blank=True,
+                        choices=[("floating", "Floating Widget"), ("inline", "Inline Section")],
+                        max_length=20,
+                        null=True,
+                    ),
+                ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 (
                     "eligibility_snapshot",

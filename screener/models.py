@@ -992,6 +992,9 @@ class NPSScore(models.Model):
             )
         ]
 
+    def __str__(self):
+        return f"NPS {self.score} for snapshot {self.eligibility_snapshot_id}"
+
 
 # Eligibility results for each specific program per screen. These are
 # aggregated per screen using the EligibilitySnapshot id

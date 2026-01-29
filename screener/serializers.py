@@ -10,6 +10,8 @@ from screener.models import (
     Message,
     Insurance,
     WhiteLabel,
+    EligibilitySnapshot,
+    NPSScore,
 )
 from authentication.serializers import UserOffersSerializer
 from rest_framework import serializers
@@ -457,3 +459,26 @@ class ResultsSerializer(serializers.Serializer):
     validations = ValidationSerializer(many=True)
     program_categories = ProgramCategorySerializer(many=True)
     pe_data = serializers.DictField(required=False, allow_null=True)
+
+
+class NPSScoreSerializer(serializers.Serializer):
+    uuid = serializers.UUIDField(write_only=True)
+    score = serializers.IntegerField(min_value=0, max_value=10)
+    variant = serializers.ChoiceField(choices=NPSScore.Variant.choices, required=False, allow_null=True)
+
+    def create(self, validated_data):
+        uuid = validated_data.pop("uuid")
+
+        # Get the most recent eligibility snapshot for this screen
+        snapshot = EligibilitySnapshot.objects.filter(
+            screen__uuid=uuid, had_error=False
+        ).order_by("-submission_date").first()
+
+        if snapshot is None:
+            raise serializers.ValidationError({"uuid": "No eligibility snapshot found for this screen"})
+
+        # Check if NPS already exists for this snapshot
+        if hasattr(snapshot, "nps_score"):
+            raise serializers.ValidationError({"uuid": "NPS score already submitted for this session"})
+
+        return NPSScore.objects.create(eligibility_snapshot=snapshot, **validated_data)
