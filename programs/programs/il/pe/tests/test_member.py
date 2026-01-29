@@ -88,7 +88,6 @@ class TestIlMsp(TestCase):
         """Test that member_value returns yearly benefit from PolicyEngine."""
         calculator = IlMsp(Mock(), Mock(), Mock())
         calculator._sim = MagicMock()
-        calculator.get_member_dependency_value = Mock(return_value=True)
         # PolicyEngine returns annual value when queried with annual period
         calculator.get_member_variable = Mock(return_value=MEDICARE_PART_B_ANNUAL_2025)
 
@@ -97,14 +96,15 @@ class TestIlMsp(TestCase):
 
         result = calculator.member_value(member)
 
-        # PolicyEngine returns annual benefit directly
-        self.assertEqual(result, int(MEDICARE_PART_B_ANNUAL_2025))
+        # PolicyEngine returns annual benefit directly (no * 12 multiplication)
+        self.assertEqual(result, MEDICARE_PART_B_ANNUAL_2025)
 
     def test_member_value_returns_zero_when_not_eligible(self):
-        """Test that member_value returns 0 when not eligible."""
+        """Test that member_value returns 0 when not eligible (PE returns 0)."""
         calculator = IlMsp(Mock(), Mock(), Mock())
         calculator._sim = MagicMock()
-        calculator.get_member_dependency_value = Mock(return_value=False)
+        # PolicyEngine returns 0 when not eligible
+        calculator.get_member_variable = Mock(return_value=0)
 
         member = Mock()
         member.id = 1
