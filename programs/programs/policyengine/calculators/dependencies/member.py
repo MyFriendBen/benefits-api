@@ -592,7 +592,6 @@ class HasBccQualifyingCoverageDependency(Member):
                 "medicaid",
                 "medicare",
                 "chp",
-                "mass_health",
                 "va",
             )
         )
