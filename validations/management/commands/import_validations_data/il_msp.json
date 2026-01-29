@@ -195,7 +195,7 @@
     }
   },
   {
-    "notes": "IL MSP - Eligible: SSDI recipient with Medicare (24+ months on SSDI)",
+    "notes": "IL MSP - Eligible: Disabled individual under 65 with Medicare",
     "household": {
       "white_label": "il",
       "zipcode": "60601",
