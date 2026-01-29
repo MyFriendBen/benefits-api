@@ -236,8 +236,8 @@ class TestPeInputMaritalUnits(PeInputTestBase):
         expected_ids = {str(self.head.id), str(self.spouse.id)}
         self.assertEqual(member_ids, expected_ids)
 
-    def test_single_adult_has_single_marital_unit(self):
-        """Test that single adults get their own marital unit."""
+    def test_single_adult_has_no_marital_unit(self):
+        """Test that single adults without a spouse have no marital unit."""
         # Create screen with single adult
         single_screen = Screen.objects.create(
             white_label=self.white_label,
@@ -246,7 +246,7 @@ class TestPeInputMaritalUnits(PeInputTestBase):
             household_size=1,
             completed=False,
         )
-        single_adult = HouseholdMember.objects.create(
+        HouseholdMember.objects.create(
             screen=single_screen,
             relationship="headOfHousehold",
             age=30,
@@ -255,11 +255,8 @@ class TestPeInputMaritalUnits(PeInputTestBase):
         result = pe_input(single_screen, [self.calculator_class])
         marital_units = result["household"]["marital_units"]
 
-        # Should have one marital unit with single member
-        self.assertEqual(len(marital_units), 1)
-        marital_unit = list(marital_units.values())[0]
-        self.assertEqual(len(marital_unit["members"]), 1)
-        self.assertIn(str(single_adult.id), marital_unit["members"])
+        # Single adults without a spouse should have no marital unit
+        self.assertEqual(len(marital_units), 0)
 
 
 class TestPeInputMultipleCalculators(PeInputTestBase):

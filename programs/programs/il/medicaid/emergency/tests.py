@@ -90,7 +90,7 @@ class TestIlEmergencyMedicaid(TestCase):
             relationship="headOfHousehold",
             age=35,
         )
-        Insurance.objects.create(household_member=member, employer=True)
+        Insurance.objects.create(household_member=member, employer=True, none=False)
 
         self.assertFalse(member.insurance.has_insurance_types(["none"]))
 
@@ -101,7 +101,7 @@ class TestIlEmergencyMedicaid(TestCase):
             relationship="headOfHousehold",
             age=35,
         )
-        Insurance.objects.create(household_member=member, medicaid=True)
+        Insurance.objects.create(household_member=member, medicaid=True, none=False)
 
         self.assertFalse(member.insurance.has_insurance_types(["none"]))
 
@@ -112,7 +112,7 @@ class TestIlEmergencyMedicaid(TestCase):
             relationship="headOfHousehold",
             age=68,
         )
-        Insurance.objects.create(household_member=member, medicare=True)
+        Insurance.objects.create(household_member=member, medicare=True, none=False)
 
         self.assertFalse(member.insurance.has_insurance_types(["none"]))
 
@@ -128,7 +128,7 @@ class TestIlEmergencyMedicaid(TestCase):
             relationship="headOfHousehold",
             age=35,
         )
-        Insurance.objects.create(household_member=insured_member, employer=True)
+        Insurance.objects.create(household_member=insured_member, employer=True, none=False)
 
         # Uninsured child
         uninsured_member = HouseholdMember.objects.create(
