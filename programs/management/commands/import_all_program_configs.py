@@ -206,7 +206,7 @@ class Command(BaseCommand):
                     "white_label": config.get("white_label", {}).get("code", "unknown"),
                     "program_name": config.get("program", {}).get("name_abbreviated", "unknown"),
                 }
-        except (json.JSONDecodeError, KeyError):
+        except (json.JSONDecodeError, KeyError, TypeError, AttributeError):
             return None
 
     def _import_config(self, config_file: Path) -> dict[str, Any]:

@@ -80,7 +80,7 @@ python manage.py import_all_program_configs --file tx_snap_initial_config.json
 ### Options
 
 | Option | Description |
-|--------|-------------|
+| -------- | ----------- |
 | `--dry-run` | Show what would be imported without making any changes |
 | `--list` | Display status of all config files (imported or pending) |
 | `--file <filename>` | Import a specific file only (still tracks it) |
@@ -90,10 +90,10 @@ python manage.py import_all_program_configs --file tx_snap_initial_config.json
 The command uses a `ProgramConfigImport` model to track imports:
 
 | Field | Description |
-|-------|-------------|
+| ------- | ------------- |
 | `filename` | Name of the JSON config file |
 | `program_name` | The `name_abbreviated` of the imported program |
-| `white_label_code` | The white label code for this program |
+| `white_label_code` | The white-label code for this program |
 | `imported_at` | Timestamp of when the import occurred |
 
 ---

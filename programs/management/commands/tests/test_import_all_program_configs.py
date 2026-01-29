@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 from django.core.management import call_command
+from django.db import IntegrityError
 from django.test import TestCase
 
 from programs.models import Program, ProgramConfigImport, ProgramCategory
@@ -50,7 +51,7 @@ class ImportAllProgramConfigsCommandTest(TestCase):
             white_label_code="co",
         )
 
-        with self.assertRaises(Exception):
+        with self.assertRaises(IntegrityError):
             ProgramConfigImport.objects.create(
                 filename="test_program.json",
                 program_name="another_program",
@@ -144,7 +145,7 @@ class ImportAllProgramConfigsCommandTest(TestCase):
                 temp_data_dir = Path(temp_dir) / "data"
                 temp_data_dir.mkdir()
                 test_file = temp_data_dir / "test_program.json"
-                with open(test_file, "w") as f:
+                with open(test_file, "w", encoding="utf-8") as f:
                     json.dump(test_config, f)
 
                 # Patch the DATA_DIR to use our temp directory
@@ -158,6 +159,12 @@ class ImportAllProgramConfigsCommandTest(TestCase):
                         stdout=self.out,
                         stderr=self.err,
                     )
+
+                # Verify the import was tracked
+                self.assertTrue(
+                    ProgramConfigImport.objects.filter(filename="test_program.json").exists(),
+                    "Expected ProgramConfigImport record to be created",
+                )
 
     @staticmethod
     def _get_command_class():
