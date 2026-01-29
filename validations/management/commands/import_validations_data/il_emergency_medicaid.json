@@ -214,7 +214,7 @@
           "age": 68,
           "has_income": true,
           "income_streams": [
-            { "type": "socialSecurity", "amount": 1400, "frequency": "monthly" }
+            { "type": "sSRetirement", "amount": 1400, "frequency": "monthly" }
           ],
           "insurance": { "medicare": true }
         }

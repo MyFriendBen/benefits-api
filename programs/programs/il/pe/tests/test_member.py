@@ -274,8 +274,12 @@ class TestIlBccp(TestCase):
         self.assertIn(member_dependency.IlBccFemaleDependency, IlBccp.pe_inputs)
 
     def test_pe_inputs_includes_insurance_eligibility_dependency(self):
-        """Test that IlBccInsuranceEligibleDependency is in pe_inputs."""
-        self.assertIn(member_dependency.IlBccInsuranceEligibleDependency, IlBccp.pe_inputs)
+        """Test that HasBccQualifyingCoverageDependency is in pe_inputs."""
+        self.assertIn(member_dependency.HasBccQualifyingCoverageDependency, IlBccp.pe_inputs)
+
+    def test_pe_inputs_includes_receives_medicaid_dependency(self):
+        """Test that ReceivesMedicaidDependency is in pe_inputs."""
+        self.assertIn(member_dependency.ReceivesMedicaidDependency, IlBccp.pe_inputs)
 
     def test_pe_outputs_includes_il_bcc_eligible(self):
         """Test that IlBccEligible is in pe_outputs."""

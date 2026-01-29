@@ -64,7 +64,7 @@
           "age": 64,
           "has_income": true,
           "income_streams": [
-            { "type": "socialSecurity", "amount": 1500, "frequency": "monthly" }
+            { "type": "sSRetirement", "amount": 1500, "frequency": "monthly" }
           ],
           "insurance": { "none": true }
         }
@@ -90,7 +90,7 @@
           "age": 65,
           "has_income": true,
           "income_streams": [
-            { "type": "socialSecurity", "amount": 1600, "frequency": "monthly" }
+            { "type": "sSRetirement", "amount": 1600, "frequency": "monthly" }
           ],
           "insurance": { "none": true }
         }

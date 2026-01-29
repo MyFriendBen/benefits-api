@@ -1,6 +1,6 @@
 [
   {
-    "notes": "IL AABD - Eligible: Senior 67 with SSI income only",
+    "notes": "IL AABD - Ineligible: Senior 67 with SSI income only - benefit $0 because income exceeds need standard",
     "household": {
       "white_label": "il",
       "zipcode": "60601",
@@ -22,11 +22,12 @@
     },
     "expected_results": {
       "program_name": "il_aabd",
-      "eligible": true
+      "eligible": false,
+      "value": 0
     }
   },
   {
-    "notes": "IL AABD - Eligible: Disabled adult 45 with low income",
+    "notes": "IL AABD - Ineligible: Disabled adult 45 with low SSDI income - benefit $0 because income exceeds need standard",
     "household": {
       "white_label": "il",
       "zipcode": "60601",
@@ -41,7 +42,7 @@
           "long_term_disability": true,
           "has_income": true,
           "income_streams": [
-            { "type": "socialSecurity", "amount": 800, "frequency": "monthly" }
+            { "type": "sSDisability", "amount": 800, "frequency": "monthly" }
           ],
           "insurance": { "none": true }
         }
@@ -50,11 +51,12 @@
     },
     "expected_results": {
       "program_name": "il_aabd",
-      "eligible": true
+      "eligible": false,
+      "value": 0
     }
   },
   {
-    "notes": "IL AABD - Eligible: Blind person 55 with modest income",
+    "notes": "IL AABD - Ineligible: Blind person 55 with modest SSDI income - benefit $0 because income exceeds need standard",
     "household": {
       "white_label": "il",
       "zipcode": "60601",
@@ -68,7 +70,7 @@
           "visually_impaired": true,
           "has_income": true,
           "income_streams": [
-            { "type": "socialSecurity", "amount": 900, "frequency": "monthly" }
+            { "type": "sSDisability", "amount": 900, "frequency": "monthly" }
           ],
           "insurance": { "none": true }
         }
@@ -77,7 +79,8 @@
     },
     "expected_results": {
       "program_name": "il_aabd",
-      "eligible": true
+      "eligible": false,
+      "value": 0
     }
   },
   {
@@ -94,7 +97,7 @@
           "age": 64,
           "has_income": true,
           "income_streams": [
-            { "type": "socialSecurity", "amount": 900, "frequency": "monthly" }
+            { "type": "sSRetirement", "amount": 900, "frequency": "monthly" }
           ],
           "insurance": { "none": true }
         }
@@ -103,11 +106,12 @@
     },
     "expected_results": {
       "program_name": "il_aabd",
-      "eligible": false
+      "eligible": false,
+      "value": 0
     }
   },
   {
-    "notes": "IL AABD - Eligible: Exact age 65 qualifies for Aged category",
+    "notes": "IL AABD - Ineligible: Exact age 65 qualifies for Aged but income exceeds need standard",
     "household": {
       "white_label": "il",
       "zipcode": "60601",
@@ -120,7 +124,7 @@
           "age": 65,
           "has_income": true,
           "income_streams": [
-            { "type": "socialSecurity", "amount": 1000, "frequency": "monthly" }
+            { "type": "sSRetirement", "amount": 1000, "frequency": "monthly" }
           ],
           "insurance": { "none": true }
         }
@@ -129,7 +133,8 @@
     },
     "expected_results": {
       "program_name": "il_aabd",
-      "eligible": true
+      "eligible": false,
+      "value": 0
     }
   },
   {
@@ -146,7 +151,7 @@
           "age": 70,
           "has_income": true,
           "income_streams": [
-            { "type": "socialSecurity", "amount": 2500, "frequency": "monthly" }
+            { "type": "sSRetirement", "amount": 2500, "frequency": "monthly" }
           ],
           "insurance": { "none": true }
         }
@@ -155,11 +160,12 @@
     },
     "expected_results": {
       "program_name": "il_aabd",
-      "eligible": false
+      "eligible": false,
+      "value": 0
     }
   },
   {
-    "notes": "IL AABD - Eligible: Senior couple with combined low income",
+    "notes": "IL AABD - Eligible: Senior couple with combined low income - gets annual benefit",
     "household": {
       "white_label": "il",
       "zipcode": "60601",
@@ -172,7 +178,7 @@
           "age": 68,
           "has_income": true,
           "income_streams": [
-            { "type": "socialSecurity", "amount": 700, "frequency": "monthly" }
+            { "type": "sSRetirement", "amount": 700, "frequency": "monthly" }
           ],
           "insurance": { "none": true }
         },
@@ -181,7 +187,7 @@
           "age": 66,
           "has_income": true,
           "income_streams": [
-            { "type": "socialSecurity", "amount": 600, "frequency": "monthly" }
+            { "type": "sSRetirement", "amount": 600, "frequency": "monthly" }
           ],
           "insurance": { "none": true }
         }
@@ -190,7 +196,8 @@
     },
     "expected_results": {
       "program_name": "il_aabd",
-      "eligible": true
+      "eligible": true,
+      "value": 3267
     }
   },
   {
@@ -219,11 +226,12 @@
     },
     "expected_results": {
       "program_name": "il_aabd",
-      "eligible": true
+      "eligible": true,
+      "value": 363
     }
   },
   {
-    "notes": "IL AABD - Eligible: Senior with zero income",
+    "notes": "IL AABD - Ineligible: Senior with zero income but no shelter expenses - minimal need standard",
     "household": {
       "white_label": "il",
       "zipcode": "60601",
@@ -243,11 +251,12 @@
     },
     "expected_results": {
       "program_name": "il_aabd",
-      "eligible": true
+      "eligible": false,
+      "value": 0
     }
   },
   {
-    "notes": "IL AABD - Eligible: Disabled adult with mixed income sources",
+    "notes": "IL AABD - Ineligible: Disabled adult with mixed income - benefit $0 because income exceeds need standard",
     "household": {
       "white_label": "il",
       "zipcode": "62002",
@@ -262,7 +271,7 @@
           "long_term_disability": true,
           "has_income": true,
           "income_streams": [
-            { "type": "socialSecurity", "amount": 500, "frequency": "monthly" },
+            { "type": "sSDisability", "amount": 500, "frequency": "monthly" },
             { "type": "wages", "amount": 200, "frequency": "monthly" }
           ],
           "insurance": { "none": true }
@@ -272,7 +281,8 @@
     },
     "expected_results": {
       "program_name": "il_aabd",
-      "eligible": true
+      "eligible": false,
+      "value": 0
     }
   }
 ]

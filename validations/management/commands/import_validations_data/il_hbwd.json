@@ -152,7 +152,7 @@
           "disabled": true,
           "has_income": true,
           "income_streams": [
-            { "type": "socialSecurity", "amount": 1000, "frequency": "monthly" },
+            { "type": "sSRetirement", "amount": 1000, "frequency": "monthly" },
             { "type": "sSI", "amount": 900, "frequency": "monthly" }
           ],
           "insurance": { "none": true }
