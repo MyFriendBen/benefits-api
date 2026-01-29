@@ -455,6 +455,14 @@ class PensionIncomeDependency(IncomeDependency):
 
 
 class SocialSecurityIncomeDependency(IncomeDependency):
+    """
+    Social Security benefits (not including SSI).
+
+    Note: SSI (Supplemental Security Income) is a separate needs-based program,
+    not funded by Social Security payroll taxes. It is handled separately via
+    SsiReportedDependency and the Ssi output dependency.
+    """
+
     field = "social_security"
     income_types = ["sSDisability", "sSSurvivor", "sSRetirement", "sSDependent"]
 
