@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
 from decimal import Decimal
 import uuid
 from authentication.models import User
@@ -966,6 +967,24 @@ class EligibilitySnapshot(models.Model):
 
 # Eligibility results for each specific program per screen. These are
 # aggregated per screen using the EligibilitySnapshot id
+class NPSScore(models.Model):
+    eligibility_snapshot = models.OneToOneField(
+        EligibilitySnapshot, related_name="nps_score", on_delete=models.CASCADE
+    )
+    score = models.IntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(10)]
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(score__gte=0) & models.Q(score__lte=10),
+                name="nps_score_range",
+            )
+        ]
+
+
 class ProgramEligibilitySnapshot(models.Model):
     eligibility_snapshot = models.ForeignKey(
         EligibilitySnapshot, related_name="program_snapshots", on_delete=models.CASCADE
