@@ -298,5 +298,33 @@
       "eligible": true,
       "value": 1
     }
+  },
+  {
+    "notes": "IL HBWD - Eligible: Edge case with zero assets",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 45,
+          "disabled": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 1500, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_hbwd",
+      "eligible": true,
+      "value": 1
+    }
   }
 ]

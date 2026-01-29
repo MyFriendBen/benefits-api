@@ -13,6 +13,12 @@ These tests verify IL-specific calculator logic for member-level programs includ
 from django.test import TestCase
 from unittest.mock import Mock, MagicMock
 
+# Named constants for benefit values used in tests
+MEDICARE_PART_B_PREMIUM_2025 = 185.0  # Monthly Medicare Part B premium
+MONTHS_PER_YEAR = 12
+IBCCP_SCREENING_VALUE = 400  # Average out-of-pocket cost for cancer screening services
+HBWD_ELIGIBLE_VALUE = 1  # Indicates eligible (value displayed as "Varies" in UI)
+
 from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
 from programs.programs.policyengine.calculators.dependencies import member as member_dependency
 from programs.programs.policyengine.calculators.dependencies import irs_gross_income
@@ -84,7 +90,7 @@ class TestIlMsp(TestCase):
         calculator = IlMsp(Mock(), Mock(), Mock())
         calculator._sim = MagicMock()
         calculator.get_member_dependency_value = Mock(return_value=True)
-        calculator.get_member_variable = Mock(return_value=185.0)  # Part B premium
+        calculator.get_member_variable = Mock(return_value=MEDICARE_PART_B_PREMIUM_2025)
 
         member = Mock()
         member.id = 1
@@ -92,7 +98,7 @@ class TestIlMsp(TestCase):
         result = calculator.member_value(member)
 
         # Monthly benefit * 12
-        self.assertEqual(result, int(185.0 * 12))
+        self.assertEqual(result, int(MEDICARE_PART_B_PREMIUM_2025 * MONTHS_PER_YEAR))
 
     def test_member_value_returns_zero_when_not_eligible(self):
         """Test that member_value returns 0 when not eligible."""
@@ -214,7 +220,7 @@ class TestIlHbwd(TestCase):
         result = calculator.member_value(member)
 
         # Returns 1 to indicate eligible (value displayed as "Varies" in UI)
-        self.assertEqual(result, 1)
+        self.assertEqual(result, HBWD_ELIGIBLE_VALUE)
 
     def test_member_value_returns_zero_when_not_eligible(self):
         """Test that member_value returns 0 when not eligible."""
@@ -290,7 +296,7 @@ class TestIlBccp(TestCase):
 
         result = calculator.member_value(member)
 
-        self.assertEqual(result, 400)
+        self.assertEqual(result, IBCCP_SCREENING_VALUE)
 
     def test_member_value_returns_zero_when_not_eligible(self):
         """Test that member_value returns 0 when not eligible."""
