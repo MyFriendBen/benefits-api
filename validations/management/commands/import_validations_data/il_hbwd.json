@@ -123,7 +123,7 @@
           "age": 42,
           "has_income": true,
           "income_streams": [
-            { "type": "socialSecurity", "amount": 1200, "frequency": "monthly" },
+            { "type": "sSDisability", "amount": 1200, "frequency": "monthly" },
             { "type": "wages", "amount": 500, "frequency": "monthly" }
           ],
           "insurance": { "none": true }

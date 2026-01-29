@@ -14,8 +14,7 @@ from django.test import TestCase
 from unittest.mock import Mock, MagicMock
 
 # Named constants for benefit values used in tests
-MEDICARE_PART_B_PREMIUM_2025 = 185.0  # Monthly Medicare Part B premium
-MONTHS_PER_YEAR = 12
+MEDICARE_PART_B_ANNUAL_2025 = 2220.0  # Annual Medicare Part B premium ($185/month * 12)
 IBCCP_SCREENING_VALUE = 400  # Average out-of-pocket cost for cancer screening services
 HBWD_ELIGIBLE_VALUE = 1  # Indicates eligible (value displayed as "Varies" in UI)
 
@@ -86,19 +85,20 @@ class TestIlMsp(TestCase):
         self.assertIn(member_dependency.Msp, IlMsp.pe_outputs)
 
     def test_member_value_returns_yearly_benefit(self):
-        """Test that member_value returns yearly benefit (monthly * 12)."""
+        """Test that member_value returns yearly benefit from PolicyEngine."""
         calculator = IlMsp(Mock(), Mock(), Mock())
         calculator._sim = MagicMock()
         calculator.get_member_dependency_value = Mock(return_value=True)
-        calculator.get_member_variable = Mock(return_value=MEDICARE_PART_B_PREMIUM_2025)
+        # PolicyEngine returns annual value when queried with annual period
+        calculator.get_member_variable = Mock(return_value=MEDICARE_PART_B_ANNUAL_2025)
 
         member = Mock()
         member.id = 1
 
         result = calculator.member_value(member)
 
-        # Monthly benefit * 12
-        self.assertEqual(result, int(MEDICARE_PART_B_PREMIUM_2025 * MONTHS_PER_YEAR))
+        # PolicyEngine returns annual benefit directly
+        self.assertEqual(result, int(MEDICARE_PART_B_ANNUAL_2025))
 
     def test_member_value_returns_zero_when_not_eligible(self):
         """Test that member_value returns 0 when not eligible."""

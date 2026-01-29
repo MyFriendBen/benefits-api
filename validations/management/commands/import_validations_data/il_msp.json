@@ -22,7 +22,8 @@
     },
     "expected_results": {
       "program_name": "il_msp",
-      "eligible": true
+      "eligible": true,
+      "value": 2220
     }
   },
   {
@@ -48,7 +49,8 @@
     },
     "expected_results": {
       "program_name": "il_msp",
-      "eligible": true
+      "eligible": true,
+      "value": 2220
     }
   },
   {
@@ -74,7 +76,8 @@
     },
     "expected_results": {
       "program_name": "il_msp",
-      "eligible": true
+      "eligible": true,
+      "value": 2220
     }
   },
   {
@@ -187,7 +190,8 @@
     },
     "expected_results": {
       "program_name": "il_msp",
-      "eligible": true
+      "eligible": true,
+      "value": 4440
     }
   },
   {
@@ -214,7 +218,8 @@
     },
     "expected_results": {
       "program_name": "il_msp",
-      "eligible": true
+      "eligible": true,
+      "value": 2220
     }
   },
   {
@@ -240,7 +245,8 @@
     },
     "expected_results": {
       "program_name": "il_msp",
-      "eligible": true
+      "eligible": true,
+      "value": 2220
     }
   },
   {
@@ -264,7 +270,8 @@
     },
     "expected_results": {
       "program_name": "il_msp",
-      "eligible": true
+      "eligible": true,
+      "value": 2220
     }
   }
 ]

@@ -368,9 +368,7 @@ class IlMsp(PolicyEngineMembersCalculator):
     def member_value(self, member):
         is_eligible = self.get_member_dependency_value(member_dependency.MspEligible, member.id)
         if is_eligible:
-            # msp returns monthly benefit value in USD
-            monthly_benefit = self.get_member_variable(member.id)
-
-            # Convert monthly to yearly
-            return int(monthly_benefit * 12)
+            # msp returns annual benefit value when queried with annual period (e.g., "2025")
+            # PolicyEngine aggregates the monthly premium ($185/month) into annual ($2,220/year)
+            return int(self.get_member_variable(member.id))
         return 0
