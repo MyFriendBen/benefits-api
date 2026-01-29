@@ -627,6 +627,8 @@ class ConfigurationData:
         "featureFlags": {"default": []},
         "defaultLanguage": {"default": "en-us", "[REPLACE_ME]": ""},
         "stateName": {"default": "", "[REPLACE_ME]": ""},
+        # NPS A/B test variant: "floating" | "inline" | "control" (control = don't show)
+        "npsVariant": {"default": "control"},
     }
 
     # Footer contact information
