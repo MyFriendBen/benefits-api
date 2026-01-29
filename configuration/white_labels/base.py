@@ -627,7 +627,12 @@ class ConfigurationData:
         "featureFlags": {"default": []},
         "defaultLanguage": {"default": "en-us", "[REPLACE_ME]": ""},
         "stateName": {"default": "", "[REPLACE_ME]": ""},
-        # NPS A/B test variant: "floating" | "inline" | "off"
+    }
+
+    # A/B test experiments with multi-variant support
+    # Each experiment maps to a variant name (not just on/off like featureFlags)
+    experiments = {
+        # NPS survey variant: "floating" | "inline" | "off"
         "npsVariant": {"default": "off"},
     }
 
