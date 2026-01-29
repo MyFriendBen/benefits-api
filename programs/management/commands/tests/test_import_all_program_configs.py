@@ -125,9 +125,7 @@ class ImportAllProgramConfigsCommandTest(TestCase):
     def test_command_tracks_successful_imports(self):
         """Test that successful imports are recorded in ProgramConfigImport"""
         # This test uses mocking to avoid actually running the import
-        with patch(
-            "programs.management.commands.import_all_program_configs.Command._import_config"
-        ) as mock_import:
+        with patch("programs.management.commands.import_all_program_configs.Command._import_config") as mock_import:
             mock_import.return_value = {
                 "status": "success",
                 "program_name": "test_program",
@@ -165,13 +163,15 @@ class ImportAllProgramConfigsCommandTest(TestCase):
     def _get_command_class():
         """Get the Command class for patching"""
         from programs.management.commands.import_all_program_configs import Command
+
         return Command
 
     def test_file_flag_imports_specific_file(self):
         """Test that --file flag targets a specific file"""
         call_command(
             "import_all_program_configs",
-            "--file", "nonexistent_file.json",
+            "--file",
+            "nonexistent_file.json",
             stdout=self.out,
             stderr=self.err,
         )
