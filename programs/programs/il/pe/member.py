@@ -203,7 +203,8 @@ class IlBccp(PolicyEngineMembersCalculator):
     pe_inputs = [
         member_dependency.IlBccFemaleDependency,
         member_dependency.AgeDependency,
-        member_dependency.IlBccInsuranceEligibleDependency,
+        member_dependency.ReceivesMedicaidDependency,
+        member_dependency.HasBccQualifyingCoverageDependency,
         household_dependency.IlStateCodeDependency,
     ]
 
@@ -252,14 +253,14 @@ class IlFamilyPlanningProgram(PolicyEngineMembersCalculator):
         member_dependency.TaxUnitSpouseDependency,
         household_dependency.IlStateCodeDependency,
         member_dependency.PregnancyDependency,
+        member_dependency.ReceivesMedicaidDependency,
     ]
     pe_outputs = [member_dependency.IlFppEligible]
 
     def member_value(self, member):
         is_eligible = self.get_member_variable(member.id)
-        has_disqualifying_insurance = member.has_insurance_types(("medicaid", "family_planning"), strict=False)
 
-        if has_disqualifying_insurance or not is_eligible:
+        if not is_eligible:
             return 0
 
         # Return 1 if eligible. We display "Varies" for the estimated value in the UI
