@@ -965,8 +965,6 @@ class EligibilitySnapshot(models.Model):
     had_error = models.BooleanField(default=False)
 
 
-# Eligibility results for each specific program per screen. These are
-# aggregated per screen using the EligibilitySnapshot id
 class NPSScore(models.Model):
     eligibility_snapshot = models.OneToOneField(
         EligibilitySnapshot, related_name="nps_score", on_delete=models.CASCADE
@@ -985,6 +983,8 @@ class NPSScore(models.Model):
         ]
 
 
+# Eligibility results for each specific program per screen. These are
+# aggregated per screen using the EligibilitySnapshot id
 class ProgramEligibilitySnapshot(models.Model):
     eligibility_snapshot = models.ForeignKey(
         EligibilitySnapshot, related_name="program_snapshots", on_delete=models.CASCADE
