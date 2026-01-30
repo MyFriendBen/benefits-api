@@ -24,7 +24,6 @@ class TestConnectForHealth(TestCase):
             relationship="headOfHousehold",
             age=60,
             student=False,
-            student_full_time=False,
             pregnant=False,
             unemployed=False,
             worked_in_last_18_mos=True,
