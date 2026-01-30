@@ -279,6 +279,9 @@ class ProgramCategoryDataController(ModelDataController["ProgramCategory"]):
 
 
 class ProgramCategory(models.Model):
+    class Meta:
+        verbose_name_plural = "Program categories"
+
     white_label = models.ForeignKey(
         WhiteLabel,
         related_name="program_categories",

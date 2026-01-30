@@ -107,12 +107,12 @@ INSTALLED_APPS = [
     "simple_history",
     "authentication.apps.AuthConfig",
     "corsheaders",
-    "screener.apps.ScreenerConfig",
-    "programs.apps.ProgramsConfig",
+    "screener.apps.ScreenerConfig",  # Site Settings - keep above configuration
     "configuration.apps.ConfigurationConfig",
-    "integrations.apps.IntegrationsConfig",
+    "programs.apps.ProgramsConfig",
     "translations.apps.TranslationsConfig",
     "validations.apps.ValidationsConfig",
+    "integrations.apps.IntegrationsConfig",  # Keep at bottom
     "rest_framework",
     "rest_framework.authtoken",
     "phonenumber_field",
@@ -383,14 +383,9 @@ UNFOLD = {
                         "link": reverse_lazy("admin:programs_warningmessage_changelist"),
                     },
                     {
-                        "title": _("Configurations"),
-                        "icon": "tune",
-                        "link": reverse_lazy("admin:configuration_configuration_changelist"),
-                    },
-                    {
-                        "title": _("Translation Overrides"),
-                        "icon": "letter_switch",
-                        "link": reverse_lazy("admin:programs_translationoverride_changelist"),
+                        "title": _("Feature Flags"),
+                        "icon": "toggle_on",
+                        "link": reverse_lazy("admin:screener_whitelabelfeatures_changelist"),
                     },
                 ],
             },
