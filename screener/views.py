@@ -26,6 +26,7 @@ from screener.serializers import (
     MessageSerializer,
     ResultsSerializer,
     WarningMessageSerializer,
+    NPSScoreSerializer,
 )
 from programs.programs.policyengine.policy_engine import calc_pe_eligibility
 from programs.util import DependencyError, Dependencies
@@ -594,3 +595,18 @@ def urgent_need_results(screen: Screen, data):
             eligible_urgent_needs.append(need_data)
 
     return eligible_urgent_needs
+
+
+class NPSScoreView(views.APIView):
+    """
+    API endpoint for submitting NPS (Net Promoter Score) feedback.
+    """
+
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = NPSScoreSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"status": "success"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

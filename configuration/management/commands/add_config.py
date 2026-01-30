@@ -52,6 +52,13 @@ class Command(BaseCommand):
                 defaults={"data": WhiteLabelData.referrer_data, "active": True},
             )
 
+            # Save experiments to database
+            Configuration.objects.update_or_create(
+                name="experiments",
+                white_label=white_label,
+                defaults={"data": WhiteLabelData.experiments, "active": True},
+            )
+
             # Save footer_data to database
             Configuration.objects.update_or_create(
                 name="footer_data",

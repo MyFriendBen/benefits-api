@@ -629,6 +629,13 @@ class ConfigurationData:
         "stateName": {"default": "", "[REPLACE_ME]": ""},
     }
 
+    # A/B test experiments with multi-variant support
+    # Each experiment maps to a variant name (not just on/off like featureFlags)
+    experiments = {
+        # NPS survey variant: "floating" | "inline" | "off"
+        "npsVariant": {"default": "off"},
+    }
+
     # Footer contact information
     footer_data = {
         "email": "hello@myfriendben.org",

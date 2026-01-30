@@ -11,4 +11,5 @@ urlpatterns = [
     path("", include(router.urls)),
     path("api-auth/", include("rest_framework.urls", namespace="rest_framework")),
     path("eligibility/<id>", views.EligibilityTranslationView.as_view(), name="translated screen eligibility endpoint"),
+    path("api/nps/", views.NPSScoreView.as_view(), name="nps-score"),
 ]
