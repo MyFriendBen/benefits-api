@@ -11,7 +11,7 @@ class NavigatorAPISerializer(serializers.ModelSerializer):
 
 class ProgramSerializerMeta:
     model = Program
-    fields = ("id", "name", "website_description", "apply_button_link")
+    fields = ("id", "name", "website_description", "learn_more_link")
 
 
 class UrgentNeedSerializerMeta:
@@ -22,7 +22,7 @@ class UrgentNeedSerializerMeta:
 class ProgramSerializer(serializers.ModelSerializer):
     name = ModelTranslationSerializer()
     website_description = ModelTranslationSerializer()
-    apply_button_link = ModelTranslationSerializer()
+    learn_more_link = ModelTranslationSerializer()
 
     class Meta(ProgramSerializerMeta):
         pass
@@ -41,7 +41,7 @@ class ProgramSerializerWithCategory(ProgramSerializer):
     category = ModelTranslationSerializer(source="category.name")
 
     class Meta(ProgramSerializerMeta):
-        fields = ("id", "name", "website_description", "category", "apply_button_link")
+        fields = ("id", "name", "website_description", "category", "learn_more_link")
 
 
 class ProgramCategorySerializer(serializers.ModelSerializer):
