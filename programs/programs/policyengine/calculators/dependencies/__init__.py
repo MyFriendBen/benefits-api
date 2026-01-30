@@ -9,4 +9,6 @@ irs_gross_income = [
     member.RentalIncomeDependency,
     member.PensionIncomeDependency,
     member.SocialSecurityIncomeDependency,
+    member.InvestmentIncomeDependency,
+    member.UnemploymentIncomeDependency,
 ]
