@@ -64,7 +64,7 @@ class Command(BaseCommand):
     def _validate_against_schema(self, test_cases: List[Dict[str, Any]]) -> None:
         """Validate test cases against JSON schema"""
         # Load schema from the same directory as the command
-        schema_path = Path(__file__).parent / "test_case_schema.json"
+        schema_path = Path(__file__).parent / "import_validations" / "test_case_schema.json"
         with open(schema_path, "r") as f:
             schema = json.load(f)
 
