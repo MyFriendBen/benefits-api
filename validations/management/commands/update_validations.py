@@ -81,6 +81,8 @@ class Command(BaseCommand):
                 screen = Screen.objects.get(uuid=screen_uuid)
             except Screen.DoesNotExist:
                 raise CommandError(f"Screen with UUID '{screen_uuid}' does not exist")
+            except ValueError:
+                raise CommandError(f"Malformed UUID '{screen_uuid}'")
 
             if not Validation.objects.filter(screen=screen, program_name=program_name).exists():
                 raise CommandError(f"Validation for screen '{screen_uuid}' and program '{program_name}' does not exist")
@@ -157,7 +159,7 @@ class Command(BaseCommand):
             if "value" in update and validation.value != Decimal(str(update["value"])):
                 self.stdout.write(f"   value: ${validation.value} → ${update['value']}")
             if "notes" in update and validation.notes != update["notes"]:
-                self.stdout.write(f"   notes: would be updated")
+                self.stdout.write("   notes: would be updated")
 
         self.stdout.write("\n" + "=" * 70)
 
