@@ -1,0 +1,26 @@
+{
+  "description": "Example validation updates - demonstrates the update_validations command format",
+  "updates": [
+    {
+      "screen_uuid": "12345678-1234-1234-1234-123456789abc",
+      "program_name": "snap",
+      "eligible": false,
+      "value": 0,
+      "_reason": "Income was miscalculated in original import - household exceeds 130% FPL"
+    },
+    {
+      "screen_uuid": "87654321-4321-4321-4321-cba987654321",
+      "program_name": "tx_aca",
+      "eligible": true,
+      "value": 150.00,
+      "notes": "Eligible for silver plan with APTC",
+      "_reason": "Policy update: expanded eligibility for households between 100-150% FPL"
+    },
+    {
+      "screen_uuid": "abcdef12-3456-7890-abcd-ef1234567890",
+      "program_name": "lifeline",
+      "notes": "Updated notes to clarify eligibility pathway",
+      "_reason": "Clarification only - no change to eligibility or value"
+    }
+  ]
+}
