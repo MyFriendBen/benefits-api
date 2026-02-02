@@ -1125,6 +1125,9 @@ class UrgentNeedDataController(ModelDataController["UrgentNeed"]):
 
 
 class County(models.Model):
+    class Meta:
+        verbose_name_plural = "Counties"
+
     white_label = models.ForeignKey(
         WhiteLabel,
         related_name="counties",

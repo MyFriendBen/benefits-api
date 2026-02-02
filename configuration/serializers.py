@@ -6,12 +6,12 @@ from .fields import OrderedJSONField
 class ConfigurationSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField()
     data = OrderedJSONField()
-    features = serializers.SerializerMethodField()
+    feature_flags = serializers.SerializerMethodField()
 
     class Meta:
         model = Configuration
         fields = "__all__"
 
-    def get_features(self, obj):
+    def get_feature_flags(self, obj):
         """Return feature flags from the related WhiteLabel."""
-        return obj.white_label.features if obj.white_label else {}
+        return obj.white_label.feature_flags if obj.white_label else {}

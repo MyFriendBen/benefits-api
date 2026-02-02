@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.urls import reverse
 from authentication.admin import SecureAdmin
 from .models import WhiteLabel
 
@@ -7,62 +8,62 @@ class WhiteLabelAdmin(SecureAdmin):
     search_fields = ("name",)
     list_display = ("name", "code", "state_code")
     list_filter = ("state_code",)
-    exclude = ("features",)
+    exclude = ("feature_flags",)
 
 
 # Proxy model for separate Feature Flags admin section
-class WhiteLabelFeatures(WhiteLabel):
+class FeatureFlags(WhiteLabel):
     class Meta:
         proxy = True
         verbose_name = "Feature Flag"
         verbose_name_plural = "Feature Flags"
 
 
-class WhiteLabelFeaturesAdmin(SecureAdmin):
-    list_display = ("name", "code", "get_features_summary")
+class FeatureFlagsAdmin(SecureAdmin):
+    list_display = ("name", "code", "get_feature_flags_summary")
     list_filter = ("state_code",)
     search_fields = ("name", "code")
     readonly_fields = ("name",)
     fields = ("name",)
-    change_form_template = "admin/screener/whitelabelfeatures/change_form.html"
+    change_form_template = "admin/screener/featureflags/change_form.html"
 
     def change_view(self, request, object_id, form_url="", extra_context=None):
         obj = self.get_object(request, object_id)
 
         # Build feature flags context for template
-        feature_flags = []
+        flags_for_template = []
+        feature_flags = obj.feature_flags or {}
         for flag_key, flag_config in WhiteLabel.FEATURE_FLAGS.items():
-            enabled = obj.features.get(flag_key, flag_config["default"]) if obj.features else flag_config["default"]
-            feature_flags.append({
+            flags_for_template.append({
                 "key": flag_key,
                 "label": flag_config["label"],
                 "description": flag_config["description"],
-                "enabled": enabled,
+                "enabled": feature_flags.get(flag_key, flag_config["default"]),
             })
 
         extra_context = extra_context or {}
-        extra_context["feature_flags"] = feature_flags
-        extra_context["whitelabel_admin_url"] = f"/admin/screener/whitelabel/{object_id}/change/"
+        extra_context["feature_flags"] = flags_for_template
+        extra_context["whitelabel_admin_url"] = reverse("admin:screener_whitelabel_change", args=[object_id])
         return super().change_view(request, object_id, form_url, extra_context)
 
     def save_model(self, request, obj, form, change):
-        # Build features dict from checkboxes in POST data
-        features = {}
+        # Build feature_flags dict from checkboxes in POST data
+        feature_flags = {}
         for flag_key in WhiteLabel.FEATURE_FLAGS:
-            features[flag_key] = flag_key in request.POST
-        obj.features = features
+            feature_flags[flag_key] = flag_key in request.POST
+        obj.feature_flags = feature_flags
         super().save_model(request, obj, form, change)
 
     def has_add_permission(self, request):
         return False
 
-    def get_features_summary(self, obj):
+    def get_feature_flags_summary(self, obj):
         """Show a summary of enabled features using human-readable labels."""
-        if not obj.features:
+        if not obj.feature_flags:
             return "No features configured"
         enabled = []
         disabled = []
-        for key, value in obj.features.items():
+        for key, value in obj.feature_flags.items():
             label = WhiteLabel.FEATURE_FLAGS.get(key, {}).get("label", key)
             if value:
                 enabled.append(label)
@@ -75,8 +76,8 @@ class WhiteLabelFeaturesAdmin(SecureAdmin):
             parts.append(f"✗ {', '.join(disabled)}")
         return " | ".join(parts) if parts else "No features configured"
 
-    get_features_summary.short_description = "Features"
+    get_feature_flags_summary.short_description = "Features"
 
 
 admin.site.register(WhiteLabel, WhiteLabelAdmin)
-admin.site.register(WhiteLabelFeatures, WhiteLabelFeaturesAdmin)
+admin.site.register(FeatureFlags, FeatureFlagsAdmin)
