@@ -83,9 +83,7 @@ class Command(BaseCommand):
                 raise CommandError(f"Screen with UUID '{screen_uuid}' does not exist")
 
             if not Validation.objects.filter(screen=screen, program_name=program_name).exists():
-                raise CommandError(
-                    f"Validation for screen '{screen_uuid}' and program '{program_name}' does not exist"
-                )
+                raise CommandError(f"Validation for screen '{screen_uuid}' and program '{program_name}' does not exist")
 
     @transaction.atomic
     def _process_updates(self, update_data: Dict[str, Any]) -> List[Dict[str, Any]]:
