@@ -22,8 +22,8 @@ class WhiteLabelFeaturesAdmin(SecureAdmin):
     list_display = ("name", "code", "get_features_summary")
     list_filter = ("state_code",)
     search_fields = ("name", "code")
-    readonly_fields = ("name", "code", "state_code")
-    fields = ("name", "code", "state_code")
+    readonly_fields = ("name",)
+    fields = ("name",)
     change_form_template = "admin/screener/whitelabelfeatures/change_form.html"
 
     def change_view(self, request, object_id, form_url="", extra_context=None):
@@ -42,6 +42,7 @@ class WhiteLabelFeaturesAdmin(SecureAdmin):
 
         extra_context = extra_context or {}
         extra_context["feature_flags"] = feature_flags
+        extra_context["whitelabel_admin_url"] = f"/admin/screener/whitelabel/{object_id}/change/"
         return super().change_view(request, object_id, form_url, extra_context)
 
     def save_model(self, request, obj, form, change):

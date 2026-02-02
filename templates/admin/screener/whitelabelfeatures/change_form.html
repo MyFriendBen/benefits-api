@@ -78,6 +78,15 @@
 </style>
 {% endblock %}
 
+{% block field_sets %}
+<fieldset class="module aligned">
+  <h2 style="font-size: 1.5rem;">{{ original.name }}</h2>
+  <p style="margin: 0; padding: 0 0 10px 15px;">
+    <a href="{{ whitelabel_admin_url }}" style="font-size: 0.75rem; color: var(--body-quiet-color, #888);">Edit White Label &rarr;</a>
+  </p>
+</fieldset>
+{% endblock %}
+
 {% block after_related_objects %}
 <fieldset class="module aligned">
   <h2>Feature Flags</h2>
