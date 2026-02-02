@@ -1,5 +1,4 @@
 from django.contrib import admin
-from django import forms
 from authentication.admin import SecureAdmin
 from .models import WhiteLabel
 
@@ -19,35 +18,55 @@ class WhiteLabelFeatures(WhiteLabel):
         verbose_name_plural = "Feature Flags"
 
 
-class WhiteLabelFeaturesForm(forms.ModelForm):
-    class Meta:
-        model = WhiteLabelFeatures
-        fields = ("features",)
-        widgets = {
-            "features": forms.Textarea(attrs={"rows": 15, "cols": 80}),
-        }
-        help_texts = {
-            "features": 'JSON object for feature flags. Example: {"show_eligible_member_tags": true, "show_nps_survey": false}',
-        }
-
-
 class WhiteLabelFeaturesAdmin(SecureAdmin):
-    form = WhiteLabelFeaturesForm
     list_display = ("name", "code", "get_features_summary")
     list_filter = ("state_code",)
     search_fields = ("name", "code")
     readonly_fields = ("name", "code", "state_code")
-    fieldsets = (
-        ("White Label", {"fields": ("name", "code", "state_code"), "description": "Read-only white label information."}),
-        ("Feature Flags", {"fields": ("features",), "description": "Configure feature flags for this white label."}),
-    )
+    fields = ("name", "code", "state_code")
+    change_form_template = "admin/screener/whitelabelfeatures/change_form.html"
+
+    def change_view(self, request, object_id, form_url="", extra_context=None):
+        obj = self.get_object(request, object_id)
+
+        # Build feature flags context for template
+        feature_flags = []
+        for flag_key, flag_config in WhiteLabel.FEATURE_FLAGS.items():
+            enabled = obj.features.get(flag_key, flag_config["default"]) if obj.features else flag_config["default"]
+            feature_flags.append({
+                "key": flag_key,
+                "label": flag_config["label"],
+                "description": flag_config["description"],
+                "enabled": enabled,
+            })
+
+        extra_context = extra_context or {}
+        extra_context["feature_flags"] = feature_flags
+        return super().change_view(request, object_id, form_url, extra_context)
+
+    def save_model(self, request, obj, form, change):
+        # Build features dict from checkboxes in POST data
+        features = {}
+        for flag_key in WhiteLabel.FEATURE_FLAGS:
+            features[flag_key] = flag_key in request.POST
+        obj.features = features
+        super().save_model(request, obj, form, change)
+
+    def has_add_permission(self, request):
+        return False
 
     def get_features_summary(self, obj):
-        """Show a summary of enabled features."""
+        """Show a summary of enabled features using human-readable labels."""
         if not obj.features:
             return "No features configured"
-        enabled = [k for k, v in obj.features.items() if v is True]
-        disabled = [k for k, v in obj.features.items() if v is False]
+        enabled = []
+        disabled = []
+        for key, value in obj.features.items():
+            label = WhiteLabel.FEATURE_FLAGS.get(key, {}).get("label", key)
+            if value:
+                enabled.append(label)
+            else:
+                disabled.append(label)
         parts = []
         if enabled:
             parts.append(f"✓ {', '.join(enabled)}")

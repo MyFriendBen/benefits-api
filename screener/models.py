@@ -10,6 +10,19 @@ from django.conf import settings
 
 
 class WhiteLabel(models.Model):
+    FEATURE_FLAGS = {
+        "nps_survey": {
+            "label": "NPS Survey",
+            "description": "Show Net Promoter Score survey to users after completing a screen.",
+            "default": False,
+        },
+        "eligibility_tags": {
+            "label": "Eligibility Tags",
+            "description": "Display member-level eligibility status tags on program cards in results.",
+            "default": False,
+        },
+    }
+
     name = models.CharField(max_length=120, blank=False, null=False)
     code = models.CharField(max_length=32, blank=False, null=False)
     state_code = models.CharField(max_length=8, blank=True, null=True)
