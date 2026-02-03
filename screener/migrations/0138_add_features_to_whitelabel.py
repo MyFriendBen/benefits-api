@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name="whitelabel",
-            name="features",
+            name="feature_flags",
             field=models.JSONField(blank=True, default=dict),
         ),
     ]
