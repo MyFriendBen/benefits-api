@@ -134,9 +134,10 @@ Each member in the `household_members` array should include:
 
 **Income Types:**
 - `"wages"`, `"selfEmployment"`, `"sSI"`, `"alimony"`, `"cashAssistance"`
+- `"sSDisability"`, `"sSRetirement"`, `"sSSurvivor"`, `"sSDependent"` (Social Security types)
 - `"childSupport"`, `"unemployment"`, `"workersCompensation"`
-- `"pension"`, `"socialSecurity"`, `"veteransBenefits"`
-- `"rentalIncome"`, `"investment"`, `"other"`
+- `"pension"`, `"veteran"`, `"veteransBenefits"`
+- `"rentalIncome"`, `"rental"`, `"investment"`, `"deferredComp"`, `"other"`
 
 **Frequency Values:**
 - `"monthly"`, `"weekly"`, `"biweekly"`, `"semimonthly"`, `"yearly"`, `"hourly"`

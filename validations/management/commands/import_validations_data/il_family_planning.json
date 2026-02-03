@@ -1,0 +1,218 @@
+[
+  {
+    "notes": "IL HFS FPP - Eligible: Non-pregnant woman 25 with income below 200% FPL, no disqualifying insurance",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 25,
+          "pregnant": false,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 2000, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": [
+      { "program_name": "il_hfs_fpp", "eligible": true, "value": 1 },
+      { "program_name": "il_fppe", "eligible": true, "value": 1 }
+    ]
+  },
+  {
+    "notes": "IL Family Planning - Eligible: Man 30 with low income seeking family planning",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 30,
+          "pregnant": false,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 1800, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": [
+      { "program_name": "il_hfs_fpp", "eligible": true, "value": 1 },
+      { "program_name": "il_fppe", "eligible": true, "value": 1 }
+    ]
+  },
+  {
+    "notes": "IL Family Planning - Ineligible: Has Medicaid (disqualifying insurance)",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 28,
+          "pregnant": false,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 1500, "frequency": "monthly" }
+          ],
+          "insurance": { "medicaid": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": [
+      { "program_name": "il_hfs_fpp", "eligible": false },
+      { "program_name": "il_fppe", "eligible": false }
+    ]
+  },
+  {
+    "notes": "IL Family Planning - Ineligible: Has family planning coverage already",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 25,
+          "pregnant": false,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 1600, "frequency": "monthly" }
+          ],
+          "insurance": { "family_planning": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": [
+      { "program_name": "il_hfs_fpp", "eligible": false },
+      { "program_name": "il_fppe", "eligible": false }
+    ]
+  },
+  {
+    "notes": "IL Family Planning - Ineligible: Pregnant (family planning not for pregnant individuals)",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 26,
+          "pregnant": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 1800, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": [
+      { "program_name": "il_hfs_fpp", "eligible": false },
+      { "program_name": "il_fppe", "eligible": false }
+    ]
+  },
+  {
+    "notes": "IL Family Planning - Ineligible: Income above 200% FPL",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 30,
+          "pregnant": false,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 4000, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": [
+      { "program_name": "il_hfs_fpp", "eligible": false },
+      { "program_name": "il_fppe", "eligible": false }
+    ]
+  },
+  {
+    "notes": "IL Family Planning - Eligible: Young adult 19 with zero income",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 19,
+          "pregnant": false,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": [
+      { "program_name": "il_hfs_fpp", "eligible": true, "value": 1 },
+      { "program_name": "il_fppe", "eligible": true, "value": 1 }
+    ]
+  },
+  {
+    "notes": "IL Family Planning - Eligible: Couple with combined household income below limit",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 2,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 28,
+          "pregnant": false,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 1500, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "spouse",
+          "age": 26,
+          "pregnant": false,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 1200, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": [
+      { "program_name": "il_hfs_fpp", "eligible": true, "value": 2 },
+      { "program_name": "il_fppe", "eligible": true, "value": 2 }
+    ]
+  }
+]
