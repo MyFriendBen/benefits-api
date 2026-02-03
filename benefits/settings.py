@@ -385,7 +385,7 @@ UNFOLD = {
                     {
                         "title": _("Feature Flags"),
                         "icon": "toggle_on",
-                        "link": reverse_lazy("admin:screener_whitelabelfeatures_changelist"),
+                        "link": reverse_lazy("admin:screener_featureflags_changelist"),
                     },
                 ],
             },

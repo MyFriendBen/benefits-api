@@ -33,6 +33,16 @@
     color: var(--body-quiet-color, #999);
     margin-top: 4px;
   }
+  .feature-flag-scope {
+    display: inline-block;
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    margin-left: 8px;
+    background-color: var(--darkened-bg, #333);
+    color: var(--body-quiet-color, #999);
+  }
   .toggle-switch {
     position: relative;
     display: inline-block;
@@ -107,7 +117,10 @@
           </label>
         </td>
         <td>
-          <div class="feature-flag-label">{{ flag.label }}</div>
+          <div class="feature-flag-label">
+            {{ flag.label }}
+            <span class="feature-flag-scope">{{ flag.scope }}</span>
+          </div>
           <div class="feature-flag-description">{{ flag.description }}</div>
         </td>
       </tr>
