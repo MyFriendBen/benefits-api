@@ -1,5 +1,7 @@
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
+from enum import Enum
+from typing import Literal, Optional
 from django.db import models
 from decimal import Decimal
 import uuid
@@ -9,18 +11,26 @@ from programs.util import Dependencies
 from django.conf import settings
 
 
+@dataclass(frozen=True)
+class FeatureFlagConfig:
+    label: str
+    description: str
+    scope: Literal["frontend", "backend", "both"]
+    default: bool = False
+
+
 class WhiteLabel(models.Model):
-    FEATURE_FLAGS = {
-        "nps_survey": {
-            "label": "NPS Survey",
-            "description": "Show Net Promoter Score survey to users after completing a screen.",
-            "default": False,
-        },
-        "eligibility_tags": {
-            "label": "Eligibility Tags",
-            "description": "Display member-level eligibility status tags on program cards in results.",
-            "default": False,
-        },
+    FEATURE_FLAGS: dict[str, FeatureFlagConfig] = {
+        "nps_survey": FeatureFlagConfig(
+            label="NPS Survey",
+            description="Show Net Promoter Score survey to users after completing a screen.",
+            scope="frontend",
+        ),
+        "eligibility_tags": FeatureFlagConfig(
+            label="Eligibility Tags",
+            description="Display member-level eligibility status tags on program cards in results.",
+            scope="frontend",
+        ),
     }
 
     name = models.CharField(max_length=120, blank=False, null=False)

@@ -36,9 +36,10 @@ class FeatureFlagsAdmin(SecureAdmin):
         for flag_key, flag_config in WhiteLabel.FEATURE_FLAGS.items():
             flags_for_template.append({
                 "key": flag_key,
-                "label": flag_config["label"],
-                "description": flag_config["description"],
-                "enabled": feature_flags.get(flag_key, flag_config["default"]),
+                "label": flag_config.label,
+                "description": flag_config.description,
+                "scope": flag_config.scope,
+                "enabled": feature_flags.get(flag_key, flag_config.default),
             })
 
         extra_context = extra_context or {}
@@ -64,7 +65,8 @@ class FeatureFlagsAdmin(SecureAdmin):
         enabled = []
         disabled = []
         for key, value in obj.feature_flags.items():
-            label = WhiteLabel.FEATURE_FLAGS.get(key, {}).get("label", key)
+            flag_config = WhiteLabel.FEATURE_FLAGS.get(key)
+            label = flag_config.label if flag_config else key
             if value:
                 enabled.append(label)
             else:
