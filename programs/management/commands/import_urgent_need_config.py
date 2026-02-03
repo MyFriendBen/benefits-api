@@ -1,0 +1,418 @@
+import argparse
+import json
+from typing import Any
+
+from django.conf import settings
+from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
+
+from integrations.clients.google_translate import Translate
+from programs.models import (
+    CategoryIconName,
+    County,
+    ExpenseType,
+    FederalPoveryLimit,
+    UrgentNeed,
+    UrgentNeedCategory,
+    UrgentNeedFunction,
+    UrgentNeedType,
+)
+from programs.programs.urgent_needs import urgent_need_functions
+from screener.models import WhiteLabel
+from translations.models import Translation
+
+
+def truncate(text: str, max_length: int = 50) -> str:
+    """Truncate text with ellipsis if it exceeds max_length."""
+    return f"{text[:max_length]}..." if len(text) > max_length else text
+
+
+class Command(BaseCommand):
+    help = """
+    Import an Urgent Need from a JSON configuration file.
+
+    This mirrors the import_program_config flow, creating/associating:
+    - UrgentNeed with translations
+    - UrgentNeedType (category_type) with translation and icon
+    - UrgentNeedCategory (type_short)
+    - Functions, counties, expense filters, FPL year
+
+        Usage:
+            python manage.py import_urgent_need_config <path/to/config.json>
+            python manage.py import_urgent_need_config <path/to/config.json> --dry-run
+            python manage.py import_urgent_need_config <path/to/config.json> --override
+    """
+
+    def add_arguments(self, parser: argparse.ArgumentParser) -> None:
+        parser.add_argument(
+            "config_file",
+            type=argparse.FileType("r", encoding="utf-8"),
+            help="Path to the JSON configuration file",
+        )
+        parser.add_argument(
+            "--dry-run",
+            action="store_true",
+            help="Print what would be created without making any changes",
+        )
+        parser.add_argument(
+            "--override",
+            action="store_true",
+            help="Update an existing Urgent Need if it already exists",
+        )
+
+    def handle(self, *args: Any, **options: Any) -> None:
+        config_file = options["config_file"]
+        dry_run = options.get("dry_run", False)
+        override = options.get("override", False)
+
+        try:
+            config = json.load(config_file)
+        except json.JSONDecodeError as e:
+            raise CommandError(f"Invalid JSON file: {e}")
+
+        self._validate_config(config)
+
+        white_label_code = config["white_label"]["code"]
+        need_config = config["need"]
+        external_name = need_config["external_name"]
+
+        # Verify white label exists
+        try:
+            white_label = WhiteLabel.objects.get(code=white_label_code)
+        except WhiteLabel.DoesNotExist:
+            raise CommandError(f"WhiteLabel with code '{white_label_code}' not found")
+
+        existing_need = UrgentNeed.objects.filter(external_name=external_name).first()
+
+        if existing_need and not override:
+            self.stdout.write(
+                self.style.WARNING(
+                    f"Urgent Need '{external_name}' already exists (ID: {existing_need.id}). "
+                    f"Use --override to update it."
+                )
+            )
+            return
+
+        if dry_run:
+            self._print_dry_run_report(config, white_label_code, external_name)
+            return
+
+        with transaction.atomic():
+            need = (
+                existing_need
+                if existing_need
+                else UrgentNeed.objects.new_urgent_need(
+                    white_label=white_label_code, name=external_name, phone_number=None
+                )
+            )
+
+            self.stdout.write(self.style.SUCCESS(f"\n[Urgent need: {external_name}]"))
+            self.stdout.write(f"White Label: {white_label_code}\n")
+
+            # Clear relationships if overriding
+            if existing_need:
+                need.type_short.clear()
+                need.functions.clear()
+                need.counties.clear()
+                need.required_expense_types.clear()
+
+            self._import_need(need, white_label, need_config)
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"\n✓ Successfully {'updated' if existing_need else 'created'} urgent need: {external_name} "
+                    f"(ID: {need.id})\n"
+                )
+            )
+
+    # --------------------------------------------------------------------------------------
+    # Validation & Dry Run
+    # --------------------------------------------------------------------------------------
+    def _validate_config(self, config: dict[str, Any]) -> None:
+        required_top = ["white_label", "need"]
+        for field in required_top:
+            if field not in config:
+                raise CommandError(f"Missing required field: {field}")
+
+        if "code" not in config["white_label"]:
+            raise CommandError("Missing required field 'white_label.code'")
+
+        need = config["need"]
+        required_need = [
+            "external_name",
+            "category_type",
+            "type_short",
+            "translations",
+        ]
+        for field in required_need:
+            if field not in need:
+                raise CommandError(f"Missing required field 'need.{field}'")
+
+        translations = need["translations"]
+        required_translations = [
+            "name",
+            "description",
+            "link",
+            "warning",
+            "website_description",
+        ]
+        for field in required_translations:
+            if field not in translations:
+                raise CommandError(f"Missing required translation 'translations.{field}'")
+
+        if not isinstance(need.get("type_short", []), list) or len(need["type_short"]) == 0:
+            raise CommandError("'need.type_short' must be a non-empty array")
+
+        functions = need.get("functions", [])
+        if functions and not isinstance(functions, list):
+            raise CommandError("'need.functions' must be an array if provided")
+
+        category_type = need["category_type"]
+        if "external_name" not in category_type:
+            raise CommandError("Missing required field 'need.category_type.external_name'")
+
+    def _print_dry_run_report(self, config: dict[str, Any], white_label_code: str, external_name: str) -> None:
+        self.stdout.write(self.style.WARNING("\n=== DRY RUN MODE ==="))
+        self.stdout.write("No changes will be made to the database.\n")
+
+        need = config["need"]
+        translations = need["translations"]
+        category_type = need["category_type"]
+
+        self.stdout.write(self.style.SUCCESS("White Label:"))
+        self.stdout.write(f"  code: {white_label_code}\n")
+
+        self.stdout.write(self.style.SUCCESS("Urgent need:"))
+        self.stdout.write(f"  external_name: {external_name}")
+        self.stdout.write(f"  type_short: {', '.join(need['type_short'])}")
+        if need.get("functions"):
+            self.stdout.write(f"  functions: {', '.join(need['functions'])}")
+        if need.get("counties"):
+            self.stdout.write(f"  counties: {', '.join(need['counties'])}")
+        if need.get("required_expense_types"):
+            self.stdout.write(f"  required_expense_types: {', '.join(need['required_expense_types'])}")
+        if need.get("fpl"):
+            self.stdout.write(f"  fpl: {need['fpl'].get('year', 'N/A')} ({need['fpl'].get('period', 'N/A')})")
+        self.stdout.write(f"  active: {need.get('active', True)}")
+        self.stdout.write(f"  low_confidence: {need.get('low_confidence', False)}")
+        self.stdout.write(f"  show_on_current_benefits: {need.get('show_on_current_benefits', True)}")
+
+        self.stdout.write(self.style.SUCCESS("\nTranslations:"))
+        for key, value in translations.items():
+            self.stdout.write(f"  {key}: {truncate(value)}")
+
+        self.stdout.write(self.style.SUCCESS("\nCategory Type:"))
+        self.stdout.write(f"  external_name: {category_type['external_name']}")
+        if category_type.get("name"):
+            self.stdout.write(f"  name: {truncate(category_type['name'])}")
+        if category_type.get("icon"):
+            self.stdout.write(f"  icon: {category_type['icon']}")
+
+        self.stdout.write(self.style.WARNING("\n=== END DRY RUN ===\n"))
+
+    # --------------------------------------------------------------------------------------
+    # Import helpers
+    # --------------------------------------------------------------------------------------
+    def _import_need(self, need: UrgentNeed, white_label: WhiteLabel, config: dict[str, Any]) -> UrgentNeed:
+        translations = config.get("translations", {})
+
+        # Basic flags and phone
+        for field, default in [
+            ("active", True),
+            ("low_confidence", False),
+            ("show_on_current_benefits", True),
+        ]:
+            setattr(need, field, config.get(field, default))
+
+        if "phone_number" in config:
+            need.phone_number = config.get("phone_number") or None
+
+        # FPL year
+        if fpl_data := config.get("fpl"):
+            year = fpl_data.get("year")
+            period = fpl_data.get("period", year)
+            if year is None:
+                raise CommandError("If 'fpl' is provided, it must include 'year'")
+            fpl_obj, _ = FederalPoveryLimit.objects.get_or_create(year=year, defaults={"period": period})
+            # ensure period is current
+            fpl_obj.period = period
+            fpl_obj.save()
+            need.year = fpl_obj
+
+        # Category type (UrgentNeedType)
+        category_type = self._get_or_create_category_type(white_label, config["category_type"])
+        need.category_type = category_type
+
+        # type_short categories
+        self._set_categories(need, config["type_short"])
+
+        # Functions
+        self._set_functions(need, config.get("functions", []))
+
+        # Counties (optional)
+        self._set_counties(need, white_label, config.get("counties", []))
+
+        # Expense filters (optional)
+        self._set_expense_filters(need, config.get("required_expense_types", []))
+
+        need.white_label = white_label
+        need.save()
+
+        # Translations for need
+        self._import_need_translations(need, translations)
+
+        # Optional translation for category type name
+        if name := config.get("category_type", {}).get("name"):
+            self._bulk_update_entity_translations(
+                category_type,
+                {"name": name},
+                "category_type",
+                UrgentNeedType.objects.translated_fields,
+            )
+
+        return need
+
+    def _get_or_create_category_type(self, white_label: WhiteLabel, config: dict[str, Any]) -> UrgentNeedType:
+        external_name = config["external_name"]
+        icon_name = config.get("icon")
+
+        category_type = UrgentNeedType.objects.filter(external_name=external_name).first()
+        if not category_type:
+            # Create icon if provided
+            icon = None
+            if icon_name:
+                icon, _ = CategoryIconName.objects.get_or_create(name=icon_name)
+            category_type = UrgentNeedType.objects.new_urgent_need_type(
+                white_label=white_label.code, external_name=external_name, icon=icon if icon else None
+            )
+            if icon:
+                category_type.icon = icon
+        else:
+            # Ensure icon set if provided
+            if icon_name:
+                icon, _ = CategoryIconName.objects.get_or_create(name=icon_name)
+                category_type.icon = icon
+            category_type.white_label = white_label
+
+        category_type.save()
+        return category_type
+
+    def _set_categories(self, need: UrgentNeed, categories: list[str]) -> None:
+        category_objs = []
+        for name in categories:
+            obj, _ = UrgentNeedCategory.objects.get_or_create(name=name)
+            category_objs.append(obj)
+        need.type_short.set(category_objs)
+        self.stdout.write(f"  Categories: {', '.join([c.name for c in category_objs])}")
+
+    def _set_functions(self, need: UrgentNeed, functions: list[str]) -> None:
+        function_objs = []
+        for func_name in functions:
+            if func_name not in urgent_need_functions:
+                raise CommandError(f"Function '{func_name}' is not registered in urgent_need_functions")
+            func_obj, _ = UrgentNeedFunction.objects.get_or_create(name=func_name)
+            function_objs.append(func_obj)
+
+        if function_objs:
+            need.functions.set(function_objs)
+            self.stdout.write(f"  Functions: {', '.join([f.name for f in function_objs])}")
+
+    def _set_counties(self, need: UrgentNeed, white_label: WhiteLabel, counties: list[str]) -> None:
+        if not counties:
+            return
+        county_objs = []
+        for county_name in counties:
+            obj, _ = County.objects.get_or_create(name=county_name, white_label=white_label)
+            county_objs.append(obj)
+        need.counties.set(county_objs)
+        self.stdout.write(f"  Counties: {', '.join([c.name for c in county_objs])}")
+
+    def _set_expense_filters(self, need: UrgentNeed, expense_types: list[str]) -> None:
+        if not expense_types:
+            return
+        expense_objs = []
+        for expense in expense_types:
+            obj, _ = ExpenseType.objects.get_or_create(name=expense)
+            expense_objs.append(obj)
+        need.required_expense_types.set(expense_objs)
+        self.stdout.write(f"  Required expense types: {', '.join([e.name for e in expense_objs])}")
+
+    def _import_need_translations(self, need: UrgentNeed, translations: dict[str, str]) -> None:
+        translated_fields = UrgentNeed.objects.translated_fields
+
+        # Map missing optional translation
+        prepared = {field: translations.get(field, "") for field in translated_fields}
+        self._bulk_update_entity_translations(need, prepared, "urgent_need", translated_fields)
+
+    # --------------------------------------------------------------------------------------
+    # Translation utilities (copied from import_program_config with minor tweaks)
+    # --------------------------------------------------------------------------------------
+    def _bulk_update_entity_translations(
+        self,
+        entity,
+        translations: dict[str, str],
+        entity_label: str,
+        translated_fields: tuple[str, ...],
+    ) -> None:
+        """
+        Update translations for multiple fields on an entity.
+
+        Mirrors the translation logic used in views.edit_translation() with auto-translate support.
+        """
+
+        texts_to_translate: list[str] = []
+        translation_objects: dict[str, list[Translation]] = {}
+
+        for field_name, english_text in translations.items():
+            if field_name not in translated_fields:
+                raise CommandError(f"Field '{field_name}' is not translatable for {entity_label}")
+
+            translation_obj: Translation = getattr(entity, field_name)
+
+            # Update translation
+            self._update_translation_all_languages(
+                translation_obj, english_text, texts_to_translate, translation_objects
+            )
+
+        # Bulk translate
+        if texts_to_translate:
+            self.stdout.write(f"  Translating {len(texts_to_translate)} field(s) to all languages...")
+
+            bulk_translations = Translate().bulk_translate(Translate.languages, texts_to_translate)
+
+            for english_text, translation_obj_list in translation_objects.items():
+                auto_translations = bulk_translations[english_text]
+                for translation_obj in translation_obj_list:
+                    for lang in Translate.languages:
+                        if lang != settings.LANGUAGE_CODE:
+                            Translation.objects.edit_translation_by_id(
+                                translation_obj.id,
+                                lang,
+                                auto_translations[lang],
+                                manual=False,
+                            )
+
+        entity.save()
+
+    def _update_translation_all_languages(
+        self,
+        translation_obj: Translation,
+        text: str,
+        texts_to_translate: list[str],
+        translation_objects: dict[str, list[Translation]],
+    ) -> None:
+        """
+        Update a translation for all languages.
+        """
+        # Update English translation (manual=True)
+        Translation.objects.edit_translation_by_id(translation_obj.id, settings.LANGUAGE_CODE, text, manual=True)
+
+        # Handle no_auto fields (copy English to all languages)
+        if translation_obj.no_auto:
+            for lang in Translate.languages:
+                Translation.objects.edit_translation_by_id(translation_obj.id, lang, text, manual=False)
+        else:
+            if text:
+                if text not in translation_objects:
+                    texts_to_translate.append(text)
+                    translation_objects[text] = []
+                translation_objects[text].append(translation_obj)
