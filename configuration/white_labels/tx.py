@@ -3122,7 +3122,7 @@ class TxConfigurationData(ConfigurationData):
                 "signUpInfo",
             ],
         },
-        "featureFlags": {"default": []},
+        "uiOptions": {"default": []},
         "defaultLanguage": {"default": "en-us"},
         "stateName": {"default": "Texas"},
         "noResultMessage": {
