@@ -8,11 +8,11 @@ from authentication.models import User
 from django.utils.translation import gettext_lazy as _
 from programs.util import Dependencies
 from django.conf import settings
-from .feature_flags import FeatureFlagsDict, WHITELABEL_FEATURE_FLAGS
+from .feature_flags import FeatureFlagConfig, WHITELABEL_FEATURE_FLAGS
 
 
 class WhiteLabel(models.Model):
-    FEATURE_FLAGS: ClassVar[FeatureFlagsDict] = WHITELABEL_FEATURE_FLAGS
+    FEATURE_FLAGS: ClassVar[dict[str, FeatureFlagConfig]] = WHITELABEL_FEATURE_FLAGS
 
     name = models.CharField(max_length=120, blank=False, null=False)
     code = models.CharField(max_length=32, blank=False, null=False)
@@ -22,6 +22,13 @@ class WhiteLabel(models.Model):
 
     def __str__(self):
         return self.name
+
+    def has_feature(self, key: str) -> bool:
+        """Check if a feature flag is enabled for this WhiteLabel."""
+        if key not in self.FEATURE_FLAGS:
+            raise KeyError(f"Unknown feature flag: {key}")
+        stored_flags = self.feature_flags or {}
+        return stored_flags.get(key, self.FEATURE_FLAGS[key].default)
 
 
 # The screen is the top most container for all information collected in the
