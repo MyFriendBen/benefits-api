@@ -23,7 +23,8 @@ python manage.py update_validations path/to/updates.json
       "program_name": "snap",
       "eligible": false,
       "value": 0,
-      "notes": "Optional notes about this validation"
+      "notes": "Optional notes about this validation",
+      "reason": "Optional explanation for why this update is needed"
     }
   ]
 }
@@ -42,6 +43,7 @@ python manage.py update_validations path/to/updates.json
 - `eligible` - Boolean eligibility status
 - `value` - Numeric benefit value
 - `notes` - Human-readable notes
+- `reason` - Documentation field explaining why the update is being made (not stored in database, for audit/reference purposes only)
 
 See [update_validation_example.json](update_validation_example.json) for a complete example.
 

@@ -46,6 +46,10 @@
         "notes": {
           "type": "string",
           "description": "Human-readable notes about this validation"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Optional documentation field explaining why this update is being made (not stored in database)"
         }
       },
       "anyOf": [
