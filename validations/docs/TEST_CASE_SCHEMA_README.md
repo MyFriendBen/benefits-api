@@ -4,8 +4,8 @@ This document describes the JSON schema for creating test cases that import Scre
 
 ## Files
 
-- **[test_case_schema.json](../management/commands/test_case_schema.json)** - JSON Schema (draft-07) defining the structure
-- **[test_case_example.json](../management/commands/test_case_example.json)** - Example test cases demonstrating various scenarios
+- **[test_case_schema.json](../management/commands/import_validations/test_case_schema.json)** - JSON Schema (draft-07) defining the structure
+- **[test_case_example.json](../management/commands/import_validations/test_case_example.json)** - Example test cases demonstrating various scenarios
 
 ## Schema Overview
 
@@ -491,7 +491,7 @@ When building an import script, the expected workflow is:
 
 ## Examples
 
-See [test_case_example.json](../management/commands/test_case_example.json) for complete working examples covering:
+See [test_case_example.json](../management/commands/import_validations/test_case_example.json) for complete working examples covering:
 
 1. **TX ACA Ineligibility** - Income above 400% FPL
 2. **CO SNAP Eligibility** - Low-income family with children
