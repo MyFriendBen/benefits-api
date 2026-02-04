@@ -200,7 +200,7 @@ referrer_data = {
             "signUpInfo",
         ]
     },
-    "featureFlags": {"default": []},
+    "uiOptions": {"default": []},
 }
 ```
 

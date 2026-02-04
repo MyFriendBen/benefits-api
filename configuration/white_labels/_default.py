@@ -51,7 +51,7 @@ class DefaultConfigurationData(ConfigurationData):
                 "signUpInfo",
             ]
         },
-        "featureFlags": {"default": []},
+        "uiOptions": {"default": []},
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",

@@ -2333,9 +2333,8 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
                 ],
             }
         },
-        "featureFlags": {
+        "uiOptions": {
             "default": [
-                "energy_calculator",
                 "no_zipcode_change_state",
                 "no_confirmation_return_zipcode",
                 "white_header",
