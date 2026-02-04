@@ -161,10 +161,9 @@ class Screen(models.Model):
         For frozen screens (with validations), use the earliest validation's created_date
         to keep ages consistent over time. For non-frozen screens, use current date.
         """
-        if self.frozen:
-            earliest_validation = self.validations.order_by("created_date").first()
-            if earliest_validation and earliest_validation.created_date:
-                return earliest_validation.created_date
+        earliest_validation = self.validations.order_by("created_date").first()
+        if earliest_validation and earliest_validation.created_date:
+            return earliest_validation.created_date
         return datetime.now()
 
     def calc_gross_income(self, frequency, types, exclude=[]):
