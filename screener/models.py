@@ -155,6 +155,18 @@ class Screen(models.Model):
     def frozen(self):
         return self.validations.count() > 0
 
+    def get_reference_date(self) -> datetime:
+        """
+        Get the reference date for age calculations.
+        For frozen screens (with validations), use the earliest validation's created_date
+        to keep ages consistent over time. For non-frozen screens, use current date.
+        """
+        if self.frozen:
+            earliest_validation = self.validations.order_by("created_date").first()
+            if earliest_validation and earliest_validation.created_date:
+                return earliest_validation.created_date
+        return datetime.now()
+
     def calc_gross_income(self, frequency, types, exclude=[]):
         household_members = self.household_members.all()
         gross_income = 0
@@ -706,11 +718,12 @@ class HouseholdMember(models.Model):
         if self.birth_year_month is None:
             return self.age
 
-        return self.age_from_date(self.birth_year_month)
+        reference_date = self.screen.get_reference_date()
+        return self.age_from_date(self.birth_year_month, reference_date)
 
     @staticmethod
-    def age_from_date(birth_year_month: datetime) -> int:
-        today = datetime.now()
+    def age_from_date(birth_year_month: datetime, reference_date: Optional[datetime] = None) -> int:
+        today = reference_date if reference_date else datetime.now()
 
         if today.month >= birth_year_month.month:
             return today.year - birth_year_month.year
@@ -718,9 +731,9 @@ class HouseholdMember(models.Model):
         return today.year - birth_year_month.year - 1
 
     def fraction_age(self) -> float:
-        today = datetime.now()
+        reference_date = self.screen.get_reference_date()
 
-        current_year = today.year + today.month / 12
+        current_year = reference_date.year + reference_date.month / 12
         birth_year = self.birth_year_month.year + self.birth_year_month.month / 12
 
         return current_year - birth_year
