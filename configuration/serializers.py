@@ -13,14 +13,13 @@ class ConfigurationSerializer(serializers.ModelSerializer):
         model = Configuration
         fields = "__all__"
 
-    def get_feature_flags(self, obj):
+    def get_feature_flags(self, obj) -> dict[str, bool]:
         """Return frontend-scoped feature flags from the related WhiteLabel."""
         if not obj.white_label:
             return {}
 
-        stored_flags = obj.white_label.feature_flags or {}
         return {
-            key: stored_flags.get(key, config.default)
+            key: obj.white_label.get_flag_value(key)
             for key, config in WhiteLabel.FEATURE_FLAGS.items()
             if config.scope in ("frontend", "both")
         }

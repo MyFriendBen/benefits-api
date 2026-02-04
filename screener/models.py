@@ -1,5 +1,4 @@
 from datetime import datetime
-from enum import Enum
 from typing import ClassVar, Optional
 from django.db import models
 from decimal import Decimal
@@ -18,17 +17,20 @@ class WhiteLabel(models.Model):
     code = models.CharField(max_length=32, blank=False, null=False)
     state_code = models.CharField(max_length=8, blank=True, null=True)
     cms_method = models.CharField(max_length=32, blank=True, null=True)
-    feature_flags = models.JSONField(default=dict, blank=True)
+    feature_flags = models.JSONField(default=dict, blank=True, null=True)
 
     def __str__(self):
         return self.name
+
+    def get_flag_value(self, key: str) -> bool:
+        """Get the value of a feature flag, falling back to its default."""
+        return (self.feature_flags or {}).get(key, self.FEATURE_FLAGS[key].default)
 
     def has_feature(self, key: str) -> bool:
         """Check if a feature flag is enabled for this WhiteLabel."""
         if key not in self.FEATURE_FLAGS:
             raise KeyError(f"Unknown feature flag: {key}")
-        stored_flags = self.feature_flags or {}
-        return stored_flags.get(key, self.FEATURE_FLAGS[key].default)
+        return self.get_flag_value(key)
 
 
 # The screen is the top most container for all information collected in the

@@ -27,22 +27,23 @@ class FeatureFlagsAdmin(SecureAdmin):
     fields = ("name",)
     change_form_template = "admin/screener/featureflags/change_form.html"
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).only("name", "code", "state_code", "feature_flags")
+
     def change_view(self, request, object_id, form_url="", extra_context=None):
         obj = self.get_object(request, object_id)
 
         # Build feature flags context for template
-        flags_for_template = []
-        feature_flags = obj.feature_flags or {}
-        for flag_key, flag_config in WhiteLabel.FEATURE_FLAGS.items():
-            flags_for_template.append(
-                {
-                    "key": flag_key,
-                    "label": flag_config.label,
-                    "description": flag_config.description,
-                    "scope": flag_config.scope,
-                    "enabled": feature_flags.get(flag_key, flag_config.default),
-                }
-            )
+        flags_for_template = [
+            {
+                "key": flag_key,
+                "label": flag_config.label,
+                "description": flag_config.description,
+                "scope": flag_config.scope,
+                "enabled": obj.get_flag_value(flag_key),
+            }
+            for flag_key, flag_config in WhiteLabel.FEATURE_FLAGS.items()
+        ]
 
         extra_context = extra_context or {}
         extra_context["feature_flags"] = flags_for_template
@@ -62,21 +63,14 @@ class FeatureFlagsAdmin(SecureAdmin):
 
     def get_feature_flags_summary(self, obj):
         """Show a summary of enabled features using human-readable labels."""
-        feature_flags = obj.feature_flags or {}
-        enabled = []
-        disabled = []
-        for key, flag_config in WhiteLabel.FEATURE_FLAGS.items():
-            is_enabled = feature_flags.get(key, flag_config.default)
-            if is_enabled:
-                enabled.append(flag_config.label)
-            else:
-                disabled.append(flag_config.label)
+        enabled = [c.label for k, c in WhiteLabel.FEATURE_FLAGS.items() if obj.get_flag_value(k)]
+        disabled = [c.label for k, c in WhiteLabel.FEATURE_FLAGS.items() if not obj.get_flag_value(k)]
         parts = []
         if enabled:
-            parts.append(f"✓ {', '.join(enabled)}")
+            parts.append(f"[ON] {', '.join(enabled)}")
         if disabled:
-            parts.append(f"✗ {', '.join(disabled)}")
-        return " | ".join(parts) if parts else "No features configured"
+            parts.append(f"[OFF] {', '.join(disabled)}")
+        return " | ".join(parts) or "No features configured"
 
     get_feature_flags_summary.short_description = "Features"
 

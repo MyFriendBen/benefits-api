@@ -112,7 +112,7 @@ INSTALLED_APPS = [
     "programs.apps.ProgramsConfig",
     "translations.apps.TranslationsConfig",
     "validations.apps.ValidationsConfig",
-    "integrations.apps.IntegrationsConfig",  # Keep at bottom
+    "integrations.apps.IntegrationsConfig",  # Keep at bottom for admin sidebar ordering
     "rest_framework",
     "rest_framework.authtoken",
     "phonenumber_field",

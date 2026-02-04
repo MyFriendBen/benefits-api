@@ -25,7 +25,7 @@ class Command(BaseCommand):
         total_added = 0
         total_removed = 0
 
-        for wl in WhiteLabel.objects.all():
+        for wl in WhiteLabel.objects.all().iterator():
             stored_flags = wl.feature_flags or {}
             stored_keys = set(stored_flags.keys())
 
