@@ -2906,6 +2906,12 @@ class NcConfigurationData(ConfigurationData):
             "211nc": ["no_results_more_help", "nc_show_211_link", "211nc"],
             "hfed": ["no_results_more_help", "hfed"],
         },
+        # Deprecated: use uiOptions. Remove as part of MFB-635.
+        "featureFlags": {
+            "default": ["nc_show_211_link"],
+            "211nc": ["no_results_more_help", "nc_show_211_link", "211nc"],
+            "hfed": ["no_results_more_help", "hfed"],
+        },
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage.nc",

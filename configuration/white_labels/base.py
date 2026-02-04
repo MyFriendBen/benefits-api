@@ -625,6 +625,7 @@ class ConfigurationData:
             "[REPLACE_ME]": [],
         },
         "uiOptions": {"default": []},
+        "featureFlags": {"default": []},  # Deprecated: use uiOptions. Remove as part of MFB-635.
         "defaultLanguage": {"default": "en-us", "[REPLACE_ME]": ""},
         "stateName": {"default": "", "[REPLACE_ME]": ""},
     }

@@ -3123,6 +3123,7 @@ class TxConfigurationData(ConfigurationData):
             ],
         },
         "uiOptions": {"default": []},
+        "featureFlags": {"default": []},  # Deprecated: use uiOptions. Remove as part of MFB-635.
         "defaultLanguage": {"default": "en-us"},
         "stateName": {"default": "Texas"},
         "noResultMessage": {

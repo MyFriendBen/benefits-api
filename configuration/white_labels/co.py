@@ -2330,6 +2330,10 @@ class CoConfigurationData(ConfigurationData):
             ],
         },
         "uiOptions": {"default": [], "211co": ["no_results_more_help", "211co"]},
+        "featureFlags": {
+            "default": [],
+            "211co": ["no_results_more_help", "211co"],
+        },  # Deprecated: use uiOptions. Remove as part of MFB-635.
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",
