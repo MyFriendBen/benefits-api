@@ -111,13 +111,13 @@
       {% for flag in feature_flags %}
       <tr>
         <td>
-          <label class="toggle-switch">
-            <input type="checkbox" name="{{ flag.key }}" {% if flag.enabled %}checked{% endif %}>
+          <label class="toggle-switch" for="flag-{{ flag.key }}">
+            <input type="checkbox" id="flag-{{ flag.key }}" name="{{ flag.key }}" {% if flag.enabled %}checked{% endif %} aria-labelledby="label-{{ flag.key }}">
             <span class="toggle-slider"></span>
           </label>
         </td>
         <td>
-          <div class="feature-flag-label">
+          <div class="feature-flag-label" id="label-{{ flag.key }}">
             {{ flag.label }}
             <span class="feature-flag-scope">{{ flag.scope }}</span>
           </div>
