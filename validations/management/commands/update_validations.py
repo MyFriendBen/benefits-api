@@ -81,8 +81,8 @@ class Command(BaseCommand):
                 screen = Screen.objects.get(uuid=screen_uuid)
             except Screen.DoesNotExist:
                 raise CommandError(f"Screen with UUID '{screen_uuid}' does not exist")
-            except ValueError:
-                raise CommandError(f"Malformed UUID '{screen_uuid}'")
+            except ValueError as e:
+                raise CommandError(f"Malformed UUID '{screen_uuid}': {e}") from e
 
             if not Validation.objects.filter(screen=screen, program_name=program_name).exists():
                 raise CommandError(f"Validation for screen '{screen_uuid}' and program '{program_name}' does not exist")
