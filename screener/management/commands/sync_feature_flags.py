@@ -48,10 +48,7 @@ class Command(BaseCommand):
                 total_added += len(added)
 
             if not dry_run:
-                synced_flags = {
-                    key: stored_flags.get(key, WhiteLabel.FEATURE_FLAGS[key].default)
-                    for key in valid_keys
-                }
+                synced_flags = {key: stored_flags.get(key, WhiteLabel.FEATURE_FLAGS[key].default) for key in valid_keys}
                 wl.feature_flags = synced_flags
                 wl.save(update_fields=["feature_flags"])
 
