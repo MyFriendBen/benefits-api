@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import ClassVar, Optional
 from django.db import models
 from decimal import Decimal
 import uuid
@@ -8,11 +8,11 @@ from authentication.models import User
 from django.utils.translation import gettext_lazy as _
 from programs.util import Dependencies
 from django.conf import settings
-from .feature_flags import WHITELABEL_FEATURE_FLAGS
+from .feature_flags import FeatureFlagsDict, WHITELABEL_FEATURE_FLAGS
 
 
 class WhiteLabel(models.Model):
-    FEATURE_FLAGS = WHITELABEL_FEATURE_FLAGS
+    FEATURE_FLAGS: ClassVar[FeatureFlagsDict] = WHITELABEL_FEATURE_FLAGS
 
     name = models.CharField(max_length=120, blank=False, null=False)
     code = models.CharField(max_length=32, blank=False, null=False)

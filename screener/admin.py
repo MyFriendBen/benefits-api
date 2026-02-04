@@ -34,13 +34,15 @@ class FeatureFlagsAdmin(SecureAdmin):
         flags_for_template = []
         feature_flags = obj.feature_flags or {}
         for flag_key, flag_config in WhiteLabel.FEATURE_FLAGS.items():
-            flags_for_template.append({
-                "key": flag_key,
-                "label": flag_config.label,
-                "description": flag_config.description,
-                "scope": flag_config.scope,
-                "enabled": feature_flags.get(flag_key, flag_config.default),
-            })
+            flags_for_template.append(
+                {
+                    "key": flag_key,
+                    "label": flag_config.label,
+                    "description": flag_config.description,
+                    "scope": flag_config.scope,
+                    "enabled": feature_flags.get(flag_key, flag_config.default),
+                }
+            )
 
         extra_context = extra_context or {}
         extra_context["feature_flags"] = flags_for_template
@@ -60,17 +62,15 @@ class FeatureFlagsAdmin(SecureAdmin):
 
     def get_feature_flags_summary(self, obj):
         """Show a summary of enabled features using human-readable labels."""
-        if not obj.feature_flags:
-            return "No features configured"
+        feature_flags = obj.feature_flags or {}
         enabled = []
         disabled = []
-        for key, value in obj.feature_flags.items():
-            flag_config = WhiteLabel.FEATURE_FLAGS.get(key)
-            label = flag_config.label if flag_config else key
-            if value:
-                enabled.append(label)
+        for key, flag_config in WhiteLabel.FEATURE_FLAGS.items():
+            is_enabled = feature_flags.get(key, flag_config.default)
+            if is_enabled:
+                enabled.append(flag_config.label)
             else:
-                disabled.append(label)
+                disabled.append(flag_config.label)
         parts = []
         if enabled:
             parts.append(f"✓ {', '.join(enabled)}")

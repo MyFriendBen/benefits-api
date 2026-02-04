@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal
+from typing import ClassVar, Literal
 
 
 @dataclass(frozen=True)
@@ -10,7 +10,10 @@ class FeatureFlagConfig:
     default: bool = False
 
 
-WHITELABEL_FEATURE_FLAGS: dict[str, FeatureFlagConfig] = {
+# Type alias for ClassVar usage in WhiteLabel model
+FeatureFlagsDict = dict[str, FeatureFlagConfig]
+
+WHITELABEL_FEATURE_FLAGS: FeatureFlagsDict = {
     "nps_survey": FeatureFlagConfig(
         label="NPS Survey",
         description="Show Net Promoter Score survey to users after completing a screen.",
