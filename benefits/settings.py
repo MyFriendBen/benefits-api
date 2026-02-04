@@ -95,6 +95,9 @@ EMAIL_FROM = os.getenv("EMAIL_FROM")
 ENABLE_GOOGLE_INTEGRATIONS = config("ENABLE_GOOGLE_INTEGRATIONS", default=True, cast=bool)
 
 # Application definition
+# NOTE: App ordering affects Django admin sidebar. Custom apps are ordered by their
+# position in INSTALLED_APPS, so we keep screener (General Settings) near the top
+# and integrations at the bottom of the custom apps section.
 
 INSTALLED_APPS = [
     "unfold",
@@ -107,12 +110,13 @@ INSTALLED_APPS = [
     "simple_history",
     "authentication.apps.AuthConfig",
     "corsheaders",
-    "screener.apps.ScreenerConfig",  # Site Settings - keep above configuration
+    # Custom apps - order determines admin sidebar position
+    "screener.apps.ScreenerConfig",
     "configuration.apps.ConfigurationConfig",
     "programs.apps.ProgramsConfig",
     "translations.apps.TranslationsConfig",
     "validations.apps.ValidationsConfig",
-    "integrations.apps.IntegrationsConfig",  # Keep at bottom for admin sidebar ordering
+    "integrations.apps.IntegrationsConfig",
     "rest_framework",
     "rest_framework.authtoken",
     "phonenumber_field",

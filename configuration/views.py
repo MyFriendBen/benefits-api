@@ -15,7 +15,9 @@ class ConfigurationView(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.DjangoModelPermissions]
 
     def get_queryset(self):
-        return Configuration.objects.filter(active=True, white_label__code=self.kwargs["white_label"])
+        return Configuration.objects.select_related("white_label").filter(
+            active=True, white_label__code=self.kwargs["white_label"]
+        )
 
     def retrieve(self, request, pk=None):
         configuration = get_object_or_404(self.get_queryset(), name=pk)

@@ -2,7 +2,7 @@
 Unit tests for Configuration app serializers.
 """
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from django.test import TestCase
 from configuration.models import Configuration
 from configuration.serializers import ConfigurationSerializer
@@ -55,7 +55,6 @@ class TestConfigurationSerializerFeatureFlags(TestCase):
             "both_flag": True,
         }
         self.white_label.save()
-        self.configuration.refresh_from_db()
 
         feature_flags = self.serializer.get_feature_flags(self.configuration)
 
@@ -82,7 +81,6 @@ class TestConfigurationSerializerFeatureFlags(TestCase):
         """Test that get_feature_flags returns the stored flag values."""
         self.white_label.feature_flags = {"frontend_flag": True}
         self.white_label.save()
-        self.configuration.refresh_from_db()
 
         feature_flags = self.serializer.get_feature_flags(self.configuration)
 
@@ -104,7 +102,6 @@ class TestConfigurationSerializerFeatureFlags(TestCase):
         """Test that get_feature_flags returns default values when flag is not stored."""
         self.white_label.feature_flags = {}
         self.white_label.save()
-        self.configuration.refresh_from_db()
 
         feature_flags = self.serializer.get_feature_flags(self.configuration)
 
@@ -125,9 +122,6 @@ class TestConfigurationSerializerFeatureFlags(TestCase):
     )
     def test_get_feature_flags_returns_empty_dict_when_no_white_label(self):
         """Test that get_feature_flags returns empty dict when configuration has no white_label."""
-        # Create a mock configuration with white_label=None
-        from unittest.mock import MagicMock
-
         config_no_wl = MagicMock()
         config_no_wl.white_label = None
 
@@ -151,7 +145,6 @@ class TestConfigurationSerializerFeatureFlags(TestCase):
         """Test that get_feature_flags handles empty feature_flags dict."""
         self.white_label.feature_flags = {}
         self.white_label.save()
-        self.configuration.refresh_from_db()
 
         feature_flags = self.serializer.get_feature_flags(self.configuration)
 

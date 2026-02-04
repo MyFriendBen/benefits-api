@@ -19,7 +19,7 @@ class ConfigurationSerializer(serializers.ModelSerializer):
             return {}
 
         return {
-            key: obj.white_label.get_flag_value(key)
+            key: obj.white_label._get_flag_value(key)
             for key, config in WhiteLabel.FEATURE_FLAGS.items()
             if config.scope in ("frontend", "both")
         }

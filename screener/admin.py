@@ -40,7 +40,7 @@ class FeatureFlagsAdmin(SecureAdmin):
                 "label": flag_config.label,
                 "description": flag_config.description,
                 "scope": flag_config.scope,
-                "enabled": obj.get_flag_value(flag_key),
+                "enabled": obj._get_flag_value(flag_key),
             }
             for flag_key, flag_config in WhiteLabel.FEATURE_FLAGS.items()
         ]
@@ -52,7 +52,8 @@ class FeatureFlagsAdmin(SecureAdmin):
 
     def save_model(self, request, obj, form, change):
         # Build feature_flags dict from checkboxes in POST data
-        feature_flags = {}
+        # Preserve existing flags to handle race condition if new flags are added during deploy
+        feature_flags = obj.feature_flags.copy() if obj.feature_flags else {}
         for flag_key in WhiteLabel.FEATURE_FLAGS:
             feature_flags[flag_key] = flag_key in request.POST
         obj.feature_flags = feature_flags
@@ -63,8 +64,8 @@ class FeatureFlagsAdmin(SecureAdmin):
 
     def get_feature_flags_summary(self, obj):
         """Show a summary of enabled features using human-readable labels."""
-        enabled = [c.label for k, c in WhiteLabel.FEATURE_FLAGS.items() if obj.get_flag_value(k)]
-        disabled = [c.label for k, c in WhiteLabel.FEATURE_FLAGS.items() if not obj.get_flag_value(k)]
+        enabled = [c.label for k, c in WhiteLabel.FEATURE_FLAGS.items() if obj._get_flag_value(k)]
+        disabled = [c.label for k, c in WhiteLabel.FEATURE_FLAGS.items() if not obj._get_flag_value(k)]
         parts = []
         if enabled:
             parts.append(f"[ON] {', '.join(enabled)}")
