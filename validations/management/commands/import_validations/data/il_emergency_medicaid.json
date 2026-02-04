@@ -6,6 +6,7 @@
       "zipcode": "60601",
       "county": "Cook",
       "household_size": 1,
+      "household_assets": 0,
       "household_members": [
         {
           "relationship": "headOfHousehold",
@@ -32,6 +33,7 @@
       "zipcode": "60601",
       "county": "Cook",
       "household_size": 1,
+      "household_assets": 0,
       "household_members": [
         {
           "relationship": "headOfHousehold",
@@ -53,21 +55,22 @@
     }
   },
   {
-    "notes": "IL Emergency Medicaid - Eligible: Uninsured child",
+    "notes": "IL Emergency Medicaid - Eligible: Uninsured child in Medicaid-eligible household",
     "household": {
       "white_label": "il",
       "zipcode": "60601",
       "county": "Cook",
       "household_size": 2,
+      "household_assets": 0,
       "household_members": [
         {
           "relationship": "headOfHousehold",
           "age": 35,
           "has_income": true,
           "income_streams": [
-            { "type": "wages", "amount": 2500, "frequency": "monthly" }
+            { "type": "wages", "amount": 1800, "frequency": "monthly" }
           ],
-          "insurance": { "employer": true }
+          "insurance": { "employer": true, "none": false }
         },
         {
           "relationship": "child",
@@ -92,6 +95,7 @@
       "zipcode": "60601",
       "county": "Cook",
       "household_size": 1,
+      "household_assets": 0,
       "household_members": [
         {
           "relationship": "headOfHousehold",
@@ -100,7 +104,7 @@
           "income_streams": [
             { "type": "wages", "amount": 1500, "frequency": "monthly" }
           ],
-          "insurance": { "employer": true }
+          "insurance": { "employer": true, "none": false }
         }
       ],
       "expenses": []
@@ -117,6 +121,7 @@
       "zipcode": "60601",
       "county": "Cook",
       "household_size": 1,
+      "household_assets": 0,
       "household_members": [
         {
           "relationship": "headOfHousehold",
@@ -125,7 +130,7 @@
           "income_streams": [
             { "type": "wages", "amount": 1200, "frequency": "monthly" }
           ],
-          "insurance": { "medicaid": true }
+          "insurance": { "medicaid": true, "none": false }
         }
       ],
       "expenses": []
@@ -142,6 +147,7 @@
       "zipcode": "60601",
       "county": "Cook",
       "household_size": 1,
+      "household_assets": 0,
       "household_members": [
         {
           "relationship": "headOfHousehold",
@@ -169,6 +175,7 @@
       "zipcode": "60601",
       "county": "Cook",
       "household_size": 3,
+      "household_assets": 0,
       "household_members": [
         {
           "relationship": "headOfHousehold",
@@ -198,7 +205,8 @@
     },
     "expected_results": {
       "program_name": "il_emergency_medicaid",
-      "eligible": true
+      "eligible": true,
+      "value": 6000
     }
   },
   {
@@ -208,6 +216,7 @@
       "zipcode": "60601",
       "county": "Cook",
       "household_size": 1,
+      "household_assets": 0,
       "household_members": [
         {
           "relationship": "headOfHousehold",
@@ -216,7 +225,7 @@
           "income_streams": [
             { "type": "sSRetirement", "amount": 1400, "frequency": "monthly" }
           ],
-          "insurance": { "medicare": true }
+          "insurance": { "medicare": true, "none": false }
         }
       ],
       "expenses": []
