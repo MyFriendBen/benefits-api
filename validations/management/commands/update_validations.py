@@ -135,7 +135,9 @@ class Command(BaseCommand):
                 new_preview = new_value[:30] + "..." if len(new_value) > 30 else new_value
                 result["changes"].append(f"notes: '{old_preview}' → '{new_preview}'")
 
-        validation.save()
+        if result["changes"]:
+            validation.save()
+
         return result
 
     def _output_dry_run_summary(self, update_data: Dict[str, Any]) -> None:
