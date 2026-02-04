@@ -20,12 +20,21 @@ class FeatureFlags(WhiteLabel):
 
 
 class FeatureFlagsAdmin(SecureAdmin):
-    list_display = ("name", "code", "get_feature_flags_summary")
+    list_display = ("name", "get_feature_flags_summary")
+    list_display_links = ("name",)
     list_filter = ("state_code",)
     search_fields = ("name", "code")
     readonly_fields = ("name",)
     fields = ("name",)
     change_form_template = "admin/screener/featureflags/change_form.html"
+
+    def changelist_view(self, request, extra_context=None):
+        # Disable checkboxes by removing bulk actions
+        self.actions = None
+        return super().changelist_view(request, extra_context)
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
     def get_queryset(self, request):
         return super().get_queryset(request).only("name", "code", "state_code", "feature_flags")
@@ -63,17 +72,11 @@ class FeatureFlagsAdmin(SecureAdmin):
         return False
 
     def get_feature_flags_summary(self, obj):
-        """Show a summary of enabled features using human-readable labels."""
+        """Show only enabled features."""
         enabled = [c.label for k, c in WhiteLabel.FEATURE_FLAGS.items() if obj._get_flag_value(k)]
-        disabled = [c.label for k, c in WhiteLabel.FEATURE_FLAGS.items() if not obj._get_flag_value(k)]
-        parts = []
-        if enabled:
-            parts.append(f"[ON] {', '.join(enabled)}")
-        if disabled:
-            parts.append(f"[OFF] {', '.join(disabled)}")
-        return " | ".join(parts) or "No features configured"
+        return ", ".join(enabled) if enabled else "—"
 
-    get_feature_flags_summary.short_description = "Features"
+    get_feature_flags_summary.short_description = "Enabled Features"
 
 
 admin.site.register(WhiteLabel, WhiteLabelAdmin)
