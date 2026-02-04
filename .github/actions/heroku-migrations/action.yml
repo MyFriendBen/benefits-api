@@ -1,5 +1,5 @@
 name: 'Run Heroku Database Migrations'
-description: 'Runs Django database migrations on Heroku'
+description: 'Runs Django database migrations and syncs feature flags on Heroku'
 
 inputs:
   heroku-api-key:
@@ -25,7 +25,7 @@ runs:
       run: |
         echo "Running migrations..."
         set +e
-        OUTPUT=$(heroku run -a ${{ inputs.heroku-app-name }} "python manage.py migrate" 2>&1)
+        OUTPUT=$(heroku run -a ${{ inputs.heroku-app-name }} "python manage.py migrate && python manage.py sync_feature_flags" 2>&1)
         STATUS=$?
         set -e
         echo "$OUTPUT"
