@@ -400,16 +400,6 @@ class NcConfigurationData(ConfigurationData):
                     "_default_message": "Medicare",
                 },
             },
-            "emergency_medicaid": {
-                "icon": {
-                    "_icon": "Emergency_medicaid",
-                    "_classname": "option-card-icon",
-                },
-                "text": {
-                    "_label": "healthInsuranceOptions.emergency_medicaid",
-                    "_default_message": "Emergency Medicaid / Reproductive Health",
-                },
-            },
             "family_planning": {
                 "icon": {"_icon": "Family_planning", "_classname": "option-card-icon"},
                 "text": {
@@ -459,16 +449,6 @@ class NcConfigurationData(ConfigurationData):
                 "text": {
                     "_label": "healthInsuranceOptions.medicare",
                     "_default_message": "Medicare",
-                },
-            },
-            "emergency_medicaid": {
-                "icon": {
-                    "_icon": "Emergency_medicaid",
-                    "_classname": "option-card-icon",
-                },
-                "text": {
-                    "_label": "healthInsuranceOptions.emergency_medicaid",
-                    "_default_message": "Emergency Medicaid / Reproductive Health",
                 },
             },
             "family_planning": {
