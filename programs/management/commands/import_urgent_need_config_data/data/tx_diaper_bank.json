@@ -1,0 +1,38 @@
+{
+  "white_label": { "code": "tx" },
+  "need": {
+    "external_name": "tx_diaper_bank",
+    "category_type": {
+      "external_name": "diapers_and_baby_supplies",
+      "name": "Diapers and baby supplies",
+      "icon": "Baby_supplies"
+    },
+    "type_short": ["baby supplies"],
+    "functions": ["tx_diaper_bank"],
+    "translations": {
+      "name": "National Diaper Bank Network",
+      "description": "Use to find access to baby diapers, wipes, and other new baby needs.",
+      "link": "https://nationaldiaperbanknetwork.org/member-directory/",
+      "warning": "",
+      "website_description": "Map to find local diaper banks in your area.",
+      "notification_message": ""
+    },
+    "phone_number": "",
+    "counties": [
+      "Travis",
+      "Dallas",
+      "El Paso",
+      "Tarrant",
+      "Galveston",
+      "Brazoria",
+      "Collin",
+      "Bexar",
+      "McLennan"
+    ],
+    "required_expense_types": ["childSupport", "childCare"],
+    "fpl": { "year": "2025", "period": "2025" },
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}
