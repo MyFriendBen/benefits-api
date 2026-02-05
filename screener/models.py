@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional
 from django.db import models
+from django.utils import timezone
 from decimal import Decimal
 import uuid
 from authentication.models import User
@@ -164,7 +165,7 @@ class Screen(models.Model):
         earliest_validation = self.validations.order_by("created_date").first()
         if earliest_validation and earliest_validation.created_date:
             return earliest_validation.created_date
-        return datetime.now()
+        return timezone.now()
 
     def calc_gross_income(self, frequency, types, exclude=[]):
         household_members = self.household_members.all()
@@ -722,7 +723,7 @@ class HouseholdMember(models.Model):
 
     @staticmethod
     def age_from_date(birth_year_month: datetime, reference_date: Optional[datetime] = None) -> int:
-        today = reference_date if reference_date else datetime.now()
+        today = reference_date if reference_date else timezone.now()
 
         if today.month >= birth_year_month.month:
             return today.year - birth_year_month.year

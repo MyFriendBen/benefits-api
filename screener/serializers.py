@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from django.utils import timezone
 from programs.models import WarningMessage
 from screener.models import (
     EnergyCalculatorMember,
@@ -85,8 +86,8 @@ class HouseholdMemberSerializer(serializers.ModelSerializer):
 
         birth_year_month = datetime(year=birth_year, month=birth_month, day=1)
 
-        # add a day for timezones
-        today = datetime.now() + timedelta(days=1)
+        # add a day buffer to handle edge cases near midnight
+        today = timezone.now() + timedelta(days=1)
 
         if birth_year_month > today:
             raise serializers.ValidationError("Birth year and month are in the future")
