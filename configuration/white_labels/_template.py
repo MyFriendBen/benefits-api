@@ -282,7 +282,7 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     #   4. Add mapping in has_benefit() name_map for ALL program name_abbreviated variants:
     #      "my_benefit": self.has_my_benefit,
     #      "co_my_benefit": self.has_my_benefit,
-    #      "co_energy_calculator_my_benefit": self.has_my_benefit,
+    #      "cesn_my_benefit": self.has_my_benefit,
     #
     # Structure:
     #   {

@@ -1,5 +1,5 @@
 from programs.programs.calc import ProgramCalculator
-from .affordable_residential_energy.calculator import AffordableResidentialEnergy
+from .affordable_residential_energy.calculator import EnergyCalculatorAffordableResidentialEnergy
 from .electric_affordability_black_hills.calculator import (
     EnergyCalculatorElectricityAffordabilityBlackHills,
 )
@@ -13,7 +13,7 @@ from .energy_outreach.calculator import EnergyCalculatorEnergyOutreach
 from .energy_outreach_crisis_intervention.calculator import (
     EnergyCalculatorEnergyOutreachCrisisIntervention,
 )
-from .energy_outreach_solar.calculator import EnergyOutreachSolar
+from .energy_outreach_solar.calculator import EnergyCalculatorEnergyOutreachSolar
 from .gas_affordability_black_hills.calculator import (
     EnergyCalculatorGasAffordabilityBlackHills,
 )
@@ -39,26 +39,26 @@ from .assistance_programs.project_cope.calculator import (
     EnergyCalculatorProjectCOPE,
 )
 
-co_energy_calculators: dict[str, type[ProgramCalculator]] = {
-    "co_energy_calculator_care": AffordableResidentialEnergy,
-    "co_energy_calculator_eocs": EnergyOutreachSolar,
-    "co_energy_calculator_leap": EnergyCalculatorEnergyAssistance,
-    "co_energy_calculator_ubp": EnergyCalculatorUtilityBillPay,
-    "co_energy_calculator_cpcr": EnergyCalculatorPropertyCreditRebate,
-    "co_energy_calculator_eoc": EnergyCalculatorEnergyOutreach,
-    "co_energy_calculator_ea": EnergyCalculatorEmergencyAssistance,
-    "co_energy_calculator_cowap": EnergyCalculatorWeatherizationAssistance,
-    "co_energy_calculator_eoccip": EnergyCalculatorEnergyOutreachCrisisIntervention,
-    "co_energy_calculator_xcelgap": EnergyCalculatorGasAffordabilityXcel,
-    "co_energy_calculator_xceleap": EnergyCalculatorElectricityAffordabilityXcel,
-    "co_energy_calculator_bhgap": EnergyCalculatorGasAffordabilityBlackHills,
-    "co_energy_calculator_bheap": EnergyCalculatorElectricityAffordabilityBlackHills,
-    "co_energy_calculator_cngba": EnergyCalculatorNaturalGasBillAssistance,
-    "co_energy_calculator_poipp": EnergyCalculatorPercentageOfIncomePaymentPlan,
-    "co_energy_calculator_energy_ebt": EnergyCalculatorEnergyEbt,
-    "co_energy_calculator_energy_vec": EnergyCalculatorVehicleExchange,
-    "co_energy_calculator_energy_mep": EnergyCalculatorMedicalExemption,
-    "co_energy_calculator_mcp": EnergyCalculatorMedicalCertification,
-    "co_energy_calculator_cope": EnergyCalculatorProjectCOPE,
-    "co_energy_calculator_heap": EnergyCalculatorHomeEfficiencyAssistance,
+cesn_calculators: dict[str, type[ProgramCalculator]] = {
+    "cesn_care": EnergyCalculatorAffordableResidentialEnergy,
+    "cesn_eocs": EnergyCalculatorEnergyOutreachSolar,
+    "cesn_leap": EnergyCalculatorEnergyAssistance,
+    "cesn_ubp": EnergyCalculatorUtilityBillPay,
+    "cesn_cpcr": EnergyCalculatorPropertyCreditRebate,
+    "cesn_eoc": EnergyCalculatorEnergyOutreach,
+    "cesn_ea": EnergyCalculatorEmergencyAssistance,
+    "cesn_cowap": EnergyCalculatorWeatherizationAssistance,
+    "cesn_eoccip": EnergyCalculatorEnergyOutreachCrisisIntervention,
+    "cesn_xcelgap": EnergyCalculatorGasAffordabilityXcel,
+    "cesn_xceleap": EnergyCalculatorElectricityAffordabilityXcel,
+    "cesn_bhgap": EnergyCalculatorGasAffordabilityBlackHills,
+    "cesn_bheap": EnergyCalculatorElectricityAffordabilityBlackHills,
+    "cesn_cngba": EnergyCalculatorNaturalGasBillAssistance,
+    "cesn_poipp": EnergyCalculatorPercentageOfIncomePaymentPlan,
+    "cesn_energy_ebt": EnergyCalculatorEnergyEbt,
+    "cesn_energy_vec": EnergyCalculatorVehicleExchange,
+    "cesn_energy_mep": EnergyCalculatorMedicalExemption,
+    "cesn_mcp": EnergyCalculatorMedicalCertification,
+    "cesn_cope": EnergyCalculatorProjectCOPE,
+    "cesn_heap": EnergyCalculatorHomeEfficiencyAssistance,
 }

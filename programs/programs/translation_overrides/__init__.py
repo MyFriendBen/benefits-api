@@ -10,7 +10,7 @@ general_calculators: dict[str, type[TranslationOverrideCalculator]] = {
 
 specific_calculators: dict[str, type[TranslationOverrideCalculator]] = {
     "ma_senior_snap_application": MaSeniorSnapApplication,
-    "co_energy_calculator_renter": CoEnergyCalculatorRenter,
+    "cesn_renter": CoEnergyCalculatorRenter,
 }
 
 warning_calculators: dict[str, type[TranslationOverrideCalculator]] = {**general_calculators, **specific_calculators}
