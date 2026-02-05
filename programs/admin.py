@@ -146,6 +146,7 @@ class ProgramAdmin(SecureAdmin):
                     <a href="{}">Apply Button Link</a>
                     <a href="{}">Estimated Application Time</a>
                     <a href="{}">Estimated Value</a>
+                    <a href="{}">Learn More Link</a>
                 </div>
             </div>
             """,
@@ -156,6 +157,7 @@ class ProgramAdmin(SecureAdmin):
             reverse("translation_admin_url", args=[obj.apply_button_link.id]),
             reverse("translation_admin_url", args=[obj.estimated_application_time.id]),
             reverse("translation_admin_url", args=[obj.estimated_value.id]),
+            reverse("translation_admin_url", args=[obj.learn_more_link.id]),
         )
 
 
