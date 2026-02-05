@@ -5,6 +5,7 @@ from programs.models import Program, FederalPoveryLimit
 from programs.util import Dependencies
 from unittest.mock import patch
 from datetime import datetime
+from django.utils import timezone
 from typing import ClassVar
 
 
@@ -89,7 +90,7 @@ class TestNCHeadStart(TestCase):
         if birth_year and birth_month:
             birth_year_month = datetime(year=birth_year, month=birth_month, day=1).date()
         else:
-            current_year = datetime.now().year
+            current_year = timezone.now().year
             birth_year_month = datetime(year=current_year - age, month=1, day=1).date()
 
         member = HouseholdMember.objects.create(
