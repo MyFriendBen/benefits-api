@@ -1,5 +1,5 @@
 {
-  "description": "Update NC Medicaid validation values after senior eligibility fix(MFB-605)",
+  "description": "Update NC Medicaid validation values after senior eligibility fix (MFB-605)",
   "updates": [
     {
       "screen_uuid": "6d07026c-67d7-4918-bcbb-3d6cdb82aa6e",
