@@ -132,10 +132,12 @@ class Command(BaseCommand):
                 if result["status"] == "success":
                     successful += 1
                     # Record the successful import
-                    ProgramConfigImport.objects.create(
+                    ProgramConfigImport.objects.get_or_create(
                         filename=config_file.name,
-                        program_name=result["program_name"],
-                        white_label_code=result["white_label_code"],
+                        defaults={
+                            "program_name": result["program_name"],
+                            "white_label_code": result["white_label_code"],                            
+                        },                        
                     )
                     logger.info(
                         "Successfully imported program config: %s (program=%s, white_label=%s)",
@@ -257,6 +259,9 @@ class Command(BaseCommand):
         except json.JSONDecodeError as e:
             return {"status": "error", "error": f"Invalid JSON: {e}"}
 
+        if not isinstance(config, dict):
+            return {"status": "error", "error": "Config file does not contain a JSON object"}
+        
         # Extract program info
         white_label_code = config.get("white_label", {}).get("code")
         program_name = config.get("program", {}).get("name_abbreviated")
