@@ -6,7 +6,9 @@ from pathlib import Path
 from typing import Any
 import argparse
 import json
-import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -57,6 +59,7 @@ class Command(BaseCommand):
 
         # Verify data directory exists
         if not self.DATA_DIR.exists():
+            logger.error("Data directory not found: %s", self.DATA_DIR)
             self.stderr.write(self.style.ERROR(f"Data directory not found: {self.DATA_DIR}"))
             return
 
@@ -64,6 +67,7 @@ class Command(BaseCommand):
         json_files = sorted(self.DATA_DIR.glob("*.json"))
 
         if not json_files:
+            logger.warning("No JSON configuration files found in data directory")
             self.stdout.write(self.style.WARNING("No JSON configuration files found in data directory."))
             return
 
@@ -86,9 +90,12 @@ class Command(BaseCommand):
         pending_files = [f for f in json_files if f.name not in imported_files]
 
         if not pending_files:
+            logger.info("All program configurations have already been imported")
             self.stdout.write(self.style.SUCCESS("\n✓ All program configurations have already been imported.\n"))
             self._show_summary(len(json_files), len(imported_files), 0)
             return
+
+        logger.info("Found %d pending program config import(s)", len(pending_files))
 
         # Show what will be imported
         self.stdout.write(self.style.WARNING(f"\n{'=' * 60}"))
@@ -130,6 +137,12 @@ class Command(BaseCommand):
                         program_name=result["program_name"],
                         white_label_code=result["white_label_code"],
                     )
+                    logger.info(
+                        "Successfully imported program config: %s (program=%s, white_label=%s)",
+                        config_file.name,
+                        result["program_name"],
+                        result["white_label_code"],
+                    )
                     self.stdout.write(self.style.SUCCESS(f"✓ Imported and recorded: {config_file.name}"))
                 elif result["status"] == "skipped":
                     skipped += 1
@@ -141,19 +154,37 @@ class Command(BaseCommand):
                             "white_label_code": result["white_label_code"],
                         },
                     )
+                    logger.info(
+                        "Skipped program config (already exists): %s (program=%s, white_label=%s)",
+                        config_file.name,
+                        result["program_name"],
+                        result["white_label_code"],
+                    )
                     self.stdout.write(
                         self.style.WARNING(f"⊘ Skipped (program exists): {config_file.name} - recorded as imported")
                     )
                 else:
                     failed += 1
+                    logger.error(
+                        "Failed to import program config: %s - %s",
+                        config_file.name,
+                        result.get("error", "Unknown error"),
+                    )
                     self.stdout.write(
                         self.style.ERROR(f"✗ Failed: {config_file.name} - {result.get('error', 'Unknown error')}")
                     )
             except Exception as e:
                 failed += 1
+                logger.exception("Error importing program config: %s", config_file.name)
                 self.stdout.write(self.style.ERROR(f"✗ Error importing {config_file.name}: {str(e)}"))
 
         # Final summary
+        logger.info(
+            "Program config import complete: successful=%d, skipped=%d, failed=%d",
+            successful,
+            skipped,
+            failed,
+        )
         self.stdout.write(self.style.WARNING(f"\n{'=' * 60}"))
         self.stdout.write(self.style.SUCCESS("Import Complete"))
         self.stdout.write(self.style.WARNING(f"{'=' * 60}"))
