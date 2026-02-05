@@ -136,8 +136,8 @@ class Command(BaseCommand):
                         filename=config_file.name,
                         defaults={
                             "program_name": result["program_name"],
-                            "white_label_code": result["white_label_code"],                            
-                        },                        
+                            "white_label_code": result["white_label_code"],
+                        },
                     )
                     logger.info(
                         "Successfully imported program config: %s (program=%s, white_label=%s)",
@@ -261,7 +261,7 @@ class Command(BaseCommand):
 
         if not isinstance(config, dict):
             return {"status": "error", "error": "Config file does not contain a JSON object"}
-        
+
         # Extract program info
         white_label_code = config.get("white_label", {}).get("code")
         program_name = config.get("program", {}).get("name_abbreviated")
