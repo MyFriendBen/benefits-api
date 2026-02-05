@@ -161,6 +161,8 @@ class Screen(models.Model):
         Get the reference date for age calculations.
         For frozen screens (with validations), use the earliest validation's created_date
         to keep ages consistent over time. For non-frozen screens, use current date.
+
+        Returns a timezone-aware datetime.
         """
         earliest_validation = self.validations.order_by("created_date").first()
         if earliest_validation and earliest_validation.created_date:
@@ -730,7 +732,10 @@ class HouseholdMember(models.Model):
 
         return today.year - birth_year_month.year - 1
 
-    def fraction_age(self) -> float:
+    def fraction_age(self) -> Optional[float]:
+        if self.birth_year_month is None:
+            return float(self.age) if self.age else None
+
         reference_date = self.screen.get_reference_date()
 
         current_year = reference_date.year + reference_date.month / 12

@@ -95,6 +95,7 @@ class HouseholdMemberSerializer(serializers.ModelSerializer):
         data["birth_year_month"] = birth_year_month.date()
 
         if "age" not in data or data["age"] is None:
+            # No reference_date needed - member is being created, no screen/validations exist yet
             data["age"] = HouseholdMember.age_from_date(birth_year_month)
 
         return data
