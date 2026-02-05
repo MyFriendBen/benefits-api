@@ -2881,6 +2881,12 @@ class NcConfigurationData(ConfigurationData):
                 "referralSource",
             ],
         },
+        "uiOptions": {
+            "default": ["nc_show_211_link"],
+            "211nc": ["no_results_more_help", "nc_show_211_link", "211nc"],
+            "hfed": ["no_results_more_help", "hfed"],
+        },
+        # Deprecated: use uiOptions. Remove as part of MFB-635.
         "featureFlags": {
             "default": ["nc_show_211_link"],
             "211nc": ["no_results_more_help", "nc_show_211_link", "211nc"],

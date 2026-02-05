@@ -1483,7 +1483,8 @@ class MaConfigurationData(ConfigurationData):
                 "signUpInfo",
             ],
         },
-        "featureFlags": {"default": []},
+        "uiOptions": {"default": []},
+        "featureFlags": {"default": []},  # Deprecated: use uiOptions. Remove as part of MFB-635.
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",

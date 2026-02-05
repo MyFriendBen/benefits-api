@@ -367,11 +367,11 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     #   - "acuteHHConditions" is the Additional Resources step
     #   - Can have multiple directories keyed by path for different flows
     #
-    # featureFlags: Array of feature flag strings to enable optional features
+    # uiOptions: Array of UI option strings to enable optional UI customizations
     #   - Examples:
-    #     * "211co" - Enable 2-1-1 Colorado specific features
-    #     * "211nc" - Enable 2-1-1 North Carolina specific features
-    #     * "lanc" - Enable LANC specific features
+    #     * "211co" - Enable 2-1-1 Colorado specific branding
+    #     * "211nc" - Enable 2-1-1 North Carolina specific branding
+    #     * "lanc" - Enable LANC specific branding
     #     * "nc_show_211_link" - Show 2-1-1 link in NC
     #     * "white_multi_select_tile_icon" - White icons on multi-select tiles
     #     * "dont_show_category_values" - Hide dollar amounts on category headings
@@ -412,7 +412,8 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
                 "signUpInfo",
             ]
         },
-        "featureFlags": {"default": []},
+        "uiOptions": {"default": []},
+        "featureFlags": {"default": []},  # Deprecated: use uiOptions. Remove as part of MFB-635.
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",
