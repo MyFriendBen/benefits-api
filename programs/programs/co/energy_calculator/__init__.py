@@ -1,5 +1,5 @@
 from programs.programs.calc import ProgramCalculator
-from .affordable_residential_energy.calculator import AffordableResidentialEnergy
+from .affordable_residential_energy.calculator import EnergyCalculatorAffordableResidentialEnergy
 from .electric_affordability_black_hills.calculator import (
     EnergyCalculatorElectricityAffordabilityBlackHills,
 )
@@ -13,7 +13,7 @@ from .energy_outreach.calculator import EnergyCalculatorEnergyOutreach
 from .energy_outreach_crisis_intervention.calculator import (
     EnergyCalculatorEnergyOutreachCrisisIntervention,
 )
-from .energy_outreach_solar.calculator import EnergyOutreachSolar
+from .energy_outreach_solar.calculator import EnergyCalculatorEnergyOutreachSolar
 from .gas_affordability_black_hills.calculator import (
     EnergyCalculatorGasAffordabilityBlackHills,
 )
@@ -40,8 +40,8 @@ from .assistance_programs.project_cope.calculator import (
 )
 
 cesn_calculators: dict[str, type[ProgramCalculator]] = {
-    "cesn_care": AffordableResidentialEnergy,
-    "cesn_eocs": EnergyOutreachSolar,
+    "cesn_care": EnergyCalculatorAffordableResidentialEnergy,
+    "cesn_eocs": EnergyCalculatorEnergyOutreachSolar,
     "cesn_leap": EnergyCalculatorEnergyAssistance,
     "cesn_ubp": EnergyCalculatorUtilityBillPay,
     "cesn_cpcr": EnergyCalculatorPropertyCreditRebate,
