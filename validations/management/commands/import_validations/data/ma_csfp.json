@@ -12,7 +12,7 @@
           "age": 65,
           "has_income": true,
           "income_streams": [
-            { "type": "socialSecurity", "amount": 1500, "frequency": "monthly" }
+            { "type": "sSRetirement", "amount": 1500, "frequency": "monthly" }
           ],
           "insurance": { "none": true }
         }
@@ -63,7 +63,7 @@
           "age": 70,
           "has_income": true,
           "income_streams": [
-            { "type": "socialSecurity", "amount": 1200, "frequency": "monthly" }
+            { "type": "sSRetirement", "amount": 1200, "frequency": "monthly" }
           ],
           "insurance": { "none": true }
         }
@@ -113,7 +113,7 @@
           "age": 62,
           "has_income": true,
           "income_streams": [
-            { "type": "socialSecurity", "amount": 1800, "frequency": "monthly" }
+            { "type": "sSRetirement", "amount": 1800, "frequency": "monthly" }
           ],
           "insurance": { "none": true }
         },
@@ -146,7 +146,7 @@
           "age": 68,
           "has_income": true,
           "income_streams": [
-            { "type": "socialSecurity", "amount": 1200, "frequency": "monthly" }
+            { "type": "sSRetirement", "amount": 1200, "frequency": "monthly" }
           ],
           "insurance": { "none": true }
         },
@@ -155,7 +155,7 @@
           "age": 65,
           "has_income": true,
           "income_streams": [
-            { "type": "socialSecurity", "amount": 800, "frequency": "monthly" }
+            { "type": "sSRetirement", "amount": 800, "frequency": "monthly" }
           ],
           "insurance": { "none": true }
         }
@@ -182,7 +182,7 @@
           "age": 70,
           "has_income": true,
           "income_streams": [
-            { "type": "socialSecurity", "amount": 1200, "frequency": "monthly" }
+            { "type": "sSRetirement", "amount": 1200, "frequency": "monthly" }
           ],
           "insurance": { "none": true }
         }
@@ -257,7 +257,7 @@
           "age": 66,
           "has_income": true,
           "income_streams": [
-            { "type": "socialSecurity", "amount": 1400, "frequency": "monthly" }
+            { "type": "sSRetirement", "amount": 1400, "frequency": "monthly" }
           ],
           "insurance": { "none": true }
         }
@@ -309,7 +309,7 @@
           "age": 80,
           "has_income": true,
           "income_streams": [
-            { "type": "socialSecurity", "amount": 1100, "frequency": "monthly" }
+            { "type": "sSRetirement", "amount": 1100, "frequency": "monthly" }
           ],
           "insurance": { "none": true }
         }
@@ -335,7 +335,7 @@
           "age": 68,
           "has_income": true,
           "income_streams": [
-            { "type": "socialSecurity", "amount": 1200, "frequency": "monthly" }
+            { "type": "sSRetirement", "amount": 1200, "frequency": "monthly" }
           ],
           "insurance": { "none": true }
         }
@@ -360,7 +360,7 @@
           "age": 65,
           "has_income": true,
           "income_streams": [
-            { "type": "socialSecurity", "amount": 1000, "frequency": "monthly" }
+            { "type": "sSRetirement", "amount": 1000, "frequency": "monthly" }
           ],
           "insurance": { "none": true }
         }

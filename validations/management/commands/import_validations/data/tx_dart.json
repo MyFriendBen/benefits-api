@@ -1,14 +1,108 @@
 [
   {
-    "notes": "TX Harris County RIDES - Eligible senior 65+ in Harris County",
+    "notes": "TX DART - Eligible child under 5 (free ride)",
     "household": {
       "white_label": "tx",
       "is_test": true,
       "agree_to_tos": true,
       "is_13_or_older": true,
-      "zipcode": "77001",
-      "county": "Harris",
+      "zipcode": "75201",
+      "county": "Dallas",
+      "household_size": 2,
+      "household_assets": 1500.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 30,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 5000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 3,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_dart",
+      "eligible": true,
+      "value": 1512
+    }
+  },
+  {
+    "notes": "TX DART - Eligible child age 5-14 (reduced fare)",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75001",
+      "county": "Collin",
+      "household_size": 2,
+      "household_assets": 2000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 6000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 10,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_dart",
+      "eligible": true,
+      "value": 756
+    }
+  },
+  {
+    "notes": "TX DART - Eligible senior 65+ (reduced fare)",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75201",
+      "county": "Dallas",
       "household_size": 1,
+      "household_assets": 5000.00,
       "household_members": [
         {
           "relationship": "headOfHousehold",
@@ -16,7 +110,7 @@
           "has_income": true,
           "income_streams": [
             {
-              "type": "socialSecurity",
+              "type": "sSRetirement",
               "amount": 2000.00,
               "frequency": "monthly"
             }
@@ -27,25 +121,270 @@
           }
         }
       ],
-      "expenses": [],
-      "has_harris_county_rides": false
+      "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_harris_rides",
+      "program_name": "tx_dart",
       "eligible": true,
-      "value": 1
+      "value": 756
     }
   },
   {
-    "notes": "TX Harris County RIDES - Eligible person exactly at age 65 in Harris County",
+    "notes": "TX DART - Eligible disabled adult",
     "household": {
       "white_label": "tx",
       "is_test": true,
       "agree_to_tos": true,
       "is_13_or_older": true,
-      "zipcode": "77002",
-      "county": "Harris",
+      "zipcode": "75001",
+      "county": "Collin",
+      "household_size": 1,
+      "household_assets": 1000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 45,
+          "disabled": true,
+          "long_term_disability": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSI",
+              "amount": 950.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_dart",
+      "eligible": true,
+      "value": 756
+    }
+  },
+  {
+    "notes": "TX DART - Eligible veteran",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75201",
+      "county": "Dallas",
+      "household_size": 1,
+      "household_assets": 3000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 55,
+          "veteran": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "va": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_dart",
+      "eligible": true,
+      "value": 756
+    }
+  },
+  {
+    "notes": "TX DART - Eligible full-time college student",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75001",
+      "county": "Collin",
+      "household_size": 1,
+      "household_assets": 500.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 20,
+          "student": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 800.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_dart",
+      "eligible": true,
+      "value": 756
+    }
+  },
+  {
+    "notes": "TX DART - Eligible adult on Medicaid (qualifying program)",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75201",
+      "county": "Dallas",
       "household_size": 2,
+      "household_assets": 800.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 28,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 5,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_dart",
+      "eligible": true,
+      "value": 1512
+    }
+  },
+  {
+    "notes": "TX DART - Ineligible adult age 15-64 without qualifying criteria",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75001",
+      "county": "Collin",
+      "household_size": 1,
+      "household_assets": 10000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 40,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 8000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_dart",
+      "eligible": false,
+      "value": 0
+    }
+  },
+  {
+    "notes": "TX DART - Eligible 14-year-old at upper age boundary for child reduced fare",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75201",
+      "county": "Dallas",
+      "household_size": 2,
+      "household_assets": 5000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 45,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 7000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 14,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_dart",
+      "eligible": true,
+      "value": 756
+    }
+  },
+  {
+    "notes": "TX DART - Eligible 65-year-old at lower senior age boundary",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75001",
+      "county": "Collin",
+      "household_size": 2,
+      "household_assets": 8000.00,
       "household_members": [
         {
           "relationship": "headOfHousehold",
@@ -53,7 +392,7 @@
           "has_income": true,
           "income_streams": [
             {
-              "type": "socialSecurity",
+              "type": "sSRetirement",
               "amount": 1800.00,
               "frequency": "monthly"
             }
@@ -70,312 +409,16 @@
           "income_streams": [],
           "insurance": {
             "none": false,
-            "medicare": true
-          }
-        }
-      ],
-      "expenses": [],
-      "has_harris_county_rides": false
-    },
-    "expected_results": {
-      "program_name": "tx_harris_rides",
-      "eligible": true,
-      "value": 1
-    }
-  },
-  {
-    "notes": "TX Harris County RIDES - Eligible disabled person under 65 in Harris County",
-    "household": {
-      "white_label": "tx",
-      "is_test": true,
-      "agree_to_tos": true,
-      "is_13_or_older": true,
-      "zipcode": "77003",
-      "county": "Harris",
-      "household_size": 1,
-      "household_members": [
-        {
-          "relationship": "headOfHousehold",
-          "age": 45,
-          "disabled": true,
-          "has_income": true,
-          "income_streams": [
-            {
-              "type": "sSI",
-              "amount": 1500.00,
-              "frequency": "monthly"
-            }
-          ],
-          "insurance": {
-            "none": false,
-            "medicaid": true
-          }
-        }
-      ],
-      "expenses": [],
-      "has_harris_county_rides": false
-    },
-    "expected_results": {
-      "program_name": "tx_harris_rides",
-      "eligible": true,
-      "value": 1
-    }
-  },
-  {
-    "notes": "TX Harris County RIDES - Eligible person with long-term disability under 65 in Harris County",
-    "household": {
-      "white_label": "tx",
-      "is_test": true,
-      "agree_to_tos": true,
-      "is_13_or_older": true,
-      "zipcode": "77004",
-      "county": "Harris",
-      "household_size": 1,
-      "household_members": [
-        {
-          "relationship": "headOfHousehold",
-          "age": 35,
-          "long_term_disability": true,
-          "has_income": true,
-          "income_streams": [
-            {
-              "type": "sSI",
-              "amount": 1200.00,
-              "frequency": "monthly"
-            }
-          ],
-          "insurance": {
-            "none": false,
-            "medicaid": true
-          }
-        }
-      ],
-      "expenses": [],
-      "has_harris_county_rides": false
-    },
-    "expected_results": {
-      "program_name": "tx_harris_rides",
-      "eligible": true,
-      "value": 1
-    }
-  },
-  {
-    "notes": "TX Harris County RIDES - Eligible visually impaired person under 65 in Harris County",
-    "household": {
-      "white_label": "tx",
-      "is_test": true,
-      "agree_to_tos": true,
-      "is_13_or_older": true,
-      "zipcode": "77005",
-      "county": "Harris",
-      "household_size": 1,
-      "household_members": [
-        {
-          "relationship": "headOfHousehold",
-          "age": 50,
-          "visually_impaired": true,
-          "has_income": true,
-          "income_streams": [
-            {
-              "type": "wages",
-              "amount": 3000.00,
-              "frequency": "monthly"
-            }
-          ],
-          "insurance": {
-            "none": false,
             "employer": true
           }
         }
       ],
-      "expenses": [],
-      "has_harris_county_rides": false
+      "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_harris_rides",
+      "program_name": "tx_dart",
       "eligible": true,
-      "value": 1
-    }
-  },
-  {
-    "notes": "TX Harris County RIDES - Ineligible due to non-Harris County location (Travis County)",
-    "household": {
-      "white_label": "tx",
-      "is_test": true,
-      "agree_to_tos": true,
-      "is_13_or_older": true,
-      "zipcode": "78701",
-      "county": "Travis",
-      "household_size": 1,
-      "household_members": [
-        {
-          "relationship": "headOfHousehold",
-          "age": 70,
-          "has_income": true,
-          "income_streams": [
-            {
-              "type": "socialSecurity",
-              "amount": 2200.00,
-              "frequency": "monthly"
-            }
-          ],
-          "insurance": {
-            "none": false,
-            "medicare": true
-          }
-        }
-      ],
-      "expenses": [],
-      "has_harris_county_rides": false
-    },
-    "expected_results": {
-      "program_name": "tx_harris_rides",
-      "eligible": false
-    }
-  },
-  {
-    "notes": "TX Harris County RIDES - Ineligible due to age under 65 and no disability",
-    "household": {
-      "white_label": "tx",
-      "is_test": true,
-      "agree_to_tos": true,
-      "is_13_or_older": true,
-      "zipcode": "77006",
-      "county": "Harris",
-      "household_size": 1,
-      "household_members": [
-        {
-          "relationship": "headOfHousehold",
-          "age": 55,
-          "has_income": true,
-          "income_streams": [
-            {
-              "type": "wages",
-              "amount": 5000.00,
-              "frequency": "monthly"
-            }
-          ],
-          "insurance": {
-            "none": false,
-            "employer": true
-          }
-        }
-      ],
-      "expenses": [],
-      "has_harris_county_rides": false
-    },
-    "expected_results": {
-      "program_name": "tx_harris_rides",
-      "eligible": false
-    }
-  },
-  {
-    "notes": "TX Harris County RIDES - Ineligible at age 64 (just under threshold) without disability",
-    "household": {
-      "white_label": "tx",
-      "is_test": true,
-      "agree_to_tos": true,
-      "is_13_or_older": true,
-      "zipcode": "77007",
-      "county": "Harris",
-      "household_size": 1,
-      "household_members": [
-        {
-          "relationship": "headOfHousehold",
-          "age": 64,
-          "has_income": true,
-          "income_streams": [
-            {
-              "type": "wages",
-              "amount": 4000.00,
-              "frequency": "monthly"
-            }
-          ],
-          "insurance": {
-            "none": false,
-            "employer": true
-          }
-        }
-      ],
-      "expenses": [],
-      "has_harris_county_rides": false
-    },
-    "expected_results": {
-      "program_name": "tx_harris_rides",
-      "eligible": false
-    }
-  },
-  {
-    "notes": "TX Harris County RIDES - Ineligible because household already has the benefit",
-    "household": {
-      "white_label": "tx",
-      "is_test": true,
-      "agree_to_tos": true,
-      "is_13_or_older": true,
-      "zipcode": "77008",
-      "county": "Harris",
-      "household_size": 1,
-      "household_members": [
-        {
-          "relationship": "headOfHousehold",
-          "age": 72,
-          "has_income": true,
-          "income_streams": [
-            {
-              "type": "socialSecurity",
-              "amount": 2500.00,
-              "frequency": "monthly"
-            }
-          ],
-          "insurance": {
-            "none": false,
-            "medicare": true
-          }
-        }
-      ],
-      "expenses": [],
-      "has_harris_county_rides": true
-    },
-    "expected_results": {
-      "program_name": "tx_harris_rides",
-      "eligible": false
-    }
-  },
-  {
-    "notes": "TX Harris County RIDES - Eligible disabled person in Dallas County is ineligible (wrong county)",
-    "household": {
-      "white_label": "tx",
-      "is_test": true,
-      "agree_to_tos": true,
-      "is_13_or_older": true,
-      "zipcode": "75201",
-      "county": "Dallas",
-      "household_size": 1,
-      "household_members": [
-        {
-          "relationship": "headOfHousehold",
-          "age": 40,
-          "disabled": true,
-          "has_income": true,
-          "income_streams": [
-            {
-              "type": "sSI",
-              "amount": 1400.00,
-              "frequency": "monthly"
-            }
-          ],
-          "insurance": {
-            "none": false,
-            "medicaid": true
-          }
-        }
-      ],
-      "expenses": [],
-      "has_harris_county_rides": false
-    },
-    "expected_results": {
-      "program_name": "tx_harris_rides",
-      "eligible": false
+      "value": 1512
     }
   }
 ]
