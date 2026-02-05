@@ -37,5 +37,5 @@ class NationalDiaperBankNetwork(UrgentNeedFunction):
         has_needs_baby_supplies = bool(self.screen.needs_baby_supplies)
 
         # Check if there are any child support expenses
-        has_child_support_expense = bool(self.screen.has_expense(["childSupport"]))
+        has_child_support_expense = bool(self.screen.has_expense(["childSupport", "childCare"]))
         return has_young_child and has_needs_baby_supplies and has_child_support_expense
