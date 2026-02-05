@@ -732,7 +732,7 @@ class HouseholdMember(models.Model):
 
     def fraction_age(self) -> Optional[float]:
         if self.birth_year_month is None:
-            return float(self.age) if self.age is None else None
+            return float(self.age) if self.age is not None else None
 
         reference_date = self.screen.get_reference_date()
 
