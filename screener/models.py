@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date
 from typing import Optional
 from django.db import models
 from django.utils import timezone
@@ -156,18 +156,16 @@ class Screen(models.Model):
     def frozen(self):
         return self.validations.count() > 0
 
-    def get_reference_date(self) -> datetime:
+    def get_reference_date(self) -> date:
         """
         Get the reference date for age calculations.
         For frozen screens (with validations), use the earliest validation's created_date
         to keep ages consistent over time. For non-frozen screens, use current date.
-
-        Returns a timezone-aware datetime.
         """
         earliest_validation = self.validations.order_by("created_date").first()
         if earliest_validation and earliest_validation.created_date:
-            return earliest_validation.created_date
-        return timezone.now()
+            return earliest_validation.created_date.date()
+        return timezone.now().date()
 
     def calc_gross_income(self, frequency, types, exclude=[]):
         household_members = self.household_members.all()
@@ -724,7 +722,7 @@ class HouseholdMember(models.Model):
         return self.age_from_date(self.birth_year_month, reference_date)
 
     @staticmethod
-    def age_from_date(birth_year_month: datetime, reference_date: Optional[datetime] = None) -> int:
+    def age_from_date(birth_year_month: date, reference_date: Optional[date] = None) -> int:
         today = reference_date if reference_date else timezone.now()
 
         if today.month >= birth_year_month.month:
