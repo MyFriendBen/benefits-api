@@ -171,7 +171,7 @@
               "frequency": "monthly"
             },
             {
-              "type": "socialSecurity",
+              "type": "sSRetirement",
               "amount": 1200.00,
               "frequency": "monthly"
             }

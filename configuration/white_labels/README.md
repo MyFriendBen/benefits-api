@@ -200,7 +200,8 @@ referrer_data = {
             "signUpInfo",
         ]
     },
-    "featureFlags": {"default": []},
+    "uiOptions": {"default": []},
+    "featureFlags": {"default": []},  # Deprecated: use uiOptions. Remove as part of MFB-635.
 }
 ```
 

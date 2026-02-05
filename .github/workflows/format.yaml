@@ -17,7 +17,8 @@ jobs:
         id: changed-files
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
-            FILES=$(git diff --name-only --diff-filter=ACMRT ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep '\.py$' | tr '\n' ' ' | xargs || true)
+            # Exclude _template.py (contains Jinja placeholders that Black can't parse)
+            FILES=$(git diff --name-only --diff-filter=ACMRT ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep '\.py$' | grep -v '_template\.py' | tr '\n' ' ' | xargs || true)
           else
             FILES="."
           fi

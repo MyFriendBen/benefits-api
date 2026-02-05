@@ -133,7 +133,7 @@
           "has_income": true,
           "income_streams": [
             {
-              "type": "socialSecurity",
+              "type": "sSRetirement",
               "amount": 1800.00,
               "frequency": "monthly"
             }
@@ -436,7 +436,7 @@
           "has_income": true,
           "income_streams": [
             {
-              "type": "socialSecurity",
+              "type": "sSRetirement",
               "amount": 1400.00,
               "frequency": "monthly"
             }
