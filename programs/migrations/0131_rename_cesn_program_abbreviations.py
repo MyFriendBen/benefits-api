@@ -9,25 +9,23 @@ def rename_co_energy_calculator_to_cesn(apps, schema_editor):
     WarningMessage = apps.get_model("programs", "WarningMessage")
 
     # Update all programs with co_energy_calculator_ prefix to cesn_
-    for program in Program.objects.filter(name_abbreviated__startswith="co_energy_calculator_"):
-        program.name_abbreviated = program.name_abbreviated.replace(
-            "co_energy_calculator_", "cesn_"
-        )
-        program.save()
+    # Using raw SQL via update() to avoid parler translation issues with historical models
+    from django.db.models.functions import Replace
+    from django.db.models import Value, F
+
+    Program.objects.filter(name_abbreviated__startswith="co_energy_calculator_").update(
+        name_abbreviated=Replace(F("name_abbreviated"), Value("co_energy_calculator_"), Value("cesn_"))
+    )
 
     # Update all program categories with co_energy_calculator_ prefix to cesn_
-    for category in ProgramCategory.objects.filter(external_name__startswith="co_energy_calculator_"):
-        category.external_name = category.external_name.replace(
-            "co_energy_calculator_", "cesn_"
-        )
-        category.save()
+    ProgramCategory.objects.filter(external_name__startswith="co_energy_calculator_").update(
+        external_name=Replace(F("external_name"), Value("co_energy_calculator_"), Value("cesn_"))
+    )
 
     # Update all warning messages with co_energy_calculator calculator to cesn
-    for warning in WarningMessage.objects.filter(calculator__startswith="co_energy_calculator"):
-        warning.calculator = warning.calculator.replace(
-            "co_energy_calculator", "cesn"
-        )
-        warning.save()
+    WarningMessage.objects.filter(calculator__startswith="co_energy_calculator").update(
+        calculator=Replace(F("calculator"), Value("co_energy_calculator"), Value("cesn"))
+    )
 
 
 def reverse_rename_cesn_to_co_energy_calculator(apps, schema_editor):
@@ -35,26 +33,23 @@ def reverse_rename_cesn_to_co_energy_calculator(apps, schema_editor):
     ProgramCategory = apps.get_model("programs", "ProgramCategory")
     WarningMessage = apps.get_model("programs", "WarningMessage")
 
+    from django.db.models.functions import Replace
+    from django.db.models import Value, F
+
     # Reverse: update all programs with cesn_ prefix back to co_energy_calculator_
-    for program in Program.objects.filter(name_abbreviated__startswith="cesn_"):
-        program.name_abbreviated = program.name_abbreviated.replace(
-            "cesn_", "co_energy_calculator_"
-        )
-        program.save()
+    Program.objects.filter(name_abbreviated__startswith="cesn_").update(
+        name_abbreviated=Replace(F("name_abbreviated"), Value("cesn_"), Value("co_energy_calculator_"))
+    )
 
     # Reverse: update all program categories with cesn_ prefix back to co_energy_calculator_
-    for category in ProgramCategory.objects.filter(external_name__startswith="cesn_"):
-        category.external_name = category.external_name.replace(
-            "cesn_", "co_energy_calculator_"
-        )
-        category.save()
+    ProgramCategory.objects.filter(external_name__startswith="cesn_").update(
+        external_name=Replace(F("external_name"), Value("cesn_"), Value("co_energy_calculator_"))
+    )
 
     # Reverse: update all warning messages with cesn calculator back to co_energy_calculator
-    for warning in WarningMessage.objects.filter(calculator__startswith="cesn"):
-        warning.calculator = warning.calculator.replace(
-            "cesn", "co_energy_calculator"
-        )
-        warning.save()
+    WarningMessage.objects.filter(calculator__startswith="cesn").update(
+        calculator=Replace(F("calculator"), Value("cesn"), Value("co_energy_calculator"))
+    )
 
 
 class Migration(migrations.Migration):
