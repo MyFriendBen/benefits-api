@@ -7,9 +7,9 @@ class UniversalPreschool(ProgramCalculator):
     age = 4
     income_limit = 1
     foster_income_limit = 2.7
-    amount_10_hr = 4_920
-    amount_15_hr = 6_204
-    amount_30_hr = 11_004
+    amount_10_hr = 4_956
+    amount_15_hr = 6_240
+    amount_30_hr = 11_088
     dependencies = ["age", "income_amount", "income_frequency", "relationship", "household_size"]
 
     def member_eligible(self, e: MemberEligibility):
