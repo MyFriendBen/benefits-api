@@ -1,0 +1,288 @@
+[
+  {
+    "notes": "IL AABD - Ineligible: Senior 67 with SSI income only - benefit $0 because income exceeds need standard",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 1500,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 67,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSI", "amount": 943, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_aabd",
+      "eligible": false,
+      "value": 0
+    }
+  },
+  {
+    "notes": "IL AABD - Ineligible: Disabled adult 45 with low SSDI income - benefit $0 because income exceeds need standard",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 1000,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 45,
+          "disabled": true,
+          "long_term_disability": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSDisability", "amount": 800, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_aabd",
+      "eligible": false,
+      "value": 0
+    }
+  },
+  {
+    "notes": "IL AABD - Ineligible: Blind person 55 with modest SSDI income - benefit $0 because income exceeds need standard",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 1200,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 55,
+          "visually_impaired": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSDisability", "amount": 900, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_aabd",
+      "eligible": false,
+      "value": 0
+    }
+  },
+  {
+    "notes": "IL AABD - Ineligible: Age 64 not old enough for Aged and not disabled/blind",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 1000,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 64,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 900, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_aabd",
+      "eligible": false,
+      "value": 0
+    }
+  },
+  {
+    "notes": "IL AABD - Ineligible: Exact age 65 qualifies for Aged but income exceeds need standard",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 1500,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 65,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 1000, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_aabd",
+      "eligible": false,
+      "value": 0
+    }
+  },
+  {
+    "notes": "IL AABD - Ineligible: Income too high exceeds countable income limit",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 1000,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 70,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 2500, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_aabd",
+      "eligible": false,
+      "value": 0
+    }
+  },
+  {
+    "notes": "IL AABD - Eligible: Senior couple with combined low income - gets annual benefit",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 2,
+      "household_assets": 2500,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 68,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 700, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "spouse",
+          "age": 66,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 600, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_aabd",
+      "eligible": true,
+      "value": 3267
+    }
+  },
+  {
+    "notes": "IL AABD - Eligible: Disabled with rent expense (shelter allowance applies)",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 1000,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 50,
+          "disabled": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSI", "amount": 943, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": [
+        { "type": "rent", "amount": 800, "frequency": "monthly" }
+      ]
+    },
+    "expected_results": {
+      "program_name": "il_aabd",
+      "eligible": true,
+      "value": 363
+    }
+  },
+  {
+    "notes": "IL AABD - Ineligible: Senior with zero income but no shelter expenses - minimal need standard",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 500,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 72,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_aabd",
+      "eligible": false,
+      "value": 0
+    }
+  },
+  {
+    "notes": "IL AABD - Ineligible: Disabled adult with mixed income - benefit $0 because income exceeds need standard",
+    "household": {
+      "white_label": "il",
+      "zipcode": "62002",
+      "county": "Madison",
+      "household_size": 1,
+      "household_assets": 1800,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 40,
+          "disabled": true,
+          "long_term_disability": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSDisability", "amount": 500, "frequency": "monthly" },
+            { "type": "wages", "amount": 200, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_aabd",
+      "eligible": false,
+      "value": 0
+    }
+  }
+]

@@ -71,7 +71,7 @@
                     "relationship": "headOfHousehold",
                     "age": 68,
                     "has_income": true,
-                    "income_streams": [{"type": "socialSecurity", "amount": 1200.00, "frequency": "monthly"}],
+                    "income_streams": [{"type": "sSRetirement", "amount": 1200.00, "frequency": "monthly"}],
                     "insurance": {"none": true}
                 }
             ],
