@@ -9,7 +9,6 @@ from django.test import TestCase
 from screener.models import WhiteLabel
 from screener.feature_flags import FeatureFlagConfig
 
-
 TEST_FLAGS = {
     "flag_one": FeatureFlagConfig(
         label="Flag One",
