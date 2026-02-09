@@ -12,6 +12,20 @@ python manage.py update_validations path/to/updates.json --dry-run
 python manage.py update_validations path/to/updates.json
 ```
 
+## File Naming Convention
+
+Update files should be stored in the `data/` directory with the following naming format:
+
+```
+YYMMDD_TICKET_description.json
+```
+
+- `YYMMDD` - Date in 2-digit year, month, day format (e.g., `250205` for Feb 5, 2025)
+- `TICKET` - Issue/ticket reference (e.g., `MFB617`)
+- `description` - Brief snake_case description of the update
+
+**Example:** `250205_MFB617_unemployment_in_irs_gross_income.json`
+
 ## JSON Format
 
 ```json
