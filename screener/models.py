@@ -1,5 +1,5 @@
+from typing import ClassVar, Optional
 from datetime import date
-from typing import Optional
 from django.db import models
 from django.utils import timezone
 from decimal import Decimal
@@ -8,16 +8,30 @@ from authentication.models import User
 from django.utils.translation import gettext_lazy as _
 from programs.util import Dependencies
 from django.conf import settings
+from .feature_flags import FeatureFlagConfig, WHITELABEL_FEATURE_FLAGS
 
 
 class WhiteLabel(models.Model):
+    FEATURE_FLAGS: ClassVar[dict[str, FeatureFlagConfig]] = WHITELABEL_FEATURE_FLAGS
+
     name = models.CharField(max_length=120, blank=False, null=False)
     code = models.CharField(max_length=32, blank=False, null=False)
     state_code = models.CharField(max_length=8, blank=True, null=True)
     cms_method = models.CharField(max_length=32, blank=True, null=True)
+    feature_flags = models.JSONField(default=dict, blank=True)
 
     def __str__(self):
         return self.name
+
+    def _get_flag_value(self, key: str) -> bool:
+        """Internal: Get flag value with default fallback. Assumes key is valid."""
+        return (self.feature_flags or {}).get(key, self.FEATURE_FLAGS[key].default)
+
+    def has_feature(self, key: str) -> bool:
+        """Check if a feature flag is enabled for this WhiteLabel."""
+        if key not in self.FEATURE_FLAGS:
+            raise KeyError(f"Unknown feature flag: {key}")
+        return self._get_flag_value(key)
 
 
 # The screen is the top most container for all information collected in the

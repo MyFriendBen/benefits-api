@@ -1,10 +1,12 @@
 """
-Unit tests for Screen and HouseholdMember model methods.
+Unit tests for Screen, HouseholdMember, and WhiteLabel model methods.
 """
 
 from decimal import Decimal
+from unittest.mock import patch
 from django.test import TestCase
 from screener.models import Screen, HouseholdMember, WhiteLabel, IncomeStream, Expense
+from screener.feature_flags import FeatureFlagConfig
 
 
 class TestScreen(TestCase):
@@ -827,3 +829,76 @@ class TestHouseholdMember(TestCase):
         # Age > 23, so not dependent (even though student)
         result = student.is_dependent()
         self.assertFalse(result)
+
+
+TEST_FEATURE_FLAGS = {
+    "test_flag": FeatureFlagConfig(
+        label="Test Flag",
+        description="A test flag",
+        scope="backend",
+        default=False,
+    ),
+    "default_true_flag": FeatureFlagConfig(
+        label="Default True",
+        description="A flag that defaults to True",
+        scope="frontend",
+        default=True,
+    ),
+}
+
+
+class TestWhiteLabelFeatureFlags(TestCase):
+    """
+    Tests for WhiteLabel.has_feature() method.
+    """
+
+    def setUp(self):
+        """Set up test data for feature flag tests."""
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+
+    @patch.object(WhiteLabel, "FEATURE_FLAGS", TEST_FEATURE_FLAGS)
+    def test_has_feature_returns_stored_value_when_enabled(self):
+        """Test has_feature returns True when flag is stored as True."""
+        self.white_label.feature_flags = {"test_flag": True, "default_true_flag": True}
+        self.white_label.save()
+
+        self.assertTrue(self.white_label.has_feature("test_flag"))
+
+    @patch.object(WhiteLabel, "FEATURE_FLAGS", TEST_FEATURE_FLAGS)
+    def test_has_feature_returns_stored_value_when_disabled(self):
+        """Test has_feature returns False when flag is stored as False."""
+        self.white_label.feature_flags = {"test_flag": False, "default_true_flag": False}
+        self.white_label.save()
+
+        self.assertFalse(self.white_label.has_feature("test_flag"))
+        self.assertFalse(self.white_label.has_feature("default_true_flag"))
+
+    @patch.object(WhiteLabel, "FEATURE_FLAGS", TEST_FEATURE_FLAGS)
+    def test_has_feature_returns_default_when_flag_not_stored(self):
+        """Test has_feature returns default value when flag is not in stored flags."""
+        self.white_label.feature_flags = {}
+        self.white_label.save()
+
+        # default=False
+        self.assertFalse(self.white_label.has_feature("test_flag"))
+        # default=True
+        self.assertTrue(self.white_label.has_feature("default_true_flag"))
+
+    @patch.object(
+        WhiteLabel,
+        "FEATURE_FLAGS",
+        {
+            "test_flag": FeatureFlagConfig(
+                label="Test Flag",
+                description="A test flag",
+                scope="backend",
+                default=False,
+            ),
+        },
+    )
+    def test_has_feature_raises_keyerror_for_unknown_flag(self):
+        """Test has_feature raises KeyError for unknown feature flag."""
+        with self.assertRaises(KeyError) as cm:
+            self.white_label.has_feature("unknown_flag")
+
+        self.assertIn("Unknown feature flag: unknown_flag", str(cm.exception))
