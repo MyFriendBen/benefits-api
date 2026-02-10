@@ -428,7 +428,6 @@ class Screen(models.Model):
             "project_cope": self.has_project_cope,
             "cesn_cope": self.has_project_cope,
             "cesn_heap": self.has_cesn_heap,
-            "cesn_heap": self.has_cesn_heap,
             "rtdlive": self.has_rtdlive,
             "cccap": self.has_ccap,
             "mydenver": self.has_mydenver,
