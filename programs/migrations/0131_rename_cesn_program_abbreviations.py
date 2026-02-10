@@ -7,6 +7,7 @@ def rename_co_energy_calculator_to_cesn(apps, schema_editor):
     Program = apps.get_model("programs", "Program")
     ProgramCategory = apps.get_model("programs", "ProgramCategory")
     WarningMessage = apps.get_model("programs", "WarningMessage")
+    TranslationOverride = apps.get_model("programs", "TranslationOverride")
 
     # Update all programs with co_energy_calculator_ prefix to cesn_
     # Using raw SQL via update() to avoid parler translation issues with historical models
@@ -27,11 +28,17 @@ def rename_co_energy_calculator_to_cesn(apps, schema_editor):
         calculator=Replace(F("calculator"), Value("co_energy_calculator"), Value("cesn"))
     )
 
+    # Update all translation overrides with co_energy_calculator calculator to cesn
+    TranslationOverride.objects.filter(calculator__startswith="co_energy_calculator").update(
+        calculator=Replace(F("calculator"), Value("co_energy_calculator"), Value("cesn"))
+    )
+
 
 def reverse_rename_cesn_to_co_energy_calculator(apps, schema_editor):
     Program = apps.get_model("programs", "Program")
     ProgramCategory = apps.get_model("programs", "ProgramCategory")
     WarningMessage = apps.get_model("programs", "WarningMessage")
+    TranslationOverride = apps.get_model("programs", "TranslationOverride")
 
     from django.db.models.functions import Replace
     from django.db.models import Value, F
@@ -48,6 +55,11 @@ def reverse_rename_cesn_to_co_energy_calculator(apps, schema_editor):
 
     # Reverse: update all warning messages with cesn calculator back to co_energy_calculator
     WarningMessage.objects.filter(calculator__startswith="cesn").update(
+        calculator=Replace(F("calculator"), Value("cesn"), Value("co_energy_calculator"))
+    )
+
+    # Reverse: update all translation overrides with cesn calculator back to co_energy_calculator
+    TranslationOverride.objects.filter(calculator__startswith="cesn").update(
         calculator=Replace(F("calculator"), Value("cesn"), Value("co_energy_calculator"))
     )
 
