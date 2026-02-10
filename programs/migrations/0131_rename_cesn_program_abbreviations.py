@@ -54,13 +54,13 @@ def reverse_rename_cesn_to_co_energy_calculator(apps, _schema_editor):
     )
 
     # Reverse: update all warning messages with cesn calculator back to co_energy_calculator
-    WarningMessage.objects.filter(calculator__startswith="cesn_").update(
-        calculator=Replace(F("calculator"), Value("cesn_"), Value("co_energy_calculator_"))
+    WarningMessage.objects.filter(calculator__startswith="cesn").update(
+        calculator=Replace(F("calculator"), Value("cesn"), Value("co_energy_calculator"))
     )
 
     # Reverse: update all translation overrides with cesn calculator back to co_energy_calculator
-    TranslationOverride.objects.filter(calculator__startswith="cesn_").update(
-        calculator=Replace(F("calculator"), Value("cesn_"), Value("co_energy_calculator_"))
+    TranslationOverride.objects.filter(calculator__startswith="cesn").update(
+        calculator=Replace(F("calculator"), Value("cesn"), Value("co_energy_calculator"))
     )
 
 

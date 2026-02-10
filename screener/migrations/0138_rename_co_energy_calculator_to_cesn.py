@@ -5,12 +5,12 @@ from django.db import migrations
 
 def rename_white_label(apps, schema_editor):  # noqa: ARG001
     WhiteLabel = apps.get_model("screener", "WhiteLabel")
-    WhiteLabel.objects.filter(code="co_energy_calculator").update(code="cesn")
+    WhiteLabel.objects.filter(code="co_energy_calculator").update(code="cesn", name="CESN")
 
 
 def reverse_rename_white_label(apps, schema_editor):  # noqa: ARG001
     WhiteLabel = apps.get_model("screener", "WhiteLabel")
-    WhiteLabel.objects.filter(code="cesn").update(code="co_energy_calculator")
+    WhiteLabel.objects.filter(code="cesn").update(code="co_energy_calculator", name="Colorado Energy Calculator")
 
 
 class Migration(migrations.Migration):
