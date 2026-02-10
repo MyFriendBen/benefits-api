@@ -42,6 +42,10 @@ class FeatureFlagsAdmin(SecureAdmin):
     def change_view(self, request, object_id, form_url="", extra_context=None):
         obj = self.get_object(request, object_id)
 
+        # Handle None return when object ID is invalid
+        if obj is None:
+            return super().change_view(request, object_id, form_url, extra_context)
+
         # Build feature flags context for template
         flags_for_template = [
             {
@@ -49,7 +53,7 @@ class FeatureFlagsAdmin(SecureAdmin):
                 "label": flag_config.label,
                 "description": flag_config.description,
                 "scope": flag_config.scope,
-                "enabled": obj._get_flag_value(flag_key),
+                "enabled": obj.has_feature(flag_key),
             }
             for flag_key, flag_config in WhiteLabel.FEATURE_FLAGS.items()
         ]
@@ -73,7 +77,7 @@ class FeatureFlagsAdmin(SecureAdmin):
 
     def get_feature_flags_summary(self, obj):
         """Show only enabled features."""
-        enabled = [c.label for k, c in WhiteLabel.FEATURE_FLAGS.items() if obj._get_flag_value(k)]
+        enabled = [c.label for k, c in WhiteLabel.FEATURE_FLAGS.items() if obj.has_feature(k)]
         return ", ".join(enabled) if enabled else "—"
 
     get_feature_flags_summary.short_description = "Enabled Features"
