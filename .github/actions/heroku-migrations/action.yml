@@ -13,6 +13,9 @@ outputs:
   migrations-output:
     description: 'Output from database migrations'
     value: ${{ steps.migrations.outputs.migrations_output }}
+  feature-flags-output:
+    description: 'Output from feature flag sync'
+    value: ${{ steps.feature-flags.outputs.feature_flags_output }}
 
 runs:
   using: 'composite'
@@ -25,7 +28,7 @@ runs:
       run: |
         echo "Running migrations..."
         set +e
-        OUTPUT=$(heroku run -a ${{ inputs.heroku-app-name }} "python manage.py migrate && python manage.py sync_feature_flags" 2>&1)
+        OUTPUT=$(heroku run -a ${{ inputs.heroku-app-name }} "python manage.py migrate" 2>&1)
         STATUS=$?
         set -e
         echo "$OUTPUT"
@@ -39,5 +42,26 @@ runs:
           echo "Please resolve the conflict locally (python manage.py makemigrations --merge), commit, and re-deploy."
           exit 1
         elif [ $STATUS -ne 0 ]; then
+          exit $STATUS
+        fi
+
+    - name: Sync feature flags
+      id: feature-flags
+      shell: bash
+      env:
+        HEROKU_API_KEY: ${{ inputs.heroku-api-key }}
+      run: |
+        echo "Syncing feature flags..."
+        set +e
+        OUTPUT=$(heroku run -a ${{ inputs.heroku-app-name }} "python manage.py sync_feature_flags" 2>&1)
+        STATUS=$?
+        set -e
+        echo "$OUTPUT"
+        DELIMITER="EOF_$(date +%s)"
+        echo "feature_flags_output<<${DELIMITER}" >> $GITHUB_OUTPUT
+        echo "$OUTPUT" >> $GITHUB_OUTPUT
+        echo "${DELIMITER}" >> $GITHUB_OUTPUT
+
+        if [ $STATUS -ne 0 ]; then
           exit $STATUS
         fi
