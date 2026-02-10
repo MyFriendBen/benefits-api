@@ -14,10 +14,10 @@ def reverse_rename_white_label(apps, schema_editor):  # noqa: ARG001
 
 
 class Migration(migrations.Migration):
-    dependencies = [
+    dependencies = [  # noqa: RUF012
         ("screener", "0137_merge_0135_screen_has_ccs_0136_merge_20260113"),
     ]
 
-    operations = [
+    operations = [  # noqa: RUF012
         migrations.RunPython(rename_white_label, reverse_rename_white_label),
     ]
