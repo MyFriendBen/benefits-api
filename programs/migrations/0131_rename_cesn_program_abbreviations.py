@@ -68,6 +68,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("programs", "0130_alter_program_legal_status_required"),
+        ("screener", "0138_rename_co_energy_calculator_to_cesn"),
     ]
 
     operations = [
