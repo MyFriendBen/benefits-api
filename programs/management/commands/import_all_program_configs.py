@@ -86,7 +86,7 @@ class Command(BaseCommand):
 
         if not pending_files:
             self.stdout.write(self.style.SUCCESS("\n✓ All program configurations have already been imported.\n"))
-            self._show_summary(len(json_files), len(imported_files), 0)
+            self._show_summary(len(json_files), len(json_files), 0)
             return
 
         self.stdout.write(f"Found {len(pending_files)} pending program config import(s)\n")
