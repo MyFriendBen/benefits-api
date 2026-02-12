@@ -101,17 +101,16 @@ class TestNPSScoreSerializer(TestCase):
 
     def test_uses_most_recent_snapshot(self):
         """Test that serializer uses the most recent non-error snapshot."""
-        # Create an older snapshot
-        older_snapshot = EligibilitySnapshot.objects.create(screen=self.screen, is_batch=False, had_error=False)
+        # Create a newer snapshot (self.snapshot from setUp is older)
+        newer_snapshot = EligibilitySnapshot.objects.create(screen=self.screen, is_batch=False, had_error=False)
 
-        # The setUp created self.snapshot which should be more recent
         data = {"uuid": str(self.screen.uuid), "score": 6, "variant": "inline"}
         serializer = NPSScoreSerializer(data=data)
         self.assertTrue(serializer.is_valid())
         nps_score = serializer.save()
 
-        # Should be linked to the most recent snapshot (self.snapshot)
-        self.assertEqual(nps_score.eligibility_snapshot, self.snapshot)
+        # Should be linked to the most recent snapshot (newer_snapshot)
+        self.assertEqual(nps_score.eligibility_snapshot, newer_snapshot)
 
     def test_ignores_error_snapshots(self):
         """Test that snapshots with had_error=True are ignored."""

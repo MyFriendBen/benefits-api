@@ -970,12 +970,8 @@ class NPSScore(models.Model):
         FLOATING = "floating", "Floating Widget"
         INLINE = "inline", "Inline Section"
 
-    eligibility_snapshot = models.OneToOneField(
-        EligibilitySnapshot, related_name="nps_score", on_delete=models.CASCADE
-    )
-    score = models.IntegerField(
-        validators=[MinValueValidator(0), MaxValueValidator(10)]
-    )
+    eligibility_snapshot = models.OneToOneField(EligibilitySnapshot, related_name="nps_score", on_delete=models.CASCADE)
+    score = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(10)])
     variant = models.CharField(
         max_length=20,
         choices=Variant.choices,

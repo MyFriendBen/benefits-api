@@ -470,9 +470,9 @@ class NPSScoreSerializer(serializers.Serializer):
         uuid = validated_data.pop("uuid")
 
         # Get the most recent eligibility snapshot for this screen
-        snapshot = EligibilitySnapshot.objects.filter(
-            screen__uuid=uuid, had_error=False
-        ).order_by("-submission_date").first()
+        snapshot = (
+            EligibilitySnapshot.objects.filter(screen__uuid=uuid, had_error=False).order_by("-submission_date").first()
+        )
 
         if snapshot is None:
             raise serializers.ValidationError({"uuid": "No eligibility snapshot found for this screen"})
@@ -493,9 +493,9 @@ class NPSScoreReasonSerializer(serializers.Serializer):
         score_reason = validated_data["score_reason"]
 
         # Get the most recent eligibility snapshot for this screen
-        snapshot = EligibilitySnapshot.objects.filter(
-            screen__uuid=uuid, had_error=False
-        ).order_by("-submission_date").first()
+        snapshot = (
+            EligibilitySnapshot.objects.filter(screen__uuid=uuid, had_error=False).order_by("-submission_date").first()
+        )
 
         if snapshot is None:
             raise serializers.ValidationError({"uuid": "No eligibility snapshot found for this screen"})

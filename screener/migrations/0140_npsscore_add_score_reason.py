@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("screener", "0139_npsscore_add_variant"),
+        ("screener", "0138_npsscore"),
     ]
 
     operations = [
