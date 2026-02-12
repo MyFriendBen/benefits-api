@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
                     "score",
                     models.IntegerField(
                         validators=[
-                            django.core.validators.MinValueValidator(0),
+                            django.core.validators.MinValueValidator(1),
                             django.core.validators.MaxValueValidator(10),
                         ]
                     ),
@@ -49,7 +49,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="npsscore",
             constraint=models.CheckConstraint(
-                check=models.Q(("score__gte", 0), ("score__lte", 10)), name="nps_score_range"
+                check=models.Q(("score__gte", 1), ("score__lte", 10)), name="nps_score_range"
             ),
         ),
     ]

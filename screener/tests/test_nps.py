@@ -33,13 +33,13 @@ class TestNPSScoreSerializer(TestCase):
         self.assertEqual(nps_score.eligibility_snapshot, self.snapshot)
 
     def test_score_range_minimum(self):
-        """Test that score of 0 is valid."""
-        data = {"uuid": str(self.screen.uuid), "score": 0, "variant": "inline"}
+        """Test that score of 1 is valid."""
+        data = {"uuid": str(self.screen.uuid), "score": 1, "variant": "inline"}
         serializer = NPSScoreSerializer(data=data)
 
         self.assertTrue(serializer.is_valid())
         nps_score = serializer.save()
-        self.assertEqual(nps_score.score, 0)
+        self.assertEqual(nps_score.score, 1)
 
     def test_score_range_maximum(self):
         """Test that score of 10 is valid."""
@@ -51,8 +51,8 @@ class TestNPSScoreSerializer(TestCase):
         self.assertEqual(nps_score.score, 10)
 
     def test_score_below_minimum_invalid(self):
-        """Test that score below 0 is invalid."""
-        data = {"uuid": str(self.screen.uuid), "score": -1, "variant": "floating"}
+        """Test that score below 1 is invalid."""
+        data = {"uuid": str(self.screen.uuid), "score": 0, "variant": "floating"}
         serializer = NPSScoreSerializer(data=data)
 
         self.assertFalse(serializer.is_valid())

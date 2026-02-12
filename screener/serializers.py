@@ -462,7 +462,7 @@ class ResultsSerializer(serializers.Serializer):
 
 class NPSScoreSerializer(serializers.Serializer):
     uuid = serializers.UUIDField(write_only=True)
-    score = serializers.IntegerField(min_value=0, max_value=10)
+    score = serializers.IntegerField(min_value=1, max_value=10)
     variant = serializers.ChoiceField(choices=NPSScore.Variant.choices, required=False, allow_null=True)
 
     def create(self, validated_data):

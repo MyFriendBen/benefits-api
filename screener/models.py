@@ -1001,7 +1001,7 @@ class NPSScore(models.Model):
         INLINE = "inline", "Inline Section"
 
     eligibility_snapshot = models.OneToOneField(EligibilitySnapshot, related_name="nps_score", on_delete=models.CASCADE)
-    score = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(10)])
+    score = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(10)])
     variant = models.CharField(
         max_length=20,
         choices=Variant.choices,
@@ -1014,7 +1014,7 @@ class NPSScore(models.Model):
     class Meta:
         constraints = [
             models.CheckConstraint(
-                check=models.Q(score__gte=0) & models.Q(score__lte=10),
+                check=models.Q(score__gte=1) & models.Q(score__lte=10),
                 name="nps_score_range",
             )
         ]
