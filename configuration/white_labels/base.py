@@ -631,10 +631,10 @@ class ConfigurationData:
     }
 
     # A/B test experiments with multi-variant support
-    # Each experiment maps to a variant name (not just on/off like featureFlags)
+    # Each experiment maps to a list of active variants (not just on/off like featureFlags)
+    # Frontend uses UUID hash to deterministically assign a variant
     experiments = {
-        # NPS survey variant: "floating" | "inline" | "off"
-        "npsVariant": {"default": "floating"},
+        "npsVariant": {"variants": ["floating", "inline"]},
     }
 
     # Footer contact information
