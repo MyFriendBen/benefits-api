@@ -482,3 +482,29 @@ class NPSScoreSerializer(serializers.Serializer):
             raise serializers.ValidationError({"uuid": "NPS score already submitted for this session"})
 
         return NPSScore.objects.create(eligibility_snapshot=snapshot, **validated_data)
+
+
+class NPSScoreReasonSerializer(serializers.Serializer):
+    uuid = serializers.UUIDField(write_only=True)
+    score_reason = serializers.CharField()
+
+    def update_reason(self, validated_data):
+        uuid = validated_data["uuid"]
+        score_reason = validated_data["score_reason"]
+
+        # Get the most recent eligibility snapshot for this screen
+        snapshot = EligibilitySnapshot.objects.filter(
+            screen__uuid=uuid, had_error=False
+        ).order_by("-submission_date").first()
+
+        if snapshot is None:
+            raise serializers.ValidationError({"uuid": "No eligibility snapshot found for this screen"})
+
+        try:
+            nps_score = snapshot.nps_score
+        except NPSScore.DoesNotExist:
+            raise serializers.ValidationError({"uuid": "No NPS score found for this session"})
+
+        nps_score.score_reason = score_reason
+        nps_score.save(update_fields=["score_reason"])
+        return nps_score

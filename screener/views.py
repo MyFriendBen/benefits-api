@@ -27,6 +27,7 @@ from screener.serializers import (
     ResultsSerializer,
     WarningMessageSerializer,
     NPSScoreSerializer,
+    NPSScoreReasonSerializer,
 )
 from programs.programs.policyengine.policy_engine import calc_pe_eligibility
 from programs.util import DependencyError, Dependencies
@@ -609,4 +610,11 @@ class NPSScoreView(views.APIView):
         if serializer.is_valid():
             serializer.save()
             return Response({"status": "success"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def patch(self, request):
+        serializer = NPSScoreReasonSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.update_reason(serializer.validated_data)
+            return Response({"status": "success"}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
