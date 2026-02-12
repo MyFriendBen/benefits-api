@@ -9,6 +9,23 @@ class NcConfigurationData(ConfigurationData):
 
     state = {"name": "North Carolina"}
 
+    # System banner messages
+    banner_messages = [
+        {
+            "id": "nc.banner.snap_nov_2025_hold",
+            "title": {
+                "_label": "nc.banner.snap_nov_2025_hold.title",
+                "_default_message": "Urgent: SNAP Benefits for November 2025 are on Hold",
+            },
+            "content": {
+                "_label": "nc.banner.snap_nov_2025_hold.content",
+                "_default_message": "The North Carolina SNAP agency said SNAP food help for November 2025 will be decreased and delayed because of the government shutdown.\n\nYou should still apply for SNAP and turn in any required paperwork.\n\nTo find out more about November SNAP, go to the North Carolina Food and Nutrition Services [website](https://www.ncdhhs.gov/divisions/child-and-family-well-being/food-and-nutrition-services-food-stamps). You can use MyFriendBen to see what other programs can help your family and to get help near you.",
+            },
+            "enabled": False,
+            "priority": 1,
+        }
+    ]
+
     public_charge_rule = {
         "link": "https://www.ncjustice.org/publications/public-charge-the-law-has-changed/",
         "text": {
@@ -171,9 +188,14 @@ class NcConfigurationData(ConfigurationData):
     }
 
     referral_options = {
+        "ctd": {"_label": "referralOptions.ctd", "_default_message": "Code the Dream"},
         "211nc": {
             "_label": "referralOptions.211nc",
             "_default_message": "2-1-1 North Carolina",
+        },
+        "amexcan": {
+            "_label": "referralOptions.amexcan",
+            "_default_message": "AMEXCAN",
         },
         "blueprint": {
             "_label": "referralOptions.blueprint",
@@ -182,6 +204,10 @@ class NcConfigurationData(ConfigurationData):
         "careReach": {
             "_label": "referralOptions.careReach",
             "_default_message": "Care Reach",
+        },
+        "cca": {
+            "_label": "referralOptions.cca",
+            "_default_message": "Community Civil Activist",
         },
         "fiel": {
             "_label": "referralOptions.fiel",
@@ -195,13 +221,17 @@ class NcConfigurationData(ConfigurationData):
             "_label": "referralOptions.felp",
             "_default_message": "Future Endeavors Life Program (FELP)",
         },
-        "hf": {
-            "_label": "referralOptions.hf",
+        "hfed": {
+            "_label": "referralOptions.hfed",
             "_default_message": "Hispanic Federation",
         },
         "lanc": {
             "_label": "referralOptions.lanc",
             "_default_message": "Legal Aid of North Carolina",
+        },
+        "mfa": {
+            "_label": "referralOptions.mfa",
+            "_default_message": "Mi Familia en Acción",
         },
         "mda": {
             "_label": "referralOptions.mda",
@@ -218,6 +248,14 @@ class NcConfigurationData(ConfigurationData):
         "nariahWay": {
             "_label": "referralOptions.nw",
             "_default_message": "Nariah's Way",
+        },
+        "ncapri": {
+            "_label": "referralOptions.ncapri",
+            "_default_message": "NCAPRI",
+        },
+        "ncba": {
+            "_label": "referralOptions.ncba",
+            "_default_message": "NC Black Alliance",
         },
         "ncchwa": {
             "_label": "referralOptions.NCCHWA",
@@ -240,6 +278,11 @@ class NcConfigurationData(ConfigurationData):
             "_label": "referralOptions.ruralHealthGroup",
             "_default_message": "Rural Health Group",
         },
+        "sf": {
+            "_label": "referralOptions.sf",
+            "_default_message": "Shackle Free",
+        },
+        "unch": {"_label": "referralOptions.unch", "_default_message": "UNC Health - Community Health"},
         "unidx": {
             "_label": "referralOptions.unidxWNC",
             "_default_message": "Unidx WNC",
@@ -252,6 +295,10 @@ class NcConfigurationData(ConfigurationData):
             "_label": "referralOptions.wrcgso",
             "_default_message": "Women's Resource Center of Greensboro",
         },
+        "valores": {
+            "_label": "referralOptions.valores",
+            "_default_message": "Valores",
+        },
         "searchEngine": {
             "_label": "referralOptions.searchEngine",
             "_default_message": "Google or other search engine",
@@ -260,6 +307,7 @@ class NcConfigurationData(ConfigurationData):
             "_label": "referralOptions.socialMedia",
             "_default_message": "Social Media",
         },
+        "merit": {"_label": "referralOptions.merit", "_default_message": "Merit America"},
         "other": {"_label": "referralOptions.other", "_default_message": "Other"},
         "testOrProspect": {
             "_label": "referralOptions.testOrProspect",
@@ -277,87 +325,46 @@ class NcConfigurationData(ConfigurationData):
         "ru": "Русский",
         "ne": "नेपाली",
         "my": "မြန်မာဘာသာစကား",
-        "zh": "中文 (简体)",
+        "zh-hans": "中文 (简体)",
         "ar": "عربي",
         "sw": "Kiswahili",
+        "pl": "Polski",
+        "tl": "Tagalog",
+        "ko": "한국어",
+        "ur": "اردو",
+        "pt-br": "Português Brasileiro",
+        "ht": "Kreyòl",
     }
 
+    # Nested income options organized by category (for future use with categorized UI)
+    income_options_by_category = {
+        **ConfigurationData.income_options_by_category,
+        "government": {
+            **ConfigurationData.income_options_by_category["government"],
+            "cashAssistance": {
+                "_label": "incomeOptions.nc_cashAssistance",
+                "_default_message": "Cash Assistance Grant",
+            },
+        },
+        "investment": {
+            **ConfigurationData.income_options_by_category["investment"],
+            "pension": {
+                "_label": "incomeOptions.nc_pension",
+                "_default_message": "Military, Government, or Private Pension",
+            },
+        },
+    }
+
+    # Flattened income options (backward compatible with current FE)
     income_options = {
-        "wages": {
-            "_label": "incomeOptions.wages",
-            "_default_message": "Wages, salaries, tips",
-        },
-        "selfEmployment": {
-            "_label": "incomeOptions.selfEmployment",
-            "_default_message": "Income from freelance, independent contractor, or self-employment work",
-        },
-        "sSDisability": {
-            "_label": "incomeOptions.sSDisability",
-            "_default_message": "Social Security Disability Benefits",
-        },
-        "sSRetirement": {
-            "_label": "incomeOptions.sSRetirement",
-            "_default_message": "Social Security Retirement Benefits",
-        },
-        "sSI": {
-            "_label": "incomeOptions.sSI",
-            "_default_message": "Supplemental Security Income (SSI)",
-        },
-        "childSupport": {
-            "_label": "incomeOptions.childSupport",
-            "_default_message": "Child Support (Received)",
-        },
+        **ConfigurationData.income_options,
         "pension": {
             "_label": "incomeOptions.nc_pension",
             "_default_message": "Military, Government, or Private Pension",
         },
-        "veteran": {
-            "_label": "incomeOptions.veteran",
-            "_default_message": "Veteran's Pension or Benefits",
-        },
-        "sSSurvivor": {
-            "_label": "incomeOptions.sSSurvivor",
-            "_default_message": "Social Security Survivor's Benefits (Widowed)",
-        },
-        "unemployment": {
-            "_label": "incomeOptions.unemployment",
-            "_default_message": "Unemployment Benefits",
-        },
-        "sSDependent": {
-            "_label": "incomeOptions.sSDependent",
-            "_default_message": "Social Security Dependent Benefits (retirement, disability, or survivors)",
-        },
         "cashAssistance": {
             "_label": "incomeOptions.nc_cashAssistance",
             "_default_message": "Cash Assistance Grant",
-        },
-        "gifts": {
-            "_label": "incomeOptions.gifts",
-            "_default_message": "Gifts/Contributions (Received)",
-        },
-        "investment": {
-            "_label": "incomeOptions.investment",
-            "_default_message": "Investment Income (interest, dividends, and profit from selling stocks)",
-        },
-        "rental": {
-            "_label": "incomeOptions.rental",
-            "_default_message": "Rental Income",
-        },
-        "alimony": {
-            "_label": "incomeOptions.alimony",
-            "_default_message": "Alimony (Received)",
-        },
-        "deferredComp": {
-            "_label": "incomeOptions.deferredComp",
-            "_default_message": "Withdrawals from Deferred Compensation (IRA, Keogh, etc.)",
-        },
-        "workersComp": {
-            "_label": "incomeOptions.workersComp",
-            "_default_message": "Worker's Compensation",
-        },
-        "boarder": {
-            "_label": "incomeOptions.boarder",
-            "_default_message": "Boarder or Lodger",
         },
     }
     health_insurance_options = {
@@ -395,16 +402,6 @@ class NcConfigurationData(ConfigurationData):
                 "text": {
                     "_label": "healthInsuranceOptions.medicare",
                     "_default_message": "Medicare",
-                },
-            },
-            "emergency_medicaid": {
-                "icon": {
-                    "_icon": "Emergency_medicaid",
-                    "_classname": "option-card-icon",
-                },
-                "text": {
-                    "_label": "healthInsuranceOptions.emergency_medicaid",
-                    "_default_message": "Emergency Medicaid / Reproductive Health",
                 },
             },
             "family_planning": {
@@ -456,16 +453,6 @@ class NcConfigurationData(ConfigurationData):
                 "text": {
                     "_label": "healthInsuranceOptions.medicare",
                     "_default_message": "Medicare",
-                },
-            },
-            "emergency_medicaid": {
-                "icon": {
-                    "_icon": "Emergency_medicaid",
-                    "_classname": "option-card-icon",
-                },
-                "text": {
-                    "_label": "healthInsuranceOptions.emergency_medicaid",
-                    "_default_message": "Emergency Medicaid / Reproductive Health",
                 },
             },
             "family_planning": {
@@ -2725,7 +2712,17 @@ class NcConfigurationData(ConfigurationData):
                         "_label": "childCareBenefits.nc_scca_desc",
                         "_default_message": "Help with child care costs",
                     },
-                }
+                },
+                "nc_head_start": {
+                    "name": {
+                        "_label": "childCareBenefits.nc_head_start",
+                        "_default_message": "NC Head Start Program: ",
+                    },
+                    "description": {
+                        "_label": "childCareBenefits.nc_head_start_desc",
+                        "_default_message": "Comprehensive early childhood education, health, nutrition, and parent involvement services to low-income children and families",
+                    },
+                },
             },
             "category_name": {
                 "_label": "childCareYouthAndEducation",
@@ -2791,7 +2788,17 @@ class NcConfigurationData(ConfigurationData):
                         "_label": "taxBenefits.nc_aca_desc",
                         "_default_message": "Health insurance marketplace and premium tax credit.",
                     },
-                }
+                },
+                "nc_medicare_savings": {
+                    "name": {
+                        "_label": "healthCareBenefits.nc_medicare_savings",
+                        "_default_message": "NC Medicare Savings Program: ",
+                    },
+                    "description": {
+                        "_label": "healthCareBenefits.nc_medicare_savings_desc",
+                        "_default_message": "Health coverage for low-income individuals and families",
+                    },
+                },
             },
             "category_name": {
                 "_label": "healthCare",
@@ -2829,62 +2836,24 @@ class NcConfigurationData(ConfigurationData):
         "theme": {"default": "default", "211nc": "twoOneOneNC", "lanc": "nc_lanc"},
         "logoSource": {
             "default": "MFB_NCLogo",
-            "bia": "BIA_MFBLogo",
-            "jeffcoHS": "JHSA_MFBLogo",
-            "jeffcoHSCM": "JHSA_MFBLogo",
-            "villageExchange": "VE_Logo",
-            "cch": "CCH_MFBLogo",
-            "lgs": "LGS_Logo",
-            "gac": "GAC_Logo",
-            "fircsummitresourcecenter": "FIRC_Logo",
-            "coBenefits": "CO_MFBLogo",
-            "dhs": "DHS_MFBLogo",
+            "hfed": "HispanicFederation_MFBLogo",
         },
         "logoAlt": {
             "default": {
                 "id": "referrerHook.logoAlts.default",
                 "defaultMessage": "MyFriendBen home page button",
             },
-            "bia": {
-                "id": "referrerHook.logoAlts.bia",
-                "defaultMessage": "Benefits in Action and MyFriendBen home page button",
-            },
-            "jeffcoHS": {
-                "id": "referrerHook.logoAlts.jeffcoHS",
-                "defaultMessage": "Jeffco Human Services and MyFriendBen home page button",
-            },
-            "jeffcoHSCM": {
-                "id": "referrerHook.logoAlts.jeffcoHSCM",
-                "defaultMessage": "Jeffco Human Services and MyFriendBen home page button",
-            },
-            "cch": {
-                "id": "referrerHook.logoAlts.cch",
-                "defaultMessage": "Colorado Coalition for the Homeless and MyFriendBen home page button",
-            },
-            "lgs": {
-                "id": "referrerHook.logoAlts.lgs",
-                "defaultMessage": "Let's Get Set home page button",
-            },
-            "gac": {
-                "id": "referrerHook.logoAlts.gac",
-                "defaultMessage": "Get Ahead Colorado home page button",
-            },
-            "fircsummitresourcecenter": {
-                "id": "referrerHook.logoAlts.fircsummitresourcecenter",
-                "defaultMessage": "Firc Summit Resource Center",
-            },
-            "coBenefits": {
-                "id": "referrerHook.logoAlts.coBenefits",
-                "defaultMessage": "MyFriendBen home page button",
-            },
-            "dhs": {
-                "id": "referrerHook.logoAlts.dhs",
-                "defaultMessage": "Denver Human Services and MyFriendBen home page button",
+            "hfed": {
+                "id": "referrerHook.logoAlts.hfed",
+                "defaultMessage": "Hispanic Federation and MyFriendBen home page button",
             },
         },
         "logoFooterSource": {"default": "MFB_NCFooterLogo"},
         "logoFooterAlt": {"default": {"id": "footer.logo.alt", "defaultMessage": "MFB Logo"}},
-        "logoClass": {"default": "logo"},
+        "logoClass": {
+            "default": "logo",
+            "hfed": "hfed-logo-size",
+        },
         "footerLogoClass": {"default": "footer-logo-nc"},
         "twoOneOneLink": {
             "default": "https://nc211.org/?utm_source=myfriendben&utm_medium=inlink&utm_campaign=organic&utm_id=211mfb"
@@ -2916,16 +2885,27 @@ class NcConfigurationData(ConfigurationData):
                 "referralSource",
             ],
         },
+        "uiOptions": {
+            "default": ["nc_show_211_link"],
+            "211nc": ["no_results_more_help", "nc_show_211_link", "211nc"],
+            "hfed": ["no_results_more_help", "hfed"],
+        },
+        # Deprecated: use uiOptions. Remove as part of MFB-635.
         "featureFlags": {
             "default": ["nc_show_211_link"],
             "211nc": ["no_results_more_help", "nc_show_211_link", "211nc"],
+            "hfed": ["no_results_more_help", "hfed"],
             "lanc": ["no_results_more_help", "lanc"],
         },
         "noResultMessage": {
             "default": {
-                "_label": "noResultMessage",
-                "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. If you indicated need for an immediate resource, please click on the “Near-Term Benefits” tab. For additional resources, please click the 'More Help' button below to get the resources you’re looking for.",
+                "_label": "noResultMessage.nc",
+                "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. If you indicated need for an immediate resource, please click on the “Near-Term Benefits” tab.",
             }
+        },
+        "defaultLanguage": {
+            "default": "en-us",
+            "hfed": "es",
         },
     }
 

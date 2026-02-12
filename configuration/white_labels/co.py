@@ -9,11 +9,28 @@ class CoConfigurationData(ConfigurationData):
 
     state = {"name": "Colorado"}
 
+    # System banner messages
+    banner_messages = [
+        {
+            "id": "co.banner.snap_nov_2025_hold",
+            "title": {
+                "_label": "co.banner.snap_nov_2025_hold.title",
+                "_default_message": "Update: November SNAP Benefits Are Coming",
+            },
+            "content": {
+                "_label": "co.banner.snap_nov_2025_hold.content",
+                "_default_message": "The federal government has reopened, and November SNAP (food assistance) benefits will be loaded onto EBT cards starting Friday, November 14.\n\n**What you need to know:**\n- Full November benefits are being processed now\n- December benefits will come on time as usual\n- You should still apply for SNAP and turn in any paperwork\n\n**Need food help while you wait?**\n- Call Colorado 211: dial 2-1-1 or 866-760-6489\n- Visit: https://www.211colorado.org",
+            },
+            "enabled": False,
+            "priority": 1,
+        }
+    ]
+
     public_charge_rule = {
-        "link": "https://cdhs.colorado.gov/public-charge-rule-and-colorado-immigrants#:~:text=About%20public%20charge&text=The%20test%20looks%20at%20whether,affidavit%20of%20support%20or%20contract.",
+        "link": "https://cdhs.colorado.gov/public-charge-rule-colorado-immigrants#:~:text=About%20public%20charge&text=The%20test%20looks%20at%20whether,affidavit%20of%20support%20or%20contract.",
         "text": {
             "_label": "landingPage.publicChargeLinkCO",
-            "_default_message": "Colorado Department of Human Services Public Charge Rule",
+            "_default_message": "Colorado Department of Human Services",
         },
     }
 
@@ -110,6 +127,13 @@ class CoConfigurationData(ConfigurationData):
                 "_default_message": "Free or low-cost help with civil legal needs or identity documents",
             },
         },
+        "savings": {
+            "icon": {"_icon": "Savings", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.savings",
+                "_default_message": "Saving for college",
+            },
+        },
     }
 
     sign_up_options = {
@@ -164,6 +188,7 @@ class CoConfigurationData(ConfigurationData):
         "pueblo": "Pueblo County",
         "pitkin": "Pitkin County",
         "broomfield": "City and County of Broomfield",
+        "theactioncenter": "The Action Center",
         "gac": "Get Ahead Colorado",
         "bia": "Benefits in Action",
         "fircsummitresourcecenter": {
@@ -175,6 +200,7 @@ class CoConfigurationData(ConfigurationData):
         "searchEngine": {"_label": "referralOptions.searchEngine", "_default_message": "Google or other search engine"},
         "socialMedia": {"_label": "referralOptions.socialMedia", "_default_message": "Social Media"},
         "friend": {"_label": "referralOptions.friend", "_default_message": "Friend / Family / Word of Mouth"},
+        "merit": {"_label": "referralOptions.merit", "_default_message": "Merit America"},
         "other": {"_label": "referralOptions.other", "_default_message": "Other"},
         "testOrProspect": {
             "_label": "referralOptions.testOrProspect",
@@ -192,62 +218,35 @@ class CoConfigurationData(ConfigurationData):
         "ru": "Русский",
         "ne": "नेपाली",
         "my": "မြန်မာဘာသာစကား",
-        "zh": "中文 (简体)",
+        "zh-hans": "中文 (简体)",
         "ar": "عربي",
         "sw": "Kiswahili",
+        "pl": "Polski",
+        "tl": "Tagalog",
+        "ko": "한국어",
+        "ur": "اردو",
+        "pt-br": "Português Brasileiro",
+        "ht": "Kreyòl",
+    }
+
+    # Override cashAssistance to include Colorado-specific text
+    income_options_by_category = {
+        **ConfigurationData.income_options_by_category,
+        "government": {
+            **ConfigurationData.income_options_by_category["government"],
+            "cashAssistance": {
+                "_label": "incomeOptions.cashAssistance",
+                "_default_message": "Government Cash Assistance (including Colorado Works/TANF)",
+            },
+        },
     }
 
     income_options = {
-        "wages": {"_label": "incomeOptions.wages", "_default_message": "Wages, salaries, tips"},
-        "selfEmployment": {
-            "_label": "incomeOptions.selfEmployment",
-            "_default_message": "Income from freelance, independent contractor, or self-employment work",
-        },
-        "sSDisability": {
-            "_label": "incomeOptions.sSDisability",
-            "_default_message": "Social Security Disability Benefits",
-        },
-        "sSRetirement": {
-            "_label": "incomeOptions.sSRetirement",
-            "_default_message": "Social Security Retirement Benefits",
-        },
-        "sSI": {"_label": "incomeOptions.sSI", "_default_message": "Supplemental Security Income (SSI)"},
-        "childSupport": {"_label": "incomeOptions.childSupport", "_default_message": "Child Support (Received)"},
-        "pension": {
-            "_label": "incomeOptions.pension",
-            "_default_message": "Military, Government, or Private Pension (including PERA)",
-        },
-        "veteran": {"_label": "incomeOptions.veteran", "_default_message": "Veteran's Pension or Benefits"},
-        "sSSurvivor": {
-            "_label": "incomeOptions.sSSurvivor",
-            "_default_message": "Social Security Survivor's Benefits (Widowed)",
-        },
-        "unemployment": {"_label": "incomeOptions.unemployment", "_default_message": "Unemployment Benefits"},
-        "sSDependent": {
-            "_label": "incomeOptions.sSDependent",
-            "_default_message": "Social Security Dependent Benefits (retirement, disability, or survivors)",
-        },
+        **ConfigurationData.income_options,
         "cashAssistance": {
             "_label": "incomeOptions.cashAssistance",
             "_default_message": "Government Cash Assistance (including Colorado Works/TANF)",
         },
-        "gifts": {"_label": "incomeOptions.gifts", "_default_message": "Gifts/Contributions (Received)"},
-        "investment": {
-            "_label": "incomeOptions.investment",
-            "_default_message": "Investment Income (interest, dividends, and profit from selling stocks)",
-        },
-        "cOSDisability": {
-            "_label": "incomeOptions.cOSDisability",
-            "_default_message": "Colorado State Disability Benefits",
-        },
-        "rental": {"_label": "incomeOptions.rental", "_default_message": "Rental Income"},
-        "alimony": {"_label": "incomeOptions.alimony", "_default_message": "Alimony (Received)"},
-        "deferredComp": {
-            "_label": "incomeOptions.deferredComp",
-            "_default_message": "Withdrawals from Deferred Compensation (IRA, Keogh, etc.)",
-        },
-        "workersComp": {"_label": "incomeOptions.workersComp", "_default_message": "Worker's Compensation"},
-        "boarder": {"_label": "incomeOptions.boarder", "_default_message": "Boarder or Lodger"},
     }
 
     health_insurance_options = {
@@ -292,13 +291,6 @@ class CoConfigurationData(ConfigurationData):
                 "text": {
                     "_label": "healthInsuranceOptions.chp",
                     "_default_message": "Child Health Plan Plus (CHP+)",
-                },
-            },
-            "emergency_medicaid": {
-                "icon": {"_icon": "Emergency_medicaid", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.emergency_medicaid",
-                    "_default_message": "Emergency Medicaid / Reproductive Health",
                 },
             },
             "family_planning": {
@@ -359,13 +351,6 @@ class CoConfigurationData(ConfigurationData):
                     "_default_message": "Child Health Plan Plus (CHP+)",
                 },
             },
-            "emergency_medicaid": {
-                "icon": {"_icon": "Emergency_medicaid", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.emergency_medicaid",
-                    "_default_message": "Emergency Medicaid / Reproductive Health",
-                },
-            },
             "family_planning": {
                 "icon": {"_icon": "Family_planning", "_classname": "option-card-icon"},
                 "text": {
@@ -381,14 +366,6 @@ class CoConfigurationData(ConfigurationData):
                 },
             },
         },
-    }
-
-    frequency_options = {
-        "weekly": {"_label": "frequencyOptions.weekly", "_default_message": "every week"},
-        "biweekly": {"_label": "frequencyOptions.biweekly", "_default_message": "every 2 weeks"},
-        "semimonthly": {"_label": "frequencyOptions.semimonthly", "_default_message": "twice a month"},
-        "monthly": {"_label": "frequencyOptions.monthly", "_default_message": "every month"},
-        "hourly": {"_label": "frequencyOptions.hourly", "_default_message": "hourly"},
     }
 
     expense_options = {
@@ -1991,7 +1968,7 @@ class CoConfigurationData(ConfigurationData):
         },
         "childCare": {
             "benefits": {
-                "cccap": {
+                "ccap": {
                     "name": {
                         "_label": "childCareBenefits.cccap",
                         "_default_message": "Colorado Child Care Assistance Program (CCCAP): ",
@@ -2121,7 +2098,7 @@ class CoConfigurationData(ConfigurationData):
                     "name": {"_label": "healthCareBenefits.nfp", "_default_message": "Nurse-Family Partnership: "},
                     "description": {
                         "_label": "healthCareBenefits.nfp_desc",
-                        "_default_message": "Personalized support for first-time parents",
+                        "_default_message": "Free nurse home visits for first-time pregnant parents",
                     },
                 },
                 "cfhc": {
@@ -2205,6 +2182,7 @@ class CoConfigurationData(ConfigurationData):
             "default": "MFB_COLogo",
             "bia": "BIA_MFBLogo",
             "broomfield": "Broomfield_MFBLogo",
+            "theactioncenter": "TheActionCenter_MFBLogo",
             "jeffcoHS": "JHSA_MFBLogo",
             "jeffcoHSCM": "JHSA_MFBLogo",
             "jeffcoPS": "JPS_MFBLogo",
@@ -2232,6 +2210,10 @@ class CoConfigurationData(ConfigurationData):
             "broomfield": {
                 "id": "referrerHook.logoAlts.broomfield",
                 "defaultMessage": "City and County of Broomfield and MyFriendBen home page button",
+            },
+            "theactioncenter": {
+                "id": "referrerHook.logoAlts.theactioncenter",
+                "defaultMessage": "The Action Center and MyFriendBen home page button",
             },
             "jeffcoHS": {
                 "id": "referrerHook.logoAlts.jeffcoHS",
@@ -2294,6 +2276,7 @@ class CoConfigurationData(ConfigurationData):
         "logoClass": {
             "default": "logo",
             "broomfield": "broomfield-logo-size",
+            "theactioncenter": "theactioncenter-logo-size",
             "eaglecounty": "eaglecounty-logo-size",
             "larimercounty": "larimercounty-logo-size",
             "tellercounty": "tellercounty-logo-size",
@@ -2332,22 +2315,18 @@ class CoConfigurationData(ConfigurationData):
                 "referralSource",
             ],
         },
-        "featureFlags": {"default": [], "211co": ["no_results_more_help", "211co"]},
+        "uiOptions": {"default": [], "211co": ["no_results_more_help", "211co"]},
+        "featureFlags": {
+            "default": [],
+            "211co": ["no_results_more_help", "211co"],
+        },  # Deprecated: use uiOptions. Remove as part of MFB-635.
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",
                 "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. If you indicated need for an immediate resource, please click on the \"Near-Term Benefits\" tab. For additional resources, please click the 'More Help' button below to get the resources you're looking for.",
             },
         },
-    }
-
-    footer_data = {
-        "email": "hello@myfriendben.org",
-    }
-
-    feedback_links = {
-        "email": "hello@myfriendben.org",
-        "survey": "https://docs.google.com/forms/d/e/1FAIpQLSdnfqjvlVSBQkJuUMvhEDUp-t6oD-8tPQi67uRG2iNetXmSfA/viewform?usp=sf_link",
+        "defaultLanguage": {"default": "en-us"},
     }
 
     override_text = {}

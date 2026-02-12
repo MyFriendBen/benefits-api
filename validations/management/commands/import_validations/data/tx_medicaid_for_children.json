@@ -1,0 +1,521 @@
+[
+  {
+    "notes": "TX Medicaid for Children - Eligible infant under 1 year at 203% FPL with no insurance",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_size": 3,
+      "household_assets": 1500.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 28,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4300.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 27,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 0,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_children",
+      "eligible": true
+    }
+  },
+  {
+    "notes": "TX Medicaid for Children - Eligible child age 1-5 at 149% FPL with no insurance",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75001",
+      "county": "Collin",
+      "household_size": 4,
+      "household_assets": 2000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 32,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3800.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 30,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 3,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 6,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_children",
+      "eligible": true
+    }
+  },
+  {
+    "notes": "TX Medicaid for Children - Eligible child age 6-18 at 138% FPL with no insurance",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "77001",
+      "county": "Harris",
+      "household_size": 3,
+      "household_assets": 1000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 40,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2900.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 10,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_children",
+      "eligible": true
+    }
+  },
+  {
+    "notes": "TX Medicaid for Children - Eligible 18-year-old at income threshold with no insurance",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_size": 2,
+      "household_assets": 500.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 45,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicare": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 18,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_children",
+      "eligible": true
+    }
+  },
+  {
+    "notes": "TX Medicaid for Children - Ineligible 19-year-old (age cutoff) despite low income and no insurance",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75201",
+      "county": "Dallas",
+      "household_size": 2,
+      "household_assets": 800.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 42,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 19,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_children",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "TX Medicaid for Children - Ineligible child with employer insurance despite low income",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_size": 3,
+      "household_assets": 1200.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 8,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_children",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "TX Medicaid for Children - Ineligible child with CHIP insurance despite otherwise qualifying",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "77001",
+      "county": "Harris",
+      "household_size": 2,
+      "household_assets": 600.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 29,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2200.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 5,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "chp": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_children",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "TX Medicaid for Children - Ineligible child above income threshold with no insurance",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75001",
+      "county": "Collin",
+      "household_size": 3,
+      "household_assets": 5000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 38,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 6000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 12,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_children",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "TX Medicaid for Children - Multiple eligible children with different ages, all without insurance",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_size": 5,
+      "household_assets": 1500.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 36,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3200.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 34,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 0,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 4,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 14,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_children",
+      "eligible": true
+    }
+  },
+  {
+    "notes": "TX Medicaid for Children - Eligible child with disabled parent receiving SSI benefits",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75201",
+      "county": "Dallas",
+      "household_size": 2,
+      "household_assets": 800.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 40,
+          "disabled": true,
+          "long_term_disability": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSI",
+              "amount": 950.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 7,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_medicaid_for_children",
+      "eligible": true
+    }
+  }
+]

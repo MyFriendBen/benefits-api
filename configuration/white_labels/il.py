@@ -10,10 +10,10 @@ class IlConfigurationData(ConfigurationData):
     state = {"name": "Illinois"}
 
     public_charge_rule = {
-        "link": "https://www.dhs.state.il.us/page.aspx?item=118709",
+        "link": "https://www.icirr.org/ifrp",
         "text": {
             "_label": "landingPage.publicChargeLinkIL",
-            "_default_message": "Illinois Department of Human Services website",
+            "_default_message": "Illinois Department of Human Services",
         },
     }
 
@@ -167,10 +167,6 @@ class IlConfigurationData(ConfigurationData):
     }
 
     referral_options = {
-        "socialServices": {
-            "_label": "referralOptions.gcfd.il",
-            "_default_message": "Greater Chicago Food Depository",
-        },
         "searchEngine": {
             "_label": "referralOptions.searchEngine",
             "_default_message": "Google or other search engine",
@@ -183,6 +179,7 @@ class IlConfigurationData(ConfigurationData):
             "_label": "referralOptions.friend",
             "_default_message": "Friend / Family / Word of Mouth",
         },
+        "merit": {"_label": "referralOptions.merit", "_default_message": "Merit America"},
         "other": {"_label": "referralOptions.other", "_default_message": "Other"},
         "testOrProspect": {
             "_label": "referralOptions.testOrProspect",
@@ -200,91 +197,65 @@ class IlConfigurationData(ConfigurationData):
         "ru": "Русский",
         "ne": "नेपाली",
         "my": "မြန်မာဘာသာစကား",
-        "zh": "中文 (简体)",
+        "zh-hans": "中文 (简体)",
         "ar": "عربي",
         "sw": "Kiswahili",
+        "pl": "Polski",
+        "tl": "Tagalog",
+        "ko": "한국어",
+        "ur": "اردو",
+        "pt-br": "Português Brasileiro",
+        "ht": "Kreyòl",
     }
 
+    # Nested income options organized by category (for future use with categorized UI)
+    income_options_by_category = {
+        **ConfigurationData.income_options_by_category,
+        "government": {
+            **ConfigurationData.income_options_by_category["government"],
+            "cashAssistance": {
+                "_label": "incomeOptions.cashAssistance.il",
+                "_default_message": "Government Cash Assistance (including TANF)",
+            },
+            "iLStateDisability": {
+                "_label": "incomeOptions.stateDisability",
+                "_default_message": "State Disability Benefits",
+            },
+        },
+        "investment": {
+            **ConfigurationData.income_options_by_category["investment"],
+            "pension": {
+                "_label": "incomeOptions.pension.il",
+                "_default_message": "Military, Government, or Private Pension",
+            },
+        },
+        "support": {
+            **ConfigurationData.income_options_by_category["support"],
+            "alimony": {
+                "_label": "incomeOptions.alimony.il",
+                "_default_message": "Alimony/spousal maintenance (Received)",
+            },
+        },
+    }
+
+    # Flattened income options (backward compatible with current FE)
     income_options = {
-        "wages": {
-            "_label": "incomeOptions.wages",
-            "_default_message": "Wages, salaries, tips",
-        },
-        "selfEmployment": {
-            "_label": "incomeOptions.selfEmployment",
-            "_default_message": "Income from freelance, independent contractor, or self-employment work",
-        },
-        "sSDisability": {
-            "_label": "incomeOptions.sSDisability",
-            "_default_message": "Social Security Disability Benefits",
-        },
-        "sSRetirement": {
-            "_label": "incomeOptions.sSRetirement",
-            "_default_message": "Social Security Retirement Benefits",
-        },
-        "sSI": {
-            "_label": "incomeOptions.sSI",
-            "_default_message": "Supplemental Security Income (SSI)",
-        },
-        "childSupport": {
-            "_label": "incomeOptions.childSupport",
-            "_default_message": "Child Support (Received)",
-        },
+        **ConfigurationData.income_options,
         "pension": {
             "_label": "incomeOptions.pension.il",
             "_default_message": "Military, Government, or Private Pension",
         },
-        "veteran": {
-            "_label": "incomeOptions.veteran",
-            "_default_message": "Veteran's Pension or Benefits",
-        },
-        "sSSurvivor": {
-            "_label": "incomeOptions.sSSurvivor",
-            "_default_message": "Social Security Survivor's Benefits (Widowed)",
-        },
-        "unemployment": {
-            "_label": "incomeOptions.unemployment",
-            "_default_message": "Unemployment Benefits",
-        },
-        "sSDependent": {
-            "_label": "incomeOptions.sSDependent",
-            "_default_message": "Social Security Dependent Benefits (retirement, disability, or survivors)",
-        },
         "cashAssistance": {
-            "_label": "incomeOptions.cashAssistance",
-            "_default_message": "Cash Assistance Grant",
-        },
-        "gifts": {
-            "_label": "incomeOptions.gifts",
-            "_default_message": "Gifts/Contributions (Received)",
-        },
-        "investment": {
-            "_label": "incomeOptions.investment",
-            "_default_message": "Investment Income (interest, dividends, and profit from selling stocks)",
+            "_label": "incomeOptions.cashAssistance.il",
+            "_default_message": "Government Cash Assistance (including TANF)",
         },
         "iLStateDisability": {
             "_label": "incomeOptions.stateDisability",
             "_default_message": "State Disability Benefits",
         },
-        "rental": {
-            "_label": "incomeOptions.rental",
-            "_default_message": "Rental Income",
-        },
         "alimony": {
-            "_label": "incomeOptions.alimony",
-            "_default_message": "Alimony (Received)",
-        },
-        "deferredComp": {
-            "_label": "incomeOptions.deferredComp",
-            "_default_message": "Withdrawals from Deferred Compensation (IRA, Keogh, etc.)",
-        },
-        "workersComp": {
-            "_label": "incomeOptions.workersComp",
-            "_default_message": "Worker's Compensation",
-        },
-        "boarder": {
-            "_label": "incomeOptions.boarder",
-            "_default_message": "Boarder or Lodger",
+            "_label": "incomeOptions.alimony.il",
+            "_default_message": "Alimony/spousal maintenance (Received)",
         },
     }
 
@@ -335,8 +306,8 @@ class IlConfigurationData(ConfigurationData):
             "family_planning": {
                 "icon": {"_icon": "Family_planning", "_classname": "option-card-icon"},
                 "text": {
-                    "_label": "healthInsuranceOptions.family_planning",
-                    "_default_message": "Family Planning Limited Medicaid",
+                    "_label": "healthInsuranceOptions.family_planning.il",
+                    "_default_message": "Family Planning (including Presumptive Eligibility)",
                 },
             },
             "va": {
@@ -393,8 +364,8 @@ class IlConfigurationData(ConfigurationData):
             "family_planning": {
                 "icon": {"_icon": "Family_planning", "_classname": "option-card-icon"},
                 "text": {
-                    "_label": "healthInsuranceOptions.family_planning",
-                    "_default_message": "Family Planning Limited Medicaid",
+                    "_label": "healthInsuranceOptions.family_planning.il",
+                    "_default_message": "Family Planning (including Presumptive Eligibility)",
                 },
             },
             "va": {
@@ -2278,7 +2249,7 @@ class IlConfigurationData(ConfigurationData):
     category_benefits = {
         "foodAndNutrition": {
             "benefits": {
-                "il_snap": {
+                "snap": {
                     "name": {
                         "_label": "foodAndNutritionBenefits.snap",
                         "_default_message": "Supplemental Nutrition Assistance Program (SNAP): ",
@@ -2288,10 +2259,236 @@ class IlConfigurationData(ConfigurationData):
                         "_default_message": "Food assistance",
                     },
                 },
+                "wic": {
+                    "name": {
+                        "_label": "foodAndNutritionBenefits.il_wic",
+                        "_default_message": "Special Supplemental Nutrition Program for Women, Infants, and Children (WIC): ",
+                    },
+                    "description": {
+                        "_label": "foodAndNutritionBenefits.il_wic_desc",
+                        "_default_message": "Food and breastfeeding assistance",
+                    },
+                },
+                "il_nslp": {
+                    "name": {
+                        "_label": "foodAndNutritionBenefits.nslp",
+                        "_default_message": "National School Lunch Program: ",
+                    },
+                    "description": {
+                        "_label": "foodAndNutritionBenefits.nslp_desc",
+                        "_default_message": "Free school meals",
+                    },
+                },
+                "csfp": {
+                    "name": {
+                        "_label": "foodAndNutritionBenefits.il_csfp",
+                        "_default_message": "Commodity Supplemental Food Program (CSFP): ",
+                    },
+                    "description": {
+                        "_label": "foodAndNutritionBenefits.il_csfp_desc",
+                        "_default_message": "Monthly food packages for seniors",
+                    },
+                },
             },
             "category_name": {
                 "_label": "foodAndNutrition",
                 "_default_message": "Food and Nutrition",
+            },
+        },
+        "housingAndUtilities": {
+            "benefits": {
+                "lifeline": {
+                    "name": {"_label": "housingAndUtilities.lifeline", "_default_message": "Lifeline: "},
+                    "description": {
+                        "_label": "housingAndUtilities.lifeline_desc",
+                        "_default_message": "Phone or internet discount",
+                    },
+                },
+                "il_liheap": {
+                    "name": {
+                        "_label": "housingAndUtilities.il_liheap",
+                        "_default_message": "Low Income Home Energy Assistance Program (LIHEAP): ",
+                    },
+                    "description": {
+                        "_label": "housingAndUtilities.il_liheap_desc",
+                        "_default_message": "Help paying heating and cooling bills",
+                    },
+                },
+            },
+            "category_name": {
+                "_label": "housing",
+                "_default_message": "Housing and Utilities",
+            },
+        },
+        "cash": {
+            "benefits": {
+                "ssdi": {
+                    "name": {
+                        "_label": "cashAssistanceBenefits.ssdi",
+                        "_default_message": "Social Security Disability Insurance (SSDI): ",
+                    },
+                    "description": {
+                        "_label": "cashAssistanceBenefits.ssdi_desc",
+                        "_default_message": "Social security benefit for people with disabilities",
+                    },
+                },
+                "ssi": {
+                    "name": {
+                        "_label": "cashAssistanceBenefits.ssi",
+                        "_default_message": "Supplemental Security Income (SSI): ",
+                    },
+                    "description": {
+                        "_label": "cashAssistanceBenefits.ssi_desc",
+                        "_default_message": "Federal cash assistance for individuals who are disabled, blind, or 65 years of age or older",
+                    },
+                },
+                "tanf": {
+                    "name": {
+                        "_label": "cashAssistanceBenefits.il_tanf",
+                        "_default_message": "Temporary Assistance for Needy Families (TANF): ",
+                    },
+                    "description": {
+                        "_label": "cashAssistanceBenefits.il_tanf_desc",
+                        "_default_message": "Cash assistance and work support",
+                    },
+                },
+                "il_aabd": {
+                    "name": {
+                        "_label": "cashAssistanceBenefits.il_aabd",
+                        "_default_message": "Aid to the Aged, Blind or Disabled (AABD): ",
+                    },
+                    "description": {
+                        "_label": "cashAssistanceBenefits.il_aabd_desc",
+                        "_default_message": "Cash assistance for aged, blind, or disabled individuals",
+                    },
+                },
+            },
+            "category_name": {"_label": "cashAssistance", "_default_message": "Cash Assistance"},
+        },
+        "transportation": {
+            "benefits": {
+                "il_bap": {
+                    "name": {
+                        "_label": "transportationBenefits.il_bap",
+                        "_default_message": "Benefits Access Program (BAP): ",
+                    },
+                    "description": {
+                        "_label": "transportationBenefits.il_bap_desc",
+                        "_default_message": "Transportation benefits for eligible individuals",
+                    },
+                },
+                "il_transit_reduced_fare": {
+                    "name": {
+                        "_label": "transportationBenefits.il_transit_reduced_fare",
+                        "_default_message": "Local Transit Reduced Fare: ",
+                    },
+                    "description": {
+                        "_label": "transportationBenefits.il_transit_reduced_fare_desc",
+                        "_default_message": "Reduced fare for public transit",
+                    },
+                },
+            },
+            "category_name": {"_label": "transportation", "_default_message": "Transportation"},
+        },
+        "taxCredits": {
+            "benefits": {
+                "eitc": {
+                    "name": {
+                        "_label": "taxCreditBenefits.eitc",
+                        "_default_message": "Earned Income Tax Credit (EITC): ",
+                    },
+                    "description": {
+                        "_label": "taxCreditBenefits.eitc_desc",
+                        "_default_message": "Federal tax credit - earned income",
+                    },
+                },
+                "ctc": {
+                    "name": {
+                        "_label": "taxCreditBenefits.ctc",
+                        "_default_message": "Child Tax Credit (CTC): ",
+                    },
+                    "description": {
+                        "_label": "taxCreditBenefits.ctc_desc",
+                        "_default_message": "Federal tax credit",
+                    },
+                },
+                "il_eitc": {
+                    "name": {
+                        "_label": "taxCreditBenefits.il_eitc",
+                        "_default_message": "Illinois Earned Income Tax Credit (IL EITC): ",
+                    },
+                    "description": {
+                        "_label": "taxCreditBenefits.il_eitc_desc",
+                        "_default_message": "Illinois state tax credit - earned income",
+                    },
+                },
+                "il_ctc": {
+                    "name": {
+                        "_label": "taxCreditBenefits.il_ctc",
+                        "_default_message": "Illinois Child Tax Credit: ",
+                    },
+                    "description": {
+                        "_label": "taxCreditBenefits.il_ctc_desc",
+                        "_default_message": "Illinois state tax credit for children",
+                    },
+                },
+            },
+            "category_name": {"_label": "taxCredits", "_default_message": "Tax Credits"},
+        },
+        "healthCare": {
+            "benefits": {
+                "il_aca": {
+                    "name": {
+                        "_label": "healthCareBenefits.il_aca",
+                        "_default_message": "ACA (Affordable Care Act) Premium Tax Credit: ",
+                    },
+                    "description": {
+                        "_label": "healthCareBenefits.il_aca_desc",
+                        "_default_message": "Health insurance marketplace and premium tax credit.",
+                    },
+                },
+                "il_hbwd": {
+                    "name": {
+                        "_label": "healthCareBenefits.il_hbwd",
+                        "_default_message": "Health Benefits for Workers with Disabilities (HBWD): ",
+                    },
+                    "description": {
+                        "_label": "healthCareBenefits.il_hbwd_desc",
+                        "_default_message": "Medicaid buy-in program for working individuals with disabilities",
+                    },
+                },
+                "nfp": {
+                    "name": {
+                        "_label": "healthCareBenefits.nfp",
+                        "_default_message": "Nurse-Family Partnership (NFP): ",
+                    },
+                    "description": {
+                        "_label": "healthCareBenefits.nfp_desc",
+                        "_default_message": "Free nurse home visits for first-time pregnant parents",
+                    },
+                },
+            },
+            "category_name": {
+                "_label": "healthCare",
+                "_default_message": "Health Care",
+            },
+        },
+        "childCareYouthEducation": {
+            "benefits": {
+                "ccap": {
+                    "name": {
+                        "_label": "childCareYouthEducationBenefits.il_ccap",
+                        "_default_message": "Child Care Assistance Program (CCAP): ",
+                    },
+                    "description": {
+                        "_label": "childCareYouthEducationBenefits.il_ccap_desc",
+                        "_default_message": "Child care subsidies for working families and students",
+                    },
+                },
+            },
+            "category_name": {
+                "_label": "childCareYouthEducation",
+                "_default_message": "Child Care, Youth & Education",
             },
         },
     }
@@ -2309,7 +2506,7 @@ class IlConfigurationData(ConfigurationData):
     referrer_data = {
         "theme": {"default": "default"},
         "logoSource": {
-            "default": "MFB_Logo",
+            "default": "MFB_ILLogo",
         },
         "logoAlt": {
             "default": {
@@ -2339,27 +2536,15 @@ class IlConfigurationData(ConfigurationData):
                 "signUpInfo",
             ],
         },
-        "featureFlags": {"default": []},
+        "uiOptions": {"default": []},
+        "featureFlags": {"default": []},  # Deprecated: use uiOptions. Remove as part of MFB-635.
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",
                 "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. If you indicated need for an immediate resource, please click on the \"Near-Term Benefits\" tab. For additional resources, please click the 'More Help' button below to get the resources you're looking for.",
             },
         },
+        "defaultLanguage": {"default": "en-us"},
     }
 
-    footer_data = {
-        "email": "hello@myfriendben.org",
-    }
-
-    feedback_links = {
-        "email": "hello@myfriendben.org",
-        "survey": "https://www.myfriendben.org/feedback",
-    }
-
-    override_text = {
-        "landingPage.publicCharge": {
-            "_label": "landingPage.publicCharge.il",
-            "_default_message": "Some benefits are available to Non-U.S. citizens. Non-U.S. citizens planning to apply for legal permanent residency or a visa should consider how applying for any benefits may affect their immigration status. To learn more, please visit the ",
-        },
-    }
+    override_text = {}

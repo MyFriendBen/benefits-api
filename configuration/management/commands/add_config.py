@@ -90,6 +90,13 @@ class Command(BaseCommand):
                 defaults={"data": WhiteLabelData.state, "active": True},
             )
 
+            # Save banner_messages to database
+            Configuration.objects.update_or_create(
+                name="banner_messages",
+                white_label=white_label,
+                defaults={"data": WhiteLabelData.banner_messages, "active": True},
+            )
+
             # Save acute_condition_options to database
             Configuration.objects.update_or_create(
                 name="public_charge_rule",
@@ -132,11 +139,25 @@ class Command(BaseCommand):
                 defaults={"data": WhiteLabelData.referral_options, "active": True},
             )
 
-            # Save income_options to database
+            # Save income_categories to database
+            Configuration.objects.update_or_create(
+                name="income_categories",
+                white_label=white_label,
+                defaults={"data": WhiteLabelData.income_categories, "active": True},
+            )
+
+            # Save income_options to database (flattened for backward compatibility)
             Configuration.objects.update_or_create(
                 name="income_options",
                 white_label=white_label,
                 defaults={"data": WhiteLabelData.income_options, "active": True},
+            )
+
+            # Save income_options_by_category to database (nested by category)
+            Configuration.objects.update_or_create(
+                name="income_options_by_category",
+                white_label=white_label,
+                defaults={"data": WhiteLabelData.income_options_by_category, "active": True},
             )
 
             # Save health_insurance_options to database

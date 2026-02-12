@@ -1,0 +1,246 @@
+name: 'Send Slack Notification'
+description: 'Sends deployment status notifications to Slack'
+
+inputs:
+  slack-webhook-url:
+    description: 'Slack webhook URL'
+    required: true
+  status:
+    description: 'Deployment status (success, failure, in-progress, completed-with-warnings)'
+    required: true
+  environment:
+    description: 'Environment name (staging, production)'
+    required: true
+  commit-sha:
+    description: 'Short commit SHA'
+    required: false
+  commit-message:
+    description: 'Commit message'
+    required: false
+  commit-author:
+    description: 'Commit author'
+    required: false
+  release-tag:
+    description: 'Release tag (for production deployments)'
+    required: false
+  release-name:
+    description: 'Release name (for production deployments)'
+    required: false
+  release-url:
+    description: 'Release URL (for production deployments)'
+    required: false
+  heroku-app-name:
+    description: 'Heroku app name'
+    required: false
+  migrations-status:
+    description: 'Status of migrations step'
+    required: false
+  config-status:
+    description: 'Status of config step'
+    required: false
+  pull-validations-status:
+    description: 'Status of pull validations step'
+    required: false
+  validations-status:
+    description: 'Status of validations step'
+    required: false
+  sync-translations-status:
+    description: 'Status of sync translations step'
+    required: false
+  validation-sheet-id:
+    description: 'Google Sheets validation results spreadsheet ID'
+    required: false
+    default: '1JRsCKm9KeeatVoW3wjsT2YqSy63js53Ib3vivK5NFYY'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Send Slack notification
+      shell: bash
+      env:
+        SLACK_WEBHOOK_URL: ${{ inputs.slack-webhook-url }}
+        STATUS: ${{ inputs.status }}
+        ENVIRONMENT: ${{ inputs.environment }}
+        COMMIT_SHA: ${{ inputs.commit-sha }}
+        COMMIT_MESSAGE: ${{ inputs.commit-message }}
+        COMMIT_AUTHOR: ${{ inputs.commit-author }}
+        RELEASE_TAG: ${{ inputs.release-tag }}
+        RELEASE_NAME: ${{ inputs.release-name }}
+        RELEASE_URL: ${{ inputs.release-url }}
+        HEROKU_APP_NAME: ${{ inputs.heroku-app-name }}
+        MIGRATIONS_STATUS: ${{ inputs.migrations-status }}
+        CONFIG_STATUS: ${{ inputs.config-status }}
+        PULL_VALIDATIONS_STATUS: ${{ inputs.pull-validations-status }}
+        VALIDATIONS_STATUS: ${{ inputs.validations-status }}
+        SYNC_TRANSLATIONS_STATUS: ${{ inputs.sync-translations-status }}
+        VALIDATION_SHEET_ID: ${{ inputs.validation-sheet-id }}
+      run: |
+        # Determine emoji and title based on status
+        case "$STATUS" in
+          "success")
+            EMOJI="✅"
+            TITLE="${ENVIRONMENT^} Deployment Successful"
+            ;;
+          "failure")
+            EMOJI="❌"
+            TITLE="${ENVIRONMENT^} Deployment Failed"
+            ;;
+          "in-progress")
+            EMOJI="🚀"
+            TITLE="${ENVIRONMENT^} Deployment In Progress"
+            ;;
+          "completed-with-warnings")
+            EMOJI="⚠️"
+            TITLE="${ENVIRONMENT^} Deployment Completed with Warnings"
+            ;;
+        esac
+
+        # Build base payload
+        if [ "$STATUS" = "failure" ]; then
+          # Failure notification
+          if [ -n "$RELEASE_TAG" ]; then
+            # Production failure
+            payload=$(jq -n \
+              --arg emoji "$EMOJI" \
+              --arg title "$TITLE" \
+              --arg env "$ENVIRONMENT" \
+              --arg tag "$RELEASE_TAG" \
+              --arg release_url "$RELEASE_URL" \
+              --arg repo "${{ github.repository }}" \
+              --arg run_id "${{ github.run_id }}" \
+              '{
+                text: "\($emoji) \($title)",
+                blocks: [
+                  {type: "header", text: {type: "plain_text", text: "\($emoji) \($title)"}},
+                  {type: "section", fields: [
+                    {type: "mrkdwn", text: "*Environment:*\n\($env | ascii_upcase)"},
+                    {type: "mrkdwn", text: "*Release:*\n<\($release_url)|\($tag)>"},
+                    {type: "mrkdwn", text: "*Workflow:*\n<https://github.com/\($repo)/actions/runs/\($run_id)|View Logs>"}
+                  ]},
+                  {type: "section", text: {type: "mrkdwn", text: "The deployment to Heroku Production failed. Please check the workflow logs for details."}}
+                ]
+              }')
+          else
+            # Staging failure
+            payload=$(jq -n \
+              --arg emoji "$EMOJI" \
+              --arg title "$TITLE" \
+              --arg env "$ENVIRONMENT" \
+              --arg sha "$COMMIT_SHA" \
+              --arg full_sha "${{ github.sha }}" \
+              --arg author "$COMMIT_AUTHOR" \
+              --arg message "$COMMIT_MESSAGE" \
+              --arg repo "${{ github.repository }}" \
+              --arg run_id "${{ github.run_id }}" \
+              '{
+                text: "\($emoji) \($title)",
+                blocks: [
+                  {type: "header", text: {type: "plain_text", text: "\($emoji) \($title)"}},
+                  {type: "section", fields: [
+                    {type: "mrkdwn", text: "*Environment:*\n\($env | ascii_upcase)"},
+                    {type: "mrkdwn", text: "*Commit:*\n<https://github.com/\($repo)/commit/\($full_sha)|\($sha)>"},
+                    {type: "mrkdwn", text: "*Author:*\n\($author)"},
+                    {type: "mrkdwn", text: "*Workflow:*\n<https://github.com/\($repo)/actions/runs/\($run_id)|View Logs>"}
+                  ]},
+                  {type: "section", text: {type: "mrkdwn", text: "*Commit Message:*\n\($message)"}},
+                  {type: "section", text: {type: "mrkdwn", text: "The deployment to Heroku failed. Please check the workflow logs for details."}}
+                ]
+              }')
+          fi
+        elif [ "$STATUS" = "in-progress" ]; then
+          # In-progress notification (production only)
+          payload=$(jq -n \
+            --arg emoji "$EMOJI" \
+            --arg title "$TITLE" \
+            --arg env "$ENVIRONMENT" \
+            --arg tag "$RELEASE_TAG" \
+            --arg name "$RELEASE_NAME" \
+            --arg app "$HEROKU_APP_NAME" \
+            --arg release_url "$RELEASE_URL" \
+            '{
+              text: "\($emoji) \($title)",
+              blocks: [
+                {type: "header", text: {type: "plain_text", text: "\($emoji) \($title)"}},
+                {type: "section", fields: [
+                  {type: "mrkdwn", text: "*Environment:*\n\($env | ascii_upcase)"},
+                  {type: "mrkdwn", text: "*Release:*\n<\($release_url)|\($tag)>"},
+                  {type: "mrkdwn", text: "*Name:*\n\($name)"},
+                  {type: "mrkdwn", text: "*App:*\n<https://\($app).herokuapp.com|View App>"}
+                ]},
+                {type: "section", text: {type: "mrkdwn", text: "_Running post-deployment scripts..._"}}
+              ]
+            }')
+        else
+          # Success or completed-with-warnings
+          # Determine status text for each step
+          MIGRATIONS_TEXT=$([ "$MIGRATIONS_STATUS" = "success" ] && echo "✅ Success" || echo "❌ Failed")
+          CONFIG_TEXT=$([ "$CONFIG_STATUS" = "success" ] && echo "✅ Success" || echo "❌ Failed")
+          PULL_VALIDATIONS_TEXT=$([ "$PULL_VALIDATIONS_STATUS" = "success" ] && echo "✅ Success" || echo "❌ Failed")
+          VALIDATIONS_TEXT=$([ "$VALIDATIONS_STATUS" = "success" ] && echo "✅ Success" || echo "❌ Failed")
+          SYNC_TRANSLATIONS_TEXT=$([ "$SYNC_TRANSLATIONS_STATUS" = "success" ] && echo "✅ Success" || echo "❌ Failed")
+
+          if [ -n "$RELEASE_TAG" ]; then
+            # Production success/warning
+            payload=$(jq -n \
+              --arg emoji "$EMOJI" \
+              --arg title "$TITLE" \
+              --arg migrations_text "$MIGRATIONS_TEXT" \
+              --arg config_text "$CONFIG_TEXT" \
+              --arg pull_validations_text "$PULL_VALIDATIONS_TEXT" \
+              --arg validations_text "$VALIDATIONS_TEXT" \
+              --arg sync_translations_text "$SYNC_TRANSLATIONS_TEXT" \
+              --arg repo "${{ github.repository }}" \
+              --arg run_id "${{ github.run_id }}" \
+              --arg tag "$RELEASE_TAG" \
+              --arg release_url "$RELEASE_URL" \
+              --arg validation_sheet_id "$VALIDATION_SHEET_ID" \
+              '{
+                text: "\($emoji) \($title)",
+                blocks: [
+                  {type: "header", text: {type: "plain_text", text: "\($emoji) \($title)"}},
+                  {type: "section", text: {type: "mrkdwn", text: "*Post-Deployment Scripts Results:*"}},
+                  {type: "section", fields: [
+                    {type: "mrkdwn", text: "*Migrations:*\n\($migrations_text)"},
+                    {type: "mrkdwn", text: "*Add Config:*\n\($config_text)"},
+                    {type: "mrkdwn", text: "*Pull Validations:*\n\($pull_validations_text)"},
+                    {type: "mrkdwn", text: "*Validations:*\n\($validations_text)"},
+                    {type: "mrkdwn", text: "*Sync Translations:*\n\($sync_translations_text)"}
+                  ]},
+                  {type: "section", fields: [
+                    {type: "mrkdwn", text: "*Release:*\n<\($release_url)|\($tag)>"},
+                    {type: "mrkdwn", text: "*Workflow:*\n<https://github.com/\($repo)/actions/runs/\($run_id)|View Logs>"}
+                  ]},
+                  {type: "section", text: {type: "mrkdwn", text: "*Validation Results:*\n<https://docs.google.com/spreadsheets/d/\($validation_sheet_id)|View Validation Spreadsheet> • <https://github.com/\($repo)/actions/runs/\($run_id)|View Full Logs>"}}
+                ]
+              }')
+          else
+            # Staging success (simple notification)
+            payload=$(jq -n \
+              --arg emoji "$EMOJI" \
+              --arg title "$TITLE" \
+              --arg env "$ENVIRONMENT" \
+              --arg sha "$COMMIT_SHA" \
+              --arg full_sha "${{ github.sha }}" \
+              --arg author "$COMMIT_AUTHOR" \
+              --arg message "$COMMIT_MESSAGE" \
+              --arg repo "${{ github.repository }}" \
+              --arg run_id "${{ github.run_id }}" \
+              '{
+                text: "\($emoji) \($title)",
+                blocks: [
+                  {type: "header", text: {type: "plain_text", text: "\($emoji) \($title)"}},
+                  {type: "section", fields: [
+                    {type: "mrkdwn", text: "*Environment:*\n\($env | ascii_upcase)"},
+                    {type: "mrkdwn", text: "*Commit:*\n<https://github.com/\($repo)/commit/\($full_sha)|\($sha)>"},
+                    {type: "mrkdwn", text: "*Author:*\n\($author)"},
+                    {type: "mrkdwn", text: "*Workflow:*\n<https://github.com/\($repo)/actions/runs/\($run_id)|View Logs>"}
+                  ]},
+                  {type: "section", text: {type: "mrkdwn", text: "*Commit Message:*\n\($message)"}}
+                ]
+              }')
+          fi
+        fi
+
+        curl -X POST "$SLACK_WEBHOOK_URL" \
+          -H 'Content-Type: application/json' \
+          -d "$payload"

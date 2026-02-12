@@ -1,11 +1,14 @@
 from django.contrib import admin
+from django.db.models import Max
 from django.urls import reverse
 from django.utils.html import format_html
+from unfold.admin import TabularInline
 from authentication.admin import SecureAdmin
 from .models import (
     LegalStatus,
     Program,
     ProgramCategory,
+    ProgramNavigator,
     UrgentNeed,
     UrgentNeedType,
     CategoryIconName,
@@ -20,59 +23,117 @@ from .models import (
     NavigatorLanguage,
     Document,
     TranslationOverride,
+    ExpenseType,
 )
+
+
+class ProgramNavigatorInline(TabularInline):
+    """
+    Sortable inline for managing Navigator ordering within a Program.
+    Uses Unfold's drag-and-drop sortable functionality.
+    """
+
+    model = ProgramNavigator
+    extra = 0
+    ordering_field = "order"
+    hide_ordering_field = False
+    fields = ["navigator", "order"]
+    autocomplete_fields = ["navigator"]
+
+    def get_queryset(self, request):
+        """Optimize queries with select_related"""
+        qs = super().get_queryset(request)
+        return qs.select_related("navigator", "program")
+
+    def get_formset(self, request, obj=None, **kwargs):
+        """
+        Auto-assign next sequential order to new navigators.
+        Ensures consistent sequential numbering (0, 1, 2, 3...) instead of gaps.
+
+        Edge cases handled:
+        - New program with no navigators: starts at 0
+        - Empty queryset: safely defaults to 0
+        - Multiple concurrent adds: each gets incremented initial value
+        - After drag-and-drop renumbering: continues from max
+        """
+        formset = super().get_formset(request, obj, **kwargs)
+
+        if obj:  # Only for existing programs (not new program creation)
+            try:
+                # Get the highest current order value from existing navigators
+                max_order_result = obj.program_navigators.aggregate(Max("order"))
+                max_order = max_order_result.get("order__max")
+
+                # Set initial value for new items
+                if max_order is not None:
+                    # Continue sequence from highest existing order
+                    formset.form.base_fields["order"].initial = max_order + 1
+                else:
+                    # First navigator for this program
+                    formset.form.base_fields["order"].initial = 0
+            except (AttributeError, KeyError):
+                # Fallback to 0 if anything goes wrong
+                formset.form.base_fields["order"].initial = 0
+
+        return formset
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        """Filter navigators by the program's white label"""
+        if db_field.name == "navigator":
+            obj_id = request.resolver_match.kwargs.get("object_id")
+            if obj_id:
+                try:
+                    program = Program.objects.get(pk=obj_id)
+                    kwargs["queryset"] = Navigator.objects.filter(white_label=program.white_label)
+                except Program.DoesNotExist:
+                    pass
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 class ProgramAdmin(SecureAdmin):
     search_fields = ("name__translations__text",)
     list_display = ["get_str", "name_abbreviated", "active", "action_buttons"]
+    list_editable = ["active"]
+    list_filter = ["active", "low_confidence", "show_on_current_benefits"]
+
     white_label_filter_horizontal = [
         "documents",
         "required_programs",
+        "excludes_programs",
         "category",
     ]
     filter_horizontal = (
         "legal_status_required",
         "documents",
         "required_programs",
+        "excludes_programs",
     )
-    exclude = [
-        "name",
-        "description",
-        "description_short",
-        "learn_more_link",
-        "apply_button_link",
-        "apply_button_description",
-        "estimated_delivery_time",
-        "estimated_application_time",
-        "value_type",
-        "website_description",
-        "estimated_value",
+    fields = [
+        "white_label",
+        "name_abbreviated",
+        "external_name",
+        "year",
+        "value_format",
+        "category",
+        "active",
+        "low_confidence",
+        "show_on_current_benefits",
+        "legal_status_required",
+        "documents",
+        "required_programs",
+        "excludes_programs",
     ]
-    list_editable = ["active"]
+    inlines = [ProgramNavigatorInline]
 
     def has_add_permission(self, request):
         return False
 
+    @admin.display(ordering="name", description="Program")
     def get_str(self, obj):
         return str(obj) if str(obj).strip() else "unnamed"
 
-    get_str.admin_order_field = "name"
-    get_str.short_description = "Program"
-
+    @admin.display(description="Translations")
     def action_buttons(self, obj):
-        name = obj.name
-        description = obj.description
-        description_short = obj.description_short
-        learn_more_link = obj.learn_more_link
-        apply_button_link = obj.apply_button_link
-        apply_button_description = obj.apply_button_description
-        estimated_delivery_time = obj.estimated_delivery_time
-        estimated_application_time = obj.estimated_application_time
-        value_type = obj.value_type
-        website_description = obj.website_description
-        estimated_value = obj.estimated_value
-
         return format_html(
             """
             <div class="dropdown">
@@ -80,33 +141,22 @@ class ProgramAdmin(SecureAdmin):
                 <div class="dropdown-content">
                     <a href="{}">Name</a>
                     <a href="{}">Description</a>
-                    <a href="{}">Short Description</a>
-                    <a href="{}">Learn More Link</a>
-                    <a href="{}">Apply Button Link</a>
-                    <a href="{}">Apply Button Description</a>
-                    <a href="{}">Estimated Delivery Time</a>
-                    <a href="{}">Estimated Application Time</a>
-                    <a href="{}">Value Type</a>
                     <a href="{}">Website Description</a>
+                    <a href="{}">Apply Button Description</a>
+                    <a href="{}">Apply Button Link</a>
+                    <a href="{}">Estimated Application Time</a>
                     <a href="{}">Estimated Value</a>
                 </div>
             </div>
             """,
-            reverse("translation_admin_url", args=[name.id]),
-            reverse("translation_admin_url", args=[description.id]),
-            reverse("translation_admin_url", args=[description_short.id]),
-            reverse("translation_admin_url", args=[learn_more_link.id]),
-            reverse("translation_admin_url", args=[apply_button_link.id]),
-            reverse("translation_admin_url", args=[apply_button_description.id]),
-            reverse("translation_admin_url", args=[estimated_delivery_time.id]),
-            reverse("translation_admin_url", args=[estimated_application_time.id]),
-            reverse("translation_admin_url", args=[value_type.id]),
-            reverse("translation_admin_url", args=[website_description.id]),
-            reverse("translation_admin_url", args=[estimated_value.id]),
+            reverse("translation_admin_url", args=[obj.name.id]),
+            reverse("translation_admin_url", args=[obj.description.id]),
+            reverse("translation_admin_url", args=[obj.website_description.id]),
+            reverse("translation_admin_url", args=[obj.apply_button_description.id]),
+            reverse("translation_admin_url", args=[obj.apply_button_link.id]),
+            reverse("translation_admin_url", args=[obj.estimated_application_time.id]),
+            reverse("translation_admin_url", args=[obj.estimated_value.id]),
         )
-
-    action_buttons.short_description = "Translate:"
-    action_buttons.allow_tags = True
 
 
 class LegalStatusAdmin(SecureAdmin):
@@ -126,14 +176,17 @@ class NavigatorLanguageAdmin(SecureAdmin):
 class NavigatorAdmin(SecureAdmin):
     search_fields = ("name__translations__text",)
     list_display = ["get_str", "external_name", "action_buttons"]
-    white_label_filter_horizontal = ("programs", "counties")
-    filter_horizontal = ("programs", "counties", "languages")
+    white_label_filter_horizontal = ("counties",)
+    filter_horizontal = ("counties", "languages")
     exclude = [
         "name",
         "email",
         "assistance_link",
         "description",
+        "programs",
+        "programs_ordered",
     ]
+    readonly_fields = ["get_associated_programs"]
 
     def has_add_permission(self, request):
         return False
@@ -143,6 +196,15 @@ class NavigatorAdmin(SecureAdmin):
 
     get_str.admin_order_field = "name"
     get_str.short_description = "Navigator"
+
+    @admin.display(description="Associated Programs")
+    def get_associated_programs(self, obj):
+        """Display programs this navigator is associated with (read-only)"""
+        if not obj.pk:
+            return "-"
+        program_navs = obj.program_navigators.select_related("program").order_by("order")
+        programs = [f"{pn.program.name_abbreviated} (order: {pn.order})" for pn in program_navs]
+        return ", ".join(programs) if programs else "No programs associated"
 
     def action_buttons(self, obj):
         name = obj.name
@@ -228,6 +290,7 @@ class UrgentNeedAdmin(SecureAdmin):
         "type_short",
         "functions",
         "counties",
+        "required_expense_types",
     )
     exclude = [
         "name",
@@ -235,6 +298,7 @@ class UrgentNeedAdmin(SecureAdmin):
         "link",
         "warning",
         "website_description",
+        "notification_message",
     ]
     list_editable = ["active"]
 
@@ -250,9 +314,11 @@ class UrgentNeedAdmin(SecureAdmin):
                     "category_type",
                     "active",
                     "low_confidence",
+                    "show_on_current_benefits",
                     "year",
                     "functions",
                     "counties",
+                    "required_expense_types",
                 ),
             },
         ),
@@ -265,7 +331,10 @@ class UrgentNeedAdmin(SecureAdmin):
                     "need. If more than one <i>type_short</i> is selected, the urgent need will be shown in the near-term benefits if either of "
                     "<i>type_short</i> associated tiles is selected.<br>"
                     "<br>"
-                    "<b>Category type:</b> A <i>category_type</i> determines the urgent need's category, name and icon."
+                    "<b>Category type:</b> A <i>category_type</i> determines the urgent need's category, name and icon.<br>"
+                    "<br>"
+                    "<b>Required expense types:</b> If none selected, urgent need is shown to all users. "
+                    "If any are selected, user must have at least one of these expense types to see this urgent need."
                 ),
             },
         ),
@@ -286,6 +355,7 @@ class UrgentNeedAdmin(SecureAdmin):
         link = obj.link
         warning = obj.warning
         website_description = obj.website_description
+        notification_message = obj.notification_message
 
         return format_html(
             """
@@ -297,6 +367,7 @@ class UrgentNeedAdmin(SecureAdmin):
                     <a href="{}">Link</a>
                     <a href="{}">Warning</a>
                     <a href="{}">Website Description</a>
+                    <a href="{}">Notification Message</a>
                 </div>
             </div>
             """,
@@ -305,6 +376,7 @@ class UrgentNeedAdmin(SecureAdmin):
             reverse("translation_admin_url", args=[link.id]),
             reverse("translation_admin_url", args=[warning.id]),
             reverse("translation_admin_url", args=[website_description.id]),
+            reverse("translation_admin_url", args=[notification_message.id]),
         )
 
     action_buttons.short_description = "Translate:"
@@ -318,6 +390,12 @@ class UrgentNeedCategoryAdmin(SecureAdmin):
 
 
 class UrgentNeedFunctionAdmin(SecureAdmin):
+    always_can_view = True
+    search_fields = ("name",)
+    fields = ("name",)
+
+
+class ExpenseTypeAdmin(SecureAdmin):
     always_can_view = True
     search_fields = ("name",)
     fields = ("name",)
@@ -494,6 +572,7 @@ admin.site.register(WarningMessage, WarningMessageAdmin)
 admin.site.register(UrgentNeed, UrgentNeedAdmin)
 admin.site.register(UrgentNeedCategory, UrgentNeedCategoryAdmin)
 admin.site.register(UrgentNeedFunction, UrgentNeedFunctionAdmin)
+admin.site.register(ExpenseType, ExpenseTypeAdmin)
 admin.site.register(FederalPoveryLimit, FederalPovertyLimitAdmin)
 admin.site.register(Document, DocumentAdmin)
 admin.site.register(Referrer, ReferrerAdmin)

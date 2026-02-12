@@ -1,0 +1,47 @@
+name: 'Run Heroku Validations'
+description: 'Runs validation tests and uploads results to Google Sheets'
+
+inputs:
+  heroku-api-key:
+    description: 'Heroku API key'
+    required: true
+  heroku-app-name:
+    description: 'Heroku application name'
+    required: true
+  validation-sheet-id:
+    description: 'Google Sheet ID for validations'
+    required: false
+    default: '1JRsCKm9KeeatVoW3wjsT2YqSy63js53Ib3vivK5NFYY'
+
+outputs:
+  validations-output:
+    description: 'Output from validate command'
+    value: ${{ steps.validations.outputs.validation_output }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Run validations
+      id: validations
+      continue-on-error: true
+      shell: bash
+      env:
+        HEROKU_API_KEY: ${{ inputs.heroku-api-key }}
+      run: |
+        echo "Running validations..."
+        set +e
+        OUTPUT=$(timeout 600 heroku run -a ${{ inputs.heroku-app-name }} "python manage.py validate --sheet-id ${{ inputs.validation-sheet-id }}" 2>&1)
+        TIMEOUT_STATUS=$?
+        set -e
+
+        if [ $TIMEOUT_STATUS -eq 124 ]; then
+          OUTPUT="ERROR: Validations timed out after 10 minutes"
+          echo "$OUTPUT"
+        else
+          echo "$OUTPUT"
+        fi
+
+        DELIMITER="EOF_$(date +%s)"
+        echo "validation_output<<${DELIMITER}" >> $GITHUB_OUTPUT
+        echo "$OUTPUT" >> $GITHUB_OUTPUT
+        echo "${DELIMITER}" >> $GITHUB_OUTPUT

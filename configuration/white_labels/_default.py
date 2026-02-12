@@ -1,6 +1,21 @@
 from .base import ConfigurationData
 from screener.models import WhiteLabel
 
+"""
+Default White Label Configuration
+
+This is the fallback white label used when no specific state is selected.
+It is used in the frontend when whiteLabel is undefined or set to "_default".
+
+Purpose:
+    - Provides generic MyFriendBen branding and links
+    - Used for direct access to screener.myfriendben.org without a state-specific path
+    - Excluded from white label selection lists in admin interfaces
+
+Note: This is NOT a template for creating new white labels.
+For creating a new white label, see: benefits-api/configuration/white_labels/_template.py
+"""
+
 
 class DefaultConfigurationData(ConfigurationData):
     is_default = True
@@ -36,13 +51,15 @@ class DefaultConfigurationData(ConfigurationData):
                 "signUpInfo",
             ]
         },
-        "featureFlags": {"default": []},
+        "uiOptions": {"default": []},
+        "featureFlags": {"default": []},  # Deprecated: use uiOptions. Remove as part of MFB-635.
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",
                 "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. If you indicated need for an immediate resource, please click on the “Near-Term Benefits” tab. For additional resources, please click the 'More Help' button below to get the resources you’re looking for.",
             },
         },
+        "defaultLanguage": {"default": "en-us"},
     }
 
     footer_data = {
@@ -64,14 +81,15 @@ class DefaultConfigurationData(ConfigurationData):
         "ru": "Русский",
         "ne": "नेपाली",
         "my": "မြန်မာဘာသာစကား",
-        "zh": "中文 (简体)",
+        "zh-hans": "中文 (简体)",
         "ar": "عربي",
         "sw": "Kiswahili",
-    }
-
-    feedback_links = {
-        "email": "hello@myfriendben.org",
-        "survey": "https://docs.google.com/forms/d/e/1FAIpQLSdnfqjvlVSBQkJuUMvhEDUp-t6oD-8tPQi67uRG2iNetXmSfA/viewform?usp=sf_link",
+        "pl": "Polski",
+        "tl": "Tagalog",
+        "ko": "한국어",
+        "ur": "اردو",
+        "pt-br": "Português Brasileiro",
+        "ht": "Kreyòl",
     }
 
     override_text = {}

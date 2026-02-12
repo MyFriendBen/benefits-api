@@ -23,9 +23,9 @@ class UrgentNeedFunction:
         if not self.can_calc():
             return False
 
-        return self.county_eligible() and self.eligible()
+        return self.county_eligible() and self.expense_eligible() and self.eligible()
 
-    def eligible(self):
+    def eligible(self) -> bool:
         """
         Returns if the condition is met
         """
@@ -42,6 +42,24 @@ class UrgentNeedFunction:
             return True
 
         return self.screen.county in self.urgent_need.county_names
+
+    def expense_eligible(self) -> bool:
+        """
+        Returns whether the screen has at least one required expense type.
+
+        If there are no required expense types, we assume all users are eligible.
+        Matching is case-insensitive.
+        """
+        required_types = self.urgent_need.required_expense_type_names
+
+        # If no expense types required, all users are eligible
+        if len(required_types) == 0:
+            return True
+
+        # Check if user has at least one of the required expense types (case-insensitive)
+        required_types_lower = [t.lower() for t in required_types]
+        user_expense_types_lower = [t.lower() for t in self.screen.expense_type_names()]
+        return any(exp_type in required_types_lower for exp_type in user_expense_types_lower)
 
     def can_calc(self):
         """

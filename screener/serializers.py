@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta
+from datetime import date
+from django.utils import timezone
 from programs.models import WarningMessage
 from screener.models import (
     EnergyCalculatorMember,
@@ -83,17 +84,15 @@ class HouseholdMemberSerializer(serializers.ModelSerializer):
         if birth_month < 1 or birth_month > 12:
             raise serializers.ValidationError("Birth month must be between 1 and 12")
 
-        birth_year_month = datetime(year=birth_year, month=birth_month, day=1)
+        birth_year_month = date(year=birth_year, month=birth_month, day=1)
 
-        # add a day for timezones
-        today = datetime.now() + timedelta(days=1)
-
-        if birth_year_month > today:
+        if birth_year_month > timezone.now().date():
             raise serializers.ValidationError("Birth year and month are in the future")
 
-        data["birth_year_month"] = birth_year_month.date()
+        data["birth_year_month"] = birth_year_month
 
         if "age" not in data or data["age"] is None:
+            # No reference_date needed - member is being created, no screen/validations exist yet
             data["age"] = HouseholdMember.age_from_date(birth_year_month)
 
         return data
@@ -123,6 +122,7 @@ class HouseholdMemberSerializer(serializers.ModelSerializer):
             "birth_year",
             "birth_month",
             "energy_calculator",
+            "is_care_worker",
         )
         read_only_fields = ("screen", "id")
 
@@ -174,9 +174,15 @@ class ScreenSerializer(serializers.ModelSerializer):
             "has_coeitc",
             "has_nslp",
             "has_ctc",
+            "has_il_eitc",
+            "has_il_ctc",
+            "has_il_transit_reduced_fare",
+            "has_il_bap",
+            "has_il_hbwd",
+            "has_harris_county_rides",
             "has_medicaid",
             "has_rtdlive",
-            "has_cccap",
+            "has_ccap",
             "has_mydenver",
             "has_chp",
             "has_ssi",
@@ -188,7 +194,11 @@ class ScreenSerializer(serializers.ModelSerializer):
             "has_ede",
             "has_erc",
             "has_leap",
+            "has_il_liheap",
+            "has_ma_heap",
             "has_nc_lieap",
+            "has_project_cope",
+            "has_cesn_heap",
             "has_oap",
             "has_nccip",
             "has_coctc",
@@ -212,6 +222,11 @@ class ScreenSerializer(serializers.ModelSerializer):
             "has_ma_mbta",
             "has_ma_maeitc",
             "has_ma_macfc",
+            "has_ma_homebridge",
+            "has_ma_dhsp_afterschool",
+            "has_ma_door_to_door",
+            "has_head_start",
+            "has_early_head_start",
             "has_co_andso",
             "has_co_care",
             "has_employer_hi",
@@ -221,6 +236,8 @@ class ScreenSerializer(serializers.ModelSerializer):
             "has_chp_hi",
             "has_no_hi",
             "has_va",
+            "has_nc_medicare_savings",
+            "has_tx_dart",
             "needs_food",
             "needs_baby_supplies",
             "needs_housing_help",
@@ -231,7 +248,14 @@ class ScreenSerializer(serializers.ModelSerializer):
             "needs_job_resources",
             "needs_dental_care",
             "needs_legal_services",
+            "needs_college_savings",
             "needs_veteran_services",
+            "utm_id",
+            "utm_source",
+            "utm_medium",
+            "utm_campaign",
+            "utm_content",
+            "utm_term",
         )
         read_only_fields = (
             "id",
@@ -243,7 +267,18 @@ class ScreenSerializer(serializers.ModelSerializer):
             "user",
             "is_test_data",
         )
-        create_only_fields = ("external_id", "is_test", "referrer_code", "white_label")
+        create_only_fields = (
+            "external_id",
+            "is_test",
+            "referrer_code",
+            "white_label",
+            "utm_id",
+            "utm_source",
+            "utm_medium",
+            "utm_campaign",
+            "utm_content",
+            "utm_term",
+        )
 
     def __init__(self, *args, **kwargs):
         self.force = kwargs.pop("force", False)
@@ -420,3 +455,4 @@ class ResultsSerializer(serializers.Serializer):
     missing_programs = serializers.BooleanField()
     validations = ValidationSerializer(many=True)
     program_categories = ProgramCategorySerializer(many=True)
+    pe_data = serializers.DictField(required=False, allow_null=True)

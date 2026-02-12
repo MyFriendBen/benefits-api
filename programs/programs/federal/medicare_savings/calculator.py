@@ -1,4 +1,5 @@
 from programs.programs.calc import MemberEligibility, ProgramCalculator
+from typing import ClassVar
 
 
 class MedicareSavings(ProgramCalculator):
@@ -12,8 +13,53 @@ class MedicareSavings(ProgramCalculator):
     general_income_disregard = 20 * 12
     earned_income_disregard = 65 * 12
     max_income_percent = 1.35
-    dependencies = ["household_assets", "relationship", "income_frequency", "income_amount", "age"]
+    dependencies: ClassVar[list[str]] = [
+        "household_assets",
+        "relationship",
+        "income_frequency",
+        "income_amount",
+        "age",
+        "insurance",
+    ]
 
+    def get_marital_status(self, member):
+        is_married = member.is_married()
+        return ("married" if is_married["is_married"] else "single"), is_married.get("married_to")
+
+    def get_combined_income(self, member, spouse=None, include_ssi=True):
+        earned = member.calc_gross_income("yearly", ["earned"])
+        unearned = member.calc_gross_income("yearly", ["unearned"], ["sSI"] if include_ssi else [])
+        ssi = member.calc_gross_income("yearly", ["sSI"]) if include_ssi else 0
+
+        if spouse:
+            earned += spouse.calc_gross_income("yearly", ["earned"])
+            unearned += spouse.calc_gross_income("yearly", ["unearned"], ["sSI"] if include_ssi else [])
+            if include_ssi:
+                ssi += spouse.calc_gross_income("yearly", ["sSI"])
+
+        return earned, unearned, ssi
+
+    def apply_income_disregards(self, earned, unearned):
+        if unearned >= self.general_income_disregard:
+            unearned -= self.general_income_disregard
+        else:
+            remaining = self.general_income_disregard - unearned
+            unearned = 0
+            earned = max(0, earned - remaining)
+
+        earned = max(0, earned - self.earned_income_disregard)
+        earned /= 2
+        return earned, unearned
+
+    def get_fpl_limits(self, household_size, min_percent=None):
+        fpl = self.program.year.as_dict().get(household_size)
+        if fpl is None:
+            return None, None
+        min_income = fpl * min_percent if min_percent else None
+        max_income = fpl * self.max_income_percent
+        return min_income, max_income
+
+    # ---------- main eligibility ----------
     def member_eligible(self, e: MemberEligibility):
         member = e.member
 
@@ -23,39 +69,19 @@ class MedicareSavings(ProgramCalculator):
         # insurance
         e.condition(member.insurance.has_insurance_types(self.eligible_insurance_types))
 
-        # assets
-        is_married = member.is_married()
-        status = "married" if is_married["is_married"] else "single"
+        # marital status & assets
+        status, spouse = self.get_marital_status(member)
         e.condition(self.screen.household_assets <= self.asset_limit[status])
 
-        # income
-        earned_income = member.calc_gross_income("yearly", ["earned"])
-        unearned_income = member.calc_gross_income("yearly", ["unearned"], ["sSI"])
-        ssi_income = member.calc_gross_income("yearly", ["sSI"])
-        if status == "married":
-            spouse = is_married["married_to"]
-            earned_income += spouse.calc_gross_income("yearly", ["earned"])
-            unearned_income += spouse.calc_gross_income("yearly", ["unearned"], ["sSI"])
-            ssi_income += spouse.calc_gross_income("yearly", ["sSI"])
+        # income limits check (federal logic)
+        self.check_income_limits(e, member, spouse)
 
-        # apply $20 general income disregard
-        if unearned_income >= self.general_income_disregard:
-            unearned_income -= self.general_income_disregard
-        else:
-            remaining_disregard = self.general_income_disregard - unearned_income
-            unearned_income = 0
-            earned_income -= remaining_disregard
+    def check_income_limits(self, e: MemberEligibility, member, spouse):
+        """Default federal logic (includes SSI)."""
+        earned, unearned, ssi = self.get_combined_income(member, spouse, include_ssi=True)
+        earned, unearned = self.apply_income_disregards(earned, unearned)
 
-        # apply $65 earned income disregard
-        earned_income = max(0, earned_income - self.earned_income_disregard)
+        countable_income = earned + unearned + ssi
 
-        # halve remaining earned income
-        earned_income /= 2
-
-        countable_income = unearned_income + earned_income + ssi_income
-
-        household_size = self.screen.household_size
-        fpl = self.program.year.as_dict()[household_size]
-        max_income = fpl * self.max_income_percent
-
+        _, max_income = self.get_fpl_limits(self.screen.household_size)
         e.condition(countable_income <= max_income)

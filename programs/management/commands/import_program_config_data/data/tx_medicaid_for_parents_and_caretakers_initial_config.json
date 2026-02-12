@@ -1,0 +1,27 @@
+{
+    "white_label": {"code": "tx"},
+    "program_category": {
+        "external_name": "tx_healthcare"
+    },
+    "program": {
+        "name_abbreviated": "tx_medicaid_for_parents_and_caretakers",
+        "year": "2025",
+        "legal_status_required": ["citizen", "gc_5plus", "refugee"],
+        "name": "Medicaid for Parents and Caretakers",
+        "website_description": "Medicaid for low-income caretakers of children who get Medicaid",
+        "description": "Free or low-cost public health insurance. Medicaid is a health care program for low-income people. If you care for a child who lives with you and the child gets Medicaid, you may be able to get Medicaid for yourself. You must meet income rules to qualify.\n\nThe child must be age 17 or younger or age 18 and in school full-time. The child must also be related to you in one of these ways:\n- A child or stepchild\n- A sibling or step-sibling\n- A grandchild\n- A niece or nephew\n- A first cousin or child of a first cousin\n\nBenefits may cover physical, dental, and behavioral health care. This program may also help you get prescription drugs or medical equipment. For some services, you may need to pay a small co-pay. People who do not meet the program's citizenship rules may qualify for Emergency Medicaid.\n\nTime to Apply is based on submitting an application in Your Texas Benefits. You may save time when you apply for several benefits with one application.\n\nOn average, it takes up to 45 days to get approved.",
+        "learn_more_link": "https://www.hhs.texas.gov/services/health/medicaid-chip/medicaid-chip-programs-services/programs-children-families/medicaid-parents-caretakers",
+        "apply_button_link": "https://yourtexasbenefits.com/Apply/GettingStartedApp?lang=en_US",
+        "apply_button_description": "",
+        "estimated_application_time": "30 - 60 minutes",
+        "estimated_value": ""
+    },
+    "documents": [
+        {"external_name": "tx_home"},
+        {"external_name": "tx_ssn"},
+        {"external_name": "tx_id_proof"},
+        {"external_name": "tx_us_status"},
+        {"external_name": "tx_earned_income"},
+        {"external_name": "tx_unearned_income"}
+    ]
+}

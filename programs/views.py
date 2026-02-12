@@ -15,7 +15,12 @@ class ProgramViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, viewsets.
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Program.objects.filter(active=True, category__isnull=False, white_label__code=self.kwargs["white_label"])
+        return Program.objects.filter(
+            active=True,
+            show_on_current_benefits=True,
+            category__isnull=False,
+            white_label__code=self.kwargs["white_label"],
+        )
 
 
 class ProgramCategoryViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
@@ -24,7 +29,10 @@ class ProgramCategoryViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, v
 
     def get_queryset(self):
         return ProgramCategory.objects.filter(
-            programs__isnull=False, programs__active=True, white_label__code=self.kwargs["white_label"]
+            programs__isnull=False,
+            programs__active=True,
+            programs__show_on_current_benefits=True,
+            white_label__code=self.kwargs["white_label"],
         ).distinct()
 
 
@@ -41,7 +49,9 @@ class UrgentNeedViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, viewse
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return UrgentNeed.objects.filter(active=True, white_label__code=self.kwargs["white_label"])
+        return UrgentNeed.objects.filter(
+            active=True, show_on_current_benefits=True, white_label__code=self.kwargs["white_label"]
+        )
 
 
 class UrgentNeedTypeViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
@@ -50,5 +60,8 @@ class UrgentNeedTypeViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, vi
 
     def get_queryset(self):
         return UrgentNeedType.objects.filter(
-            urgent_needs__isnull=False, urgent_needs__active=True, white_label__code=self.kwargs["white_label"]
+            urgent_needs__isnull=False,
+            urgent_needs__active=True,
+            urgent_needs__show_on_current_benefits=True,
+            white_label__code=self.kwargs["white_label"],
         ).distinct()

@@ -1,43 +1,78 @@
-{% extends "base.html" %} {% block content %}
+{% extends "base.html" %} {% load filters %} {% block content %} {% load static %}
 <section class="section">
-  <h2 class="title">{{ translation.label }}</h2>
+  <div class="level">
+    <div class="level-left">
+      <div class="level-item">
+        <h2 class="title">{{ translation.label }}</h2>
+      </div>
+    </div>
+    <div class="level-right">
+      <div class="level-item">
+        <button
+          class="button is-danger is-dark"
+          hx-delete="{{ translation.id }}"
+          hx-confirm="This is permanent"
+          hx-swap="innerHTML"
+          hx-target="#delete-errors"
+        >
+          Delete
+        </button>
+      </div>
+      <div id="delete-errors"></div>
+    </div>
+  </div>
 </section>
 <hr />
 <div class="container">
   <div class="box">
+    <form class="mb-4" hx-post="{{ translation.id }}" hx-swap="innerHTML">
+      {% include "./label_form.html" with form=label_form %}
+    </form>
     <div class="level">
-      <div class="level-left">
-        <div class="level-item">
-          <form hx-post="{{ translation.id }}" hx-swap="innerHTML">
-            {% include "./label_form.html" with form=label_form %}
-          </form>
-        </div>
-      </div>
+      <div class="level-left"></div>
       <div class="level-right">
         <div class="level-item">
-          <button
-            class="button is-danger is-dark"
-            hx-delete="{{ translation.id }}"
-            hx-confirm="This is perminant"
-            hx-swap="innerHTML"
-            hx-target="#delete-errors"
-          >
-            Delete
-          </button>
+          <a class="button is-text" href="/api/translations/admin/translation_history/{{ translation.id }}">
+            History of All Languages
+          </a>
         </div>
-        <div id="delete-errors"></div>
       </div>
     </div>
     <div class="box">
       <div id="languages">
         {% for lang, form in langs.items %}
         <div class="block">
-          <label class="label">Language Code: {{ lang }}</label>
+          <div class="level">
+            <div class="level-left">
+              <div class="level-item">
+                <label class="label">Language: {{ lang|get_language_name }}</label>
+              </div>
+            </div>
+            <div class="level-right">
+              <div class="level-item">
+                {% if updated_dates|get_datetime_label:lang == "Never" %}
+                <span class="tag is-Warning"><strong>Never Updated</strong></span>
+                {% else %}
+                <strong><span class="utc-date tag is-Warning" data-utc-date="{{ updated_dates|get_datetime_label:lang }}">
+                  {% if translation|get_update_type:lang or lang == "en-us" %}
+                    Manual
+                  {% else %}
+                    Auto
+                  {% endif %}
+                  update applied at {{ updated_dates|get_datetime_label:lang }}
+                {% endif %}
+                </span></strong>
+              </div>
+            </div>
+          </div>
           <form
             id="{{ lang }}"
             hx-post="{{ translation.id }}/{{ lang }}"
             hx-target="#languages"
             hx-swap="outerHTML"
+            {% if lang == "en-us" %}
+              hx-include="[name='excluded_languages']"
+            {% endif %}
           >
             {% include "./lang_form.html" with lang=lang form=form %}
           </form>
@@ -46,6 +81,5 @@
       </div>
     </div>
   </div>
-
   {% endblock content %}
 </div>

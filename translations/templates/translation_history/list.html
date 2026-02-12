@@ -1,0 +1,61 @@
+{% load static %} {% load filters %}
+<div id="translation-history-container">
+  <table
+    id="translation-history-table"
+    class="translation-history-table table is-striped is-fullwidth is-bordered"
+  >
+    <thead>
+      <tr>
+        {% if not lang %}
+        <th>Language</th>
+        {% endif %}
+        <th>Original</th>
+        <th>Changed to</th>
+        <th>Type</th>
+        <th>Date</th>
+        <th>Changed by</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for record in page_obj %}
+      <tr>
+        {% if not lang %}
+        <td>{{ record.affected_language|get_language_name }}</td>
+        {% endif %}
+        <td>{{ record.original_text }}</td>
+        <td>{{ record.changed_text }}</td>
+        {% if record.edit_type %}
+        <td>Manual</td>
+        {% else %}
+        <td>Auto</td>
+        {% endif %}
+        <td
+          class="utc-date"
+          data-utc-date="{{ record.history_date|get_datetime_label:None }}"
+        >{{ record.history_date|get_datetime_label:None }}</td>
+        <td>{{ record.history_user }}</td>
+        <td>
+          <form method="post" action="{% url 'revert_translation' record.history_id %}">
+            {% csrf_token %}
+            <button type="submit" class="button">Revert</button>
+          </form>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="{% if not lang %}7{% else %}6{% endif %}">No results</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="{% if not lang %}7{% else %}6{% endif %}">Total: {{ page_obj.paginator.count }}</td>
+      </tr>
+    </tfoot>
+  </table>
+  <script>
+    var tableId = "translation-history-table";
+  </script>
+  {% include "pagination.html" %}
+</div>

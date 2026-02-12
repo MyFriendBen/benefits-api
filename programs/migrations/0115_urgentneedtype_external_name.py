@@ -9,6 +9,8 @@ def updated_urgent_need_type_external_name(apps, schema_editor):
 
     # populates the external_name field
     for urgent_need_type in UrgentNeedType.objects.all():
+        if urgent_need_type.external_name:
+            continue
         wl = urgent_need_type.white_label.code
         text = urgent_need_type.name.text.replace(" ", "_").replace("'", "").replace(",", "").lower()
         if wl == "co":
@@ -19,12 +21,16 @@ def updated_urgent_need_type_external_name(apps, schema_editor):
 
     # updates urgentneedtype name field labels
     for urgent_need_type in UrgentNeedType.objects.all():
-        if urgent_need_type.external_name:
-            current_label = urgent_need_type.name.label
-            new_label = f"urgent_need_type.{urgent_need_type.external_name}_{urgent_need_type.id}-name"
-            translation = Translation.objects.get(label=current_label)
+        if not urgent_need_type.external_name:
+            continue
+
+        new_label = f"urgent_need_type.{urgent_need_type.external_name}_{urgent_need_type.id}-name"
+        try:
+            translation = Translation.objects.get(label=urgent_need_type.name.label)
             translation.label = new_label
             translation.save()
+        except Translation.DoesNotExist:
+            continue
 
 
 class Migration(migrations.Migration):

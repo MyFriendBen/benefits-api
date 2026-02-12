@@ -1,11 +1,12 @@
 from typing import Any
 from django.db import models
+from simple_history.models import HistoricalRecords
 from parler.models import TranslatableModel, TranslatedFields, TranslatableManager
 from django.conf import settings
 from dataclasses import dataclass
 from integrations.util.cache import Cache
 from translations.model_data import ModelDataController
-
+from sentry_sdk import capture_exception
 
 BLANK_TRANSLATION_PLACEHOLDER = "[PLACEHOLDER]"
 
@@ -41,13 +42,23 @@ class TranslationManager(TranslatableManager):
             parent.no_auto = no_auto
             parent.save()
 
-        parent.create_translation(default_lang, text=default_message, edited=True)
+        # Check if translation exists before creating
+        if parent.has_translation(default_lang):
+            # Update existing translation
+            parent.set_current_language(default_lang)
+            parent.text = default_message
+            parent.edited = True
+            parent.save()
+        else:
+            parent.create_translation(default_lang, text=default_message, edited=True)
 
         for lang in self.all_langs:
             if lang == default_lang:
                 continue
 
-            parent.create_translation(lang, text="", edited=False)
+            # Check if translation exists before creating
+            if not parent.has_translation(lang):
+                parent.create_translation(lang, text="", edited=False)
         self.translation_cache.invalid = True
         return parent
 
@@ -137,7 +148,24 @@ class TranslationManager(TranslatableManager):
         return translations_export
 
 
+class CustomHistoricalRecords(HistoricalRecords):
+
+    def get_history_model_name(self, model):
+        return f"Historical{model._meta.object_name}"
+
+    def create_history_model(self, model, inherited):
+        history_model = super().create_history_model(model, inherited)
+
+        history_model.add_to_class("affected_language", models.CharField(max_length=16, null=True, blank=True))
+        history_model.add_to_class("original_text", models.TextField(null=True, blank=True))
+        history_model.add_to_class("changed_text", models.TextField(null=True, blank=True))
+        history_model.add_to_class("edit_type", models.BooleanField(null=True, blank=True))
+
+        return history_model
+
+
 class Translation(TranslatableModel):
+    history = CustomHistoricalRecords()
     translations = TranslatedFields(
         text=models.TextField(null=True, blank=True), edited=models.BooleanField(default=False, null=False)
     )
@@ -146,6 +174,61 @@ class Translation(TranslatableModel):
     label = models.CharField(max_length=128, null=False, blank=False, unique=True)
 
     objects = TranslationManager()
+
+    def save(self, *args, **kwargs):
+        """
+        This overrides the save method to track translation changes
+        and save them in the history model.
+        """
+        is_new = self.pk is None
+
+        old_translations = {}
+        if not is_new:
+            try:
+                old_instance = Translation.objects.get(pk=self.pk)
+                for lang_code, _ in settings.LANGUAGES:
+                    if old_instance.has_translation(lang_code):
+                        old_text = old_instance.safe_translation_getter(
+                            "text",
+                            language_code=lang_code,
+                            any_language=False,
+                        )
+                        old_edited = old_instance.safe_translation_getter(
+                            "edited",
+                            language_code=lang_code,
+                            any_language=False,
+                        )
+                        old_translations[lang_code] = {
+                            "text": old_text,
+                            "edited": old_edited,
+                        }
+                    else:
+                        old_translations[lang_code] = None
+            except Translation.DoesNotExist:
+                pass
+
+        super().save(*args, **kwargs)
+
+        for lang_code, _ in settings.LANGUAGES:
+            try:
+                self.set_current_language(lang_code)
+                new_text = self.text
+                new_edited = self.edited
+
+                old = old_translations.get(lang_code)
+                if old is None:
+                    continue
+
+                if old["text"] != new_text:
+                    latest_history = self.history.first()
+                    if latest_history:
+                        latest_history.affected_language = lang_code
+                        latest_history.original_text = old["text"]
+                        latest_history.changed_text = new_text
+                        latest_history.edit_type = new_edited
+                        latest_history.save()
+            except Exception as e:
+                capture_exception(e, level="warning", extras={"lang_code": lang_code, "translation_id": self.pk})
 
     def _get_reverses(self):
         """

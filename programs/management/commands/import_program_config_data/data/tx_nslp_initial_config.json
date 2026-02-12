@@ -1,0 +1,42 @@
+{
+    "white_label": {"code": "tx"},
+    "program_category": {
+        "external_name": "tx_food",
+        "name": "Food and Nutrition",
+        "icon": "food"
+    },
+    "program": {
+        "name_abbreviated": "tx_nslp",
+        "year": "2025",
+        "legal_status_required": ["citizen", "gc_5plus", "gc_under18_no5", "non_citizen", "otherWithWorkPermission"],
+        "name": "National School Lunch Program",
+        "description_short": "Free or low-cost healthy school meals for children.",
+        "description": "Free or low-cost healthy school meals for children. When you enroll in the school meal program, your child may get free breakfast and/or lunch at school. You can apply at your child's school. It may take up to 10 days to get this benefit.\n\nIf your school is a Community Eligibility Provision (CEP) school, your child may already qualify for free meals.",
+        "learn_more_link": "https://squaremeals.org/Programs/National-School-Lunch-Program/Eligibility-and-Verification",
+        "apply_button_link": "https://squaremeals.org/Programs/National-School-Lunch-Program/Eligibility-and-Verification/Household-Applications",
+        "apply_button_description": "Apply at Your Child's School",
+        "estimated_application_time": "15 minutes",
+        "estimated_value": "",
+        "website_description": "Free or low-cost meals for students and other reduced program fees"
+    },
+    "documents": [
+        {
+            "external_name": "tx_other_program",
+            "text": "Evidence of participation in a qualifying benefits program (if applicable)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "tx_unearned_income",
+            "text": "Proof of unearned income (ex: child support, social security, unemployment)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "tx_earned_income",
+            "text": "Proof of earned income (ex: pay stubs, tax returns, W-2, 1099) & employer information",
+            "link_url": "",
+            "link_text": ""
+        }
+    ]
+}

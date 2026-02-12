@@ -19,7 +19,30 @@ from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
+from django.conf.locale import LANG_INFO as DJANGO_LANG_INFO
 
+EXTRA_LANG_INFO = {
+    "am": {
+        "bidi": False,
+        "code": "am",
+        "name": "Amharic",
+        "name_local": "አማርኛ",
+    },
+    "so": {
+        "bidi": False,
+        "code": "so",
+        "name": "Somali",
+        "name_local": "Soomaali",
+    },
+    "ht": {
+        "bidi": False,
+        "code": "ht",
+        "name": "Haitian Creole",
+        "name_local": "Kreyòl ayisyen",
+    },
+}
+
+DJANGO_LANG_INFO.update(EXTRA_LANG_INFO)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -68,7 +91,13 @@ BREVO_API_KEY = os.getenv("BREVO_API_KEY")
 FRONTEND_DOMAIN = config("FRONTEND_DOMAIN", default="http://localhost:3000")
 EMAIL_FROM = os.getenv("EMAIL_FROM")
 
+# Google Integrations (Translate, Sheets)
+ENABLE_GOOGLE_INTEGRATIONS = config("ENABLE_GOOGLE_INTEGRATIONS", default=True, cast=bool)
+
 # Application definition
+# NOTE: App ordering affects Django admin sidebar. Custom apps are ordered by their
+# position in INSTALLED_APPS, so we keep screener (General Settings) near the top
+# and integrations at the bottom of the custom apps section.
 
 INSTALLED_APPS = [
     "unfold",
@@ -78,14 +107,16 @@ INSTALLED_APPS = [
     "unfold.contrib.guardian",  # optional, if django-guardian package is used
     # optional, if django-simple-history package is used
     "unfold.contrib.simple_history",
+    "simple_history",
     "authentication.apps.AuthConfig",
     "corsheaders",
+    # Custom apps - order determines admin sidebar position
     "screener.apps.ScreenerConfig",
-    "programs.apps.ProgramsConfig",
     "configuration.apps.ConfigurationConfig",
-    "integrations.apps.IntegrationsConfig",
+    "programs.apps.ProgramsConfig",
     "translations.apps.TranslationsConfig",
     "validations.apps.ValidationsConfig",
+    "integrations.apps.IntegrationsConfig",
     "rest_framework",
     "rest_framework.authtoken",
     "phonenumber_field",
@@ -113,6 +144,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.locale.LocaleMiddleware",
+    "simple_history.middleware.HistoryRequestMiddleware",
 ]
 
 ROOT_URLCONF = "benefits.urls"
@@ -197,9 +229,15 @@ LANGUAGES = (
     ("ru", _("Russian")),
     ("ne", _("Nepali")),
     ("my", _("Burmese")),
-    ("zh", _("Chinese")),
+    ("zh-hans", _("Simplified Chinese")),
     ("ar", _("Arabic")),
     ("sw", _("Kiswahili")),
+    ("pl", _("Polish")),
+    ("tl", _("Tagalog")),
+    ("ko", _("Korean")),
+    ("ur", _("Urdu")),
+    ("pt-br", _("Brazilian Portuguese")),
+    ("ht", _("Haitian Creole")),
 )
 
 TIME_ZONE = "UTC"
@@ -221,15 +259,31 @@ PARLER_LANGUAGES = {
         {"code": "ru"},
         {"code": "ne"},
         {"code": "my"},
-        {"code": "zh"},
+        {"code": "zh-hans"},
         {"code": "ar"},
         {"code": "sw"},
+        {"code": "pl"},
+        {"code": "tl"},
+        {"code": "ko"},
+        {"code": "ur"},
+        {"code": "pt-br"},
+        {"code": "ht"},
     ),
     "default": {
         "fallbacks": ["en-us"],  # defaults to PARLER_DEFAULT_LANGUAGE_CODE
         # the default; let .active_translations() return fallbacks too.
         "hide_untranslated": True,
     },
+}
+
+# Add custom language info for languages not in Django's built-in LANG_INFO
+from django.conf.locale import LANG_INFO
+
+LANG_INFO["tl"] = {
+    "bidi": False,
+    "code": "tl",
+    "name": "Tagalog",
+    "name_local": "Tagalog",
 }
 
 # Static files (CSS, JavaScript, Images)
@@ -257,6 +311,46 @@ if config("SENTRY_DSN", None) is not None:
 
 django_heroku.settings(locals())
 
+# Cache Configuration
+# Multiple cache backends for different use cases
+# Heroku Redis automatically sets REDIS_URL when the add-on is provisioned
+REDIS_URL = config("REDIS_URL", default=None)
+
+# Always provide both cache backends
+CACHES = {
+    "default": {
+        # Use in-memory cache for Parler translations by default
+        # This avoids Redis connection issues and keeps translations fast
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "parler-translations",
+        "TIMEOUT": 300,
+        "OPTIONS": {
+            "MAX_ENTRIES": 10000,
+        },
+    },
+}
+
+# Add Redis cache backend if REDIS_URL is available
+if REDIS_URL:  # pragma: no cover
+    CACHES["redis"] = {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_URL,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            # Connection pool settings (good for production with multiple dynos)
+            "CONNECTION_POOL_KWARGS": {
+                "max_connections": 50,
+                "retry_on_timeout": True,
+            },
+            "SOCKET_CONNECT_TIMEOUT": 5,  # seconds
+            "SOCKET_TIMEOUT": 5,  # seconds
+        },
+        "KEY_PREFIX": "benefits",  # Namespace for all cache keys
+        "TIMEOUT": 300,  # Default timeout: 5 minutes
+    }
+
+# Configure Parler to use the default (LocMemCache) backend
+PARLER_CACHE_BACKEND = "default"
 
 # UNFOLD SETTINGS
 UNFOLD = {
@@ -293,14 +387,9 @@ UNFOLD = {
                         "link": reverse_lazy("admin:programs_warningmessage_changelist"),
                     },
                     {
-                        "title": _("Configurations"),
-                        "icon": "tune",
-                        "link": reverse_lazy("admin:configuration_configuration_changelist"),
-                    },
-                    {
-                        "title": _("Translation Overrides"),
-                        "icon": "letter_switch",
-                        "link": reverse_lazy("admin:programs_translationoverride_changelist"),
+                        "title": _("Feature Flags"),
+                        "icon": "toggle_on",
+                        "link": reverse_lazy("admin:screener_featureflags_changelist"),
                     },
                 ],
             },

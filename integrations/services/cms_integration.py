@@ -71,7 +71,7 @@ class HubSpotIntegration(CmsIntegration):
             contact_id = api_response.id
         except HubSpotApiException as e:
             http_body = json.loads(e.body)
-            if http_body["category"] == "CONFLICT":
+            if http_body.get("category") == "CONFLICT":
                 contact_id = self._get_conflict_contact_id(e)
                 self._update_contact(contact_id, data)
             else:
@@ -125,23 +125,35 @@ class HubSpotIntegration(CmsIntegration):
 
 class CoHubSpotIntegration(HubSpotIntegration):
     STATE = "CO"
-    OWNER_ID = "80630223"
+    OWNER_ID = "80630223"  # Josh's owner ID
 
 
 class NcHubSpotIntegration(HubSpotIntegration):
     STATE = "NC"
-    OWNER_ID = "47185138"
+    OWNER_ID = "47185138"  # Ricky's owner ID (CodeTheDream)
 
 
 class MaHubSpotIntegration(HubSpotIntegration):
     STATE = "MA"
-    OWNER_ID = "79223440"
+    OWNER_ID = "80630223"  # Josh's owner ID
+
+
+class IlHubSpotIntegration(HubSpotIntegration):
+    STATE = "IL"
+    OWNER_ID = "80630223"  # Josh's owner ID
+
+
+class TxHubSpotIntegration(HubSpotIntegration):
+    STATE = "TX"
+    OWNER_ID = "80630223"  # Josh's owner ID
 
 
 CMS_INTEGRATIONS = {
     "co_hubspot": CoHubSpotIntegration,
     "nc_hubspot": NcHubSpotIntegration,
     "ma_hubspot": MaHubSpotIntegration,
+    "il_hubspot": IlHubSpotIntegration,
+    "tx_hubspot": TxHubSpotIntegration,
 }
 
 

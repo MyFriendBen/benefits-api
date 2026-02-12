@@ -1,9 +1,35 @@
-from typing import Literal, Union
+from typing import ClassVar, Literal, Union
+
+from sentry_sdk import capture_message, new_scope
+
 from integrations.services.sheets.sheets import GoogleSheetsCache
 from screener.models import Screen
 
 
 class Ami(GoogleSheetsCache):
+    """
+    DEPRECATED: This Google Sheets-based AMI lookup is maintained for backwards compatibility only.
+
+    New code should use the HUD Income Limits API client instead:
+        from integrations.clients.hud_income_limits import hud_client
+
+        # For MTSP (Multifamily Tax Subsidy Project) income limits:
+        income_limit = hud_client.get_screen_mtsp_ami(screen, "80%", 2025)
+
+        # For Standard Section 8 Income Limits:
+        income_limit = hud_client.get_screen_il_ami(screen, "80%", 2025)
+
+    Benefits of using the HUD API client:
+    - Real-time data directly from HUD (no manual Google Sheets updates)
+    - More reliable and accurate
+    - Better error handling
+    - Automatic caching
+    - Support for all AMI percentage levels
+    - Works nationwide (all US states and counties)
+
+    See: integrations/clients/hud_income_limits/README.md
+    """
+
     sheet_id = "1ZnOg_IuT7TYz2HeF31k_FSPcA-nraaMG3RUWJFUIIb8"
     range_name = "current!A2:CH"
     default = {}
@@ -16,7 +42,7 @@ class Ami(GoogleSheetsCache):
     IL_PERCENTS = ["80%", "50%", "30%"]
     IL_LIMITS_START_INDEX = 62
 
-    def update(self):
+    def update(self) -> dict[str, dict[str, dict[str, dict[int, int]]]]:  # type: ignore[override]
         data = super().update()
 
         ami: dict[str, dict[str, dict[str, dict[int, int]]]] = {}
@@ -29,7 +55,11 @@ class Ami(GoogleSheetsCache):
             values = {"mtsp": {}, "il": {}}
             continue_outer = False
             percent = 80
-            for i in range(self.MTSP_LIMITS_START_INDEX, self.MAX_HOUSEHOLD_SIZE * 7, self.MAX_HOUSEHOLD_SIZE):
+            for i in range(
+                self.MTSP_LIMITS_START_INDEX,
+                self.MAX_HOUSEHOLD_SIZE * 7,
+                self.MAX_HOUSEHOLD_SIZE,
+            ):
                 try:
                     income_limit_values = self._get_income_limits(row[i : i + self.MAX_HOUSEHOLD_SIZE])
                 except ValueError:
@@ -105,7 +135,7 @@ class Smi(GoogleSheetsCache):
     STATE_INDEX = 1
     LIMITS_START_INDEX = 2
 
-    def update(self):
+    def update(self) -> dict[str, dict[str, dict[int, int]]]:  # type: ignore[override]
         data = super().update()
 
         smi = {}
@@ -131,3 +161,114 @@ class Smi(GoogleSheetsCache):
 
 
 smi = Smi()
+
+
+class IncomeLimitsCache(GoogleSheetsCache):
+    """
+    Income Limits data used for
+    - UtilityBillPay
+    - WeatherizationAssistance
+    """
+
+    sheet_id = "1ZzQYhULtiP61crj0pbPjhX62L1TnyAisLcr_dQXbbFg"
+    range_name = "A2:K"
+    default: ClassVar[dict] = {}
+
+    def update(self) -> dict[str, list[float]]:
+        data = super().update()
+        result = {}
+        for r in data:
+            result[self._format_county(r[0])] = self._format_amounts(r[1:])
+        return result
+
+    @staticmethod
+    def _format_county(county: str):
+        return county.strip() + " County"
+
+    @staticmethod
+    def _format_amounts(amounts: list[str]):
+        result = []
+        for a in amounts:
+            cleaned = a.strip().replace("$", "").replace(",", "")
+            try:
+                result.append(float(cleaned) if cleaned else None)
+            except ValueError:
+                result.append(None)
+
+        return result
+
+    @staticmethod
+    def _log_income_limit_error(message: str, county: str | None = None, **additional_extras) -> None:
+        """
+        Helper to log income limit validation errors to Sentry.
+
+        Args:
+            message: Error message describing the issue
+            county: County name where the error occurred
+            **additional_extras: Any additional context fields (e.g., household_size)
+        """
+        with new_scope() as scope:
+            if county is not None:
+                scope.set_extra("county", county)
+            for key, value in additional_extras.items():
+                scope.set_extra(key, value)
+            capture_message(message, level="warning")
+
+    def get_income_limit(self, screen: Screen) -> int | None:
+        """
+        Retrieves the income limit for the given household size and county.
+        Logs any issues in calculating the income limit
+
+        Args:
+            screen: The screening object with household information
+
+        Returns:
+            Optional[int]: The income limit (or None if not found)
+        """
+
+        # Get county
+        county = screen.county
+
+        # Fetch income limits data (keys are "Adams County", "Alamosa County", etc.)
+        limits_by_county = self.fetch()
+        size_index = screen.household_size - 1 if screen.household_size else None
+
+        # Check for valid income_limit
+        if county not in limits_by_county:
+            self._log_income_limit_error("County data not found", county=county)
+            return None
+
+        if limits_by_county.get(county) is None:
+            self._log_income_limit_error("Data for county is not found", county=county)
+            return None
+
+        try:
+            income_limit = limits_by_county[county][size_index]
+        except IndexError:
+            self._log_income_limit_error(
+                "Invalid HH size given income limit data",
+                county=county,
+                household_size=screen.household_size,
+            )
+            return None
+        except TypeError:
+            self._log_income_limit_error(
+                "Invalid HH size",
+                county=county,
+                household_size=screen.household_size,
+            )
+            return None
+
+        if income_limit is None:
+            self._log_income_limit_error(
+                "Income limit for county and given HH Size is missing or misformatted",
+                county=county,
+                household_size=screen.household_size,
+            )
+            return None
+
+        # valid income_limit
+        return int(income_limit)
+
+
+income_limits_cache = IncomeLimitsCache()

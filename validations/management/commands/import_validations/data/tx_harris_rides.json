@@ -1,0 +1,381 @@
+[
+  {
+    "notes": "TX Harris County RIDES - Eligible senior 65+ in Harris County",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "77001",
+      "county": "Harris",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 68,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 2000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicare": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_harris_county_rides": false
+    },
+    "expected_results": {
+      "program_name": "tx_harris_rides",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "TX Harris County RIDES - Eligible person exactly at age 65 in Harris County",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "77002",
+      "county": "Harris",
+      "household_size": 2,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 65,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 1800.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicare": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 62,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "medicare": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_harris_county_rides": false
+    },
+    "expected_results": {
+      "program_name": "tx_harris_rides",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "TX Harris County RIDES - Eligible disabled person under 65 in Harris County",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "77003",
+      "county": "Harris",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 45,
+          "disabled": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSI",
+              "amount": 1500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_harris_county_rides": false
+    },
+    "expected_results": {
+      "program_name": "tx_harris_rides",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "TX Harris County RIDES - Eligible person with long-term disability under 65 in Harris County",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "77004",
+      "county": "Harris",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "long_term_disability": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSI",
+              "amount": 1200.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_harris_county_rides": false
+    },
+    "expected_results": {
+      "program_name": "tx_harris_rides",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "TX Harris County RIDES - Eligible visually impaired person under 65 in Harris County",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "77005",
+      "county": "Harris",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 50,
+          "visually_impaired": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_harris_county_rides": false
+    },
+    "expected_results": {
+      "program_name": "tx_harris_rides",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "TX Harris County RIDES - Ineligible due to non-Harris County location (Travis County)",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 70,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 2200.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicare": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_harris_county_rides": false
+    },
+    "expected_results": {
+      "program_name": "tx_harris_rides",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "TX Harris County RIDES - Ineligible due to age under 65 and no disability",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "77006",
+      "county": "Harris",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 55,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 5000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_harris_county_rides": false
+    },
+    "expected_results": {
+      "program_name": "tx_harris_rides",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "TX Harris County RIDES - Ineligible at age 64 (just under threshold) without disability",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "77007",
+      "county": "Harris",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 64,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_harris_county_rides": false
+    },
+    "expected_results": {
+      "program_name": "tx_harris_rides",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "TX Harris County RIDES - Ineligible because household already has the benefit",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "77008",
+      "county": "Harris",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 72,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 2500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicare": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_harris_county_rides": true
+    },
+    "expected_results": {
+      "program_name": "tx_harris_rides",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "TX Harris County RIDES - Eligible disabled person in Dallas County is ineligible (wrong county)",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75201",
+      "county": "Dallas",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 40,
+          "disabled": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSI",
+              "amount": 1400.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_harris_county_rides": false
+    },
+    "expected_results": {
+      "program_name": "tx_harris_rides",
+      "eligible": false
+    }
+  }
+]

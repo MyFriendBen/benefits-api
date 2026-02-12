@@ -1,9 +1,7 @@
-from programs.programs.ma.pe import spm
 import programs.programs.ma.pe.tax as tax
 import programs.programs.ma.pe.member as member
 import programs.programs.ma.pe.spm as spm
 from programs.programs.policyengine.calculators.base import PolicyEngineCalulator
-
 
 ma_member_calculators = {
     "ma_wic": member.MaWic,
@@ -12,6 +10,9 @@ ma_member_calculators = {
     "ma_mass_health_limited": member.MaMassHealthLimited,
     "ma_mbta": member.MaMbta,
     "ma_ssp": member.MaStateSupplementProgram,
+    "ma_head_start": member.MaHeadStart,
+    "ma_csfp": member.MaCsfp,
+    "ma_early_head_start": member.MaEarlyHeadStart,
 }
 
 ma_tax_unit_calculators = {
@@ -24,6 +25,7 @@ ma_spm_calculators = {
     "ma_snap": spm.MaSnap,
     "ma_tafdc": spm.MaTafdc,
     "ma_eaedc": spm.MaEaedc,
+    "ma_heap": spm.MaHeap,
 }
 
 ma_pe_calculators: dict[str, type[PolicyEngineCalulator]] = {

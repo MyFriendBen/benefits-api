@@ -1,0 +1,59 @@
+name: PR Validation
+
+# Validates pull requests to main branch with:
+# - Full test suite using VCR (replays existing cassettes, records new interactions)
+# - Coverage upload to Codecov
+# - Code formatting checks
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Run Tests with Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      SECRET_KEY: django-insecure-test-key-ci-github-actions-only
+      DJANGO_SETTINGS_MODULE: benefits.settings
+      DB_NAME: test_benefits_db
+      DB_USER: postgres
+      DB_PASS: postgres
+      DB_HOST: localhost
+      DB_PORT: 5432
+      ENABLE_GOOGLE_INTEGRATIONS: false
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: test_benefits_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d test_benefits_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Run tests with VCR and upload coverage
+        uses: ./.github/actions/run-tests
+        with:
+          vcr-mode: new_episodes
+          upload-coverage: 'true'
+          codecov-token: ${{ secrets.CODECOV_TOKEN }}
+          hud-api-token: ${{ secrets.HUD_API_TOKEN }}
+
+  lint:
+    name: Check Formatting
+    uses: ./.github/workflows/format.yaml
