@@ -64,8 +64,8 @@ class Command(BaseCommand):
                 if invalid:
                     self.stdout.write(
                         self.style.ERROR(
-                            f'Invalid NPS variants in {white_label_code} experiments config: {invalid}. '
-                            f'Valid options: {valid_variants}'
+                            f"Invalid NPS variants in {white_label_code} experiments config: {invalid}. "
+                            f"Valid options: {valid_variants}"
                         )
                     )
                     raise ValueError(f"Invalid NPS variants: {invalid}")

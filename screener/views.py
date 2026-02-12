@@ -603,7 +603,8 @@ class NPSRateThrottle(throttling.AnonRateThrottle):
     Rate throttle for NPS submissions to prevent abuse.
     Limits anonymous users to 10 submissions per hour per IP.
     """
-    scope = 'nps'
+
+    scope = "nps"
 
 
 class NPSScoreView(views.APIView):
@@ -616,7 +617,7 @@ class NPSScoreView(views.APIView):
 
     def post(self, request, screen_uuid):
         # Inject UUID from URL into request data
-        data = {**request.data, 'uuid': str(screen_uuid)}
+        data = {**request.data, "uuid": str(screen_uuid)}
         serializer = NPSScoreSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
@@ -625,7 +626,7 @@ class NPSScoreView(views.APIView):
 
     def patch(self, request, screen_uuid):
         # Inject UUID from URL into request data
-        data = {**request.data, 'uuid': str(screen_uuid)}
+        data = {**request.data, "uuid": str(screen_uuid)}
         serializer = NPSScoreReasonSerializer(data=data)
         if serializer.is_valid():
             uuid = serializer.validated_data.pop("uuid")
