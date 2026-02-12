@@ -95,6 +95,9 @@ EMAIL_FROM = os.getenv("EMAIL_FROM")
 ENABLE_GOOGLE_INTEGRATIONS = config("ENABLE_GOOGLE_INTEGRATIONS", default=True, cast=bool)
 
 # Application definition
+# NOTE: App ordering affects Django admin sidebar. Custom apps are ordered by their
+# position in INSTALLED_APPS, so we keep screener (General Settings) near the top
+# and integrations at the bottom of the custom apps section.
 
 INSTALLED_APPS = [
     "unfold",
@@ -107,12 +110,13 @@ INSTALLED_APPS = [
     "simple_history",
     "authentication.apps.AuthConfig",
     "corsheaders",
+    # Custom apps - order determines admin sidebar position
     "screener.apps.ScreenerConfig",
-    "programs.apps.ProgramsConfig",
     "configuration.apps.ConfigurationConfig",
-    "integrations.apps.IntegrationsConfig",
+    "programs.apps.ProgramsConfig",
     "translations.apps.TranslationsConfig",
     "validations.apps.ValidationsConfig",
+    "integrations.apps.IntegrationsConfig",
     "rest_framework",
     "rest_framework.authtoken",
     "phonenumber_field",
@@ -383,14 +387,9 @@ UNFOLD = {
                         "link": reverse_lazy("admin:programs_warningmessage_changelist"),
                     },
                     {
-                        "title": _("Configurations"),
-                        "icon": "tune",
-                        "link": reverse_lazy("admin:configuration_configuration_changelist"),
-                    },
-                    {
-                        "title": _("Translation Overrides"),
-                        "icon": "letter_switch",
-                        "link": reverse_lazy("admin:programs_translationoverride_changelist"),
+                        "title": _("Feature Flags"),
+                        "icon": "toggle_on",
+                        "link": reverse_lazy("admin:screener_featureflags_changelist"),
                     },
                 ],
             },

@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://myfriendben.org/schemas/update-validation-v1.json",
+  "title": "Validation Update",
+  "description": "Schema for updating existing Validation records in the database",
+  "type": "object",
+  "required": ["description", "updates"],
+  "properties": {
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable description of what this update does"
+    },
+    "updates": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/validationUpdate"
+      }
+    }
+  },
+  "definitions": {
+    "validationUpdate": {
+      "type": "object",
+      "required": ["screen_uuid", "program_name"],
+      "properties": {
+        "screen_uuid": {
+          "type": "string",
+          "format": "uuid",
+          "description": "UUID of the screen"
+        },
+        "program_name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Program name_abbreviated (e.g., 'snap', 'tanf', 'tx_aca')"
+        },
+        "eligible": {
+          "type": "boolean",
+          "description": "Whether household is eligible for the program"
+        },
+        "value": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Expected benefit value"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Human-readable notes about this validation"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Optional documentation field explaining why this update is being made (not stored in database)"
+        }
+      },
+      "anyOf": [
+        { "required": ["eligible"] },
+        { "required": ["value"] },
+        { "required": ["notes"] }
+      ]
+    }
+  }
+}

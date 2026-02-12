@@ -54,6 +54,65 @@ class TxConfigurationData(ConfigurationData):
         },
     }
 
+    acute_condition_options = {
+        "food": {
+            "icon": {"_icon": "Food", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.food",
+                "_default_message": "Food or groceries",
+            },
+        },
+        "babySupplies": {
+            "icon": {"_icon": "Baby_supplies", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.babySupplies",
+                "_default_message": "Diapers and other baby supplies",
+            },
+        },
+        "housing": {
+            "icon": {"_icon": "Housing", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.housing",
+                "_default_message": "Help with managing your mortgage, rent, or utilities",
+            },
+        },
+        "support": {
+            "icon": {"_icon": "Support", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.support",
+                "_default_message": "A challenge you or your child would like to talk about",
+            },
+        },
+        "childDevelopment": {
+            "icon": {"_icon": "Child_development", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.childDevelopment",
+                "_default_message": "Concern about your child's development",
+            },
+        },
+        "jobResources": {
+            "icon": {"_icon": "Job_resources", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.jobResources",
+                "_default_message": "Finding a job",
+            },
+        },
+        "dentalCare": {
+            "icon": {"_icon": "Dental_care", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.dentalCare",
+                "_default_message": "Low-cost dental care",
+            },
+        },
+        "legalServices": {
+            "icon": {"_icon": "Legal_services", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.legalServices",
+                "_default_message": "Free or low-cost help with civil legal needs or identity documents",
+            },
+        },
+    }
+
     # Nested income options organized by category (for future use with categorized UI)
     income_options_by_category = {
         **ConfigurationData.income_options_by_category,
@@ -3122,7 +3181,8 @@ class TxConfigurationData(ConfigurationData):
                 "signUpInfo",
             ],
         },
-        "featureFlags": {"default": []},
+        "uiOptions": {"default": []},
+        "featureFlags": {"default": []},  # Deprecated: use uiOptions. Remove as part of MFB-635.
         "defaultLanguage": {"default": "en-us"},
         "stateName": {"default": "Texas"},
         "noResultMessage": {

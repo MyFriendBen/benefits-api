@@ -580,7 +580,7 @@ class ConfigurationData:
         "[REPLACE_ME]": "",
     }
 
-    # Configuration for branding, logos, steps, and feature flags
+    # Configuration for branding, logos, steps, and UI options
     # See template for detailed documentation on each field
     referrer_data = {
         "theme": {"default": "default", "[REPLACE_ME]": ""},
@@ -624,7 +624,8 @@ class ConfigurationData:
             ],
             "[REPLACE_ME]": [],
         },
-        "featureFlags": {"default": []},
+        "uiOptions": {"default": []},
+        "featureFlags": {"default": []},  # Deprecated: use uiOptions. Remove as part of MFB-635.
         "defaultLanguage": {"default": "en-us", "[REPLACE_ME]": ""},
         "stateName": {"default": "", "[REPLACE_ME]": ""},
     }

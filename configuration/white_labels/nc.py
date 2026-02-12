@@ -400,16 +400,6 @@ class NcConfigurationData(ConfigurationData):
                     "_default_message": "Medicare",
                 },
             },
-            "emergency_medicaid": {
-                "icon": {
-                    "_icon": "Emergency_medicaid",
-                    "_classname": "option-card-icon",
-                },
-                "text": {
-                    "_label": "healthInsuranceOptions.emergency_medicaid",
-                    "_default_message": "Emergency Medicaid / Reproductive Health",
-                },
-            },
             "family_planning": {
                 "icon": {"_icon": "Family_planning", "_classname": "option-card-icon"},
                 "text": {
@@ -459,16 +449,6 @@ class NcConfigurationData(ConfigurationData):
                 "text": {
                     "_label": "healthInsuranceOptions.medicare",
                     "_default_message": "Medicare",
-                },
-            },
-            "emergency_medicaid": {
-                "icon": {
-                    "_icon": "Emergency_medicaid",
-                    "_classname": "option-card-icon",
-                },
-                "text": {
-                    "_label": "healthInsuranceOptions.emergency_medicaid",
-                    "_default_message": "Emergency Medicaid / Reproductive Health",
                 },
             },
             "family_planning": {
@@ -2901,6 +2881,12 @@ class NcConfigurationData(ConfigurationData):
                 "referralSource",
             ],
         },
+        "uiOptions": {
+            "default": ["nc_show_211_link"],
+            "211nc": ["no_results_more_help", "nc_show_211_link", "211nc"],
+            "hfed": ["no_results_more_help", "hfed"],
+        },
+        # Deprecated: use uiOptions. Remove as part of MFB-635.
         "featureFlags": {
             "default": ["nc_show_211_link"],
             "211nc": ["no_results_more_help", "nc_show_211_link", "211nc"],

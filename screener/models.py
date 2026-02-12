@@ -1,23 +1,38 @@
-from datetime import datetime
-from typing import Optional
+from typing import ClassVar, Optional
+from datetime import date
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.utils import timezone
 from decimal import Decimal
 import uuid
 from authentication.models import User
 from django.utils.translation import gettext_lazy as _
 from programs.util import Dependencies
 from django.conf import settings
+from .feature_flags import FeatureFlagConfig, WHITELABEL_FEATURE_FLAGS
 
 
 class WhiteLabel(models.Model):
+    FEATURE_FLAGS: ClassVar[dict[str, FeatureFlagConfig]] = WHITELABEL_FEATURE_FLAGS
+
     name = models.CharField(max_length=120, blank=False, null=False)
     code = models.CharField(max_length=32, blank=False, null=False)
     state_code = models.CharField(max_length=8, blank=True, null=True)
     cms_method = models.CharField(max_length=32, blank=True, null=True)
+    feature_flags = models.JSONField(default=dict, blank=True)
 
     def __str__(self):
         return self.name
+
+    def _get_flag_value(self, key: str) -> bool:
+        """Internal: Get flag value with default fallback. Assumes key is valid."""
+        return (self.feature_flags or {}).get(key, self.FEATURE_FLAGS[key].default)
+
+    def has_feature(self, key: str) -> bool:
+        """Check if a feature flag is enabled for this WhiteLabel."""
+        if key not in self.FEATURE_FLAGS:
+            raise KeyError(f"Unknown feature flag: {key}")
+        return self._get_flag_value(key)
 
 
 # The screen is the top most container for all information collected in the
@@ -155,6 +170,17 @@ class Screen(models.Model):
     @property
     def frozen(self):
         return self.validations.count() > 0
+
+    def get_reference_date(self) -> date:
+        """
+        Get the reference date for age calculations.
+        For frozen screens (with validations), use the earliest validation's created_date
+        to keep ages consistent over time. For non-frozen screens, use current date.
+        """
+        earliest_validation = self.validations.order_by("created_date").first()
+        if earliest_validation and earliest_validation.created_date:
+            return earliest_validation.created_date.date()
+        return timezone.now().date()
 
     def calc_gross_income(self, frequency, types, exclude=[]):
         household_members = self.household_members.all()
@@ -707,21 +733,25 @@ class HouseholdMember(models.Model):
         if self.birth_year_month is None:
             return self.age
 
-        return self.age_from_date(self.birth_year_month)
+        reference_date = self.screen.get_reference_date()
+        return self.age_from_date(self.birth_year_month, reference_date)
 
     @staticmethod
-    def age_from_date(birth_year_month: datetime) -> int:
-        today = datetime.now()
+    def age_from_date(birth_year_month: date, reference_date: Optional[date] = None) -> int:
+        today = reference_date if reference_date else timezone.now()
 
         if today.month >= birth_year_month.month:
             return today.year - birth_year_month.year
 
         return today.year - birth_year_month.year - 1
 
-    def fraction_age(self) -> float:
-        today = datetime.now()
+    def fraction_age(self) -> Optional[float]:
+        if self.birth_year_month is None:
+            return float(self.age) if self.age is not None else None
 
-        current_year = today.year + today.month / 12
+        reference_date = self.screen.get_reference_date()
+
+        current_year = reference_date.year + reference_date.month / 12
         birth_year = self.birth_year_month.year + self.birth_year_month.month / 12
 
         return current_year - birth_year

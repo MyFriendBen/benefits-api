@@ -1,0 +1,131 @@
+{% extends "admin/change_form.html" %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+  .feature-flags-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+  }
+  .feature-flags-table th,
+  .feature-flags-table td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--hairline-color, #e0e0e0);
+  }
+  .feature-flags-table th {
+    font-weight: 600;
+    color: var(--body-quiet-color, #666);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .feature-flags-table tbody tr:hover {
+    background-color: var(--darkened-bg, rgba(255,255,255,0.1));
+  }
+  .feature-flag-label {
+    font-weight: 500;
+    font-size: 0.9rem;
+  }
+  .feature-flag-description {
+    font-size: 0.8rem;
+    color: var(--body-quiet-color, #999);
+    margin-top: 4px;
+  }
+  .feature-flag-scope {
+    display: inline-block;
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    margin-left: 8px;
+    background-color: var(--darkened-bg, #333);
+    color: var(--body-quiet-color, #999);
+  }
+  .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 28px;
+  }
+  .toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--body-quiet-color, #555);
+    transition: 0.3s;
+    border-radius: 28px;
+  }
+  .toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 3px;
+    bottom: 3px;
+    background-color: var(--body-bg, white);
+    transition: 0.3s;
+    border-radius: 50%;
+  }
+  input:checked + .toggle-slider {
+    background-color: var(--primary, #44ac44);
+  }
+  input:checked + .toggle-slider:before {
+    transform: translateX(22px);
+  }
+  input:focus + .toggle-slider {
+    box-shadow: 0 0 3px var(--primary, #44ac44);
+  }
+</style>
+{% endblock %}
+
+{% block field_sets %}
+<fieldset class="module aligned">
+  <h2 style="font-size: 1.5rem;">{{ original.name }}</h2>
+  <p style="margin: 0; padding: 0 0 10px 15px;">
+    <a href="{{ whitelabel_admin_url }}" style="font-size: 0.75rem; color: var(--body-quiet-color, #888);">Edit White Label &rarr;</a>
+  </p>
+</fieldset>
+{% endblock %}
+
+{% block after_related_objects %}
+<fieldset class="module aligned">
+  <h2>Feature Flags</h2>
+  <table class="feature-flags-table">
+    <thead>
+      <tr>
+        <th style="width: 100px;">Enabled</th>
+        <th>Feature</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for flag in feature_flags %}
+      <tr>
+        <td>
+          <label class="toggle-switch" for="flag-{{ flag.key }}">
+            <input type="checkbox" id="flag-{{ flag.key }}" name="{{ flag.key }}" {% if flag.enabled %}checked{% endif %} aria-labelledby="label-{{ flag.key }}">
+            <span class="toggle-slider"></span>
+          </label>
+        </td>
+        <td>
+          <div class="feature-flag-label" id="label-{{ flag.key }}">
+            {{ flag.label }}
+            <span class="feature-flag-scope">{{ flag.scope }}</span>
+          </div>
+          <div class="feature-flag-description">{{ flag.description }}</div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</fieldset>
+{% endblock %}
