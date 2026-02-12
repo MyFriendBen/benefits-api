@@ -486,7 +486,7 @@ class NPSScoreSerializer(serializers.Serializer):
     score = serializers.IntegerField(min_value=1, max_value=10)
     variant = serializers.ChoiceField(choices=NPSScore.Variant.choices, required=False, allow_null=True)
 
-    def create(self, validated_data):
+    def create(self, validated_data: dict) -> NPSScore:
         uuid = validated_data.pop("uuid")
         snapshot = get_latest_eligibility_snapshot(uuid)
 
@@ -510,7 +510,7 @@ class NPSScoreReasonSerializer(serializers.Serializer):
     uuid = serializers.UUIDField(write_only=True)
     score_reason = serializers.CharField(max_length=500, trim_whitespace=True)
 
-    def update(self, instance, validated_data):
+    def update(self, instance: NPSScore, validated_data: dict) -> NPSScore:
         """
         Update an existing NPS score with a reason.
         Standard DRF update method for PATCH operations.
@@ -523,7 +523,7 @@ class NPSScoreReasonSerializer(serializers.Serializer):
         )
         return instance
 
-    def get_nps_score(self, uuid):
+    def get_nps_score(self, uuid: str) -> NPSScore:
         """
         Helper method to retrieve NPS score by screen UUID.
         """

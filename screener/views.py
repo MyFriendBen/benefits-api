@@ -614,15 +614,19 @@ class NPSScoreView(views.APIView):
     permission_classes = [permissions.AllowAny]
     throttle_classes = [NPSRateThrottle]
 
-    def post(self, request):
-        serializer = NPSScoreSerializer(data=request.data)
+    def post(self, request, screen_uuid):
+        # Inject UUID from URL into request data
+        data = {**request.data, 'uuid': str(screen_uuid)}
+        serializer = NPSScoreSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response({"status": "success"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def patch(self, request):
-        serializer = NPSScoreReasonSerializer(data=request.data)
+    def patch(self, request, screen_uuid):
+        # Inject UUID from URL into request data
+        data = {**request.data, 'uuid': str(screen_uuid)}
+        serializer = NPSScoreReasonSerializer(data=data)
         if serializer.is_valid():
             uuid = serializer.validated_data.pop("uuid")
             nps_score = serializer.get_nps_score(uuid)
