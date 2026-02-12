@@ -488,7 +488,7 @@ class NPSScoreReasonSerializer(serializers.Serializer):
     uuid = serializers.UUIDField(write_only=True)
     score_reason = serializers.CharField()
 
-    def update_reason(self, validated_data):
+    def submit_reason(self, validated_data):
         uuid = validated_data["uuid"]
         score_reason = validated_data["score_reason"]
 

@@ -615,6 +615,6 @@ class NPSScoreView(views.APIView):
     def patch(self, request):
         serializer = NPSScoreReasonSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.update_reason(serializer.validated_data)
+            serializer.submit_reason(serializer.validated_data)
             return Response({"status": "success"}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

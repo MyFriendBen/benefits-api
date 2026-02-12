@@ -211,7 +211,7 @@ class TestNPSScoreReasonSerializer(TestCase):
         serializer = NPSScoreReasonSerializer(data=data)
 
         self.assertTrue(serializer.is_valid())
-        nps_score = serializer.update_reason(serializer.validated_data)
+        nps_score = serializer.submit_reason(serializer.validated_data)
 
         self.assertEqual(nps_score.score_reason, "The tool was very helpful")
         self.assertEqual(nps_score.score, 8)  # Original score unchanged
@@ -222,7 +222,7 @@ class TestNPSScoreReasonSerializer(TestCase):
         serializer = NPSScoreReasonSerializer(data=data)
 
         self.assertTrue(serializer.is_valid())
-        serializer.update_reason(serializer.validated_data)
+        serializer.submit_reason(serializer.validated_data)
 
         self.nps_score.refresh_from_db()
         self.assertEqual(self.nps_score.score_reason, "Easy to use")
@@ -235,7 +235,7 @@ class TestNPSScoreReasonSerializer(TestCase):
         data = {"uuid": str(self.screen.uuid), "score_reason": "Updated reason"}
         serializer = NPSScoreReasonSerializer(data=data)
         self.assertTrue(serializer.is_valid())
-        serializer.update_reason(serializer.validated_data)
+        serializer.submit_reason(serializer.validated_data)
 
         self.nps_score.refresh_from_db()
         self.assertEqual(self.nps_score.score_reason, "Updated reason")
@@ -247,7 +247,7 @@ class TestNPSScoreReasonSerializer(TestCase):
 
         self.assertTrue(serializer.is_valid())
         with self.assertRaises(Exception):
-            serializer.update_reason(serializer.validated_data)
+            serializer.submit_reason(serializer.validated_data)
 
     def test_no_nps_score_exists(self):
         """Test that error is raised when no NPS score exists for the snapshot."""
@@ -258,7 +258,7 @@ class TestNPSScoreReasonSerializer(TestCase):
 
         self.assertTrue(serializer.is_valid())
         with self.assertRaises(Exception):
-            serializer.update_reason(serializer.validated_data)
+            serializer.submit_reason(serializer.validated_data)
 
     def test_missing_score_reason(self):
         """Test that score_reason is required."""
@@ -285,7 +285,7 @@ class TestNPSScoreReasonSerializer(TestCase):
         data = {"uuid": str(self.screen.uuid), "score_reason": "Recent feedback"}
         serializer = NPSScoreReasonSerializer(data=data)
         self.assertTrue(serializer.is_valid())
-        result = serializer.update_reason(serializer.validated_data)
+        result = serializer.submit_reason(serializer.validated_data)
 
         self.assertEqual(result.id, newer_nps.id)
         self.assertEqual(result.score_reason, "Recent feedback")
@@ -300,7 +300,7 @@ class TestNPSScoreReasonSerializer(TestCase):
         self.assertTrue(serializer.is_valid())
 
         with self.assertRaises(Exception):
-            serializer.update_reason(serializer.validated_data)
+            serializer.submit_reason(serializer.validated_data)
 
 
 class TestNPSScoreReasonView(APITestCase):
