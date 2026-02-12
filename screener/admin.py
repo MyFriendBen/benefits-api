@@ -31,6 +31,8 @@ class FeatureFlagsAdmin(SecureAdmin):
     def _user_can_access(self, request, obj=None):
         if request.user.is_superuser:
             return True
+        if not getattr(request.user, "is_staff", False):
+            return False
         if obj is None:
             return request.user.white_labels.exists()
         return request.user.white_labels.filter(pk=obj.pk).exists()
