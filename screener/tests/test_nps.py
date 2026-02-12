@@ -2,7 +2,7 @@
 Unit tests for NPS (Net Promoter Score) functionality.
 """
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from rest_framework.test import APITestCase
 from rest_framework import status
 from screener.models import Screen, WhiteLabel, EligibilitySnapshot, NPSScore
@@ -126,6 +126,7 @@ class TestNPSScoreSerializer(TestCase):
             serializer.save()  # No valid snapshot exists
 
 
+@override_settings(REST_FRAMEWORK={"DEFAULT_THROTTLE_RATES": {"nps": "1000/hour"}})
 class TestNPSScoreView(APITestCase):
     """Tests for NPSScoreView API endpoint."""
 
@@ -136,11 +137,11 @@ class TestNPSScoreView(APITestCase):
             white_label=self.white_label, zipcode="78701", county="Test County", household_size=2, completed=True
         )
         self.snapshot = EligibilitySnapshot.objects.create(screen=self.screen, is_batch=False, had_error=False)
-        self.url = "/api/nps/"
+        self.url = f"/api/screens/{self.screen.uuid}/nps/"
 
     def test_post_valid_nps_score(self):
         """Test successful NPS score submission."""
-        data = {"uuid": str(self.screen.uuid), "score": 9, "variant": "floating"}
+        data = {"score": 9, "variant": "floating"}
         response = self.client.post(self.url, data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -149,7 +150,7 @@ class TestNPSScoreView(APITestCase):
 
     def test_post_invalid_score(self):
         """Test that invalid score returns 400."""
-        data = {"uuid": str(self.screen.uuid), "score": 15, "variant": "floating"}
+        data = {"score": 15, "variant": "floating"}
         response = self.client.post(self.url, data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -157,22 +158,23 @@ class TestNPSScoreView(APITestCase):
 
     def test_post_missing_required_fields(self):
         """Test that missing required fields returns 400."""
-        data = {"variant": "floating"}  # Missing uuid and score
+        data = {"variant": "floating"}  # Missing score
         response = self.client.post(self.url, data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_post_invalid_uuid(self):
         """Test that invalid uuid returns 400."""
-        data = {"uuid": "00000000-0000-0000-0000-000000000000", "score": 5, "variant": "inline"}
-        response = self.client.post(self.url, data, format="json")
+        url = "/api/screens/00000000-0000-0000-0000-000000000000/nps/"
+        data = {"score": 5, "variant": "inline"}
+        response = self.client.post(url, data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("uuid", response.data)
 
     def test_post_duplicate_submission(self):
         """Test that duplicate submission returns 400."""
-        data = {"uuid": str(self.screen.uuid), "score": 8, "variant": "floating"}
+        data = {"score": 8, "variant": "floating"}
 
         # First submission
         response1 = self.client.post(self.url, data, format="json")
@@ -185,7 +187,7 @@ class TestNPSScoreView(APITestCase):
     def test_no_authentication_required(self):
         """Test that endpoint is accessible without authentication."""
         # Client has no authentication set up
-        data = {"uuid": str(self.screen.uuid), "score": 7, "variant": "inline"}
+        data = {"score": 7, "variant": "inline"}
         response = self.client.post(self.url, data, format="json")
 
         # Should succeed without auth
@@ -211,10 +213,11 @@ class TestNPSScoreReasonSerializer(TestCase):
         serializer = NPSScoreReasonSerializer(data=data)
 
         self.assertTrue(serializer.is_valid())
-        nps_score = serializer.submit_reason(serializer.validated_data)
+        nps_score = serializer.get_nps_score(serializer.validated_data["uuid"])
+        result = serializer.update(nps_score, serializer.validated_data)
 
-        self.assertEqual(nps_score.score_reason, "The tool was very helpful")
-        self.assertEqual(nps_score.score, 8)  # Original score unchanged
+        self.assertEqual(result.score_reason, "The tool was very helpful")
+        self.assertEqual(result.score, 8)  # Original score unchanged
 
     def test_reason_updates_existing_score(self):
         """Test that reason is added to an existing NPS score record."""
@@ -222,7 +225,8 @@ class TestNPSScoreReasonSerializer(TestCase):
         serializer = NPSScoreReasonSerializer(data=data)
 
         self.assertTrue(serializer.is_valid())
-        serializer.submit_reason(serializer.validated_data)
+        nps_score = serializer.get_nps_score(serializer.validated_data["uuid"])
+        serializer.update(nps_score, serializer.validated_data)
 
         self.nps_score.refresh_from_db()
         self.assertEqual(self.nps_score.score_reason, "Easy to use")
@@ -235,7 +239,8 @@ class TestNPSScoreReasonSerializer(TestCase):
         data = {"uuid": str(self.screen.uuid), "score_reason": "Updated reason"}
         serializer = NPSScoreReasonSerializer(data=data)
         self.assertTrue(serializer.is_valid())
-        serializer.submit_reason(serializer.validated_data)
+        nps_score = serializer.get_nps_score(serializer.validated_data["uuid"])
+        serializer.update(nps_score, serializer.validated_data)
 
         self.nps_score.refresh_from_db()
         self.assertEqual(self.nps_score.score_reason, "Updated reason")
@@ -247,7 +252,7 @@ class TestNPSScoreReasonSerializer(TestCase):
 
         self.assertTrue(serializer.is_valid())
         with self.assertRaises(Exception):
-            serializer.submit_reason(serializer.validated_data)
+            serializer.get_nps_score(serializer.validated_data["uuid"])
 
     def test_no_nps_score_exists(self):
         """Test that error is raised when no NPS score exists for the snapshot."""
@@ -258,7 +263,7 @@ class TestNPSScoreReasonSerializer(TestCase):
 
         self.assertTrue(serializer.is_valid())
         with self.assertRaises(Exception):
-            serializer.submit_reason(serializer.validated_data)
+            serializer.get_nps_score(serializer.validated_data["uuid"])
 
     def test_missing_score_reason(self):
         """Test that score_reason is required."""
@@ -285,7 +290,8 @@ class TestNPSScoreReasonSerializer(TestCase):
         data = {"uuid": str(self.screen.uuid), "score_reason": "Recent feedback"}
         serializer = NPSScoreReasonSerializer(data=data)
         self.assertTrue(serializer.is_valid())
-        result = serializer.submit_reason(serializer.validated_data)
+        nps_score = serializer.get_nps_score(serializer.validated_data["uuid"])
+        result = serializer.update(nps_score, serializer.validated_data)
 
         self.assertEqual(result.id, newer_nps.id)
         self.assertEqual(result.score_reason, "Recent feedback")
@@ -300,9 +306,10 @@ class TestNPSScoreReasonSerializer(TestCase):
         self.assertTrue(serializer.is_valid())
 
         with self.assertRaises(Exception):
-            serializer.submit_reason(serializer.validated_data)
+            serializer.get_nps_score(serializer.validated_data["uuid"])
 
 
+@override_settings(REST_FRAMEWORK={"DEFAULT_THROTTLE_RATES": {"nps": "1000/hour"}})
 class TestNPSScoreReasonView(APITestCase):
     """Tests for NPSScoreView PATCH endpoint (score reason)."""
 
@@ -314,11 +321,11 @@ class TestNPSScoreReasonView(APITestCase):
         )
         self.snapshot = EligibilitySnapshot.objects.create(screen=self.screen, is_batch=False, had_error=False)
         self.nps_score = NPSScore.objects.create(eligibility_snapshot=self.snapshot, score=8, variant="floating")
-        self.url = "/api/nps/"
+        self.url = f"/api/screens/{self.screen.uuid}/nps/"
 
     def test_patch_valid_reason(self):
         """Test successful reason submission via PATCH."""
-        data = {"uuid": str(self.screen.uuid), "score_reason": "Great experience"}
+        data = {"score_reason": "Great experience"}
         response = self.client.patch(self.url, data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -329,24 +336,17 @@ class TestNPSScoreReasonView(APITestCase):
 
     def test_patch_missing_reason(self):
         """Test that missing score_reason returns 400."""
-        data = {"uuid": str(self.screen.uuid)}
+        data = {}
         response = self.client.patch(self.url, data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("score_reason", response.data)
 
-    def test_patch_missing_uuid(self):
-        """Test that missing uuid returns 400."""
-        data = {"score_reason": "Some reason"}
-        response = self.client.patch(self.url, data, format="json")
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("uuid", response.data)
-
     def test_patch_invalid_uuid(self):
         """Test that invalid uuid returns 400."""
-        data = {"uuid": "00000000-0000-0000-0000-000000000000", "score_reason": "Some reason"}
-        response = self.client.patch(self.url, data, format="json")
+        url = "/api/screens/00000000-0000-0000-0000-000000000000/nps/"
+        data = {"score_reason": "Some reason"}
+        response = self.client.patch(url, data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("uuid", response.data)
@@ -355,7 +355,7 @@ class TestNPSScoreReasonView(APITestCase):
         """Test that PATCH fails when no NPS score exists."""
         self.nps_score.delete()
 
-        data = {"uuid": str(self.screen.uuid), "score_reason": "Some reason"}
+        data = {"score_reason": "Some reason"}
         response = self.client.patch(self.url, data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -363,7 +363,7 @@ class TestNPSScoreReasonView(APITestCase):
 
     def test_patch_no_authentication_required(self):
         """Test that PATCH endpoint is accessible without authentication."""
-        data = {"uuid": str(self.screen.uuid), "score_reason": "No auth needed"}
+        data = {"score_reason": "No auth needed"}
         response = self.client.patch(self.url, data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -374,12 +374,12 @@ class TestNPSScoreReasonView(APITestCase):
         self.nps_score.delete()
 
         # Step 1: Submit NPS score
-        score_data = {"uuid": str(self.screen.uuid), "score": 9, "variant": "inline"}
+        score_data = {"score": 9, "variant": "inline"}
         response1 = self.client.post(self.url, score_data, format="json")
         self.assertEqual(response1.status_code, status.HTTP_201_CREATED)
 
         # Step 2: Submit followup reason
-        reason_data = {"uuid": str(self.screen.uuid), "score_reason": "Very useful tool"}
+        reason_data = {"score_reason": "Very useful tool"}
         response2 = self.client.patch(self.url, reason_data, format="json")
         self.assertEqual(response2.status_code, status.HTTP_200_OK)
 

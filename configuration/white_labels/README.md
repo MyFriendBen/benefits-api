@@ -227,6 +227,7 @@ experiments = {
 | NPS off | `nps_survey: false` | doesn't matter |
 | NPS on, A/B test | `nps_survey: true` | `{"variants": ["floating", "inline"]}` |
 | NPS on, single variant | `nps_survey: true` | `{"variants": ["floating"]}` |
+
 - Experiments can be overridden per white label, e.g. to run the A/B test in Colorado but show only the floating widget in Illinois:
 
 ```python
