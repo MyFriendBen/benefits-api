@@ -2369,6 +2369,10 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
         "defaultLanguage": {"default": "en-us"},
     }
 
+    experiments = {
+        "npsVariant": {"variants": ["inline"]},
+    }
+
     current_benefits = {
         "title": {
             "_label": "energyCalculator.currentBenefits.title",
