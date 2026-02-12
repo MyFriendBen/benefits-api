@@ -2,11 +2,8 @@ import argparse
 import json
 from typing import Any
 
-from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
-
-from integrations.clients.google_translate import Translate
 from programs.models import (
     CategoryIconName,
     County,
@@ -19,7 +16,7 @@ from programs.models import (
 )
 from programs.programs.urgent_needs import urgent_need_functions
 from screener.models import WhiteLabel
-from translations.models import Translation
+from programs.management.commands._translation_utils import TranslationImportMixin
 
 
 def truncate(text: str, max_length: int = 50) -> str:
@@ -27,7 +24,7 @@ def truncate(text: str, max_length: int = 50) -> str:
     return f"{text[:max_length]}..." if len(text) > max_length else text
 
 
-class Command(BaseCommand):
+class Command(TranslationImportMixin, BaseCommand):
     help = """
     Import an Urgent Need from a JSON configuration file.
 
@@ -57,7 +54,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--override",
             action="store_true",
-            help="Update an existing Urgent Need if it already exists",
+            help="Delete and recreate an existing Urgent Need if it already exists",
         )
 
     def handle(self, *args: Any, **options: Any) -> None:
@@ -83,12 +80,13 @@ class Command(BaseCommand):
             raise CommandError(f"WhiteLabel with code '{white_label_code}' not found")
 
         existing_need = UrgentNeed.objects.filter(external_name=external_name).first()
+        overriding = bool(existing_need and override)
 
         if existing_need and not override:
             self.stdout.write(
                 self.style.WARNING(
                     f"Urgent Need '{external_name}' already exists (ID: {existing_need.id}). "
-                    f"Use --override to update it."
+                    f"Use --override to delete and recreate it."
                 )
             )
             return
@@ -97,32 +95,31 @@ class Command(BaseCommand):
             self._print_dry_run_report(config, white_label_code, external_name)
             return
 
-        with transaction.atomic():
-            need = (
-                existing_need
-                if existing_need
-                else UrgentNeed.objects.new_urgent_need(
-                    white_label=white_label_code, name=external_name, phone_number=None
+        try:
+            with transaction.atomic():
+                if overriding and existing_need:
+                    self._delete_need(existing_need)
+                    existing_need = None
+
+                need = UrgentNeed.objects.new_urgent_need(
+                    white_label=white_label_code,
+                    name=external_name,
+                    phone_number=None,
                 )
-            )
 
-            self.stdout.write(self.style.SUCCESS(f"\n[Urgent need: {external_name}]"))
-            self.stdout.write(f"White Label: {white_label_code}\n")
+                self.stdout.write(self.style.SUCCESS(f"\n[Urgent need: {external_name}]"))
+                self.stdout.write(f"White Label: {white_label_code}\n")
 
-            # Clear relationships if overriding
-            if existing_need:
-                need.type_short.clear()
-                need.functions.clear()
-                need.counties.clear()
-                need.required_expense_types.clear()
-
-            self._import_need(need, white_label, need_config)
-            self.stdout.write(
-                self.style.SUCCESS(
-                    f"\n✓ Successfully {'updated' if existing_need else 'created'} urgent need: {external_name} "
-                    f"(ID: {need.id})\n"
+                self._import_need(need, white_label, need_config)
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f"\n✓ Successfully {'recreated' if overriding else 'created'} urgent need: {external_name} "
+                        f"(ID: {need.id})\n"
+                    )
                 )
-            )
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"\nError during import: {e}\n" f"All changes have been rolled back."))
+            raise
 
     # --------------------------------------------------------------------------------------
     # Validation & Dry Run
@@ -212,6 +209,13 @@ class Command(BaseCommand):
     # --------------------------------------------------------------------------------------
     # Import helpers
     # --------------------------------------------------------------------------------------
+    def _delete_need(self, need: UrgentNeed) -> None:
+        """Delete an urgent need before re-importing in override mode."""
+        name = need.external_name or f"ID {need.id}"
+        self.stdout.write(self.style.WARNING("\n[Override Mode] Deleting existing urgent need..."))
+        need.delete()
+        self.stdout.write(f"  Deleted urgent need: {name}\n")
+
     def _import_need(self, need: UrgentNeed, white_label: WhiteLabel, config: dict[str, Any]) -> UrgentNeed:
         translations = config.get("translations", {})
 
@@ -224,7 +228,7 @@ class Command(BaseCommand):
             setattr(need, field, config.get(field, default))
 
         if "phone_number" in config:
-            need.phone_number = config.get("phone_number") or None
+            need.phone_number = config.get("phone_number")
 
         # FPL year
         if fpl_data := config.get("fpl"):
@@ -277,15 +281,15 @@ class Command(BaseCommand):
 
         category_type = UrgentNeedType.objects.filter(external_name=external_name).first()
         if not category_type:
-            # Create icon if provided
-            icon = None
+            # Ensure icon exists if provided, manager expects string name
             if icon_name:
-                icon, _ = CategoryIconName.objects.get_or_create(name=icon_name)
+                CategoryIconName.objects.get_or_create(name=icon_name)
+
             category_type = UrgentNeedType.objects.new_urgent_need_type(
-                white_label=white_label.code, external_name=external_name, icon=icon if icon else None
+                white_label=white_label.code,
+                external_name=external_name,
+                icon=icon_name,  # pass string name
             )
-            if icon:
-                category_type.icon = icon
         else:
             # Ensure icon set if provided
             if icon_name:
@@ -342,77 +346,3 @@ class Command(BaseCommand):
         # Map missing optional translation
         prepared = {field: translations.get(field, "") for field in translated_fields}
         self._bulk_update_entity_translations(need, prepared, "urgent_need", translated_fields)
-
-    # --------------------------------------------------------------------------------------
-    # Translation utilities (copied from import_program_config with minor tweaks)
-    # --------------------------------------------------------------------------------------
-    def _bulk_update_entity_translations(
-        self,
-        entity,
-        translations: dict[str, str],
-        entity_label: str,
-        translated_fields: tuple[str, ...],
-    ) -> None:
-        """
-        Update translations for multiple fields on an entity.
-
-        Mirrors the translation logic used in views.edit_translation() with auto-translate support.
-        """
-
-        texts_to_translate: list[str] = []
-        translation_objects: dict[str, list[Translation]] = {}
-
-        for field_name, english_text in translations.items():
-            if field_name not in translated_fields:
-                raise CommandError(f"Field '{field_name}' is not translatable for {entity_label}")
-
-            translation_obj: Translation = getattr(entity, field_name)
-
-            # Update translation
-            self._update_translation_all_languages(
-                translation_obj, english_text, texts_to_translate, translation_objects
-            )
-
-        # Bulk translate
-        if texts_to_translate:
-            self.stdout.write(f"  Translating {len(texts_to_translate)} field(s) to all languages...")
-
-            bulk_translations = Translate().bulk_translate(Translate.languages, texts_to_translate)
-
-            for english_text, translation_obj_list in translation_objects.items():
-                auto_translations = bulk_translations[english_text]
-                for translation_obj in translation_obj_list:
-                    for lang in Translate.languages:
-                        if lang != settings.LANGUAGE_CODE:
-                            Translation.objects.edit_translation_by_id(
-                                translation_obj.id,
-                                lang,
-                                auto_translations[lang],
-                                manual=False,
-                            )
-
-        entity.save()
-
-    def _update_translation_all_languages(
-        self,
-        translation_obj: Translation,
-        text: str,
-        texts_to_translate: list[str],
-        translation_objects: dict[str, list[Translation]],
-    ) -> None:
-        """
-        Update a translation for all languages.
-        """
-        # Update English translation (manual=True)
-        Translation.objects.edit_translation_by_id(translation_obj.id, settings.LANGUAGE_CODE, text, manual=True)
-
-        # Handle no_auto fields (copy English to all languages)
-        if translation_obj.no_auto:
-            for lang in Translate.languages:
-                Translation.objects.edit_translation_by_id(translation_obj.id, lang, text, manual=False)
-        else:
-            if text:
-                if text not in translation_objects:
-                    texts_to_translate.append(text)
-                    translation_objects[text] = []
-                translation_objects[text].append(translation_obj)

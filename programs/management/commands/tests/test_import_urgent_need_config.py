@@ -2,6 +2,7 @@ import json
 
 import pytest
 from django.core.management import call_command
+from django.core.management.base import CommandError
 
 from integrations.clients.google_translate import Translate
 from programs.models import UrgentNeed, UrgentNeedType
@@ -139,3 +140,144 @@ def test_import_urgent_need_dry_run(tmp_path):
     call_command("import_urgent_need_config", str(config_path), "--dry-run")
 
     assert UrgentNeed.objects.filter(external_name="dry_run_need").count() == 0
+
+
+@pytest.mark.django_db
+def test_import_urgent_need_override_recreates(tmp_path):
+    white_label = WhiteLabel.objects.create(name="Test", code="test", state_code="TS")
+
+    base_config = {
+        "white_label": {"code": "test"},
+        "need": {
+            "external_name": "override_need",
+            "category_type": {"external_name": "ct_one"},
+            "type_short": ["one"],
+            "translations": {
+                "name": "Need One",
+                "description": "Desc one",
+                "link": "https://example.com/one",
+                "warning": "",
+                "website_description": "Site one",
+            },
+        },
+    }
+
+    config_path = tmp_path / "need_override.json"
+    config_path.write_text(json.dumps(base_config))
+    call_command("import_urgent_need_config", str(config_path))
+
+    original = UrgentNeed.objects.get(external_name="override_need")
+
+    # Override with changed category and translation
+    override_config = base_config.copy()
+    override_config["need"] = {
+        **base_config["need"],
+        "category_type": {"external_name": "ct_two", "name": "Category Two"},
+        "type_short": ["two"],
+        "translations": {
+            "name": "Need Two",
+            "description": "Desc two",
+            "link": "https://example.com/two",
+            "warning": "",
+            "website_description": "Site two",
+        },
+    }
+
+    config_path.write_text(json.dumps(override_config))
+    call_command("import_urgent_need_config", str(config_path), "--override")
+
+    recreated = UrgentNeed.objects.get(external_name="override_need")
+
+    assert UrgentNeed.objects.filter(external_name="override_need").count() == 1
+    assert recreated.id != original.id  # type: ignore[attr-defined]
+    assert recreated.category_type is not None
+    assert recreated.category_type.external_name == "ct_two"
+    assert set(recreated.type_short.values_list("name", flat=True)) == {"two"}
+    assert recreated.name.safe_translation_getter("text", any_language=False) == "Need Two"
+
+
+@pytest.mark.django_db
+def test_import_fails_on_missing_white_label(tmp_path):
+    config = {
+        "white_label": {"code": "missing"},
+        "need": {
+            "external_name": "need",
+            "category_type": {"external_name": "ct"},
+            "type_short": ["one"],
+            "translations": {
+                "name": "Name",
+                "description": "Desc",
+                "link": "https://example.com",
+                "warning": "",
+                "website_description": "Site",
+            },
+        },
+    }
+    path = tmp_path / "missing_white_label.json"
+    path.write_text(json.dumps(config))
+
+    with pytest.raises(CommandError):
+        call_command("import_urgent_need_config", str(path))
+
+
+@pytest.mark.django_db
+def test_import_fails_on_invalid_function(tmp_path):
+    WhiteLabel.objects.create(name="Test", code="test", state_code="TS")
+
+    config = {
+        "white_label": {"code": "test"},
+        "need": {
+            "external_name": "need",
+            "category_type": {"external_name": "ct"},
+            "type_short": ["one"],
+            "functions": ["not_a_function"],
+            "translations": {
+                "name": "Name",
+                "description": "Desc",
+                "link": "https://example.com",
+                "warning": "",
+                "website_description": "Site",
+            },
+        },
+    }
+
+    path = tmp_path / "invalid_function.json"
+    path.write_text(json.dumps(config))
+
+    with pytest.raises(CommandError):
+        call_command("import_urgent_need_config", str(path))
+
+
+def test_import_fails_on_invalid_json(tmp_path):
+    path = tmp_path / "invalid.json"
+    path.write_text("{ invalid json")
+
+    with pytest.raises(CommandError):
+        call_command("import_urgent_need_config", str(path))
+
+
+@pytest.mark.django_db
+def test_import_fails_on_empty_type_short(tmp_path):
+    WhiteLabel.objects.create(name="Test", code="test", state_code="TS")
+
+    config = {
+        "white_label": {"code": "test"},
+        "need": {
+            "external_name": "need",
+            "category_type": {"external_name": "ct"},
+            "type_short": [],
+            "translations": {
+                "name": "Name",
+                "description": "Desc",
+                "link": "https://example.com",
+                "warning": "",
+                "website_description": "Site",
+            },
+        },
+    }
+
+    path = tmp_path / "empty_type_short.json"
+    path.write_text(json.dumps(config))
+
+    with pytest.raises(CommandError):
+        call_command("import_urgent_need_config", str(path))
