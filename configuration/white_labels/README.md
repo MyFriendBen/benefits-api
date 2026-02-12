@@ -218,8 +218,16 @@ experiments = {
 - Each experiment key maps to a dict with a `"variants"` list
 - All active variants must be listed — the frontend picks one per user based on their UUID
 - To disable an experiment, set `"variants": []` (empty list)
-- To force a single variant (no A/B test), use a single-item list: `"variants": ["floating"]`
-- Experiments can be overridden per white label to run different tests in different states
+- To skip the A/B test and show one variant to all users, use a single-item list: `"variants": ["floating"]`
+- Experiments can be overridden per white label, e.g. to run the A/B test in Colorado but show only the floating widget in Illinois:
+
+```python
+# In il.py — feature is on (via feature flag) but no A/B test, everyone sees floating
+class IlConfigurationData(ConfigurationData):
+    experiments = {
+        "npsVariant": {"variants": ["floating"]},
+    }
+```
 
 **Adding a new experiment:**
 1. Add the key and variants to `experiments` in `base.py`
