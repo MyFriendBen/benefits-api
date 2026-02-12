@@ -1,0 +1,17 @@
+{
+  "description": "Update NC Medicaid validation values after senior eligibility fix (MFB-605)",
+  "updates": [
+    {
+      "screen_uuid": "6d07026c-67d7-4918-bcbb-3d6cdb82aa6e",
+      "program_name": "nc_medicaid",
+      "value": 8928,
+      "reason": "Senior Medicaid logic fixed in MFB-605; benefit amount updated correctly"
+    },
+    {
+      "screen_uuid": "7fd656c0-2188-480a-a723-0b3b27f3f6d3",
+      "program_name": "nc_medicaid",
+      "value": 6144,
+      "reason": "Senior Medicaid logic fixed in MFB-605; benefit amount updated correctly"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "description": "Fix TX Medicaid for Children validation expectations - update benefit values and eligibility (MFB-638)",
+  "updates": [
+    {
+      "screen_uuid": "0934272e-84a1-45fb-a69b-6c1276880e56",
+      "program_name": "tx_medicaid_for_children",
+      "value": 4137,
+      "reason": "$4,137 annual value represents estimated health insurance coverage cost for one eligible infant"
+    },
+    {
+      "screen_uuid": "9da2b7c7-3291-4798-b6b5-5e8c0a6646cb",
+      "program_name": "tx_medicaid_for_children",
+      "value": 4137,
+      "reason": "$4,137 annual value represents estimated health insurance coverage cost for one eligible child"
+    },
+    {
+      "screen_uuid": "434e167a-868f-4cd3-afb4-a3aa2cfdd9d8",
+      "program_name": "tx_medicaid_for_children",
+      "value": 12412,
+      "reason": "$12,412 annual value represents estimated health insurance coverage cost for 3 eligible children (infant, preschooler, teen)"
+    },
+    {
+      "screen_uuid": "28c49abe-34d9-4806-b4d5-b578bb4f76fa",
+      "program_name": "tx_medicaid_for_children",
+      "value": 4137,
+      "reason": "$4,137 annual value represents estimated health insurance coverage cost for one eligible child in SSI household"
+    },
+    {
+      "screen_uuid": "f7896da9-7fcc-4294-ab0a-1e0ae92ce340",
+      "program_name": "tx_medicaid_for_children",
+      "eligible": false,
+      "reason": "Household income exceeds 138% FPL limit for ages 6-18"
+    },
+    {
+      "screen_uuid": "fd47bc40-9d74-4be7-9838-ac977398b380",
+      "program_name": "tx_medicaid_for_children",
+      "eligible": false,
+      "reason": "Household income exceeds 138% FPL limit for ages 6-18"
+    }
+  ]
+}
