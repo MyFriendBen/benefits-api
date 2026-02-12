@@ -14,7 +14,7 @@ from screener.models import (
     EligibilitySnapshot,
     ProgramEligibilitySnapshot,
 )
-from rest_framework import viewsets, views, status, mixins
+from rest_framework import viewsets, views, status, mixins, throttling
 from rest_framework import permissions
 from rest_framework.response import Response
 from screener.serializers import (
@@ -598,12 +598,21 @@ def urgent_need_results(screen: Screen, data):
     return eligible_urgent_needs
 
 
+class NPSRateThrottle(throttling.AnonRateThrottle):
+    """
+    Rate throttle for NPS submissions to prevent abuse.
+    Limits anonymous users to 10 submissions per hour per IP.
+    """
+    scope = 'nps'
+
+
 class NPSScoreView(views.APIView):
     """
     API endpoint for submitting NPS (Net Promoter Score) feedback.
     """
 
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [NPSRateThrottle]
 
     def post(self, request):
         serializer = NPSScoreSerializer(data=request.data)
@@ -615,6 +624,8 @@ class NPSScoreView(views.APIView):
     def patch(self, request):
         serializer = NPSScoreReasonSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.submit_reason(serializer.validated_data)
+            uuid = serializer.validated_data.pop("uuid")
+            nps_score = serializer.get_nps_score(uuid)
+            serializer.update(nps_score, serializer.validated_data)
             return Response({"status": "success"}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

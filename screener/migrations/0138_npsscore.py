@@ -45,6 +45,12 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
+            options={
+                "indexes": [
+                    models.Index(fields=["-created_at"], name="nps_created_at_idx"),
+                    models.Index(fields=["variant"], name="nps_variant_idx"),
+                ],
+            },
         ),
         migrations.AddConstraint(
             model_name="npsscore",

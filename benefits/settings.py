@@ -81,6 +81,9 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     "EXCEPTION_HANDLER": "benefits.views.drf_exception_handler",
+    "DEFAULT_THROTTLE_RATES": {
+        "nps": "10/hour",  # Limit NPS submissions to prevent abuse
+    },
 }
 
 CORS_ALLOW_ALL_ORIGINS = True

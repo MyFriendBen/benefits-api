@@ -1018,6 +1018,10 @@ class NPSScore(models.Model):
                 name="nps_score_range",
             )
         ]
+        indexes = [
+            models.Index(fields=["-created_at"], name="nps_created_at_idx"),
+            models.Index(fields=["variant"], name="nps_variant_idx"),
+        ]
 
     def __str__(self):
         return f"NPS {self.score} for snapshot {self.eligibility_snapshot_id}"

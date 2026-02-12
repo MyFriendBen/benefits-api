@@ -1,6 +1,9 @@
+import logging
 from datetime import date
 from django.db import IntegrityError
 from django.utils import timezone
+
+logger = logging.getLogger(__name__)
 from programs.models import WarningMessage
 from screener.models import (
     EnergyCalculatorMember,
@@ -461,6 +464,23 @@ class ResultsSerializer(serializers.Serializer):
     pe_data = serializers.DictField(required=False, allow_null=True)
 
 
+def get_latest_eligibility_snapshot(screen_uuid):
+    """
+    Get the most recent non-error eligibility snapshot for a screen.
+
+    Args:
+        screen_uuid: UUID of the screen
+
+    Returns:
+        EligibilitySnapshot or None if not found
+    """
+    return (
+        EligibilitySnapshot.objects.filter(screen__uuid=screen_uuid, had_error=False)
+        .order_by("-submission_date")
+        .first()
+    )
+
+
 class NPSScoreSerializer(serializers.Serializer):
     uuid = serializers.UUIDField(write_only=True)
     score = serializers.IntegerField(min_value=1, max_value=10)
@@ -468,46 +488,51 @@ class NPSScoreSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         uuid = validated_data.pop("uuid")
-
-        # Get the most recent eligibility snapshot for this screen
-        snapshot = (
-            EligibilitySnapshot.objects.filter(screen__uuid=uuid, had_error=False).order_by("-submission_date").first()
-        )
+        snapshot = get_latest_eligibility_snapshot(uuid)
 
         if snapshot is None:
             raise serializers.ValidationError({"uuid": "No eligibility snapshot found for this screen"})
 
-        # Check if NPS already exists for this snapshot
-        if hasattr(snapshot, "nps_score"):
-            raise serializers.ValidationError({"uuid": "NPS score already submitted for this session"})
-
+        # Try to create NPS score - database constraint prevents duplicates
         try:
-            return NPSScore.objects.create(eligibility_snapshot=snapshot, **validated_data)
+            nps_score = NPSScore.objects.create(eligibility_snapshot=snapshot, **validated_data)
+            logger.info(
+                f"NPS score created: score={nps_score.score}, variant={nps_score.variant}, "
+                f"snapshot_id={snapshot.id}, screen_uuid={uuid}"
+            )
+            return nps_score
         except IntegrityError:
+            logger.warning(f"Duplicate NPS submission attempted for screen_uuid={uuid}")
             raise serializers.ValidationError({"uuid": "NPS score already submitted for this session"})
 
 
 class NPSScoreReasonSerializer(serializers.Serializer):
     uuid = serializers.UUIDField(write_only=True)
-    score_reason = serializers.CharField()
+    score_reason = serializers.CharField(max_length=500, trim_whitespace=True)
 
-    def submit_reason(self, validated_data):
-        uuid = validated_data["uuid"]
-        score_reason = validated_data["score_reason"]
-
-        # Get the most recent eligibility snapshot for this screen
-        snapshot = (
-            EligibilitySnapshot.objects.filter(screen__uuid=uuid, had_error=False).order_by("-submission_date").first()
+    def update(self, instance, validated_data):
+        """
+        Update an existing NPS score with a reason.
+        Standard DRF update method for PATCH operations.
+        """
+        instance.score_reason = validated_data.get("score_reason", instance.score_reason)
+        instance.save(update_fields=["score_reason"])
+        logger.info(
+            f"NPS reason updated: score={instance.score}, reason_length={len(instance.score_reason)}, "
+            f"snapshot_id={instance.eligibility_snapshot_id}"
         )
+        return instance
+
+    def get_nps_score(self, uuid):
+        """
+        Helper method to retrieve NPS score by screen UUID.
+        """
+        snapshot = get_latest_eligibility_snapshot(uuid)
 
         if snapshot is None:
             raise serializers.ValidationError({"uuid": "No eligibility snapshot found for this screen"})
 
         try:
-            nps_score = snapshot.nps_score
+            return snapshot.nps_score
         except NPSScore.DoesNotExist:
             raise serializers.ValidationError({"uuid": "No NPS score found for this session"})
-
-        nps_score.score_reason = score_reason
-        nps_score.save(update_fields=["score_reason"])
-        return nps_score
