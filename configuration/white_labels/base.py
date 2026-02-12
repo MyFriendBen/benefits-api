@@ -634,7 +634,7 @@ class ConfigurationData:
     # Each experiment maps to a variant name (not just on/off like featureFlags)
     experiments = {
         # NPS survey variant: "floating" | "inline" | "off"
-        "npsVariant": {"default": "off"},
+        "npsVariant": {"default": "floating"},
     }
 
     # Footer contact information
