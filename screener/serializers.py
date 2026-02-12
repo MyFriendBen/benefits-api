@@ -1,4 +1,5 @@
 from datetime import date
+from django.db import IntegrityError
 from django.utils import timezone
 from programs.models import WarningMessage
 from screener.models import (
@@ -480,7 +481,10 @@ class NPSScoreSerializer(serializers.Serializer):
         if hasattr(snapshot, "nps_score"):
             raise serializers.ValidationError({"uuid": "NPS score already submitted for this session"})
 
-        return NPSScore.objects.create(eligibility_snapshot=snapshot, **validated_data)
+        try:
+            return NPSScore.objects.create(eligibility_snapshot=snapshot, **validated_data)
+        except IntegrityError:
+            raise serializers.ValidationError({"uuid": "NPS score already submitted for this session"})
 
 
 class NPSScoreReasonSerializer(serializers.Serializer):
