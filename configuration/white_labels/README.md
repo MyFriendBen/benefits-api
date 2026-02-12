@@ -217,7 +217,7 @@ experiments = {
 
 - Each experiment key maps to a dict with a `"variants"` list
 - All active variants must be listed — the frontend picks one per user based on their UUID
-- To disable an experiment, set `"variants": []` (empty list)
+- Use the feature flag (not experiments) to disable a feature entirely
 - To skip the A/B test and show one variant to all users, use a single-item list: `"variants": ["floating"]`
 - Experiments can be overridden per white label, e.g. to run the A/B test in Colorado but show only the floating widget in Illinois:
 
