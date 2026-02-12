@@ -28,6 +28,22 @@ class FeatureFlagsAdmin(SecureAdmin):
     fields = ("name",)
     change_form_template = "admin/screener/featureflags/change_form.html"
 
+    def _user_can_access(self, request, obj=None):
+        if request.user.is_superuser:
+            return True
+        if obj is None:
+            return request.user.white_labels.exists()
+        return request.user.white_labels.filter(pk=obj.pk).exists()
+
+    def has_module_permission(self, request):
+        return self._user_can_access(request)
+
+    def has_view_permission(self, request, obj=None):
+        return self._user_can_access(request, obj)
+
+    def has_change_permission(self, request, obj=None):
+        return self._user_can_access(request, obj)
+
     def changelist_view(self, request, extra_context=None):
         # Disable checkboxes by removing bulk actions
         self.actions = None
@@ -37,7 +53,10 @@ class FeatureFlagsAdmin(SecureAdmin):
         return False
 
     def get_queryset(self, request):
-        return super().get_queryset(request).only("name", "code", "state_code", "feature_flags")
+        qs = self.model.objects.only("name", "code", "state_code", "feature_flags")
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(pk__in=request.user.white_labels.all())
 
     def change_view(self, request, object_id, form_url="", extra_context=None):
         obj = self.get_object(request, object_id)
