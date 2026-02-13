@@ -333,15 +333,10 @@ class NcConfigurationData(ConfigurationData):
     }
 
     # Nested income options organized by category (for future use with categorized UI)
-    # Exclude cOSDisability (Colorado State Disability Benefits) - not applicable to NC
     income_options_by_category = {
         **ConfigurationData.income_options_by_category,
         "government": {
-            key: value
-            for key, value in ConfigurationData.income_options_by_category["government"].items()
-            if key != "cOSDisability"
-        }
-        | {
+            **ConfigurationData.income_options_by_category["government"],
             "cashAssistance": {
                 "_label": "incomeOptions.nc_cashAssistance",
                 "_default_message": "Cash Assistance Grant",
@@ -357,10 +352,8 @@ class NcConfigurationData(ConfigurationData):
     }
 
     # Flattened income options (backward compatible with current FE)
-    # Exclude cOSDisability (Colorado State Disability Benefits) - not applicable to NC
     income_options = {
-        key: value for key, value in ConfigurationData.income_options.items() if key != "cOSDisability"
-    } | {
+        **ConfigurationData.income_options,
         "pension": {
             "_label": "incomeOptions.nc_pension",
             "_default_message": "Military, Government, or Private Pension",
