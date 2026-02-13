@@ -111,7 +111,7 @@ This directory contains configuration files for MyFriendBen white labels (state/
 - `ma.py` - Massachusetts
 - `nc.py` - North Carolina
 - `tx.py` - Texas
-- `co_energy_calculator.py` - Colorado Energy Calculator (specialized flow)
+- `cesn.py` - Colorado Energy Savings Navigator (specialized flow)
 
 ## Key Configuration Sections
 
@@ -259,7 +259,7 @@ This ensures translations are available across all environments and languages.
 
 ### Program Name Abbreviations
 
-Programs are registered with a `name_abbreviated` (e.g., `"snap"`, `"co_snap"`, `"co_energy_calculator_leap"`).
+Programs are registered with a `name_abbreviated` (e.g., `"snap"`, `"co_snap"`, `"cesn_leap"`).
 
 Multiple program variants can map to the same benefit in `has_benefit()`:
 - `"snap"` → `self.has_snap`
