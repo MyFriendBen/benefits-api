@@ -67,8 +67,8 @@ def reverse_rename_cesn_to_co_energy_calculator(apps, _schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("programs", "0130_alter_program_legal_status_required"),
-        ("screener", "0138_rename_co_energy_calculator_to_cesn"),
+        ("programs", "0131_alter_county_options_alter_programcategory_options"),
+        ("screener", "0140_rename_co_energy_calculator_to_cesn"),
     ]
 
     operations = [
