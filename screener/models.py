@@ -1,5 +1,5 @@
+from typing import ClassVar, Optional
 from datetime import date
-from typing import Optional
 from django.db import models
 from django.utils import timezone
 from decimal import Decimal
@@ -8,16 +8,30 @@ from authentication.models import User
 from django.utils.translation import gettext_lazy as _
 from programs.util import Dependencies
 from django.conf import settings
+from .feature_flags import FeatureFlagConfig, WHITELABEL_FEATURE_FLAGS
 
 
 class WhiteLabel(models.Model):
+    FEATURE_FLAGS: ClassVar[dict[str, FeatureFlagConfig]] = WHITELABEL_FEATURE_FLAGS
+
     name = models.CharField(max_length=120, blank=False, null=False)
     code = models.CharField(max_length=32, blank=False, null=False)
     state_code = models.CharField(max_length=8, blank=True, null=True)
     cms_method = models.CharField(max_length=32, blank=True, null=True)
+    feature_flags = models.JSONField(default=dict, blank=True)
 
     def __str__(self):
         return self.name
+
+    def _get_flag_value(self, key: str) -> bool:
+        """Internal: Get flag value with default fallback. Assumes key is valid."""
+        return (self.feature_flags or {}).get(key, self.FEATURE_FLAGS[key].default)
+
+    def has_feature(self, key: str) -> bool:
+        """Check if a feature flag is enabled for this WhiteLabel."""
+        if key not in self.FEATURE_FLAGS:
+            raise KeyError(f"Unknown feature flag: {key}")
+        return self._get_flag_value(key)
 
 
 # The screen is the top most container for all information collected in the
@@ -373,7 +387,7 @@ class Screen(models.Model):
         Common Pattern:
             Multiple program variants (e.g., different states or screener types) map to the same field:
             - "snap", "co_snap", "il_snap" → all map to self.has_snap (same real-world benefit)
-            - "leap", "co_energy_calculator_leap" → both map to self.has_leap (same benefit, different flows)
+            - "leap", "cesn_leap" → both map to self.has_leap (same benefit, different flows)
 
         Adding New Mappings:
             1. Ensure the benefit key exists in white_label config's category_benefits (e.g., "leap")
@@ -426,9 +440,8 @@ class Screen(models.Model):
             "il_hbwd": self.has_il_hbwd,
             "il_ccap": self.has_ccap,
             "project_cope": self.has_project_cope,
-            "co_energy_calculator_cope": self.has_project_cope,
+            "cesn_cope": self.has_project_cope,
             "cesn_heap": self.has_cesn_heap,
-            "co_energy_calculator_heap": self.has_cesn_heap,
             "rtdlive": self.has_rtdlive,
             "cccap": self.has_ccap,
             "mydenver": self.has_mydenver,
@@ -440,13 +453,13 @@ class Screen(models.Model):
             "andcs": self.has_andcs,
             "chs": self.has_chs,
             "cpcr": self.has_cpcr,
-            "co_energy_calculator_cpcr": self.has_cpcr,
+            "cesn_cpcr": self.has_cpcr,
             "cdhcs": self.has_cdhcs,
             "dpp": self.has_dpp,
             "ede": self.has_ede,
             "erc": self.has_erc,
             "leap": self.has_leap,
-            "co_energy_calculator_leap": self.has_leap,
+            "cesn_leap": self.has_leap,
             "ma_heap": self.has_ma_heap,
             "il_liheap": self.has_il_liheap,
             "nc_lieap": self.has_nc_lieap,
@@ -466,10 +479,10 @@ class Screen(models.Model):
             "section_8": self.has_section_8,
             "ma_cha": self.has_section_8,
             "cowap": self.has_cowap,
-            "co_energy_calculator_cowap": self.has_cowap,
+            "cesn_cowap": self.has_cowap,
             "ncwap": self.has_ncwap,
             "ubp": self.has_ubp,
-            "co_energy_calculator_ubp": self.has_ubp,
+            "cesn_ubp": self.has_ubp,
             "medicare": self.has_medicare_hi,
             "chp": self.has_chp or self.has_chp_hi,
             "va": self.has_va,

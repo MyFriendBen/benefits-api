@@ -3,7 +3,7 @@ from programs.co_county_zips import counties_from_screen
 from programs.programs.calc import Eligibility, ProgramCalculator
 
 
-class AffordableResidentialEnergy(ProgramCalculator):
+class EnergyCalculatorAffordableResidentialEnergy(ProgramCalculator):
     amount = 1
     dependencies = ["household_size", "energy_calculator", "income_amount", "income_frequency", "county"]
     electricity_providers = [

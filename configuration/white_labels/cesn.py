@@ -2,10 +2,10 @@ from .base import ConfigurationData
 from screener.models import WhiteLabel
 
 
-class CoEnergyCalculatorConfigurationData(ConfigurationData):
+class CesnConfigurationData(ConfigurationData):
     @classmethod
     def get_white_label(self) -> WhiteLabel:
-        return WhiteLabel.objects.get(code="co_energy_calculator")
+        return WhiteLabel.objects.get(code="cesn")
 
     state = {"name": "Colorado"}
 
@@ -2307,7 +2307,7 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
             "default": "logo",
         },
         "shareLink": {
-            "default": "https://screener.myfriendben.org/co_energy_calculator/landing-page",
+            "default": "/cesn",
         },
         "stepDirectory": {
             "default": {
@@ -2333,9 +2333,22 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
                 ],
             }
         },
+        "uiOptions": {
+            "default": [
+                "no_zipcode_change_state",
+                "no_confirmation_return_zipcode",
+                "white_header",
+                "white_multi_select_tile_icon",
+                "dont_show_category_values",
+                "logo_landing_page_link",
+                "no_lets_get_started",
+                "help_bubble_always_open",
+                "small_header_language_dropdown",
+            ]
+        },
+        # Deprecated: use uiOptions. Remove as part of MFB-635.
         "featureFlags": {
             "default": [
-                "energy_calculator",
                 "no_zipcode_change_state",
                 "no_confirmation_return_zipcode",
                 "white_header",

@@ -12,7 +12,7 @@ class EnergyCalculatorVehicleExchange(ProgramCalculator):
     min_age = 18
     ami_percent = "80%"
     presumptive_eligibility = ["co_care", "cowap", "rtdlive", "section_8", "ssdi", "wic", "leap", "snap", "ssi"]
-    calculated_presumptive_eligibility = ["co_energy_calculator_care", "co_energy_calculator_cowap"]
+    calculated_presumptive_eligibility = ["cesn_care", "cesn_cowap"]
     dependencies = ["age", "income_frequency", "income_amount", "energy_calculator"]
 
     def household_eligible(self, e: Eligibility):
