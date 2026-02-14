@@ -77,11 +77,31 @@ class Command(TranslationImportMixin, BaseCommand):
         try:
             white_label = WhiteLabel.objects.get(code=white_label_code)
         except WhiteLabel.DoesNotExist:
-            raise CommandError(f"WhiteLabel with code '{white_label_code}' not found")
+            raise CommandError(f"WhiteLabel with code '{white_label_code}' not found") from None
 
         existing_need = UrgentNeed.objects.filter(external_name=external_name).first()
         overriding = bool(existing_need and override)
 
+        # --- DRY RUN FIRST ---
+        if dry_run:
+            if existing_need:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"Urgent Need '{external_name}' already exists (ID: {existing_need.id}). "
+                        f"Dry run will show what would be updated."
+                    )
+                )
+            else:
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f"Urgent Need '{external_name}' does not exist. " f"Dry run will show what would be created."
+                    )
+                )
+
+            self._print_dry_run_report(config, white_label_code, external_name)
+            return
+
+        # --- REAL EXECUTION VALIDATION ---
         if existing_need and not override:
             self.stdout.write(
                 self.style.WARNING(
@@ -89,10 +109,6 @@ class Command(TranslationImportMixin, BaseCommand):
                     f"Use --override to delete and recreate it."
                 )
             )
-            return
-
-        if dry_run:
-            self._print_dry_run_report(config, white_label_code, external_name)
             return
 
         try:

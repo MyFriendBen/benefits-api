@@ -34,7 +34,7 @@ python manage.py import_urgent_need_config programs/management/commands/import_u
 ```
 
 - `--dry-run`: Show what would be created/updated without DB writes.
-- `--override`: Update an existing urgent need with the same `external_name` (clears and replaces relations).
+- `--override`: Delete any existing `UrgentNeed` with the same `external_name` and recreate it from the provided config; relations are cleared and replaced.
 
 ## JSON Configuration Format
 
