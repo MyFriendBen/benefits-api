@@ -90,7 +90,8 @@ python manage.py import_program_config programs/management/commands/import_progr
     "legal_status_required": ["citizen", "refugee", "gc_5plus"],
     "name": "Program Name",
     "description": "Program description...",
-    "apply_button_link": "https://...",
+    "learn_more_link": "https://example.gov/program-info",  // Informational page about the program
+    "apply_button_link": "https://example.gov/apply",       // Direct application form
     "apply_button_description": "Learn More",
     "estimated_application_time": "10 minutes",
     "website_description": "Short description",
@@ -174,6 +175,10 @@ Naming pattern: `{white_label_code}_{program_short_name}`
 - `apply_button_description` - Text for apply button
 - `website_description` - Short description for website
 - All other text fields
+
+**URL fields** (translatable but NOT auto-translated):
+- `learn_more_link` - Informational page URL
+- `apply_button_link` - Application page URL
 
 **Configuration fields**:
 - `year` - FPL year (e.g., "2025")

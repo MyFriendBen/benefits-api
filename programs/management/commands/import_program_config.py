@@ -206,6 +206,9 @@ class Command(BaseCommand):
         # Skip these fields as they're handled elsewhere
         skip_fields = ["name_abbreviated"]
 
+        # Note: learn_more_link and apply_button_link are handled here because
+        # they are defined as translated fields in the Program model, even though they contain URLs.
+
         translations = {}
         configuration = {}
 
@@ -448,6 +451,7 @@ class Command(BaseCommand):
             translation_obj = getattr(entity, field_name)
 
             # Update translation
+            self.stdout.write(f"    - {field_name}: {truncate(english_text)}")
             self._update_translation_all_languages(
                 translation_obj, english_text, texts_to_translate, translation_objects
             )
