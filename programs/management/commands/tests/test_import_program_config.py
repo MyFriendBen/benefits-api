@@ -125,10 +125,10 @@ class ImportProgramConfigTestCase(TransactionTestCase):
         # Now use mock to force failure during override
         with patch("programs.models.Program.objects.new_program") as mock_new_program:
             # Mock new_program to raise an exception (simulating a failure during import)
-            mock_new_program.side_effect = Exception("Simulated import failure")
+            mock_new_program.side_effect = RuntimeError("Simulated import failure")
 
             # Attempt to override with the same config (should fail due to mock)
-            with self.assertRaises(Exception):
+            with self.assertRaises(RuntimeError):
                 call_command("import_program_config", config_file, "--override", stdout=StringIO())
 
         # Verify original program still exists (deletion was rolled back)
@@ -196,8 +196,8 @@ class ImportProgramConfigTestCase(TransactionTestCase):
         original_id = original_program.id
 
         # Create config with new category missing required fields
-        # This will raise CommandError before the transaction starts, so we need
-        # a different test. Let's just verify the behavior with the other test.
+        # This will raise CommandError inside the transaction during _import_program_category
+        # (called after deletion), so the deletion should be rolled back
         invalid_config = self.base_config.copy()
         invalid_config["program_category"] = {
             "external_name": "new_category",
@@ -205,7 +205,7 @@ class ImportProgramConfigTestCase(TransactionTestCase):
         }
         invalid_config_file = self._create_temp_config(invalid_config)
 
-        # This will raise CommandError during validation
+        # CommandError raised inside transaction during category validation
         with self.assertRaises(CommandError):
             call_command("import_program_config", invalid_config_file, "--override", stdout=StringIO())
 
