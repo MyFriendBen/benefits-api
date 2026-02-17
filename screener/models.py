@@ -1,6 +1,7 @@
 from typing import ClassVar, Optional
 from datetime import date
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 from decimal import Decimal
 import uuid
@@ -994,6 +995,38 @@ class EligibilitySnapshot(models.Model):
     submission_date = models.DateTimeField(auto_now=True)
     is_batch = models.BooleanField(default=False)
     had_error = models.BooleanField(default=False)
+
+
+class NPSScore(models.Model):
+    class Variant(models.TextChoices):
+        FLOATING = "floating", "Floating Widget"
+        INLINE = "inline", "Inline Section"
+
+    eligibility_snapshot = models.OneToOneField(EligibilitySnapshot, related_name="nps_score", on_delete=models.CASCADE)
+    score = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(10)])
+    variant = models.CharField(
+        max_length=20,
+        choices=Variant.choices,
+        blank=True,
+        null=True,
+    )
+    score_reason = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(score__gte=1) & models.Q(score__lte=10),
+                name="nps_score_range",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["-created_at"], name="nps_created_at_idx"),
+            models.Index(fields=["variant"], name="nps_variant_idx"),
+        ]
+
+    def __str__(self):
+        return f"NPS {self.score} for snapshot {self.eligibility_snapshot_id}"
 
 
 # Eligibility results for each specific program per screen. These are

@@ -205,7 +205,45 @@ referrer_data = {
 }
 ```
 
-### 5. Other Sections
+### 5. Experiments (A/B Testing)
+
+Controls A/B test variant assignment. The frontend reads the variants list and uses a UUID hash to deterministically assign each user a variant.
+
+```python
+experiments = {
+    "npsVariant": {"variants": ["floating", "inline"]},
+}
+```
+
+- Each experiment key maps to a dict with a `"variants"` list
+- All active variants must be listed — the frontend picks one per user based on their UUID
+- Use the feature flag (not experiments) to disable a feature entirely
+- To skip the A/B test and show one variant to all users, use a single-item list: `"variants": ["floating"]`
+
+**Feature flags vs experiments (per white label):**
+
+| Want | Feature Flag | Experiment Config |
+|------|-------------|-------------------|
+| NPS off | `nps_survey: false` | doesn't matter |
+| NPS on, A/B test | `nps_survey: true` | `{"variants": ["floating", "inline"]}` |
+| NPS on, single variant | `nps_survey: true` | `{"variants": ["floating"]}` |
+
+- Experiments can be overridden per white label, e.g. to run the A/B test in Colorado but show only the floating widget in Illinois:
+
+```python
+# In il.py — feature is on (via feature flag) but no A/B test, everyone sees floating
+class IlConfigurationData(ConfigurationData):
+    experiments = {
+        "npsVariant": {"variants": ["floating"]},
+    }
+```
+
+**Adding a new experiment:**
+1. Add the key and variants to `experiments` in `base.py`
+2. Run `python manage.py add_config --all` to update the database
+3. Read the experiment config on the frontend and implement variant logic
+
+### 6. Other Sections
 
 - **`acute_condition_options`** - Urgent needs in the "Additional Resources" step
   - Icon names must be defined in `benefits-calculator/src/Components/Results/helpers.ts` (`ICON_OPTIONS_MAP`)

@@ -630,6 +630,13 @@ class ConfigurationData:
         "stateName": {"default": "", "[REPLACE_ME]": ""},
     }
 
+    # A/B test experiments with multi-variant support
+    # Each experiment maps to a list of active variants (not just on/off like featureFlags)
+    # Frontend uses UUID hash to deterministically assign a variant
+    experiments = {
+        "npsVariant": {"variants": ["floating", "inline"]},
+    }
+
     # Footer contact information
     footer_data = {
         "email": "hello@myfriendben.org",
