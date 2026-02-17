@@ -205,7 +205,7 @@ class Command(BaseCommand):
 
         # Skip these fields as they're handled elsewhere
         skip_fields = ["name_abbreviated"]
-        
+
         # Note: learn_more_link and apply_button_link are handled here because
         # they are defined as translated fields in the Program model, even though they contain URLs.
 
