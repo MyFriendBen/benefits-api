@@ -1,3 +1,4 @@
+import hashlib
 from typing import Optional
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -601,10 +602,18 @@ def urgent_need_results(screen: Screen, data):
 class NPSRateThrottle(throttling.AnonRateThrottle):
     """
     Rate throttle for NPS submissions to prevent abuse.
-    Limits anonymous users to 10 submissions per hour per IP.
+    Limits anonymous users to 3 submissions per hour per IP.
+    Uses a hashed IP as the cache key to avoid storing raw IPs.
     """
 
     scope = "nps"
+
+    def get_cache_key(self, request, view):
+        ident = self.get_ident(request)
+        if ident is None:
+            return None
+        hashed = hashlib.sha256(ident.encode()).hexdigest()
+        return self.cache_format % {"scope": self.scope, "ident": hashed}
 
 
 class NPSScoreView(views.APIView):
