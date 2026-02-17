@@ -602,7 +602,7 @@ def urgent_need_results(screen: Screen, data):
 class NPSRateThrottle(throttling.AnonRateThrottle):
     """
     Rate throttle for NPS submissions to prevent abuse.
-    Limits anonymous users to 3 submissions per hour per IP.
+    Rate is configured via DEFAULT_THROTTLE_RATES["nps"] in settings.
     Uses a hashed IP as the cache key to avoid storing raw IPs.
     """
 
