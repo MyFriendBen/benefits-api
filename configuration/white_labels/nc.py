@@ -225,6 +225,10 @@ class NcConfigurationData(ConfigurationData):
             "_label": "referralOptions.hfed",
             "_default_message": "Hispanic Federation",
         },
+        "lanc": {
+            "_label": "referralOptions.lanc",
+            "_default_message": "Legal Aid of North Carolina",
+        },
         "mfa": {
             "_label": "referralOptions.mfa",
             "_default_message": "Mi Familia en Acción",
@@ -2829,7 +2833,7 @@ class NcConfigurationData(ConfigurationData):
     }
 
     referrer_data = {
-        "theme": {"default": "default", "211nc": "twoOneOneNC"},
+        "theme": {"default": "default", "211nc": "twoOneOneNC", "lanc": "nc_lanc"},
         "logoSource": {
             "default": "MFB_NCLogo",
             "hfed": "HispanicFederation_MFBLogo",
@@ -2885,12 +2889,14 @@ class NcConfigurationData(ConfigurationData):
             "default": ["nc_show_211_link"],
             "211nc": ["no_results_more_help", "nc_show_211_link", "211nc"],
             "hfed": ["no_results_more_help", "hfed"],
+            "lanc": ["no_results_more_help", "lanc"],
         },
         # Deprecated: use uiOptions. Remove as part of MFB-635.
         "featureFlags": {
             "default": ["nc_show_211_link"],
             "211nc": ["no_results_more_help", "nc_show_211_link", "211nc"],
             "hfed": ["no_results_more_help", "hfed"],
+            "lanc": ["no_results_more_help", "lanc"],
         },
         "noResultMessage": {
             "default": {
