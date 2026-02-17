@@ -214,10 +214,6 @@ class ConfigurationData:
             },
             "unemployment": {"_label": "incomeOptions.unemployment", "_default_message": "Unemployment Benefits"},
             "cashAssistance": {"_label": "incomeOptions.cashAssistance", "_default_message": "Cash Assistance Grant"},
-            "cOSDisability": {
-                "_label": "incomeOptions.cOSDisability",
-                "_default_message": "Colorado State Disability Benefits",
-            },
             "workersComp": {"_label": "incomeOptions.workersComp", "_default_message": "Worker's Compensation"},
             "veteran": {"_label": "incomeOptions.veteran", "_default_message": "Veteran's Pension or Benefits"},
         },
@@ -271,10 +267,6 @@ class ConfigurationData:
         },
         "unemployment": {"_label": "incomeOptions.unemployment", "_default_message": "Unemployment Benefits"},
         "cashAssistance": {"_label": "incomeOptions.cashAssistance", "_default_message": "Cash Assistance Grant"},
-        "cOSDisability": {
-            "_label": "incomeOptions.cOSDisability",
-            "_default_message": "Colorado State Disability Benefits",
-        },
         "workersComp": {"_label": "incomeOptions.workersComp", "_default_message": "Worker's Compensation"},
         "veteran": {"_label": "incomeOptions.veteran", "_default_message": "Veteran's Pension or Benefits"},
         "childSupport": {"_label": "incomeOptions.childSupport", "_default_message": "Child Support (Received)"},
@@ -628,6 +620,13 @@ class ConfigurationData:
         "featureFlags": {"default": []},  # Deprecated: use uiOptions. Remove as part of MFB-635.
         "defaultLanguage": {"default": "en-us", "[REPLACE_ME]": ""},
         "stateName": {"default": "", "[REPLACE_ME]": ""},
+    }
+
+    # A/B test experiments with multi-variant support
+    # Each experiment maps to a list of active variants (not just on/off like featureFlags)
+    # Frontend uses UUID hash to deterministically assign a variant
+    experiments = {
+        "npsVariant": {"variants": ["floating", "inline"]},
     }
 
     # Footer contact information

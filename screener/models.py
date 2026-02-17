@@ -1,6 +1,7 @@
 from typing import ClassVar, Optional
 from datetime import date
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 from decimal import Decimal
 import uuid
@@ -387,7 +388,7 @@ class Screen(models.Model):
         Common Pattern:
             Multiple program variants (e.g., different states or screener types) map to the same field:
             - "snap", "co_snap", "il_snap" → all map to self.has_snap (same real-world benefit)
-            - "leap", "co_energy_calculator_leap" → both map to self.has_leap (same benefit, different flows)
+            - "leap", "cesn_leap" → both map to self.has_leap (same benefit, different flows)
 
         Adding New Mappings:
             1. Ensure the benefit key exists in white_label config's category_benefits (e.g., "leap")
@@ -440,9 +441,8 @@ class Screen(models.Model):
             "il_hbwd": self.has_il_hbwd,
             "il_ccap": self.has_ccap,
             "project_cope": self.has_project_cope,
-            "co_energy_calculator_cope": self.has_project_cope,
+            "cesn_cope": self.has_project_cope,
             "cesn_heap": self.has_cesn_heap,
-            "co_energy_calculator_heap": self.has_cesn_heap,
             "rtdlive": self.has_rtdlive,
             "cccap": self.has_ccap,
             "mydenver": self.has_mydenver,
@@ -454,13 +454,13 @@ class Screen(models.Model):
             "andcs": self.has_andcs,
             "chs": self.has_chs,
             "cpcr": self.has_cpcr,
-            "co_energy_calculator_cpcr": self.has_cpcr,
+            "cesn_cpcr": self.has_cpcr,
             "cdhcs": self.has_cdhcs,
             "dpp": self.has_dpp,
             "ede": self.has_ede,
             "erc": self.has_erc,
             "leap": self.has_leap,
-            "co_energy_calculator_leap": self.has_leap,
+            "cesn_leap": self.has_leap,
             "ma_heap": self.has_ma_heap,
             "il_liheap": self.has_il_liheap,
             "nc_lieap": self.has_nc_lieap,
@@ -480,10 +480,10 @@ class Screen(models.Model):
             "section_8": self.has_section_8,
             "ma_cha": self.has_section_8,
             "cowap": self.has_cowap,
-            "co_energy_calculator_cowap": self.has_cowap,
+            "cesn_cowap": self.has_cowap,
             "ncwap": self.has_ncwap,
             "ubp": self.has_ubp,
-            "co_energy_calculator_ubp": self.has_ubp,
+            "cesn_ubp": self.has_ubp,
             "medicare": self.has_medicare_hi,
             "chp": self.has_chp or self.has_chp_hi,
             "va": self.has_va,
@@ -598,6 +598,9 @@ class HouseholdMember(models.Model):
     birth_year_month = models.DateField(blank=True, null=True)
     student = models.BooleanField(blank=True, null=True)
     student_full_time = models.BooleanField(blank=True, null=True)
+    student_job_training_program = models.BooleanField(blank=True, null=True)
+    student_has_work_study = models.BooleanField(blank=True, null=True)
+    student_works_20_plus_hrs = models.BooleanField(blank=True, null=True)
     pregnant = models.BooleanField(blank=True, null=True)
     unemployed = models.BooleanField(blank=True, null=True)
     worked_in_last_18_mos = models.BooleanField(blank=True, null=True)
@@ -992,6 +995,38 @@ class EligibilitySnapshot(models.Model):
     submission_date = models.DateTimeField(auto_now=True)
     is_batch = models.BooleanField(default=False)
     had_error = models.BooleanField(default=False)
+
+
+class NPSScore(models.Model):
+    class Variant(models.TextChoices):
+        FLOATING = "floating", "Floating Widget"
+        INLINE = "inline", "Inline Section"
+
+    eligibility_snapshot = models.OneToOneField(EligibilitySnapshot, related_name="nps_score", on_delete=models.CASCADE)
+    score = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(10)])
+    variant = models.CharField(
+        max_length=20,
+        choices=Variant.choices,
+        blank=True,
+        null=True,
+    )
+    score_reason = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(score__gte=1) & models.Q(score__lte=10),
+                name="nps_score_range",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["-created_at"], name="nps_created_at_idx"),
+            models.Index(fields=["variant"], name="nps_variant_idx"),
+        ]
+
+    def __str__(self):
+        return f"NPS {self.score} for snapshot {self.eligibility_snapshot_id}"
 
 
 # Eligibility results for each specific program per screen. These are

@@ -345,7 +345,7 @@ The benefit key in `category_benefits` creates a critical chain that must be con
 Multiple programs can check the same benefit field. For example:
 - Regular screener: `name_abbreviated = "snap"`
 - State variant: `name_abbreviated = "co_snap"`
-- Calculator variant: `name_abbreviated = "co_energy_calculator_snap"`
+- Calculator variant: `name_abbreviated = "cesn_snap"`
 
 **All must map to the SAME `has_*` field** in the `has_benefit()` name_map!
 

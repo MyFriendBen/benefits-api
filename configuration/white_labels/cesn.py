@@ -2,10 +2,10 @@ from .base import ConfigurationData
 from screener.models import WhiteLabel
 
 
-class CoEnergyCalculatorConfigurationData(ConfigurationData):
+class CesnConfigurationData(ConfigurationData):
     @classmethod
     def get_white_label(self) -> WhiteLabel:
-        return WhiteLabel.objects.get(code="co_energy_calculator")
+        return WhiteLabel.objects.get(code="cesn")
 
     state = {"name": "Colorado"}
 
@@ -2307,7 +2307,7 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
             "default": "logo",
         },
         "shareLink": {
-            "default": "https://screener.myfriendben.org/co_energy_calculator/landing-page",
+            "default": "/cesn",
         },
         "stepDirectory": {
             "default": {
@@ -2367,6 +2367,10 @@ class CoEnergyCalculatorConfigurationData(ConfigurationData):
             },
         },
         "defaultLanguage": {"default": "en-us"},
+    }
+
+    experiments = {
+        "npsVariant": {"variants": ["inline"]},
     }
 
     current_benefits = {

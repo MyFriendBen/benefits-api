@@ -282,7 +282,7 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     #   4. Add mapping in has_benefit() name_map for ALL program name_abbreviated variants:
     #      "my_benefit": self.has_my_benefit,
     #      "co_my_benefit": self.has_my_benefit,
-    #      "co_energy_calculator_my_benefit": self.has_my_benefit,
+    #      "cesn_my_benefit": self.has_my_benefit,
     #
     # Structure:
     #   {
@@ -473,3 +473,14 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # Most white labels do not use this - delete this section if not needed.
     # ==========================================================================================
     # override_text = {"my_custom_key": {"_label": "myLabel", "_default_message": "My custom text"}}
+
+    # ==========================================================================================
+    # EXPERIMENTS (A/B TESTING) - Usually inherited from base.py
+    # ==========================================================================================
+    # Controls A/B test variants. Frontend uses UUID hash to assign each user a variant.
+    # Override to change which variants are active for this white label.
+    # See README.md for full documentation.
+    # ==========================================================================================
+    # experiments = {
+    #     "npsVariant": {"variants": ["floating"]},  # Single variant = no A/B test
+    # }

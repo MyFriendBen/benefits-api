@@ -1,5 +1,9 @@
+import logging
 from datetime import date
+from django.db import IntegrityError
 from django.utils import timezone
+
+logger = logging.getLogger(__name__)
 from programs.models import WarningMessage
 from screener.models import (
     EnergyCalculatorMember,
@@ -11,6 +15,8 @@ from screener.models import (
     Message,
     Insurance,
     WhiteLabel,
+    EligibilitySnapshot,
+    NPSScore,
 )
 from authentication.serializers import UserOffersSerializer
 from rest_framework import serializers
@@ -107,6 +113,9 @@ class HouseholdMemberSerializer(serializers.ModelSerializer):
             "age",
             "student",
             "student_full_time",
+            "student_job_training_program",
+            "student_has_work_study",
+            "student_works_20_plus_hrs",
             "pregnant",
             "unemployed",
             "worked_in_last_18_mos",
@@ -456,3 +465,77 @@ class ResultsSerializer(serializers.Serializer):
     validations = ValidationSerializer(many=True)
     program_categories = ProgramCategorySerializer(many=True)
     pe_data = serializers.DictField(required=False, allow_null=True)
+
+
+def get_latest_eligibility_snapshot(screen_uuid):
+    """
+    Get the most recent non-error eligibility snapshot for a screen.
+
+    Args:
+        screen_uuid: UUID of the screen
+
+    Returns:
+        EligibilitySnapshot or None if not found
+    """
+    return (
+        EligibilitySnapshot.objects.filter(screen__uuid=screen_uuid, had_error=False)
+        .order_by("-submission_date")
+        .first()
+    )
+
+
+class NPSScoreSerializer(serializers.Serializer):
+    uuid = serializers.UUIDField(write_only=True)
+    score = serializers.IntegerField(min_value=1, max_value=10)
+    variant = serializers.ChoiceField(choices=NPSScore.Variant.choices, required=False, allow_null=True)
+
+    def create(self, validated_data: dict) -> NPSScore:
+        uuid = validated_data.pop("uuid")
+        snapshot = get_latest_eligibility_snapshot(uuid)
+
+        if snapshot is None:
+            raise serializers.ValidationError({"uuid": "No eligibility snapshot found for this screen"})
+
+        # Try to create NPS score - database constraint prevents duplicates
+        try:
+            nps_score = NPSScore.objects.create(eligibility_snapshot=snapshot, **validated_data)
+            logger.info(
+                f"NPS score created: score={nps_score.score}, variant={nps_score.variant}, "
+                f"snapshot_id={snapshot.id}, screen_uuid={uuid}"
+            )
+            return nps_score
+        except IntegrityError:
+            logger.warning(f"Duplicate NPS submission attempted for screen_uuid={uuid}")
+            raise serializers.ValidationError({"uuid": "NPS score already submitted for this session"})
+
+
+class NPSScoreReasonSerializer(serializers.Serializer):
+    uuid = serializers.UUIDField(write_only=True)
+    score_reason = serializers.CharField(max_length=500, trim_whitespace=True)
+
+    def update(self, instance: NPSScore, validated_data: dict) -> NPSScore:
+        """
+        Update an existing NPS score with a reason.
+        Standard DRF update method for PATCH operations.
+        """
+        instance.score_reason = validated_data.get("score_reason", instance.score_reason)
+        instance.save(update_fields=["score_reason"])
+        logger.info(
+            f"NPS reason updated: score={instance.score}, reason_length={len(instance.score_reason)}, "
+            f"snapshot_id={instance.eligibility_snapshot_id}"
+        )
+        return instance
+
+    def get_nps_score(self, uuid: str) -> NPSScore:
+        """
+        Helper method to retrieve NPS score by screen UUID.
+        """
+        snapshot = get_latest_eligibility_snapshot(uuid)
+
+        if snapshot is None:
+            raise serializers.ValidationError({"uuid": "No eligibility snapshot found for this screen"})
+
+        try:
+            return snapshot.nps_score
+        except NPSScore.DoesNotExist:
+            raise serializers.ValidationError({"uuid": "No NPS score found for this session"})

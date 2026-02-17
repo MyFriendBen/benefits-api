@@ -28,7 +28,7 @@ from .emergency_rental_assistance.calculator import EmergencyRentalAssistance
 from .denver_trash_rebate.calculator import DenverTrashRebate
 from .denver_property_tax_relief.calculator import DenverPropertyTaxRelief
 from .nurturing_futures.calculator import NurturingFutures
-from .energy_calculator import co_energy_calculators
+from .energy_calculator import cesn_calculators
 from .denver_sidewalk_rebate.calculator import DenverSidewalkRebate
 from .senior_housing_tax_credit.calculator import SeniorHousingIncomeTaxCredit
 from .jeffco_student_benefits.calculator import JeffcoStudentBenefits
@@ -68,5 +68,5 @@ co_calculators: dict[str, type[ProgramCalculator]] = {
     "dsr": DenverSidewalkRebate,
     "shitc": SeniorHousingIncomeTaxCredit,
     "jeffco_student_benefits": JeffcoStudentBenefits,
-    **co_energy_calculators,
+    **cesn_calculators,
 }
