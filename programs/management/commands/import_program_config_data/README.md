@@ -176,6 +176,10 @@ Naming pattern: `{white_label_code}_{program_short_name}`
 - `website_description` - Short description for website
 - All other text fields
 
+**URL fields** (translatable but NOT auto-translated):
+- `learn_more_link` - Informational page URL
+- `apply_button_link` - Application page URL
+
 **Configuration fields**:
 - `year` - FPL year (e.g., "2025")
 - `legal_status_required` - Array of legal status codes
