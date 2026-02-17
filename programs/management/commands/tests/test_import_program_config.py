@@ -45,12 +45,13 @@ class ImportProgramConfigTestCase(TransactionTestCase):
             },
         }
 
-        # Mock Google Translate to avoid slow API calls
-        self.translate_patcher = patch("integrations.clients.google_translate.Translate.bulk_translate")
-        self.mock_translate = self.translate_patcher.start()
-        # Return dummy translations: {text: {lang: text}} format
-        self.mock_translate.return_value = {}
-        self.mock_translate.side_effect = lambda langs, texts: {
+        # Mock Google Translate to avoid slow API calls and missing credentials in CI
+        self.translate_patcher = patch("integrations.clients.google_translate.Translate")
+        mock_translate_class = self.translate_patcher.start()
+
+        # Create a mock instance with bulk_translate method
+        mock_instance = mock_translate_class.return_value
+        mock_instance.bulk_translate.side_effect = lambda langs, texts: {
             text: {lang: f"{text} (translated to {lang})" for lang in langs} for text in texts
         }
 
