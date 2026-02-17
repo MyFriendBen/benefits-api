@@ -238,6 +238,10 @@ class CoConfigurationData(ConfigurationData):
                 "_label": "incomeOptions.cashAssistance",
                 "_default_message": "Government Cash Assistance (including Colorado Works/TANF)",
             },
+            "cOSDisability": {
+                "_label": "incomeOptions.cOSDisability",
+                "_default_message": "Colorado State Disability Benefits",
+            },
         },
     }
 
@@ -246,6 +250,10 @@ class CoConfigurationData(ConfigurationData):
         "cashAssistance": {
             "_label": "incomeOptions.cashAssistance",
             "_default_message": "Government Cash Assistance (including Colorado Works/TANF)",
+        },
+        "cOSDisability": {
+            "_label": "incomeOptions.cOSDisability",
+            "_default_message": "Colorado State Disability Benefits",
         },
     }
 
