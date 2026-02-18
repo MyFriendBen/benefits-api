@@ -2370,7 +2370,7 @@ class CesnConfigurationData(ConfigurationData):
     }
 
     experiments = {
-        "npsVariant": {"variants": ["inline"]},
+        "npsvariant": {"variants": ["inline"]},
     }
 
     current_benefits = {

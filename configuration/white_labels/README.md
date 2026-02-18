@@ -211,10 +211,11 @@ Controls A/B test variant assignment. The frontend reads the variants list and u
 
 ```python
 experiments = {
-    "npsVariant": {"variants": ["floating", "inline"]},
+    "npsvariant": {"variants": ["floating", "inline"]},
 }
 ```
 
+- **Experiment keys must be all lowercase** — they are used as URL query param names (e.g. `?npsvariant=inline`) and Heroku lowercases query params, so camelCase keys would silently break URL overrides
 - Each experiment key maps to a dict with a `"variants"` list
 - All active variants must be listed — the frontend picks one per user based on their UUID
 - Use the feature flag (not experiments) to disable a feature entirely
@@ -234,7 +235,7 @@ experiments = {
 # In il.py — feature is on (via feature flag) but no A/B test, everyone sees floating
 class IlConfigurationData(ConfigurationData):
     experiments = {
-        "npsVariant": {"variants": ["floating"]},
+        "npsvariant": {"variants": ["floating"]},
     }
 ```
 

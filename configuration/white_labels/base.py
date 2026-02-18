@@ -626,7 +626,7 @@ class ConfigurationData:
     # Each experiment maps to a list of active variants (not just on/off like featureFlags)
     # Frontend uses UUID hash to deterministically assign a variant
     experiments = {
-        "npsVariant": {"variants": ["floating", "inline"]},
+        "npsvariant": {"variants": ["floating", "inline"]},
     }
 
     # Footer contact information

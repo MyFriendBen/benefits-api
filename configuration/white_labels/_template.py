@@ -479,8 +479,10 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # ==========================================================================================
     # Controls A/B test variants. Frontend uses UUID hash to assign each user a variant.
     # Override to change which variants are active for this white label.
+    # IMPORTANT: Experiment keys must be all lowercase — they are used directly as URL query
+    # param names (e.g. ?npsvariant=inline) and Heroku lowercases query params.
     # See README.md for full documentation.
     # ==========================================================================================
     # experiments = {
-    #     "npsVariant": {"variants": ["floating"]},  # Single variant = no A/B test
+    #     "npsvariant": {"variants": ["floating"]},  # Single variant = no A/B test
     # }
