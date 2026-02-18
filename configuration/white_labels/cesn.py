@@ -2401,4 +2401,8 @@ class CesnConfigurationData(ConfigurationData):
             "_label": "energyCalculator.hasBenefits.description",
             "_default_message": "You may qualify for some energy programs if someone in your household receives public benefits (for example, SNAP, Medicaid, etc.).",
         },
+        "nps.prompt": {
+            "_label": "energyCalculator.nps.prompt",
+            "_default_message": "How likely are you to recommend the Colorado Energy Savings Calculator to a friend?",
+        },
     }
