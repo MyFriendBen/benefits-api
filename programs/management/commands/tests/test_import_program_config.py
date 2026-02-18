@@ -46,7 +46,8 @@ class ImportProgramConfigTestCase(TransactionTestCase):
         }
 
         # Mock Google Translate to avoid slow API calls and missing credentials in CI
-        self.translate_patcher = patch("integrations.clients.google_translate.Translate")
+        # Patch at the import location where it's used, not at the definition site
+        self.translate_patcher = patch("programs.management.commands.import_program_config.Translate")
         mock_translate_class = self.translate_patcher.start()
 
         # Create a mock instance with bulk_translate method
