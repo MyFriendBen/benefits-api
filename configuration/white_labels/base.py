@@ -426,7 +426,7 @@ class ConfigurationData:
 
     # Income frequency options
     frequency_options = {
-        "annually": {"_label": "frequencyOptions.annually", "_default_message": "annually"},
+        "yearly": {"_label": "frequencyOptions.yearly", "_default_message": "annually"},
         "monthly": {"_label": "frequencyOptions.monthly", "_default_message": "every month"},
         "semimonthly": {"_label": "frequencyOptions.semimonthly", "_default_message": "twice a month"},
         "biweekly": {"_label": "frequencyOptions.biweekly", "_default_message": "every 2 weeks"},

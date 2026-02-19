@@ -802,7 +802,7 @@ class IncomeStream(models.Model):
             monthly = self.amount * Decimal(2.175)
         elif self.frequency == "semimonthly":
             monthly = self.amount * 2
-        elif self.frequency in ("yearly", "annually"):
+        elif self.frequency == "yearly":
             monthly = self.amount / 12
         elif self.frequency == "hourly":
             monthly = self._hour_to_month()
@@ -818,7 +818,7 @@ class IncomeStream(models.Model):
             yearly = self.amount * Decimal(26.01745)
         elif self.frequency == "semimonthly":
             yearly = self.amount * 24
-        elif self.frequency in ("yearly", "annually"):
+        elif self.frequency == "yearly":
             yearly = self.amount
         elif self.frequency == "hourly":
             yearly = self._hour_to_month() * 12
@@ -860,7 +860,7 @@ class Expense(models.Model):
             monthly = self.amount * Decimal(2.175)
         elif self.frequency == "semimonthly":
             monthly = self.amount * 2
-        elif self.frequency in ("yearly", "annually"):
+        elif self.frequency == "yearly":
             monthly = self.amount / 12
         return monthly
 
@@ -873,7 +873,7 @@ class Expense(models.Model):
             yearly = self.amount * Decimal(26.01745)
         elif self.frequency == "semimonthly":
             yearly = self.amount * 24
-        elif self.frequency in ("yearly", "annually"):
+        elif self.frequency == "yearly":
             yearly = self.amount
 
         return yearly
