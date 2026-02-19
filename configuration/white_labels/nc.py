@@ -2897,7 +2897,7 @@ class NcConfigurationData(ConfigurationData):
             "default": ["nc_show_211_link"],
             "211nc": ["no_results_more_help", "nc_show_211_link", "211nc"],
             "hfed": ["no_results_more_help", "hfed"],
-            "lanc": ["no_results_more_help", "lanc"],
+            "lanc": ["no_results_more_help", "nc_show_211_link", "lanc"],
         },
         "noResultMessage": {
             "default": {
