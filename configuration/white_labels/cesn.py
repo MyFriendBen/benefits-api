@@ -124,11 +124,11 @@ class CesnConfigurationData(ConfigurationData):
     income_options = {
         "wages": {
             "_label": "incomeOptions.wages",
-            "_default_message": "Wages, salaries, tips",
+            "_default_message": "Wages, salaries, or tips",
         },
         "selfEmployment": {
             "_label": "incomeOptions.selfEmployment",
-            "_default_message": "Income from freelance, independent contractor, or self-employment work",
+            "_default_message": "Self-employment, freelance, or independent contractor",
         },
         "sSDisability": {
             "_label": "incomeOptions.sSDisability",
@@ -156,7 +156,7 @@ class CesnConfigurationData(ConfigurationData):
         },
         "sSSurvivor": {
             "_label": "incomeOptions.sSSurvivor",
-            "_default_message": "Social Security Survivor's Benefits (Widowed)",
+            "_default_message": "Social Security Survivor's Benefits",
         },
         "unemployment": {
             "_label": "incomeOptions.unemployment",
@@ -172,7 +172,7 @@ class CesnConfigurationData(ConfigurationData):
         },
         "gifts": {
             "_label": "incomeOptions.gifts",
-            "_default_message": "Gifts/Contributions (Received)",
+            "_default_message": "Gifts or Contributions (Received)",
         },
         "investment": {
             "_label": "incomeOptions.investment",
@@ -200,7 +200,7 @@ class CesnConfigurationData(ConfigurationData):
         },
         "boarder": {
             "_label": "incomeOptions.boarder",
-            "_default_message": "Boarder or Lodger",
+            "_default_message": "Boarder or Lodger Income",
         },
     }
 

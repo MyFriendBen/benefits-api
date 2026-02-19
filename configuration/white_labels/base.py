@@ -181,17 +181,18 @@ class ConfigurationData:
     income_categories = {
         "employment": {"_label": "incomeCategories.employment", "_default_message": "Employment Income"},
         "government": {"_label": "incomeCategories.government", "_default_message": "Government Benefits"},
-        "support": {"_label": "incomeCategories.support", "_default_message": "Support & Gifts"},
         "investment": {"_label": "incomeCategories.investment", "_default_message": "Investment & Retirement"},
+        "property": {"_label": "incomeCategories.property", "_default_message": "Property Income"},
+        "support": {"_label": "incomeCategories.support", "_default_message": "Family Support & Gifts"},
     }
 
-    # Nested income options organized by category (for future use with categorized UI)
+    # Nested income options organized by category
     income_options_by_category = {
         "employment": {
-            "wages": {"_label": "incomeOptions.wages", "_default_message": "Wages, salaries, tips"},
+            "wages": {"_label": "incomeOptions.wages", "_default_message": "Wages, salaries, or tips"},
             "selfEmployment": {
                 "_label": "incomeOptions.selfEmployment",
-                "_default_message": "Income from freelance, independent contractor, or self-employment work",
+                "_default_message": "Self-employment, freelance, or independent contractor",
             },
         },
         "government": {
@@ -206,7 +207,7 @@ class ConfigurationData:
             "sSI": {"_label": "incomeOptions.sSI", "_default_message": "Supplemental Security Income (SSI)"},
             "sSSurvivor": {
                 "_label": "incomeOptions.sSSurvivor",
-                "_default_message": "Social Security Survivor's Benefits (Widowed)",
+                "_default_message": "Social Security Survivor's Benefits",
             },
             "sSDependent": {
                 "_label": "incomeOptions.sSDependent",
@@ -217,12 +218,6 @@ class ConfigurationData:
             "workersComp": {"_label": "incomeOptions.workersComp", "_default_message": "Worker's Compensation"},
             "veteran": {"_label": "incomeOptions.veteran", "_default_message": "Veteran's Pension or Benefits"},
         },
-        "support": {
-            "childSupport": {"_label": "incomeOptions.childSupport", "_default_message": "Child Support (Received)"},
-            "alimony": {"_label": "incomeOptions.alimony", "_default_message": "Alimony (Received)"},
-            "gifts": {"_label": "incomeOptions.gifts", "_default_message": "Gifts/Contributions (Received)"},
-            "boarder": {"_label": "incomeOptions.boarder", "_default_message": "Boarder or Lodger"},
-        },
         "investment": {
             "pension": {
                 "_label": "incomeOptions.pension",
@@ -232,21 +227,28 @@ class ConfigurationData:
                 "_label": "incomeOptions.investment",
                 "_default_message": "Investment Income (interest, dividends, and profit from selling stocks)",
             },
-            "rental": {"_label": "incomeOptions.rental", "_default_message": "Rental Income"},
             "deferredComp": {
                 "_label": "incomeOptions.deferredComp",
                 "_default_message": "Withdrawals from Deferred Compensation (IRA, Keogh, etc.)",
             },
         },
+        "property": {
+            "rental": {"_label": "incomeOptions.rental", "_default_message": "Rental Income"},
+            "boarder": {"_label": "incomeOptions.boarder", "_default_message": "Boarder or Lodger Income"},
+        },
+        "support": {
+            "childSupport": {"_label": "incomeOptions.childSupport", "_default_message": "Child Support (Received)"},
+            "alimony": {"_label": "incomeOptions.alimony", "_default_message": "Alimony (Received)"},
+            "gifts": {"_label": "incomeOptions.gifts", "_default_message": "Gifts or Contributions (Received)"},
+        },
     }
 
     # Flattened income options (backward compatible with current FE)
-    # This is what the FE currently expects - a simple flat dictionary
     income_options = {
-        "wages": {"_label": "incomeOptions.wages", "_default_message": "Wages, salaries, tips"},
+        "wages": {"_label": "incomeOptions.wages", "_default_message": "Wages, salaries, or tips"},
         "selfEmployment": {
             "_label": "incomeOptions.selfEmployment",
-            "_default_message": "Income from freelance, independent contractor, or self-employment work",
+            "_default_message": "Self-employment, freelance, or independent contractor",
         },
         "sSDisability": {
             "_label": "incomeOptions.sSDisability",
@@ -259,7 +261,7 @@ class ConfigurationData:
         "sSI": {"_label": "incomeOptions.sSI", "_default_message": "Supplemental Security Income (SSI)"},
         "sSSurvivor": {
             "_label": "incomeOptions.sSSurvivor",
-            "_default_message": "Social Security Survivor's Benefits (Widowed)",
+            "_default_message": "Social Security Survivor's Benefits",
         },
         "sSDependent": {
             "_label": "incomeOptions.sSDependent",
@@ -269,10 +271,6 @@ class ConfigurationData:
         "cashAssistance": {"_label": "incomeOptions.cashAssistance", "_default_message": "Cash Assistance Grant"},
         "workersComp": {"_label": "incomeOptions.workersComp", "_default_message": "Worker's Compensation"},
         "veteran": {"_label": "incomeOptions.veteran", "_default_message": "Veteran's Pension or Benefits"},
-        "childSupport": {"_label": "incomeOptions.childSupport", "_default_message": "Child Support (Received)"},
-        "alimony": {"_label": "incomeOptions.alimony", "_default_message": "Alimony (Received)"},
-        "gifts": {"_label": "incomeOptions.gifts", "_default_message": "Gifts/Contributions (Received)"},
-        "boarder": {"_label": "incomeOptions.boarder", "_default_message": "Boarder or Lodger"},
         "pension": {
             "_label": "incomeOptions.pension",
             "_default_message": "Military, Government, or Private Pension (including PERA)",
@@ -281,11 +279,15 @@ class ConfigurationData:
             "_label": "incomeOptions.investment",
             "_default_message": "Investment Income (interest, dividends, and profit from selling stocks)",
         },
-        "rental": {"_label": "incomeOptions.rental", "_default_message": "Rental Income"},
         "deferredComp": {
             "_label": "incomeOptions.deferredComp",
             "_default_message": "Withdrawals from Deferred Compensation (IRA, Keogh, etc.)",
         },
+        "rental": {"_label": "incomeOptions.rental", "_default_message": "Rental Income"},
+        "boarder": {"_label": "incomeOptions.boarder", "_default_message": "Boarder or Lodger Income"},
+        "childSupport": {"_label": "incomeOptions.childSupport", "_default_message": "Child Support (Received)"},
+        "alimony": {"_label": "incomeOptions.alimony", "_default_message": "Alimony (Received)"},
+        "gifts": {"_label": "incomeOptions.gifts", "_default_message": "Gifts or Contributions (Received)"},
     }
 
     # Health insurance options (customize for state-specific programs)
@@ -431,9 +433,13 @@ class ConfigurationData:
         "hourly": {"_label": "frequencyOptions.hourly", "_default_message": "hourly"},
     }
 
-    # Expenses grouped by category. The category key maps to a translation ID of the form
-    # expenses.category.<key> (e.g. "housing" → "expenses.category.housing").
-    # Override this entire dict in a white label file when you need different expense types or categories.
+    expense_categories = {
+        "housing": {"_label": "expenseCategories.housing", "_default_message": "Housing"},
+        "utilities": {"_label": "expenseCategories.utilities", "_default_message": "Utilities"},
+        "healthcare": {"_label": "expenseCategories.healthcare", "_default_message": "Healthcare"},
+        "dependentCare": {"_label": "expenseCategories.dependentCare", "_default_message": "Dependent Care"},
+    }
+
     expense_options_by_category = {
         "housing": {
             "rent": {"_label": "expenseOptions.rent", "_default_message": "Rent"},
