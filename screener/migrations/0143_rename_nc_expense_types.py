@@ -3,14 +3,20 @@ from django.db import migrations
 
 def rename_nc_expense_types(apps, schema_editor):
     Expense = apps.get_model("screener", "Expense")
-    Expense.objects.filter(type="propertyTaxes").update(type="propertyTax")
-    Expense.objects.filter(type="associationFees").update(type="hoa")
+    WhiteLabel = apps.get_model("screener", "WhiteLabel")
+    nc = WhiteLabel.objects.get(code="nc")
+    nc_expenses = Expense.objects.filter(screen__white_label=nc)
+    nc_expenses.filter(type="propertyTaxes").update(type="propertyTax")
+    nc_expenses.filter(type="associationFees").update(type="hoa")
 
 
 def reverse_rename_nc_expense_types(apps, schema_editor):
     Expense = apps.get_model("screener", "Expense")
-    Expense.objects.filter(type="propertyTax").update(type="propertyTaxes")
-    Expense.objects.filter(type="hoa").update(type="associationFees")
+    WhiteLabel = apps.get_model("screener", "WhiteLabel")
+    nc = WhiteLabel.objects.get(code="nc")
+    nc_expenses = Expense.objects.filter(screen__white_label=nc)
+    nc_expenses.filter(type="propertyTax").update(type="propertyTaxes")
+    nc_expenses.filter(type="hoa").update(type="associationFees")
 
 
 class Migration(migrations.Migration):
