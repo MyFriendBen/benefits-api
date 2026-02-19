@@ -376,44 +376,30 @@ class CoConfigurationData(ConfigurationData):
         },
     }
 
-    expense_options = {
-        "rent": {"_label": "expenseOptions.rent", "_default_message": "Rent"},
-        "telephone": {"_label": "expenseOptions.telephone", "_default_message": "Telephone"},
-        "internet": {"_label": "expenseOptions.internet", "_default_message": "Internet"},
-        "otherUtilities": {"_label": "expenseOptions.otherUtilities", "_default_message": "Other Utilities"},
-        "heating": {"_label": "expenseOptions.heating", "_default_message": "Heating"},
-        "mortgage": {"_label": "expenseOptions.mortgage", "_default_message": "Mortgage"},
-        "propertyTax": {"_label": "expenseOptions.propertyTax", "_default_message": "Property Taxes"},
-        "hoa": {"_label": "expenseOptions.hoa", "_default_message": "Homeowners or Condo Association Fees and Dues"},
-        "homeownersInsurance": {
-            "_label": "expenseOptions.homeownersInsurance",
-            "_default_message": "Homeowners Insurance",
+    expense_options_by_category = {
+        "housing": {
+            "rent": {"_label": "expenseOptions.rent", "_default_message": "Rent"},
+            "mortgage": {"_label": "expenseOptions.mortgage", "_default_message": "Mortgage"},
+            "propertyTax": {"_label": "expenseOptions.propertyTax", "_default_message": "Property Taxes"},
+            "hoa": {"_label": "expenseOptions.hoa", "_default_message": "Homeowners or Condo Association Fees and Dues"},
+            "homeownersInsurance": {"_label": "expenseOptions.homeownersInsurance", "_default_message": "Homeowners Insurance"},
         },
-        "medical": {"_label": "expenseOptions.medical", "_default_message": "Medical Insurance Premium &/or Bills"},
-        "cooling": {"_label": "expenseOptions.cooling", "_default_message": "Cooling"},
-        "childCare": {"_label": "expenseOptions.childCare", "_default_message": "Child Care"},
-        "childSupport": {"_label": "expenseOptions.childSupport", "_default_message": "Child Support (Paid)"},
-        "dependentCare": {"_label": "expenseOptions.dependentCare", "_default_message": "Dependent Care"},
+        "utilities": {
+            "heating": {"_label": "expenseOptions.heating", "_default_message": "Heating"},
+            "cooling": {"_label": "expenseOptions.cooling", "_default_message": "Cooling"},
+            "telephone": {"_label": "expenseOptions.telephone", "_default_message": "Telephone"},
+            "internet": {"_label": "expenseOptions.internet", "_default_message": "Internet"},
+            "otherUtilities": {"_label": "expenseOptions.otherUtilities", "_default_message": "Other Utilities"},
+        },
+        "healthcare": {
+            "medical": {"_label": "expenseOptions.medical", "_default_message": "Medical Insurance Premium &/or Bills"},
+        },
+        "dependentCare": {
+            "childCare": {"_label": "expenseOptions.childCare", "_default_message": "Child Care"},
+            "childSupport": {"_label": "expenseOptions.childSupport", "_default_message": "Child Support (Paid)"},
+            "dependentCare": {"_label": "expenseOptions.dependentCare", "_default_message": "Dependent Care"},
+        },
     }
-
-    expense_categories = [
-        {
-            "label": {"_label": "expenses.category.housing", "_default_message": "Housing"},
-            "expenses": ["rent", "mortgage", "propertyTax", "hoa", "homeownersInsurance"],
-        },
-        {
-            "label": {"_label": "expenses.category.utilities", "_default_message": "Utilities"},
-            "expenses": ["heating", "cooling", "telephone", "internet", "otherUtilities"],
-        },
-        {
-            "label": {"_label": "expenses.category.healthcare", "_default_message": "Healthcare"},
-            "expenses": ["medical"],
-        },
-        {
-            "label": {"_label": "expenses.category.dependentCare", "_default_message": "Dependent Care"},
-            "expenses": ["childCare", "childSupport", "dependentCare"],
-        },
-    ]
 
     condition_options = {
         "you": {

@@ -198,18 +198,11 @@ class Command(BaseCommand):
                 defaults={"data": WhiteLabelData.frequency_options, "active": True},
             )
 
-            # Save expense_options to database
+            # Save expense_options_by_category to database
             Configuration.objects.update_or_create(
-                name="expense_options",
+                name="expense_options_by_category",
                 white_label=white_label,
-                defaults={"data": WhiteLabelData.expense_options, "active": True},
-            )
-
-            # Save expense_categories to database
-            Configuration.objects.update_or_create(
-                name="expense_categories",
-                white_label=white_label,
-                defaults={"data": WhiteLabelData.expense_categories, "active": True},
+                defaults={"data": WhiteLabelData.expense_options_by_category, "active": True},
             )
 
             # Save condition_options to database

@@ -251,8 +251,7 @@ class IlConfigurationData(ConfigurationData):
 - **`language_options`** - Available translations
 - **`income_options`** - Types of income to collect
 - **`health_insurance_options`** - Health insurance types
-- **`expense_options`** - Types of expenses to collect
-- **`expense_categories`** - How expenses are grouped and ordered in the form. If you override `expense_options` with different keys, override this too so the new keys land in the right category.
+- **`expense_options_by_category`** - Expenses grouped by category. The category key maps to a translation ID (`expenses.category.<key>`). Override the entire dict when you need different expense types or categories — options and their category are defined together so they stay in sync.
 - **`condition_options`** - Household member conditions
 - **`feedback_links`** - Contact links:
   - `email`: Linked when user selects "CONTACT US"

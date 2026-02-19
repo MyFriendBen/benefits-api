@@ -190,40 +190,32 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # }
 
     # ==========================================================================================
-    # EXPENSE OPTIONS - Usually inherited as is from ConfigurationData
     # ==========================================================================================
-    # Types of expenses to collect - usually inherited from base.py
+    # EXPENSE OPTIONS BY CATEGORY - Usually inherited as is from ConfigurationData
     # ==========================================================================================
-    # expense_options = {
-    #     "rent": {"_label": "expenseOptions.rent", "_default_message": "Rent"},
-    #     "childCare": {"_label": "expenseOptions.childCare", "_default_message": "Child Care"},
-    #     # ... see base.py for full list
+    # Expenses grouped by category. The category key maps to a translation ID of the form
+    # expenses.category.<key>. Override the entire dict when you need different expense types
+    # or categories — category and options are defined together so they stay in sync.
+    # ==========================================================================================
+    # expense_options_by_category = {
+    #     "housing": {
+    #         "rent": {"_label": "expenseOptions.rent", "_default_message": "Rent"},
+    #         "mortgage": {"_label": "expenseOptions.mortgage", "_default_message": "Mortgage"},
+    #         # ... see base.py for full list
+    #     },
+    #     "utilities": {
+    #         "heating": {"_label": "expenseOptions.heating", "_default_message": "Heating"},
+    #         # ...
+    #     },
+    #     "healthcare": {
+    #         "medical": {"_label": "expenseOptions.medical", "_default_message": "Medical Insurance Premium &/or Bills"},
+    #     },
+    #     "dependentCare": {
+    #         "childCare": {"_label": "expenseOptions.childCare", "_default_message": "Child Care"},
+    #         "childSupport": {"_label": "expenseOptions.childSupport", "_default_message": "Child Support (Paid)"},
+    #         "dependentCare": {"_label": "expenseOptions.dependentCare", "_default_message": "Dependent Care"},
+    #     },
     # }
-
-    # ==========================================================================================
-    # EXPENSE CATEGORIES - Usually inherited as is from ConfigurationData
-    # ==========================================================================================
-    # Controls how expense_options are grouped and ordered in the expenses form.
-    # If you override expense_options with different keys, override this too.
-    # ==========================================================================================
-    # expense_categories = [
-    #     {
-    #         "label": {"_label": "expenses.category.housing", "_default_message": "Housing"},
-    #         "expenses": ["rent", "mortgage", "propertyTax", "hoa", "homeownersInsurance"],
-    #     },
-    #     {
-    #         "label": {"_label": "expenses.category.utilities", "_default_message": "Utilities"},
-    #         "expenses": ["heating", "cooling", "telephone", "internet", "otherUtilities"],
-    #     },
-    #     {
-    #         "label": {"_label": "expenses.category.healthcare", "_default_message": "Healthcare"},
-    #         "expenses": ["medical"],
-    #     },
-    #     {
-    #         "label": {"_label": "expenses.category.dependentCare", "_default_message": "Dependent Care"},
-    #         "expenses": ["childCare", "childSupport", "dependentCare"],
-    #     },
-    # ]
 
     # ==========================================================================================
     # CONDITION OPTIONS - Usually inherited as is from ConfigurationData
