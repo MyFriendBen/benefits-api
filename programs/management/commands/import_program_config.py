@@ -117,7 +117,7 @@ class Command(BaseCommand):
         try:
             with transaction.atomic():
                 # Delete existing program if overriding (inside transaction for proper rollback)
-                if overriding and existing_program:
+                if overriding:
                     self._delete_program_and_related(existing_program, config)
                     existing_program = None
 
