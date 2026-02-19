@@ -226,7 +226,7 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # ==========================================================================================
     # expense_options = {
     #     "rent": {"_label": "expenseOptions.rent", "_default_message": "Rent"},
-    #     "telephone": {"_label": "expenseOptions.telephone", "_default_message": "Telephone"},
+    #     "childCare": {"_label": "expenseOptions.childCare", "_default_message": "Child Care"},
     #     # ... see base.py for full list
     # }
 
