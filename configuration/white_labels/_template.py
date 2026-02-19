@@ -190,7 +190,6 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # }
 
     # ==========================================================================================
-    # ==========================================================================================
     # EXPENSE OPTIONS BY CATEGORY - Usually inherited as is from ConfigurationData
     # ==========================================================================================
     # Expenses grouped by category. The category key maps to a translation ID of the form
