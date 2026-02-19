@@ -3,14 +3,14 @@
     "program_category": {"external_name": "ma_child_care"},
     "program": {
         "name_abbreviated": "ma_cpp",
-        "year": "2026",
+        "year": "2025",
         "legal_status_required": [
             "citizen",
             "gc_5plus",
             "gc_5less",
             "refugee",
             "otherWithWorkPermission",
-            "non_citizen",
+            "non_citizen"
         ],
         "name": "Cambridge Preschool Program (CPP)",
         "description_short": "Free preschool for Cambridge children age 3–4",
@@ -22,19 +22,17 @@
         "estimated_delivery_time": "Enrollment-based (school year)",
         "estimated_value": "Varies",
         "website_description": "Free, high-quality preschool for Cambridge children age 3–4",
-        "low_confidence": false,
+        "low_confidence": false
     },
     "warning_message": {
         "external_name": "ma_cpp_warning",
         "calculator": "_show",
-        "message": "This program has limited spots and uses a lottery system. Applying does not guarantee enrollment.",
+        "message": "This program has limited spots and uses a lottery system. Applying does not guarantee enrollment."
     },
     "documents": [
         {"external_name": "ma_id_proof"},
-        {"external_name": "ma_birth_certificate"},
         {"external_name": "ma_proof_income"},
         {"external_name": "ma_cambridge_residency"},
-        {"external_name": "ma_proof_address"},
-        {"external_name": "ma_immunization_records"},
-    ],
+        {"external_name": "ma_proof_address"}
+    ]
 }
