@@ -122,85 +122,14 @@ class CesnConfigurationData(ConfigurationData):
     }
 
     income_options = {
-        "wages": {
-            "_label": "incomeOptions.wages",
-            "_default_message": "Wages, salaries, tips",
-        },
-        "selfEmployment": {
-            "_label": "incomeOptions.selfEmployment",
-            "_default_message": "Income from freelance, independent contractor, or self-employment work",
-        },
-        "sSDisability": {
-            "_label": "incomeOptions.sSDisability",
-            "_default_message": "Social Security Disability Benefits",
-        },
-        "sSRetirement": {
-            "_label": "incomeOptions.sSRetirement",
-            "_default_message": "Social Security Retirement Benefits",
-        },
-        "sSI": {
-            "_label": "incomeOptions.sSI",
-            "_default_message": "Supplemental Security Income (SSI)",
-        },
-        "childSupport": {
-            "_label": "incomeOptions.childSupport",
-            "_default_message": "Child Support (Received)",
-        },
-        "pension": {
-            "_label": "incomeOptions.pension",
-            "_default_message": "Military, Government, or Private Pension (including PERA)",
-        },
-        "veteran": {
-            "_label": "incomeOptions.veteran",
-            "_default_message": "Veteran's Pension or Benefits",
-        },
-        "sSSurvivor": {
-            "_label": "incomeOptions.sSSurvivor",
-            "_default_message": "Social Security Survivor's Benefits (Widowed)",
-        },
-        "unemployment": {
-            "_label": "incomeOptions.unemployment",
-            "_default_message": "Unemployment Benefits",
-        },
-        "sSDependent": {
-            "_label": "incomeOptions.sSDependent",
-            "_default_message": "Social Security Dependent Benefits (retirement, disability, or survivors)",
-        },
+        **ConfigurationData.income_options,
         "cashAssistance": {
             "_label": "incomeOptions.cashAssistance",
             "_default_message": "Government Cash Assistance (including Colorado Works/TANF)",
         },
-        "gifts": {
-            "_label": "incomeOptions.gifts",
-            "_default_message": "Gifts/Contributions (Received)",
-        },
-        "investment": {
-            "_label": "incomeOptions.investment",
-            "_default_message": "Investment Income (interest, dividends, and profit from selling stocks)",
-        },
         "cOSDisability": {
             "_label": "incomeOptions.cOSDisability",
             "_default_message": "Colorado State Disability Benefits",
-        },
-        "rental": {
-            "_label": "incomeOptions.rental",
-            "_default_message": "Rental Income",
-        },
-        "alimony": {
-            "_label": "incomeOptions.alimony",
-            "_default_message": "Alimony (Received)",
-        },
-        "deferredComp": {
-            "_label": "incomeOptions.deferredComp",
-            "_default_message": "Withdrawals from Deferred Compensation (IRA, Keogh, etc.)",
-        },
-        "workersComp": {
-            "_label": "incomeOptions.workersComp",
-            "_default_message": "Worker's Compensation",
-        },
-        "boarder": {
-            "_label": "incomeOptions.boarder",
-            "_default_message": "Boarder or Lodger",
         },
     }
 
@@ -209,25 +138,9 @@ class CesnConfigurationData(ConfigurationData):
         "them": {},
     }
 
-    frequency_options = {
-        "weekly": {
-            "_label": "frequencyOptions.weekly",
-            "_default_message": "every week",
-        },
-        "biweekly": {
-            "_label": "frequencyOptions.biweekly",
-            "_default_message": "every 2 weeks",
-        },
-        "semimonthly": {
-            "_label": "frequencyOptions.semimonthly",
-            "_default_message": "twice a month",
-        },
-        "monthly": {
-            "_label": "frequencyOptions.monthly",
-            "_default_message": "every month",
-        },
-        "hourly": {"_label": "frequencyOptions.hourly", "_default_message": "hourly"},
-    }
+    expense_categories = {}
+
+    expense_options_by_category = {}
 
     expense_options = {}
 

@@ -319,19 +319,23 @@ class MaConfigurationData(ConfigurationData):
         },
     }
 
-    frequency_options = {
-        "weekly": {"_label": "frequencyOptions.weekly", "_default_message": "every week"},
-        "biweekly": {"_label": "frequencyOptions.biweekly", "_default_message": "every 2 weeks"},
-        "semimonthly": {"_label": "frequencyOptions.semimonthly", "_default_message": "twice a month"},
-        "monthly": {"_label": "frequencyOptions.monthly", "_default_message": "every month"},
-        "hourly": {"_label": "frequencyOptions.hourly", "_default_message": "hourly"},
+    expense_options_by_category = {
+        **ConfigurationData.expense_options_by_category,
+        "housing": {
+            **ConfigurationData.expense_options_by_category["housing"],
+            "rent": {"_label": "expenseOptions.nonSubsidizedRent", "_default_message": "Rent (Non-Subsidized)"},
+            "subsidizedRent": {
+                "_label": "expenseOptions.subsidizedRent",
+                "_default_message": "Rent (Public / Subsidized Housing)",
+            },
+        },
     }
 
     expense_options = {
-        "rent": {"_label": "expenseOptions.nonSubidizedRent", "_default_message": "Rent (Non-Subsidized)"},
+        "rent": {"_label": "expenseOptions.nonSubsidizedRent", "_default_message": "Rent (Non-Subsidized)"},
         "subsidizedRent": {
-            "_label": "expenseOptions.subidizedRent",
-            "_default_message": "Rent (Public / Subidized Housing)",
+            "_label": "expenseOptions.subsidizedRent",
+            "_default_message": "Rent (Public / Subsidized Housing)",
         },
         "telephone": {"_label": "expenseOptions.telephone", "_default_message": "Telephone"},
         "internet": {"_label": "expenseOptions.internet", "_default_message": "Internet"},

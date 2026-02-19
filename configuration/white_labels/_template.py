@@ -141,10 +141,22 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # Types of income to collect
     # Only override if your state has unique income types (e.g., state-specific disability benefits)
     # ==========================================================================================
+
+    # income_categories and income_options_by_category are usually inherited from base.py.
+    # Override income_options_by_category using the spread pattern to add state-specific options:
+    # income_options_by_category = {
+    #     **ConfigurationData.income_options_by_category,
+    #     "government": {
+    #         **ConfigurationData.income_options_by_category["government"],
+    #         "stateDisability": {"_label": "incomeOptions.stateDisability", "_default_message": "State Disability"},
+    #     },
+    # }
+
+    # Flat income options (backward compatible with current FE).
+    # When overriding income_options_by_category, also override this to keep both in sync.
     # income_options = {
-    #     "wages": {"_label": "incomeOptions.wages", "_default_message": "Wages, salaries, tips"},
-    #     "sSI": {"_label": "incomeOptions.sSI", "_default_message": "Supplemental Security Income (SSI)"},
-    #     # ... see base.py for full list
+    #     **ConfigurationData.income_options,
+    #     "stateDisability": {"_label": "incomeOptions.stateDisability", "_default_message": "State Disability"},
     # }
 
     # ==========================================================================================
@@ -192,7 +204,24 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # ==========================================================================================
     # EXPENSE OPTIONS - Usually inherited as is from ConfigurationData
     # ==========================================================================================
-    # Types of expenses to collect - usually inherited from base.py
+    # expense_categories and expense_options_by_category are usually inherited from base.py.
+    # Override expense_options_by_category using the spread pattern to add state-specific options.
+    # ==========================================================================================
+    # expense_options_by_category = {
+    #     **ConfigurationData.expense_options_by_category,
+    #     "housing": {
+    #         **ConfigurationData.expense_options_by_category["housing"],
+    #         "rent": {"_label": "expenseOptions.nonSubsidizedRent", "_default_message": "Rent (Non-Subsidized)"},
+    #         "subsidizedRent": {"_label": "expenseOptions.subsidizedRent", "_default_message": "Rent (Public / Subsidized Housing)"},
+    #     },
+    # }
+
+    # ==========================================================================================
+    # EXPENSE OPTIONS (FLAT) - Backward compatible with current FE
+    # ==========================================================================================
+    # Flattened expense options — same data as expense_options_by_category but without
+    # category grouping. When overriding expense_options_by_category, also override this
+    # to keep both in sync (same pattern as income_options / income_options_by_category).
     # ==========================================================================================
     # expense_options = {
     #     "rent": {"_label": "expenseOptions.rent", "_default_message": "Rent"},
