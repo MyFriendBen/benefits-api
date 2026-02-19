@@ -10,9 +10,9 @@ class NCWeatherization(ProgramCalculator):
         "heating",
         "cooling",
         "otherUtilities",
-        "propertyTaxes",
+        "propertyTax",
         "homeownersInsurance",
-        "associationFees",
+        "hoa",
     ]
     dependencies = ["household_size", "income_amount", "income_frequency"]
     amount = 300

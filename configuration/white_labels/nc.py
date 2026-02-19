@@ -493,23 +493,6 @@ class NcConfigurationData(ConfigurationData):
         "hourly": {"_label": "frequencyOptions.hourly", "_default_message": "hourly"},
     }
 
-    expense_options_by_category = {
-        **ConfigurationData.expense_options_by_category,
-        "housing": {
-            "rent": {"_label": "expenseOptions.rent", "_default_message": "Rent"},
-            "mortgage": {"_label": "expenseOptions.mortgage", "_default_message": "Mortgage"},
-            "propertyTaxes": {"_label": "expenseOptions.propertyTaxes", "_default_message": "Property Taxes"},
-            "associationFees": {
-                "_label": "expenseOptions.associationFees",
-                "_default_message": "Homeowners or Condo Association Fees and Dues",
-            },
-            "homeownersInsurance": {
-                "_label": "expenseOptions.homeownersInsurance",
-                "_default_message": "Homeowners Insurance",
-            },
-        },
-    }
-
     expense_options = {
         "rent": {"_label": "expenseOptions.rent", "_default_message": "Rent"},
         "telephone": {
@@ -529,12 +512,12 @@ class NcConfigurationData(ConfigurationData):
             "_label": "expenseOptions.mortgage",
             "_default_message": "Mortgage",
         },
-        "propertyTaxes": {
-            "_label": "expenseOptions.propertyTaxes",
+        "propertyTax": {
+            "_label": "expenseOptions.propertyTax",
             "_default_message": "Property Taxes",
         },
-        "associationFees": {
-            "_label": "expenseOptions.associationFees",
+        "hoa": {
+            "_label": "expenseOptions.hoa",
             "_default_message": "Homeowners or Condo Association Fees and Dues",
         },
         "homeownersInsurance": {
