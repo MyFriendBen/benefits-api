@@ -207,7 +207,7 @@ class ConfigurationData:
             "sSI": {"_label": "incomeOptions.sSI", "_default_message": "Supplemental Security Income (SSI)"},
             "sSSurvivor": {
                 "_label": "incomeOptions.sSSurvivor",
-                "_default_message": "Social Security Survivor's Benefits",
+                "_default_message": "Social Security Survivor's Benefits (Widowed)",
             },
             "sSDependent": {
                 "_label": "incomeOptions.sSDependent",
@@ -261,7 +261,7 @@ class ConfigurationData:
         "sSI": {"_label": "incomeOptions.sSI", "_default_message": "Supplemental Security Income (SSI)"},
         "sSSurvivor": {
             "_label": "incomeOptions.sSSurvivor",
-            "_default_message": "Social Security Survivor's Benefits",
+            "_default_message": "Social Security Survivor's Benefits (Widowed)",
         },
         "sSDependent": {
             "_label": "incomeOptions.sSDependent",
