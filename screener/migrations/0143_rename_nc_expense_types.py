@@ -4,7 +4,10 @@ from django.db import migrations
 def rename_nc_expense_types(apps, schema_editor):
     Expense = apps.get_model("screener", "Expense")
     WhiteLabel = apps.get_model("screener", "WhiteLabel")
-    nc = WhiteLabel.objects.get(code="nc")
+    try:
+        nc = WhiteLabel.objects.get(code="nc")
+    except WhiteLabel.DoesNotExist:
+        return
     nc_expenses = Expense.objects.filter(screen__white_label=nc)
     nc_expenses.filter(type="propertyTaxes").update(type="propertyTax")
     nc_expenses.filter(type="associationFees").update(type="hoa")
@@ -13,7 +16,10 @@ def rename_nc_expense_types(apps, schema_editor):
 def reverse_rename_nc_expense_types(apps, schema_editor):
     Expense = apps.get_model("screener", "Expense")
     WhiteLabel = apps.get_model("screener", "WhiteLabel")
-    nc = WhiteLabel.objects.get(code="nc")
+    try:
+        nc = WhiteLabel.objects.get(code="nc")
+    except WhiteLabel.DoesNotExist:
+        return
     nc_expenses = Expense.objects.filter(screen__white_label=nc)
     nc_expenses.filter(type="propertyTax").update(type="propertyTaxes")
     nc_expenses.filter(type="hoa").update(type="associationFees")
