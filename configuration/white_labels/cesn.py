@@ -229,6 +229,8 @@ class CesnConfigurationData(ConfigurationData):
         "hourly": {"_label": "frequencyOptions.hourly", "_default_message": "hourly"},
     }
 
+    expense_categories = {}
+
     expense_options_by_category = {}
 
     expense_options = {}
