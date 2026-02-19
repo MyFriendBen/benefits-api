@@ -193,26 +193,15 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # EXPENSE OPTIONS BY CATEGORY - Usually inherited as is from ConfigurationData
     # ==========================================================================================
     # Expenses grouped by category. The category key maps to a translation ID of the form
-    # expenses.category.<key>. Override the entire dict when you need different expense types
-    # or categories — category and options are defined together so they stay in sync.
+    # expenses.category.<key>. Use the spread pattern to inherit base and only override the
+    # categories that differ (same as income_options_by_category).
     # ==========================================================================================
     # expense_options_by_category = {
+    #     **ConfigurationData.expense_options_by_category,
     #     "housing": {
-    #         "rent": {"_label": "expenseOptions.rent", "_default_message": "Rent"},
-    #         "mortgage": {"_label": "expenseOptions.mortgage", "_default_message": "Mortgage"},
-    #         # ... see base.py for full list
-    #     },
-    #     "utilities": {
-    #         "heating": {"_label": "expenseOptions.heating", "_default_message": "Heating"},
-    #         # ...
-    #     },
-    #     "healthcare": {
-    #         "medical": {"_label": "expenseOptions.medical", "_default_message": "Medical Insurance Premium &/or Bills"},
-    #     },
-    #     "dependentCare": {
-    #         "childCare": {"_label": "expenseOptions.childCare", "_default_message": "Child Care"},
-    #         "childSupport": {"_label": "expenseOptions.childSupport", "_default_message": "Child Support (Paid)"},
-    #         "dependentCare": {"_label": "expenseOptions.dependentCare", "_default_message": "Dependent Care"},
+    #         **ConfigurationData.expense_options_by_category["housing"],
+    #         "rent": {"_label": "expenseOptions.nonSubsidizedRent", "_default_message": "Rent (Non-Subsidized)"},
+    #         "subsidizedRent": {"_label": "expenseOptions.subsidizedRent", "_default_message": "Rent (Public / Subsidized Housing)"},
     #     },
     # }
 

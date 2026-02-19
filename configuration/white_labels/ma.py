@@ -331,19 +331,19 @@ class MaConfigurationData(ConfigurationData):
         **ConfigurationData.expense_options_by_category,
         "housing": {
             **ConfigurationData.expense_options_by_category["housing"],
-            "rent": {"_label": "expenseOptions.nonSubidizedRent", "_default_message": "Rent (Non-Subsidized)"},
+            "rent": {"_label": "expenseOptions.nonSubsidizedRent", "_default_message": "Rent (Non-Subsidized)"},
             "subsidizedRent": {
-                "_label": "expenseOptions.subidizedRent",
-                "_default_message": "Rent (Public / Subidized Housing)",
+                "_label": "expenseOptions.subsidizedRent",
+                "_default_message": "Rent (Public / Subsidized Housing)",
             },
         },
     }
 
     expense_options = {
-        "rent": {"_label": "expenseOptions.nonSubidizedRent", "_default_message": "Rent (Non-Subsidized)"},
+        "rent": {"_label": "expenseOptions.nonSubsidizedRent", "_default_message": "Rent (Non-Subsidized)"},
         "subsidizedRent": {
-            "_label": "expenseOptions.subidizedRent",
-            "_default_message": "Rent (Public / Subidized Housing)",
+            "_label": "expenseOptions.subsidizedRent",
+            "_default_message": "Rent (Public / Subsidized Housing)",
         },
         "telephone": {"_label": "expenseOptions.telephone", "_default_message": "Telephone"},
         "internet": {"_label": "expenseOptions.internet", "_default_message": "Internet"},
