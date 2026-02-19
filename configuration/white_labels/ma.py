@@ -1321,7 +1321,7 @@ class MaConfigurationData(ConfigurationData):
                     },
                     "description": {
                         "_label": "childCareBenefits.ma_cpp_desc",
-                        "_default_message": "Free preschool for Cambridge children age 3–4",
+                        "_default_message": "Free preschool for Cambridge children age 3-4",
                     },
                 },
             },

@@ -5,7 +5,7 @@ These tests verify the Cambridge Preschool Program (CPP) calculator logic,
 including:
 - Calculator registration and class attributes
 - Cambridge residency eligibility
-- Child age eligibility (ages 3–4)
+- Child age eligibility (ages 3-4)
 - Income eligibility for 3-year-olds (≤65% AMI, approximated as 60% MTSP)
 - No income restriction for 4-year-olds
 - has_benefit exclusion
@@ -37,7 +37,7 @@ class TestMaCppCalculator(TestCase):
         self.assertEqual(MaCpp.eligible_city, "Cambridge")
 
     def test_child_age_range_is_preschool(self):
-        """Test that the child age range is set correctly for preschool (ages 3–4)."""
+        """Test that the child age range is set correctly for preschool (ages 3-4)."""
         self.assertEqual(MaCpp.min_child_age, 3)
         self.assertEqual(MaCpp.max_child_age, 4)
 
