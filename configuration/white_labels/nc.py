@@ -2861,6 +2861,7 @@ class NcConfigurationData(ConfigurationData):
         "shareLink": {
             "default": "https://screener.myfriendben.org/nc",
             "211nc": "https://screener.myfriendben.org/nc?referrer=211nc",
+            "lanc": "https://screener.myfriendben.org/nc?referrer=lanc",
         },
         "stepDirectory": {
             "default": [
