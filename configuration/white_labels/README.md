@@ -252,6 +252,7 @@ class IlConfigurationData(ConfigurationData):
 - **`income_options`** - Types of income to collect
 - **`health_insurance_options`** - Health insurance types
 - **`expense_options`** - Types of expenses to collect
+- **`expense_categories`** - How expenses are grouped and ordered in the form. If you override `expense_options` with different keys, override this too so the new keys land in the right category.
 - **`condition_options`** - Household member conditions
 - **`feedback_links`** - Contact links:
   - `email`: Linked when user selects "CONTACT US"

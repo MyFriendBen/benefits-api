@@ -452,6 +452,28 @@ class ConfigurationData:
         "dependentCare": {"_label": "expenseOptions.dependentCare", "_default_message": "Dependent Care"},
     }
 
+    # Grouping of expense_options keys into display categories for the expenses form.
+    # Each category has a label and an ordered list of expense keys that belong to it.
+    # Any expense_options key not listed here will fall into the first category as a fallback.
+    expense_categories = [
+        {
+            "label": {"_label": "expenses.category.housing", "_default_message": "Housing"},
+            "expenses": ["rent", "mortgage", "propertyTax", "hoa", "homeownersInsurance"],
+        },
+        {
+            "label": {"_label": "expenses.category.utilities", "_default_message": "Utilities"},
+            "expenses": ["heating", "cooling", "telephone", "internet", "otherUtilities"],
+        },
+        {
+            "label": {"_label": "expenses.category.healthcare", "_default_message": "Healthcare"},
+            "expenses": ["medical"],
+        },
+        {
+            "label": {"_label": "expenses.category.dependentCare", "_default_message": "Dependent Care"},
+            "expenses": ["childCare", "childSupport", "dependentCare"],
+        },
+    ]
+
     # Household member condition options
     condition_options = {
         "you": {

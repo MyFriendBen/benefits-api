@@ -205,6 +205,13 @@ class Command(BaseCommand):
                 defaults={"data": WhiteLabelData.expense_options, "active": True},
             )
 
+            # Save expense_categories to database
+            Configuration.objects.update_or_create(
+                name="expense_categories",
+                white_label=white_label,
+                defaults={"data": WhiteLabelData.expense_categories, "active": True},
+            )
+
             # Save condition_options to database
             Configuration.objects.update_or_create(
                 name="condition_options",

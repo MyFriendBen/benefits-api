@@ -543,6 +543,25 @@ class NcConfigurationData(ConfigurationData):
         },
     }
 
+    expense_categories = [
+        {
+            "label": {"_label": "expenses.category.housing", "_default_message": "Housing"},
+            "expenses": ["rent", "mortgage", "propertyTaxes", "associationFees", "homeownersInsurance"],
+        },
+        {
+            "label": {"_label": "expenses.category.utilities", "_default_message": "Utilities"},
+            "expenses": ["heating", "cooling", "telephone", "internet", "otherUtilities"],
+        },
+        {
+            "label": {"_label": "expenses.category.healthcare", "_default_message": "Healthcare"},
+            "expenses": ["medical"],
+        },
+        {
+            "label": {"_label": "expenses.category.dependentCare", "_default_message": "Dependent Care"},
+            "expenses": ["childCare", "childSupport", "dependentCare"],
+        },
+    ]
+
     condition_options = {
         "you": {
             "student": {
