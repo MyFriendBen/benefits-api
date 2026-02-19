@@ -498,8 +498,14 @@ class NcConfigurationData(ConfigurationData):
             "rent": {"_label": "expenseOptions.rent", "_default_message": "Rent"},
             "mortgage": {"_label": "expenseOptions.mortgage", "_default_message": "Mortgage"},
             "propertyTaxes": {"_label": "expenseOptions.propertyTaxes", "_default_message": "Property Taxes"},
-            "associationFees": {"_label": "expenseOptions.associationFees", "_default_message": "Homeowners or Condo Association Fees and Dues"},
-            "homeownersInsurance": {"_label": "expenseOptions.homeownersInsurance", "_default_message": "Homeowners Insurance"},
+            "associationFees": {
+                "_label": "expenseOptions.associationFees",
+                "_default_message": "Homeowners or Condo Association Fees and Dues",
+            },
+            "homeownersInsurance": {
+                "_label": "expenseOptions.homeownersInsurance",
+                "_default_message": "Homeowners Insurance",
+            },
         },
         "utilities": {
             "heating": {"_label": "expenseOptions.heating", "_default_message": "Heating"},

@@ -330,11 +330,20 @@ class MaConfigurationData(ConfigurationData):
     expense_options_by_category = {
         "housing": {
             "rent": {"_label": "expenseOptions.nonSubidizedRent", "_default_message": "Rent (Non-Subsidized)"},
-            "subsidizedRent": {"_label": "expenseOptions.subidizedRent", "_default_message": "Rent (Public / Subidized Housing)"},
+            "subsidizedRent": {
+                "_label": "expenseOptions.subidizedRent",
+                "_default_message": "Rent (Public / Subidized Housing)",
+            },
             "mortgage": {"_label": "expenseOptions.mortgage", "_default_message": "Mortgage"},
             "propertyTax": {"_label": "expenseOptions.propertyTax", "_default_message": "Property Taxes"},
-            "hoa": {"_label": "expenseOptions.hoa", "_default_message": "Homeowners or Condo Association Fees and Dues"},
-            "homeownersInsurance": {"_label": "expenseOptions.homeownersInsurance", "_default_message": "Homeowners Insurance"},
+            "hoa": {
+                "_label": "expenseOptions.hoa",
+                "_default_message": "Homeowners or Condo Association Fees and Dues",
+            },
+            "homeownersInsurance": {
+                "_label": "expenseOptions.homeownersInsurance",
+                "_default_message": "Homeowners Insurance",
+            },
         },
         "utilities": {
             "heating": {"_label": "expenseOptions.heating", "_default_message": "Heating"},

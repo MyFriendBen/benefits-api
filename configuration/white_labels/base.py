@@ -439,8 +439,14 @@ class ConfigurationData:
             "rent": {"_label": "expenseOptions.rent", "_default_message": "Rent"},
             "mortgage": {"_label": "expenseOptions.mortgage", "_default_message": "Mortgage"},
             "propertyTax": {"_label": "expenseOptions.propertyTax", "_default_message": "Property Taxes"},
-            "hoa": {"_label": "expenseOptions.hoa", "_default_message": "Homeowners or Condo Association Fees and Dues"},
-            "homeownersInsurance": {"_label": "expenseOptions.homeownersInsurance", "_default_message": "Homeowners Insurance"},
+            "hoa": {
+                "_label": "expenseOptions.hoa",
+                "_default_message": "Homeowners or Condo Association Fees and Dues",
+            },
+            "homeownersInsurance": {
+                "_label": "expenseOptions.homeownersInsurance",
+                "_default_message": "Homeowners Insurance",
+            },
         },
         "utilities": {
             "heating": {"_label": "expenseOptions.heating", "_default_message": "Heating"},
@@ -470,7 +476,10 @@ class ConfigurationData:
         "mortgage": {"_label": "expenseOptions.mortgage", "_default_message": "Mortgage"},
         "propertyTax": {"_label": "expenseOptions.propertyTax", "_default_message": "Property Taxes"},
         "hoa": {"_label": "expenseOptions.hoa", "_default_message": "Homeowners or Condo Association Fees and Dues"},
-        "homeownersInsurance": {"_label": "expenseOptions.homeownersInsurance", "_default_message": "Homeowners Insurance"},
+        "homeownersInsurance": {
+            "_label": "expenseOptions.homeownersInsurance",
+            "_default_message": "Homeowners Insurance",
+        },
         "medical": {"_label": "expenseOptions.medical", "_default_message": "Medical Insurance Premium &/or Bills"},
         "cooling": {"_label": "expenseOptions.cooling", "_default_message": "Cooling"},
         "childCare": {"_label": "expenseOptions.childCare", "_default_message": "Child Care"},
