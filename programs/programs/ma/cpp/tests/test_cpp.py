@@ -86,9 +86,7 @@ class TestMaCppLocationEligibility(TestCase):
             members.append(Mock(age=age))
         mock_screen.household_members.all.return_value = members
 
-        return MaCpp(
-            mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps
-        )
+        return MaCpp(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
     @patch("programs.programs.ma.cpp.calculator.hud_client")
     def test_cambridge_resident_with_preschool_child_passes(self, mock_hud_client):
@@ -139,9 +137,7 @@ class TestMaCppMemberEligibility(TestCase):
             members.append(Mock(age=age))
         mock_screen.household_members.all.return_value = members
 
-        return MaCpp(
-            mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps
-        )
+        return MaCpp(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
     @patch("programs.programs.ma.cpp.calculator.hud_client")
     def test_scenario1_three_year_old_low_income_eligible(self, mock_hud_client):
@@ -162,9 +158,7 @@ class TestMaCppMemberEligibility(TestCase):
         mock_hud_client.get_screen_mtsp_ami.assert_not_called()
 
     @patch("programs.programs.ma.cpp.calculator.hud_client")
-    def test_scenario3_three_year_old_just_below_income_limit_eligible(
-        self, mock_hud_client
-    ):
+    def test_scenario3_three_year_old_just_below_income_limit_eligible(self, mock_hud_client):
         """Scenario 3: 3-year-old, income just below 60% MTSP → Eligible."""
         mock_hud_client.get_screen_mtsp_ami.return_value = 75000
         calculator = self._create_calculator([3], gross_income_yearly=74999)
@@ -172,9 +166,7 @@ class TestMaCppMemberEligibility(TestCase):
         self.assertTrue(eligibility.eligible)
 
     @patch("programs.programs.ma.cpp.calculator.hud_client")
-    def test_scenario4_three_year_old_just_above_income_limit_ineligible(
-        self, mock_hud_client
-    ):
+    def test_scenario4_three_year_old_just_above_income_limit_ineligible(self, mock_hud_client):
         """Scenario 4: 3-year-old, income just above 60% MTSP → Not eligible."""
         mock_hud_client.get_screen_mtsp_ami.return_value = 75000
         calculator = self._create_calculator([3], gross_income_yearly=75001)
@@ -208,9 +200,7 @@ class TestMaCppMemberEligibility(TestCase):
         self.assertTrue(eligibility.eligible)
 
     @patch("programs.programs.ma.cpp.calculator.hud_client")
-    def test_mixed_household_3yo_and_4yo_high_income_only_4yo_eligible(
-        self, mock_hud_client
-    ):
+    def test_mixed_household_3yo_and_4yo_high_income_only_4yo_eligible(self, mock_hud_client):
         """Mixed household: 3yo + 4yo with income above limit → only 4yo is eligible member."""
         mock_hud_client.get_screen_mtsp_ami.return_value = 60000
         # Income above limit for 3yo, but 4yo has no income restriction
@@ -221,9 +211,7 @@ class TestMaCppMemberEligibility(TestCase):
         self.assertTrue(eligibility.eligible)
 
         # Check per-member results: 3yo ineligible, 4yo eligible
-        child_eligibilities = [
-            m for m in eligibility.eligible_members if m.member.age in [3, 4]
-        ]
+        child_eligibilities = [m for m in eligibility.eligible_members if m.member.age in [3, 4]]
         three_yo = next(m for m in child_eligibilities if m.member.age == 3)
         four_yo = next(m for m in child_eligibilities if m.member.age == 4)
         self.assertFalse(three_yo.eligible)
@@ -234,9 +222,7 @@ class TestMaCppMemberEligibility(TestCase):
         """HUD API error for a 3-year-old → member ineligible (conservative behavior)."""
         from integrations.clients.hud_income_limits import HudIncomeClientError
 
-        mock_hud_client.get_screen_mtsp_ami.side_effect = HudIncomeClientError(
-            "API error"
-        )
+        mock_hud_client.get_screen_mtsp_ami.side_effect = HudIncomeClientError("API error")
         calculator = self._create_calculator([3])
         eligibility = calculator.eligible()
         self.assertFalse(eligibility.eligible)
@@ -276,9 +262,7 @@ class TestMaCppHasBenefit(TestCase):
         members = [Mock(age=35), Mock(age=4)]
         mock_screen.household_members.all.return_value = members
 
-        return MaCpp(
-            mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps
-        )
+        return MaCpp(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
     def test_without_benefit_is_eligible(self):
         """Test that households without the benefit can be eligible."""
@@ -317,9 +301,7 @@ class TestMaCppValue(TestCase):
             members.append(m)
         mock_screen.household_members.all.return_value = members
 
-        return MaCpp(
-            mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps
-        )
+        return MaCpp(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
     def test_value_is_one_for_eligible_household(self):
         """Test that household value is 1 (representing 'Varies')."""
@@ -337,9 +319,7 @@ class TestMaCppValue(TestCase):
         members = [Mock(age=35, id=0), Mock(age=4, id=1)]
         mock_screen.household_members.all.return_value = members
 
-        calculator = MaCpp(
-            mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps
-        )
+        calculator = MaCpp(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
         eligibility = calculator.eligible()
         calculator.value(eligibility)
         self.assertEqual(eligibility.household_value, 0)

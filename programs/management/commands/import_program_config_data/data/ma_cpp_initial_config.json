@@ -1,12 +1,17 @@
 {
     "white_label": {"code": "ma"},
-    "program_category": {
-        "external_name": "ma_child_care"
-    },
+    "program_category": {"external_name": "ma_child_care"},
     "program": {
         "name_abbreviated": "ma_cpp",
         "year": "2026",
-        "legal_status_required": ["citizen", "gc_5plus", "gc_5less", "refugee", "otherWithWorkPermission", "non_citizen"],
+        "legal_status_required": [
+            "citizen",
+            "gc_5plus",
+            "gc_5less",
+            "refugee",
+            "otherWithWorkPermission",
+            "non_citizen",
+        ],
         "name": "Cambridge Preschool Program (CPP)",
         "description_short": "Free preschool for Cambridge children age 3–4",
         "description": "The Cambridge Preschool Program (CPP) provides free, high-quality preschool for Cambridge children who are 3 or 4 years old. The program is run by Cambridge Public Schools, the City of Cambridge, and local childcare providers.\n\nFamilies apply once and choose which programs they'd like to attend. The program then matches children to available spots based on eligibility and family preferences. Classrooms focus on school readiness and social-emotional learning.\n\nTo qualify, you must:\n- Live in Cambridge\n- Have a child who is age 3 or 4\n- For 3-year-olds: household income at or below 65% Area Median Income (AMI)\n- For 4-year-olds: no income restriction\n\nNote: No citizenship requirement for the child.",
@@ -17,25 +22,21 @@
         "estimated_delivery_time": "Enrollment-based (school year)",
         "estimated_value": "Varies",
         "website_description": "Free, high-quality preschool for Cambridge children age 3–4",
-        "low_confidence": false
+        "low_confidence": false,
     },
     "warning_message": {
         "external_name": "ma_cpp_warning",
         "calculator": "_show",
-        "message": "This program has limited spots and uses a lottery system. Applying does not guarantee enrollment."
+        "message": "This program has limited spots and uses a lottery system. Applying does not guarantee enrollment.",
     },
     "documents": [
-        {
-            "external_name": "ma_cambridge_residency"
-        },
+        {"external_name": "ma_cambridge_residency"},
         {
             "external_name": "ma_child_info",
             "text": "Child's age verification (birth certificate or similar)",
             "link_url": "",
-            "link_text": ""
+            "link_text": "",
         },
-        {
-            "external_name": "ma_proof_income"
-        }
-    ]
+        {"external_name": "ma_proof_income"},
+    ],
 }
