@@ -353,6 +353,30 @@ class MaConfigurationData(ConfigurationData):
         },
     }
 
+    expense_options = {
+        "rent": {"_label": "expenseOptions.nonSubidizedRent", "_default_message": "Rent (Non-Subsidized)"},
+        "subsidizedRent": {
+            "_label": "expenseOptions.subidizedRent",
+            "_default_message": "Rent (Public / Subidized Housing)",
+        },
+        "telephone": {"_label": "expenseOptions.telephone", "_default_message": "Telephone"},
+        "internet": {"_label": "expenseOptions.internet", "_default_message": "Internet"},
+        "otherUtilities": {"_label": "expenseOptions.otherUtilities", "_default_message": "Other Utilities"},
+        "heating": {"_label": "expenseOptions.heating", "_default_message": "Heating"},
+        "mortgage": {"_label": "expenseOptions.mortgage", "_default_message": "Mortgage"},
+        "propertyTax": {"_label": "expenseOptions.propertyTax", "_default_message": "Property Taxes"},
+        "hoa": {"_label": "expenseOptions.hoa", "_default_message": "Homeowners or Condo Association Fees and Dues"},
+        "homeownersInsurance": {
+            "_label": "expenseOptions.homeownersInsurance",
+            "_default_message": "Homeowners Insurance",
+        },
+        "medical": {"_label": "expenseOptions.medical", "_default_message": "Medical Insurance Premium &/or Bills"},
+        "cooling": {"_label": "expenseOptions.cooling", "_default_message": "Cooling"},
+        "childCare": {"_label": "expenseOptions.childCare", "_default_message": "Child Care"},
+        "childSupport": {"_label": "expenseOptions.childSupport", "_default_message": "Child Support (Paid)"},
+        "dependentCare": {"_label": "expenseOptions.dependentCare", "_default_message": "Dependent Care"},
+    }
+
     condition_options = {
         "you": {
             "student": {

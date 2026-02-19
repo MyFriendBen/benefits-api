@@ -231,6 +231,8 @@ class CesnConfigurationData(ConfigurationData):
 
     expense_options_by_category = {}
 
+    expense_options = {}
+
     condition_options = {
         "you": {
             "survivingSpouse": {

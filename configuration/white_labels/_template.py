@@ -218,6 +218,19 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # }
 
     # ==========================================================================================
+    # EXPENSE OPTIONS (FLAT) - Backward compatible with current FE
+    # ==========================================================================================
+    # Flattened expense options — same data as expense_options_by_category but without
+    # category grouping. When overriding expense_options_by_category, also override this
+    # to keep both in sync (same pattern as income_options / income_options_by_category).
+    # ==========================================================================================
+    # expense_options = {
+    #     "rent": {"_label": "expenseOptions.rent", "_default_message": "Rent"},
+    #     "telephone": {"_label": "expenseOptions.telephone", "_default_message": "Telephone"},
+    #     # ... see base.py for full list
+    # }
+
+    # ==========================================================================================
     # CONDITION OPTIONS - Usually inherited as is from ConfigurationData
     # ==========================================================================================
     # Household member conditions - usually inherited from base.py
