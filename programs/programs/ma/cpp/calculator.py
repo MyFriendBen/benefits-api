@@ -30,9 +30,7 @@ class MaCpp(ProgramCalculator):
     amount = 1  # Value varies (free tuition); frontend displays "Varies"
     eligible_city = "Cambridge"
     hud_county = "Middlesex"  # Cambridge is in Middlesex County, MA
-    # 65% AMI is not available from the HUD API (MTSP supports 20/30/40/50/60/70/80/100%).
-    # Using 60% MTSP as a conservative approximation.
-    max_ami_percent = "60%"
+    max_ami_percent = "60%"  # HUD API doesn't support 65% AMI; using 60% MTSP as a conservative approximation
     min_child_age = 3
     max_child_age = 4
     dependencies = ["income_amount", "income_frequency", "household_size", "county"]
@@ -54,7 +52,7 @@ class MaCpp(ProgramCalculator):
         e.condition(is_preschool_age)
 
         # 3-year-olds have an income restriction (≤65% AMI, approximated as 60% MTSP).
-        # 4-year-olds have no income restriction — all Cambridge 4-year-olds are eligible.
+        # 4-year-olds have no income restriction.
         if member.age == 3:
             try:
                 income = self.screen.calc_gross_income("yearly", ["all"])

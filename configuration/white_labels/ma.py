@@ -1314,6 +1314,16 @@ class MaConfigurationData(ConfigurationData):
                         "_default_message": "Affordable afterschool care for Cambridge children K-8",
                     },
                 },
+                "ma_cpp": {
+                    "name": {
+                        "_label": "childCareBenefits.ma_cpp",
+                        "_default_message": "Cambridge Preschool Program (CPP): ",
+                    },
+                    "description": {
+                        "_label": "childCareBenefits.ma_cpp_desc",
+                        "_default_message": "Free preschool for Cambridge children age 3–4",
+                    },
+                },
             },
             "category_name": {
                 "_label": "childCareYouthAndEducation",

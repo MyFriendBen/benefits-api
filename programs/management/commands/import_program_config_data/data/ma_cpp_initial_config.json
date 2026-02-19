@@ -30,13 +30,11 @@
         "message": "This program has limited spots and uses a lottery system. Applying does not guarantee enrollment.",
     },
     "documents": [
-        {"external_name": "ma_cambridge_residency"},
-        {
-            "external_name": "ma_child_info",
-            "text": "Child's age verification (birth certificate or similar)",
-            "link_url": "",
-            "link_text": "",
-        },
+        {"external_name": "ma_id_proof"},
+        {"external_name": "ma_birth_certificate"},
         {"external_name": "ma_proof_income"},
+        {"external_name": "ma_cambridge_residency"},
+        {"external_name": "ma_proof_address"},
+        {"external_name": "ma_immunization_records"},
     ],
 }
