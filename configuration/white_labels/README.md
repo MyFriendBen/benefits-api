@@ -249,10 +249,14 @@ class IlConfigurationData(ConfigurationData):
   - Icon names must be defined in `benefits-calculator/src/Components/Results/helpers.ts` (`ICON_OPTIONS_MAP`)
 - **`referral_options`** - "How did you hear about us?" options
 - **`language_options`** - Available translations
-- **`income_options`** - Types of income to collect
+- **`income_categories`** - Translatable category labels for income (e.g. `incomeCategories.employment`)
+- **`income_options_by_category`** - Income types grouped by category. When overriding, use the spread pattern to inherit base and only override the categories that differ.
+- **`income_options`** - Flat dict of income types (backward compatible with current FE). Keep in sync with `income_options_by_category`.
 - **`health_insurance_options`** - Health insurance types
-- **`expense_options`** - Flat dict of expense types (backward compatible with current FE)
-- **`expense_options_by_category`** - Expenses grouped by category (new FE). The category key maps to a translation ID (`expenses.category.<key>`). When overriding, use the spread pattern to inherit base and only override the categories that differ (same as `income_options_by_category`). Keep both `expense_options` and `expense_options_by_category` in sync.
+- **`frequency_options`** - Income/expense frequency options (annually, monthly, weekly, etc.)
+- **`expense_categories`** - Translatable category labels for expenses (e.g. `expenseCategories.housing`)
+- **`expense_options_by_category`** - Expenses grouped by category. When overriding, use the spread pattern to inherit base and only override the categories that differ.
+- **`expense_options`** - Flat dict of expense types (backward compatible with current FE). Keep in sync with `expense_options_by_category`.
 - **`condition_options`** - Household member conditions
 - **`feedback_links`** - Contact links:
   - `email`: Linked when user selects "CONTACT US"
