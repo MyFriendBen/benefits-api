@@ -2790,6 +2790,7 @@ class NcConfigurationData(ConfigurationData):
         "shareLink": {
             "default": "https://screener.myfriendben.org/nc",
             "211nc": "https://screener.myfriendben.org/nc?referrer=211nc",
+            "lanc": "https://screener.myfriendben.org/nc?referrer=lanc",
         },
         "stepDirectory": {
             "default": [
@@ -2818,14 +2819,14 @@ class NcConfigurationData(ConfigurationData):
             "default": ["nc_show_211_link"],
             "211nc": ["no_results_more_help", "nc_show_211_link", "211nc"],
             "hfed": ["no_results_more_help", "hfed"],
-            "lanc": ["no_results_more_help", "lanc"],
+            "lanc": ["no_results_more_help", "nc_show_211_link", "lanc"],
         },
         # Deprecated: use uiOptions. Remove as part of MFB-635.
         "featureFlags": {
             "default": ["nc_show_211_link"],
             "211nc": ["no_results_more_help", "nc_show_211_link", "211nc"],
             "hfed": ["no_results_more_help", "hfed"],
-            "lanc": ["no_results_more_help", "lanc"],
+            "lanc": ["no_results_more_help", "nc_show_211_link", "lanc"],
         },
         "noResultMessage": {
             "default": {
