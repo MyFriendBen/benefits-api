@@ -234,6 +234,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             "has_ma_homebridge",
             "has_ma_dhsp_afterschool",
             "has_ma_door_to_door",
+            "has_ma_taxi_discount",
             "has_ma_cpp",
             "has_head_start",
             "has_early_head_start",
