@@ -1,0 +1,42 @@
+services:
+  pg:
+    image: imresamu/postgis:16-3.5.2-alpine3.20
+    user: postgres
+    command: postgres -c 'max_connections=250'
+    volumes:
+      - postgresdata16:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    labels:
+      SERVICE_NAME: pg
+    environment:
+      # WARNING: trust authentication is for local dev only
+      # Production must use password authentication
+      - "POSTGRES_HOST_AUTH_METHOD=trust"
+    networks:
+      - my_network
+
+  api:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    command: ["/bin/bash", "/code/docker/start.sh"]
+    image: benefits-api:benefits-api
+    depends_on:
+      - pg
+    env_file:
+      - ../.env
+    expose:
+      - 8000
+    ports:
+      - "8000:8000"
+    networks:
+      - my_network
+
+networks:
+  my_network:
+    name: ${DOCKER_NETWORK_NAME:-policyengine-api_default}
+    external: true
+
+volumes:
+  postgresdata16:

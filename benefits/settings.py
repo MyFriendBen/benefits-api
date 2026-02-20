@@ -94,6 +94,11 @@ BREVO_API_KEY = os.getenv("BREVO_API_KEY")
 FRONTEND_DOMAIN = config("FRONTEND_DOMAIN", default="http://localhost:3000")
 EMAIL_FROM = os.getenv("EMAIL_FROM")
 
+# PolicyEngine APIs
+POLICY_ENGINE_API_PRIVATE = config("POLICY_ENGINE_API_PRIVATE", False)
+POLICY_ENGINE_API_SIM = config("POLICY_ENGINE_API_SIM", False)
+POLICY_ENGINE_API_UK = config("POLICY_ENGINE_API_UK", False)
+
 # Google Integrations (Translate, Sheets)
 ENABLE_GOOGLE_INTEGRATIONS = config("ENABLE_GOOGLE_INTEGRATIONS", default=True, cast=bool)
 
@@ -134,6 +139,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "drf_yasg",
     "django_extensions",
+    "django_watchfiles",
 ]
 
 MIDDLEWARE = [
