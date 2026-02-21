@@ -4,6 +4,7 @@ from .door2door.calculator import MaDoorToDoor
 from ..calc import ProgramCalculator
 from .cha.calculator import Cha
 from .cpp.calculator import MaCpp
+from .cmsp.calculator import MaCmsp
 
 ma_calculators: dict[str, type[ProgramCalculator]] = {
     "ma_homebridge": MaHomeBridge,
@@ -11,4 +12,5 @@ ma_calculators: dict[str, type[ProgramCalculator]] = {
     "ma_dhsp_afterschool": MaDhspAfterschool,
     "ma_door_to_door": MaDoorToDoor,
     "ma_cpp": MaCpp,
+    "ma_cmsp": MaCmsp,
 }
