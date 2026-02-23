@@ -1,302 +1,302 @@
 [
-    {
-        "notes": "MA CMSP - Scenario 1 - Eligible: Uninsured child, low income household (basic eligibility)",
-        "household": {
-            "white_label": "ma",
-            "is_test": true,
-            "agree_to_tos": true,
-            "is_13_or_older": true,
-            "zipcode": "02139",
-            "county": "Cambridge",
-            "household_size": 2,
-            "household_members": [
-                {
-                    "relationship": "headOfHousehold",
-                    "age": 35,
-                    "has_income": true,
-                    "income_streams": [{"type": "wages", "amount": 2500.00, "frequency": "monthly"}],
-                    "insurance": {"none": true},
-                },
-                {
-                    "relationship": "child",
-                    "age": 10,
-                    "has_income": false,
-                    "income_streams": [],
-                    "insurance": {"none": true},
-                },
-            ],
-            "expenses": [],
+  {
+    "notes": "MA CMSP - Scenario 1 - Eligible: Uninsured child, low income household (basic eligibility)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 2,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [{"type": "wages", "amount": 2500.00, "frequency": "monthly"}],
+          "insurance": {"none": true}
         },
-        "expected_results": {"program_name": "ma_cmsp", "eligible": true, "value": 239},
+        {
+          "relationship": "child",
+          "age": 10,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {"none": true}
+        }
+      ],
+      "expenses": []
     },
-    {
-        "notes": "MA CMSP - Scenario 2 - Eligible: Uninsured child, very high income (no income limit)",
-        "household": {
-            "white_label": "ma",
-            "is_test": true,
-            "agree_to_tos": true,
-            "is_13_or_older": true,
-            "zipcode": "02116",
-            "county": "Boston",
-            "household_size": 2,
-            "household_members": [
-                {
-                    "relationship": "headOfHousehold",
-                    "age": 40,
-                    "has_income": true,
-                    "income_streams": [{"type": "wages", "amount": 20000.00, "frequency": "monthly"}],
-                    "insurance": {"none": false, "employer": true},
-                },
-                {
-                    "relationship": "child",
-                    "age": 14,
-                    "has_income": false,
-                    "income_streams": [],
-                    "insurance": {"none": true},
-                },
-            ],
-            "expenses": [],
+    "expected_results": {"program_name": "ma_cmsp", "eligible": true, "value": 239}
+  },
+  {
+    "notes": "MA CMSP - Scenario 2 - Eligible: Uninsured child, very high income (no income limit)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02116",
+      "county": "Boston",
+      "household_size": 2,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 40,
+          "has_income": true,
+          "income_streams": [{"type": "wages", "amount": 20000.00, "frequency": "monthly"}],
+          "insurance": {"none": false, "employer": true}
         },
-        "expected_results": {"program_name": "ma_cmsp", "eligible": true, "value": 239},
+        {
+          "relationship": "child",
+          "age": 14,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {"none": true}
+        }
+      ],
+      "expenses": []
     },
-    {
-        "notes": "MA CMSP - Scenario 3 - Eligible: Infant (age 0), uninsured (lower age boundary)",
-        "household": {
-            "white_label": "ma",
-            "is_test": true,
-            "agree_to_tos": true,
-            "is_13_or_older": true,
-            "zipcode": "02130",
-            "county": "Boston",
-            "household_size": 2,
-            "household_members": [
-                {
-                    "relationship": "headOfHousehold",
-                    "age": 28,
-                    "has_income": true,
-                    "income_streams": [{"type": "wages", "amount": 3000.00, "frequency": "monthly"}],
-                    "insurance": {"none": true},
-                },
-                {
-                    "relationship": "child",
-                    "age": 0,
-                    "has_income": false,
-                    "income_streams": [],
-                    "insurance": {"none": true},
-                },
-            ],
-            "expenses": [],
+    "expected_results": {"program_name": "ma_cmsp", "eligible": true, "value": 239}
+  },
+  {
+    "notes": "MA CMSP - Scenario 3 - Eligible: Infant (age 0), uninsured (lower age boundary)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02130",
+      "county": "Boston",
+      "household_size": 2,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 28,
+          "has_income": true,
+          "income_streams": [{"type": "wages", "amount": 3000.00, "frequency": "monthly"}],
+          "insurance": {"none": true}
         },
-        "expected_results": {"program_name": "ma_cmsp", "eligible": true, "value": 239},
+        {
+          "relationship": "child",
+          "age": 0,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {"none": true}
+        }
+      ],
+      "expenses": []
     },
-    {
-        "notes": "MA CMSP - Scenario 4 - Eligible: Undocumented child (no citizenship requirement)",
-        "household": {
-            "white_label": "ma",
-            "is_test": true,
-            "agree_to_tos": true,
-            "is_13_or_older": true,
-            "zipcode": "02139",
-            "county": "Cambridge",
-            "household_size": 2,
-            "household_members": [
-                {
-                    "relationship": "headOfHousehold",
-                    "age": 32,
-                    "has_income": true,
-                    "income_streams": [{"type": "wages", "amount": 2000.00, "frequency": "monthly"}],
-                    "insurance": {"none": true},
-                },
-                {
-                    "relationship": "child",
-                    "age": 8,
-                    "has_income": false,
-                    "income_streams": [],
-                    "insurance": {"none": true},
-                },
-            ],
-            "expenses": [],
+    "expected_results": {"program_name": "ma_cmsp", "eligible": true, "value": 239}
+  },
+  {
+    "notes": "MA CMSP - Scenario 4 - Eligible: Undocumented child (no citizenship requirement)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 2,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 32,
+          "has_income": true,
+          "income_streams": [{"type": "wages", "amount": 2000.00, "frequency": "monthly"}],
+          "insurance": {"none": true}
         },
-        "expected_results": {"program_name": "ma_cmsp", "eligible": true, "value": 239},
+        {
+          "relationship": "child",
+          "age": 8,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {"none": true}
+        }
+      ],
+      "expenses": []
     },
-    {
-        "notes": "MA CMSP - Scenario 5 - Eligible: Multiple children, only one uninsured",
-        "household": {
-            "white_label": "ma",
-            "is_test": true,
-            "agree_to_tos": true,
-            "is_13_or_older": true,
-            "zipcode": "02139",
-            "county": "Cambridge",
-            "household_size": 3,
-            "household_members": [
-                {
-                    "relationship": "headOfHousehold",
-                    "age": 35,
-                    "has_income": true,
-                    "income_streams": [{"type": "wages", "amount": 3000.00, "frequency": "monthly"}],
-                    "insurance": {"none": true},
-                },
-                {
-                    "relationship": "child",
-                    "age": 8,
-                    "has_income": false,
-                    "income_streams": [],
-                    "insurance": {"none": true},
-                },
-                {
-                    "relationship": "child",
-                    "age": 12,
-                    "has_income": false,
-                    "income_streams": [],
-                    "insurance": {"none": false, "employer": true},
-                },
-            ],
-            "expenses": [],
+    "expected_results": {"program_name": "ma_cmsp", "eligible": true, "value": 239}
+  },
+  {
+    "notes": "MA CMSP - Scenario 5 - Eligible: Multiple children, only one uninsured",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 3,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [{"type": "wages", "amount": 3000.00, "frequency": "monthly"}],
+          "insurance": {"none": true}
         },
-        "expected_results": {"program_name": "ma_cmsp", "eligible": true, "value": 239},
-    },
-    {
-        "notes": "MA CMSP - Scenario 6 - Ineligible: Child already has MassHealth",
-        "household": {
-            "white_label": "ma",
-            "is_test": true,
-            "agree_to_tos": true,
-            "is_13_or_older": true,
-            "zipcode": "02139",
-            "county": "Cambridge",
-            "household_size": 2,
-            "household_members": [
-                {
-                    "relationship": "headOfHousehold",
-                    "age": 35,
-                    "has_income": true,
-                    "income_streams": [{"type": "wages", "amount": 2000.00, "frequency": "monthly"}],
-                    "insurance": {"none": true},
-                },
-                {
-                    "relationship": "child",
-                    "age": 10,
-                    "has_income": false,
-                    "income_streams": [],
-                    "insurance": {"none": false, "mass_health": true},
-                },
-            ],
-            "expenses": [],
+        {
+          "relationship": "child",
+          "age": 8,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {"none": true}
         },
-        "expected_results": {"program_name": "ma_cmsp", "eligible": false},
+        {
+          "relationship": "child",
+          "age": 12,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {"none": false, "employer": true}
+        }
+      ],
+      "expenses": []
     },
-    {
-        "notes": "MA CMSP - Scenario 7 - Ineligible: Child has private insurance",
-        "household": {
-            "white_label": "ma",
-            "is_test": true,
-            "agree_to_tos": true,
-            "is_13_or_older": true,
-            "zipcode": "02116",
-            "county": "Boston",
-            "household_size": 2,
-            "household_members": [
-                {
-                    "relationship": "headOfHousehold",
-                    "age": 38,
-                    "has_income": true,
-                    "income_streams": [{"type": "wages", "amount": 5000.00, "frequency": "monthly"}],
-                    "insurance": {"none": false, "private": true},
-                },
-                {
-                    "relationship": "child",
-                    "age": 12,
-                    "has_income": false,
-                    "income_streams": [],
-                    "insurance": {"none": false, "private": true},
-                },
-            ],
-            "expenses": [],
+    "expected_results": {"program_name": "ma_cmsp", "eligible": true, "value": 239}
+  },
+  {
+    "notes": "MA CMSP - Scenario 6 - Ineligible: Child already has MassHealth",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 2,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [{"type": "wages", "amount": 2000.00, "frequency": "monthly"}],
+          "insurance": {"none": true}
         },
-        "expected_results": {"program_name": "ma_cmsp", "eligible": false},
+        {
+          "relationship": "child",
+          "age": 10,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {"none": false, "mass_health": true}
+        }
+      ],
+      "expenses": []
     },
-    {
-        "notes": "MA CMSP - Scenario 8 - Ineligible: Child age 19 (age cutoff enforced)",
-        "household": {
-            "white_label": "ma",
-            "is_test": true,
-            "agree_to_tos": true,
-            "is_13_or_older": true,
-            "zipcode": "02139",
-            "county": "Cambridge",
-            "household_size": 2,
-            "household_members": [
-                {
-                    "relationship": "headOfHousehold",
-                    "age": 42,
-                    "has_income": true,
-                    "income_streams": [{"type": "wages", "amount": 2500.00, "frequency": "monthly"}],
-                    "insurance": {"none": true},
-                },
-                {
-                    "relationship": "child",
-                    "age": 19,
-                    "has_income": false,
-                    "income_streams": [],
-                    "insurance": {"none": true},
-                },
-            ],
-            "expenses": [],
+    "expected_results": {"program_name": "ma_cmsp", "eligible": false}
+  },
+  {
+    "notes": "MA CMSP - Scenario 7 - Ineligible: Child has private insurance",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02116",
+      "county": "Boston",
+      "household_size": 2,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 38,
+          "has_income": true,
+          "income_streams": [{"type": "wages", "amount": 5000.00, "frequency": "monthly"}],
+          "insurance": {"none": false, "private": true}
         },
-        "expected_results": {"program_name": "ma_cmsp", "eligible": false},
+        {
+          "relationship": "child",
+          "age": 12,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {"none": false, "private": true}
+        }
+      ],
+      "expenses": []
     },
-    {
-        "notes": "MA CMSP - Scenario 9 - Ineligible: No children in household (adult-only)",
-        "household": {
-            "white_label": "ma",
-            "is_test": true,
-            "agree_to_tos": true,
-            "is_13_or_older": true,
-            "zipcode": "02139",
-            "county": "Cambridge",
-            "household_size": 1,
-            "household_members": [
-                {
-                    "relationship": "headOfHousehold",
-                    "age": 35,
-                    "has_income": true,
-                    "income_streams": [{"type": "wages", "amount": 2000.00, "frequency": "monthly"}],
-                    "insurance": {"none": true},
-                }
-            ],
-            "expenses": [],
+    "expected_results": {"program_name": "ma_cmsp", "eligible": false}
+  },
+  {
+    "notes": "MA CMSP - Scenario 8 - Ineligible: Child age 19 (age cutoff enforced)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 2,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 42,
+          "has_income": true,
+          "income_streams": [{"type": "wages", "amount": 2500.00, "frequency": "monthly"}],
+          "insurance": {"none": true}
         },
-        "expected_results": {"program_name": "ma_cmsp", "eligible": false},
+        {
+          "relationship": "child",
+          "age": 19,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {"none": true}
+        }
+      ],
+      "expenses": []
     },
-    {
-        "notes": "MA CMSP - Scenario 10 - Ineligible: Child has employer insurance (covered under parent's plan)",
-        "household": {
-            "white_label": "ma",
-            "is_test": true,
-            "agree_to_tos": true,
-            "is_13_or_older": true,
-            "zipcode": "02116",
-            "county": "Boston",
-            "household_size": 2,
-            "household_members": [
-                {
-                    "relationship": "headOfHousehold",
-                    "age": 36,
-                    "has_income": true,
-                    "income_streams": [{"type": "wages", "amount": 4000.00, "frequency": "monthly"}],
-                    "insurance": {"none": false, "employer": true},
-                },
-                {
-                    "relationship": "child",
-                    "age": 7,
-                    "has_income": false,
-                    "income_streams": [],
-                    "insurance": {"none": false, "employer": true},
-                },
-            ],
-            "expenses": [],
+    "expected_results": {"program_name": "ma_cmsp", "eligible": false}
+  },
+  {
+    "notes": "MA CMSP - Scenario 9 - Ineligible: No children in household (adult-only)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [{"type": "wages", "amount": 2000.00, "frequency": "monthly"}],
+          "insurance": {"none": true}
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {"program_name": "ma_cmsp", "eligible": false}
+  },
+  {
+    "notes": "MA CMSP - Scenario 10 - Ineligible: Child has employer insurance (covered under parent's plan)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02116",
+      "county": "Boston",
+      "household_size": 2,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 36,
+          "has_income": true,
+          "income_streams": [{"type": "wages", "amount": 4000.00, "frequency": "monthly"}],
+          "insurance": {"none": false, "employer": true}
         },
-        "expected_results": {"program_name": "ma_cmsp", "eligible": false},
+        {
+          "relationship": "child",
+          "age": 7,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {"none": false, "employer": true}
+        }
+      ],
+      "expenses": []
     },
+    "expected_results": {"program_name": "ma_cmsp", "eligible": false}
+  }
 ]
