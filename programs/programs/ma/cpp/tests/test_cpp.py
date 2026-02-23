@@ -145,7 +145,7 @@ class TestMaCppMemberEligibility(TestCase):
     def test_scenario1_three_year_old_low_income_eligible(self, mock_hud_client):
         """Scenario 1: 3-year-old Cambridge family well below income limit → Eligible."""
         mock_hud_client.approximate_screen_mtsp_ami.return_value = 80000
-        # $2,000/month = $24,000/year → well below 60% AMI
+        # $2,000/month = $24,000/year → well below 65% AMI
         calculator = self._create_calculator([3], gross_income_yearly=24000)
         eligibility = calculator.eligible()
         self.assertTrue(eligibility.eligible)
