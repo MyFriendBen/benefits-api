@@ -22,7 +22,7 @@ class MaTaxiDiscount(ProgramCalculator):
     member_amount = 50 * 12  # $600/year per eligible person
     eligible_city = "Cambridge"
     min_age = 60
-    dependencies = ["zipcode", "age", "disabled", "visually_impaired", "long_term_disability"]
+    dependencies = ["zipcode", "age"]
 
     def household_eligible(self, e: Eligibility) -> None:
         # Check if user already has this benefit

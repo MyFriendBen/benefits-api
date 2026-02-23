@@ -43,7 +43,7 @@ class TestMaTaxiDiscountCalculator(TestCase):
 
     def test_dependencies_are_defined(self):
         """Test that required dependencies are properly defined."""
-        expected_deps = ["zipcode", "age", "disabled", "visually_impaired", "long_term_disability"]
+        expected_deps = ["zipcode", "age"]
         self.assertEqual(list(MaTaxiDiscount.dependencies), expected_deps)
 
 
