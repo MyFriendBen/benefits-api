@@ -19,6 +19,6 @@
     "warning_message": {
         "external_name": "ma_cmsp_warning",
         "calculator": "_show",
-        "message": "There may be a waiting list to receive CMSP coverage. If your child may also qualify for MassHealth, apply for MassHealth first, as it provides more comprehensive coverage."
+        "message": "There may be a waiting list to receive CMSP coverage. If your child also qualifies for MassHealth, apply for MassHealth first, as it provides more comprehensive coverage."
     }
 }
