@@ -83,8 +83,8 @@ class TestMaCmspEligibility(TestCase):
         Confirms basic eligibility for an uninsured child regardless of income.
         """
         members = [
-            self._make_member(35, insured=True),   # Parent with insurance
-            self._make_member(10, insured=False),   # Uninsured child
+            self._make_member(35, insured=True),  # Parent with insurance
+            self._make_member(10, insured=False),  # Uninsured child
         ]
         calculator = self._create_calculator(members)
         eligibility = calculator.eligible()
@@ -96,8 +96,8 @@ class TestMaCmspEligibility(TestCase):
         CMSP has no income limit — high-income families with uninsured children qualify.
         """
         members = [
-            self._make_member(40, insured=True),    # Parent with employer insurance
-            self._make_member(14, insured=False),   # Uninsured child
+            self._make_member(40, insured=True),  # Parent with employer insurance
+            self._make_member(14, insured=False),  # Uninsured child
         ]
         calculator = self._create_calculator(members)
         eligibility = calculator.eligible()
@@ -109,8 +109,8 @@ class TestMaCmspEligibility(TestCase):
         Confirms youngest children (age 0) are included.
         """
         members = [
-            self._make_member(28, insured=True),    # Parent
-            self._make_member(0, insured=False),    # Uninsured infant
+            self._make_member(28, insured=True),  # Parent
+            self._make_member(0, insured=False),  # Uninsured infant
         ]
         calculator = self._create_calculator(members)
         eligibility = calculator.eligible()
@@ -125,8 +125,8 @@ class TestMaCmspEligibility(TestCase):
         # Citizenship is not a field checked in the calculator; the program
         # simply has no citizenship restriction. An uninsured child qualifies.
         members = [
-            self._make_member(32, insured=True),    # Parent
-            self._make_member(8, insured=False),    # Uninsured undocumented child
+            self._make_member(32, insured=True),  # Parent
+            self._make_member(8, insured=False),  # Uninsured undocumented child
         ]
         calculator = self._create_calculator(members)
         eligibility = calculator.eligible()
@@ -138,9 +138,9 @@ class TestMaCmspEligibility(TestCase):
         Confirms per-child eligibility logic: at least one uninsured child qualifies.
         """
         members = [
-            self._make_member(35, insured=True),    # Parent
-            self._make_member(8, insured=False),    # Uninsured child → eligible
-            self._make_member(12, insured=True),    # Insured child → not eligible member
+            self._make_member(35, insured=True),  # Parent
+            self._make_member(8, insured=False),  # Uninsured child → eligible
+            self._make_member(12, insured=True),  # Insured child → not eligible member
         ]
         calculator = self._create_calculator(members)
         eligibility = calculator.eligible()
@@ -152,7 +152,7 @@ class TestMaCmspEligibility(TestCase):
         Children enrolled in MassHealth are already insured and do not qualify.
         """
         members = [
-            self._make_member(35, insured=True),           # Parent
+            self._make_member(35, insured=True),  # Parent
             self._make_member(10, insured=True, mass_health=True),  # MassHealth child
         ]
         # insurance.none = False means the child is insured
@@ -166,8 +166,8 @@ class TestMaCmspEligibility(TestCase):
         Any insured child is excluded from CMSP.
         """
         members = [
-            self._make_member(38, insured=True),    # Parent
-            self._make_member(12, insured=True),    # Child with private insurance
+            self._make_member(38, insured=True),  # Parent
+            self._make_member(12, insured=True),  # Child with private insurance
         ]
         calculator = self._create_calculator(members)
         eligibility = calculator.eligible()
@@ -179,8 +179,8 @@ class TestMaCmspEligibility(TestCase):
         Confirms the strict under-19 age requirement.
         """
         members = [
-            self._make_member(42, insured=True),    # Parent
-            self._make_member(19, insured=False),   # 19-year-old (too old)
+            self._make_member(42, insured=True),  # Parent
+            self._make_member(19, insured=False),  # 19-year-old (too old)
         ]
         calculator = self._create_calculator(members)
         eligibility = calculator.eligible()
@@ -192,8 +192,8 @@ class TestMaCmspEligibility(TestCase):
         Confirms already-enrolled households are excluded via has_benefit.
         """
         members = [
-            self._make_member(35, insured=True),    # Parent
-            self._make_member(10, insured=False),   # Uninsured child
+            self._make_member(35, insured=True),  # Parent
+            self._make_member(10, insured=False),  # Uninsured child
         ]
         calculator = self._create_calculator(members, has_benefit=True)
         eligibility = calculator.eligible()
@@ -205,7 +205,7 @@ class TestMaCmspEligibility(TestCase):
         CMSP is child-specific; adults without children in the household are excluded.
         """
         members = [
-            self._make_member(35, insured=False),   # Adult, uninsured but not a child
+            self._make_member(35, insured=False),  # Adult, uninsured but not a child
         ]
         calculator = self._create_calculator(members)
         eligibility = calculator.eligible()
@@ -217,8 +217,8 @@ class TestMaCmspEligibility(TestCase):
         Children covered through an employer plan are excluded.
         """
         members = [
-            self._make_member(36, insured=True),    # Parent with employer insurance
-            self._make_member(7, insured=True),     # Child on parent's employer plan
+            self._make_member(36, insured=True),  # Parent with employer insurance
+            self._make_member(7, insured=True),  # Child on parent's employer plan
         ]
         calculator = self._create_calculator(members)
         eligibility = calculator.eligible()
@@ -227,8 +227,8 @@ class TestMaCmspEligibility(TestCase):
     def test_child_age_18_is_eligible(self):
         """Child age 18 is under 19 and should qualify."""
         members = [
-            self._make_member(40, insured=True),    # Parent
-            self._make_member(18, insured=False),   # 18-year-old
+            self._make_member(40, insured=True),  # Parent
+            self._make_member(18, insured=False),  # 18-year-old
         ]
         calculator = self._create_calculator(members)
         eligibility = calculator.eligible()
@@ -261,8 +261,8 @@ class TestMaCmspValue(TestCase):
     def test_value_is_239_for_one_eligible_child(self):
         """One eligible uninsured child → value = $239/month."""
         members = [
-            self._make_member(35, insured=True),    # Parent
-            self._make_member(10, insured=False),   # Uninsured child
+            self._make_member(35, insured=True),  # Parent
+            self._make_member(10, insured=False),  # Uninsured child
         ]
         calculator = self._create_calculator(members)
         eligibility = calculator.eligible()
@@ -272,9 +272,9 @@ class TestMaCmspValue(TestCase):
     def test_value_is_478_for_two_eligible_children(self):
         """Two eligible uninsured children → value = $478/month."""
         members = [
-            self._make_member(35, insured=True),    # Parent
-            self._make_member(8, insured=False),    # Uninsured child 1
-            self._make_member(12, insured=False),   # Uninsured child 2
+            self._make_member(35, insured=True),  # Parent
+            self._make_member(8, insured=False),  # Uninsured child 1
+            self._make_member(12, insured=False),  # Uninsured child 2
         ]
         calculator = self._create_calculator(members)
         eligibility = calculator.eligible()
@@ -284,9 +284,9 @@ class TestMaCmspValue(TestCase):
     def test_value_counts_only_uninsured_children(self):
         """Mixed household: only the uninsured child counts toward value."""
         members = [
-            self._make_member(35, insured=True),    # Parent
-            self._make_member(8, insured=False),    # Uninsured child → $239
-            self._make_member(12, insured=True),    # Insured child → $0
+            self._make_member(35, insured=True),  # Parent
+            self._make_member(8, insured=False),  # Uninsured child → $239
+            self._make_member(12, insured=True),  # Insured child → $0
         ]
         calculator = self._create_calculator(members)
         eligibility = calculator.eligible()
@@ -296,8 +296,8 @@ class TestMaCmspValue(TestCase):
     def test_value_is_zero_when_ineligible(self):
         """Already enrolled household → value = $0."""
         members = [
-            self._make_member(35, insured=True),    # Parent
-            self._make_member(10, insured=False),   # Uninsured child
+            self._make_member(35, insured=True),  # Parent
+            self._make_member(10, insured=False),  # Uninsured child
         ]
         calculator = self._create_calculator(members, has_benefit=True)
         eligibility = calculator.eligible()
