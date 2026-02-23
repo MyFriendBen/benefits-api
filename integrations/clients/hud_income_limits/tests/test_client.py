@@ -427,9 +427,7 @@ class TestHudIncomeClientApproximate(HudClientTestBase):
 
         middlesex_counties = [{"county_name": "Middlesex County", "fips_code": "25017"}]
         with self.mock_api_responses(client, middlesex_counties, self.mock_mtsp_response) as mock_api:
-            result = client.approximate_screen_mtsp_ami(
-                self.screen, "65%", "2025", county_override="Middlesex"
-            )
+            result = client.approximate_screen_mtsp_ami(self.screen, "65%", "2025", county_override="Middlesex")
             self.assertEqual(result, 84120)
             first_call_endpoint = mock_api.call_args_list[0][0][0]
             self.assertIn("listCounties", first_call_endpoint)
