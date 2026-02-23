@@ -43,7 +43,7 @@ class TestMaTaxiDiscountCalculator(TestCase):
 
     def test_dependencies_are_defined(self):
         """Test that required dependencies are properly defined."""
-        expected_deps = ["zipcode", "age"]
+        expected_deps = ["zipcode", "age", "disabled", "visually_impaired", "long_term_disability"]
         self.assertEqual(list(MaTaxiDiscount.dependencies), expected_deps)
 
 
@@ -77,8 +77,8 @@ class TestMaTaxiDiscountLocationEligibility(TestCase):
         member_eligibility = MemberEligibility(mock_member)
         return calculator, member_eligibility
 
-    def test_cambridge_resident_age_60_passes(self):
-        """Test that Cambridge residents age 60+ pass eligibility."""
+    def test_cambridge_resident_age_65_passes(self):
+        """Test that Cambridge residents age 60+ pass eligibility (age=65 representative)."""
         calculator, member_eligibility = self._create_calculator("Cambridge", age=65)
 
         household_eligibility = Eligibility()

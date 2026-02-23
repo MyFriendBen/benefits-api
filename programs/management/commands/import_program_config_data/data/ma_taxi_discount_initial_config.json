@@ -1,42 +1,39 @@
 {
     "white_label": {"code": "ma"},
     "program_category": {
-        "external_name": "ma_transportation",
-        "name": "Transportation",
-        "icon": "transportation"
+        "external_name": "ma_transportation"
     },
     "program": {
         "name_abbreviated": "ma_taxi_discount",
-        "year": "2025",
+        "year": "2026",
         "legal_status_required": ["citizen", "gc_5plus", "gc_5less", "refugee", "otherWithWorkPermission", "non_citizen"],
         "name": "Cambridge Taxi Discount Coupon Program",
         "description_short": "Discounted taxi coupons for Cambridge seniors and people with disabilities",
-        "description": "The Cambridge Taxi Discount Coupon Program provides $50/month in taxi discount coupons to eligible Cambridge residents.\n\nTo qualify, you must:\n- Be a Cambridge resident\n- Be age 60 or older, OR have a disability\n\nNote: You must register before receiving coupons. Coupon supply and distribution schedules may vary.",
+        "description": "The Cambridge Taxi Discount Coupon Program provides taxi discount coupons to eligible Cambridge residents.\n\nTo qualify, you must:\n- Be a Cambridge resident\n- Be age 60 or older, OR have a disability\n\nNote: You must register before receiving coupons. Coupon supply and distribution schedules may vary.",
         "learn_more_link": "https://www.cambridgema.gov/services/cambridgetaxidiscountcouponprogram",
         "apply_button_link": "https://www.cambridgema.gov/services/cambridgetaxidiscountcouponprogram",
-        "apply_button_description": "Call CCPD (under 60 with disability) or Council on Aging (60+) to apply",
+        "apply_button_description": "",
         "estimated_application_time": "5-15 minutes",
-        "estimated_value": "$600/year",
+        "estimated_value": "",
         "website_description": "Discounted taxi coupons for eligible Cambridge seniors and people with disabilities",
         "low_confidence": false
     },
-    "warning_message": {
-        "external_name": "ma_taxi_discount_warning",
-        "calculator": "_show",
-        "message": "You must register before receiving coupons. Coupon supply and distribution schedules may vary."
-    },
     "documents": [
         {
-            "external_name": "ma_cambridge_residency",
-            "text": "Proof of Cambridge residency (lease, utility bill)",
-            "link_url": "",
-            "link_text": ""
+            "external_name": "ma_cambridge_residency"
         },
         {
-            "external_name": "ma_age_or_disability_proof",
-            "text": "Proof of age (60+) or disability documentation (if under 60)",
-            "link_url": "",
-            "link_text": ""
+            "external_name": "ma_age_or_disability_proof"
+        }
+    ],
+    "navigators": [
+        {
+            "external_name": "cambridge_commission_for_persons_with_disabilities",
+            "name": "Cambridge Commission for Persons with Disabilities",
+            "email": "",
+            "description": "The Cambridge Commission for Persons with Disabilities can help you apply for the Cambridge Taxi Discount Coupon Program.",
+            "assistance_link": "https://www.cambridgema.gov/Departments/commissionforpersonswithdisabilities",
+            "phone_number": "617-349-4692"
         }
     ]
 }

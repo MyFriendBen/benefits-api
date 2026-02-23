@@ -6,7 +6,7 @@ class MaTaxiDiscount(ProgramCalculator):
     """
     Cambridge Taxi Discount Coupon Program
 
-    Provides $50/month in taxi discount coupons to eligible Cambridge residents.
+    Provides taxi discount coupons to eligible Cambridge residents.
 
     Eligibility requirements that can be verified:
     - Cambridge resident (city residency via county field)
@@ -16,17 +16,13 @@ class MaTaxiDiscount(ProgramCalculator):
     - Registration required before receiving coupons
     - Formal disability documentation required if under 60 (verified at registration)
 
-    Data gap: Disability verification for under-60 applicants happens at registration,
-    not in the screener. We use has_disability() as a proxy.
-
-    Value: $50/month ($600/year) in taxi discount coupons per eligible person.
     Source: https://www.cambridgema.gov/services/cambridgetaxidiscountcouponprogram
     """
 
     member_amount = 50 * 12  # $600/year per eligible person
     eligible_city = "Cambridge"
     min_age = 60
-    dependencies = ["zipcode", "age"]
+    dependencies = ["zipcode", "age", "disabled", "visually_impaired", "long_term_disability"]
 
     def household_eligible(self, e: Eligibility) -> None:
         # Check if user already has this benefit
