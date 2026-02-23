@@ -1363,6 +1363,16 @@ class MaConfigurationData(ConfigurationData):
                         "_default_message": "First-time homebuyer assistance for Cambridge residents",
                     },
                 },
+                "ma_middle_income_rental": {
+                    "name": {
+                        "_label": "housingAndUtilities.ma_middle_income_rental",
+                        "_default_message": "Middle-Income Rental Program: ",
+                    },
+                    "description": {
+                        "_label": "housingAndUtilities.ma_middle_income_rental_desc",
+                        "_default_message": "Income-restricted rental apartments in Cambridge",
+                    },
+                },
                 "section_8": {
                     "name": {
                         "_label": "housingAndUtilities.section_8",

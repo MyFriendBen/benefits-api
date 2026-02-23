@@ -235,6 +235,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             "has_ma_dhsp_afterschool",
             "has_ma_door_to_door",
             "has_ma_cpp",
+            "has_ma_middle_income_rental",
             "has_head_start",
             "has_early_head_start",
             "has_co_andso",
