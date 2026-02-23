@@ -6,7 +6,6 @@ requiring actual API credentials or network calls.
 """
 
 import copy
-import pytest
 import requests
 from contextlib import contextmanager
 from typing import Any
@@ -352,6 +351,88 @@ class TestHudIncomeClientStandardIL(HudClientTestBase):
         with self.mock_api_responses(client, self.mock_counties_response, incomplete_data):
             with self.assertRaisesRegex(HudIncomeClientError, r"No 80% AMI data"):
                 client.get_screen_il_ami(self.screen, "80%", "2025")
+
+
+class TestHudIncomeClientApproximate(HudClientTestBase):
+    """Test approximate_screen_mtsp_ami linear interpolation method."""
+
+    def setUp(self):
+        super().setUp()
+
+        # Mock MTSP response with 60% and 70% tiers for Cook County, HH size 4
+        self.mock_mtsp_response = {
+            "data": {
+                "60percent": {"il60_p4": 79440},
+                "70percent": {"il70_p4": 88800},
+                "median_income": 90700,
+            }
+        }
+
+    def test_65_percent_returns_midpoint_of_60_and_70(self) -> None:
+        """65% AMI is linearly interpolated as (79440 + 88800) // 2 = 84120."""
+        client = HudIncomeClient(api_token="test_token")
+
+        with self.mock_api_responses(client, self.mock_counties_response, self.mock_mtsp_response):
+            result = client.approximate_screen_mtsp_ami(self.screen, "65%", "2025")
+            self.assertEqual(result, 84120)
+
+    def test_exact_tier_returns_value_without_second_api_call(self) -> None:
+        """When target is exactly on a supported tier, only one API call is needed."""
+        client = HudIncomeClient(api_token="test_token")
+
+        exact_response = {"data": {"60percent": {"il60_p4": 79440}, "median_income": 90700}}
+        with self.mock_api_responses(client, self.mock_counties_response, exact_response) as mock_api:
+            result = client.approximate_screen_mtsp_ami(self.screen, "60%", "2025")
+            self.assertEqual(result, 79440)
+            # Only one MTSP data call (no second tier needed)
+            self.assertEqual(mock_api.call_count, 2)  # counties + one MTSP fetch
+
+    def test_non_midpoint_interpolation(self) -> None:
+        """63% AMI is 30% of the way from 60% to 70%: 79440 + 0.3 * (88800 - 79440) = 82248."""
+        client = HudIncomeClient(api_token="test_token")
+
+        with self.mock_api_responses(client, self.mock_counties_response, self.mock_mtsp_response):
+            result = client.approximate_screen_mtsp_ami(self.screen, "63%", "2025")
+            self.assertEqual(result, int(79440 + 0.3 * (88800 - 79440)))
+
+    def test_integer_target_accepted(self) -> None:
+        """Integer target (65) is accepted as well as string ("65%")."""
+        client = HudIncomeClient(api_token="test_token")
+
+        with self.mock_api_responses(client, self.mock_counties_response, self.mock_mtsp_response):
+            result = client.approximate_screen_mtsp_ami(self.screen, 65, "2025")
+            self.assertEqual(result, 84120)
+
+    def test_out_of_range_raises_error(self) -> None:
+        """Targets outside [20, 100] raise HudIncomeClientError."""
+        client = HudIncomeClient(api_token="test_token")
+
+        with self.assertRaisesRegex(HudIncomeClientError, r"outside the supported MTSP range"):
+            client.approximate_screen_mtsp_ami(self.screen, "10%", "2025")
+
+        with self.assertRaisesRegex(HudIncomeClientError, r"outside the supported MTSP range"):
+            client.approximate_screen_mtsp_ami(self.screen, "105%", "2025")
+
+    def test_propagates_hud_api_error(self) -> None:
+        """HudIncomeClientError from the underlying API call propagates unchanged."""
+        client = HudIncomeClient(api_token="test_token")
+
+        with self.mock_api_responses(client, []):  # empty counties → county not found
+            with self.assertRaises(HudIncomeClientError):
+                client.approximate_screen_mtsp_ami(self.screen, "65%", "2025")
+
+    def test_uses_county_override(self) -> None:
+        """county_override is forwarded to the underlying get_screen_mtsp_ami calls."""
+        client = HudIncomeClient(api_token="test_token")
+
+        middlesex_counties = [{"county_name": "Middlesex County", "fips_code": "25017"}]
+        with self.mock_api_responses(client, middlesex_counties, self.mock_mtsp_response) as mock_api:
+            result = client.approximate_screen_mtsp_ami(
+                self.screen, "65%", "2025", county_override="Middlesex"
+            )
+            self.assertEqual(result, 84120)
+            first_call_endpoint = mock_api.call_args_list[0][0][0]
+            self.assertIn("listCounties", first_call_endpoint)
 
 
 class TestHudIncomeClientValidation(HudClientTestBase):
