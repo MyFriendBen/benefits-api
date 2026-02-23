@@ -9,7 +9,6 @@ including:
 - No citizenship requirement
 - Insurance status exclusion (already insured children)
 - Age cutoff at 19
-- has_benefit exclusion (already enrolled households)
 - Per-child value calculation
 - Multi-child household scenarios
 """
@@ -38,10 +37,6 @@ class TestMaCmspCalculator(TestCase):
         """Test that member_amount is $239/month per eligible uninsured child."""
         self.assertEqual(MaCmsp.member_amount, 239)
 
-    def test_low_confidence_is_true(self):
-        """Test that low_confidence is True (cannot verify true MassHealth ineligibility)."""
-        self.assertTrue(MaCmsp.low_confidence)
-
     def test_dependencies_are_defined(self):
         """Test that required dependencies are properly defined."""
         self.assertIn("age", MaCmsp.dependencies)
@@ -66,14 +61,9 @@ class TestMaCmspEligibility(TestCase):
         member.insurance.mass_health = mass_health
         return member
 
-    def _create_calculator(
-        self,
-        members: list,
-        has_benefit: bool = False,
-    ) -> MaCmsp:
+    def _create_calculator(self, members: list) -> MaCmsp:
         """Helper to create a calculator with mocked screen."""
         mock_screen = Mock()
-        mock_screen.has_benefit = Mock(return_value=has_benefit)
         mock_screen.household_members.all.return_value = members
         return MaCmsp(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
@@ -186,21 +176,8 @@ class TestMaCmspEligibility(TestCase):
         eligibility = calculator.eligible()
         self.assertFalse(eligibility.eligible)
 
-    def test_scenario9_already_enrolled_in_cmsp_ineligible(self):
-        """Scenario 9: Household already enrolled in CMSP → Not eligible.
-
-        Confirms already-enrolled households are excluded via has_benefit.
-        """
-        members = [
-            self._make_member(35, insured=True),  # Parent
-            self._make_member(10, insured=False),  # Uninsured child
-        ]
-        calculator = self._create_calculator(members, has_benefit=True)
-        eligibility = calculator.eligible()
-        self.assertFalse(eligibility.eligible)
-
-    def test_scenario10_no_children_adult_only_ineligible(self):
-        """Scenario 10: Adult-only household → Not eligible.
+    def test_scenario9_no_children_adult_only_ineligible(self):
+        """Scenario 9: Adult-only household → Not eligible.
 
         CMSP is child-specific; adults without children in the household are excluded.
         """
@@ -211,8 +188,8 @@ class TestMaCmspEligibility(TestCase):
         eligibility = calculator.eligible()
         self.assertFalse(eligibility.eligible)
 
-    def test_scenario11_child_has_employer_insurance_ineligible(self):
-        """Scenario 11: Child covered under employer plan → Not eligible.
+    def test_scenario10_child_has_employer_insurance_ineligible(self):
+        """Scenario 10: Child covered under employer plan → Not eligible.
 
         Children covered through an employer plan are excluded.
         """
@@ -252,9 +229,8 @@ class TestMaCmspValue(TestCase):
         member.insurance.none = not insured
         return member
 
-    def _create_calculator(self, members: list, has_benefit: bool = False) -> MaCmsp:
+    def _create_calculator(self, members: list) -> MaCmsp:
         mock_screen = Mock()
-        mock_screen.has_benefit = Mock(return_value=has_benefit)
         mock_screen.household_members.all.return_value = members
         return MaCmsp(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
@@ -292,14 +268,3 @@ class TestMaCmspValue(TestCase):
         eligibility = calculator.eligible()
         calculator.value(eligibility)
         self.assertEqual(eligibility.value, 239)
-
-    def test_value_is_zero_when_ineligible(self):
-        """Already enrolled household → value = $0."""
-        members = [
-            self._make_member(35, insured=True),  # Parent
-            self._make_member(10, insured=False),  # Uninsured child
-        ]
-        calculator = self._create_calculator(members, has_benefit=True)
-        eligibility = calculator.eligible()
-        calculator.value(eligibility)
-        self.assertEqual(eligibility.value, 0)

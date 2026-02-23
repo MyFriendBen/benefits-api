@@ -1413,16 +1413,6 @@ class MaConfigurationData(ConfigurationData):
                         "_default_message": "Health insurance marketplace premium tax credit",
                     },
                 },
-                "ma_cmsp": {
-                    "name": {
-                        "_label": "healthCareBenefits.ma_cmsp",
-                        "_default_message": "Children's Medical Security Plan (CMSP): ",
-                    },
-                    "description": {
-                        "_label": "healthCareBenefits.ma_cmsp_desc",
-                        "_default_message": "Low-cost health coverage for uninsured MA children under 19",
-                    },
-                },
             },
             "category_name": {"_label": "healthCare", "_default_message": "Health Care"},
         },

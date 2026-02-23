@@ -131,7 +131,6 @@ class Screen(models.Model):
     has_ma_dhsp_afterschool = models.BooleanField(default=False, blank=True, null=True)
     has_ma_door_to_door = models.BooleanField(default=False, blank=True, null=True)
     has_ma_cpp = models.BooleanField(default=False, blank=True, null=True)
-    has_ma_cmsp = models.BooleanField(default=False, blank=True, null=True)
     has_head_start = models.BooleanField(default=False, blank=True, null=True)
     has_early_head_start = models.BooleanField(default=False, blank=True, null=True)
     has_co_andso = models.BooleanField(default=False, blank=True, null=True)
@@ -504,7 +503,6 @@ class Screen(models.Model):
             "ma_dhsp_afterschool": self.has_ma_dhsp_afterschool,
             "ma_door_to_door": self.has_ma_door_to_door,
             "ma_cpp": self.has_ma_cpp,
-            "ma_cmsp": self.has_ma_cmsp,
             "ma_tafdc": self.has_tanf,
             "ma_mass_health": self.has_medicaid or self.has_medicaid_hi,
             "ma_head_start": self.has_head_start,
