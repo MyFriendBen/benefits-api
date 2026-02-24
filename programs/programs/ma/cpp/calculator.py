@@ -48,7 +48,6 @@ class MaCpp(ProgramCalculator):
         is_preschool_age = self.min_child_age <= member.age <= self.max_child_age
         e.condition(is_preschool_age)
 
-        # Foster care children receive priority enrollment and bypass the income restriction.
         # 3-year-olds have an income restriction (≤65% AMI) unless they are foster children.
         # 4-year-olds and foster children have no income restriction.
         is_foster_child = member.relationship == "fosterChild"
