@@ -248,15 +248,21 @@ class Command(TranslationImportMixin, BaseCommand):
 
         # FPL year
         if fpl_data := config.get("fpl"):
-            year = fpl_data.get("year")
-            period = fpl_data.get("period", year)
-            if year is None:
-                raise CommandError("If 'fpl' is provided, it must include 'year'")
-            fpl_obj, _ = FederalPoveryLimit.objects.get_or_create(year=year, defaults={"period": period})
-            # ensure period is current
-            fpl_obj.period = period
-            fpl_obj.save()
-            need.year = fpl_obj
+            fpl_year = fpl_data["year"]
+            fpl_period = fpl_data.get("period", "annual")
+            fpl, created = FederalPoveryLimit.objects.get_or_create(year=fpl_year)
+            if created:
+                fpl.period = fpl_period
+                fpl.save()
+            elif fpl.period != fpl_period:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"  [FPL] Existing FPL record for year {fpl_year} has period '{fpl.period}', "
+                        f"but config specifies '{fpl_period}'. "
+                        f"The existing period will be kept to avoid affecting other records."
+                    )
+                )
+            need.year = fpl
 
         # Category type (UrgentNeedType)
         category_type = self._get_or_create_category_type(white_label, config["category_type"])
