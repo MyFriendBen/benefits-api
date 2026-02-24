@@ -6,7 +6,8 @@ This directory contains utilities for importing new program configurations into 
 
 ```
 programs/management/commands/
-├── import_program_config.py         # Django management command
+├── import_program_config.py         # Import a single program from JSON
+├── import_all_program_configs.py    # Import all pending programs (like migrations)
 └── import_program_config_data/      # Documentation and data
     ├── README.md                    # This file
     └── data/                        # JSON configuration files
@@ -24,7 +25,84 @@ The `import_program_config` Django management command allows you to create new p
 - Runs all operations in a database transaction (rollback on error)
 - Includes a dry-run mode to preview changes before applying them
 
-## Usage
+## Quick Start
+
+### Import All Pending Programs (Recommended)
+
+Similar to Django migrations, this command imports all program configs that haven't been imported yet:
+
+```bash
+# See what would be imported (dry run)
+python manage.py import_all_program_configs --dry-run
+
+# Import all pending configs
+python manage.py import_all_program_configs
+
+# Check status of all config files
+python manage.py import_all_program_configs --list
+```
+
+### Import a Single Program
+
+```bash
+python manage.py import_program_config programs/management/commands/import_program_config_data/data/<config_file>.json
+```
+
+---
+
+## import_all_program_configs Command
+
+This command works like Django migrations - it tracks which program configs have been imported and only processes new ones.
+
+### Usage
+
+```bash
+# Import all pending program configurations
+python manage.py import_all_program_configs
+
+# Preview what would be imported (no changes made)
+python manage.py import_all_program_configs --dry-run
+
+# Show status of all config files (imported vs pending)
+python manage.py import_all_program_configs --list
+
+# Import a specific file only
+python manage.py import_all_program_configs --file tx_snap_initial_config.json
+```
+
+### How It Works
+
+1. Scans `import_program_config_data/data/` directory for JSON files
+2. Checks the `ProgramConfigImport` database table to see which files have already been imported
+3. Imports only the pending (new) configuration files
+4. Records each successful import in the database
+
+### Options
+
+| Option | Description |
+| -------- | ----------- |
+| `--dry-run` | Show what would be imported without making any changes |
+| `--list` | Display status of all config files (imported or pending) |
+| `--file <filename>` | Import a specific file only (still tracks it) |
+
+### Database Tracking
+
+The command uses a `ProgramConfigImport` model to track imports:
+
+| Field | Description |
+| ------- | ------------- |
+| `filename` | Name of the JSON config file |
+| `program_name` | The `name_abbreviated` of the imported program |
+| `white_label_code` | The white-label code for this program |
+| `imported_at` | Timestamp of when the import occurred |
+
+---
+
+## import_program_config Command
+
+Import a single program from a JSON configuration file.
+
+### Usage
 
 ### Basic Command
 

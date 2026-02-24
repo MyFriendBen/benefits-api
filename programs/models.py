@@ -1834,3 +1834,39 @@ class TranslationOverride(models.Model):
         white_label_name = f"[{self.white_label.name}] " if self.white_label and self.white_label.name else ""
         name = self.external_name if self.external_name is not None else self.calculator
         return f"{white_label_name}{name}"
+
+
+class ProgramConfigImport(models.Model):
+    """
+    Tracks which program configuration JSON files have been imported.
+
+    Similar to Django's migrations table, this model keeps track of which
+    program config files have been successfully imported to avoid re-importing
+    the same configuration.
+    """
+
+    filename = models.CharField(
+        max_length=255,
+        unique=True,
+        help_text="Name of the JSON configuration file (without path)",
+    )
+    program_name = models.CharField(
+        max_length=255,
+        help_text="The name_abbreviated of the program that was created",
+    )
+    white_label_code = models.CharField(
+        max_length=64,
+        help_text="The white label code for this program",
+    )
+    imported_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="When this configuration was imported",
+    )
+
+    class Meta:
+        ordering = ["-imported_at"]
+        verbose_name = "Program Config Import"
+        verbose_name_plural = "Program Config Imports"
+
+    def __str__(self):
+        return f"{self.filename} ({self.program_name}) - {self.imported_at.strftime('%Y-%m-%d %H:%M')}"
