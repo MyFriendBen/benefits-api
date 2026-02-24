@@ -130,6 +130,7 @@ class Screen(models.Model):
     has_ma_homebridge = models.BooleanField(default=False, blank=True, null=True)
     has_ma_dhsp_afterschool = models.BooleanField(default=False, blank=True, null=True)
     has_ma_door_to_door = models.BooleanField(default=False, blank=True, null=True)
+    has_ma_taxi_discount = models.BooleanField(default=False, blank=True, null=True)
     has_ma_cpp = models.BooleanField(default=False, blank=True, null=True)
     has_ma_cmsp = models.BooleanField(default=False, blank=True, null=True)
     has_head_start = models.BooleanField(default=False, blank=True, null=True)
@@ -503,6 +504,7 @@ class Screen(models.Model):
             "ma_homebridge": self.has_ma_homebridge,
             "ma_dhsp_afterschool": self.has_ma_dhsp_afterschool,
             "ma_door_to_door": self.has_ma_door_to_door,
+            "ma_taxi_discount": self.has_ma_taxi_discount,
             "ma_cpp": self.has_ma_cpp,
             "ma_cmsp": self.has_ma_cmsp,
             "ma_tafdc": self.has_tanf,
