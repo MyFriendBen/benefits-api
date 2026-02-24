@@ -296,6 +296,62 @@ class TestMaCppHasBenefit(TestCase):
         self.assertFalse(eligibility.eligible)
 
 
+class TestMaCppFosterCare(TestCase):
+    """Tests for foster care eligibility — foster children bypass the 3yo income restriction."""
+
+    def setUp(self):
+        self.mock_program = Mock()
+        self.mock_data = {}
+        self.mock_missing_deps = Mock()
+        self.mock_missing_deps.has.return_value = False
+
+    def _create_calculator(self, child_age: int, relationship: str, gross_income_yearly: int = 10000):
+        """Helper to create a calculator with a single child of the given age and relationship."""
+        mock_screen = Mock()
+        mock_screen.county = "Cambridge"
+        mock_screen.household_size = 2
+        mock_screen.has_benefit = Mock(return_value=False)
+        mock_screen.calc_gross_income.return_value = gross_income_yearly
+
+        parent = Mock(age=35, relationship="headOfHousehold")
+        child = Mock(age=child_age, relationship=relationship)
+        mock_screen.household_members.all.return_value = [parent, child]
+
+        return MaCpp(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
+
+    @patch("programs.programs.ma.cpp.calculator.hud_client")
+    def test_foster_child_age_3_above_income_limit_is_eligible(self, mock_hud_client):
+        """Foster care child age 3 with income above 65% AMI → Eligible (bypasses income check)."""
+        mock_hud_client.approximate_screen_mtsp_ami.return_value = 84120
+        # $10,000/month = $120,000/year, well above the ~$84,120 interpolated 65% AMI limit
+        calculator = self._create_calculator(child_age=3, relationship="fosterChild", gross_income_yearly=120000)
+        eligibility = calculator.eligible()
+        self.assertTrue(eligibility.eligible)
+
+    @patch("programs.programs.ma.cpp.calculator.hud_client")
+    def test_foster_child_age_3_does_not_call_hud_api(self, mock_hud_client):
+        """HUD API should not be called for a 3-year-old foster child."""
+        calculator = self._create_calculator(child_age=3, relationship="fosterChild", gross_income_yearly=120000)
+        calculator.eligible()
+        mock_hud_client.approximate_screen_mtsp_ami.assert_not_called()
+
+    @patch("programs.programs.ma.cpp.calculator.hud_client")
+    def test_non_foster_child_age_3_above_income_limit_is_ineligible(self, mock_hud_client):
+        """Non-foster child age 3 with income above 65% AMI → Not eligible (income check applies)."""
+        mock_hud_client.approximate_screen_mtsp_ami.return_value = 84120
+        calculator = self._create_calculator(child_age=3, relationship="child", gross_income_yearly=120000)
+        eligibility = calculator.eligible()
+        self.assertFalse(eligibility.eligible)
+
+    @patch("programs.programs.ma.cpp.calculator.hud_client")
+    def test_foster_child_age_4_is_eligible(self, mock_hud_client):
+        """Foster care child age 4 → Eligible (4-year-olds always pass regardless of relation)."""
+        calculator = self._create_calculator(child_age=4, relationship="fosterChild", gross_income_yearly=120000)
+        eligibility = calculator.eligible()
+        self.assertTrue(eligibility.eligible)
+        mock_hud_client.approximate_screen_mtsp_ami.assert_not_called()
+
+
 class TestMaCppValue(TestCase):
     """Tests for benefit value calculation."""
 
