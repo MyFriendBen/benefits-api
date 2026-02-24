@@ -1408,6 +1408,16 @@ class MaConfigurationData(ConfigurationData):
                         "_default_message": "On-demand transportation for Cambridge seniors and people with mobility impairments",
                     },
                 },
+                "ma_taxi_discount": {
+                    "name": {
+                        "_label": "transportationBenefits.ma_taxi_discount",
+                        "_default_message": "Cambridge Taxi Discount Coupon Program: ",
+                    },
+                    "description": {
+                        "_label": "transportationBenefits.ma_taxi_discount_desc",
+                        "_default_message": "Discounted taxi coupons for Cambridge seniors and people with disabilities",
+                    },
+                },
             },
             "category_name": {"_label": "transportation", "_default_message": "Transportation"},
         },

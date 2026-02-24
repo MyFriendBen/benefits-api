@@ -150,7 +150,7 @@
     }
   },
   {
-    "notes": "MA CPP - Scenario 4: Ineligible 3-year-old, income just above 60% MTSP threshold ($79,440/yr) for HH size 2",
+    "notes": "MA CPP - Scenario 4: Ineligible 3-year-old, income above 65% AMI threshold (~$84,120/yr interpolated for HH size 2)",
     "household": {
       "white_label": "ma",
       "is_test": true,
@@ -169,7 +169,7 @@
           "income_streams": [
             {
               "type": "wages",
-              "amount": 6700.00,
+              "amount": 7500.00,
               "frequency": "monthly"
             }
           ],
