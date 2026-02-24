@@ -47,10 +47,10 @@ class MaMiddleIncomeRental(ProgramCalculator):
             ami_100 = hud_client.get_screen_mtsp_ami(
                 self.screen, "100%", self.ami_year, county_override=self.hud_county
             )
-            # HUD MTSP API only provides up to 100% AMI; 120% is derived by multiplying 100% × 1.20
+            # HUD MTSP API only provides up to 100% AMI; 120% is derived by multiplying 100% x 1.20
             ami_max = ami_100 * self.max_ami_percent
             gross_income = self.screen.calc_gross_income("yearly", ["all"])
             income_eligible = ami_min <= gross_income <= ami_max
-            e.condition(income_eligible, messages.income(gross_income, ami_max))
+            e.condition(income_eligible, messages.income_range(gross_income, ami_min, ami_max))
         except HudIncomeClientError:
             e.condition(False, messages.income_limit_unknown())

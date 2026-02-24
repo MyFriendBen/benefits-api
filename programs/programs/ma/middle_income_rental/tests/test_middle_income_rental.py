@@ -80,7 +80,7 @@ class TestMaMiddleIncomeRentalLocationEligibility(TestCase):
     def _mock_ami_values(self, mock_hud_client, ami_80=80000, ami_100=100000):
         """Helper to mock HUD client returning different values for 80% and 100% AMI."""
 
-        def side_effect(screen, percent, year, county_override=None):
+        def side_effect(_screen, percent, _year, **_kwargs):
             if percent == "80%":
                 return ami_80
             elif percent == "100%":
@@ -152,7 +152,7 @@ class TestMaMiddleIncomeRentalIncomeEligibility(TestCase):
     def _mock_ami_values(self, mock_hud_client, ami_80=80000, ami_100=100000):
         """Helper to mock HUD client returning different values for 80% and 100% AMI."""
 
-        def side_effect(screen, percent, year, county_override=None):
+        def side_effect(_screen, percent, _year, **_kwargs):
             if percent == "80%":
                 return ami_80
             elif percent == "100%":
@@ -253,7 +253,7 @@ class TestMaMiddleIncomeRentalAssetEligibility(TestCase):
     def _mock_ami_values(self, mock_hud_client, ami_80=80000, ami_100=100000):
         """Helper to mock HUD client."""
 
-        def side_effect(screen, percent, year, county_override=None):
+        def side_effect(_screen, percent, _year, **_kwargs):
             if percent == "80%":
                 return ami_80
             elif percent == "100%":
@@ -363,7 +363,7 @@ class TestMaMiddleIncomeRentalHasBenefit(TestCase):
     def _mock_ami_values(self, mock_hud_client, ami_80=80000, ami_100=100000):
         """Helper to mock HUD client."""
 
-        def side_effect(screen, percent, year, county_override=None):
+        def side_effect(_screen, percent, _year, **_kwargs):
             if percent == "80%":
                 return ami_80
             elif percent == "100%":
