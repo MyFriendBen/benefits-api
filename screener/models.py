@@ -1,22 +1,38 @@
-from datetime import datetime
-from typing import Optional
+from typing import ClassVar, Optional
+from datetime import date
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
+from django.utils import timezone
 from decimal import Decimal
 import uuid
 from authentication.models import User
 from django.utils.translation import gettext_lazy as _
 from programs.util import Dependencies
 from django.conf import settings
+from .feature_flags import FeatureFlagConfig, WHITELABEL_FEATURE_FLAGS
 
 
 class WhiteLabel(models.Model):
+    FEATURE_FLAGS: ClassVar[dict[str, FeatureFlagConfig]] = WHITELABEL_FEATURE_FLAGS
+
     name = models.CharField(max_length=120, blank=False, null=False)
     code = models.CharField(max_length=32, blank=False, null=False)
     state_code = models.CharField(max_length=8, blank=True, null=True)
     cms_method = models.CharField(max_length=32, blank=True, null=True)
+    feature_flags = models.JSONField(default=dict, blank=True)
 
     def __str__(self):
         return self.name
+
+    def _get_flag_value(self, key: str) -> bool:
+        """Internal: Get flag value with default fallback. Assumes key is valid."""
+        return (self.feature_flags or {}).get(key, self.FEATURE_FLAGS[key].default)
+
+    def has_feature(self, key: str) -> bool:
+        """Check if a feature flag is enabled for this WhiteLabel."""
+        if key not in self.FEATURE_FLAGS:
+            raise KeyError(f"Unknown feature flag: {key}")
+        return self._get_flag_value(key)
 
 
 # The screen is the top most container for all information collected in the
@@ -114,6 +130,9 @@ class Screen(models.Model):
     has_ma_homebridge = models.BooleanField(default=False, blank=True, null=True)
     has_ma_dhsp_afterschool = models.BooleanField(default=False, blank=True, null=True)
     has_ma_door_to_door = models.BooleanField(default=False, blank=True, null=True)
+    has_ma_taxi_discount = models.BooleanField(default=False, blank=True, null=True)
+    has_ma_cpp = models.BooleanField(default=False, blank=True, null=True)
+    has_ma_cmsp = models.BooleanField(default=False, blank=True, null=True)
     has_head_start = models.BooleanField(default=False, blank=True, null=True)
     has_early_head_start = models.BooleanField(default=False, blank=True, null=True)
     has_co_andso = models.BooleanField(default=False, blank=True, null=True)
@@ -154,6 +173,17 @@ class Screen(models.Model):
     @property
     def frozen(self):
         return self.validations.count() > 0
+
+    def get_reference_date(self) -> date:
+        """
+        Get the reference date for age calculations.
+        For frozen screens (with validations), use the earliest validation's created_date
+        to keep ages consistent over time. For non-frozen screens, use current date.
+        """
+        earliest_validation = self.validations.order_by("created_date").first()
+        if earliest_validation and earliest_validation.created_date:
+            return earliest_validation.created_date.date()
+        return timezone.now().date()
 
     def calc_gross_income(self, frequency, types, exclude=[]):
         household_members = self.household_members.all()
@@ -361,7 +391,7 @@ class Screen(models.Model):
         Common Pattern:
             Multiple program variants (e.g., different states or screener types) map to the same field:
             - "snap", "co_snap", "il_snap" → all map to self.has_snap (same real-world benefit)
-            - "leap", "co_energy_calculator_leap" → both map to self.has_leap (same benefit, different flows)
+            - "leap", "cesn_leap" → both map to self.has_leap (same benefit, different flows)
 
         Adding New Mappings:
             1. Ensure the benefit key exists in white_label config's category_benefits (e.g., "leap")
@@ -414,9 +444,8 @@ class Screen(models.Model):
             "il_hbwd": self.has_il_hbwd,
             "il_ccap": self.has_ccap,
             "project_cope": self.has_project_cope,
-            "co_energy_calculator_cope": self.has_project_cope,
+            "cesn_cope": self.has_project_cope,
             "cesn_heap": self.has_cesn_heap,
-            "co_energy_calculator_heap": self.has_cesn_heap,
             "rtdlive": self.has_rtdlive,
             "cccap": self.has_ccap,
             "mydenver": self.has_mydenver,
@@ -428,13 +457,13 @@ class Screen(models.Model):
             "andcs": self.has_andcs,
             "chs": self.has_chs,
             "cpcr": self.has_cpcr,
-            "co_energy_calculator_cpcr": self.has_cpcr,
+            "cesn_cpcr": self.has_cpcr,
             "cdhcs": self.has_cdhcs,
             "dpp": self.has_dpp,
             "ede": self.has_ede,
             "erc": self.has_erc,
             "leap": self.has_leap,
-            "co_energy_calculator_leap": self.has_leap,
+            "cesn_leap": self.has_leap,
             "ma_heap": self.has_ma_heap,
             "il_liheap": self.has_il_liheap,
             "nc_lieap": self.has_nc_lieap,
@@ -454,10 +483,10 @@ class Screen(models.Model):
             "section_8": self.has_section_8,
             "ma_cha": self.has_section_8,
             "cowap": self.has_cowap,
-            "co_energy_calculator_cowap": self.has_cowap,
+            "cesn_cowap": self.has_cowap,
             "ncwap": self.has_ncwap,
             "ubp": self.has_ubp,
-            "co_energy_calculator_ubp": self.has_ubp,
+            "cesn_ubp": self.has_ubp,
             "medicare": self.has_medicare_hi,
             "chp": self.has_chp or self.has_chp_hi,
             "va": self.has_va,
@@ -475,6 +504,9 @@ class Screen(models.Model):
             "ma_homebridge": self.has_ma_homebridge,
             "ma_dhsp_afterschool": self.has_ma_dhsp_afterschool,
             "ma_door_to_door": self.has_ma_door_to_door,
+            "ma_taxi_discount": self.has_ma_taxi_discount,
+            "ma_cpp": self.has_ma_cpp,
+            "ma_cmsp": self.has_ma_cmsp,
             "ma_tafdc": self.has_tanf,
             "ma_mass_health": self.has_medicaid or self.has_medicaid_hi,
             "ma_head_start": self.has_head_start,
@@ -572,6 +604,9 @@ class HouseholdMember(models.Model):
     birth_year_month = models.DateField(blank=True, null=True)
     student = models.BooleanField(blank=True, null=True)
     student_full_time = models.BooleanField(blank=True, null=True)
+    student_job_training_program = models.BooleanField(blank=True, null=True)
+    student_has_work_study = models.BooleanField(blank=True, null=True)
+    student_works_20_plus_hrs = models.BooleanField(blank=True, null=True)
     pregnant = models.BooleanField(blank=True, null=True)
     unemployed = models.BooleanField(blank=True, null=True)
     worked_in_last_18_mos = models.BooleanField(blank=True, null=True)
@@ -706,21 +741,25 @@ class HouseholdMember(models.Model):
         if self.birth_year_month is None:
             return self.age
 
-        return self.age_from_date(self.birth_year_month)
+        reference_date = self.screen.get_reference_date()
+        return self.age_from_date(self.birth_year_month, reference_date)
 
     @staticmethod
-    def age_from_date(birth_year_month: datetime) -> int:
-        today = datetime.now()
+    def age_from_date(birth_year_month: date, reference_date: Optional[date] = None) -> int:
+        today = reference_date if reference_date else timezone.now()
 
         if today.month >= birth_year_month.month:
             return today.year - birth_year_month.year
 
         return today.year - birth_year_month.year - 1
 
-    def fraction_age(self) -> float:
-        today = datetime.now()
+    def fraction_age(self) -> Optional[float]:
+        if self.birth_year_month is None:
+            return float(self.age) if self.age is not None else None
 
-        current_year = today.year + today.month / 12
+        reference_date = self.screen.get_reference_date()
+
+        current_year = reference_date.year + reference_date.month / 12
         birth_year = self.birth_year_month.year + self.birth_year_month.month / 12
 
         return current_year - birth_year
@@ -962,6 +1001,38 @@ class EligibilitySnapshot(models.Model):
     submission_date = models.DateTimeField(auto_now=True)
     is_batch = models.BooleanField(default=False)
     had_error = models.BooleanField(default=False)
+
+
+class NPSScore(models.Model):
+    class Variant(models.TextChoices):
+        FLOATING = "floating", "Floating Widget"
+        INLINE = "inline", "Inline Section"
+
+    eligibility_snapshot = models.OneToOneField(EligibilitySnapshot, related_name="nps_score", on_delete=models.CASCADE)
+    score = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(10)])
+    variant = models.CharField(
+        max_length=20,
+        choices=Variant.choices,
+        blank=True,
+        null=True,
+    )
+    score_reason = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(score__gte=1) & models.Q(score__lte=10),
+                name="nps_score_range",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["-created_at"], name="nps_created_at_idx"),
+            models.Index(fields=["variant"], name="nps_variant_idx"),
+        ]
+
+    def __str__(self):
+        return f"NPS {self.score} for snapshot {self.eligibility_snapshot_id}"
 
 
 # Eligibility results for each specific program per screen. These are

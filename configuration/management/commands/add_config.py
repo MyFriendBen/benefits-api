@@ -5,6 +5,7 @@ from configuration.models import (
     Configuration,
 )
 from configuration.white_labels import white_label_config
+from screener.models import NPSScore
 import argparse
 
 
@@ -50,6 +51,29 @@ class Command(BaseCommand):
                 name="referrer_data",
                 white_label=white_label,
                 defaults={"data": WhiteLabelData.referrer_data, "active": True},
+            )
+
+            # Save experiments to database (with validation)
+            experiments_data = WhiteLabelData.experiments
+
+            # Validate npsVariant experiment config against model choices
+            if "npsVariant" in experiments_data:
+                valid_variants = [choice[0] for choice in NPSScore.Variant.choices]
+                config_variants = experiments_data["npsVariant"].get("variants", [])
+                invalid = set(config_variants) - set(valid_variants)
+                if invalid:
+                    self.stdout.write(
+                        self.style.ERROR(
+                            f"Invalid NPS variants in {white_label_code} experiments config: {invalid}. "
+                            f"Valid options: {valid_variants}"
+                        )
+                    )
+                    raise ValueError(f"Invalid NPS variants: {invalid}")
+
+            Configuration.objects.update_or_create(
+                name="experiments",
+                white_label=white_label,
+                defaults={"data": experiments_data, "active": True},
             )
 
             # Save footer_data to database
@@ -174,11 +198,25 @@ class Command(BaseCommand):
                 defaults={"data": WhiteLabelData.frequency_options, "active": True},
             )
 
+            # Save expense_categories to database
+            Configuration.objects.update_or_create(
+                name="expense_categories",
+                white_label=white_label,
+                defaults={"data": WhiteLabelData.expense_categories, "active": True},
+            )
+
             # Save expense_options to database
             Configuration.objects.update_or_create(
                 name="expense_options",
                 white_label=white_label,
                 defaults={"data": WhiteLabelData.expense_options, "active": True},
+            )
+
+            # Save expense_options_by_category to database
+            Configuration.objects.update_or_create(
+                name="expense_options_by_category",
+                white_label=white_label,
+                defaults={"data": WhiteLabelData.expense_options_by_category, "active": True},
             )
 
             # Save condition_options to database

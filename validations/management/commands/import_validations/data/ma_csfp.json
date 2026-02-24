@@ -1,0 +1,375 @@
+[
+  {
+    "notes": "MA CSFP - Eligible: 65-year-old in Suffolk County with income below 150% FPL",
+    "household": {
+      "white_label": "ma",
+      "zipcode": "02101",
+      "county": "Suffolk",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 65,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 1500, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ma_csfp",
+      "eligible": true,
+      "value": 330
+    }
+  },
+  {
+    "notes": "MA CSFP - Ineligible: Age 59 (under minimum age of 60)",
+    "household": {
+      "white_label": "ma",
+      "zipcode": "02101",
+      "county": "Suffolk",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 59,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 1500, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ma_csfp",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA CSFP - Ineligible: Non-eligible county (Berkshire not in eligible list)",
+    "household": {
+      "white_label": "ma",
+      "zipcode": "01201",
+      "county": "Berkshire",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 70,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 1200, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ma_csfp",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA CSFP - Ineligible: Income above 150% FPL ($2,000/mo exceeds $1,956/mo limit for 1 person)",
+    "household": {
+      "white_label": "ma",
+      "zipcode": "02101",
+      "county": "Suffolk",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 65,
+          "has_income": true,
+          "income_streams": [
+            { "type": "pension", "amount": 2000, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ma_csfp",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA CSFP - Eligible: Two-person household with one senior 60+ in Middlesex County",
+    "household": {
+      "white_label": "ma",
+      "zipcode": "02139",
+      "county": "Middlesex",
+      "household_size": 2,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 62,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 1800, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "spouse",
+          "age": 55,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ma_csfp",
+      "eligible": true,
+      "value": 330
+    }
+  },
+  {
+    "notes": "MA CSFP - Eligible: Two seniors 60+ in household (both qualify for $330 each)",
+    "household": {
+      "white_label": "ma",
+      "zipcode": "02101",
+      "county": "Suffolk",
+      "household_size": 2,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 68,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 1200, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "spouse",
+          "age": 65,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 800, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ma_csfp",
+      "eligible": true,
+      "value": 660
+    }
+  },
+  {
+    "notes": "MA CSFP - Ineligible: Already receiving CSFP benefit",
+    "household": {
+      "white_label": "ma",
+      "zipcode": "02101",
+      "county": "Suffolk",
+      "household_size": 1,
+      "has_csfp": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 70,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 1200, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ma_csfp",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA CSFP - Eligible: Weekly income converted to monthly stays under 150% FPL in Worcester County",
+    "household": {
+      "white_label": "ma",
+      "zipcode": "01601",
+      "county": "Worcester",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 63,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 400, "frequency": "weekly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ma_csfp",
+      "eligible": true,
+      "value": 330
+    }
+  },
+  {
+    "notes": "MA CSFP - Eligible: Senior with zero income in Essex County",
+    "household": {
+      "white_label": "ma",
+      "zipcode": "01901",
+      "county": "Essex",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 75,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ma_csfp",
+      "eligible": true,
+      "value": 330
+    }
+  },
+  {
+    "notes": "MA CSFP - Eligible: Senior in Bristol County (eligible county)",
+    "household": {
+      "white_label": "ma",
+      "zipcode": "02702",
+      "county": "Bristol",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 66,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 1400, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ma_csfp",
+      "eligible": true,
+      "value": 330
+    }
+  },
+  {
+    "notes": "MA CSFP - Eligible: Senior in Norfolk County (eligible county)",
+    "household": {
+      "white_label": "ma",
+      "zipcode": "02169",
+      "county": "Norfolk",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 72,
+          "has_income": true,
+          "income_streams": [
+            { "type": "pension", "amount": 1300, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ma_csfp",
+      "eligible": true,
+      "value": 330
+    }
+  },
+  {
+    "notes": "MA CSFP - Eligible: Senior in Plymouth County (eligible county)",
+    "household": {
+      "white_label": "ma",
+      "zipcode": "02360",
+      "county": "Plymouth",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 80,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 1100, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ma_csfp",
+      "eligible": true,
+      "value": 330
+    }
+  },
+  {
+    "notes": "MA CSFP - Ineligible: Non-eligible county (Hampden not in eligible list)",
+    "household": {
+      "white_label": "ma",
+      "zipcode": "01103",
+      "county": "Hampden",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 68,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 1200, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ma_csfp",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA CSFP - Ineligible: Non-eligible county (Franklin not in eligible list)",
+    "household": {
+      "white_label": "ma",
+      "zipcode": "01301",
+      "county": "Franklin",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 65,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 1000, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ma_csfp",
+      "eligible": false
+    }
+  }
+]

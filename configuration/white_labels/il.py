@@ -378,26 +378,6 @@ class IlConfigurationData(ConfigurationData):
         },
     }
 
-    frequency_options = {
-        "weekly": {
-            "_label": "frequencyOptions.weekly",
-            "_default_message": "every week",
-        },
-        "biweekly": {
-            "_label": "frequencyOptions.biweekly",
-            "_default_message": "every 2 weeks",
-        },
-        "semimonthly": {
-            "_label": "frequencyOptions.semimonthly",
-            "_default_message": "twice a month",
-        },
-        "monthly": {
-            "_label": "frequencyOptions.monthly",
-            "_default_message": "every month",
-        },
-        "hourly": {"_label": "frequencyOptions.hourly", "_default_message": "hourly"},
-    }
-
     expense_options = {
         "rent": {"_label": "expenseOptions.rent", "_default_message": "Rent"},
         "telephone": {
@@ -2536,7 +2516,8 @@ class IlConfigurationData(ConfigurationData):
                 "signUpInfo",
             ],
         },
-        "featureFlags": {"default": []},
+        "uiOptions": {"default": []},
+        "featureFlags": {"default": []},  # Deprecated: use uiOptions. Remove as part of MFB-635.
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",

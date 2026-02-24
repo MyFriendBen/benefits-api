@@ -21,7 +21,6 @@ class TestPropertyCreditRebatePension(TestCase):
             relationship="headOfHousehold",
             age=65,
             student=False,
-            student_full_time=False,
             pregnant=False,
             unemployed=False,
             worked_in_last_18_mos=True,

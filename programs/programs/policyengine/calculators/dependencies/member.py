@@ -455,6 +455,14 @@ class PensionIncomeDependency(IncomeDependency):
 
 
 class SocialSecurityIncomeDependency(IncomeDependency):
+    """
+    Social Security benefits (not including SSI).
+
+    Note: SSI (Supplemental Security Income) is a separate needs-based program,
+    not funded by Social Security payroll taxes. It is handled separately via
+    SsiReportedDependency and the Ssi output dependency.
+    """
+
     field = "social_security"
     income_types = ["sSDisability", "sSSurvivor", "sSRetirement", "sSDependent"]
 
@@ -571,8 +579,8 @@ class ReceivesMedicaidDependency(Member):
     field = "receives_medicaid"
 
     def value(self):
-        # Medicaid or CHIP/CHP counts as receiving Medicaid for BCC eligibility purposes
-        return self.member.has_insurance_types(("medicaid", "chp"))
+        # Medicaid, CHIP/CHP, or Family Planning coverage counts as receiving Medicaid
+        return self.member.has_insurance_types(("medicaid", "chp", "family_planning"))
 
 
 class HasBccQualifyingCoverageDependency(Member):

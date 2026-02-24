@@ -97,19 +97,17 @@ class Command(BaseCommand):
 
         # Check if program already exists
         existing_program = Program.objects.filter(name_abbreviated=program_name, white_label=white_label).first()
+        overriding = bool(existing_program and override)
 
-        if existing_program:
-            if override:
-                self._delete_program_and_related(existing_program, config)
-            else:
-                self.stdout.write(
-                    self.style.WARNING(
-                        f"\nProgram '{program_name}' already exists for white label '{white_label_code}' "
-                        f"(ID: {existing_program.id}). Skipping import.\n"
-                        f"Use --override to delete and recreate the program."
-                    )
+        if existing_program and not override:
+            self.stdout.write(
+                self.style.WARNING(
+                    f"\nProgram '{program_name}' already exists for white label '{white_label_code}' "
+                    f"(ID: {existing_program.id}). Skipping import.\n"
+                    f"Use --override to delete and recreate the program."
                 )
-                return
+            )
+            return
 
         if dry_run:
             self._print_dry_run_report(config, white_label_code, program_name)
@@ -118,6 +116,11 @@ class Command(BaseCommand):
         # Wrap all creation logic in a transaction for rollback support
         try:
             with transaction.atomic():
+                # Delete existing program if overriding (inside transaction for proper rollback)
+                if overriding:
+                    self._delete_program_and_related(existing_program, config)
+                    existing_program = None
+
                 self.stdout.write(self.style.SUCCESS(f"\n[Program: {program_name}]"))
                 self.stdout.write(f"White Label: {white_label_code}\n")
 
@@ -148,8 +151,9 @@ class Command(BaseCommand):
                 if "navigators" in config:
                     self._import_navigators(program, config["navigators"])
 
+                action = "recreated" if overriding else "created"
                 self.stdout.write(
-                    self.style.SUCCESS(f"\n✓ Successfully created program: {program_name} (ID: {program.id})\n")
+                    self.style.SUCCESS(f"\n✓ Successfully {action} program: {program_name} (ID: {program.id})\n")
                 )
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"\nError during import: {e}\n" f"All changes have been rolled back."))
@@ -205,6 +209,9 @@ class Command(BaseCommand):
 
         # Skip these fields as they're handled elsewhere
         skip_fields = ["name_abbreviated"]
+
+        # Note: learn_more_link and apply_button_link are handled here because
+        # they are defined as translated fields in the Program model, even though they contain URLs.
 
         translations = {}
         configuration = {}
@@ -448,6 +455,7 @@ class Command(BaseCommand):
             translation_obj = getattr(entity, field_name)
 
             # Update translation
+            self.stdout.write(f"    - {field_name}: {truncate(english_text)}")
             self._update_translation_all_languages(
                 translation_obj, english_text, texts_to_translate, translation_objects
             )

@@ -1,0 +1,29 @@
+{
+  "description": "MFB-617: Update expected values after adding unemployment income to irs_gross_income",
+  "updates": [
+    {
+      "screen_uuid": "c3a09afd-8e0a-4e3a-9d26-df3c46809302",
+      "program_name": "il_federal_eitc",
+      "eligible": true,
+      "value": 2952.00,
+      "notes": "MFB-617: Updated for unemployment in AGI. 3 children, $52,800 AGI triggers phase-out.",
+      "reason": "Unemployment income ($2,400/year) now included in irs_gross_income per 26 USC § 85. Higher AGI increases EITC phase-out."
+    },
+    {
+      "screen_uuid": "c3a09afd-8e0a-4e3a-9d26-df3c46809302",
+      "program_name": "il_eitc",
+      "eligible": true,
+      "value": 590.00,
+      "notes": "MFB-617: 20% of federal EITC ($2,952). Reduced due to unemployment in AGI.",
+      "reason": "IL EITC is 20% of federal EITC. Federal EITC reduced from $3,848 to $2,952."
+    },
+    {
+      "screen_uuid": "c3a09afd-8e0a-4e3a-9d26-df3c46809302",
+      "program_name": "il_ctc",
+      "eligible": true,
+      "value": 118.00,
+      "notes": "MFB-617: 20% of IL EITC ($590). 2 children under 12 qualify.",
+      "reason": "IL CTC is 20% of IL EITC. IL EITC reduced from $769 to $590."
+    }
+  ]
+}

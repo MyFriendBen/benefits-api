@@ -238,6 +238,10 @@ class CoConfigurationData(ConfigurationData):
                 "_label": "incomeOptions.cashAssistance",
                 "_default_message": "Government Cash Assistance (including Colorado Works/TANF)",
             },
+            "cOSDisability": {
+                "_label": "incomeOptions.cOSDisability",
+                "_default_message": "Colorado State Disability Benefits",
+            },
         },
     }
 
@@ -246,6 +250,10 @@ class CoConfigurationData(ConfigurationData):
         "cashAssistance": {
             "_label": "incomeOptions.cashAssistance",
             "_default_message": "Government Cash Assistance (including Colorado Works/TANF)",
+        },
+        "cOSDisability": {
+            "_label": "incomeOptions.cOSDisability",
+            "_default_message": "Colorado State Disability Benefits",
         },
     }
 
@@ -291,13 +299,6 @@ class CoConfigurationData(ConfigurationData):
                 "text": {
                     "_label": "healthInsuranceOptions.chp",
                     "_default_message": "Child Health Plan Plus (CHP+)",
-                },
-            },
-            "emergency_medicaid": {
-                "icon": {"_icon": "Emergency_medicaid", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.emergency_medicaid",
-                    "_default_message": "Emergency Medicaid / Reproductive Health",
                 },
             },
             "family_planning": {
@@ -356,13 +357,6 @@ class CoConfigurationData(ConfigurationData):
                 "text": {
                     "_label": "healthInsuranceOptions.chp",
                     "_default_message": "Child Health Plan Plus (CHP+)",
-                },
-            },
-            "emergency_medicaid": {
-                "icon": {"_icon": "Emergency_medicaid", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.emergency_medicaid",
-                    "_default_message": "Emergency Medicaid / Reproductive Health",
                 },
             },
             "family_planning": {
@@ -2329,7 +2323,11 @@ class CoConfigurationData(ConfigurationData):
                 "referralSource",
             ],
         },
-        "featureFlags": {"default": [], "211co": ["no_results_more_help", "211co"]},
+        "uiOptions": {"default": [], "211co": ["no_results_more_help", "211co"]},
+        "featureFlags": {
+            "default": [],
+            "211co": ["no_results_more_help", "211co"],
+        },  # Deprecated: use uiOptions. Remove as part of MFB-635.
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",

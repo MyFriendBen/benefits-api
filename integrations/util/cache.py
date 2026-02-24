@@ -1,6 +1,7 @@
 from typing import Any
 from sentry_sdk import capture_exception
 from django.conf import settings
+from django.utils import timezone
 import datetime
 
 
@@ -10,7 +11,7 @@ class Cache:
 
     def __init__(self):
         self.data = self.default
-        self.last_update = datetime.datetime.now() - datetime.timedelta(seconds=self.expire_time)
+        self.last_update = timezone.now() - datetime.timedelta(seconds=self.expire_time)
         self.invalid = True
 
     def update(self):
@@ -19,7 +20,7 @@ class Cache:
     def _update_cache(self):
         try:
             self.save(self.update())
-            self.last_update = datetime.datetime.now()
+            self.last_update = timezone.now()
             self.invalid = False
         except Exception as e:
             if settings.DEBUG:
@@ -33,7 +34,7 @@ class Cache:
         if self.invalid is True:
             return True
 
-        return datetime.datetime.now() > self.last_update + datetime.timedelta(seconds=self.expire_time)
+        return timezone.now() > self.last_update + datetime.timedelta(seconds=self.expire_time)
 
     def fetch(self) -> Any:
         if self.should_update():

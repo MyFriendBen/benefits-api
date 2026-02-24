@@ -141,10 +141,22 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # Types of income to collect
     # Only override if your state has unique income types (e.g., state-specific disability benefits)
     # ==========================================================================================
+
+    # income_categories and income_options_by_category are usually inherited from base.py.
+    # Override income_options_by_category using the spread pattern to add state-specific options:
+    # income_options_by_category = {
+    #     **ConfigurationData.income_options_by_category,
+    #     "government": {
+    #         **ConfigurationData.income_options_by_category["government"],
+    #         "stateDisability": {"_label": "incomeOptions.stateDisability", "_default_message": "State Disability"},
+    #     },
+    # }
+
+    # Flat income options (backward compatible with current FE).
+    # When overriding income_options_by_category, also override this to keep both in sync.
     # income_options = {
-    #     "wages": {"_label": "incomeOptions.wages", "_default_message": "Wages, salaries, tips"},
-    #     "sSI": {"_label": "incomeOptions.sSI", "_default_message": "Supplemental Security Income (SSI)"},
-    #     # ... see base.py for full list
+    #     **ConfigurationData.income_options,
+    #     "stateDisability": {"_label": "incomeOptions.stateDisability", "_default_message": "State Disability"},
     # }
 
     # ==========================================================================================
@@ -192,7 +204,24 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # ==========================================================================================
     # EXPENSE OPTIONS - Usually inherited as is from ConfigurationData
     # ==========================================================================================
-    # Types of expenses to collect - usually inherited from base.py
+    # expense_categories and expense_options_by_category are usually inherited from base.py.
+    # Override expense_options_by_category using the spread pattern to add state-specific options.
+    # ==========================================================================================
+    # expense_options_by_category = {
+    #     **ConfigurationData.expense_options_by_category,
+    #     "housing": {
+    #         **ConfigurationData.expense_options_by_category["housing"],
+    #         "rent": {"_label": "expenseOptions.nonSubsidizedRent", "_default_message": "Rent (Non-Subsidized)"},
+    #         "subsidizedRent": {"_label": "expenseOptions.subsidizedRent", "_default_message": "Rent (Public / Subsidized Housing)"},
+    #     },
+    # }
+
+    # ==========================================================================================
+    # EXPENSE OPTIONS (FLAT) - Backward compatible with current FE
+    # ==========================================================================================
+    # Flattened expense options — same data as expense_options_by_category but without
+    # category grouping. When overriding expense_options_by_category, also override this
+    # to keep both in sync (same pattern as income_options / income_options_by_category).
     # ==========================================================================================
     # expense_options = {
     #     "rent": {"_label": "expenseOptions.rent", "_default_message": "Rent"},
@@ -282,7 +311,7 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     #   4. Add mapping in has_benefit() name_map for ALL program name_abbreviated variants:
     #      "my_benefit": self.has_my_benefit,
     #      "co_my_benefit": self.has_my_benefit,
-    #      "co_energy_calculator_my_benefit": self.has_my_benefit,
+    #      "cesn_my_benefit": self.has_my_benefit,
     #
     # Structure:
     #   {
@@ -367,11 +396,11 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     #   - "acuteHHConditions" is the Additional Resources step
     #   - Can have multiple directories keyed by path for different flows
     #
-    # featureFlags: Array of feature flag strings to enable optional features
+    # uiOptions: Array of UI option strings to enable optional UI customizations
     #   - Examples:
-    #     * "211co" - Enable 2-1-1 Colorado specific features
-    #     * "211nc" - Enable 2-1-1 North Carolina specific features
-    #     * "lanc" - Enable LANC specific features
+    #     * "211co" - Enable 2-1-1 Colorado specific branding
+    #     * "211nc" - Enable 2-1-1 North Carolina specific branding
+    #     * "lanc" - Enable LANC specific branding
     #     * "nc_show_211_link" - Show 2-1-1 link in NC
     #     * "white_multi_select_tile_icon" - White icons on multi-select tiles
     #     * "dont_show_category_values" - Hide dollar amounts on category headings
@@ -412,7 +441,8 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
                 "signUpInfo",
             ]
         },
-        "featureFlags": {"default": []},
+        "uiOptions": {"default": []},
+        "featureFlags": {"default": []},  # Deprecated: use uiOptions. Remove as part of MFB-635.
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",
@@ -472,3 +502,14 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # Most white labels do not use this - delete this section if not needed.
     # ==========================================================================================
     # override_text = {"my_custom_key": {"_label": "myLabel", "_default_message": "My custom text"}}
+
+    # ==========================================================================================
+    # EXPERIMENTS (A/B TESTING) - Usually inherited from base.py
+    # ==========================================================================================
+    # Controls A/B test variants. Frontend uses UUID hash to assign each user a variant.
+    # Override to change which variants are active for this white label.
+    # See README.md for full documentation.
+    # ==========================================================================================
+    # experiments = {
+    #     "npsVariant": {"variants": ["floating"]},  # Single variant = no A/B test
+    # }

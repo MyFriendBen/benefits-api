@@ -225,6 +225,10 @@ class NcConfigurationData(ConfigurationData):
             "_label": "referralOptions.hfed",
             "_default_message": "Hispanic Federation",
         },
+        "lanc": {
+            "_label": "referralOptions.lanc",
+            "_default_message": "Legal Aid of North Carolina",
+        },
         "mfa": {
             "_label": "referralOptions.mfa",
             "_default_message": "Mi Familia en Acción",
@@ -400,16 +404,6 @@ class NcConfigurationData(ConfigurationData):
                     "_default_message": "Medicare",
                 },
             },
-            "emergency_medicaid": {
-                "icon": {
-                    "_icon": "Emergency_medicaid",
-                    "_classname": "option-card-icon",
-                },
-                "text": {
-                    "_label": "healthInsuranceOptions.emergency_medicaid",
-                    "_default_message": "Emergency Medicaid / Reproductive Health",
-                },
-            },
             "family_planning": {
                 "icon": {"_icon": "Family_planning", "_classname": "option-card-icon"},
                 "text": {
@@ -461,16 +455,6 @@ class NcConfigurationData(ConfigurationData):
                     "_default_message": "Medicare",
                 },
             },
-            "emergency_medicaid": {
-                "icon": {
-                    "_icon": "Emergency_medicaid",
-                    "_classname": "option-card-icon",
-                },
-                "text": {
-                    "_label": "healthInsuranceOptions.emergency_medicaid",
-                    "_default_message": "Emergency Medicaid / Reproductive Health",
-                },
-            },
             "family_planning": {
                 "icon": {"_icon": "Family_planning", "_classname": "option-card-icon"},
                 "text": {
@@ -485,77 +469,6 @@ class NcConfigurationData(ConfigurationData):
                     "_default_message": "VA health care benefits",
                 },
             },
-        },
-    }
-
-    frequency_options = {
-        "weekly": {
-            "_label": "frequencyOptions.weekly",
-            "_default_message": "every week",
-        },
-        "biweekly": {
-            "_label": "frequencyOptions.biweekly",
-            "_default_message": "every 2 weeks",
-        },
-        "semimonthly": {
-            "_label": "frequencyOptions.semimonthly",
-            "_default_message": "twice a month",
-        },
-        "monthly": {
-            "_label": "frequencyOptions.monthly",
-            "_default_message": "every month",
-        },
-        "yearly": {"_label": "frequencyOptions.yearly", "_default_message": "yearly"},
-        "hourly": {"_label": "frequencyOptions.hourly", "_default_message": "hourly"},
-    }
-
-    expense_options = {
-        "rent": {"_label": "expenseOptions.rent", "_default_message": "Rent"},
-        "telephone": {
-            "_label": "expenseOptions.telephone",
-            "_default_message": "Telephone",
-        },
-        "internet": {
-            "_label": "expenseOptions.internet",
-            "_default_message": "Internet",
-        },
-        "otherUtilities": {
-            "_label": "expenseOptions.otherUtilities",
-            "_default_message": "Other Utilities",
-        },
-        "heating": {"_label": "expenseOptions.heating", "_default_message": "Heating"},
-        "mortgage": {
-            "_label": "expenseOptions.mortgage",
-            "_default_message": "Mortgage",
-        },
-        "propertyTaxes": {
-            "_label": "expenseOptions.propertyTaxes",
-            "_default_message": "Property Taxes",
-        },
-        "associationFees": {
-            "_label": "expenseOptions.associationFees",
-            "_default_message": "Homeowners or Condo Association Fees and Dues",
-        },
-        "homeownersInsurance": {
-            "_label": "expenseOptions.homeownersInsurance",
-            "_default_message": "Homeowners Insurance",
-        },
-        "medical": {
-            "_label": "expenseOptions.medical",
-            "_default_message": "Medical Insurance Premium &/or Bills",
-        },
-        "cooling": {"_label": "expenseOptions.cooling", "_default_message": "Cooling"},
-        "childCare": {
-            "_label": "expenseOptions.childCare",
-            "_default_message": "Child Care",
-        },
-        "childSupport": {
-            "_label": "expenseOptions.childSupport",
-            "_default_message": "Child Support (Paid)",
-        },
-        "dependentCare": {
-            "_label": "expenseOptions.dependentCare",
-            "_default_message": "Dependent Care",
         },
     }
 
@@ -2849,7 +2762,7 @@ class NcConfigurationData(ConfigurationData):
     }
 
     referrer_data = {
-        "theme": {"default": "default", "211nc": "twoOneOneNC"},
+        "theme": {"default": "default", "211nc": "twoOneOneNC", "lanc": "nc_lanc"},
         "logoSource": {
             "default": "MFB_NCLogo",
             "hfed": "HispanicFederation_MFBLogo",
@@ -2877,6 +2790,7 @@ class NcConfigurationData(ConfigurationData):
         "shareLink": {
             "default": "https://screener.myfriendben.org/nc",
             "211nc": "https://screener.myfriendben.org/nc?referrer=211nc",
+            "lanc": "https://screener.myfriendben.org/nc?referrer=lanc",
         },
         "stepDirectory": {
             "default": [
@@ -2901,10 +2815,18 @@ class NcConfigurationData(ConfigurationData):
                 "referralSource",
             ],
         },
+        "uiOptions": {
+            "default": ["nc_show_211_link"],
+            "211nc": ["no_results_more_help", "nc_show_211_link", "211nc"],
+            "hfed": ["no_results_more_help", "hfed"],
+            "lanc": ["no_results_more_help", "nc_show_211_link", "lanc"],
+        },
+        # Deprecated: use uiOptions. Remove as part of MFB-635.
         "featureFlags": {
             "default": ["nc_show_211_link"],
             "211nc": ["no_results_more_help", "nc_show_211_link", "211nc"],
             "hfed": ["no_results_more_help", "hfed"],
+            "lanc": ["no_results_more_help", "nc_show_211_link", "lanc"],
         },
         "noResultMessage": {
             "default": {

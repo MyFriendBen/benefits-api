@@ -111,7 +111,7 @@ This directory contains configuration files for MyFriendBen white labels (state/
 - `ma.py` - Massachusetts
 - `nc.py` - North Carolina
 - `tx.py` - Texas
-- `co_energy_calculator.py` - Colorado Energy Calculator (specialized flow)
+- `cesn.py` - Colorado Energy Savings Navigator (specialized flow)
 
 ## Key Configuration Sections
 
@@ -200,19 +200,63 @@ referrer_data = {
             "signUpInfo",
         ]
     },
-    "featureFlags": {"default": []},
+    "uiOptions": {"default": []},
+    "featureFlags": {"default": []},  # Deprecated: use uiOptions. Remove as part of MFB-635.
 }
 ```
 
-### 5. Other Sections
+### 5. Experiments (A/B Testing)
+
+Controls A/B test variant assignment. The frontend reads the variants list and uses a UUID hash to deterministically assign each user a variant.
+
+```python
+experiments = {
+    "npsVariant": {"variants": ["floating", "inline"]},
+}
+```
+
+- Each experiment key maps to a dict with a `"variants"` list
+- All active variants must be listed — the frontend picks one per user based on their UUID
+- Use the feature flag (not experiments) to disable a feature entirely
+- To skip the A/B test and show one variant to all users, use a single-item list: `"variants": ["floating"]`
+
+**Feature flags vs experiments (per white label):**
+
+| Want | Feature Flag | Experiment Config |
+|------|-------------|-------------------|
+| NPS off | `nps_survey: false` | doesn't matter |
+| NPS on, A/B test | `nps_survey: true` | `{"variants": ["floating", "inline"]}` |
+| NPS on, single variant | `nps_survey: true` | `{"variants": ["floating"]}` |
+
+- Experiments can be overridden per white label, e.g. to run the A/B test in Colorado but show only the floating widget in Illinois:
+
+```python
+# In il.py — feature is on (via feature flag) but no A/B test, everyone sees floating
+class IlConfigurationData(ConfigurationData):
+    experiments = {
+        "npsVariant": {"variants": ["floating"]},
+    }
+```
+
+**Adding a new experiment:**
+1. Add the key and variants to `experiments` in `base.py`
+2. Run `python manage.py add_config --all` to update the database
+3. Read the experiment config on the frontend and implement variant logic
+
+### 6. Other Sections
 
 - **`acute_condition_options`** - Urgent needs in the "Additional Resources" step
   - Icon names must be defined in `benefits-calculator/src/Components/Results/helpers.ts` (`ICON_OPTIONS_MAP`)
 - **`referral_options`** - "How did you hear about us?" options
 - **`language_options`** - Available translations
-- **`income_options`** - Types of income to collect
+- **`income_categories`** - Translatable category labels for income (e.g. `incomeCategories.employment`)
+- **`income_options_by_category`** - Income types grouped by category. When overriding, use the spread pattern to inherit base and only override the categories that differ.
+- **`income_options`** - Flat dict of income types (backward compatible with current FE). Keep in sync with `income_options_by_category`.
 - **`health_insurance_options`** - Health insurance types
-- **`expense_options`** - Types of expenses to collect
+- **`frequency_options`** - Income/expense frequency options (annually, monthly, weekly, etc.)
+- **`expense_categories`** - Translatable category labels for expenses (e.g. `expenseCategories.housing`)
+- **`expense_options_by_category`** - Expenses grouped by category. When overriding, use the spread pattern to inherit base and only override the categories that differ.
+- **`expense_options`** - Flat dict of expense types (backward compatible with current FE). Keep in sync with `expense_options_by_category`.
 - **`condition_options`** - Household member conditions
 - **`feedback_links`** - Contact links:
   - `email`: Linked when user selects "CONTACT US"
@@ -258,7 +302,7 @@ This ensures translations are available across all environments and languages.
 
 ### Program Name Abbreviations
 
-Programs are registered with a `name_abbreviated` (e.g., `"snap"`, `"co_snap"`, `"co_energy_calculator_leap"`).
+Programs are registered with a `name_abbreviated` (e.g., `"snap"`, `"co_snap"`, `"cesn_leap"`).
 
 Multiple program variants can map to the same benefit in `has_benefit()`:
 - `"snap"` → `self.has_snap`

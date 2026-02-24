@@ -319,19 +319,23 @@ class MaConfigurationData(ConfigurationData):
         },
     }
 
-    frequency_options = {
-        "weekly": {"_label": "frequencyOptions.weekly", "_default_message": "every week"},
-        "biweekly": {"_label": "frequencyOptions.biweekly", "_default_message": "every 2 weeks"},
-        "semimonthly": {"_label": "frequencyOptions.semimonthly", "_default_message": "twice a month"},
-        "monthly": {"_label": "frequencyOptions.monthly", "_default_message": "every month"},
-        "hourly": {"_label": "frequencyOptions.hourly", "_default_message": "hourly"},
+    expense_options_by_category = {
+        **ConfigurationData.expense_options_by_category,
+        "housing": {
+            **ConfigurationData.expense_options_by_category["housing"],
+            "rent": {"_label": "expenseOptions.nonSubsidizedRent", "_default_message": "Rent (Non-Subsidized)"},
+            "subsidizedRent": {
+                "_label": "expenseOptions.subsidizedRent",
+                "_default_message": "Rent (Public / Subsidized Housing)",
+            },
+        },
     }
 
     expense_options = {
-        "rent": {"_label": "expenseOptions.nonSubidizedRent", "_default_message": "Rent (Non-Subsidized)"},
+        "rent": {"_label": "expenseOptions.nonSubsidizedRent", "_default_message": "Rent (Non-Subsidized)"},
         "subsidizedRent": {
-            "_label": "expenseOptions.subidizedRent",
-            "_default_message": "Rent (Public / Subidized Housing)",
+            "_label": "expenseOptions.subsidizedRent",
+            "_default_message": "Rent (Public / Subsidized Housing)",
         },
         "telephone": {"_label": "expenseOptions.telephone", "_default_message": "Telephone"},
         "internet": {"_label": "expenseOptions.internet", "_default_message": "Internet"},
@@ -1314,6 +1318,16 @@ class MaConfigurationData(ConfigurationData):
                         "_default_message": "Affordable afterschool care for Cambridge children K-8",
                     },
                 },
+                "ma_cpp": {
+                    "name": {
+                        "_label": "childCareBenefits.ma_cpp",
+                        "_default_message": "Cambridge Preschool Program (CPP): ",
+                    },
+                    "description": {
+                        "_label": "childCareBenefits.ma_cpp_desc",
+                        "_default_message": "Free preschool for Cambridge children age 3-4",
+                    },
+                },
             },
             "category_name": {
                 "_label": "childCareYouthAndEducation",
@@ -1382,6 +1396,16 @@ class MaConfigurationData(ConfigurationData):
                     "description": {
                         "_label": "transportationBenefits.ma_door_to_door_desc",
                         "_default_message": "On-demand transportation for Cambridge seniors and people with mobility impairments",
+                    },
+                },
+                "ma_taxi_discount": {
+                    "name": {
+                        "_label": "transportationBenefits.ma_taxi_discount",
+                        "_default_message": "Cambridge Taxi Discount Coupon Program: ",
+                    },
+                    "description": {
+                        "_label": "transportationBenefits.ma_taxi_discount_desc",
+                        "_default_message": "Discounted taxi coupons for Cambridge seniors and people with disabilities",
                     },
                 },
             },
@@ -1483,7 +1507,8 @@ class MaConfigurationData(ConfigurationData):
                 "signUpInfo",
             ],
         },
-        "featureFlags": {"default": []},
+        "uiOptions": {"default": []},
+        "featureFlags": {"default": []},  # Deprecated: use uiOptions. Remove as part of MFB-635.
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",

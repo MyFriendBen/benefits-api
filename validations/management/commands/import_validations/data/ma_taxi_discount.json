@@ -1,0 +1,328 @@
+[
+  {
+    "notes": "MA Taxi Discount - Eligible Cambridge resident age 65, no disability",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 65,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "medicare": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_taxi_discount": false
+    },
+    "expected_results": {
+      "program_name": "ma_taxi_discount",
+      "eligible": true,
+      "value": 600
+    }
+  },
+  {
+    "notes": "MA Taxi Discount - Eligible Cambridge resident age 45 with disability",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02140",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 45,
+          "disabled": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSI",
+              "amount": 1500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_taxi_discount": false
+    },
+    "expected_results": {
+      "program_name": "ma_taxi_discount",
+      "eligible": true,
+      "value": 600
+    }
+  },
+  {
+    "notes": "MA Taxi Discount - Eligible Cambridge resident exactly age 60, no disability",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02141",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 60,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 2000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicare": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_taxi_discount": false
+    },
+    "expected_results": {
+      "program_name": "ma_taxi_discount",
+      "eligible": true,
+      "value": 600
+    }
+  },
+  {
+    "notes": "MA Taxi Discount - Ineligible: age 59, no disability",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 59,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_taxi_discount": false
+    },
+    "expected_results": {
+      "program_name": "ma_taxi_discount",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA Taxi Discount - Ineligible: non-Cambridge location (Boston), age 70",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02108",
+      "county": "Boston",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 70,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 1800.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicare": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_taxi_discount": false
+    },
+    "expected_results": {
+      "program_name": "ma_taxi_discount",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA Taxi Discount - Eligible: Cambridge resident age 62, very high income (no income test)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02138",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 62,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 10000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_taxi_discount": false
+    },
+    "expected_results": {
+      "program_name": "ma_taxi_discount",
+      "eligible": true,
+      "value": 600
+    }
+  },
+  {
+    "notes": "MA Taxi Discount - Ineligible: Cambridge resident age 45, no disability",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 45,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 5000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_taxi_discount": false
+    },
+    "expected_results": {
+      "program_name": "ma_taxi_discount",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA Taxi Discount - Eligible: Cambridge resident age 65 with disability (both criteria met, one benefit)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02142",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 65,
+          "disabled": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 2200.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicare": true,
+            "medicaid": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_taxi_discount": false
+    },
+    "expected_results": {
+      "program_name": "ma_taxi_discount",
+      "eligible": true,
+      "value": 600
+    }
+  },
+  {
+    "notes": "MA Taxi Discount - Ineligible: household already has the benefit",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 68,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 2200.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicare": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_taxi_discount": true
+    },
+    "expected_results": {
+      "program_name": "ma_taxi_discount",
+      "eligible": false
+    }
+  }
+]
