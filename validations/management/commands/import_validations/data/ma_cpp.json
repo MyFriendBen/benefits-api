@@ -457,6 +457,56 @@
     }
   },
   {
+    "notes": "MA CPP - Scenario 11: Eligible — foster care child (age 3) with income above 65% AMI threshold",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 2,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "birth_year": 1990,
+          "birth_month": 3,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 10000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "fosterChild",
+          "age": 3,
+          "birth_year": 2022,
+          "birth_month": 6,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_cpp": false
+    },
+    "expected_results": {
+      "program_name": "ma_cpp",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
     "notes": "MA CPP - Scenario 10: Ineligible — no children in household",
     "household": {
       "white_label": "ma",

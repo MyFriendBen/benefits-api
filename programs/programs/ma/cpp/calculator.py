@@ -48,9 +48,11 @@ class MaCpp(ProgramCalculator):
         is_preschool_age = self.min_child_age <= member.age <= self.max_child_age
         e.condition(is_preschool_age)
 
-        # 3-year-olds have an income restriction (≤65% AMI).
-        # 4-year-olds have no income restriction.
-        if member.age == 3:
+        # 3-year-olds have an income restriction (≤65% AMI) unless they are foster children.
+        # 4-year-olds and foster children have no income restriction.
+        is_foster_child = member.relationship == "fosterChild"
+
+        if member.age == 3 and not is_foster_child:
             try:
                 income = self.screen.calc_gross_income("yearly", ["all"])
                 income_limit = hud_client.approximate_screen_mtsp_ami(
