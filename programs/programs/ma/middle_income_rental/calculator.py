@@ -11,19 +11,10 @@ class MaMiddleIncomeRental(ProgramCalculator):
     an income-restricted "middle-income" apartment in Cambridge through privately
     owned buildings, with rents set to be affordable based on income.
 
-    Note: This is a waiting pool — submitting an application does not guarantee a
-    unit. Wait times vary depending on unit availability and position on the waiting
-    pool (often months or years).
-
     Eligibility requirements that can be verified:
     - Cambridge residency
     - Household gross income between 80% and 120% AMI (MTSP)
     - Liquid assets at or below $100,000
-
-    Requirements that cannot be verified programmatically:
-    - Specific unit availability
-    - Wait pool position
-    - Additional asset flexibility for households where all members are 62+ or disabled
     """
 
     # Cambridge is a city in Middlesex County - used for HUD AMI lookups
@@ -56,6 +47,7 @@ class MaMiddleIncomeRental(ProgramCalculator):
             ami_100 = hud_client.get_screen_mtsp_ami(
                 self.screen, "100%", self.ami_year, county_override=self.hud_county
             )
+            # HUD MTSP API only provides up to 100% AMI; 120% is derived by multiplying 100% × 1.20
             ami_max = ami_100 * self.max_ami_percent
             gross_income = self.screen.calc_gross_income("yearly", ["all"])
             income_eligible = ami_min <= gross_income <= ami_max

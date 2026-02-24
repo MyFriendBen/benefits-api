@@ -1,17 +1,20 @@
 {
     "white_label": {"code": "ma"},
-    "program_category": {
-        "external_name": "ma_housing",
-        "name": "Housing",
-        "icon": "housing"
-    },
+    "program_category": {"external_name": "ma_housing", "name": "Housing", "icon": "housing"},
     "program": {
         "name_abbreviated": "ma_middle_income_rental",
         "year": "2025",
-        "legal_status_required": ["citizen", "gc_5plus", "gc_5less", "refugee", "otherWithWorkPermission", "non_citizen"],
+        "legal_status_required": [
+            "citizen",
+            "gc_5plus",
+            "gc_5less",
+            "refugee",
+            "otherWithWorkPermission",
+            "non_citizen",
+        ],
         "name": "Middle-Income Rental Program",
         "description_short": "Income-restricted rental apartments in Cambridge",
-        "description": "The Middle-Income housing pool provides opportunities for households to rent an income-restricted \"middle-income\" apartment in Cambridge through privately owned buildings, with rents set to be affordable based on your income.\n\nTo qualify, you must:\n- Be a current Cambridge resident\n- Have household gross income between 80% and 120% of Area Median Income (AMI)\n- Have liquid assets at or below $100,000\n\nNote: Additional asset flexibility may exist for households where all members are 62 or older or have disabilities.\n\nThis is a waiting pool, not a guaranteed rental unit. Applicants may face long waits depending on unit availability and waiting pool position.",
+        "description": 'The Middle-Income housing pool provides opportunities for households to rent an income-restricted "middle-income" apartment in Cambridge through privately owned buildings, with rents set to be affordable based on your income.\n\nTo qualify, you must:\n- Be a current Cambridge resident\n- Have household gross income between 80% and 120% of Area Median Income (AMI)\n- Have liquid assets at or below $100,000\n\nNote: Additional asset flexibility may exist for households where all members are 62 or older or have disabilities.\n\nThis is a waiting pool, not a guaranteed rental unit. Applicants may face long waits depending on unit availability and waiting pool position.',
         "learn_more_link": "https://www.cambridgema.gov/CDD/housing/forapplicants/middleincomerentalprogram",
         "apply_button_link": "https://www.cambridgema.gov/-/media/Files/CDD/Housing/ForApplicants/hsg_mid_inc_app.pdf",
         "apply_button_description": "",
@@ -20,37 +23,37 @@
         "estimated_value": "Varies",
         "website_description": "Income-restricted rental apartments for Cambridge residents with income between 80% and 120% AMI",
         "active": true,
-        "low_confidence": false
+        "low_confidence": false,
     },
     "warning_message": {
         "external_name": "ma_middle_income_rental_warning",
         "calculator": "_show",
-        "message": "This is a waiting pool, not a guaranteed rental unit. Applicants may face long waits depending on unit availability."
+        "message": "This is a waiting pool, not a guaranteed rental unit. Applicants may face long waits depending on unit availability.",
     },
     "documents": [
         {
-            "external_name": "ma_proof_household_size",
-            "text": "Proof of household size (lease, tax return/W-2s, birth certificates)",
+            "external_name": "ma_household_info",
+            "text": "Household member names and dates of birth",
             "link_url": "",
-            "link_text": ""
+            "link_text": "",
         },
         {
             "external_name": "ma_proof_income",
-            "text": "Proof of income (tax returns, W-2s)",
+            "text": "Proof of income (tax returns, pay stubs, W-2, 1099, etc.)",
             "link_url": "",
-            "link_text": ""
+            "link_text": "",
         },
         {
             "external_name": "ma_cambridge_residency",
             "text": "Proof of Cambridge residency (lease, utility bill)",
             "link_url": "",
-            "link_text": ""
+            "link_text": "",
         },
         {
             "external_name": "ma_id_proof",
             "text": "Proof of identity (ex: driver's license, official state ID card)",
             "link_url": "",
-            "link_text": ""
-        }
-    ]
+            "link_text": "",
+        },
+    ],
 }
