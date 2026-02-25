@@ -5,6 +5,7 @@ from .taxi_discount.calculator import MaTaxiDiscount
 from ..calc import ProgramCalculator
 from .cha.calculator import Cha
 from .cpp.calculator import MaCpp
+from .middle_income_rental.calculator import MaMiddleIncomeRental
 from .cmsp.calculator import MaCmsp
 
 ma_calculators: dict[str, type[ProgramCalculator]] = {
@@ -14,5 +15,6 @@ ma_calculators: dict[str, type[ProgramCalculator]] = {
     "ma_door_to_door": MaDoorToDoor,
     "ma_taxi_discount": MaTaxiDiscount,
     "ma_cpp": MaCpp,
+    "ma_middle_income_rental": MaMiddleIncomeRental,
     "ma_cmsp": MaCmsp,
 }
