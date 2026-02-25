@@ -4,6 +4,7 @@
     "program": {
         "name_abbreviated": "ma_cmsp",
         "year": "2026",
+        "legal_status_required": ["citizen", "non_citizen", "refugee", "gc_5plus", "gc_5less", "gc_18plus_no5", "gc_under18_no5", "otherWithWorkPermission", "other"],
         "name": "Children's Medical Security Plan (CMSP)",
         "description_short": "Low-cost health coverage for uninsured MA children under 19",
         "description": "The Children's Medical Security Plan (CMSP) provides low-cost health coverage for children under age 19 who live in Massachusetts and are currently uninsured.\n\nCMSP helps pay for regular checkups, sick visits, prescriptions, and some specialty care.\n\nTo qualify, a child must:\n- Be under age 19\n- Live in Massachusetts\n- Currently have no health insurance\n\nThere is no income limit — families at any income level may qualify. There is no citizenship requirement — undocumented children are eligible.",

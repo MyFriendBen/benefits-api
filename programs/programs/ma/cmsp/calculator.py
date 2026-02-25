@@ -12,8 +12,8 @@ class MaCmsp(ProgramCalculator):
     - https://www.mass.gov/childrens-medical-security-plan
     """
 
-    # $239/month matches MaMassHealth child coverage values (YOUNG_CHILD, OLDER_CHILD, INFANT)
-    member_amount = 239
+    # $239/month × 12 = $2,868/year per eligible uninsured child
+    member_amount = 2868
     dependencies = ["age", "health_insurance"]
 
     def member_eligible(self, e: MemberEligibility) -> None:

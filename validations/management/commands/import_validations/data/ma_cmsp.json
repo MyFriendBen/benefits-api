@@ -27,7 +27,7 @@
       ],
       "expenses": []
     },
-    "expected_results": {"program_name": "ma_cmsp", "eligible": true, "value": 239}
+    "expected_results": {"program_name": "ma_cmsp", "eligible": true, "value": 2868}
   },
   {
     "notes": "MA CMSP - Scenario 2 - Eligible: Uninsured child, very high income (no income limit)",
@@ -57,7 +57,7 @@
       ],
       "expenses": []
     },
-    "expected_results": {"program_name": "ma_cmsp", "eligible": true, "value": 239}
+    "expected_results": {"program_name": "ma_cmsp", "eligible": true, "value": 2868}
   },
   {
     "notes": "MA CMSP - Scenario 3 - Eligible: Infant (age 0), uninsured (lower age boundary)",
@@ -87,7 +87,7 @@
       ],
       "expenses": []
     },
-    "expected_results": {"program_name": "ma_cmsp", "eligible": true, "value": 239}
+    "expected_results": {"program_name": "ma_cmsp", "eligible": true, "value": 2868}
   },
   {
     "notes": "MA CMSP - Scenario 4 - Eligible: Undocumented child (no citizenship requirement)",
@@ -117,7 +117,7 @@
       ],
       "expenses": []
     },
-    "expected_results": {"program_name": "ma_cmsp", "eligible": true, "value": 239}
+    "expected_results": {"program_name": "ma_cmsp", "eligible": true, "value": 2868}
   },
   {
     "notes": "MA CMSP - Scenario 5 - Eligible: Multiple children, only one uninsured",
@@ -154,7 +154,7 @@
       ],
       "expenses": []
     },
-    "expected_results": {"program_name": "ma_cmsp", "eligible": true, "value": 239}
+    "expected_results": {"program_name": "ma_cmsp", "eligible": true, "value": 2868}
   },
   {
     "notes": "MA CMSP - Scenario 6 - Ineligible: Child already has MassHealth",
