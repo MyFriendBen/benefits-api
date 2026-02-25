@@ -12,7 +12,9 @@ class MaCmsp(ProgramCalculator):
     - https://www.mass.gov/childrens-medical-security-plan
     """
 
-    # $239/month × 12 = $2,868/year per eligible uninsured child
+    # $239/month × 12 = $2,868/year per eligible uninsured child.
+    # Source: average MassHealth child coverage value (YOUNG_CHILD, OLDER_CHILD, INFANT rates).
+    # See: https://www.mass.gov/doc/masshealth-fy2026-q2-per-member-per-month-capitation-rates/download
     member_amount = 2868
     dependencies = ["age", "health_insurance"]
 
