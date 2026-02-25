@@ -33,9 +33,9 @@ class TestMaCmspCalculator(TestCase):
         self.assertIn("ma_cmsp", ma_calculators)
         self.assertEqual(ma_calculators["ma_cmsp"], MaCmsp)
 
-    def test_member_amount_is_239(self):
-        """Test that member_amount is $239/month per eligible uninsured child."""
-        self.assertEqual(MaCmsp.member_amount, 239)
+    def test_member_amount_is_2868(self):
+        """Test that member_amount is $2,868/year ($239/month) per eligible uninsured child."""
+        self.assertEqual(MaCmsp.member_amount, 2868)
 
     def test_dependencies_are_defined(self):
         """Test that required dependencies are properly defined."""
@@ -234,8 +234,8 @@ class TestMaCmspValue(TestCase):
         mock_screen.household_members.all.return_value = members
         return MaCmsp(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
-    def test_value_is_239_for_one_eligible_child(self):
-        """One eligible uninsured child → value = $239/month."""
+    def test_value_is_2868_for_one_eligible_child(self):
+        """One eligible uninsured child → value = $2,868/year ($239/month)."""
         members = [
             self._make_member(35, insured=True),  # Parent
             self._make_member(10, insured=False),  # Uninsured child
@@ -243,10 +243,10 @@ class TestMaCmspValue(TestCase):
         calculator = self._create_calculator(members)
         eligibility = calculator.eligible()
         calculator.value(eligibility)
-        self.assertEqual(eligibility.value, 239)
+        self.assertEqual(eligibility.value, 2868)
 
-    def test_value_is_478_for_two_eligible_children(self):
-        """Two eligible uninsured children → value = $478/month."""
+    def test_value_is_5736_for_two_eligible_children(self):
+        """Two eligible uninsured children → value = $5,736/year ($478/month)."""
         members = [
             self._make_member(35, insured=True),  # Parent
             self._make_member(8, insured=False),  # Uninsured child 1
@@ -255,16 +255,16 @@ class TestMaCmspValue(TestCase):
         calculator = self._create_calculator(members)
         eligibility = calculator.eligible()
         calculator.value(eligibility)
-        self.assertEqual(eligibility.value, 478)
+        self.assertEqual(eligibility.value, 5736)
 
     def test_value_counts_only_uninsured_children(self):
         """Mixed household: only the uninsured child counts toward value."""
         members = [
             self._make_member(35, insured=True),  # Parent
-            self._make_member(8, insured=False),  # Uninsured child → $239
+            self._make_member(8, insured=False),  # Uninsured child → $2,868/year
             self._make_member(12, insured=True),  # Insured child → $0
         ]
         calculator = self._create_calculator(members)
         eligibility = calculator.eligible()
         calculator.value(eligibility)
-        self.assertEqual(eligibility.value, 239)
+        self.assertEqual(eligibility.value, 2868)
