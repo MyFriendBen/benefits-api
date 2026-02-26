@@ -110,72 +110,77 @@ jobs:
       - name: Run validations
         if: success()
         id: validations
-        uses: ./.github/actions/heroku-validations
-        with:
-          heroku-api-key: ${{ secrets.HEROKU_API_KEY }}
-          heroku-app-name: ${{ secrets.HEROKU_PROD_APP_NAME }}
-          validation-sheet-id: ${{ secrets.VALIDATION_SHEET_ID }}
+        continue-on-error: true
+        # TODO: Step consistently times out (see: MFB-470, MFB-472)
+        run: exit 1
+        # uses: ./.github/actions/heroku-validations
+        # with:
+        #   heroku-api-key: ${{ secrets.HEROKU_API_KEY }}
+        #   heroku-app-name: ${{ secrets.HEROKU_PROD_APP_NAME }}
+        #   validation-sheet-id: ${{ secrets.VALIDATION_SHEET_ID }}
 
       - name: Sync translations to staging
         if: success()
         id: sync_translations
         continue-on-error: true
-        env:
-          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -e  # Exit on any error (but step continues due to continue-on-error)
-          echo "Syncing translations from production to staging..."
-
-          # Export translations from production - check for failures
-          echo "Exporting translations..."
-          EXPORT_OUTPUT=$(heroku run -a ${{ secrets.HEROKU_PROD_APP_NAME }} "python manage.py bulk_export" 2>&1)
-          EXPORT_STATUS=$?
-
-          if [ $EXPORT_STATUS -ne 0 ]; then
-            echo "ERROR: Translation export failed with status $EXPORT_STATUS"
-            echo "$EXPORT_OUTPUT"
-            exit 1
-          fi
-
-          # Remove the last line (Heroku adds connection info)
-          TRANSLATIONS=$(echo "$EXPORT_OUTPUT" | sed '$ d')
-
-          # Validate we got JSON (basic check)
-          if ! echo "$TRANSLATIONS" | jq empty 2>/dev/null; then
-            echo "ERROR: Export did not produce valid JSON"
-            echo "$TRANSLATIONS"
-            exit 1
-          fi
-
-          # Clone translations repo
-          git clone https://x-access-token:${{ secrets.TRANSLATIONS_REPO_TOKEN }}@github.com/MyFriendBen/mfb-translations.git /tmp/mfb-translations
-          cd /tmp/mfb-translations
-
-          # Save translations with date
-          DATE=$(date +%Y-%m-%d)
-          echo "$TRANSLATIONS" > translations/${DATE}.json
-
-          # Commit and push
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add translations/${DATE}.json
-
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "Export translations from production - ${DATE} (Release ${{ github.event.release.tag_name }})"
-            git push origin main
-          fi
-
-          # Import to staging - check for failures
-          echo "Importing translations to staging..."
-          heroku run --no-tty -a ${{ secrets.HEROKU_STAGING_APP_NAME }} "python manage.py bulk_import" < translations/${DATE}.json
-
-          DELIMITER="EOF_$(date +%s)"
-          echo "sync_translations_output<<${DELIMITER}" >> $GITHUB_OUTPUT
-          echo "Translations synced: ${DATE}.json" >> $GITHUB_OUTPUT
-          echo "${DELIMITER}" >> $GITHUB_OUTPUT
+        # TODO: Step consistently times out (see: MFB-471)
+        run: exit 1
+        # env:
+        #   HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # run: |
+        #   set -e  # Exit on any error (but step continues due to continue-on-error)
+        #   echo "Syncing translations from production to staging..."
+        #
+        #   # Export translations from production - check for failures
+        #   echo "Exporting translations..."
+        #   EXPORT_OUTPUT=$(heroku run -a ${{ secrets.HEROKU_PROD_APP_NAME }} "python manage.py bulk_export" 2>&1)
+        #   EXPORT_STATUS=$?
+        #
+        #   if [ $EXPORT_STATUS -ne 0 ]; then
+        #     echo "ERROR: Translation export failed with status $EXPORT_STATUS"
+        #     echo "$EXPORT_OUTPUT"
+        #     exit 1
+        #   fi
+        #
+        #   # Remove the last line (Heroku adds connection info)
+        #   TRANSLATIONS=$(echo "$EXPORT_OUTPUT" | sed '$ d')
+        #
+        #   # Validate we got JSON (basic check)
+        #   if ! echo "$TRANSLATIONS" | jq empty 2>/dev/null; then
+        #     echo "ERROR: Export did not produce valid JSON"
+        #     echo "$TRANSLATIONS"
+        #     exit 1
+        #   fi
+        #
+        #   # Clone translations repo
+        #   git clone https://x-access-token:${{ secrets.TRANSLATIONS_REPO_TOKEN }}@github.com/MyFriendBen/mfb-translations.git /tmp/mfb-translations
+        #   cd /tmp/mfb-translations
+        #
+        #   # Save translations with date
+        #   DATE=$(date +%Y-%m-%d)
+        #   echo "$TRANSLATIONS" > translations/${DATE}.json
+        #
+        #   # Commit and push
+        #   git config user.name "github-actions[bot]"
+        #   git config user.email "github-actions[bot]@users.noreply.github.com"
+        #   git add translations/${DATE}.json
+        #
+        #   if git diff --staged --quiet; then
+        #     echo "No changes to commit"
+        #   else
+        #     git commit -m "Export translations from production - ${DATE} (Release ${{ github.event.release.tag_name }})"
+        #     git push origin main
+        #   fi
+        #
+        #   # Import to staging - check for failures
+        #   echo "Importing translations to staging..."
+        #   heroku run --no-tty -a ${{ secrets.HEROKU_STAGING_APP_NAME }} "python manage.py bulk_import" < translations/${DATE}.json
+        #
+        #   DELIMITER="EOF_$(date +%s)"
+        #   echo "sync_translations_output<<${DELIMITER}" >> $GITHUB_OUTPUT
+        #   echo "Translations synced: ${DATE}.json" >> $GITHUB_OUTPUT
+        #   echo "${DELIMITER}" >> $GITHUB_OUTPUT
 
       - name: Determine final status
         if: ${{ !failure() }}
