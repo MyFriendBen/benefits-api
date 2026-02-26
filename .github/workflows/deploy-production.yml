@@ -110,8 +110,8 @@ jobs:
       - name: Run validations
         if: success()
         id: validations
-        continue-on-error: true
         # TODO: Step consistently times out (see: MFB-470, MFB-472)
+        continue-on-error: true
         run: exit 1
         # uses: ./.github/actions/heroku-validations
         # with:
