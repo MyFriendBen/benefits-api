@@ -250,11 +250,8 @@ class Command(TranslationImportMixin, BaseCommand):
         if fpl_data := config.get("fpl"):
             fpl_year = fpl_data["year"]
             fpl_period = fpl_data.get("period", "annual")
-            fpl, created = FederalPoveryLimit.objects.get_or_create(year=fpl_year)
-            if created:
-                fpl.period = fpl_period
-                fpl.save()
-            elif fpl.period != fpl_period:
+            fpl, created = FederalPoveryLimit.objects.get_or_create(year=fpl_year, defaults={"period": fpl_period})
+            if not created and fpl.period != fpl_period:
                 self.stdout.write(
                     self.style.WARNING(
                         f"  [FPL] Existing FPL record for year {fpl_year} has period '{fpl.period}', "
