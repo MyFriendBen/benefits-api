@@ -3,13 +3,19 @@ from django.conf import settings
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
 import json
+import os
 from integrations.util.cache import Cache
 
 
 class GoogleSheets:
     # Initialize at class definition time (only if integrations enabled)
     if getattr(settings, "ENABLE_GOOGLE_INTEGRATIONS", True):
-        info = json.loads(config("GOOGLE_APPLICATION_CREDENTIALS"))
+        google_creds = config("GOOGLE_APPLICATION_CREDENTIALS")
+        if os.path.exists(google_creds):
+            fh = open(google_creds)
+            info = json.load(fh)
+        else:
+            info = json.loads(google_creds)
         creds = service_account.Credentials.from_service_account_info(info)
         service = build("sheets", "v4", credentials=creds)
         sheet = service.spreadsheets()

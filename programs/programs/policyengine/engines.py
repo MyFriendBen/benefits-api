@@ -1,6 +1,7 @@
 from integrations.util.cache import Cache
 from decouple import config
 import requests
+from django.conf import settings
 
 
 class Sim:
@@ -24,7 +25,7 @@ class Sim:
 
 class ApiSim(Sim):
     method_name = "Policy Engine API"
-    pe_url = "https://api.policyengine.org/us/calculate"
+    pe_url = settings.POLICY_ENGINE_API_SIM or "https://api.policyengine.org/us/calculate"
 
     def __init__(self, data) -> None:
         self.request_payload = data
@@ -52,7 +53,7 @@ class PolicyEngineBearerTokenCache(Cache):
     default = ""
     client_id: str = config("POLICY_ENGINE_CLIENT_ID", "")
     client_secret: str = config("POLICY_ENGINE_CLIENT_SECRET", "")
-    domain = "https://policyengine.uk.auth0.com"
+    domain = settings.POLICY_ENGINE_API_UK or "https://policyengine.uk.auth0.com"
     endpoint = "/oauth/token"
 
     def update(self):
@@ -76,7 +77,7 @@ class PolicyEngineBearerTokenCache(Cache):
 class PrivateApiSim(ApiSim):
     method_name = "Private Policy Engine API"
     token = PolicyEngineBearerTokenCache()
-    pe_url = "https://household.api.policyengine.org/us/calculate"
+    pe_url = settings.POLICY_ENGINE_API_PRIVATE or "https://household.api.policyengine.org/us/calculate"
 
     def __init__(self, data) -> None:
         token = self.token.fetch()

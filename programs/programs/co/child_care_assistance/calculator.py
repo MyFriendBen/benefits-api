@@ -25,7 +25,13 @@ class ChildCareAssistance(ProgramCalculator):
     max_age_afterschool = 13
     max_age_afterschool_disabled = 19
     asset_limit = 1_000_000
-    dependencies = ["age", "income_amount", "income_frequency", "zipcode", "household_size"]
+    dependencies = [
+        "age",
+        "income_amount",
+        "income_frequency",
+        "zipcode",
+        "household_size",
+    ]
     fpl_limits = CccapFplCache()
 
     def household_eligible(self, e: Eligibility):
@@ -46,7 +52,7 @@ class ChildCareAssistance(ProgramCalculator):
         gross_income = self.screen.calc_gross_income(frequency, ["all"], ["cashAssistance"])
         deductions = self.screen.calc_expenses(frequency, ["childSupport"])
         net_income = gross_income - deductions
-        fpl_percent = cccap_county_limits[county_name] / 100
+        fpl_percent = cccap_county_limits.get(county_name, 0) / 100
         fpl = self.program.year.as_dict()
         income_limit = fpl[self.screen.household_size] * fpl_percent
         e.condition(net_income <= income_limit, messages.income(net_income, income_limit))
