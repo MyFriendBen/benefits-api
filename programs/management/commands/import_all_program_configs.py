@@ -122,7 +122,7 @@ class Command(BaseCommand):
     def _handle_dry_run(self, pending_files: list[Path]) -> None:
         """Display what would be imported without making any changes."""
         self.stdout.write(self.style.WARNING(f"\n{'=' * 60}"))
-        self.stdout.write(self.style.WARNING("Importing Program Configurations"))
+        self.stdout.write(self.style.WARNING("DRY RUN - No changes will be made"))
         self.stdout.write(self.style.WARNING(f"{'=' * 60}\n"))
 
         self.stdout.write(f"Found {len(pending_files)} pending import(s):\n")
