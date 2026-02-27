@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from django.core.management.base import BaseCommand
 from django.core.management import call_command
 from programs.models import ProgramConfigImport, Program
@@ -6,6 +8,13 @@ from pathlib import Path
 from typing import Any
 import argparse
 import json
+
+
+@dataclass
+class ImportResults:
+    successful: int = 0
+    failed: int = 0
+    skipped: int = 0
 
 
 class Command(BaseCommand):
@@ -50,51 +59,70 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args: Any, **options: Any) -> None:
-        dry_run = options.get("dry_run", False)
-        list_status = options.get("list_status", False)
-        single_file = options.get("single_file")
-
-        # Verify data directory exists
-        if not self.DATA_DIR.exists():
-            self.stderr.write(self.style.ERROR(f"Data directory not found: {self.DATA_DIR}"))
+        """Orchestrates the import process based on command options."""
+        if not self._validate_data_directory():
             return
 
-        # Get all JSON files in the data directory
-        json_files = sorted(self.DATA_DIR.glob("*.json"))
-
+        json_files = self._discover_config_files()
         if not json_files:
             self.stdout.write(self.style.WARNING("No JSON configuration files found in data directory."))
             return
 
-        # Get already imported files
-        imported_files = set(ProgramConfigImport.objects.values_list("filename", flat=True))
+        imported_files = self._get_imported_filenames()
 
-        # If --list flag, show status and exit
-        if list_status:
-            self._show_status(json_files, imported_files)
+        if options["list_status"]:
+            return self._show_status(json_files, imported_files)
+
+        pending_files = self._filter_pending_files(json_files, imported_files, options.get("single_file"))
+        if pending_files is None:  # error already written to stderr
             return
-
-        # If --file flag, filter to just that file
-        if single_file:
-            json_files = [f for f in json_files if f.name == single_file]
-            if not json_files:
-                self.stderr.write(self.style.ERROR(f"File not found: {single_file}"))
-                return
-
-        # Find pending imports
-        pending_files = [f for f in json_files if f.name not in imported_files]
 
         if not pending_files:
             self.stdout.write(self.style.SUCCESS("\n✓ All program configurations have already been imported.\n"))
             self._show_summary(len(json_files), len(json_files), 0)
             return
 
-        self.stdout.write(f"Found {len(pending_files)} pending program config import(s)\n")
+        if options["dry_run"]:
+            return self._handle_dry_run(pending_files)
 
-        # Show what will be imported
+        results = self._execute_imports(pending_files)
+        self._display_final_summary(results)
+
+    def _validate_data_directory(self) -> bool:
+        """Return False and write an error if the data directory doesn't exist."""
+        if not self.DATA_DIR.exists():
+            self.stderr.write(self.style.ERROR(f"Data directory not found: {self.DATA_DIR}"))
+            return False
+        return True
+
+    def _discover_config_files(self) -> list[Path]:
+        """Return a sorted list of JSON config files in the data directory."""
+        return sorted(self.DATA_DIR.glob("*.json"))
+
+    def _get_imported_filenames(self) -> set[str]:
+        """Return the set of filenames already recorded as imported."""
+        return set(ProgramConfigImport.objects.values_list("filename", flat=True))
+
+    def _filter_pending_files(
+        self, json_files: list[Path], imported_files: set[str], single_file: str | None
+    ) -> list[Path] | None:
+        """
+        Return files that haven't been imported yet.
+
+        If single_file is given, filters to just that file. Returns None (writing
+        to stderr) if a requested single file isn't found in the data directory.
+        """
+        if single_file:
+            json_files = [f for f in json_files if f.name == single_file]
+            if not json_files:
+                self.stderr.write(self.style.ERROR(f"File not found: {single_file}"))
+                return None
+        return [f for f in json_files if f.name not in imported_files]
+
+    def _handle_dry_run(self, pending_files: list[Path]) -> None:
+        """Display what would be imported without making any changes."""
         self.stdout.write(self.style.WARNING(f"\n{'=' * 60}"))
-        if dry_run:
-            self.stdout.write(self.style.WARNING("DRY RUN - No changes will be made"))
+        self.stdout.write(self.style.WARNING("DRY RUN - No changes will be made"))
         self.stdout.write(self.style.WARNING(f"{'=' * 60}\n"))
 
         self.stdout.write(f"Found {len(pending_files)} pending import(s):\n")
@@ -104,17 +132,22 @@ class Command(BaseCommand):
             if program_info:
                 self.stdout.write(f"    └─ {program_info['white_label']}/{program_info['program_name']}")
 
-        if dry_run:
-            self.stdout.write(self.style.WARNING("\n[Dry run] No imports executed.\n"))
-            return
+        self.stdout.write(self.style.WARNING("\n[Dry run] No imports executed.\n"))
 
-        # Confirm before proceeding
+    def _execute_imports(self, pending_files: list[Path]) -> ImportResults:
+        """Process each pending config file and return import results."""
+        results = ImportResults()
+
+        self.stdout.write(self.style.WARNING(f"\n{'=' * 60}"))
+        self.stdout.write(self.style.WARNING(f"{'=' * 60}\n"))
+        self.stdout.write(f"Found {len(pending_files)} pending import(s):\n")
+        for f in pending_files:
+            program_info = self._get_program_info(f)
+            self.stdout.write(f"  • {f.name}")
+            if program_info:
+                self.stdout.write(f"    └─ {program_info['white_label']}/{program_info['program_name']}")
+
         self.stdout.write("")
-
-        # Process each pending file
-        successful = 0
-        failed = 0
-        skipped = 0
 
         for config_file in pending_files:
             self.stdout.write(self.style.WARNING(f"\n{'─' * 60}"))
@@ -124,8 +157,7 @@ class Command(BaseCommand):
             try:
                 result = self._import_config(config_file)
                 if result["status"] == "success":
-                    successful += 1
-                    # Record the successful import
+                    results.successful += 1
                     ProgramConfigImport.objects.get_or_create(
                         filename=config_file.name,
                         defaults={
@@ -133,11 +165,9 @@ class Command(BaseCommand):
                             "white_label_code": result["white_label_code"],
                         },
                     )
-
                     self.stdout.write(self.style.SUCCESS(f"✓ Imported and recorded: {config_file.name}"))
                 elif result["status"] == "skipped":
-                    skipped += 1
-                    # Program already exists - record it as imported anyway
+                    results.skipped += 1
                     ProgramConfigImport.objects.get_or_create(
                         filename=config_file.name,
                         defaults={
@@ -145,27 +175,28 @@ class Command(BaseCommand):
                             "white_label_code": result["white_label_code"],
                         },
                     )
-
                     self.stdout.write(
                         self.style.WARNING(f"⊘ Skipped (program exists): {config_file.name} - recorded as imported")
                     )
                 else:
-                    failed += 1
+                    results.failed += 1
                     self.stdout.write(
                         self.style.ERROR(f"✗ Failed: {config_file.name} - {result.get('error', 'Unknown error')}")
                     )
             except Exception as e:
-                failed += 1
-
+                results.failed += 1
                 self.stdout.write(self.style.ERROR(f"✗ Error importing {config_file.name}: {str(e)}"))
 
-        # Final summary
+        return results
+
+    def _display_final_summary(self, results: ImportResults) -> None:
+        """Display a summary of the completed import run."""
         self.stdout.write(self.style.WARNING(f"\n{'=' * 60}"))
         self.stdout.write(self.style.SUCCESS("Import Complete"))
         self.stdout.write(self.style.WARNING(f"{'=' * 60}"))
-        self.stdout.write(f"  Successful: {successful}")
-        self.stdout.write(f"  Skipped:    {skipped}")
-        self.stdout.write(f"  Failed:     {failed}")
+        self.stdout.write(f"  Successful: {results.successful}")
+        self.stdout.write(f"  Skipped:    {results.skipped}")
+        self.stdout.write(f"  Failed:     {results.failed}")
         self.stdout.write("")
 
     def _show_status(self, json_files: list[Path], imported_files: set[str]) -> None:
