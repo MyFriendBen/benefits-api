@@ -66,7 +66,7 @@ class MaMiddleIncomeRental(ProgramCalculator):
             ami_max = ami_min * self.ami_max_multiplier
             gross_income = self.screen.calc_gross_income("yearly", ["all"])
             # Minimum Income Limits do not apply to households who have tenant based or mobile housing vouchers
-            if self.screen.has_section_8:
+            if self.screen.has_benefit("section_8"):
                 income_eligible = gross_income <= ami_max
             else:
                 income_eligible = ami_min <= gross_income <= ami_max
