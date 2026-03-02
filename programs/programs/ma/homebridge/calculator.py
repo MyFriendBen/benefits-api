@@ -31,6 +31,7 @@ class MaHomeBridge(ProgramCalculator):
     max_ami_percent = 1.20
     ami_year = 2025
     amount = 1
+    ami_max_multiplier = 1.5  # 120% AMI = 80% AMI × 1.5
     dependencies = ["zipcode", "income_amount", "income_frequency", "household_size"]
 
     def household_eligible(self, e: Eligibility):
@@ -43,14 +44,10 @@ class MaHomeBridge(ProgramCalculator):
 
         # Income eligibility - 60% to 120% AMI
         try:
-            min_ami_str = f"{int(self.min_ami_percent * 100)}%"
-            ami_min = hud_client.get_screen_mtsp_ami(
-                self.screen, min_ami_str, self.ami_year, county_override=self.hud_county
-            )
-            ami_100 = hud_client.get_screen_mtsp_ami(
-                self.screen, "100%", self.ami_year, county_override=self.hud_county
-            )
-            ami_max = ami_100 * self.max_ami_percent
+            ami_min = hud_client.get_screen_mtsp_ami(self.screen, "60%", self.ami_year, county_override=self.hud_county)
+            # HUD API doesn't provide 120% directly; estimate from 80% AMI
+            ami_80 = hud_client.get_screen_mtsp_ami(self.screen, "80%", self.ami_year, county_override=self.hud_county)
+            ami_max = ami_80 * self.ami_max_multiplier
             gross_income = self.screen.calc_gross_income("yearly", ["all"])
             income_eligible = ami_min <= gross_income <= ami_max
             e.condition(income_eligible, messages.income(gross_income, ami_max))
