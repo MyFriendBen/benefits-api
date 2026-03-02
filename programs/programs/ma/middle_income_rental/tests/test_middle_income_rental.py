@@ -167,6 +167,18 @@ class TestMaMiddleIncomeRentalHoHAge(TestCase):
         return MaMiddleIncomeRental(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
     @patch("programs.programs.ma.middle_income_rental.calculator.hud_client")
+    def test_hoh_age_none_is_ineligible(self, mock_hud_client):
+        """Test that a head of household with unknown age is not eligible."""
+        mock_hud_client.get_screen_mtsp_ami.return_value = 80000
+
+        calculator = self._create_calculator(head_age=None)
+        eligibility = Eligibility()
+
+        calculator.household_eligible(eligibility)
+
+        self.assertFalse(eligibility.eligible)
+
+    @patch("programs.programs.ma.middle_income_rental.calculator.hud_client")
     def test_hoh_age_17_is_ineligible(self, mock_hud_client):
         """Test that a head of household aged 17 is not eligible."""
         mock_hud_client.get_screen_mtsp_ami.return_value = 80000

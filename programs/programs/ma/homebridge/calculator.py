@@ -31,7 +31,7 @@ class MaHomeBridge(ProgramCalculator):
     max_ami_percent = 1.20
     ami_year = 2025
     amount = 1
-    ami_max_multiplier = 1.5  # 120% AMI = 80% AMI × 1.5
+    ami_max_multiplier = 1.5  # 120% AMI = 80% AMI x 1.5
     dependencies = ["zipcode", "income_amount", "income_frequency", "household_size"]
 
     def household_eligible(self, e: Eligibility):

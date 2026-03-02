@@ -35,7 +35,7 @@ class MaMiddleIncomeRental(ProgramCalculator):
     asset_limit = 75_000
     senior_asset_limit = 150_000
     min_head_age = 18
-    ami_max_multiplier = 1.5  # 120% AMI = 80% AMI × 1.5
+    ami_max_multiplier = 1.5  # 120% AMI = 80% AMI x 1.5
     dependencies = ["zipcode", "income_amount", "income_frequency", "household_size", "household_assets"]
 
     def household_eligible(self, e: Eligibility) -> None:
@@ -48,7 +48,8 @@ class MaMiddleIncomeRental(ProgramCalculator):
 
         # Head of household must be at least 18
         head = self.screen.get_head()
-        e.condition(head.age >= self.min_head_age, messages.older_than(self.min_head_age))
+        head_age = head.age
+        e.condition(head_age is not None and head_age >= self.min_head_age, messages.older_than(self.min_head_age))
 
         # Asset limit - seniors (all 62+) or all-disabled households get $150,000; otherwise $75,000
         members = self.screen.household_members.all()

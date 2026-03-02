@@ -10,7 +10,7 @@ homebuyer assistance program, including:
 """
 
 from django.test import TestCase
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 
 from programs.programs.ma import ma_calculators
 from programs.programs.ma.homebridge.calculator import MaHomeBridge
@@ -76,10 +76,10 @@ class TestMaHomeBridgeLocationEligibility(TestCase):
     def _mock_ami_values(self, mock_hud_client, ami_60=60000, ami_80=80000):
         """Helper to mock HUD client returning values for 60% and 80% AMI.
 
-        With ami_80=80000, the 120% ceiling is 80000 × 1.5 = 120000.
+        With ami_80=80000, the 120% ceiling is 80000 x 1.5 = 120000.
         """
 
-        def side_effect(screen, percent, year, county_override=None):
+        def side_effect(_screen, percent, _year, **_kwargs):
             if percent == "60%":
                 return ami_60
             elif percent == "80%":
@@ -152,10 +152,10 @@ class TestMaHomeBridgeIncomeEligibility(TestCase):
     def _mock_ami_values(self, mock_hud_client, ami_60=60000, ami_80=80000):
         """Helper to mock HUD client returning values for 60% and 80% AMI.
 
-        With ami_80=80000, the 120% ceiling is 80000 × 1.5 = 120000.
+        With ami_80=80000, the 120% ceiling is 80000 x 1.5 = 120000.
         """
 
-        def side_effect(screen, percent, year, county_override=None):
+        def side_effect(_screen, percent, _year, **_kwargs):
             if percent == "60%":
                 return ami_60
             elif percent == "80%":
@@ -167,7 +167,7 @@ class TestMaHomeBridgeIncomeEligibility(TestCase):
     @patch("programs.programs.ma.homebridge.calculator.hud_client")
     def test_income_at_60_percent_ami_is_eligible(self, mock_hud_client):
         """Test that income exactly at 60% AMI is eligible."""
-        # 60% AMI = 60000, 80% AMI = 80000, so 120% AMI = 80000 × 1.5 = 120000
+        # 60% AMI = 60000, 80% AMI = 80000, so 120% AMI = 80000 x 1.5 = 120000
         self._mock_ami_values(mock_hud_client)
 
         calculator = self._create_calculator(income=60000)
@@ -180,7 +180,7 @@ class TestMaHomeBridgeIncomeEligibility(TestCase):
     @patch("programs.programs.ma.homebridge.calculator.hud_client")
     def test_income_at_120_percent_ami_is_eligible(self, mock_hud_client):
         """Test that income exactly at 120% AMI is eligible."""
-        # 60% AMI = 60000, 80% AMI = 80000, so 120% AMI = 80000 × 1.5 = 120000
+        # 60% AMI = 60000, 80% AMI = 80000, so 120% AMI = 80000 x 1.5 = 120000
         self._mock_ami_values(mock_hud_client)
 
         calculator = self._create_calculator(income=120000)
@@ -219,7 +219,7 @@ class TestMaHomeBridgeIncomeEligibility(TestCase):
     @patch("programs.programs.ma.homebridge.calculator.hud_client")
     def test_income_above_120_percent_ami_is_ineligible(self, mock_hud_client):
         """Test that income above 120% AMI is not eligible."""
-        # 80% AMI = 80000, so 120% AMI = 80000 × 1.5 = 120000
+        # 80% AMI = 80000, so 120% AMI = 80000 x 1.5 = 120000
         self._mock_ami_values(mock_hud_client)
 
         calculator = self._create_calculator(income=130000)  # Above 120% AMI
@@ -293,10 +293,10 @@ class TestMaHomeBridgeHasBenefit(TestCase):
     def _mock_ami_values(self, mock_hud_client, ami_60=60000, ami_80=80000):
         """Helper to mock HUD client returning values for 60% and 80% AMI.
 
-        With ami_80=80000, the 120% ceiling is 80000 × 1.5 = 120000.
+        With ami_80=80000, the 120% ceiling is 80000 x 1.5 = 120000.
         """
 
-        def side_effect(screen, percent, year, county_override=None):
+        def side_effect(_screen, percent, _year, **_kwargs):
             if percent == "60%":
                 return ami_60
             elif percent == "80%":
