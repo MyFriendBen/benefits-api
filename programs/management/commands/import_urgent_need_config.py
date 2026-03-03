@@ -17,6 +17,7 @@ from programs.models import (
 from programs.programs.urgent_needs import urgent_need_functions
 from screener.models import WhiteLabel
 from programs.management.commands._translation_utils import TranslationImportMixin
+from translations.models import Translation
 
 
 def truncate(text: str, max_length: int = 50) -> str:
@@ -226,11 +227,28 @@ class Command(TranslationImportMixin, BaseCommand):
     # Import helpers
     # --------------------------------------------------------------------------------------
     def _delete_need(self, need: UrgentNeed) -> None:
-        """Delete an urgent need before re-importing in override mode."""
+        """Delete an urgent need before re-importing in override mode.
+
+        Translation FK fields use on_delete=PROTECT, so we must collect and delete
+        the Translation objects first to avoid a ProtectedError and prevent orphaned
+        translation records from accumulating in the DB across override runs.
+        """
         name = need.external_name or f"ID {need.id}"
         self.stdout.write(self.style.WARNING("\n[Override Mode] Deleting existing urgent need..."))
+
+        # Collect Translation objects referenced by PROTECT FK fields before deletion
+        old_translations = [
+            getattr(need, field)
+            for field in UrgentNeed.objects.translated_fields
+            if getattr(need, field, None) is not None
+        ]
+
         need.delete()
-        self.stdout.write(f"  Deleted urgent need: {name}\n")
+
+        # Delete orphaned Translation records now that the need is gone
+        old_translation_ids = [t.id for t in old_translations]
+        deleted_count, _ = Translation.objects.filter(id__in=old_translation_ids).delete()
+        self.stdout.write(f"  Deleted urgent need: {name} (removed {deleted_count} orphaned translation(s))\n")
 
     def _import_need(self, need: UrgentNeed, white_label: WhiteLabel, config: dict[str, Any]) -> UrgentNeed:
         translations = config.get("translations", {})
