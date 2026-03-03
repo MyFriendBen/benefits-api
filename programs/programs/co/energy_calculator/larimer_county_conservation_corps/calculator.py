@@ -1,7 +1,7 @@
 from programs.programs.calc import Eligibility, ProgramCalculator
 
 
-class LarimerCountyConservationCorps(ProgramCalculator):
+class EnergyCalculatorLarimerConservationCorps(ProgramCalculator):
     amount = 1
     dependencies = ["energy_calculator"]
     utility_providers = [
