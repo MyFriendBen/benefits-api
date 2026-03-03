@@ -27,8 +27,6 @@ class MaHomeBridge(ProgramCalculator):
     # Cambridge is a city in Middlesex County - used for HUD AMI lookups
     eligible_city = "Cambridge"
     hud_county = "Middlesex"
-    min_ami_percent = 0.60
-    max_ami_percent = 1.20
     ami_year = 2025
     amount = 1
     ami_max_multiplier = 1.5  # 120% AMI = 80% AMI x 1.5

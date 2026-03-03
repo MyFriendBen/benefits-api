@@ -37,10 +37,8 @@ class TestMaHomeBridgeCalculator(TestCase):
         """Test that the HUD county is Middlesex (Cambridge is in Middlesex County)."""
         self.assertEqual(MaHomeBridge.hud_county, "Middlesex")
 
-    def test_ami_thresholds_are_correct(self):
-        """Test that AMI thresholds are set correctly (60% to 120%)."""
-        self.assertEqual(MaHomeBridge.min_ami_percent, 0.60)
-        self.assertEqual(MaHomeBridge.max_ami_percent, 1.20)
+    def test_ami_max_multiplier_is_correct(self):
+        """Test that ami_max_multiplier is 1.5 (80% AMI × 1.5 = 120% AMI)."""
         self.assertEqual(MaHomeBridge.ami_max_multiplier, 1.5)
 
     def test_dependencies_are_defined(self):

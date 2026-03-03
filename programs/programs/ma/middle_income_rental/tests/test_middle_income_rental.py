@@ -533,6 +533,37 @@ class TestMaMiddleIncomeRentalSeniorAssetException(TestCase):
         self.assertFalse(eligibility.eligible)
 
     @patch("programs.programs.ma.middle_income_rental.calculator.hud_client")
+    def test_mixed_disability_household_uses_standard_75k_limit(self, mock_hud_client):
+        """Mixed-disability household (not all disabled) uses the $75,000 standard limit."""
+        mock_hud_client.get_screen_il_ami.return_value = 80000
+
+        mock_screen = Mock()
+        mock_screen.county = "Cambridge"
+        mock_screen.household_size = 2
+        mock_screen.household_assets = 100_000
+        mock_screen.white_label = Mock()
+        mock_screen.white_label.state_code = "MA"
+        mock_screen.calc_gross_income = Mock(return_value=90000)
+        mock_screen.has_benefit = Mock(return_value=False)
+        mock_head = Mock()
+        mock_head.age = 40
+        mock_screen.get_head = Mock(return_value=mock_head)
+        disabled_member = Mock()
+        disabled_member.age = 40
+        disabled_member.has_disability = Mock(return_value=True)
+        able_member = Mock()
+        able_member.age = 38
+        able_member.has_disability = Mock(return_value=False)
+        mock_screen.household_members = Mock()
+        mock_screen.household_members.all = Mock(return_value=[disabled_member, able_member])
+
+        calculator = MaMiddleIncomeRental(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
+        eligibility = Eligibility()
+        calculator.household_eligible(eligibility)
+
+        self.assertFalse(eligibility.eligible)  # $100K > $75K standard limit
+
+    @patch("programs.programs.ma.middle_income_rental.calculator.hud_client")
     def test_all_senior_household_above_150k_is_ineligible(self, mock_hud_client):
         """All-senior household with assets above $150,000 is still ineligible."""
         mock_hud_client.get_screen_il_ami.return_value = 80000
