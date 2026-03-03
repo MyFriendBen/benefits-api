@@ -14,7 +14,7 @@ class MaMiddleIncomeRental(ProgramCalculator):
     Eligibility requirements that can be verified:
     - Cambridge residency
     - Head of household must be at least 18 years old
-    - Household gross income between 80% and 120% AMI (MTSP)
+    - Household gross income between 80% and 120% AMI (Standard Section 8 IL)
       - Section 8 / housing voucher holders are exempt from the 80% floor
     - Liquid assets at or below $75,000
       - Households where all members are 62+ or all members are disabled: $150,000
@@ -58,10 +58,10 @@ class MaMiddleIncomeRental(ProgramCalculator):
         limit = self.senior_asset_limit if (all_senior or all_disabled) else self.asset_limit
         e.condition(self.screen.household_assets <= limit, messages.assets(limit))
 
-        # Income eligibility - 80% to 120% AMI (MTSP)
+        # Income eligibility - 80% to 120% AMI (Standard Section 8 IL)
         # Section 8 / housing voucher holders are exempt from the 80% floor.
         try:
-            ami_min = hud_client.get_screen_mtsp_ami(self.screen, "80%", self.ami_year, county_override=self.hud_county)
+            ami_min = hud_client.get_screen_il_ami(self.screen, "80%", self.ami_year, county_override=self.hud_county)
             # HUD API doesn't provide 120% directly; estimate from 80% AMI
             ami_max = ami_min * self.ami_max_multiplier
             gross_income = self.screen.calc_gross_income("yearly", ["all"])

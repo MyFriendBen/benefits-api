@@ -165,39 +165,7 @@
     }
   },
   {
-    "notes": "MA Middle-Income Rental - Eligible: income exactly at 120% AMI ceiling ($11,580/mo = 80% AMI × 1.5 for 1-person, Middlesex 2025)",
-    "household": {
-      "white_label": "ma",
-      "is_test": true,
-      "agree_to_tos": true,
-      "is_13_or_older": true,
-      "zipcode": "02140",
-      "county": "Cambridge",
-      "household_size": 1,
-      "household_assets": 50000.00,
-      "household_members": [
-        {
-          "relationship": "headOfHousehold",
-          "age": 40,
-          "has_income": true,
-          "income_streams": [
-            { "type": "wages", "amount": 11580.00, "frequency": "monthly" }
-          ],
-          "insurance": { "none": false, "employer": true }
-        }
-      ],
-      "expenses": [],
-      "has_ma_middle_income_rental": false,
-      "needs_housing_help": true
-    },
-    "expected_results": {
-      "program_name": "ma_middle_income_rental",
-      "eligible": true,
-      "value": 1
-    }
-  },
-  {
-    "notes": "MA Middle-Income Rental - Ineligible: income $1 above 120% AMI ceiling ($11,581/mo vs $11,580/mo ceiling for 1-person, Middlesex 2025)",
+    "notes": "MA Middle-Income Rental - Eligible: income exactly at 120% AMI ceiling ($11,581/mo = 80% AMI × 1.5 for 1-person, Middlesex 2025, Standard Section 8 IL $92,650 × 1.5 = $138,975/yr; $11,581 × 12 = $138,972 ≤ $138,975)",
     "household": {
       "white_label": "ma",
       "is_test": true,
@@ -224,11 +192,43 @@
     },
     "expected_results": {
       "program_name": "ma_middle_income_rental",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "MA Middle-Income Rental - Ineligible: income $1 above 120% AMI ceiling ($11,582/mo vs $11,581/mo ceiling for 1-person, Middlesex 2025, Standard Section 8 IL $92,650 × 1.5 = $138,975/yr; $11,582 × 12 = $138,984 > $138,975)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02140",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_assets": 50000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 40,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 11582.00, "frequency": "monthly" }
+          ],
+          "insurance": { "none": false, "employer": true }
+        }
+      ],
+      "expenses": [],
+      "has_ma_middle_income_rental": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_middle_income_rental",
       "eligible": false
     }
   },
   {
-    "notes": "MA Middle-Income Rental - Ineligible: income above 120% AMI (too high); 1-person, $11,700/mo exceeds $11,580/mo ceiling (80% AMI × 1.5, Middlesex 2025)",
+    "notes": "MA Middle-Income Rental - Ineligible: income above 120% AMI (too high); 1-person, $11,700/mo exceeds $11,581/mo ceiling (80% AMI × 1.5, Middlesex 2025, Standard Section 8 IL)",
     "household": {
       "white_label": "ma",
       "is_test": true,
@@ -642,7 +642,7 @@
     }
   },
   {
-    "notes": "MA Middle-Income Rental - Ineligible: Section 8 voucher holder, income above 120% AMI ceiling (ceiling still applies)",
+    "notes": "MA Middle-Income Rental - Ineligible: Section 8 voucher holder, income above 120% AMI ceiling ($11,700/mo exceeds $11,581/mo ceiling, Standard Section 8 IL, ceiling still applies)",
     "household": {
       "white_label": "ma",
       "is_test": true,

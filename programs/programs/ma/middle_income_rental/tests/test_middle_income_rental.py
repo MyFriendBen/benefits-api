@@ -97,7 +97,7 @@ class TestMaMiddleIncomeRentalLocationEligibility(TestCase):
 
     def _mock_ami_values(self, mock_hud_client, ami_80=80000):
         """Helper to mock HUD client returning 80% AMI."""
-        mock_hud_client.get_screen_mtsp_ami.return_value = ami_80
+        mock_hud_client.get_screen_il_ami.return_value = ami_80
 
     @patch("programs.programs.ma.middle_income_rental.calculator.hud_client")
     def test_cambridge_resident_passes_location_check(self, mock_hud_client):
@@ -169,7 +169,7 @@ class TestMaMiddleIncomeRentalHoHAge(TestCase):
     @patch("programs.programs.ma.middle_income_rental.calculator.hud_client")
     def test_hoh_age_none_is_ineligible(self, mock_hud_client):
         """Test that a head of household with unknown age is not eligible."""
-        mock_hud_client.get_screen_mtsp_ami.return_value = 80000
+        mock_hud_client.get_screen_il_ami.return_value = 80000
 
         calculator = self._create_calculator(head_age=None)
         eligibility = Eligibility()
@@ -181,7 +181,7 @@ class TestMaMiddleIncomeRentalHoHAge(TestCase):
     @patch("programs.programs.ma.middle_income_rental.calculator.hud_client")
     def test_hoh_age_17_is_ineligible(self, mock_hud_client):
         """Test that a head of household aged 17 is not eligible."""
-        mock_hud_client.get_screen_mtsp_ami.return_value = 80000
+        mock_hud_client.get_screen_il_ami.return_value = 80000
 
         calculator = self._create_calculator(head_age=17)
         eligibility = Eligibility()
@@ -193,7 +193,7 @@ class TestMaMiddleIncomeRentalHoHAge(TestCase):
     @patch("programs.programs.ma.middle_income_rental.calculator.hud_client")
     def test_hoh_age_18_is_eligible(self, mock_hud_client):
         """Test that a head of household aged 18 meets the minimum age requirement."""
-        mock_hud_client.get_screen_mtsp_ami.return_value = 80000
+        mock_hud_client.get_screen_il_ami.return_value = 80000
 
         calculator = self._create_calculator(head_age=18)
         eligibility = Eligibility()
@@ -241,7 +241,7 @@ class TestMaMiddleIncomeRentalIncomeEligibility(TestCase):
             self.assertEqual(percent, "80%", f"Expected '80%' AMI request but got '{percent}'")
             return ami_80
 
-        mock_hud_client.get_screen_mtsp_ami.side_effect = _side_effect
+        mock_hud_client.get_screen_il_ami.side_effect = _side_effect
 
     @patch("programs.programs.ma.middle_income_rental.calculator.hud_client")
     def test_income_at_80_percent_ami_is_eligible(self, mock_hud_client):
@@ -347,7 +347,7 @@ class TestMaMiddleIncomeRentalSection8Voucher(TestCase):
             self.assertEqual(percent, "80%", f"Expected '80%' AMI request but got '{percent}'")
             return ami_80
 
-        mock_hud_client.get_screen_mtsp_ami.side_effect = _side_effect
+        mock_hud_client.get_screen_il_ami.side_effect = _side_effect
 
     @patch("programs.programs.ma.middle_income_rental.calculator.hud_client")
     def test_voucher_holder_below_80_pct_floor_is_eligible(self, mock_hud_client):
@@ -427,7 +427,7 @@ class TestMaMiddleIncomeRentalAssetEligibility(TestCase):
     @patch("programs.programs.ma.middle_income_rental.calculator.hud_client")
     def test_assets_at_standard_limit_are_eligible(self, mock_hud_client):
         """Test that assets exactly at $75,000 are eligible."""
-        mock_hud_client.get_screen_mtsp_ami.return_value = 80000
+        mock_hud_client.get_screen_il_ami.return_value = 80000
 
         calculator = self._create_calculator(assets=75_000)
         eligibility = Eligibility()
@@ -439,7 +439,7 @@ class TestMaMiddleIncomeRentalAssetEligibility(TestCase):
     @patch("programs.programs.ma.middle_income_rental.calculator.hud_client")
     def test_assets_below_standard_limit_are_eligible(self, mock_hud_client):
         """Test that assets below $75,000 are eligible."""
-        mock_hud_client.get_screen_mtsp_ami.return_value = 80000
+        mock_hud_client.get_screen_il_ami.return_value = 80000
 
         calculator = self._create_calculator(assets=50_000)
         eligibility = Eligibility()
@@ -451,7 +451,7 @@ class TestMaMiddleIncomeRentalAssetEligibility(TestCase):
     @patch("programs.programs.ma.middle_income_rental.calculator.hud_client")
     def test_assets_above_standard_limit_are_ineligible(self, mock_hud_client):
         """Test that assets above $75,000 are ineligible for standard households."""
-        mock_hud_client.get_screen_mtsp_ami.return_value = 80000
+        mock_hud_client.get_screen_il_ami.return_value = 80000
 
         calculator = self._create_calculator(assets=76_000)
         eligibility = Eligibility()
@@ -498,7 +498,7 @@ class TestMaMiddleIncomeRentalSeniorAssetException(TestCase):
     @patch("programs.programs.ma.middle_income_rental.calculator.hud_client")
     def test_all_senior_household_gets_150k_limit(self, mock_hud_client):
         """All-senior (62+) household is eligible with assets up to $150,000."""
-        mock_hud_client.get_screen_mtsp_ami.return_value = 80000
+        mock_hud_client.get_screen_il_ami.return_value = 80000
 
         calculator = self._create_calculator(assets=100_000, member_ages=[65, 63])
         eligibility = Eligibility()
@@ -510,7 +510,7 @@ class TestMaMiddleIncomeRentalSeniorAssetException(TestCase):
     @patch("programs.programs.ma.middle_income_rental.calculator.hud_client")
     def test_all_disabled_household_gets_150k_limit(self, mock_hud_client):
         """All-disabled household is eligible with assets up to $150,000."""
-        mock_hud_client.get_screen_mtsp_ami.return_value = 80000
+        mock_hud_client.get_screen_il_ami.return_value = 80000
 
         calculator = self._create_calculator(assets=100_000, member_ages=[40, 38], all_disabled=True)
         eligibility = Eligibility()
@@ -522,7 +522,7 @@ class TestMaMiddleIncomeRentalSeniorAssetException(TestCase):
     @patch("programs.programs.ma.middle_income_rental.calculator.hud_client")
     def test_mixed_age_household_uses_standard_75k_limit(self, mock_hud_client):
         """Mixed-age household (not all senior) uses the $75,000 standard limit."""
-        mock_hud_client.get_screen_mtsp_ami.return_value = 80000
+        mock_hud_client.get_screen_il_ami.return_value = 80000
 
         # One member is 65, one is 40 — not all senior
         calculator = self._create_calculator(assets=100_000, member_ages=[65, 40])
@@ -535,7 +535,7 @@ class TestMaMiddleIncomeRentalSeniorAssetException(TestCase):
     @patch("programs.programs.ma.middle_income_rental.calculator.hud_client")
     def test_all_senior_household_above_150k_is_ineligible(self, mock_hud_client):
         """All-senior household with assets above $150,000 is still ineligible."""
-        mock_hud_client.get_screen_mtsp_ami.return_value = 80000
+        mock_hud_client.get_screen_il_ami.return_value = 80000
 
         calculator = self._create_calculator(assets=151_000, member_ages=[65, 63])
         eligibility = Eligibility()
@@ -582,7 +582,7 @@ class TestMaMiddleIncomeRentalHudApiError(TestCase):
         """Test that HUD API errors result in ineligibility (income cannot be verified)."""
         from integrations.clients.hud_income_limits import HudIncomeClientError
 
-        mock_hud_client.get_screen_mtsp_ami.side_effect = HudIncomeClientError("API Error")
+        mock_hud_client.get_screen_il_ami.side_effect = HudIncomeClientError("API Error")
 
         calculator = self._create_calculator()
         eligibility = Eligibility()
@@ -627,7 +627,7 @@ class TestMaMiddleIncomeRentalHasBenefit(TestCase):
     @patch("programs.programs.ma.middle_income_rental.calculator.hud_client")
     def test_user_without_benefit_is_eligible(self, mock_hud_client):
         """Test that users who don't have the benefit can be eligible."""
-        mock_hud_client.get_screen_mtsp_ami.return_value = 80000
+        mock_hud_client.get_screen_il_ami.return_value = 80000
 
         calculator = self._create_calculator(has_benefit=False, income=90000)
         eligibility = Eligibility()
@@ -639,7 +639,7 @@ class TestMaMiddleIncomeRentalHasBenefit(TestCase):
     @patch("programs.programs.ma.middle_income_rental.calculator.hud_client")
     def test_user_with_benefit_is_ineligible(self, mock_hud_client):
         """Test that users who already have the benefit are ineligible."""
-        mock_hud_client.get_screen_mtsp_ami.return_value = 80000
+        mock_hud_client.get_screen_il_ami.return_value = 80000
 
         calculator = self._create_calculator(has_benefit=True, income=90000)
         eligibility = Eligibility()
