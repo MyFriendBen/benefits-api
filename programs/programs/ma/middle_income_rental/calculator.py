@@ -36,7 +36,7 @@ class MaMiddleIncomeRental(ProgramCalculator):
     senior_asset_limit = 150_000
     min_head_age = 18
     ami_max_multiplier = 1.5  # 120% AMI = 80% AMI x 1.5
-    dependencies = ["zipcode", "income_amount", "income_frequency", "household_size", "household_assets"]
+    dependencies = ["age", "zipcode", "income_amount", "income_frequency", "household_size", "household_assets"]
 
     def household_eligible(self, e: Eligibility) -> None:
         # Check if user already has this benefit

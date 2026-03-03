@@ -59,7 +59,7 @@ class TestMaMiddleIncomeRentalCalculator(TestCase):
 
     def test_dependencies_are_defined(self):
         """Test that required dependencies are properly defined."""
-        expected_deps = ["zipcode", "income_amount", "income_frequency", "household_size", "household_assets"]
+        expected_deps = ["age", "zipcode", "income_amount", "income_frequency", "household_size", "household_assets"]
         self.assertEqual(list(MaMiddleIncomeRental.dependencies), expected_deps)
 
 
