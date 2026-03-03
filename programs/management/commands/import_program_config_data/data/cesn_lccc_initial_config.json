@@ -7,6 +7,8 @@
   },
   "program": {
     "name_abbreviated": "cesn_lccc",
+    "external_name": "cesn_lccc",
+    "show_on_current_benefits": true,
     "legal_status_required": ["citizen", "non_citizen", "gc_5plus", "gc_18plus_no5", "gc_under18_no5"],
     "name": "Larimer County Conservation Corps",
     "description_short": "Free home efficiency assessments for Fort Collins and Loveland Utilities customers",
