@@ -39,7 +39,7 @@
     }
   },
   {
-    "notes": "MA HomeBridge - Eligible Cambridge resident with income at 120% AMI (upper bound)",
+    "notes": "MA HomeBridge - Eligible Cambridge resident with income exactly at 120% AMI ceiling ($11,580/mo = 80% AMI × 1.5 for 1-person, Middlesex 2025)",
     "household": {
       "white_label": "ma",
       "is_test": true,
@@ -57,7 +57,7 @@
           "income_streams": [
             {
               "type": "wages",
-              "amount": 9166.00,
+              "amount": 11580.00,
               "frequency": "monthly"
             }
           ],
@@ -193,7 +193,45 @@
     }
   },
   {
-    "notes": "MA HomeBridge - Ineligible due to income above 120% AMI (too high)",
+    "notes": "MA HomeBridge - Ineligible: income $1 above 120% AMI ceiling ($11,581/mo vs $11,580/mo ceiling for 1-person, Middlesex 2025)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02140",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_assets": 35000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 11581.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": [],
+      "has_ma_homebridge": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_homebridge",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA HomeBridge - Ineligible due to income well above 120% AMI",
     "household": {
       "white_label": "ma",
       "is_test": true,
