@@ -501,7 +501,7 @@
           "disabled": true,
           "has_income": true,
           "income_streams": [
-            { "type": "sSDisability", "amount": 3500.00, "frequency": "monthly" }
+            { "type": "sSDisability", "amount": 4500.00, "frequency": "monthly" }
           ],
           "insurance": { "none": false, "mass_health": true }
         },
@@ -511,7 +511,7 @@
           "disabled": true,
           "has_income": true,
           "income_streams": [
-            { "type": "sSDisability", "amount": 3500.00, "frequency": "monthly" }
+            { "type": "sSDisability", "amount": 4500.00, "frequency": "monthly" }
           ],
           "insurance": { "none": false, "mass_health": true }
         }
@@ -544,7 +544,7 @@
           "disabled": true,
           "has_income": true,
           "income_streams": [
-            { "type": "sSDisability", "amount": 3500.00, "frequency": "monthly" }
+            { "type": "sSDisability", "amount": 4500.00, "frequency": "monthly" }
           ],
           "insurance": { "none": false, "mass_health": true }
         },
@@ -554,7 +554,7 @@
           "disabled": true,
           "has_income": true,
           "income_streams": [
-            { "type": "sSDisability", "amount": 3500.00, "frequency": "monthly" }
+            { "type": "sSDisability", "amount": 4500.00, "frequency": "monthly" }
           ],
           "insurance": { "none": false, "mass_health": true }
         }
