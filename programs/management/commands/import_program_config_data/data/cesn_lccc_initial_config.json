@@ -1,0 +1,22 @@
+{
+  "white_label": {
+    "code": "cesn"
+  },
+  "program_category": {
+    "external_name": "cesn_efficiency_upgrades"
+  },
+  "program": {
+    "name_abbreviated": "cesn_lccc",
+    "legal_status_required": ["citizen", "non_citizen", "gc_5plus", "gc_18plus_no5", "gc_under18_no5"],
+    "name": "Larimer County Conservation Corps",
+    "description_short": "Free home efficiency assessments for Fort Collins and Loveland Utilities customers",
+    "description": "Larimer County Conservation Corps offers FREE basic home efficiency assessments to Fort Collins Utilities and Loveland Utilities customers. During a 1-1.5 hour assessment two crew members: - Install LED light bulbs, water conserving shower-heads and faucet aerators, smoke/carbon monoxide detectors, clotheslines, furnace air filters and outdoor hose timers and nozzles. - Educate customers about water and energy efficiency practices and other services offered by the utility provider. - Take a quick look around the home - checking appliances, toilets, and your heating and cooling system. Then share any rebate options or special offers available by upgrading to high-efficiency appliances.",
+    "learn_more_link": "https://www.larimer.gov/ewd/young-adults/lccc/energy",
+    "apply_button_link": "https://larimercountyconservationcorps.fullslate.com/",
+    "apply_button_description": "Schedule an Assessment",
+    "estimated_application_time": "5 minutes",
+    "estimated_delivery_time": "1 week to receive assessment upon scheduling",
+    "estimated_value": "Varies",
+    "website_description": "Free home efficiency assessments for Fort Collins and Loveland Utilities customers"
+  }
+}
