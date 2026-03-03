@@ -139,6 +139,10 @@
         "has_medicare_hi": { "type": "boolean" },
         "has_chp_hi": { "type": "boolean" },
         "has_no_hi": { "type": "boolean" },
+        "housing_situation": {
+          "type": "string",
+          "enum": ["rent", "own", "staying_with_friends", "hotel", "shelter", "other"]
+        },
         "utm_id": { "type": "string" },
         "utm_source": { "type": "string" },
         "utm_medium": { "type": "string" },
@@ -216,8 +220,15 @@
             "fosterChild",
             "fosterParent",
             "stepParent",
+            "stepChild",
             "grandParent",
+            "grandChild",
             "domesticPartner",
+            "sisterOrBrother",
+            "stepSisterOrBrother",
+            "boyfriendOrGirlfriend",
+            "relatedOther",
+            "unrelated",
             "other"
           ]
         },
