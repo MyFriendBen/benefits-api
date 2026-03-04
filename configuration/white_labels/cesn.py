@@ -2227,7 +2227,7 @@ class CesnConfigurationData(ConfigurationData):
                 "default": [
                     "zipcode",
                     "householdSize",
-                    "energyCalculatorHouseholdData",
+                    "householdData",
                     "energyCalculatorElectricityProvider",
                     "energyCalculatorGasProvider",
                     "energyCalculatorUtilityStatus",
@@ -2238,7 +2238,7 @@ class CesnConfigurationData(ConfigurationData):
                     "energyCalculatorExpenses",
                     "zipcode",
                     "householdSize",
-                    "energyCalculatorHouseholdData",
+                    "householdData",
                     "energyCalculatorElectricityProvider",
                     "energyCalculatorGasProvider",
                     "energyCalculatorUtilityStatus",
