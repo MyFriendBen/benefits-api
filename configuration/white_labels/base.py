@@ -179,7 +179,7 @@ class ConfigurationData:
     # Types of income to collect (customize for state-specific income types)
     # Organized by category for two-level dropdown selection
     income_categories = {
-        "employment": {"_label": "incomeCategories.employment", "_default_message": "Employment Income"},
+        "employment": {"_label": "incomeCategories.employment", "_default_message": "Work & Self-Employment Income"},
         "government": {"_label": "incomeCategories.government", "_default_message": "Government Benefits"},
         "investment": {"_label": "incomeCategories.investment", "_default_message": "Investment & Retirement"},
         "property": {"_label": "incomeCategories.property", "_default_message": "Property Income"},
