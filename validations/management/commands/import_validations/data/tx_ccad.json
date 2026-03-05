@@ -9,7 +9,6 @@
       "household_assets": 0.0,
       "agree_to_tos": true,
       "is_13_or_older": true,
-      "housing_situation": "rent",
       "household_members": [
         {
           "relationship": "headOfHousehold",
@@ -52,7 +51,6 @@
       "household_assets": 0.0,
       "agree_to_tos": true,
       "is_13_or_older": true,
-      "housing_situation": "rent",
       "household_members": [
         {
           "relationship": "headOfHousehold",
@@ -96,7 +94,6 @@
       "household_assets": 0.0,
       "agree_to_tos": true,
       "is_13_or_older": true,
-      "housing_situation": "rent",
       "household_members": [
         {
           "relationship": "headOfHousehold",
@@ -139,7 +136,6 @@
       "household_assets": 0.0,
       "agree_to_tos": true,
       "is_13_or_older": true,
-      "housing_situation": "rent",
       "household_members": [
         {
           "relationship": "headOfHousehold",
@@ -182,7 +178,6 @@
       "household_assets": 0.0,
       "agree_to_tos": true,
       "is_13_or_older": true,
-      "housing_situation": "rent",
       "household_members": [
         {
           "relationship": "headOfHousehold",
@@ -225,7 +220,6 @@
       "household_assets": 0.0,
       "agree_to_tos": true,
       "is_13_or_older": true,
-      "housing_situation": "rent",
       "household_members": [
         {
           "relationship": "headOfHousehold",
@@ -269,7 +263,6 @@
       "household_assets": 0.0,
       "agree_to_tos": true,
       "is_13_or_older": true,
-      "housing_situation": "rent",
       "household_members": [
         {
           "relationship": "headOfHousehold",
@@ -313,7 +306,6 @@
       "household_assets": 0.0,
       "agree_to_tos": true,
       "is_13_or_older": true,
-      "housing_situation": "rent",
       "household_members": [
         {
           "relationship": "headOfHousehold",
@@ -356,7 +348,6 @@
       "household_assets": 0.0,
       "agree_to_tos": true,
       "is_13_or_older": true,
-      "housing_situation": "rent",
       "household_members": [
         {
           "relationship": "headOfHousehold",
@@ -399,7 +390,6 @@
       "household_assets": 0.0,
       "agree_to_tos": true,
       "is_13_or_older": true,
-      "housing_situation": "rent",
       "household_members": [
         {
           "relationship": "headOfHousehold",
@@ -434,50 +424,6 @@
     }
   },
   {
-    "notes": "TX Community Care for the Aged and Disabled (CCAD) - 65-Year-Old Currently Residing in Nursing Facility - Excluded from CCAD",
-    "household": {
-      "white_label": "tx",
-      "household_size": 1,
-      "zipcode": "75201",
-      "county": "Dallas",
-      "household_assets": 0.0,
-      "agree_to_tos": true,
-      "is_13_or_older": true,
-      "housing_situation": "nursing_home",
-      "household_members": [
-        {
-          "relationship": "headOfHousehold",
-          "birth_month": 1,
-          "birth_year": 1961,
-          "age": 65,
-          "has_income": true,
-          "income_streams": [
-            {
-              "type": "sSRetirement",
-              "amount": 1200.0,
-              "frequency": "monthly"
-            }
-          ],
-          "insurance": {
-            "none": false,
-            "employer": false,
-            "private": false,
-            "medicaid": true,
-            "medicare": false,
-            "chp": false,
-            "va": false
-          },
-          "disabled": true
-        }
-      ],
-      "expenses": []
-    },
-    "expected_results": {
-      "program_name": "tx_ccad",
-      "eligible": false
-    }
-  },
-  {
     "notes": "TX Community Care for the Aged and Disabled (CCAD) - Mixed Household - Eligible 68-Year-Old with Ineligible 45-Year-Old Adult Child",
     "household": {
       "white_label": "tx",
@@ -487,7 +433,6 @@
       "household_assets": 0.0,
       "agree_to_tos": true,
       "is_13_or_older": true,
-      "housing_situation": "rent",
       "household_members": [
         {
           "relationship": "headOfHousehold",
@@ -553,7 +498,6 @@
       "household_assets": 0.0,
       "agree_to_tos": true,
       "is_13_or_older": true,
-      "housing_situation": "rent",
       "household_members": [
         {
           "relationship": "headOfHousehold",
@@ -619,7 +563,6 @@
       "household_assets": 0.0,
       "agree_to_tos": true,
       "is_13_or_older": true,
-      "housing_situation": "rent",
       "household_members": [
         {
           "relationship": "headOfHousehold",
@@ -663,7 +606,6 @@
       "household_assets": 0.0,
       "agree_to_tos": true,
       "is_13_or_older": true,
-      "housing_situation": "rent",
       "household_members": [
         {
           "relationship": "headOfHousehold",
@@ -707,7 +649,6 @@
       "household_assets": 0.0,
       "agree_to_tos": true,
       "is_13_or_older": true,
-      "housing_situation": "rent",
       "household_members": [
         {
           "relationship": "headOfHousehold",
