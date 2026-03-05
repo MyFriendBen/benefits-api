@@ -29,7 +29,7 @@ def backfill_income_category_gap(apps, schema_editor):
         "cashAssistance": "government",
         "workersComp": "government",
         "veteran": "government",
-        "cOSDisability": "government",    # CO
+        "cOSDisability": "government",  # CO
         "stateDisability": "government",  # TX, MA
         "iLStateDisability": "government",  # IL
         # Investment and retirement
@@ -56,9 +56,9 @@ def backfill_income_category_gap(apps, schema_editor):
             gap_count += 1
 
     # Part 2: correct rental/boarder rows that 0126 set to 'investment'
-    correction_count = IncomeStream.objects.filter(
-        type__in=["rental", "boarder"], category="investment"
-    ).update(category="property")
+    correction_count = IncomeStream.objects.filter(type__in=["rental", "boarder"], category="investment").update(
+        category="property"
+    )
 
     print(f"Backfilled {gap_count} gap rows; corrected {correction_count} rental/boarder rows to 'property'")
 
