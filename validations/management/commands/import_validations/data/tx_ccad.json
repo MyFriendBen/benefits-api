@@ -16,20 +16,12 @@
           "birth_month": 1,
           "birth_year": 1961,
           "age": 65,
-          "gender": null,
-          "pregnant": null,
-          "student": null,
-          "disabled": null,
-          "veteran": null,
-          "visually_impaired": null,
-          "unemployed": null,
           "has_income": true,
           "income_streams": [
             {
               "type": "sSRetirement",
               "amount": 1500.0,
-              "frequency": "monthly",
-              "hours_worked": null
+              "frequency": "monthly"
             }
           ],
           "insurance": {
@@ -43,35 +35,11 @@
           }
         }
       ],
-      "expenses": [],
-      "has_tanf": null,
-      "has_wic": null,
-      "has_snap": null,
-      "has_sunbucks": null,
-      "has_lifeline": null,
-      "has_acp": null,
-      "has_eitc": null,
-      "has_coeitc": null,
-      "has_nslp": null,
-      "has_ctc": null,
-      "has_il_eitc": null,
-      "has_il_ctc": null,
-      "has_medicaid": null,
-      "has_rtdlive": null,
-      "has_cccap": null,
-      "has_chp": null,
-      "has_ssi": null,
-      "has_ssdi": null,
-      "has_aca": null,
-      "has_section_8": null,
-      "has_ma_homebridge": null,
-      "has_ma_door_to_door": null,
-      "has_csfp": null
+      "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_community care for the aged and disabled (ccad)",
-      "eligible": true,
-      "value": null
+      "program_name": "tx_ccad",
+      "eligible": true
     }
   },
   {
@@ -91,20 +59,13 @@
           "birth_month": 3,
           "birth_year": 2005,
           "age": 21,
-          "gender": null,
-          "pregnant": null,
-          "student": null,
-          "disabled": null,
-          "veteran": null,
-          "visually_impaired": null,
-          "unemployed": null,
+          "disabled": true,
           "has_income": true,
           "income_streams": [
             {
               "type": "sSDisability",
-              "amount": 3825.0,
-              "frequency": "monthly",
-              "hours_worked": null
+              "amount": 3765.0,
+              "frequency": "monthly"
             }
           ],
           "insurance": {
@@ -118,35 +79,11 @@
           }
         }
       ],
-      "expenses": [],
-      "has_tanf": null,
-      "has_wic": null,
-      "has_snap": null,
-      "has_sunbucks": null,
-      "has_lifeline": null,
-      "has_acp": null,
-      "has_eitc": null,
-      "has_coeitc": null,
-      "has_nslp": null,
-      "has_ctc": null,
-      "has_il_eitc": null,
-      "has_il_ctc": null,
-      "has_medicaid": null,
-      "has_rtdlive": null,
-      "has_cccap": null,
-      "has_chp": null,
-      "has_ssi": null,
-      "has_ssdi": null,
-      "has_aca": null,
-      "has_section_8": null,
-      "has_ma_homebridge": null,
-      "has_ma_door_to_door": null,
-      "has_csfp": null
+      "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_community care for the aged and disabled (ccad)",
-      "eligible": true,
-      "value": null
+      "program_name": "tx_ccad",
+      "eligible": true
     }
   },
   {
@@ -166,20 +103,12 @@
           "birth_month": 1,
           "birth_year": 1959,
           "age": 67,
-          "gender": null,
-          "pregnant": null,
-          "student": null,
-          "disabled": null,
-          "veteran": null,
-          "visually_impaired": null,
-          "unemployed": null,
           "has_income": true,
           "income_streams": [
             {
               "type": "sSRetirement",
-              "amount": 4200.0,
-              "frequency": "monthly",
-              "hours_worked": null
+              "amount": 3700.0,
+              "frequency": "monthly"
             }
           ],
           "insurance": {
@@ -193,35 +122,11 @@
           }
         }
       ],
-      "expenses": [],
-      "has_tanf": null,
-      "has_wic": null,
-      "has_snap": null,
-      "has_sunbucks": null,
-      "has_lifeline": null,
-      "has_acp": null,
-      "has_eitc": null,
-      "has_coeitc": null,
-      "has_nslp": null,
-      "has_ctc": null,
-      "has_il_eitc": null,
-      "has_il_ctc": null,
-      "has_medicaid": null,
-      "has_rtdlive": null,
-      "has_cccap": null,
-      "has_chp": null,
-      "has_ssi": null,
-      "has_ssdi": null,
-      "has_aca": null,
-      "has_section_8": null,
-      "has_ma_homebridge": null,
-      "has_ma_door_to_door": null,
-      "has_csfp": null
+      "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_community care for the aged and disabled (ccad)",
-      "eligible": true,
-      "value": null
+      "program_name": "tx_ccad",
+      "eligible": true
     }
   },
   {
@@ -241,20 +146,12 @@
           "birth_month": 1,
           "birth_year": 1956,
           "age": 70,
-          "gender": null,
-          "pregnant": null,
-          "student": null,
-          "disabled": null,
-          "veteran": null,
-          "visually_impaired": null,
-          "unemployed": null,
           "has_income": true,
           "income_streams": [
             {
               "type": "sSRetirement",
-              "amount": 4395.0,
-              "frequency": "monthly",
-              "hours_worked": null
+              "amount": 3765.0,
+              "frequency": "monthly"
             }
           ],
           "insurance": {
@@ -268,35 +165,11 @@
           }
         }
       ],
-      "expenses": [],
-      "has_tanf": null,
-      "has_wic": null,
-      "has_snap": null,
-      "has_sunbucks": null,
-      "has_lifeline": null,
-      "has_acp": null,
-      "has_eitc": null,
-      "has_coeitc": null,
-      "has_nslp": null,
-      "has_ctc": null,
-      "has_il_eitc": null,
-      "has_il_ctc": null,
-      "has_medicaid": null,
-      "has_rtdlive": null,
-      "has_cccap": null,
-      "has_chp": null,
-      "has_ssi": null,
-      "has_ssdi": null,
-      "has_aca": null,
-      "has_section_8": null,
-      "has_ma_homebridge": null,
-      "has_ma_door_to_door": null,
-      "has_csfp": null
+      "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_community care for the aged and disabled (ccad)",
-      "eligible": true,
-      "value": null
+      "program_name": "tx_ccad",
+      "eligible": true
     }
   },
   {
@@ -316,20 +189,12 @@
           "birth_month": 1,
           "birth_year": 1954,
           "age": 72,
-          "gender": null,
-          "pregnant": null,
-          "student": null,
-          "disabled": null,
-          "veteran": null,
-          "visually_impaired": null,
-          "unemployed": null,
           "has_income": true,
           "income_streams": [
             {
               "type": "sSRetirement",
               "amount": 4900.0,
-              "frequency": "monthly",
-              "hours_worked": null
+              "frequency": "monthly"
             }
           ],
           "insurance": {
@@ -343,35 +208,11 @@
           }
         }
       ],
-      "expenses": [],
-      "has_tanf": null,
-      "has_wic": null,
-      "has_snap": null,
-      "has_sunbucks": null,
-      "has_lifeline": null,
-      "has_acp": null,
-      "has_eitc": null,
-      "has_coeitc": null,
-      "has_nslp": null,
-      "has_ctc": null,
-      "has_il_eitc": null,
-      "has_il_ctc": null,
-      "has_medicaid": null,
-      "has_rtdlive": null,
-      "has_cccap": null,
-      "has_chp": null,
-      "has_ssi": null,
-      "has_ssdi": null,
-      "has_aca": null,
-      "has_section_8": null,
-      "has_ma_homebridge": null,
-      "has_ma_door_to_door": null,
-      "has_csfp": null
+      "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_community care for the aged and disabled (ccad)",
-      "eligible": false,
-      "value": null
+      "program_name": "tx_ccad",
+      "eligible": false
     }
   },
   {
@@ -391,20 +232,13 @@
           "birth_month": 3,
           "birth_year": 2005,
           "age": 21,
-          "gender": null,
-          "pregnant": null,
-          "student": null,
-          "disabled": null,
-          "veteran": null,
-          "visually_impaired": null,
-          "unemployed": null,
+          "disabled": true,
           "has_income": true,
           "income_streams": [
             {
               "type": "sSDisability",
               "amount": 943.0,
-              "frequency": "monthly",
-              "hours_worked": null
+              "frequency": "monthly"
             }
           ],
           "insurance": {
@@ -418,39 +252,15 @@
           }
         }
       ],
-      "expenses": [],
-      "has_tanf": null,
-      "has_wic": null,
-      "has_snap": null,
-      "has_sunbucks": null,
-      "has_lifeline": null,
-      "has_acp": null,
-      "has_eitc": null,
-      "has_coeitc": null,
-      "has_nslp": null,
-      "has_ctc": null,
-      "has_il_eitc": null,
-      "has_il_ctc": null,
-      "has_medicaid": null,
-      "has_rtdlive": null,
-      "has_cccap": null,
-      "has_chp": null,
-      "has_ssi": null,
-      "has_ssdi": null,
-      "has_aca": null,
-      "has_section_8": null,
-      "has_ma_homebridge": null,
-      "has_ma_door_to_door": null,
-      "has_csfp": null
+      "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_community care for the aged and disabled (ccad)",
-      "eligible": true,
-      "value": null
+      "program_name": "tx_ccad",
+      "eligible": true
     }
   },
   {
-    "notes": "TX Community Care for the Aged and Disabled (CCAD) - 20-Year-Old with Disability - Age Just Below Minimum Threshold",
+    "notes": "TX Community Care for the Aged and Disabled (CCAD) - 19-Year-Old with Disability - Age Just Below Minimum Threshold",
     "household": {
       "white_label": "tx",
       "household_size": 1,
@@ -464,22 +274,15 @@
         {
           "relationship": "headOfHousehold",
           "birth_month": 4,
-          "birth_year": 2006,
+          "birth_year": 2007,
           "age": 19,
-          "gender": null,
-          "pregnant": null,
-          "student": null,
-          "disabled": null,
-          "veteran": null,
-          "visually_impaired": null,
-          "unemployed": null,
+          "disabled": true,
           "has_income": true,
           "income_streams": [
             {
               "type": "sSDisability",
               "amount": 943.0,
-              "frequency": "monthly",
-              "hours_worked": null
+              "frequency": "monthly"
             }
           ],
           "insurance": {
@@ -493,35 +296,11 @@
           }
         }
       ],
-      "expenses": [],
-      "has_tanf": null,
-      "has_wic": null,
-      "has_snap": null,
-      "has_sunbucks": null,
-      "has_lifeline": null,
-      "has_acp": null,
-      "has_eitc": null,
-      "has_coeitc": null,
-      "has_nslp": null,
-      "has_ctc": null,
-      "has_il_eitc": null,
-      "has_il_ctc": null,
-      "has_medicaid": null,
-      "has_rtdlive": null,
-      "has_cccap": null,
-      "has_chp": null,
-      "has_ssi": null,
-      "has_ssdi": null,
-      "has_aca": null,
-      "has_section_8": null,
-      "has_ma_homebridge": null,
-      "has_ma_door_to_door": null,
-      "has_csfp": null
+      "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_community care for the aged and disabled (ccad)",
-      "eligible": false,
-      "value": null
+      "program_name": "tx_ccad",
+      "eligible": false
     }
   },
   {
@@ -541,20 +320,12 @@
           "birth_month": 1,
           "birth_year": 1941,
           "age": 85,
-          "gender": null,
-          "pregnant": null,
-          "student": null,
-          "disabled": null,
-          "veteran": null,
-          "visually_impaired": null,
-          "unemployed": null,
           "has_income": true,
           "income_streams": [
             {
               "type": "sSRetirement",
               "amount": 1200.0,
-              "frequency": "monthly",
-              "hours_worked": null
+              "frequency": "monthly"
             }
           ],
           "insurance": {
@@ -568,35 +339,11 @@
           }
         }
       ],
-      "expenses": [],
-      "has_tanf": null,
-      "has_wic": null,
-      "has_snap": null,
-      "has_sunbucks": null,
-      "has_lifeline": null,
-      "has_acp": null,
-      "has_eitc": null,
-      "has_coeitc": null,
-      "has_nslp": null,
-      "has_ctc": null,
-      "has_il_eitc": null,
-      "has_il_ctc": null,
-      "has_medicaid": null,
-      "has_rtdlive": null,
-      "has_cccap": null,
-      "has_chp": null,
-      "has_ssi": null,
-      "has_ssdi": null,
-      "has_aca": null,
-      "has_section_8": null,
-      "has_ma_homebridge": null,
-      "has_ma_door_to_door": null,
-      "has_csfp": null
+      "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_community care for the aged and disabled (ccad)",
-      "eligible": true,
-      "value": null
+      "program_name": "tx_ccad",
+      "eligible": true
     }
   },
   {
@@ -616,20 +363,12 @@
           "birth_month": 1,
           "birth_year": 1958,
           "age": 68,
-          "gender": null,
-          "pregnant": null,
-          "student": null,
-          "disabled": null,
-          "veteran": null,
-          "visually_impaired": null,
-          "unemployed": null,
           "has_income": true,
           "income_streams": [
             {
               "type": "sSRetirement",
               "amount": 1200.0,
-              "frequency": "monthly",
-              "hours_worked": null
+              "frequency": "monthly"
             }
           ],
           "insurance": {
@@ -643,35 +382,11 @@
           }
         }
       ],
-      "expenses": [],
-      "has_tanf": null,
-      "has_wic": null,
-      "has_snap": null,
-      "has_sunbucks": null,
-      "has_lifeline": null,
-      "has_acp": null,
-      "has_eitc": null,
-      "has_coeitc": null,
-      "has_nslp": null,
-      "has_ctc": null,
-      "has_il_eitc": null,
-      "has_il_ctc": null,
-      "has_medicaid": null,
-      "has_rtdlive": null,
-      "has_cccap": null,
-      "has_chp": null,
-      "has_ssi": null,
-      "has_ssdi": null,
-      "has_aca": null,
-      "has_section_8": null,
-      "has_ma_homebridge": null,
-      "has_ma_door_to_door": null,
-      "has_csfp": null
+      "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_community care for the aged and disabled (ccad)",
-      "eligible": true,
-      "value": null
+      "program_name": "tx_ccad",
+      "eligible": true
     }
   },
   {
@@ -691,20 +406,12 @@
           "birth_month": 1,
           "birth_year": 1961,
           "age": 65,
-          "gender": null,
-          "pregnant": null,
-          "student": null,
-          "disabled": null,
-          "veteran": null,
-          "visually_impaired": null,
-          "unemployed": null,
           "has_income": true,
           "income_streams": [
             {
               "type": "sSRetirement",
               "amount": 1200.0,
-              "frequency": "monthly",
-              "hours_worked": null
+              "frequency": "monthly"
             }
           ],
           "insurance": {
@@ -719,34 +426,11 @@
         }
       ],
       "expenses": [],
-      "has_tanf": null,
-      "has_wic": null,
-      "has_snap": null,
-      "has_sunbucks": null,
-      "has_lifeline": null,
-      "has_acp": null,
-      "has_eitc": null,
-      "has_coeitc": null,
-      "has_nslp": null,
-      "has_ctc": null,
-      "has_il_eitc": null,
-      "has_il_ctc": null,
-      "has_medicaid": null,
-      "has_rtdlive": null,
-      "has_cccap": null,
-      "has_chp": null,
-      "has_ssi": null,
-      "has_ssdi": null,
-      "has_aca": null,
-      "has_section_8": null,
-      "has_ma_homebridge": null,
-      "has_ma_door_to_door": null,
-      "has_csfp": null
+      "has_ccad": true
     },
     "expected_results": {
-      "program_name": "tx_community care for the aged and disabled (ccad)",
-      "eligible": false,
-      "value": null
+      "program_name": "tx_ccad",
+      "eligible": false
     }
   },
   {
@@ -759,27 +443,19 @@
       "household_assets": 0.0,
       "agree_to_tos": true,
       "is_13_or_older": true,
-      "housing_situation": "rent",
+      "housing_situation": "nursing_home",
       "household_members": [
         {
           "relationship": "headOfHousehold",
           "birth_month": 1,
           "birth_year": 1961,
           "age": 65,
-          "gender": null,
-          "pregnant": null,
-          "student": null,
-          "disabled": null,
-          "veteran": null,
-          "visually_impaired": null,
-          "unemployed": null,
           "has_income": true,
           "income_streams": [
             {
               "type": "sSRetirement",
               "amount": 1200.0,
-              "frequency": "monthly",
-              "hours_worked": null
+              "frequency": "monthly"
             }
           ],
           "insurance": {
@@ -790,38 +466,15 @@
             "medicare": false,
             "chp": false,
             "va": false
-          }
+          },
+          "disabled": true
         }
       ],
-      "expenses": [],
-      "has_tanf": null,
-      "has_wic": null,
-      "has_snap": null,
-      "has_sunbucks": null,
-      "has_lifeline": null,
-      "has_acp": null,
-      "has_eitc": null,
-      "has_coeitc": null,
-      "has_nslp": null,
-      "has_ctc": null,
-      "has_il_eitc": null,
-      "has_il_ctc": null,
-      "has_medicaid": null,
-      "has_rtdlive": null,
-      "has_cccap": null,
-      "has_chp": null,
-      "has_ssi": null,
-      "has_ssdi": null,
-      "has_aca": null,
-      "has_section_8": null,
-      "has_ma_homebridge": null,
-      "has_ma_door_to_door": null,
-      "has_csfp": null
+      "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_community care for the aged and disabled (ccad)",
-      "eligible": false,
-      "value": null
+      "program_name": "tx_ccad",
+      "eligible": false
     }
   },
   {
@@ -841,20 +494,12 @@
           "birth_month": 1,
           "birth_year": 1958,
           "age": 68,
-          "gender": null,
-          "pregnant": null,
-          "student": null,
-          "disabled": null,
-          "veteran": null,
-          "visually_impaired": null,
-          "unemployed": null,
           "has_income": true,
           "income_streams": [
             {
               "type": "sSRetirement",
               "amount": 1800.0,
-              "frequency": "monthly",
-              "hours_worked": null
+              "frequency": "monthly"
             }
           ],
           "insurance": {
@@ -868,24 +513,16 @@
           }
         },
         {
-          "relationship": "adultChild",
+          "relationship": "other",
           "birth_month": 6,
           "birth_year": 1981,
           "age": 44,
-          "gender": null,
-          "pregnant": null,
-          "student": null,
-          "disabled": null,
-          "veteran": null,
-          "visually_impaired": null,
-          "unemployed": null,
           "has_income": true,
           "income_streams": [
             {
               "type": "wages",
               "amount": 2500.0,
-              "frequency": "monthly",
-              "hours_worked": null
+              "frequency": "monthly"
             }
           ],
           "insurance": {
@@ -899,35 +536,11 @@
           }
         }
       ],
-      "expenses": [],
-      "has_tanf": null,
-      "has_wic": null,
-      "has_snap": null,
-      "has_sunbucks": null,
-      "has_lifeline": null,
-      "has_acp": null,
-      "has_eitc": null,
-      "has_coeitc": null,
-      "has_nslp": null,
-      "has_ctc": null,
-      "has_il_eitc": null,
-      "has_il_ctc": null,
-      "has_medicaid": null,
-      "has_rtdlive": null,
-      "has_cccap": null,
-      "has_chp": null,
-      "has_ssi": null,
-      "has_ssdi": null,
-      "has_aca": null,
-      "has_section_8": null,
-      "has_ma_homebridge": null,
-      "has_ma_door_to_door": null,
-      "has_csfp": null
+      "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_community care for the aged and disabled (ccad)",
-      "eligible": true,
-      "value": null
+      "program_name": "tx_ccad",
+      "eligible": true
     }
   },
   {
@@ -947,20 +560,12 @@
           "birth_month": 1,
           "birth_year": 1959,
           "age": 67,
-          "gender": null,
-          "pregnant": null,
-          "student": null,
-          "disabled": null,
-          "veteran": null,
-          "visually_impaired": null,
-          "unemployed": null,
           "has_income": true,
           "income_streams": [
             {
               "type": "sSRetirement",
               "amount": 1200.0,
-              "frequency": "monthly",
-              "hours_worked": null
+              "frequency": "monthly"
             }
           ],
           "insurance": {
@@ -978,20 +583,12 @@
           "birth_month": 6,
           "birth_year": 1960,
           "age": 65,
-          "gender": null,
-          "pregnant": null,
-          "student": null,
-          "disabled": null,
-          "veteran": null,
-          "visually_impaired": null,
-          "unemployed": null,
           "has_income": true,
           "income_streams": [
             {
               "type": "sSRetirement",
               "amount": 1000.0,
-              "frequency": "monthly",
-              "hours_worked": null
+              "frequency": "monthly"
             }
           ],
           "insurance": {
@@ -1005,35 +602,11 @@
           }
         }
       ],
-      "expenses": [],
-      "has_tanf": null,
-      "has_wic": null,
-      "has_snap": null,
-      "has_sunbucks": null,
-      "has_lifeline": null,
-      "has_acp": null,
-      "has_eitc": null,
-      "has_coeitc": null,
-      "has_nslp": null,
-      "has_ctc": null,
-      "has_il_eitc": null,
-      "has_il_ctc": null,
-      "has_medicaid": null,
-      "has_rtdlive": null,
-      "has_cccap": null,
-      "has_chp": null,
-      "has_ssi": null,
-      "has_ssdi": null,
-      "has_aca": null,
-      "has_section_8": null,
-      "has_ma_homebridge": null,
-      "has_ma_door_to_door": null,
-      "has_csfp": null
+      "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_community care for the aged and disabled (ccad)",
-      "eligible": true,
-      "value": null
+      "program_name": "tx_ccad",
+      "eligible": true
     }
   },
   {
@@ -1053,20 +626,56 @@
           "birth_month": 12,
           "birth_year": 2004,
           "age": 21,
-          "gender": null,
-          "pregnant": null,
-          "student": null,
-          "disabled": null,
-          "veteran": null,
-          "visually_impaired": null,
-          "unemployed": null,
+          "disabled": true,
           "has_income": true,
           "income_streams": [
             {
               "type": "sSDisability",
               "amount": 1200.0,
-              "frequency": "monthly",
-              "hours_worked": null
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_ccad",
+      "eligible": true
+    }
+  },
+  {
+    "notes": "TX Community Care for the Aged and Disabled (CCAD) - Categorically Eligible SNAP Recipient Above 300% FPL",
+    "household": {
+      "white_label": "tx",
+      "household_size": 1,
+      "zipcode": "78701",
+      "county": "Travis County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1958,
+          "age": 68,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 4500.0,
+              "frequency": "monthly"
             }
           ],
           "insurance": {
@@ -1081,34 +690,56 @@
         }
       ],
       "expenses": [],
-      "has_tanf": null,
-      "has_wic": null,
-      "has_snap": null,
-      "has_sunbucks": null,
-      "has_lifeline": null,
-      "has_acp": null,
-      "has_eitc": null,
-      "has_coeitc": null,
-      "has_nslp": null,
-      "has_ctc": null,
-      "has_il_eitc": null,
-      "has_il_ctc": null,
-      "has_medicaid": null,
-      "has_rtdlive": null,
-      "has_cccap": null,
-      "has_chp": null,
-      "has_ssi": null,
-      "has_ssdi": null,
-      "has_aca": null,
-      "has_section_8": null,
-      "has_ma_homebridge": null,
-      "has_ma_door_to_door": null,
-      "has_csfp": null
+      "has_snap": true
     },
     "expected_results": {
-      "program_name": "tx_community care for the aged and disabled (ccad)",
-      "eligible": true,
-      "value": null
+      "program_name": "tx_ccad",
+      "eligible": true
+    }
+  },
+  {
+    "notes": "TX Community Care for the Aged and Disabled (CCAD) - 23-Year-Old with Long-Term Disability (disabled=False, long_term_disability=True) - is_disabled Composite Field Test",
+    "household": {
+      "white_label": "tx",
+      "household_size": 1,
+      "zipcode": "78701",
+      "county": "Travis County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 3,
+          "birth_year": 2003,
+          "age": 23,
+          "disabled": false,
+          "long_term_disability": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSDisability",
+              "amount": 1200.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_ccad",
+      "eligible": true
     }
   }
 ]

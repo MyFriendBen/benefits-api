@@ -9,26 +9,26 @@
 
 | # | Criterion | Screener Fields | Logic | Can Evaluate? | Notes | Source |
 |---|-----------|-----------------|-------|---------------|-------|--------|
-| 1 | Age 65+ OR age 21+ with disability | `household_member.age`, `household_member.disabled` | `age >= 65 OR (age >= 21 AND disabled == True)` | ✅ | | CCSE Handbook §3000 |
-| 2 | Income at or below 300% FPL | `household_size`, all income fields | `calc_gross_income('yearly', 'all') <= FPL_300_PERCENT[household_size]` | ✅ | | CCSE Handbook §3000 |
-| 3 | Functionally eligible (needs ADL assistance) | `household_member.disabled`, `household_member.long_term_disability` | `disabled == True OR long_term_disability == True` | ⚠️ | Screener has general disability fields but no detailed ADL assessment; CCAD requires professional nursing assessment of specific ADL limitations | CCSE Handbook §3000 |
-| 4 | Texas residency | `county`, `zipcode` | `county in TEXAS_COUNTIES OR zipcode in TEXAS_ZIPCODES` | ✅ | | CCSE Handbook §3000 |
+| 1 | Age 65+ OR age 21+ with disability | `household_member.age`, `household_member.is_disabled` | `age >= 65 OR (age >= 21 AND is_disabled == True)` | ✅ | `is_disabled` is a calculated field covering `disabled`, `long_term_disability`, and `visually_impaired`. For applicants 65+, disability status is not required. | CCSE Handbook §3000 |
+| 2 | Income at or below 300% FPL, OR categorically eligible | `household_size`, all income fields, `has_snap`, `has_ssi`, `has_tanf`, `has_medicaid` | `calc_gross_income('yearly', 'all') <= FPL_300_PERCENT[household_size] OR has_snap OR has_ssi OR has_tanf OR has_medicaid` | ✅ | Categorical eligibility (SSI, TANF, SNAP, Medicaid, SLMB, QMB) bypasses the income test. See [CCSE §3300](https://www.hhs.texas.gov/handbooks/community-care-services-eligibility-handbook/3300-income-eligibility). | CCSE Handbook §3300 |
+| 3 | Functionally eligible (needs ADL assistance) | `household_member.disabled`, `household_member.long_term_disability` | `is_disabled == True` | ⚠️ | Screener has general disability fields but no detailed ADL assessment; CCAD requires professional nursing assessment of specific ADL limitations | CCSE Handbook §3000 |
+| 4 | Texas residency | — | Handled by TX white label association | ✅ | Not evaluated separately — CCAD is associated exclusively with the TX white label, so non-TX screens are filtered out before this check applies. | CCSE Handbook §3000 |
 | 5 | Must not be residing in a nursing facility | `housing_situation` | `housing_situation != 'nursing_home'` | ✅ | | CCSE Handbook §3000 |
-| 6 | Medicaid eligible or meets Medicaid financial criteria | `has_medicaid`, `household_member.medicaid` | `has_medicaid == True OR household_member.medicaid == True OR meets_medicaid_criteria` | ✅ | | CCSE Handbook §3000 |
-| 7 | Asset limit: $2,000 individual / $3,000 couple (Medicaid standards) | `household_assets` | `assets <= 2000 (individual) or <= 3000 (couple)` | ⚠️ | Field is household-level, not individual/couple; Medicaid asset exemptions (home equity, one vehicle, burial funds) not captured | CCSE Handbook §3000 |
+| 6 | Medicaid eligible or categorically eligible | `has_medicaid`, `has_snap`, `has_ssi`, `has_tanf` | `has_medicaid OR has_snap OR has_ssi OR has_tanf` | ✅ | Overlaps with Criterion 2 categorical path; listed separately for clarity | CCSE Handbook §3000 |
+| 7 | Asset limit: $2,000 individual / $3,000 couple (Medicaid standards) | `household_assets` | Not enforced | ⚠️ | **Gap (not enforced)**: Asset exemptions (home equity, one vehicle, burial funds) are complex and not fully captured. A warning message is shown to users instead. | CCSE Handbook §3000 |
 | 8 | At risk of nursing facility placement without services | — | Clinical determination | ❌ | No screener field captures nursing facility risk level | CCSE Handbook §3000 |
-| 9 | U.S. citizenship or qualified immigration status | — | — | ❌ | No citizenship/immigration status field in screener; required because CCAD follows Medicaid eligibility rules | CCSE Handbook §3000 |
+| 9 | U.S. citizenship or qualified immigration status | `legal_status` | Via `legal_status_required` config filter | ✅ | Per CCSE §3110: most CCSE services are available regardless of immigration status; only Community Attendant Services (CAS) and waiver services require citizenship/identity verification. Config includes all statuses (citizen, gc_5plus, gc_5less, refugee, otherWithWorkPermission, non_citizen). Warning message surfaces the CAS/waiver caveat. | CCSE Handbook §3110 |
 | 10 | No asset transfers below fair market value within lookback period | — | Medicaid 60-month lookback | ❌ | No screener field captures asset transfer history | Medicaid asset transfer rules |
 | 11 | Medical necessity for home and community-based services | — | Professional assessment | ❌ | Medical necessity is determined by healthcare professional, not self-reported screener data | CCSE Handbook §3000 |
 | 12 | Must choose CCAD over nursing facility placement | — | Applicant preference | ❌ | Determined during application process, not captured in screener | CCSE Handbook §3000 |
-| 13 | Services available in applicant's geographic area | `county`, `zipcode` | — | ❌ | No data on service availability or waiting lists by region | CCSE Handbook §2000 |
+| 13 | Services available in applicant's geographic area | — | — | ❌ | No data on service availability or waiting lists by region; waiting list information is surfaced via program config | CCSE Handbook §2000 |
 | 14 | No responsible party able to provide necessary care | — | Informal caregiver assessment | ❌ | No field captures availability of informal caregivers or family support | CCSE Handbook §3000 |
-| 15 | Must not already be receiving CCAD | `current_benefits` | `'ccad' not in current_benefits` | ✅ | | — |
+| 15 | Must not already be receiving CCAD | `has_ccad` | `has_ccad != True` | ✅ | `has_ccad` field to be added to Screen model during implementation, following the same pattern as `has_ccs`, `has_tx_dart`, etc. | — |
 
 ## Coverage
 
 - **Evaluable**: 6 of 15 criteria (40%)
-- **Summary**: The evaluable criteria include age requirements, income limits (300% FPL), basic disability status, Texas residency, housing situation, and current Medicaid enrollment. Critical gaps include detailed asset limits with Medicaid exemptions, specific ADL functional assessment, nursing facility risk determination, citizenship/immigration status, and asset transfer history. The most significant limitation is the inability to perform detailed functional assessment and asset evaluation, both of which are core CCAD eligibility requirements.
+- **Summary**: The evaluable criteria include age requirements, income limits with categorical eligibility (300% FPL or SSI/TANF/SNAP/Medicaid), housing situation, citizenship/immigration status via config filter, and duplicate enrollment check (requires adding `has_ccad` to the Screen model during implementation). Texas residency is handled automatically by the TX white label. Critical gaps include detailed ADL functional assessment, nursing facility risk determination, asset evaluation with Medicaid exemptions, and asset transfer history. The most significant limitation is the inability to perform detailed functional assessment and asset evaluation, both of which are core CCAD eligibility requirements.
 
 ## Benefit Value
 
@@ -41,6 +41,8 @@ Amount varies by household based on services needed. CCAD services may include p
 - [CCAD Eligibility Requirements](https://www.payingforseniorcare.com/texas/ccad#Eligibility_Guidelines)
 - [CCAD Covered Services](https://www.payingforseniorcare.com/texas/ccad#Benefits_and_Services)
 - [CCAD Application Process](https://www.payingforseniorcare.com/texas/ccad#How_to_Apply_Learn_More)
+- [CCSE Income Eligibility §3300](https://www.hhs.texas.gov/handbooks/community-care-services-eligibility-handbook/3300-income-eligibility)
+- [CCSE Verification Procedures §3400](https://www.hhs.texas.gov/handbooks/community-care-services-eligibility-handbook/3400-verification-procedures)
 
 ## Test Scenarios
 
@@ -66,7 +68,7 @@ Amount varies by household based on services needed. CCAD services may include p
 **Steps**:
 - **Location**: ZIP `75001`, County `Collin`
 - **Household**: 1 person
-- **Person 1**: DOB `March 2005` (age 21), Head of Household, U.S. Citizen, has disability, SSDI `$3,825/month` ($45,900/year = 300% FPL for household of 1), no insurance
+- **Person 1**: DOB `March 2005` (age 21), Head of Household, U.S. Citizen, has disability (`disabled = True`), SSDI `$3,765/month` ($45,180/year = exactly 300% FPL for household of 1 in 2025), no insurance
 
 **Why this matters**: Tests both minimum boundaries simultaneously — youngest possible qualifying age and highest allowable income. Ensures no rounding errors at the precise income threshold.
 
@@ -80,7 +82,7 @@ Amount varies by household based on services needed. CCAD services may include p
 **Steps**:
 - **Location**: ZIP `75201`, County `Dallas`
 - **Household**: 1 person
-- **Person 1**: DOB `January 1959` (age 67), Head of Household, U.S. Citizen, Social Security Retirement `$4,200/month`, no disability, no insurance, no current benefits
+- **Person 1**: DOB `January 1959` (age 67), Head of Household, U.S. Citizen, Social Security Retirement `$3,700/month`, no disability, no insurance, no current benefits
 
 **Why this matters**: Validates the income threshold boundary prevents false negatives for seniors close to but under the limit.
 
@@ -94,7 +96,7 @@ Amount varies by household based on services needed. CCAD services may include p
 **Steps**:
 - **Location**: ZIP `75201`, County `Dallas County`
 - **Household**: 1 person
-- **Person 1**: DOB `January 1956` (age 70), Head of Household, U.S. Citizen, Social Security Retirement `$4,395/month` ($52,740/year), no insurance, no current benefits
+- **Person 1**: DOB `January 1956` (age 70), Head of Household, U.S. Citizen, Social Security Retirement `$3,765/month` ($45,180/year = exactly 300% FPL for 2025), no insurance, no current benefits
 
 **Why this matters**: Confirms the boundary condition is inclusive — applicants at exactly 300% FPL must not be incorrectly excluded.
 
@@ -122,13 +124,13 @@ Amount varies by household based on services needed. CCAD services may include p
 **Steps**:
 - **Location**: ZIP `75001`, County `Collin`
 - **Household**: 1 person
-- **Person 1**: DOB `March 2005` (age 21), Head of Household, U.S. Citizen, has disability, SSI/SSDI `$943/month`, Medicaid
+- **Person 1**: DOB `March 2005` (age 21), Head of Household, U.S. Citizen, has disability (`disabled = True`), SSI/SSDI `$943/month`, Medicaid
 
 **Why this matters**: Confirms no off-by-one error in age calculation for the disability pathway minimum age.
 
 ---
 
-### Scenario 7: 20-Year-Old with Disability — Below Minimum Age
+### Scenario 7: 19-Year-Old with Disability — Below Minimum Age
 
 **Checks**: Under-21 applicants are ineligible even with disability and qualifying income
 **Expected**: Not eligible
@@ -136,9 +138,9 @@ Amount varies by household based on services needed. CCAD services may include p
 **Steps**:
 - **Location**: ZIP `75201`, County `Dallas`
 - **Household**: 1 person
-- **Person 1**: DOB `April 2006` (age 20), Head of Household, U.S. Citizen, has disability, SSI `$943/month`, no insurance, no current benefits
+- **Person 1**: DOB `April 2007` (age 19), Head of Household, U.S. Citizen, has disability (`disabled = True`), SSI `$943/month`, no insurance, no current benefits
 
-**Why this matters**: Validates the age gate for the disability pathway — a 20-year-old with disability does not qualify.
+**Why this matters**: Validates the age gate for the disability pathway — a 19-year-old with disability does not qualify.
 
 ---
 
@@ -170,17 +172,17 @@ Amount varies by household based on services needed. CCAD services may include p
 
 ---
 
-### Scenario 10: Already Receiving CCAD
+### Scenario 10: Already Receiving CCAD — Duplicate Benefit Check
 
-**Checks**: Duplicate benefit check — current CCAD recipients are ineligible
+**Checks**: Current CCAD recipients are excluded from re-enrollment
 **Expected**: Not eligible
 
 **Steps**:
 - **Location**: ZIP `78701`, County `Travis`
 - **Household**: 1 person
-- **Person 1**: DOB `January 1961` (age 65), Head of Household, U.S. Citizen, no disability, Social Security Retirement `$1,200/month`, Medicaid, **current benefits: CCAD**
+- **Person 1**: DOB `January 1961` (age 65), Head of Household, U.S. Citizen, no disability, Social Security Retirement `$1,200/month`, Medicaid, `has_ccad = True`
 
-**Why this matters**: Prevents duplicate enrollment and ensures current beneficiaries are correctly identified.
+**Why this matters**: Prevents duplicate enrollment — someone already receiving CCAD should not be shown as newly eligible.
 
 ---
 
@@ -192,7 +194,7 @@ Amount varies by household based on services needed. CCAD services may include p
 **Steps**:
 - **Location**: ZIP `75201`, County `Dallas`
 - **Household**: 1 person
-- **Person 1**: DOB `January 1961` (age 65), Head of Household, U.S. Citizen, has disability, Social Security Retirement `$1,200/month`, housing situation: Nursing Home/Long-term Care Facility, Medicaid
+- **Person 1**: DOB `January 1961` (age 65), Head of Household, U.S. Citizen, has disability (`disabled = True`), Social Security Retirement `$1,200/month`, housing situation: Nursing Home/Long-term Care Facility, Medicaid
 
 **Why this matters**: CCAD is a community-based alternative to institutional care — applicants already in nursing facilities do not qualify.
 
@@ -236,6 +238,34 @@ Amount varies by household based on services needed. CCAD services may include p
 **Steps**:
 - **Location**: ZIP `78701`, County `Travis`
 - **Household**: 1 person
-- **Person 1**: DOB `December 2004` (age 21 — birthday hasn't occurred yet in 2026), Head of Household, U.S. Citizen, has disability, SSDI `$1,200/month` ($14,400/year), no insurance
+- **Person 1**: DOB `December 2004` (age 21 — birthday hasn't occurred yet in 2026), Head of Household, U.S. Citizen, has disability (`disabled = True`), SSDI `$1,200/month` ($14,400/year), no insurance
 
 **Why this matters**: Ensures age calculation doesn't prematurely advance the applicant to 22 before their birthday. At exactly 21 with a disability, this is a critical boundary.
+
+---
+
+### Scenario 15: Categorically Eligible — SNAP Recipient Above 300% FPL
+
+**Checks**: Categorical eligibility path — SNAP recipient qualifies regardless of income
+**Expected**: Eligible
+
+**Steps**:
+- **Location**: ZIP `78701`, County `Travis`
+- **Household**: 1 person
+- **Person 1**: DOB `January 1958` (age 68), Head of Household, U.S. Citizen, Social Security Retirement `$4,500/month` (above 300% FPL), no disability, no insurance, currently receiving SNAP (`has_snap = True`)
+
+**Why this matters**: Confirms that categorical eligibility (SNAP) overrides the income test — a senior above 300% FPL who receives SNAP should still qualify.
+
+---
+
+### Scenario 16: `is_disabled` via `long_term_disability` — Not Directly Marked as Disabled
+
+**Checks**: `is_disabled` composite field includes `long_term_disability = True` even when `disabled = False`
+**Expected**: Eligible
+
+**Steps**:
+- **Location**: ZIP `78701`, County `Travis`
+- **Household**: 1 person
+- **Person 1**: DOB `March 2003` (age 23), Head of Household, U.S. Citizen, `disabled = False`, `long_term_disability = True`, SSDI `$1,200/month`, no insurance
+
+**Why this matters**: Validates that the `is_disabled` composite field correctly captures long-term disability as a qualifying signal, even when the direct `disabled` flag is not set. This is important for applicants who identify as having a long-term disability but haven't checked the general "disabled" box.
