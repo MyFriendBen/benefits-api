@@ -61,7 +61,7 @@ class TestMemberExpenseDependency(TestCase):
 
     def test_value_calculates_annual_per_person(self):
         """Test SnapChildSupportDependency.value() calculates annual child support divided by household size."""
-        Expense.objects.create(screen=self.screen, source="childSupport", amount=500, frequency="monthly")
+        Expense.objects.create(screen=self.screen, type="childSupport", amount=500, frequency="monthly")
 
         dep = member.SnapChildSupportDependency(self.screen, self.head, {})
         # $500/month * 12 / household_size(2)

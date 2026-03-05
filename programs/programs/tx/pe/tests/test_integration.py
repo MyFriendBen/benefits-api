@@ -104,7 +104,7 @@ class TxPeInputTestBase(TestCase):
         )
 
         # Add expenses
-        Expense.objects.create(screen=self.screen, source="childSupport", amount=500, frequency="monthly")
+        Expense.objects.create(screen=self.screen, type="childSupport", amount=500, frequency="monthly")
         Expense.objects.create(screen=self.screen, type="medical", amount=200, frequency="monthly")
 
 
