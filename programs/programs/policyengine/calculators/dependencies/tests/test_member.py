@@ -61,7 +61,7 @@ class TestMemberExpenseDependency(TestCase):
 
     def test_value_calculates_annual_per_person(self):
         """Test SnapChildSupportDependency.value() calculates annual child support divided by household size."""
-        Expense.objects.create(screen=self.screen, type="childSupport", amount=500, frequency="monthly")
+        Expense.objects.create(screen=self.screen, source="childSupport", amount=500, frequency="monthly")
 
         dep = member.SnapChildSupportDependency(self.screen, self.head, {})
         # $500/month * 12 / household_size(2)
@@ -170,7 +170,7 @@ class TestEmploymentIncomeDependency(TestCase):
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=self.head,
-            type="wages",
+            source="wages",
             amount=3000,
             frequency="monthly",
         )
@@ -189,14 +189,14 @@ class TestEmploymentIncomeDependency(TestCase):
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=self.head,
-            type="wages",
+            source="wages",
             amount=2000,
             frequency="monthly",
         )
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=self.head,
-            type="selfEmployment",
+            source="selfEmployment",
             amount=1000,
             frequency="monthly",
         )
@@ -228,7 +228,7 @@ class TestSelfEmploymentIncomeDependency(TestCase):
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=self.head,
-            type="selfEmployment",
+            source="selfEmployment",
             amount=4000,
             frequency="monthly",
         )
@@ -265,7 +265,7 @@ class TestRentalIncomeDependency(TestCase):
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=self.head,
-            type="rental",
+            source="rental",
             amount=1500,
             frequency="monthly",
         )
@@ -302,7 +302,7 @@ class TestPensionIncomeDependency(TestCase):
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=self.head,
-            type="pension",
+            source="pension",
             amount=2500,
             frequency="monthly",
         )
@@ -316,7 +316,7 @@ class TestPensionIncomeDependency(TestCase):
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=self.head,
-            type="veteran",
+            source="veteran",
             amount=1000,
             frequency="monthly",
         )
@@ -329,14 +329,14 @@ class TestPensionIncomeDependency(TestCase):
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=self.head,
-            type="pension",
+            source="pension",
             amount=2000,
             frequency="monthly",
         )
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=self.head,
-            type="veteran",
+            source="veteran",
             amount=500,
             frequency="monthly",
         )
@@ -372,7 +372,7 @@ class TestSocialSecurityIncomeDependency(TestCase):
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=self.head,
-            type="sSRetirement",
+            source="sSRetirement",
             amount=1800,
             frequency="monthly",
         )
@@ -386,7 +386,7 @@ class TestSocialSecurityIncomeDependency(TestCase):
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=self.head,
-            type="sSDisability",
+            source="sSDisability",
             amount=1500,
             frequency="monthly",
         )
@@ -399,7 +399,7 @@ class TestSocialSecurityIncomeDependency(TestCase):
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=self.head,
-            type="sSSurvivor",
+            source="sSSurvivor",
             amount=1200,
             frequency="monthly",
         )
@@ -412,7 +412,7 @@ class TestSocialSecurityIncomeDependency(TestCase):
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=self.head,
-            type="sSDependent",
+            source="sSDependent",
             amount=800,
             frequency="monthly",
         )
@@ -425,14 +425,14 @@ class TestSocialSecurityIncomeDependency(TestCase):
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=self.head,
-            type="sSRetirement",
+            source="sSRetirement",
             amount=1000,
             frequency="monthly",
         )
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=self.head,
-            type="sSDependent",
+            source="sSDependent",
             amount=300,
             frequency="monthly",
         )

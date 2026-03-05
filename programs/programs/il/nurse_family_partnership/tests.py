@@ -57,7 +57,7 @@ class TestIlNurseFamilyPartnership(TestCase):
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=parent,
-            type="wages",
+            source="wages",
             amount=2500,
             frequency="monthly",
         )
@@ -83,7 +83,7 @@ class TestIlNurseFamilyPartnership(TestCase):
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=parent,
-            type="wages",
+            source="wages",
             amount=6000,
             frequency="monthly",
         )
@@ -106,7 +106,7 @@ class TestIlNurseFamilyPartnership(TestCase):
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=parent,
-            type="wages",
+            source="wages",
             amount=7000,
             frequency="monthly",
         )
@@ -129,7 +129,7 @@ class TestIlNurseFamilyPartnership(TestCase):
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=pregnant_member,
-            type="wages",
+            source="wages",
             amount=2000,
             frequency="monthly",
         )
@@ -153,7 +153,7 @@ class TestIlNurseFamilyPartnership(TestCase):
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=non_pregnant,
-            type="wages",
+            source="wages",
             amount=2000,
             frequency="monthly",
         )
@@ -179,7 +179,7 @@ class TestIlNurseFamilyPartnership(TestCase):
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=head,
-            type="wages",
+            source="wages",
             amount=2500,
             frequency="monthly",
         )

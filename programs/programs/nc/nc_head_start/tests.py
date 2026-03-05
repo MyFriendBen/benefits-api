@@ -108,7 +108,7 @@ class TestNCHeadStart(TestCase):
     def add_income(self, screen, member, income_type, amount, frequency="monthly"):
         """Helper method to add income to a household member"""
         return IncomeStream.objects.create(
-            screen=screen, household_member=member, type=income_type, amount=amount, frequency=frequency
+            screen=screen, household_member=member, source=income_type, amount=amount, frequency=frequency
         )
 
     def add_expense(self, screen, member, expense_type, amount, frequency="monthly"):

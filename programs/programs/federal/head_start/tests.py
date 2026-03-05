@@ -51,7 +51,7 @@ class TestHeadStartPension(TestCase):
 
     def test_head_start_failed_all_conditions(self):
         income = IncomeStream.objects.create(
-            screen=self.screen1, household_member=self.person1, type="wages", amount=2000, frequency="monthly"
+            screen=self.screen1, household_member=self.person1, source="wages", amount=2000, frequency="monthly"
         )
         self.screen1.save()
         self.person2.age = 6

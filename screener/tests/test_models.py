@@ -28,7 +28,7 @@ class TestScreen(TestCase):
         """Test calc_gross_income with earned income types for yearly period."""
         # Add wages (earned income)
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="wages", amount=2000, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="wages", amount=2000, frequency="monthly"
         )
 
         result = self.screen.calc_gross_income("yearly", ["earned"])
@@ -38,7 +38,7 @@ class TestScreen(TestCase):
         """Test calc_gross_income with unearned income types for yearly period."""
         # Add alimony (unearned income)
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="alimony", amount=500, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="alimony", amount=500, frequency="monthly"
         )
 
         result = self.screen.calc_gross_income("yearly", ["unearned"])
@@ -48,10 +48,10 @@ class TestScreen(TestCase):
         """Test calc_gross_income with 'all' income types."""
         # Add both earned and unearned
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="wages", amount=2000, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="wages", amount=2000, frequency="monthly"
         )
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="alimony", amount=500, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="alimony", amount=500, frequency="monthly"
         )
 
         result = self.screen.calc_gross_income("yearly", ["all"])
@@ -61,10 +61,10 @@ class TestScreen(TestCase):
         """Test calc_gross_income with exclude parameter."""
         # Add cash assistance and other unearned income
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="cashAssistance", amount=300, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="cashAssistance", amount=300, frequency="monthly"
         )
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="alimony", amount=500, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="alimony", amount=500, frequency="monthly"
         )
 
         # Exclude cash assistance
@@ -79,7 +79,7 @@ class TestScreen(TestCase):
     def test_calc_gross_income_monthly_period(self):
         """Test calc_gross_income with monthly period."""
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="wages", amount=2000, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="wages", amount=2000, frequency="monthly"
         )
 
         result = self.screen.calc_gross_income("monthly", ["earned"])
@@ -89,10 +89,10 @@ class TestScreen(TestCase):
         """Test calc_gross_income with multiple income streams of same type."""
         # Add multiple wage income streams (e.g., two jobs)
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="wages", amount=2000, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="wages", amount=2000, frequency="monthly"
         )
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="wages", amount=500, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="wages", amount=500, frequency="monthly"
         )
 
         result = self.screen.calc_gross_income("yearly", ["earned"])
@@ -310,7 +310,7 @@ class TestScreen(TestCase):
         # Primary tax unit: head with moderate income
         head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=55)
         IncomeStream.objects.create(
-            screen=self.screen, household_member=head, type="wages", amount=3000, frequency="monthly"
+            screen=self.screen, household_member=head, source="wages", amount=3000, frequency="monthly"
         )
 
         # Adult child with high income (not a dependent)
@@ -318,7 +318,7 @@ class TestScreen(TestCase):
             screen=self.screen, relationship="child", age=25, student=False, disabled=False
         )
         IncomeStream.objects.create(
-            screen=self.screen, household_member=adult_child, type="wages", amount=4000, frequency="monthly"
+            screen=self.screen, household_member=adult_child, source="wages", amount=4000, frequency="monthly"
         )
 
         result = self.screen.other_tax_unit_structure()
@@ -393,13 +393,13 @@ class TestScreen(TestCase):
 
         # Give them high income so they're not dependents
         IncomeStream.objects.create(
-            screen=self.screen, household_member=head, type="wages", amount=2000, frequency="monthly"
+            screen=self.screen, household_member=head, source="wages", amount=2000, frequency="monthly"
         )
         IncomeStream.objects.create(
-            screen=self.screen, household_member=adult1, type="wages", amount=3000, frequency="monthly"
+            screen=self.screen, household_member=adult1, source="wages", amount=3000, frequency="monthly"
         )
         IncomeStream.objects.create(
-            screen=self.screen, household_member=adult2, type="wages", amount=3500, frequency="monthly"
+            screen=self.screen, household_member=adult2, source="wages", amount=3500, frequency="monthly"
         )
 
         self.screen.household_size = 4
@@ -427,13 +427,13 @@ class TestScreen(TestCase):
 
         # Give head moderate income
         IncomeStream.objects.create(
-            screen=self.screen, household_member=head, type="wages", amount=2000, frequency="monthly"
+            screen=self.screen, household_member=head, source="wages", amount=2000, frequency="monthly"
         )
 
         # Give adult child high income (not a dependent of head)
         # Need income > ($2000 * 12) / 2 = $12,000
         IncomeStream.objects.create(
-            screen=self.screen, household_member=adult_child, type="wages", amount=2000, frequency="monthly"
+            screen=self.screen, household_member=adult_child, source="wages", amount=2000, frequency="monthly"
         )
 
         # Second adult child also not dependent
@@ -442,7 +442,7 @@ class TestScreen(TestCase):
         )
 
         IncomeStream.objects.create(
-            screen=self.screen, household_member=adult_child2, type="wages", amount=1500, frequency="monthly"
+            screen=self.screen, household_member=adult_child2, source="wages", amount=1500, frequency="monthly"
         )
 
         result = self.screen.other_tax_unit_structure()
@@ -518,7 +518,7 @@ class TestHouseholdMember(TestCase):
 
         # Add wages to specific member
         IncomeStream.objects.create(
-            screen=self.screen, household_member=head, type="wages", amount=2000, frequency="monthly"
+            screen=self.screen, household_member=head, source="wages", amount=2000, frequency="monthly"
         )
 
         result = head.calc_gross_income("yearly", ["earned"])
@@ -533,7 +533,7 @@ class TestHouseholdMember(TestCase):
 
         # Add alimony to specific member
         IncomeStream.objects.create(
-            screen=self.screen, household_member=head, type="alimony", amount=500, frequency="monthly"
+            screen=self.screen, household_member=head, source="alimony", amount=500, frequency="monthly"
         )
 
         result = head.calc_gross_income("yearly", ["unearned"])
@@ -548,10 +548,10 @@ class TestHouseholdMember(TestCase):
 
         # Add both earned and unearned to member
         IncomeStream.objects.create(
-            screen=self.screen, household_member=head, type="wages", amount=2000, frequency="monthly"
+            screen=self.screen, household_member=head, source="wages", amount=2000, frequency="monthly"
         )
         IncomeStream.objects.create(
-            screen=self.screen, household_member=head, type="sSI", amount=800, frequency="monthly"
+            screen=self.screen, household_member=head, source="sSI", amount=800, frequency="monthly"
         )
 
         result = head.calc_gross_income("yearly", ["all"])
@@ -566,10 +566,10 @@ class TestHouseholdMember(TestCase):
 
         # Add cash assistance and other unearned income
         IncomeStream.objects.create(
-            screen=self.screen, household_member=head, type="cashAssistance", amount=300, frequency="monthly"
+            screen=self.screen, household_member=head, source="cashAssistance", amount=300, frequency="monthly"
         )
         IncomeStream.objects.create(
-            screen=self.screen, household_member=head, type="alimony", amount=500, frequency="monthly"
+            screen=self.screen, household_member=head, source="alimony", amount=500, frequency="monthly"
         )
 
         # Exclude cash assistance
@@ -591,7 +591,7 @@ class TestHouseholdMember(TestCase):
         head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
 
         IncomeStream.objects.create(
-            screen=self.screen, household_member=head, type="wages", amount=2000, frequency="monthly"
+            screen=self.screen, household_member=head, source="wages", amount=2000, frequency="monthly"
         )
 
         result = head.calc_gross_income("monthly", ["earned"])
@@ -606,13 +606,13 @@ class TestHouseholdMember(TestCase):
 
         # Add income to head
         IncomeStream.objects.create(
-            screen=self.screen, household_member=head, type="wages", amount=2000, frequency="monthly"
+            screen=self.screen, household_member=head, source="wages", amount=2000, frequency="monthly"
         )
 
         # Add another member with different income
         spouse = HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=30)
         IncomeStream.objects.create(
-            screen=self.screen, household_member=spouse, type="wages", amount=1500, frequency="monthly"
+            screen=self.screen, household_member=spouse, source="wages", amount=1500, frequency="monthly"
         )
 
         # Head's income should only be $2000/month
@@ -735,14 +735,14 @@ class TestHouseholdMember(TestCase):
 
         # Add income to head
         IncomeStream.objects.create(
-            screen=self.screen, household_member=head, type="wages", amount=4000, frequency="monthly"
+            screen=self.screen, household_member=head, source="wages", amount=4000, frequency="monthly"
         )
 
         # Disabled child with income less than half of household
         disabled_child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=25, disabled=True)
 
         IncomeStream.objects.create(
-            screen=self.screen, household_member=disabled_child, type="sSI", amount=800, frequency="monthly"
+            screen=self.screen, household_member=disabled_child, source="sSI", amount=800, frequency="monthly"
         )
 
         # $800*12 = $9,600 < ($4000+$800)*12 / 2 = $28,800
@@ -780,14 +780,14 @@ class TestHouseholdMember(TestCase):
         # Use self.head from setUp
         # Head has low income
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="wages", amount=1000, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="wages", amount=1000, frequency="monthly"
         )
 
         # Child has high income (more than half)
         child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=17)
 
         IncomeStream.objects.create(
-            screen=self.screen, household_member=child, type="wages", amount=2000, frequency="monthly"
+            screen=self.screen, household_member=child, source="wages", amount=2000, frequency="monthly"
         )
 
         # Child income $24,000 > household $36,000 / 2 = $18,000

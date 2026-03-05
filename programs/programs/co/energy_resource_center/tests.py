@@ -37,7 +37,7 @@ class TestEnergyResourceCenterPension(TestCase):
 
     def test_energy_resource_center_failed_income_condition(self):
         income = IncomeStream.objects.create(
-            screen=self.screen1, household_member=self.person1, type="wages", amount=3000, frequency="monthly"
+            screen=self.screen1, household_member=self.person1, source="wages", amount=3000, frequency="monthly"
         )
         erc = EnergyResourceCenter(self.screen1)
         eligibility = erc.eligibility

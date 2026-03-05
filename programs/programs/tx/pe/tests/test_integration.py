@@ -70,41 +70,41 @@ class TxPeInputTestBase(TestCase):
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=self.head,
-            type="wages",
+            source="wages",
             amount=30000,
             frequency="yearly",
         )
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=self.head,
-            type="selfEmployment",
+            source="selfEmployment",
             amount=5000,
             frequency="yearly",
         )
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=self.head,
-            type="rental",
+            source="rental",
             amount=12000,
             frequency="yearly",
         )
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=self.spouse,
-            type="pension",
+            source="pension",
             amount=8000,
             frequency="yearly",
         )
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=self.spouse,
-            type="sSRetirement",
+            source="sSRetirement",
             amount=6000,
             frequency="yearly",
         )
 
         # Add expenses
-        Expense.objects.create(screen=self.screen, type="childSupport", amount=500, frequency="monthly")
+        Expense.objects.create(screen=self.screen, source="childSupport", amount=500, frequency="monthly")
         Expense.objects.create(screen=self.screen, type="medical", amount=200, frequency="monthly")
 
 
@@ -526,7 +526,7 @@ class TestTxEitcPeInput(TxPeInputTestBase):
         IncomeStream.objects.create(
             screen=single_parent_screen,
             household_member=single_parent,
-            type="wages",
+            source="wages",
             amount=25000,
             frequency="yearly",
         )

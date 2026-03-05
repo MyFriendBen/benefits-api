@@ -40,7 +40,7 @@ class TestOmniSaludPension(TestCase):
         self.screen1.has_no_hi = False
         self.screen1.save()
         IncomeStream.objects.create(
-            screen=self.screen1, household_member=self.person1, type="wages", amount=2000, frequency="monthly"
+            screen=self.screen1, household_member=self.person1, source="wages", amount=2000, frequency="monthly"
         )
 
         omnisalud = OmniSalud(self.screen1)

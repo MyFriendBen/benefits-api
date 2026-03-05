@@ -54,7 +54,7 @@ class TestFamilyPlanningServicesPension(TestCase):
         self.person2.age = 20
         self.person2.save()
         IncomeStream.objects.create(
-            screen=self.screen1, household_member=self.person1, type="wages", amount=4000, frequency="monthly"
+            screen=self.screen1, household_member=self.person1, source="wages", amount=4000, frequency="monthly"
         )
 
         fps = FamilyPlanningServices(self.screen1, [{"name_abbreviated": "medicaid", "eligible": True}])

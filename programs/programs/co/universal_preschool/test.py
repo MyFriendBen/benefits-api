@@ -53,7 +53,7 @@ class TestCoUniversalPreschool(TestCase):
         IncomeStream.objects.create(
             screen=screen,
             household_member=parent,
-            type="wages",
+            source="wages",
             amount=4500,  # 54,000/yearly
             frequency="monthly",
         )
@@ -95,7 +95,7 @@ class TestCoUniversalPreschool(TestCase):
         IncomeStream.objects.create(
             screen=screen,
             household_member=parent,
-            type="wages",
+            source="wages",
             amount=1700,  # 20,400/yearly
             frequency="monthly",
         )
@@ -137,7 +137,7 @@ class TestCoUniversalPreschool(TestCase):
         IncomeStream.objects.create(
             screen=screen,
             household_member=parent,
-            type="wages",
+            source="wages",
             amount=5600,  # 67,200 yearly
             frequency="monthly",
         )
@@ -186,7 +186,7 @@ class TestCoUniversalPreschool(TestCase):
         IncomeStream.objects.create(
             screen=screen,
             household_member=parent,
-            type="wages",
+            source="wages",
             amount=1700,  # 20,400 yearly
             frequency="monthly",
         )
@@ -228,7 +228,7 @@ class TestCoUniversalPreschool(TestCase):
         IncomeStream.objects.create(
             screen=screen,
             household_member=parent,
-            type="wages",
+            source="wages",
             amount=5000,  # 60,000 yearly
             frequency="monthly",
         )
@@ -268,7 +268,7 @@ class TestCoUniversalPreschool(TestCase):
         IncomeStream.objects.create(
             screen=screen,
             household_member=parent,
-            type="wages",
+            source="wages",
             amount=5000,  # 60,000
             frequency="monthly",
         )

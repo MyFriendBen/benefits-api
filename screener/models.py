@@ -628,13 +628,13 @@ class HouseholdMember(models.Model):
 
         income_streams = self.income_streams.all()
         for income_stream in income_streams:
-            if income_stream.type in exclude:
+            if income_stream.source in exclude:
                 continue
 
             include_all = "all" in types
-            specific_match = income_stream.type in types
-            earned_income_match = "earned" in types and income_stream.type in earned_income_types
-            unearned_income_match = "unearned" in types and income_stream.type not in earned_income_types
+            specific_match = income_stream.source in types
+            earned_income_match = "earned" in types and income_stream.source in earned_income_types
+            unearned_income_match = "unearned" in types and income_stream.source not in earned_income_types
             if include_all or earned_income_match or unearned_income_match or specific_match:
                 if frequency == "monthly":
                     gross_income += income_stream.monthly()
@@ -795,8 +795,8 @@ class HouseholdMember(models.Model):
 class IncomeStream(models.Model):
     screen = models.ForeignKey(Screen, related_name="income_streams", on_delete=models.CASCADE)
     household_member = models.ForeignKey(HouseholdMember, related_name="income_streams", on_delete=models.CASCADE)
-    category = models.CharField(max_length=30, blank=True, null=True)
     type = models.CharField(max_length=30, blank=True, null=True)
+    source = models.CharField(max_length=30, blank=True, null=True)
     amount = models.DecimalField(decimal_places=2, max_digits=10, blank=True, null=True)
     frequency = models.CharField(max_length=30, blank=True, null=True)
     hours_worked = models.IntegerField(null=True, blank=True)
@@ -838,7 +838,7 @@ class IncomeStream(models.Model):
 
     def missing_fields(self):
         income_fields = (
-            "type",
+            "source",
             "amount",
             "frequency",
         )

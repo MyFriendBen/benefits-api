@@ -42,7 +42,7 @@ class TestDentalHealthCareSeniorsPension(TestCase):
         self.screen1.has_medicaid = True
         self.screen1.save()
         IncomeStream.objects.create(
-            screen=self.screen1, household_member=self.person1, type="wages", amount=3000, frequency="monthly"
+            screen=self.screen1, household_member=self.person1, source="wages", amount=3000, frequency="monthly"
         )
 
         cdhcs = DentalHealthCareSeniors(self.screen1)

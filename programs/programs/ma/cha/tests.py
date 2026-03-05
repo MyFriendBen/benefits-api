@@ -41,7 +41,7 @@ class TestCha(TestCase):
         IncomeStream.objects.create(
             screen=self.eligible_screen,
             household_member=self.head,
-            type="wages",
+            source="wages",
             amount=3000,  # $36,000/year
             frequency="monthly",
         )
@@ -87,7 +87,7 @@ class TestCha(TestCase):
         IncomeStream.objects.create(
             screen=screen,
             household_member=head,
-            type="wages",
+            source="wages",
             amount=3000,
             frequency="monthly",
         )
@@ -120,7 +120,7 @@ class TestCha(TestCase):
         IncomeStream.objects.create(
             screen=screen,
             household_member=head,
-            type="wages",
+            source="wages",
             amount=7000,  # $84,000/year - above limit
             frequency="monthly",
         )
@@ -173,7 +173,7 @@ class TestCha(TestCase):
         IncomeStream.objects.create(
             screen=screen,
             household_member=head,
-            type="wages",
+            source="wages",
             amount=3000,
             frequency="monthly",
         )
@@ -207,7 +207,7 @@ class TestCha(TestCase):
         IncomeStream.objects.create(
             screen=screen,
             household_member=head,
-            type="wages",
+            source="wages",
             amount=4000,  # $48,000/year
             frequency="monthly",
         )

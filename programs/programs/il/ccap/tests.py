@@ -50,7 +50,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         IncomeStream.objects.create(
             screen=self.eligible_screen,
             household_member=self.parent,
-            type="wages",
+            source="wages",
             amount=2000,  # $2000/month = $24,000/year
             frequency="monthly",
         )
@@ -181,7 +181,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         IncomeStream.objects.create(
             screen=screen,
             household_member=parent,
-            type="wages",
+            source="wages",
             amount=10000,  # $120,000/year - way above threshold
             frequency="monthly",
         )
@@ -221,7 +221,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         IncomeStream.objects.create(
             screen=screen,
             household_member=parent,
-            type="wages",
+            source="wages",
             amount=2000,
             frequency="monthly",
         )
@@ -254,7 +254,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         IncomeStream.objects.create(
             screen=screen,
             household_member=parent,
-            type="wages",
+            source="wages",
             amount=2000,
             frequency="monthly",
         )
@@ -293,7 +293,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         IncomeStream.objects.create(
             screen=screen,
             household_member=parent,
-            type="wages",
+            source="wages",
             amount=2000,
             frequency="monthly",
         )
@@ -326,7 +326,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         IncomeStream.objects.create(
             screen=screen,
             household_member=parent,
-            type="wages",
+            source="wages",
             amount=2000,
             frequency="monthly",
         )
@@ -365,7 +365,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         IncomeStream.objects.create(
             screen=screen,
             household_member=parent,
-            type="wages",
+            source="wages",
             amount=2000,
             frequency="monthly",
         )
@@ -404,7 +404,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         IncomeStream.objects.create(
             screen=screen,
             household_member=parent,
-            type="wages",
+            source="wages",
             amount=2000,
             frequency="monthly",
         )
@@ -436,7 +436,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         IncomeStream.objects.create(
             screen=screen,
             household_member=parent,
-            type="wages",
+            source="wages",
             amount=2000,
             frequency="monthly",
         )
@@ -468,7 +468,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         IncomeStream.objects.create(
             screen=screen,
             household_member=parent,
-            type="wages",
+            source="wages",
             amount=2000,
             frequency="monthly",
         )
@@ -499,7 +499,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         IncomeStream.objects.create(
             screen=screen,
             household_member=parent,
-            type="wages",
+            source="wages",
             amount=2000,
             frequency="monthly",
         )
@@ -552,7 +552,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         IncomeStream.objects.create(
             screen=screen,
             household_member=parent,
-            type="wages",
+            source="wages",
             amount=1500,
             frequency="monthly",
         )
@@ -583,7 +583,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         IncomeStream.objects.create(
             screen=screen,
             household_member=parent,
-            type="wages",
+            source="wages",
             amount=1800,
             frequency="monthly",
         )
@@ -615,7 +615,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         IncomeStream.objects.create(
             screen=screen,
             household_member=parent,
-            type="wages",
+            source="wages",
             amount=3000,
             frequency="monthly",
         )
@@ -648,7 +648,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         IncomeStream.objects.create(
             screen=screen,
             household_member=parent,
-            type="wages",
+            source="wages",
             amount=1985,
             frequency="monthly",
         )
@@ -679,7 +679,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         IncomeStream.objects.create(
             screen=screen,
             household_member=parent,
-            type="wages",
+            source="wages",
             amount=2312,
             frequency="monthly",
         )
@@ -710,7 +710,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         IncomeStream.objects.create(
             screen=screen,
             household_member=parent,
-            type="wages",
+            source="wages",
             amount=13000,
             frequency="monthly",
         )
@@ -740,7 +740,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         IncomeStream.objects.create(
             screen=screen,
             household_member=parent,
-            type="wages",
+            source="wages",
             amount=2000,
             frequency="monthly",
         )
@@ -772,7 +772,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         IncomeStream.objects.create(
             screen=screen,
             household_member=parent,
-            type="wages",
+            source="wages",
             amount=2000,
             frequency="monthly",
         )

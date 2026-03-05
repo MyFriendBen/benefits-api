@@ -46,7 +46,7 @@ class TestPropertyCreditRebatePension(TestCase):
         self.person1.disabled = False
         self.person1.save()
         income = IncomeStream.objects.create(
-            screen=self.screen1, household_member=self.person1, type="wages", amount=2000, frequency="monthly"
+            screen=self.screen1, household_member=self.person1, source="wages", amount=2000, frequency="monthly"
         )
 
         cpcr = PropertyCreditRebate(self.screen1)

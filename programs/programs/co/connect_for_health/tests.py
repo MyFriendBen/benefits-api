@@ -44,7 +44,7 @@ class TestConnectForHealth(TestCase):
         self.screen1.has_no_hi = False
         self.screen1.save()
         income = IncomeStream.objects.create(
-            screen=self.screen1, household_member=self.person1, type="wages", amount=5800, frequency="monthly"
+            screen=self.screen1, household_member=self.person1, source="wages", amount=5800, frequency="monthly"
         )
 
         cfhc = ConnectForHealth(self.screen1)

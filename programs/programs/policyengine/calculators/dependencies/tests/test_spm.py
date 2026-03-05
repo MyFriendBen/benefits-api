@@ -25,12 +25,12 @@ class TestSnapIncomeDependency(TestCase):
 
         # Add earned income
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="wages", amount=2000, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="wages", amount=2000, frequency="monthly"
         )
 
         # Add unearned income
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="alimony", amount=500, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="alimony", amount=500, frequency="monthly"
         )
 
     def test_value_calculates_annual_earned_income(self):
@@ -299,12 +299,12 @@ class TestSchoolMealCountableIncomeDependency(TestCase):
         """Test value() calculates annual income from specific income types used for school meal eligibility."""
         # Add wages income (included in school meal countable income)
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="wages", amount=2000, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="wages", amount=2000, frequency="monthly"
         )
 
         # Add self-employment income (included)
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="selfEmployment", amount=500, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="selfEmployment", amount=500, frequency="monthly"
         )
 
         dep = spm.SchoolMealCountableIncomeDependency(self.screen, None, {})
@@ -315,22 +315,22 @@ class TestSchoolMealCountableIncomeDependency(TestCase):
         """Test value() includes various social security income types in calculation."""
         # Add SS Retirement income (included)
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="sSRetirement", amount=1500, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="sSRetirement", amount=1500, frequency="monthly"
         )
 
         # Add SS Disability income (included)
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="sSDisability", amount=1000, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="sSDisability", amount=1000, frequency="monthly"
         )
 
         # Add SS Survivor income (included)
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="sSSurvivor", amount=800, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="sSSurvivor", amount=800, frequency="monthly"
         )
 
         # Add SS Dependent income (included)
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="sSDependent", amount=400, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="sSDependent", amount=400, frequency="monthly"
         )
 
         dep = spm.SchoolMealCountableIncomeDependency(self.screen, None, {})
@@ -340,17 +340,17 @@ class TestSchoolMealCountableIncomeDependency(TestCase):
         """Test value() includes rental, pension, and veteran income types."""
         # Add rental income (included)
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="rental", amount=1200, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="rental", amount=1200, frequency="monthly"
         )
 
         # Add pension income (included)
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="pension", amount=2000, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="pension", amount=2000, frequency="monthly"
         )
 
         # Add veteran income (included)
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="veteran", amount=800, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="veteran", amount=800, frequency="monthly"
         )
 
         dep = spm.SchoolMealCountableIncomeDependency(self.screen, None, {})
@@ -360,17 +360,17 @@ class TestSchoolMealCountableIncomeDependency(TestCase):
         """Test value() excludes income types not in the specified list."""
         # Add wages income (included)
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="wages", amount=2000, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="wages", amount=2000, frequency="monthly"
         )
 
         # Add alimony income (NOT included in school meal countable income)
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="alimony", amount=500, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="alimony", amount=500, frequency="monthly"
         )
 
         # Add unemployment income (NOT included)
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="unemployment", amount=300, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="unemployment", amount=300, frequency="monthly"
         )
 
         dep = spm.SchoolMealCountableIncomeDependency(self.screen, None, {})
@@ -386,13 +386,13 @@ class TestSchoolMealCountableIncomeDependency(TestCase):
         """Test value() aggregates countable income across all household members."""
         # Head has wages
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="wages", amount=2000, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="wages", amount=2000, frequency="monthly"
         )
 
         # Spouse has self-employment
         spouse = HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=32)
         IncomeStream.objects.create(
-            screen=self.screen, household_member=spouse, type="selfEmployment", amount=1500, frequency="monthly"
+            screen=self.screen, household_member=spouse, source="selfEmployment", amount=1500, frequency="monthly"
         )
 
         dep = spm.SchoolMealCountableIncomeDependency(self.screen, None, {})
@@ -403,10 +403,10 @@ class TestSchoolMealCountableIncomeDependency(TestCase):
         """Test value() uses Screen.calc_gross_income() method with correct parameters."""
         # Add multiple income types
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="wages", amount=3000, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="wages", amount=3000, frequency="monthly"
         )
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="sSRetirement", amount=1000, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="sSRetirement", amount=1000, frequency="monthly"
         )
 
         dep = spm.SchoolMealCountableIncomeDependency(self.screen, None, {})
@@ -446,17 +446,17 @@ class TestTxTanfDependencies(TestCase):
 
         # Add earned income
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="wages", amount=1500, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="wages", amount=1500, frequency="monthly"
         )
 
         # Add unearned income
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="childSupport", amount=300, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="childSupport", amount=300, frequency="monthly"
         )
 
         # Add cash assistance (should be excluded from unearned income)
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="cashAssistance", amount=200, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="cashAssistance", amount=200, frequency="monthly"
         )
 
     def test_tx_tanf_countable_earned_income_dependency(self):
@@ -494,7 +494,7 @@ class TestTxTanfDependencies(TestCase):
     def test_tx_tanf_earned_income_with_no_earned_income(self):
         """Test TxTanfCountableEarnedIncomeDependency.value() returns 0 when no earned income."""
         # Remove earned income
-        IncomeStream.objects.filter(screen=self.screen, type="wages").delete()
+        IncomeStream.objects.filter(screen=self.screen, source="wages").delete()
 
         dep = spm.TxTanfCountableEarnedIncomeDependency(self.screen, None, {})
         self.assertEqual(dep.value(), 0)
@@ -518,26 +518,26 @@ class TestTxTanfDependencies(TestCase):
 
         # Add earned income streams for multiple members
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="wages", amount=1500, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="wages", amount=1500, frequency="monthly"
         )
         IncomeStream.objects.create(
-            screen=self.screen, household_member=spouse, type="selfEmployment", amount=800, frequency="monthly"
+            screen=self.screen, household_member=spouse, source="selfEmployment", amount=800, frequency="monthly"
         )
 
         # Add unearned income streams for multiple members
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="childSupport", amount=300, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="childSupport", amount=300, frequency="monthly"
         )
         IncomeStream.objects.create(
-            screen=self.screen, household_member=spouse, type="sSRetirement", amount=500, frequency="monthly"
+            screen=self.screen, household_member=spouse, source="sSRetirement", amount=500, frequency="monthly"
         )
         IncomeStream.objects.create(
-            screen=self.screen, household_member=child, type="sSSurvivor", amount=200, frequency="monthly"
+            screen=self.screen, household_member=child, source="sSSurvivor", amount=200, frequency="monthly"
         )
 
         # Add cash assistance (should be excluded from unearned income)
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="cashAssistance", amount=150, frequency="monthly"
+            screen=self.screen, household_member=self.head, source="cashAssistance", amount=150, frequency="monthly"
         )
 
         # Test earned income aggregation
