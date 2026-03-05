@@ -1,0 +1,65 @@
+{
+  "white_label": {
+    "code": "tx"
+  },
+  "program_category": {
+    "external_name": "tx_cash"
+  },
+  "program": {
+    "name_abbreviated": "tx_social security disability insurance (ssdi)",
+    "year": "2025",
+    "legal_status_required": [
+      "citizen"
+    ],
+    "name": "Social Security Disability Insurance (SSDI)",
+    "description": "SSDI provides monthly cash payments to workers who can no longer work due to a serious disability. The disability must be expected to last at least 12 months or result in death. The amount you receive is based on your lifetime earnings covered by Social Security.\n\nYou may qualify if you are under age 67, have a long-term disability, have worked in jobs covered by Social Security, and earn less than $1,620 per month. You must have enough work credits from your past jobs. The Social Security Administration will review your medical records to determine if you meet their disability requirements. There is a five-month waiting period before benefits begin.",
+    "description_short": "Monthly payments for workers with disabilities",
+    "learn_more_link": "https://www.ssa.gov/disability",
+    "apply_button_link": "https://www.ssa.gov/apply?benefits=disability&age=adult",
+    "apply_button_description": "Apply for SSDI",
+    "estimated_application_time": "1 - 2 hours",
+    "estimated_delivery_time": "3 - 5 months",
+    "estimated_value": "Varies based on lifetime earnings (average $1,537/month in 2024)",
+    "website_description": "Monthly cash benefits for workers who can no longer work due to a serious, long-term disability"
+  },
+  "warning_message": null,
+  "documents": [
+    {
+      "external_name": "tx_ssn",
+      "text": "Social Security Number",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "id_proof",
+      "text": "Proof of identity (birth certificate or other proof of age)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_medical_records",
+      "text": "Medical records and doctor information documenting your disability",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_work_history",
+      "text": "Work history for the past 15 years (employers, dates, job duties)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_earned_income",
+      "text": "Proof of current earnings (pay stubs, tax returns)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_military_records",
+      "text": "Military discharge papers (DD 214) if you served in the military",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": []
+}
