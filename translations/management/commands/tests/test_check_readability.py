@@ -214,7 +214,9 @@ class CheckReadabilityCommandTest(TestCase):
         mock_translation.label = "program.test_1-name"
         mock_program = MagicMock()
         mock_program.name = mock_translation
-        mock_program_class.objects.filter.return_value = [mock_program]
+        mock_program_queryset = MagicMock()
+        mock_program_queryset.select_related.return_value = [mock_program]
+        mock_program_class.objects.filter.return_value = mock_program_queryset
 
         # Set up translation mock
         mock_queryset = MagicMock()

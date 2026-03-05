@@ -230,6 +230,7 @@ class Command(BaseCommand):
             allowed_labels = self._get_whitelabel_translation_labels(whitelabel)
             if not allowed_labels:
                 raise CommandError(f"No programs found for white label: {whitelabel}")
+            translations = translations.filter(label__in=allowed_labels)
             self.stdout.write(f"Filtering by white label: {whitelabel} ({len(allowed_labels)} translation labels)")
 
         if label_filter:
@@ -243,11 +244,6 @@ class Command(BaseCommand):
         skipped_count = 0
 
         for translation in translations:
-
-            # Skip if not in allowed labels (when filtering by whitelabel)
-            if allowed_labels is not None and translation.label not in allowed_labels:
-                continue
-
             translation.set_current_language(language)
             text = translation.text
 
@@ -303,11 +299,6 @@ class Command(BaseCommand):
             except WhiteLabel.DoesNotExist:
                 return set()
 
-        # Get all programs for this white label
-        programs = Program.objects.filter(white_label=wl)
-
-        # Collect translation labels from programs
-        labels: Set[str] = set()
         translation_fields = [
             "name",
             "description",
@@ -321,6 +312,8 @@ class Command(BaseCommand):
             "estimated_value",
             "website_description",
         ]
+        programs = Program.objects.filter(white_label=wl).select_related(*translation_fields)
+        labels: Set[str] = set()
 
         for program in programs:
             for field in translation_fields:
