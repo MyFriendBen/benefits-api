@@ -342,8 +342,6 @@ class Command(BaseCommand):
         whitelabel: Optional[str] = None,
     ):
         """Export the readability report to a file."""
-        total = len(passing) + len(failing)
-
         if output_format == "json":
             self._export_json(output_file, passing, failing, skipped, language, checker, whitelabel)
         elif output_format == "csv":
@@ -561,7 +559,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("PASSING TRANSLATIONS:"))
             self.stdout.write("-" * 60)
 
-            for result in sorted(passing, key=lambda r: r.primary_score):
+            for result in sorted(passing, key=lambda r: r.primary_score, reverse=language.startswith("es")):
                 self._print_result(result, detailed, is_failing=False)
         elif passing and not show_passing:
             self.stdout.write(
