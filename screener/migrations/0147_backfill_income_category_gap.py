@@ -3,11 +3,15 @@ from django.db import migrations
 
 def backfill_income_category_gap(apps, schema_editor):
     """
-    Backfill the category field for IncomeStream records created after migration
-    0126_add_income_category_with_backfill ran (December 2025) but before the
-    frontend began persisting category on new submissions.
+    Two-part fix for income stream category data:
 
-    Only rows where category IS NULL and type IS NOT NULL are affected.
+    1. Gap window: Backfill category=NULL rows created after migration 0126 ran
+       (December 2025) but before the frontend began persisting category.
+
+    2. Category correction: Migration 0126 placed 'rental' and 'boarder' under
+       'investment'. The config has since introduced a dedicated 'property'
+       category for these types. Correct any rows set to 'investment' for these
+       two types.
     """
     IncomeStream = apps.get_model("screener", "IncomeStream")
 
@@ -23,33 +27,40 @@ def backfill_income_category_gap(apps, schema_editor):
         "sSDependent": "government",
         "unemployment": "government",
         "cashAssistance": "government",
-        "cOSDisability": "government",
         "workersComp": "government",
         "veteran": "government",
+        "cOSDisability": "government",    # CO
         "stateDisability": "government",  # TX, MA
         "iLStateDisability": "government",  # IL
-        # Support and gifts
-        "childSupport": "support",
-        "alimony": "support",
-        "gifts": "support",
-        "boarder": "support",
         # Investment and retirement
         "pension": "investment",
         "investment": "investment",
-        "rental": "investment",
         "deferredComp": "investment",
+        # Property income (split out from 'investment' in 0126)
+        "rental": "property",
+        "boarder": "property",
+        # Family support and gifts
+        "childSupport": "support",
+        "alimony": "support",
+        "gifts": "support",
     }
 
-    streams = IncomeStream.objects.filter(category__isnull=True).exclude(type__isnull=True).exclude(type="")
-    updated_count = 0
-    for stream in streams:
+    # Part 1: fill NULL category rows from the gap window
+    gap_streams = IncomeStream.objects.filter(category__isnull=True).exclude(type__isnull=True).exclude(type="")
+    gap_count = 0
+    for stream in gap_streams:
         category = INCOME_TYPE_TO_CATEGORY.get(stream.type)
         if category:
             stream.category = category
             stream.save(update_fields=["category"])
-            updated_count += 1
+            gap_count += 1
 
-    print(f"Backfilled {updated_count} gap IncomeStream records with categories")
+    # Part 2: correct rental/boarder rows that 0126 set to 'investment'
+    correction_count = IncomeStream.objects.filter(
+        type__in=["rental", "boarder"], category="investment"
+    ).update(category="property")
+
+    print(f"Backfilled {gap_count} gap rows; corrected {correction_count} rental/boarder rows to 'property'")
 
 
 def reverse_backfill(apps, schema_editor):
