@@ -58,7 +58,7 @@ class ImportValidationsCommandTest(TestCase):
                         "relationship": "headOfHousehold",
                         "age": 30,
                         "has_income": True,
-                        "income_streams": [{"type": "wages", "amount": 1500.00, "frequency": "monthly"}],
+                        "income_streams": [{"type": "employment", "source": "wages", "amount": 1500.00, "frequency": "monthly"}],
                         "insurance": {"none": True},
                     }
                 ],
@@ -137,7 +137,7 @@ class ImportValidationsCommandTest(TestCase):
                             "relationship": "headOfHousehold",
                             "age": 40,
                             "has_income": True,
-                            "income_streams": [{"type": "wages", "amount": 5000.00, "frequency": "monthly"}],
+                            "income_streams": [{"type": "employment", "source": "wages", "amount": 5000.00, "frequency": "monthly"}],
                             "insurance": {"none": False, "employer": True},
                         }
                     ],
