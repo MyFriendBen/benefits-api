@@ -1,0 +1,1114 @@
+[
+  {
+    "notes": "TX Community Care for the Aged and Disabled (CCAD) - 65-Year-Old Retiree with Social Security Income Below 300% FPL",
+    "household": {
+      "white_label": "tx",
+      "household_size": 1,
+      "zipcode": "78701",
+      "county": "Travis County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1961,
+          "age": 65,
+          "gender": null,
+          "pregnant": null,
+          "student": null,
+          "disabled": null,
+          "veteran": null,
+          "visually_impaired": null,
+          "unemployed": null,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 1500.0,
+              "frequency": "monthly",
+              "hours_worked": null
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": [],
+      "has_tanf": null,
+      "has_wic": null,
+      "has_snap": null,
+      "has_sunbucks": null,
+      "has_lifeline": null,
+      "has_acp": null,
+      "has_eitc": null,
+      "has_coeitc": null,
+      "has_nslp": null,
+      "has_ctc": null,
+      "has_il_eitc": null,
+      "has_il_ctc": null,
+      "has_medicaid": null,
+      "has_rtdlive": null,
+      "has_cccap": null,
+      "has_chp": null,
+      "has_ssi": null,
+      "has_ssdi": null,
+      "has_aca": null,
+      "has_section_8": null,
+      "has_ma_homebridge": null,
+      "has_ma_door_to_door": null,
+      "has_csfp": null
+    },
+    "expected_results": {
+      "program_name": "tx_community care for the aged and disabled (ccad)",
+      "eligible": true,
+      "value": null
+    }
+  },
+  {
+    "notes": "TX Community Care for the Aged and Disabled (CCAD) - 21-Year-Old with Disability at Exactly 300% FPL Income Threshold",
+    "household": {
+      "white_label": "tx",
+      "household_size": 1,
+      "zipcode": "75001",
+      "county": "Collin",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 3,
+          "birth_year": 2005,
+          "age": 21,
+          "gender": null,
+          "pregnant": null,
+          "student": null,
+          "disabled": null,
+          "veteran": null,
+          "visually_impaired": null,
+          "unemployed": null,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSDisability",
+              "amount": 3825.0,
+              "frequency": "monthly",
+              "hours_worked": null
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": [],
+      "has_tanf": null,
+      "has_wic": null,
+      "has_snap": null,
+      "has_sunbucks": null,
+      "has_lifeline": null,
+      "has_acp": null,
+      "has_eitc": null,
+      "has_coeitc": null,
+      "has_nslp": null,
+      "has_ctc": null,
+      "has_il_eitc": null,
+      "has_il_ctc": null,
+      "has_medicaid": null,
+      "has_rtdlive": null,
+      "has_cccap": null,
+      "has_chp": null,
+      "has_ssi": null,
+      "has_ssdi": null,
+      "has_aca": null,
+      "has_section_8": null,
+      "has_ma_homebridge": null,
+      "has_ma_door_to_door": null,
+      "has_csfp": null
+    },
+    "expected_results": {
+      "program_name": "tx_community care for the aged and disabled (ccad)",
+      "eligible": true,
+      "value": null
+    }
+  },
+  {
+    "notes": "TX Community Care for the Aged and Disabled (CCAD) - 67-Year-Old Single Adult with Income Just Below 300% FPL Threshold",
+    "household": {
+      "white_label": "tx",
+      "household_size": 1,
+      "zipcode": "75201",
+      "county": "Dallas",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1959,
+          "age": 67,
+          "gender": null,
+          "pregnant": null,
+          "student": null,
+          "disabled": null,
+          "veteran": null,
+          "visually_impaired": null,
+          "unemployed": null,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 4200.0,
+              "frequency": "monthly",
+              "hours_worked": null
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": [],
+      "has_tanf": null,
+      "has_wic": null,
+      "has_snap": null,
+      "has_sunbucks": null,
+      "has_lifeline": null,
+      "has_acp": null,
+      "has_eitc": null,
+      "has_coeitc": null,
+      "has_nslp": null,
+      "has_ctc": null,
+      "has_il_eitc": null,
+      "has_il_ctc": null,
+      "has_medicaid": null,
+      "has_rtdlive": null,
+      "has_cccap": null,
+      "has_chp": null,
+      "has_ssi": null,
+      "has_ssdi": null,
+      "has_aca": null,
+      "has_section_8": null,
+      "has_ma_homebridge": null,
+      "has_ma_door_to_door": null,
+      "has_csfp": null
+    },
+    "expected_results": {
+      "program_name": "tx_community care for the aged and disabled (ccad)",
+      "eligible": true,
+      "value": null
+    }
+  },
+  {
+    "notes": "TX Community Care for the Aged and Disabled (CCAD) - 70-Year-Old Single Adult with Income Exactly at 300% FPL Threshold",
+    "household": {
+      "white_label": "tx",
+      "household_size": 1,
+      "zipcode": "75201",
+      "county": "Dallas County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1956,
+          "age": 70,
+          "gender": null,
+          "pregnant": null,
+          "student": null,
+          "disabled": null,
+          "veteran": null,
+          "visually_impaired": null,
+          "unemployed": null,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 4395.0,
+              "frequency": "monthly",
+              "hours_worked": null
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": [],
+      "has_tanf": null,
+      "has_wic": null,
+      "has_snap": null,
+      "has_sunbucks": null,
+      "has_lifeline": null,
+      "has_acp": null,
+      "has_eitc": null,
+      "has_coeitc": null,
+      "has_nslp": null,
+      "has_ctc": null,
+      "has_il_eitc": null,
+      "has_il_ctc": null,
+      "has_medicaid": null,
+      "has_rtdlive": null,
+      "has_cccap": null,
+      "has_chp": null,
+      "has_ssi": null,
+      "has_ssdi": null,
+      "has_aca": null,
+      "has_section_8": null,
+      "has_ma_homebridge": null,
+      "has_ma_door_to_door": null,
+      "has_csfp": null
+    },
+    "expected_results": {
+      "program_name": "tx_community care for the aged and disabled (ccad)",
+      "eligible": true,
+      "value": null
+    }
+  },
+  {
+    "notes": "TX Community Care for the Aged and Disabled (CCAD) - 72-Year-Old Single Adult with Income Just Above 300% FPL Threshold",
+    "household": {
+      "white_label": "tx",
+      "household_size": 1,
+      "zipcode": "75201",
+      "county": "Dallas County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1954,
+          "age": 72,
+          "gender": null,
+          "pregnant": null,
+          "student": null,
+          "disabled": null,
+          "veteran": null,
+          "visually_impaired": null,
+          "unemployed": null,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 4900.0,
+              "frequency": "monthly",
+              "hours_worked": null
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": [],
+      "has_tanf": null,
+      "has_wic": null,
+      "has_snap": null,
+      "has_sunbucks": null,
+      "has_lifeline": null,
+      "has_acp": null,
+      "has_eitc": null,
+      "has_coeitc": null,
+      "has_nslp": null,
+      "has_ctc": null,
+      "has_il_eitc": null,
+      "has_il_ctc": null,
+      "has_medicaid": null,
+      "has_rtdlive": null,
+      "has_cccap": null,
+      "has_chp": null,
+      "has_ssi": null,
+      "has_ssdi": null,
+      "has_aca": null,
+      "has_section_8": null,
+      "has_ma_homebridge": null,
+      "has_ma_door_to_door": null,
+      "has_csfp": null
+    },
+    "expected_results": {
+      "program_name": "tx_community care for the aged and disabled (ccad)",
+      "eligible": false,
+      "value": null
+    }
+  },
+  {
+    "notes": "TX Community Care for the Aged and Disabled (CCAD) - 21-Year-Old with Disability at Exact Minimum Age Threshold",
+    "household": {
+      "white_label": "tx",
+      "household_size": 1,
+      "zipcode": "75001",
+      "county": "Collin",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 3,
+          "birth_year": 2005,
+          "age": 21,
+          "gender": null,
+          "pregnant": null,
+          "student": null,
+          "disabled": null,
+          "veteran": null,
+          "visually_impaired": null,
+          "unemployed": null,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSDisability",
+              "amount": 943.0,
+              "frequency": "monthly",
+              "hours_worked": null
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": false,
+            "private": false,
+            "medicaid": true,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": [],
+      "has_tanf": null,
+      "has_wic": null,
+      "has_snap": null,
+      "has_sunbucks": null,
+      "has_lifeline": null,
+      "has_acp": null,
+      "has_eitc": null,
+      "has_coeitc": null,
+      "has_nslp": null,
+      "has_ctc": null,
+      "has_il_eitc": null,
+      "has_il_ctc": null,
+      "has_medicaid": null,
+      "has_rtdlive": null,
+      "has_cccap": null,
+      "has_chp": null,
+      "has_ssi": null,
+      "has_ssdi": null,
+      "has_aca": null,
+      "has_section_8": null,
+      "has_ma_homebridge": null,
+      "has_ma_door_to_door": null,
+      "has_csfp": null
+    },
+    "expected_results": {
+      "program_name": "tx_community care for the aged and disabled (ccad)",
+      "eligible": true,
+      "value": null
+    }
+  },
+  {
+    "notes": "TX Community Care for the Aged and Disabled (CCAD) - 20-Year-Old with Disability - Age Just Below Minimum Threshold",
+    "household": {
+      "white_label": "tx",
+      "household_size": 1,
+      "zipcode": "75201",
+      "county": "Dallas",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 4,
+          "birth_year": 2006,
+          "age": 19,
+          "gender": null,
+          "pregnant": null,
+          "student": null,
+          "disabled": null,
+          "veteran": null,
+          "visually_impaired": null,
+          "unemployed": null,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSDisability",
+              "amount": 943.0,
+              "frequency": "monthly",
+              "hours_worked": null
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": [],
+      "has_tanf": null,
+      "has_wic": null,
+      "has_snap": null,
+      "has_sunbucks": null,
+      "has_lifeline": null,
+      "has_acp": null,
+      "has_eitc": null,
+      "has_coeitc": null,
+      "has_nslp": null,
+      "has_ctc": null,
+      "has_il_eitc": null,
+      "has_il_ctc": null,
+      "has_medicaid": null,
+      "has_rtdlive": null,
+      "has_cccap": null,
+      "has_chp": null,
+      "has_ssi": null,
+      "has_ssdi": null,
+      "has_aca": null,
+      "has_section_8": null,
+      "has_ma_homebridge": null,
+      "has_ma_door_to_door": null,
+      "has_csfp": null
+    },
+    "expected_results": {
+      "program_name": "tx_community care for the aged and disabled (ccad)",
+      "eligible": false,
+      "value": null
+    }
+  },
+  {
+    "notes": "TX Community Care for the Aged and Disabled (CCAD) - 85-Year-Old Senior Well Above Minimum Age Threshold with Low Income",
+    "household": {
+      "white_label": "tx",
+      "household_size": 1,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1941,
+          "age": 85,
+          "gender": null,
+          "pregnant": null,
+          "student": null,
+          "disabled": null,
+          "veteran": null,
+          "visually_impaired": null,
+          "unemployed": null,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 1200.0,
+              "frequency": "monthly",
+              "hours_worked": null
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": [],
+      "has_tanf": null,
+      "has_wic": null,
+      "has_snap": null,
+      "has_sunbucks": null,
+      "has_lifeline": null,
+      "has_acp": null,
+      "has_eitc": null,
+      "has_coeitc": null,
+      "has_nslp": null,
+      "has_ctc": null,
+      "has_il_eitc": null,
+      "has_il_ctc": null,
+      "has_medicaid": null,
+      "has_rtdlive": null,
+      "has_cccap": null,
+      "has_chp": null,
+      "has_ssi": null,
+      "has_ssdi": null,
+      "has_aca": null,
+      "has_section_8": null,
+      "has_ma_homebridge": null,
+      "has_ma_door_to_door": null,
+      "has_csfp": null
+    },
+    "expected_results": {
+      "program_name": "tx_community care for the aged and disabled (ccad)",
+      "eligible": true,
+      "value": null
+    }
+  },
+  {
+    "notes": "TX Community Care for the Aged and Disabled (CCAD) - Eligible Texas Resident in Dallas County with Valid ZIP Code",
+    "household": {
+      "white_label": "tx",
+      "household_size": 1,
+      "zipcode": "75201",
+      "county": "Dallas",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1958,
+          "age": 68,
+          "gender": null,
+          "pregnant": null,
+          "student": null,
+          "disabled": null,
+          "veteran": null,
+          "visually_impaired": null,
+          "unemployed": null,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 1200.0,
+              "frequency": "monthly",
+              "hours_worked": null
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": [],
+      "has_tanf": null,
+      "has_wic": null,
+      "has_snap": null,
+      "has_sunbucks": null,
+      "has_lifeline": null,
+      "has_acp": null,
+      "has_eitc": null,
+      "has_coeitc": null,
+      "has_nslp": null,
+      "has_ctc": null,
+      "has_il_eitc": null,
+      "has_il_ctc": null,
+      "has_medicaid": null,
+      "has_rtdlive": null,
+      "has_cccap": null,
+      "has_chp": null,
+      "has_ssi": null,
+      "has_ssdi": null,
+      "has_aca": null,
+      "has_section_8": null,
+      "has_ma_homebridge": null,
+      "has_ma_door_to_door": null,
+      "has_csfp": null
+    },
+    "expected_results": {
+      "program_name": "tx_community care for the aged and disabled (ccad)",
+      "eligible": true,
+      "value": null
+    }
+  },
+  {
+    "notes": "TX Community Care for the Aged and Disabled (CCAD) - 65-Year-Old Already Receiving CCAD - Duplicate Benefit Check",
+    "household": {
+      "white_label": "tx",
+      "household_size": 1,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1961,
+          "age": 65,
+          "gender": null,
+          "pregnant": null,
+          "student": null,
+          "disabled": null,
+          "veteran": null,
+          "visually_impaired": null,
+          "unemployed": null,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 1200.0,
+              "frequency": "monthly",
+              "hours_worked": null
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": false,
+            "private": false,
+            "medicaid": true,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": [],
+      "has_tanf": null,
+      "has_wic": null,
+      "has_snap": null,
+      "has_sunbucks": null,
+      "has_lifeline": null,
+      "has_acp": null,
+      "has_eitc": null,
+      "has_coeitc": null,
+      "has_nslp": null,
+      "has_ctc": null,
+      "has_il_eitc": null,
+      "has_il_ctc": null,
+      "has_medicaid": null,
+      "has_rtdlive": null,
+      "has_cccap": null,
+      "has_chp": null,
+      "has_ssi": null,
+      "has_ssdi": null,
+      "has_aca": null,
+      "has_section_8": null,
+      "has_ma_homebridge": null,
+      "has_ma_door_to_door": null,
+      "has_csfp": null
+    },
+    "expected_results": {
+      "program_name": "tx_community care for the aged and disabled (ccad)",
+      "eligible": false,
+      "value": null
+    }
+  },
+  {
+    "notes": "TX Community Care for the Aged and Disabled (CCAD) - 65-Year-Old Currently Residing in Nursing Facility - Excluded from CCAD",
+    "household": {
+      "white_label": "tx",
+      "household_size": 1,
+      "zipcode": "75201",
+      "county": "Dallas",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1961,
+          "age": 65,
+          "gender": null,
+          "pregnant": null,
+          "student": null,
+          "disabled": null,
+          "veteran": null,
+          "visually_impaired": null,
+          "unemployed": null,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 1200.0,
+              "frequency": "monthly",
+              "hours_worked": null
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": false,
+            "private": false,
+            "medicaid": true,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": [],
+      "has_tanf": null,
+      "has_wic": null,
+      "has_snap": null,
+      "has_sunbucks": null,
+      "has_lifeline": null,
+      "has_acp": null,
+      "has_eitc": null,
+      "has_coeitc": null,
+      "has_nslp": null,
+      "has_ctc": null,
+      "has_il_eitc": null,
+      "has_il_ctc": null,
+      "has_medicaid": null,
+      "has_rtdlive": null,
+      "has_cccap": null,
+      "has_chp": null,
+      "has_ssi": null,
+      "has_ssdi": null,
+      "has_aca": null,
+      "has_section_8": null,
+      "has_ma_homebridge": null,
+      "has_ma_door_to_door": null,
+      "has_csfp": null
+    },
+    "expected_results": {
+      "program_name": "tx_community care for the aged and disabled (ccad)",
+      "eligible": false,
+      "value": null
+    }
+  },
+  {
+    "notes": "TX Community Care for the Aged and Disabled (CCAD) - Mixed Household - Eligible 68-Year-Old with Ineligible 45-Year-Old Adult Child",
+    "household": {
+      "white_label": "tx",
+      "household_size": 2,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1958,
+          "age": 68,
+          "gender": null,
+          "pregnant": null,
+          "student": null,
+          "disabled": null,
+          "veteran": null,
+          "visually_impaired": null,
+          "unemployed": null,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 1800.0,
+              "frequency": "monthly",
+              "hours_worked": null
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": true,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "adultChild",
+          "birth_month": 6,
+          "birth_year": 1981,
+          "age": 44,
+          "gender": null,
+          "pregnant": null,
+          "student": null,
+          "disabled": null,
+          "veteran": null,
+          "visually_impaired": null,
+          "unemployed": null,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2500.0,
+              "frequency": "monthly",
+              "hours_worked": null
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": [],
+      "has_tanf": null,
+      "has_wic": null,
+      "has_snap": null,
+      "has_sunbucks": null,
+      "has_lifeline": null,
+      "has_acp": null,
+      "has_eitc": null,
+      "has_coeitc": null,
+      "has_nslp": null,
+      "has_ctc": null,
+      "has_il_eitc": null,
+      "has_il_ctc": null,
+      "has_medicaid": null,
+      "has_rtdlive": null,
+      "has_cccap": null,
+      "has_chp": null,
+      "has_ssi": null,
+      "has_ssdi": null,
+      "has_aca": null,
+      "has_section_8": null,
+      "has_ma_homebridge": null,
+      "has_ma_door_to_door": null,
+      "has_csfp": null
+    },
+    "expected_results": {
+      "program_name": "tx_community care for the aged and disabled (ccad)",
+      "eligible": true,
+      "value": null
+    }
+  },
+  {
+    "notes": "TX Community Care for the Aged and Disabled (CCAD) - Married Couple - Both Spouses Age 65+ and Eligible with Combined Income Below 300% FPL",
+    "household": {
+      "white_label": "tx",
+      "household_size": 2,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1959,
+          "age": 67,
+          "gender": null,
+          "pregnant": null,
+          "student": null,
+          "disabled": null,
+          "veteran": null,
+          "visually_impaired": null,
+          "unemployed": null,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 1200.0,
+              "frequency": "monthly",
+              "hours_worked": null
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "spouse",
+          "birth_month": 6,
+          "birth_year": 1960,
+          "age": 65,
+          "gender": null,
+          "pregnant": null,
+          "student": null,
+          "disabled": null,
+          "veteran": null,
+          "visually_impaired": null,
+          "unemployed": null,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 1000.0,
+              "frequency": "monthly",
+              "hours_worked": null
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": [],
+      "has_tanf": null,
+      "has_wic": null,
+      "has_snap": null,
+      "has_sunbucks": null,
+      "has_lifeline": null,
+      "has_acp": null,
+      "has_eitc": null,
+      "has_coeitc": null,
+      "has_nslp": null,
+      "has_ctc": null,
+      "has_il_eitc": null,
+      "has_il_ctc": null,
+      "has_medicaid": null,
+      "has_rtdlive": null,
+      "has_cccap": null,
+      "has_chp": null,
+      "has_ssi": null,
+      "has_ssdi": null,
+      "has_aca": null,
+      "has_section_8": null,
+      "has_ma_homebridge": null,
+      "has_ma_door_to_door": null,
+      "has_csfp": null
+    },
+    "expected_results": {
+      "program_name": "tx_community care for the aged and disabled (ccad)",
+      "eligible": true,
+      "value": null
+    }
+  },
+  {
+    "notes": "TX Community Care for the Aged and Disabled (CCAD) - 22-Year-Old with Disability Born in December - Age Calculation Edge Case",
+    "household": {
+      "white_label": "tx",
+      "household_size": 1,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 12,
+          "birth_year": 2004,
+          "age": 21,
+          "gender": null,
+          "pregnant": null,
+          "student": null,
+          "disabled": null,
+          "veteran": null,
+          "visually_impaired": null,
+          "unemployed": null,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSDisability",
+              "amount": 1200.0,
+              "frequency": "monthly",
+              "hours_worked": null
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": [],
+      "has_tanf": null,
+      "has_wic": null,
+      "has_snap": null,
+      "has_sunbucks": null,
+      "has_lifeline": null,
+      "has_acp": null,
+      "has_eitc": null,
+      "has_coeitc": null,
+      "has_nslp": null,
+      "has_ctc": null,
+      "has_il_eitc": null,
+      "has_il_ctc": null,
+      "has_medicaid": null,
+      "has_rtdlive": null,
+      "has_cccap": null,
+      "has_chp": null,
+      "has_ssi": null,
+      "has_ssdi": null,
+      "has_aca": null,
+      "has_section_8": null,
+      "has_ma_homebridge": null,
+      "has_ma_door_to_door": null,
+      "has_csfp": null
+    },
+    "expected_results": {
+      "program_name": "tx_community care for the aged and disabled (ccad)",
+      "eligible": true,
+      "value": null
+    }
+  }
+]
