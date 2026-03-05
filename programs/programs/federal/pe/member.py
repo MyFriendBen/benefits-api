@@ -63,16 +63,29 @@ class Medicaid(PolicyEngineMembersCalculator):
     aged_min_age = 65
 
     def member_value(self, member: HouseholdMember):
-        # In Policy Engine, senior and disabled are not included in the medicaid categories variable.
-        # Instead, a separate variable is used to determine the medicaid eligiblity for a senior or disabled member.
-        is_senior_or_disabled = self.get_member_dependency_value(dependency.member.MedicaidSeniorOrDisabled, member.id)
+        # PolicyEngine uses two separate pathways for Medicaid eligibility:
+        # 1. "medicaid" variable - ACA expansion eligibility (138% FPL for adults under 65)
+        # 2. "is_optional_senior_or_disabled_for_medicaid" - aged/disabled pathway
+        #    (state-specific FPL thresholds, typically 74-100%)
+        #
+        # Seniors (65+) and disabled individuals must use the aged/disabled pathway,
+        # as ACA expansion only applies to adults under 65.
+        is_senior = member.age is not None and member.age >= self.aged_min_age
+        is_disabled = member.has_disability()
 
-        if is_senior_or_disabled:
-            if member.has_disability():
+        if is_senior or is_disabled:
+            qualifies_via_aged_disabled_pathway = self.get_member_dependency_value(
+                dependency.member.MedicaidSeniorOrDisabled, member.id
+            )
+            if not qualifies_via_aged_disabled_pathway:
+                return 0
+
+            if is_disabled:
                 return self.medicaid_categories["DISABLED"] * 12
-            elif member.age >= self.aged_min_age:
+            else:
                 return self.medicaid_categories["AGED"] * 12
 
+        # Non-senior, non-disabled members use regular Medicaid eligibility
         if self.get_member_variable(member.id) <= 0:
             return 0
 

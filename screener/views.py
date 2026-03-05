@@ -1,3 +1,4 @@
+import hashlib
 from typing import Optional
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -14,7 +15,7 @@ from screener.models import (
     EligibilitySnapshot,
     ProgramEligibilitySnapshot,
 )
-from rest_framework import viewsets, views, status, mixins
+from rest_framework import viewsets, views, status, mixins, throttling
 from rest_framework import permissions
 from rest_framework.response import Response
 from screener.serializers import (
@@ -26,6 +27,8 @@ from screener.serializers import (
     MessageSerializer,
     ResultsSerializer,
     WarningMessageSerializer,
+    NPSScoreSerializer,
+    NPSScoreReasonSerializer,
 )
 from programs.programs.policyengine.policy_engine import calc_pe_eligibility
 from programs.util import DependencyError, Dependencies
@@ -288,11 +291,11 @@ def eligibility_results(screen: Screen, batch=False):
             "emergency_medicaid",
             "wic",
             "andcs",
-            "co_energy_calculator_leap",
-            "co_energy_calculator_eoc",
-            "co_energy_calculator_cowap",
-            "co_energy_calculator_ubp",
-            "co_energy_calculator_care",
+            "cesn_leap",
+            "cesn_eoc",
+            "cesn_cowap",
+            "cesn_ubp",
+            "cesn_care",
         )
 
         if program.name_abbreviated not in calc_order:
@@ -594,3 +597,49 @@ def urgent_need_results(screen: Screen, data):
             eligible_urgent_needs.append(need_data)
 
     return eligible_urgent_needs
+
+
+class NPSRateThrottle(throttling.AnonRateThrottle):
+    """
+    Rate throttle for NPS submissions to prevent abuse.
+    Rate is configured via DEFAULT_THROTTLE_RATES["nps"] in settings.
+    Uses a hashed IP as the cache key to avoid storing raw IPs.
+    """
+
+    scope = "nps"
+
+    def get_cache_key(self, request, view):
+        ident = self.get_ident(request)
+        if ident is None:
+            return None
+        hashed = hashlib.sha256(ident.encode()).hexdigest()
+        return self.cache_format % {"scope": self.scope, "ident": hashed}
+
+
+class NPSScoreView(views.APIView):
+    """
+    API endpoint for submitting NPS (Net Promoter Score) feedback.
+    """
+
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [NPSRateThrottle]
+
+    def post(self, request, screen_uuid):
+        # Inject UUID from URL into request data
+        data = {**request.data, "uuid": str(screen_uuid)}
+        serializer = NPSScoreSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"status": "success"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def patch(self, request, screen_uuid):
+        # Inject UUID from URL into request data
+        data = {**request.data, "uuid": str(screen_uuid)}
+        serializer = NPSScoreReasonSerializer(data=data)
+        if serializer.is_valid():
+            uuid = serializer.validated_data.pop("uuid")
+            nps_score = serializer.get_nps_score(uuid)
+            serializer.update(nps_score, serializer.validated_data)
+            return Response({"status": "success"}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

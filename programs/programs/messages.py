@@ -14,6 +14,20 @@ def income(income, max_income):
     )
 
 
+def income_range(income, min_income, max_income):
+    """
+    Household makes ${income} per year which must be between ${min_income} and ${max_income}
+    """
+    return (
+        translation("income", 0, "Household makes"),
+        f" ${round(income)} ",
+        translation("income_range", 0, "per year which must be between"),
+        f" ${round(min_income)} ",
+        translation("income_range", 1, "and"),
+        f" ${round(max_income)}",
+    )
+
+
 def income_limit_unknown():
     """
     Household income limit lookup failed

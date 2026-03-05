@@ -1,0 +1,558 @@
+[
+  {
+    "notes": "TX CCS - Eligible single parent working 25+ hours with young child under 13",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_size": 2,
+      "household_assets": 5000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 30,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 15.00,
+              "frequency": "hourly",
+              "hours_worked": 30
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 5,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": [
+        {
+          "type": "childCare",
+          "amount": 1200.00,
+          "frequency": "monthly"
+        }
+      ]
+    },
+    "expected_results": {
+      "program_name": "tx_ccs",
+      "eligible": true,
+      "value": 6528
+    }
+  },
+  {
+    "notes": "TX CCS - Eligible two-parent family with combined 50+ work hours and toddler",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75201",
+      "county": "Dallas",
+      "household_size": 3,
+      "household_assets": 10000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 32,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 14.00,
+              "frequency": "hourly",
+              "hours_worked": 30
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 30,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 13.00,
+              "frequency": "hourly",
+              "hours_worked": 25
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 2,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": [
+        {
+          "type": "childCare",
+          "amount": 1000.00,
+          "frequency": "monthly"
+        }
+      ]
+    },
+    "expected_results": {
+      "program_name": "tx_ccs",
+      "eligible": true,
+      "value": 7488
+    }
+  },
+  {
+    "notes": "TX CCS - Eligible disabled child under 19 with working parent",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "77001",
+      "county": "Harris",
+      "household_size": 2,
+      "household_assets": 8000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 45,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 16.00,
+              "frequency": "hourly",
+              "hours_worked": 35
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 16,
+          "disabled": true,
+          "long_term_disability": true,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        }
+      ],
+      "expenses": [
+        {
+          "type": "childCare",
+          "amount": 800.00,
+          "frequency": "monthly"
+        }
+      ]
+    },
+    "expected_results": {
+      "program_name": "tx_ccs",
+      "eligible": true,
+      "value": 6144
+    }
+  },
+  {
+    "notes": "TX CCS - Eligible full-time student parent exempt from work requirements",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_size": 2,
+      "household_assets": 3000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 22,
+          "student": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 12.00,
+              "frequency": "hourly",
+              "hours_worked": 15
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 3,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": [
+        {
+          "type": "childCare",
+          "amount": 900.00,
+          "frequency": "monthly"
+        }
+      ]
+    },
+    "expected_results": {
+      "program_name": "tx_ccs",
+      "eligible": true,
+      "value": 6528
+    }
+  },
+  {
+    "notes": "TX CCS - Eligible disabled parent exempt from work requirements",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75001",
+      "county": "Collin",
+      "household_size": 2,
+      "household_assets": 2000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "disabled": true,
+          "long_term_disability": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSI",
+              "amount": 950.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 8,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": [
+        {
+          "type": "childCare",
+          "amount": 700.00,
+          "frequency": "monthly"
+        }
+      ]
+    },
+    "expected_results": {
+      "program_name": "tx_ccs",
+      "eligible": true,
+      "value": 6144
+    }
+  },
+  {
+    "notes": "TX CCS - Ineligible child age 13+ (non-disabled) exceeds age limit",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_size": 2,
+      "household_assets": 5000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 40,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 15.00,
+              "frequency": "hourly",
+              "hours_worked": 30
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 14,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_ccs",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "TX CCS - Ineligible single parent not meeting 25-hour work requirement",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "77001",
+      "county": "Harris",
+      "household_size": 2,
+      "household_assets": 4000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 28,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 14.00,
+              "frequency": "hourly",
+              "hours_worked": 20
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 4,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_ccs",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "TX CCS - Ineligible two-parent family not meeting 50-hour combined work requirement",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75201",
+      "county": "Dallas",
+      "household_size": 3,
+      "household_assets": 6000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 34,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 15.00,
+              "frequency": "hourly",
+              "hours_worked": 25
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 32,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 13.00,
+              "frequency": "hourly",
+              "hours_worked": 20
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 6,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_ccs",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "TX CCS - Ineligible household income exceeds 85% SMI threshold",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_size": 3,
+      "household_assets": 20000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 38,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 8000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 36,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 5000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 7,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_ccs",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "TX CCS - Ineligible household with no children under age limit",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75001",
+      "county": "Collin",
+      "household_size": 2,
+      "household_assets": 5000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 16.00,
+              "frequency": "hourly",
+              "hours_worked": 40
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 33,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_ccs",
+      "eligible": false
+    }
+  }
+]

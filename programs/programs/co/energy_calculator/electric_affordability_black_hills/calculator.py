@@ -18,11 +18,11 @@ class EnergyCalculatorElectricityAffordabilityBlackHills(ProgramCalculator):
         "energy_calculator",
     ]
     presumptive_eligibility = [
-        "co_energy_calculator_leap",
-        "co_energy_calculator_eoc",
-        "co_energy_calculator_cowap",
-        "co_energy_calculator_ubp",
-        "co_energy_calculator_care",
+        "cesn_leap",
+        "cesn_eoc",
+        "cesn_cowap",
+        "cesn_ubp",
+        "cesn_care",
     ]
     electricity_providers = ["co-black-hills-energy"]
 

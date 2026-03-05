@@ -13,6 +13,7 @@ il_member_calculators = {
     "il_hfs_fpp": member.IlFamilyPlanningProgram,
     "il_fppe": member.IlFamilyPlanningProgram,
     "il_mpe": member.IlMpe,
+    "il_msp": member.IlMsp,
 }
 
 il_tax_unit_calculators = {

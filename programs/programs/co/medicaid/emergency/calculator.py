@@ -3,7 +3,7 @@ from programs.programs.helpers import medicaid_eligible
 import programs.programs.messages as messages
 
 
-class EmergencyMedicaid(ProgramCalculator):
+class CoEmergencyMedicaid(ProgramCalculator):
     amount = 9_540
     insurance_types = ["none"]
     dependencies = ["insurance"]
@@ -16,4 +16,4 @@ class EmergencyMedicaid(ProgramCalculator):
         member = e.member
 
         # insurance
-        e.condition(member.insurance.has_insurance_types(EmergencyMedicaid.insurance_types))
+        e.condition(member.insurance.has_insurance_types(self.insurance_types))

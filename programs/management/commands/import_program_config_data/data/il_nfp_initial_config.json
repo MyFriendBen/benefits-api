@@ -1,0 +1,48 @@
+{
+    "white_label": {"code": "il"},
+    "program_category": {"external_name": "il_health"},
+    "program": {
+        "name_abbreviated": "il_nfp",
+        "year": "2026",
+        "legal_status_required": ["citizen", "non_citizen", "refugee", "gc_5plus", "gc_5less", "gc_18plus_no5", "gc_under18_no5", "otherWithWorkPermission"],
+        "name": "Nurse-Family Partnership (NFP)",
+        "description": "NFP (Nurse-Family Partnership) gives you a free personal nurse if you're going to have a baby. Your nurse will help you during your pregnancy and your baby's first two years. She will teach you about:\n\n- What happens during pregnancy and when you have your baby\n- How your baby grows and learns\n- Healthy foods to eat\n- Shots your baby needs to stay healthy\n- Help you can get in your community\n\nThis program has been shown to help kids grow up healthier, reduce the number of babies born too early or too small, and help parents feel closer to their babies.\n\nNFP is usually for moms having their first baby who are 28 weeks pregnant or less. The rules are different depending on where you live, and some places have income limits. If you're pregnant, you can still reach out to see if you qualify.\n\nTo learn more, call or text (844) 637-6667 or email newmoms@changent.org.",
+        "apply_button_link": "https://changent.org/nfp-moms/",
+        "apply_button_description": "Learn More",
+        "estimated_application_time": "5-10 minutes",
+        "website_description": "Pairing first-time pregnant women with registered nurses who provide support from early pregnancy through the child's second birthday.",
+        "estimated_value": ""
+    },
+    "navigators": [
+        {
+            "external_name": "carle_healthy_beginnings",
+            "name": "Carle Healthy Beginnings",
+            "email": "",
+            "description": "Contact Carle Healthy Beginnings to apply for NFP if you live in Champaign-Urbana or Vermilion County.",
+            "assistance_link": "https://carle.org/services/healthy-beginnings",
+            "phone_number": "217-902-3130",
+            "counties": ["Champaign", "Vermilion"],
+            "languages": []
+        },
+        {
+            "external_name": "kane_kares",
+            "name": "Kane Kares",
+            "email": "",
+            "description": "Contact Kane Kares to apply for NFP if you live in Kane County.",
+            "assistance_link": "https://www.kanehealth.com/Pages/Kane-Kares",
+            "phone_number": "847-888-6457",
+            "counties": ["Kane"],
+            "languages": []
+        },
+        {
+            "external_name": "metropolitan_family_services",
+            "name": "Metropolitan Family Services",
+            "email": "",
+            "description": "Contact Metropolitan Family Services to apply for NFP if you live in Cook County.",
+            "assistance_link": "https://www.metrofamily.org/community-center",
+            "phone_number": "312-965-4363",
+            "counties": ["Cook"],
+            "languages": []
+        }
+    ]
+}

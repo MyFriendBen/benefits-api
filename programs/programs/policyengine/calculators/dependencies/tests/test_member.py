@@ -952,3 +952,141 @@ class TestCareWorkerEligibleDependency(TestCase):
         """Test CareWorkerEligibleDependency.dependencies includes is_care_worker field."""
         dep = member.CareWorkerEligibleDependency(self.screen, self.head, {})
         self.assertIn("is_care_worker", dep.dependencies)
+
+
+class TestChildcareAttendingDaysPerMonthDependency(TestCase):
+    """Tests for ChildcareAttendingDaysPerMonthDependency class used by childcare subsidy calculators."""
+
+    def setUp(self):
+        """Set up test data for childcare attending days tests."""
+        self.white_label = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Travis",
+            household_size=2,
+            completed=False,
+        )
+
+        self.parent = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=30)
+        self.child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=3)
+
+    def test_value_returns_default_20_days(self):
+        """Test ChildcareAttendingDaysPerMonthDependency.value() returns default of 20 days per month."""
+        dep = member.ChildcareAttendingDaysPerMonthDependency(self.screen, self.child, {})
+        self.assertEqual(dep.value(), 20)
+
+    def test_field_name_is_correct(self):
+        """Test that field name matches PolicyEngine's childcare_attending_days_per_month variable."""
+        dep = member.ChildcareAttendingDaysPerMonthDependency(self.screen, self.child, {})
+        self.assertEqual(dep.field, "childcare_attending_days_per_month")
+
+    def test_is_member_level_dependency(self):
+        """Test that ChildcareAttendingDaysPerMonthDependency is a member-level (per-child) dependency."""
+        from programs.programs.policyengine.calculators.dependencies.base import Member
+
+        self.assertTrue(issubclass(member.ChildcareAttendingDaysPerMonthDependency, Member))
+
+    def test_value_same_for_all_children(self):
+        """Test that all children get the same default value of 20 days."""
+        child2 = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=5)
+
+        dep1 = member.ChildcareAttendingDaysPerMonthDependency(self.screen, self.child, {})
+        dep2 = member.ChildcareAttendingDaysPerMonthDependency(self.screen, child2, {})
+
+        self.assertEqual(dep1.value(), 20)
+        self.assertEqual(dep2.value(), 20)
+
+    def test_works_with_relationship_map(self):
+        """Test that dependency works correctly with relationship_map parameter."""
+        relationship_map = {self.parent.id: self.child.id}
+
+        dep = member.ChildcareAttendingDaysPerMonthDependency(self.screen, self.child, relationship_map)
+
+        self.assertIsNotNone(dep)
+        self.assertEqual(dep.value(), 20)
+
+    def test_has_correct_unit(self):
+        """Test that dependency has correct unit (people) for PolicyEngine."""
+        dep = member.ChildcareAttendingDaysPerMonthDependency(self.screen, self.child, {})
+        self.assertEqual(dep.unit, "people")
+
+
+class TestIsMedicareEligibleDependency(TestCase):
+    """Tests for IsMedicareEligibleDependency class used by IL MSP calculator.
+
+    This dependency overrides PolicyEngine's is_medicare_eligible calculation
+    when we know the user has Medicare selected, fixing the disabled under-65
+    pathway issue (Test 13 in IL MSP QA).
+    """
+
+    def setUp(self):
+        """Set up test data for Medicare eligibility tests."""
+        from screener.models import Insurance
+
+        self.white_label = WhiteLabel.objects.create(name="Illinois", code="il", state_code="IL")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="60601",
+            county="Cook",
+            household_size=1,
+            completed=False,
+        )
+
+        # Member with Medicare
+        self.member_with_medicare = HouseholdMember.objects.create(
+            screen=self.screen, relationship="headOfHousehold", age=55, disabled=True
+        )
+        Insurance.objects.create(household_member=self.member_with_medicare, medicare=True, none=False)
+
+        # Member without Medicare (no insurance record)
+        self.member_without_insurance = HouseholdMember.objects.create(
+            screen=self.screen, relationship="spouse", age=68
+        )
+
+    def test_value_returns_true_when_member_has_medicare(self):
+        """Test IsMedicareEligibleDependency.value() returns True when member has Medicare selected."""
+        dep = member.IsMedicareEligibleDependency(self.screen, self.member_with_medicare, {})
+        self.assertTrue(dep.value())
+
+    def test_value_returns_none_when_member_has_no_insurance_record(self):
+        """Test IsMedicareEligibleDependency.value() returns None when member has no insurance record."""
+        dep = member.IsMedicareEligibleDependency(self.screen, self.member_without_insurance, {})
+        self.assertIsNone(dep.value())
+
+    def test_value_returns_none_when_member_has_other_insurance_only(self):
+        """Test IsMedicareEligibleDependency.value() returns None when member has non-Medicare insurance."""
+        from screener.models import Insurance
+
+        member_with_medicaid = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=30)
+        Insurance.objects.create(household_member=member_with_medicaid, medicaid=True, medicare=False, none=False)
+
+        dep = member.IsMedicareEligibleDependency(self.screen, member_with_medicaid, {})
+        self.assertIsNone(dep.value())
+
+    def test_field_name_is_correct(self):
+        """Test that field name matches PolicyEngine's is_medicare_eligible variable."""
+        dep = member.IsMedicareEligibleDependency(self.screen, self.member_with_medicare, {})
+        self.assertEqual(dep.field, "is_medicare_eligible")
+
+    def test_is_member_level_dependency(self):
+        """Test that IsMedicareEligibleDependency is a member-level dependency."""
+        from programs.programs.policyengine.calculators.dependencies.base import Member
+
+        self.assertTrue(issubclass(member.IsMedicareEligibleDependency, Member))
+
+    def test_disabled_under_65_with_medicare_returns_true(self):
+        """Test that disabled individual under 65 with Medicare returns True.
+
+        This is the key fix for Test 13: disabled 55yo with Medicare should
+        be eligible for MSP. Previously, PolicyEngine would calculate
+        is_medicare_eligible=False because we don't send
+        months_receiving_social_security_disability.
+        """
+        dep = member.IsMedicareEligibleDependency(self.screen, self.member_with_medicare, {})
+        # Member is 55, disabled, and has Medicare - should return True
+        self.assertEqual(self.member_with_medicare.age, 55)
+        self.assertTrue(self.member_with_medicare.disabled)
+        self.assertTrue(dep.value())

@@ -1,0 +1,277 @@
+[
+  {
+    "notes": "IL MSP - Eligible QMB: Senior 68 with Medicare and income below 100% FPL",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 5000,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 68,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 1100, "frequency": "monthly" }
+          ],
+          "insurance": { "medicare": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_msp",
+      "eligible": true,
+      "value": 2220
+    }
+  },
+  {
+    "notes": "IL MSP - Eligible SLMB: Senior 70 with Medicare and income 100-120% FPL",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 7000,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 70,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 1450, "frequency": "monthly" }
+          ],
+          "insurance": { "medicare": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_msp",
+      "eligible": true,
+      "value": 2220
+    }
+  },
+  {
+    "notes": "IL MSP - Eligible QI: Senior 72 with Medicare only and income 120-135% FPL",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 8000,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 72,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 1650, "frequency": "monthly" }
+          ],
+          "insurance": { "medicare": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_msp",
+      "eligible": true,
+      "value": 2220
+    }
+  },
+  {
+    "notes": "IL MSP - Ineligible: Income above 135% FPL",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 5000,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 68,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 2200, "frequency": "monthly" }
+          ],
+          "insurance": { "medicare": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_msp",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "IL MSP - Ineligible: Assets exceed $9,660 limit for individual",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 12000,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 67,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 1200, "frequency": "monthly" }
+          ],
+          "insurance": { "medicare": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_msp",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "IL MSP - Ineligible: No Medicare coverage",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 5000,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 64,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 1100, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_msp",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "IL MSP - Eligible: Senior couple both 66 with Medicare and combined low income",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 2,
+      "household_assets": 10000,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 66,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 900, "frequency": "monthly" }
+          ],
+          "insurance": { "medicare": true }
+        },
+        {
+          "relationship": "spouse",
+          "age": 66,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 800, "frequency": "monthly" }
+          ],
+          "insurance": { "medicare": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_msp",
+      "eligible": true,
+      "value": 4440
+    }
+  },
+  {
+    "notes": "IL MSP - Eligible: Disabled individual under 65 with Medicare",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 6000,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 55,
+          "disabled": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 1300, "frequency": "monthly" }
+          ],
+          "insurance": { "medicare": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_msp",
+      "eligible": true,
+      "value": 2220
+    }
+  },
+  {
+    "notes": "IL MSP - Eligible: Senior 65 at exactly minimum Medicare age",
+    "household": {
+      "white_label": "il",
+      "zipcode": "62002",
+      "county": "Madison",
+      "household_size": 1,
+      "household_assets": 4000,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 65,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 1000, "frequency": "monthly" }
+          ],
+          "insurance": { "medicare": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_msp",
+      "eligible": true,
+      "value": 2220
+    }
+  },
+  {
+    "notes": "IL MSP - Eligible: Senior 80 with very low income (zero income)",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 2000,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 80,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "medicare": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_msp",
+      "eligible": true,
+      "value": 2220
+    }
+  }
+]

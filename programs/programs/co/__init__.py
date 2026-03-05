@@ -1,4 +1,4 @@
-from .nurse_family_partnership.calculator import NurseFamilyPartnership
+from .nurse_family_partnership.calculator import CoNurseFamilyPartnership
 from .rtdlive.calculator import RtdLive
 from .child_care_assistance.calculator import ChildCareAssistance
 from .mydenver.calculator import MyDenver
@@ -17,7 +17,7 @@ from .my_spark.calculator import MySpark
 from .low_wage_covid_relief.calculator import LowWageCovidRelief
 from .medicaid.child_with_disability.calculator import MedicaidChildWithDisability
 from .medicaid.adult_with_disability.calculator import MedicaidAdultWithDisability
-from .medicaid.emergency.calculator import EmergencyMedicaid
+from .medicaid.emergency.calculator import CoEmergencyMedicaid
 from .basic_cash_assistance.calculator import BasicCashAssistance
 from .weatherization_assistance.calculator import WeatherizationAssistance
 from .tabor.calculator import Tabor
@@ -28,7 +28,7 @@ from .emergency_rental_assistance.calculator import EmergencyRentalAssistance
 from .denver_trash_rebate.calculator import DenverTrashRebate
 from .denver_property_tax_relief.calculator import DenverPropertyTaxRelief
 from .nurturing_futures.calculator import NurturingFutures
-from .energy_calculator import co_energy_calculators
+from .energy_calculator import cesn_calculators
 from .denver_sidewalk_rebate.calculator import DenverSidewalkRebate
 from .senior_housing_tax_credit.calculator import SeniorHousingIncomeTaxCredit
 from .jeffco_student_benefits.calculator import JeffcoStudentBenefits
@@ -53,7 +53,7 @@ co_calculators: dict[str, type[ProgramCalculator]] = {
     "lwcr": LowWageCovidRelief,
     "cwd_medicaid": MedicaidChildWithDisability,
     "awd_medicaid": MedicaidAdultWithDisability,
-    "emergency_medicaid": EmergencyMedicaid,
+    "emergency_medicaid": CoEmergencyMedicaid,
     "bca": BasicCashAssistance,
     "cowap": WeatherizationAssistance,
     "tabor": Tabor,
@@ -61,12 +61,12 @@ co_calculators: dict[str, type[ProgramCalculator]] = {
     "ubp": UtilityBillPay,
     "rag": RentalAssistanceGrant,
     "erap": EmergencyRentalAssistance,
-    "nfp": NurseFamilyPartnership,
+    "co_nfp": CoNurseFamilyPartnership,
     "dtr": DenverTrashRebate,
     "dptr": DenverPropertyTaxRelief,
     "nf": NurturingFutures,
     "dsr": DenverSidewalkRebate,
     "shitc": SeniorHousingIncomeTaxCredit,
     "jeffco_student_benefits": JeffcoStudentBenefits,
-    **co_energy_calculators,
+    **cesn_calculators,
 }

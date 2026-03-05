@@ -1,0 +1,330 @@
+[
+  {
+    "notes": "IL HBWD - Eligible: Working disabled adult 35, low income and assets",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 5000,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "disabled": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 2000, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_hbwd",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "IL HBWD - Ineligible: Age 15 is below minimum age 16",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 1000,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 15,
+          "disabled": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 800, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_hbwd",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "IL HBWD - Ineligible: Age 65 exceeds maximum age 64",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 10000,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 65,
+          "disabled": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 1500, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_hbwd",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "IL HBWD - Eligible: Blind self-employed worker age 28",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 3000,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 28,
+          "visually_impaired": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "selfEmployment", "amount": 1800, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_hbwd",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "IL HBWD - Eligible: SSDI recipient working part-time (SSDI proves disability)",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 15000,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 42,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSDisability", "amount": 1200, "frequency": "monthly" },
+            { "type": "wages", "amount": 500, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_hbwd",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "IL HBWD - Ineligible: Disabled but not working (no earned income)",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 2000,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 50,
+          "disabled": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 1000, "frequency": "monthly" },
+            { "type": "sSI", "amount": 900, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_hbwd",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "IL HBWD - Ineligible: Assets $26,000 exceed $25,000 limit",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 26000,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 38,
+          "disabled": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 2500, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_hbwd",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "IL HBWD - Eligible: Family of 4 with one disabled working parent",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 4,
+      "household_assets": 20000,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 40,
+          "disabled": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 3500, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "spouse",
+          "age": 38,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 2800, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "child",
+          "age": 10,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "child",
+          "age": 7,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_hbwd",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "IL HBWD - Eligible: Edge case at minimum age 16",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 1000,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 16,
+          "disabled": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 600, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_hbwd",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "IL HBWD - Eligible: Edge case at maximum age 64",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 8000,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 64,
+          "disabled": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 1200, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_hbwd",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "IL HBWD - Eligible: Edge case with zero assets",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 45,
+          "disabled": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 1500, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_hbwd",
+      "eligible": true,
+      "value": 1
+    }
+  }
+]

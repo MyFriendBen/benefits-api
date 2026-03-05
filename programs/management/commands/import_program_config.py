@@ -11,13 +11,19 @@ from programs.models import (
     Navigator,
     County,
     NavigatorLanguage,
+    LegalStatus,
 )
 from screener.models import WhiteLabel
 from integrations.clients.google_translate import Translate
 from django.conf import settings
 import argparse
 import json
-from typing import Any, Dict, List, Tuple
+from typing import Any
+
+
+def truncate(text: str, max_length: int = 50) -> str:
+    """Truncate text with ellipsis if it exceeds max_length."""
+    return f"{text[:max_length]}..." if len(text) > max_length else text
 
 
 class Command(BaseCommand):
@@ -47,10 +53,16 @@ class Command(BaseCommand):
             action="store_true",
             help="Print what would be created without making any changes",
         )
+        parser.add_argument(
+            "--override",
+            action="store_true",
+            help="Delete existing program and its navigators/documents before importing",
+        )
 
     def handle(self, *args: Any, **options: Any) -> None:
         config_file = options["config_file"]
         dry_run = options.get("dry_run", False)
+        override = options.get("override", False)
 
         try:
             config = json.load(config_file)
@@ -72,10 +84,8 @@ class Command(BaseCommand):
 
         # Validate program section
         program_config = config["program"]
-        required_program_fields = ["name_abbreviated"]
-        for field in required_program_fields:
-            if field not in program_config:
-                raise CommandError(f"Missing required field 'program.{field}'")
+        if "name_abbreviated" not in program_config:
+            raise CommandError("Missing required field 'program.name_abbreviated'")
 
         program_name = program_config["name_abbreviated"]
 
@@ -87,13 +97,14 @@ class Command(BaseCommand):
 
         # Check if program already exists
         existing_program = Program.objects.filter(name_abbreviated=program_name, white_label=white_label).first()
+        overriding = bool(existing_program and override)
 
-        if existing_program:
+        if existing_program and not override:
             self.stdout.write(
                 self.style.WARNING(
                     f"\nProgram '{program_name}' already exists for white label '{white_label_code}' "
                     f"(ID: {existing_program.id}). Skipping import.\n"
-                    f"This command only creates new programs and does not update existing data."
+                    f"Use --override to delete and recreate the program."
                 )
             )
             return
@@ -105,6 +116,11 @@ class Command(BaseCommand):
         # Wrap all creation logic in a transaction for rollback support
         try:
             with transaction.atomic():
+                # Delete existing program if overriding (inside transaction for proper rollback)
+                if overriding:
+                    self._delete_program_and_related(existing_program, config)
+                    existing_program = None
+
                 self.stdout.write(self.style.SUCCESS(f"\n[Program: {program_name}]"))
                 self.stdout.write(f"White Label: {white_label_code}\n")
 
@@ -135,14 +151,54 @@ class Command(BaseCommand):
                 if "navigators" in config:
                     self._import_navigators(program, config["navigators"])
 
+                action = "recreated" if overriding else "created"
                 self.stdout.write(
-                    self.style.SUCCESS(f"\n✓ Successfully created program: {program_name} (ID: {program.id})\n")
+                    self.style.SUCCESS(f"\n✓ Successfully {action} program: {program_name} (ID: {program.id})\n")
                 )
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"\nError during import: {e}\n" f"All changes have been rolled back."))
             raise
 
-    def _separate_program_fields(self, program_config: Dict[str, Any]) -> Tuple[Dict[str, str], Dict[str, Any]]:
+    def _delete_program_and_related(self, program: Program, config: dict[str, Any]) -> None:
+        """
+        Delete a program and its related navigators/documents defined in the config.
+
+        Only deletes navigators and documents that are specified in the config file,
+        preserving any that might be shared with other programs.
+        """
+        self.stdout.write(self.style.WARNING("\n[Override Mode] Deleting existing program and related entities..."))
+
+        program_name = program.name_abbreviated
+
+        # Delete navigators and documents specified in config
+        for entity_type, model, config_key, related_name in [
+            ("navigator", Navigator, "navigators", "programs"),
+            ("document", Document, "documents", "program_documents"),
+        ]:
+            for item_config in config.get(config_key, []):
+                external_name = item_config.get("external_name")
+                if not external_name:
+                    continue
+                entity = model.objects.filter(external_name=external_name).first()
+                if not entity:
+                    continue
+                if getattr(entity, related_name).exclude(id=program.id).exists():
+                    self.stdout.write(f"  Keeping {entity_type} '{external_name}' (used by other programs)")
+                else:
+                    entity.delete()
+                    self.stdout.write(f"  Deleted {entity_type}: {external_name}")
+
+        # Delete warning messages associated only with this program
+        for warning in program.warning_messages.all():
+            if warning.programs.count() == 1:
+                warning.delete()
+                self.stdout.write(f"  Deleted warning message: {warning.external_name}")
+
+        # Delete the program
+        program.delete()
+        self.stdout.write(f"  Deleted program: {program_name}\n")
+
+    def _separate_program_fields(self, program_config: dict[str, Any]) -> tuple[dict[str, str], dict[str, Any]]:
         """
         Separate program fields into translations and configuration.
 
@@ -153,6 +209,9 @@ class Command(BaseCommand):
 
         # Skip these fields as they're handled elsewhere
         skip_fields = ["name_abbreviated"]
+
+        # Note: learn_more_link and apply_button_link are handled here because
+        # they are defined as translated fields in the Program model, even though they contain URLs.
 
         translations = {}
         configuration = {}
@@ -168,7 +227,7 @@ class Command(BaseCommand):
 
         return translations, configuration
 
-    def _print_dry_run_report(self, config: Dict[str, Any], white_label_code: str, program_name: str) -> None:
+    def _print_dry_run_report(self, config: dict[str, Any], white_label_code: str, program_name: str) -> None:
         """Print a report of what would be created without making changes."""
         self.stdout.write(self.style.WARNING("\n=== DRY RUN MODE ==="))
         self.stdout.write("No changes will be made to the database.\n")
@@ -183,9 +242,7 @@ class Command(BaseCommand):
         self.stdout.write(f"  external_name: {category_config.get('external_name', 'N/A')}")
         self.stdout.write(f"  icon: {category_config.get('icon', 'N/A')}")
         if "name" in category_config:
-            name_value = category_config["name"]
-            preview = name_value[:50] + "..." if len(name_value) > 50 else name_value
-            self.stdout.write(f"  name: {preview}")
+            self.stdout.write(f"  name: {truncate(category_config['name'])}")
 
         # Program section - separate into translations and configuration
         program_config = config["program"]
@@ -203,20 +260,15 @@ class Command(BaseCommand):
         # Show translations
         if translations:
             for field_name, english_text in translations.items():
-                preview = english_text[:50] + "..." if len(english_text) > 50 else english_text
-                self.stdout.write(f"  {field_name}: {preview}")
+                self.stdout.write(f"  {field_name}: {truncate(english_text)}")
 
         # Warning message
         if "warning_message" in config:
             warning = config["warning_message"]
             self.stdout.write(f"\n{self.style.SUCCESS('Warning Message:')}")
-            external_name = warning.get("external_name", "N/A")
-            calculator = warning.get("calculator", "_show")
-            message = warning.get("message", "")
-            preview = message[:50] + "..." if len(message) > 50 else message
-            self.stdout.write(f"  external_name: {external_name}")
-            self.stdout.write(f"  calculator: {calculator}")
-            self.stdout.write(f"  message: {preview}")
+            self.stdout.write(f"  external_name: {warning.get('external_name', 'N/A')}")
+            self.stdout.write(f"  calculator: {warning.get('calculator', '_show')}")
+            self.stdout.write(f"  message: {truncate(warning.get('message', ''))}")
 
         # Documents
         if "documents" in config:
@@ -227,21 +279,15 @@ class Command(BaseCommand):
                 external_name = doc.get("external_name", "N/A")
                 text = doc.get("text", "")
 
-                # Check if this is referencing an existing document (text not provided)
+                self.stdout.write(f"    external_name: {external_name}")
                 if not text:
-                    self.stdout.write(f"    external_name: {external_name}")
-                    self.stdout.write(f"    (will use existing document if found)")
+                    self.stdout.write("    (will use existing document if found)")
                 else:
-                    text_preview = text[:50] + "..." if len(text) > 50 else text
-                    link_url = doc.get("link_url", "")
-                    link_text = doc.get("link_text", "")
-                    self.stdout.write(f"    external_name: {external_name}")
-                    self.stdout.write(f"    text: {text_preview}")
-                    if link_url:
+                    self.stdout.write(f"    text: {truncate(text)}")
+                    if link_url := doc.get("link_url"):
                         self.stdout.write(f"    link_url: {link_url}")
-                    if link_text:
-                        link_text_preview = link_text[:50] + "..." if len(link_text) > 50 else link_text
-                        self.stdout.write(f"    link_text: {link_text_preview}")
+                    if link_text := doc.get("link_text"):
+                        self.stdout.write(f"    link_text: {truncate(link_text)}")
 
         # Navigators
         if "navigators" in config:
@@ -252,33 +298,22 @@ class Command(BaseCommand):
                 external_name = nav.get("external_name", "N/A")
                 name = nav.get("name", "")
 
-                # Check if this is referencing an existing navigator (name not provided)
+                self.stdout.write(f"    external_name: {external_name}")
                 if not name:
-                    self.stdout.write(f"    external_name: {external_name}")
-                    self.stdout.write(f"    (will use existing navigator if found)")
+                    self.stdout.write("    (will use existing navigator if found)")
                 else:
-                    name_preview = name[:50] + "..." if len(name) > 50 else name
-                    email = nav.get("email", "")
-                    description = nav.get("description", "")
-                    assistance_link = nav.get("assistance_link", "")
-                    phone_number = nav.get("phone_number", "")
-                    counties = nav.get("counties", [])
-                    languages = nav.get("languages", [])
-
-                    self.stdout.write(f"    external_name: {external_name}")
-                    self.stdout.write(f"    name: {name_preview}")
-                    if email:
+                    self.stdout.write(f"    name: {truncate(name)}")
+                    if email := nav.get("email"):
                         self.stdout.write(f"    email: {email}")
-                    if description:
-                        desc_preview = description[:50] + "..." if len(description) > 50 else description
-                        self.stdout.write(f"    description: {desc_preview}")
-                    if assistance_link:
+                    if description := nav.get("description"):
+                        self.stdout.write(f"    description: {truncate(description)}")
+                    if assistance_link := nav.get("assistance_link"):
                         self.stdout.write(f"    assistance_link: {assistance_link}")
-                    if phone_number:
+                    if phone_number := nav.get("phone_number"):
                         self.stdout.write(f"    phone_number: {phone_number}")
-                    if counties:
+                    if counties := nav.get("counties"):
                         self.stdout.write(f"    counties: {', '.join(counties)}")
-                    if languages:
+                    if languages := nav.get("languages"):
                         self.stdout.write(f"    languages: {', '.join(languages)}")
 
         self.stdout.write(self.style.WARNING("\n=== END DRY RUN ===\n"))
@@ -288,8 +323,8 @@ class Command(BaseCommand):
         white_label: WhiteLabel,
         program_name: str,
         category: ProgramCategory,
-        translations: Dict[str, str],
-        configuration: Dict[str, Any],
+        translations: dict[str, str],
+        configuration: dict[str, Any],
     ) -> Program:
         """
         Create a new program with all data consolidated.
@@ -317,7 +352,7 @@ class Command(BaseCommand):
 
         return program
 
-    def _import_program_category(self, white_label: WhiteLabel, category_config: Dict[str, Any]) -> ProgramCategory:
+    def _import_program_category(self, white_label: WhiteLabel, category_config: dict[str, Any]) -> ProgramCategory:
         """
         Find or create a program category.
 
@@ -386,9 +421,9 @@ class Command(BaseCommand):
     def _bulk_update_entity_translations(
         self,
         entity: Any,
-        translations: Dict[str, str],
+        translations: dict[str, str],
         entity_type: str,
-        translated_fields: List[str],
+        translated_fields: list[str],
     ) -> None:
         """
         Reusable method for bulk translation updates across different entity types.
@@ -420,6 +455,7 @@ class Command(BaseCommand):
             translation_obj = getattr(entity, field_name)
 
             # Update translation
+            self.stdout.write(f"    - {field_name}: {truncate(english_text)}")
             self._update_translation_all_languages(
                 translation_obj, english_text, texts_to_translate, translation_objects
             )
@@ -444,7 +480,7 @@ class Command(BaseCommand):
 
         entity.save()
 
-    def _import_program_category_translations(self, category: ProgramCategory, translations: Dict[str, str]) -> None:
+    def _import_program_category_translations(self, category: ProgramCategory, translations: dict[str, str]) -> None:
         """
         Update translatable fields for a program category.
 
@@ -456,7 +492,7 @@ class Command(BaseCommand):
         translated_fields = ProgramCategory.objects.translated_fields
         self._bulk_update_entity_translations(category, translations, "category", translated_fields)
 
-    def _import_program_translations(self, program: Program, translations: Dict[str, str]) -> None:
+    def _import_program_translations(self, program: Program, translations: dict[str, str]) -> None:
         """
         Update translatable fields for a program.
 
@@ -472,8 +508,8 @@ class Command(BaseCommand):
         self,
         translation_obj: Translation,
         text: str,
-        texts_to_translate: List[str],
-        translation_objects: Dict[str, List[Translation]],
+        texts_to_translate: list[str],
+        translation_objects: dict[str, list[Translation]],
     ) -> None:
         """
         Update a translation for all languages.
@@ -498,7 +534,7 @@ class Command(BaseCommand):
                 # Append this translation object to the list for this text
                 translation_objects[text].append(translation_obj)
 
-    def _import_program_configuration(self, program: Program, configuration: Dict[str, Any]) -> None:
+    def _import_program_configuration(self, program: Program, configuration: dict[str, Any]) -> None:
         """Import non-translatable configuration for a program."""
         # Handle year
         if "year" in configuration:
@@ -513,8 +549,6 @@ class Command(BaseCommand):
         # Handle legal_status_required
         if "legal_status_required" in configuration:
             legal_statuses = configuration["legal_status_required"]
-            from programs.models import LegalStatus
-
             for status_code in legal_statuses:
                 try:
                     status = LegalStatus.objects.get(status=status_code)
@@ -539,7 +573,7 @@ class Command(BaseCommand):
 
         program.save()
 
-    def _import_warning_message(self, program: Program, warning_config: Dict[str, Any]) -> None:
+    def _import_warning_message(self, program: Program, warning_config: dict[str, Any]) -> None:
         """
         Import a warning message for a new program.
 
@@ -556,11 +590,11 @@ class Command(BaseCommand):
         if "external_name" not in warning_config:
             raise CommandError("Missing required field 'external_name' in warning_messages configuration")
 
-        external_name = warning_config.get("external_name")
+        external_name = warning_config["external_name"]
 
         # Validate white_label if provided matches program's white_label
         if "white_label" in warning_config:
-            white_label_code = warning_config.get("white_label")
+            white_label_code = warning_config["white_label"]
             if white_label_code != program.white_label.code:
                 raise CommandError(
                     f"Warning message white_label '{white_label_code}' does not match "
@@ -607,7 +641,7 @@ class Command(BaseCommand):
 
         self._bulk_update_entity_translations(warning, field_values, "warning", translated_fields)
 
-    def _import_documents(self, program: Program, documents_config: List[Dict[str, Any]]) -> None:
+    def _import_documents(self, program: Program, documents_config: list[dict[str, Any]]) -> None:
         """
         Import documents for a program.
 
@@ -676,7 +710,7 @@ class Command(BaseCommand):
             program.documents.add(*documents_to_associate)
             self.stdout.write(f"  Associated {len(documents_to_associate)} document(s) with program")
 
-    def _import_document_translations(self, document: Document, translations: Dict[str, str]) -> None:
+    def _import_document_translations(self, document: Document, translations: dict[str, str]) -> None:
         """
         Update translatable fields for a document.
 
@@ -691,7 +725,7 @@ class Command(BaseCommand):
         translated_fields = Document.objects.translated_fields
         self._bulk_update_entity_translations(document, translations, "document", translated_fields)
 
-    def _import_navigators(self, program: Program, navigators_config: List[Dict[str, Any]]) -> None:
+    def _import_navigators(self, program: Program, navigators_config: list[dict[str, Any]]) -> None:
         """
         Import navigators for a program.
 
@@ -799,7 +833,7 @@ class Command(BaseCommand):
                 )
             self.stdout.write(f"  Associated {len(navigators_to_associate)} navigator(s) with program")
 
-    def _import_navigator_translations(self, navigator: Navigator, translations: Dict[str, str]) -> None:
+    def _import_navigator_translations(self, navigator: Navigator, translations: dict[str, str]) -> None:
         """
         Update translatable fields for a navigator.
 

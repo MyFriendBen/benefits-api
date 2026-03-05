@@ -1,0 +1,238 @@
+[
+  {
+    "notes": "IL Emergency Medicaid - Eligible: Uninsured person who qualifies for Medicaid",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 1500, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_emergency_medicaid",
+      "eligible": true,
+      "value": 2000
+    }
+  },
+  {
+    "notes": "IL Emergency Medicaid - Eligible: Pregnant woman uninsured with low income",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 28,
+          "pregnant": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 2000, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_emergency_medicaid",
+      "eligible": true,
+      "value": 2000
+    }
+  },
+  {
+    "notes": "IL Emergency Medicaid - Eligible: Uninsured child in Medicaid-eligible household",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 2,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 1800, "frequency": "monthly" }
+          ],
+          "insurance": { "employer": true, "none": false }
+        },
+        {
+          "relationship": "child",
+          "age": 8,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_emergency_medicaid",
+      "eligible": true,
+      "value": 2000
+    }
+  },
+  {
+    "notes": "IL Emergency Medicaid - Ineligible: Has employer insurance",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 1500, "frequency": "monthly" }
+          ],
+          "insurance": { "employer": true, "none": false }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_emergency_medicaid",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "IL Emergency Medicaid - Ineligible: Already has Medicaid",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 30,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 1200, "frequency": "monthly" }
+          ],
+          "insurance": { "medicaid": true, "none": false }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_emergency_medicaid",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "IL Emergency Medicaid - Eligible: Disabled uninsured adult",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 45,
+          "disabled": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSI", "amount": 943, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_emergency_medicaid",
+      "eligible": true,
+      "value": 2000
+    }
+  },
+  {
+    "notes": "IL Emergency Medicaid - Eligible: Family with multiple uninsured members",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 3,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 32,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 2200, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "spouse",
+          "age": 30,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "child",
+          "age": 5,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_emergency_medicaid",
+      "eligible": true,
+      "value": 6000
+    }
+  },
+  {
+    "notes": "IL Emergency Medicaid - Ineligible: Has Medicare",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 68,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 1400, "frequency": "monthly" }
+          ],
+          "insurance": { "medicare": true, "none": false }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_emergency_medicaid",
+      "eligible": false
+    }
+  }
+]

@@ -15,7 +15,9 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
+
+from benefits.views import redirect_legacy_co_energy_calculator
 from sesame.views import LoginView
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
@@ -36,6 +38,8 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
+    # Redirect legacy co_energy_calculator URLs to cesn
+    re_path(r"^api/.*co_energy_calculator", redirect_legacy_co_energy_calculator),
     path("api/", include("configuration.urls")),
     path("api/", include("screener.urls")),
     path("api/", include("programs.urls")),

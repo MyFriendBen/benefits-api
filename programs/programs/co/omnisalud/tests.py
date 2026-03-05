@@ -20,7 +20,6 @@ class TestOmniSaludPension(TestCase):
             relationship="headOfHousehold",
             age=20,
             student=False,
-            student_full_time=False,
             pregnant=False,
             unemployed=False,
             worked_in_last_18_mos=True,

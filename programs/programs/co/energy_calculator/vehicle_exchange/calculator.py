@@ -1,13 +1,18 @@
 from integrations.services.income_limits import ami
 from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
 
+"""
+As of January 21, 2026, the EnergyCalculatorVehicleExchange program has been set to inactive in CESN
+since we switched to retrieving the details via the Rewiring America API.
+"""
+
 
 class EnergyCalculatorVehicleExchange(ProgramCalculator):
     amount = 4_000
     min_age = 18
     ami_percent = "80%"
     presumptive_eligibility = ["co_care", "cowap", "rtdlive", "section_8", "ssdi", "wic", "leap", "snap", "ssi"]
-    calculated_presumptive_eligibility = ["co_energy_calculator_care", "co_energy_calculator_cowap"]
+    calculated_presumptive_eligibility = ["cesn_care", "cesn_cowap"]
     dependencies = ["age", "income_frequency", "income_amount", "energy_calculator"]
 
     def household_eligible(self, e: Eligibility):

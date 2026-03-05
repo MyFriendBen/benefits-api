@@ -1,0 +1,223 @@
+[
+  {
+    "notes": "IL NFP - Eligible: First-time pregnant woman 25 with income below 300% FPL",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 25,
+          "pregnant": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 2500, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_nfp",
+      "eligible": true,
+      "value": 2400
+    }
+  },
+  {
+    "notes": "IL NFP - Eligible: Low-income pregnant teen 18",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 18,
+          "pregnant": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 1200, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_nfp",
+      "eligible": true,
+      "value": 2400
+    }
+  },
+  {
+    "notes": "IL NFP - Eligible: Pregnant woman with WIC (presumed eligible regardless of income)",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "has_wic": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 28,
+          "pregnant": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 4500, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_nfp",
+      "eligible": true,
+      "value": 2400
+    }
+  },
+  {
+    "notes": "IL NFP - Ineligible: Not pregnant",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 25,
+          "pregnant": false,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 2000, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_nfp",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "IL NFP - Ineligible: Income above 300% FPL without WIC",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 30,
+          "pregnant": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 5500, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_nfp",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "IL NFP - Eligible: Pregnant woman 32 with zero income",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 32,
+          "pregnant": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_nfp",
+      "eligible": true,
+      "value": 2400
+    }
+  },
+  {
+    "notes": "IL NFP - Eligible: Household with pregnant spouse (spouse is member eligible)",
+    "household": {
+      "white_label": "il",
+      "zipcode": "60601",
+      "county": "Cook",
+      "household_size": 2,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 30,
+          "pregnant": false,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 3000, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "spouse",
+          "age": 28,
+          "pregnant": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_nfp",
+      "eligible": true,
+      "value": 2400
+    }
+  },
+  {
+    "notes": "IL NFP - Eligible: Pregnant woman in Madison County (different location)",
+    "household": {
+      "white_label": "il",
+      "zipcode": "62002",
+      "county": "Madison",
+      "household_size": 1,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 22,
+          "pregnant": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 1800, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_nfp",
+      "eligible": true,
+      "value": 2400
+    }
+  }
+]

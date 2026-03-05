@@ -1,0 +1,33 @@
+{
+    "white_label": {"code": "tx"},
+    "program_category": {
+        "external_name": "tx_child_care",
+        "name": "Child Care",
+        "icon": "child_care"
+    },
+    "program": {
+        "name_abbreviated": "tx_ccs",
+        "year": "2026",
+        "legal_status_required": ["citizen", "gc_5plus", "gc_18plus_no5", "gc_under18_no5"],
+        "name": "Texas Workforce Commission (TWC) Child Care Services (CCS)",
+        "description_short": "Scholarships and financial assistance for child care to eligible families.",
+        "description": "CCS offers scholarships and financial assistance for child care to eligible families, allowing parents to work, search for employment, attend school, or participate in training programs.\n\nWorking parents are approved for funding for 12 months, while parents who are seeking employment are approved for 3 months at a time.\n\nThis program helps families afford quality child care while they work toward self-sufficiency. Income limits and other eligibility requirements apply.",
+        "learn_more_link": "https://www.twc.texas.gov/programs/child-care#:~:text=CCS%20provides%20scholarships%20(financial%20aid,are%20approved%20for%20the%20program.",
+        "apply_button_link": "https://childcare.twc.texas.gov/find/register?mode=signup",
+        "apply_button_description": "",
+        "estimated_application_time": "45 minutes",
+        "estimated_value": "",
+        "website_description": "Child Care Support"
+    },
+    "documents": [
+        {"external_name": "tx_id_proof"},
+        {"external_name": "tx_us_status"},
+        {"external_name": "tx_earned_income"},
+        {"external_name": "tx_unearned_income"},
+        {"external_name": "tx_home"}
+    ],
+    "warning": {
+        "external_name": "tx_ccs_warning",
+        "text": "Parents seeking work are only applicable for 3 months of childcare support at a time."
+    }
+}

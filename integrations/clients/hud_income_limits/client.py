@@ -10,7 +10,7 @@ Provides access to two HUD Income Limits datasets:
 API Documentation: https://www.huduser.gov/portal/dataset/fmr-api.html
 """
 
-from typing import Union, Literal, Optional
+from typing import Union, Literal, Optional, cast, get_args
 from decouple import config
 import requests
 from requests.adapters import HTTPAdapter
@@ -252,6 +252,67 @@ class HudIncomeClient:
             raise HudIncomeClientError(f"No {percent} AMI data for household size {screen.household_size}")
 
         return int(value)
+
+    # Derived from MtspAmiPercent so the two stay in sync automatically
+    MTSP_THRESHOLDS: list[int] = sorted(int(p.rstrip("%")) for p in get_args(MtspAmiPercent))
+
+    def approximate_screen_mtsp_ami(
+        self,
+        screen: Screen,
+        target_percent: Union[int, str],
+        year: Union[int, str],
+        county_override: Optional[str] = None,
+    ) -> int:
+        """
+        Approximate an MTSP AMI income limit at any percentage via linear interpolation.
+
+        The HUD MTSP API only provides values at fixed tiers (20%, 30%, 40%, 50%,
+        60%, 70%, 80%, 100%).  When a program targets an intermediate percentage
+        (e.g. 65% AMI), this method finds the two bracketing tiers and linearly
+        interpolates between them.
+
+        If ``target_percent`` falls exactly on a supported tier, the HUD value for
+        that tier is returned with no interpolation.
+
+        Args:
+            screen: Screen object with white_label.state_code, county, and household_size
+            target_percent: Target AMI percentage as a string (e.g. "65%") or integer (e.g. 65).
+                Must be in the range [20, 100].
+            year: Year for income limits (e.g. 2025 or "2025")
+            county_override: Optional county name to use instead of screen.county
+
+        Returns:
+            Interpolated income limit in dollars (integer floor)
+
+        Raises:
+            HudIncomeClientError: If target_percent is outside the [20, 100] range or
+                if the HUD API request fails.
+
+        Example:
+            >>> hud_client.approximate_screen_mtsp_ami(screen, "65%", "2025")
+            84120  # linearly interpolated between 60% ($79,440) and 70% ($88,800)
+            >>> hud_client.approximate_screen_mtsp_ami(screen, "80%", "2025")
+            103600  # exact tier — no interpolation needed
+        """
+        target_num = int(str(target_percent).rstrip("%"))
+
+        if target_num < self.MTSP_THRESHOLDS[0] or target_num > self.MTSP_THRESHOLDS[-1]:
+            raise HudIncomeClientError(
+                f"target_percent {target_percent} is outside the supported MTSP range "
+                f"[{self.MTSP_THRESHOLDS[0]}%, {self.MTSP_THRESHOLDS[-1]}%]"
+            )
+
+        lower_num = max(t for t in self.MTSP_THRESHOLDS if t <= target_num)
+        upper_num = min(t for t in self.MTSP_THRESHOLDS if t >= target_num)
+
+        lower_value = self.get_screen_mtsp_ami(screen, cast(MtspAmiPercent, f"{lower_num}%"), year, county_override)
+
+        if lower_num == upper_num:
+            return lower_value
+
+        upper_value = self.get_screen_mtsp_ami(screen, cast(MtspAmiPercent, f"{upper_num}%"), year, county_override)
+        position = (target_num - lower_num) / (upper_num - lower_num)
+        return int(lower_value + position * (upper_value - lower_value))
 
     def _validate_household_size(self, household_size: int) -> None:
         """Validate household size is within HUD API bounds (1-8)."""

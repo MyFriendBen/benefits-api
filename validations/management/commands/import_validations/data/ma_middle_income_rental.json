@@ -1,0 +1,739 @@
+[
+  {
+    "notes": "MA Middle-Income Rental - Eligible Cambridge resident, 1 person, income ~100% AMI, assets $50,000",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_assets": 50000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 9000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": { "none": false, "employer": true }
+        }
+      ],
+      "expenses": [],
+      "has_ma_middle_income_rental": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_middle_income_rental",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "MA Middle-Income Rental - Eligible Cambridge family of 4, income ~90% AMI, assets $60,000",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02138",
+      "county": "Cambridge",
+      "household_size": 4,
+      "household_assets": 60000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 38,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 7000.00, "frequency": "monthly" }
+          ],
+          "insurance": { "none": false, "employer": true }
+        },
+        {
+          "relationship": "spouse",
+          "age": 36,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 5500.00, "frequency": "monthly" }
+          ],
+          "insurance": { "none": false, "employer": true }
+        },
+        {
+          "relationship": "child",
+          "age": 10,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": false, "mass_health": true }
+        },
+        {
+          "relationship": "child",
+          "age": 7,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": false, "mass_health": true }
+        }
+      ],
+      "expenses": [],
+      "has_ma_middle_income_rental": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_middle_income_rental",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "MA Middle-Income Rental - Eligible Cambridge resident, assets exactly at $75,000 limit",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02140",
+      "county": "Cambridge",
+      "household_size": 2,
+      "household_assets": 75000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 42,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 6000.00, "frequency": "monthly" }
+          ],
+          "insurance": { "none": false, "employer": true }
+        },
+        {
+          "relationship": "spouse",
+          "age": 40,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 6000.00, "frequency": "monthly" }
+          ],
+          "insurance": { "none": false, "employer": true }
+        }
+      ],
+      "expenses": [],
+      "has_ma_middle_income_rental": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_middle_income_rental",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "MA Middle-Income Rental - Ineligible: income below 80% AMI (too low)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_assets": 20000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 28,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 3000.00, "frequency": "monthly" }
+          ],
+          "insurance": { "none": false, "mass_health": true }
+        }
+      ],
+      "expenses": [],
+      "has_ma_middle_income_rental": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_middle_income_rental",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA Middle-Income Rental - Eligible: income exactly at 120% AMI ceiling ($11,581/mo = 80% AMI × 1.5 for 1-person, Middlesex 2025, Standard Section 8 IL $92,650 × 1.5 = $138,975/yr; $11,581 × 12 = $138,972 ≤ $138,975)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02140",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_assets": 50000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 40,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 11581.00, "frequency": "monthly" }
+          ],
+          "insurance": { "none": false, "employer": true }
+        }
+      ],
+      "expenses": [],
+      "has_ma_middle_income_rental": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_middle_income_rental",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "MA Middle-Income Rental - Ineligible: income $1 above 120% AMI ceiling ($11,582/mo vs $11,581/mo ceiling for 1-person, Middlesex 2025, Standard Section 8 IL $92,650 × 1.5 = $138,975/yr; $11,582 × 12 = $138,984 > $138,975)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02140",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_assets": 50000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 40,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 11582.00, "frequency": "monthly" }
+          ],
+          "insurance": { "none": false, "employer": true }
+        }
+      ],
+      "expenses": [],
+      "has_ma_middle_income_rental": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_middle_income_rental",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA Middle-Income Rental - Ineligible: income above 120% AMI (too high); 1-person, $11,700/mo exceeds $11,581/mo ceiling (80% AMI × 1.5, Middlesex 2025, Standard Section 8 IL)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02140",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_assets": 50000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 40,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 11700.00, "frequency": "monthly" }
+          ],
+          "insurance": { "none": false, "employer": true }
+        }
+      ],
+      "expenses": [],
+      "has_ma_middle_income_rental": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_middle_income_rental",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA Middle-Income Rental - Ineligible: non-Cambridge resident (Boston)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02108",
+      "county": "Boston",
+      "household_size": 1,
+      "household_assets": 50000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 32,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 9000.00, "frequency": "monthly" }
+          ],
+          "insurance": { "none": false, "employer": true }
+        }
+      ],
+      "expenses": [],
+      "has_ma_middle_income_rental": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_middle_income_rental",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA Middle-Income Rental - Ineligible: non-Cambridge resident (Somerville)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02143",
+      "county": "Somerville",
+      "household_size": 2,
+      "household_assets": 60000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 34,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 7500.00, "frequency": "monthly" }
+          ],
+          "insurance": { "none": false, "employer": true }
+        },
+        {
+          "relationship": "spouse",
+          "age": 32,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 5000.00, "frequency": "monthly" }
+          ],
+          "insurance": { "none": false, "employer": true }
+        }
+      ],
+      "expenses": [],
+      "has_ma_middle_income_rental": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_middle_income_rental",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA Middle-Income Rental - Ineligible: assets exceed $75,000 standard limit",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_assets": 76000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 38,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 9000.00, "frequency": "monthly" }
+          ],
+          "insurance": { "none": false, "employer": true }
+        }
+      ],
+      "expenses": [],
+      "has_ma_middle_income_rental": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_middle_income_rental",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA Middle-Income Rental - Ineligible: already has this benefit",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 2,
+      "household_assets": 50000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 42,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 8000.00, "frequency": "monthly" }
+          ],
+          "insurance": { "none": false, "employer": true }
+        },
+        {
+          "relationship": "spouse",
+          "age": 40,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 6000.00, "frequency": "monthly" }
+          ],
+          "insurance": { "none": false, "employer": true }
+        }
+      ],
+      "expenses": [],
+      "has_ma_middle_income_rental": true,
+      "needs_housing_help": false
+    },
+    "expected_results": {
+      "program_name": "ma_middle_income_rental",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA Middle-Income Rental - Eligible single parent in Cambridge, income within 80-120% AMI range",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02141",
+      "county": "Cambridge",
+      "household_size": 2,
+      "household_assets": 40000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 33,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 9000.00, "frequency": "monthly" }
+          ],
+          "insurance": { "none": false, "employer": true }
+        },
+        {
+          "relationship": "child",
+          "age": 6,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": false, "mass_health": true }
+        }
+      ],
+      "expenses": [
+        { "type": "childcare", "amount": 800.00, "frequency": "monthly" }
+      ],
+      "has_ma_middle_income_rental": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_middle_income_rental",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "MA Middle-Income Rental - Eligible all-senior household (both 62+), assets $100,000 (senior exception applies)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 2,
+      "household_assets": 100000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 68,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 4500.00, "frequency": "monthly" }
+          ],
+          "insurance": { "none": false, "medicare": true }
+        },
+        {
+          "relationship": "spouse",
+          "age": 65,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 4500.00, "frequency": "monthly" }
+          ],
+          "insurance": { "none": false, "medicare": true }
+        }
+      ],
+      "expenses": [],
+      "has_ma_middle_income_rental": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_middle_income_rental",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "MA Middle-Income Rental - Eligible: all-disabled household, assets $150,000 (disabled exception applies)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 2,
+      "household_assets": 150000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 45,
+          "disabled": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSDisability", "amount": 4500.00, "frequency": "monthly" }
+          ],
+          "insurance": { "none": false, "mass_health": true }
+        },
+        {
+          "relationship": "spouse",
+          "age": 42,
+          "disabled": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSDisability", "amount": 4500.00, "frequency": "monthly" }
+          ],
+          "insurance": { "none": false, "mass_health": true }
+        }
+      ],
+      "expenses": [],
+      "has_ma_middle_income_rental": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_middle_income_rental",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "MA Middle-Income Rental - Ineligible: all-disabled household, assets $150,001 exceeds $150,000 disabled/senior limit",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 2,
+      "household_assets": 150001.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 45,
+          "disabled": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSDisability", "amount": 4500.00, "frequency": "monthly" }
+          ],
+          "insurance": { "none": false, "mass_health": true }
+        },
+        {
+          "relationship": "spouse",
+          "age": 42,
+          "disabled": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSDisability", "amount": 4500.00, "frequency": "monthly" }
+          ],
+          "insurance": { "none": false, "mass_health": true }
+        }
+      ],
+      "expenses": [],
+      "has_ma_middle_income_rental": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_middle_income_rental",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA Middle-Income Rental - Ineligible: mixed-age household (not all 62+), assets $100,000 exceeds $75,000 standard limit",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02140",
+      "county": "Cambridge",
+      "household_size": 2,
+      "household_assets": 100000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 65,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 5000.00, "frequency": "monthly" }
+          ],
+          "insurance": { "none": false, "medicare": true }
+        },
+        {
+          "relationship": "spouse",
+          "age": 45,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 4000.00, "frequency": "monthly" }
+          ],
+          "insurance": { "none": false, "employer": true }
+        }
+      ],
+      "expenses": [],
+      "has_ma_middle_income_rental": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_middle_income_rental",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA Middle-Income Rental - Eligible: Section 8 voucher holder, income below 80% AMI floor (voucher exempts from floor)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_assets": 20000.00,
+      "has_section_8": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 30,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 5000.00, "frequency": "monthly" }
+          ],
+          "insurance": { "none": false, "mass_health": true }
+        }
+      ],
+      "expenses": [],
+      "has_ma_middle_income_rental": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_middle_income_rental",
+      "eligible": true,
+      "value": 1
+    }
+  },
+  {
+    "notes": "MA Middle-Income Rental - Ineligible: Section 8 voucher holder, income above 120% AMI ceiling ($11,700/mo exceeds $11,581/mo ceiling, Standard Section 8 IL, ceiling still applies)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_assets": 20000.00,
+      "has_section_8": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 11700.00, "frequency": "monthly" }
+          ],
+          "insurance": { "none": false, "employer": true }
+        }
+      ],
+      "expenses": [],
+      "has_ma_middle_income_rental": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_middle_income_rental",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA Middle-Income Rental - Ineligible: head of household is 17 (minimum age is 18)",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_assets": 20000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 17,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 7500.00, "frequency": "monthly" }
+          ],
+          "insurance": { "none": false, "mass_health": true }
+        }
+      ],
+      "expenses": [],
+      "has_ma_middle_income_rental": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_middle_income_rental",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MA Middle-Income Rental - Eligible: head of household is exactly 18",
+    "household": {
+      "white_label": "ma",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "02139",
+      "county": "Cambridge",
+      "household_size": 1,
+      "household_assets": 20000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 18,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 8000.00, "frequency": "monthly" }
+          ],
+          "insurance": { "none": false, "mass_health": true }
+        }
+      ],
+      "expenses": [],
+      "has_ma_middle_income_rental": false,
+      "needs_housing_help": true
+    },
+    "expected_results": {
+      "program_name": "ma_middle_income_rental",
+      "eligible": true,
+      "value": 1
+    }
+  }
+]
