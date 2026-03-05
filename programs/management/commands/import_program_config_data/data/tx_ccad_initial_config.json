@@ -1,0 +1,77 @@
+{
+  "white_label": {
+    "code": "tx"
+  },
+  "program_category": {
+    "external_name": "tx_healthcare"
+  },
+  "program": {
+    "name_abbreviated": "tx_community care for the aged and disabled (ccad)",
+    "year": "2025",
+    "legal_status_required": [
+      "citizen"
+    ],
+    "name": "Community Care for the Aged and Disabled (CCAD)",
+    "description": "CCAD provides home and community-based services to help seniors and adults with disabilities live safely at home instead of in a nursing facility. Services may include personal care assistance, adult day care, emergency response systems, home-delivered meals, and medical supplies. The program helps with daily activities like bathing, dressing, eating, and getting around.\n\nYou may qualify if you are age 65 or older, or age 21 or older with a disability. You must have Medicaid or meet Medicaid income limits (300% of the Federal Poverty Level), need help with daily activities, and be at risk of nursing home placement without these services. You must live in Texas and not currently be in a nursing facility.",
+    "description_short": "Home care services for seniors and people with disabilities",
+    "learn_more_link": "https://www.hhs.texas.gov/laws-regulations/handbooks/case-worker-community-care-aged-disabled-handbook",
+    "apply_button_link": "https://www.hhs.texas.gov/laws-regulations/handbooks/case-worker-community-care-aged-disabled-handbook",
+    "apply_button_description": "Apply for Texas CCAD",
+    "estimated_application_time": "2 - 3 hours",
+    "estimated_delivery_time": "30 days",
+    "estimated_value": "Varies by services needed",
+    "website_description": "Home and community-based services to help seniors and adults with disabilities avoid nursing facility placement"
+  },
+  "warning_message": null,
+  "documents": [
+    {
+      "external_name": "tx_home",
+      "text": "Proof of Texas residency (ex: lease, utility bill, driver's license)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "id_proof",
+      "text": "Proof of identity (ex: driver's license, state ID, birth certificate)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_ssn",
+      "text": "Social Security Number or proof of application",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_earned_income",
+      "text": "Proof of all household income (ex: pay stubs, Social Security statements, pension statements)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_us_status",
+      "text": "Proof of U.S. citizenship or qualified immigration status",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_medicaid",
+      "text": "Medicaid card or proof of Medicaid eligibility (if applicable)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_disability",
+      "text": "Proof of disability (ex: SSI/SSDI award letter, medical records)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_assets",
+      "text": "Documentation of assets (ex: bank statements, property records) - must be under $2,000 for individual or $3,000 for couple",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": []
+}
