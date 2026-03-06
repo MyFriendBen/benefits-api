@@ -6,23 +6,24 @@
     "external_name": "tx_cash"
   },
   "program": {
-    "name_abbreviated": "tx_social security disability insurance (ssdi)",
+    "name_abbreviated": "tx_ssdi",
     "year": "2025",
     "legal_status_required": [
-      "citizen"
+      "citizen",
+      "otherWithWorkPermission"
     ],
     "name": "Social Security Disability Insurance (SSDI)",
-    "description": "SSDI provides monthly cash payments to workers who can no longer work due to a serious disability. The disability must be expected to last at least 12 months or result in death. The amount you receive is based on your lifetime earnings covered by Social Security.\n\nYou may qualify if you are under age 67, have a long-term disability, have worked in jobs covered by Social Security, and earn less than $1,620 per month. You must have enough work credits from your past jobs. The Social Security Administration will review your medical records to determine if you meet their disability requirements. There is a five-month waiting period before benefits begin.",
+    "description": "SSDI provides monthly cash payments to workers who can no longer work due to a serious disability. The disability must be expected to last at least 12 months or result in death. The amount you receive is based on your lifetime earnings covered by Social Security.\n\nYou may qualify if you are under age 67, have a long-term disability, have worked in jobs covered by Social Security, and earn below the Substantial Gainful Activity limit. You must have enough work credits from your past jobs. The Social Security Administration will review your medical records to determine if you meet their disability requirements. There is a five-month waiting period before benefits begin.",
     "description_short": "Monthly payments for workers with disabilities",
     "learn_more_link": "https://www.ssa.gov/disability",
     "apply_button_link": "https://www.ssa.gov/apply?benefits=disability&age=adult",
     "apply_button_description": "Apply for SSDI",
-    "estimated_application_time": "1 - 2 hours",
-    "estimated_delivery_time": "3 - 5 months",
-    "estimated_value": "Varies based on lifetime earnings (average $1,537/month in 2024)",
+    "estimated_application_time": "2 - 4 hours",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
     "website_description": "Monthly cash benefits for workers who can no longer work due to a serious, long-term disability"
   },
-  "warning_message": null,
+  "warning_message": "Generally, you must have worked for at least 5 of the last 10 years to qualify for Disability. People under the age of 24 may not need to have worked as long.",
   "documents": [
     {
       "external_name": "tx_ssn",
