@@ -1,0 +1,110 @@
+{
+  "white_label": {
+    "code": "tx"
+  },
+  "program_category": {
+    "external_name": "tx_cash"
+  },
+  "program": {
+    "name_abbreviated": "tx_ssdi",
+    "year": "2025",
+    "legal_status_required": [
+      "citizen",
+      "otherWithWorkPermission"
+    ],
+    "name": "Social Security Disability Insurance (SSDI)",
+    "description": "SSDI gives monthly cash to people who can't work because of a serious disability. Your disability must be expected to last at least 12 months or result in death. Your payment is based on your past earnings from jobs covered by Social Security.\n\nYou may qualify if you are under age 67, have a long-term disability, and have worked jobs covered by Social Security. You must earn below Social Security's work limit and have enough work credits from past jobs. Social Security will review your medical records to confirm your disability. There is a five-month wait before payments begin.",
+    "description_short": "Monthly payments for workers with disabilities",
+    "learn_more_link": "https://www.ssa.gov/disability",
+    "apply_button_link": "https://www.ssa.gov/apply?benefits=disability&age=adult",
+    "apply_button_description": "Apply for SSDI",
+    "estimated_application_time": "2 - 4 hours",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "website_description": "Monthly cash benefits for workers who can no longer work due to a serious, long-term disability"
+  },
+  "warning_message": {
+    "external_name": "tx_ssdi_work_history",
+    "calculator": "_show",
+    "message": "Generally, you must have worked for at least 5 of the last 10 years to qualify for Disability. People under the age of 24 may not need to have worked as long. Estimated value is an average of outcomes. For a personalized value estimate, visit:",
+    "link_text": "ssa.gov/prepare/get-benefits-estimate",
+    "link_url": "https://www.ssa.gov/prepare/get-benefits-estimate"
+  },
+  "documents": [
+    {
+      "external_name": "tx_ssn",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "id_proof",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_medical_records",
+      "text": "Medical records and doctor information documenting your disability",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_work_history",
+      "text": "Work history for the past 15 years (employers, dates, job duties)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_earned_income",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_military_records",
+      "text": "Military discharge papers (DD 214) if you served in the military",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "tx_lsla",
+      "name": "Lone Star Legal Aid",
+      "phone_number": "(800) 733-8394",
+      "email": "",
+      "description": "Free legal representation for low-income Texans on SSDI applications, denials, and appeals before administrative law judges.",
+      "assistance_link": "https://www.lonestarlegal.org/services/medical-legal-partnership/",
+      "languages": ["en", "es"],
+      "counties": ["Anderson", "Angelina", "Austin", "Bell", "Bosque", "Bowie", "Brazoria", "Brazos", "Burleson", "Camp", "Cass", "Chambers", "Cherokee", "Colorado", "Coryell", "Delta", "Falls", "Fayette", "Fort Bend", "Franklin", "Freestone", "Galveston", "Gregg", "Grimes", "Hamilton", "Hardin", "Harris", "Harrison", "Henderson", "Hill", "Hopkins", "Houston", "Jasper", "Jefferson", "Lamar", "Lampasas", "Lee", "Leon", "Liberty", "Limestone", "Madison", "Marion", "Matagorda", "McLennan", "Milam", "Montgomery", "Morris", "Nacogdoches", "Navarro", "Newton", "Orange", "Panola", "Polk", "Rains", "Red River", "Robertson", "Rusk", "Sabine", "San Augustine", "San Jacinto", "Shelby", "Smith", "Titus", "Trinity", "Tyler", "Upshur", "Walker", "Waller", "Washington", "Wharton", "Wood"]
+    },
+    {
+      "external_name": "tx_tlsc",
+      "name": "Texas Legal Services Center",
+      "phone_number": "(800) 622-2520",
+      "email": "",
+      "description": "Free statewide legal help for income-eligible Texans on SSDI, SSI, Medicaid, and related public benefits, with attorney advice by phone and chat.",
+      "assistance_link": "https://www.tlsc.org/what-we-do",
+      "languages": ["en", "es"],
+      "counties": []
+    },
+    {
+      "external_name": "tx_trla",
+      "name": "Texas RioGrande Legal Aid",
+      "phone_number": "(833) 329-8752",
+      "email": "",
+      "description": "Free civil legal services for low-income residents in Southwest, Central, and South Texas, including SSDI and public benefits advocacy.",
+      "assistance_link": "https://www.trla.org/public-benefits",
+      "languages": ["en", "es"],
+      "counties": ["Aransas", "Atascosa", "Bandera", "Bastrop", "Bee", "Bexar", "Blanco", "Brewster", "Brooks", "Burnet", "Caldwell", "Calhoun", "Cameron", "Comal", "Crockett", "Culberson", "DeWitt", "Dimmit", "Duval", "Edwards", "El Paso", "Frio", "Gillespie", "Goliad", "Gonzales", "Guadalupe", "Hays", "Hidalgo", "Hudspeth", "Jackson", "Jeff Davis", "Jim Hogg", "Jim Wells", "Karnes", "Kendall", "Kenedy", "Kerr", "Kimble", "Kinney", "Kleberg", "La Salle", "Lavaca", "Live Oak", "Llano", "Mason", "Maverick", "McMullen", "Medina", "Nueces", "Pecos", "Presidio", "Real", "Reeves", "Refugio", "San Patricio", "Starr", "Sutton", "Terrell", "Travis", "Uvalde", "Victoria", "Webb", "Willacy", "Williamson", "Wilson", "Zapata", "Zavala"]
+    },
+    {
+      "external_name": "tx_lanwt",
+      "name": "Legal Aid of NorthWest Texas",
+      "phone_number": "(888) 529-5277",
+      "email": "",
+      "description": "Free civil legal services for low-income residents across North and West Texas, including SSDI applications, appeals, and benefit navigation.",
+      "assistance_link": "https://legalaidtx.org/get-help/",
+      "languages": ["en", "es"],
+      "counties": ["Andrews", "Archer", "Armstrong", "Bailey", "Baylor", "Borden", "Briscoe", "Brown", "Callahan", "Carson", "Castro", "Childress", "Clay", "Cochran", "Coke", "Coleman", "Collin", "Collingsworth", "Comanche", "Concho", "Cooke", "Cottle", "Crane", "Crosby", "Dallam", "Dallas", "Dawson", "Deaf Smith", "Denton", "Dickens", "Donley", "Eastland", "Ector", "Ellis", "Erath", "Fannin", "Fisher", "Floyd", "Foard", "Gaines", "Garza", "Glasscock", "Gray", "Grayson", "Hale", "Hall", "Hansford", "Hardeman", "Hartley", "Haskell", "Hemphill", "Hockley", "Hood", "Howard", "Hunt", "Hutchinson", "Irion", "Jack", "Johnson", "Jones", "Kaufman", "Kent", "King", "Knox", "Lamb", "Lipscomb", "Loving", "Lubbock", "Lynn", "Martin", "McCulloch", "Menard", "Midland", "Mills", "Mitchell", "Montague", "Moore", "Motley", "Nolan", "Ochiltree", "Oldham", "Palo Pinto", "Parker", "Parmer", "Potter", "Randall", "Reagan", "Roberts", "Rockwall", "Runnels", "San Saba", "Schleicher", "Scurry", "Shackelford", "Sherman", "Somervell", "Stephens", "Sterling", "Stonewall", "Swisher", "Tarrant", "Taylor", "Terry", "Throckmorton", "Tom Green", "Upton", "Ward", "Wheeler", "Wichita", "Wilbarger", "Winkler", "Wise", "Yoakum", "Young"]
+    }
+  ]
+}
