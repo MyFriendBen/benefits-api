@@ -27,7 +27,11 @@
     "estimated_value": "Varies",
     "website_description": "Home and community-based services to help seniors and adults with disabilities avoid nursing facility placement"
   },
-  "warning_message": "To qualify, you must have less than $2,000 in assets as an individual or $3,000 as a couple (your home, one vehicle, and burial funds are typically exempt). Also note: some services — including in-home personal care — require proof of citizenship or immigration status, even if you are otherwise eligible.",
+  "warning_message": {
+    "external_name": "tx_ccad_asset_limit",
+    "calculator": "_show",
+    "message": "To qualify, you must have less than $2,000 in assets as an individual or $3,000 as a couple (your home, one vehicle, and burial funds are typically exempt). Also note: some services — including in-home personal care — require proof of citizenship or immigration status, even if you are otherwise eligible."
+  },
   "documents": [
     {
       "external_name": "tx_home",
