@@ -32,7 +32,21 @@
 
 ## Benefit Value
 
-Amount varies by household based on services needed. CCAD services may include personal care assistance, adult day care, emergency response systems, home-delivered meals, and medical supplies. No fixed dollar amount can be calculated by the screener.
+- **Single value estimate**: $10,000/year
+- **Range estimate**: $5,000–$20,000/year
+
+**Methodology**: CCAD is a service bundle, not a cash transfer. Value is derived from the cost of services the state purchases on behalf of recipients.
+
+The program's hard ceiling is the daily cost of nursing facility placement (~$193/day in TX, ~$70,000/year), per [CCSE Handbook Appendix II](https://www.hhs.texas.gov/handbooks/community-care-services-eligibility-handbook/appendix-ii-cost-limit-purchased-services).
+
+The dominant service is **Primary Home Care (PHC)** — personal care attendants. Texas reimburses providers at ~$17/hour (based on the $13.00/hr base attendant wage + 14% payroll taxes/benefits + administrative component per the [Sept 2025 rate action](https://pfd.hhs.texas.gov/sites/default/files/documents/long-term-svcs/2025/9-1-2025-phc-rates.pdf)). The [CCSE Handbook §4600](https://www.hhs.texas.gov/handbooks/community-care-services-eligibility-handbook/4600-primary-home-care-community-attendant-services) authorizes 6–50 hours/week; a typical recipient receives ~15 hrs/week, yielding ~$13,260/year in PHC alone. Adding supplemental services (home-delivered meals ~$1,200–2,000/yr, emergency response ~$400/yr) suggests a realistic midpoint of ~$14,000–15,000/year for moderate-need recipients. The $10,000 single-value estimate is intentionally conservative to account for lower-intensity recipients (6–12 hrs/week) who pull the average down.
+
+**Value Estimate Sources**:
+- [CCSE Handbook Appendix II — Cost Limit for Purchased Services](https://www.hhs.texas.gov/handbooks/community-care-services-eligibility-handbook/appendix-ii-cost-limit-purchased-services)
+- [CCSE Handbook §4600 — Primary Home Care and Community Attendant Services](https://www.hhs.texas.gov/handbooks/community-care-services-eligibility-handbook/4600-primary-home-care-community-attendant-services)
+- [Texas HHS 2025 Attendant Rate Action (effective Sept 1, 2025)](https://pfd.hhs.texas.gov/sites/default/files/documents/long-term-svcs/2025/9-1-2025-phc-rates.pdf)
+- [Nursing Home Costs by State — Medicaid Planning Assistance](https://www.medicaidplanningassistance.org/nursing-home-costs/)
+- [Adult Day Care Costs 2026 — SeniorLiving.org](https://www.seniorliving.org/adult-day-care/costs/)
 
 ## Sources
 
