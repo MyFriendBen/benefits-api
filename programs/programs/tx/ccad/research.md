@@ -11,7 +11,7 @@
 |---|-----------|-----------------|-------|---------------|-------|--------|
 | 1 | Age 65+ OR age 21+ with disability | `household_member.age`, `household_member.is_disabled` | `age >= 65 OR (age >= 21 AND is_disabled == True)` | ✅ | `is_disabled` is a calculated field covering `disabled`, `long_term_disability`, and `visually_impaired`. For applicants 65+, disability status is not required. | CCSE Handbook §3000 |
 | 2 | Income at or below 300% FPL, OR categorically eligible | `household_size`, all income fields, `has_snap`, `has_ssi`, `has_tanf`, `has_medicaid` | `calc_gross_income('yearly', 'all') <= FPL_300_PERCENT[household_size] OR has_snap OR has_ssi OR has_tanf OR has_medicaid` | ✅ | Categorical eligibility (SSI, TANF, SNAP, Medicaid, SLMB, QMB) bypasses the income test. See [CCSE §3300](https://www.hhs.texas.gov/handbooks/community-care-services-eligibility-handbook/3300-income-eligibility). | CCSE Handbook §3300 |
-| 3 | Functionally eligible (needs ADL assistance) | `household_member.disabled`, `household_member.long_term_disability` | `is_disabled == True` | ⚠️ | Screener has general disability fields but no detailed ADL assessment; CCAD requires professional nursing assessment of specific ADL limitations | CCSE Handbook §3000 |
+| 3 | Functionally eligible (needs ADL assistance) | `household_member.age`, `household_member.disabled`, `household_member.long_term_disability` | `age >= 65 OR is_disabled == True` | ⚠️ | Screener has general disability fields but no detailed ADL assessment; CCAD requires professional nursing assessment of specific ADL limitations. For applicants 65+, `is_disabled` is not required as a proxy — seniors may need ADL assistance without being marked as disabled. For applicants under 65, `is_disabled` (covering `disabled`, `long_term_disability`, and `visually_impaired`) is used as a proxy. | CCSE Handbook §3000 |
 | 4 | Texas residency | — | Handled by TX white label association | ✅ | Not evaluated separately — CCAD is associated exclusively with the TX white label, so non-TX screens are filtered out before this check applies. | CCSE Handbook §3000 |
 | 5 | Must not be residing in a nursing facility | — | — | ❌ | **Gap**: `housing_situation` field does not exist in the screener | CCSE Handbook §3000 |
 | 6 | Medicaid eligible or categorically eligible | `has_medicaid`, `has_snap`, `has_ssi`, `has_tanf` | `has_medicaid OR has_snap OR has_ssi OR has_tanf` | ✅ | Overlaps with Criterion 2 categorical path; listed separately for clarity | CCSE Handbook §3000 |
@@ -194,7 +194,7 @@ Amount varies by household based on services needed. CCAD services may include p
 **Steps**:
 - **Location**: ZIP `75201`, County `Dallas`
 - **Household**: 1 person
-- **Person 1**: DOB `January 1961` (age 65), Head of Household, U.S. Citizen, has disability (`disabled = True`), Social Security Retirement `$1,200/month`, housing situation: Nursing Home/Long-term Care Facility, Medicaid
+- **Person 1**: DOB `January 1961` (age 65), Head of Household, U.S. Citizen, no disability, Social Security Retirement `$1,200/month`, housing situation: Nursing Home/Long-term Care Facility, Medicaid
 
 **Why this matters**: CCAD is a community-based alternative to institutional care — applicants already in nursing facilities do not qualify.
 
