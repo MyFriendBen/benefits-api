@@ -7,25 +7,25 @@
 
 ## Eligibility Criteria
 
-| # | Criterion | Screener Fields | Logic | Can Evaluate? | Notes | Source |
-|---|-----------|-----------------|-------|---------------|-------|--------|
-| 1 | Worked in jobs covered by Social Security | `household_member.worked_in_last_18_mos`, `household_member.has_income`, `incomeStreams (category='wages')` | `worked_in_last_18_mos == True OR (has_income == True AND income category 'wages')` | ⚠️ | Can only capture if currently working; cannot verify past SS-covered employment history | 20 CFR § 404.101, 404.110–404.146 |
-| 2 | Medically determinable impairment expected to last 12+ months or result in death | `household_member.long_term_disability` | `long_term_disability == True` | ✅ | | 20 CFR § 404.1505, 42 U.S.C. § 423(d)(1)(A) |
-| 3a | Not engaging in SGA — non-blind ($1,690/month in 2026) | `household_member.has_income`, `incomeStreams (amount, frequency)` | `calc_gross_income('monthly', types=['all']) < 1690` | ✅ | Includes wages and self-employment income (20 CFR § 404.1575) | 20 CFR § 404.1574, [SSA SGA Table](https://www.ssa.gov/oact/cola/sga.html) |
-| 3b | Not engaging in SGA — blind ($2,830/month in 2026) | `household_member.has_income`, `household_member.visually_impaired`, `incomeStreams (amount, frequency)` | `IF visually_impaired: calc_gross_income('monthly', types=['all']) < 2830` | ✅ | Higher SGA threshold for statutory blindness | 20 CFR § 404.1584, [SSA Red Book 2026](https://www.ssa.gov/redbook/newfor2026.htm) |
-| 4 | Under Full Retirement Age (67 for those born 1960+) | `household_member.age`, `household_member.birth_year_month` | `age < 67` | ✅ | FRA varies by birth year (66–67); screener can approximate with age field | 20 CFR § 404.1520, 42 U.S.C. § 423 |
-| 5 | Unable to do previous work and cannot adjust to other work | — | SSA vocational assessment | ❌ | Requires SSA's five-step sequential evaluation; screener doesn't have the fields to assess this | 20 CFR § 404.1520(a)(4) |
-| 6 | Sufficient work credits (generally 40 credits, 20 in last 10 years for age 31+) | — | SSA earnings record calculation | ❌ | Requires SSA earnings records; `worked_in_last_18_mos` is too limited | 20 CFR § 404.130, 404.140–404.146 |
-| 7 | Disability meets SSA Blue Book listings or medical-vocational guidelines | — | SSA medical adjudication | ❌ | Requires specific diagnoses/functional limitations; screener only captures general disability status | 20 CFR Part 404, Subpart P, Appendix 1 |
-| 8 | Five-month waiting period from disability onset | — | Disability onset date | ❌ | Screener does not capture disability onset date or duration | 20 CFR § 404.315, 42 U.S.C. § 423(a)(1) |
-| 9 | Not already receiving Social Security retirement benefits | `incomeStreams (category='socialSecurity')` | `calc_gross_income('yearly', types=['socialSecurity']) == 0` | ✅ | Can infer SS retirement from income type | 20 CFR § 404.1520 |
-| 10 | Insured status — worked in 5 of last 10 years (age 31+) | — | Detailed work history | ❌ | `worked_in_last_18_mos` is insufficient; need quarters of coverage in specific periods | 20 CFR § 404.130, 404.140 |
-| 11 | U.S. citizenship or qualified alien with work authorization | `legal_status_required` | `legal_status in ['citizen', 'otherWithWorkPermission']` | ✅ | Captured via program's `legal_status_required` configuration | 42 U.S.C. § 402(y), 20 CFR § 404.1520 |
-| 12 | Not incarcerated for felony conviction or confined to public institution | — | — | ❌ | No incarceration status field in screener | 20 CFR § 404.468, 42 U.S.C. § 402(x) |
-| 13 | No prior SSDI denial within past 60 days (for reopening) | — | Prior application history | ❌ | Screener does not capture prior SSDI application history | 20 CFR § 404.987–404.989 |
-| 14 | Medical evidence from acceptable medical sources | — | Medical documentation | ❌ | Procedural requirement; screener doesn't capture whether applicant has treating physicians | 20 CFR § 404.1513 |
-| 15 | Blindness exception: higher SGA limit (see 3b) | `household_member.visually_impaired` | See criterion 3b | ⚠️ | SSA statutory blindness (20/200 or less, or visual field ≤20°) is more specific than `visually_impaired` field; handled via separate SGA threshold in 3b | 20 CFR § 404.1584, 404.1585 |
-| 16 | Not already receiving SSDI | `current_benefits` | `'tx_ssdi' not in current_benefits` | ✅ | | — |
+| # | Criterion | Screener Fields | Can Evaluate? | Notes | Source |
+|---|-----------|-----------------|---------------|-------|--------|
+| 1 | Worked in jobs covered by Social Security | `household_member.worked_in_last_18_mos`, `household_member.has_income`, `incomeStreams (category='wages')` | ⚠️ | Can only capture if currently working; cannot verify past SS-covered employment history | 20 CFR § 404.101, 404.110–404.146 |
+| 2 | Medically determinable impairment expected to last 12+ months or result in death | `household_member.long_term_disability` | ✅ | | 20 CFR § 404.1505, 42 U.S.C. § 423(d)(1)(A) |
+| 3a | Not engaging in SGA — non-blind ($1,690/month in 2026) | `household_member.has_income`, `incomeStreams (amount, frequency)` | ✅ | Includes wages and self-employment income (20 CFR § 404.1575) | 20 CFR § 404.1574, [SSA SGA Table](https://www.ssa.gov/oact/cola/sga.html) |
+| 3b | Not engaging in SGA — blind ($2,830/month in 2026) | `household_member.has_income`, `household_member.visually_impaired`, `incomeStreams (amount, frequency)` | ✅ | Higher SGA threshold for statutory blindness | 20 CFR § 404.1584, [SSA Red Book 2026](https://www.ssa.gov/redbook/newfor2026.htm) |
+| 4 | Under Full Retirement Age (67 for those born 1960+) | `household_member.age`, `household_member.birth_year_month` | ✅ | FRA varies by birth year (66–67); screener can approximate with age field | 20 CFR § 404.1520, 42 U.S.C. § 423 |
+| 5 | Unable to do previous work and cannot adjust to other work | — | ❌ | Requires SSA's five-step sequential evaluation; screener doesn't have the fields to assess this | 20 CFR § 404.1520(a)(4) |
+| 6 | Sufficient work credits (generally 40 credits, 20 in last 10 years for age 31+) | — | ❌ | Requires SSA earnings records; `worked_in_last_18_mos` is too limited | 20 CFR § 404.130, 404.140–404.146 |
+| 7 | Disability meets SSA Blue Book listings or medical-vocational guidelines | — | ❌ | Requires specific diagnoses/functional limitations; screener only captures general disability status | 20 CFR Part 404, Subpart P, Appendix 1 |
+| 8 | Five-month waiting period from disability onset | — | ❌ | Screener does not capture disability onset date or duration | 20 CFR § 404.315, 42 U.S.C. § 423(a)(1) |
+| 9 | Not already receiving Social Security retirement benefits | `incomeStreams (category='socialSecurity')` | ✅ | Can infer SS retirement from income type | 20 CFR § 404.1520 |
+| 10 | Insured status — worked in 5 of last 10 years (age 31+) | — | ❌ | `worked_in_last_18_mos` is insufficient; need quarters of coverage in specific periods | 20 CFR § 404.130, 404.140 |
+| 11 | U.S. citizenship or qualified alien with work authorization | `legal_status_required` | ✅ | Captured via program's `legal_status_required` configuration | 42 U.S.C. § 402(y), 20 CFR § 404.1520 |
+| 12 | Not incarcerated for felony conviction or confined to public institution | — | ❌ | No incarceration status field in screener | 20 CFR § 404.468, 42 U.S.C. § 402(x) |
+| 13 | No prior SSDI denial within past 60 days (for reopening) | — | ❌ | Screener does not capture prior SSDI application history | 20 CFR § 404.987–404.989 |
+| 14 | Medical evidence from acceptable medical sources | — | ❌ | Procedural requirement; screener doesn't capture whether applicant has treating physicians | 20 CFR § 404.1513 |
+| 15 | Blindness exception: higher SGA limit (see 3b) | `household_member.visually_impaired` | ⚠️ | SSA statutory blindness (20/200 or less, or visual field ≤20°) is more specific than `visually_impaired` field; handled via separate SGA threshold in 3b | 20 CFR § 404.1584, 404.1585 |
+| 16 | Not already receiving SSDI | `current_benefits` | ✅ | | — |
 
 ## Coverage
 
