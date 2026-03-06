@@ -72,7 +72,7 @@ Amount varies by individual based on lifetime Social Security-covered earnings. 
 **Steps**:
 - **Location**: ZIP `75001`, County `Collin County`
 - **Household**: 1 person
-- **Person 1**: DOB `April 1959` (age 66), Head of Household, U.S. Citizen, has disability, long-term disability, worked in last 18 months, wages: `$1,619/month`, no insurance
+- **Person 1**: DOB `April 1959` (age 66), Head of Household, U.S. Citizen, has disability, long-term disability, worked in last 18 months, wages: `$1,689/month`, no insurance
 
 **Why this matters**: Tests minimum threshold boundaries simultaneously — age just under FRA and earnings just below SGA. Ensures the screener doesn't incorrectly exclude marginally eligible applicants.
 
@@ -80,7 +80,7 @@ Amount varies by individual based on lifetime Social Security-covered earnings. 
 
 ### Scenario 3: Monthly Income Just Below SGA Threshold
 
-**Checks**: Income just under $1,620/month is permitted
+**Checks**: Income just under $1,690/month is permitted
 **Expected**: Eligible
 
 **Steps**:
@@ -94,13 +94,13 @@ Amount varies by individual based on lifetime Social Security-covered earnings. 
 
 ### Scenario 4: Monthly Income Exactly at SGA Threshold
 
-**Checks**: Income at exactly $1,620/month should still qualify ("less than or equal to")
+**Checks**: Income at exactly $1,690/month should still qualify ("less than or equal to")
 **Expected**: Eligible
 
 **Steps**:
 - **Location**: ZIP `75001`, County `Collin County`
 - **Household**: 1 person
-- **Person 1**: DOB `March 1976` (age 50), Head of Household, U.S. Citizen, has disability, long-term disability, worked in last 18 months, wages: `$1,620/month`, no insurance
+- **Person 1**: DOB `March 1976` (age 50), Head of Household, U.S. Citizen, has disability, long-term disability, worked in last 18 months, wages: `$1,690/month`, no insurance
 
 **Why this matters**: Confirms the boundary is inclusive — ensures the system uses `<=` not `<` for the SGA check.
 
@@ -108,7 +108,7 @@ Amount varies by individual based on lifetime Social Security-covered earnings. 
 
 ### Scenario 5: Monthly Income Above SGA Threshold
 
-**Checks**: Income exceeding $1,620/month disqualifies the applicant
+**Checks**: Income exceeding $1,690/month disqualifies the applicant
 **Expected**: Not eligible
 
 **Steps**:
@@ -120,9 +120,9 @@ Amount varies by individual based on lifetime Social Security-covered earnings. 
 
 ---
 
-### Scenario 6: Minimum Age (18) with Disability
+### Scenario 6: Young Adult Worker (Age 18) with Disability
 
-**Checks**: Age 18 is the minimum; eligible if all other criteria met
+**Checks**: Age 18 — young worker who meets the pre-24 credit exception; eligible if all other criteria met
 **Expected**: Eligible
 
 **Steps**:
@@ -130,21 +130,21 @@ Amount varies by individual based on lifetime Social Security-covered earnings. 
 - **Household**: 1 person
 - **Person 1**: DOB `March 2008` (age 18), Head of Household, U.S. Citizen, has disability, long-term disability, worked in last 18 months, wages: `$500/month`, no insurance
 
-**Why this matters**: Validates no off-by-one error at minimum age. Young workers who become disabled shortly after entering the workforce should qualify.
+**Why this matters**: Workers who become disabled before age 24 can qualify with as few as 6 credits. Validates that young workers with disability and recent work history are not incorrectly excluded.
 
 ---
 
-### Scenario 7: Age 17 — Below Minimum Age
+### Scenario 7: Age 17 — Young Worker Edge Case
 
-**Checks**: Under-18 applicants are ineligible even with disability and work history
-**Expected**: Not eligible
+**Checks**: 17-year-old with disability and work history — the screener cannot verify work credits, so marks as potentially eligible
+**Expected**: Eligible
 
 **Steps**:
 - **Location**: ZIP `75001`, County `Collin County`
 - **Household**: 1 person
 - **Person 1**: DOB `April 2008` (age 17), Head of Household, U.S. Citizen, has disability, long-term disability, worked in last 18 months, wages: `$500/month`, no insurance
 
-**Why this matters**: SSDI is for adult workers; minors with disabilities are directed to SSI instead.
+**Why this matters**: SSDI has no strict minimum age of 18. A worker under 24 who became disabled before age 24 may qualify with as few as 6 credits. Since the screener cannot verify work credit history (Criterion 6 is ❌), it cannot rule out eligibility for a 17-year-old. SSI remains the primary program for minors, but SSDI eligibility depends on individual work history.
 
 ---
 
@@ -170,7 +170,7 @@ Amount varies by individual based on lifetime Social Security-covered earnings. 
 **Steps**:
 - **Location**: ZIP `75201`, County `Dallas County`
 - **Household**: 1 person
-- **Person 1**: DOB `January 1981` (age 45), Head of Household, U.S. Citizen, has disability, long-term disability, worked in last 18 months, income: `$800/month` Social Security, no insurance
+- **Person 1**: DOB `January 1981` (age 45), Head of Household, U.S. Citizen, has disability, long-term disability, worked in last 18 months, income: `$0`, no insurance
 
 **Why this matters**: Confirms geographic location within Texas poses no barrier to eligibility for this federal program.
 
@@ -228,24 +228,24 @@ Amount varies by individual based on lifetime Social Security-covered earnings. 
 **Steps**:
 - **Location**: ZIP `75201`, County `Dallas County`
 - **Household**: 2 people
-- **Person 1 (Head)**: DOB `January 1971` (age 55), U.S. Citizen, has disability, long-term disability, worked in last 18 months, income: `$1,200/month SSDI`, no insurance
-- **Person 2 (Spouse)**: DOB `June 1973` (age 52), U.S. Citizen, has disability, long-term disability, worked in last 18 months, income: `$1,050/month SSDI`, no insurance
+- **Person 1 (Head)**: DOB `January 1971` (age 55), U.S. Citizen, has disability, long-term disability, worked in last 18 months, income: `$0`, no insurance
+- **Person 2 (Spouse)**: DOB `June 1973` (age 52), U.S. Citizen, has disability, long-term disability, worked in last 18 months, income: `$0`, no insurance
 
 **Why this matters**: Validates that multiple household members can independently qualify and are each evaluated on their own work history and disability status.
 
 ---
 
-### Scenario 14: Exactly at Full Retirement Age (67)
+### Scenario 14: At Full Retirement Age
 
-**Checks**: At FRA, SSDI eligibility ends and transitions to retirement benefits
+**Checks**: At or past FRA, SSDI eligibility ends and transitions to retirement benefits
 **Expected**: Not eligible
 
 **Steps**:
 - **Location**: ZIP `75001`, County `Collin County`
 - **Household**: 1 person
-- **Person 1**: DOB `March 1959` (age 67 — exactly at FRA), Head of Household, U.S. Citizen, has disability, long-term disability, worked in last 18 months, income: `$0`, no insurance, no current benefits
+- **Person 1**: DOB `March 1959` (age 67 — past FRA of 66y10m for the 1959 cohort), Head of Household, U.S. Citizen, has disability, long-term disability, worked in last 18 months, income: `$0`, no insurance, no current benefits
 
-**Why this matters**: At FRA, disability benefits convert to retirement benefits. Confirms the age cutoff is correctly enforced and no SSDI eligibility is shown at 67.
+**Why this matters**: FRA for the 1959 birth cohort is 66 years and 10 months (not 67). This person reached FRA in January 2026. At FRA, disability benefits convert to retirement benefits. Confirms the age cutoff is correctly enforced and no SSDI eligibility is shown at or past FRA.
 
 ---
 

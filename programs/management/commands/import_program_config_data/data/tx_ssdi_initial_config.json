@@ -33,13 +33,11 @@
   "documents": [
     {
       "external_name": "tx_ssn",
-      "text": "Social Security Number",
       "link_url": "",
       "link_text": ""
     },
     {
       "external_name": "id_proof",
-      "text": "Proof of identity (birth certificate or other proof of age)",
       "link_url": "",
       "link_text": ""
     },
@@ -57,7 +55,6 @@
     },
     {
       "external_name": "tx_earned_income",
-      "text": "Proof of current earnings (pay stubs, tax returns)",
       "link_url": "",
       "link_text": ""
     },
