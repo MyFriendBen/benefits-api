@@ -30,7 +30,7 @@
   "warning_message": {
     "external_name": "tx_ccad_asset_limit",
     "calculator": "_show",
-    "message": "To qualify, you must have less than $2,000 in assets as an individual or $3,000 as a couple (your home, one vehicle, and burial funds are typically exempt). Also note: some services — including in-home personal care — require proof of citizenship or immigration status, even if you are otherwise eligible."
+    "message": "To qualify, an individual must have less than $2,000 in assets and a couple must have less than $3,000. Your home, one car, and burial funds do not count as assets. You may need to show proof of citizenship or immigration status for some services, even if you qualify in other ways."
   },
   "documents": [
     {
@@ -83,7 +83,7 @@
     },
     {
       "external_name": "tx_public_assistance_verification",
-      "text": "Verification of public assistance status (ex: SSI, TANF, SNAP, QMB, SLMB, or Medicaid award letter) — required within 24 months of last financial review for categorically eligible applicants",
+      "text": "If you qualify based on public benefits (e.g. SNAP), you must show that you've received them in the past two years",
       "link_url": "",
       "link_text": ""
     }

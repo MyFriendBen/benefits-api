@@ -27,7 +27,7 @@
 
 ## Coverage
 
-- **Evaluable**: 5 of 15 criteria (33%)
+- **Evaluable**: 6 of 15 criteria (40%)
 - **Summary**: The evaluable criteria include age requirements, income limits with categorical eligibility (300% FPL or SSI/TANF/SNAP/Medicaid), citizenship/immigration status via config filter, and duplicate enrollment check (requires adding `has_ccad` to the Screen model during implementation). Texas residency is handled automatically by the TX white label. Critical gaps include housing situation (no `housing_situation` field in screener), detailed ADL functional assessment, nursing facility risk determination, asset evaluation with Medicaid exemptions, and asset transfer history. The most significant limitation is the inability to perform detailed functional assessment and asset evaluation, both of which are core CCAD eligibility requirements.
 
 ## Benefit Value
