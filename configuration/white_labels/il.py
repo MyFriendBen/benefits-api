@@ -110,62 +110,6 @@ class IlConfigurationData(ConfigurationData):
         },
     }
 
-    relationship_options = {
-        "child": {"_label": "relationshipOptions.child", "_default_message": "Child"},
-        "fosterChild": {
-            "_label": "relationshipOptions.fosterChildOrKinshipChild",
-            "_default_message": "Foster Child / Kinship Care",
-        },
-        "stepChild": {
-            "_label": "relationshipOptions.stepChild",
-            "_default_message": "Step-child",
-        },
-        "grandChild": {
-            "_label": "relationshipOptions.grandChild",
-            "_default_message": "Grandchild",
-        },
-        "spouse": {
-            "_label": "relationshipOptions.spouse",
-            "_default_message": "Spouse",
-        },
-        "parent": {
-            "_label": "relationshipOptions.parent",
-            "_default_message": "Parent",
-        },
-        "fosterParent": {
-            "_label": "relationshipOptions.fosterParent",
-            "_default_message": "Foster Parent",
-        },
-        "stepParent": {
-            "_label": "relationshipOptions.stepParent",
-            "_default_message": "Step-parent",
-        },
-        "grandParent": {
-            "_label": "relationshipOptions.grandParent",
-            "_default_message": "Grandparent",
-        },
-        "sisterOrBrother": {
-            "_label": "relationshipOptions.sisterOrBrother",
-            "_default_message": "Sister/Brother",
-        },
-        "stepSisterOrBrother": {
-            "_label": "relationshipOptions.stepSisterOrBrother",
-            "_default_message": "Step-sister/Step-brother",
-        },
-        "boyfriendOrGirlfriend": {
-            "_label": "relationshipOptions.boyfriendOrGirlfriend",
-            "_default_message": "Boyfriend/Girlfriend",
-        },
-        "domesticPartner": {
-            "_label": "relationshipOptions.domesticPartner",
-            "_default_message": "Domestic Partner",
-        },
-        "relatedOther": {
-            "_label": "relationshipOptions.relatedOther",
-            "_default_message": "Related in some other way",
-        },
-    }
-
     referral_options = {
         "searchEngine": {
             "_label": "referralOptions.searchEngine",
