@@ -142,8 +142,8 @@ class ConfigurationData:
             "_default_message": "Boyfriend/Girlfriend",
         },
         "domesticPartner": {"_label": "relationshipOptions.domesticPartner", "_default_message": "Domestic Partner"},
-        "relatedOther": {"_label": "relationshipOptions.relatedOther", "_default_message": "Related in some other way"},
         "roommate": {"_label": "relationshipOptions.roommate", "_default_message": "Roommate"},
+        "relatedOther": {"_label": "relationshipOptions.relatedOther", "_default_message": "Related in some other way"},
     }
 
     # "How did you hear about us?" options on referral source step
