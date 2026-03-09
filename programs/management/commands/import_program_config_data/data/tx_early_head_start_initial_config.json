@@ -1,0 +1,69 @@
+{
+  "white_label": {
+    "code": "tx"
+  },
+  "program_category": {
+    "external_name": "tx_childcare"
+  },
+  "program": {
+    "name_abbreviated": "tx_early_head_start",
+    "year": "2025",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission"
+    ],
+    "name": "Early Head Start",
+    "description": "Early Head Start provides free early learning and development services for infants, toddlers, and pregnant women. The program offers child care, health screenings, meals, parent education, and support services to help young children grow and learn. Services are provided through local programs in your community.\n\nFamilies with children from birth to age 3 can qualify if their income is at or below the federal poverty level. Pregnant women are also eligible for prenatal services. Families receiving TANF or SSI, children in foster care, and homeless families may qualify regardless of income. Priority is given to families with the lowest income and children with disabilities.",
+    "description_short": "Free early learning and care for infants and toddlers",
+    "learn_more_link": "https://www.earlychildhood.texas.gov/about-eligibility-screener",
+    "apply_button_link": "https://www.earlychildhood.texas.gov/about-eligibility-screener",
+    "apply_button_description": "",
+    "estimated_application_time": "1 - 2 hours",
+    "estimated_delivery_time": "Varies based on program availability",
+    "estimated_value": "Varies by program and services provided",
+    "website_description": "Free early learning, child care, and family support services for infants, toddlers, and pregnant women"
+  },
+  "warning_message": null,
+  "documents": [
+    {
+      "external_name": "tx_home",
+      "text": "Proof of home address (ex: lease, utility bill)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "id_proof",
+      "text": "Proof of identity for parent/guardian",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_earned_income",
+      "text": "Proof of household income (ex: pay stubs, tax returns, benefit statements)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_ssn",
+      "text": "Social Security Number or proof of application for SSN",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "child_birth_certificate",
+      "text": "Child's birth certificate or proof of age",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "immunization_records",
+      "text": "Child's immunization records and health information",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": []
+}
