@@ -1,0 +1,63 @@
+{
+  "white_label": {
+    "code": "tx"
+  },
+  "program_category": {
+    "external_name": "tx_childcare"
+  },
+  "program": {
+    "name_abbreviated": "tx_head_start",
+    "year": "2025",
+    "legal_status_required": ["citizen", "non_citizen", "gc_5plus", "gc_5less", "refugee", "otherWithWorkPermission"],
+    "name": "Head Start",
+    "description": "Head Start provides free early childhood education and development services for children ages 3-5 from low-income families. The program offers classroom learning, health screenings, meals, and support services to help children prepare for kindergarten.\n\nFamilies with income at or below the federal poverty level qualify, as well as families receiving TANF, SSI, or SNAP benefits. Children with disabilities and children in foster care or experiencing homelessness are also eligible. Priority is given to 4-year-olds and families with the lowest incomes.",
+    "description_short": "Free preschool for low-income families",
+    "learn_more_link": "https://www.earlychildhood.texas.gov/about-eligibility-screener",
+    "apply_button_link": "https://www.earlychildhood.texas.gov/about-eligibility-screener",
+    "apply_button_description": "Apply for Texas Head Start",
+    "estimated_application_time": "1 - 2 hours",
+    "estimated_delivery_time": "Varies by program availability",
+    "estimated_value": "Varies - free preschool services valued at several thousand dollars per year",
+    "website_description": "Free early childhood education and development services for children ages 3-5 from low-income families"
+  },
+  "warning_message": null,
+  "documents": [
+    {
+      "external_name": "tx_home",
+      "text": "Proof of home address (ex: lease, utility bill)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "id_proof",
+      "text": "Proof of identity for child (ex: birth certificate)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_earned_income",
+      "text": "Proof of household income (ex: pay stubs, tax returns)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_ssn",
+      "text": "Social Security Number for child",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_immunization",
+      "text": "Child's immunization records",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_health_records",
+      "text": "Child's health screening or physical exam records",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": []
+}

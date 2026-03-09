@@ -1,0 +1,1041 @@
+[
+  {
+    "notes": "TX Head Start - Single Parent with 4-Year-Old, Income Below 100% FPL",
+    "household": {
+      "white_label": "tx",
+      "household_size": 2,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1990,
+          "age": 36,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2000.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 6,
+          "birth_year": 2021,
+          "age": 4,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_head start",
+      "eligible": true
+    }
+  },
+  {
+    "notes": "TX Head Start - 3-Year-Old Child at Exactly 100% FPL with No Public Assistance",
+    "household": {
+      "white_label": "tx",
+      "household_size": 2,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1990,
+          "age": 36,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2510.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 3,
+          "birth_year": 2023,
+          "age": 3,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_head start",
+      "eligible": true
+    }
+  },
+  {
+    "notes": "TX Head Start - Two-Parent Household with 5-Year-Old, Income Just Below 100% FPL",
+    "household": {
+      "white_label": "tx",
+      "household_size": 4,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1988,
+          "age": 38,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2400.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "spouse",
+          "birth_month": 3,
+          "birth_year": 1989,
+          "age": 37,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 600.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 4,
+          "birth_year": 2021,
+          "age": 4,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 6,
+          "birth_year": 2023,
+          "age": 2,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_head start",
+      "eligible": true
+    }
+  },
+  {
+    "notes": "TX Head Start - Family of Four with Income Exactly at 100% FPL - Should Be Eligible",
+    "household": {
+      "white_label": "tx",
+      "household_size": 4,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1990,
+          "age": 36,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2417.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "spouse",
+          "birth_month": 5,
+          "birth_year": 1991,
+          "age": 34,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 6,
+          "birth_year": 2022,
+          "age": 3,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 9,
+          "birth_year": 2024,
+          "age": 1,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_head start",
+      "eligible": true
+    }
+  },
+  {
+    "notes": "TX Head Start - Single Parent with 4-Year-Old, Income Just Above 100% FPL - Should NOT Be Eligible",
+    "household": {
+      "white_label": "tx",
+      "household_size": 2,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1990,
+          "age": 36,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2300.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 6,
+          "birth_year": 2022,
+          "age": 3,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_head start",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "TX Head Start - Child Exactly 3 Years Old (Minimum Age) - Should Be Eligible",
+    "household": {
+      "white_label": "tx",
+      "household_size": 2,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1991,
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1800.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 3,
+          "birth_year": 2023,
+          "age": 3,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_head start",
+      "eligible": true
+    }
+  },
+  {
+    "notes": "TX Head Start - Child Age 2 (Just Below Minimum Age of 3) - Should NOT Be Eligible",
+    "household": {
+      "white_label": "tx",
+      "household_size": 2,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1990,
+          "age": 36,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1800.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 4,
+          "birth_year": 2024,
+          "age": 1,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_head start",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "TX Head Start - Child Age 5 (Maximum Age) - Should Be Eligible",
+    "household": {
+      "white_label": "tx",
+      "household_size": 3,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1990,
+          "age": 36,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2100.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 2,
+          "birth_year": 2021,
+          "age": 5,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 1,
+          "birth_year": 2019,
+          "age": 7,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_head start",
+      "eligible": true
+    }
+  },
+  {
+    "notes": "TX Head Start - Eligible Location Within Service Area - Travis County, TX",
+    "household": {
+      "white_label": "tx",
+      "household_size": 3,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1990,
+          "age": 36,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2000.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "spouse",
+          "birth_month": 2,
+          "birth_year": 1991,
+          "age": 35,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 4,
+          "birth_year": 2022,
+          "age": 3,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_head start",
+      "eligible": true
+    }
+  },
+  {
+    "notes": "TX Head Start - Family Already Enrolled in Head Start - Duplicate Application",
+    "household": {
+      "white_label": "tx",
+      "household_size": 3,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1990,
+          "age": 36,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2000.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 6,
+          "birth_year": 2022,
+          "age": 3,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 9,
+          "birth_year": 2024,
+          "age": 1,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_head start",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "TX Head Start - Child Age 6 (Kindergarten Age) - Should NOT Be Eligible Due to Age Exclusion",
+    "household": {
+      "white_label": "tx",
+      "household_size": 2,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1990,
+          "age": 36,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1200.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 1,
+          "birth_year": 2020,
+          "age": 6,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_head start",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "TX Head Start - Multi-Child Household - One Eligible Child (Age 4), One Too Young (Age 2), One Too Old (Age 6)",
+    "household": {
+      "white_label": "tx",
+      "household_size": 5,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1988,
+          "age": 38,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2100.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "spouse",
+          "birth_month": 3,
+          "birth_year": 1990,
+          "age": 36,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1800.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 1,
+          "birth_year": 2020,
+          "age": 6,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 5,
+          "birth_year": 2022,
+          "age": 3,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 6,
+          "birth_year": 2024,
+          "age": 1,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_head start",
+      "eligible": true
+    }
+  },
+  {
+    "notes": "TX Head Start - Two Eligible Children (Ages 3 and 4) with Working Parent Below 100% FPL",
+    "household": {
+      "white_label": "tx",
+      "household_size": 3,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1990,
+          "age": 36,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1900.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 6,
+          "birth_year": 2022,
+          "age": 3,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 9,
+          "birth_year": 2021,
+          "age": 4,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_head start",
+      "eligible": true
+    }
+  },
+  {
+    "notes": "TX Head Start - Child Turning 3 Years Old Tomorrow - Age Boundary Edge Case",
+    "household": {
+      "white_label": "tx",
+      "household_size": 2,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "housing_situation": "rent",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1990,
+          "age": 36,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1255.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 3,
+          "birth_year": 2023,
+          "age": 3,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_head start",
+      "eligible": false
+    }
+  }
+]
