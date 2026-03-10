@@ -1929,6 +1929,16 @@ class CoConfigurationData(ConfigurationData):
                         "_default_message": "Social security benefit for people with disabilities",
                     },
                 },
+                "trump_account": {
+                    "name": {
+                        "_label": "cashAssistanceBenefits.trump_account",
+                        "_default_message": "530A (\"Trump\") Accounts: ",
+                    },
+                    "description": {
+                        "_label": "cashAssistanceBenefits.trump_account_desc",
+                        "_default_message": "$1,000 government investment account for kids born 2025–2028",
+                    },
+                },
             },
             "category_name": {"_label": "cashAssistance", "_default_message": "Cash Assistance"},
         },
@@ -2171,24 +2181,6 @@ class CoConfigurationData(ConfigurationData):
                 },
             },
             "category_name": {"_label": "taxCredits", "_default_message": "Tax Credits"},
-        },
-        "savings": {
-            "benefits": {
-                "trump_account": {
-                    "name": {
-                        "_label": "savingsBenefits.trump_account",
-                        "_default_message": "530A (\"Trump\") Accounts: ",
-                    },
-                    "description": {
-                        "_label": "savingsBenefits.trump_account_desc",
-                        "_default_message": "Free government-seeded $1,000 investment account for children",
-                    },
-                },
-            },
-            "category_name": {
-                "_label": "savings",
-                "_default_message": "Savings",
-            },
         },
     }
 
