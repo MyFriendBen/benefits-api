@@ -17,7 +17,7 @@
 ## Coverage
 
 - **Evaluable**: 4 of 5 criteria (80%)
-- **Summary**: The evaluable criteria are child age (under 18), U.S. citizenship (via `legal_status_required` config), and pilot contribution birth window (2025–2028). No income test applies. The one unevaluable gap is SSN verification, which is not collected in the screener and is surfaced in the description. The calculator returns a value of $1,000 for children born in the pilot window (2025–2028) who are U.S. citizens and under 18; it returns $0 for eligible children outside the pilot window (account can still be opened, but no government contribution).
+- **Summary**: This calculator models only the $1,000 pilot contribution. Evaluable criteria are child age (under 18), U.S. citizenship (via `legal_status_required` config), and pilot birth window (Jan 2025–Dec 2028). No income test applies. Children outside the pilot window are not shown — while they can open an account, there is no government benefit to surface. The one unevaluable gap is SSN verification, which is not collected in the screener and is surfaced in the description.
 
 ## Benefit Value
 
@@ -44,153 +44,15 @@
 
 ## Test Scenarios
 
-### Scenario 1: Newborn in 2025 — Pilot-Eligible, Receives $1,000
-
-**Checks**: Core eligibility — U.S. citizen child born in the pilot window gets $1,000
-**Expected**: Eligible, value: $1,000
-
-**Steps**:
-- **Location**: ZIP `78701`, County `Travis County`
-- **Household**: 2 people
-- **Person 1 (Head)**: DOB `January 1990` (age 36), wages $3,000/month
-- **Person 2 (Child)**: DOB `June 2025` (age 0), U.S. citizen
-
-**Why this matters**: Most common profile — a newborn born in 2025 whose parents open a Trump Account. Confirms the pilot $1,000 value is returned.
-
----
-
-### Scenario 2: Child Born in 2028 — Last Year of Pilot Window
-
-**Checks**: Upper bound of pilot birth window is inclusive
-**Expected**: Eligible, value: $1,000
-
-**Steps**:
-- **Location**: ZIP `78701`, County `Travis County`
-- **Household**: 2 people
-- **Person 1 (Head)**: DOB `March 1995` (age 31), wages $2,500/month
-- **Person 2 (Child)**: DOB `January 2028` (age 0), U.S. citizen
-
-**Why this matters**: Confirms children born in 2028 (last eligible year) correctly receive the $1,000 pilot contribution.
-
----
-
-### Scenario 3: Child Born in 2024 — Outside Pilot Window, Account Eligible but No $1,000
-
-**Checks**: Children born before 2025 can open an account but receive no pilot contribution
-**Expected**: Eligible, value: $0
-
-**Steps**:
-- **Location**: ZIP `78701`, County `Travis County`
-- **Household**: 2 people
-- **Person 1 (Head)**: DOB `April 1988` (age 38), wages $4,000/month
-- **Person 2 (Child)**: DOB `September 2024` (age 1), U.S. citizen
-
-**Why this matters**: Confirms that children born before January 1, 2025 are still eligible to open a Trump Account but do not receive the $1,000 government contribution.
-
----
-
-### Scenario 4: Child Born in 2029 — Outside Pilot Window
-
-**Checks**: Children born after December 31, 2028 do not receive the pilot contribution
-**Expected**: Eligible, value: $0
-
-**Steps**:
-- **Location**: ZIP `78701`, County `Travis County`
-- **Household**: 2 people
-- **Person 1 (Head)**: DOB `May 1992` (age 34), wages $3,500/month
-- **Person 2 (Child)**: DOB `March 2029` (age 0), U.S. citizen
-
-**Why this matters**: Confirms the pilot window upper bound (2028) is correctly enforced.
-
----
-
-### Scenario 5: Child Exactly Age 17 — Last Year of Eligibility
-
-**Checks**: Child under 18 is eligible; age boundary is exclusive
-**Expected**: Eligible, value: $1,000 (if born 2025–2028)
-
-**Steps**:
-- **Location**: ZIP `75201`, County `Dallas County`
-- **Household**: 2 people
-- **Person 1 (Head)**: DOB `June 1980` (age 45), wages $5,000/month
-- **Person 2 (Child)**: DOB `January 2026` (age 0 — but use age 17 to represent a child in their last eligible year), U.S. citizen
-
-**Why this matters**: Confirms age 17 is still eligible (under 18 means 0–17 inclusive).
-
----
-
-### Scenario 6: Child Age 18 — Ineligible
-
-**Checks**: Children who have turned 18 cannot open a new Trump Account
-**Expected**: Not eligible
-
-**Steps**:
-- **Location**: ZIP `75201`, County `Dallas County`
-- **Household**: 2 people
-- **Person 1 (Head)**: DOB `June 1980` (age 45), wages $5,000/month
-- **Person 2 (Child)**: DOB `January 2008` (age 18), U.S. citizen
-
-**Why this matters**: Confirms the age ceiling (< 18) is correctly enforced.
-
----
-
-### Scenario 7: No Children in Household — Ineligible
-
-**Checks**: Households with no children under 18 are ineligible
-**Expected**: Not eligible
-
-**Steps**:
-- **Location**: ZIP `78701`, County `Travis County`
-- **Household**: 2 people
-- **Person 1 (Head)**: DOB `January 1985` (age 41), wages $3,000/month
-- **Person 2 (Spouse)**: DOB `March 1987` (age 39), wages $2,000/month
-
-**Why this matters**: Confirms the program correctly returns ineligible for adult-only households.
-
----
-
-### Scenario 8: High-Income Family with Newborn — No Income Limit
-
-**Checks**: No income test — wealthy families are also eligible
-**Expected**: Eligible, value: $1,000
-
-**Steps**:
-- **Location**: ZIP `75201`, County `Dallas County`
-- **Household**: 3 people
-- **Person 1 (Head)**: DOB `January 1985` (age 41), wages $20,000/month
-- **Person 2 (Spouse)**: DOB `March 1987` (age 39), wages $15,000/month
-- **Person 3 (Child)**: DOB `July 2025` (age 0), U.S. citizen
-
-**Why this matters**: Confirms that Trump Accounts have no income limit — high-income families receive the same $1,000 pilot contribution.
-
----
-
-### Scenario 9: Multiple Children — Two Eligible, One Outside Window
-
-**Checks**: Each eligible child receives a separate $1,000; child outside pilot window gets $0
-**Expected**: Eligible, value: $2,000 (two pilot-eligible children)
-
-**Steps**:
-- **Location**: ZIP `78701`, County `Travis County`
-- **Household**: 4 people
-- **Person 1 (Head)**: DOB `January 1988` (age 38), wages $4,000/month
-- **Person 2 (Spouse)**: DOB `June 1990` (age 36), no income
-- **Person 3 (Child)**: DOB `March 2025` (age 0), U.S. citizen (pilot-eligible)
-- **Person 4 (Child)**: DOB `August 2027` (age 0), U.S. citizen (pilot-eligible)
-
-**Why this matters**: Confirms per-child benefit accumulation — two children in the pilot window should yield $2,000 total.
-
----
-
-### Scenario 10: Teenager Age 16 with Pilot-Window Birth Year
-
-**Checks**: Older children born in 2025–2028 are correctly evaluated (unlikely in practice but valid)
-**Expected**: Eligible (if age and birth_year checks are consistent)
-
-**Steps**:
-- **Location**: ZIP `78701`, County `Travis County`
-- **Household**: 2 people
-- **Person 1 (Head)**: DOB `January 1985` (age 41), wages $3,000/month
-- **Person 2 (Child)**: DOB `January 2026` (age 0 per screener — represents a young child), U.S. citizen
-
-**Why this matters**: Validates that the screener correctly handles children whose birth_year falls in the pilot window.
+| # | Description | Expected |
+|---|-------------|----------|
+| 1 | Newborn born June 2025 — core pilot-eligible case | Eligible, $1,000 |
+| 2 | Child born Sept 2024 — outside pilot window, not shown | Not eligible |
+| 3 | Child age 18 — age ceiling enforced | Not eligible |
+| 4 | Adult-only household, no children | Not eligible |
+| 5 | High-income family with 2025 newborn — no income limit | Eligible, $1,000 |
+| 6 | Two pilot-eligible children, both born 2025 — per-child accumulation | Eligible, $2,000 |
+| 7 | One pilot-eligible child (2025) + one non-pilot child (2024) | Eligible, $1,000 |
+| 8 | Pregnant member — estimated due date (today + 280 days) in pilot window | Eligible, $1,000 |
+| 9 | Pregnant member + existing pilot-eligible child | Eligible, $2,000 |
+| 10 | Non-citizen household with child — citizenship gate enforced | Not eligible |

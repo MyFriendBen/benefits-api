@@ -50,56 +50,6 @@
     }
   },
   {
-    "notes": "Child born in 2028 — last year of pilot window, receives $1,000",
-    "household": {
-      "white_label": "tx",
-      "is_test": true,
-      "agree_to_tos": true,
-      "is_13_or_older": true,
-      "zipcode": "78701",
-      "county": "Travis County",
-      "household_size": 2,
-      "household_assets": 3000.00,
-      "household_members": [
-        {
-          "relationship": "headOfHousehold",
-          "age": 31,
-          "birth_year": 1995,
-          "birth_month": 3,
-          "has_income": true,
-          "income_streams": [
-            {
-              "type": "wages",
-              "amount": 2500.00,
-              "frequency": "monthly"
-            }
-          ],
-          "insurance": {
-            "none": false,
-            "employer": true
-          }
-        },
-        {
-          "relationship": "child",
-          "age": 0,
-          "birth_year": 2028,
-          "birth_month": 1,
-          "has_income": false,
-          "income_streams": [],
-          "insurance": {
-            "none": true
-          }
-        }
-      ],
-      "expenses": []
-    },
-    "expected_results": {
-      "program_name": "trump_account",
-      "eligible": true,
-      "value": 1000
-    }
-  },
-  {
     "notes": "Child born in 2024 — outside pilot window, account eligible but $0 government contribution",
     "household": {
       "white_label": "tx",
@@ -145,108 +95,7 @@
     },
     "expected_results": {
       "program_name": "trump_account",
-      "eligible": true,
-      "value": 0
-    }
-  },
-  {
-    "notes": "Child born in 2029 — outside pilot window, eligible but $0 government contribution",
-    "household": {
-      "white_label": "tx",
-      "is_test": true,
-      "agree_to_tos": true,
-      "is_13_or_older": true,
-      "zipcode": "78701",
-      "county": "Travis County",
-      "household_size": 2,
-      "household_assets": 2000.00,
-      "household_members": [
-        {
-          "relationship": "headOfHousehold",
-          "age": 34,
-          "birth_year": 1992,
-          "birth_month": 5,
-          "has_income": true,
-          "income_streams": [
-            {
-              "type": "wages",
-              "amount": 3500.00,
-              "frequency": "monthly"
-            }
-          ],
-          "insurance": {
-            "none": false,
-            "employer": true
-          }
-        },
-        {
-          "relationship": "child",
-          "age": 0,
-          "birth_year": 2029,
-          "birth_month": 3,
-          "has_income": false,
-          "income_streams": [],
-          "insurance": {
-            "none": true
-          }
-        }
-      ],
-      "expenses": []
-    },
-    "expected_results": {
-      "program_name": "trump_account",
-      "eligible": true,
-      "value": 0
-    }
-  },
-  {
-    "notes": "Child age 17 — last eligible year (under 18), born in pilot window, receives $1,000",
-    "household": {
-      "white_label": "tx",
-      "is_test": true,
-      "agree_to_tos": true,
-      "is_13_or_older": true,
-      "zipcode": "75201",
-      "county": "Dallas County",
-      "household_size": 2,
-      "household_assets": 10000.00,
-      "household_members": [
-        {
-          "relationship": "headOfHousehold",
-          "age": 45,
-          "birth_year": 1981,
-          "birth_month": 6,
-          "has_income": true,
-          "income_streams": [
-            {
-              "type": "wages",
-              "amount": 5000.00,
-              "frequency": "monthly"
-            }
-          ],
-          "insurance": {
-            "none": false,
-            "employer": true
-          }
-        },
-        {
-          "relationship": "child",
-          "age": 17,
-          "birth_year": 2026,
-          "birth_month": 1,
-          "has_income": false,
-          "income_streams": [],
-          "insurance": {
-            "none": true
-          }
-        }
-      ],
-      "expenses": []
-    },
-    "expected_results": {
-      "program_name": "trump_account",
-      "eligible": true,
-      "value": 1000
+      "eligible": false
     }
   },
   {
@@ -423,7 +272,7 @@
     }
   },
   {
-    "notes": "Two pilot-eligible children (2025 and 2027) — value is $2,000 total",
+    "notes": "Two pilot-eligible children (both born 2025) — value is $2,000 total",
     "household": {
       "white_label": "tx",
       "is_test": true,
@@ -478,8 +327,8 @@
         {
           "relationship": "child",
           "age": 0,
-          "birth_year": 2027,
-          "birth_month": 8,
+          "birth_year": 2025,
+          "birth_month": 9,
           "has_income": false,
           "income_streams": [],
           "insurance": {
@@ -496,7 +345,7 @@
     }
   },
   {
-    "notes": "One pilot-eligible child (2026) and one non-pilot child (2024) — value is $1,000",
+    "notes": "One pilot-eligible child (2025) and one non-pilot child (2024) — value is $1,000",
     "household": {
       "white_label": "tx",
       "is_test": true,
@@ -540,8 +389,8 @@
         {
           "relationship": "child",
           "age": 0,
-          "birth_year": 2026,
-          "birth_month": 5,
+          "birth_year": 2025,
+          "birth_month": 3,
           "has_income": false,
           "income_streams": [],
           "insurance": {
@@ -566,6 +415,170 @@
       "program_name": "trump_account",
       "eligible": true,
       "value": 1000
+    }
+  },
+  {
+    "notes": "Pregnant member — estimated due date in pilot window, receives $1,000",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "78701",
+      "county": "Travis County",
+      "household_size": 2,
+      "household_assets": 3000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 28,
+          "birth_year": 1998,
+          "birth_month": 5,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 30,
+          "birth_year": 1996,
+          "birth_month": 2,
+          "pregnant": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "trump_account",
+      "eligible": true,
+      "value": 1000
+    }
+  },
+  {
+    "notes": "Pregnant member plus existing pilot-eligible child — $2,000 total",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "78701",
+      "county": "Travis County",
+      "household_size": 3,
+      "household_assets": 4000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 32,
+          "birth_year": 1994,
+          "birth_month": 7,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 30,
+          "birth_year": 1996,
+          "birth_month": 3,
+          "pregnant": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 0,
+          "birth_year": 2025,
+          "birth_month": 6,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "trump_account",
+      "eligible": true,
+      "value": 2000
+    }
+  },
+  {
+    "notes": "Non-citizen household with child — ineligible (citizenship required)",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "78701",
+      "county": "Travis County",
+      "household_size": 2,
+      "household_assets": 3000.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 34,
+          "birth_year": 1992,
+          "birth_month": 6,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 0,
+          "birth_year": 2025,
+          "birth_month": 4,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "trump_account",
+      "eligible": false
     }
   }
 ]
