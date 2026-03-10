@@ -27,7 +27,7 @@
         {
             "external_name": "trump_account_launch_date",
             "calculator": "_show",
-            "message": "Trump Accounts are not yet open. They are expected to become available on or after July 4, 2026. Check IRS.gov/trumpaccounts for updates."
+            "message": "Trump Accounts are expected to become available on or after July 4, 2026. Check IRS.gov/trumpaccounts for updates."
         },
         {
             "external_name": "trump_account_ssn_required",
