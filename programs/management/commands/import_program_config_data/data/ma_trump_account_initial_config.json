@@ -23,18 +23,6 @@
         "estimated_value": "",
         "website_description": "Free government-seeded $1,000 investment account for U.S. citizen children born 2025–2028"
     },
-    "warning_messages": [
-        {
-            "external_name": "trump_account_launch_date",
-            "calculator": "_show",
-            "message": "Trump Accounts are expected to become available on or after July 4, 2026. Check IRS.gov/trumpaccounts for updates."
-        },
-        {
-            "external_name": "trump_account_ssn_required",
-            "calculator": "_show",
-            "message": "Your child must have a valid Social Security Number to open a Trump Account. If your child does not yet have an SSN, apply at ssa.gov."
-        }
-    ],
     "documents": [
         {
             "external_name": "trump_account_child_ssn",
@@ -60,5 +48,10 @@
             "link_url": "https://www.irs.gov/trumpaccounts",
             "link_text": "IRS Trump Accounts page"
         }
-    ]
+    ],
+    "warning_message": {
+        "external_name": "trump_account_notices",
+        "calculator": "_show",
+        "message": "Trump Accounts are expected to become available on or after July 4, 2026. Check IRS.gov/trumpaccounts for updates.\n\nYour child must have a valid Social Security Number to open a Trump Account. If your child does not yet have an SSN, apply at ssa.gov."
+    }
 }

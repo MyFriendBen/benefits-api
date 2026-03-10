@@ -29,6 +29,9 @@ class TrumpAccount(ProgramCalculator):
         e.condition(member.age <= TrumpAccount.max_age)
 
     def value(self, e: Eligibility):
+        # All under-18 children are eligible to open an account (value = $0 by default).
+        # Only children born in the pilot window (2025–2028) receive the $1,000 government
+        # contribution
         if not e.eligible:
             return
 
@@ -36,5 +39,6 @@ class TrumpAccount(ProgramCalculator):
             if not member_eligibility.eligible:
                 continue
             member = member_eligibility.member
-            if TrumpAccount.pilot_birth_year_min <= member.birth_year <= TrumpAccount.pilot_birth_year_max:
+            birth_year = member.birth_year
+            if birth_year is not None and TrumpAccount.pilot_birth_year_min <= birth_year <= TrumpAccount.pilot_birth_year_max:
                 member_eligibility.value = TrumpAccount.pilot_contribution
