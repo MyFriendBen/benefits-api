@@ -17,6 +17,7 @@
 ## Coverage
 
 - **Evaluable**: 4 of 5 criteria (80%)
+- **Note**: Citizenship is enforced via `legal_status_required` config on the frontend — the screener does not collect `legal_status` on `HouseholdMember`, so it cannot be tested via the validation runner.
 - **Summary**: This calculator models only the $1,000 pilot contribution. Evaluable criteria are child age (under 18), U.S. citizenship (via `legal_status_required` config), and pilot birth window (Jan 2025–Dec 2028). No income test applies. Children outside the pilot window are not shown — while they can open an account, there is no government benefit to surface. The one unevaluable gap is SSN verification, which is not collected in the screener and is surfaced in the description.
 
 ## Benefit Value
@@ -55,4 +56,3 @@
 | 7 | One pilot-eligible child (2025) + one non-pilot child (2024) | Eligible, $1,000 |
 | 8 | Pregnant member — estimated due date (today + 280 days) in pilot window | Eligible, $1,000 |
 | 9 | Pregnant member + existing pilot-eligible child | Eligible, $2,000 |
-| 10 | Non-citizen household with child — citizenship gate enforced | Not eligible |

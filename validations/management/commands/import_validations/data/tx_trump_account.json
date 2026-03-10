@@ -531,54 +531,5 @@
       "eligible": true,
       "value": 2000
     }
-  },
-  {
-    "notes": "Non-citizen household with child — ineligible (citizenship required)",
-    "household": {
-      "white_label": "tx",
-      "is_test": true,
-      "agree_to_tos": true,
-      "is_13_or_older": true,
-      "zipcode": "78701",
-      "county": "Travis County",
-      "household_size": 2,
-      "household_assets": 3000.00,
-      "household_members": [
-        {
-          "relationship": "headOfHousehold",
-          "age": 34,
-          "birth_year": 1992,
-          "birth_month": 6,
-          "has_income": true,
-          "income_streams": [
-            {
-              "type": "wages",
-              "amount": 3000.00,
-              "frequency": "monthly"
-            }
-          ],
-          "insurance": {
-            "none": false,
-            "employer": true
-          }
-        },
-        {
-          "relationship": "child",
-          "age": 0,
-          "birth_year": 2025,
-          "birth_month": 4,
-          "has_income": false,
-          "income_streams": [],
-          "insurance": {
-            "none": true
-          }
-        }
-      ],
-      "expenses": []
-    },
-    "expected_results": {
-      "program_name": "trump_account",
-      "eligible": false
-    }
   }
 ]
