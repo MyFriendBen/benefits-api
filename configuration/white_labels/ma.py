@@ -1235,7 +1235,7 @@ class MaConfigurationData(ConfigurationData):
                     },
                     "description": {
                         "_label": "cashAssistanceBenefits.trump_account_desc",
-                        "_default_message": "$1,000 government investment account for kids born 2025–2028",
+                        "_default_message": "$1,000 government investment account for kids born 2025-2028",
                     },
                 },
             },
