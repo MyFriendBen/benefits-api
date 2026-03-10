@@ -1168,7 +1168,7 @@ class MaConfigurationData(ConfigurationData):
         "02777": {"Swansea": "Swansea"},
         "02779": {"Berkley": "Berkley"},
         "02780": {"Taunton": "Taunton"},
-        "02783": {"Taunton ": "Taunton "},
+        "02783": {"Taunton": "Taunton"},
         "02790": {"Westport": "Westport"},
         "02791": {"Westport": "Westport"},
         "05501": {"Andover": "Andover"},
