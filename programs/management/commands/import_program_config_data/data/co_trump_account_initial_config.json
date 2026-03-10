@@ -1,0 +1,56 @@
+{
+    "white_label": {"code": "co"},
+    "program_category": {"external_name": "co_cash", "name": "Cash Assistance", "icon": "cash"},
+    "program": {
+        "name_abbreviated": "trump_account",
+        "year": "2025",
+        "legal_status_required": ["citizen"],
+        "name": "530A (\"Trump\") Accounts",
+        "description_short": "Free government-seeded investment account for children under 18",
+        "description": "530A (\"Trump\") Accounts are government-authorized custodial investment accounts for children under 18, created by the 2025 federal tax law (Section 530A of the Internal Revenue Code).\n\nThe federal government makes a one-time $1,000 contribution to eligible accounts. To receive the $1,000 government deposit, the child must be a U.S. citizen with a valid Social Security Number who was born between January 1, 2025 and December 31, 2028.\n\nChildren born outside this window can still open a Trump Account — they simply will not receive the $1,000 government deposit.\n\nThere is no income limit. Accounts are expected to be available starting July 4, 2026. To open an account, a parent or guardian completes IRS Form 4547 on the child's behalf. Only one Trump Account is allowed per child.\n\nFunds in the account must be invested in low-cost index funds or ETFs tracking primarily U.S. equities (e.g., S&P 500), with an expense ratio of no more than 0.10%. Withdrawals are not permitted before the child turns 18. After age 18, the account follows traditional IRA rules.",
+        "learn_more_link": "https://www.irs.gov/trumpaccounts",
+        "apply_button_link": "https://trumpaccounts.gov/",
+        "apply_button_description": "Learn how to open a Trump Account",
+        "estimated_application_time": "30 minutes",
+        "estimated_value": "$1,000",
+        "website_description": "Free government-seeded $1,000 investment account for U.S. citizen children born 2025–2028"
+    },
+    "warning_messages": [
+        {
+            "external_name": "trump_account_launch_date",
+            "calculator": "_show",
+            "message": "Trump Accounts are not yet open. They are expected to become available on or after July 4, 2026. Check IRS.gov/trumpaccounts for updates."
+        },
+        {
+            "external_name": "trump_account_ssn_required",
+            "calculator": "_show",
+            "message": "Your child must have a valid Social Security Number to open a Trump Account. If your child does not yet have an SSN, apply at ssa.gov."
+        }
+    ],
+    "documents": [
+        {
+            "external_name": "trump_account_child_ssn",
+            "text": "Child's Social Security Number (SSN)",
+            "link_url": "https://www.ssa.gov/number-card/request-number-first-time",
+            "link_text": "Apply for a child's SSN at ssa.gov"
+        },
+        {
+            "external_name": "trump_account_child_birth_certificate",
+            "text": "Child's birth certificate or proof of age and citizenship",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "trump_account_parent_id",
+            "text": "Parent or guardian's photo ID",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "trump_account_irs_form",
+            "text": "IRS Form 4547 (to elect to open a Trump Account)",
+            "link_url": "https://www.irs.gov/trumpaccounts",
+            "link_text": "IRS Trump Accounts page"
+        }
+    ]
+}
