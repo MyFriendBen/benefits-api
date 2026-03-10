@@ -197,6 +197,10 @@ class NcConfigurationData(ConfigurationData):
             "_label": "referralOptions.amexcan",
             "_default_message": "AMEXCAN",
         },
+        "appphi": {
+            "_label": "referralOptions.appphi",
+            "_default_message": "Appalachian Public Health Innovation Lab",
+        },
         "blueprint": {
             "_label": "referralOptions.blueprint",
             "_default_message": "Blueprint NC",
@@ -216,6 +220,10 @@ class NcConfigurationData(ConfigurationData):
         "elRefugio": {
             "_label": "referralOptions.elRefugio",
             "_default_message": "El Refugio",
+        },
+        "fbcenc": {
+            "_label": "referralOptions.fbcenc",
+            "_default_message": "Food Bank of Central & Eastern NC",
         },
         "felp": {
             "_label": "referralOptions.felp",
