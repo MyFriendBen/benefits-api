@@ -15,7 +15,7 @@
         ],
         "name": "530A (\"Trump\") Accounts",
         "description_short": "Free government-seeded investment account for children under 18",
-        "description": "530A (\"Trump\") Accounts are special savings accounts for kids under 18. For children born between January 1, 2025 and December 31, 2028, the government makes a one-time $1,000 deposit into the account. Kids born outside that window can still open an account, they just won't receive the $1,000.\n\nTo open an account, a parent or guardian fills out IRS Form 4547. Any family can apply regardless of income, but the child must be a U.S. citizen with a Social Security Number. Only one account is allowed per child.\n\nThe money is invested in index funds or ETFs, which are simple investments that follow the stock market (like the S&P 500). The law requires that these investments carry very low fees — no more than 0.10% per year.\n\nA parent or guardian manages the account until the child turns 18. After that, withdrawals are allowed under traditional IRA rules (which say how and when withdrawals can be made).",
+        "description": "530A (\"Trump\") Accounts are special investment accounts for kids under 18. For children born between January 1, 2025 and December 31, 2028, the government makes a one-time $1,000 deposit into the account. Kids born outside that window can still open an account, they just won't receive the $1,000.\n\nTo open an account, a parent or guardian fills out IRS Form 4547. Any family can apply regardless of income, but the child must be a U.S. citizen with a Social Security Number. Only one account is allowed per child.\n\nThe money is invested in index funds or ETFs, which are simple investments that follow the stock market (like the S&P 500). The law requires that these investments carry very low fees — no more than 0.10% per year.\n\nA parent or guardian manages the account until the child turns 18. After that, withdrawals are allowed under traditional IRA rules (which say how and when withdrawals can be made).",
         "learn_more_link": "https://www.irs.gov/trumpaccounts",
         "apply_button_link": "https://trumpaccounts.gov/",
         "apply_button_description": "Learn how to open a Trump Account",
@@ -38,7 +38,7 @@
         },
         {
             "external_name": "trump_account_parent_id",
-            "text": "Parent or guardian's photo ID",
+            "text": "Parent or guardian's government-issued photo ID (ex: driver's license, passport)",
             "link_url": "",
             "link_text": ""
         },
