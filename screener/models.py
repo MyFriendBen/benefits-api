@@ -123,6 +123,7 @@ class Screen(models.Model):
     has_va = models.BooleanField(default=None, blank=True, null=True)
     has_project_cope = models.BooleanField(default=False, blank=True, null=True)
     has_cesn_heap = models.BooleanField(default=False, blank=True, null=True)
+    has_ccad = models.BooleanField(default=False, blank=True, null=True)
     needs_food = models.BooleanField(default=False, blank=True, null=True)
     needs_baby_supplies = models.BooleanField(default=False, blank=True, null=True)
     needs_housing_help = models.BooleanField(default=False, blank=True, null=True)
@@ -461,6 +462,7 @@ class Screen(models.Model):
             "cfhc": self.has_cfhc,
             "shitc": self.has_shitc,
             "nc_medicare_savings": self.has_nc_medicare_savings,
+            "tx_ccad": self.has_ccad,
         }
 
         if name_abbreviated in name_map:

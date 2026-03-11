@@ -1,0 +1,100 @@
+{
+  "white_label": {
+    "code": "tx"
+  },
+  "program_category": {
+    "external_name": "tx_healthcare"
+  },
+  "program": {
+    "name_abbreviated": "tx_ccad",
+    "year": "2025",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission",
+      "non_citizen"
+    ],
+    "name": "Community Care for the Aged and Disabled (CCAD)",
+    "description": "CCAD provides home and community-based services to help seniors and adults with disabilities live safely at home instead of in a nursing facility. Services may include personal care assistance, adult day care, emergency response systems, home-delivered meals, and medical supplies. The program helps with daily activities like bathing, dressing, eating, and getting around.\n\nYou may qualify if you are age 65 or older, or age 21 or older with a disability. You must have Medicaid or meet Medicaid income limits (300% of the Federal Poverty Level), need help with daily activities, and be at risk of nursing home placement without these services. You must live in Texas and not currently be in a nursing facility.",
+    "description_short": "Home care services for seniors and people with disabilities",
+    "learn_more_link": "https://www.payingforseniorcare.com/texas/ccad",
+    "apply_button_link": "https://yourtexasbenefits.com/Learn/Home",
+    "apply_button_description": "",
+    "estimated_application_time": "2 - 3 hours",
+    "estimated_delivery_time": "45 - 90 days",
+    "estimated_value": "Varies",
+    "website_description": "Home and community-based services to help seniors and adults with disabilities avoid nursing facility placement"
+  },
+  "warning_message": {
+    "external_name": "tx_ccad_asset_limit",
+    "calculator": "_show",
+    "message": "To qualify, an individual must have less than $2,000 in assets and a couple must have less than $3,000. Your home, one car, and burial funds do not count as assets. You may need to show proof of citizenship or immigration status for some services, even if you qualify in other ways."
+  },
+  "documents": [
+    {
+      "external_name": "tx_home",
+      "text": "Proof of Texas residency (ex: lease, utility bill, driver's license)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "id_proof",
+      "text": "Proof of identity (ex: driver's license, state ID, birth certificate)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_ssn",
+      "text": "Social Security Number or proof of application",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_earned_income",
+      "text": "Proof of all household income (ex: pay stubs, Social Security statements, pension statements)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_us_status",
+      "text": "Proof of U.S. citizenship or qualified immigration status",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_medicaid",
+      "text": "Medicaid card or proof of Medicaid eligibility (if applicable)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_disability",
+      "text": "Proof of disability (ex: SSI/SSDI award letter, medical records)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_assets",
+      "text": "Documentation of assets (ex: bank statements, property records) - must be under $2,000 for individual or $3,000 for couple",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_public_assistance_verification",
+      "text": "If you qualify based on public benefits (e.g. SNAP), you must show that you've received them in the past two years",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "tx_adrc",
+      "name": "Aging and Disability Resource Center (ADRC)",
+      "email": "",
+      "description": "ADRCs help Texans access long-term services and supports including CCAD. Find your local ADRC to start the application process.",
+      "assistance_link": "https://www.hhs.texas.gov/services/aging/long-term-care/aging-disability-resource-centers/find-adrc"
+    }
+  ]
+}
