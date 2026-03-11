@@ -221,7 +221,7 @@ Files generated:
 [ ] Scenario 11 (Child Age 6 (Above Maximum Age), Income Below 100% FPL - Should NOT Be Eligible): User should be **ineligible**
 [ ] Scenario 12 (Multi-Member Household - 3 Children (One Eligible Age, Two Ineligible Ages), Income Below 100% FPL): User should be **eligible** with $None/year
 [ ] Scenario 13 (Multi-Member Household - Two Eligible Children (Ages 3 and 5), One Parent, Income Below 100% FPL): User should be **eligible** with $None/year
-[ ] Scenario 14 (Child Born Next Month - Testing Age Boundary at Minimum Eligibility): User should be **ineligible**
+[ ] Scenario 14 (Child Turns 3 Next Month - Testing Age Boundary at Minimum Eligibility): User should be **ineligible**
 
 ## Test Scenarios
 
@@ -434,8 +434,8 @@ Files generated:
 
 ---
 
-### Scenario 14: Child Born Next Month - Testing Age Boundary at Minimum Eligibility
-**What we're checking**: Tests the minimum age boundary where a child's birth month/year is next month (April 2026), meaning they are currently age 2 at the time of screening (March 2026) and will not yet have turned 3. This should make them ineligible.
+### Scenario 14: Child Turns 3 Next Month - Testing Age Boundary at Minimum Eligibility
+**What we're checking**: Tests the minimum age boundary where a child turns 3 next month (April 2026), meaning they are currently age 2 at the time of screening (March 2026) and will not yet have turned 3. This should make them ineligible.
 **Expected**: Not eligible
 
 **Steps**:
