@@ -14,7 +14,7 @@
      - `household_member.age`
      - `household_member.pregnant`
      - `household_member.birth_year_month`
-   - Source: 45 CFR 1302.12(c) - Early Head Start serves children from birth to compulsory school age
+   - Source: 45 CFR 1302.12(c) - Early Head Start serves children from birth to age 3 (under 36 months)
 
 2. **Family income at or below 100% of Federal Poverty Level (FPL)**
    - Screener fields:
@@ -23,11 +23,12 @@
      - `household_size`
    - Source: 45 CFR 1302.12(a)(1)(i) and 42 U.S.C. § 9840(a)(1)(B)(i)
 
-3. **Child receives or is eligible for public assistance (TANF, SSI)**
+3. **Child receives or is eligible for public assistance (TANF, SSI, or SNAP)**
    - Screener fields:
      - `has_tanf`
      - `has_ssi`
-   - Source: 45 CFR 1302.12(a)(1)(ii) - Categorical eligibility for families receiving public assistance
+     - `has_snap`
+   - Source: 45 CFR 1302.12(a)(1)(ii)(A)-(C) - Categorical eligibility for families receiving TANF, SSI, or SNAP
 
 4. **Child is in foster care**
    - Screener fields:
@@ -90,10 +91,10 @@
 
 ## Implementation Coverage
 
-- ✅ Evaluable criteria: 6
+- ✅ Evaluable criteria: 7
 - ⚠️  Data gaps: 8
 
-Of 13 identified eligibility criteria, 6 can be fully evaluated with current screener fields, 2 can be partially evaluated, and 5 cannot be evaluated. The core eligibility criteria (age, income, categorical eligibility through TANF/SSI, foster care status) can be assessed. Major gaps include: (1) homelessness status - housing_situation field exists but is not collected; (2) geographic service area - requires grantee-specific data; (3) program capacity - external to eligibility; (4) selection priorities - can identify some factors but not relative ranking. The income threshold (100% FPL) and categorical eligibility provisions are well-supported by existing fields.
+Of 14 identified eligibility criteria, 7 can be fully evaluated with current screener fields, 2 can be partially evaluated, and 5 cannot be evaluated. The core eligibility criteria (age, income, categorical eligibility through TANF/SSI/SNAP, foster care status) can be assessed. Major gaps include: (1) homelessness status - housing_situation field exists but is not collected; (2) geographic service area - requires grantee-specific data; (3) program capacity - external to eligibility; (4) selection priorities - can identify some factors but not relative ranking. The income threshold (100% FPL) and categorical eligibility provisions are well-supported by existing fields.
 
 ## Research Sources
 
@@ -207,10 +208,11 @@ Files generated:
 [ ] Scenario 8 (Child age 2 years 11 months - well within age eligibility range): User should be **eligible** with $None/year
 [ ] Scenario 9 (Eligible location within service area - Travis County, TX): User should be **eligible** with $None/year
 [ ] Scenario 10 (Family already enrolled in Early Head Start - duplicate enrollment check): User should be **ineligible**
-[ ] Scenario 11 (Child enrolled in Head Start (age 3+) - program exclusion): User should be **ineligible**
+[ ] Scenario 11 (Household with only an over-age child - no EHS-eligible children): User should be **ineligible**
 [ ] Scenario 12 (Mixed household - eligible toddler, ineligible older sibling, working parent at 95% FPL): User should be **eligible** with $None/year
 [ ] Scenario 13 (Multi-generational household - pregnant teen, infant sibling, and working parent at 92% FPL): User should be **eligible** with $None/year
 [ ] Scenario 14 (Child turning 3 years old tomorrow - age boundary edge case): User should be **eligible** with $None/year
+[ ] Scenario 15 (Family with SNAP benefits - categorical eligibility overrides high income): User should be **eligible** with $None/year
 
 ## Test Scenarios
 
@@ -324,7 +326,7 @@ Files generated:
 - **Current Benefits**: Select `None`
 - **Citizenship**: Select `U.S. Citizen`
 
-**Why this matters**: This test validates the upper age boundary for Early Head Start eligibility. Per 45 CFR 1302.12(c), Early Head Start serves children from birth to compulsory school age, with the program specifically designed for infants and toddlers under 3. A child who has reached their 3rd birthday should transition to Head Start, not Early Head Start. This ensures proper program placement and resource allocation.
+**Why this matters**: This test validates the upper age boundary for Early Head Start eligibility. Per 45 CFR 1302.12(c), Early Head Start serves children from birth to age 3 (under 36 months). A child who has reached their 3rd birthday should transition to Head Start, not Early Head Start. This ensures proper program placement and resource allocation.
 
 ---
 
@@ -369,27 +371,26 @@ Files generated:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `3`
 - **Person 1 (Parent)**: Relationship: `Head of Household`, Birth month/year: `March 1998` (age 28), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$1,800`, Income frequency: `Monthly`, Insurance: `None`
-- **Person 2 (Child 1)**: Relationship: `Child`, Birth month/year: `January 2025` (age 1 year 2 months), Has income: `No`, Insurance: `None`
+- **Person 2 (Child 1)**: Relationship: `Child`, Birth month/year: `January 2025` (age 1 year 2 months), Has income: `No`, Insurance: `None`, Current benefits: `Early Head Start`
 - **Person 3 (Child 2)**: Relationship: `Child`, Birth month/year: `November 2024` (age 1 year 4 months), Has income: `No`, Insurance: `None`
-- **Current Benefits**: Select `Early Head Start` as a current benefit, Complete remaining questions as applicable
+- **Current Benefits**: Select `Early Head Start` as a current benefit (marks the household as already enrolled)
 
 **Why this matters**: Prevents duplicate enrollment and ensures accurate tracking of program participation. Families already receiving Early Head Start should not be screened as newly eligible, as they are already being served. This tests the system's ability to identify and handle existing beneficiaries appropriately.
 
 ---
 
-### Scenario 11: Child enrolled in Head Start (age 3+) - program exclusion
-**What we're checking**: Verifies that children already enrolled in Head Start (regular, not Early) are excluded from Early Head Start due to age and program participation
+### Scenario 11: Household with only an over-age child - no EHS-eligible children
+**What we're checking**: Verifies that a household with no children under age 3 is NOT eligible for Early Head Start, even when income is below 100% FPL
 **Expected**: Not eligible
 
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
-- **Household**: Number of people: `3`
+- **Household**: Number of people: `2`
 - **Person 1**: Relationship: `You (Head of Household)`, Birth month/year: `January 1992` (age 34), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$2,100`, Income frequency: `Monthly`, Insurance: `None`
-- **Person 2**: Relationship: `Child`, Birth month/year: `June 2022` (age 3 years 9 months), Has income: `No`, Insurance: `None`, Current benefits: `Head Start` (if available as option)
-- **Person 3**: Relationship: `Child`, Birth month/year: `March 2025` (age 1 year), Has income: `No`, Insurance: `None`
-- **Current Benefits**: Indicate if any household member receives Head Start services
+- **Person 2**: Relationship: `Child`, Birth month/year: `June 2022` (age 3 years 9 months), Has income: `No`, Insurance: `None`
+- **Current Benefits**: Select `None`
 
-**Why this matters**: Early Head Start specifically serves children birth to age 3 (36 months) per 45 CFR 1302.12(c). Children age 3 and older transition to regular Head Start programs. This test ensures the screener correctly identifies age-based program boundaries and prevents enrollment of over-age children in Early Head Start when they should be in regular Head Start.
+**Why this matters**: Early Head Start specifically serves children birth to age 3 (36 months) per 45 CFR 1302.12(c). A household with no age-eligible children should be ineligible regardless of income level. This ensures the age criterion is correctly applied as a prerequisite for all other eligibility pathways.
 
 ---
 
@@ -435,11 +436,27 @@ Files generated:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `2`
 - **Person 1**: Relationship: `Head of Household`, Birth month/year: `January 1998` (age 28), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `2,100`, Income frequency: `Monthly`, Insurance: `None`
-- **Person 2**: Relationship: `Child`, Birth month/year: `March 2023` (age 2 years, 11 months, 30 days - turns 3 tomorrow), Insurance: `None`
+- **Person 2**: Relationship: `Child`, Birth month/year: `April 2023` (age 2 years, 11 months - turns 3 next month), Insurance: `None`
 - **Current Benefits**: Select: `None`
 - **Citizenship**: Select: `U.S. Citizen`
 
 **Why this matters**: Tests the precise age boundary interpretation - whether the system correctly evaluates 'under age 3' as the child's current age on the application date, not their upcoming birthday. This edge case is critical because families applying just before a child's 3rd birthday need clarity on eligibility timing.
+
+---
+
+### Scenario 15: Family with SNAP benefits - categorical eligibility overrides high income
+**What we're checking**: Verifies that a family receiving SNAP is categorically eligible for Early Head Start regardless of income exceeding 100% FPL
+**Expected**: Eligible
+
+**Steps**:
+- **Location**: Enter ZIP code `78701`, Select county `Travis`
+- **Household**: Number of people: `2`
+- **Person 1 (Head of Household)**: Birth month/year: `January 1990` (age 36), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$3,500`, Income frequency: `Monthly`, Insurance: `None`
+- **Person 2 (Child)**: Birth month/year: `June 2024` (age 1), Relationship: `Child`, Has income: `No`, Insurance: `None`
+- **Current Benefits**: Select `SNAP (Food Stamps)`: `Yes`
+- **Citizenship**: Citizenship status: `U.S. Citizen`
+
+**Why this matters**: Per 45 CFR 1302.12(a)(1)(ii)(C), families receiving SNAP have categorical eligibility for Early Head Start regardless of income level. This test validates that SNAP participation is a pathway IN (not an exclusion), and that high-income families who receive SNAP still qualify. Unlike CSFP, Early Head Start treats other benefit participation as a categorical eligibility pathway.
 
 ---
 
