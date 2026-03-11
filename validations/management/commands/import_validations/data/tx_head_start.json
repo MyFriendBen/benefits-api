@@ -54,7 +54,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_head start",
+      "program_name": "tx_head_start",
       "eligible": true
     }
   },
@@ -113,7 +113,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_head start",
+      "program_name": "tx_head_start",
       "eligible": true
     }
   },
@@ -195,7 +195,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_head start",
+      "program_name": "tx_head_start",
       "eligible": true
     }
   },
@@ -294,7 +294,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_head start",
+      "program_name": "tx_head_start",
       "eligible": true
     }
   },
@@ -353,7 +353,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_head start",
+      "program_name": "tx_head_start",
       "eligible": false
     }
   },
@@ -412,12 +412,12 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_head start",
+      "program_name": "tx_head_start",
       "eligible": true
     }
   },
   {
-    "notes": "TX Head Start - Child Age 2 (Just Below Minimum Age 3), Income Below 100% FPL - Should NOT Be Eligible",
+    "notes": "TX Head Start - Child Age 1 (Below Minimum Age 3), Income Below 100% FPL - Should NOT Be Eligible",
     "household": {
       "white_label": "tx",
       "household_size": 2,
@@ -471,7 +471,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_head start",
+      "program_name": "tx_head_start",
       "eligible": false
     }
   },
@@ -530,7 +530,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_head start",
+      "program_name": "tx_head_start",
       "eligible": true
     }
   },
@@ -606,7 +606,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_head start",
+      "program_name": "tx_head_start",
       "eligible": true
     }
   },
@@ -688,7 +688,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_head start",
+      "program_name": "tx_head_start",
       "eligible": false
     }
   },
@@ -764,7 +764,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_head start",
+      "program_name": "tx_head_start",
       "eligible": false
     }
   },
@@ -874,7 +874,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_head start",
+      "program_name": "tx_head_start",
       "eligible": true
     }
   },
@@ -950,7 +950,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_head start",
+      "program_name": "tx_head_start",
       "eligible": true
     }
   },
@@ -1009,7 +1009,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_head start",
+      "program_name": "tx_head_start",
       "eligible": false
     }
   }
