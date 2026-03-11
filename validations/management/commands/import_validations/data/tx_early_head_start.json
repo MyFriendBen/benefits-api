@@ -524,7 +524,7 @@
     }
   },
   {
-    "notes": "TX Early Head Start - Eligible location within service area - Travis County, TX",
+    "notes": "TX Early Head Start - Family at 94% FPL with infant - income and age eligible",
     "household": {
       "white_label": "tx",
       "household_size": 2,
@@ -543,7 +543,7 @@
           "income_streams": [
             {
               "type": "wages",
-              "amount": 1800.0,
+              "amount": 1600.0,
               "frequency": "monthly"
             }
           ],
