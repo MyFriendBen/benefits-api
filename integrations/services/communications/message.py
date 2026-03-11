@@ -81,7 +81,7 @@ class MessageUser:
         return Client(self.cell_account_sid, self.cell_auth_token)
 
     def _generate_link(self):
-        return f"{self.front_end_domain}/{self.screen.white_label.code}/{self.screen.uuid}/results"
+        return f"{self.front_end_domain}/{self.screen.white_label.code}/{self.screen.uuid}/results/benefits"
 
     def log(self, type: Literal["emailScreen", "textScreen"]):
         self.screen.last_email_request_date = timezone.now()
