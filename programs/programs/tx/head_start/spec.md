@@ -143,7 +143,14 @@ Django admin import configuration (ready to use):
   "program": {
     "name_abbreviated": "tx_head_start",
     "year": "2025",
-    "legal_status_required": [],
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission",
+      "non_citizen"
+    ],
     "name": "Head Start",
     "description": "Head Start is a free program for young children ages 3 to 5. It offers preschool classes, meals, and health checkups. Your child also gets help learning and growing. Families pay nothing to join.\n\nFamilies with low income can apply. Children who get TANF (cash help) or SSI (disability benefits) qualify right away. Children in foster care also qualify. Children without a stable home qualify too.",
     "description_short": "Free preschool for children ages 3 to 5",
@@ -180,7 +187,7 @@ Django admin import configuration (ready to use):
     },
     {
       "external_name": "tx_benefit_proof",
-      "text": "Proof of TANF, SSI, or SNAP benefits if applicable",
+      "text": "Proof of TANF or SSI benefits if applicable",
       "link_url": "",
       "link_text": ""
     }
@@ -291,13 +298,13 @@ Files generated:
 ---
 
 ### Scenario 5: Single Parent with 4-Year-Old, Income Just Above 100% FPL - Should NOT Be Eligible
-**What we're checking**: Verifies that a household with income slightly above 100% FPL is correctly determined ineligible when not receiving categorical benefits (TANF/SSI/SNAP)
+**What we're checking**: Verifies that a household with income slightly above 100% FPL is correctly determined ineligible when not receiving categorical benefits (TANF/SSI)
 **Expected**: Not eligible
 
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `2`
-- **Person 1 (Parent)**: Birth month/year: `January 1990` (age 36), Relationship: `Head of Household`, Has income: `Yes`, Employment income: `$2,200` per month ($26,400 annually), Income frequency: `Monthly`, Insurance: `None`, Not receiving TANF, SSI, or SNAP
+- **Person 1 (Parent)**: Birth month/year: `January 1990` (age 36), Relationship: `Head of Household`, Has income: `Yes`, Employment income: `$2,200` per month ($26,400 annually), Income frequency: `Monthly`, Insurance: `None`, Not receiving TANF or SSI
 - **Person 2 (Child)**: Birth month/year: `June 2022` (age 4), Relationship: `Child`, Has income: `No`, Insurance: `None`, Not in foster care, No disabilities
 
 **Why this matters**: This test validates the income threshold enforcement at 100% FPL per 45 CFR § 1302.12(a)(1)(i). It ensures the system correctly rejects applicants who exceed the primary income limit and don't qualify through categorical eligibility, preventing over-enrollment of families above the poverty threshold.
@@ -428,7 +435,7 @@ Files generated:
 - **Person 1 (Head of Household)**: Birth month/year: `January 1992` (age 34), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$1,800` per month ($21,600 annually), Insurance: `None`
 - **Person 2 (First Child)**: Birth month/year: `March 2023` (age 3), Relationship: `Child`, Has income: `No`, Insurance: `None`
 - **Person 3 (Second Child)**: Birth month/year: `September 2020` (age 5, turning 6 in September 2026), Relationship: `Child`, Has income: `No`, Insurance: `None`
-- **Current Benefits**: Not currently receiving TANF, SSI, or SNAP
+- **Current Benefits**: Not currently receiving TANF or SSI
 
 **Why this matters**: This test validates that the screener correctly identifies multiple eligible children within the same household, which is a common real-world scenario. Head Start programs must be able to serve multiple children from the same family when they meet eligibility criteria, and the system should properly account for all eligible household members rather than just one.
 
