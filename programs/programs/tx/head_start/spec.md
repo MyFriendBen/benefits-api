@@ -32,82 +32,77 @@
      - `has_ssi`
    - Source: 45 CFR § 1302.12(a)(1)(ii)(B) - Categorical eligibility
 
-5. **Child receives or family is eligible for SNAP**
-   - Screener fields:
-     - `has_snap`
-   - Source: 45 CFR § 1302.12(a)(1)(ii)(C) - Categorical eligibility
-
-6. **Child is in foster care**
+5. **Child is in foster care**
    - Screener fields:
      - `household_member.relationship`
    - Source: 45 CFR § 1302.12(c)(1)(ii) - Foster children eligibility
 
-7. **Family income between 100% and 130% FPL (up to 10% of enrollment)**
+6. **Family income between 100% and 130% FPL (up to 10% of enrollment)**
    - Screener fields:
      - `income_stream.amount`
      - `income_stream.frequency`
      - `household_size`
    - Source: 45 CFR § 1302.12(a)(1)(iii) - Over-income eligibility
 
-8. **Priority for children from families with incomes below poverty line**
+7. **Priority for children from families with incomes below poverty line**
    - Screener fields:
      - `income_stream.amount`
      - `income_stream.frequency`
      - `household_size`
    - Source: 45 CFR § 1302.14(a)(1) - Selection priorities
 
-9. **Priority for children with disabilities**
+8. **Priority for children with disabilities**
    - Screener fields:
      - `household_member.disabled`
      - `household_member.long_term_disability`
    - Source: 45 CFR § 1302.14(a)(2) - Selection priorities
 
-10. **Child experiencing homelessness** ⚠️ *data gap*
+9. **Child experiencing homelessness** ⚠️ *data gap*
    - Note: Children experiencing homelessness are categorically eligible regardless of income. The screener has 'housing_situation' field in the model but it is not collected from users. The 'needs_housing_help' field indicates desire for housing assistance, not current housing status. Cannot evaluate homelessness status.
    - Source: 45 CFR § 1302.12(c)(1)(i) - Homeless children eligibility
    - Impact: High
 
-11. **Child must not yet be eligible for kindergarten** ⚠️ *data gap*
+10. **Child must not yet be eligible for kindergarten** ⚠️ *data gap*
    - Note: 5-year-olds are only eligible if not yet eligible for kindergarten. Kindergarten eligibility varies by state/district and depends on birth date cutoffs (e.g., must turn 5 by September 1). The screener captures age but not kindergarten enrollment status or eligibility.
    - Source: 45 CFR § 1302.12(c)(1) - Age eligibility
    - Impact: Medium
 
-12. **Residency in program service area** ⚠️ *data gap*
+11. **Residency in program service area** ⚠️ *data gap*
    - Note: Each Head Start program serves a specific geographic area (may be county, city, neighborhood, or other boundary). The screener captures zipcode and county but cannot determine if these fall within a specific program's service area without program-specific geographic data.
    - Source: 45 CFR § 1302.12(b) - Geographic eligibility
    - Impact: High
 
-13. **Priority for families receiving public assistance** ⚠️ *data gap*
+12. **Priority for families receiving public assistance** ⚠️ *data gap*
    - Note: Selection priority for families receiving public assistance beyond TANF/SSI/SNAP (e.g., housing assistance, Medicaid). While screener captures some benefits (has_medicaid, has_section_8), 'public assistance' is broader and not fully defined. Partial evaluation possible but incomplete.
    - Source: 45 CFR § 1302.14(a)(3) - Selection priorities
    - Impact: Low
 
-14. **Priority for single-parent families** ⚠️ *data gap*
+13. **Priority for single-parent families** ⚠️ *data gap*
    - Note: Programs may establish additional selection priorities including single-parent status. The screener captures household member relationships but cannot definitively determine single-parent status (would need to identify one adult guardian with children and no spouse/partner).
    - Source: 45 CFR § 1302.14(b) - Additional selection criteria
    - Impact: Low
 
-15. **Priority for families with lowest incomes** ⚠️ *data gap*
+14. **Priority for families with lowest incomes** ⚠️ *data gap*
    - Note: Among eligible families, priority given to those with lowest incomes. This requires ranking/comparison across applicants, which cannot be done in a single-screen evaluation context.
    - Source: 45 CFR § 1302.14(a)(1) - Selection priorities
    - Impact: Low
 
-16. **Child's immunization status** ⚠️ *data gap*
+15. **Child's immunization status** ⚠️ *data gap*
    - Note: Children must be up-to-date on immunizations or have exemption. This is a post-enrollment requirement, not an eligibility barrier, but must be addressed within 90 days. Not captured in screener.
    - Source: 45 CFR § 1302.42 - Child health status and care
    - Impact: Low
 
-17. **Citizenship or immigration status** ⚠️ *data gap*
+16. **Citizenship or immigration status** ⚠️ *data gap*
    - Note: Head Start does not have citizenship requirements - children are eligible regardless of immigration status. However, this is not captured in screener. No evaluation needed as there is no restriction.
    - Source: Head Start Act Section 645(a)(1)(B)(ii)
    - Impact: Low
 
-18. **Documentation of income eligibility** ⚠️ *data gap*
+17. **Documentation of income eligibility** ⚠️ *data gap*
    - Note: Programs must verify income eligibility through documentation (pay stubs, tax returns, benefit award letters, etc.). The screener collects self-reported income but cannot verify documentation. This is an administrative requirement, not an eligibility criterion.
    - Source: 45 CFR § 1302.12(j) - Verification of eligibility
    - Impact: Low
 
-19. **Priority for children in families with both parents working or in training** ⚠️ *data gap*
+18. **Priority for children in families with both parents working or in training** ⚠️ *data gap*
    - Note: Programs may prioritize families where parents are working or in job training. The screener captures income streams (which may indicate employment) but not explicit employment status or training program participation for all household members.
    - Source: 45 CFR § 1302.14(b) - Additional selection criteria
    - Impact: Low
@@ -118,10 +113,10 @@
 
 ## Implementation Coverage
 
-- ✅ Evaluable criteria: 9
+- ✅ Evaluable criteria: 8
 - ⚠️  Data gaps: 10
 
-Head Start eligibility can be substantially evaluated with current screener fields. Of the core eligibility criteria, we can evaluate: age requirements (3-5 years old), income eligibility (at or below 100% FPL, or 100-130% FPL for up to 10% of slots), and categorical eligibility through TANF, SSI, and SNAP receipt. We can also evaluate some selection priorities including disability status and income level. However, critical gaps exist: we cannot determine if a child is experiencing homelessness (a categorical eligibility factor), whether a 5-year-old is kindergarten-eligible, or whether the family resides in a specific program's service area. The homelessness gap is particularly significant as homeless children are categorically eligible regardless of income. Most other gaps relate to selection priorities rather than hard eligibility requirements, making them lower impact.
+Head Start eligibility can be substantially evaluated with current screener fields. Of the core eligibility criteria, we can evaluate: age requirements (3-5 years old), income eligibility (at or below 100% FPL, or 100-130% FPL for up to 10% of slots), and categorical eligibility through TANF, SSI, and foster care receipt. We can also evaluate some selection priorities including disability status and income level. However, critical gaps exist: we cannot determine if a child is experiencing homelessness (a categorical eligibility factor), whether a 5-year-old is kindergarten-eligible, or whether the family resides in a specific program's service area. The homelessness gap is particularly significant as homeless children are categorically eligible regardless of income. Most other gaps relate to selection priorities rather than hard eligibility requirements, making them lower impact.
 
 ## Research Sources
 
@@ -275,7 +270,7 @@ Files generated:
 - **Household**: Number of people: `3`
 - **Person 1 (Head of Household)**: Birth month/year: `January 1990` (age 36), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Amount: `$1,950`, Frequency: `Monthly`, Insurance: `None`
 - **Person 2 (Spouse)**: Birth month/year: `March 1991` (age 35), Relationship: `Spouse`, Has income: `Yes`, Income type: `Wages/Salaries`, Amount: `$800`, Frequency: `Monthly`, Insurance: `None`
-- **Person 3 (Child)**: Birth month/year: `June 2023` (age 3), Relationship: `Child`, Has income: `No`, Insurance: `None`
+- **Person 3 (Child)**: Birth month/year: `June 2022` (age 3), Relationship: `Child`, Has income: `No`, Insurance: `None`
 - **Current Benefits**: Select `None` for all benefit programs
 - **Citizenship**: All household members are `U.S. Citizens`
 
@@ -355,7 +350,7 @@ Files generated:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `2`
 - **Person 1 (Parent)**: Relationship: `Head of Household`, Birth month/year: `January 1996` (age 30), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$1,800`, Income frequency: `Monthly`, Insurance: `None`
-- **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `April 2021` (age 5), Has income: `No`, Insurance: `None`
+- **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `February 2021` (age 5), Has income: `No`, Insurance: `None`
 - **Current Benefits**: Select `None` for all benefit programs
 - **Citizenship**: Citizenship status: `U.S. Citizen`
 
@@ -436,7 +431,7 @@ Files generated:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `3`
 - **Person 1 (Head of Household)**: Birth month/year: `January 1992` (age 34), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$1,800` per month ($21,600 annually), Insurance: `None`
-- **Person 2 (First Child)**: Birth month/year: `June 2023` (age 2, turning 3 in June 2026), Relationship: `Child`, Has income: `No`, Insurance: `None`
+- **Person 2 (First Child)**: Birth month/year: `March 2023` (age 3), Relationship: `Child`, Has income: `No`, Insurance: `None`
 - **Person 3 (Second Child)**: Birth month/year: `September 2020` (age 5, turning 6 in September 2026), Relationship: `Child`, Has income: `No`, Insurance: `None`
 - **Current Benefits**: Not currently receiving TANF, SSI, or SNAP
 
@@ -452,7 +447,7 @@ Files generated:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1991` (age 35), Has income: `Yes`, Income type: `Employment`, Income amount: `$1,200` per month ($14,400/year), Insurance: `None`
-- **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `March 2023` (will turn 3 tomorrow on March 12, 2026), Currently age 2 years, 364 days old, Has income: `No`, Insurance: `None`
+- **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `April 2023` (age 2, turns 3 in April 2026), Has income: `No`, Insurance: `None`
 - **Current Benefits**: Not receiving any current benefits
 - **Citizenship**: Citizenship status: `U.S. Citizen`
 

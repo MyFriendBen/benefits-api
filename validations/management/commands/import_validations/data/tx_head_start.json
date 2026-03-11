@@ -177,8 +177,8 @@
         {
           "relationship": "child",
           "birth_month": 6,
-          "birth_year": 2023,
-          "age": 2,
+          "birth_year": 2022,
+          "age": 3,
           "has_income": false,
           "income_streams": [],
           "insurance": {
@@ -511,9 +511,9 @@
         },
         {
           "relationship": "child",
-          "birth_month": 4,
+          "birth_month": 2,
           "birth_year": 2021,
-          "age": 4,
+          "age": 5,
           "has_income": false,
           "income_streams": [],
           "insurance": {
@@ -914,9 +914,9 @@
         },
         {
           "relationship": "child",
-          "birth_month": 6,
+          "birth_month": 3,
           "birth_year": 2023,
-          "age": 2,
+          "age": 3,
           "has_income": false,
           "income_streams": [],
           "insurance": {
@@ -990,9 +990,9 @@
         },
         {
           "relationship": "child",
-          "birth_month": 3,
+          "birth_month": 4,
           "birth_year": 2023,
-          "age": 3,
+          "age": 2,
           "has_income": false,
           "income_streams": [],
           "insurance": {
