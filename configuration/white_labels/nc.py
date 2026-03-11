@@ -127,14 +127,6 @@ class NcConfigurationData(ConfigurationData):
         },
     }
 
-    relationship_options = {
-        **ConfigurationData.relationship_options,
-        "unrelated": {
-            "_label": "relationshipOptions.unrelated",
-            "_default_message": "Unrelated",
-        },
-    }
-
     referral_options = {
         "ctd": {"_label": "referralOptions.ctd", "_default_message": "Code the Dream"},
         "211nc": {
