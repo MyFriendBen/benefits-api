@@ -1932,7 +1932,7 @@ class CoConfigurationData(ConfigurationData):
                 "trump_account": {
                     "name": {
                         "_label": "cashAssistanceBenefits.trump_account",
-                        "_default_message": "530A (\"Trump\") Accounts: ",
+                        "_default_message": '530A ("Trump") Accounts: ',
                     },
                     "description": {
                         "_label": "cashAssistanceBenefits.trump_account_desc",
