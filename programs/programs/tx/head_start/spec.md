@@ -122,7 +122,6 @@ Head Start eligibility can be substantially evaluated with current screener fiel
 
 - [HHS Poverty Guidelines (Annual Update per 42 U.S.C. § 9902)](https://aspe.hhs.gov/topics/poverty-economic-mobility/poverty-guidelines)
 - [Texas Early Childhood Education Eligibility Screener - About Page](https://www.earlychildhood.texas.gov/about-eligibility-screener)
-- [Skip to main content](https://aspe.hhs.gov/topics/poverty-economic-mobility/poverty-guidelines#main-content)
 - [Historical HHS Poverty Guidelines with Federal Register Citations (1982-Present)](https://aspe.hhs.gov/topics/poverty-economic-mobility/poverty-guidelines/prior-hhs-poverty-guidelines-federal-register-references)
 - [HHS Poverty Guidelines FAQ - Definitions and Program Applications](https://aspe.hhs.gov/topics/poverty-economic-mobility/poverty-guidelines/frequently-asked-questions-related-poverty-guidelines-poverty)
 - [Further Resources](https://aspe.hhs.gov/topics/poverty-economic-mobility/poverty-guidelines/further-resources-poverty-measurement-poverty-lines-their-history)
@@ -220,7 +219,7 @@ Files generated:
 [ ] Scenario 4 (Two-Parent Household with 5-Year-Old, Income Exactly at 100% FPL): User should be **eligible** with $None/year
 [ ] Scenario 5 (Single Parent with 4-Year-Old, Income Just Above 100% FPL - Should NOT Be Eligible): User should be **ineligible**
 [ ] Scenario 6 (Child Exactly Age 3 (Minimum Age), Income Below 100% FPL - Should Be Eligible): User should be **eligible** with $None/year
-[ ] Scenario 7 (Child Age 2 (Just Below Minimum Age 3), Income Below 100% FPL - Should NOT Be Eligible): User should be **ineligible**
+[ ] Scenario 7 (Child Age 1 (Just Below Minimum Age 3), Income Below 100% FPL - Should NOT Be Eligible): User should be **ineligible**
 [ ] Scenario 8 (Child Age 5 (Maximum Age), Income Below 100% FPL - Should Be Eligible): User should be **eligible** with $None/year
 [ ] Scenario 9 (Eligible Location Within Service Area - Travis County, TX): User should be **eligible** with $None/year
 [ ] Scenario 10 (Family Already Enrolled in Head Start - Duplicate Application): User should be **ineligible**
@@ -326,7 +325,7 @@ Files generated:
 
 ---
 
-### Scenario 7: Child Age 2 (Just Below Minimum Age 3), Income Below 100% FPL - Should NOT Be Eligible
+### Scenario 7: Child Age 1 (Just Below Minimum Age 3), Income Below 100% FPL - Should NOT Be Eligible
 **What we're checking**: Validates that children under age 3 are not eligible for Head Start, even when family income qualifies
 **Expected**: Not eligible
 
@@ -334,7 +333,7 @@ Files generated:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `2`
 - **Person 1**: Relationship: `You (Head of Household)`, Birth month/year: `January 1992` (age 34), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$1,200`, Income frequency: `Monthly`, Insurance: `None`
-- **Person 2**: Relationship: `Child`, Birth month/year: `May 2024` (age 2), Has income: `No`, Insurance: `None`
+- **Person 2**: Relationship: `Child`, Birth month/year: `May 2024` (age 1), Has income: `No`, Insurance: `None`
 - **Current Benefits**: Select: `None`
 - **Citizenship**: Select: `U.S. Citizen`
 
