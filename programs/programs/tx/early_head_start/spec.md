@@ -35,18 +35,15 @@
      - `household_member.relationship`
    - Source: 45 CFR 1302.12(a)(1)(iii) - Categorical eligibility for foster children
 
-5. **Child is homeless**
-   - Source: 45 CFR 1302.12(a)(1)(iv) - Categorical eligibility for homeless children
-
-6. **Family income between 100% and 130% FPL (up to 10% of enrollment)**
+5. **Family income between 100% and 130% FPL (up to 10% of enrollment)**
    - Screener fields:
      - `income_stream.amount`
      - `income_stream.frequency`
      - `household_size`
    - Source: 45 CFR 1302.12(a)(2) - Over-income eligibility for up to 10% of enrollment
 
-7. **Child is homeless (McKinney-Vento definition)** ⚠️ *data gap*
-   - Note: The housing_situation field exists in the data model but is not collected from users during screening. The needs_housing_help field only indicates whether the user wants housing assistance, not their actual housing status. Cannot determine if child meets McKinney-Vento homeless definition.
+6. **Child is homeless (McKinney-Vento definition)** ⚠️ *data gap*
+   - Note: The housing_situation field exists in the data model but is not collected from users during screening. The needs_housing_help field only indicates whether the user wants housing assistance, not their actual housing status. Cannot determine if child meets McKinney-Vento homeless definition (42 U.S.C. § 11434a). Categorical eligibility under this pathway cannot be evaluated until housing_situation is collected.
    - Source: 45 CFR 1302.12(a)(1)(iv) and 42 U.S.C. § 11434a
    - Impact: Medium
 
@@ -91,10 +88,10 @@
 
 ## Implementation Coverage
 
-- ✅ Evaluable criteria: 7
-- ⚠️  Data gaps: 7
+- ✅ Evaluable criteria: 5
+- ⚠️  Data gaps: 8
 
-Of 14 identified eligibility criteria, 7 can be fully evaluated with current screener fields, 2 can be partially evaluated, and 5 cannot be evaluated. The core eligibility criteria (age, income, categorical eligibility through TANF/SSI/SNAP, foster care status) can be assessed. Major gaps include: (1) homelessness status - housing_situation field exists but is not collected; (2) geographic service area - requires grantee-specific data; (3) program capacity - external to eligibility; (4) selection priorities - can identify some factors but not relative ranking. The income threshold (100% FPL) and categorical eligibility provisions are well-supported by existing fields.
+Of 13 identified eligibility criteria, 5 can be fully evaluated with current screener fields and 8 cannot be evaluated. The core evaluable criteria are: age (birth to 36 months / pregnant), income at or below 100% FPL, categorical eligibility through TANF/SSI/SNAP, foster care status, and income 100-130% FPL. Major gaps include: (1) homelessness status - housing_situation field exists but is not collected from users; (2) geographic service area - requires grantee-specific boundary data; (3) program capacity - external to eligibility determination; (4) selection priorities - can identify some factors but not relative ranking. The income threshold (100% FPL) and categorical eligibility provisions are well-supported by existing fields.
 
 ## Research Sources
 
@@ -204,12 +201,12 @@ Files generated:
 [ ] Scenario 6 (Newborn at exactly 0 months old - minimum age requirement): User should be **eligible** with $None/year
 [ ] Scenario 7 (Child age 3 years old - just above maximum age threshold): User should be **ineligible**
 [ ] Scenario 8 (Child age 2 years 11 months - well within age eligibility range): User should be **eligible** with $None/year
-[ ] Scenario 9 (Eligible location within service area - Travis County, TX): User should be **eligible** with $None/year
+[ ] Scenario 9 (Family at 94% FPL with infant - income and age eligible): User should be **eligible** with $None/year
 [ ] Scenario 10 (Family already enrolled in Early Head Start - duplicate enrollment check): User should be **ineligible**
 [ ] Scenario 11 (Household with only an over-age child - no EHS-eligible children): User should be **ineligible**
 [ ] Scenario 12 (Mixed household - eligible toddler, ineligible older sibling, working parent at 95% FPL): User should be **eligible** with $None/year
 [ ] Scenario 13 (Multi-generational household - pregnant teen, infant sibling, and working parent at 92% FPL): User should be **eligible** with $None/year
-[ ] Scenario 14 (Child turning 3 years old tomorrow - age boundary edge case): User should be **eligible** with $None/year
+[ ] Scenario 14 (Child turning 3 years old next month - age boundary edge case): User should be **eligible** with $None/year
 [ ] Scenario 15 (Family with SNAP benefits - categorical eligibility overrides high income): User should be **eligible** with $None/year
 
 ## Test Scenarios
@@ -345,19 +342,19 @@ Files generated:
 
 ---
 
-### Scenario 9: Eligible location within service area - Travis County, TX
-**What we're checking**: Verifies that families in a major Texas county with Early Head Start programs are correctly identified as eligible based on geographic location
+### Scenario 9: Family at 94% FPL with infant - income and age eligible
+**What we're checking**: Validates that a family with income at 94% FPL and an age-eligible infant is correctly identified as eligible. Note: geographic service area eligibility is a high-impact data gap (each grantee has specific service area boundaries not available in the screener) and is not evaluated here.
 **Expected**: Eligible
 
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `2`
-- **Person 1**: Birth month/year: `January 1998` (age 28), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$1,800`, Income frequency: `Monthly`, Insurance: `None`
+- **Person 1**: Birth month/year: `January 1998` (age 28), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$1,600`, Income frequency: `Monthly`, Insurance: `None`
 - **Person 2**: Birth month/year: `January 2025` (age 1), Relationship: `Child`, Has income: `No`, Insurance: `None`
 - **Current Benefits**: Select `None`
 - **Citizenship**: Select `U.S. Citizen`
 
-**Why this matters**: Travis County (Austin area) is a major metropolitan area in Texas with established Early Head Start programs. This test confirms that the screener correctly identifies eligible families in a known service area, validating geographic coverage logic for Texas locations.
+**Why this matters**: This test confirms income and age eligibility for a household of 2 at 94% FPL ($1,600/month ≈ $19,200/year, below the $20,440 threshold for household of 2). Geographic service area validation requires grantee-specific boundary data that is not available in the screener and therefore cannot be used as an eligibility signal.
 
 ---
 
@@ -426,8 +423,8 @@ Files generated:
 
 ---
 
-### Scenario 14: Child turning 3 years old tomorrow - age boundary edge case
-**What we're checking**: Tests the exact age cutoff at 36 months (under age 3) when child will age out the next day
+### Scenario 14: Child turning 3 years old next month - age boundary edge case
+**What we're checking**: Tests the age cutoff at 36 months (under age 3) when child will age out next month
 **Expected**: Eligible
 
 **Steps**:
@@ -438,7 +435,7 @@ Files generated:
 - **Current Benefits**: Select: `None`
 - **Citizenship**: Select: `U.S. Citizen`
 
-**Why this matters**: Tests the precise age boundary interpretation - whether the system correctly evaluates 'under age 3' as the child's current age on the application date, not their upcoming birthday. This edge case is critical because families applying just before a child's 3rd birthday need clarity on eligibility timing.
+**Why this matters**: Tests the age boundary interpretation - whether the system correctly evaluates 'under age 3' as the child's current age on the application date. With a birth month of April 2023 and research date of March 2026, the child is 2 years 11 months old and turns 3 next month. This edge case is critical because families applying just before a child's 3rd birthday need clarity on eligibility timing.
 
 ---
 
