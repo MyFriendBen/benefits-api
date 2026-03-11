@@ -37,12 +37,10 @@
      - `household_member.relationship`
    - Source: 45 CFR § 1302.12(c)(1)(ii) - Foster children eligibility
 
-6. **Family income between 100% and 130% FPL (up to 10% of enrollment)**
-   - Screener fields:
-     - `income_stream.amount`
-     - `income_stream.frequency`
-     - `household_size`
+6. **Family income between 100% and 130% FPL (up to 10% of enrollment)** ⚠️ *data gap*
+   - Note: This exception allows grantees to enroll up to 10% of children with family income between 100% and 130% FPL, but only when program capacity permits. Enrollment in this band is at the grantee's discretion and cannot be determined from screener data alone — it depends on slot availability at each local program.
    - Source: 45 CFR § 1302.12(a)(1)(iii) - Over-income eligibility
+   - Impact: Medium
 
 7. **Priority for children from families with incomes below poverty line**
    - Screener fields:
@@ -113,10 +111,10 @@
 
 ## Implementation Coverage
 
-- ✅ Evaluable criteria: 8
-- ⚠️  Data gaps: 10
+- ✅ Evaluable criteria: 7
+- ⚠️  Data gaps: 11
 
-Head Start eligibility can be substantially evaluated with current screener fields. Of the core eligibility criteria, we can evaluate: age requirements (3-5 years old), income eligibility (at or below 100% FPL, or 100-130% FPL for up to 10% of slots), and categorical eligibility through TANF, SSI, and foster care receipt. We can also evaluate some selection priorities including disability status and income level. However, critical gaps exist: we cannot determine if a child is experiencing homelessness (a categorical eligibility factor), whether a 5-year-old is kindergarten-eligible, or whether the family resides in a specific program's service area. The homelessness gap is particularly significant as homeless children are categorically eligible regardless of income. Most other gaps relate to selection priorities rather than hard eligibility requirements, making them lower impact.
+Head Start eligibility can be substantially evaluated with current screener fields. Of the core eligibility criteria, we can evaluate: age requirements (3-5 years old), income eligibility (at or below 100% FPL), and categorical eligibility through TANF, SSI, and foster care receipt. We can also evaluate some selection priorities including disability status and income level. However, critical gaps exist: we cannot determine if a child is experiencing homelessness (a categorical eligibility factor), whether a 5-year-old is kindergarten-eligible, or whether the family resides in a specific program's service area. The 100%-130% FPL over-income pathway is also a data gap since enrollment in this band depends on slot availability at each local grantee. The homelessness gap is particularly significant as homeless children are categorically eligible regardless of income. Most other gaps relate to selection priorities rather than hard eligibility requirements, making them lower impact.
 
 ## Research Sources
 
@@ -161,19 +159,16 @@ Django admin import configuration (ready to use):
   "documents": [
     {
       "external_name": "tx_home",
-      "text": "Proof of home address (ex: lease, utility bill)",
       "link_url": "",
       "link_text": ""
     },
     {
       "external_name": "id_proof",
-      "text": "Proof of identity for child (ex: birth certificate)",
       "link_url": "",
       "link_text": ""
     },
     {
       "external_name": "tx_earned_income",
-      "text": "Proof of income (ex: pay stubs, tax returns, benefit award letters)",
       "link_url": "",
       "link_text": ""
     },
@@ -203,7 +198,7 @@ Django admin import configuration (ready to use):
 
 ## Research Output
 
-Local path: `/Users/patrickwey/code/mfb/program-researcher/output/tx_Head Start_20260311_111721`
+Local path: `../../../program-researcher/output/tx_Head Start_20260311_111721`
 
 Files generated:
 - Program config: `{white_label}_{program_name}_initial_config.json`
@@ -221,12 +216,12 @@ Files generated:
 [ ] Scenario 6 (Child Exactly Age 3 (Minimum Age), Income Below 100% FPL - Should Be Eligible): User should be **eligible** with $None/year
 [ ] Scenario 7 (Child Age 1 (Just Below Minimum Age 3), Income Below 100% FPL - Should NOT Be Eligible): User should be **ineligible**
 [ ] Scenario 8 (Child Age 5 (Maximum Age), Income Below 100% FPL - Should Be Eligible): User should be **eligible** with $None/year
-[ ] Scenario 9 (Eligible Location Within Service Area - Travis County, TX): User should be **eligible** with $None/year
+[ ] Scenario 9 (Two-Parent Household in Travis County with Income Below 100% FPL): User should be **eligible** with $None/year
 [ ] Scenario 10 (Family Already Enrolled in Head Start - Duplicate Application): User should be **ineligible**
 [ ] Scenario 11 (Child Age 6 (Above Maximum Age), Income Below 100% FPL - Should NOT Be Eligible): User should be **ineligible**
 [ ] Scenario 12 (Multi-Member Household - 3 Children (One Eligible Age, Two Ineligible Ages), Income Below 100% FPL): User should be **eligible** with $None/year
 [ ] Scenario 13 (Multi-Member Household - Two Eligible Children (Ages 3 and 5), One Parent, Income Below 100% FPL): User should be **eligible** with $None/year
-[ ] Scenario 14 (Child Turns 3 Years Old Tomorrow - Testing Age Boundary at Minimum Eligibility): User should be **ineligible**
+[ ] Scenario 14 (Child Born Next Month - Testing Age Boundary at Minimum Eligibility): User should be **ineligible**
 
 ## Test Scenarios
 
@@ -357,9 +352,10 @@ Files generated:
 
 ---
 
-### Scenario 9: Eligible Location Within Service Area - Travis County, TX
-**What we're checking**: Verifies that a family in an eligible geographic location (Travis County, TX) with a qualifying child and income below 100% FPL is eligible for Head Start services
+### Scenario 9: Two-Parent Household in Travis County with Income Below 100% FPL
+**What we're checking**: Verifies that a two-parent household in Travis County, TX with a qualifying child age 3 and income below 100% FPL is eligible for Head Start based on income and age criteria
 **Expected**: Eligible
+**Note**: Service-area eligibility (whether this household falls within a specific grantee's coverage area) is a data gap and cannot be evaluated by the screener. Eligibility here is based on income and age criteria only.
 
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
@@ -368,7 +364,7 @@ Files generated:
 - **Person 2 (Spouse)**: Birth month/year: `March 1991` (age 35), Relationship: `Spouse`, Has income: `No`, Insurance: `None`
 - **Person 3 (Child)**: Birth month/year: `June 2022` (age 3), Relationship: `Child`, Has income: `No`, Insurance: `None`
 
-**Why this matters**: Head Start programs are administered by local grantees that serve specific geographic areas. This test confirms that the screener correctly identifies eligible locations within Texas and processes applications for families in those service areas. Geographic eligibility is a foundational requirement that must be validated before other eligibility criteria.
+**Why this matters**: Tests standard income and age eligibility for a two-parent household — the same criteria evaluated for any Texas resident. The screener cannot determine whether any specific Travis County address falls within a particular grantee's service area (this is a known data gap), so this scenario validates income/age criteria which are deterministic.
 
 ---
 
@@ -438,19 +434,19 @@ Files generated:
 
 ---
 
-### Scenario 14: Child Turns 3 Years Old Tomorrow - Testing Age Boundary at Minimum Eligibility
-**What we're checking**: Tests the exact minimum age boundary where a child is currently 2 years and 364 days old (turns 3 tomorrow), which should make them ineligible today but eligible tomorrow. This validates strict age enforcement at the lower boundary.
+### Scenario 14: Child Born Next Month - Testing Age Boundary at Minimum Eligibility
+**What we're checking**: Tests the minimum age boundary where a child's birth month/year is next month (April 2026), meaning they are currently age 2 at the time of screening (March 2026) and will not yet have turned 3. This should make them ineligible.
 **Expected**: Not eligible
 
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1991` (age 35), Has income: `Yes`, Income type: `Employment`, Income amount: `$1,200` per month ($14,400/year), Insurance: `None`
-- **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `April 2023` (age 2, turns 3 in April 2026), Has income: `No`, Insurance: `None`
+- **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `April 2023` (age 2 as of March 2026, turns 3 in April 2026), Has income: `No`, Insurance: `None`
 - **Current Benefits**: Not receiving any current benefits
 - **Citizenship**: Citizenship status: `U.S. Citizen`
 
-**Why this matters**: This edge case tests whether the system correctly enforces the minimum age requirement down to the day level. A child who is 2 years and 364 days old is technically still 2 years old and should not be eligible, even though they will be eligible the next day. This validates that the age calculation is precise and not rounded or approximated, which is critical for program integrity and compliance with 45 CFR § 1302.12(c)(1).
+**Why this matters**: This edge case tests the minimum age boundary using month-year granularity (the precision available in the screener). A child born April 2023 is age 2 when screened in March 2026 and should not be eligible. This validates that the age calculation correctly handles month-boundary cases per 45 CFR § 1302.12(c)(1). Note: day-level precision (e.g., "turns 3 tomorrow") is not testable since the screener captures only birth month and year.
 
 ---
 
@@ -461,7 +457,7 @@ Files generated:
 - https://www.earlychildhood.texas.gov/about-eligibility-screener
 
 ## JSON Test Cases
-File: `/Users/patrickwey/code/mfb/program-researcher/output/tx_Head Start_20260311_111721/ticket_content/tx_Head Start_test_cases.json`
+File: `../../../program-researcher/output/tx_Head Start_20260311_111721/ticket_content/tx_Head Start_test_cases.json`
 
-## Program Configuration
-File: `/Users/patrickwey/code/mfb/program-researcher/output/tx_Head Start_20260311_111721/ticket_content/tx_Head Start_initial_config.json`
+## Generated Program Configuration
+File: `../../../program-researcher/output/tx_Head Start_20260311_111721/ticket_content/tx_Head Start_initial_config.json`
