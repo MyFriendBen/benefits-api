@@ -21,7 +21,8 @@
         "apply_button_description": "Learn More",
         "estimated_application_time": "5 minutes",
         "estimated_value": "",
-        "website_description": "Free government-seeded $1,000 investment account for U.S. citizen children born 2025-2028"
+        "value_format": "lump_sum",
+        "website_description": "$1,000 government investment account for U.S. citizen children born 2025-2028"
     },
     "documents": [
         {
