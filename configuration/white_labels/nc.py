@@ -2582,7 +2582,7 @@ class NcConfigurationData(ConfigurationData):
                 "trump_account": {
                     "name": {
                         "_label": "cashBenefits.trump_account",
-                        "_default_message": "530A (\"Trump\") Accounts: ",
+                        "_default_message": '530A ("Trump") Accounts: ',
                     },
                     "description": {
                         "_label": "cashBenefits.trump_account_desc",
