@@ -34,7 +34,7 @@ class TrumpAccount(ProgramCalculator):
     def member_eligible(self, e: MemberEligibility):
         member = e.member
         if member.pregnant:
-            estimated_due_date = date.today() + timedelta(days=self.gestation_days)
+            estimated_due_date = self.screen.get_reference_date() + timedelta(days=self.gestation_days)
             e.condition(self.pilot_start <= estimated_due_date <= self.pilot_end)
         else:
             birth_year_month = member.birth_year_month

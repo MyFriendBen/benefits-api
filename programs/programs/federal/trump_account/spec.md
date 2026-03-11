@@ -12,8 +12,9 @@
 | 1 | Child must be under age 18 | `household_member.age` | `age < 18` | ✅ | Account must be opened before the child turns 18. The election is made in the calendar year the account is established. | IRS Notice 2025-68; IRC §530A |
 | 2 | Child must be a U.S. citizen (for $1,000 pilot contribution) | `legal_status` | Via `legal_status_required` config filter | ✅ | Only U.S. citizens born Jan 1, 2025 – Dec 31, 2028 receive the $1,000 government seed. Non-citizens can still open an account; they simply will not receive the pilot contribution. Config restricts to `citizen` only. | IRS Notice 2025-68; Federal Register 2026-04534 |
 | 3 | Child must have a valid Social Security Number | — | Not captured in screener | ❌ | **Gap**: The screener does not collect SSN. Surfaced via program description. | IRS Notice 2025-68 |
-| 4 | Child born January 1, 2025 – December 31, 2028 (pilot contribution) | `household_member.birth_year`, `household_member.birth_month` | `2025 <= birth_year <= 2028` | ✅ | Only children born within this window receive the $1,000 government contribution. Children outside this window can still open an account (no government contribution). Calculator uses birth_year to determine pilot eligibility. | IRS Notice 2025-68; Federal Register 2026-04534 |
+| 4 | Child born January 1, 2025 – December 31, 2028 (pilot contribution) | `household_member.birth_year`, `household_member.birth_month` | `date(2025, 1, 1) <= birth_year_month <= date(2028, 12, 31)` | ✅ | Only children born within this window receive the $1,000 government contribution. Children outside this window can still open an account (no government contribution). Calculator uses `birth_year_month` (a date set to day=1) for month+year precision, correctly enforcing the January 2025 start and December 2028 end boundaries. | IRS Notice 2025-68; Federal Register 2026-04534 |
 | 5 | No income limit | — | No income test | ✅ | There is no income limit for Trump Accounts. Any family may open one regardless of income. | Fidelity; Thrivent; IRS Notice 2025-68 |
+
 ## Coverage
 
 - **Evaluable**: 4 of 5 criteria (80%)
@@ -43,7 +44,7 @@
 - [Thrivent: Trump Accounts for Kids — Section 530A Basics](https://www.thrivent.com/insights/financial-planning/trump-accounts-for-kids-the-basics-of-section-530a-accounts)
 - [Vanguard: What to know about the new Trump accounts for kids](https://corporate.vanguard.com/content/corporatesite/us/en/corp/articles/what-to-know-about-new-trump-accounts-for-kids.html)
 
-## Test Scenarios
+## Test Scenarios (9)
 
 | # | Description | Expected |
 |---|-------------|----------|
