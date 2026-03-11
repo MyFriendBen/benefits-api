@@ -54,7 +54,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_early head start",
+      "program_name": "tx_early_head_start",
       "eligible": true
     }
   },
@@ -97,7 +97,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_early head start",
+      "program_name": "tx_early_head_start",
       "eligible": true
     }
   },
@@ -173,7 +173,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_early head start",
+      "program_name": "tx_early_head_start",
       "eligible": true
     }
   },
@@ -249,7 +249,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_early head start",
+      "program_name": "tx_early_head_start",
       "eligible": true
     }
   },
@@ -325,7 +325,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_early head start",
+      "program_name": "tx_early_head_start",
       "eligible": false
     }
   },
@@ -384,7 +384,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_early head start",
+      "program_name": "tx_early_head_start",
       "eligible": true
     }
   },
@@ -443,7 +443,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_early head start",
+      "program_name": "tx_early_head_start",
       "eligible": false
     }
   },
@@ -519,7 +519,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_early head start",
+      "program_name": "tx_early_head_start",
       "eligible": true
     }
   },
@@ -578,7 +578,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_early head start",
+      "program_name": "tx_early_head_start",
       "eligible": true
     }
   },
@@ -655,7 +655,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_early head start",
+      "program_name": "tx_early_head_start",
       "eligible": false
     }
   },
@@ -714,7 +714,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_early head start",
+      "program_name": "tx_early_head_start",
       "eligible": false
     }
   },
@@ -807,7 +807,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_early head start",
+      "program_name": "tx_early_head_start",
       "eligible": true
     }
   },
@@ -901,7 +901,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_early head start",
+      "program_name": "tx_early_head_start",
       "eligible": true
     }
   },
@@ -960,7 +960,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_early head start",
+      "program_name": "tx_early_head_start",
       "eligible": true
     }
   },
@@ -1020,7 +1020,7 @@
       "has_snap": true
     },
     "expected_results": {
-      "program_name": "tx_early head start",
+      "program_name": "tx_early_head_start",
       "eligible": true
     }
   }
