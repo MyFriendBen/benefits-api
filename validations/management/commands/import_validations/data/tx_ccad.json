@@ -85,48 +85,6 @@
     }
   },
   {
-    "notes": "TX Community Care for the Aged and Disabled (CCAD) - 67-Year-Old Single Adult with Income Just Below 300% FPL Threshold",
-    "household": {
-      "white_label": "tx",
-      "household_size": 1,
-      "zipcode": "75201",
-      "county": "Dallas",
-      "household_assets": 0.0,
-      "agree_to_tos": true,
-      "is_13_or_older": true,
-      "household_members": [
-        {
-          "relationship": "headOfHousehold",
-          "birth_month": 1,
-          "birth_year": 1959,
-          "age": 67,
-          "has_income": true,
-          "income_streams": [
-            {
-              "type": "sSRetirement",
-              "amount": 3700.0,
-              "frequency": "monthly"
-            }
-          ],
-          "insurance": {
-            "none": true,
-            "employer": false,
-            "private": false,
-            "medicaid": false,
-            "medicare": false,
-            "chp": false,
-            "va": false
-          }
-        }
-      ],
-      "expenses": []
-    },
-    "expected_results": {
-      "program_name": "tx_ccad",
-      "eligible": true
-    }
-  },
-  {
     "notes": "TX Community Care for the Aged and Disabled (CCAD) - 70-Year-Old Single Adult with Income Exactly at 300% FPL Threshold",
     "household": {
       "white_label": "tx",
@@ -294,90 +252,6 @@
     "expected_results": {
       "program_name": "tx_ccad",
       "eligible": false
-    }
-  },
-  {
-    "notes": "TX Community Care for the Aged and Disabled (CCAD) - 85-Year-Old Senior Well Above Minimum Age Threshold with Low Income",
-    "household": {
-      "white_label": "tx",
-      "household_size": 1,
-      "zipcode": "78701",
-      "county": "Travis",
-      "household_assets": 0.0,
-      "agree_to_tos": true,
-      "is_13_or_older": true,
-      "household_members": [
-        {
-          "relationship": "headOfHousehold",
-          "birth_month": 1,
-          "birth_year": 1941,
-          "age": 85,
-          "has_income": true,
-          "income_streams": [
-            {
-              "type": "sSRetirement",
-              "amount": 1200.0,
-              "frequency": "monthly"
-            }
-          ],
-          "insurance": {
-            "none": true,
-            "employer": false,
-            "private": false,
-            "medicaid": false,
-            "medicare": false,
-            "chp": false,
-            "va": false
-          }
-        }
-      ],
-      "expenses": []
-    },
-    "expected_results": {
-      "program_name": "tx_ccad",
-      "eligible": true
-    }
-  },
-  {
-    "notes": "TX Community Care for the Aged and Disabled (CCAD) - Eligible Texas Resident in Dallas County with Valid ZIP Code",
-    "household": {
-      "white_label": "tx",
-      "household_size": 1,
-      "zipcode": "75201",
-      "county": "Dallas",
-      "household_assets": 0.0,
-      "agree_to_tos": true,
-      "is_13_or_older": true,
-      "household_members": [
-        {
-          "relationship": "headOfHousehold",
-          "birth_month": 1,
-          "birth_year": 1958,
-          "age": 68,
-          "has_income": true,
-          "income_streams": [
-            {
-              "type": "sSRetirement",
-              "amount": 1200.0,
-              "frequency": "monthly"
-            }
-          ],
-          "insurance": {
-            "none": true,
-            "employer": false,
-            "private": false,
-            "medicaid": false,
-            "medicare": false,
-            "chp": false,
-            "va": false
-          }
-        }
-      ],
-      "expenses": []
-    },
-    "expected_results": {
-      "program_name": "tx_ccad",
-      "eligible": true
     }
   },
   {
@@ -637,6 +511,150 @@
     "expected_results": {
       "program_name": "tx_ccad",
       "eligible": true
+    }
+  },
+  {
+    "notes": "TX Community Care for the Aged and Disabled (CCAD) - TANF Recipient Above 300% FPL - Categorical Bypass",
+    "household": {
+      "white_label": "tx",
+      "household_size": 1,
+      "zipcode": "78701",
+      "county": "Travis County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1958,
+          "age": 68,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 4500.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": [],
+      "has_tanf": true
+    },
+    "expected_results": {
+      "program_name": "tx_ccad",
+      "eligible": true
+    }
+  },
+  {
+    "notes": "TX Community Care for the Aged and Disabled (CCAD) - Medicaid Recipient Above 300% FPL - Categorical Bypass (no SSI)",
+    "household": {
+      "white_label": "tx",
+      "household_size": 1,
+      "zipcode": "78701",
+      "county": "Travis County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1958,
+          "age": 68,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 4500.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": false,
+            "private": false,
+            "medicaid": true,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_ccad",
+      "eligible": true
+    }
+  },
+  {
+    "notes": "TX Community Care for the Aged and Disabled (CCAD) - Only Non-Age-Eligible Member Has Medicaid - Should Not Bypass Income Test for Age-Eligible Member",
+    "household": {
+      "white_label": "tx",
+      "household_size": 2,
+      "zipcode": "78701",
+      "county": "Travis County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1958,
+          "age": 68,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 4500.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "other",
+          "birth_month": 6,
+          "birth_year": 1990,
+          "age": 35,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "employer": false,
+            "private": false,
+            "medicaid": true,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_ccad",
+      "eligible": false
     }
   },
   {

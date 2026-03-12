@@ -15,23 +15,29 @@ class TxCcad(ProgramCalculator):
 
     def member_eligible(self, e: MemberEligibility):
         member = e.member
-        age_eligible = member.age is not None and (
-            member.age >= self.min_age or (member.age >= self.min_age_disabled and member.has_disability())
+        age = member.age
+        age_eligible = age is not None and (
+            age >= self.min_age or (age >= self.min_age_disabled and member.has_disability())
         )
-        e.condition(age_eligible)
+        e.condition(bool(age_eligible))
 
     def household_eligible(self, e: Eligibility):
-        e.condition(not self.screen.has_benefit("tx_ccad"))
+        # SNAP and TANF are household-level benefits that bypass the income test
+        presumed_eligible = self.screen.has_benefit("snap") or self.screen.has_benefit("tanf")
 
-        household_size = self.screen.household_size
+        # SSI and Medicaid are individual — only counts if the age-eligible member has it
+        if not presumed_eligible:
+            for member_e in e.eligible_members:
+                if not member_e.eligible:
+                    continue
+                member = member_e.member
+                has_ssi = member.calc_gross_income("yearly", ["sSI"]) > 0
+                has_medicaid = member.has_benefit("medicaid")
+                if has_ssi or has_medicaid:
+                    presumed_eligible = True
+                    break
+
         gross_income = self.screen.calc_gross_income("yearly", ["all"])
-        income_limit = int(self.fpl_percent * self.program.year.get_limit(household_size))
+        income_limit = int(self.fpl_percent * self.program.year.get_limit(self.screen.household_size))
 
-        categorically_eligible = (
-            self.screen.has_snap
-            or self.screen.has_ssi
-            or self.screen.has_tanf
-            or self.screen.has_medicaid
-        )
-
-        e.condition(categorically_eligible or gross_income <= income_limit)
+        e.condition(presumed_eligible or gross_income <= income_limit)
