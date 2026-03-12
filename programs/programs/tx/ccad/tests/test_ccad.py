@@ -143,7 +143,9 @@ class TestTxCcadSnapTanfCategoricalEligibility(TestCase):
     """SNAP and TANF are household-level and bypass the income test."""
 
     def _run(self, has_snap=False, has_tanf=False, household_income=99999, fpl_limit=5000):
-        calc = make_calculator(has_snap=has_snap, has_tanf=has_tanf, household_income=household_income, fpl_limit=fpl_limit)
+        calc = make_calculator(
+            has_snap=has_snap, has_tanf=has_tanf, household_income=household_income, fpl_limit=fpl_limit
+        )
         member = make_member(age=68)
         e = Eligibility()
         e.add_member_eligibility(make_eligible_member_e(member))
