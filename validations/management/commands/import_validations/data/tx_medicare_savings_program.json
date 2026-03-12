@@ -48,7 +48,7 @@
       "household_size": 1,
       "zipcode": "75001",
       "county": "Collin",
-      "household_assets": 10000.0,
+      "household_assets": 9400.0,
       "agree_to_tos": true,
       "is_13_or_older": true,
       "household_members": [
@@ -61,7 +61,7 @@
           "income_streams": [
             {
               "type": "sSRetirement",
-              "amount": 1255.0,
+              "amount": 1632.0,
               "frequency": "monthly"
             }
           ],
@@ -229,7 +229,7 @@
           "income_streams": [
             {
               "type": "sSDisability",
-              "amount": 1500.0,
+              "amount": 2510.0,
               "frequency": "monthly"
             }
           ],
