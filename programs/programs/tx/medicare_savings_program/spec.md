@@ -69,7 +69,7 @@
 
 10. **QI: Not eligible for Medicaid**
    - Screener fields:
-     - `has_medicaid`
+     - `HouseholdMember.insurance.medicaid`
    - Source: Section Q-5000
 
 11. **Must be entitled to Medicare Part A (hospital insurance)**
@@ -143,8 +143,6 @@ The Medicare Savings Program in Texas has four sub-programs (QMB, SLMB, QI, QDWI
 
 - [Appendix IX - Medicare Savings Program (MSP) Income and Resource Limits Table (Texas MEPD Handbook)](https://www.hhs.texas.gov/handbooks/medicaid-elderly-people-disabilities-handbook/appendix-ix-medicare-savings-program-information)
 - [Section Q-1000 - Medicare Savings Programs Overview (42 U.S.C. § 1396a, 42 CFR § 435.4)](https://www.hhs.texas.gov/handbooks/medicaid-elderly-people-disabilities-handbook/q-1000-medicare-savings-programs-overview)
-- [Skip to main content](https://www.hhs.texas.gov/handbooks/medicaid-elderly-people-disabilities-handbook/appendix-ix-medicare-savings-program-information#main-content)
-- [Search this Handbook](https://www.hhs.texas.gov/handbooks/medicaid-elderly-people-disabilities-handbook/search-handbook)
 - [Chapter A - General Information and MEPD Eligibility Groups (Texas MEPD Handbook)](https://www.hhs.texas.gov/handbooks/medicaid-elderly-people-disabilities-handbook/chapter-a-general-information-mepd-groups)
 - [Chapter B - Application Process and Redetermination Requirements (Texas MEPD Handbook)](https://www.hhs.texas.gov/handbooks/medicaid-elderly-people-disabilities-handbook/chapter-b-applications-redeterminations)
 - [Chapter C, Rights and Responsibilities](https://www.hhs.texas.gov/handbooks/medicaid-elderly-people-disabilities-handbook/chapter-c-rights-responsibilities)
@@ -161,7 +159,7 @@ The Medicare Savings Program in Texas has four sub-programs (QMB, SLMB, QI, QDWI
 
 ## Research Output
 
-Local path: `/Users/patrickwey/code/mfb/program-researcher/output/tx_Medicare Savings Program_20260311_164059`
+Local path: `programs/programs/tx/medicare_savings_program/`
 
 Files generated:
 - Program config: `{white_label}_{program_name}_initial_config.json`
@@ -397,7 +395,7 @@ Files generated:
 - https://www.hhs.texas.gov/handbooks/medicaid-elderly-people-disabilities-handbook/q-1000-medicare-savings-programs-overview
 
 ## JSON Test Cases
-File: `/Users/patrickwey/code/mfb/program-researcher/output/tx_Medicare Savings Program_20260311_164059/ticket_content/tx_Medicare Savings Program_test_cases.json`
+File: `validations/management/commands/import_validations/data/tx_medicare_savings_program.json`
 
 ## Program Configuration
-File: `/Users/patrickwey/code/mfb/program-researcher/output/tx_Medicare Savings Program_20260311_164059/ticket_content/tx_Medicare Savings Program_initial_config.json`
+File: `programs/management/commands/import_program_config_data/data/tx_medicare_savings_program_initial_config.json`

@@ -9,7 +9,10 @@
     "name_abbreviated": "tx_medicare_savings_program",
     "year": "2025",
     "legal_status_required": [
-      "citizen"
+      "citizen",
+      "gc_5plus",
+      "gc_under18_no5",
+      "refugee"
     ],
     "name": "Medicare Savings Program (MSP)",
     "description": "The Medicare Savings Program helps pay for Medicare costs. It covers premiums, deductibles, and copays. There are four types: QMB, SLMB, QI, and QDWI. Each type helps with different Medicare costs. You must have Medicare Part A to qualify for most types.\n\nYou can get help if your income is low. Single people must earn less than $1,695 per month. Couples must earn less than $2,301 per month. You must also have limited savings and assets. You must live in Texas and meet other rules.",

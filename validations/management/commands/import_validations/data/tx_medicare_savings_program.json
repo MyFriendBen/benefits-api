@@ -37,7 +37,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_medicare savings program",
+      "program_name": "tx_medicare_savings_program",
       "eligible": true
     }
   },
@@ -79,7 +79,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_medicare savings program",
+      "program_name": "tx_medicare_savings_program",
       "eligible": true
     }
   },
@@ -121,7 +121,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_medicare savings program",
+      "program_name": "tx_medicare_savings_program",
       "eligible": true
     }
   },
@@ -141,6 +141,7 @@
           "birth_month": 3,
           "birth_year": 1962,
           "age": 64,
+          "disabled": true,
           "has_income": true,
           "income_streams": [
             {
@@ -163,7 +164,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_medicare savings program",
+      "program_name": "tx_medicare_savings_program",
       "eligible": true
     }
   },
@@ -205,7 +206,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_medicare savings program",
+      "program_name": "tx_medicare_savings_program",
       "eligible": false
     }
   }
