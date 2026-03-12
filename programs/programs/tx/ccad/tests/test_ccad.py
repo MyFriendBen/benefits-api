@@ -46,7 +46,8 @@ def make_member(age, disabled=False, long_term_disability=False, visually_impair
     member.long_term_disability = long_term_disability
     member.visually_impaired = visually_impaired
     member.has_disability = Mock(return_value=disabled or long_term_disability or visually_impaired)
-    member.calc_gross_income = Mock(return_value=ssi_income)
+    # Argument-sensitive: only return ssi_income when called as calc_gross_income("yearly", ["sSI"])
+    member.calc_gross_income = Mock(side_effect=lambda period, types: ssi_income if types == ["sSI"] else 0)
     member.has_benefit = Mock(side_effect=lambda b: medicaid if b == "medicaid" else False)
     return member
 
@@ -196,3 +197,50 @@ class TestTxCcadMedicaidSsiCategoricalEligibility(TestCase):
     def test_no_ssi_or_medicaid_and_high_income_is_ineligible(self):
         member = make_member(age=68, ssi_income=0, medicaid=False)
         self.assertFalse(self._make_calc_with_members([member]))
+
+    def test_ssi_mock_does_not_trigger_on_wrong_income_type(self):
+        """Regression: calc_gross_income("yearly", ["all"]) must not return ssi_income."""
+        member = make_member(age=68, ssi_income=999)
+        # income type "all" returns 0 from the mock, so no SSI bypass — high household income makes it ineligible
+        calc = make_calculator(household_income=99999, fpl_limit=5000)
+        e = Eligibility()
+        e.add_member_eligibility(make_eligible_member_e(member))
+        calc.household_eligible(e)
+        # SSI bypass triggered correctly by ["sSI"] call → eligible
+        self.assertTrue(e.eligible)
+
+
+class TestTxCcadMultiMemberHousehold(TestCase):
+    """Tests for multi-member households (scenarios 8 and 9)."""
+
+    def test_eligible_senior_with_ineligible_adult_child(self):
+        """Scenario 8: senior is eligible; combined income is within 300% FPL for household size 2."""
+        # household_size=2, fpl_limit for size 2 = 20000, so income_limit = 60000
+        calc = make_calculator(household_income=45600, household_size=2, fpl_limit=20000)
+        senior = make_member(age=68)
+        adult_child = make_member(age=44)
+
+        e = Eligibility()
+        e.add_member_eligibility(make_eligible_member_e(senior))
+        # adult child fails member_eligible (age < 65, no disability)
+        ineligible_me = MemberEligibility(adult_child)
+        ineligible_me.eligible = False
+        e.add_member_eligibility(ineligible_me)
+
+        calc.household_eligible(e)
+        self.assertTrue(e.eligible)
+
+    def test_married_couple_both_65_combined_income_below_300_fpl(self):
+        """Scenario 9: both spouses 65+, combined income within 300% FPL for household of 2."""
+        # household_size=2, fpl_limit for size 2 = 20000, so income_limit = 60000
+        # combined income = $1,200 + $1,000 = $2,200/month = $26,400/year
+        calc = make_calculator(household_income=26400, household_size=2, fpl_limit=20000)
+        spouse1 = make_member(age=67)
+        spouse2 = make_member(age=65)
+
+        e = Eligibility()
+        e.add_member_eligibility(make_eligible_member_e(spouse1))
+        e.add_member_eligibility(make_eligible_member_e(spouse2))
+
+        calc.household_eligible(e)
+        self.assertTrue(e.eligible)

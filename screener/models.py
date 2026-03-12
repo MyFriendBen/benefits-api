@@ -152,7 +152,6 @@ class Screen(models.Model):
     has_cesn_heap = models.BooleanField(default=False, blank=True, null=True)
     has_tx_dart = models.BooleanField(default=False, blank=True, null=True)
     has_ccs = models.BooleanField(default=False, blank=True, null=True)
-    has_ccad = models.BooleanField(default=False, blank=True, null=True)
     needs_food = models.BooleanField(default=False, blank=True, null=True)
     needs_baby_supplies = models.BooleanField(default=False, blank=True, null=True)
     needs_housing_help = models.BooleanField(default=False, blank=True, null=True)
@@ -523,7 +522,6 @@ class Screen(models.Model):
             "tx_dart": self.has_tx_dart,
             "ccs": self.has_ccs,
             "tx_ccs": self.has_ccs,
-            "tx_ccad": self.has_ccad,
         }
 
         if name_abbreviated in name_map:
