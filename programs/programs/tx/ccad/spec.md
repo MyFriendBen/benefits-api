@@ -27,7 +27,7 @@
 
 ## Coverage
 
-- **Evaluable**: 6 of 14 criteria (43%)
+- **Evaluable**: 6 of 15 criteria (40%)
 - **Summary**: The evaluable criteria include age requirements, income limits with categorical eligibility (300% FPL or SSI/TANF/SNAP/Medicaid), citizenship/immigration status via config filter, and duplicate enrollment check (requires adding `has_ccad` to the Screen model during implementation). Texas residency is handled automatically by the TX white label. Critical gaps include housing situation (no `housing_situation` field in screener), detailed ADL functional assessment, nursing facility risk determination, asset evaluation with Medicaid exemptions, and asset transfer history. The most significant limitation is the inability to perform detailed functional assessment and asset evaluation, both of which are core CCAD eligibility requirements.
 
 ## Benefit Value
@@ -148,21 +148,7 @@ Scenarios marked `[validation]` are included in `tx_ccad.json` as automated vali
 
 ---
 
-### Scenario 7: Already Receiving CCAD — Duplicate Benefit Check
-
-**Checks**: Current CCAD recipients are excluded from re-enrollment
-**Expected**: Not eligible
-
-**Steps**:
-- **Location**: ZIP `78701`, County `Travis`
-- **Household**: 1 person
-- **Person 1**: DOB `January 1961` (age 65), Head of Household, U.S. Citizen, no disability, Social Security Retirement `$1,200/month`, Medicaid, `has_ccad = True`
-
-**Why this matters**: Prevents duplicate enrollment — someone already receiving CCAD should not be shown as newly eligible.
-
----
-
-### Scenario 8: Mixed Household — Eligible Senior with Ineligible Adult Child
+### Scenario 7: Mixed Household — Eligible Senior with Ineligible Adult Child
 
 **Checks**: CCAD eligibility is per-individual, not household-wide
 **Expected**: Eligible (for the senior)
@@ -177,7 +163,7 @@ Scenarios marked `[validation]` are included in `tx_ccad.json` as automated vali
 
 ---
 
-### Scenario 9: Married Couple — Both 65+, Combined Income Below 300% FPL
+### Scenario 8: Married Couple — Both 65+, Combined Income Below 300% FPL
 
 **Checks**: Multiple eligible members in one household; income evaluated at household size of 2
 **Expected**: Eligible
@@ -192,7 +178,7 @@ Scenarios marked `[validation]` are included in `tx_ccad.json` as automated vali
 
 ---
 
-### Scenario 10: 21-Year-Old with December Birthday — Age Calculation Edge Case
+### Scenario 9: 21-Year-Old with December Birthday — Age Calculation Edge Case
 
 **Checks**: Age calculated correctly when birth month hasn't occurred yet in the current year
 **Expected**: Eligible
@@ -206,7 +192,7 @@ Scenarios marked `[validation]` are included in `tx_ccad.json` as automated vali
 
 ---
 
-### Scenario 11: Categorically Eligible — SNAP Recipient Above 300% FPL `[validation]`
+### Scenario 10: Categorically Eligible — SNAP Recipient Above 300% FPL `[validation]`
 
 **Checks**: Categorical eligibility path — SNAP recipient qualifies regardless of income
 **Expected**: Eligible
@@ -220,7 +206,7 @@ Scenarios marked `[validation]` are included in `tx_ccad.json` as automated vali
 
 ---
 
-### Scenario 12: TANF Recipient Above 300% FPL — Categorical Bypass
+### Scenario 11: TANF Recipient Above 300% FPL — Categorical Bypass
 
 **Checks**: TANF (household-level) bypasses the income test
 **Expected**: Eligible
@@ -230,11 +216,11 @@ Scenarios marked `[validation]` are included in `tx_ccad.json` as automated vali
 - **Household**: 1 person
 - **Person 1**: DOB `January 1958` (age 68), Head of Household, U.S. Citizen, Social Security Retirement `$4,500/month` (above 300% FPL), no insurance, `has_tanf = True`
 
-**Why this matters**: Confirms TANF (a household-level benefit) bypasses the income test independently of SNAP. Scenario 11 covers SNAP; this isolates TANF.
+**Why this matters**: Confirms TANF (a household-level benefit) bypasses the income test independently of SNAP. Scenario 10 covers SNAP; this isolates TANF.
 
 ---
 
-### Scenario 13: Medicaid Recipient Above 300% FPL — Categorical Bypass (No SSI)
+### Scenario 12: Medicaid Recipient Above 300% FPL — Categorical Bypass (No SSI)
 
 **Checks**: Member-level Medicaid insurance alone bypasses the income test
 **Expected**: Eligible
@@ -244,11 +230,11 @@ Scenarios marked `[validation]` are included in `tx_ccad.json` as automated vali
 - **Household**: 1 person
 - **Person 1**: DOB `January 1958` (age 68), Head of Household, U.S. Citizen, Social Security Retirement `$4,500/month` (above 300% FPL), Medicaid insurance, no SSI income
 
-**Why this matters**: Scenario 5 has both Medicaid and SSI — this isolates Medicaid as the sole categorical trigger, confirming it works independently without SSI income.
+**Why this matters**: Scenario 2 has both Medicaid and SSI — this isolates Medicaid as the sole categorical trigger, confirming it works independently without SSI income.
 
 ---
 
-### Scenario 14: Non-Age-Eligible Member Has Medicaid — Should Not Bypass Income Test
+### Scenario 13: Non-Age-Eligible Member Has Medicaid — Should Not Bypass Income Test
 
 **Checks**: Medicaid belonging to a non-age-eligible member does not grant categorical eligibility to the age-eligible member
 **Expected**: Not eligible (income above 300% FPL, only the ineligible member has Medicaid)
@@ -256,14 +242,16 @@ Scenarios marked `[validation]` are included in `tx_ccad.json` as automated vali
 **Steps**:
 - **Location**: ZIP `78701`, County `Travis County`
 - **Household**: 2 people
-- **Person 1 (Head)**: DOB `January 1958` (age 68), no insurance, Social Security Retirement `$4,500/month` (above 300% FPL)
+- **Person 1 (Head)**: DOB `January 1958` (age 68), no insurance, Social Security Retirement `$6,000/month` (above 300% FPL for household size 2: $63,450/year)
 - **Person 2**: DOB `June 1990` (age 35), Medicaid, no income
 
 **Why this matters**: Validates that Medicaid categorical eligibility is tied to the individual applicant — a younger household member's Medicaid should not bypass the income test for an unrelated age-eligible member.
 
+**Note on income**: 300% FPL for household size 2 is $63,450/year ($5,287/month) in 2025. Person 1's income must exceed this to test the Medicaid bypass guard. Use $6,000/month ($72,000/year) to be clearly above the limit.
+
 ---
 
-### Scenario 15: `is_disabled` via `long_term_disability` — Not Directly Marked as Disabled
+### Scenario 14: `is_disabled` via `long_term_disability` — Not Directly Marked as Disabled
 
 **Checks**: `is_disabled` composite field includes `long_term_disability = True` even when `disabled = False`
 **Expected**: Eligible

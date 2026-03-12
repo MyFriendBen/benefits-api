@@ -201,15 +201,21 @@ class TestTxCcadMedicaidSsiCategoricalEligibility(TestCase):
         self.assertFalse(self._make_calc_with_members([member]))
 
     def test_ssi_mock_does_not_trigger_on_wrong_income_type(self):
-        """Regression: calc_gross_income("yearly", ["all"]) must not return ssi_income."""
+        """Regression: calc_gross_income("yearly", ["all"]) must not return ssi_income.
+
+        The mock returns ssi_income only for ("yearly", ["sSI"]).  The household
+        income calc uses ("yearly", ["all"]) and gets 0, so the income path alone
+        would fail (99999 > limit).  The SSI bypass succeeds because the calculator
+        correctly calls ("yearly", ["sSI"]) — confirming the right token is used.
+        If the calculator mistakenly called ["all"] for SSI, the mock would return 0,
+        has_ssi would be False, and this test would fail.
+        """
         member = make_member(age=68, ssi_income=999)
-        # income type "all" returns 0 from the mock, so no SSI bypass — high household income makes it ineligible
         calc = make_calculator(household_income=99999, fpl_limit=5000)
         e = Eligibility()
         e.add_member_eligibility(make_eligible_member_e(member))
         calc.household_eligible(e)
-        # SSI bypass triggered correctly by ["sSI"] call → eligible
-        self.assertTrue(e.eligible)
+        self.assertTrue(e.eligible)  # SSI bypass triggered via ["sSI"] token
 
 
 class TestTxCcadMultiMemberHousehold(TestCase):
