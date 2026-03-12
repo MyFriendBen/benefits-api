@@ -60,7 +60,11 @@ The dominant service is **Primary Home Care (PHC)** — personal care attendants
 
 ## Test Scenarios
 
-### Scenario 1: 65-Year-Old Retiree with Social Security Income Below 300% FPL
+Scenarios marked `[validation]` are included in `tx_ccad.json` as automated validations run in CI. All scenarios are covered by unit tests in `programs/programs/tx/ccad/tests/test_ccad.py`. All scenarios are used for Playwright QA against local/staging/prod.
+
+---
+
+### Scenario 1: 65-Year-Old Retiree with Social Security Income Below 300% FPL `[validation]`
 
 **Checks**: Core age-based eligibility (65+) with income clearly below threshold
 **Expected**: Eligible
@@ -102,7 +106,7 @@ The dominant service is **Primary Home Care (PHC)** — personal care attendants
 
 ---
 
-### Scenario 4: 72-Year-Old with Income Just Above 300% FPL
+### Scenario 4: 72-Year-Old with Income Just Above 300% FPL `[validation]`
 
 **Checks**: Income exceeding threshold is correctly rejected
 **Expected**: Not eligible
@@ -202,7 +206,7 @@ The dominant service is **Primary Home Care (PHC)** — personal care attendants
 
 ---
 
-### Scenario 11: Categorically Eligible — SNAP Recipient Above 300% FPL
+### Scenario 11: Categorically Eligible — SNAP Recipient Above 300% FPL `[validation]`
 
 **Checks**: Categorical eligibility path — SNAP recipient qualifies regardless of income
 **Expected**: Eligible
@@ -216,7 +220,7 @@ The dominant service is **Primary Home Care (PHC)** — personal care attendants
 
 ---
 
-### Scenario 13: TANF Recipient Above 300% FPL — Categorical Bypass
+### Scenario 12: TANF Recipient Above 300% FPL — Categorical Bypass
 
 **Checks**: TANF (household-level) bypasses the income test
 **Expected**: Eligible
@@ -226,11 +230,11 @@ The dominant service is **Primary Home Care (PHC)** — personal care attendants
 - **Household**: 1 person
 - **Person 1**: DOB `January 1958` (age 68), Head of Household, U.S. Citizen, Social Security Retirement `$4,500/month` (above 300% FPL), no insurance, `has_tanf = True`
 
-**Why this matters**: Confirms TANF (a household-level benefit) bypasses the income test independently of SNAP. Scenario 15 covers SNAP; this isolates TANF.
+**Why this matters**: Confirms TANF (a household-level benefit) bypasses the income test independently of SNAP. Scenario 11 covers SNAP; this isolates TANF.
 
 ---
 
-### Scenario 14: Medicaid Recipient Above 300% FPL — Categorical Bypass (No SSI)
+### Scenario 13: Medicaid Recipient Above 300% FPL — Categorical Bypass (No SSI)
 
 **Checks**: Member-level Medicaid insurance alone bypasses the income test
 **Expected**: Eligible
@@ -244,7 +248,7 @@ The dominant service is **Primary Home Care (PHC)** — personal care attendants
 
 ---
 
-### Scenario 15: Non-Age-Eligible Member Has Medicaid — Should Not Bypass Income Test
+### Scenario 14: Non-Age-Eligible Member Has Medicaid — Should Not Bypass Income Test
 
 **Checks**: Medicaid belonging to a non-age-eligible member does not grant categorical eligibility to the age-eligible member
 **Expected**: Not eligible (income above 300% FPL, only the ineligible member has Medicaid)
@@ -259,7 +263,7 @@ The dominant service is **Primary Home Care (PHC)** — personal care attendants
 
 ---
 
-### Scenario 12: `is_disabled` via `long_term_disability` — Not Directly Marked as Disabled
+### Scenario 15: `is_disabled` via `long_term_disability` — Not Directly Marked as Disabled
 
 **Checks**: `is_disabled` composite field includes `long_term_disability = True` even when `disabled = False`
 **Expected**: Eligible
