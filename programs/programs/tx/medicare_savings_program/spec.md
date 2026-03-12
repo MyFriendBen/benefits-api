@@ -256,10 +256,10 @@ Files generated:
 ## Acceptance Criteria
 
 [ ] Scenario 1 (QMB Eligible - Single Senior with Social Security Income): User should be **eligible** with $None/year
-[ ] Scenario 2 (SLMB Eligible - Single Senior at 120% FPL Threshold): User should be **eligible** with $None/year
-[ ] Scenario 3 (QI Eligible - Single Senior Just Below 135% FPL Income Threshold): User should be **eligible** with $None/year
+[ ] Scenario 2 (SLMB Eligible - Single Senior with Income in 100-120% FPL Range): User should be **eligible** with $None/year
+[ ] Scenario 3 (QI Eligible - Single Senior with Income in 120-135% FPL Range): User should be **eligible** with $None/year
 [ ] Scenario 4 (QMB Eligible - Single Senior with Income Exactly at 100% FPL): User should be **eligible** with $None/year
-[ ] Scenario 5 (Income Just Above 135% FPL - Not Eligible for Any MSP Category): User should be **ineligible**
+[ ] Scenario 5 (Ineligible - Income Above 135% FPL Disqualifies All MSP Categories): User should be **ineligible**
 [ ] Scenario 6 (QDWI Eligible - Person Exactly Age 64 at Disability Threshold): User should be **eligible** with $None/year
 [ ] Scenario 7 (QDWI Not Eligible - Person Age 65 Just Above Age Threshold): User should be **ineligible**
 [ ] Scenario 8 (QMB Eligible - Senior Age 75 Well Above Minimum Age): User should be **eligible** with $None/year
@@ -284,36 +284,36 @@ Files generated:
 - **Current Benefits**: Not currently receiving Medicaid or other assistance
 - **Citizenship**: Citizenship status: `U.S. Citizen`
 
-**Why this matters**: This is the most common QMB scenario - a single senior on Medicare with Social Security income right at the 100% FPL threshold. QMB is the most comprehensive Medicare Savings Program, and this tests the baseline eligibility for the program's primary target population.
+**Why this matters**: The most common QMB scenario — a single senior on Medicare with Social Security income at the 100% FPL threshold. QMB is the most comprehensive sub-program and tests the baseline eligibility for the program's primary target population.
 
 ---
 
-### Scenario 2: SLMB Eligible - Single Senior at 120% FPL Threshold
-**What we're checking**: Validates SLMB eligibility at the minimum income threshold (just above 100% FPL) with maximum allowable resources
-**Expected**: Eligible
-
-**Steps**:
-- **Location**: Enter ZIP code `75001`, Select county `Collin`
-- **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `January 1961` (age 65), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$1,255`, Frequency: `Monthly`, Has health insurance: `Medicare`, Citizenship: `U.S. Citizen`
-- **Assets**: Total household assets: `$10,000`
-
-**Why this matters**: Tests the lower boundary of SLMB eligibility - ensures the system correctly identifies applicants who exceed QMB income limits but qualify for SLMB at the minimum threshold with maximum allowable resources
-
----
-
-### Scenario 3: QI Eligible - Single Senior Just Below 135% FPL Income Threshold
-**What we're checking**: Tests QI eligibility with income just below the 135% FPL threshold to verify the upper income boundary is correctly evaluated
+### Scenario 2: SLMB Eligible - Single Senior with Income in 100-120% FPL Range
+**What we're checking**: Validates SLMB eligibility for a Medicare beneficiary whose income exceeds the QMB limit but falls below 120% FPL
 **Expected**: Eligible
 
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `January 1959` (age 67), Has Medicare: `Yes`, Has income: `Yes`, Social Security Retirement: `$1,732` monthly, Income frequency: `Monthly`
-- **Assets**: Total household assets: `$8,500`
+- **Person 1**: Birth month/year: `January 1959` (age 67), Relationship: `Head of Household`, Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$1,380`, Frequency: `Monthly`, Citizenship: `U.S. Citizen`
+- **Assets**: Total household assets: `$8,000`
+
+**Why this matters**: Tests SLMB eligibility with income clearly between 100% ($1,255/mo) and 120% ($1,506/mo) FPL, confirming the system routes correctly to the SLMB sub-program when income exceeds the QMB threshold.
+
+---
+
+### Scenario 3: QI Eligible - Single Senior with Income in 120-135% FPL Range
+**What we're checking**: Tests QI eligibility with income between 120% and 135% FPL, verifying the upper income tier is correctly evaluated
+**Expected**: Eligible
+
+**Steps**:
+- **Location**: Enter ZIP code `75001`, Select county `Collin`
+- **Household**: Number of people: `1`
+- **Person 1**: Birth month/year: `January 1961` (age 65), Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$1,632`, Frequency: `Monthly`, Citizenship: `U.S. Citizen`
+- **Assets**: Total household assets: `$9,400`
 - **Current Benefits**: Not currently receiving Medicaid
 
-**Why this matters**: This test validates that the income threshold calculation correctly identifies applicants just below the 135% FPL limit for QI eligibility. It ensures the system doesn't incorrectly reject applicants who are within the qualifying range by even a small margin, which is critical for ensuring eligible seniors receive benefits.
+**Why this matters**: Tests that the QI income tier (120-135% FPL) is correctly identified. Income of $1,632/mo falls between the SLMB ceiling ($1,506/mo at 120% FPL) and QI ceiling ($1,694/mo at 135% FPL).
 
 ---
 
@@ -324,23 +324,23 @@ Files generated:
 **Steps**:
 - **Location**: Enter ZIP code `75001`, Select county `Collin`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `January 1959` (age 67), Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$1,255` monthly (exactly $15,060/year = 100% FPL for 1 person), Has assets: `Yes`, Asset amount: `$8,000` (below $10,000 resource limit)
+- **Person 1**: Birth month/year: `January 1959` (age 67), Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$1,255` monthly (exactly $15,060/year = 100% FPL for 1 person), Assets: `$8,000` (below $9,430 resource limit)
 
-**Why this matters**: Tests boundary condition where income is exactly at the 100% FPL threshold. This validates that the 'at or below' logic is implemented correctly and doesn't incorrectly exclude applicants at the exact threshold.
+**Why this matters**: Tests the boundary condition where income is exactly at the 100% FPL threshold. Validates that the 'at or below' logic is implemented correctly and does not exclude applicants at the exact threshold.
 
 ---
 
-### Scenario 5: Income Just Above 135% FPL - Not Eligible for Any MSP Category
-**What we're checking**: Validates that applicants with income exceeding 135% FPL (the highest QI threshold) are correctly denied for all Medicare Savings Program categories
+### Scenario 5: Ineligible - Income Above 135% FPL Disqualifies All MSP Categories
+**What we're checking**: Validates that applicants with income exceeding 135% FPL are correctly denied for all Medicare Savings Program categories
 **Expected**: Not eligible
 
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `January 1961` (age 65), Relationship: `Head of Household`, U.S. Citizen: `Yes`, Has income: `Yes`, Social Security Retirement: `$1,700` per month, Income frequency: `Monthly`, Has health insurance: `Medicare only`, Not disabled, Not receiving Medicaid
+- **Person 1**: Birth month/year: `January 1961` (age 65), Relationship: `Head of Household`, U.S. Citizen: `Yes`, Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$1,700` per month, Not disabled, Not receiving Medicaid
 - **Assets**: Total household assets: `$5,000`
 
-**Why this matters**: This test ensures the screener correctly denies applicants whose income exceeds the highest MSP threshold (135% FPL for QI). It validates that the income ceiling is properly enforced and prevents false positives for applicants who earn too much to qualify for any MSP category.
+**Why this matters**: Income of $1,700/mo exceeds 135% FPL ($1,694/mo), ruling out QMB/SLMB/QI. Age 65 rules out QDWI. This single case validates all income ceiling logic across the program.
 
 ---
 
@@ -351,24 +351,24 @@ Files generated:
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `March 1962` (age 64), Relationship: `Head of Household`, Check `Has a disability`, Income: Social Security Disability Income `$1,500/month` ($18,000/year), Assets: `$3,500`, Insurance: `Medicare Part A only`
+- **Person 1**: Birth month/year: `March 1962` (age 64), Relationship: `Head of Household`, Check `Has a disability`, Has income: `Yes`, Income type: `Social Security Disability`, Amount: `$1,500/month`, Has Medicare: `No`, Has Medicaid: `No`
+- **Assets**: Total household assets: `$3,500`
 
-**Why this matters**: This test validates that the age threshold for QDWI is correctly implemented as 'under 65' (not 'under 64' or '65 and under'). A person who is exactly 64 years old should qualify, while someone who turns 65 would not qualify for QDWI based on age alone. This is critical because QDWI has different eligibility rules than QMB/SLMB/QI programs.
+**Why this matters**: Validates that the age threshold for QDWI is correctly implemented as 'under 65'. A person exactly 64 should qualify. QDWI has different eligibility rules than QMB/SLMB/QI — it requires disability and age under 65 rather than Medicare enrollment.
 
 ---
 
 ### Scenario 7: QDWI Not Eligible - Person Age 65 Just Above Age Threshold
-**What we're checking**: Validates that QDWI has strict age requirement of under 65, and person who just turned 65 is not eligible for QDWI (but may qualify for QMB/SLMB/QI instead)
+**What we're checking**: Validates that QDWI has a strict age requirement of under 65, and a person who just turned 65 is not eligible
 **Expected**: Not eligible
 
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `February 1961` (age 65, just turned 65 last month), Check `Disabled`, Check `Has income`, Income type: `Social Security Disability`, Amount: `$1,800`, Frequency: `Monthly`, Insurance: `Medicare`, Assets: `$3,500`
+- **Person 1**: Birth month/year: `February 1961` (age 65), Check `Has a disability`, Has income: `Yes`, Income type: `Social Security Disability`, Amount: `$1,500`, Frequency: `Monthly`, Has Medicare: `Yes`, Assets: `$3,500`
 - **Current Benefits**: Select `None`
-- **Citizenship**: Select `U.S. Citizen`
 
-**Why this matters**: Tests the strict age boundary for QDWI eligibility. QDWI is specifically for disabled individuals under age 65 who are working and paying Medicare Part A premiums. Once a person turns 65, they transition to standard Medicare and would need to qualify under QMB/SLMB/QI categories instead. This validates the system correctly enforces the age < 65 requirement per Section Q-6000.
+**Why this matters**: Tests the strict age boundary for QDWI (age < 65). At age 65 with income of $1,500/mo (within QMB range), the person would normally qualify — but disability and Medicare coverage together with age 65 means they should be screened for QMB instead. This validates that QDWI correctly enforces the age < 65 requirement per Section Q-6000.
 
 ---
 
@@ -379,10 +379,10 @@ Files generated:
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `March 1951` (age 75), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$950`, Frequency: `Monthly`, Has health insurance: `Medicare`, Citizenship: `U.S. Citizen`
+- **Person 1**: Birth month/year: `March 1951` (age 75), Relationship: `Head of Household`, Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$950`, Frequency: `Monthly`, Citizenship: `U.S. Citizen`
 - **Assets**: Total household assets: `$8,000`
 
-**Why this matters**: This test confirms that the Medicare Savings Program does not have an upper age limit and that seniors significantly older than the minimum Medicare age (65) can still qualify for QMB assistance. This is important because many seniors in their 70s and 80s have limited fixed incomes and need help with Medicare costs.
+**Why this matters**: Confirms that MSP does not have an upper age limit and that seniors significantly older than 65 can still qualify for QMB. Important because many seniors in their 70s and 80s have limited fixed incomes.
 
 ---
 
@@ -393,24 +393,24 @@ Files generated:
 **Steps**:
 - **Location**: Enter ZIP code `77002`, Select county `Harris`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `January 1959` (age 67), Relationship: `Head of Household`, Citizenship: `U.S. Citizen`, Has income: `Yes`, Social Security Retirement: `$950/month`, Insurance: `Medicare only`
+- **Person 1**: Birth month/year: `January 1959` (age 67), Relationship: `Head of Household`, Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$950/month`, Citizenship: `U.S. Citizen`
 - **Assets**: Total household assets: `$5,000`
 
-**Why this matters**: Confirms that the Medicare Savings Program correctly recognizes major Texas metropolitan areas as eligible service locations. Harris County (Houston) is the most populous county in Texas, so this validates that urban areas are properly included in the geographic eligibility criteria.
+**Why this matters**: Confirms that the program correctly recognizes major Texas metropolitan areas as eligible service locations. Harris County (Houston) is the most populous county in Texas.
 
 ---
 
 ### Scenario 10: Already Receiving Medicaid - QI Exclusion Test
-**What we're checking**: Tests that applicants already receiving Medicaid are excluded from QI (Qualifying Individual) program per Section Q-5000 requirement
+**What we're checking**: Tests that applicants already receiving Medicaid are excluded from QI (Qualifying Individual) program per Section Q-5000
 **Expected**: Not eligible
 
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `January 1959` (age 67), Relationship: `Head of Household`, Citizenship: `U.S. Citizen`, Has income: `Yes`, Income type: `Social Security Retirement`, Income amount: `$1,350` per month (approximately 122% FPL - within QI range), Has health insurance: `Yes - Medicaid`
-- **Assets**: Total household assets: `$5,000` (well below $10,000 limit)
+- **Person 1**: Birth month/year: `January 1959` (age 67), Relationship: `Head of Household`, Has Medicare: `Yes`, Has Medicaid: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$1,350` per month (within QI range at ~122% FPL), Citizenship: `U.S. Citizen`
+- **Assets**: Total household assets: `$5,000`
 
-**Why this matters**: This test validates the critical exclusion rule in Section Q-5000 that prevents dual enrollment in Medicaid and QI programs. QI is specifically designed for Medicare beneficiaries who are NOT eligible for Medicaid, so this exclusion prevents improper benefit stacking and ensures program integrity.
+**Why this matters**: Validates the critical exclusion rule in Section Q-5000 — QI is specifically designed for Medicare beneficiaries who are NOT eligible for Medicaid. The Medicaid exclusion prevents improper benefit stacking. Income of $1,350/mo would qualify for QI on income alone, so Medicaid is the only disqualifying factor.
 
 ---
 
@@ -421,11 +421,10 @@ Files generated:
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `January 1964` (age 62), Relationship: `Head of Household`, Citizenship: `U.S. Citizen`, Disabled: `Yes`, Has income: `Yes`, Income type: `Social Security Disability`, Income amount: `$1,500` per month, Has health insurance: `Yes`, Insurance type: `Medicare Part A (Premium-Free)`
+- **Person 1**: Birth month/year: `January 1964` (age 62), Relationship: `Head of Household`, Citizenship: `U.S. Citizen`, Check `Has a disability`, Has Medicare: `Yes`, Has Medicaid: `No`, Has income: `Yes`, Income type: `Social Security Disability`, Amount: `$1,500` per month
 - **Assets**: Total household assets: `$3,000`
-- **Current Benefits**: Not receiving Medicaid or other assistance programs
 
-**Why this matters**: QDWI (Qualified Disabled and Working Individuals) program specifically helps disabled individuals under age 65 who have lost premium-free Medicare Part A due to returning to work and need to purchase Part A coverage. Those who already have premium-free Part A are excluded from QDWI but may qualify for other MSP categories (QMB/SLMB/QI). This tests the system correctly identifies this exclusion criterion.
+**Why this matters**: QDWI specifically helps disabled workers who lost premium-free Medicare Part A due to returning to work. Those who already have Medicare (premium-free Part A) are excluded from QDWI. Note: the screener uses the `medicare` field as a proxy — this scenario tests that Medicare enrollment correctly disqualifies a QDWI candidate.
 
 ---
 
@@ -436,27 +435,27 @@ Files generated:
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `2`
-- **Person 1 (Head of Household)**: Birth month/year: `January 1958` (age 68), Relationship: `Head of Household`, Has Medicare Part A: `Yes`, Has Medicare Part B: `Yes`, Has income: `Yes`, Social Security Retirement: `$1,350` monthly, Citizenship: `U.S. Citizen`
-- **Person 2 (Adult Child)**: Birth month/year: `June 1988` (age 37), Relationship: `Child`, Has Medicare: `No`, Has income: `Yes`, Wages: `$2,800` monthly, Citizenship: `U.S. Citizen`
+- **Person 1 (Head of Household)**: Birth month/year: `January 1958` (age 68), Relationship: `Head of Household`, Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$1,350` monthly, Citizenship: `U.S. Citizen`
+- **Person 2 (Adult Child)**: Birth month/year: `June 1988` (age 37), Relationship: `Child`, Has Medicare: `No`, Has income: `Yes`, Income type: `Wages`, Amount: `$2,800` monthly, Citizenship: `U.S. Citizen`
 - **Assets**: Total household assets: `$8,500`
 
-**Why this matters**: This test validates that the screener correctly handles mixed households where only some members meet all eligibility criteria. It ensures that MSP eligibility is assessed individually based on Medicare enrollment status, even when household income and assets are within limits. This is critical because MSP requires Medicare enrollment, which typically requires age 65+ or disability.
+**Why this matters**: Validates that MSP eligibility is assessed per member — the senior with Medicare qualifies even though the adult child does not. Ensures the system doesn't incorrectly deny the senior due to the child's presence or income.
 
 ---
 
 ### Scenario 13: Multiple Eligible Members - Married Couple Both Qualifying for QMB
-**What we're checking**: Tests that multiple household members can each qualify for MSP benefits independently when both meet QMB eligibility criteria (both 65+, combined income at 100% FPL for household of 2, combined resources under $10,000)
+**What we're checking**: Tests that multiple household members can each qualify for MSP benefits when both meet QMB eligibility criteria
 **Expected**: Eligible
 
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `2`
-- **Person 1 (Head of Household)**: Birth month/year: `January 1959` (age 67), Relationship: Head of Household, Has income: Yes, Social Security Retirement: `$1,100` monthly, Insurance: Medicare Part A and Part B, Citizenship: U.S. Citizen
-- **Person 2 (Spouse)**: Birth month/year: `March 1960` (age 66), Relationship: Spouse, Has income: Yes, Social Security Retirement: `$900` monthly, Insurance: Medicare Part A and Part B, Citizenship: U.S. Citizen
+- **Person 1 (Head of Household)**: Birth month/year: `January 1959` (age 67), Relationship: `Head of Household`, Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$1,100` monthly, Citizenship: `U.S. Citizen`
+- **Person 2 (Spouse)**: Birth month/year: `March 1960` (age 66), Relationship: `Spouse`, Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$900` monthly, Citizenship: `U.S. Citizen`
 - **Assets**: Total household assets: `$8,500`
 - **Current Benefits**: Not receiving Medicaid or other assistance
 
-**Why this matters**: This test validates that the MSP screening tool correctly handles households where multiple members independently qualify for the same MSP category. It ensures the system can process married couples where both spouses meet QMB criteria, properly aggregates household income and resources, and applies the correct couple thresholds rather than individual thresholds. This is a common real-world scenario since married seniors often both have Medicare and modest Social Security income.
+**Why this matters**: Validates that the system correctly handles households where multiple members independently qualify. Combined income of $2,000/mo for a household of 2 should be within QMB thresholds, applying the couple resource limit ($14,130) rather than the individual limit ($9,430).
 
 ---
 
@@ -467,11 +466,11 @@ Files generated:
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `March 1962` (age 64), Relationship: `Head of Household`, Citizenship: `U.S. Citizen`, Has disability: `Yes`, Has Medicare Part A (premium-free): `No`, Has Medicare Part B: `No`, Has Medicaid: `No`
-- **Income**: Social Security Disability Income: `$1,500` per month, Total monthly income: `$1,500`, Annual income: `$18,000` (exactly 120% FPL for household of 1)
+- **Person 1**: Birth month/year: `March 1962` (age 64), Relationship: `Head of Household`, Citizenship: `U.S. Citizen`, Check `Has a disability`, Has Medicare: `No`, Has Medicaid: `No`
+- **Income**: Income type: `Social Security Disability`, Amount: `$1,500` per month
 - **Assets**: Total household assets: `$4,000` (exactly at QDWI resource limit)
 
-**Why this matters**: This edge case tests the system's handling of exact threshold values for QDWI resources ($4,000) combined with age boundary (64 years old, just under the 65 age exclusion). It validates that the system correctly applies 'at or below' logic for resource limits and properly evaluates the unique QDWI requirements (disabled, under 65, no premium-free Part A) when multiple boundary conditions are present simultaneously.
+**Why this matters**: Tests the system's handling of exact threshold values for QDWI resources ($4,000 at or below) combined with the age boundary (64, just under the 65 exclusion). Validates that 'at or below' logic is correctly applied for resource limits.
 
 ---
 
