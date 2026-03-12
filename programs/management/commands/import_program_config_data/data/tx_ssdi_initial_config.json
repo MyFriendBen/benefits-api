@@ -13,7 +13,7 @@
       "otherWithWorkPermission"
     ],
     "name": "Social Security Disability Insurance (SSDI)",
-    "description": "SSDI gives monthly cash to people who can't work because of a serious disability. Your disability must be expected to last at least 12 months or result in death. Your payment is based on your past earnings from jobs covered by Social Security.\n\nYou may qualify if you are under age 67, have a long-term disability, and have worked jobs covered by Social Security. You must earn below Social Security's work limit and have enough work credits from past jobs. Social Security will review your medical records to confirm your disability. There is a five-month wait before payments begin.",
+    "description": "SSDI gives monthly cash to people who can't work because of a serious disability. Your disability must be expected to last at least 12 months or result in death. Your payment is based on your past earnings from jobs covered by Social Security.\n\nYou may qualify if you are under age 67, have a long-term disability, and have worked jobs covered by Social Security. You must earn below Social Security's work limit and have enough work credits from past jobs. Social Security will review your medical records to confirm your disability. There is a five-month wait after the start of your disability before payments begin.",
     "description_short": "Monthly payments for workers with disabilities",
     "learn_more_link": "https://www.ssa.gov/disability",
     "apply_button_link": "https://www.ssa.gov/apply?benefits=disability&age=adult",
