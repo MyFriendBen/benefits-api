@@ -1,0 +1,57 @@
+{
+  "white_label": {
+    "code": "tx"
+  },
+  "program_category": {
+    "external_name": "tx_childcare"
+  },
+  "program": {
+    "name_abbreviated": "tx_head_start",
+    "year": "2025",
+    "legal_status_required": [],
+    "name": "Head Start",
+    "description": "Head Start is a free program for young children ages 3 to 5. It offers preschool classes, meals, and health checkups. Your child also gets help learning and growing. Families pay nothing to join.\n\nFamilies with low income can apply. Children who get TANF (cash help) or SSI (disability benefits) qualify right away. Children in foster care also qualify. Children without a stable home qualify too.",
+    "description_short": "Free preschool for children ages 3 to 5",
+    "learn_more_link": "https://www.earlychildhood.texas.gov/about-eligibility-screener",
+    "apply_button_link": "https://www.earlychildhood.texas.gov/about-eligibility-screener",
+    "apply_button_description": "Apply for TX Head Start",
+    "estimated_application_time": "1 - 2 hours",
+    "estimated_delivery_time": "Varies by program availability",
+    "estimated_value": "Free preschool services valued at approximately $10,000 per year",
+    "website_description": "Free preschool, meals, and health services for children ages 3 to 5 from low-income families"
+  },
+  "warning_message": null,
+  "documents": [
+    {
+      "external_name": "tx_home",
+      "text": "Proof of home address (ex: lease, utility bill)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "id_proof",
+      "text": "Proof of identity for child (ex: birth certificate)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_earned_income",
+      "text": "Proof of income (ex: pay stubs, tax returns, benefit award letters)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_immunization",
+      "text": "Child's immunization records (can be provided within 90 days of enrollment)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_benefit_proof",
+      "text": "Proof of TANF, SSI, or SNAP benefits if applicable",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": []
+}
