@@ -1,6 +1,6 @@
 [
   {
-    "notes": "TX SSDI - Eligible disabled worker under FRA with work history and no SGA income",
+    "notes": "TX SSDI - Eligible disabled worker under FRA with no SGA income",
     "household": {
       "white_label": "tx",
       "is_test": true,
@@ -18,7 +18,6 @@
           "birth_month": 1,
           "disabled": true,
           "long_term_disability": true,
-          "worked_in_last_18_mos": true,
           "has_income": false,
           "income_streams": [],
           "insurance": {
@@ -52,7 +51,6 @@
           "birth_month": 3,
           "disabled": true,
           "long_term_disability": true,
-          "worked_in_last_18_mos": true,
           "has_income": true,
           "income_streams": [
             {
@@ -92,7 +90,6 @@
           "birth_month": 1,
           "disabled": true,
           "long_term_disability": false,
-          "worked_in_last_18_mos": true,
           "has_income": false,
           "income_streams": [],
           "insurance": {
