@@ -475,6 +475,7 @@ class Screen(models.Model):
             "coctc": self.has_coctc,
             "upk": self.has_upk,
             "ssdi": self.has_ssdi,
+            "tx_ssdi": self.has_ssdi,
             "pell_grant": self.has_pell_grant,
             "rag": self.has_rag,
             "nfp": self.has_nfp,
