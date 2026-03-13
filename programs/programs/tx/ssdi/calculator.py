@@ -25,7 +25,8 @@ class TxSsdi(ProgramCalculator):
         # long-term disability required (12+ months expected duration)
         e.condition(member.long_term_disability)
 
-        # not already receiving Social Security retirement benefits
+        # not already receiving SSDI or Social Security retirement benefits
+        e.condition(member.calc_gross_income("monthly", ["sSDisability"]) == 0)
         e.condition(member.calc_gross_income("monthly", ["sSRetirement"]) == 0)
 
         # income below SGA threshold (inclusive of limit per SSA rules)

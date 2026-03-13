@@ -35,6 +35,7 @@ def make_member(
     visually_impaired=False,
     earned_income=0,
     ss_retirement_income=0,
+    ss_disability_income=0,
 ):
     """Create a mock HouseholdMember with configurable SSDI-relevant fields.
 
@@ -51,6 +52,8 @@ def make_member(
     def calc_gross_income(period, income_types):
         if list(income_types) == ["sSRetirement"]:
             return ss_retirement_income
+        if list(income_types) == ["sSDisability"]:
+            return ss_disability_income
         if list(income_types) == ["earned"]:
             return earned_income
         return 0
@@ -102,7 +105,7 @@ class TestTxSsdiDisabilityCheck(TestCase):
 
 
 class TestTxSsdiSsRetirement(TestCase):
-    """Scenario 14 — SS retirement income disqualifies."""
+    """Scenario 14 — SS retirement or SSDI income disqualifies."""
 
     def test_ss_retirement_income_is_not_eligible(self):
         # Scenario 14: person receiving sSRetirement income → not eligible
@@ -117,6 +120,15 @@ class TestTxSsdiSsRetirement(TestCase):
         # SS retirement income must not affect the SGA check
         member = make_member(ss_retirement_income=900, earned_income=0)
         self.assertFalse(run_member_eligible(member).eligible)  # ineligible due to sSRetirement, not SGA
+
+    def test_already_receiving_ssdi_income_is_not_eligible(self):
+        # Scenario 5: member already has sSDisability income → not eligible
+        member = make_member(ss_disability_income=1_537)
+        self.assertFalse(run_member_eligible(member).eligible)
+
+    def test_no_ssdi_income_is_eligible(self):
+        member = make_member(ss_disability_income=0)
+        self.assertTrue(run_member_eligible(member).eligible)
 
 
 class TestTxSsdiSgaIncome(TestCase):
