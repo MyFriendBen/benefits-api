@@ -127,66 +127,6 @@ class NcConfigurationData(ConfigurationData):
         },
     }
 
-    relationship_options = {
-        "child": {"_label": "relationshipOptions.child", "_default_message": "Child"},
-        "fosterChild": {
-            "_label": "relationshipOptions.fosterChildOrKinshipChild",
-            "_default_message": "Foster Child / Kinship Care",
-        },
-        "stepChild": {
-            "_label": "relationshipOptions.stepChild",
-            "_default_message": "Step-child",
-        },
-        "grandChild": {
-            "_label": "relationshipOptions.grandChild",
-            "_default_message": "Grandchild",
-        },
-        "spouse": {
-            "_label": "relationshipOptions.spouse",
-            "_default_message": "Spouse",
-        },
-        "parent": {
-            "_label": "relationshipOptions.parent",
-            "_default_message": "Parent",
-        },
-        "fosterParent": {
-            "_label": "relationshipOptions.fosterParent",
-            "_default_message": "Foster Parent",
-        },
-        "stepParent": {
-            "_label": "relationshipOptions.stepParent",
-            "_default_message": "Step-parent",
-        },
-        "grandParent": {
-            "_label": "relationshipOptions.grandParent",
-            "_default_message": "Grandparent",
-        },
-        "sisterOrBrother": {
-            "_label": "relationshipOptions.sisterOrBrother",
-            "_default_message": "Sister/Brother",
-        },
-        "stepSisterOrBrother": {
-            "_label": "relationshipOptions.stepSisterOrBrother",
-            "_default_message": "Step-sister/Step-brother",
-        },
-        "boyfriendOrGirlfriend": {
-            "_label": "relationshipOptions.boyfriendOrGirlfriend",
-            "_default_message": "Boyfriend/Girlfriend",
-        },
-        "domesticPartner": {
-            "_label": "relationshipOptions.domesticPartner",
-            "_default_message": "Domestic Partner",
-        },
-        "unrelated": {
-            "_label": "relationshipOptions.unrelated",
-            "_default_message": "Unrelated",
-        },
-        "relatedOther": {
-            "_label": "relationshipOptions.relatedOther",
-            "_default_message": "Related in some other way",
-        },
-    }
-
     referral_options = {
         "ctd": {"_label": "referralOptions.ctd", "_default_message": "Code the Dream"},
         "211nc": {
@@ -196,6 +136,10 @@ class NcConfigurationData(ConfigurationData):
         "amexcan": {
             "_label": "referralOptions.amexcan",
             "_default_message": "AMEXCAN",
+        },
+        "appphi": {
+            "_label": "referralOptions.appphi",
+            "_default_message": "Appalachian Public Health Innovation Lab",
         },
         "blueprint": {
             "_label": "referralOptions.blueprint",
@@ -216,6 +160,10 @@ class NcConfigurationData(ConfigurationData):
         "elRefugio": {
             "_label": "referralOptions.elRefugio",
             "_default_message": "El Refugio",
+        },
+        "fbcenc": {
+            "_label": "referralOptions.fbcenc",
+            "_default_message": "Food Bank of Central & Eastern NC",
         },
         "felp": {
             "_label": "referralOptions.felp",
@@ -2577,6 +2525,16 @@ class NcConfigurationData(ConfigurationData):
                     "description": {
                         "_label": "cashBenefits.ssdi_desc",
                         "_default_message": "Social security benefit for people with disabilities",
+                    },
+                },
+                "trump_account": {
+                    "name": {
+                        "_label": "cashBenefits.trump_account",
+                        "_default_message": '530A ("Trump") Accounts: ',
+                    },
+                    "description": {
+                        "_label": "cashBenefits.trump_account_desc",
+                        "_default_message": "$1,000 government investment account for kids born 2025-2028",
                     },
                 },
             },
