@@ -1,0 +1,80 @@
+{
+  "white_label": {
+    "code": "tx"
+  },
+  "program_category": {
+    "external_name": "tx_healthcare"
+  },
+  "program": {
+    "name_abbreviated": "tx_medicare_savings_program",
+    "year": "2025",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_under18_no5",
+      "refugee"
+    ],
+    "name": "Medicare Savings Program (MSP)",
+    "description": "The Medicare Savings Program helps pay for Medicare costs. It covers premiums, deductibles, and copays. There are four types: QMB, SLMB, QI, and QDWI. Each type helps with different Medicare costs. You must have Medicare Part A to qualify for most types.\n\nYou can get help if your income is low. Single people must earn less than $1,695 per month. Couples must earn less than $2,301 per month. You must also have limited savings and assets. You must live in Texas and meet other rules.",
+    "description_short": "Help paying for Medicare premiums and costs",
+    "learn_more_link": "https://www.hhs.texas.gov/handbooks/medicaid-elderly-people-disabilities-handbook/q-1000-medicare-savings-programs-overview",
+    "apply_button_link": "https://www.hhs.texas.gov/handbooks/medicaid-elderly-people-disabilities-handbook/chapter-b-applications-redeterminations",
+    "apply_button_description": "Apply for Texas Medicare Savings Program",
+    "estimated_application_time": "1 - 2 hours",
+    "estimated_delivery_time": "30 days",
+    "estimated_value": "Varies by program - QMB covers Part A and B premiums plus cost-sharing; SLMB covers Part B premiums; QI covers Part B premiums; QDWI covers Part A premiums",
+    "website_description": "Helps pay Medicare premiums, deductibles, and copays for people with low income"
+  },
+  "warning_message": null,
+  "documents": [
+    {
+      "external_name": "tx_home",
+      "text": "Proof of home address (ex: lease, utility bill)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "id_proof",
+      "text": "Proof of identity",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_ssn",
+      "text": "Social Security Number or proof you applied for one",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_medicare_card",
+      "text": "Medicare card showing Part A enrollment",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_earned_income",
+      "text": "Proof of income (ex: pay stubs, Social Security statement, pension statement)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_assets",
+      "text": "Proof of assets (ex: bank statements, investment accounts). Do not include your home, one vehicle, household goods, or burial funds up to $1,500",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_us_status",
+      "text": "Proof of U.S. citizenship or qualified immigration status",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_disability_proof",
+      "text": "Proof of disability (for QDWI program only)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": []
+}
