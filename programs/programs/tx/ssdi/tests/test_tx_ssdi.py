@@ -6,7 +6,7 @@ Covers all spec.md test scenarios plus edge cases:
 - Current benefits: already receiving SSDI disqualifies; SSI does not (concurrent OK)
 - SS retirement: sSRetirement income disqualifies
 - SGA income: earned-only, non-blind $1,690 and blind $2,830 thresholds (inclusive)
-- FRA age: dynamically computed from birth year per SSA schedule
+- FRA age: dynamically computed from birth year per SSA schedule; uses fraction_age() for precision
 - Household: per-member evaluation; spousal income is irrelevant
 - Value: $1,580 × 12 per eligible member
 """
@@ -17,7 +17,7 @@ from django.test import SimpleTestCase as TestCase
 
 from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
 from programs.programs.tx import tx_calculators
-from programs.programs.tx.ssdi.calculator import TxSsdi, _FRA_BY_BIRTH_YEAR
+from programs.programs.tx.ssdi.calculator import TxSsdi
 
 
 def make_calculator(has_ssdi=False):
@@ -121,7 +121,6 @@ class TestTxSsdiCurrentBenefits(TestCase):
     def test_already_receiving_ssi_is_still_eligible(self):
         # Scenario 6: SSI and SSDI are concurrent; SSI receipt doesn't disqualify
         member = make_member()
-        # has_ssdi=False — screen.has_benefit("tx_ssdi") returns False
         self.assertTrue(run_member_eligible(member, has_ssdi=False).eligible)
 
 
@@ -147,7 +146,6 @@ class TestTxSsdiSgaIncome(TestCase):
     """Scenarios 3, 4, 10, 11 — SGA thresholds; checks use earned income only."""
 
     def test_no_earned_income_is_eligible(self):
-        # Scenario 1: $0 earned income → eligible
         member = make_member(earned_income=0)
         self.assertTrue(run_member_eligible(member).eligible)
 
@@ -171,17 +169,15 @@ class TestTxSsdiSgaIncome(TestCase):
         self.assertTrue(run_member_eligible(member).eligible)
 
     def test_blind_income_at_blind_sga_threshold_is_eligible(self):
-        # Blind SGA boundary is also inclusive
         member = make_member(visually_impaired=True, earned_income=2_830)
         self.assertTrue(run_member_eligible(member).eligible)
 
     def test_blind_income_above_blind_sga_is_not_eligible(self):
-        # Scenario 11: visually_impaired, $3,000/month (above $2,830 blind SGA) → not eligible
+        # Scenario 11: visually_impaired, $3,000/month → not eligible
         member = make_member(visually_impaired=True, earned_income=3_000)
         self.assertFalse(run_member_eligible(member).eligible)
 
     def test_blind_income_above_nonblind_sga_but_below_blind_sga_is_eligible(self):
-        # $2,500 is above non-blind limit ($1,690) but below blind limit ($2,830)
         member = make_member(visually_impaired=True, earned_income=2_500)
         self.assertTrue(run_member_eligible(member).eligible)
 
@@ -190,102 +186,83 @@ class TestTxSsdiSgaIncome(TestCase):
         self.assertFalse(run_member_eligible(member).eligible)
 
     def test_sga_uses_earned_income_not_all_income(self):
-        # Verify calc_gross_income is called with ["earned"], not ["all"]
         member = make_member(ss_retirement_income=0, earned_income=0)
         run_member_eligible(member)
         self.assertIn(call("monthly", ["earned"]), member.calc_gross_income.call_args_list)
 
 
-class TestTxSsdiFraTable(TestCase):
-    """Unit tests for _full_retirement_age() and the FRA lookup table."""
+class TestTxSsdiFra(TestCase):
+    """_full_retirement_age() formula — spot checks across each SSA segment."""
 
-    def test_born_1937_or_earlier_fra_is_65(self):
-        self.assertEqual(TxSsdi._full_retirement_age(1937), 65.0)
-        self.assertEqual(TxSsdi._full_retirement_age(1920), 65.0)
+    def test_born_1960_or_later_fra_is_67(self):
+        self.assertEqual(TxSsdi._full_retirement_age(1960), 67)
+        self.assertEqual(TxSsdi._full_retirement_age(1990), 67)
 
-    def test_born_1938_fra_is_65_years_2_months(self):
-        self.assertAlmostEqual(TxSsdi._full_retirement_age(1938), 65 + 2 / 12)
+    def test_birth_year_none_falls_back_to_67(self):
+        self.assertEqual(TxSsdi._full_retirement_age(None), 67)
 
-    def test_born_1942_fra_is_65_years_10_months(self):
-        self.assertAlmostEqual(TxSsdi._full_retirement_age(1942), 65 + 10 / 12)
+    def test_born_1955_to_1959_fra_increments_by_2_months(self):
+        expected = {
+            1955: 66 + 2 / 12,
+            1956: 66 + 4 / 12,
+            1957: 66 + 6 / 12,
+            1958: 66 + 8 / 12,
+            1959: 66 + 10 / 12,
+        }
+        for birth_year, fra in expected.items():
+            with self.subTest(birth_year=birth_year):
+                self.assertAlmostEqual(TxSsdi._full_retirement_age(birth_year), fra)
 
     def test_born_1943_to_1954_fra_is_66(self):
         for year in range(1943, 1955):
             with self.subTest(birth_year=year):
-                self.assertEqual(TxSsdi._full_retirement_age(year), 66.0)
+                self.assertEqual(TxSsdi._full_retirement_age(year), 66)
 
-    def test_born_1955_fra_is_66_years_2_months(self):
-        self.assertAlmostEqual(TxSsdi._full_retirement_age(1955), 66 + 2 / 12)
-
-    def test_born_1959_fra_is_66_years_10_months(self):
-        self.assertAlmostEqual(TxSsdi._full_retirement_age(1959), 66 + 10 / 12)
-
-    def test_born_1960_fra_is_67(self):
-        self.assertEqual(TxSsdi._full_retirement_age(1960), 67.0)
-
-    def test_born_after_1960_fra_is_67(self):
-        self.assertEqual(TxSsdi._full_retirement_age(1990), 67.0)
-        self.assertEqual(TxSsdi._full_retirement_age(2000), 67.0)
-
-    def test_birth_year_none_falls_back_to_67(self):
-        # When birth_year_month is not set, default conservatively to 67
-        self.assertEqual(TxSsdi._full_retirement_age(None), 67.0)
-
-    def test_fra_table_covers_all_transitional_years(self):
-        # Ensure every year from 1938-1959 is in the table (no KeyError)
-        for year in range(1938, 1960):
-            with self.subTest(birth_year=year):
-                self.assertIn(year, _FRA_BY_BIRTH_YEAR)
+    def test_born_before_1943_fra_is_65(self):
+        self.assertEqual(TxSsdi._full_retirement_age(1942), 65)
+        self.assertEqual(TxSsdi._full_retirement_age(1920), 65)
 
 
 class TestTxSsdiAge(TestCase):
-    """Scenarios 2, 9 — FRA boundary; uses fraction_age() and birth_year."""
+    """Scenarios 2, 9 — FRA boundary using fraction_age() for sub-year precision."""
 
     def test_age_50_born_1976_is_eligible(self):
-        # Scenario 1: core happy path, born 1960+ (FRA=67), age 50
         member = make_member(age=50, birth_year=1976)
         self.assertTrue(run_member_eligible(member).eligible)
 
     def test_age_66_born_1960_is_eligible(self):
-        # Scenario 2: born 1960 (FRA=67), fraction_age=66.0 < 67.0 → eligible
+        # Scenario 2: born 1960 (FRA=67), fraction_age=66.0 → eligible
         member = make_member(age=66, birth_year=1960)
         member.fraction_age = Mock(return_value=66.0)
         self.assertTrue(run_member_eligible(member).eligible)
 
     def test_age_67_born_1960_is_not_eligible(self):
-        # Born 1960 (FRA=67), fraction_age=67.0 — exactly at FRA → not eligible
         member = make_member(age=67, birth_year=1960)
         member.fraction_age = Mock(return_value=67.0)
         self.assertFalse(run_member_eligible(member).eligible)
 
-    def test_age_67_born_1959_past_fra_is_not_eligible(self):
-        # Scenario 9: born Jan 1959 (FRA=66y10m≈66.833), now 67y2m past FRA → not eligible
-        member = make_member(age=67, birth_year=1959)
-        member.fraction_age = Mock(return_value=67 + 2 / 12)
-        self.assertFalse(run_member_eligible(member).eligible)
-
-    def test_age_66_born_1954_is_eligible(self):
-        # Born 1954 (FRA=66.0 exactly), fraction_age=65.5 — not yet reached FRA → eligible
-        member = make_member(age=65, birth_year=1954)
-        member.fraction_age = Mock(return_value=65.5)
-        self.assertTrue(run_member_eligible(member).eligible)
-
-    def test_age_66_born_1954_at_fra_is_not_eligible(self):
-        # Born 1954 (FRA=66.0), fraction_age=66.0 — exactly at FRA → not eligible
-        member = make_member(age=66, birth_year=1954)
-        member.fraction_age = Mock(return_value=66.0)
-        self.assertFalse(run_member_eligible(member).eligible)
-
     def test_born_1959_just_before_fra_is_eligible(self):
-        # Born 1959 (FRA=66y10m≈66.833), fraction_age=66.5 — not yet reached FRA → eligible
+        # FRA for 1959 cohort = 66y10m; fraction_age=66.5 → not yet reached FRA
         member = make_member(age=66, birth_year=1959)
         member.fraction_age = Mock(return_value=66.5)
         self.assertTrue(run_member_eligible(member).eligible)
 
     def test_born_1959_just_after_fra_is_not_eligible(self):
-        # Born 1959 (FRA=66y10m≈66.833), fraction_age=66.9 — just past FRA → not eligible
+        # FRA for 1959 cohort = 66y10m; fraction_age=66.9 → past FRA
         member = make_member(age=66, birth_year=1959)
         member.fraction_age = Mock(return_value=66.9)
+        self.assertFalse(run_member_eligible(member).eligible)
+
+    def test_born_1954_at_fra_is_not_eligible(self):
+        # FRA for 1954 cohort = 66.0 exactly; fraction_age=66.0 → at FRA, not eligible
+        member = make_member(age=66, birth_year=1954)
+        member.fraction_age = Mock(return_value=66.0)
+        self.assertFalse(run_member_eligible(member).eligible)
+
+    def test_age_67_born_1959_past_fra_is_not_eligible(self):
+        # Scenario 9: born 1959 (FRA=66y10m), now 67y2m → well past FRA
+        member = make_member(age=67, birth_year=1959)
+        member.fraction_age = Mock(return_value=67 + 2 / 12)
         self.assertFalse(run_member_eligible(member).eligible)
 
 
@@ -323,7 +300,6 @@ class TestTxSsdiHouseholdEligibility(TestCase):
         self.assertTrue(e2.eligible)
 
     def test_spousal_income_does_not_affect_disabled_member_eligibility(self):
-        # SSDI is an individual entitlement; spouse earning $2,800/month is irrelevant
         calculator = make_calculator()
         disabled_head = make_member(age=54, long_term_disability=True, earned_income=0)
         e = MemberEligibility(disabled_head)

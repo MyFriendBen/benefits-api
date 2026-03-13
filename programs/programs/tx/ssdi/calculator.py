@@ -1,21 +1,5 @@
 from programs.programs.calc import MemberEligibility, ProgramCalculator
 
-# Full Retirement Age in fractional years by birth year (SSA schedule).
-# 1937 and earlier → 65, 1960 and later → 67 (handled in _full_retirement_age).
-_FRA_BY_BIRTH_YEAR: dict[int, float] = {
-    1938: 65 + 2 / 12,
-    1939: 65 + 4 / 12,
-    1940: 65 + 6 / 12,
-    1941: 65 + 8 / 12,
-    1942: 65 + 10 / 12,
-    **{year: 66.0 for year in range(1943, 1955)},
-    1955: 66 + 2 / 12,
-    1956: 66 + 4 / 12,
-    1957: 66 + 6 / 12,
-    1958: 66 + 8 / 12,
-    1959: 66 + 10 / 12,
-}
-
 
 class TxSsdi(ProgramCalculator):
     income_limit = 1_690  # 2026 non-blind SGA threshold
@@ -24,13 +8,16 @@ class TxSsdi(ProgramCalculator):
     dependencies = ["income_amount", "income_frequency", "household_size"]
 
     @staticmethod
-    def _full_retirement_age(birth_year: int | None) -> float:
-        """Return FRA in fractional years. Falls back to 67 when birth year is unknown."""
+    def _full_retirement_age(birth_year: int | None) -> int | float:
+        """Return FRA in years per the SSA schedule. Falls back to 67 when birth year is unknown."""
         if birth_year is None or birth_year >= 1960:
-            return 67.0
-        if birth_year <= 1937:
-            return 65.0
-        return _FRA_BY_BIRTH_YEAR[birth_year]
+            return 67
+        if birth_year >= 1955:
+            return 66 + (birth_year - 1954) * 2 / 12  # 66y2m → 66y10m
+        if birth_year >= 1943:
+            return 66
+        # Pre-1943 cohort is 83+ today and always past FRA
+        return 65
 
     def member_eligible(self, e: MemberEligibility):
         member = e.member
@@ -49,5 +36,4 @@ class TxSsdi(ProgramCalculator):
         e.condition(member.calc_gross_income("monthly", ["earned"]) <= income_limit)
 
         # under Full Retirement Age (varies by birth year per SSA schedule)
-        fra = TxSsdi._full_retirement_age(member.birth_year)
-        e.condition(member.fraction_age() < fra)
+        e.condition(member.fraction_age() < TxSsdi._full_retirement_age(member.birth_year))
