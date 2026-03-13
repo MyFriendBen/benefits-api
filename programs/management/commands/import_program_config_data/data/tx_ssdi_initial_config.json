@@ -7,9 +7,12 @@
   },
   "program": {
     "name_abbreviated": "tx_ssdi",
-    "year": "2025",
+    "year": "2026",
     "legal_status_required": [
       "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
       "otherWithWorkPermission"
     ],
     "name": "Social Security Disability Insurance (SSDI)",
@@ -73,7 +76,7 @@
       "email": "",
       "description": "Free legal representation for low-income Texans on SSDI applications, denials, and appeals before administrative law judges.",
       "assistance_link": "https://www.lonestarlegal.org/services/medical-legal-partnership/",
-      "languages": ["en", "es"],
+      "languages": ["es"],
       "counties": ["Anderson", "Angelina", "Austin", "Bell", "Bosque", "Bowie", "Brazoria", "Brazos", "Burleson", "Camp", "Cass", "Chambers", "Cherokee", "Colorado", "Coryell", "Delta", "Falls", "Fayette", "Fort Bend", "Franklin", "Freestone", "Galveston", "Gregg", "Grimes", "Hamilton", "Hardin", "Harris", "Harrison", "Henderson", "Hill", "Hopkins", "Houston", "Jasper", "Jefferson", "Lamar", "Lampasas", "Lee", "Leon", "Liberty", "Limestone", "Madison", "Marion", "Matagorda", "McLennan", "Milam", "Montgomery", "Morris", "Nacogdoches", "Navarro", "Newton", "Orange", "Panola", "Polk", "Rains", "Red River", "Robertson", "Rusk", "Sabine", "San Augustine", "San Jacinto", "Shelby", "Smith", "Titus", "Trinity", "Tyler", "Upshur", "Walker", "Waller", "Washington", "Wharton", "Wood"]
     },
     {
@@ -83,7 +86,7 @@
       "email": "",
       "description": "Free statewide legal help for income-eligible Texans on SSDI, SSI, Medicaid, and related public benefits, with attorney advice by phone and chat.",
       "assistance_link": "https://www.tlsc.org/what-we-do",
-      "languages": ["en", "es"],
+      "languages": ["es"],
       "counties": []
     },
     {
@@ -93,7 +96,7 @@
       "email": "",
       "description": "Free civil legal services for low-income residents in Southwest, Central, and South Texas, including SSDI and public benefits advocacy.",
       "assistance_link": "https://www.trla.org/public-benefits",
-      "languages": ["en", "es"],
+      "languages": ["es"],
       "counties": ["Aransas", "Atascosa", "Bandera", "Bastrop", "Bee", "Bexar", "Blanco", "Brewster", "Brooks", "Burnet", "Caldwell", "Calhoun", "Cameron", "Comal", "Crockett", "Culberson", "DeWitt", "Dimmit", "Duval", "Edwards", "El Paso", "Frio", "Gillespie", "Goliad", "Gonzales", "Guadalupe", "Hays", "Hidalgo", "Hudspeth", "Jackson", "Jeff Davis", "Jim Hogg", "Jim Wells", "Karnes", "Kendall", "Kenedy", "Kerr", "Kimble", "Kinney", "Kleberg", "La Salle", "Lavaca", "Live Oak", "Llano", "Mason", "Maverick", "McMullen", "Medina", "Nueces", "Pecos", "Presidio", "Real", "Reeves", "Refugio", "San Patricio", "Starr", "Sutton", "Terrell", "Travis", "Uvalde", "Victoria", "Webb", "Willacy", "Williamson", "Wilson", "Zapata", "Zavala"]
     },
     {
@@ -103,7 +106,7 @@
       "email": "",
       "description": "Free civil legal services for low-income residents across North and West Texas, including SSDI applications, appeals, and benefit navigation.",
       "assistance_link": "https://legalaidtx.org/get-help/",
-      "languages": ["en", "es"],
+      "languages": ["es"],
       "counties": ["Andrews", "Archer", "Armstrong", "Bailey", "Baylor", "Borden", "Briscoe", "Brown", "Callahan", "Carson", "Castro", "Childress", "Clay", "Cochran", "Coke", "Coleman", "Collin", "Collingsworth", "Comanche", "Concho", "Cooke", "Cottle", "Crane", "Crosby", "Dallam", "Dallas", "Dawson", "Deaf Smith", "Denton", "Dickens", "Donley", "Eastland", "Ector", "Ellis", "Erath", "Fannin", "Fisher", "Floyd", "Foard", "Gaines", "Garza", "Glasscock", "Gray", "Grayson", "Hale", "Hall", "Hansford", "Hardeman", "Hartley", "Haskell", "Hemphill", "Hockley", "Hood", "Howard", "Hunt", "Hutchinson", "Irion", "Jack", "Johnson", "Jones", "Kaufman", "Kent", "King", "Knox", "Lamb", "Lipscomb", "Loving", "Lubbock", "Lynn", "Martin", "McCulloch", "Menard", "Midland", "Mills", "Mitchell", "Montague", "Moore", "Motley", "Nolan", "Ochiltree", "Oldham", "Palo Pinto", "Parker", "Parmer", "Potter", "Randall", "Reagan", "Roberts", "Rockwall", "Runnels", "San Saba", "Schleicher", "Scurry", "Shackelford", "Sherman", "Somervell", "Stephens", "Sterling", "Stonewall", "Swisher", "Tarrant", "Taylor", "Terry", "Throckmorton", "Tom Green", "Upton", "Ward", "Wheeler", "Wichita", "Wilbarger", "Winkler", "Wise", "Yoakum", "Young"]
     }
   ]
