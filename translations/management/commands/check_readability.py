@@ -193,39 +193,30 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         language = options["language"]
         whitelabel = options.get("whitelabel")
-        threshold = options["threshold"]
-        fail_on_error = options["fail_on_error"]
-        detailed = options["detailed"]
-        min_words = options["min_words"]
-        label_filter = options.get("label_filter")
-        show_passing = options["show_passing"]
-        output_file = options.get("output")
-        output_format = options.get("format")
 
-        # Auto-detect format from file extension if not specified
-        if output_file and not output_format:
-            ext = Path(output_file).suffix.lower()
-            if ext == ".json":
-                output_format = "json"
-            elif ext == ".csv":
-                output_format = "csv"
-            else:
-                output_format = "text"
+        checker = self._build_checker(language, options["threshold"], options["min_words"])
+        translations = self._fetch_translations(language, whitelabel, options.get("label_filter"))
+        passing, failing, skipped = self._analyze(translations, language, checker, options["min_words"])
 
-        # Set up the checker
-        checker = ReadabilityChecker(
+        self._print_summary(passing, failing, skipped, language, checker, options["detailed"], options["show_passing"], whitelabel)
+
+        output_file, output_format = self._resolve_output_path(options.get("output"), options.get("format"), language, whitelabel)
+        self._export_report(output_file, output_format, passing, failing, skipped, language, checker, whitelabel)
+
+        if options["fail_on_error"] and failing:
+            raise CommandError(f"{len(failing)} translation(s) failed readability check")
+
+    def _build_checker(self, language: str, threshold: Optional[float], min_words: int) -> ReadabilityChecker:
+        return ReadabilityChecker(
             en_threshold=threshold if language.startswith("en") else None,
             es_threshold=threshold if language.startswith("es") else None,
             min_words=min_words,
         )
 
-        # Fetch translations
+    def _fetch_translations(self, language: str, whitelabel: Optional[str], label_filter: Optional[str]):
         self.stdout.write(f"\nFetching translations for language: {language}")
-
         translations = Translation.objects.filter(active=True).prefetch_related("translations")
 
-        # Filter by white label if specified
-        allowed_labels: Optional[Set[str]] = None
         if whitelabel:
             allowed_labels = self._get_whitelabel_translation_labels(whitelabel)
             if not allowed_labels:
@@ -237,52 +228,58 @@ class Command(BaseCommand):
             translations = translations.filter(label__startswith=label_filter)
 
         self.stdout.write(f"Found {translations.count()} active translations\n")
+        return translations
 
-        # Analyze each translation
-        passing_results: List[ReadabilityResult] = []
-        failing_results: List[ReadabilityResult] = []
-        skipped_count = 0
+    def _analyze(self, translations, language: str, checker: ReadabilityChecker, min_words: int):
+        passing: List[ReadabilityResult] = []
+        failing: List[ReadabilityResult] = []
+        skipped = 0
 
         for translation in translations:
             translation.set_current_language(language)
             text = translation.text
 
             if not text:
-                skipped_count += 1
+                skipped += 1
                 continue
 
             result = checker.check(translation.label, text, language)
 
             if result.word_count < min_words:
-                skipped_count += 1
+                skipped += 1
                 continue
 
             if result.passes:
-                passing_results.append(result)
+                passing.append(result)
             else:
-                failing_results.append(result)
+                failing.append(result)
 
-        # Print summary
-        self._print_summary(
-            passing_results, failing_results, skipped_count, language, checker, detailed, show_passing, whitelabel
-        )
+        return passing, failing, skipped
 
-        # Export to file if requested
-        if output_file:
-            self._export_report(
-                output_file,
-                output_format or "text",
-                passing_results,
-                failing_results,
-                skipped_count,
-                language,
-                checker,
-                whitelabel,
-            )
+    def _resolve_output_path(
+        self,
+        output_file: Optional[str],
+        output_format: Optional[str],
+        language: str,
+        whitelabel: Optional[str],
+    ) -> tuple[str, str]:
+        """Return (resolved_path, resolved_format), creating the output directory as needed."""
+        if output_file and not output_format:
+            ext = Path(output_file).suffix.lower()
+            output_format = {".json": "json", ".csv": "csv"}.get(ext, "text")
 
-        # Exit with error if requested and there are failures
-        if fail_on_error and failing_results:
-            raise CommandError(f"{len(failing_results)} translation(s) failed readability check")
+        if not output_file:
+            suffix = {"json": ".json", "csv": ".csv"}.get(output_format or "", ".txt")
+            name = f"readability-check-{language}"
+            if whitelabel:
+                name += f"-{whitelabel}"
+            output_file = name + suffix
+
+        p = Path(output_file)
+        if p.parent == Path("."):
+            p = Path("readability-output") / p
+        p.parent.mkdir(parents=True, exist_ok=True)
+        return str(p), output_format or "text"
 
     def _get_whitelabel_translation_labels(self, whitelabel_code: str) -> Set[str]:
         """
@@ -419,17 +416,21 @@ class Command(BaseCommand):
                     ]
                 )
 
-    def _export_text(
+    def _build_report_lines(
         self,
-        output_file: str,
         passing: List[ReadabilityResult],
         failing: List[ReadabilityResult],
         skipped: int,
         language: str,
         checker: ReadabilityChecker,
         whitelabel: Optional[str] = None,
-    ):
-        """Export report as plain text."""
+        show_passing: bool = True,
+        detailed: bool = False,
+    ) -> List[str]:
+        """Build the report as a list of plain-text lines.
+
+        Used by both _export_text (writes to file) and _print_summary (writes to stdout).
+        """
         total = len(passing) + len(failing)
 
         lines = [
@@ -450,57 +451,59 @@ class Command(BaseCommand):
             lines.append("Metric: Flesch-Kincaid Grade Level (lower is better)")
             lines.append(f"Threshold: <= {checker.en_threshold}")
 
-        lines.extend(
-            [
-                "",
-                f"Total analyzed: {total}",
-                f"Skipped (too short): {skipped}",
-                f"Passing: {len(passing)} ({100 * len(passing) / total:.1f}%)" if total > 0 else "Passing: 0",
-                f"Failing: {len(failing)} ({100 * len(failing) / total:.1f}%)" if total > 0 else "Failing: 0",
-                "",
-                "-" * 60,
-                "FAILING TRANSLATIONS:",
-                "-" * 60,
-            ]
-        )
+        lines.extend([
+            "",
+            f"Total analyzed: {total}",
+            f"Skipped (too short): {skipped}",
+            f"✅ Passing: {len(passing)} ({100 * len(passing) / total:.1f}%)" if total > 0 else "✅ Passing: 0",
+            f"❌ Failing: {len(failing)} ({100 * len(failing) / total:.1f}%)" if failing else "✅ Failing: 0",
+        ])
 
-        for result in sorted(failing, key=lambda x: x.primary_score):
-            display_text = (
-                result.text[:100].replace("\n", " ") + "..."
-                if len(result.text) > 100
-                else result.text.replace("\n", " ")
-            )
-            lines.extend(
-                [
+        if failing:
+            lines.extend(["", "-" * 60, "FAILING TRANSLATIONS:", "-" * 60])
+            # Sort worst-first: highest score for English (lower is better), lowest for Spanish
+            failing_sorted = sorted(failing, key=lambda r: r.primary_score, reverse=not language.startswith("es"))
+            for result in failing_sorted:
+                display_text = result.text[:100].replace("\n", " ") + ("..." if len(result.text) > 100 else "")
+                lines.extend([
                     "",
                     f"❌ {result.label}",
                     f"   Score: {result.primary_score:.1f} (threshold: {result.threshold})",
                     f"   Words: {result.word_count}",
                     f'   Text: "{display_text}"',
-                ]
-            )
+                ])
+                if detailed:
+                    lines.append("   All scores:")
+                    lines.extend([f"      {m}: {s:.2f}" for m, s in result.scores.items()])
 
-        lines.extend(
-            [
-                "",
-                "-" * 60,
-                "PASSING TRANSLATIONS:",
-                "-" * 60,
-            ]
-        )
-
-        for result in sorted(passing, key=lambda x: x.primary_score, reverse=language.startswith("es")):
-            lines.extend(
-                [
+        if show_passing and passing:
+            lines.extend(["", "-" * 60, "PASSING TRANSLATIONS:", "-" * 60])
+            for result in sorted(passing, key=lambda r: r.primary_score, reverse=language.startswith("es")):
+                lines.extend([
                     "",
                     f"✅ {result.label}",
                     f"   Score: {result.primary_score:.1f}",
                     f"   Words: {result.word_count}",
-                ]
-            )
+                ])
+                if detailed:
+                    lines.append("   All scores:")
+                    lines.extend([f"      {m}: {s:.2f}" for m, s in result.scores.items()])
 
         lines.append("\n" + "=" * 60)
+        return lines
 
+    def _export_text(
+        self,
+        output_file: str,
+        passing: List[ReadabilityResult],
+        failing: List[ReadabilityResult],
+        skipped: int,
+        language: str,
+        checker: ReadabilityChecker,
+        whitelabel: Optional[str] = None,
+    ):
+        """Export report as plain text."""
+        lines = self._build_report_lines(passing, failing, skipped, language, checker, whitelabel, show_passing=True)
         with open(output_file, "w", encoding="utf-8") as f:
             f.write("\n".join(lines))
 
@@ -516,80 +519,23 @@ class Command(BaseCommand):
         whitelabel: Optional[str] = None,
     ):
         """Print a formatted summary of the readability analysis."""
-        total = len(passing) + len(failing)
-
-        self.stdout.write("\n" + "=" * 60)
-        self.stdout.write("READABILITY ANALYSIS REPORT")
-        self.stdout.write("=" * 60)
-
-        self.stdout.write(f"\nLanguage: {language}")
-        if whitelabel:
-            self.stdout.write(f"White Label: {whitelabel}")
-
-        if language.startswith("es"):
-            self.stdout.write("Metric: Fernández-Huerta (higher is better)")
-            self.stdout.write(f"Threshold: >= {checker.es_threshold}")
-        else:
-            self.stdout.write("Metric: Flesch-Kincaid Grade Level (lower is better)")
-            self.stdout.write(f"Threshold: <= {checker.en_threshold} (8th grade)")
-
-        self.stdout.write(f"\nTotal analyzed: {total}")
-        self.stdout.write(f"Skipped (too short): {skipped}")
-        self.stdout.write(
-            self.style.SUCCESS(f"✅ Passing: {len(passing)} ({100 * len(passing) / total:.1f}%)")
-            if total > 0
-            else "Passing: 0"
+        lines = self._build_report_lines(
+            passing, failing, skipped, language, checker, whitelabel,
+            show_passing=show_passing, detailed=detailed,
         )
-        self.stdout.write(
-            self.style.ERROR(f"❌ Failing: {len(failing)} ({100 * len(failing) / total:.1f}%)")
-            if failing
-            else self.style.SUCCESS("✅ Failing: 0")
-        )
+        for line in lines:
+            if line.startswith("✅"):
+                self.stdout.write(self.style.SUCCESS(line))
+            elif line.startswith("❌"):
+                self.stdout.write(self.style.ERROR(line))
+            elif line == "PASSING TRANSLATIONS:":
+                self.stdout.write(self.style.SUCCESS(line))
+            elif line == "FAILING TRANSLATIONS:":
+                self.stdout.write(self.style.ERROR(line))
+            else:
+                self.stdout.write(line)
 
-        # Show passing results if requested
-        if show_passing and passing:
-            self.stdout.write("\n" + "-" * 60)
-            self.stdout.write(self.style.SUCCESS("PASSING TRANSLATIONS:"))
-            self.stdout.write("-" * 60)
-
-            for result in sorted(passing, key=lambda r: r.primary_score, reverse=language.startswith("es")):
-                self._print_result(result, detailed, is_failing=False)
-        elif passing and not show_passing:
+        if passing and not show_passing:
             self.stdout.write(
                 self.style.NOTICE(f"\n💡 Tip: Use --show-passing to see the {len(passing)} passing translations")
             )
-
-        # Show failing results
-        if failing:
-            self.stdout.write("\n" + "-" * 60)
-            self.stdout.write(self.style.ERROR("FAILING TRANSLATIONS:"))
-            self.stdout.write("-" * 60)
-
-            # Sort by score (worst first for English, best first for Spanish)
-            if language.startswith("es"):
-                failing_sorted = sorted(failing, key=lambda r: r.primary_score)
-            else:
-                failing_sorted = sorted(failing, key=lambda r: -r.primary_score)
-
-            for result in failing_sorted:
-                self._print_result(result, detailed, is_failing=True)
-
-        self.stdout.write("\n" + "=" * 60 + "\n")
-
-    def _print_result(self, result: ReadabilityResult, detailed: bool, is_failing: bool):
-        """Print details for a single translation result."""
-        icon = "❌" if is_failing else "✅"
-
-        self.stdout.write(f"\n{icon} {result.label}")
-        self.stdout.write(f"   Score: {result.primary_score:.1f} (threshold: {result.threshold})")
-        self.stdout.write(f"   Words: {result.word_count}")
-
-        # Truncate text for display
-        display_text = result.text[:100] + "..." if len(result.text) > 100 else result.text
-        display_text = display_text.replace("\n", " ")
-        self.stdout.write(f'   Text: "{display_text}"')
-
-        if detailed:
-            self.stdout.write("   All scores:")
-            for metric, score in result.scores.items():
-                self.stdout.write(f"      {metric}: {score:.2f}")
