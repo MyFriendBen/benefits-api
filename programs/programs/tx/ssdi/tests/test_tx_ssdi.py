@@ -3,12 +3,11 @@ Unit tests for TxSsdi calculator.
 
 Covers all spec.md test scenarios plus edge cases:
 - Disability: long_term_disability required; general disabled flag alone is insufficient
-- Current benefits: already receiving SSDI disqualifies; SSI does not (concurrent OK)
 - SS retirement: sSRetirement income disqualifies
 - SGA income: earned-only, non-blind $1,690 and blind $2,830 thresholds (inclusive)
 - FRA age: dynamically computed from birth year per SSA schedule; uses fraction_age() for precision
 - Household: per-member evaluation; spousal income is irrelevant
-- Value: $1,580 × 12 per eligible member
+- Value: $1,580 * 12 per eligible member
 """
 
 from unittest.mock import Mock, call
@@ -20,10 +19,9 @@ from programs.programs.tx import tx_calculators
 from programs.programs.tx.ssdi.calculator import TxSsdi
 
 
-def make_calculator(has_ssdi=False):
+def make_calculator():
     """Create a TxSsdi calculator with a mocked screen."""
     mock_screen = Mock()
-    mock_screen.has_benefit = Mock(return_value=has_ssdi)
     mock_program = Mock()
     mock_missing_deps = Mock()
     mock_missing_deps.has.return_value = False
@@ -61,9 +59,9 @@ def make_member(
     return mock_member
 
 
-def run_member_eligible(member, has_ssdi=False):
+def run_member_eligible(member):
     """Run member_eligible and return the MemberEligibility result."""
-    calculator = make_calculator(has_ssdi=has_ssdi)
+    calculator = make_calculator()
     e = MemberEligibility(member)
     calculator.member_eligible(e)
     return e
@@ -102,26 +100,6 @@ class TestTxSsdiDisabilityCheck(TestCase):
         member = make_member(long_term_disability=False)
         self.assertFalse(run_member_eligible(member).eligible)
 
-
-class TestTxSsdiCurrentBenefits(TestCase):
-    """Scenarios 5, 6 — SSDI checkbox disqualifies; SSI does not."""
-
-    def test_already_receiving_ssdi_is_not_eligible(self):
-        # Scenario 5: current_benefits includes SSDI → not eligible
-        member = make_member()
-        self.assertFalse(run_member_eligible(member, has_ssdi=True).eligible)
-
-    def test_already_receiving_ssdi_has_benefit_called_with_tx_ssdi(self):
-        calculator = make_calculator(has_ssdi=False)
-        member = make_member()
-        e = MemberEligibility(member)
-        calculator.member_eligible(e)
-        calculator.screen.has_benefit.assert_called_with("tx_ssdi")
-
-    def test_already_receiving_ssi_is_still_eligible(self):
-        # Scenario 6: SSI and SSDI are concurrent; SSI receipt doesn't disqualify
-        member = make_member()
-        self.assertTrue(run_member_eligible(member, has_ssdi=False).eligible)
 
 
 class TestTxSsdiSsRetirement(TestCase):
@@ -308,10 +286,10 @@ class TestTxSsdiHouseholdEligibility(TestCase):
 
 
 class TestTxSsdiValue(TestCase):
-    """Value: $1,580 × 12 per eligible member."""
+    """Value: $1,580 * 12 per eligible member."""
 
-    def _run_with_value(self, member, has_ssdi=False):
-        calculator = make_calculator(has_ssdi=has_ssdi)
+    def _run_with_value(self, member):
+        calculator = make_calculator()
         member_e = MemberEligibility(member)
         calculator.member_eligible(member_e)
         household_e = Eligibility()

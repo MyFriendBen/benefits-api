@@ -5,7 +5,7 @@ class TxSsdi(ProgramCalculator):
     income_limit = 1_690  # 2026 non-blind SGA threshold
     income_limit_blind = 2_830  # 2026 blind SGA threshold
     member_amount = 1_580 * 12  # average annual SSDI benefit
-    dependencies = ["income_amount", "income_frequency", "household_size"]
+    dependencies = ["income_amount", "income_frequency", "household_size", "age"]
 
     @staticmethod
     def _full_retirement_age(birth_year: int | None) -> int | float:
@@ -24,9 +24,6 @@ class TxSsdi(ProgramCalculator):
 
         # long-term disability required (12+ months expected duration)
         e.condition(member.long_term_disability)
-
-        # not already receiving SSDI (current benefits checkbox)
-        e.condition(not self.screen.has_benefit("tx_ssdi"))
 
         # not already receiving Social Security retirement benefits
         e.condition(member.calc_gross_income("monthly", ["sSRetirement"]) == 0)
