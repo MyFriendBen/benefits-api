@@ -22,7 +22,7 @@ class TxSsdi(ProgramCalculator):
 
         # income below SGA threshold (inclusive of limit per SSA rules)
         income_limit = TxSsdi.income_limit_blind if member.visually_impaired else TxSsdi.income_limit
-        e.condition(member.calc_gross_income("monthly", ("all",)) <= income_limit)
+        e.condition(member.calc_gross_income("monthly", ["earned"]) <= income_limit)
 
         # under Full Retirement Age
         e.condition(member.age < TxSsdi.max_age)
