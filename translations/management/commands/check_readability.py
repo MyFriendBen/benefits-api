@@ -198,9 +198,13 @@ class Command(BaseCommand):
         translations = self._fetch_translations(language, whitelabel, options.get("label_filter"))
         passing, failing, skipped = self._analyze(translations, language, checker, options["min_words"])
 
-        self._print_summary(passing, failing, skipped, language, checker, options["detailed"], options["show_passing"], whitelabel)
+        self._print_summary(
+            passing, failing, skipped, language, checker, options["detailed"], options["show_passing"], whitelabel
+        )
 
-        output_file, output_format = self._resolve_output_path(options.get("output"), options.get("format"), language, whitelabel)
+        output_file, output_format = self._resolve_output_path(
+            options.get("output"), options.get("format"), language, whitelabel
+        )
         self._export_report(output_file, output_format, passing, failing, skipped, language, checker, whitelabel)
 
         if options["fail_on_error"] and failing:
@@ -451,13 +455,15 @@ class Command(BaseCommand):
             lines.append("Metric: Flesch-Kincaid Grade Level (lower is better)")
             lines.append(f"Threshold: <= {checker.en_threshold}")
 
-        lines.extend([
-            "",
-            f"Total analyzed: {total}",
-            f"Skipped (too short): {skipped}",
-            f"✅ Passing: {len(passing)} ({100 * len(passing) / total:.1f}%)" if total > 0 else "✅ Passing: 0",
-            f"❌ Failing: {len(failing)} ({100 * len(failing) / total:.1f}%)" if failing else "✅ Failing: 0",
-        ])
+        lines.extend(
+            [
+                "",
+                f"Total analyzed: {total}",
+                f"Skipped (too short): {skipped}",
+                f"✅ Passing: {len(passing)} ({100 * len(passing) / total:.1f}%)" if total > 0 else "✅ Passing: 0",
+                f"❌ Failing: {len(failing)} ({100 * len(failing) / total:.1f}%)" if failing else "✅ Failing: 0",
+            ]
+        )
 
         if failing:
             lines.extend(["", "-" * 60, "FAILING TRANSLATIONS:", "-" * 60])
@@ -465,13 +471,15 @@ class Command(BaseCommand):
             failing_sorted = sorted(failing, key=lambda r: r.primary_score, reverse=not language.startswith("es"))
             for result in failing_sorted:
                 display_text = result.text[:100].replace("\n", " ") + ("..." if len(result.text) > 100 else "")
-                lines.extend([
-                    "",
-                    f"❌ {result.label}",
-                    f"   Score: {result.primary_score:.1f} (threshold: {result.threshold})",
-                    f"   Words: {result.word_count}",
-                    f'   Text: "{display_text}"',
-                ])
+                lines.extend(
+                    [
+                        "",
+                        f"❌ {result.label}",
+                        f"   Score: {result.primary_score:.1f} (threshold: {result.threshold})",
+                        f"   Words: {result.word_count}",
+                        f'   Text: "{display_text}"',
+                    ]
+                )
                 if detailed:
                     lines.append("   All scores:")
                     lines.extend([f"      {m}: {s:.2f}" for m, s in result.scores.items()])
@@ -479,12 +487,14 @@ class Command(BaseCommand):
         if show_passing and passing:
             lines.extend(["", "-" * 60, "PASSING TRANSLATIONS:", "-" * 60])
             for result in sorted(passing, key=lambda r: r.primary_score, reverse=language.startswith("es")):
-                lines.extend([
-                    "",
-                    f"✅ {result.label}",
-                    f"   Score: {result.primary_score:.1f}",
-                    f"   Words: {result.word_count}",
-                ])
+                lines.extend(
+                    [
+                        "",
+                        f"✅ {result.label}",
+                        f"   Score: {result.primary_score:.1f}",
+                        f"   Words: {result.word_count}",
+                    ]
+                )
                 if detailed:
                     lines.append("   All scores:")
                     lines.extend([f"      {m}: {s:.2f}" for m, s in result.scores.items()])
@@ -520,8 +530,14 @@ class Command(BaseCommand):
     ):
         """Print a formatted summary of the readability analysis."""
         lines = self._build_report_lines(
-            passing, failing, skipped, language, checker, whitelabel,
-            show_passing=show_passing, detailed=detailed,
+            passing,
+            failing,
+            skipped,
+            language,
+            checker,
+            whitelabel,
+            show_passing=show_passing,
+            detailed=detailed,
         )
         for line in lines:
             if line.startswith("✅"):
