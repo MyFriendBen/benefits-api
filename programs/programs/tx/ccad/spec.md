@@ -60,7 +60,11 @@ The dominant service is **Primary Home Care (PHC)** — personal care attendants
 
 ## Test Scenarios
 
-### Scenario 1: 65-Year-Old Retiree with Social Security Income Below 300% FPL
+Scenarios marked `[validation]` are included in `tx_ccad.json` as automated validations run in CI. All scenarios are covered by unit tests in `programs/programs/tx/ccad/tests/test_ccad.py`. All scenarios are used for Playwright QA against local/staging/prod.
+
+---
+
+### Scenario 1: 65-Year-Old Retiree with Social Security Income Below 300% FPL `[validation]`
 
 **Checks**: Core age-based eligibility (65+) with income clearly below threshold
 **Expected**: Eligible
@@ -88,21 +92,7 @@ The dominant service is **Primary Home Care (PHC)** — personal care attendants
 
 ---
 
-### Scenario 3: 67-Year-Old with Income Just Below 300% FPL
-
-**Checks**: Upper income boundary — applicant just under the threshold is eligible
-**Expected**: Eligible
-
-**Steps**:
-- **Location**: ZIP `75201`, County `Dallas`
-- **Household**: 1 person
-- **Person 1**: DOB `January 1959` (age 67), Head of Household, U.S. Citizen, Social Security Retirement `$3,700/month`, no disability, no insurance, no current benefits
-
-**Why this matters**: Validates the income threshold boundary prevents false negatives for seniors close to but under the limit.
-
----
-
-### Scenario 4: 70-Year-Old with Income Exactly at 300% FPL
+### Scenario 3: 70-Year-Old with Income Exactly at 300% FPL
 
 **Checks**: Income exactly at the threshold qualifies ("at or below")
 **Expected**: Eligible
@@ -116,7 +106,7 @@ The dominant service is **Primary Home Care (PHC)** — personal care attendants
 
 ---
 
-### Scenario 5: 72-Year-Old with Income Just Above 300% FPL
+### Scenario 4: 72-Year-Old with Income Just Above 300% FPL `[validation]`
 
 **Checks**: Income exceeding threshold is correctly rejected
 **Expected**: Not eligible
@@ -130,7 +120,7 @@ The dominant service is **Primary Home Care (PHC)** — personal care attendants
 
 ---
 
-### Scenario 6: 21-Year-Old with Disability at Exact Minimum Age
+### Scenario 5: 21-Year-Old with Disability at Exact Minimum Age
 
 **Checks**: Age threshold is inclusive (>= 21, not > 21) for disabled applicants
 **Expected**: Eligible
@@ -144,7 +134,7 @@ The dominant service is **Primary Home Care (PHC)** — personal care attendants
 
 ---
 
-### Scenario 7: 19-Year-Old with Disability — Below Minimum Age
+### Scenario 6: 19-Year-Old with Disability — Below Minimum Age
 
 **Checks**: Under-21 applicants are ineligible even with disability and qualifying income
 **Expected**: Not eligible
@@ -158,63 +148,7 @@ The dominant service is **Primary Home Care (PHC)** — personal care attendants
 
 ---
 
-### Scenario 8: 85-Year-Old with Low Income
-
-**Checks**: No unintended upper age limit; early birth years processed correctly
-**Expected**: Eligible
-
-**Steps**:
-- **Location**: ZIP `78701`, County `Travis`
-- **Household**: 1 person
-- **Person 1**: DOB `January 1941` (age 85), Head of Household, U.S. Citizen, Social Security Retirement `$1,200/month`, no disability, no insurance, no current benefits
-
-**Why this matters**: Confirms the system handles birth years from the early 1940s and applies no unintended upper age limit.
-
----
-
-### Scenario 9: Valid Texas Resident — Geographic Eligibility
-
-**Checks**: Texas county and ZIP code validation passes
-**Expected**: Eligible
-
-**Steps**:
-- **Location**: ZIP `75201`, County `Dallas`
-- **Household**: 1 person
-- **Person 1**: DOB `January 1958` (age 68), Head of Household, U.S. Citizen, Social Security Retirement `$1,200/month`, no insurance
-
-**Why this matters**: Confirms the screener correctly recognizes valid Texas counties and ZIP codes for the residency requirement.
-
----
-
-### Scenario 10: Already Receiving CCAD — Duplicate Benefit Check
-
-**Checks**: Current CCAD recipients are excluded from re-enrollment
-**Expected**: Not eligible
-
-**Steps**:
-- **Location**: ZIP `78701`, County `Travis`
-- **Household**: 1 person
-- **Person 1**: DOB `January 1961` (age 65), Head of Household, U.S. Citizen, no disability, Social Security Retirement `$1,200/month`, Medicaid, `has_ccad = True`
-
-**Why this matters**: Prevents duplicate enrollment — someone already receiving CCAD should not be shown as newly eligible.
-
----
-
-### Scenario 11: Currently in Nursing Facility
-
-**Checks**: Applicants in nursing facilities are excluded
-**Expected**: Not eligible
-
-**Steps**:
-- **Location**: ZIP `75201`, County `Dallas`
-- **Household**: 1 person
-- **Person 1**: DOB `January 1961` (age 65), Head of Household, U.S. Citizen, no disability, Social Security Retirement `$1,200/month`, housing situation: Nursing Home/Long-term Care Facility, Medicaid
-
-**Why this matters**: CCAD is a community-based alternative to institutional care — applicants already in nursing facilities do not qualify.
-
----
-
-### Scenario 12: Mixed Household — Eligible Senior with Ineligible Adult Child
+### Scenario 7: Mixed Household — Eligible Senior with Ineligible Adult Child
 
 **Checks**: CCAD eligibility is per-individual, not household-wide
 **Expected**: Eligible (for the senior)
@@ -229,7 +163,7 @@ The dominant service is **Primary Home Care (PHC)** — personal care attendants
 
 ---
 
-### Scenario 13: Married Couple — Both 65+, Combined Income Below 300% FPL
+### Scenario 8: Married Couple — Both 65+, Combined Income Below 300% FPL
 
 **Checks**: Multiple eligible members in one household; income evaluated at household size of 2
 **Expected**: Eligible
@@ -244,7 +178,7 @@ The dominant service is **Primary Home Care (PHC)** — personal care attendants
 
 ---
 
-### Scenario 14: 21-Year-Old with December Birthday — Age Calculation Edge Case
+### Scenario 9: 21-Year-Old with December Birthday — Age Calculation Edge Case
 
 **Checks**: Age calculated correctly when birth month hasn't occurred yet in the current year
 **Expected**: Eligible
@@ -258,7 +192,7 @@ The dominant service is **Primary Home Care (PHC)** — personal care attendants
 
 ---
 
-### Scenario 15: Categorically Eligible — SNAP Recipient Above 300% FPL
+### Scenario 10: Categorically Eligible — SNAP Recipient Above 300% FPL `[validation]`
 
 **Checks**: Categorical eligibility path — SNAP recipient qualifies regardless of income
 **Expected**: Eligible
@@ -272,7 +206,52 @@ The dominant service is **Primary Home Care (PHC)** — personal care attendants
 
 ---
 
-### Scenario 16: `is_disabled` via `long_term_disability` — Not Directly Marked as Disabled
+### Scenario 11: TANF Recipient Above 300% FPL — Categorical Bypass
+
+**Checks**: TANF (household-level) bypasses the income test
+**Expected**: Eligible
+
+**Steps**:
+- **Location**: ZIP `78701`, County `Travis County`
+- **Household**: 1 person
+- **Person 1**: DOB `January 1958` (age 68), Head of Household, U.S. Citizen, Social Security Retirement `$4,500/month` (above 300% FPL), no insurance, `has_tanf = True`
+
+**Why this matters**: Confirms TANF (a household-level benefit) bypasses the income test independently of SNAP. Scenario 10 covers SNAP; this isolates TANF.
+
+---
+
+### Scenario 12: Medicaid Recipient Above 300% FPL — Categorical Bypass (No SSI)
+
+**Checks**: Member-level Medicaid insurance alone bypasses the income test
+**Expected**: Eligible
+
+**Steps**:
+- **Location**: ZIP `78701`, County `Travis County`
+- **Household**: 1 person
+- **Person 1**: DOB `January 1958` (age 68), Head of Household, U.S. Citizen, Social Security Retirement `$4,500/month` (above 300% FPL), Medicaid insurance, no SSI income
+
+**Why this matters**: Scenario 2 has both Medicaid and SSI — this isolates Medicaid as the sole categorical trigger, confirming it works independently without SSI income.
+
+---
+
+### Scenario 13: Non-Age-Eligible Member Has Medicaid — Should Not Bypass Income Test
+
+**Checks**: Medicaid belonging to a non-age-eligible member does not grant categorical eligibility to the age-eligible member
+**Expected**: Not eligible (income above 300% FPL, only the ineligible member has Medicaid)
+
+**Steps**:
+- **Location**: ZIP `78701`, County `Travis County`
+- **Household**: 2 people
+- **Person 1 (Head)**: DOB `January 1958` (age 68), no insurance, Social Security Retirement `$6,000/month` (above 300% FPL for household size 2: $63,450/year)
+- **Person 2**: DOB `June 1990` (age 35), Medicaid, no income
+
+**Why this matters**: Validates that Medicaid categorical eligibility is tied to the individual applicant — a younger household member's Medicaid should not bypass the income test for an unrelated age-eligible member.
+
+**Note on income**: 300% FPL for household size 2 is $63,450/year ($5,287/month) in 2025. Person 1's income must exceed this to test the Medicaid bypass guard. Use $6,000/month ($72,000/year) to be clearly above the limit.
+
+---
+
+### Scenario 14: `is_disabled` via `long_term_disability` — Not Directly Marked as Disabled
 
 **Checks**: `is_disabled` composite field includes `long_term_disability = True` even when `disabled = False`
 **Expected**: Eligible
