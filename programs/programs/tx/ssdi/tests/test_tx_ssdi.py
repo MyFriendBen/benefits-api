@@ -101,7 +101,6 @@ class TestTxSsdiDisabilityCheck(TestCase):
         self.assertFalse(run_member_eligible(member).eligible)
 
 
-
 class TestTxSsdiSsRetirement(TestCase):
     """Scenario 14 — SS retirement income disqualifies."""
 
