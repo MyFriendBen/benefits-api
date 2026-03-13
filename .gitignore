@@ -37,5 +37,5 @@ tasks/todo.md
 .claude/projects/
 .claude/settings.local.json
 
-# Readability check output files
+# Readability check output files in readability-output folder
 readability-output/
