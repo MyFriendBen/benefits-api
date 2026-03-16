@@ -230,7 +230,7 @@ Scenarios marked `[validation]` are included in `tx_ccad.json` as automated vali
 - **Household**: 1 person
 - **Person 1**: DOB `January 1958` (age 68), Head of Household, U.S. Citizen, Social Security Retirement `$4,500/month` (above 300% FPL), Medicaid insurance, no SSI income
 
-**Why this matters**: Scenario 2 has both Medicaid and SSI — this isolates Medicaid as the sole categorical trigger, confirming it works independently without SSI income.
+**Why this matters**: Scenario 5 has both Medicaid and SSI — this isolates Medicaid as the sole categorical trigger, confirming it works independently without SSI income.
 
 ---
 
