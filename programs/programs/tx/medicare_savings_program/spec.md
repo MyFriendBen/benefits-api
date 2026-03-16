@@ -162,7 +162,7 @@ The Medicare Savings Program in Texas has four sub-programs (QMB, SLMB, QI, QDWI
 [ ] Scenario 8 (QMB Eligible - Senior Age 75 Well Above Minimum Age): User should be **eligible** (benefit amount: N/A)
 [ ] Scenario 9 (Eligible Location - Houston ZIP Code in Harris County): User should be **eligible** (benefit amount: N/A)
 [ ] Scenario 10 (Already Receiving Medicaid - QI Exclusion Test): User should be **ineligible**
-[ ] Scenario 11 (QDWI Excluded - Already Receiving Medicare Part A (Premium-Free)): User should be **ineligible**
+[ ] Scenario 11 (QDWI Excluded - Already Receiving Medicare Part A (Premium-Free)): User should be **eligible** (for SLMB; ineligible for QDWI)
 [ ] Scenario 12 (Mixed Household - Eligible Senior with Non-Eligible Adult Child): User should be **eligible** (benefit amount: N/A)
 [ ] Scenario 13 (Multiple Eligible Members - Married Couple Both Qualifying for SLMB): User should be **eligible** (benefit amount: N/A)
 [ ] Scenario 14 (QDWI Edge Case - Disabled Person Age 64 with Resources Exactly at $4,000 Limit): User should be **eligible** (benefit amount: N/A)
@@ -311,8 +311,8 @@ The Medicare Savings Program in Texas has four sub-programs (QMB, SLMB, QI, QDWI
 ---
 
 ### Scenario 11: QDWI Excluded - Already Receiving Medicare Part A (Premium-Free)
-**What we're checking**: Tests QDWI exclusion for individuals who already have premium-free Medicare Part A coverage, as QDWI is specifically for those who need to purchase Part A
-**Expected**: Not eligible
+**What we're checking**: Tests QDWI exclusion for individuals who already have premium-free Medicare Part A coverage, while confirming they still qualify for SLMB
+**Expected**: Eligible (for SLMB; ineligible for QDWI)
 
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
@@ -320,7 +320,7 @@ The Medicare Savings Program in Texas has four sub-programs (QMB, SLMB, QI, QDWI
 - **Person 1**: Birth month/year: `January 1964` (age 62), Relationship: `Head of Household`, Check `Has a disability`, Has Medicare: `Yes`, Has Medicaid: `No`, Has income: `Yes`, Income type: `Social Security Disability`, Amount: `$1,500` per month
 - **Assets**: Total household assets: `$3,000`
 
-**Why this matters**: QDWI specifically helps disabled workers who lost premium-free Medicare Part A due to returning to work. Those who already have Medicare (premium-free Part A) are excluded from QDWI. Note: the screener uses the `medicare` field as a proxy — this scenario tests that Medicare enrollment correctly disqualifies a QDWI candidate.
+**Why this matters**: QDWI specifically helps disabled workers who lost premium-free Medicare Part A due to returning to work. Those who already have Medicare (premium-free Part A) are excluded from QDWI. Note: the screener uses the `medicare` field as a proxy — this scenario tests that Medicare enrollment correctly disqualifies a QDWI candidate. However, having Medicare is a *prerequisite* (not a disqualification) for SLMB. With income of $1,500/month (~115% FPL, within the 100–120% SLMB range) and assets of $3,000 (below the $9,430 individual limit), this person qualifies for SLMB. The system should fall through to SLMB eligibility rather than returning a blanket denial.
 
 ---
 
