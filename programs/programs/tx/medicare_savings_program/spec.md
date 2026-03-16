@@ -169,20 +169,20 @@ Files generated:
 
 ## Acceptance Criteria
 
-[ ] Scenario 1 (QMB Eligible - Single Senior with Social Security Income): User should be **eligible** with $None/year
-[ ] Scenario 2 (SLMB Eligible - Single Senior with Income in 100-120% FPL Range): User should be **eligible** with $None/year
-[ ] Scenario 3 (QI Eligible - Single Senior with Income in 120-135% FPL Range): User should be **eligible** with $None/year
-[ ] Scenario 4 (QMB Eligible - Single Senior with Income Exactly at 100% FPL): User should be **eligible** with $None/year
+[ ] Scenario 1 (QMB Eligible - Single Senior with Social Security Income): User should be **eligible** (benefit amount: N/A)
+[ ] Scenario 2 (SLMB Eligible - Single Senior with Income in 100-120% FPL Range): User should be **eligible** (benefit amount: N/A)
+[ ] Scenario 3 (QI Eligible - Single Senior with Income in 120-135% FPL Range): User should be **eligible** (benefit amount: N/A)
+[ ] Scenario 4 (QMB Eligible - Single Senior with Income Exactly at 100% FPL): User should be **eligible** (benefit amount: N/A)
 [ ] Scenario 5 (Ineligible - Income Above 135% FPL Disqualifies All MSP Categories): User should be **ineligible**
-[ ] Scenario 6 (QDWI Eligible - Person Exactly Age 64 at Disability Threshold): User should be **eligible** with $None/year
+[ ] Scenario 6 (QDWI Eligible - Person Exactly Age 64 at Disability Threshold): User should be **eligible** (benefit amount: N/A)
 [ ] Scenario 7 (QDWI Not Eligible - Person Age 65 Just Above Age Threshold): User should be **ineligible**
-[ ] Scenario 8 (QMB Eligible - Senior Age 75 Well Above Minimum Age): User should be **eligible** with $None/year
-[ ] Scenario 9 (Eligible Location - Houston ZIP Code in Harris County): User should be **eligible** with $None/year
+[ ] Scenario 8 (QMB Eligible - Senior Age 75 Well Above Minimum Age): User should be **eligible** (benefit amount: N/A)
+[ ] Scenario 9 (Eligible Location - Houston ZIP Code in Harris County): User should be **eligible** (benefit amount: N/A)
 [ ] Scenario 10 (Already Receiving Medicaid - QI Exclusion Test): User should be **ineligible**
 [ ] Scenario 11 (QDWI Excluded - Already Receiving Medicare Part A (Premium-Free)): User should be **ineligible**
-[ ] Scenario 12 (Mixed Household - Eligible Senior with Non-Eligible Adult Child): User should be **eligible** with $None/year
-[ ] Scenario 13 (Multiple Eligible Members - Married Couple Both Qualifying for QMB): User should be **eligible** with $None/year
-[ ] Scenario 14 (QDWI Edge Case - Disabled Person Age 64 with Resources Exactly at $4,000 Limit): User should be **eligible** with $None/year
+[ ] Scenario 12 (Mixed Household - Eligible Senior with Non-Eligible Adult Child): User should be **eligible** (benefit amount: N/A)
+[ ] Scenario 13 (Multiple Eligible Members - Married Couple Both Qualifying for QMB): User should be **eligible** (benefit amount: N/A)
+[ ] Scenario 14 (QDWI Edge Case - Disabled Person Age 64 with Resources Exactly at $4,000 Limit): User should be **eligible** (benefit amount: N/A)
 
 ## Test Scenarios
 
