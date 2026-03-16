@@ -71,7 +71,7 @@ class Medicaid(PolicyEngineMembersCalculator):
         # Seniors (65+) and disabled individuals must use the aged/disabled pathway,
         # as ACA expansion only applies to adults under 65.
         age = member.calc_age()
-+       is_senior = age is not None and age >= self.aged_min_age
+        is_senior = age is not None and age >= self.aged_min_age
         is_disabled = member.has_disability()
 
         if is_senior or is_disabled:
