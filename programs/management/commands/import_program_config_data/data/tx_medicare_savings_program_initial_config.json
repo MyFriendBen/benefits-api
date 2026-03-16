@@ -15,17 +15,16 @@
       "refugee"
     ],
     "name": "Medicare Savings Program (MSP)",
-    "description": "The Medicare Savings Program helps pay for Medicare costs. It covers premiums, deductibles, and copays. There are four types: QMB, SLMB, QI, and QDWI. Each type helps with different Medicare costs. You must have Medicare Part A to qualify for most types.\n\nYou can get help if your income is low. Single people must earn less than $1,695 per month. Couples must earn less than $2,301 per month. You must also have limited savings and assets. You must live in Texas and meet other rules.",
+    "description": "The Medicare Savings Program helps pay for Medicare costs. It covers premiums, deductibles, and copays. There are four types: QMB, SLMB, QI, and QDWI. Each type helps with different Medicare costs. You must have Medicare Part A to qualify for most types.\n\nYou can get help if your income is low. Income and asset limits vary by program type. You must live in Texas and meet other rules.",
     "description_short": "Help paying for Medicare premiums and costs",
     "learn_more_link": "https://www.hhs.texas.gov/handbooks/medicaid-elderly-people-disabilities-handbook/q-1000-medicare-savings-programs-overview",
     "apply_button_link": "https://www.hhs.texas.gov/handbooks/medicaid-elderly-people-disabilities-handbook/chapter-b-applications-redeterminations",
-    "apply_button_description": "Apply for Texas Medicare Savings Program",
+    "apply_button_description": "",
     "estimated_application_time": "1 - 2 hours",
     "estimated_delivery_time": "30 days",
-    "estimated_value": "Varies by program - QMB covers Part A and B premiums plus cost-sharing; SLMB covers Part B premiums; QI covers Part B premiums; QDWI covers Part A premiums",
+    "estimated_value": "Varies",
     "website_description": "Helps pay Medicare premiums, deductibles, and copays for people with low income"
   },
-  "warning_message": null,
   "documents": [
     {
       "external_name": "tx_home",
@@ -76,5 +75,76 @@
       "link_text": ""
     }
   ],
-  "navigators": []
+  "navigators": [
+    {
+      "external_name": "tx_hhs_hicap",
+      "name": "Texas Health Information, Counseling and Advocacy Program (HICAP)",
+      "email": "",
+      "description": "Texas HICAP provides free Medicare counseling statewide and can help you understand and apply for Medicare Savings Programs. Call to be connected with a certified benefits counselor near you.",
+      "assistance_link": "https://www.hhs.texas.gov/services/health/medicare",
+      "phone_number": "800-252-9240",
+      "counties": [],
+      "languages": []
+    },
+    {
+      "external_name": "tx_legal_services_center_hicap",
+      "name": "Texas Legal Services Center – HICAP",
+      "email": "",
+      "description": "Texas Legal Services Center administers the statewide HICAP/SHIP program, training certified benefits counselors across Texas who can help you apply for the Medicare Savings Program.",
+      "assistance_link": "https://www.tlsc.org/hicap",
+      "phone_number": "",
+      "counties": [],
+      "languages": []
+    },
+    {
+      "external_name": "tx_area_agency_on_aging_of_central_texas",
+      "name": "Area Agency on Aging of Central Texas (AAACT)",
+      "email": "",
+      "description": "AAACT offers free one-on-one help from certified benefits counselors who can screen your eligibility and assist with your MSP application. Serves Bell and surrounding Central Texas counties.",
+      "assistance_link": "https://aaact.org/state-health-insurance/",
+      "phone_number": "254-770-2330",
+      "counties": ["Bell", "Coryell", "Hamilton", "Lampasas", "Milam", "Mills", "San Saba"],
+      "languages": []
+    },
+    {
+      "external_name": "tx_houston_galveston_area_council_aaa",
+      "name": "Houston-Galveston Area Council Area Agency on Aging",
+      "email": "",
+      "description": "H-GAC's Benefits Counseling Team offers free, unbiased help applying for the Medicare Savings Program by phone or in person at community sites throughout the Houston-Galveston region.",
+      "assistance_link": "https://www.h-gac.com/area-agency-on-aging/medicare-benefits-counseling",
+      "phone_number": "800-437-7396",
+      "counties": ["Harris", "Brazoria", "Chambers", "Fort Bend", "Galveston", "Liberty", "Montgomery", "Walker", "Wharton"],
+      "languages": []
+    },
+    {
+      "external_name": "tx_area_agency_on_aging_of_east_texas",
+      "name": "Area Agency on Aging of East Texas",
+      "email": "",
+      "description": "The AAA of East Texas provides free HICAP-certified benefits counseling and can help seniors and people with disabilities in East Texas apply for the Medicare Savings Program.",
+      "assistance_link": "https://www.easttexasaaa.org/benefits-counseling",
+      "phone_number": "800-442-8845",
+      "counties": ["Gregg", "Harrison", "Panola", "Rusk", "Smith", "Upshur", "Wood", "Cherokee", "Henderson", "Anderson", "Nacogdoches", "Shelby", "San Augustine", "Sabine", "Newton", "Jasper", "Tyler", "Hardin", "Polk", "Trinity", "Houston", "Angelina"],
+      "languages": []
+    },
+    {
+      "external_name": "tx_houston_health_department_benefits_counseling",
+      "name": "Houston Health Department – Benefits Counseling Program",
+      "email": "",
+      "description": "The Houston Health Department's HICAP-certified counselors provide free help with MSP applications by phone, in person, or in writing for Medicare beneficiaries in Harris County.",
+      "assistance_link": "https://www.houstonhealth.org/services/aging/benefits-counseling",
+      "phone_number": "832-393-4301",
+      "counties": ["Harris"],
+      "languages": []
+    },
+    {
+      "external_name": "tx_area_agency_on_aging_of_the_capital_area",
+      "name": "Area Agency on Aging of the Capital Area (AAACAP)",
+      "email": "",
+      "description": "AAACAP provides free Medicare benefits counseling and can help residents in the Austin metro area screen for eligibility and apply for the Medicare Savings Program.",
+      "assistance_link": "https://www.findhelp.org/area-agency-on-aging-of-the-capital-area-(aaacap)---capital-area-council-of-governments-(capcog)--austin-tx-benefits-counseling-program/2232131",
+      "phone_number": "512-916-6062",
+      "counties": ["Travis", "Williamson", "Hays", "Bastrop", "Caldwell", "Blanco", "Burnet", "Fayette", "Lee", "Llano"],
+      "languages": []
+    }
+  ]
 }
