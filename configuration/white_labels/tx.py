@@ -2985,6 +2985,16 @@ class TxConfigurationData(ConfigurationData):
                         "_default_message": "Federal cash assistance for individuals who are disabled, blind, or 65 years of age or older",
                     },
                 },
+                "ssdi": {
+                    "name": {
+                        "_label": "cashAssistanceBenefits.ssdi",
+                        "_default_message": "Social Security Disability Insurance (SSDI): ",
+                    },
+                    "description": {
+                        "_label": "cashAssistanceBenefits.ssdi_desc",
+                        "_default_message": "Social security benefit for people with disabilities",
+                    },
+                },
                 "trump_account": {
                     "name": {
                         "_label": "cashAssistanceBenefits.trump_account",
