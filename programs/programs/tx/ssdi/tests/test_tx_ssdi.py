@@ -178,6 +178,7 @@ class TestTxSsdiSgaIncome(TestCase):
         member = make_member(ss_retirement_income=0, earned_income=0)
         run_member_eligible(member)
         self.assertIn(call("monthly", ["earned"]), member.calc_gross_income.call_args_list)
+        self.assertNotIn(call("monthly", ["all"]), member.calc_gross_income.call_args_list)
 
 
 class TestTxSsdiFra(TestCase):

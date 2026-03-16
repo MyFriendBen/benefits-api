@@ -8,7 +8,7 @@ class TxSsdi(ProgramCalculator):
     dependencies = ["income_amount", "income_frequency", "household_size", "age"]
 
     @staticmethod
-    def _full_retirement_age(birth_year: int | None) -> int | float:
+    def _full_retirement_age(birth_year: int | None) -> float:
         """Return FRA in years per the SSA schedule. Falls back to 67 when birth year is unknown."""
         if birth_year is None or birth_year >= 1960:
             return 67
@@ -19,7 +19,7 @@ class TxSsdi(ProgramCalculator):
         # Pre-1943 cohort is 83+ today and always past FRA
         return 65
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
 
         # long-term disability required (12+ months expected duration)
