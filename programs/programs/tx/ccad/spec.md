@@ -23,12 +23,12 @@
 | 12 | Must choose CCAD over nursing facility placement | — | Applicant preference | ❌ | Determined during application process, not captured in screener | CCSE Handbook §3000 |
 | 13 | Services available in applicant's geographic area | — | — | ❌ | No data on service availability or waiting lists by region; waiting list information is surfaced via program config | CCSE Handbook §2000 |
 | 14 | No responsible party able to provide necessary care | — | Informal caregiver assessment | ❌ | No field captures availability of informal caregivers or family support | CCSE Handbook §3000 |
-| 15 | Must not already be receiving CCAD | `has_ccad` | `has_ccad != True` | ✅ | `has_ccad` field to be added to Screen model during implementation, following the same pattern as `has_ccs`, `has_tx_dart`, etc. | — |
+| 15 | Must not already be receiving CCAD | — | — | ❌ | **Gap**: No `has_ccad` field on the Screen model; duplicate enrollment is not checked by the calculator. | — |
 
 ## Coverage
 
-- **Evaluable**: 6 of 15 criteria (40%)
-- **Summary**: The evaluable criteria include age requirements, income limits with categorical eligibility (300% FPL or SSI/TANF/SNAP/Medicaid), citizenship/immigration status via config filter, and duplicate enrollment check (requires adding `has_ccad` to the Screen model during implementation). Texas residency is handled automatically by the TX white label. Critical gaps include housing situation (no `housing_situation` field in screener), detailed ADL functional assessment, nursing facility risk determination, asset evaluation with Medicaid exemptions, and asset transfer history. The most significant limitation is the inability to perform detailed functional assessment and asset evaluation, both of which are core CCAD eligibility requirements.
+- **Evaluable**: 5 of 15 criteria (33%)
+- **Summary**: The evaluable criteria include age requirements, income limits with categorical eligibility (300% FPL or SSI/TANF/SNAP/Medicaid), and citizenship/immigration status via config filter. Texas residency is handled automatically by the TX white label. Critical gaps include housing situation (no `housing_situation` field in screener), duplicate enrollment detection (no `has_ccad` field), detailed ADL functional assessment, nursing facility risk determination, asset evaluation with Medicaid exemptions, and asset transfer history. The most significant limitation is the inability to perform detailed functional assessment and asset evaluation, both of which are core CCAD eligibility requirements.
 
 ## Benefit Value
 
@@ -199,8 +199,8 @@ Scenarios marked `[validation]` are included in `tx_ccad.json` as automated vali
 
 **Steps**:
 - **Location**: ZIP `78701`, County `Travis`
-- **Household**: 1 person
-- **Person 1**: DOB `January 1958` (age 68), Head of Household, U.S. Citizen, Social Security Retirement `$4,500/month` (above 300% FPL), no disability, no insurance, currently receiving SNAP (`has_snap = True`)
+- **Household**: 1 person, currently receiving SNAP (`has_snap = True`)
+- **Person 1**: DOB `January 1958` (age 68), Head of Household, U.S. Citizen, Social Security Retirement `$4,500/month` (above 300% FPL), no disability, no insurance
 
 **Why this matters**: Confirms that categorical eligibility (SNAP) overrides the income test — a senior above 300% FPL who receives SNAP should still qualify.
 
@@ -213,8 +213,8 @@ Scenarios marked `[validation]` are included in `tx_ccad.json` as automated vali
 
 **Steps**:
 - **Location**: ZIP `78701`, County `Travis County`
-- **Household**: 1 person
-- **Person 1**: DOB `January 1958` (age 68), Head of Household, U.S. Citizen, Social Security Retirement `$4,500/month` (above 300% FPL), no insurance, `has_tanf = True`
+- **Household**: 1 person, `has_tanf = True`
+- **Person 1**: DOB `January 1958` (age 68), Head of Household, U.S. Citizen, Social Security Retirement `$4,500/month` (above 300% FPL), no insurance
 
 **Why this matters**: Confirms TANF (a household-level benefit) bypasses the income test independently of SNAP. Scenario 10 covers SNAP; this isolates TANF.
 
@@ -242,12 +242,12 @@ Scenarios marked `[validation]` are included in `tx_ccad.json` as automated vali
 **Steps**:
 - **Location**: ZIP `78701`, County `Travis County`
 - **Household**: 2 people
-- **Person 1 (Head)**: DOB `January 1958` (age 68), no insurance, Social Security Retirement `$6,000/month` (above 300% FPL for household size 2: $63,450/year)
+- **Person 1 (Head)**: DOB `January 1958` (age 68), no insurance, Social Security Retirement `$6,000/month` (above 300% FPL for household size 2: $61,320/year in 2025)
 - **Person 2**: DOB `June 1990` (age 35), Medicaid, no income
 
 **Why this matters**: Validates that Medicaid categorical eligibility is tied to the individual applicant — a younger household member's Medicaid should not bypass the income test for an unrelated age-eligible member.
 
-**Note on income**: 300% FPL for household size 2 is $63,450/year ($5,287/month) in 2025. Person 1's income must exceed this to test the Medicaid bypass guard. Use $6,000/month ($72,000/year) to be clearly above the limit.
+**Note on income**: 300% FPL for household size 2 is $61,320/year ($5,110/month) in 2025. Person 1's income must exceed this to test the Medicaid bypass guard. Use $6,000/month ($72,000/year) to be clearly above the limit.
 
 ---
 
