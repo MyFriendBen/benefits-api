@@ -86,7 +86,7 @@ Scenarios marked `[validation]` are included in `tx_ccad.json` as automated vali
 **Steps**:
 - **Location**: ZIP `75001`, County `Collin`
 - **Household**: 1 person
-- **Person 1**: DOB `March 2005` (age 21), Head of Household, U.S. Citizen, has disability (`disabled = True`), SSDI `$3,765/month` ($45,180/year = exactly 300% FPL for household of 1 in 2025), no insurance
+- **Person 1**: DOB `March 2005` (age 21), Head of Household, U.S. Citizen, has disability (`disabled = True`), SSDI `$3,990/month` ($47,880/year = exactly 300% FPL for household of 1 in 2026), no insurance
 
 **Why this matters**: Tests both minimum boundaries simultaneously — youngest possible qualifying age and highest allowable income. Ensures no rounding errors at the precise income threshold.
 
@@ -100,7 +100,7 @@ Scenarios marked `[validation]` are included in `tx_ccad.json` as automated vali
 **Steps**:
 - **Location**: ZIP `75201`, County `Dallas County`
 - **Household**: 1 person
-- **Person 1**: DOB `January 1956` (age 70), Head of Household, U.S. Citizen, Social Security Retirement `$3,765/month` ($45,180/year = exactly 300% FPL for 2025), no insurance, no current benefits
+- **Person 1**: DOB `January 1956` (age 70), Head of Household, U.S. Citizen, Social Security Retirement `$3,990/month` ($47,880/year = exactly 300% FPL for 2026), no insurance, no current benefits
 
 **Why this matters**: Confirms the boundary condition is inclusive — applicants at exactly 300% FPL must not be incorrectly excluded.
 
@@ -247,7 +247,7 @@ Scenarios marked `[validation]` are included in `tx_ccad.json` as automated vali
 
 **Why this matters**: Validates that Medicaid categorical eligibility is tied to the individual applicant — a younger household member's Medicaid should not bypass the income test for an unrelated age-eligible member.
 
-**Note on income**: 300% FPL for household size 2 is $61,320/year ($5,110/month) in 2025. Person 1's income must exceed this to test the Medicaid bypass guard. Use $6,000/month ($72,000/year) to be clearly above the limit.
+**Note on income**: 300% FPL for household size 2 is $64,920/year ($5,410/month) in 2026. Person 1's income must exceed this to test the Medicaid bypass guard. Use $6,000/month ($72,000/year) to be clearly above the limit.
 
 ---
 
