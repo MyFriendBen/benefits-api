@@ -83,10 +83,10 @@
    - Source: Section Q-6000
    - Impact: High
 
-13. **Must be U.S. citizen or qualified non-citizen** ⚠️ *data gap*
-   - Note: No citizenship/immigration status field in screener. MSP follows Medicaid citizenship requirements. Qualified non-citizens must meet specific immigration status and duration requirements.
+13. **Must be U.S. citizen or qualified non-citizen**
+   - Screener fields: `legal_status_required` (program config)
+   - Note: Handled at the program level via `legal_status_required`. MSP follows Medicaid citizenship requirements; the program config restricts results to citizens and qualified non-citizens.
    - Source: Chapter D - Non-Financial Eligibility Requirements
-   - Impact: High
 
 14. **Must provide Social Security Number or apply for one** ⚠️ *data gap*
    - Note: No SSN field in screener. Required for all MSP applicants unless good cause exception applies.
@@ -98,32 +98,27 @@
    - Source: Chapter D - Non-Financial Eligibility Requirements
    - Impact: Low
 
-16. **QI: First-come, first-served based on federal funding allocation** ⚠️ *data gap*
-   - Note: QI program has limited federal funding and operates on first-come, first-served basis. Cannot determine if funding is available through screener.
-   - Source: Section Q-5000
-   - Impact: Medium
-
-17. **Must assign rights to medical support and third-party payments** ⚠️ *data gap*
+16. **Must assign rights to medical support and third-party payments** ⚠️ *data gap*
    - Note: Administrative requirement - applicants must assign rights to medical support. Cannot evaluate through screener.
    - Source: Chapter D - Non-Financial Eligibility Requirements
    - Impact: Low
 
-18. **Must cooperate with quality control reviews** ⚠️ *data gap*
+17. **Must cooperate with quality control reviews** ⚠️ *data gap*
    - Note: Administrative requirement - cannot evaluate through screener.
    - Source: Chapter D - Non-Financial Eligibility Requirements
    - Impact: Low
 
-19. **Specific income exclusions and deductions apply** ⚠️ *data gap*
+18. **Specific income exclusions and deductions apply** ⚠️ *data gap*
    - Note: MSP uses specific income counting rules including exclusions for certain income types (e.g., $20 general income exclusion, earned income exclusions, etc.). Screener collects gross income but cannot apply all MSP-specific exclusions and deductions.
    - Source: Chapter E - Income Determination
    - Impact: Medium
 
-20. **Specific resource exclusions apply** ⚠️ *data gap*
+19. **Specific resource exclusions apply** ⚠️ *data gap*
    - Note: Many resources excluded: homestead, one vehicle, household goods, personal effects, burial funds up to $1,500, life insurance with face value up to $1,500, etc. Screener asks for household_assets but users may not know to exclude these items.
    - Source: Chapter F - Resources, Section Q-1300
    - Impact: Medium
 
-21. **Deeming rules for married couples** ⚠️ *data gap*
+20. **Deeming rules for married couples** ⚠️ *data gap*
    - Note: When one spouse applies for MSP, income and resources of both spouses are considered. Complex deeming calculations apply. Screener can identify couples but cannot apply full deeming methodology.
    - Source: Chapter E - Income Determination, Chapter F - Resources
    - Impact: Medium
@@ -134,10 +129,10 @@
 
 ## Implementation Coverage
 
-- ✅ Evaluable criteria: 11
-- ⚠️  Data gaps: 10
+- ✅ Evaluable criteria: 12
+- ⚠️  Data gaps: 8
 
-The Medicare Savings Program in Texas has four sub-programs (QMB, SLMB, QI, QDWI) with varying income and resource limits. Of the major eligibility criteria, 11 can be evaluated with current screener fields, while 10 cannot. The evaluable criteria include all income thresholds (100%, 120%, 135%, 200% FPL), resource limits ($9,430/$14,130 for QMB/SLMB/QI; $4,000/$6,000 for QDWI), Medicare enrollment status (via `insurance.medicare` field), age requirements (QDWI under 65), disability status (QDWI), Texas residency, and Medicaid exclusion (QI only). Critical gaps include citizenship/immigration status, SSN requirement, whether someone lost free Part A due to returning to work (QDWI), and QI funding availability. The screener can effectively pre-screen based on income, assets, and Medicare enrollment status.
+The Medicare Savings Program in Texas has four sub-programs (QMB, SLMB, QI, QDWI) with varying income and resource limits. Of the major eligibility criteria, 12 can be evaluated with current screener fields or program config, while 8 cannot. The evaluable criteria include all income thresholds (100%, 120%, 135%, 200% FPL), resource limits ($9,430/$14,130 for QMB/SLMB/QI; $4,000/$6,000 for QDWI), Medicare enrollment status (via `insurance.medicare` field), age requirements (QDWI under 65), disability status (QDWI), Texas residency, Medicaid exclusion (QI only), and citizenship/immigration status (via `legal_status_required` program config). Critical gaps include SSN requirement and whether someone lost free Part A due to returning to work (QDWI). The screener can effectively pre-screen based on income, assets, Medicare enrollment status, and immigration status.
 
 ## Research Sources
 
