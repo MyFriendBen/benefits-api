@@ -494,6 +494,30 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # }
 
     # ==========================================================================================
+    # COMMUNICATIONS - Optional, usually inherited as is from ConfigurationData
+    # ==========================================================================================
+    # Text for "Save Results" email and SMS communications.
+    # Standard labels are registered in the translation system.
+    # Override if you need custom sender names, subjects, or bodies.
+    # ==========================================================================================
+    # communications = {
+    #     "save_results": {
+    #         "from_name": {
+    #             "_label": "sendResults.email-fromName",
+    #             "_default_message": "screener",
+    #         },
+    #         "subject": {
+    #             "_label": "sendResults.email-subject",
+    #             "_default_message": "Benefits Results from MyFriendBen",
+    #         },
+    #         "body": {
+    #             "_label": "sendResults.email",
+    #             "_default_message": "Thank you for using MyFriendBen. Click here to review your results.",
+    #         },
+    #     }
+    # }
+
+    # ==========================================================================================
     # OVERRIDE TEXT - Optional, delete if not needed
     # ==========================================================================================
     # Custom translation overrides for specific text strings

@@ -7,6 +7,7 @@ from decouple import config
 from django.conf import settings
 from twilio.rest import Client
 from django.utils import timezone
+from configuration.white_labels import white_label_config
 
 
 class MessageUser:
@@ -37,7 +38,11 @@ class MessageUser:
             return
 
         sg = self._email_client()
-        from_email = Email(self.email_from)  # Change to your verified sender
+        from_name = self._from_name()
+        if from_name:
+            from_email = Email(self.email_from, from_name)
+        else:
+            from_email = Email(self.email_from)
         to_email = To(email)  # Change to your recipient
         subject = self._email_subject()
         content = Content("text/html", self._email_body())
@@ -51,10 +56,10 @@ class MessageUser:
         return sendgrid.SendGridAPIClient(api_key=self.email_api_key)
 
     def _email_subject(self):
-        return Translation.objects.get(label="sendResults.email-subject").get_lang(self.lang).text
+        return self._get_text("subject")
 
     def _email_body(self):
-        words = Translation.objects.get(label="sendResults.email").get_lang(self.lang).text
+        words = self._get_text("body") or ""
         url = self._generate_link()
 
         return words + f' <a href="{url}">{url}</a>'
@@ -72,10 +77,31 @@ class MessageUser:
         self.log("textScreen")
 
     def _text_body(self):
-        words = Translation.objects.get(label="sendResults.email").get_lang(self.lang).text
+        words = self._get_text("body") or ""
         url = self._generate_link()
 
         return f"{words} {url}"
+
+    def _get_text(self, field: Literal["subject", "body", "from_name"]):
+        wl_config = white_label_config.get(self.screen.white_label.code) or white_label_config.get("_default")
+        comm_config = (getattr(wl_config, "communications", {}) or {}).get("save_results", {}).get(field)
+
+        if comm_config is None:
+            return ""
+
+        if isinstance(comm_config, dict) and "_label" in comm_config:
+            try:
+                trans = Translation.objects.get(label=comm_config["_label"]).get_lang(self.lang)
+                if trans and trans.text:
+                    return trans.text
+            except (Translation.DoesNotExist, AttributeError):
+                pass
+            return comm_config.get("_default_message", "")
+
+        return str(comm_config)
+
+    def _from_name(self):
+        return self._get_text("from_name")
 
     def _cell_client(self):
         return Client(self.cell_account_sid, self.cell_auth_token)

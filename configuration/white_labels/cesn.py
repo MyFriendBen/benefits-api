@@ -2263,3 +2263,20 @@ class CesnConfigurationData(ConfigurationData):
             "_default_message": "How likely are you to recommend the Colorado Energy Savings Calculator to a friend?",
         },
     }
+
+    communications = {
+        "save_results": {
+            "from_name": {
+                "_label": "energyCalculator.sendResults.email-fromName",
+                "_default_message": "Colorado Energy Savings Navigator",
+            },
+            "subject": {
+                "_label": "energyCalculator.sendResults.email-subject",
+                "_default_message": "Results from the Colorado Energy Savings Navigator",
+            },
+            "body": {
+                "_label": "energyCalculator.sendResults.email",
+                "_default_message": "Thank you for using the Colorado Energy Savings Navigator. Click here to review your results.",
+            },
+        }
+    }
