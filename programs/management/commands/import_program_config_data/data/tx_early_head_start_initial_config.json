@@ -8,9 +8,9 @@
   "program": {
     "name_abbreviated": "tx_early_head_start",
     "year": "2025",
-    "legal_status_required": [],
+    "legal_status_required": ["citizen", "non_citizen", "refugee", "gc_5plus", "gc_5less", "gc_under18_no5", "gc_18plus_no5", "otherWithWorkPermission"],
     "name": "Early Head Start",
-    "description": "Early Head Start is a free program for babies and toddlers from birth to age 3. It also helps pregnant women. The program offers learning activities, meals, health checkups, and family support. Parents pay nothing to join.\n\nFamilies with low income can apply. Children who get TANF (cash help) or SSI (disability benefits) qualify right away. Foster children and children without a stable home also qualify. Income must be at or below the poverty line for most families.",
+    "description": "Early childhood learning and family support for infants, toddlers, and pregnant women in Texas. Early Head Start provides free early learning, health care, healthy meals, and family support. Families also get help with parenting and community resources.\n\nEarly Head Start is run by local agencies, so services and availability vary by location. There may be a waitlist in some areas.\n\nChildren in foster care, those experiencing homelessness, and families receiving TANF, SNAP, or SSI are eligible regardless of income.",
     "description_short": "Free early learning program for infants and toddlers",
     "learn_more_link": "https://www.earlychildhood.texas.gov/about-eligibility-screener",
     "apply_button_link": "https://www.earlychildhood.texas.gov/about-eligibility-screener",
