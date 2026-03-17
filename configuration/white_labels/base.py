@@ -703,6 +703,10 @@ class ConfigurationData:
     # Email and SMS communication configuration
     communications = {
         "save_results": {
+            "from_name": {
+                "_label": "sendResults.email-fromName",
+                "_default_message": "screener",
+            },
             "subject": {
                 "_label": "sendResults.email-subject",
                 "_default_message": "Benefits Results from MyFriendBen",

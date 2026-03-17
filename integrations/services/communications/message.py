@@ -59,7 +59,7 @@ class MessageUser:
         return self._get_text("subject")
 
     def _email_body(self):
-        words = self._get_text("body")
+        words = self._get_text("body") or ""
         url = self._generate_link()
 
         return words + f' <a href="{url}">{url}</a>'
@@ -77,17 +77,17 @@ class MessageUser:
         self.log("textScreen")
 
     def _text_body(self):
-        words = self._get_text("body")
+        words = self._get_text("body") or ""
         url = self._generate_link()
 
         return f"{words} {url}"
 
     def _get_text(self, field: Literal["subject", "body", "from_name"]):
-        config = white_label_config.get(self.screen.white_label.code)
-        branding = config.communications.get("save_results", {}).get(field)
+        wl_config = white_label_config.get(self.screen.white_label.code) or white_label_config.get("_default")
+        branding = (getattr(wl_config, "communications", {}) or {}).get("save_results", {}).get(field)
 
-        if not branding:
-            return None
+        if branding is None:
+            return ""
 
         if isinstance(branding, dict) and "_label" in branding:
             try:
@@ -96,9 +96,9 @@ class MessageUser:
                     return trans.text
             except (Translation.DoesNotExist, AttributeError):
                 pass
-            return branding.get("_default_message")
+            return branding.get("_default_message", "")
 
-        return branding
+        return str(branding)
 
     def _from_name(self):
         return self._get_text("from_name")
