@@ -84,21 +84,21 @@ class MessageUser:
 
     def _get_text(self, field: Literal["subject", "body", "from_name"]):
         wl_config = white_label_config.get(self.screen.white_label.code) or white_label_config.get("_default")
-        branding = (getattr(wl_config, "communications", {}) or {}).get("save_results", {}).get(field)
+        comm_config = (getattr(wl_config, "communications", {}) or {}).get("save_results", {}).get(field)
 
-        if branding is None:
+        if comm_config is None:
             return ""
 
-        if isinstance(branding, dict) and "_label" in branding:
+        if isinstance(comm_config, dict) and "_label" in comm_config:
             try:
-                trans = Translation.objects.get(label=branding["_label"]).get_lang(self.lang)
+                trans = Translation.objects.get(label=comm_config["_label"]).get_lang(self.lang)
                 if trans and trans.text:
                     return trans.text
             except (Translation.DoesNotExist, AttributeError):
                 pass
-            return branding.get("_default_message", "")
+            return comm_config.get("_default_message", "")
 
-        return str(branding)
+        return str(comm_config)
 
     def _from_name(self):
         return self._get_text("from_name")
