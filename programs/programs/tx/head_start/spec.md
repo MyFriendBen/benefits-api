@@ -25,84 +25,79 @@
 3. **Child receives or family is eligible for TANF**
    - Screener fields:
      - `has_tanf`
-   - Source: 45 CFR § 1302.12(a)(1)(ii)(A) - Categorical eligibility
+   - Source: 45 CFR § 1302.12(c)(1)(ii) - Categorical eligibility (public assistance)
 
 4. **Child receives or family is eligible for SSI**
    - Screener fields:
      - `has_ssi`
-   - Source: 45 CFR § 1302.12(a)(1)(ii)(B) - Categorical eligibility
+   - Source: 45 CFR § 1302.12(c)(1)(ii) - Categorical eligibility (public assistance)
 
-5. **Child is in foster care**
+5. **Child receives or family is eligible for SNAP**
+   - Screener fields:
+     - `has_snap`
+   - Source: [Head Start FAQ](https://headstart.gov/about-us/article/head-start-faqs) - Categorical eligibility; SNAP listed alongside TANF and SSI as qualifying benefits
+
+6. **Child is in foster care**
    - Screener fields:
      - `household_member.relationship`
-   - Source: 45 CFR § 1302.12(c)(1)(ii) - Foster children eligibility
+   - Source: 45 CFR § 1302.12(c)(1)(iii) - Foster children eligibility
 
-6. **Family income between 100% and 130% FPL (up to 10% of enrollment)** ⚠️ *data gap*
-   - Note: This exception allows grantees to enroll up to 10% of children with family income between 100% and 130% FPL, but only when program capacity permits. Enrollment in this band is at the grantee's discretion and cannot be determined from screener data alone — it depends on slot availability at each local program.
-   - Source: 45 CFR § 1302.12(a)(1)(iii) - Over-income eligibility
+7. **Family income between 100% and 130% FPL** ⚠️ *data gap*
+   - Note: Programs may enroll children whose family income is between 100% and 130% FPL under two provisions: (d)(1) allows up to 35% of enrollment from families below 130% FPL; (c)(2) allows up to 10% of enrollment for any child who would benefit regardless of income. Both are grantee-discretionary and depend on slot availability — cannot be determined from screener data alone.
+   - Source: 45 CFR § 1302.12(c)(2) and § 1302.12(d)(1) - Over-income enrollment
    - Impact: Medium
 
-7. **Priority for children from families with incomes below poverty line**
+8. **Priority for children from families with incomes below poverty line**
    - Screener fields:
      - `income_stream.amount`
      - `income_stream.frequency`
      - `household_size`
    - Source: 45 CFR § 1302.14(a)(1) - Selection priorities
 
-8. **Priority for children with disabilities**
+9. **Priority for children with disabilities**
    - Screener fields:
      - `household_member.disabled`
      - `household_member.long_term_disability`
    - Source: 45 CFR § 1302.14(a)(2) - Selection priorities
 
-9. **Child experiencing homelessness** ⚠️ *data gap*
+10. **Child experiencing homelessness** ⚠️ *data gap*
    - Note: Children experiencing homelessness are categorically eligible regardless of income. The screener has 'housing_situation' field in the model but it is not collected from users. The 'needs_housing_help' field indicates desire for housing assistance, not current housing status. Cannot evaluate homelessness status.
    - Source: 45 CFR § 1302.12(c)(1)(i) - Homeless children eligibility
    - Impact: High
 
-10. **Child must not yet be eligible for kindergarten** ⚠️ *data gap*
+11. **Child must not yet be eligible for kindergarten** ⚠️ *data gap*
    - Note: 5-year-olds are only eligible if not yet eligible for kindergarten. Kindergarten eligibility varies by state/district and depends on birth date cutoffs (e.g., must turn 5 by September 1). The screener captures age but not kindergarten enrollment status or eligibility.
    - Source: 45 CFR § 1302.12(c)(1) - Age eligibility
    - Impact: Medium
 
-11. **Residency in program service area** ⚠️ *data gap*
+12. **Residency in program service area** ⚠️ *data gap*
    - Note: Each Head Start program serves a specific geographic area (may be county, city, neighborhood, or other boundary). The screener captures zipcode and county but cannot determine if these fall within a specific program's service area without program-specific geographic data.
-   - Source: 45 CFR § 1302.12(b) - Geographic eligibility
+   - Source: 45 CFR § 1302.12 - Geographic eligibility
    - Impact: High
 
-12. **Priority for families receiving public assistance** ⚠️ *data gap*
+13. **Priority for families receiving public assistance** ⚠️ *data gap*
    - Note: Selection priority for families receiving public assistance beyond TANF/SSI/SNAP (e.g., housing assistance, Medicaid). While screener captures some benefits (has_medicaid, has_section_8), 'public assistance' is broader and not fully defined. Partial evaluation possible but incomplete.
-   - Source: 45 CFR § 1302.14(a)(3) - Selection priorities
+   - Source: 45 CFR § 1302.14 - Selection priorities
    - Impact: Low
 
-13. **Priority for single-parent families** ⚠️ *data gap*
+14. **Priority for single-parent families** ⚠️ *data gap*
    - Note: Programs may establish additional selection priorities including single-parent status. The screener captures household member relationships but cannot definitively determine single-parent status (would need to identify one adult guardian with children and no spouse/partner).
-   - Source: 45 CFR § 1302.14(b) - Additional selection criteria
+   - Source: 45 CFR § 1302.14 - Selection priorities
    - Impact: Low
 
-14. **Priority for families with lowest incomes** ⚠️ *data gap*
+15. **Priority for families with lowest incomes** ⚠️ *data gap*
    - Note: Among eligible families, priority given to those with lowest incomes. This requires ranking/comparison across applicants, which cannot be done in a single-screen evaluation context.
    - Source: 45 CFR § 1302.14(a)(1) - Selection priorities
    - Impact: Low
 
-15. **Child's immunization status** ⚠️ *data gap*
+16. **Child's immunization status** ⚠️ *data gap*
    - Note: Children must be up-to-date on immunizations or have exemption. This is a post-enrollment requirement, not an eligibility barrier, but must be addressed within 90 days. Not captured in screener.
    - Source: 45 CFR § 1302.42 - Child health status and care
    - Impact: Low
 
-16. **Citizenship or immigration status** ⚠️ *data gap*
-   - Note: Head Start does not have citizenship requirements - children are eligible regardless of immigration status. However, this is not captured in screener. No evaluation needed as there is no restriction.
-   - Source: Head Start Act Section 645(a)(1)(B)(ii)
-   - Impact: Low
-
-17. **Documentation of income eligibility** ⚠️ *data gap*
-   - Note: Programs must verify income eligibility through documentation (pay stubs, tax returns, benefit award letters, etc.). The screener collects self-reported income but cannot verify documentation. This is an administrative requirement, not an eligibility criterion.
-   - Source: 45 CFR § 1302.12(j) - Verification of eligibility
-   - Impact: Low
-
-18. **Priority for children in families with both parents working or in training** ⚠️ *data gap*
+17. **Priority for children in families with both parents working or in training** ⚠️ *data gap*
    - Note: Programs may prioritize families where parents are working or in job training. The screener captures income streams (which may indicate employment) but not explicit employment status or training program participation for all household members.
-   - Source: 45 CFR § 1302.14(b) - Additional selection criteria
+   - Source: 45 CFR § 1302.14 - Selection priorities
    - Impact: Low
 
 ## Benefit Value
@@ -111,10 +106,10 @@
 
 ## Implementation Coverage
 
-- ✅ Evaluable criteria: 7
-- ⚠️  Data gaps: 11
+- ✅ Evaluable criteria: 8
+- ⚠️  Data gaps: 9
 
-Head Start eligibility can be substantially evaluated with current screener fields. Of the core eligibility criteria, we can evaluate: age requirements (3-5 years old), income eligibility (at or below 100% FPL), and categorical eligibility through TANF, SSI, and foster care receipt. We can also evaluate some selection priorities including disability status and income level. However, critical gaps exist: we cannot determine if a child is experiencing homelessness (a categorical eligibility factor), whether a 5-year-old is kindergarten-eligible, or whether the family resides in a specific program's service area. The 100%-130% FPL over-income pathway is also a data gap since enrollment in this band depends on slot availability at each local grantee. The homelessness gap is particularly significant as homeless children are categorically eligible regardless of income. Most other gaps relate to selection priorities rather than hard eligibility requirements, making them lower impact.
+Head Start eligibility can be substantially evaluated with current screener fields. Of the core eligibility criteria, we can evaluate: age requirements (3-5 years old), income eligibility (at or below 100% FPL), and categorical eligibility through TANF, SSI, SNAP, and foster care receipt. We can also evaluate some selection priorities including disability status and income level. However, critical gaps exist: we cannot determine if a child is experiencing homelessness (a categorical eligibility factor), whether a 5-year-old is kindergarten-eligible, or whether the family resides in a specific program's service area. The 100%-130% FPL over-income pathway is also a data gap since enrollment in this band depends on slot availability at each local grantee. The homelessness gap is particularly significant as homeless children are categorically eligible regardless of income. Most other gaps relate to selection priorities rather than hard eligibility requirements, making them lower impact.
 
 ## Research Sources
 
@@ -130,30 +125,20 @@ Head Start eligibility can be substantially evaluated with current screener fiel
 
 ## Research Output
 
-Local path: `../../../program-researcher/output/tx_Head Start_20260311_111721`
+Generated via program-researcher tool on 2026-03-11.
 
-Files generated:
-- Program config: `{white_label}_{program_name}_initial_config.json`
-- Test cases: `{white_label}_{program_name}_test_cases.json`
-- Full research data in output directory
+Files committed to repo:
+- Program config: `programs/management/commands/import_program_config_data/data/tx_head_start_initial_config.json`
+- Test cases: `validations/management/commands/import_validations/data/tx_head_start.json`
 
 
 ## Acceptance Criteria
 
-[ ] Scenario 1 (Single Parent with 4-Year-Old Child, Income Below 100% FPL): User should be **eligible** with $None/year
-[ ] Scenario 2 (Foster Child at Age 3, Family Income at Exactly 100% FPL): User should be **eligible** with $None/year
-[ ] Scenario 3 (Two-Parent Household with 3-Year-Old, Income Just Below 100% FPL): User should be **eligible** with $None/year
-[ ] Scenario 4 (Two-Parent Household with 5-Year-Old, Income Exactly at 100% FPL): User should be **eligible** with $None/year
-[ ] Scenario 5 (Single Parent with 4-Year-Old, Income Just Above 100% FPL - Should NOT Be Eligible): User should be **ineligible**
-[ ] Scenario 6 (Child Exactly Age 3 (Minimum Age), Income Below 100% FPL - Should Be Eligible): User should be **eligible** with $None/year
-[ ] Scenario 7 (Child Age 1 (Just Below Minimum Age 3), Income Below 100% FPL - Should NOT Be Eligible): User should be **ineligible**
-[ ] Scenario 8 (Child Age 5 (Maximum Age), Income Below 100% FPL - Should Be Eligible): User should be **eligible** with $None/year
-[ ] Scenario 9 (Two-Parent Household in Travis County with Income Below 100% FPL): User should be **eligible** with $None/year
-[ ] Scenario 10 (Family Already Enrolled in Head Start - Duplicate Application): User should be **ineligible**
+[ ] Scenario 1 (Single Parent with 4-Year-Old Child, Income Below 100% FPL): User should be **eligible**[ ] Scenario 2 (Foster Child at Age 3, Family Income at Exactly 100% FPL): User should be **eligible**[ ] Scenario 3 (Two-Parent Household with 3-Year-Old, Income Just Below 100% FPL): User should be **eligible**[ ] Scenario 4 (Two-Parent Household with 5-Year-Old, Income Exactly at 100% FPL): User should be **eligible**[ ] Scenario 5 (Single Parent with 4-Year-Old, Income Just Above 100% FPL - Should NOT Be Eligible): User should be **ineligible**
+[ ] Scenario 6 (Child Exactly Age 3 (Minimum Age), Income Below 100% FPL - Should Be Eligible): User should be **eligible**[ ] Scenario 7 (Child Age 1 (Just Below Minimum Age 3), Income Below 100% FPL - Should NOT Be Eligible): User should be **ineligible**
+[ ] Scenario 8 (Child Age 5 (Maximum Age), Income Below 100% FPL - Should Be Eligible): User should be **eligible**[ ] Scenario 9 (Two-Parent Household in Travis County with Income Below 100% FPL): User should be **eligible**[ ] Scenario 10 (Family Already Enrolled in Head Start - Duplicate Application): User should be **ineligible**
 [ ] Scenario 11 (Child Age 6 (Above Maximum Age), Income Below 100% FPL - Should NOT Be Eligible): User should be **ineligible**
-[ ] Scenario 12 (Multi-Member Household - 3 Children (One Eligible Age, Two Ineligible Ages), Income Below 100% FPL): User should be **eligible** with $None/year
-[ ] Scenario 13 (Multi-Member Household - Two Eligible Children (Ages 3 and 5), One Parent, Income Below 100% FPL): User should be **eligible** with $None/year
-[ ] Scenario 14 (Child Turns 3 Next Month - Testing Age Boundary at Minimum Eligibility): User should be **ineligible**
+[ ] Scenario 12 (Multi-Member Household - 3 Children (One Eligible Age, Two Ineligible Ages), Income Below 100% FPL): User should be **eligible**[ ] Scenario 13 (Multi-Member Household - Two Eligible Children (Ages 3 and 5), One Parent, Income Below 100% FPL): User should be **eligible**[ ] Scenario 14 (Child Turns 3 Next Month - Testing Age Boundary at Minimum Eligibility): User should be **ineligible**
 
 ## Test Scenarios
 
@@ -389,7 +374,7 @@ Files generated:
 - https://www.earlychildhood.texas.gov/about-eligibility-screener
 
 ## JSON Test Cases
-File: `../../../program-researcher/output/tx_Head Start_20260311_111721/ticket_content/tx_Head Start_test_cases.json`
+File: `validations/management/commands/import_validations/data/tx_head_start.json`
 
 ## Generated Program Configuration
-File: `../../../program-researcher/output/tx_Head Start_20260311_111721/ticket_content/tx_Head Start_initial_config.json`
+File: `programs/management/commands/import_program_config_data/data/tx_head_start_initial_config.json`
