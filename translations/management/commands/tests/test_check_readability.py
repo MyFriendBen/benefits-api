@@ -100,13 +100,12 @@ class ReadabilityCheckerTest(TestCase):
         self.assertGreater(result.primary_score, 8.0)
 
     def test_check_short_text_passes(self):
-        """Test that very short text is skipped and passes by default."""
+        """Test that checker.check always analyzes text; skipping by word count is handled by _analyze."""
         text = "Hello world"  # Only 2 words
         result = self.checker.check("test.label", text, "en-us")
 
-        self.assertTrue(result.passes)
         self.assertEqual(result.word_count, 2)
-        self.assertEqual(result.scores, {})
+        self.assertNotEqual(result.scores, {})
 
     def test_check_empty_text_passes(self):
         """Test that empty text passes by default."""
