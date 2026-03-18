@@ -40,13 +40,15 @@
 5. **QMB/SLMB/QI: Resources not exceeding $9,430 for individual or $14,130 for couple (2024)**
    - Screener fields:
      - `household_assets`
-     - `household_size`
+     - `HouseholdMember.relationship`
+   - Note: The resource limit is determined by marital status (individual vs. couple), not by household size — there is no defined limit for households with 3 or more members. The couple limit ($14,130) applies when a spouse is present (use `screen.is_joint()` or check for a spouse relationship); otherwise the individual limit ($9,430) applies. `household_size` is not the right field to select the limit. ⚠️ Partial gap for households > 2: `household_assets` is a household-level total that includes assets of non-eligible members (e.g., adult children). MSP resource counting applies only to the applicant and their spouse — other household members' assets should be excluded. Using `household_assets` as a proxy may produce false negatives for 3+ person households where non-eligible members hold significant assets.
    - Source: Section Q-1300, Appendix IX
 
 6. **QDWI: Resources not exceeding $4,000 for individual or $6,000 for couple**
    - Screener fields:
      - `household_assets`
-     - `household_size`
+     - `HouseholdMember.relationship`
+   - Note: Same household-size caveat as criterion 5. The couple limit ($6,000) applies when a spouse is present; otherwise the individual limit ($4,000) applies. ⚠️ Partial gap for households > 2: `household_assets` overcounts by including non-eligible members' assets, risking false negatives.
    - Source: Section Q-6000, Q-1300
 
 7. **QDWI: Age under 65**
@@ -133,7 +135,7 @@
 - ✅ Evaluable criteria: 12
 - ⚠️  Data gaps: 8
 
-The Medicare Savings Program in Texas has four sub-programs (QMB, SLMB, QI, QDWI) with varying income and resource limits. Of the major eligibility criteria, 12 can be evaluated with current screener fields or program config, while 8 cannot. The evaluable criteria include all income thresholds (100%, 120%, 135%, 200% FPL), resource limits ($9,430/$14,130 for QMB/SLMB/QI; $4,000/$6,000 for QDWI), Medicare enrollment status (via `insurance.medicare` field), age requirements (QDWI under 65), disability status (QDWI), Texas residency, Medicaid exclusion (QI only), and citizenship/immigration status (via `legal_status_required` program config). Critical gaps include SSN requirement and whether someone lost free Part A due to returning to work (QDWI). The screener can effectively pre-screen based on income, assets, Medicare enrollment status, and immigration status.
+The Medicare Savings Program in Texas has four sub-programs (QMB, SLMB, QI, QDWI) with varying income and resource limits. Of the major eligibility criteria, 12 can be evaluated with current screener fields or program config, while 8 cannot. The evaluable criteria include all income thresholds (100%, 120%, 135%, 200% FPL), resource limits ($9,430/$14,130 for QMB/SLMB/QI; $4,000/$6,000 for QDWI), Medicare enrollment status (via `insurance.medicare` field), age requirements (QDWI under 65), disability status (QDWI), Texas residency, Medicaid exclusion (QI only), and citizenship/immigration status (via `legal_status_required` program config). Critical gaps include SSN requirement and whether someone lost free Part A due to returning to work (QDWI). Resource limit checks are accurate for households of 1–2 (the vast majority of MSP cases) but partially limited for households > 2: `household_assets` captures the whole household including non-eligible members, and the individual/couple limits are selected by spouse presence rather than household size. The screener can effectively pre-screen based on income, assets, Medicare enrollment status, and immigration status.
 
 ## Research Sources
 
