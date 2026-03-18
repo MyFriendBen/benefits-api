@@ -42,7 +42,8 @@
      - `household_assets`
      - `HouseholdMember.relationship`
    - Note: The resource limit is determined by marital status (individual vs. couple), not by household size — there is no defined limit for households with 3 or more members. The couple limit ($14,130) applies when a spouse is present (use `screen.is_joint()` or check for a spouse relationship); otherwise the individual limit ($9,430) applies. `household_size` is not the right field to select the limit. ⚠️ Partial gap for households > 2: `household_assets` is a household-level total that includes assets of non-eligible members (e.g., adult children). MSP resource counting applies only to the applicant and their spouse — other household members' assets should be excluded. Using `household_assets` as a proxy may produce false negatives for 3+ person households where non-eligible members hold significant assets.
-   - Source: Section Q-1300, Appendix IX
+   - Note on resource exclusions: Many asset types are excluded from the resource count under MSP rules: homestead, one vehicle, household goods, personal effects, burial funds up to $1,500, and life insurance with face value up to $1,500. The screener collects a single `household_assets` total, so users may unknowingly include excluded items — this can produce false negatives. This is surfaced in the initial program config description to set user expectations.
+   - Source: Section Q-1300, Appendix IX, Chapter F - Resources
 
 6. **QDWI: Resources not exceeding $4,000 for individual or $6,000 for couple**
    - Screener fields:
@@ -112,12 +113,7 @@
    - Source: Chapter D - Non-Financial Eligibility Requirements
    - Impact: Low
 
-18. **Specific resource exclusions apply** ⚠️ *data gap*
-   - Note: Many resources excluded: homestead, one vehicle, household goods, personal effects, burial funds up to $1,500, life insurance with face value up to $1,500, etc. Screener asks for household_assets but users may not know to exclude these items.
-   - Source: Chapter F - Resources, Section Q-1300
-   - Impact: Medium
-
-19. **Deeming rules for married couples** ⚠️ *data gap*
+18. **Deeming rules for married couples** ⚠️ *data gap*
    - Note: When one spouse applies for MSP, income and resources of both spouses are considered. Complex deeming calculations apply. Screener can identify couples but cannot apply full deeming methodology.
    - Source: Chapter E - Income Determination, Chapter F - Resources
    - Impact: Medium
@@ -129,9 +125,9 @@
 ## Implementation Coverage
 
 - ✅ Evaluable criteria: 12
-- ⚠️  Data gaps: 7
+- ⚠️  Data gaps: 6
 
-The Medicare Savings Program in Texas has four sub-programs (QMB, SLMB, QI, QDWI) with varying income and resource limits. Of the major eligibility criteria, 12 can be evaluated with current screener fields or program config, while 7 cannot. The evaluable criteria include all income thresholds (100%, 120%, 135%, 200% FPL), resource limits ($9,430/$14,130 for QMB/SLMB/QI; $4,000/$6,000 for QDWI), Medicare enrollment status (via `insurance.medicare` field), age requirements (QDWI under 65), disability status (QDWI), Texas residency, Medicaid exclusion (QI only), and citizenship/immigration status (via `legal_status_required` program config). Critical gaps include SSN requirement and whether someone lost free Part A due to returning to work (QDWI). Resource limit checks are accurate for households of 1–2 (the vast majority of MSP cases) but partially limited for households > 2: `household_assets` captures the whole household including non-eligible members, and the individual/couple limits are selected by spouse presence rather than household size. The screener can effectively pre-screen based on income, assets, Medicare enrollment status, and immigration status. The QI Medicaid exclusion is evaluated in two steps: first by checking `insurance.medicaid` directly, then by falling back to PolicyEngine's `medicaid_eligible` calculation when not indicated — ensuring that applicants who would qualify for Medicaid are also excluded from QI even if they haven't explicitly reported Medicaid enrollment.
+The Medicare Savings Program in Texas has four sub-programs (QMB, SLMB, QI, QDWI) with varying income and resource limits. Of the major eligibility criteria, 12 can be evaluated with current screener fields or program config, while 6 cannot. The evaluable criteria include all income thresholds (100%, 120%, 135%, 200% FPL), resource limits ($9,430/$14,130 for QMB/SLMB/QI; $4,000/$6,000 for QDWI), Medicare enrollment status (via `insurance.medicare` field), age requirements (QDWI under 65), disability status (QDWI), Texas residency, Medicaid exclusion (QI only), and citizenship/immigration status (via `legal_status_required` program config). Critical gaps include SSN requirement and whether someone lost free Part A due to returning to work (QDWI). Resource limit checks are accurate for households of 1–2 (the vast majority of MSP cases) but partially limited for households > 2: `household_assets` captures the whole household including non-eligible members, and the individual/couple limits are selected by spouse presence rather than household size. The screener can effectively pre-screen based on income, assets, Medicare enrollment status, and immigration status. The QI Medicaid exclusion is evaluated in two steps: first by checking `insurance.medicaid` directly, then by falling back to PolicyEngine's `medicaid_eligible` calculation when not indicated — ensuring that applicants who would qualify for Medicaid are also excluded from QI even if they haven't explicitly reported Medicaid enrollment.
 
 ## Research Sources
 
