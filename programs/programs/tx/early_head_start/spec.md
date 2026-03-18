@@ -51,7 +51,7 @@
    - Impact: Medium
 
 10. **Geographic service area requirement** ⚠️ *data gap*
-   - Note: Each Early Head Start grantee serves specific geographic areas (counties, cities, neighborhoods). We have `zipcode` and `county` fields but would need grantee-specific service area data to evaluate. This is program-specific, not universal eligibility.
+   - Note: Each Early Head Start grantee serves specific geographic areas (counties, cities, neighborhoods). Texas has multiple grantees, each with their own service area boundaries. We have `zipcode` and `county` fields but would need grantee-specific service area data to evaluate which program(s) serve a given location. This is program-specific, not universal eligibility.
    - Source: 45 CFR 1302.11(b) - Programs serve designated geographic areas
    - Impact: High
 
@@ -75,11 +75,6 @@
    - Source: 45 CFR 1302.42(b) - Children must have ongoing source of continuous, accessible health care
    - Impact: Low
 
-15. **Residency in program service area** ⚠️ *data gap*
-   - Note: Texas has multiple Early Head Start grantees, each serving specific geographic areas. Would need grantee-specific service area boundaries to evaluate. `zipcode`/county fields available but need mapping to specific programs.
-   - Source: Program-specific requirement based on grantee service area
-   - Impact: High
-
 ## Benefit Value
 
 - Amount varies by household - see test cases
@@ -87,9 +82,9 @@
 ## Implementation Coverage
 
 - ✅ Evaluable criteria: 4
-- ⚠️  Data gaps: 9
+- ⚠️  Data gaps: 8
 
-Of 13 identified eligibility criteria, 4 can be fully evaluated with current screener fields and 9 cannot be evaluated. The core evaluable criteria are: age (birth to 36 months / pregnant), income at or below 100% FPL, categorical eligibility through TANF/SSI/SNAP, and foster care status. Major gaps include: (1) over-income slots (100–130% FPL) - discretionary and grantee-specific, cannot evaluate availability; (2) homelessness status - housing_situation field exists but is not collected from users; (3) geographic service area - requires grantee-specific boundary data; (4) program capacity - external to eligibility determination; (5) selection priorities - can identify some factors but not relative ranking. The income threshold (100% FPL) and categorical eligibility provisions are well-supported by existing fields.
+Of 12 identified eligibility criteria, 4 can be fully evaluated with current screener fields and 8 cannot be evaluated. The core evaluable criteria are: age (birth to 36 months / pregnant), income at or below 100% FPL, categorical eligibility through TANF/SSI/SNAP, and foster care status. Major gaps include: (1) over-income slots (100–130% FPL) - discretionary and grantee-specific, cannot evaluate availability; (2) homelessness status - housing_situation field exists but is not collected from users; (3) geographic service area - requires grantee-specific boundary data; (4) program capacity - external to eligibility determination; (5) selection priorities - can identify some factors but not relative ranking. The income threshold (100% FPL) and categorical eligibility provisions are well-supported by existing fields.
 
 ## Research Sources
 
@@ -161,7 +156,7 @@ Of 13 identified eligibility criteria, 4 can be fully evaluated with current scr
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `3`
-- **Person 1**: Birth month/year: `June 1995` (age 30), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Amount: `$2,178` monthly (99% of FPL for household of 3), Insurance: `None`
+- **Person 1**: Birth month/year: `June 1995` (age 30), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Amount: `$2,130` monthly (99% of FPL for household of 3), Insurance: `None`
 - **Person 2**: Birth month/year: `August 1997` (age 28), Relationship: `Spouse`, Has income: `No`, Insurance: `None`
 - **Person 3**: Birth month/year: `January 2025` (age 1), Relationship: `Child`, Has income: `No`, Insurance: `None`
 - **Current Benefits**: Select `None` for all benefit programs
@@ -178,7 +173,7 @@ Of 13 identified eligibility criteria, 4 can be fully evaluated with current scr
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `3`
-- **Person 1 (Head of Household)**: Birth month/year: `January 1995` (age 31), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Amount: `2,308` (monthly), Insurance: `None`
+- **Person 1 (Head of Household)**: Birth month/year: `January 1995` (age 31), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Amount: `2,152` (monthly), Insurance: `None`
 - **Person 2 (Spouse)**: Birth month/year: `March 1996` (age 30), Relationship: `Spouse`, Has income: `No`, Insurance: `None`
 - **Person 3 (Child)**: Birth month/year: `June 2024` (age 1), Relationship: `Child`, Has income: `No`, Insurance: `None`
 - **Current Benefits**: Select: `None`
@@ -195,7 +190,7 @@ Of 13 identified eligibility criteria, 4 can be fully evaluated with current scr
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `3`
-- **Person 1**: Birth month/year: `January 1992` (age 34), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Amount: `$2,323`, Frequency: `Monthly`, Insurance: `None`
+- **Person 1**: Birth month/year: `January 1992` (age 34), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Amount: `$2,173`, Frequency: `Monthly`, Insurance: `None`
 - **Person 2**: Birth month/year: `March 1993` (age 33), Relationship: `Spouse`, Has income: `No`, Insurance: `None`
 - **Person 3**: Birth month/year: `June 2024` (age 1), Relationship: `Child`, Has income: `No`, Insurance: `None`
 - **Current Benefits**: Select `None` for all benefit programs
@@ -325,7 +320,7 @@ Of 13 identified eligibility criteria, 4 can be fully evaluated with current scr
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `4`
-- **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1988` (age 38), Has income: `Yes`, Income type: `Wages/Salary`, Amount: `$2,600`, Frequency: `Monthly`, Insurance: `None`
+- **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1988` (age 38), Has income: `Yes`, Income type: `Wages/Salary`, Amount: `$2,392`, Frequency: `Monthly`, Insurance: `None`
 - **Person 2 (Pregnant Teen)**: Relationship: `Child`, Birth month/year: `June 2009` (age 16), Pregnant: `Yes`, Has income: `No`, Insurance: `None`
 - **Person 3 (Infant)**: Relationship: `Child`, Birth month/year: `December 2025` (age 0 - 3 months old), Has income: `No`, Insurance: `None`
 - **Person 4 (School-Age Child)**: Relationship: `Child`, Birth month/year: `March 2018` (age 8), Has income: `No`, Insurance: `None`
