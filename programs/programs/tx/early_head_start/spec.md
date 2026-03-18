@@ -35,14 +35,7 @@
      - `household_member.relationship`
    - Source: 45 CFR 1302.12(a)(1)(iii) - Categorical eligibility for foster children
 
-5. **Family income between 100% and 130% FPL (up to 10% of enrollment)**
-   - Screener fields:
-     - `income_stream.amount`
-     - `income_stream.frequency`
-     - `household_size`
-   - Source: 45 CFR 1302.12(a)(2) - Over-income eligibility for up to 10% of enrollment
-
-6. **Child is homeless (McKinney-Vento definition)** ⚠️ *data gap*
+5. **Child is homeless (McKinney-Vento definition)** ⚠️ *data gap*
    - Note: The housing_situation field exists in the data model but is not collected from users during screening. The needs_housing_help field only indicates whether the user wants housing assistance, not their actual housing status. Cannot determine if child meets McKinney-Vento homeless definition (42 U.S.C. § 11434a). Categorical eligibility under this pathway cannot be evaluated until housing_situation is collected.
    - Source: 45 CFR 1302.12(a)(1)(iv) and 42 U.S.C. § 11434a
    - Impact: Medium
@@ -58,27 +51,32 @@
    - Impact: Medium
 
 10. **Geographic service area requirement** ⚠️ *data gap*
-   - Note: Each Early Head Start grantee serves specific geographic areas (counties, cities, neighborhoods). We have zipcode and county fields but would need grantee-specific service area data to evaluate. This is program-specific, not universal eligibility.
+   - Note: Each Early Head Start grantee serves specific geographic areas (counties, cities, neighborhoods). We have `zipcode` and `county` fields but would need grantee-specific service area data to evaluate. This is program-specific, not universal eligibility.
    - Source: 45 CFR 1302.11(b) - Programs serve designated geographic areas
    - Impact: High
 
-11. **Program capacity/enrollment availability** ⚠️ *data gap*
+11. **Family income between 100% and 130% FPL (up to 10% of enrollment)** ⚠️ *data gap*
+   - Note: Grantees *may* enroll up to 10% of their slots for families with income between 100–130% FPL (45 CFR 1302.12(a)(2)), but this is discretionary. Whether a specific grantee has chosen to use this pathway and has available over-income slots cannot be determined from the screener data. Cannot evaluate without grantee-specific capacity data.
+   - Source: 45 CFR 1302.12(a)(2) - Over-income eligibility for up to 10% of enrollment
+   - Impact: High
+
+12. **Program capacity/enrollment availability** ⚠️ *data gap*
    - Note: Meeting eligibility criteria does not guarantee enrollment - programs may have waiting lists. Cannot evaluate program capacity or current enrollment status.
    - Source: 45 CFR 1302.12(b)(3) - Programs must maintain waiting lists when at capacity
    - Impact: High
 
-12. **Age-appropriate immunizations (unless exemption)** ⚠️ *data gap*
+13. **Age-appropriate immunizations (unless exemption)** ⚠️ *data gap*
    - Note: Children must have age-appropriate immunizations or be in process of obtaining them (with exemptions allowed). No immunization field in screener. This is typically verified after initial eligibility determination.
    - Source: 45 CFR 1302.42 - Child health status and care requirements
    - Impact: Low
 
-13. **Ongoing health care requirement** ⚠️ *data gap*
+14. **Ongoing health care requirement** ⚠️ *data gap*
    - Note: Programs must ensure children have ongoing health care. We can identify insurance status but not whether child has established medical home or ongoing care provider.
    - Source: 45 CFR 1302.42(b) - Children must have ongoing source of continuous, accessible health care
    - Impact: Low
 
-14. **Residency in program service area** ⚠️ *data gap*
-   - Note: Texas has multiple Early Head Start grantees, each serving specific geographic areas. Would need grantee-specific service area boundaries to evaluate. Zipcode/county fields available but need mapping to specific programs.
+15. **Residency in program service area** ⚠️ *data gap*
+   - Note: Texas has multiple Early Head Start grantees, each serving specific geographic areas. Would need grantee-specific service area boundaries to evaluate. `zipcode`/county fields available but need mapping to specific programs.
    - Source: Program-specific requirement based on grantee service area
    - Impact: High
 
@@ -88,10 +86,10 @@
 
 ## Implementation Coverage
 
-- ✅ Evaluable criteria: 5
-- ⚠️  Data gaps: 8
+- ✅ Evaluable criteria: 4
+- ⚠️  Data gaps: 9
 
-Of 13 identified eligibility criteria, 5 can be fully evaluated with current screener fields and 8 cannot be evaluated. The core evaluable criteria are: age (birth to 36 months / pregnant), income at or below 100% FPL, categorical eligibility through TANF/SSI/SNAP, foster care status, and income 100-130% FPL. Major gaps include: (1) homelessness status - housing_situation field exists but is not collected from users; (2) geographic service area - requires grantee-specific boundary data; (3) program capacity - external to eligibility determination; (4) selection priorities - can identify some factors but not relative ranking. The income threshold (100% FPL) and categorical eligibility provisions are well-supported by existing fields.
+Of 13 identified eligibility criteria, 4 can be fully evaluated with current screener fields and 9 cannot be evaluated. The core evaluable criteria are: age (birth to 36 months / pregnant), income at or below 100% FPL, categorical eligibility through TANF/SSI/SNAP, and foster care status. Major gaps include: (1) over-income slots (100–130% FPL) - discretionary and grantee-specific, cannot evaluate availability; (2) homelessness status - housing_situation field exists but is not collected from users; (3) geographic service area - requires grantee-specific boundary data; (4) program capacity - external to eligibility determination; (5) selection priorities - can identify some factors but not relative ranking. The income threshold (100% FPL) and categorical eligibility provisions are well-supported by existing fields.
 
 ## Research Sources
 
@@ -132,7 +130,7 @@ Of 13 identified eligibility criteria, 5 can be fully evaluated with current scr
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `2`
-- **Person 1 (Head of Household)**: Birth month/year: `June 1998` (age 27), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$1,900`, Income frequency: `Monthly`, Insurance: `None`
+- **Person 1 (Head of Household)**: Birth month/year: `June 1998` (age 27), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$1,448`, Income frequency: `Monthly`, Insurance: `None`
 - **Person 2 (Child)**: Birth month/year: `January 2025` (age 1), Relationship: `Child`, Has income: `No`, Insurance: `None`
 - **Current Benefits**: Select `None` for all benefit programs
 - **Citizenship**: Select `U.S. Citizen` for all household members
