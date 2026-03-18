@@ -46,14 +46,16 @@ def backfill_income_category_gap(apps, schema_editor):
     }
 
     # Part 1: fill NULL category rows from the gap window
-    gap_streams = IncomeStream.objects.filter(category__isnull=True).exclude(type__isnull=True).exclude(type="")
-    gap_count = 0
-    for stream in gap_streams:
-        category = INCOME_TYPE_TO_CATEGORY.get(stream.type)
-        if category:
-            stream.category = category
-            stream.save(update_fields=["category"])
-            gap_count += 1
+    from django.db.models import Case, Value, When
+
+    gap_count = IncomeStream.objects.filter(
+        category__isnull=True,
+        type__in=list(INCOME_TYPE_TO_CATEGORY.keys()),
+    ).update(
+        category=Case(
+            *[When(type=t, then=Value(c)) for t, c in INCOME_TYPE_TO_CATEGORY.items()],
+        )
+    )
 
     # Part 2: correct rental/boarder rows that 0126 set to 'investment'
     correction_count = IncomeStream.objects.filter(type__in=["rental", "boarder"], category="investment").update(
