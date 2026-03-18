@@ -113,9 +113,11 @@
    - Source: Chapter D - Non-Financial Eligibility Requirements
    - Impact: Low
 
-18. **Deeming rules for married couples** ⚠️ *data gap*
-   - Note: When one spouse applies for MSP, income and resources of both spouses are considered. Complex deeming calculations apply. Screener can identify couples but cannot apply full deeming methodology.
-   - Source: Chapter E - Income Determination, Chapter F - Resources
+18. **Deeming rules (spouse-to-spouse and parent-to-child)**
+   - Spouse-to-spouse: If the applicant lives with an ineligible (non-applying) spouse, that spouse's income and resources are factored into the eligibility determination.
+   - Parent-to-child: For an eligible child under 18 who lives with one or both parents, is not married, and is eligible for Medicaid, a parent's income (even if earned) is treated as unearned income when deemed to the child. Deeming stops the month after the child turns 18.
+   - Deeming does not apply when the ineligible spouse or parent is in an institutional setting.
+   - Source: [E-7100 Living Arrangement (Texas MEPD Handbook)](https://www.hhs.texas.gov/handbooks/medicaid-elderly-people-disabilities-handbook/e-7100-living-arrangement), [D-4200 Living Arrangements (Texas MEPD Handbook)](https://www.hhs.texas.gov/handbooks/medicaid-elderly-people-disabilities-handbook/d-4200-living-arrangements), Chapter E - Income Determination, Chapter F - Resources
    - Impact: Medium
 
 ## Benefit Value
@@ -124,10 +126,10 @@
 
 ## Implementation Coverage
 
-- ✅ Evaluable criteria: 12
-- ⚠️  Data gaps: 6
+- ✅ Evaluable criteria: 13
+- ⚠️  Data gaps: 5
 
-The Medicare Savings Program in Texas has four sub-programs (QMB, SLMB, QI, QDWI) with varying income and resource limits. Of the major eligibility criteria, 12 can be evaluated with current screener fields or program config, while 6 cannot. The evaluable criteria include all income thresholds (100%, 120%, 135%, 200% FPL), resource limits ($9,430/$14,130 for QMB/SLMB/QI; $4,000/$6,000 for QDWI), Medicare enrollment status (via `insurance.medicare` field), age requirements (QDWI under 65), disability status (QDWI), Texas residency, Medicaid exclusion (QI only), and citizenship/immigration status (via `legal_status_required` program config). Critical gaps include SSN requirement and whether someone lost free Part A due to returning to work (QDWI). Resource limit checks are accurate for households of 1–2 (the vast majority of MSP cases) but partially limited for households > 2: `household_assets` captures the whole household including non-eligible members, and the individual/couple limits are selected by spouse presence rather than household size. The screener can effectively pre-screen based on income, assets, Medicare enrollment status, and immigration status. The QI Medicaid exclusion is evaluated in two steps: first by checking `insurance.medicaid` directly, then by falling back to PolicyEngine's `medicaid_eligible` calculation when not indicated — ensuring that applicants who would qualify for Medicaid are also excluded from QI even if they haven't explicitly reported Medicaid enrollment.
+The Medicare Savings Program in Texas has four sub-programs (QMB, SLMB, QI, QDWI) with varying income and resource limits. Of the major eligibility criteria, 13 can be evaluated with current screener fields or program config, while 5 cannot. The evaluable criteria include all income thresholds (100%, 120%, 135%, 200% FPL), resource limits ($9,430/$14,130 for QMB/SLMB/QI; $4,000/$6,000 for QDWI), Medicare enrollment status (via `insurance.medicare` field), age requirements (QDWI under 65), disability status (QDWI), Texas residency, Medicaid exclusion (QI only), citizenship/immigration status (via `legal_status_required` program config), and deeming rules (spouse-to-spouse and parent-to-child, using household member relationships, ages, and income already collected by the screener). Critical gaps include SSN requirement and whether someone lost free Part A due to returning to work (QDWI). Resource limit checks are accurate for households of 1–2 (the vast majority of MSP cases) but partially limited for households > 2: `household_assets` captures the whole household including non-eligible members, and the individual/couple limits are selected by spouse presence rather than household size. The screener can effectively pre-screen based on income, assets, Medicare enrollment status, immigration status, and deeming. The QI Medicaid exclusion is evaluated in two steps: first by checking `insurance.medicaid` directly, then by falling back to PolicyEngine's `medicaid_eligible` calculation when not indicated — ensuring that applicants who would qualify for Medicaid are also excluded from QI even if they haven't explicitly reported Medicaid enrollment.
 
 ## Research Sources
 
@@ -139,6 +141,8 @@ The Medicare Savings Program in Texas has four sub-programs (QMB, SLMB, QI, QDWI
 - [Chapter D - Non-Financial Eligibility Requirements (Texas MEPD Handbook)](https://www.hhs.texas.gov/handbooks/medicaid-elderly-people-disabilities-handbook/chapter-d-non-financial)
 - [Chapter E - Income Determination and Counting Rules (Texas MEPD Handbook)](https://www.hhs.texas.gov/handbooks/medicaid-elderly-people-disabilities-handbook/chapter-e-general-income)
 - [Chapter F - Resource Determination and Exclusions (Texas MEPD Handbook)](https://www.hhs.texas.gov/handbooks/medicaid-elderly-people-disabilities-handbook/chapter-f-resources)
+- [E-7100 Living Arrangement (Texas MEPD Handbook)](https://www.hhs.texas.gov/handbooks/medicaid-elderly-people-disabilities-handbook/e-7100-living-arrangement)
+- [D-4200 Living Arrangements (Texas MEPD Handbook)](https://www.hhs.texas.gov/handbooks/medicaid-elderly-people-disabilities-handbook/d-4200-living-arrangements)
 
 ## Acceptance Criteria
 
@@ -155,6 +159,7 @@ The Medicare Savings Program in Texas has four sub-programs (QMB, SLMB, QI, QDWI
 [ ] Scenario 12 (Mixed Household - Eligible Senior with Non-Eligible Adult Child): User should be **eligible** (benefit amount: N/A)
 [ ] Scenario 13 (Multiple Eligible Members - Married Couple Both Qualifying for SLMB): User should be **eligible** (benefit amount: N/A)
 [ ] Scenario 14 (QDWI Edge Case - Disabled Person Age 64 with Resources Exactly at $4,000 Limit): User should be **eligible** (benefit amount: N/A)
+[ ] Scenario 15 (Spouse-to-Spouse Deeming - Ineligible Due to Deemed Spouse Income): User should be **ineligible**
 
 ## Test Scenarios
 
@@ -345,6 +350,22 @@ The Medicare Savings Program in Texas has four sub-programs (QMB, SLMB, QI, QDWI
 
 ---
 
+
+### Scenario 15: Spouse-to-Spouse Deeming - Ineligible Due to Deemed Spouse Income
+**What we're checking**: Tests that an ineligible (non-applying) spouse's income is deemed to the applicant, making them ineligible for all MSP sub-programs even though their own income would qualify them for QMB
+**Expected**: Not eligible
+
+**Steps**:
+- **Location**: Enter ZIP code `78701`, Select county `Travis`
+- **Household**: Number of people: `2`
+- **Person 1 (Head of Household)**: Birth month/year: `January 1959` (age 67), Relationship: `Head of Household`, Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$800` monthly
+- **Person 2 (Spouse)**: Birth month/year: `March 1962` (age 64), Relationship: `Spouse`, Has Medicare: `No`, Has income: `Yes`, Income type: `Wages`, Amount: `$1,500` monthly
+- **Assets**: Total household assets: `$8,000`
+- **Current Benefits**: Not receiving Medicaid or other assistance
+
+**Why this matters**: The applicant's own income ($800/mo) is well below the QMB threshold for a single person (~$1,255/mo at 100% FPL). Without deeming, they would qualify for QMB. But with the ineligible spouse's income deemed in, the combined household income is $2,300/mo — just above the 135% FPL ceiling for a 2-person household (~$2,299/mo), disqualifying them from all MSP sub-programs. This directly validates that spouse-to-spouse deeming is applied and can change eligibility outcomes.
+
+---
 
 ## Source Documentation
 
