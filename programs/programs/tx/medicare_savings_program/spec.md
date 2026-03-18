@@ -65,9 +65,7 @@
    - Source: Section Q-6000
 
 9. **Must be Texas resident**
-   - Screener fields:
-     - `zipcode`
-     - `county`
+   - Note: Handled via white label association — the program is only shown to users of the `tx` white label, so no screener field check is needed.
    - Source: Chapter D - Non-Financial Eligibility Requirements
 
 10. **QI: Not eligible for Medicaid**
@@ -158,7 +156,6 @@ The Medicare Savings Program in Texas has four sub-programs (QMB, SLMB, QI, QDWI
 [ ] Scenario 6 (QDWI Eligible - Person Exactly Age 64 at Disability Threshold): User should be **eligible** (benefit amount: N/A)
 [ ] Scenario 7 (QDWI Not Eligible - Person Age 65 With Income in SLMB Range): User should be **eligible** (benefit amount: N/A)
 [ ] Scenario 8 (QMB Eligible - Senior Age 75 Well Above Minimum Age): User should be **eligible** (benefit amount: N/A)
-[ ] Scenario 9 (Eligible Location - Houston ZIP Code in Harris County): User should be **eligible** (benefit amount: N/A)
 [ ] Scenario 10 (Already Receiving Medicaid - QI Exclusion Test): User should be **ineligible**
 [ ] Scenario 11 (QDWI Excluded - Already Receiving Medicare Part A (Premium-Free)): User should be **eligible** (for SLMB; ineligible for QDWI)
 [ ] Scenario 12 (Mixed Household - Eligible Senior with Non-Eligible Adult Child): User should be **eligible** (benefit amount: N/A)
@@ -277,20 +274,6 @@ The Medicare Savings Program in Texas has four sub-programs (QMB, SLMB, QI, QDWI
 - **Assets**: Total household assets: `$8,000`
 
 **Why this matters**: Confirms that MSP does not have an upper age limit and that seniors significantly older than 65 can still qualify for QMB. Important because many seniors in their 70s and 80s have limited fixed incomes.
-
----
-
-### Scenario 9: Eligible Location - Houston ZIP Code in Harris County
-**What we're checking**: Verifies that applicants in a major Texas metropolitan area (Houston) are eligible based on geographic location
-**Expected**: Eligible
-
-**Steps**:
-- **Location**: Enter ZIP code `77002`, Select county `Harris`
-- **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `January 1959` (age 67), Relationship: `Head of Household`, Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$950/month`
-- **Assets**: Total household assets: `$5,000`
-
-**Why this matters**: Confirms that the program correctly recognizes major Texas metropolitan areas as eligible service locations. Harris County (Houston) is the most populous county in Texas.
 
 ---
 
