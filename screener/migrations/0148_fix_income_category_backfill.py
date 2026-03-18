@@ -1,7 +1,6 @@
 from django.db import migrations
 from django.db.models import Case, Value, When
 
-
 INCOME_TYPE_TO_CATEGORY = {
     # Employment
     "wages": "employment",
@@ -52,9 +51,9 @@ def fix_income_category_backfill(apps, schema_editor):
     )
 
     # Re-run Part 2 in case it was also skipped (it's idempotent)
-    correction_count = IncomeStream.objects.filter(
-        type__in=["rental", "boarder"], category="investment"
-    ).update(category="property")
+    correction_count = IncomeStream.objects.filter(type__in=["rental", "boarder"], category="investment").update(
+        category="property"
+    )
 
     print(f"Fixed {gap_count} remaining gap rows; corrected {correction_count} rental/boarder rows to 'property'")
 
