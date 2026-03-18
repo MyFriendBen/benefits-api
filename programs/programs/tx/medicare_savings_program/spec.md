@@ -122,7 +122,20 @@
 
 ## Benefit Value
 
-- Amount varies by household - see test cases
+MSP covers Medicare premium costs per eligible person per month. The benefit value is the sum across all eligible household members, expressed as an annual total.
+
+| Sub-program | Covers | 2025 Monthly Value | 2025 Annual Value |
+|---|---|---|---|
+| QMB | Part A + Part B premiums | $0–$185+ (most enrollees have free Part A) | $0–$2,220+ |
+| SLMB | Part B premium only | $185/month | $2,220/year |
+| QI | Part B premium only | $185/month | $2,220/year |
+| QDWI | Part A premium only | ~$285–$518/month | ~$3,420–$6,216/year |
+
+**Notes:**
+- Part B premium is set annually by CMS ($174.70/month in 2024, $185/month in 2025).
+- Most enrollees 65+ have 40+ work quarters → premium-free Part A → QMB benefit equals the Part B premium ($2,220/year in 2025).
+- QDWI benefit value is not modeled by PolicyEngine (`msp_benefit_value` has no QDWI branch); the annual range above is derived from the monthly Part A premium tiers.
+- For multi-member households, the annual value is the sum across all eligible members (e.g., two SLMB-eligible spouses = $4,440/year in 2025).
 
 ## Implementation Coverage
 
@@ -146,19 +159,19 @@ The Medicare Savings Program in Texas has four sub-programs (QMB, SLMB, QI, QDWI
 
 ## Acceptance Criteria
 
-[ ] Scenario 1 (QMB Eligible - Single Senior with Social Security Income): User should be **eligible** (benefit amount: N/A)
-[ ] Scenario 2 (SLMB Eligible - Single Senior with Income in 100-120% FPL Range): User should be **eligible** (benefit amount: N/A)
-[ ] Scenario 3 (QI Eligible - Single Senior with Income in 120-135% FPL Range): User should be **eligible** (benefit amount: N/A)
-[ ] Scenario 4 (QMB Eligible - Single Senior with Income Exactly at 100% FPL): User should be **eligible** (benefit amount: N/A)
+[ ] Scenario 1 (QMB Eligible - Single Senior with Social Security Income): User should be **eligible** (benefit amount: $2,220/year)
+[ ] Scenario 2 (SLMB Eligible - Single Senior with Income in 100-120% FPL Range): User should be **eligible** (benefit amount: $2,220/year)
+[ ] Scenario 3 (QI Eligible - Single Senior with Income in 120-135% FPL Range): User should be **eligible** (benefit amount: $2,220/year)
+[ ] Scenario 4 (QMB Eligible - Single Senior with Income Exactly at 100% FPL): User should be **eligible** (benefit amount: $2,220/year)
 [ ] Scenario 5 (Ineligible - Income Above 135% FPL Disqualifies All MSP Categories): User should be **ineligible**
-[ ] Scenario 6 (QDWI Eligible - Person Exactly Age 64 at Disability Threshold): User should be **eligible** (benefit amount: N/A)
-[ ] Scenario 7 (QDWI Not Eligible - Person Age 65 With Income in SLMB Range): User should be **eligible** (benefit amount: N/A)
-[ ] Scenario 8 (QMB Eligible - Senior Age 75 Well Above Minimum Age): User should be **eligible** (benefit amount: N/A)
+[ ] Scenario 6 (QDWI Eligible - Person Exactly Age 64 at Disability Threshold): User should be **eligible** (benefit amount: not modeled)
+[ ] Scenario 7 (QDWI Not Eligible - Person Age 65 With Income in SLMB Range): User should be **eligible** (SLMB; benefit amount: $2,220/year)
+[ ] Scenario 8 (QMB Eligible - Senior Age 75 Well Above Minimum Age): User should be **eligible** (benefit amount: $2,220/year)
 [ ] Scenario 10 (Already Receiving Medicaid - QI Exclusion Test): User should be **ineligible**
-[ ] Scenario 11 (QDWI Excluded - Already Receiving Medicare Part A (Premium-Free)): User should be **eligible** (for SLMB; ineligible for QDWI)
-[ ] Scenario 12 (Mixed Household - Eligible Senior with Non-Eligible Adult Child): User should be **eligible** (benefit amount: N/A)
-[ ] Scenario 13 (Multiple Eligible Members - Married Couple Both Qualifying for SLMB): User should be **eligible** (benefit amount: N/A)
-[ ] Scenario 14 (QDWI Edge Case - Disabled Person Age 64 with Resources Exactly at $4,000 Limit): User should be **eligible** (benefit amount: N/A)
+[ ] Scenario 11 (QDWI Excluded - Already Receiving Medicare Part A (Premium-Free)): User should be **eligible** (SLMB; benefit amount: $2,220/year)
+[ ] Scenario 12 (Mixed Household - Eligible Senior with Non-Eligible Adult Child): User should be **eligible** (benefit amount: $2,220/year — 1 eligible member)
+[ ] Scenario 13 (Multiple Eligible Members - Married Couple Both Qualifying for SLMB): User should be **eligible** (benefit amount: $4,440/year — 2 eligible members × $2,220)
+[ ] Scenario 14 (QDWI Edge Case - Disabled Person Age 64 with Resources Exactly at $4,000 Limit): User should be **eligible** (benefit amount: not modeled)
 [ ] Scenario 15 (Spouse-to-Spouse Deeming - Ineligible Due to Deemed Spouse Income): User should be **ineligible**
 
 ## Test Scenarios

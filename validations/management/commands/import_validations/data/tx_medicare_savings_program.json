@@ -38,7 +38,8 @@
     },
     "expected_results": {
       "program_name": "tx_medicare_savings_program",
-      "eligible": true
+      "eligible": true,
+      "value": 2220
     }
   },
   {
@@ -80,7 +81,8 @@
     },
     "expected_results": {
       "program_name": "tx_medicare_savings_program",
-      "eligible": true
+      "eligible": true,
+      "value": 2220
     }
   },
   {
@@ -122,7 +124,8 @@
     },
     "expected_results": {
       "program_name": "tx_medicare_savings_program",
-      "eligible": true
+      "eligible": true,
+      "value": 2220
     }
   },
   {
