@@ -58,6 +58,7 @@
 8. **QDWI: Must be disabled**
    - Screener fields:
      - `HouseholdMember.disabled`
+     - `HouseholdMember.visually_impaired`
      - `HouseholdMember.long_term_disability`
    - Source: Section Q-6000
 
@@ -242,7 +243,7 @@ The Medicare Savings Program in Texas has four sub-programs (QMB, SLMB, QI, QDWI
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `March 1962` (age 64), Relationship: `Head of Household`, Check `Has a disability`, Has income: `Yes`, Income type: `Social Security Disability`, Amount: `$1,500/month`, Has Medicare: `No`, Has Medicaid: `No`
+- **Person 1**: Birth month/year: `March 1962` (age 64), Relationship: `Head of Household`, Check `Has a disability` (`disabled`, `visually_impaired`, or `long_term_disability`), Has income: `Yes`, Income type: `Social Security Disability`, Amount: `$1,500/month`, Has Medicare: `No`, Has Medicaid: `No`
 - **Assets**: Total household assets: `$3,500`
 
 **Why this matters**: Validates that the age threshold for QDWI is correctly implemented as 'under 65'. A person exactly 64 should qualify. Note: QDWI technically requires the person to be paying Medicare Part A premiums (having lost premium-free coverage by returning to work), but this is a known data gap (#12). The screener uses `Has Medicare: No` as a proxy for this requirement — this scenario tests the proxy behavior only, not exact QDWI eligibility.
@@ -256,7 +257,7 @@ The Medicare Savings Program in Texas has four sub-programs (QMB, SLMB, QI, QDWI
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `February 1961` (age 65), Check `Has a disability`, Has income: `Yes`, Income type: `Social Security Disability`, Amount: `$1,500`, Frequency: `Monthly`, Has Medicare: `Yes`, Assets: `$3,500`
+- **Person 1**: Birth month/year: `February 1961` (age 65), Check `Has a disability` (`disabled`, `visually_impaired`, or `long_term_disability`), Has income: `Yes`, Income type: `Social Security Disability`, Amount: `$1,500`, Frequency: `Monthly`, Has Medicare: `Yes`, Assets: `$3,500`
 - **Current Benefits**: Select `None`
 
 **Why this matters**: Tests the strict age boundary for QDWI (age < 65). At age 65 with income of $1,500/mo (~119.5% FPL, in SLMB range), the person is denied QDWI due to age but correctly qualifies for SLMB. This validates that (a) QDWI correctly enforces the age < 65 requirement per Section Q-6000, and (b) the system falls through to SLMB eligibility rather than returning a blanket denial.
@@ -312,7 +313,7 @@ The Medicare Savings Program in Texas has four sub-programs (QMB, SLMB, QI, QDWI
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `January 1964` (age 62), Relationship: `Head of Household`, Check `Has a disability`, Has Medicare: `Yes`, Has Medicaid: `No`, Has income: `Yes`, Income type: `Social Security Disability`, Amount: `$1,500` per month
+- **Person 1**: Birth month/year: `January 1964` (age 62), Relationship: `Head of Household`, Check `Has a disability` (`disabled`, `visually_impaired`, or `long_term_disability`), Has Medicare: `Yes`, Has Medicaid: `No`, Has income: `Yes`, Income type: `Social Security Disability`, Amount: `$1,500` per month
 - **Assets**: Total household assets: `$3,000`
 
 **Why this matters**: QDWI specifically helps disabled workers who lost premium-free Medicare Part A due to returning to work. Those who already have Medicare (premium-free Part A) are excluded from QDWI. Note: the screener uses the `medicare` field as a proxy — this scenario tests that Medicare enrollment correctly disqualifies a QDWI candidate. However, having Medicare is a *prerequisite* (not a disqualification) for SLMB. With income of $1,500/month (~115% FPL, within the 100–120% SLMB range) and assets of $3,000 (below the $9,430 individual limit), this person qualifies for SLMB. The system should fall through to SLMB eligibility rather than returning a blanket denial.
@@ -357,7 +358,7 @@ The Medicare Savings Program in Texas has four sub-programs (QMB, SLMB, QI, QDWI
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `March 1962` (age 64), Relationship: `Head of Household`, Check `Has a disability`, Has Medicare: `No`, Has Medicaid: `No`
+- **Person 1**: Birth month/year: `March 1962` (age 64), Relationship: `Head of Household`, Check `Has a disability` (`disabled`, `visually_impaired`, or `long_term_disability`), Has Medicare: `No`, Has Medicaid: `No`
 - **Income**: Income type: `Social Security Disability`, Amount: `$1,500` per month
 - **Assets**: Total household assets: `$4,000` (exactly at QDWI resource limit)
 
