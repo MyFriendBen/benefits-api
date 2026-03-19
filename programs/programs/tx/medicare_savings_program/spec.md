@@ -268,11 +268,11 @@ This implementation covers the three remaining MSP sub-programs: QMB, SLMB, and 
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Birth month/year: `January 1959` (age 67), Relationship: `Head of Household`, Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$800` monthly
-- **Person 2 (Spouse)**: Birth month/year: `March 1962` (age 64), Relationship: `Spouse`, Has Medicare: `No`, Has income: `Yes`, Income type: `Wages`, Amount: `$1,500` monthly
+- **Person 2 (Spouse)**: Birth month/year: `March 1962` (age 64), Relationship: `Spouse`, Has Medicare: `No`, Has income: `Yes`, Income type: `Wages`, Amount: `$3,200` monthly
 - **Assets**: Total household assets: `$8,000`
 - **Current Benefits**: Not receiving Medicaid or other assistance
 
-**Why this matters**: The applicant's own income ($800/mo) is well below the QMB threshold for a single person (~$1,255/mo at 100% FPL). Without deeming, they would qualify for QMB. But with the ineligible spouse's income deemed in, the combined household income is $2,300/mo — just above the 135% FPL ceiling for a 2-person household (~$2,299/mo), disqualifying them from all MSP sub-programs. This directly validates that spouse-to-spouse deeming is applied and can change eligibility outcomes.
+**Why this matters**: MSP uses SSI income methodology, which applies exclusions before comparing to the FPL threshold: (1) $20 general exclusion applied to unearned income first, (2) $65 earned income exclusion, (3) 50% of remaining earned income excluded. The applicant's own SS income ($800/mo) counts as $780 after the $20 exclusion. Without deeming, $780 is well below the 1-person QMB threshold (~$1,255/mo), so they would qualify. With the spouse's wages deemed in: ($3,200 − $65) × 0.50 = $1,567.50 countable, for a combined countable income of $2,347.50/mo — above the 135% FPL ceiling for a 2-person household ($2,299.50/mo). This disqualifies them from all sub-programs and directly validates that spouse-to-spouse deeming is applied and can change eligibility outcomes.
 
 ---
 
