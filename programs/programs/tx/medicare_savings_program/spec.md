@@ -127,6 +127,8 @@ This implementation covers the three remaining MSP sub-programs: QMB, SLMB, and 
 [ ] Scenario 12 (Mixed Household - Eligible Senior with Non-Eligible Adult Child): User should be **eligible** (benefit amount: $2,220/year — 1 eligible member)
 [ ] Scenario 13 (Multiple Eligible Members - Married Couple Both Qualifying for SLMB): User should be **eligible** (benefit amount: $4,440/year — 2 eligible members × $2,220)
 [ ] Scenario 15 (Spouse-to-Spouse Deeming - Ineligible Due to Deemed Spouse Income): User should be **ineligible**
+[ ] Scenario 16 (Resource Boundary - Assets Exactly at Individual Limit): User should be **eligible** (benefit amount: $2,220/year)
+[ ] Scenario 17 (Earned Income Exclusion - Wages Exceeding Gross Income Limits): User should be **eligible** (benefit amount: $2,220/year)
 
 ## Test Scenarios
 
@@ -175,15 +177,15 @@ This implementation covers the three remaining MSP sub-programs: QMB, SLMB, and 
 ---
 
 ### Scenario 4: QMB Eligible - Single Senior with Income Exactly at 100% FPL
-**What we're checking**: Validates that income exactly at 100% FPL qualifies for QMB (at or below threshold)
+**What we're checking**: Validates that countable income exactly at 100% FPL qualifies for QMB (at or below threshold)
 **Expected**: Eligible
 
 **Steps**:
 - **Location**: Enter ZIP code `75001`, Select county `Collin`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `January 1959` (age 67), Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$1,255` monthly (exactly $15,060/year = 100% FPL for 1 person), Assets: `$8,000` (below $9,430 resource limit)
+- **Person 1**: Birth month/year: `January 1959` (age 67), Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$1,275` monthly, Assets: `$8,000` (below $9,430 resource limit)
 
-**Why this matters**: Tests the boundary condition where income is exactly at the 100% FPL threshold. Validates that the 'at or below' logic is implemented correctly and does not exclude applicants at the exact threshold.
+**Why this matters**: Tests the boundary condition where countable income is exactly at the 100% FPL threshold ($1,255/mo). Gross SS of $1,275 minus the $20 general exclusion yields countable income of exactly $1,255 — the QMB ceiling. Validates that the 'at or below' logic is implemented correctly (≤, not <) and does not exclude applicants at the exact threshold.
 
 ---
 
@@ -230,7 +232,7 @@ This implementation covers the three remaining MSP sub-programs: QMB, SLMB, and 
 ---
 
 ### Scenario 12: Mixed Household - Eligible Senior with Non-Eligible Adult Child
-**What we're checking**: Tests multi-member household where head of household qualifies for QMB but adult child does not have Medicare, ensuring individual eligibility is properly assessed
+**What we're checking**: Tests multi-member household where head of household qualifies for SLMB but adult child does not have Medicare, ensuring individual eligibility is properly assessed
 **Expected**: Eligible
 
 **Steps**:
@@ -253,10 +255,10 @@ This implementation covers the three remaining MSP sub-programs: QMB, SLMB, and 
 - **Household**: Number of people: `2`
 - **Person 1 (Head of Household)**: Birth month/year: `January 1959` (age 67), Relationship: `Head of Household`, Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$1,100` monthly
 - **Person 2 (Spouse)**: Birth month/year: `March 1960` (age 66), Relationship: `Spouse`, Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$900` monthly
-- **Assets**: Total household assets: `$8,500`
+- **Assets**: Total household assets: `$12,000`
 - **Current Benefits**: Not receiving Medicaid or other assistance
 
-**Why this matters**: Validates that the system correctly handles households where multiple members independently qualify. Combined income of $2,000/mo for a household of 2 is ~117.5% of the 2-person FPL, placing them in the SLMB range (100–120% FPL). The couple resource limit ($14,130) applies rather than the individual limit ($9,430).
+**Why this matters**: Validates that the system correctly handles households where multiple members independently qualify. Combined income of $2,000/mo for a household of 2 is ~117.5% of the 2-person FPL, placing them in the SLMB range (100–120% FPL). Assets of $12,000 exceed the individual resource limit ($9,430) but fall below the couple limit ($14,130), so this test only passes if the system correctly applies the couple limit.
 
 ---
 
@@ -272,7 +274,37 @@ This implementation covers the three remaining MSP sub-programs: QMB, SLMB, and 
 - **Assets**: Total household assets: `$8,000`
 - **Current Benefits**: Not receiving Medicaid or other assistance
 
-**Why this matters**: MSP uses SSI income methodology, which applies exclusions before comparing to the FPL threshold: (1) $20 general exclusion applied to unearned income first, (2) $65 earned income exclusion, (3) 50% of remaining earned income excluded. The applicant's own SS income ($800/mo) counts as $780 after the $20 exclusion. Without deeming, $780 is well below the 1-person QMB threshold (~$1,255/mo), so they would qualify. With the spouse's wages deemed in: ($3,200 − $65) × 0.50 = $1,567.50 countable, for a combined countable income of $2,347.50/mo — above the 135% FPL ceiling for a 2-person household ($2,299.50/mo). This disqualifies them from all sub-programs and directly validates that spouse-to-spouse deeming is applied and can change eligibility outcomes.
+**Why this matters**: MSP uses SSI income methodology, which applies exclusions before comparing to the FPL threshold: (1) $20 general exclusion applied to unearned income first, (2) $65 earned income exclusion, (3) 50% of remaining earned income excluded. The applicant's own SS income ($800/mo) counts as $780 after the $20 exclusion. Without deeming, $780 is well below the 1-person QMB threshold (~$1,255/mo), so they would qualify. With the spouse's wages deemed in: ($3,200 − $20 − $65) × 0.50 = $1,557.50 countable, for a combined countable income of $2,337.50/mo — above the 135% FPL ceiling for a 2-person household ($2,299.50/mo). This disqualifies them from all sub-programs and directly validates that spouse-to-spouse deeming is applied and can change eligibility outcomes.
+
+---
+
+### Scenario 16: Resource Boundary - Assets Exactly at Individual Limit
+**What we're checking**: Validates that assets exactly equal to the individual resource limit ($9,430) do not disqualify the applicant — the rule is "not exceeding," meaning the limit is inclusive
+**Expected**: Eligible
+
+**Steps**:
+- **Location**: Enter ZIP code `78701`, Select county `Travis`
+- **Household**: Number of people: `1`
+- **Person 1**: Birth month/year: `January 1961` (age 65), Relationship: `Head of Household`, Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$1,000` monthly
+- **Assets**: Total household assets: `$9,430`
+- **Current Benefits**: Not currently receiving Medicaid or other assistance
+
+**Why this matters**: Tests the boundary condition on the resource limit. Income of $1,000/mo is comfortably within the QMB range (below the $1,255/mo threshold), so the only variable being tested here is the asset limit. Assets at exactly $9,430 should result in eligibility because the rule is "not exceeding $9,430" (≤), not "below $9,430" (<). This validates the comparison operator is implemented correctly and that applicants at the exact threshold are not incorrectly denied.
+
+---
+
+### Scenario 17: Earned Income Exclusion - Wages Exceeding Gross Income Limits
+**What we're checking**: Validates that the SSI earned income methodology — $20 general exclusion, $65 earned income exclusion, and 50% of remaining earned income excluded — is applied to wages, making someone with high gross wages eligible for QMB
+**Expected**: Eligible
+
+**Steps**:
+- **Location**: Enter ZIP code `78701`, Select county `Travis`
+- **Household**: Number of people: `1`
+- **Person 1**: Birth month/year: `January 1961` (age 65), Relationship: `Head of Household`, Has Medicare: `Yes`, Has income: `Yes`, Income type: `Wages`, Amount: `$2,400` monthly
+- **Assets**: Total household assets: `$5,000`
+- **Current Benefits**: Not currently receiving Medicaid or other assistance
+
+**Why this matters**: Gross wages of $2,400/mo greatly exceed the QMB income ceiling of $1,255/mo. Under SSI income methodology, the earned income exclusions reduce countable income significantly: $2,400 − $20 (general exclusion) − $65 (earned income exclusion) = $2,315; $2,315 × 0.50 = $1,157.50 countable income/mo — well below the QMB threshold. Without these exclusions, the system would incorrectly deny the applicant for all three sub-programs. This test validates that the system applies the 50% earned income exclusion rather than using gross wages directly.
 
 ---
 
