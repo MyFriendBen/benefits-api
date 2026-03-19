@@ -194,10 +194,10 @@ This implementation covers the three remaining MSP sub-programs: QMB, SLMB, and 
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `January 1961` (age 65), Relationship: `Head of Household`, Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$1,700` per month, Not disabled, Not receiving Medicaid
+- **Person 1**: Birth month/year: `January 1961` (age 65), Relationship: `Head of Household`, Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$1,715` per month, Not disabled, Not receiving Medicaid
 - **Assets**: Total household assets: `$5,000`
 
-**Why this matters**: Income of $1,700/mo exceeds 135% FPL ($1,694/mo), ruling out all three sub-programs (QMB/SLMB/QI). This single case validates all income ceiling logic across the program.
+**Why this matters**: MSP uses SSI income methodology, which applies a $20 general exclusion to unearned income before comparing to the FPL threshold. Countable income is $1,715 − $20 = $1,695/mo, which exceeds the 135% FPL ceiling ($1,694.25/mo), ruling out all three sub-programs (QMB/SLMB/QI). This single case validates all income ceiling logic across the program.
 
 ---
 
