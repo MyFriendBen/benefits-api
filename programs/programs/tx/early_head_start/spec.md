@@ -40,37 +40,37 @@
    - Source: 45 CFR 1302.12(a)(1)(iv) and 42 U.S.C. § 11434a
    - Impact: Medium
 
-8. **U.S. citizenship or qualified immigration status not required for child** ⚠️ *data gap*
+6. **U.S. citizenship or qualified immigration status not required for child** ⚠️ *data gap*
    - Note: Early Head Start does not have citizenship requirements for children. No citizenship field in screener, but this is not a barrier - all children are eligible regardless of immigration status.
    - Source: 45 CFR 1302.12(d) - Children do not need to meet citizenship requirements
    - Impact: Low
 
-9. **Selection priorities: lowest income families, children with disabilities, families experiencing homelessness** ⚠️ *data gap*
+7. **Selection priorities: lowest income families, children with disabilities, families experiencing homelessness** ⚠️ *data gap*
    - Note: Programs must prioritize: (1) lowest income families, (2) children with disabilities, (3) homeless families. We can identify some priority factors (disability, income level) but cannot evaluate relative priority or homelessness status.
    - Source: 45 CFR 1302.12(b) - Programs must establish selection criteria prioritizing certain populations
    - Impact: Medium
 
-10. **Geographic service area requirement** ⚠️ *data gap*
+8. **Geographic service area requirement** ⚠️ *data gap*
    - Note: Each Early Head Start grantee serves specific geographic areas (counties, cities, neighborhoods). Texas has multiple grantees, each with their own service area boundaries. We have `zipcode` and `county` fields but would need grantee-specific service area data to evaluate which program(s) serve a given location. This is program-specific, not universal eligibility.
    - Source: 45 CFR 1302.11(b) - Programs serve designated geographic areas
    - Impact: High
 
-11. **Family income between 100% and 130% FPL (up to 10% of enrollment)** ⚠️ *data gap*
+9. **Family income between 100% and 130% FPL (up to 10% of enrollment)** ⚠️ *data gap*
    - Note: Grantees *may* enroll up to 10% of their slots for families with income between 100–130% FPL (45 CFR 1302.12(a)(2)), but this is discretionary. Whether a specific grantee has chosen to use this pathway and has available over-income slots cannot be determined from the screener data. Cannot evaluate without grantee-specific capacity data.
    - Source: 45 CFR 1302.12(a)(2) - Over-income eligibility for up to 10% of enrollment
    - Impact: High
 
-12. **Program capacity/enrollment availability** ⚠️ *data gap*
+10. **Program capacity/enrollment availability** ⚠️ *data gap*
    - Note: Meeting eligibility criteria does not guarantee enrollment - programs may have waiting lists. Cannot evaluate program capacity or current enrollment status.
    - Source: 45 CFR 1302.12(b)(3) - Programs must maintain waiting lists when at capacity
    - Impact: High
 
-13. **Age-appropriate immunizations (unless exemption)** ⚠️ *data gap*
+11. **Age-appropriate immunizations (unless exemption)** ⚠️ *data gap*
    - Note: Children must have age-appropriate immunizations or be in process of obtaining them (with exemptions allowed). No immunization field in screener. This is typically verified after initial eligibility determination.
    - Source: 45 CFR 1302.42 - Child health status and care requirements
    - Impact: Low
 
-14. **Ongoing health care requirement** ⚠️ *data gap*
+12. **Ongoing health care requirement** ⚠️ *data gap*
    - Note: Programs must ensure children have ongoing health care. We can identify insurance status but not whether child has established medical home or ongoing care provider.
    - Source: 45 CFR 1302.42(b) - Children must have ongoing source of continuous, accessible health care
    - Impact: Low
@@ -303,7 +303,7 @@ Of 12 identified eligibility criteria, 4 can be fully evaluated with current scr
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `4`
-- **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1992` (age 34), Has income: `Yes`, Income type: `Wages/Salaries`, Amount: `$2,400`, Frequency: `Monthly`, Insurance: `None`
+- **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1992` (age 34), Has income: `Yes`, Income type: `Wages/Salaries`, Amount: `$2,470`, Frequency: `Monthly`, Insurance: `None`
 - **Person 2 (Spouse)**: Relationship: `Spouse`, Birth month/year: `May 1993` (age 32), Has income: `No`, Insurance: `None`
 - **Person 3 (Eligible Child)**: Relationship: `Child`, Birth month/year: `June 2024` (age 1 year 9 months), Has income: `No`, Insurance: `None`
 - **Person 4 (Ineligible Child)**: Relationship: `Child`, Birth month/year: `February 2021` (age 5), Has income: `No`, Insurance: `None`
