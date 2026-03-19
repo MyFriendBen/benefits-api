@@ -30,14 +30,7 @@
      - `IncomeStream.frequency`
    - Source: Section Q-5000, Appendix IX
 
-4. **QDWI: Income at or below 200% of Federal Poverty Level**
-   - Screener fields:
-     - `household_size`
-     - `IncomeStream.amount`
-     - `IncomeStream.frequency`
-   - Source: Section Q-6000
-
-5. **QMB/SLMB/QI: Resources not exceeding $9,430 for individual or $14,130 for couple (2024)**
+4. **QMB/SLMB/QI: Resources not exceeding $9,430 for individual or $14,130 for couple (2024)**
    - Screener fields:
      - `household_assets`
      - `HouseholdMember.relationship`
@@ -45,31 +38,11 @@
    - Note on resource exclusions: Many asset types are excluded from the resource count under MSP rules: homestead, one vehicle, household goods, personal effects, burial funds up to $1,500, and life insurance with face value up to $1,500. The screener collects a single `household_assets` total, so users may unknowingly include excluded items — this can produce false negatives. This is surfaced in the initial program config description to set user expectations.
    - Source: Section Q-1300, Appendix IX, Chapter F - Resources
 
-6. **QDWI: Resources not exceeding $4,000 for individual or $6,000 for couple**
-   - Screener fields:
-     - `household_assets`
-     - `HouseholdMember.relationship`
-   - Note: Same household-size caveat as criterion 5. The couple limit ($6,000) applies when a spouse is present; otherwise the individual limit ($4,000) applies. ⚠️ Partial gap for households > 2: `household_assets` overcounts by including non-eligible members' assets, risking false negatives.
-   - Source: Section Q-6000, Q-1300
-
-7. **QDWI: Age under 65**
-   - Screener fields:
-     - `HouseholdMember.age`
-     - `HouseholdMember.relationship`
-   - Source: Section Q-6000
-
-8. **QDWI: Must be disabled**
-   - Screener fields:
-     - `HouseholdMember.disabled`
-     - `HouseholdMember.visually_impaired`
-     - `HouseholdMember.long_term_disability`
-   - Source: Section Q-6000
-
-9. **Must be Texas resident**
+5. **Must be Texas resident**
    - Note: Handled via white label association — the program is only shown to users of the `tx` white label, so no screener field check is needed.
    - Source: Chapter D - Non-Financial Eligibility Requirements
 
-10. **QI: Not eligible for Medicaid**
+6. **QI: Not eligible for Medicaid**
    - Screener fields:
      - `HouseholdMember.insurance.medicaid`
    - PolicyEngine calculation:
@@ -77,33 +50,28 @@
    - Note: If the person has indicated they currently have Medicaid, they are immediately disqualified from QI. If they have not indicated Medicaid coverage, `medicaid_eligible` (derived from PolicyEngine's calculation) is used to determine whether they would be eligible for Medicaid — if so, they are also disqualified from QI.
    - Source: Section Q-5000
 
-11. **Must be entitled to Medicare Part A (hospital insurance)**
+7. **Must be entitled to Medicare Part A (hospital insurance)**
    - Screener fields:
      - `HouseholdMember.insurance.medicare`
-   - Note: The screener `medicare` insurance field is used as a proxy for Medicare Part A enrollment. QMB/SLMB/QI require Part A entitlement. QDWI has a different requirement (lost free Part A due to returning to work — see data gap below).
+   - Note: The screener `medicare` insurance field is used as a proxy for Medicare Part A enrollment. QMB/SLMB/QI all require Part A entitlement.
    - Source: Section Q-1000, Q-2000, Q-3000, Q-5000
 
-12. **QDWI: Must be working and paying Medicare Part A premiums** ⚠️ *data gap*
-   - Note: No field captures whether someone is paying Medicare Part A premiums or lost free Part A due to returning to work. QDWI specifically helps disabled workers who lost free Part A.
-   - Source: Section Q-6000
-   - Impact: High
-
-13. **Must be U.S. citizen or qualified non-citizen**
+8. **Must be U.S. citizen or qualified non-citizen**
    - Screener fields: `legal_status_required` (program config)
    - Note: Handled at the program level via `legal_status_required`. MSP follows Medicaid citizenship requirements; the program config restricts results to citizens and qualified non-citizens.
    - Source: Chapter D - Non-Financial Eligibility Requirements
 
-14. **Must provide Social Security Number or apply for one** ⚠️ *data gap*
+9. **Must provide Social Security Number or apply for one** ⚠️ *data gap*
    - Note: No SSN field in screener. Required for all MSP applicants unless good cause exception applies.
    - Source: Chapter D - Non-Financial Eligibility Requirements
    - Impact: Medium
 
-15. **Cannot be an inmate of a public institution** ⚠️ *data gap*
+10. **Cannot be an inmate of a public institution** ⚠️ *data gap*
    - Note: No incarceration status field. Inmates of public institutions are ineligible for MSP.
    - Source: Chapter D - Non-Financial Eligibility Requirements
    - Impact: Low
 
-16. **Deeming rules (spouse-to-spouse and parent-to-child)**
+11. **Deeming rules (spouse-to-spouse and parent-to-child)**
    - Spouse-to-spouse: If the applicant lives with an ineligible (non-applying) spouse, that spouse's income and resources are factored into the eligibility determination.
    - Parent-to-child: For an eligible child under 18 who lives with one or both parents, is not married, and is eligible for Medicaid, a parent's income (even if earned) is treated as unearned income when deemed to the child. Deeming stops the month after the child turns 18.
    - Deeming does not apply when the ineligible spouse or parent is in an institutional setting.
@@ -119,20 +87,20 @@ MSP covers Medicare premium costs per eligible person per month. The benefit val
 | QMB | Part A + Part B premiums | $0–$185+ (most enrollees have free Part A) | $0–$2,220+ |
 | SLMB | Part B premium only | $185/month | $2,220/year |
 | QI | Part B premium only | $185/month | $2,220/year |
-| QDWI | Part A premium only | ~$285–$518/month | ~$3,420–$6,216/year |
 
 **Notes:**
 - Part B premium is set annually by CMS ($174.70/month in 2024, $185/month in 2025).
 - Most enrollees 65+ have 40+ work quarters → premium-free Part A → QMB benefit equals the Part B premium ($2,220/year in 2025).
-- QDWI benefit value is not modeled by PolicyEngine (`msp_benefit_value` has no QDWI branch); the annual range above is derived from the monthly Part A premium tiers.
 - For multi-member households, the annual value is the sum across all eligible members (e.g., two SLMB-eligible spouses = $4,440/year in 2025).
 
 ## Implementation Coverage
 
-- ✅ Evaluable criteria: 13
-- ⚠️  Data gaps: 3
+- ✅ Evaluable criteria: 9
+- ⚠️  Data gaps: 2
 
-The Medicare Savings Program in Texas has four sub-programs (QMB, SLMB, QI, QDWI) with varying income and resource limits. Of the major eligibility criteria, 13 can be evaluated with current screener fields or program config, while 3 cannot. The evaluable criteria include all income thresholds (100%, 120%, 135%, 200% FPL), resource limits ($9,430/$14,130 for QMB/SLMB/QI; $4,000/$6,000 for QDWI), Medicare enrollment status (via `insurance.medicare` field), age requirements (QDWI under 65), disability status (QDWI), Texas residency, Medicaid exclusion (QI only), citizenship/immigration status (via `legal_status_required` program config), and deeming rules (spouse-to-spouse and parent-to-child, using household member relationships, ages, and income already collected by the screener). Critical gaps include SSN requirement and whether someone lost free Part A due to returning to work (QDWI). Resource limit checks are accurate for households of 1–2 (the vast majority of MSP cases) but partially limited for households > 2: `household_assets` captures the whole household including non-eligible members, and the individual/couple limits are selected by spouse presence rather than household size. The screener can effectively pre-screen based on income, assets, Medicare enrollment status, immigration status, and deeming. The QI Medicaid exclusion is evaluated in two steps: first by checking `insurance.medicaid` directly, then by falling back to PolicyEngine's `medicaid_eligible` calculation when not indicated — ensuring that applicants who would qualify for Medicaid are also excluded from QI even if they haven't explicitly reported Medicaid enrollment.
+> **Note on QDWI:** The QDWI (Qualified Disabled and Working Individuals) sub-program is not surfaced by this implementation. PolicyEngine does not model the QDWI benefit value (`msp_benefit_value` has no QDWI branch), and the program's primary eligibility requirement — that the applicant lost premium-free Medicare Part A by returning to work — cannot be evaluated with current screener fields. Given these limitations, QDWI is excluded from the screener results.
+
+This implementation covers the three remaining MSP sub-programs: QMB, SLMB, and QI. Of the 11 major eligibility criteria for these programs, 9 can be evaluated with current screener fields or program config, while 2 cannot. The evaluable criteria include all income thresholds (100%, 120%, 135% FPL), resource limits ($9,430/$14,130 for individual/couple), Medicare enrollment status (via `insurance.medicare` field), Texas residency, Medicaid exclusion (QI only), citizenship/immigration status (via `legal_status_required` program config), and deeming rules (spouse-to-spouse and parent-to-child). Resource limit checks are accurate for households of 1–2 (the vast majority of MSP cases) but partially limited for households > 2: `household_assets` captures the whole household including non-eligible members, and the individual/couple limits are selected by spouse presence rather than household size. The screener can effectively pre-screen based on income, assets, Medicare enrollment status, immigration status, and deeming. The QI Medicaid exclusion is evaluated in two steps: first by checking `insurance.medicaid` directly, then by falling back to PolicyEngine's `medicaid_eligible` calculation when not indicated — ensuring that applicants who would qualify for Medicaid are also excluded from QI even if they haven't explicitly reported Medicaid enrollment.
 
 ## Research Sources
 
@@ -154,14 +122,10 @@ The Medicare Savings Program in Texas has four sub-programs (QMB, SLMB, QI, QDWI
 [ ] Scenario 3 (QI Eligible - Single Senior with Income in 120-135% FPL Range): User should be **eligible** (benefit amount: $2,220/year)
 [ ] Scenario 4 (QMB Eligible - Single Senior with Income Exactly at 100% FPL): User should be **eligible** (benefit amount: $2,220/year)
 [ ] Scenario 5 (Ineligible - Income Above 135% FPL Disqualifies All MSP Categories): User should be **ineligible**
-[ ] Scenario 6 (QDWI Eligible - Person Exactly Age 64 at Disability Threshold): User should be **eligible** (benefit amount: not modeled)
-[ ] Scenario 7 (QDWI Not Eligible - Person Age 65 With Income in SLMB Range): User should be **eligible** (SLMB; benefit amount: $2,220/year)
 [ ] Scenario 8 (QMB Eligible - Senior Age 75 Well Above Minimum Age): User should be **eligible** (benefit amount: $2,220/year)
 [ ] Scenario 10 (Already Receiving Medicaid - QI Exclusion Test): User should be **ineligible**
-[ ] Scenario 11 (QDWI Excluded - Already Receiving Medicare Part A (Premium-Free)): User should be **eligible** (SLMB; benefit amount: $2,220/year)
 [ ] Scenario 12 (Mixed Household - Eligible Senior with Non-Eligible Adult Child): User should be **eligible** (benefit amount: $2,220/year — 1 eligible member)
 [ ] Scenario 13 (Multiple Eligible Members - Married Couple Both Qualifying for SLMB): User should be **eligible** (benefit amount: $4,440/year — 2 eligible members × $2,220)
-[ ] Scenario 14 (QDWI Edge Case - Disabled Person Age 64 with Resources Exactly at $4,000 Limit): User should be **eligible** (benefit amount: not modeled)
 [ ] Scenario 15 (Spouse-to-Spouse Deeming - Ineligible Due to Deemed Spouse Income): User should be **ineligible**
 
 ## Test Scenarios
@@ -233,35 +197,7 @@ The Medicare Savings Program in Texas has four sub-programs (QMB, SLMB, QI, QDWI
 - **Person 1**: Birth month/year: `January 1961` (age 65), Relationship: `Head of Household`, Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$1,700` per month, Not disabled, Not receiving Medicaid
 - **Assets**: Total household assets: `$5,000`
 
-**Why this matters**: Income of $1,700/mo exceeds 135% FPL ($1,694/mo), ruling out QMB/SLMB/QI. Age 65 rules out QDWI. This single case validates all income ceiling logic across the program.
-
----
-
-### Scenario 6: QDWI Eligible - Person Exactly Age 64 at Disability Threshold
-**What we're checking**: Tests that a person exactly at age 64 (under 65) with disability qualifies for QDWI program
-**Expected**: Eligible
-
-**Steps**:
-- **Location**: Enter ZIP code `78701`, Select county `Travis`
-- **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `March 1962` (age 64), Relationship: `Head of Household`, Check `Has a disability` (`disabled`, `visually_impaired`, or `long_term_disability`), Has income: `Yes`, Income type: `Social Security Disability`, Amount: `$1,500/month`, Has Medicare: `No`, Has Medicaid: `No`
-- **Assets**: Total household assets: `$3,500`
-
-**Why this matters**: Validates that the age threshold for QDWI is correctly implemented as 'under 65'. A person exactly 64 should qualify. Note: QDWI technically requires the person to be paying Medicare Part A premiums (having lost premium-free coverage by returning to work), but this is a known data gap (#12). The screener uses `Has Medicare: No` as a proxy for this requirement — this scenario tests the proxy behavior only, not exact QDWI eligibility.
-
----
-
-### Scenario 7: QDWI Not Eligible - Person Age 65 With Income in SLMB Range
-**What we're checking**: Validates that QDWI has a strict age requirement of under 65, and a person who just turned 65 is denied QDWI but correctly qualifies for SLMB instead
-**Expected**: Eligible (for SLMB; ineligible for QDWI)
-
-**Steps**:
-- **Location**: Enter ZIP code `78701`, Select county `Travis`
-- **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `February 1961` (age 65), Check `Has a disability` (`disabled`, `visually_impaired`, or `long_term_disability`), Has income: `Yes`, Income type: `Social Security Disability`, Amount: `$1,500`, Frequency: `Monthly`, Has Medicare: `Yes`, Assets: `$3,500`
-- **Current Benefits**: Select `None`
-
-**Why this matters**: Tests the strict age boundary for QDWI (age < 65). At age 65 with income of $1,500/mo (~119.5% FPL, in SLMB range), the person is denied QDWI due to age but correctly qualifies for SLMB. This validates that (a) QDWI correctly enforces the age < 65 requirement per Section Q-6000, and (b) the system falls through to SLMB eligibility rather than returning a blanket denial.
+**Why this matters**: Income of $1,700/mo exceeds 135% FPL ($1,694/mo), ruling out all three sub-programs (QMB/SLMB/QI). This single case validates all income ceiling logic across the program.
 
 ---
 
@@ -290,20 +226,6 @@ The Medicare Savings Program in Texas has four sub-programs (QMB, SLMB, QI, QDWI
 - **Assets**: Total household assets: `$5,000`
 
 **Why this matters**: Validates the critical exclusion rule in Section Q-5000 — QI is specifically designed for Medicare beneficiaries who are NOT eligible for Medicaid. The Medicaid exclusion prevents improper benefit stacking. Income of $1,600/mo is in the QI range (~127.5% FPL, between 120% and 135% FPL), so Medicaid is the only disqualifying factor.
-
----
-
-### Scenario 11: QDWI Excluded - Already Receiving Medicare Part A (Premium-Free)
-**What we're checking**: Tests QDWI exclusion for individuals who already have premium-free Medicare Part A coverage, while confirming they still qualify for SLMB
-**Expected**: Eligible (for SLMB; ineligible for QDWI)
-
-**Steps**:
-- **Location**: Enter ZIP code `78701`, Select county `Travis`
-- **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `January 1964` (age 62), Relationship: `Head of Household`, Check `Has a disability` (`disabled`, `visually_impaired`, or `long_term_disability`), Has Medicare: `Yes`, Has Medicaid: `No`, Has income: `Yes`, Income type: `Social Security Disability`, Amount: `$1,500` per month
-- **Assets**: Total household assets: `$3,000`
-
-**Why this matters**: QDWI specifically helps disabled workers who lost premium-free Medicare Part A due to returning to work. Those who already have Medicare (premium-free Part A) are excluded from QDWI. Note: the screener uses the `medicare` field as a proxy — this scenario tests that Medicare enrollment correctly disqualifies a QDWI candidate. However, having Medicare is a *prerequisite* (not a disqualification) for SLMB. With income of $1,500/month (~115% FPL, within the 100–120% SLMB range) and assets of $3,000 (below the $9,430 individual limit), this person qualifies for SLMB. The system should fall through to SLMB eligibility rather than returning a blanket denial.
 
 ---
 
@@ -337,22 +259,6 @@ The Medicare Savings Program in Texas has four sub-programs (QMB, SLMB, QI, QDWI
 **Why this matters**: Validates that the system correctly handles households where multiple members independently qualify. Combined income of $2,000/mo for a household of 2 is ~117.5% of the 2-person FPL, placing them in the SLMB range (100–120% FPL). The couple resource limit ($14,130) applies rather than the individual limit ($9,430).
 
 ---
-
-### Scenario 14: QDWI Edge Case - Disabled Person Age 64 with Resources Exactly at $4,000 Limit
-**What we're checking**: Tests QDWI eligibility when applicant is at the exact resource limit ($4,000 for individual) and just under the age threshold (64 years old)
-**Expected**: Eligible
-
-**Steps**:
-- **Location**: Enter ZIP code `78701`, Select county `Travis`
-- **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `March 1962` (age 64), Relationship: `Head of Household`, Check `Has a disability` (`disabled`, `visually_impaired`, or `long_term_disability`), Has Medicare: `No`, Has Medicaid: `No`
-- **Income**: Income type: `Social Security Disability`, Amount: `$1,500` per month
-- **Assets**: Total household assets: `$4,000` (exactly at QDWI resource limit)
-
-**Why this matters**: Tests the system's handling of exact threshold values for QDWI resources ($4,000 at or below) combined with the age boundary (64, just under the 65 exclusion). Validates that 'at or below' logic is correctly applied for resource limits. Note: Like Scenario 6, this uses `Has Medicare: No` as a proxy for the QDWI Part A premium-payment requirement (data gap #12) — this tests proxy behavior only.
-
----
-
 
 ### Scenario 15: Spouse-to-Spouse Deeming - Ineligible Due to Deemed Spouse Income
 **What we're checking**: Tests that an ineligible (non-applying) spouse's income is deemed to the applicant, making them ineligible for all MSP sub-programs even though their own income would qualify them for QMB

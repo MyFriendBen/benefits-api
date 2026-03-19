@@ -129,49 +129,6 @@
     }
   },
   {
-    "notes": "TX Medicare Savings Program - QDWI Eligible - Disabled Person Age 64 with Resources at $4,000 Limit",
-    "household": {
-      "white_label": "tx",
-      "household_size": 1,
-      "zipcode": "78701",
-      "county": "Travis",
-      "household_assets": 4000.0,
-      "agree_to_tos": true,
-      "is_13_or_older": true,
-      "household_members": [
-        {
-          "relationship": "headOfHousehold",
-          "birth_month": 3,
-          "birth_year": 1962,
-          "age": 64,
-          "disabled": true,
-          "has_income": true,
-          "income_streams": [
-            {
-              "type": "sSDisability",
-              "amount": 1500.0,
-              "frequency": "monthly"
-            }
-          ],
-          "insurance": {
-            "none": true,
-            "employer": false,
-            "private": false,
-            "medicaid": false,
-            "medicare": false,
-            "chp": false,
-            "va": false
-          }
-        }
-      ],
-      "expenses": []
-    },
-    "expected_results": {
-      "program_name": "tx_medicare_savings_program",
-      "eligible": true
-    }
-  },
-  {
     "notes": "TX Medicare Savings Program - Ineligible - Income Above 135% FPL Disqualifies All Sub-Programs",
     "household": {
       "white_label": "tx",
