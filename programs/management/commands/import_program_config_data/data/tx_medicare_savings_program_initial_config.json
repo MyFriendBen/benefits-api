@@ -1,0 +1,151 @@
+{
+  "white_label": {
+    "code": "tx"
+  },
+  "program_category": {
+    "external_name": "tx_healthcare"
+  },
+  "program": {
+    "name_abbreviated": "tx_medicare_savings_program",
+    "year": "2025",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission"
+    ],
+    "name": "Medicare Savings Program (MSP)",
+    "description": "People pay a monthly fee called a premium to keep their Medicare. MSP helps pay these premiums if you have a low income.\n\nHow much help you get depends on your income:\n- Very low income: MSP pays your premium, plus your deductibles (the amount you pay before Medicare starts paying) and the copayments and coinsurance you pay when you get care.\n- A little higher income: MSP pays your premium only.\n\nThe estimated savings shown above only includes what you save on premiums. Your actual savings could be much higher if you qualify for the very low income level, which also covers your deductibles and other costs when you get care.\n\nThe estimated savings assumes you or your spouse worked at least 10 years. If not, your savings may be slightly lower.\n\nMSP also has a limit on the value of assets you own. Many things are not counted toward this limit, including your home, one vehicle, household goods, personal belongings, burial funds up to $1,500, and life insurance with a face value up to $1,500. When estimating your assets, do not include these items.\n\nTo apply, you must already be enrolled in Medicare.",
+    "description_short": "Help paying for Medicare premiums and costs",
+    "learn_more_link": "https://www.hhs.texas.gov/services/health/medicare",
+    "apply_button_link": "https://www.hhs.texas.gov/services/health/medicare",
+    "apply_button_description": "",
+    "estimated_application_time": "1 - 2 hours",
+    "estimated_delivery_time": "30 days",
+    "estimated_value": "",
+    "website_description": "Helps pay Medicare premiums, deductibles, and copays for people with low income"
+  },
+  "documents": [
+    {
+      "external_name": "tx_home",
+      "text": "Proof of home address (ex: lease, utility bill)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "id_proof",
+      "text": "Proof of identity",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_ssn",
+      "text": "Social Security Number or proof you applied for one",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_medicare_card",
+      "text": "Medicare card showing Part A enrollment",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_earned_income",
+      "text": "Proof of income (ex: pay stubs, Social Security statement, pension statement)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_assets",
+      "text": "Proof of assets (ex: bank statements, investment accounts). Do not include your home, one vehicle, household goods, or burial funds up to $1,500",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_us_status",
+      "text": "Proof of U.S. citizenship or qualified immigration status",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_disability_proof",
+      "text": "Proof of disability (for QDWI program only)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "tx_hhs_hicap",
+      "name": "Texas Health Information, Counseling and Advocacy Program (HICAP)",
+      "email": "",
+      "description": "Texas HICAP provides free Medicare counseling statewide and can help you understand and apply for Medicare Savings Programs. Call to be connected with a certified benefits counselor near you.",
+      "assistance_link": "https://www.hhs.texas.gov/services/health/medicare",
+      "phone_number": "800-252-9240",
+      "counties": [],
+      "languages": []
+    },
+    {
+      "external_name": "tx_legal_services_center_hicap",
+      "name": "Texas Legal Services Center – HICAP",
+      "email": "",
+      "description": "Texas Legal Services Center administers the statewide HICAP/SHIP program, training certified benefits counselors across Texas who can help you apply for the Medicare Savings Program.",
+      "assistance_link": "https://www.tlsc.org/hicap",
+      "phone_number": "",
+      "counties": [],
+      "languages": []
+    },
+    {
+      "external_name": "tx_area_agency_on_aging_of_central_texas",
+      "name": "Area Agency on Aging of Central Texas (AAACT)",
+      "email": "",
+      "description": "AAACT offers free one-on-one help from certified benefits counselors who can screen your eligibility and assist with your MSP application. Serves Bell and surrounding Central Texas counties.",
+      "assistance_link": "https://aaact.org/state-health-insurance/",
+      "phone_number": "254-770-2330",
+      "counties": ["Bell", "Coryell", "Hamilton", "Lampasas", "Milam", "Mills", "San Saba"],
+      "languages": []
+    },
+    {
+      "external_name": "tx_houston_galveston_area_council_aaa",
+      "name": "Houston-Galveston Area Council Area Agency on Aging",
+      "email": "",
+      "description": "H-GAC's Benefits Counseling Team offers free, unbiased help applying for the Medicare Savings Program by phone or in person at community sites throughout the Houston-Galveston region.",
+      "assistance_link": "https://www.h-gac.com/area-agency-on-aging/medicare-benefits-counseling",
+      "phone_number": "800-437-7396",
+      "counties": ["Harris", "Brazoria", "Chambers", "Fort Bend", "Galveston", "Liberty", "Montgomery", "Walker", "Wharton"],
+      "languages": []
+    },
+    {
+      "external_name": "tx_area_agency_on_aging_of_east_texas",
+      "name": "Area Agency on Aging of East Texas",
+      "email": "",
+      "description": "The AAA of East Texas provides free HICAP-certified benefits counseling and can help seniors and people with disabilities in East Texas apply for the Medicare Savings Program.",
+      "assistance_link": "https://www.easttexasaaa.org/benefits-counseling",
+      "phone_number": "800-442-8845",
+      "counties": ["Gregg", "Harrison", "Panola", "Rusk", "Smith", "Upshur", "Wood", "Cherokee", "Henderson", "Anderson", "Nacogdoches", "Shelby", "San Augustine", "Sabine", "Newton", "Jasper", "Tyler", "Hardin", "Polk", "Trinity", "Houston", "Angelina"],
+      "languages": []
+    },
+    {
+      "external_name": "tx_houston_health_department_benefits_counseling",
+      "name": "Houston Health Department – Benefits Counseling Program",
+      "email": "",
+      "description": "The Houston Health Department's HICAP-certified counselors provide free help with MSP applications by phone, in person, or in writing for Medicare beneficiaries in Harris County.",
+      "assistance_link": "https://www.houstonhealth.org/services/aging/benefits-counseling",
+      "phone_number": "832-393-4301",
+      "counties": ["Harris"],
+      "languages": []
+    },
+    {
+      "external_name": "tx_area_agency_on_aging_of_the_capital_area",
+      "name": "Area Agency on Aging of the Capital Area (AAACAP)",
+      "email": "",
+      "description": "AAACAP provides free Medicare benefits counseling and can help residents in the Austin metro area screen for eligibility and apply for the Medicare Savings Program.",
+      "assistance_link": "https://www.findhelp.org/area-agency-on-aging-of-the-capital-area-(aaacap)---capital-area-council-of-governments-(capcog)--austin-tx-benefits-counseling-program/2232131",
+      "phone_number": "512-916-6062",
+      "counties": ["Travis", "Williamson", "Hays", "Bastrop", "Caldwell", "Blanco", "Burnet", "Fayette", "Lee", "Llano"],
+      "languages": []
+    }
+  ]
+}
