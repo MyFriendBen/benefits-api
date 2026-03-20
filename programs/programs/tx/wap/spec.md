@@ -58,7 +58,16 @@
 
 ## Benefit Value
 
-- Amount varies by household - see test cases
+- **Single value estimate**: $372/year
+
+**Methodology**: WAP is a one-time weatherization service, but the benefit is expressed as the average annual energy savings delivered to the household post-weatherization. The DOE reports that WAP recipients save an average of $372 or more every year in energy costs.
+
+TX-specific note: Texas households tend to have above-average cooling loads (hot climate, larger homes), so the national average of $372/year is a reasonable and conservative estimate for TX. Comparable WAP implementations in this codebase use $300–$350/year (NC and CO respectively).
+
+**Value Estimate Sources**:
+- [DOE WAP Overview — "an average of $372 or more every year"](https://www.energy.gov/scep/wap/weatherization-assistance-program)
+- CO WAP: `amount = 350` (`programs/programs/co/weatherization_assistance/calculator.py`)
+- NC WAP: `amount = 300` (`programs/programs/nc/nc_weatherization/calculator.py`)
 
 ## Implementation Coverage
 
@@ -82,17 +91,17 @@
 
 ## Acceptance Criteria
 
-[ ] Scenario 1 (Clearly Eligible Low-Income Senior Homeowner in Texas): User should be **eligible** with $None/year
-[ ] Scenario 2 (Minimally Eligible Single Adult Renter at Income Threshold): User should be **eligible** with $None/year
-[ ] Scenario 3 (Family of 4 with Income Just Below 200% FPL Threshold): User should be **eligible** with $None/year
-[ ] Scenario 4 (Single Person with Income Exactly at 200% FPL Boundary): User should be **eligible** with $None/year
+[ ] Scenario 1 (Clearly Eligible Low-Income Senior Homeowner in Texas): User should be **eligible** with $372/year
+[ ] Scenario 2 (Minimally Eligible Single Adult Renter at Income Threshold): User should be **eligible** with $372/year
+[ ] Scenario 3 (Family of 4 with Income Just Below 200% FPL Threshold): User should be **eligible** with $372/year
+[ ] Scenario 4 (Single Person with Income Exactly at 200% FPL Boundary): User should be **eligible** with $372/year
 [ ] Scenario 5 (Family of 3 with Income Just Above 200% FPL - Should Be Ineligible): User should be **ineligible**
-[ ] Scenario 6 (Person Exactly Age 60 - Meets Elderly Priority Threshold): User should be **eligible** with $None/year
-[ ] Scenario 7 (Eligible Texas Resident in Rural West Texas ZIP Code): User should be **eligible** with $None/year
+[ ] Scenario 6 (Person Exactly Age 60 - Meets Elderly Priority Threshold): User should be **eligible** with $372/year
+[ ] Scenario 7 (Eligible Texas Resident in Rural West Texas ZIP Code): User should be **eligible** with $372/year
 [ ] Scenario 8 (Out-of-State Resident - Not a Texas Resident Exclusion): User should be **ineligible**
 [ ] Scenario 9 (Mixed Household - Elderly Disabled Grandparent, Working-Age Adult, and Child with Income Above 200% FPL): User should be **ineligible**
-[ ] Scenario 10 (Multiple Eligible Members - Elderly Couple with Disabled Adult Child and Grandchild, SNAP Recipient): User should be **eligible** with $None/year
-[ ] Scenario 11 (Household of 1 with Income Exactly $0 - Zero Income Edge Case with Categorical Eligibility via SSI): User should be **eligible** with $None/year
+[ ] Scenario 10 (Multiple Eligible Members - Elderly Couple with Disabled Adult Child and Grandchild, SNAP Recipient): User should be **eligible** with $372/year
+[ ] Scenario 11 (Household of 1 with Income Exactly $0 - Zero Income Edge Case with Categorical Eligibility via SSI): User should be **eligible** with $372/year
 
 ## Test Scenarios
 
