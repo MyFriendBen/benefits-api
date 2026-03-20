@@ -86,8 +86,6 @@ TX-specific note: Texas households tend to have above-average cooling loads (hot
 - [DOE Weatherization Assistance Program Resource Hub – Training, Tools, and Technical Resources](https://www.energy.gov/scep/wap/weatherization-assistance-program-resource-hub)
 - [DOE Weatherization Assistance Program Successes and Solutions Center – Case Studies and Best Practices](https://www.energy.gov/scep/wap/successes-solutions-center)
 - [DOE Announces Over $400 Million in WAP Funding and Policy Changes (2025) – Press Release](https://www.energy.gov/cmei/scep/articles/energy-department-announces-over-400-million-funding-and-removes-burdensome)
-- [Skip the navigation](https://www.tdhca.state.tx.us/energy/wap/#navskip)
-- [Site map](https://www.tdhca.state.tx.us/site_map.htm)
 
 ## Acceptance Criteria
 
@@ -98,10 +96,9 @@ TX-specific note: Texas households tend to have above-average cooling loads (hot
 [ ] Scenario 5 (Family of 3 with Income Just Above 200% FPL - Should Be Ineligible): User should be **ineligible**
 [ ] Scenario 6 (Person Exactly Age 60 - Meets Elderly Priority Threshold): User should be **eligible** with $372/year
 [ ] Scenario 7 (Eligible Texas Resident in Rural West Texas ZIP Code): User should be **eligible** with $372/year
-[ ] Scenario 8 (Out-of-State Resident - Not a Texas Resident Exclusion): User should be **ineligible**
-[ ] Scenario 9 (Mixed Household - Elderly Disabled Grandparent, Working-Age Adult, and Child with Income Above 200% FPL): User should be **ineligible**
-[ ] Scenario 10 (Multiple Eligible Members - Elderly Couple with Disabled Adult Child and Grandchild, SNAP Recipient): User should be **eligible** with $372/year
-[ ] Scenario 11 (Household of 1 with Income Exactly $0 - Zero Income Edge Case with Categorical Eligibility via SSI): User should be **eligible** with $372/year
+[ ] Scenario 8 (Mixed Household - Elderly Disabled Grandparent, Working-Age Adult, and Child with Income Above 200% FPL): User should be **ineligible**
+[ ] Scenario 9 (Multiple Eligible Members - Elderly Couple with Disabled Adult Child and Grandchild, SNAP Recipient): User should be **eligible** with $372/year
+[ ] Scenario 10 (Household of 1 with Income Exactly $0 - Zero Income Edge Case with Categorical Eligibility via SSI): User should be **eligible** with $372/year
 
 ## Test Scenarios
 
@@ -216,23 +213,7 @@ TX-specific note: Texas households tend to have above-average cooling loads (hot
 
 ---
 
-### Scenario 8: Out-of-State Resident - Not a Texas Resident Exclusion
-**What we're checking**: Validates that a household not residing in Texas is excluded from the Texas Weatherization Assistance Program, as the program requires state residency per TDHCA WAP guidelines and 10 CFR 440.22
-**Expected**: Not eligible
-
-**Steps**:
-- **Location**: Enter ZIP code `73301`, Note: This ZIP code is sometimes mapped ambiguously; if the screener does not recognize it as a valid Texas ZIP or routes to a different state, that confirms the geographic exclusion. Alternatively, if the screener asks for state, select a non-Texas state.
-- **Household**: Number of people: `2`
-- **Person 1**: Relationship: `Head of Household`, Birth month/year: `June 1986` (age 39), Has income: Yes, Income type: `Employment / Wages`, Income amount: `$1,800` per month ($21,600/year), Disabled: No
-- **Person 2**: Relationship: `Spouse`, Birth month/year: `September 1988` (age 37), Has income: No, Disabled: No
-- **Current Benefits**: Select `None` - no current benefits
-- **Housing**: Select `Renter`, Note: If the screener identifies the location as outside Texas service areas, the household should be excluded regardless of other eligibility factors
-
-**Why this matters**: The Weatherization Assistance Program is state-administered, and applicants must reside in the administering state (Texas via TDHCA). This test ensures the screener properly enforces the residency/geographic requirement and does not approve applicants who may not be in a Texas service area. This is a fundamental exclusion criterion per 10 CFR 440.22 and TDHCA program rules.
-
----
-
-### Scenario 9: Mixed Household - Elderly Disabled Grandparent, Working-Age Adult, and Child with Income Above 200% FPL
+### Scenario 8: Mixed Household - Elderly Disabled Grandparent, Working-Age Adult, and Child with Income Above 200% FPL
 **What we're checking**: Tests a multi-member household with diverse characteristics (elderly member age 72 with disability, working-age adult age 40, and child age 8) where total household income exceeds 200% FPL for a 3-person household, making them income-ineligible despite having priority-qualifying members (elderly, disabled, child). Also verifies that no categorical eligibility override applies since no qualifying benefits are received.
 **Expected**: Not eligible
 
@@ -249,7 +230,7 @@ TX-specific note: Texas households tend to have above-average cooling loads (hot
 
 ---
 
-### Scenario 10: Multiple Eligible Members - Elderly Couple with Disabled Adult Child and Grandchild, SNAP Recipient
+### Scenario 9: Multiple Eligible Members - Elderly Couple with Disabled Adult Child and Grandchild, SNAP Recipient
 **What we're checking**: Validates that a multi-member household with multiple priority categories (elderly, disabled, children) and categorical eligibility via SNAP is correctly identified as eligible with all priority flags
 **Expected**: Eligible
 
@@ -263,11 +244,11 @@ TX-specific note: Texas households tend to have above-average cooling loads (hot
 - **Current Benefits**: Select SNAP (food stamps), Select SSI
 - **Housing**: Housing situation: Homeowner or Renter (select Homeowner)
 
-**Why this matters**: This scenario tests a complex multi-member household where every priority category (elderly, disabled, children, high energy burden) is represented across different members. It also tests that categorical eligibility via both SNAP and SSI is recognized, and that the screener correctly handles four members with diverse ages, income sources, and characteristics. This ensures the system doesn't miss any priority flags when multiple eligible conditions coexist in the same household.
+**Why this matters**: This scenario tests a complex multi-member household where every priority category (elderly, disabled, children, high-energy burden) is represented across different members. It also tests that categorical eligibility via both SNAP and SSI is recognized, and that the screener correctly handles four members with diverse ages, income sources, and characteristics. This ensures the system doesn't miss any priority flags when multiple eligible conditions coexist in the same household.
 
 ---
 
-### Scenario 11: Household of 1 with Income Exactly $0 - Zero Income Edge Case with Categorical Eligibility via SSI
+### Scenario 10: Household of 1 with Income Exactly $0 - Zero Income Edge Case with Categorical Eligibility via SSI
 **What we're checking**: Tests edge case where household has absolutely zero income but qualifies through SSI categorical eligibility, verifying the system handles $0 income correctly and still processes categorical eligibility and priority flags (disabled)
 **Expected**: Eligible
 

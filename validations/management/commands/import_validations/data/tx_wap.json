@@ -61,7 +61,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_weatherization assistance program",
+      "program_name": "tx_wap",
       "eligible": true
     }
   },
@@ -104,7 +104,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_weatherization assistance program",
+      "program_name": "tx_wap",
       "eligible": false
     }
   },
@@ -159,7 +159,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "tx_weatherization assistance program",
+      "program_name": "tx_wap",
       "eligible": true
     }
   }
