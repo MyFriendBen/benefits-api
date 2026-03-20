@@ -36,74 +36,22 @@
      - `county`
    - Source: TDHCA WAP page; 10 CFR 440.22 (state-administered program)
 
-6. **Priority given to households with elderly members (age 60 or older)**
-   - Screener fields:
-     - `age (HouseholdMember)`
-   - Source: 42 U.S.C. § 6863(b)(1)(B); 10 CFR 440.16(b)(1)
-
-7. **Priority given to households with disabled members**
-   - Screener fields:
-     - `disabled (HouseholdMember)`
-   - Source: 42 U.S.C. § 6863(b)(1)(B); 10 CFR 440.16(b)(2)
-
-8. **Priority given to households with children (under age 18 or under age 6 in some state plans)**
-   - Screener fields:
-     - `age (HouseholdMember)`
-   - Source: 42 U.S.C. § 6863(b)(1)(B); 10 CFR 440.16(b)(3)
-
-9. **Priority given to households with high energy burden (high energy costs relative to income)**
-   - Screener fields:
-     - `incomeStreams`
-     - `household_size`
-   - Source: 42 U.S.C. § 6863(b)(1)(A); 10 CFR 440.16(a)
-
-10. **Dwelling must be a residential unit (single-family home, multifamily unit, or mobile home)**
-   - Screener fields:
-     - `isHomeOwner`
-     - `isRenter`
+6. **Dwelling must be a residential unit (single-family home, multifamily unit, or mobile home)** ⚠️ *data gap*
+   - Note: The TX screener does not collect fields to verify dwelling type. This is confirmed during the application and on-site audit process.
    - Source: 10 CFR 440.22; 42 U.S.C. § 6862(6) definition of 'dwelling unit'
+   - Impact: Low
 
-11. **Dwelling must not have been previously weatherized with DOE WAP funds (unless 15+ years have passed or exception applies)** ⚠️ *data gap*
+7. **Dwelling must not have been previously weatherized with DOE WAP funds (unless 15+ years have passed or exception applies)** ⚠️ *data gap*
    - Note: The screener has no field to capture whether the dwelling has been previously weatherized. This is verified during the application/audit process. The DOE announced in 2024 that the re-weatherization waiting period was reduced from the previous standard to 15 years.
    - Source: 10 CFR 440.18(e)(2); 42 U.S.C. § 6865(c)(2); DOE updated re-weatherization rules in 2024 allowing re-weatherization after 15 years
    - Impact: Medium
 
-12. **For rental properties, landlord must provide written permission for weatherization work** ⚠️ *data gap*
-   - Note: Renters are eligible but must obtain landlord consent. This is an administrative/documentation requirement that cannot be evaluated at the screening stage.
-   - Source: 10 CFR 440.22(b)(3); TDHCA WAP program requirements
-   - Impact: Medium
+8. **Applicant must be a U.S. citizen or meet immigration status requirements**
+   - Note: The federal WAP statute (42 U.S.C. § 6861 et seq.) does not contain an explicit citizenship or immigration status requirement, and DOE has historically not required citizenship verification for WAP. This is broader than many federal benefit programs. In Texas, TDHCA follows federal guidelines and does not impose additional immigration status restrictions. As a result, WAP is available to all immigration statuses — citizens, green card holders (regardless of years held), refugees, individuals with work authorization, and undocumented individuals. This criterion is handled by front-end filtering; the `legal_status_required` in the program config should include all statuses.
+   - Source: 42 U.S.C. § 6861 et seq. (no citizenship restriction); DOE WAP guidance does not restrict by immigration status; TDHCA WAP follows federal eligibility rules
+   - Screener fields: Handled by front-end (`legal_status_required`)
 
-13. **For rental properties in buildings with 2-4 units, at least 50% of units must be occupied by income-eligible households; for buildings with 5+ units, at least 66% (two-thirds) must be income-eligible** ⚠️ *data gap*
-   - Note: For multifamily rental buildings, there are building-level eligibility requirements regarding the proportion of income-eligible tenants. This cannot be determined from individual household screener data.
-   - Source: 10 CFR 440.22(b)(2)(i)-(ii); 42 U.S.C. § 6863(b)(5)
-   - Impact: Low
-
-14. **Applicant must provide income documentation (pay stubs, tax returns, benefit award letters, etc.)** ⚠️ *data gap*
-   - Note: Income verification documentation is required during the formal application process. The screener collects self-reported income but cannot verify documentation. Note: DOE announced in 2024 removal of some burdensome income verification requirements, allowing self-certification in some cases.
-   - Source: 10 CFR 440.22(a); TDHCA WAP application requirements
-   - Impact: Low
-
-15. **Dwelling must pass a health and safety inspection and energy audit before weatherization work begins** ⚠️ *data gap*
-   - Note: An energy audit and health/safety assessment of the dwelling is required. Dwellings with certain hazardous conditions (e.g., structural deficiencies, active vermiculite insulation containing asbestos) may be deferred. This is determined during the on-site assessment, not at screening.
-   - Source: 10 CFR 440.21(b); DOE WPN 22-7 (Health and Safety guidance)
-   - Impact: Medium
-
-16. **Dwelling must not be designated for acquisition or demolition within 12 months** ⚠️ *data gap*
-   - Note: Dwellings scheduled for demolition or acquisition by a public entity are not eligible. This cannot be determined from screener data.
-   - Source: 10 CFR 440.18(e)(1)
-   - Impact: Low
-
-17. **Applicant must apply through the local subgrantee/community action agency serving their geographic area** ⚠️ *data gap*
-   - Note: In Texas, TDHCA contracts with local subgrantees (community action agencies and local governments) to deliver WAP services. Applicants must apply through the subgrantee serving their area. The screener can identify the county/zip but cannot route to the specific subgrantee or verify application submission.
-   - Source: TDHCA WAP page; DOE 'How to Apply' page
-   - Impact: Low
-
-18. **Applicant must be a U.S. citizen or qualified non-citizen (varies by local subgrantee requirements)** ⚠️ *data gap*
-   - Note: The federal WAP statute (42 U.S.C. § 6861 et seq.) does not contain an explicit citizenship requirement. DOE has historically not required citizenship verification for WAP. However, some local subgrantees may have their own policies. The screener does not collect citizenship/immigration status. Given the federal program's general lack of citizenship restriction, this is noted but not a standard barrier.
-   - Source: Federal WAP statute does not explicitly require citizenship; however, some states/subgrantees may impose requirements. DOE guidance generally does not restrict based on immigration status for WAP.
-   - Impact: Low
-
-19. **Household must occupy the dwelling as their primary residence** ⚠️ *data gap*
+9. **Household must occupy the dwelling as their primary residence** ⚠️ *data gap*
    - Note: The dwelling must be the applicant's primary residence. Vacation homes, investment properties, and unoccupied units are not eligible. The screener does not explicitly capture whether the dwelling is the primary residence, though isHomeOwner/isRenter implies occupancy.
    - Source: 10 CFR 440.22; implicit in program design (weatherization of occupied dwelling units)
    - Impact: Low
@@ -114,10 +62,10 @@
 
 ## Implementation Coverage
 
-- ✅ Evaluable criteria: 10
-- ⚠️  Data gaps: 9
+- ✅ Evaluable criteria: 6
+- ⚠️  Data gaps: 3
 
-10 of 19 total criteria can be evaluated or approximated with current screener fields. The core eligibility requirements — income at or below 200% FPL, categorical eligibility via SNAP/SSI/TANF, Texas residency, and dwelling occupancy — are well-covered by the screener. Priority criteria (elderly, disabled, children, high energy burden) can also be assessed. The 9 criteria that cannot be evaluated are primarily administrative, documentation, or dwelling-specific requirements that are verified during the formal application and energy audit process, not at the initial screening stage.
+6 of 9 total criteria can be evaluated with current screener fields and front-end filtering. The core eligibility requirements — income at or below 200% FPL, categorical eligibility via SNAP/SSI/TANF, Texas residency, and immigration status (via front-end filtering) — are well-covered. The 3 data gaps are dwelling-specific requirements verified during the formal application and on-site audit process.
 
 ## Research Sources
 
