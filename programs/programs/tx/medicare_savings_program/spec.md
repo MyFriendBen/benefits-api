@@ -45,16 +45,25 @@
 
 6. **QI: Not eligible for Medicaid**
    - Screener fields:
-     - `HouseholdMember.insurance.medicaid`
-   - PolicyEngine calculation:
-     - `medicaid_eligible` (used when `HouseholdMember.insurance.medicaid` is not indicated)
-   - Note: If the person has indicated they currently have Medicaid, they are immediately disqualified from QI. If they have not indicated Medicaid coverage, `medicaid_eligible` (derived from PolicyEngine's calculation) is used to determine whether they would be eligible for Medicaid — if so, they are also disqualified from QI.
+     - `HouseholdMember.insurance.medicaid` (direct check — definitionally Medicaid-eligible)
+     - `HouseholdMember` birth month/year (age, for PE fallback calculation)
+     - `HouseholdMember.pregnant` (for PE fallback calculation)
+     - `HouseholdMember.disabled` / `long_term_disability` (for PE fallback calculation)
+     - `IncomeStream.amount`, `IncomeStream.frequency` (for PE fallback calculation — covered by criteria #1–3)
+     - `household_assets` (for PE fallback calculation via `ssi_countable_resources` — covered by criteria #4)
+   - PolicyEngine dependency: `IsMedicaidEligibleDependency` (`is_medicaid_eligible`)
+   - Note: Two-step evaluation. Step 1: If `insurance.medicaid` is True, `IsMedicaidEligibleDependency` returns `True` — PolicyEngine sees the member as Medicaid-eligible and disqualifies them from QI. Step 2: If `insurance.medicaid` is not indicated, the dependency returns `None` and PolicyEngine calculates `is_medicaid_eligible` from age, income, disability, and pregnancy (`medicaid_category`). If PolicyEngine finds them eligible, they are still disqualified from QI. This mirrors `IsMedicareEligibleDependency` and prevents PolicyEngine from reaching a different Medicaid eligibility conclusion than what the user has reported.
    - Source: Section Q-5000
 
 7. **Must be entitled to Medicare Part A (hospital insurance)**
    - Screener fields:
-     - `HouseholdMember.insurance.medicare`
-   - Note: The screener `medicare` insurance field is used as a proxy for Medicare Part A enrollment. QMB/SLMB/QI all require Part A entitlement.
+     - `HouseholdMember.insurance.medicare` (direct check — definitionally Medicare-eligible)
+     - `HouseholdMember` birth month/year (age, for PE fallback — age pathway: `age >= 65`)
+     - `IncomeStream.type = sSDisability`, `IncomeStream.amount`, `IncomeStream.frequency` (for PE fallback — disability pathway: `social_security_disability > 0`)
+     - `months_receiving_social_security_disability` ⚠️ *not collected* — see data gap below
+   - PolicyEngine dependency: `IsMedicareEligibleDependency` (`is_medicare_eligible`)
+   - Note: Two-step evaluation. Step 1: If `insurance.medicare` is True, `IsMedicareEligibleDependency` returns `True` — definitionally Medicare-eligible, bypassing PolicyEngine's calculation entirely. Step 2: If `insurance.medicare` is not indicated, the dependency returns `None` and PolicyEngine calculates via two pathways: age (`age >= 65`, reliable) or SSDI duration (`social_security_disability > 0` AND `months_receiving_social_security_disability >= 24`). The disability pathway is unreliable because `months_receiving_social_security_disability` is not collected — disabled users under 65 who have Medicare but haven't indicated it will produce a false negative on this criterion. QMB/SLMB/QI all require Part A entitlement.
+   - Data gap ⚠️: `months_receiving_social_security_disability` is not collected. Disabled individuals under 65 with Medicare who do not indicate `insurance.medicare` may be incorrectly found ineligible via the disability pathway. Impact: Low — the direct `insurance.medicare` check covers the vast majority of Medicare beneficiaries.
    - Source: Section Q-1000, Q-2000, Q-3000, Q-5000
 
 8. **Must be U.S. citizen or qualified non-citizen**
@@ -97,11 +106,11 @@ MSP covers Medicare premium costs per eligible person per month. The benefit val
 ## Implementation Coverage
 
 - ✅ Evaluable criteria: 9
-- ⚠️  Data gaps: 2
+- ⚠️  Data gaps: 3 (SSN requirement, incarceration status, `months_receiving_social_security_disability` for disabled Medicare beneficiaries under 65)
 
 > **Note on QDWI:** The QDWI (Qualified Disabled and Working Individuals) sub-program is not surfaced by this implementation. PolicyEngine does not model the QDWI benefit value (`msp_benefit_value` has no QDWI branch), and the program's primary eligibility requirement — that the applicant lost premium-free Medicare Part A by returning to work — cannot be evaluated with current screener fields. Given these limitations, QDWI is excluded from the screener results.
 
-This implementation covers the three remaining MSP sub-programs: QMB, SLMB, and QI. Of the 11 major eligibility criteria for these programs, 9 can be evaluated with current screener fields or program config, while 2 cannot. The evaluable criteria include all income thresholds (100%, 120%, 135% FPL), resource limits ($9,430/$14,130 for individual/couple), Medicare enrollment status (via `insurance.medicare` field), Texas residency, Medicaid exclusion (QI only), citizenship/immigration status (via `legal_status_required` program config), and deeming rules (spouse-to-spouse and parent-to-child). Resource limit checks are accurate for households of 1–2 (the vast majority of MSP cases); for households > 2, a custom dependency zeroes out `household_assets` before passing it to PolicyEngine (since `household_assets` includes non-eligible members' assets and MSP only counts the applicant's and spouse's resources), treating the resource test as passing rather than risk a false negative. The screener can effectively pre-screen based on income, assets, Medicare enrollment status, immigration status, and deeming. The QI Medicaid exclusion is evaluated in two steps: first by checking `insurance.medicaid` directly, then by falling back to PolicyEngine's `medicaid_eligible` calculation when not indicated — ensuring that applicants who would qualify for Medicaid are also excluded from QI even if they haven't explicitly reported Medicaid enrollment.
+This implementation covers the three remaining MSP sub-programs: QMB, SLMB, and QI. Of the 11 major eligibility criteria for these programs, 9 can be evaluated with current screener fields or program config, while 3 cannot (SSN requirement, incarceration status, and SSDI duration for disabled Medicare beneficiaries under 65). The evaluable criteria include all income thresholds (100%, 120%, 135% FPL), resource limits ($9,430/$14,130 for individual/couple), Medicare enrollment status, Texas residency, Medicaid exclusion (QI only), citizenship/immigration status (via `legal_status_required` program config), and deeming rules (spouse-to-spouse and parent-to-child). Resource limit checks are accurate for households of 1–2 (the vast majority of MSP cases); for households > 2, a custom dependency zeroes out `household_assets` before passing it to PolicyEngine (since `household_assets` includes non-eligible members' assets and MSP only counts the applicant's and spouse's resources), treating the resource test as passing rather than risk a false negative. Medicare eligibility (criteria #7) is evaluated via `IsMedicareEligibleDependency`: if `insurance.medicare` is True it returns `True` directly, bypassing PolicyEngine's SSDI-duration check (which would fail for disabled users under 65 since we don't collect `months_receiving_social_security_disability`); otherwise it returns `None` and PolicyEngine falls back to the age pathway (`age >= 65`). The QI Medicaid exclusion (criteria #6) is evaluated via a parallel `IsMedicaidEligibleDependency`: if `insurance.medicaid` is True it returns `True` directly; otherwise PolicyEngine calculates Medicaid eligibility from age, income, disability, and pregnancy — ensuring applicants who would qualify for Medicaid are excluded from QI even if they haven't explicitly reported Medicaid enrollment.
 
 ## Research Sources
 
