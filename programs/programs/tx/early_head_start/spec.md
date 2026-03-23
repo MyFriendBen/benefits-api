@@ -103,12 +103,9 @@ Of 11 identified eligibility criteria, 6 can be fully evaluated and 5 cannot. Th
 [ ] Scenario 6 (Newborn at exactly 0 months old - minimum age requirement): User should be **eligible** with $None/year
 [ ] Scenario 7 (Child age 3 years old - just above maximum age threshold): User should be **ineligible**
 [ ] Scenario 8 (Child age 2 years 11 months - well within age eligibility range): User should be **eligible** with $None/year
-[ ] Scenario 9 (Family at 94% FPL with infant - income and age eligible): User should be **eligible** with $None/year
 [ ] Scenario 10 (Family already enrolled in Early Head Start - duplicate enrollment check): User should be **ineligible**
-[ ] Scenario 11 (Household with only an over-age child - no EHS-eligible children): User should be **ineligible**
 [ ] Scenario 12 (Mixed household - eligible toddler, ineligible older sibling, working parent at 95% FPL): User should be **eligible** with $None/year
 [ ] Scenario 13 (Multi-generational household - pregnant teen, infant sibling, and working parent at 92% FPL): User should be **eligible** with $None/year
-[ ] Scenario 14 (Child turning 3 years old next month - age boundary edge case): User should be **eligible** with $None/year
 [ ] Scenario 15 (Family with SNAP benefits - categorical eligibility overrides high income): User should be **eligible** with $None/year
 
 ## Test Scenarios
@@ -227,22 +224,6 @@ Of 11 identified eligibility criteria, 6 can be fully evaluated and 5 cannot. Th
 
 ---
 
-### Scenario 9: Family at 94% FPL with infant - income and age eligible
-**What we're checking**: Validates that a family with income at 94% FPL and an age-eligible infant is correctly identified as eligible. Note: geographic service area eligibility is a high-impact data gap (each grantee has specific service area boundaries not available in the screener) and is not evaluated here.
-**Expected**: Eligible
-
-**Steps**:
-- **Location**: Enter ZIP code `78701`, Select county `Travis`
-- **Household**: Number of people: `2`
-- **Person 1**: Birth month/year: `January 1998` (age 28), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$1,600`, Income frequency: `Monthly`, Insurance: `None`
-- **Person 2**: Birth month/year: `January 2025` (age 1), Relationship: `Child`, Has income: `No`, Insurance: `None`
-- **Current Benefits**: Select `None`
-- **Citizenship**: Select `U.S. Citizen`
-
-**Why this matters**: This test confirms income and age eligibility for a household of 2 at 94% FPL ($1,600/month ≈ $19,200/year, below the $20,440 threshold for household of 2). Geographic service area validation requires grantee-specific boundary data that is not available in the screener and therefore cannot be used as an eligibility signal.
-
----
-
 ### Scenario 10: Family already enrolled in Early Head Start - duplicate enrollment check
 **What we're checking**: Tests that families already receiving Early Head Start benefits are properly identified and handled (may show different messaging or prevent duplicate enrollment)
 **Expected**: Not eligible
@@ -256,21 +237,6 @@ Of 11 identified eligibility criteria, 6 can be fully evaluated and 5 cannot. Th
 - **Current Benefits**: Select `Early Head Start` as a current benefit (marks the household as already enrolled)
 
 **Why this matters**: Prevents duplicate enrollment and ensures accurate tracking of program participation. Families already receiving Early Head Start should not be screened as newly eligible, as they are already being served. This tests the system's ability to identify and handle existing beneficiaries appropriately.
-
----
-
-### Scenario 11: Household with only an over-age child - no EHS-eligible children
-**What we're checking**: Verifies that a household with no children under age 3 is NOT eligible for Early Head Start, even when income is below 100% FPL
-**Expected**: Not eligible
-
-**Steps**:
-- **Location**: Enter ZIP code `78701`, Select county `Travis`
-- **Household**: Number of people: `2`
-- **Person 1**: Relationship: `You (Head of Household)`, Birth month/year: `January 1992` (age 34), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$2,100`, Income frequency: `Monthly`, Insurance: `None`
-- **Person 2**: Relationship: `Child`, Birth month/year: `June 2022` (age 3 years 9 months), Has income: `No`, Insurance: `None`
-- **Current Benefits**: Select `None`
-
-**Why this matters**: Early Head Start specifically serves children birth to age 3 (36 months) per 45 CFR 1302.12(c). A household with no age-eligible children should be ineligible regardless of income level. This ensures the age criterion is correctly applied as a prerequisite for all other eligibility pathways.
 
 ---
 
@@ -305,22 +271,6 @@ Of 11 identified eligibility criteria, 6 can be fully evaluated and 5 cannot. Th
 - **Current Benefits**: Select `None` or skip if no current benefits
 
 **Why this matters**: Tests complex household with multiple eligible members through different pathways (pregnancy + age-eligible infant) while including an ineligible older child, ensuring the screener correctly identifies all eligible household members and doesn't incorrectly exclude based on presence of older children
-
----
-
-### Scenario 14: Child turning 3 years old next month - age boundary edge case
-**What we're checking**: Tests the age cutoff at 36 months (under age 3) when child will age out next month
-**Expected**: Eligible
-
-**Steps**:
-- **Location**: Enter ZIP code `78701`, Select county `Travis`
-- **Household**: Number of people: `2`
-- **Person 1**: Relationship: `Head of Household`, Birth month/year: `January 1998` (age 28), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `2,100`, Income frequency: `Monthly`, Insurance: `None`
-- **Person 2**: Relationship: `Child`, Birth month/year: `April 2023` (age 2 years, 11 months - turns 3 next month), Insurance: `None`
-- **Current Benefits**: Select: `None`
-- **Citizenship**: Select: `U.S. Citizen`
-
-**Why this matters**: Tests the age boundary interpretation - whether the system correctly evaluates 'under age 3' as the child's current age on the application date. With a birth month of April 2023 and research date of March 2026, the child is 2 years 11 months old and turns 3 next month. This edge case is critical because families applying just before a child's 3rd birthday need clarity on eligibility timing.
 
 ---
 
