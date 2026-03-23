@@ -10,7 +10,7 @@
     "year": "2026",
     "legal_status_required": ["citizen", "non_citizen", "refugee", "gc_5plus", "gc_5less", "gc_under18_no5", "gc_18plus_no5", "otherWithWorkPermission"],
     "name": "Head Start",
-    "description": "Head Start is a free program for young children ages 3 to 5. It offers preschool classes, meals, health checkups, and child development and family support services. Families pay nothing to join.\n\nFamilies with low income can apply. Children who get SNAP (food stamps), TANF (cash help), or SSI (disability benefits) qualify right away. Children in foster care or experiencing homelessness also qualify.",
+    "description": "Head Start is a free program for children ages 3 to 5. It offers preschool classes, meals, health checkups, and support for child development and families. Families pay nothing to join.\n\nFamilies with low income can apply. Children who get SNAP (food stamps), TANF (cash help), or SSI (disability benefits) qualify right away. Children in foster care or experiencing homelessness also qualify.\n\nSome local programs also have spots for families whose income is a little above the poverty limit. If your income is slightly over the limit, contact your local Head Start program to ask about open spots.",
     "description_short": "Free preschool for children ages 3 to 5",
     "learn_more_link": "https://www.earlychildhood.texas.gov/about-eligibility-screener",
     "apply_button_link": "https://www.earlychildhood.texas.gov/about-eligibility-screener",
