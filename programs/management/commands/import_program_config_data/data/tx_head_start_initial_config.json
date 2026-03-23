@@ -8,7 +8,7 @@
   "program": {
     "name_abbreviated": "tx_head_start",
     "year": "2026",
-    "legal_status_required": ["citizen", "gc_5plus", "gc_5less", "refugee", "otherWithWorkPermission", "non_citizen"],
+    "legal_status_required": ["citizen", "non_citizen", "refugee", "gc_5plus", "gc_5less", "gc_under18_no5", "gc_18plus_no5", "otherWithWorkPermission"],
     "name": "Head Start",
     "description": "Head Start is a free program for young children ages 3 to 5. It offers preschool classes, meals, health checkups, and child development and family support services. Families pay nothing to join.\n\nFamilies with low income can apply. Children who get SNAP (food stamps), TANF (cash help), or SSI (disability benefits) qualify right away. Children in foster care or experiencing homelessness also qualify.",
     "description_short": "Free preschool for children ages 3 to 5",
