@@ -92,15 +92,15 @@ Of 10 identified eligibility criteria, 5 can be fully evaluated and 5 cannot. No
 ## Acceptance Criteria
 
 [ ] Scenario 1 (Young mother with infant - income eligible at 85% FPL): User should be **eligible** with $None/year
-[ ] Scenario 3 (Family with toddler at 134% FPL - just below income ceiling): User should be **eligible** with $None/year
-[ ] Scenario 16 (Family at 140% FPL - above all income thresholds, no categorical eligibility): User should be **ineligible**
-[ ] Scenario 6 (Newborn at exactly 0 months old - minimum age requirement): User should be **eligible** with $None/year
-[ ] Scenario 7 (Child age 3 years old - just above maximum age threshold): User should be **ineligible**
-[ ] Scenario 8 (Child age 2 years 11 months - approaching upper age limit): User should be **eligible** with $None/year
-[ ] Scenario 10 (Family already enrolled in Early Head Start - duplicate enrollment check): User should be **ineligible**
-[ ] Scenario 12 (Mixed household - eligible toddler, ineligible older sibling, working parent at 95% FPL): User should be **eligible** with $None/year
-[ ] Scenario 13 (Multi-generational household - pregnant teen, infant sibling, and working parent at 92% FPL): User should be **eligible** with $None/year
-[ ] Scenario 15 (Family with SNAP benefits - categorical eligibility overrides high income): User should be **eligible** with $None/year
+[ ] Scenario 2 (Family with toddler at 134% FPL - just below income ceiling): User should be **eligible** with $None/year
+[ ] Scenario 3 (Newborn at exactly 0 months old - minimum age requirement): User should be **eligible** with $None/year
+[ ] Scenario 4 (Child age 3 years old - just above maximum age threshold): User should be **ineligible**
+[ ] Scenario 5 (Child age 2 years 11 months - approaching upper age limit): User should be **eligible** with $None/year
+[ ] Scenario 6 (Family already enrolled in Early Head Start - duplicate enrollment check): User should be **ineligible**
+[ ] Scenario 7 (Mixed household - eligible toddler, ineligible older sibling, working parent at 95% FPL): User should be **eligible** with $None/year
+[ ] Scenario 8 (Multi-generational household - pregnant teen, infant sibling, and working parent at 92% FPL): User should be **eligible** with $None/year
+[ ] Scenario 9 (Family with SNAP benefits - categorical eligibility overrides high income): User should be **eligible** with $None/year
+[ ] Scenario 10 (Family at 140% FPL - above all income thresholds, no categorical eligibility): User should be **ineligible**
 
 ## Test Scenarios
 
@@ -120,7 +120,7 @@ Of 10 identified eligibility criteria, 5 can be fully evaluated and 5 cannot. No
 
 ---
 
-### Scenario 3: Family with toddler at 134% FPL - just below income ceiling
+### Scenario 2: Family with toddler at 134% FPL - just below income ceiling
 **What we're checking**: Validates income eligibility when family income is just below the 135% FPL screener ceiling (134% FPL)
 **Expected**: Eligible
 
@@ -137,7 +137,7 @@ Of 10 identified eligibility criteria, 5 can be fully evaluated and 5 cannot. No
 
 ---
 
-### Scenario 6: Newborn at exactly 0 months old - minimum age requirement
+### Scenario 3: Newborn at exactly 0 months old - minimum age requirement
 **What we're checking**: Child at exactly the minimum age (birth/0 months) qualifies for Early Head Start
 **Expected**: Eligible
 
@@ -153,7 +153,7 @@ Of 10 identified eligibility criteria, 5 can be fully evaluated and 5 cannot. No
 
 ---
 
-### Scenario 7: Child age 3 years old - just above maximum age threshold
+### Scenario 4: Child age 3 years old - just above maximum age threshold
 **What we're checking**: Validates that a child who has turned 3 years old (36 months) is NOT eligible for Early Head Start, which serves children birth to 36 months
 **Expected**: Not eligible
 
@@ -169,7 +169,7 @@ Of 10 identified eligibility criteria, 5 can be fully evaluated and 5 cannot. No
 
 ---
 
-### Scenario 8: Child age 2 years 11 months - approaching upper age limit
+### Scenario 5: Child age 2 years 11 months - approaching upper age limit
 **What we're checking**: Validates that a child who is 2 years and 11 months old (35 months) is eligible, just one month before the 36-month age cutoff
 **Expected**: Eligible
 
@@ -186,7 +186,7 @@ Of 10 identified eligibility criteria, 5 can be fully evaluated and 5 cannot. No
 
 ---
 
-### Scenario 10: Family already enrolled in Early Head Start - duplicate enrollment check
+### Scenario 6: Family already enrolled in Early Head Start - duplicate enrollment check
 **What we're checking**: Tests that families already receiving Early Head Start benefits are properly identified and handled (may show different messaging or prevent duplicate enrollment)
 **Expected**: Not eligible
 
@@ -202,7 +202,7 @@ Of 10 identified eligibility criteria, 5 can be fully evaluated and 5 cannot. No
 
 ---
 
-### Scenario 12: Mixed household - eligible toddler, ineligible older sibling, working parent at 95% FPL
+### Scenario 7: Mixed household - eligible toddler, ineligible older sibling, working parent at 95% FPL
 **What we're checking**: Tests that eligibility is correctly determined when household contains both age-eligible (under 3) and age-ineligible (over 3) children, with income below 100% FPL
 **Expected**: Eligible
 
@@ -219,7 +219,7 @@ Of 10 identified eligibility criteria, 5 can be fully evaluated and 5 cannot. No
 
 ---
 
-### Scenario 13: Multi-generational household - pregnant teen, infant sibling, and working parent at 92% FPL
+### Scenario 8: Multi-generational household - pregnant teen, infant sibling, and working parent at 92% FPL
 **What we're checking**: Multiple eligible children (pregnant teen + infant) in same household with working parent below income threshold
 **Expected**: Eligible
 
@@ -236,7 +236,7 @@ Of 10 identified eligibility criteria, 5 can be fully evaluated and 5 cannot. No
 
 ---
 
-### Scenario 15: Family with SNAP benefits - categorical eligibility overrides high income
+### Scenario 9: Family with SNAP benefits - categorical eligibility overrides high income
 **What we're checking**: Verifies that a family receiving SNAP is categorically eligible for Early Head Start regardless of income exceeding 100% FPL
 **Expected**: Eligible
 
@@ -252,7 +252,7 @@ Of 10 identified eligibility criteria, 5 can be fully evaluated and 5 cannot. No
 
 ---
 
-### Scenario 16: Family at 140% FPL - above all income thresholds, no categorical eligibility
+### Scenario 10: Family at 140% FPL - above all income thresholds, no categorical eligibility
 **What we're checking**: Verifies that a family with income above 130% FPL and no categorical eligibility (no TANF/SNAP/SSI, not foster care) is NOT eligible
 **Expected**: Not eligible
 
