@@ -35,6 +35,7 @@
      - `household_assets`
      - `HouseholdMember.relationship`
    - Note: The resource limit is determined by marital status (individual vs. couple), not by household size — there is no defined limit for households with 3 or more members. The couple limit ($14,130) applies when a spouse is present (use `screen.is_joint()` or check for a spouse relationship); otherwise the individual limit ($9,430) applies. `household_size` is not the right field to select the limit. ⚠️ Partial gap for households > 2: `household_assets` is a household-level total that includes assets of non-eligible members (e.g., adult children). MSP resource counting applies only to the applicant and their spouse — other household members' assets should be excluded. Using `household_assets` as a proxy may produce false negatives for 3+ person households where non-eligible members hold significant assets.
+   - **Proposed fix**: Use a custom dependency that only passes `household_assets` to PolicyEngine when `household_size == 1` or `screen.is_joint()` (household of 2 with a spouse). For any other household configuration, set the asset value to `0` — treating the resource check as passing, since we cannot correctly attribute assets to the applicant alone. This avoids false negatives for 3+ person households while preserving accurate resource evaluation for singles and couples.
    - Note on resource exclusions: Many asset types are excluded from the resource count under MSP rules: homestead, one vehicle, household goods, personal effects, burial funds up to $1,500, and life insurance with face value up to $1,500. The screener collects a single `household_assets` total, so users may unknowingly include excluded items — this can produce false negatives. This is surfaced in the initial program config description to set user expectations.
    - Source: Section Q-1300, Appendix IX, Chapter F - Resources
 
@@ -100,7 +101,7 @@ MSP covers Medicare premium costs per eligible person per month. The benefit val
 
 > **Note on QDWI:** The QDWI (Qualified Disabled and Working Individuals) sub-program is not surfaced by this implementation. PolicyEngine does not model the QDWI benefit value (`msp_benefit_value` has no QDWI branch), and the program's primary eligibility requirement — that the applicant lost premium-free Medicare Part A by returning to work — cannot be evaluated with current screener fields. Given these limitations, QDWI is excluded from the screener results.
 
-This implementation covers the three remaining MSP sub-programs: QMB, SLMB, and QI. Of the 11 major eligibility criteria for these programs, 9 can be evaluated with current screener fields or program config, while 2 cannot. The evaluable criteria include all income thresholds (100%, 120%, 135% FPL), resource limits ($9,430/$14,130 for individual/couple), Medicare enrollment status (via `insurance.medicare` field), Texas residency, Medicaid exclusion (QI only), citizenship/immigration status (via `legal_status_required` program config), and deeming rules (spouse-to-spouse and parent-to-child). Resource limit checks are accurate for households of 1–2 (the vast majority of MSP cases) but partially limited for households > 2: `household_assets` captures the whole household including non-eligible members, and the individual/couple limits are selected by spouse presence rather than household size. The screener can effectively pre-screen based on income, assets, Medicare enrollment status, immigration status, and deeming. The QI Medicaid exclusion is evaluated in two steps: first by checking `insurance.medicaid` directly, then by falling back to PolicyEngine's `medicaid_eligible` calculation when not indicated — ensuring that applicants who would qualify for Medicaid are also excluded from QI even if they haven't explicitly reported Medicaid enrollment.
+This implementation covers the three remaining MSP sub-programs: QMB, SLMB, and QI. Of the 11 major eligibility criteria for these programs, 9 can be evaluated with current screener fields or program config, while 2 cannot. The evaluable criteria include all income thresholds (100%, 120%, 135% FPL), resource limits ($9,430/$14,130 for individual/couple), Medicare enrollment status (via `insurance.medicare` field), Texas residency, Medicaid exclusion (QI only), citizenship/immigration status (via `legal_status_required` program config), and deeming rules (spouse-to-spouse and parent-to-child). Resource limit checks are accurate for households of 1–2 (the vast majority of MSP cases); for households > 2, a custom dependency zeroes out `household_assets` before passing it to PolicyEngine (since `household_assets` includes non-eligible members' assets and MSP only counts the applicant's and spouse's resources), treating the resource test as passing rather than risk a false negative. The screener can effectively pre-screen based on income, assets, Medicare enrollment status, immigration status, and deeming. The QI Medicaid exclusion is evaluated in two steps: first by checking `insurance.medicaid` directly, then by falling back to PolicyEngine's `medicaid_eligible` calculation when not indicated — ensuring that applicants who would qualify for Medicaid are also excluded from QI even if they haven't explicitly reported Medicaid enrollment.
 
 ## Research Sources
 
@@ -129,6 +130,8 @@ This implementation covers the three remaining MSP sub-programs: QMB, SLMB, and 
 [ ] Scenario 15 (Spouse-to-Spouse Deeming - Ineligible Due to Deemed Spouse Income): User should be **ineligible**
 [ ] Scenario 16 (Resource Boundary - Assets Exactly at Individual Limit): User should be **eligible** (benefit amount: $2,220/year)
 [ ] Scenario 17 (Earned Income Exclusion - Wages Exceeding Gross Income Limits): User should be **eligible** (benefit amount: $2,220/year)
+[ ] Scenario 18 (3+ Person Household - Assets Above Individual Limit, Data Gap): User should be **eligible** (benefit amount: $2,220/year — assets not penalized due to data gap)
+[ ] Scenario 19 (Single Individual - Assets Above Individual Limit, Below Couple Limit): User should be **ineligible**
 
 ## Test Scenarios
 
@@ -305,6 +308,37 @@ This implementation covers the three remaining MSP sub-programs: QMB, SLMB, and 
 - **Current Benefits**: Not currently receiving Medicaid or other assistance
 
 **Why this matters**: Gross wages of $2,400/mo greatly exceed the QMB income ceiling of $1,255/mo. Under SSI income methodology, the earned income exclusions reduce countable income significantly: $2,400 − $20 (general exclusion) − $65 (earned income exclusion) = $2,315; $2,315 × 0.50 = $1,157.50 countable income/mo — well below the QMB threshold. Without these exclusions, the system would incorrectly deny the applicant for all three sub-programs. This test validates that the system applies the 50% earned income exclusion rather than using gross wages directly.
+
+---
+
+### Scenario 18: 3+ Person Household — Assets Above Individual Limit (Data Gap)
+**What we're checking**: A senior living with an adult child where `household_assets` exceeds the individual resource limit, but the excess may belong to the non-eligible child. Because assets cannot be correctly attributed to the applicant alone for non-couple households, the custom dependency zeroes out assets before passing them to PolicyEngine — the resource check is treated as passing, and the applicant should not be denied on the basis of assets.
+**Expected**: Eligible
+
+**Steps**:
+- **Location**: Enter ZIP code `78701`, Select county `Travis`
+- **Household**: Number of people: `2`
+- **Person 1 (Head of Household)**: Birth month/year: `January 1961` (age 65), Relationship: `Head of Household`, Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$1,000` monthly
+- **Person 2 (Adult Child)**: Birth month/year: `June 1988` (age ~37), Relationship: `Child`, Has Medicare: `No`, Has income: `Yes`, Income type: `Wages`, Amount: `$2,000` monthly
+- **Assets**: Total household assets: `$12,000`
+- **Current Benefits**: Not receiving Medicaid or other assistance
+
+**Why this matters**: `household_assets` of $12,000 exceeds the individual resource limit ($9,430) but could belong entirely or largely to the adult child — MSP only counts the applicant's resources, not those of a non-eligible household member. The custom dependency should zero out `household_assets` for this non-couple, non-single household configuration, preventing a false negative. This validates that the asset data gap is handled conservatively (eligible, not denied) when household composition makes attribution impossible.
+
+---
+
+### Scenario 19: Single Individual — Assets Between Individual and Couple Limits
+**What we're checking**: A single person whose assets exceed the individual resource limit ($9,430) but fall below the couple resource limit ($14,130). The individual limit must apply — this would catch a bug where the couple limit was incorrectly applied to a single-person household.
+**Expected**: Not eligible
+
+**Steps**:
+- **Location**: Enter ZIP code `78701`, Select county `Travis`
+- **Household**: Number of people: `1`
+- **Person 1**: Birth month/year: `January 1961` (age 65), Relationship: `Head of Household`, Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$1,000` monthly
+- **Assets**: Total household assets: `$10,000`
+- **Current Benefits**: Not currently receiving Medicaid or other assistance
+
+**Why this matters**: Assets of $10,000 are above the individual limit ($9,430) but below the couple limit ($14,130). Income of $1,000/mo is comfortably within the QMB range, so the resource limit is the sole disqualifying factor. This scenario would catch a PE bug where `spm_unit_cash_assets` caused the couple limit to be applied to a single-person household — under that bug, assets of $10,000 would pass the (incorrect) $14,130 couple threshold and the applicant would be incorrectly deemed eligible. The correct result is ineligible.
 
 ---
 
