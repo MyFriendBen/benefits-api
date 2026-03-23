@@ -54,7 +54,7 @@
     },
     {
       "external_name": "tx_public_assistance",
-      "text": "Proof of TANF or SSI benefits (if applicable)",
+      "text": "Proof of TANF, SNAP, or SSI benefits (if applicable)",
       "link_url": "",
       "link_text": ""
     }
