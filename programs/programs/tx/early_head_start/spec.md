@@ -42,30 +42,26 @@
    - Source: 45 CFR 1302.12(a)(1)(iv) and 42 U.S.C. § 11434a
    - Impact: Medium
 
-6. **U.S. citizenship or qualified immigration status not required for child**
-   - Note: Early Head Start does not have citizenship requirements for children. All children are eligible regardless of immigration or citizenship status. The screener does not collect immigration status directly, but the frontend allows users to filter programs by immigration status. Since EHS has no citizenship requirement, it will always be shown to users regardless of their selected filter.
-   - Source: 45 CFR 1302.14 - Children do not need to meet citizenship requirements
-
-7. **Geographic service area requirement** ⚠️ *data gap*
+6. **Geographic service area requirement** ⚠️ *data gap*
    - Note: Each Early Head Start grantee serves specific geographic areas (counties, cities, neighborhoods). Texas has multiple grantees, each with their own service area boundaries. We have `zipcode` and `county` fields but would need grantee-specific service area data to evaluate which program(s) serve a given location. This is program-specific, not universal eligibility.
    - Source: 45 CFR 1302.11(b) - Programs serve designated geographic areas
    - Impact: High
 
-8. **Family income between 100% and 130% FPL (up to 35% of enrollment)** — show as eligible
+7. **Family income between 100% and 130% FPL (up to 35% of enrollment)** — show as eligible
    - Note: Under 45 CFR 1302.12(d)(1-2), a program may enroll up to an additional 35% of participants whose family income is between 100–130% FPL, provided specific reporting requirements are met. Because this pathway serves a defined income band with a substantial enrollment allowance, the screener surfaces these families as potentially eligible. The program description notes that enrollment depends on grantee slot availability.
    - Source: 45 CFR 1302.12(d)(1-2)
 
-9. **Fully discretionary enrollment (no income criterion, up to 10% of enrollment)** ⚠️ *data gap*
+8. **Fully discretionary enrollment (no income criterion, up to 10% of enrollment)** ⚠️ *data gap*
    - Note: Under 45 CFR 1302.12(c)(2), if a child does not meet any criterion under (c)(1) (income, public assistance, homelessness, foster care), a program may still enroll that child at its sole discretion, subject to a 10% enrollment cap. This carve-out has no income threshold — it cannot be evaluated without grantee-specific capacity data.
    - Source: 45 CFR 1302.12(c)(2)
    - Impact: Low
 
-10. **Tribal program eligibility (income waived for tribal service area)** ⚠️ *data gap*
+9. **Tribal program eligibility (income waived for tribal service area)** ⚠️ *data gap*
     - Note: A Tribal program may determine any pregnant woman or child in the approved tribal service area to be eligible regardless of income, provided they meet the age requirement (birth to 36 months or pregnant, per 45 CFR 1302.12(b)). Cannot evaluate without knowing whether the grantee is a Tribal program and whether the user's location falls within the tribal service area. Capturing this would require grantee-type data and tribal service area boundaries.
     - Source: 45 CFR 1302.12(e)
     - Impact: Low (applies only to Tribal grantees)
 
-11. **Small community eligibility (program-defined criteria)** ⚠️ *data gap*
+10. **Small community eligibility (program-defined criteria)** ⚠️ *data gap*
     - Note: In communities with 1,000 or fewer individuals, a program may establish its own eligibility criteria provided they satisfy the requirements of section 645(a)(2) of the Act. Cannot evaluate without community population data and the specific criteria a given small-community grantee has established.
     - Source: 45 CFR 1302.12(g)
     - Impact: Low (applies only to very small communities)
@@ -76,10 +72,10 @@
 
 ## Implementation Coverage
 
-- ✅ Evaluable criteria: 6
+- ✅ Evaluable criteria: 5
 - ⚠️  Data gaps: 5
 
-Of 11 identified eligibility criteria, 6 can be fully evaluated and 5 cannot. The evaluable criteria are: age (birth to 36 months / pregnant), income at or below 135% FPL (covering primary 100% FPL threshold and the 100–130% FPL over-income pathway under 45 CFR 1302.12(d)), categorical eligibility through TANF/SSI/SNAP, foster care status, and citizenship/immigration status (no requirement — all children qualify). Major gaps include: (1) fully discretionary 10% enrollment carve-out (45 CFR 1302.12(c)(2)) — no income threshold, grantee discretion only; (2) homelessness status — housing_situation field exists but is not collected from users; (3) geographic service area — requires grantee-specific boundary data; (4) tribal program eligibility (45 CFR 1302.12(e)) — requires knowing whether grantee is a Tribal program and tribal service area boundaries; (5) small community eligibility (45 CFR 1302.12(g)) — requires community population data and grantee-specific criteria for communities of 1,000 or fewer. The income threshold (135% FPL ceiling) and categorical eligibility provisions are well-supported by existing fields.
+Of 10 identified eligibility criteria, 5 can be fully evaluated and 5 cannot. Note: Early Head Start has no citizenship or immigration requirement — all children qualify regardless of status. The evaluable criteria are: age (birth to 36 months / pregnant), income at or below 135% FPL (covering primary 100% FPL threshold and the 100–130% FPL over-income pathway under 45 CFR 1302.12(d)), categorical eligibility through TANF/SSI/SNAP, and foster care status. Major gaps include: (1) fully discretionary 10% enrollment carve-out (45 CFR 1302.12(c)(2)) — no income threshold, grantee discretion only; (2) homelessness status — housing_situation field exists but is not collected from users; (3) geographic service area — requires grantee-specific boundary data; (4) tribal program eligibility (45 CFR 1302.12(e)) — requires knowing whether grantee is a Tribal program and tribal service area boundaries; (5) small community eligibility (45 CFR 1302.12(g)) — requires community population data and grantee-specific criteria for communities of 1,000 or fewer. The income threshold (135% FPL ceiling) and categorical eligibility provisions are well-supported by existing fields.
 
 ## Research Sources
 
@@ -96,13 +92,11 @@ Of 11 identified eligibility criteria, 6 can be fully evaluated and 5 cannot. Th
 ## Acceptance Criteria
 
 [ ] Scenario 1 (Young mother with infant - income eligible at 85% FPL): User should be **eligible** with $None/year
-[ ] Scenario 2 (Pregnant woman at exactly 100% FPL - minimal income eligibility): User should be **eligible** with $None/year
-[ ] Scenario 3 (Family with toddler at 99% FPL - just below income threshold): User should be **eligible** with $None/year
-[ ] Scenario 4 (Family with toddler at exactly 135% FPL - income at new upper threshold): User should be **eligible** with $None/year
+[ ] Scenario 3 (Family with toddler at 134% FPL - just below income ceiling): User should be **eligible** with $None/year
 [ ] Scenario 16 (Family at 140% FPL - above all income thresholds, no categorical eligibility): User should be **ineligible**
 [ ] Scenario 6 (Newborn at exactly 0 months old - minimum age requirement): User should be **eligible** with $None/year
 [ ] Scenario 7 (Child age 3 years old - just above maximum age threshold): User should be **ineligible**
-[ ] Scenario 8 (Child age 2 years 11 months - well within age eligibility range): User should be **eligible** with $None/year
+[ ] Scenario 8 (Child age 2 years 11 months - approaching upper age limit): User should be **eligible** with $None/year
 [ ] Scenario 10 (Family already enrolled in Early Head Start - duplicate enrollment check): User should be **ineligible**
 [ ] Scenario 12 (Mixed household - eligible toddler, ineligible older sibling, working parent at 95% FPL): User should be **eligible** with $None/year
 [ ] Scenario 13 (Multi-generational household - pregnant teen, infant sibling, and working parent at 92% FPL): User should be **eligible** with $None/year
@@ -126,52 +120,20 @@ Of 11 identified eligibility criteria, 6 can be fully evaluated and 5 cannot. Th
 
 ---
 
-### Scenario 2: Pregnant woman at exactly 100% FPL - minimal income eligibility
-**What we're checking**: Validates eligibility at the exact 100% FPL threshold with pregnant woman (no children yet)
-**Expected**: Eligible
-
-**Steps**:
-- **Location**: Enter ZIP code `78701`, Select county `Travis`
-- **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `June 1998` (age 27), Relationship: `Head of Household`, Pregnant: `Yes`, Has income: `Yes`, Income type: `Wages/Salary`, Income amount: `1255` monthly (exactly 100% FPL for household of 1), Insurance: `None`
-- **Current Benefits**: No current benefits selected
-- **Citizenship**: Citizenship status: `U.S. Citizen`
-
-**Why this matters**: Tests the minimum threshold for income eligibility at exactly 100% FPL with a pregnant woman, confirming that pregnant women qualify even without existing children under age 3
-
----
-
-### Scenario 3: Family with toddler at 99% FPL - just below income threshold
-**What we're checking**: Validates income eligibility when family income is just below the 100% FPL threshold (99% FPL)
+### Scenario 3: Family with toddler at 134% FPL - just below income ceiling
+**What we're checking**: Validates income eligibility when family income is just below the 135% FPL screener ceiling (134% FPL)
 **Expected**: Eligible
 
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `3`
-- **Person 1**: Birth month/year: `June 1995` (age 30), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Amount: `$2,130` monthly (99% of FPL for household of 3), Insurance: `None`
+- **Person 1**: Birth month/year: `June 1995` (age 30), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Amount: `$2,976` monthly (~134% FPL for household of 3), Insurance: `None`
 - **Person 2**: Birth month/year: `August 1997` (age 28), Relationship: `Spouse`, Has income: `No`, Insurance: `None`
 - **Person 3**: Birth month/year: `January 2025` (age 1), Relationship: `Child`, Has income: `No`, Insurance: `None`
 - **Current Benefits**: Select `None` for all benefit programs
 - **Citizenship**: Select `U.S. Citizen` for all household members
 
-**Why this matters**: Tests the income threshold boundary to ensure families just below 100% FPL are correctly identified as eligible under 45 CFR 1302.12(a)(1)(i). This validates the screener properly calculates and compares income against FPL without rounding errors that might incorrectly exclude eligible families.
-
----
-
-### Scenario 4: Family with toddler at exactly 135% FPL - income at new upper threshold
-**What we're checking**: Validates that a family with income exactly at 135% FPL is eligible (testing the upper boundary of the screener's income ceiling, which covers both the primary ≤100% FPL pathway and the 100–130% FPL over-income pathway under 45 CFR 1302.12(d))
-**Expected**: Eligible
-
-**Steps**:
-- **Location**: Enter ZIP code `78701`, Select county `Travis`
-- **Household**: Number of people: `3`
-- **Person 1 (Head of Household)**: Birth month/year: `January 1995` (age 31), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Amount: `$2,998` monthly (exactly 135% FPL for household of 3), Insurance: `None`
-- **Person 2 (Spouse)**: Birth month/year: `March 1996` (age 30), Relationship: `Spouse`, Has income: `No`, Insurance: `None`
-- **Person 3 (Child)**: Birth month/year: `June 2024` (age 1), Relationship: `Child`, Has income: `No`, Insurance: `None`
-- **Current Benefits**: Select: `None`
-- **Citizenship**: All household members are U.S. citizens
-
-**Why this matters**: This test validates the screener's 135% FPL ceiling, which captures families eligible under the over-income pathway (45 CFR 1302.12(d)). A family at exactly 135% FPL falls within the 100–130% FPL band and should be shown as potentially eligible so they can inquire about slot availability at their local grantee.
+**Why this matters**: Tests the screener's 135% FPL income ceiling boundary. A family at 134% FPL falls within the 100–130% FPL over-income band (45 CFR 1302.12(d)) and should be shown as potentially eligible. This validates the screener correctly includes families just below its upper income ceiling without rounding errors that might incorrectly exclude them.
 
 ---
 
@@ -207,8 +169,8 @@ Of 11 identified eligibility criteria, 6 can be fully evaluated and 5 cannot. Th
 
 ---
 
-### Scenario 8: Child age 2 years 11 months - well within age eligibility range
-**What we're checking**: Validates that a child who is 2 years and 11 months old (35 months) is eligible, being well within the birth to 36 months age range but approaching the upper limit
+### Scenario 8: Child age 2 years 11 months - approaching upper age limit
+**What we're checking**: Validates that a child who is 2 years and 11 months old (35 months) is eligible, just one month before the 36-month age cutoff
 **Expected**: Eligible
 
 **Steps**:
@@ -220,7 +182,7 @@ Of 11 identified eligibility criteria, 6 can be fully evaluated and 5 cannot. Th
 - **Current Benefits**: Select `None of these`
 - **Citizenship**: Select `U.S. Citizen`
 
-**Why this matters**: This test validates that children who are well within the age range (but not at the extremes) are properly identified as eligible. A child at 35 months is clearly under the 36-month threshold and should qualify based on age, combined with income eligibility at 95% FPL.
+**Why this matters**: This is a near-boundary threshold check. A child at 35 months is just one month before the age cutoff, validating that the screener correctly includes children right at the upper edge of eligibility rather than treating this as a comfortable mid-range case. Combined with income eligibility at 95% FPL.
 
 ---
 
