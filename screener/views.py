@@ -180,6 +180,8 @@ class MessageViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             message.email(body["email"], send_tests=True)
         if "phone" in body:
             message.text("+1" + body["phone"], send_tests=True)
+        if "whatsapp" in body:
+            message.whatsapp(body["whatsapp"], send_tests=True)
 
         return Response({}, status=status.HTTP_201_CREATED)
 

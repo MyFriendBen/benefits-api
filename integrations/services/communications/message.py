@@ -77,13 +77,25 @@ class MessageUser:
 
         return f"{words} {url}"
 
+    def whatsapp(self, cell: str, send_tests=False):
+        if not self.should_send() and not send_tests:
+            return
+
+        self._cell_client().messages.create(
+            from_="whatsapp:" + self.cell_from_phone_number,
+            body=self._text_body(),
+            to="whatsapp:" + cell,
+        )
+
+        self.log("whatsappScreen")
+
     def _cell_client(self):
         return Client(self.cell_account_sid, self.cell_auth_token)
 
     def _generate_link(self):
         return f"{self.front_end_domain}/{self.screen.white_label.code}/{self.screen.uuid}/results/benefits"
 
-    def log(self, type: Literal["emailScreen", "textScreen"]):
+    def log(self, type: Literal["emailScreen", "textScreen", "whatsappScreen"]):
         self.screen.last_email_request_date = timezone.now()
         self.screen.save()
 
