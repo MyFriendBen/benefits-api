@@ -77,9 +77,16 @@ class ZipCodeDependency(Household):
     dependencies = ["zipcode"]
 
     def value(self):
+        print("screen value:", self.screen.zipcode)
         return self.screen.zipcode
 
+class CountyFipsDependency(Household):
+    field = "county_fips"
+    dependencies = ["county_fips"]
 
+    def value(self):
+        return "48113"
+    
 class IsInPublicHousingDependency(Household):
     field = "is_in_public_housing"
 
