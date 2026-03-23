@@ -60,6 +60,16 @@
    - Source: 45 CFR 1302.12(c)(2)
    - Impact: Low
 
+10. **Tribal program eligibility (income waived for tribal service area)** ⚠️ *data gap*
+    - Note: A Tribal program may determine any pregnant woman or child in the approved tribal service area to be eligible regardless of income, provided they meet the age requirement (birth to 36 months or pregnant, per 45 CFR 1302.12(b)). Cannot evaluate without knowing whether the grantee is a Tribal program and whether the user's location falls within the tribal service area. Capturing this would require grantee-type data and tribal service area boundaries.
+    - Source: 45 CFR 1302.12(e)
+    - Impact: Low (applies only to Tribal grantees)
+
+11. **Small community eligibility (program-defined criteria)** ⚠️ *data gap*
+    - Note: In communities with 1,000 or fewer individuals, a program may establish its own eligibility criteria provided they satisfy the requirements of section 645(a)(2) of the Act. Cannot evaluate without community population data and the specific criteria a given small-community grantee has established.
+    - Source: 45 CFR 1302.12(g)
+    - Impact: Low (applies only to very small communities)
+
 ## Benefit Value
 
 - Amount varies by household - see test cases
@@ -67,9 +77,9 @@
 ## Implementation Coverage
 
 - ✅ Evaluable criteria: 6
-- ⚠️  Data gaps: 3
+- ⚠️  Data gaps: 5
 
-Of 9 identified eligibility criteria, 6 can be fully evaluated and 3 cannot. The evaluable criteria are: age (birth to 36 months / pregnant), income at or below 135% FPL (covering primary 100% FPL threshold and the 100–130% FPL over-income pathway under 45 CFR 1302.12(d)), categorical eligibility through TANF/SSI/SNAP, foster care status, and citizenship/immigration status (no requirement — all children qualify). Major gaps include: (1) fully discretionary 10% enrollment carve-out (45 CFR 1302.12(c)(2)) — no income threshold, grantee discretion only; (2) homelessness status — housing_situation field exists but is not collected from users; (3) geographic service area — requires grantee-specific boundary data. The income threshold (135% FPL ceiling) and categorical eligibility provisions are well-supported by existing fields.
+Of 11 identified eligibility criteria, 6 can be fully evaluated and 5 cannot. The evaluable criteria are: age (birth to 36 months / pregnant), income at or below 135% FPL (covering primary 100% FPL threshold and the 100–130% FPL over-income pathway under 45 CFR 1302.12(d)), categorical eligibility through TANF/SSI/SNAP, foster care status, and citizenship/immigration status (no requirement — all children qualify). Major gaps include: (1) fully discretionary 10% enrollment carve-out (45 CFR 1302.12(c)(2)) — no income threshold, grantee discretion only; (2) homelessness status — housing_situation field exists but is not collected from users; (3) geographic service area — requires grantee-specific boundary data; (4) tribal program eligibility (45 CFR 1302.12(e)) — requires knowing whether grantee is a Tribal program and tribal service area boundaries; (5) small community eligibility (45 CFR 1302.12(g)) — requires community population data and grantee-specific criteria for communities of 1,000 or fewer. The income threshold (135% FPL ceiling) and categorical eligibility provisions are well-supported by existing fields.
 
 ## Research Sources
 
