@@ -101,15 +101,13 @@ Files committed to repo:
 
 [ ] Scenario 1 (Single Parent with 4-Year-Old Child, Income Below 100% FPL): User should be **eligible**
 [ ] Scenario 2 (Foster Child at Age 3, Family Income at Exactly 100% FPL): User should be **eligible**
-[ ] Scenario 3 (Two-Parent Household with 3-Year-Old, Income Just Below 100% FPL): User should be **eligible**
-[ ] Scenario 4 (Two-Parent Household with 5-Year-Old, Income Exactly at 100% FPL): User should be **eligible**
-[ ] Scenario 5 (Single Parent with 4-Year-Old, Income Above 135% FPL, No Categorical Eligibility): User should be **ineligible**
-[ ] Scenario 6 (Child Exactly Age 3 - Minimum Age Boundary): User should be **eligible**
-[ ] Scenario 7 (Child Age 1 - Below Minimum Age): User should be **ineligible**
-[ ] Scenario 11 (Child Age 6 - Above Maximum Age): User should be **ineligible**
-[ ] Scenario 12 (Multi-Member Household - One Eligible Child Among Age-Ineligible Siblings): User should be **eligible**
-[ ] Scenario 14 (Child Turns 3 Next Month - Month-Level Age Boundary): User should be **ineligible**
-[ ] Scenario 15 (Family at 115% FPL - Over-Income Pathway, No Categorical): User should be **eligible**
+[ ] Scenario 3 (Two-Parent Household with 5-Year-Old, Income Exactly at 100% FPL): User should be **eligible**
+[ ] Scenario 4 (Single Parent with 4-Year-Old, Income Above 135% FPL, No Categorical Eligibility): User should be **ineligible**
+[ ] Scenario 5 (Child Exactly Age 3 - Minimum Age Boundary): User should be **eligible**
+[ ] Scenario 6 (Child Age 6 - Above Maximum Age): User should be **ineligible**
+[ ] Scenario 7 (Multi-Member Household - One Eligible Child Among Age-Ineligible Siblings): User should be **eligible**
+[ ] Scenario 8 (Child Turns 3 Next Month - Month-Level Age Boundary): User should be **ineligible**
+[ ] Scenario 9 (Family at 130% FPL - Over-Income Pathway Upper Boundary, No Categorical): User should be **eligible**
 
 ## Test Scenarios
 
@@ -143,24 +141,7 @@ Files committed to repo:
 
 ---
 
-### Scenario 3: Two-Parent Household with 3-Year-Old, Income Just Below 100% FPL
-**What we're checking**: Validates income eligibility when household income is just below the 100% FPL threshold for a family of 3
-**Expected**: Eligible
-
-**Steps**:
-- **Location**: Enter ZIP code `78701`, Select county `Travis`
-- **Household**: Number of people: `3`
-- **Person 1 (Head of Household)**: Birth month/year: `January 1990` (age 36), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Amount: `$1,950`, Frequency: `Monthly`, Insurance: `None`
-- **Person 2 (Spouse)**: Birth month/year: `March 1991` (age 35), Relationship: `Spouse`, Has income: `Yes`, Income type: `Wages/Salaries`, Amount: `$800`, Frequency: `Monthly`, Insurance: `None`
-- **Person 3 (Child)**: Birth month/year: `June 2022` (age 3), Relationship: `Child`, Has income: `No`, Insurance: `None`
-- **Current Benefits**: Select `None` for all benefit programs
-- **Citizenship**: All household members are `U.S. Citizens`
-
-**Why this matters**: Tests the income threshold boundary at just below 100% FPL (45 CFR § 1302.12(a)(1)(i)). This validates that families with income slightly under the poverty line are correctly identified as eligible, ensuring the screener accurately calculates and compares household income against FPL thresholds for different household sizes.
-
----
-
-### Scenario 4: Two-Parent Household with 5-Year-Old, Income Exactly at 100% FPL
+### Scenario 3: Two-Parent Household with 5-Year-Old, Income Exactly at 100% FPL
 **What we're checking**: Validates that a family with income exactly at 100% FPL is eligible (testing the upper boundary of the primary income threshold)
 **Expected**: Eligible
 
@@ -178,7 +159,7 @@ Files committed to repo:
 
 ---
 
-### Scenario 5: Single Parent with 4-Year-Old, Income Above 135% FPL - Should NOT Be Eligible
+### Scenario 4: Single Parent with 4-Year-Old, Income Above 135% FPL - Should NOT Be Eligible
 **What we're checking**: Verifies that a household with income above 135% FPL is ineligible when not receiving categorical benefits — this is above both the primary 100% FPL threshold and the 100–130% FPL over-income pathway
 **Expected**: Not eligible
 
@@ -194,7 +175,7 @@ Files committed to repo:
 
 ---
 
-### Scenario 6: Child Exactly Age 3 (Minimum Age), Income Below 100% FPL - Should Be Eligible
+### Scenario 5: Child Exactly Age 3 (Minimum Age), Income Below 100% FPL - Should Be Eligible
 **What we're checking**: Validates that a child who is exactly 3 years old (the minimum age requirement) is eligible for Head Start when family income is below 100% FPL
 **Expected**: Eligible
 
@@ -210,23 +191,7 @@ Files committed to repo:
 
 ---
 
-### Scenario 7: Child Age 1 (Just Below Minimum Age 3), Income Below 100% FPL - Should NOT Be Eligible
-**What we're checking**: Validates that children under age 3 are not eligible for Head Start, even when family income qualifies
-**Expected**: Not eligible
-
-**Steps**:
-- **Location**: Enter ZIP code `78701`, Select county `Travis`
-- **Household**: Number of people: `2`
-- **Person 1**: Relationship: `You (Head of Household)`, Birth month/year: `January 1992` (age 34), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$1,200`, Income frequency: `Monthly`, Insurance: `None`
-- **Person 2**: Relationship: `Child`, Birth month/year: `May 2024` (age 1), Has income: `No`, Insurance: `None`
-- **Current Benefits**: Select: `None`
-- **Citizenship**: Select: `U.S. Citizen`
-
-**Why this matters**: This test ensures the age floor is properly enforced. Head Start serves children ages 3-5 per 45 CFR § 1302.12(c)(1). Children under 3 should be directed to Early Head Start instead. This prevents inappropriate enrollment and ensures families are referred to the correct program.
-
----
-
-### Scenario 11: Child Age 6 (Above Maximum Age), Income Below 100% FPL - Should NOT Be Eligible
+### Scenario 6: Child Age 6 (Above Maximum Age), Income Below 100% FPL - Should NOT Be Eligible
 **What we're checking**: Verifies that children who are 6 years old (above the maximum age of 5) are excluded from Head Start eligibility, even when family income is well below 100% FPL
 **Expected**: Not eligible
 
@@ -243,7 +208,7 @@ Files committed to repo:
 
 ---
 
-### Scenario 12: Multi-Member Household - 3 Children (One Eligible Age, Two Ineligible Ages), Income Below 100% FPL
+### Scenario 7: Multi-Member Household - 3 Children (One Eligible Age, Two Ineligible Ages), Income Below 100% FPL
 **What we're checking**: Tests that only age-eligible children (3-5 years old) qualify while siblings outside the age range do not, even when household income is well below 100% FPL
 **Expected**: Eligible
 
@@ -260,7 +225,7 @@ Files committed to repo:
 
 ---
 
-### Scenario 14: Child Turns 3 Next Month - Testing Age Boundary at Minimum Eligibility
+### Scenario 8: Child Turns 3 Next Month - Testing Age Boundary at Minimum Eligibility
 **What we're checking**: Tests the minimum age boundary where a child turns 3 next month (April 2026), meaning they are currently age 2 at the time of screening (March 2026) and will not yet have turned 3. This should make them ineligible.
 **Expected**: Not eligible
 
@@ -276,20 +241,20 @@ Files committed to repo:
 
 ---
 
-### Scenario 15: Family at 115% FPL - Over-Income Pathway, No Categorical Eligibility
-**What we're checking**: Validates that a family with income between 100% and 130% FPL and an age-eligible child is shown as potentially eligible under the over-income enrollment pathway (45 CFR § 1302.12(d)(1-2))
+### Scenario 9: Family at 130% FPL - Over-Income Pathway Upper Boundary, No Categorical Eligibility
+**What we're checking**: Validates that a family with income at exactly 130% FPL and an age-eligible child is shown as potentially eligible at the upper boundary of the over-income enrollment pathway (45 CFR § 1302.12(d)(1-2))
 **Expected**: Eligible
 
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `3`
-- **Person 1 (Head of Household)**: Birth month/year: `January 1990` (age 36), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$2,550` per month (~$30,600 annually, ~115% FPL for HH of 3), Income frequency: `Monthly`, Insurance: `None`
+- **Person 1 (Head of Household)**: Birth month/year: `January 1990` (age 36), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$2,797` per month (~$33,564 annually, ~130% FPL for HH of 3), Income frequency: `Monthly`, Insurance: `None`
 - **Person 2 (Spouse)**: Birth month/year: `March 1991` (age 35), Relationship: `Spouse`, Has income: `No`, Insurance: `None`
 - **Person 3 (Child)**: Birth month/year: `June 2022` (age 4), Relationship: `Child`, Has income: `No`, Insurance: `None`
 - **Current Benefits**: Select `None` for all benefit programs
 - **Citizenship**: All household members are `U.S. Citizens`
 
-**Why this matters**: This test validates that the screener surfaces Head Start as a potential option for families in the 100–130% FPL band. Under 45 CFR § 1302.12(d)(1-2), up to 35% of program enrollment may come from families in this income range. Families in this band should see Head Start as a result so they know to contact their local program about availability — the program description notes that enrollment depends on slot availability.
+**Why this matters**: This test validates the upper boundary of the over-income pathway. Under 45 CFR § 1302.12(d)(1-2), families at up to 130% FPL may be enrolled (up to 35% of slots). Testing at exactly 130% — rather than a comfortable 115% — confirms the screener's ceiling is inclusive and correctly placed. Families in this band should see Head Start as a result so they know to contact their local program about availability — the program description notes that enrollment depends on slot availability.
 
 ---
 
