@@ -65,7 +65,8 @@
 
 ## Benefit Value
 
-- Amount varies by household - see test cases
+- ~$10,517/year per eligible child (ages 3–5), based on TX state spending divided by enrollment (PolicyEngine 2022 data: $538,423,499 ÷ 51,195 slots). Value scales with number of eligible children in the household.
+- Note: PolicyEngine calculates this as `state_spending / state_enrollment`; actual grantee-level cost may differ.
 
 ## Implementation Coverage
 
