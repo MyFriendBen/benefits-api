@@ -39,7 +39,8 @@
 
 5. **Family income between 100% and 130% FPL (up to 35% of enrollment)** — show as eligible
    - Note: Under 45 CFR § 1302.12(d)(1-2), a program may enroll up to an additional 35% of participants whose family income is between 100–130% FPL, provided specific reporting requirements are met. Because this pathway serves a defined income band with a substantial enrollment allowance, the screener surfaces these families as potentially eligible. The program description notes that enrollment depends on grantee slot availability.
-   - Source: 45 CFR § 1302.12(d)(1-2)
+   - Note: Under 45 CFR § 1302.12(a)(1)(ii), a program may adjust a family's gross income downward for eligibility purposes to account for excessive housing costs. If a family spends more than 30% of gross income on housing (as defined in part 1305), the program may subtract the excess amount — potentially reducing a family's effective income for FPL calculation. This is relevant to families near the 100% or 130% FPL thresholds who might qualify once housing costs are factored in. This adjustment cannot be determined from screener data alone — it requires documentation (bills, bank statements) and is applied at the grantee's discretion. The screener does not collect housing cost data. ⚠️ *data gap*
+   - Source: 45 CFR § 1302.12(d)(1-2); housing adjustment per 45 CFR § 1302.12(a)(1)(ii)
 
 6. **Fully discretionary enrollment (no income criterion, up to 10% of enrollment)** ⚠️ *data gap*
    - Note: Under 45 CFR § 1302.12(c)(2), if a child does not meet any criterion under (c)(1) (income, public assistance, homelessness, foster care), a program may still enroll that child at its sole discretion, subject to a 10% enrollment cap (counted within the 35% d.1 cap). This carve-out has no income threshold — it cannot be evaluated without grantee-specific capacity data.
