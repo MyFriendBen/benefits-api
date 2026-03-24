@@ -58,29 +58,9 @@
    - Source: 45 CFR § 1302.12(c)(1)(i) - Homeless children eligibility
    - Impact: High
 
-9. **Priority for families receiving public assistance** ⚠️ *data gap*
-   - Note: Selection priority for families receiving public assistance beyond TANF/SSI/SNAP (e.g., housing assistance, Medicaid). While screener captures some benefits (has_medicaid, has_section_8), 'public assistance' is broader and not fully defined. Partial evaluation possible but incomplete.
-   - Source: 45 CFR § 1302.14 - Selection priorities
-   - Impact: Low
-
-10. **Priority for single-parent families** ⚠️ *data gap*
-   - Note: Programs may establish additional selection priorities including single-parent status. The screener captures household member relationships but cannot definitively determine single-parent status (would need to identify one adult guardian with children and no spouse/partner).
-   - Source: 45 CFR § 1302.14 - Selection priorities
-   - Impact: Low
-
-11. **Priority for families with lowest incomes** ⚠️ *data gap*
-   - Note: Among eligible families, priority given to those with lowest incomes. This requires ranking/comparison across applicants, which cannot be done in a single-screen evaluation context.
-   - Source: 45 CFR § 1302.14(a)(1) - Selection priorities
-   - Impact: Low
-
-12. **Child's immunization status** ⚠️ *data gap*
+9. **Child's immunization status** ⚠️ *data gap*
    - Note: Children must be up-to-date on immunizations or have exemption. This is a post-enrollment requirement, not an eligibility barrier, but must be addressed within 90 days. Not captured in screener.
    - Source: 45 CFR § 1302.42 - Child health status and care
-   - Impact: Low
-
-13. **Priority for children in families with both parents working or in training** ⚠️ *data gap*
-   - Note: Programs may prioritize families where parents are working or in job training. The screener captures income streams (which may indicate employment) but not explicit employment status or training program participation for all household members.
-   - Source: 45 CFR § 1302.14 - Selection priorities
    - Impact: Low
 
 ## Benefit Value
@@ -90,9 +70,9 @@
 ## Implementation Coverage
 
 - ✅ Evaluable criteria: 6
-- ⚠️  Data gaps: 7
+- ⚠️  Data gaps: 3
 
-Head Start eligibility can be substantially evaluated with current screener fields. Of the core eligibility criteria, we can evaluate: age requirements (3-5 years old), income eligibility (at or below 135% FPL, covering both the primary ≤100% FPL threshold and the 100–130% FPL over-income pathway under 45 CFR § 1302.12(d)), and categorical eligibility through TANF, SSI, SNAP, and foster care. We can also evaluate some selection priorities including income level. Critical gaps remain: we cannot determine if a child is experiencing homelessness (a categorical eligibility factor). The kindergarten cutoff nuance for 5-year-olds is addressed in the program description rather than evaluated by the screener. The 10% fully discretionary carve-out (c.2) is also a data gap since it applies to any child regardless of income and depends entirely on grantee judgment. The homelessness gap is particularly significant as homeless children are categorically eligible regardless of income. Most other gaps relate to selection priorities rather than hard eligibility requirements, making them lower impact.
+Head Start eligibility can be substantially evaluated with current screener fields. Of the core eligibility criteria, we can evaluate: age requirements (3-5 years old), income eligibility (at or below 135% FPL, covering both the primary ≤100% FPL threshold and the 100–130% FPL over-income pathway under 45 CFR § 1302.12(d)), and categorical eligibility through TANF, SSI, SNAP, and foster care. We can also evaluate selection priorities based on income level. The remaining gaps are: homelessness status (a categorical eligibility factor — the screener does not collect current housing status), the 10% fully discretionary carve-out (depends entirely on grantee judgment), and immunization status (a post-enrollment requirement, not an eligibility barrier). The homelessness gap is the most significant as homeless children are categorically eligible regardless of income.
 
 ## Research Sources
 
