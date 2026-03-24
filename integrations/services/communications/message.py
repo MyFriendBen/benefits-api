@@ -93,7 +93,7 @@ class MessageUser:
         )
 
         self.log("whatsappScreen")
-        
+
     def _get_text(self, field: Literal["subject", "body", "from_name"]):
         wl_config = white_label_config.get(self.screen.white_label.code) or white_label_config.get("_default")
         comm_config = (getattr(wl_config, "communications", {}) or {}).get("save_results", {}).get(field)
