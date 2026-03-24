@@ -447,6 +447,27 @@ class CashAssetsDependency(SpmUnit):
         return int(assets)
 
 
+class TxMspCashAssetsDependency(SpmUnit):
+    """
+    TX MSP-specific asset dependency.
+
+    MSP resource counting applies only to the applicant and their spouse — other household
+    members' assets should be excluded. Since household_assets is a household-level total
+    that may include non-eligible members (e.g., adult children), we use it as-is only
+    for households of 1 or couples (screen.is_joint()). For any other configuration, we
+    return 0 so the resource check passes rather than risk a false negative.
+
+    See: programs/programs/tx/medicare_savings_program/spec.md — criteria #4
+    """
+
+    field = "spm_unit_cash_assets"
+
+    def value(self):
+        if self.screen.household_size == 1 or self.screen.is_joint():
+            return int(self.screen.household_assets or 0)
+        return 0
+
+
 class IlLiheapIncomeEligible(SpmUnit):
     field = "il_liheap_income_eligible"
 
