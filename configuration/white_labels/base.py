@@ -699,3 +699,21 @@ class ConfigurationData:
     # Custom translation overrides for specific text strings (optional)
     # should follow format {"[REPLACE_ME]": {"_label": "[REPLACE_ME]", "_default_message": "[REPLACE_ME]"}}
     override_text = {}
+
+    # Email and SMS communication configuration
+    communications = {
+        "save_results": {
+            "from_name": {
+                "_label": "sendResults.email-fromName",
+                "_default_message": "screener",
+            },
+            "subject": {
+                "_label": "sendResults.email-subject",
+                "_default_message": "Benefits Results from MyFriendBen",
+            },
+            "body": {
+                "_label": "sendResults.email",
+                "_default_message": "Thank you for using MyFriendBen. Click here to review your results.",
+            },
+        }
+    }

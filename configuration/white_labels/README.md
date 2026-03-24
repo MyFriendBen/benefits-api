@@ -261,6 +261,16 @@ class IlConfigurationData(ConfigurationData):
 - **`feedback_links`** - Contact links:
   - `email`: Linked when user selects "CONTACT US"
   - `survey`: Linked when user selects "REPORT AN ISSUE"
+- **`communications`** - Optional settings for "Save Results" email/SMS. Use this to override default sender names, subjects, or bodies.
+  ```python
+  communications = {
+      "save_results": {
+          "from_name": {"_label": "...", "_default_message": "..."},
+          "subject": {"_label": "...", "_default_message": "..."},
+          "body": {"_label": "...", "_default_message": "..."}
+      }
+  }
+  ```
 
 Most of these rarely need customization and can be inherited from `base.py`.
 

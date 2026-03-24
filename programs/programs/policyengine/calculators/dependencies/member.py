@@ -7,7 +7,7 @@ class AgeDependency(Member):
     dependencies = ("age",)
 
     def value(self):
-        return self.member.age
+        return self.member.calc_age()
 
 
 class PregnancyDependency(Member):
