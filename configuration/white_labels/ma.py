@@ -1210,6 +1210,16 @@ class MaConfigurationData(ConfigurationData):
                         "_default_message": "Social security benefit for people with disabilities",
                     },
                 },
+                "trump_account": {
+                    "name": {
+                        "_label": "cashAssistanceBenefits.trump_account",
+                        "_default_message": '530A ("Trump") Accounts: ',
+                    },
+                    "description": {
+                        "_label": "cashAssistanceBenefits.trump_account_desc",
+                        "_default_message": "$1,000 government investment account for kids born 2025-2028",
+                    },
+                },
             },
             "category_name": {"_label": "cashAssistance", "_default_message": "Cash Assistance"},
         },
@@ -1413,6 +1423,16 @@ class MaConfigurationData(ConfigurationData):
                     "description": {
                         "_label": "healthCareBenefits.aca_desc.ma",
                         "_default_message": "Health insurance marketplace premium tax credit",
+                    },
+                },
+                "ma_cmsp": {
+                    "name": {
+                        "_label": "healthCareBenefits.ma_cmsp",
+                        "_default_message": "Children's Medical Security Plan (CMSP): ",
+                    },
+                    "description": {
+                        "_label": "healthCareBenefits.ma_cmsp_desc",
+                        "_default_message": "Low-cost health coverage for uninsured children under 19",
                     },
                 },
             },

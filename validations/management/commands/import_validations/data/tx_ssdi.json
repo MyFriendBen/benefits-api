@@ -1,0 +1,107 @@
+[
+  {
+    "notes": "TX SSDI - Eligible disabled worker under FRA with no SGA income",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75001",
+      "county": "Collin",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 50,
+          "birth_year": 1976,
+          "birth_month": 1,
+          "disabled": true,
+          "long_term_disability": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_ssdi",
+      "eligible": true
+    }
+  },
+  {
+    "notes": "TX SSDI - Not eligible: monthly wages exceed SGA threshold ($1,750 > $1,690)",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75201",
+      "county": "Dallas",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 54,
+          "birth_year": 1972,
+          "birth_month": 3,
+          "disabled": true,
+          "long_term_disability": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1750.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_ssdi",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "TX SSDI - Not eligible: general disability flag only, long_term_disability not set",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75001",
+      "county": "Collin",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 50,
+          "birth_year": 1976,
+          "birth_month": 1,
+          "disabled": true,
+          "long_term_disability": false,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_ssdi",
+      "eligible": false
+    }
+  }
+]

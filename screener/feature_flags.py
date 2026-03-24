@@ -45,4 +45,9 @@ WHITELABEL_FEATURE_FLAGS: dict[str, FeatureFlagConfig] = {
         description="Display member-level eligibility status tags on program cards in results.",
         scope="frontend",
     ),
+    "share_popup": FeatureFlagConfig(
+        label="Share Popup",
+        description="Show a popup in results that lets users share MyFriendBen with friends via email, SMS, or link.",
+        scope="frontend",
+    ),
 }

@@ -260,3 +260,10 @@ class Command(BaseCommand):
                 white_label=white_label,
                 defaults={"data": WhiteLabelData.current_benefits, "active": True},
             )
+
+            # Save communications to database
+            Configuration.objects.update_or_create(
+                name="communications",
+                white_label=white_label,
+                defaults={"data": WhiteLabelData.communications, "active": True},
+            )
