@@ -412,8 +412,8 @@ class TxMsp(PolicyEngineMembersCalculator):
 
     Categories (determined by PolicyEngine):
         - QMB (≤100% FPL): Part A/B premiums, deductibles, coinsurance
-        - SLMB (100–120% FPL): Part B premium only
-        - QI (120–135% FPL, not Medicaid-eligible): Part B premium only
+        - SLMB (100-120% FPL): Part B premium only
+        - QI (120-135% FPL, not Medicaid-eligible): Part B premium only
 
     Limitations:
         - SSDI pathway partially supported: we don't collect months_receiving_social_security_disability,
