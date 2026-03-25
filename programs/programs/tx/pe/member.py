@@ -420,9 +420,9 @@ class TxMsp(PolicyEngineMembersCalculator):
           but IsMedicareEligibleDependency short-circuits for users who have Medicare selected
         - Assumes 40 quarters of Medicare-covered employment (Part A is free); ~99% of beneficiaries
           meet this threshold (per CMS)
-        - For households of 3+, household_assets is zeroed out before passing to PolicyEngine because
-          MSP only counts the applicant's and spouse's resources — non-eligible household members'
-          assets cannot be separated from household_assets (TxMspCashAssetsDependency)
+        - household_assets (household-level total) is passed directly to PolicyEngine for all household
+          sizes. MSP only counts the applicant's and spouse's resources, so for households with
+          non-eligible members (e.g., adult children), this may be stricter than the actual rule (known data gap)
         - Benefit value is premium savings only; QMB deductible/coinsurance coverage is not included
 
     Note: Includes Medicaid pe_inputs + IsMedicaidEligibleDependency because QI requires checking
@@ -443,11 +443,12 @@ class TxMsp(PolicyEngineMembersCalculator):
         # msp_countable_income (uses SSI methodology)
         dependency.member.SsiEarnedIncomeDependency,
         dependency.member.SsiUnearnedIncomeDependency,
-        # msp_asset_eligible - TX-specific: zeroes out assets for 3+ person non-couple households
-        dependency.spm.TxMspCashAssetsDependency,
+        # msp_asset_eligible
+        dependency.spm.CashAssetsDependency,
         # state
         dependency.household.TxStateCodeDependency,
-        # msp_standard_part_a_premium (for benefit value calculation)
+        # Sends 40 quarters → is_premium_free_part_a=True → base_part_a_premium=$0
+        # QMB benefit value = Part B premium only (~99% of beneficiaries have free Part A)
         dependency.member.MedicareQuartersOfCoverageDependency,
         # is_medicaid_eligible (for QI exclusion) - override when user reports Medicaid
         dependency.member.IsMedicaidEligibleDependency,

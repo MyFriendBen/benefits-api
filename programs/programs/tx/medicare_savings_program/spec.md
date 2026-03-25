@@ -34,8 +34,7 @@
    - Screener fields:
      - `household_assets`
      - `HouseholdMember.relationship`
-   - Note: The resource limit is determined by marital status (individual vs. couple), not by household size — there is no defined limit for households with 3 or more members. The couple limit ($14,130) applies when a spouse is present (use `screen.is_joint()` or check for a spouse relationship); otherwise the individual limit ($9,430) applies. `household_size` is not the right field to select the limit. ⚠️ Partial gap for households > 2: `household_assets` is a household-level total that includes assets of non-eligible members (e.g., adult children). MSP resource counting applies only to the applicant and their spouse — other household members' assets should be excluded. Using `household_assets` as a proxy may produce false negatives for 3+ person households where non-eligible members hold significant assets.
-   - **Proposed fix**: Use a custom dependency that only passes `household_assets` to PolicyEngine when `household_size == 1` or `screen.is_joint()` (household of 2 with a spouse). For any other household configuration, set the asset value to `0` — treating the resource check as passing, since we cannot correctly attribute assets to the applicant alone. This avoids false negatives for 3+ person households while preserving accurate resource evaluation for singles and couples.
+   - Note: The resource limit is determined by marital status (individual vs. couple), not by household size — there is no defined limit for households with 3 or more members. The couple limit ($14,130) applies when a spouse is present (use `screen.is_joint()` or check for a spouse relationship); otherwise the individual limit ($9,430) applies. `household_size` is not the right field to select the limit. ⚠️ Data gap: `household_assets` is a household-level total that includes assets of non-eligible members (e.g., adult children). MSP only counts the applicant's and spouse's resources, so passing `household_assets` directly can produce false negatives when non-eligible household members hold significant assets.
    - Note on resource exclusions: Many asset types are excluded from the resource count under MSP rules: homestead, one vehicle, household goods, personal effects, burial funds up to $1,500, and life insurance with face value up to $1,500. The screener collects a single `household_assets` total, so users may unknowingly include excluded items — this can produce false negatives. This is surfaced in the initial program config description to set user expectations.
    - Source: Section Q-1300, Appendix IX, Chapter F - Resources
 
@@ -139,7 +138,7 @@ This implementation covers the three remaining MSP sub-programs: QMB, SLMB, and 
 [ ] Scenario 15 (Spouse-to-Spouse Deeming - Ineligible Due to Deemed Spouse Income): User should be **ineligible**
 [ ] Scenario 16 (Resource Boundary - Assets Exactly at Individual Limit): User should be **eligible** (benefit amount: $2,220/year)
 [ ] Scenario 17 (Earned Income Exclusion - Wages Exceeding Gross Income Limits): User should be **eligible** (benefit amount: $2,220/year)
-[ ] Scenario 18 (3+ Person Household - Assets Above Individual Limit, Data Gap): User should be **eligible** (benefit amount: $2,220/year — assets not penalized due to data gap)
+[ ] Scenario 18 (3+ Person Household - Assets Above Individual Limit, Data Gap): User should be **ineligible** (household_assets exceeds individual resource limit; non-eligible member's assets cannot be separated — known false negative)
 [ ] Scenario 19 (Single Individual - Assets Above Individual Limit, Below Couple Limit): User should be **ineligible**
 
 ## Test Scenarios
@@ -208,10 +207,10 @@ This implementation covers the three remaining MSP sub-programs: QMB, SLMB, and 
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `January 1961` (age 65), Relationship: `Head of Household`, Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$1,715` per month, Not disabled, Not receiving Medicaid
+- **Person 1**: Birth month/year: `January 1961` (age 65), Relationship: `Head of Household`, Has Medicare: `Yes`, Has income: `Yes`, Income type: `Social Security Retirement`, Amount: `$1,800` per month, Not disabled, Not receiving Medicaid
 - **Assets**: Total household assets: `$5,000`
 
-**Why this matters**: MSP uses SSI income methodology, which applies a $20 general exclusion to unearned income before comparing to the FPL threshold. Countable income is $1,715 − $20 = $1,695/mo, which exceeds the 135% FPL ceiling ($1,694.25/mo), ruling out all three sub-programs (QMB/SLMB/QI). This single case validates all income ceiling logic across the program.
+**Why this matters**: MSP uses SSI income methodology, which applies a $20 general exclusion to unearned income before comparing to the FPL threshold. Countable income is $1,800 − $20 = $1,780/mo, which exceeds the 135% FPL ceiling ($1,760.63/mo at 2025 FPL), ruling out all three sub-programs (QMB/SLMB/QI). This single case validates all income ceiling logic across the program.
 
 ---
 
@@ -320,9 +319,9 @@ This implementation covers the three remaining MSP sub-programs: QMB, SLMB, and 
 
 ---
 
-### Scenario 18: 3+ Person Household — Assets Above Individual Limit (Data Gap)
-**What we're checking**: A senior living with an adult child where `household_assets` exceeds the individual resource limit, but the excess may belong to the non-eligible child. Because assets cannot be correctly attributed to the applicant alone for non-couple households, the custom dependency zeroes out assets before passing them to PolicyEngine — the resource check is treated as passing, and the applicant should not be denied on the basis of assets.
-**Expected**: Eligible
+### Scenario 18: 3+ Person Household — Assets Above Individual Limit (Known False Negative)
+**What we're checking**: A senior living with an adult child where `household_assets` exceeds the individual resource limit. The implementation passes `household_assets` directly to PolicyEngine for all household sizes, so the resource check fails even though the excess assets may belong entirely to the non-eligible adult child (MSP only counts the applicant's and spouse's resources). This is a known false negative caused by the data gap.
+**Expected**: Not eligible (known false negative — user should be advised to apply regardless)
 
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
@@ -332,7 +331,7 @@ This implementation covers the three remaining MSP sub-programs: QMB, SLMB, and 
 - **Assets**: Total household assets: `$12,000`
 - **Current Benefits**: Not receiving Medicaid or other assistance
 
-**Why this matters**: `household_assets` of $12,000 exceeds the individual resource limit ($9,430) but could belong entirely or largely to the adult child — MSP only counts the applicant's resources, not those of a non-eligible household member. The custom dependency should zero out `household_assets` for this non-couple, non-single household configuration, preventing a false negative. This validates that the asset data gap is handled conservatively (eligible, not denied) when household composition makes attribution impossible.
+**Why this matters**: Validates the known data gap behavior — `household_assets` of $12,000 exceeds the individual resource limit ($9,430), so the screener returns not eligible even though the excess may belong entirely to the adult child. Documents that this is an expected false negative so future developers understand the behavior is intentional, not a bug.
 
 ---
 
