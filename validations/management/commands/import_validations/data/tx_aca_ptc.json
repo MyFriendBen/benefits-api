@@ -1,0 +1,127 @@
+[
+  {
+    "notes": "TX ACA PTC - Eligible single adult with no insurance and income within 100-400% FPL",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75001",
+      "county": "Dallas",
+      "household_size": 1,
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 36,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3037.50,
+              "frequency": "monthly"
+            }
+          ],
+         "insurance": { "none": true }
+        }        
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_aca_ptc",
+      "eligible": true,
+      "value": 1512
+    }
+  },
+  {
+    "notes": "TX ACA PTC - Eligible household of 3, head on Medicaid, uninsured children, income ~200% FPL",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75001",
+      "county": "Dallas",
+      "household_size": 3,
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 36,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4166.66,
+              "frequency": "monthly"
+            }
+          ],
+           "insurance": {
+            "none": false,
+            "medicaid": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 6,
+          "student": false,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+        {
+          "relationship": "child",
+          "age": 2,
+          "student": false,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_aca_ptc",
+      "eligible": true,
+      "value": 5001
+    }
+  },
+  {
+    "notes": "TX ACA PTC - Eligible single adult with no insurance, income ~133% FPL",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75001",
+      "county": "Dallas",
+      "household_size": 1,
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 36,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1666.66,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_aca_ptc",
+      "eligible": true,
+      "value": 7567
+    }
+  } 
+]

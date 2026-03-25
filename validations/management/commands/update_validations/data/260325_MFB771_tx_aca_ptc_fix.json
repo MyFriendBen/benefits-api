@@ -1,0 +1,26 @@
+{
+  "description": "Fix incorrect expected values for TX ACA PTC validation",
+  "updates": [
+    {
+      "screen_uuid": "d68512f3-694c-4f5b-9adb-cde787959033",
+      "program_name": "aca_ptc",
+      "eligible": true,
+      "value": 5153,
+      "reason": "MFB-771: Initial expected value for aca_ptc was incorrect at the time the validation was created."
+    },
+    {
+      "screen_uuid": "b88a5e3b-bf5c-49f8-9fa3-1c817a2e442b",
+      "program_name": "aca_ptc",
+      "eligible": true,
+      "value": 5001,
+      "reason": "MFB-771: Initial expected value for aca_ptc was incorrect at the time the validation was created."
+    },
+    {
+      "screen_uuid": "a408c084-942b-4f86-8e68-99ed2472f0c73",
+      "program_name": "aca_ptc",
+      "eligible": true,
+      "value": 7567,
+      "reason": "MFB-771: Initial expected value for aca_ptc was incorrect at the time the validation was created."
+    }
+  ]
+}
