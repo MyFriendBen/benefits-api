@@ -16,7 +16,7 @@
       "reason": "MFB-771: Initial expected value for aca_ptc was incorrect at the time the validation was created."
     },
     {
-      "screen_uuid": "a408c084-942b-4f86-8e68-99ed2472f0c73",
+      "screen_uuid": "a408c084-942b-4f86-8e68-99ed2472f0c7",
       "program_name": "aca_ptc",
       "eligible": true,
       "value": 7567,
@@ -24,3 +24,4 @@
     }
   ]
 }
+
