@@ -401,3 +401,13 @@ class TxFpp(PolicyEngineMembersCalculator):
 
         # Return PolicyEngine-calculated value (handles age and income eligibility)
         return self.get_member_variable(member.id)
+
+
+class TxEarlyHeadStart(PolicyEngineMembersCalculator):
+    pe_name = "early_head_start"
+    pe_inputs = [
+        dependency.member.AgeDependency,
+        dependency.household.TxStateCodeDependency,
+        *dependency.irs_gross_income,
+    ]
+    pe_outputs = [dependency.member.EarlyHeadStart]
