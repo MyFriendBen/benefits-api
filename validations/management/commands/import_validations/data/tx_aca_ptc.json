@@ -123,5 +123,42 @@
       "eligible": true,
       "value": 7567
     }
-  } 
+  },
+  {
+    "notes": "TX ACA PTC - Ineligible single adult enrolled in Medicare",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75001",
+      "county": "Dallas",
+      "household_size": 1,
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 67,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1666.66,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "medicare": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_aca",
+      "eligible": false,
+      "value": 0
+    }
+  }
 ]
