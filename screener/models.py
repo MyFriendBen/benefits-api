@@ -587,12 +587,12 @@ class Screen(models.Model):
         return missing_fields
 
 
-class ScreenCurrentBenefit(models.Model):
+class CurrentBenefit(models.Model):
     screen = models.ForeignKey(Screen, on_delete=models.CASCADE, related_name="current_benefits")
     program = models.ForeignKey("programs.Program", on_delete=models.CASCADE)
 
     class Meta:
-        db_table = "screener_screen_current_benefits"
+        db_table = "screener_current_benefits"
         unique_together = ("screen", "program")
 
 

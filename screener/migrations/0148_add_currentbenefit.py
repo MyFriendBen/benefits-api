@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name="ScreenCurrentBenefit",
+            name="CurrentBenefit",
             fields=[
                 ("id", models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 (
@@ -31,11 +31,11 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
-                "db_table": "screener_screen_current_benefits",
+                "db_table": "screener_current_benefits",
             },
         ),
         migrations.AlterUniqueTogether(
-            name="screencurrentbenefit",
+            name="currentbenefit",
             unique_together={("screen", "program")},
         ),
     ]
