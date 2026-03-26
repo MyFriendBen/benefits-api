@@ -409,5 +409,8 @@ class TxEarlyHeadStart(PolicyEngineMembersCalculator):
         dependency.member.AgeDependency,
         dependency.household.TxStateCodeDependency,
         *dependency.irs_gross_income,
+        dependency.member.SsiReportedDependency,
+        dependency.spm.SnapReportedDependency,
+        dependency.spm.TanfReportedDependency,
     ]
     pe_outputs = [dependency.member.EarlyHeadStart]

@@ -140,6 +140,20 @@ class Snap(SpmUnit):
     field = "snap"
 
 
+class SnapReportedDependency(SpmUnit):
+    field = "snap_reported"
+
+    def value(self):
+        return 1 if self.screen.has_benefit("snap") else None
+
+
+class TanfReportedDependency(SpmUnit):
+    field = "tanf_reported"
+
+    def value(self):
+        return 1 if self.screen.has_benefit("tanf") else None
+
+
 class Acp(SpmUnit):
     field = "acp"
 
