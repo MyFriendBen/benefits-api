@@ -632,7 +632,7 @@ class Program(models.Model):
         default=True, help_text="Display this program on the current benefits page"
     )
     show_in_has_benefits_step = models.BooleanField(
-        default=False, help_text="Show this program in step 8 (already has benefits)"
+        default=False, help_text="Show this program in the 'already has benefits' screener step"
     )
     year = models.ForeignKey(
         FederalPoveryLimit,
