@@ -15,20 +15,21 @@
      - `incomeStreams (all types)`
    - Source: 42 U.S.C. § 6862(7); 10 CFR 440.22(a); DOE WPN 24-1 (updated income guidelines); TDHCA WAP page states income eligibility based on federal poverty guidelines
 
-2. **Categorical eligibility: Household automatically income-eligible if any member receives SNAP benefits**
-   - Screener fields:
-     - `has_snap`
-   - Source: 10 CFR 440.22(b)(1); 42 U.S.C. § 6862(7)(A)
-
-3. **Categorical eligibility: Household automatically income-eligible if any member receives SSI (Supplemental Security Income)**
+2. **Categorical eligibility: Household automatically income-eligible if any member receives SSI (Supplemental Security Income)**
    - Screener fields:
      - `has_ssi`
-   - Source: 10 CFR 440.22(b)(1); 42 U.S.C. § 6862(7)(B)
+   - Source: 10 CFR 440.22(a)(2); 42 U.S.C. § 1381 et seq. (SSA Title XVI)
 
-4. **Categorical eligibility: Household automatically income-eligible if any member receives TANF (Temporary Assistance for Needy Families)**
+3. **Categorical eligibility: Household automatically income-eligible if any member receives TANF (Temporary Assistance for Needy Families)**
    - Screener fields:
      - `has_tanf`
-   - Source: 10 CFR 440.22(b)(1); 42 U.S.C. § 6862(7)(C)
+   - Source: 10 CFR 440.22(a)(2); 42 U.S.C. § 601 et seq. (SSA Title IV)
+
+4. **Categorical eligibility: Household automatically income-eligible if eligible for LIHEAP (Low-Income Home Energy Assistance Program)**
+   - Screener fields:
+     - `has_liheap` *(field needs to be added to screener)*
+   - Note: The screener currently has `has_il_liheap` (Illinois-specific) but no generic LIHEAP field. A `has_liheap` field will need to be added.
+   - Source: 10 CFR 440.22(a)(3); 42 U.S.C. § 8621 et seq.
 
 5. **Applicant must reside in the state of Texas**
    - Screener fields:
@@ -46,16 +47,6 @@
    - Source: 10 CFR 440.18(e)(2); 42 U.S.C. § 6865(c)(2); DOE updated re-weatherization rules in 2024 allowing re-weatherization after 15 years
    - Impact: Medium
 
-8. **Applicant must be a U.S. citizen or meet immigration status requirements**
-   - Note: The federal WAP statute (42 U.S.C. § 6861 et seq.) does not contain an explicit citizenship or immigration status requirement, and DOE has historically not required citizenship verification for WAP. This is broader than many federal benefit programs. In Texas, TDHCA follows federal guidelines and does not impose additional immigration status restrictions. As a result, WAP is available to all immigration statuses — citizens, green card holders (regardless of years held), refugees, individuals with work authorization, and undocumented individuals. This criterion is handled by front-end filtering; the `legal_status_required` in the program config should include all statuses.
-   - Source: 42 U.S.C. § 6861 et seq. (no citizenship restriction); DOE WAP guidance does not restrict by immigration status; TDHCA WAP follows federal eligibility rules
-   - Screener fields: Handled by front-end (`legal_status_required`)
-
-9. **Household must occupy the dwelling as their primary residence** ⚠️ *data gap*
-   - Note: The dwelling must be the applicant's primary residence. Vacation homes, investment properties, and unoccupied units are not eligible. The screener does not explicitly capture whether the dwelling is the primary residence, though isHomeOwner/isRenter implies occupancy.
-   - Source: 10 CFR 440.22; implicit in program design (weatherization of occupied dwelling units)
-   - Impact: Low
-
 ## Benefit Value
 
 - **Single value estimate**: $372/year
@@ -71,15 +62,15 @@ TX-specific note: Texas households tend to have above-average cooling loads (hot
 
 ## Implementation Coverage
 
-- ✅ Evaluable criteria: 6
-- ⚠️  Data gaps: 3
+- ✅ Evaluable criteria: 5
+- ⚠️  Data gaps: 2
 
-6 of 9 total criteria can be evaluated with current screener fields and front-end filtering. The core eligibility requirements — income at or below 200% FPL, categorical eligibility via SNAP/SSI/TANF, Texas residency, and immigration status (via front-end filtering) — are well-covered. The 3 data gaps are dwelling-specific requirements verified during the formal application and on-site audit process.
+5 of 7 total criteria can be evaluated with current screener fields. The core eligibility requirements — income at or below 200% FPL, categorical eligibility via SSI/TANF/LIHEAP, and Texas residency — are well-covered (LIHEAP requires a new `has_liheap` screener field). The 2 data gaps are dwelling-specific requirements verified during the formal application and on-site audit process.
 
 ## Research Sources
 
 - [DOE Weatherization Assistance Program (WAP) Overview – 42 U.S.C. § 6861 et seq. (Energy Conservation in Existing Buildings Act of 1976)](https://www.energy.gov/scep/wap/weatherization-assistance-program)
-- [Texas Weatherization Assistance Program (WAP) – Texas Department of Housing and Community Affairs (TDHCA) – 10 TAC Chapter 6](https://www.tdhca.state.tx.us/energy/wap/)
+- [Texas Weatherization Assistance Program (WAP) – Texas Department of Housing and Community Affairs (TDHCA) – 10 TAC Chapter 6](https://www.tdhca.texas.gov/weatherization-assistance-program)
 - [DOE Weatherization Assistance Program (WAP) Overview – Main Content Anchor](https://www.energy.gov/scep/wap/weatherization-assistance-program#main-content)
 - [How to Apply for Weatherization Assistance – DOE WAP Application Guide](https://www.energy.gov/scep/wap/how-apply-weatherization-assistance)
 - [DOE Weatherization Program Notices (WPNs) and Memorandums – Official Policy Guidance](https://www.energy.gov/scep/wap/weatherization-program-notices-and-memorandums)
@@ -267,4 +258,4 @@ TX-specific note: Texas households tend to have above-average cooling loads (hot
 ## Source Documentation
 
 - https://www.energy.gov/scep/wap/weatherization-assistance-program
-- https://www.tdhca.state.tx.us/energy/wap/
+- https://www.tdhca.texas.gov/weatherization-assistance-program
