@@ -35,7 +35,6 @@ class Aca(PolicyEngineTaxUnitCalulator):
         dependency.member.AgeDependency,
         dependency.member.IsDisabledDependency,
         dependency.household.ZipCodeDependency,
-        # dependency.household.CountyFipsDependency,
         *dependency.irs_gross_income,
     ]
     pe_outputs = [dependency.tax.Aca]
