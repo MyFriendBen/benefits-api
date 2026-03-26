@@ -11,6 +11,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="program",
             name="show_in_has_benefits_step",
-            field=models.BooleanField(default=False, help_text="Show this program in the 'already has benefits' screener step"),
+            field=models.BooleanField(
+                default=False, help_text="Show this program in the 'already has benefits' screener step"
+            ),
         ),
     ]
