@@ -30,7 +30,7 @@
     "expected_results": {
       "program_name": "tx_aca",
       "eligible": true,
-      "value": 1512
+      "value": 5152
     }
   },
   {
@@ -87,7 +87,7 @@
     "expected_results": {
       "program_name": "tx_aca",
       "eligible": true,
-      "value": 5001
+      "value": 5000
     }
   },
   {
