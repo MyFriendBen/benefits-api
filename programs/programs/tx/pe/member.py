@@ -430,7 +430,7 @@ class TxMsp(PolicyEngineMembersCalculator):
 
     References:
         - TX MSP: https://www.hhs.texas.gov/handbooks/medicaid-elderly-people-disabilities-handbook/q-1000-medicare-savings-programs-overview
-        - 2025 Medicare costs: https://www.cms.gov/newsroom/fact-sheets/2026-medicare-parts-b-premiums-deductibles
+        - 2026 Medicare costs: https://www.cms.gov/newsroom/fact-sheets/2026-medicare-parts-b-premiums-deductibles
     """
 
     pe_name = "msp"
