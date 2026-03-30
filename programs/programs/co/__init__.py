@@ -69,6 +69,6 @@ co_calculators: dict[str, type[ProgramCalculator]] = {
     "dsr": DenverSidewalkRebate,
     "shitc": SeniorHousingIncomeTaxCredit,
     "jeffco_student_benefits": JeffcoStudentBenefits,
-    "chs": CoHeadStart,
+    "co_head_start": CoHeadStart,
     **cesn_calculators,
 }
