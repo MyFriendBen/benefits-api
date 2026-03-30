@@ -96,6 +96,7 @@ Files committed to repo:
 [ ] Scenario 7 (Child Turns 3 Next Month - Month-Level Age Boundary): User should be **ineligible**
 [ ] Scenario 8 (Family at 130% FPL - Over-Income Pathway Upper Boundary, No Categorical): User should be **eligible**
 [ ] Scenario 9 (SNAP Recipient, Income Above 135% FPL - Categorical Override): User should be **eligible**
+[ ] Scenario 10 (Foster Child, Income Above 135% FPL - Foster Care Categorical Override): User should be **eligible**
 
 ## Test Scenarios
 
@@ -245,6 +246,21 @@ Files committed to repo:
 - **Citizenship**: All household members are `U.S. Citizens`
 
 **Why this matters**: Tests that SNAP categorical eligibility (45 CFR § 1302.12(a)(1)(ii)(B)) independently qualifies a family regardless of income. The family is well above the income ceiling, so eligibility must flow solely from SNAP receipt. The same logic applies to TANF and SSI — this scenario covers the categorical override pathway for all three benefits.
+
+---
+
+### Scenario 10: Foster Child, Income Above 135% FPL - Foster Care Categorical Override
+**What we're checking**: Validates that a foster child is categorically eligible for Head Start regardless of family income, with no other qualifying factors (no SNAP/TANF/SSI)
+**Expected**: Eligible
+
+**Steps**:
+- **Location**: Enter ZIP code `78701`, Select county `Travis`
+- **Household**: Number of people: `2`
+- **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1985` (age 41), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$4,000` per month (~$48,000 annually, ~194% FPL for HH of 2), Income frequency: `Monthly`, Insurance: `None`, Citizenship: `U.S. Citizen`
+- **Person 2 (Foster Child)**: Relationship: `Foster Child`, Birth month/year: `August 2022` (age 3), Has income: `No`, Insurance: `None`, Citizenship: `U.S. Citizen`
+- **Current Benefits**: Select `None`
+
+**Why this matters**: Tests that foster care status (45 CFR § 1302.12(c)(1)(iii)) independently qualifies a child regardless of family income, with no other categorical benefit (SNAP/TANF/SSI) present. The household income is nearly double the 100% FPL threshold, so eligibility must flow solely from foster care status. This isolates the foster care override pathway from the income and SNAP/TANF/SSI pathways.
 
 ---
 
