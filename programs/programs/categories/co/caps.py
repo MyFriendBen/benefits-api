@@ -2,7 +2,7 @@ from programs.programs.categories.base import CategoryCap, ProgramCategoryCapCal
 
 
 class PreschoolCategoryCap(ProgramCategoryCapCalculator):
-    static_caps = [CategoryCap(["dpp", "upk", "chs", "cccap"], cap=8_640, member_cap=True)]
+    static_caps = [CategoryCap(["dpp", "upk", "co_head_start", "cccap"], cap=8_640, member_cap=True)]
 
 
 class HealthCareCategoryCap(ProgramCategoryCapCalculator):
