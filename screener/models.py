@@ -456,7 +456,7 @@ class Screen(models.Model):
             "tx_csfp": self.has_csfp,
             "tx_harris_rides": self.has_harris_county_rides,
             "andcs": self.has_andcs,
-            "co_head_start": self.has_chs,
+            "co_head_start": self.has_head_start,
             "cpcr": self.has_cpcr,
             "cesn_cpcr": self.has_cpcr,
             "cdhcs": self.has_cdhcs,
