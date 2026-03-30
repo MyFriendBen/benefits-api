@@ -391,7 +391,6 @@ class Command(BaseCommand):
             "screen.has_ccb": "Has Colorado Child Care Benefit",
             "screen.has_ssi": "Has Supplemental Security Income",
             "screen.has_andcs": "Has Aid to Needy Disabled (Colorado State)",
-            "screen.has_head_start": "Has Colorado Head Start",
             "screen.has_cpcr": "Has Colorado Property/Rent/Heat Credit",
             "screen.has_cdhcs": "Has Colorado Disabled Health Care Subsidy",
             "screen.has_dpp": "Has Denver Preschool Program",
