@@ -95,7 +95,6 @@ class Screen(models.Model):
     has_ccb = models.BooleanField(default=False, blank=True, null=True)
     has_ssi = models.BooleanField(default=False, blank=True, null=True)
     has_andcs = models.BooleanField(default=False, blank=True, null=True)
-    has_chs = models.BooleanField(default=False, blank=True, null=True)
     has_cpcr = models.BooleanField(default=False, blank=True, null=True)
     has_cdhcs = models.BooleanField(default=False, blank=True, null=True)
     has_dpp = models.BooleanField(default=False, blank=True, null=True)
@@ -456,7 +455,7 @@ class Screen(models.Model):
             "tx_csfp": self.has_csfp,
             "tx_harris_rides": self.has_harris_county_rides,
             "andcs": self.has_andcs,
-            "chs": self.has_chs,
+            "co_head_start": self.has_head_start,
             "cpcr": self.has_cpcr,
             "cesn_cpcr": self.has_cpcr,
             "cdhcs": self.has_cdhcs,

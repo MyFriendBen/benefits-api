@@ -196,7 +196,6 @@ class ScreenSerializer(serializers.ModelSerializer):
             "has_chp",
             "has_ssi",
             "has_andcs",
-            "has_chs",
             "has_cpcr",
             "has_cdhcs",
             "has_dpp",
