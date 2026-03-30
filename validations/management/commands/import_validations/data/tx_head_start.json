@@ -119,7 +119,7 @@
     }
   },
   {
-    "notes": "TX Head Start - Single Parent with 4-Year-Old, Income Above 135% FPL (~140% FPL) - Should NOT Be Eligible",
+    "notes": "TX Head Start - Single Parent with 4-Year-Old, Income Above 135% FPL, TANF Recipient - Categorical Override - Should Be Eligible",
     "household": {
       "white_label": "tx",
       "household_size": 2,
@@ -170,11 +170,13 @@
           }
         }
       ],
-      "expenses": []
+      "expenses": [],
+      "has_tanf": true
     },
     "expected_results": {
       "program_name": "tx_head_start",
-      "eligible": false
+      "eligible": true,
+      "value": 10517
     }
   }
 ]

@@ -89,7 +89,7 @@ Files committed to repo:
 
 [ ] Scenario 1 (Single Parent with 4-Year-Old Child, Income Below 100% FPL): User should be **eligible**
 [ ] Scenario 2 (Foster Child, Income Above 135% FPL - Categorical Override): User should be **eligible**
-[ ] Scenario 3 (Single Parent with 4-Year-Old, Income Above 135% FPL, No Categorical Eligibility): User should be **ineligible**
+[ ] Scenario 3 (Single Parent with 4-Year-Old, Income Above 135% FPL, TANF Recipient - Categorical Override): User should be **eligible**
 [ ] Scenario 4 (Child Exactly Age 3 - Minimum Age Boundary): User should be **eligible**
 [ ] Scenario 5 (Child Age 6 - Above Maximum Age): User should be **ineligible**
 [ ] Scenario 6 (Multi-Member Household - One Eligible Child Among Age-Ineligible Siblings): User should be **eligible**
@@ -131,19 +131,19 @@ Files committed to repo:
 
 ---
 
-### Scenario 3: Single Parent with 4-Year-Old, Income Above 135% FPL, No Categorical Eligibility
-**What we're checking**: Verifies that a household with income above 135% FPL is ineligible when not receiving any categorical benefits
-**Expected**: Not eligible
+### Scenario 3: Single Parent with 4-Year-Old, Income Above 135% FPL, TANF Recipient - Categorical Override
+**What we're checking**: Validates that a family receiving TANF is eligible for Head Start regardless of income, because TANF receipt confers categorical eligibility
+**Expected**: Eligible
 
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `2`
 - **Person 1 (Parent)**: Birth month/year: `January 1990` (age 36), Relationship: `Head of Household`, Has income: `Yes`, Employment income: `$2,900` per month (~$34,800 annually, ~140% FPL for HH of 2), Income frequency: `Monthly`, Insurance: `None`
-- **Person 2 (Child)**: Birth month/year: `June 2022` (age 4), Relationship: `Child`, Has income: `No`, Insurance: `None`
-- **Current Benefits**: Select `None`
+- **Person 2 (Child)**: Birth month/year: `June 2022` (age 3), Relationship: `Child`, Has income: `No`, Insurance: `None`
+- **Current Benefits**: Select `TANF`
 - **Citizenship**: Select `U.S. Citizen`
 
-**Why this matters**: Validates the income ceiling at 135% FPL. At 140% FPL, the family exceeds both the primary 100% FPL threshold (45 CFR § 1302.12(a)(1)(i)) and the 100–130% FPL over-income band (45 CFR § 1302.12(d)(1-2)). With no categorical eligibility (no TANF/SSI/SNAP, not a foster child), this family should not be shown as eligible.
+**Why this matters**: Tests that TANF categorical eligibility (45 CFR § 1302.12(a)(1)(ii)(B)) independently qualifies a family regardless of income. The family is above the 135% FPL ceiling, so eligibility must flow solely from TANF receipt. This explicitly covers the TANF pathway; Scenario 9 covers SNAP and Scenario 2/10 cover foster care.
 
 ---
 
