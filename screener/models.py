@@ -586,6 +586,15 @@ class Screen(models.Model):
         return missing_fields
 
 
+class CurrentBenefit(models.Model):
+    screen = models.ForeignKey(Screen, on_delete=models.CASCADE, related_name="current_benefits")
+    program = models.ForeignKey("programs.Program", on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = "screener_current_benefits"
+        unique_together = ("screen", "program")
+
+
 # Log table for any messages sent by the application via text or email
 class Message(models.Model):
     sent = models.DateTimeField(auto_now=True)
