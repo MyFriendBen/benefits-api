@@ -95,7 +95,6 @@ class Screen(models.Model):
     has_ccb = models.BooleanField(default=False, blank=True, null=True)
     has_ssi = models.BooleanField(default=False, blank=True, null=True)
     has_andcs = models.BooleanField(default=False, blank=True, null=True)
-    has_chs = models.BooleanField(default=False, blank=True, null=True)
     has_cpcr = models.BooleanField(default=False, blank=True, null=True)
     has_cdhcs = models.BooleanField(default=False, blank=True, null=True)
     has_dpp = models.BooleanField(default=False, blank=True, null=True)
