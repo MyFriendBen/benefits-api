@@ -16,7 +16,7 @@ def rename_co_head_start_to_chs(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("programs", "0133_merge_0131_add_program_config_import_0132_rename_cesn"),
+        ("programs", "0134_program_show_in_has_benefits_step"),
     ]
 
     operations = [

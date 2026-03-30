@@ -15,7 +15,7 @@ def reverse_backfill_has_head_start(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("screener", "0147_backfill_income_category_gap"),
+        ("screener", "0148_add_currentbenefit"),
     ]
 
     operations = [
