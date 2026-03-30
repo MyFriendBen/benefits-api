@@ -409,7 +409,7 @@ class TxHeadStart(PolicyEngineMembersCalculator):
         dependency.member.AgeDependency,
         dependency.household.TxStateCodeDependency,
         *dependency.irs_gross_income,
-        dependency.member.SsiReportedDependency,
+        dependency.member.Ssi,
         dependency.spm.Snap,
         dependency.spm.Tanf,
     ]
