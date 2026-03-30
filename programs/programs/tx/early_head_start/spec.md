@@ -98,7 +98,7 @@ Of 10 identified eligibility criteria, 5 can be fully evaluated and 5 cannot. No
 [ ] Scenario 5 (Child age 2 years 11 months - approaching upper age limit): User should be **eligible** with $None/year
 [ ] Scenario 6 (Family already enrolled in Early Head Start - duplicate enrollment check): User should be **ineligible**
 [ ] Scenario 7 (Mixed household - eligible toddler, ineligible older sibling, working parent at 95% FPL): User should be **eligible** with $None/year
-[ ] Scenario 8 (Multi-generational household - pregnant teen, infant sibling, and working parent at 92% FPL): User should be **eligible** with $None/year
+[ ] Scenario 8 (Pregnant woman drives eligibility - no age-eligible child in household, working parent at 92% FPL): User should be **eligible** with $None/year
 [ ] Scenario 9 (Family with SNAP benefits - categorical eligibility overrides high income): User should be **eligible** with $None/year
 [ ] Scenario 10 (Family at 140% FPL - above all income thresholds, no categorical eligibility): User should be **ineligible**
 
@@ -219,20 +219,19 @@ Of 10 identified eligibility criteria, 5 can be fully evaluated and 5 cannot. No
 
 ---
 
-### Scenario 8: Multi-generational household - pregnant teen, infant sibling, and working parent at 92% FPL
-**What we're checking**: Multiple eligible children (pregnant teen + infant) in same household with working parent below income threshold
+### Scenario 8: Pregnant woman drives eligibility - no age-eligible child in household
+**What we're checking**: Pregnancy alone qualifies a household member for Early Head Start when there is no child under age 3 present
 **Expected**: Eligible
 
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
-- **Household**: Number of people: `4`
-- **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1988` (age 38), Has income: `Yes`, Income type: `Wages/Salary`, Amount: `$2,392`, Frequency: `Monthly`, Insurance: `None`
+- **Household**: Number of people: `3`
+- **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1988` (age 38), Has income: `Yes`, Income type: `Wages/Salary`, Amount: `$1,817`, Frequency: `Monthly`, Insurance: `None`
 - **Person 2 (Pregnant Teen)**: Relationship: `Child`, Birth month/year: `June 2009` (age 16), Pregnant: `Yes`, Has income: `No`, Insurance: `None`
-- **Person 3 (Infant)**: Relationship: `Child`, Birth month/year: `December 2025` (age 0 - 3 months old), Has income: `No`, Insurance: `None`
-- **Person 4 (School-Age Child)**: Relationship: `Child`, Birth month/year: `March 2018` (age 8), Has income: `No`, Insurance: `None`
+- **Person 3 (School-Age Child)**: Relationship: `Child`, Birth month/year: `March 2018` (age 8), Has income: `No`, Insurance: `None`
 - **Current Benefits**: Select `None` or skip if no current benefits
 
-**Why this matters**: Tests complex household with multiple eligible members through different pathways (pregnancy + age-eligible infant) while including an ineligible older child, ensuring the screener correctly identifies all eligible household members and doesn't incorrectly exclude based on presence of older children
+**Why this matters**: Per 45 CFR 1302.12(c), Early Head Start is available to pregnant women in addition to children birth to 36 months. By removing any child under age 3, this test isolates the pregnancy pathway to confirm that a pregnant household member alone — with no age-eligible infant or toddler — is sufficient to trigger eligibility. Income is set at ~92% FPL for a household of 3 ($1,817/mo).
 
 ---
 
