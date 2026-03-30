@@ -148,7 +148,7 @@
           "income_streams": [
             {
               "type": "sSRetirement",
-              "amount": 1715.0,
+              "amount": 1800.0,
               "frequency": "monthly"
             }
           ],

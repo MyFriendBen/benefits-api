@@ -1980,7 +1980,7 @@ class CoConfigurationData(ConfigurationData):
                         "_default_message": "Tuition credits for Denver preschoolers",
                     },
                 },
-                "coheadstart": {
+                "head_start": {
                     "name": {"_label": "childCareBenefits.coheadstart", "_default_message": "Colorado Head Start: "},
                     "description": {
                         "_label": "childCareBenefits.coheadstart_desc",
