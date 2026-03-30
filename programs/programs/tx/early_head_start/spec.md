@@ -100,7 +100,8 @@ Of 10 identified eligibility criteria, 5 can be fully evaluated and 5 cannot. No
 [ ] Scenario 7 (Mixed household - eligible toddler, ineligible older sibling, working parent at 95% FPL): User should be **eligible** with $None/year
 [ ] Scenario 8 (Pregnant woman drives eligibility - no age-eligible child in household, working parent at 92% FPL): User should be **eligible** with $None/year
 [ ] Scenario 9 (Family with SNAP benefits - categorical eligibility overrides high income): User should be **eligible** with $None/year
-[ ] Scenario 10 (Family at 140% FPL - above all income thresholds, no categorical eligibility): User should be **ineligible**
+[ ] Scenario 10 (Family at 121% FPL - above EHS income threshold but SNAP-eligible, categorical eligibility applies): User should be **eligible** with $None/year
+[ ] Scenario 11 (Family at 170% FPL - above TX BBCE SNAP limit of 165% FPL, no categorical eligibility): User should be **ineligible**
 
 ## Test Scenarios
 
@@ -251,20 +252,37 @@ Of 10 identified eligibility criteria, 5 can be fully evaluated and 5 cannot. No
 
 ---
 
-### Scenario 10: Family at 140% FPL - above all income thresholds, no categorical eligibility
-**What we're checking**: Verifies that a family with income above 130% FPL and no categorical eligibility (no TANF/SNAP/SSI, not foster care) is NOT eligible
+### Scenario 10: Family at 121% FPL - SNAP eligibility triggers categorical Early Head Start eligibility
+**What we're checking**: Verifies that a family whose income exceeds the EHS income threshold but who is eligible for SNAP receives categorical Early Head Start eligibility via SNAP
+**Expected**: Eligible
+
+**Steps**:
+- **Location**: Enter ZIP code `78701`, Select county `Travis`
+- **Household**: Number of people: `3`
+- **Person 1**: Birth month/year: `January 1992` (age 34), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Amount: `$2,400` monthly (~121% FPL for household of 3), Frequency: `Monthly`, Insurance: `None`
+- **Person 2**: Birth month/year: `March 1993` (age 33), Relationship: `Spouse`, Has income: `No`, Insurance: `None`
+- **Person 3**: Birth month/year: `June 2024` (age 1), Relationship: `Child`, Has income: `No`, Insurance: `None`
+- **Current Benefits**: Select `SNAP` under Food and Nutrition
+- **Citizenship**: Select `U.S. Citizen` for all household members
+
+**Why this matters**: Per 45 CFR 1302.12(a)(1)(ii)(C), families receiving SNAP have categorical eligibility for Early Head Start regardless of income. At ~121% FPL, this family is above the primary 100% FPL income threshold but within SNAP's 130% gross income limit — they are SNAP-eligible. Reporting SNAP as a current benefit should trigger categorical EHS eligibility. This validates the categorical pathway works independently of the income pathway.
+
+---
+
+### Scenario 11: Family at 170% FPL - above TX BBCE SNAP limit, no categorical eligibility
+**What we're checking**: Verifies that a family with income above Texas's BBCE SNAP limit (165% FPL) and no reported categorical benefits is NOT eligible
 **Expected**: Not eligible
 
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `3`
-- **Person 1**: Birth month/year: `January 1992` (age 34), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Amount: `$3,015` monthly (~140% FPL for household of 3), Frequency: `Monthly`, Insurance: `None`
+- **Person 1**: Birth month/year: `January 1992` (age 34), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Amount: `$3,360` monthly (~170% FPL for household of 3), Frequency: `Monthly`, Insurance: `None`
 - **Person 2**: Birth month/year: `March 1993` (age 33), Relationship: `Spouse`, Has income: `No`, Insurance: `None`
 - **Person 3**: Birth month/year: `June 2024` (age 1), Relationship: `Child`, Has income: `No`, Insurance: `None`
 - **Current Benefits**: Select `None` for all benefit programs
 - **Citizenship**: Select `U.S. Citizen` for all household members
 
-**Why this matters**: This test validates the upper income boundary of the screener's 135% FPL ceiling. At 140% FPL, the family exceeds both the primary 100% FPL threshold and the 100–130% FPL over-income band under 45 CFR 1302.12(d). With no categorical eligibility pathway (TANF, SNAP, SSI, foster care), this family should not be shown as eligible.
+**Why this matters**: Texas uses Broad-Based Categorical Eligibility (BBCE) for SNAP, with a gross income limit of 165% FPL — higher than the federal 130% standard. A household at 170% FPL exceeds TX's BBCE limit, so they are not SNAP-eligible even under BBCE rules. Combined with no reported TANF/SSI and no foster care, there is no remaining EHS eligibility pathway. This is the true "no pathway" ineligibility test for Texas specifically.
 
 ---
 
