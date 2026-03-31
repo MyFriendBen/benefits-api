@@ -126,6 +126,9 @@ def backfill_current_benefits(apps, schema_editor):
     Populates the screener_current_benefits join table from existing has_* column values
     for all historical Screen records. Uses the has_benefit() name_map as source of truth
     for which name_abbreviated values correspond to which has_* fields.
+
+    Programs are scoped per white label so a CO screen never gets linked to IL/TX/etc.
+    programs that share the same has_* field mapping.
     """
     Screen = apps.get_model("screener", "Screen")
     Program = apps.get_model("programs", "Program")
@@ -136,58 +139,70 @@ def backfill_current_benefits(apps, schema_editor):
     for name, field in NAME_TO_FIELD.items():
         field_to_names[field].append(name)
 
-    # Index existing programs by name_abbreviated
-    programs_by_name = {p.name_abbreviated: p.id for p in Program.objects.all()}
+    # Group programs by white_label_id so lookups are scoped per white label.
+    # A name_abbreviated is unique per (white_label, name_abbreviated), not globally.
+    programs_by_wl: dict[int, dict[str, int]] = defaultdict(dict)
+    for p in Program.objects.values("id", "name_abbreviated", "white_label_id"):
+        programs_by_wl[p["white_label_id"]][p["name_abbreviated"]] = p["id"]
 
     entries_to_create = []
 
-    # --- Simple field-based cases ---
-    for field_name, name_abbreviated_list in field_to_names.items():
-        program_ids = [programs_by_name[n] for n in name_abbreviated_list if n in programs_by_name]
-        if not program_ids:
-            continue
+    for white_label_id, programs_by_name in programs_by_wl.items():
 
-        screen_ids = list(Screen.objects.filter(**{field_name: True}).values_list("id", flat=True))
-        if not screen_ids:
-            continue
+        # --- Simple field-based cases ---
+        for field_name, name_abbreviated_list in field_to_names.items():
+            program_ids = [programs_by_name[n] for n in name_abbreviated_list if n in programs_by_name]
+            if not program_ids:
+                continue
 
-        for screen_id in screen_ids:
-            for program_id in program_ids:
-                entries_to_create.append(CurrentBenefit(screen_id=screen_id, program_id=program_id))
+            screen_ids = list(
+                Screen.objects.filter(white_label_id=white_label_id, **{field_name: True}).values_list("id", flat=True)
+            )
+            if not screen_ids:
+                continue
 
-    # --- Compound cases: mirror Screen.has_benefit() exactly ---
+            for screen_id in screen_ids:
+                for program_id in program_ids:
+                    entries_to_create.append(CurrentBenefit(screen_id=screen_id, program_id=program_id))
 
-    # SSI: has_ssi=True OR any income stream with type="sSI" exists
-    ssi_program_ids = [programs_by_name[n] for n in ("ssi", "tx_ssi") if n in programs_by_name]
-    if ssi_program_ids:
-        ssi_screen_ids = list(
-            Screen.objects.filter(Q(has_ssi=True) | Q(household_members__income_streams__type="sSI"))
-            .distinct()
-            .values_list("id", flat=True)
-        )
-        for screen_id in ssi_screen_ids:
-            for program_id in ssi_program_ids:
-                entries_to_create.append(CurrentBenefit(screen_id=screen_id, program_id=program_id))
+        # --- Compound cases: mirror Screen.has_benefit() exactly ---
 
-    # CHP: has_chp=True OR has_chp_hi=True
-    chp_program_ids = [programs_by_name["chp"]] if "chp" in programs_by_name else []
-    if chp_program_ids:
-        chp_screen_ids = list(
-            Screen.objects.filter(Q(has_chp=True) | Q(has_chp_hi=True)).values_list("id", flat=True)
-        )
-        for screen_id in chp_screen_ids:
-            for program_id in chp_program_ids:
-                entries_to_create.append(CurrentBenefit(screen_id=screen_id, program_id=program_id))
+        # SSI: has_ssi=True OR any income stream with type="sSI" exists
+        ssi_program_ids = [programs_by_name[n] for n in ("ssi", "tx_ssi") if n in programs_by_name]
+        if ssi_program_ids:
+            ssi_screen_ids = list(
+                Screen.objects.filter(white_label_id=white_label_id)
+                .filter(Q(has_ssi=True) | Q(household_members__income_streams__type="sSI"))
+                .distinct()
+                .values_list("id", flat=True)
+            )
+            for screen_id in ssi_screen_ids:
+                for program_id in ssi_program_ids:
+                    entries_to_create.append(CurrentBenefit(screen_id=screen_id, program_id=program_id))
 
-    # MA Mass Health: has_medicaid=True OR has_medicaid_hi=True
-    mass_health_program_ids = [programs_by_name["ma_mass_health"]] if "ma_mass_health" in programs_by_name else []
-    if mass_health_program_ids:
-        mass_health_screen_ids = list(
-            Screen.objects.filter(Q(has_medicaid=True) | Q(has_medicaid_hi=True)).values_list("id", flat=True)
-        )
-        for screen_id in mass_health_screen_ids:
-            for program_id in mass_health_program_ids:
-                entries_to_create.append(CurrentBenefit(screen_id=screen_id, program_id=program_id))
+        # CHP: has_chp=True OR has_chp_hi=True
+        chp_program_ids = [programs_by_name["chp"]] if "chp" in programs_by_name else []
+        if chp_program_ids:
+            chp_screen_ids = list(
+                Screen.objects.filter(white_label_id=white_label_id)
+                .filter(Q(has_chp=True) | Q(has_chp_hi=True))
+                .values_list("id", flat=True)
+            )
+            for screen_id in chp_screen_ids:
+                for program_id in chp_program_ids:
+                    entries_to_create.append(CurrentBenefit(screen_id=screen_id, program_id=program_id))
+
+        # MA Mass Health: has_medicaid=True OR has_medicaid_hi=True
+        mass_health_program_ids = [programs_by_name["ma_mass_health"]] if "ma_mass_health" in programs_by_name else []
+        if mass_health_program_ids:
+            mass_health_screen_ids = list(
+                Screen.objects.filter(white_label_id=white_label_id)
+                .filter(Q(has_medicaid=True) | Q(has_medicaid_hi=True))
+                .values_list("id", flat=True)
+            )
+            for screen_id in mass_health_screen_ids:
+                for program_id in mass_health_program_ids:
+                    entries_to_create.append(CurrentBenefit(screen_id=screen_id, program_id=program_id))
 
     batch_size = 1000
     created = 0

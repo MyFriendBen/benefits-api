@@ -147,7 +147,9 @@ def _sync_current_benefits(screen):
     on the same screen and prevent races on the delete+bulk_create.
     """
     program_ids_to_write = [
-        program.id for program in Program.objects.all() if screen.has_benefit(program.name_abbreviated)
+        program.id
+        for program in Program.objects.filter(white_label=screen.white_label)
+        if screen.has_benefit(program.name_abbreviated)
     ]
     with transaction.atomic():
         Screen.objects.select_for_update().get(pk=screen.pk)
