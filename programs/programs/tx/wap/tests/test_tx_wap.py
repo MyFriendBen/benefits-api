@@ -63,27 +63,28 @@ class TestTxWapIncomeEligibility(TestCase):
     """Income-only path: no categorical benefits."""
 
     def test_income_below_200_fpl_is_eligible(self):
-        # 1-person: FPL = 15,650, limit = 31,300; income = 31,000
-        calc = make_calculator(household_income=31_000, fpl_limit=15_650)
+        # 1-person: 2026 FPL = 15,960, limit = 31,920; income = 31,500
+        calc = make_calculator(household_income=31_500, fpl_limit=15_960)
         self.assertTrue(run_household_eligible(calc))
 
     def test_income_exactly_at_200_fpl_is_eligible(self):
-        # Boundary: income == limit (≤ is inclusive)
-        calc = make_calculator(household_income=31_300, fpl_limit=15_650)
+        # Boundary: income == limit (≤ is inclusive); 2026 1-person limit = 31,920
+        calc = make_calculator(household_income=31_920, fpl_limit=15_960)
         self.assertTrue(run_household_eligible(calc))
 
     def test_income_above_200_fpl_is_ineligible(self):
-        calc = make_calculator(household_income=31_301, fpl_limit=15_650)
+        # 2026 1-person limit = 31,920; income = 31,921
+        calc = make_calculator(household_income=31_921, fpl_limit=15_960)
         self.assertFalse(run_household_eligible(calc))
 
     def test_four_person_household_at_200_fpl_is_eligible(self):
-        # 4-person: FPL ≈ 31,200, limit = 62,400; income = 62,400
-        calc = make_calculator(household_income=62_400, household_size=4, fpl_limit=31_200)
+        # 4-person: 2026 FPL = 33,000, limit = 66,000; income = 66,000
+        calc = make_calculator(household_income=66_000, household_size=4, fpl_limit=33_000)
         self.assertTrue(run_household_eligible(calc))
 
     def test_three_person_household_just_above_200_fpl_is_ineligible(self):
-        # 3-person: FPL ≈ 20,820, limit = 41,640; income = 42,600
-        calc = make_calculator(household_income=42_600, household_size=3, fpl_limit=20_820)
+        # 3-person: 2026 FPL = 27,320, limit = 54,640; income = 55,200 (just above)
+        calc = make_calculator(household_income=55_200, household_size=3, fpl_limit=27_320)
         self.assertFalse(run_household_eligible(calc))
 
 
@@ -108,5 +109,6 @@ class TestTxWapCategoricalEligibility(TestCase):
 
     def test_priority_traits_do_not_override_income_ceiling(self):
         # High income, no categorical benefits — ineligible regardless of member traits
-        calc = make_calculator(household_income=75_600, household_size=3, fpl_limit=20_820)
+        # 3-person: 2026 FPL = 27,320, limit = 54,640; income = 75,600 (well above)
+        calc = make_calculator(household_income=75_600, household_size=3, fpl_limit=27_320)
         self.assertFalse(run_household_eligible(calc))

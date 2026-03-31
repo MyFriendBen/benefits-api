@@ -100,7 +100,7 @@ TX-specific note: Texas households tend to have above-average cooling loads (hot
 **Steps**:
 - **Location**: Enter ZIP code `79901`, Select county `El Paso`
 - **Household**: Number of people: `1`, Renter
-- **Person 1**: Birth month/year: `June 1986` (age 39), Relationship: Head of Household, Not disabled, Employment income: `$2,600` per month ($31,200/year — just below 200% FPL for 1-person household in 2025: $15,650 × 2 = $31,300)
+- **Person 1**: Birth month/year: `June 1986` (age 39), Relationship: Head of Household, Not disabled, Employment income: `$2,600` per month ($31,200/year — just below 200% FPL for 1-person household in 2026: $15,960 × 2 = $31,920)
 - **Current Benefits**: Do NOT select SNAP, SSI, or TANF
 
 **Why this matters**: Confirms the 200% FPL income ceiling for a 1-person household. With no priority characteristics and no categorical eligibility, this is a clean test of the income check alone.
@@ -114,7 +114,7 @@ TX-specific note: Texas households tend to have above-average cooling loads (hot
 **Steps**:
 - **Location**: Enter ZIP code `77001`, Select county `Harris`
 - **Household**: Number of people: `4`
-- **Person 1**: Birth month/year: `June 1988` (age 37), Relationship: Head of Household, Employment income: `$2,600` per `semi-monthly` (twice per month, $62,400/year — exactly at 200% FPL for a 4-person household in 2025)
+- **Person 1**: Birth month/year: `June 1988` (age 37), Relationship: Head of Household, Employment income: `$2,750` per `semi-monthly` (twice per month, $66,000/year — exactly at 200% FPL for a 4-person household in 2026: $33,000 × 2 = $66,000)
 - **Person 2**: Birth month/year: `September 1990` (age 35), Relationship: Spouse, No income
 - **Person 3**: Birth month/year: `January 2016` (age 10), Relationship: Child, No income
 - **Person 4**: Birth month/year: `April 2019` (age 6), Relationship: Child, No income
@@ -131,12 +131,12 @@ TX-specific note: Texas households tend to have above-average cooling loads (hot
 **Steps**:
 - **Location**: Enter ZIP code `78745`, Select county `Travis`
 - **Household**: Number of people: `3`
-- **Person 1**: Birth month/year: `June 1988` (age 37), Relationship: Head of Household, Employment income: `$2,500` per month, Not disabled
-- **Person 2**: Birth month/year: `September 1990` (age 35), Relationship: Spouse, Employment income: `$1,050` per month, Not disabled
+- **Person 1**: Birth month/year: `June 1988` (age 37), Relationship: Head of Household, Employment income: `$3,000` per month, Not disabled
+- **Person 2**: Birth month/year: `September 1990` (age 35), Relationship: Spouse, Employment income: `$1,600` per month, Not disabled
 - **Person 3**: Birth month/year: `January 2019` (age 7), Relationship: Child, No income, Not disabled
 - **Current Benefits**: Do not select any current benefits (no SNAP, SSI, or TANF)
 
-**Why this matters**: A family of 3 earning $42,600/year ($960 above the ~$41,640 200% FPL limit for 3 people) should be denied. This confirms the ceiling is a hard gate, not a soft threshold.
+**Why this matters**: A family of 3 earning $55,200/year ($560 above the $54,640 200% FPL limit for 3 people in 2026: $27,320 × 2) should be denied. This confirms the ceiling is a hard gate, not a soft threshold.
 
 ---
 
@@ -147,7 +147,7 @@ TX-specific note: Texas households tend to have above-average cooling loads (hot
 **Steps**:
 - **Location**: Enter ZIP code `77001`, Select county `Harris`
 - **Household**: Number of people: `2`
-- **Person 1**: Birth month/year: `June 1985` (age 40), Relationship: Head of Household, Employment income: `$3,500` per month ($42,000/year — above the 200% FPL of ~$23,600 for a 2-person household), Not disabled
+- **Person 1**: Birth month/year: `June 1985` (age 40), Relationship: Head of Household, Employment income: `$3,700` per month ($44,400/year — above the 200% FPL of ~$43,280 for a 2-person household in 2026: $21,640 × 2), Not disabled
 - **Person 2**: Birth month/year: `March 2015` (age 11), Relationship: Child, No income, Not disabled
 - **Current Benefits**: Select `SNAP (food stamps)` — do NOT select SSI or TANF
 - **Housing**: Renter
