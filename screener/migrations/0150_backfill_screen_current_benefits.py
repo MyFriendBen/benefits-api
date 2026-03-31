@@ -118,6 +118,7 @@ NAME_TO_FIELD = {
     "tx_dart": "has_tx_dart",
     "ccs": "has_ccs",
     "tx_ccs": "has_ccs",
+    "ma_ssp": "has_ma_ssp",
 }
 
 
@@ -142,7 +143,7 @@ def backfill_current_benefits(apps, schema_editor):
     # Group programs by white_label_id so lookups are scoped per white label.
     # A name_abbreviated is unique per (white_label, name_abbreviated), not globally.
     programs_by_wl: dict[int, dict[str, int]] = defaultdict(dict)
-    for p in Program.objects.values("id", "name_abbreviated", "white_label_id"):
+    for p in Program.objects.filter(active=True).values("id", "name_abbreviated", "white_label_id"):
         programs_by_wl[p["white_label_id"]][p["name_abbreviated"]] = p["id"]
 
     entries_to_create = []

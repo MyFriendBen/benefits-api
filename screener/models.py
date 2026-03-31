@@ -521,6 +521,7 @@ class Screen(models.Model):
             "tx_dart": self.has_tx_dart,
             "ccs": self.has_ccs,
             "tx_ccs": self.has_ccs,
+            "ma_ssp": self.has_ma_ssp,
         }
 
         if name_abbreviated in name_map:
