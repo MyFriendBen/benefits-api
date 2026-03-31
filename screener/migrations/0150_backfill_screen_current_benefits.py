@@ -44,7 +44,6 @@ NAME_TO_FIELD = {
     "il_csfp": "has_csfp",
     "il_hbwd": "has_il_hbwd",
     "il_ccap": "has_ccap",
-    "project_cope": "has_project_cope",
     "cesn_cope": "has_project_cope",
     "cesn_heap": "has_cesn_heap",
     "rtdlive": "has_rtdlive",

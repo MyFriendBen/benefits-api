@@ -443,7 +443,6 @@ class Screen(models.Model):
             "il_csfp": self.has_csfp,
             "il_hbwd": self.has_il_hbwd,
             "il_ccap": self.has_ccap,
-            "project_cope": self.has_project_cope,
             "cesn_cope": self.has_project_cope,
             "cesn_heap": self.has_cesn_heap,
             "rtdlive": self.has_rtdlive,
