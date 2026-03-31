@@ -419,6 +419,7 @@ class TxHeadStart(PolicyEngineMembersCalculator):
     pe_name = "head_start"
     pe_inputs = [
         dependency.member.AgeDependency,
+        dependency.member.FosterCareDependency,
         dependency.household.TxStateCodeDependency,
         *dependency.irs_gross_income,
         dependency.member.Ssi,
@@ -448,6 +449,7 @@ class TxEarlyHeadStart(PolicyEngineMembersCalculator):
     pe_inputs = [
         dependency.member.AgeDependency,
         dependency.member.PregnancyDependency,
+        dependency.member.FosterCareDependency,
         dependency.household.TxStateCodeDependency,
         *dependency.irs_gross_income,
         dependency.member.SsiReportedDependency,
