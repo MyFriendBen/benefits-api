@@ -4,8 +4,9 @@ from django.db import IntegrityError
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
-from programs.models import WarningMessage
+from programs.models import Program, WarningMessage
 from screener.models import (
+    CurrentBenefit,
     EnergyCalculatorMember,
     EnergyCalculatorScreen,
     Screen,
@@ -134,6 +135,22 @@ class HouseholdMemberSerializer(serializers.ModelSerializer):
             "is_care_worker",
         )
         read_only_fields = ("screen", "id")
+
+
+def _sync_current_benefits(screen):
+    """
+    Syncs CurrentBenefit rows for a screen based on has_* column values.
+    Called on every PATCH so the join table stays in sync with the authoritative has_* columns.
+    Reads still come from has_* columns — this is Phase 2 dual-write only.
+    """
+    program_ids_to_write = [
+        program.id for program in Program.objects.all() if screen.has_benefit(program.name_abbreviated)
+    ]
+    CurrentBenefit.objects.filter(screen=screen).delete()
+    if program_ids_to_write:
+        CurrentBenefit.objects.bulk_create(
+            [CurrentBenefit(screen=screen, program_id=pid) for pid in program_ids_to_write]
+        )
 
 
 class ScreenSerializer(serializers.ModelSerializer):
@@ -360,6 +377,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             EnergyCalculatorScreen.objects.create(**energy_calculator_screen, screen=instance)
         instance.refresh_from_db()
         instance.set_screen_is_test()
+        _sync_current_benefits(instance)
         return instance
 
 
