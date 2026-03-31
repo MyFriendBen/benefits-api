@@ -404,6 +404,18 @@ class TxFpp(PolicyEngineMembersCalculator):
 
 
 class TxHeadStart(PolicyEngineMembersCalculator):
+    """
+    Texas Head Start calculator using PolicyEngine.
+
+    Federal early childhood program providing comprehensive education, health,
+    and family support services to low-income children (ages 3-5) and their families.
+
+    Eligibility (determined by PolicyEngine):
+        - Child must be age 3-5 (Early Head Start covers 0-2)
+        - Household income at or below 100% FPL
+        - Automatic eligibility for families receiving SNAP, TANF, or SSI
+    """
+
     pe_name = "head_start"
     pe_inputs = [
         dependency.member.AgeDependency,
@@ -415,7 +427,7 @@ class TxHeadStart(PolicyEngineMembersCalculator):
     ]
     pe_outputs = [dependency.member.HeadStart]
 
-    
+
 class TxMsp(PolicyEngineMembersCalculator):
     """
     Texas Medicare Savings Program (MSP) calculator using PolicyEngine.
