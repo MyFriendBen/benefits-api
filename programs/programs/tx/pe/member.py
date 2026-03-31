@@ -412,8 +412,8 @@ class TxHeadStart(PolicyEngineMembersCalculator):
 
     Eligibility (determined by PolicyEngine):
         - Child must be age 3-5 (Early Head Start covers 0-2)
-        - Household income at or below 100% FPL
-        - Automatic eligibility for families receiving SNAP, TANF, or SSI
+        - Household income at or below 135% FPL
+        - Automatic eligibility for families eligible for or receiving SNAP, TANF, or SSI
     """
 
     pe_name = "head_start"
@@ -427,7 +427,7 @@ class TxHeadStart(PolicyEngineMembersCalculator):
     ]
     pe_outputs = [dependency.member.HeadStart]
 
-    
+
 class TxEarlyHeadStart(PolicyEngineMembersCalculator):
     """
     Texas Early Head Start calculator using PolicyEngine.
