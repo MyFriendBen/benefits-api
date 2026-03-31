@@ -3158,7 +3158,7 @@ class TxConfigurationData(ConfigurationData):
                     "description": {
                         "_label": "childCareBenefits.tx_head_start_desc",
                         "_default_message": "Free child care and family support for families with children ages 3 to 5",
-                    }
+                    },
                 },
                 "early_head_start": {
                     "name": {
