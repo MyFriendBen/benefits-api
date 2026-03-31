@@ -148,7 +148,7 @@ def _sync_current_benefits(screen):
     """
     program_ids_to_write = [
         program.id
-        for program in Program.objects.filter(white_label=screen.white_label, active=True)
+        for program in Program.objects.filter(white_label=screen.white_label)
         if screen.has_benefit(program.name_abbreviated)
     ]
     with transaction.atomic():
