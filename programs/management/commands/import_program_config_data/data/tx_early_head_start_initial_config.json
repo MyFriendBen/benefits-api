@@ -3,24 +3,23 @@
     "code": "tx"
   },
   "program_category": {
-    "external_name": "tx_childcare"
+    "external_name": "tx_child_care"
   },
   "program": {
     "name_abbreviated": "tx_early_head_start",
     "year": "2025",
     "legal_status_required": ["citizen", "non_citizen", "refugee", "gc_5plus", "gc_5less", "gc_under18_no5", "gc_18plus_no5", "otherWithWorkPermission"],
     "name": "Early Head Start",
-    "description": "Early childhood learning and family support for infants, toddlers, and pregnant women in Texas. Early Head Start provides free early learning, health care, healthy meals, and family support. Families also get help with parenting and community resources.\n\nEarly Head Start is run by local agencies, so services and availability vary by location. There may be a waitlist in some areas.\n\nSome programs can also enroll families with income between 100% and 130% of the poverty level if they have open slots. A small number of spots (up to 10%) may go to any child who could benefit, even if the family does not meet the income or other requirements.\n\nChildren in foster care, those experiencing homelessness, and families receiving TANF, SNAP, or SSI are eligible regardless of income.\n\nWhen programs have limited slots, priority is given to the lowest-income families, children with disabilities, and families experiencing homelessness.",
+    "description": "Early childhood learning and family support for infants, toddlers, and pregnant women in Texas. Early Head Start provides free early learning, health care, healthy meals, and family support. Families also get help with parenting and community resources.\n\nEarly Head Start is run by local agencies, so services and availability vary by location. There may be a waitlist in some areas.\n\nChildren in foster care, those experiencing homelessness, and families receiving TANF, SNAP, or SSI are eligible regardless of income.\n\nWhen programs have limited slots, priority is given to the lowest-income families, children with disabilities, and families experiencing homelessness.",
     "description_short": "Free early learning program for infants and toddlers",
-    "learn_more_link": "https://www.earlychildhood.texas.gov/about-eligibility-screener",
-    "apply_button_link": "https://www.earlychildhood.texas.gov/about-eligibility-screener",
-    "apply_button_description": "Apply for TX Early Head Start",
-    "estimated_application_time": "1 - 2 hours",
+    "learn_more_link": "https://www.earlychildhood.texas.gov/head-start",
+    "apply_button_link": "https://www.headstart.gov/how-apply",
+    "apply_button_description": "",
+    "estimated_application_time": "Varies",
     "estimated_delivery_time": "Varies based on program capacity",
-    "estimated_value": "Varies - free preschool, meals, and health services",
+    "estimated_value": "",
     "website_description": "Free early learning and support for infants, toddlers, and pregnant women"
   },
-  "warning_message": null,
   "documents": [
     {
       "external_name": "tx_home",

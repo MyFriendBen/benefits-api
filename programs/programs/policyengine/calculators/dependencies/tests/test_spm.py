@@ -431,6 +431,76 @@ class TestSchoolMealCountableIncomeDependency(TestCase):
         self.assertEqual(dep.value(), 48000)  # ($3000 + $1000) * 12
 
 
+class TestSnapDependency(TestCase):
+    """Tests for Snap dependency — dual-role as PE input (categorical eligibility) and output (benefit amount)."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=2,
+            has_snap=False,
+            completed=False,
+        )
+
+    def test_field_name(self):
+        dep = spm.Snap(self.screen, None, {})
+        self.assertEqual(dep.field, "snap")
+
+    def test_value_returns_1_when_screen_has_snap(self):
+        """When user reports having SNAP, send 1 to PE to enable categorical eligibility."""
+        self.screen.has_snap = True
+        self.screen.save()
+
+        dep = spm.Snap(self.screen, None, {})
+        self.assertEqual(dep.value(), 1)
+
+    def test_value_returns_none_when_screen_does_not_have_snap(self):
+        """When user does not report SNAP, return None so PE calculates the benefit amount."""
+        self.screen.has_snap = False
+        self.screen.save()
+
+        dep = spm.Snap(self.screen, None, {})
+        self.assertIsNone(dep.value())
+
+
+class TestTanfDependency(TestCase):
+    """Tests for Tanf dependency — dual-role as PE input (categorical eligibility) and output (benefit amount)."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=2,
+            has_tanf=False,
+            completed=False,
+        )
+
+    def test_field_name(self):
+        dep = spm.Tanf(self.screen, None, {})
+        self.assertEqual(dep.field, "tanf")
+
+    def test_value_returns_1_when_screen_has_tanf(self):
+        """When user reports having TANF, send 1 to PE to enable categorical eligibility."""
+        self.screen.has_tanf = True
+        self.screen.save()
+
+        dep = spm.Tanf(self.screen, None, {})
+        self.assertEqual(dep.value(), 1)
+
+    def test_value_returns_none_when_screen_does_not_have_tanf(self):
+        """When user does not report TANF, return None so PE calculates the benefit amount."""
+        self.screen.has_tanf = False
+        self.screen.save()
+
+        dep = spm.Tanf(self.screen, None, {})
+        self.assertIsNone(dep.value())
+
+
 class TestTxTanfDependencies(TestCase):
     """Tests for TX TANF income dependencies used by TxTanf calculator."""
 
