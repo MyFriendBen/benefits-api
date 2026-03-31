@@ -17,7 +17,7 @@ class PolicyEngineScreenInput:
         self.members = members
         self.relationship_map = relationship_map
 
-    def value(self):
+    def value(self) -> object:
         """
         Return the value to send to Policy Engine
         """

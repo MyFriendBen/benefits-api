@@ -514,6 +514,7 @@ class Screen(models.Model):
             "tx_head_start": self.has_head_start,
             "ma_csfp": self.has_csfp,
             "ma_early_head_start": self.has_early_head_start,
+            "tx_early_head_start": self.has_early_head_start,
             "co_andso": self.has_co_andso,
             "co_care": self.has_co_care,
             "cfhc": self.has_cfhc,
