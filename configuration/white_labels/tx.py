@@ -3150,7 +3150,7 @@ class TxConfigurationData(ConfigurationData):
                         "_default_message": "Subsidized child care assistance for eligible families",
                     },
                 },
-"early_head_start": {
+                "early_head_start": {
                     "name": {
                         "_label": "childCareBenefits.tx_early_head_start",
                         "_default_message": "Early Head Start: ",
