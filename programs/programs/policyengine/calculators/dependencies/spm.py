@@ -146,6 +146,7 @@ class Snap(SpmUnit):
     - If no reported snap: return None so PE calculates the SNAP benefit
       amount the household is eligible for.
     """
+
     field = "snap"
 
     def value(self):
@@ -178,6 +179,7 @@ class Tanf(SpmUnit):
     - If no reported tanf: return None so PE calculates the TANF benefit
       amount the household is eligible for.
     """
+
     field = "tanf"
 
     def value(self):
