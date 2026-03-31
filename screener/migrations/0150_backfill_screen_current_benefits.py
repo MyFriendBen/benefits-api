@@ -3,7 +3,6 @@ from collections import defaultdict
 from django.db import migrations
 from django.db.models import Q
 
-
 # Derived from Screen.has_benefit() name_map.
 # Maps program name_abbreviated -> has_* field name on Screen model.
 # Three entries are intentionally omitted here and handled separately below
@@ -145,7 +144,19 @@ def backfill_current_benefits(apps, schema_editor):
     for p in Program.objects.values("id", "name_abbreviated", "white_label_id"):
         programs_by_wl[p["white_label_id"]][p["name_abbreviated"]] = p["id"]
 
-    entries_to_create = []
+    batch_size = 1000
+    pending = []
+
+    def flush():
+        if pending:
+            CurrentBenefit.objects.bulk_create(pending, ignore_conflicts=True)
+            pending.clear()
+
+    def enqueue(screen_id, program_ids):
+        for program_id in program_ids:
+            pending.append(CurrentBenefit(screen_id=screen_id, program_id=program_id))
+        if len(pending) >= batch_size:
+            flush()
 
     for white_label_id, programs_by_name in programs_by_wl.items():
 
@@ -155,62 +166,52 @@ def backfill_current_benefits(apps, schema_editor):
             if not program_ids:
                 continue
 
-            screen_ids = list(
-                Screen.objects.filter(white_label_id=white_label_id, **{field_name: True}).values_list("id", flat=True)
-            )
-            if not screen_ids:
-                continue
-
-            for screen_id in screen_ids:
-                for program_id in program_ids:
-                    entries_to_create.append(CurrentBenefit(screen_id=screen_id, program_id=program_id))
+            for screen_id in Screen.objects.filter(white_label_id=white_label_id, **{field_name: True}).values_list(
+                "id", flat=True
+            ):
+                enqueue(screen_id, program_ids)
 
         # --- Compound cases: mirror Screen.has_benefit() exactly ---
 
-        # SSI: has_ssi=True OR any income stream with type="sSI" exists
+        # SSI: has_ssi=True OR any income stream with type="sSI" and amount > 0
         ssi_program_ids = [programs_by_name[n] for n in ("ssi", "tx_ssi") if n in programs_by_name]
         if ssi_program_ids:
-            ssi_screen_ids = list(
+            for screen_id in (
                 Screen.objects.filter(white_label_id=white_label_id)
-                .filter(Q(has_ssi=True) | Q(household_members__income_streams__type="sSI"))
+                .filter(
+                    Q(has_ssi=True)
+                    | Q(
+                        household_members__income_streams__type="sSI",
+                        household_members__income_streams__amount__gt=0,
+                    )
+                )
                 .distinct()
                 .values_list("id", flat=True)
-            )
-            for screen_id in ssi_screen_ids:
-                for program_id in ssi_program_ids:
-                    entries_to_create.append(CurrentBenefit(screen_id=screen_id, program_id=program_id))
+            ):
+                enqueue(screen_id, ssi_program_ids)
 
         # CHP: has_chp=True OR has_chp_hi=True
         chp_program_ids = [programs_by_name["chp"]] if "chp" in programs_by_name else []
         if chp_program_ids:
-            chp_screen_ids = list(
+            for screen_id in (
                 Screen.objects.filter(white_label_id=white_label_id)
                 .filter(Q(has_chp=True) | Q(has_chp_hi=True))
                 .values_list("id", flat=True)
-            )
-            for screen_id in chp_screen_ids:
-                for program_id in chp_program_ids:
-                    entries_to_create.append(CurrentBenefit(screen_id=screen_id, program_id=program_id))
+            ):
+                enqueue(screen_id, chp_program_ids)
 
         # MA Mass Health: has_medicaid=True OR has_medicaid_hi=True
         mass_health_program_ids = [programs_by_name["ma_mass_health"]] if "ma_mass_health" in programs_by_name else []
         if mass_health_program_ids:
-            mass_health_screen_ids = list(
+            for screen_id in (
                 Screen.objects.filter(white_label_id=white_label_id)
                 .filter(Q(has_medicaid=True) | Q(has_medicaid_hi=True))
                 .values_list("id", flat=True)
-            )
-            for screen_id in mass_health_screen_ids:
-                for program_id in mass_health_program_ids:
-                    entries_to_create.append(CurrentBenefit(screen_id=screen_id, program_id=program_id))
+            ):
+                enqueue(screen_id, mass_health_program_ids)
 
-    batch_size = 1000
-    created = 0
-    for i in range(0, len(entries_to_create), batch_size):
-        batch = CurrentBenefit.objects.bulk_create(entries_to_create[i : i + batch_size], ignore_conflicts=True)
-        created += len(batch)
-
-    print(f"Backfilled {created} CurrentBenefit rows from has_* columns")
+    flush()
+    print("Backfilled CurrentBenefit rows from has_* columns")
 
 
 class Migration(migrations.Migration):
