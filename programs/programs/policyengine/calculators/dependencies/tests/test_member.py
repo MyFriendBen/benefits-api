@@ -1181,15 +1181,9 @@ class TestFosterCareDependency(TestCase):
             household_size=2,
             completed=False,
         )
-        self.head = HouseholdMember.objects.create(
-            screen=self.screen, relationship="headOfHousehold", age=30
-        )
-        self.foster_child = HouseholdMember.objects.create(
-            screen=self.screen, relationship="fosterChild", age=4
-        )
-        self.biological_child = HouseholdMember.objects.create(
-            screen=self.screen, relationship="child", age=4
-        )
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=30)
+        self.foster_child = HouseholdMember.objects.create(screen=self.screen, relationship="fosterChild", age=4)
+        self.biological_child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=4)
 
     def test_field_name(self):
         """FosterCareDependency maps to the was_in_foster_care PE variable."""
