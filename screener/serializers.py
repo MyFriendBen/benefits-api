@@ -1,6 +1,6 @@
 import logging
 from datetime import date
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
@@ -140,17 +140,22 @@ class HouseholdMemberSerializer(serializers.ModelSerializer):
 def _sync_current_benefits(screen):
     """
     Syncs CurrentBenefit rows for a screen based on has_* column values.
-    Called on every PATCH so the join table stays in sync with the authoritative has_* columns.
+    Called on every POST/PATCH so the join table stays in sync with the authoritative has_* columns.
     Reads still come from has_* columns — this is Phase 2 dual-write only.
+
+    Uses select_for_update() inside a transaction to serialize concurrent PATCH requests
+    on the same screen and prevent races on the delete+bulk_create.
     """
     program_ids_to_write = [
         program.id for program in Program.objects.all() if screen.has_benefit(program.name_abbreviated)
     ]
-    CurrentBenefit.objects.filter(screen=screen).delete()
-    if program_ids_to_write:
-        CurrentBenefit.objects.bulk_create(
-            [CurrentBenefit(screen=screen, program_id=pid) for pid in program_ids_to_write]
-        )
+    with transaction.atomic():
+        Screen.objects.select_for_update().get(pk=screen.pk)
+        CurrentBenefit.objects.filter(screen=screen).delete()
+        if program_ids_to_write:
+            CurrentBenefit.objects.bulk_create(
+                [CurrentBenefit(screen=screen, program_id=pid) for pid in program_ids_to_write]
+            )
 
 
 class ScreenSerializer(serializers.ModelSerializer):
@@ -341,6 +346,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             Expense.objects.create(**expense, screen=screen)
         if energy_calculator_screen is not None:
             EnergyCalculatorScreen.objects.create(**energy_calculator_screen, screen=screen)
+        _sync_current_benefits(screen)
         return screen
 
     def update(self, instance, validated_data):

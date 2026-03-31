@@ -1,14 +1,16 @@
 from collections import defaultdict
 
 from django.db import migrations
+from django.db.models import Q
 
 
 # Derived from Screen.has_benefit() name_map.
 # Maps program name_abbreviated -> has_* field name on Screen model.
-# Special cases simplified:
-#   - "ssi" / "tx_ssi": uses has_ssi only (skips SSI income check)
-#   - "chp": uses has_chp only (skips has_chp_hi)
-#   - "ma_mass_health": uses has_medicaid only (skips has_medicaid_hi)
+# Three entries are intentionally omitted here and handled separately below
+# because their enrollment condition is a compound expression in has_benefit():
+#   "ssi" / "tx_ssi"  → has_ssi=True OR SSI income stream exists
+#   "chp"              → has_chp=True OR has_chp_hi=True
+#   "ma_mass_health"   → has_medicaid=True OR has_medicaid_hi=True
 NAME_TO_FIELD = {
     "tanf": "has_tanf",
     "nc_tanf": "has_tanf",
@@ -49,8 +51,6 @@ NAME_TO_FIELD = {
     "cccap": "has_ccap",
     "mydenver": "has_mydenver",
     "ccb": "has_ccb",
-    "ssi": "has_ssi",
-    "tx_ssi": "has_ssi",
     "tx_csfp": "has_csfp",
     "tx_harris_rides": "has_harris_county_rides",
     "andcs": "has_andcs",
@@ -87,7 +87,6 @@ NAME_TO_FIELD = {
     "ubp": "has_ubp",
     "cesn_ubp": "has_ubp",
     "medicare": "has_medicare_hi",
-    "chp": "has_chp",
     "va": "has_va",
     "aca": "has_aca",
     "nc_aca": "has_aca",
@@ -108,7 +107,6 @@ NAME_TO_FIELD = {
     "ma_middle_income_rental": "has_ma_middle_income_rental",
     "ma_cmsp": "has_ma_cmsp",
     "ma_tafdc": "has_tanf",
-    "ma_mass_health": "has_medicaid",
     "ma_head_start": "has_head_start",
     "ma_csfp": "has_csfp",
     "ma_early_head_start": "has_early_head_start",
@@ -143,19 +141,52 @@ def backfill_current_benefits(apps, schema_editor):
 
     entries_to_create = []
 
+    # --- Simple field-based cases ---
     for field_name, name_abbreviated_list in field_to_names.items():
-        # Resolve to program IDs that actually exist in the DB
         program_ids = [programs_by_name[n] for n in name_abbreviated_list if n in programs_by_name]
         if not program_ids:
             continue
 
-        # Find screens where this has_* field is True
         screen_ids = list(Screen.objects.filter(**{field_name: True}).values_list("id", flat=True))
         if not screen_ids:
             continue
 
         for screen_id in screen_ids:
             for program_id in program_ids:
+                entries_to_create.append(CurrentBenefit(screen_id=screen_id, program_id=program_id))
+
+    # --- Compound cases: mirror Screen.has_benefit() exactly ---
+
+    # SSI: has_ssi=True OR any income stream with type="sSI" exists
+    ssi_program_ids = [programs_by_name[n] for n in ("ssi", "tx_ssi") if n in programs_by_name]
+    if ssi_program_ids:
+        ssi_screen_ids = list(
+            Screen.objects.filter(Q(has_ssi=True) | Q(household_members__income_streams__type="sSI"))
+            .distinct()
+            .values_list("id", flat=True)
+        )
+        for screen_id in ssi_screen_ids:
+            for program_id in ssi_program_ids:
+                entries_to_create.append(CurrentBenefit(screen_id=screen_id, program_id=program_id))
+
+    # CHP: has_chp=True OR has_chp_hi=True
+    chp_program_ids = [programs_by_name["chp"]] if "chp" in programs_by_name else []
+    if chp_program_ids:
+        chp_screen_ids = list(
+            Screen.objects.filter(Q(has_chp=True) | Q(has_chp_hi=True)).values_list("id", flat=True)
+        )
+        for screen_id in chp_screen_ids:
+            for program_id in chp_program_ids:
+                entries_to_create.append(CurrentBenefit(screen_id=screen_id, program_id=program_id))
+
+    # MA Mass Health: has_medicaid=True OR has_medicaid_hi=True
+    mass_health_program_ids = [programs_by_name["ma_mass_health"]] if "ma_mass_health" in programs_by_name else []
+    if mass_health_program_ids:
+        mass_health_screen_ids = list(
+            Screen.objects.filter(Q(has_medicaid=True) | Q(has_medicaid_hi=True)).values_list("id", flat=True)
+        )
+        for screen_id in mass_health_screen_ids:
+            for program_id in mass_health_program_ids:
                 entries_to_create.append(CurrentBenefit(screen_id=screen_id, program_id=program_id))
 
     batch_size = 1000
@@ -167,11 +198,6 @@ def backfill_current_benefits(apps, schema_editor):
     print(f"Backfilled {created} CurrentBenefit rows from has_* columns")
 
 
-def reverse_backfill(apps, schema_editor):
-    CurrentBenefit = apps.get_model("screener", "CurrentBenefit")
-    CurrentBenefit.objects.all().delete()
-
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -179,5 +205,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(backfill_current_benefits, reverse_backfill),
+        migrations.RunPython(backfill_current_benefits, migrations.RunPython.noop),
     ]
