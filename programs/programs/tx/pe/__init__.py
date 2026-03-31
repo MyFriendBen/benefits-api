@@ -16,6 +16,7 @@ tx_member_calculators = {
     "tx_dart": member.TxDart,
     "tx_fpp": member.TxFpp,
     "tx_head_start": member.TxHeadStart,
+    "tx_medicare_savings_program": member.TxMsp,
 }
 
 tx_tax_unit_calculators = {

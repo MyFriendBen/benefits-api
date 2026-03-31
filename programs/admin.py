@@ -94,7 +94,7 @@ class ProgramAdmin(SecureAdmin):
     search_fields = ("name__translations__text",)
     list_display = ["get_str", "name_abbreviated", "active", "action_buttons"]
     list_editable = ["active"]
-    list_filter = ["active", "low_confidence", "show_on_current_benefits"]
+    list_filter = ["active", "low_confidence", "show_on_current_benefits", "show_in_has_benefits_step"]
 
     white_label_filter_horizontal = [
         "documents",
@@ -118,6 +118,7 @@ class ProgramAdmin(SecureAdmin):
         "active",
         "low_confidence",
         "show_on_current_benefits",
+        "show_in_has_benefits_step",
         "legal_status_required",
         "documents",
         "required_programs",

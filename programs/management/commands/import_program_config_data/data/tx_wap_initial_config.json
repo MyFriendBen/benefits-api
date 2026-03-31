@@ -1,0 +1,74 @@
+{
+  "white_label": {
+    "code": "tx"
+  },
+  "program_category": {
+    "external_name": "tx_housing"
+  },
+  "program": {
+    "name_abbreviated": "tx_wap",
+    "year": "2025",
+    "legal_status_required": ["citizen", "non_citizen", "gc_5plus", "gc_5less", "refugee", "otherWithWorkPermission"],
+    "name": "Weatherization Assistance Program (WAP)",
+    "description": "The Weatherization Assistance Program (WAP) helps lower your energy bills for free by making your home more energy efficient. This can include adding insulation, sealing air leaks, and fixing heating or cooling systems.\n\nAfter you apply, you will be placed on a waitlist. When it is your turn, a trained energy auditor will visit your home to find where energy is being wasted. Then a local contractor will do the work at no cost to you. Finally, an inspector checks the work when it is done.\n\nTo qualify, your household income must be at or below the program's limits. You can also qualify if anyone in your home gets SNAP (food stamps), SSI (disability benefits), or TANF (cash help). You must live in Texas. Both homeowners and renters can apply. Families with seniors, people with disabilities, or young children may get help sooner.\n\nIf you rent, your landlord must agree to the work before it can begin. If you live in a building with more than one unit, go ahead and apply — the program will check if enough of your neighbors qualify. You do not need to collect information from your neighbors yourself.\n\nA note on applying: After clicking our apply link, select \"Weatherization\", enter your city or county, and submit.",
+    "description_short": "Free home energy upgrades to lower your bills",
+    "learn_more_link": "https://www.tdhca.texas.gov/weatherization-assistance-program",
+    "apply_button_link": "https://www.tdhca.texas.gov/help-for-texans",
+    "apply_button_description": "",
+    "estimated_application_time": "1 - 2 hours",
+    "estimated_delivery_time": "Varies based on waiting list and funding",
+    "estimated_value": "",
+    "website_description": "Free home improvements to save energy and lower utility bills for low-income households"
+  },
+  "warning_message": null,
+  "documents": [
+    {
+      "external_name": "tx_home",
+      "text": "Proof of home address (ex: lease, utility bill)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "id_proof",
+      "text": "Proof of identity (ex: driver's license, state ID)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_earned_income",
+      "text": "Proof of income for all household members (ex: pay stubs, tax returns, benefit award letters)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_ssn",
+      "text": "Social Security numbers for all household members",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_utility_bills",
+      "text": "Recent utility bills (electric, gas, or propane) for the past 12 months",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_benefit_proof",
+      "text": "Proof of SNAP, SSI, or TANF benefits if applicable (ex: award letter)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "211_texas",
+      "name": "2-1-1 Texas",
+      "email": "",
+      "description": "2-1-1 Texas connects residents with local health and human services resources. Call 2-1-1 to find weatherization assistance providers in your area.",
+      "assistance_link": "https://www.211texas.org/",
+      "phone_number": "877-541-7905",
+      "counties": [],
+      "languages": []
+    }
+  ]
+}

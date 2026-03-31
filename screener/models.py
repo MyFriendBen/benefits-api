@@ -95,7 +95,6 @@ class Screen(models.Model):
     has_ccb = models.BooleanField(default=False, blank=True, null=True)
     has_ssi = models.BooleanField(default=False, blank=True, null=True)
     has_andcs = models.BooleanField(default=False, blank=True, null=True)
-    has_chs = models.BooleanField(default=False, blank=True, null=True)
     has_cpcr = models.BooleanField(default=False, blank=True, null=True)
     has_cdhcs = models.BooleanField(default=False, blank=True, null=True)
     has_dpp = models.BooleanField(default=False, blank=True, null=True)
@@ -456,7 +455,7 @@ class Screen(models.Model):
             "tx_csfp": self.has_csfp,
             "tx_harris_rides": self.has_harris_county_rides,
             "andcs": self.has_andcs,
-            "chs": self.has_chs,
+            "co_head_start": self.has_head_start,
             "cpcr": self.has_cpcr,
             "cesn_cpcr": self.has_cpcr,
             "cdhcs": self.has_cdhcs,
@@ -586,6 +585,15 @@ class Screen(models.Model):
             missing_fields.update(expence.missing_fields())
 
         return missing_fields
+
+
+class CurrentBenefit(models.Model):
+    screen = models.ForeignKey(Screen, on_delete=models.CASCADE, related_name="current_benefits")
+    program = models.ForeignKey("programs.Program", on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = "screener_current_benefits"
+        unique_together = ("screen", "program")
 
 
 # Log table for any messages sent by the application via text or email
