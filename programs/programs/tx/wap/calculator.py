@@ -15,9 +15,7 @@ class TxWap(ProgramCalculator):
     def household_eligible(self, e: Eligibility):
         # Categorical eligibility: SSI, TANF, or SNAP bypass the income test
         categorical_eligible = (
-            self.screen.has_benefit("ssi")
-            or self.screen.has_benefit("tanf")
-            or self.screen.has_benefit("snap")
+            self.screen.has_benefit("ssi") or self.screen.has_benefit("tanf") or self.screen.has_benefit("snap")
         )
 
         if categorical_eligible:
