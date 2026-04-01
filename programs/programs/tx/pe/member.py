@@ -412,7 +412,7 @@ class TxHeadStart(PolicyEngineMembersCalculator):
 
     Eligibility (determined by PolicyEngine):
         - Child must be age 3-5 (Early Head Start covers 0-2)
-        - Household income at or below 135% FPL
+        - Household income at or below 130% FPL
         - Automatic eligibility for families eligible for or receiving SNAP, TANF, or SSI
     """
 
@@ -439,7 +439,7 @@ class TxEarlyHeadStart(PolicyEngineMembersCalculator):
 
     Eligibility pathways (45 CFR 1302.12):
     - Age: child under 36 months OR pregnant woman
-    - Income: family income at or below 135% FPL (covers both the primary 100% FPL
+    - Income: family income at or below 130% FPL (covers both the primary 100% FPL
       threshold and the over-income band up to 130% FPL per 45 CFR 1302.12(d))
     - Categorical: family receives SNAP, TANF, or SSI (income test waived)
     - Foster care: child is in foster care (income test waived)
