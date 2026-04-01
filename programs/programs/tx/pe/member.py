@@ -452,7 +452,7 @@ class TxEarlyHeadStart(PolicyEngineMembersCalculator):
         dependency.member.FosterCareDependency,
         dependency.household.TxStateCodeDependency,
         *dependency.irs_gross_income,
-        dependency.member.SsiReportedDependency,
+        dependency.member.Ssi,
         dependency.spm.Snap,
         dependency.spm.Tanf,
     ]
