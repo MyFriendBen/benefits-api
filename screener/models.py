@@ -448,7 +448,6 @@ class Screen(models.Model):
             "rtdlive": self.has_rtdlive,
             "cccap": self.has_ccap,
             "mydenver": self.has_mydenver,
-            "cocb": self.has_ccb,
             "ssi": has_ssi_or_ssi_income,
             "tx_ssi": has_ssi_or_ssi_income,
             "tx_csfp": self.has_csfp,
