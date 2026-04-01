@@ -124,6 +124,10 @@ class IlConfigurationData(ConfigurationData):
             "_default_message": "Friend / Family / Word of Mouth",
         },
         "merit": {"_label": "referralOptions.merit", "_default_message": "Merit America"},
+        "211il": {
+            "_label": "referralOptions.211il",
+            "_default_message": "2-1-1 Illinois",
+        },
         "other": {"_label": "referralOptions.other", "_default_message": "Other"},
         "testOrProspect": {
             "_label": "referralOptions.testOrProspect",
@@ -2438,7 +2442,7 @@ class IlConfigurationData(ConfigurationData):
     }
 
     referrer_data = {
-        "theme": {"default": "default"},
+        "theme": {"default": "default", "211il": "twoOneOne"},
         "logoSource": {
             "default": "MFB_ILLogo",
         },
@@ -2453,8 +2457,13 @@ class IlConfigurationData(ConfigurationData):
             "default": {"id": "footer.logo.alt", "defaultMessage": "MFB Logo"},
         },
         "logoClass": {"default": "logo"},
+        "twoOneOneLink": {
+            "default": "https://211illinois.org/",
+            "211il": "https://211illinois.org/",
+        },
         "shareLink": {
             "default": "",
+            "211il": "https://screener.myfriendben.org/il?referrer=211il",
         },
         "stepDirectory": {
             "default": [
@@ -2470,8 +2479,11 @@ class IlConfigurationData(ConfigurationData):
                 "signUpInfo",
             ],
         },
-        "uiOptions": {"default": []},
-        "featureFlags": {"default": []},  # Deprecated: use uiOptions. Remove as part of MFB-635.
+        "uiOptions": {"default": [], "211il": ["no_results_more_help", "211il"]},
+        "featureFlags": {
+            "default": [],
+            "211il": ["no_results_more_help", "211il"],
+        },  # Deprecated: use uiOptions. Remove as part of MFB-635.
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",
