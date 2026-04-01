@@ -91,16 +91,17 @@ Of 10 identified eligibility criteria, 5 can be fully evaluated and 5 cannot. No
 
 ## Acceptance Criteria
 
-[ ] Scenario 1 (Young mother with infant - income eligible at 85% FPL): User should be **eligible** with $None/year
-[ ] Scenario 2 (Family with toddler at 134% FPL - just below income ceiling): User should be **eligible** with $None/year
-[ ] Scenario 3 (Newborn at exactly 0 months old - minimum age requirement): User should be **eligible** with $None/year
+[ ] Scenario 1 (Young mother with infant - income eligible at 85% FPL): User should be **eligible** and Early Head Start appears in results
+[ ] Scenario 2 (Family with toddler at 134% FPL - just below income ceiling): User should be **eligible** and Early Head Start appears in results
+[ ] Scenario 3 (Newborn at exactly 0 months old - minimum age requirement): User should be **eligible** and Early Head Start appears in results
 [ ] Scenario 4 (Child age 3 years old - just above maximum age threshold): User should be **ineligible**
-[ ] Scenario 5 (Child age 2 years 11 months - approaching upper age limit): User should be **eligible** with $None/year
+[ ] Scenario 5 (Child age 2 years 11 months - approaching upper age limit): User should be **eligible** and Early Head Start appears in results
 [ ] Scenario 6 (Family already enrolled in Early Head Start - duplicate enrollment check): User should be **ineligible**
-[ ] Scenario 7 (Mixed household - eligible toddler, ineligible older sibling, working parent at 95% FPL): User should be **eligible** with $None/year
-[ ] Scenario 8 (Multi-generational household - pregnant teen, infant sibling, and working parent at 92% FPL): User should be **eligible** with $None/year
-[ ] Scenario 9 (Family with SNAP benefits - categorical eligibility overrides high income): User should be **eligible** with $None/year
-[ ] Scenario 10 (Family at 140% FPL - above all income thresholds, no categorical eligibility): User should be **ineligible**
+[ ] Scenario 7 (Mixed household - eligible toddler, ineligible older sibling, working parent at 95% FPL): User should be **eligible** and Early Head Start appears in results
+[ ] Scenario 8 (Pregnant woman drives eligibility - no age-eligible child in household, working parent at 92% FPL): User should be **eligible** and Early Head Start appears in results
+[ ] Scenario 9 (Family with SNAP benefits - categorical eligibility overrides high income): User should be **eligible** and Early Head Start appears in results
+[ ] Scenario 10 (Family at 108% FPL - above EHS income threshold but SNAP-eligible, categorical eligibility applies): User should be **eligible** and Early Head Start appears in results
+[ ] Scenario 11 (Family with high income above TX BBCE SNAP threshold, no categorical eligibility): User should be **ineligible**
 
 ## Test Scenarios
 
@@ -111,12 +112,12 @@ Of 10 identified eligibility criteria, 5 can be fully evaluated and 5 cannot. No
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `2`
-- **Person 1 (Head of Household)**: Birth month/year: `June 1998` (age 27), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$1,448`, Income frequency: `Monthly`, Insurance: `None`
+- **Person 1 (Head of Household)**: Birth month/year: `June 1998` (age 27), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$1,496`, Income frequency: `Monthly`, Insurance: `None`
 - **Person 2 (Child)**: Birth month/year: `January 2025` (age 1), Relationship: `Child`, Has income: `No`, Insurance: `None`
 - **Current Benefits**: Select `None` for all benefit programs
 - **Citizenship**: Select `U.S. Citizen` for all household members
 
-**Why this matters**: This is the most common eligibility pathway for Early Head Start - a low-income family with a young child under age 3. Testing this scenario validates the core income-based eligibility criterion (45 CFR 1302.12(a)(1)(i)) and age requirement (45 CFR 1302.12(c)).
+**Why this matters**: This is the most common eligibility pathway for Early Head Start - a low-income family with a young child under age 3. Testing this scenario validates the core income-based eligibility criterion (45 CFR 1302.12(a)(1)(i)) and age requirement (45 CFR 1302.12(c)). Income is set at ~85% of the 2025 FPL for a household of 2 ($21,150/yr → $1,762/mo × 0.85 ≈ $1,496/mo).
 
 ---
 
@@ -202,37 +203,36 @@ Of 10 identified eligibility criteria, 5 can be fully evaluated and 5 cannot. No
 
 ---
 
-### Scenario 7: Mixed household - eligible toddler, ineligible older sibling, working parent at 95% FPL
+### Scenario 7: Mixed household - eligible toddler, ineligible older sibling, working parent at 92% FPL
 **What we're checking**: Tests that eligibility is correctly determined when household contains both age-eligible (under 3) and age-ineligible (over 3) children, with income below 100% FPL
 **Expected**: Eligible
 
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `4`
-- **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1992` (age 34), Has income: `Yes`, Income type: `Wages/Salaries`, Amount: `$2,470`, Frequency: `Monthly`, Insurance: `None`
+- **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1992` (age 34), Has income: `Yes`, Income type: `Wages/Salaries`, Amount: `$2,470`, Frequency: `Monthly`, Insurance: `None` (~92% of 2025 FPL for household of 4: $32,150/yr → $2,679/mo × 0.92 ≈ $2,465/mo)
 - **Person 2 (Spouse)**: Relationship: `Spouse`, Birth month/year: `May 1993` (age 32), Has income: `No`, Insurance: `None`
 - **Person 3 (Eligible Child)**: Relationship: `Child`, Birth month/year: `June 2024` (age 1 year 9 months), Has income: `No`, Insurance: `None`
 - **Person 4 (Ineligible Child)**: Relationship: `Child`, Birth month/year: `February 2021` (age 5), Has income: `No`, Insurance: `None`
 - **Current Benefits**: Not receiving any current benefits
 
-**Why this matters**: This test validates that the screener correctly handles mixed-age households where some children meet age requirements and others don't. Early Head Start serves children birth to age 3, while Head Start serves ages 3-5. A household can have children in both age ranges, and the presence of older children should not disqualify younger eligible children. This is a common real-world scenario for families with multiple children.
+**Why this matters**: This test validates that the screener correctly handles mixed-age households where some children meet age requirements and others don't. Early Head Start serves children birth to age 3, while Head Start serves ages 3-5. A household can have children in both age ranges, and the presence of older children should not disqualify younger eligible children. This is a common real-world scenario for families with multiple children. Income is ~92% of the 2025 FPL for a household of 4 ($32,150/yr → $2,679/mo × 0.92 ≈ $2,465/mo).
 
 ---
 
-### Scenario 8: Multi-generational household - pregnant teen, infant sibling, and working parent at 92% FPL
-**What we're checking**: Multiple eligible children (pregnant teen + infant) in same household with working parent below income threshold
+### Scenario 8: Pregnant woman drives eligibility - no age-eligible child in household, working parent at 82% FPL
+**What we're checking**: Pregnancy alone qualifies a household member for Early Head Start when there is no child under age 3 present
 **Expected**: Eligible
 
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
-- **Household**: Number of people: `4`
-- **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1988` (age 38), Has income: `Yes`, Income type: `Wages/Salary`, Amount: `$2,392`, Frequency: `Monthly`, Insurance: `None`
+- **Household**: Number of people: `3`
+- **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1988` (age 38), Has income: `Yes`, Income type: `Wages/Salary`, Amount: `$1,817`, Frequency: `Monthly`, Insurance: `None`
 - **Person 2 (Pregnant Teen)**: Relationship: `Child`, Birth month/year: `June 2009` (age 16), Pregnant: `Yes`, Has income: `No`, Insurance: `None`
-- **Person 3 (Infant)**: Relationship: `Child`, Birth month/year: `December 2025` (age 0 - 3 months old), Has income: `No`, Insurance: `None`
-- **Person 4 (School-Age Child)**: Relationship: `Child`, Birth month/year: `March 2018` (age 8), Has income: `No`, Insurance: `None`
+- **Person 3 (School-Age Child)**: Relationship: `Child`, Birth month/year: `March 2018` (age 8), Has income: `No`, Insurance: `None`
 - **Current Benefits**: Select `None` or skip if no current benefits
 
-**Why this matters**: Tests complex household with multiple eligible members through different pathways (pregnancy + age-eligible infant) while including an ineligible older child, ensuring the screener correctly identifies all eligible household members and doesn't incorrectly exclude based on presence of older children
+**Why this matters**: Per 45 CFR 1302.12(c), Early Head Start is available to pregnant women in addition to children birth to 36 months. By removing any child under age 3, this test isolates the pregnancy pathway to confirm that a pregnant household member alone — with no age-eligible infant or toddler — is sufficient to trigger eligibility. Income is set at ~82% of the 2025 FPL for a household of 3 ($26,650/yr → $2,221/mo × 0.82 ≈ $1,821/mo).
 
 ---
 
@@ -252,20 +252,37 @@ Of 10 identified eligibility criteria, 5 can be fully evaluated and 5 cannot. No
 
 ---
 
-### Scenario 10: Family at 140% FPL - above all income thresholds, no categorical eligibility
-**What we're checking**: Verifies that a family with income above 130% FPL and no categorical eligibility (no TANF/SNAP/SSI, not foster care) is NOT eligible
+### Scenario 10: Family at 108% FPL - SNAP eligibility triggers categorical Early Head Start eligibility
+**What we're checking**: Verifies that a family whose income exceeds the EHS income threshold but who is eligible for SNAP receives categorical Early Head Start eligibility via SNAP
+**Expected**: Eligible
+
+**Steps**:
+- **Location**: Enter ZIP code `78701`, Select county `Travis`
+- **Household**: Number of people: `3`
+- **Person 1**: Birth month/year: `January 1992` (age 34), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Amount: `$2,400` monthly (~108% of 2025 FPL for household of 3: $26,650/yr → $2,221/mo), Frequency: `Monthly`, Insurance: `None`
+- **Person 2**: Birth month/year: `March 1993` (age 33), Relationship: `Spouse`, Has income: `No`, Insurance: `None`
+- **Person 3**: Birth month/year: `June 2024` (age 1), Relationship: `Child`, Has income: `No`, Insurance: `None`
+- **Current Benefits**: Select `SNAP` under Food and Nutrition
+- **Citizenship**: Select `U.S. Citizen` for all household members
+
+**Why this matters**: Per 45 CFR 1302.12(a)(1)(ii)(C), families receiving SNAP have categorical eligibility for Early Head Start regardless of income. At ~108% of the 2025 FPL for a household of 3, this family is above the primary 100% FPL income threshold but within SNAP's 130% gross income limit — they are SNAP-eligible. Reporting SNAP as a current benefit should trigger categorical EHS eligibility. This validates the categorical pathway works independently of the income pathway.
+
+---
+
+### Scenario 11: Family with high income above TX BBCE SNAP threshold, no categorical eligibility
+**What we're checking**: Verifies that a family with income above Texas's BBCE SNAP threshold and no reported categorical benefits is NOT eligible
 **Expected**: Not eligible
 
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `3`
-- **Person 1**: Birth month/year: `January 1992` (age 34), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Amount: `$3,015` monthly (~140% FPL for household of 3), Frequency: `Monthly`, Insurance: `None`
+- **Person 1**: Birth month/year: `January 1992` (age 34), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Amount: `$3,700` monthly, Frequency: `Monthly`, Insurance: `None`
 - **Person 2**: Birth month/year: `March 1993` (age 33), Relationship: `Spouse`, Has income: `No`, Insurance: `None`
 - **Person 3**: Birth month/year: `June 2024` (age 1), Relationship: `Child`, Has income: `No`, Insurance: `None`
 - **Current Benefits**: Select `None` for all benefit programs
 - **Citizenship**: Select `U.S. Citizen` for all household members
 
-**Why this matters**: This test validates the upper income boundary of the screener's 135% FPL ceiling. At 140% FPL, the family exceeds both the primary 100% FPL threshold and the 100–130% FPL over-income band under 45 CFR 1302.12(d). With no categorical eligibility pathway (TANF, SNAP, SSI, foster care), this family should not be shown as eligible.
+**Why this matters**: Texas uses Broad-Based Categorical Eligibility (BBCE) for SNAP, with a gross income limit of 165% of the SPM poverty threshold (which differs from HHS FPL). At $3,700/mo ($44,400/yr), this household is above that threshold and is not SNAP-eligible even under BBCE rules. Combined with no reported TANF/SSI and no foster care, there is no remaining EHS eligibility pathway. Note: this scenario's expected result depends on MFB-838 — until that fix lands, PE may still compute SNAP eligibility internally via `snap: null` and incorrectly trigger categorical EHS eligibility.
 
 ---
 

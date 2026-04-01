@@ -97,6 +97,7 @@ Files committed to repo:
 [ ] Scenario 8 (Family at 130% FPL - Over-Income Pathway Upper Boundary, No Categorical): User should be **eligible**
 [ ] Scenario 9 (SNAP Recipient, Income Above 135% FPL - Categorical Override): User should be **eligible**
 [ ] Scenario 10 (Foster Child, Income Above 135% FPL - Foster Care Categorical Override): User should be **eligible**
+[ ] Scenario 11 (Family with High Income Above TX BBCE SNAP Threshold, No Categorical Eligibility): User should be **ineligible**
 
 ## Test Scenarios
 
@@ -107,7 +108,7 @@ Files committed to repo:
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `2`
-- **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1992` (age 34), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$1,800` per month, Insurance: `None`, Citizenship: `U.S. Citizen`
+- **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1992` (age 34), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$1,496` per month (~85% of 2025 FPL for HH of 2: $21,150/yr → $1,762/mo × 0.85 ≈ $1,496/mo), Insurance: `None`, Citizenship: `U.S. Citizen`
 - **Person 2 (Child)**: Relationship: `Child`, Birth month/year: `June 2022` (age 3, turning 4 in June), Has income: `No`, Insurance: `None`, Citizenship: `U.S. Citizen`
 - **Current Benefits**: Select `None`
 
@@ -122,7 +123,7 @@ Files committed to repo:
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `2`
-- **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1990` (age 36), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$3,200` per month (~$38,400 annually, ~155% FPL for HH of 2), Insurance: `None`
+- **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1990` (age 36), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$2,732` per month (~155% of 2025 FPL for HH of 2: $21,150/yr → $1,762/mo × 1.55 ≈ $2,732/mo), Insurance: `None`
 - **Person 2 (Foster Child)**: Relationship: `Foster Child`, Birth month/year: `March 2023` (age 3), Has income: `No`, Insurance: `None`
 - **Current Benefits**: Select `None`
 - **Citizenship**: Select `U.S. Citizen`
@@ -138,7 +139,7 @@ Files committed to repo:
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `2`
-- **Person 1 (Parent)**: Birth month/year: `January 1990` (age 36), Relationship: `Head of Household`, Has income: `Yes`, Employment income: `$2,900` per month (~$34,800 annually, ~140% FPL for HH of 2), Income frequency: `Monthly`, Insurance: `None`
+- **Person 1 (Parent)**: Birth month/year: `January 1990` (age 36), Relationship: `Head of Household`, Has income: `Yes`, Employment income: `$2,467` per month (~140% of 2025 FPL for HH of 2: $21,150/yr → $1,762/mo × 1.40 ≈ $2,467/mo), Income frequency: `Monthly`, Insurance: `None`
 - **Person 2 (Child)**: Birth month/year: `June 2022` (age 3), Relationship: `Child`, Has income: `No`, Insurance: `None`
 - **Current Benefits**: Select `TANF`
 - **Citizenship**: Select `U.S. Citizen`
@@ -154,7 +155,7 @@ Files committed to repo:
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `2`
-- **Person 1 (Head of Household)**: Birth month/year: `January 1991` (age 35), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$1,800` per month ($21,600 annually), Insurance: `None`
+- **Person 1 (Head of Household)**: Birth month/year: `January 1991` (age 35), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$1,496` per month (~85% of 2025 FPL for HH of 2: $21,150/yr → $1,762/mo × 0.85 ≈ $1,496/mo), Insurance: `None`
 - **Person 2 (Child)**: Birth month/year: `March 2023` (age exactly 3), Relationship: `Child`, Has income: `No`, Insurance: `None`
 - **Current Benefits**: Select `None` for all benefit programs
 - **Citizenship**: Citizenship status: `U.S. Citizen`
@@ -222,7 +223,7 @@ Files committed to repo:
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `3`
-- **Person 1 (Head of Household)**: Birth month/year: `January 1990` (age 36), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$2,797` per month (~$33,564 annually, ~130% FPL for HH of 3), Income frequency: `Monthly`, Insurance: `None`
+- **Person 1 (Head of Household)**: Birth month/year: `January 1990` (age 36), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$2,887` per month (~130% of 2025 FPL for HH of 3: $26,650/yr → $2,221/mo × 1.30 ≈ $2,887/mo), Income frequency: `Monthly`, Insurance: `None`
 - **Person 2 (Spouse)**: Birth month/year: `March 1991` (age 35), Relationship: `Spouse`, Has income: `No`, Insurance: `None`
 - **Person 3 (Child)**: Birth month/year: `June 2022` (age 4), Relationship: `Child`, Has income: `No`, Insurance: `None`
 - **Current Benefits**: Select `None` for all benefit programs
@@ -232,14 +233,14 @@ Files committed to repo:
 
 ---
 
-### Scenario 9: SNAP Recipient, Income Above 135% FPL - Categorical Override
+### Scenario 9: SNAP Recipient at 150% FPL - Categorical Override
 **What we're checking**: Validates that a family receiving SNAP is eligible for Head Start regardless of income, because SNAP receipt confers categorical eligibility
 **Expected**: Eligible
 
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `3`
-- **Person 1 (Head of Household)**: Birth month/year: `January 1988` (age 38), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$3,500` per month (~$42,000 annually, ~163% FPL for HH of 3), Income frequency: `Monthly`, Insurance: `None`
+- **Person 1 (Head of Household)**: Birth month/year: `January 1988` (age 38), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$3,331` per month (~150% of 2025 FPL for HH of 3: $26,650/yr → $2,221/mo × 1.50 ≈ $3,331/mo), Income frequency: `Monthly`, Insurance: `None`
 - **Person 2 (Spouse)**: Birth month/year: `March 1990` (age 36), Relationship: `Spouse`, Has income: `No`, Insurance: `None`
 - **Person 3 (Child)**: Birth month/year: `June 2022` (age 4), Relationship: `Child`, Has income: `No`, Insurance: `None`
 - **Current Benefits**: Select `SNAP`
@@ -256,11 +257,27 @@ Files committed to repo:
 **Steps**:
 - **Location**: Enter ZIP code `78701`, Select county `Travis`
 - **Household**: Number of people: `2`
-- **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1985` (age 41), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$4,000` per month (~$48,000 annually, ~194% FPL for HH of 2), Income frequency: `Monthly`, Insurance: `None`, Citizenship: `U.S. Citizen`
+- **Person 1 (Head of Household)**: Relationship: `Head of Household`, Birth month/year: `January 1985` (age 41), Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$3,435` per month (~195% of 2025 FPL for HH of 2: $21,150/yr → $1,762/mo × 1.95 ≈ $3,437/mo), Income frequency: `Monthly`, Insurance: `None`, Citizenship: `U.S. Citizen`
 - **Person 2 (Foster Child)**: Relationship: `Foster Child`, Birth month/year: `August 2022` (age 3), Has income: `No`, Insurance: `None`, Citizenship: `U.S. Citizen`
 - **Current Benefits**: Select `None`
 
 **Why this matters**: Tests that foster care status (45 CFR § 1302.12(c)(1)(iii)) independently qualifies a child regardless of family income, with no other categorical benefit (SNAP/TANF/SSI) present. The household income is nearly double the 100% FPL threshold, so eligibility must flow solely from foster care status. This isolates the foster care override pathway from the income and SNAP/TANF/SSI pathways.
+
+---
+
+### Scenario 11: Family with High Income Above TX BBCE SNAP Threshold, No Categorical Eligibility
+**What we're checking**: Validates that a family with income well above 135% FPL is ineligible for Head Start when there is no categorical eligibility (no SNAP, TANF, SSI, or foster care), and income is high enough to also be above the TX BBCE SNAP threshold so PolicyEngine does not compute SNAP eligibility internally
+**Expected**: Not eligible
+
+**Steps**:
+- **Location**: Enter ZIP code `78701`, Select county `Travis`
+- **Household**: Number of people: `3`
+- **Person 1 (Head of Household)**: Birth month/year: `January 1988` (age 38), Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$3,775` per month (~170% of 2025 FPL for HH of 3: $26,650/yr → $2,221/mo × 1.70 ≈ $3,775/mo), Income frequency: `Monthly`, Insurance: `None`, Citizenship: `U.S. Citizen`
+- **Person 2 (Spouse)**: Birth month/year: `March 1990` (age 36), Relationship: `Spouse`, Has income: `No`, Insurance: `None`, Citizenship: `U.S. Citizen`
+- **Person 3 (Child)**: Birth month/year: `June 2022` (age 3–4), Relationship: `Child`, Has income: `No`, Insurance: `None`, Citizenship: `U.S. Citizen`
+- **Current Benefits**: Select `None`
+
+**Why this matters**: Validates the income ceiling for Head Start (135% FPL) with no categorical override. The household income of $3,775/mo is ~170% FPL for a 3-person household — well above the 135% ceiling. The child is age-eligible and no categorical benefits are selected, so the only remaining eligibility question is income. The income also exceeds the TX BBCE SNAP gross income threshold (~$3,664/mo for a 3-person household, 165% of the SPM poverty threshold), ensuring PolicyEngine does not internally compute SNAP eligibility via categorical eligibility — which could otherwise incorrectly trigger Head Start eligibility through the `snap: null` pathway.
 
 ---
 

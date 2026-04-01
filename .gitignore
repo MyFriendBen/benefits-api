@@ -36,3 +36,6 @@ tasks/todo.md
 # AI tooling
 .claude/projects/
 .claude/settings.local.json
+
+# Readability check output files in readability-output folder
+readability-output/

@@ -7,7 +7,7 @@
   },
   "program": {
     "name_abbreviated": "tx_wap",
-    "year": "2025",
+    "year": "2026",
     "legal_status_required": ["citizen", "non_citizen", "gc_5plus", "gc_5less", "refugee", "otherWithWorkPermission"],
     "name": "Weatherization Assistance Program (WAP)",
     "description": "The Weatherization Assistance Program (WAP) helps lower your energy bills for free by making your home more energy efficient. This can include adding insulation, sealing air leaks, and fixing heating or cooling systems.\n\nAfter you apply, you will be placed on a waitlist. When it is your turn, a trained energy auditor will visit your home to find where energy is being wasted. Then a local contractor will do the work at no cost to you. Finally, an inspector checks the work when it is done.\n\nTo qualify, your household income must be at or below the program's limits. You can also qualify if anyone in your home gets SNAP (food stamps), SSI (disability benefits), or TANF (cash help). You must live in Texas. Both homeowners and renters can apply. Families with seniors, people with disabilities, or young children may get help sooner.\n\nIf you rent, your landlord must agree to the work before it can begin. If you live in a building with more than one unit, go ahead and apply — the program will check if enough of your neighbors qualify. You do not need to collect information from your neighbors yourself.\n\nA note on applying: After clicking our apply link, select \"Weatherization\", enter your city or county, and submit.",
@@ -20,7 +20,6 @@
     "estimated_value": "",
     "website_description": "Free home improvements to save energy and lower utility bills for low-income households"
   },
-  "warning_message": null,
   "documents": [
     {
       "external_name": "tx_home",
