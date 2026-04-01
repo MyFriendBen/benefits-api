@@ -1167,3 +1167,40 @@ class TestIsMedicaidEligibleDependency(TestCase):
         # Member has both Medicare and Medicaid — Medicaid dependency returns True,
         # which causes PolicyEngine to exclude them from QI.
         self.assertTrue(dep.value())
+
+
+class TestFosterCareDependency(TestCase):
+    """Tests for FosterCareDependency which maps fosterChild relationship to was_in_foster_care."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=2,
+            completed=False,
+        )
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=30)
+        self.foster_child = HouseholdMember.objects.create(screen=self.screen, relationship="fosterChild", age=4)
+        self.biological_child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=4)
+
+    def test_field_name(self):
+        """FosterCareDependency maps to the was_in_foster_care PE variable."""
+        dep = member.FosterCareDependency(self.screen, self.foster_child, {})
+        self.assertEqual(dep.field, "was_in_foster_care")
+
+    def test_value_returns_true_for_foster_child(self):
+        """Returns True when the member's relationship is fosterChild."""
+        dep = member.FosterCareDependency(self.screen, self.foster_child, {})
+        self.assertTrue(dep.value())
+
+    def test_value_returns_none_for_biological_child(self):
+        """Returns None for a child with a non-foster relationship (let PE calculate)."""
+        dep = member.FosterCareDependency(self.screen, self.biological_child, {})
+        self.assertIsNone(dep.value())
+
+    def test_value_returns_none_for_head_of_household(self):
+        """Returns None for the head of household (not a foster child)."""
+        dep = member.FosterCareDependency(self.screen, self.head, {})
+        self.assertIsNone(dep.value())

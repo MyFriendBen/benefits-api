@@ -403,6 +403,32 @@ class TxFpp(PolicyEngineMembersCalculator):
         return self.get_member_variable(member.id)
 
 
+class TxHeadStart(PolicyEngineMembersCalculator):
+    """
+    Texas Head Start calculator using PolicyEngine.
+
+    Federal early childhood program providing comprehensive education, health,
+    and family support services to low-income children (ages 3-5) and their families.
+
+    Eligibility (determined by PolicyEngine):
+        - Child must be age 3-5 (Early Head Start covers 0-2)
+        - Household income at or below 135% FPL
+        - Automatic eligibility for families eligible for or receiving SNAP, TANF, or SSI
+    """
+
+    pe_name = "head_start"
+    pe_inputs = [
+        dependency.member.AgeDependency,
+        dependency.member.FosterCareDependency,
+        dependency.household.TxStateCodeDependency,
+        *dependency.irs_gross_income,
+        dependency.member.Ssi,
+        dependency.spm.Snap,
+        dependency.spm.Tanf,
+    ]
+    pe_outputs = [dependency.member.HeadStart]
+
+
 class TxEarlyHeadStart(PolicyEngineMembersCalculator):
     """
     Texas Early Head Start calculator using PolicyEngine.
@@ -423,9 +449,10 @@ class TxEarlyHeadStart(PolicyEngineMembersCalculator):
     pe_inputs = [
         dependency.member.AgeDependency,
         dependency.member.PregnancyDependency,
+        dependency.member.FosterCareDependency,
         dependency.household.TxStateCodeDependency,
         *dependency.irs_gross_income,
-        dependency.member.SsiReportedDependency,
+        dependency.member.Ssi,
         dependency.spm.Snap,
         dependency.spm.Tanf,
     ]

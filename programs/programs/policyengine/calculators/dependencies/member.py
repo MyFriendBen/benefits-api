@@ -727,3 +727,14 @@ class IsMedicaidEligibleDependency(Member):
         if has_medicaid:
             return True
         return None
+
+
+class FosterCareDependency(Member):
+    field = "was_in_foster_care"
+    dependencies = ("relationship",)
+
+    def value(self):
+
+        if self.member.relationship == "fosterChild":
+            return True
+        return None
