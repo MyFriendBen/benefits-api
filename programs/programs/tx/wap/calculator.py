@@ -15,9 +15,7 @@ class TxWap(ProgramCalculator):
     ]
 
     def household_eligible(self, e: Eligibility):
-        categorically_eligible = any(
-            self.screen.has_benefit(program) for program in self.categorically_eligible
-        )
+        categorically_eligible = any(self.screen.has_benefit(program) for program in self.categorically_eligible)
 
         if categorically_eligible:
             e.condition(True, messages.presumed_eligibility())
