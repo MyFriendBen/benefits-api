@@ -6,6 +6,8 @@ from typing import ClassVar
 class TxWap(ProgramCalculator):
     fpl_percent = 2
     amount = 372
+    # NOTE: LIHEAP should also qualify for categorical eligibility, but is not currently available for TX
+    categorically_eligible = ["ssi", "tanf", "snap"]
     dependencies: ClassVar[list[str]] = [
         "household_size",
         "income_amount",
@@ -13,9 +15,8 @@ class TxWap(ProgramCalculator):
     ]
 
     def household_eligible(self, e: Eligibility):
-        # Categorical eligibility: SSI, TANF, or SNAP bypass the income test
-        categorically_eligible = (
-            self.screen.has_benefit("ssi") or self.screen.has_benefit("tanf") or self.screen.has_benefit("snap")
+        categorically_eligible = any(
+            self.screen.has_benefit(program) for program in self.categorically_eligible
         )
 
         if categorically_eligible:
