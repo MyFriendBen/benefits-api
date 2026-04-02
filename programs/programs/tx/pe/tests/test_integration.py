@@ -249,6 +249,19 @@ class TestTxTanfPeInput(TxPeInputTestBase):
         self.assertIn("age", people[head_id])
         self.assertIn("is_full_time_college_student", people[head_id])
 
+    def test_includes_tax_unit_dependent_dependency(self):
+        """Test that TxTanf populates is_tax_unit_dependent for all members.
+
+        This is required by PolicyEngine's tx_tanf_age_eligible_child formula, which
+        gates child eligibility on is_tax_unit_dependent. Without it the field defaults
+        to False and tx_tanf always returns $0.
+        """
+        result = pe_input(self.screen, [TxTanf])
+        people = result["household"]["people"]
+
+        for member in [self.head, self.spouse, self.child]:
+            self.assertIn("is_tax_unit_dependent", people[str(member.id)])
+
 
 # =============================================================================
 # Member Calculator Tests

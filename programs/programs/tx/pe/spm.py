@@ -45,6 +45,7 @@ class TxTanf(Tanf):
     pe_inputs = [
         *Tanf.pe_inputs,
         dependency.household.TxStateCodeDependency,
+        dependency.member.TaxUnitDependentDependency,
         dependency.spm.TxTanfCountableEarnedIncomeDependency,
         dependency.spm.TxTanfCountableUnearnedIncomeDependency,
     ]

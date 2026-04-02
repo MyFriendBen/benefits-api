@@ -12,7 +12,7 @@ as they test Screen model methods, not TX-specific logic.
 from django.test import TestCase
 
 from programs.programs.federal.pe.spm import Lifeline, Snap, SchoolLunch, Tanf
-from programs.programs.policyengine.calculators.dependencies import household, spm
+from programs.programs.policyengine.calculators.dependencies import household, member, spm
 from programs.programs.policyengine.calculators.dependencies.household import TxStateCodeDependency
 from programs.programs.tx.pe import tx_pe_calculators
 from programs.programs.tx.pe.spm import TxLifeline, TxSnap, TxNslp, TxTanf
@@ -229,6 +229,11 @@ class TestTxTanf(TestCase):
         # Verify TxStateCodeDependency is in the list
         self.assertIn(household.TxStateCodeDependency, TxTanf.pe_inputs)
 
+        # Verify TaxUnitDependentDependency is present — required because PolicyEngine's
+        # tx_tanf_age_eligible_child checks is_tax_unit_dependent to identify eligible
+        # children in the TX certified group (§ 372.104 / 1-TAC-372-307).
+        self.assertIn(member.TaxUnitDependentDependency, TxTanf.pe_inputs)
+
         # Verify TX-specific income dependencies are present
         self.assertIn(spm.TxTanfCountableEarnedIncomeDependency, TxTanf.pe_inputs)
         self.assertIn(spm.TxTanfCountableUnearnedIncomeDependency, TxTanf.pe_inputs)
@@ -250,6 +255,23 @@ class TestTxTanf(TestCase):
         # Verify it's configured correctly
         self.assertEqual(TxStateCodeDependency.state, "TX")
         self.assertEqual(TxStateCodeDependency.field, "state_code")
+
+    def test_pe_inputs_includes_tax_unit_dependent_dependency(self):
+        """
+        Test that TaxUnitDependentDependency is in TxTanf pe_inputs.
+
+        PolicyEngine's tx_tanf_age_eligible_child formula requires is_tax_unit_dependent
+        to identify eligible children in the TX certified group (per § 372.104 /
+        1-TAC-372-307). Without this dependency, is_tax_unit_dependent defaults to
+        False for all members, causing tx_tanf_eligible to always be False and the
+        program to return $0 for every household.
+
+        Other states (CO, IL, NC) use the federal is_demographic_tanf_eligible check
+        which only requires age and pregnancy — no is_tax_unit_dependent needed. TX is
+        unique in explicitly modeling the certified group composition this way.
+        """
+        self.assertIn(member.TaxUnitDependentDependency, TxTanf.pe_inputs)
+        self.assertEqual(member.TaxUnitDependentDependency.field, "is_tax_unit_dependent")
 
     def test_pe_inputs_includes_tx_tanf_income_dependencies(self):
         """
