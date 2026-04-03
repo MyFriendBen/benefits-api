@@ -450,6 +450,7 @@ class BaseProgram(models.TextChoices):
     LIHEAP = "liheap", "LIHEAP"
     WAP = "wap", "WAP"
     MEDICARE_SAVINGS = "medicare_savings", "Medicare Savings"
+    CCAP = "ccap", "CCAP"
 
 
 class ProgramManager(models.Manager):

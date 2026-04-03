@@ -98,6 +98,7 @@ TRACKING_PROGRAMS = [
         "name_abbreviated": "nc_cccap",
         "name_text": "NC Subsidized Child Care Assistance: ",
         "description_text": "Help with child care costs",
+        "base_program": "ccap",
     },
 ]
 

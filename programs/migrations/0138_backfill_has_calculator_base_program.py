@@ -88,6 +88,10 @@ NAME_TO_BASE_PROGRAM = {
     # Section 8
     "ma_cha": "section_8",
     "cesn_section_8": "section_8",
+    # CCAP
+    "cccap": "ccap",
+    "il_ccap": "ccap",
+    "nc_cccap": "ccap",
     # CSFP
     "il_csfp": "csfp",
     "tx_csfp": "csfp",
