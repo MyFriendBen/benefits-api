@@ -90,6 +90,7 @@ NAME_TO_BASE_PROGRAM = {
     "cesn_section_8": "section_8",
     # CCAP
     "cccap": "ccap",
+    "co_ccap": "ccap",
     "il_ccap": "ccap",
     "nc_cccap": "ccap",
     # CSFP
