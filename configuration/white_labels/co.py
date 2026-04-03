@@ -165,6 +165,7 @@ class CoConfigurationData(ConfigurationData):
         "theactioncenter": "The Action Center",
         "gac": "Get Ahead Colorado",
         "bia": "Benefits in Action",
+        "yab": "Youth Advisory Board",
         "fircsummitresourcecenter": {
             "_label": "referralOptions.fircsummitresourcecenter",
             "_default_message": "FIRC Summit Resource Center",
