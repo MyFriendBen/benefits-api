@@ -286,7 +286,7 @@ class TestTxTanf(TestCase):
         lets PolicyEngine apply the work expense deduction and earned income disregard through
         its own formula chain. The previous approach of passing gross income directly as
         tx_tanf_countable_earned_income bypassed these deductions, causing households with
-        gross wages between ~$188–$402/month (family of 3, 1 parent) to be incorrectly denied.
+        gross wages between ~$188-$402/month (family of 3, 1 parent) to be incorrectly denied.
         """
         for dep in irs_gross_income:
             self.assertIn(dep, TxTanf.pe_inputs)

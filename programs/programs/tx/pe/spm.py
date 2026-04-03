@@ -44,7 +44,7 @@ class TxTanf(Tanf):
     can compute tx_tanf_countable_earned_income correctly — applying the $120 work
     expense deduction and 1/3 earned income disregard per § 372.409. Passing gross
     income directly as tx_tanf_countable_earned_income (the previous approach) bypassed
-    these deductions and caused households with gross wages between ~$188–$402/month
+    these deductions and caused households with gross wages between ~$188-$402/month
     to be incorrectly denied for a family of 3 with 1 parent.
     """
 
