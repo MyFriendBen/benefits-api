@@ -2,7 +2,6 @@ from .nurse_family_partnership.calculator import CoNurseFamilyPartnership
 from .rtdlive.calculator import RtdLive
 from .child_care_assistance.calculator import ChildCareAssistance
 from .mydenver.calculator import MyDenver
-from .cash_back.calculator import CashBack
 from .energy_assistance.calculator import EnergyAssistance
 from .energy_resource_center.calculator import EnergyResourceCenter
 from .omnisalud.calculator import OmniSalud
@@ -39,7 +38,6 @@ co_calculators: dict[str, type[ProgramCalculator]] = {
     "rtdlive": RtdLive,
     "cccap": ChildCareAssistance,
     "mydenver": MyDenver,
-    "cocb": CashBack,
     "leap": EnergyAssistance,
     "erc": EnergyResourceCenter,
     "omnisalud": OmniSalud,
