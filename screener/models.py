@@ -479,7 +479,7 @@ class Screen(models.Model):
             "fatc": self.has_fatc,
             "ma_cha": self.has_section_8,
             "cowap": self.has_cowap,
-            "cesn_wap": self.has_cowap,
+            "cesn_cowap": self.has_cowap,
             "ncwap": self.has_ncwap,
             "ubp": self.has_ubp,
             "cesn_ubp": self.has_ubp,

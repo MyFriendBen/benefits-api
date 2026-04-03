@@ -293,7 +293,7 @@ def eligibility_results(screen: Screen, batch=False):
             "andcs",
             "cesn_leap",
             "cesn_eoc",
-            "cesn_wap",
+            "cesn_cowap",
             "cesn_ubp",
             "cesn_care",
         )

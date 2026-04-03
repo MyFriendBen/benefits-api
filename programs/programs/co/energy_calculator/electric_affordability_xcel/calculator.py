@@ -20,7 +20,7 @@ class EnergyCalculatorElectricityAffordabilityXcel(ProgramCalculator):
     presumptive_eligibility = [
         "cesn_leap",
         "cesn_eoc",
-        "cesn_wap",
+        "cesn_cowap",
         "cesn_ubp",
     ]
     electricity_providers = ["co-xcel-energy"]

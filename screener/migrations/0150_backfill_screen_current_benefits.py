@@ -78,7 +78,7 @@ NAME_TO_FIELD = {
     "fatc": "has_fatc",
     "ma_cha": "has_section_8",
     "cowap": "has_cowap",
-    "cesn_wap": "has_cowap",
+    "cesn_cowap": "has_cowap",
     "ncwap": "has_ncwap",
     "ubp": "has_ubp",
     "cesn_ubp": "has_ubp",
@@ -229,7 +229,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("screener", "0149_backfill_has_head_start_from_has_chs"),
-        ("programs", "0140_rename_cesn_cowap_to_cesn_wap"),
+        ("programs", "0139_delete_cocb_program"),
     ]
 
     operations = [

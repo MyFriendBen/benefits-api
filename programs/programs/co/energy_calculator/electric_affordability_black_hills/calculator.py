@@ -20,7 +20,7 @@ class EnergyCalculatorElectricityAffordabilityBlackHills(ProgramCalculator):
     presumptive_eligibility = [
         "cesn_leap",
         "cesn_eoc",
-        "cesn_wap",
+        "cesn_cowap",
         "cesn_ubp",
         "cesn_care",
     ]

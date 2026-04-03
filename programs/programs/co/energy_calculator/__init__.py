@@ -48,7 +48,7 @@ cesn_calculators: dict[str, type[ProgramCalculator]] = {
     "cesn_cpcr": EnergyCalculatorPropertyCreditRebate,
     "cesn_eoc": EnergyCalculatorEnergyOutreach,
     "cesn_ea": EnergyCalculatorEmergencyAssistance,
-    "cesn_wap": EnergyCalculatorWeatherizationAssistance,
+    "cesn_cowap": EnergyCalculatorWeatherizationAssistance,
     "cesn_eoccip": EnergyCalculatorEnergyOutreachCrisisIntervention,
     "cesn_xcelgap": EnergyCalculatorGasAffordabilityXcel,
     "cesn_xceleap": EnergyCalculatorElectricityAffordabilityXcel,

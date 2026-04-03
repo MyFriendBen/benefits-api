@@ -20,7 +20,7 @@ class EnergyCalculatorPercentageOfIncomePaymentPlan(ProgramCalculator):
     presumptive_eligibility = [
         "cesn_leap",
         "cesn_eoc",
-        "cesn_wap",
+        "cesn_cowap",
         "cesn_ubp",
     ]
     gas_providers = ["co-atmos-energy"]
