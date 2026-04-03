@@ -441,17 +441,15 @@ class BaseProgram(models.TextChoices):
     NSLP = "nslp", "NSLP"
     NFP = "nfp", "NFP"
     HEAD_START = "head_start", "Head Start"
+    EARLY_HEAD_START = "early_head_start", "Early Head Start"
     SECTION_8 = "section_8", "Section 8"
     CSFP = "csfp", "CSFP"
-    CHILD_CARE = "child_care", "Child Care"
     LIFELINE = "lifeline", "Lifeline"
     CHP = "chp", "CHP"
     OAP = "oap", "OAP"
-    ENERGY_ASSISTANCE = "energy_assistance", "Energy Assistance"
-    WEATHERIZATION = "weatherization", "Weatherization"
-    CCS = "ccs", "CCS"
-    PELL_GRANT = "pell_grant", "Pell Grant"
-    SUNBUCKS = "sunbucks", "Sun Bucks"
+    LIHEAP = "liheap", "LIHEAP"
+    WAP = "wap", "WAP"
+    MEDICARE_SAVINGS = "medicare_savings", "Medicare Savings"
 
 
 class ProgramManager(models.Manager):

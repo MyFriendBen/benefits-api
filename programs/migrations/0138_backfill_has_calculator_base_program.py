@@ -81,9 +81,10 @@ NAME_TO_BASE_PROGRAM = {
     "co_head_start": "head_start",
     "nc_head_start": "head_start",
     "ma_head_start": "head_start",
-    "ma_early_head_start": "head_start",
     "tx_head_start": "head_start",
-    "tx_early_head_start": "head_start",
+    # Early Head Start
+    "ma_early_head_start": "early_head_start",
+    "tx_early_head_start": "early_head_start",
     # Section 8
     "ma_cha": "section_8",
     "cesn_section_8": "section_8",
@@ -91,46 +92,37 @@ NAME_TO_BASE_PROGRAM = {
     "il_csfp": "csfp",
     "tx_csfp": "csfp",
     "ma_csfp": "csfp",
-    # Child Care
-    "cccap": "child_care",
-    "il_ccap": "child_care",
-    "ma_ccdf": "child_care",
-    "nc_scca": "child_care",
-    "nc_cccap": "child_care",
+
+
     # Lifeline
     "lifeline": "lifeline",
+    "tx_lifeline": "lifeline",
     # CHP
     "chp": "chp",
     "cesn_chp": "chp",
     # OAP
     "oap": "oap",
     "cesn_oap": "oap",
-    # Energy Assistance
-    "leap": "energy_assistance",
-    "cesn_leap": "energy_assistance",
-    "nc_leap": "energy_assistance",
-    "nc_lieap": "energy_assistance",
-    "ma_heap": "energy_assistance",
-    "il_liheap": "energy_assistance",
-    "nccip": "energy_assistance",
+    # Energy Assistance (LIHEAP variants)
+    "leap": "liheap",
+    "cesn_leap": "liheap",
+    "nc_leap": "liheap",
+    "nc_lieap": "liheap",
+    "ma_heap": "liheap",
+    "il_liheap": "liheap",
     # Weatherization
-    "cowap": "weatherization",
-    "cesn_cowap": "weatherization",
-    "ncwap": "weatherization",
-    "tx_wap": "weatherization",
-    # CCS
-    "ccs": "ccs",
-    "tx_ccs": "ccs",
-    # Pell Grant
-    "pell_grant": "pell_grant",
-    # Sun Bucks
-    "sunbucks": "sunbucks",
+    "cowap": "wap",
+    "cesn_cowap": "wap",
+    "ncwap": "wap",
+    "tx_wap": "wap",
     # AND-CS
     "andcs": "andcs",
     "cesn_andcs": "andcs",
     # Medicare Savings
     "nc_medicare_savings": "medicare_savings",
     "medicare_savings": "medicare_savings",
+    "il_msp": "medicare_savings",
+    "tx_medicare_savings_program": "medicare_savings",
 }
 
 # Programs that exist solely for tracking (no eligibility calculator).
