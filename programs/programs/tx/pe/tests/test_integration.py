@@ -224,12 +224,14 @@ class TestTxTanfPeInput(TxPeInputTestBase):
         """Test that TxTanf includes TX-specific dependencies."""
         result = pe_input(self.screen, [TxTanf])
         household = result["household"]
-        spm_unit = household["spm_units"]["spm_unit"]
+        people = household["people"]
         household_unit = household["households"]["household"]
 
-        # TX TANF income dependencies
-        self.assertIn("tx_tanf_countable_earned_income", spm_unit)
-        self.assertIn("tx_tanf_countable_unearned_income", spm_unit)
+        # Income is provided at the person level so PE can apply the $120 work expense
+        # deduction and 1/3 earned income disregard (§ 372.409) through its own formula.
+        head_id = str(self.head.id)
+        self.assertIn("employment_income", people[head_id])
+        self.assertIn("self_employment_income", people[head_id])
 
         # TX state code
         self.assertIn("state_code", household_unit)

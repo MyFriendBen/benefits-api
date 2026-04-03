@@ -12,7 +12,7 @@ as they test Screen model methods, not TX-specific logic.
 from django.test import TestCase
 
 from programs.programs.federal.pe.spm import Lifeline, Snap, SchoolLunch, Tanf
-from programs.programs.policyengine.calculators.dependencies import household, member, spm
+from programs.programs.policyengine.calculators.dependencies import household, irs_gross_income, member, spm
 from programs.programs.policyengine.calculators.dependencies.household import TxStateCodeDependency
 from programs.programs.tx.pe import tx_pe_calculators
 from programs.programs.tx.pe.spm import TxLifeline, TxSnap, TxNslp, TxTanf
@@ -234,9 +234,10 @@ class TestTxTanf(TestCase):
         # children in the TX certified group (§ 372.104 / 1-TAC-372-307).
         self.assertIn(member.TaxUnitDependentDependency, TxTanf.pe_inputs)
 
-        # Verify TX-specific income dependencies are present
-        self.assertIn(spm.TxTanfCountableEarnedIncomeDependency, TxTanf.pe_inputs)
-        self.assertIn(spm.TxTanfCountableUnearnedIncomeDependency, TxTanf.pe_inputs)
+        # Verify person-level income dependencies are present so PE can apply the $120
+        # work expense deduction and 1/3 earned income disregard (§ 372.409)
+        for dep in irs_gross_income:
+            self.assertIn(dep, TxTanf.pe_inputs)
 
         # Verify all parent inputs are present
         for parent_input in Tanf.pe_inputs:
@@ -273,26 +274,26 @@ class TestTxTanf(TestCase):
         self.assertIn(member.TaxUnitDependentDependency, TxTanf.pe_inputs)
         self.assertEqual(member.TaxUnitDependentDependency.field, "is_tax_unit_dependent")
 
-    def test_pe_inputs_includes_tx_tanf_income_dependencies(self):
+    def test_pe_inputs_includes_person_level_income_dependencies(self):
         """
-        Test that TX-specific TANF income dependencies are properly added.
+        Test that person-level income dependencies are in TxTanf pe_inputs.
 
-        TX TANF requires specific countable income calculations that differ from
-        other states' TANF programs.
+        TX TANF income eligibility uses two tests (§ 372.408):
+          - Budgetary needs test: income after $120 work expense < budgetary needs standard
+          - Recognizable needs test: income after work expense + 1/3 disregard < 25% of standard
+
+        Providing income at the person level (employment_income, self_employment_income, etc.)
+        lets PolicyEngine apply the work expense deduction and earned income disregard through
+        its own formula chain. The previous approach of passing gross income directly as
+        tx_tanf_countable_earned_income bypassed these deductions, causing households with
+        gross wages between ~$188–$402/month (family of 3, 1 parent) to be incorrectly denied.
         """
-        # Verify earned income dependency is in pe_inputs
-        self.assertIn(spm.TxTanfCountableEarnedIncomeDependency, TxTanf.pe_inputs)
-        self.assertEqual(
-            spm.TxTanfCountableEarnedIncomeDependency.field,
-            "tx_tanf_countable_earned_income",
-        )
+        for dep in irs_gross_income:
+            self.assertIn(dep, TxTanf.pe_inputs)
 
-        # Verify unearned income dependency is in pe_inputs
-        self.assertIn(spm.TxTanfCountableUnearnedIncomeDependency, TxTanf.pe_inputs)
-        self.assertEqual(
-            spm.TxTanfCountableUnearnedIncomeDependency.field,
-            "tx_tanf_countable_unearned_income",
-        )
+        # Confirm the old SPM-level overrides are NOT used
+        self.assertNotIn(spm.TxTanfCountableEarnedIncomeDependency, TxTanf.pe_inputs)
+        self.assertNotIn(spm.TxTanfCountableUnearnedIncomeDependency, TxTanf.pe_inputs)
 
     def test_pe_outputs_includes_tx_tanf(self):
         """
