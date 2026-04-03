@@ -2,7 +2,6 @@
 
 from django.db import migrations
 
-
 # Programs to create as tracking-only (has_calculator=False, show_in_has_benefits_step=True).
 # These are generic/cross-WL programs that exist in the category_benefits config for a white label
 # but don't have a Program record scoped to that WL. They allow the CurrentBenefit join table
@@ -92,14 +91,13 @@ TRACKING_PROGRAMS = [
         "name_abbreviated": "nc_leap",
         "name_text": "NC LIEAP (Low-Income Energy Assistance Program): ",
         "description_text": "Help with winter heating bills",
-        "base_program": "energy_assistance",
+        "base_program": "liheap",
     },
     {
         "white_label_code": "nc",
         "name_abbreviated": "nc_cccap",
         "name_text": "NC Subsidized Child Care Assistance: ",
         "description_text": "Help with child care costs",
-        "base_program": "child_care",
     },
 ]
 
@@ -111,9 +109,14 @@ def create_tracking_programs(apps, schema_editor):
     complex Translation FK creation that historical models can't support.
     """
     from programs.models import Program
+    from screener.models import WhiteLabel
     from translations.models import Translation
 
     for p in TRACKING_PROGRAMS:
+        # Skip if white label doesn't exist (e.g. in CI test databases)
+        if not WhiteLabel.objects.filter(code=p["white_label_code"]).exists():
+            continue
+
         # Skip if already exists
         if Program.objects.filter(
             white_label__code=p["white_label_code"],

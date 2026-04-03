@@ -48,7 +48,6 @@ NAME_TO_FIELD = {
     "rtdlive": "has_rtdlive",
     "cccap": "has_ccap",
     "mydenver": "has_mydenver",
-
     "tx_csfp": "has_csfp",
     "tx_harris_rides": "has_harris_county_rides",
     "andcs": "has_andcs",
