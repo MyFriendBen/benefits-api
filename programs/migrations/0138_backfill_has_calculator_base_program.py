@@ -112,7 +112,7 @@ NAME_TO_BASE_PROGRAM = {
     "il_liheap": "liheap",
     # Weatherization
     "cowap": "wap",
-    "cesn_cowap": "wap",
+    "cesn_wap": "wap",
     "ncwap": "wap",
     "tx_wap": "wap",
     # AND-CS

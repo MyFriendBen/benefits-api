@@ -20,7 +20,7 @@ class EnergyCalculatorGasAffordabilityXcel(ProgramCalculator):
     presumptive_eligibility = [
         "cesn_leap",
         "cesn_eoc",
-        "cesn_cowap",
+        "cesn_wap",
         "cesn_ubp",
     ]
     gas_providers = ["co-xcel-energy-gas"]
