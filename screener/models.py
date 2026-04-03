@@ -521,7 +521,21 @@ class Screen(models.Model):
             "tx_dart": self.has_tx_dart,
             "ccs": self.has_ccs,
             "tx_ccs": self.has_ccs,
+            "tx_ssdi": self.has_ssdi,
             "ma_ssp": self.has_ma_ssp,
+            "cesn_snap": self.has_snap,
+            "cesn_tanf": self.has_tanf,
+            "cesn_wic": self.has_wic,
+            "cesn_ssi": has_ssi_or_ssi_income,
+            "cesn_ssdi": self.has_ssdi,
+            "cesn_chp": self.has_chp or self.has_chp_hi,
+            "cesn_oap": self.has_oap,
+            "cesn_section_8": self.has_section_8,
+            "cesn_rtdlive": self.has_rtdlive,
+            "cesn_andcs": self.has_andcs,
+            "cesn_medicaid": self.has_medicaid,
+            "nc_leap": self.has_leap,
+            "nc_cccap": self.has_ccap,
         }
 
         if name_abbreviated in name_map:

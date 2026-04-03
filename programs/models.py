@@ -428,6 +428,32 @@ class Document(models.Model):
         return f"{white_label_name}{name}"
 
 
+class BaseProgram(models.TextChoices):
+    SNAP = "snap", "SNAP"
+    TANF = "tanf", "TANF"
+    WIC = "wic", "WIC"
+    SSI = "ssi", "SSI"
+    SSDI = "ssdi", "SSDI"
+    MEDICAID = "medicaid", "Medicaid"
+    ACA = "aca", "ACA"
+    EITC = "eitc", "EITC"
+    CTC = "ctc", "CTC"
+    NSLP = "nslp", "NSLP"
+    NFP = "nfp", "NFP"
+    HEAD_START = "head_start", "Head Start"
+    SECTION_8 = "section_8", "Section 8"
+    CSFP = "csfp", "CSFP"
+    CHILD_CARE = "child_care", "Child Care"
+    LIFELINE = "lifeline", "Lifeline"
+    CHP = "chp", "CHP"
+    OAP = "oap", "OAP"
+    ENERGY_ASSISTANCE = "energy_assistance", "Energy Assistance"
+    WEATHERIZATION = "weatherization", "Weatherization"
+    CCS = "ccs", "CCS"
+    PELL_GRANT = "pell_grant", "Pell Grant"
+    SUNBUCKS = "sunbucks", "Sun Bucks"
+
+
 class ProgramManager(models.Manager):
     translated_fields = (
         "description_short",
@@ -633,6 +659,14 @@ class Program(models.Model):
     )
     show_in_has_benefits_step = models.BooleanField(
         default=False, help_text="Show this program in the 'already has benefits' screener step"
+    )
+    has_calculator = models.BooleanField(default=True, help_text="Whether this program has an eligibility calculator")
+    base_program = models.CharField(
+        max_length=32,
+        choices=BaseProgram.choices,
+        blank=True,
+        null=True,
+        help_text="Cross-white-label program grouping for analytics (e.g. co_snap, il_snap → snap)",
     )
     year = models.ForeignKey(
         FederalPoveryLimit,

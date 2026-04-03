@@ -116,7 +116,19 @@ NAME_TO_FIELD = {
     "tx_dart": "has_tx_dart",
     "ccs": "has_ccs",
     "tx_ccs": "has_ccs",
+    "tx_ssdi": "has_ssdi",
     "ma_ssp": "has_ma_ssp",
+    "cesn_snap": "has_snap",
+    "cesn_tanf": "has_tanf",
+    "cesn_wic": "has_wic",
+    "cesn_ssdi": "has_ssdi",
+    "cesn_oap": "has_oap",
+    "cesn_section_8": "has_section_8",
+    "cesn_rtdlive": "has_rtdlive",
+    "cesn_andcs": "has_andcs",
+    "cesn_medicaid": "has_medicaid",
+    "nc_leap": "has_leap",
+    "nc_cccap": "has_ccap",
 }
 
 
@@ -174,7 +186,7 @@ def backfill_current_benefits(apps, schema_editor):
         # --- Compound cases: mirror Screen.has_benefit() exactly ---
 
         # SSI: has_ssi=True OR any income stream with type="sSI" and amount > 0
-        ssi_program_ids = [programs_by_name[n] for n in ("ssi", "tx_ssi") if n in programs_by_name]
+        ssi_program_ids = [programs_by_name[n] for n in ("ssi", "tx_ssi", "cesn_ssi") if n in programs_by_name]
         if ssi_program_ids:
             for screen_id in (
                 Screen.objects.filter(white_label_id=white_label_id)
@@ -191,7 +203,7 @@ def backfill_current_benefits(apps, schema_editor):
                 enqueue(screen_id, ssi_program_ids)
 
         # CHP: has_chp=True OR has_chp_hi=True
-        chp_program_ids = [programs_by_name["chp"]] if "chp" in programs_by_name else []
+        chp_program_ids = [programs_by_name[n] for n in ("chp", "cesn_chp") if n in programs_by_name]
         if chp_program_ids:
             for screen_id in (
                 Screen.objects.filter(white_label_id=white_label_id)
@@ -218,6 +230,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("screener", "0149_backfill_has_head_start_from_has_chs"),
+        ("programs", "0137_create_tracking_programs"),
     ]
 
     operations = [
