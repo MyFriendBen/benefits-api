@@ -454,14 +454,18 @@ class ProgramManager(models.Manager):
                 no_auto=(field in self.no_auto_fields),
             )
 
-        # try to set the external_name to the name_abbreviated
-        external_name_exists = self.filter(external_name=name_abbreviated).count() > 0
+        # external_name must be globally unique — raise if already taken
+        if self.filter(external_name=name_abbreviated).exists():
+            raise ValueError(
+                f"A Program with external_name='{name_abbreviated}' already exists. "
+                "Provide an explicit, unique external_name for this white-label variant."
+            )
 
         # set white label
         white_label = WhiteLabel.objects.get(code=white_label)
         program = self.create(
             name_abbreviated=name_abbreviated,
-            external_name=name_abbreviated if not external_name_exists else None,
+            external_name=name_abbreviated,
             year=None,
             active=False,
             low_confidence=False,
@@ -1602,6 +1606,11 @@ class WarningMessageDataController(ModelDataController["WarningMessage"]):
         # get programs
         programs = []
         for external_name in data["programs"]:
+            if external_name is None:
+                raise ValueError(
+                    "WarningMessage references a program with external_name=None. "
+                    "Fix the program data before re-importing."
+                )
             program_instance = Program.objects.get(external_name=external_name)
             programs.append(program_instance)
         warning.programs.set(programs)
