@@ -32,6 +32,10 @@ class TxStateCodeDependency(StateCode):
     state = "TX"
 
 
+class WaStateCodeDependency(StateCode):
+    state = "WA"
+
+
 class CountyDependency(Household):
     field: ClassVar[str] = "county_str"
     dependencies: ClassVar[list[str]] = ["county"]
