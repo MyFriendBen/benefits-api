@@ -94,7 +94,7 @@ NAME_TO_FIELD = {
     "ma_wic": "has_wic",
     "ma_eaedc": "has_ma_eaedc",
     "ma_maeitc": "has_ma_maeitc",
-    "ma_cfc": "has_ma_macfc",
+    "ma_cfc": "has_ma_cfc",
     "ma_homebridge": "has_ma_homebridge",
     "ma_dhsp_afterschool": "has_ma_dhsp_afterschool",
     "ma_door_to_door": "has_ma_door_to_door",

@@ -421,7 +421,7 @@ class Command(BaseCommand):
             "screen.has_ma_ssp": "Has Massachusetts State Supplement Program",
             "screen.has_ma_mbta": "Has Massachusetts MBTA reduced fare",
             "screen.has_ma_maeitc": "Has Massachusetts Earned Income Tax Credit",
-            "screen.has_ma_macfc": "Has Massachusetts Child and Family Tax Credit",
+            "screen.has_ma_cfc": "Has Massachusetts Child and Family Tax Credit",
             "screen.has_ma_homebridge": "Has Massachusetts HomeBridge program",
             "screen.has_ma_dhsp_afterschool": "Has Massachusetts DHSP Afterschool program",
             "screen.has_ma_door_to_door": "Has Massachusetts Door to Door transportation",

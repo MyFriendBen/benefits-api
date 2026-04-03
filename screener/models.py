@@ -125,7 +125,7 @@ class Screen(models.Model):
     has_ma_ssp = models.BooleanField(default=False, blank=True, null=True)
     has_ma_mbta = models.BooleanField(default=False, blank=True, null=True)
     has_ma_maeitc = models.BooleanField(default=False, blank=True, null=True)
-    has_ma_macfc = models.BooleanField(default=False, blank=True, null=True)
+    has_ma_cfc = models.BooleanField(default=False, blank=True, null=True)
     has_ma_homebridge = models.BooleanField(default=False, blank=True, null=True)
     has_ma_dhsp_afterschool = models.BooleanField(default=False, blank=True, null=True)
     has_ma_door_to_door = models.BooleanField(default=False, blank=True, null=True)
@@ -497,7 +497,7 @@ class Screen(models.Model):
             "ma_wic": self.has_wic,
             "ma_eaedc": self.has_ma_eaedc,
             "ma_maeitc": self.has_ma_maeitc,
-            "ma_cfc": self.has_ma_macfc,
+            "ma_cfc": self.has_ma_cfc,
             "ma_homebridge": self.has_ma_homebridge,
             "ma_dhsp_afterschool": self.has_ma_dhsp_afterschool,
             "ma_door_to_door": self.has_ma_door_to_door,
