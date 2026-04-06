@@ -90,7 +90,6 @@ class TestNPSScoreSerializer(TestCase):
         with self.assertRaises(Exception):
             serializer2.save()  # But save should fail
 
-
     def test_uses_most_recent_snapshot(self):
         """Test that serializer uses the most recent non-error snapshot."""
         # Create a newer snapshot (self.snapshot from setUp is older)
