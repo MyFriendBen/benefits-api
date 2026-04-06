@@ -444,7 +444,7 @@ class ProgramManager(models.Manager):
     )
     no_auto_fields = ("apply_button_link", "learn_more_link")
 
-    def new_program(self, white_label: str, name_abbreviated: str):
+    def new_program(self, white_label: str, name_abbreviated: str, external_name: Optional[str] = None):
         translations = {}
         for field in self.translated_fields:
             default_message = "" if field == "apply_button_description" else BLANK_TRANSLATION_PLACEHOLDER
@@ -454,18 +454,16 @@ class ProgramManager(models.Manager):
                 no_auto=(field in self.no_auto_fields),
             )
 
+        candidate_external_name = external_name or f"{name_abbreviated}_{white_label}"
         # external_name must be globally unique — raise if already taken
-        if self.filter(external_name=name_abbreviated).exists():
-            raise ValueError(
-                f"A Program with external_name='{name_abbreviated}' already exists. "
-                "Provide an explicit, unique external_name for this white-label variant."
-            )
+        if self.filter(external_name=candidate_external_name).exists():
+            raise ValueError(f"A Program with external_name='{candidate_external_name}' already exists.")
 
         # set white label
         white_label = WhiteLabel.objects.get(code=white_label)
         program = self.create(
             name_abbreviated=name_abbreviated,
-            external_name=name_abbreviated,
+            external_name=candidate_external_name,
             year=None,
             active=False,
             low_confidence=False,
