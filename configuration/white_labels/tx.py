@@ -53,7 +53,6 @@ class TxConfigurationData(ConfigurationData):
             "_default_message": "Test / Prospective Partner",
         },
         "ctl": "Center for Transforming Lives",
-        "pce": "PACE",
     }
 
     acute_condition_options = {

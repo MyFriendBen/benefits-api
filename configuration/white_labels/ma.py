@@ -139,6 +139,7 @@ class MaConfigurationData(ConfigurationData):
         "bch": "Boston Children's Hospital",
         "masscap": "MASSCAP",
         "ccf": "Cambridge Community Foundation",
+        "pce": "PACE",
         "socialMedia": {"_label": "referralOptions.socialMedia", "_default_message": "Social Media"},
         "friend": {"_label": "referralOptions.friend", "_default_message": "Friend / Family / Word of Mouth"},
         "merit": {"_label": "referralOptions.merit", "_default_message": "Merit America"},
