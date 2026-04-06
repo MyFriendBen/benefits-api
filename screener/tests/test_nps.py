@@ -2,7 +2,7 @@
 Unit tests for NPS (Net Promoter Score) functionality.
 """
 
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from rest_framework.test import APITestCase
 from unittest.mock import patch
 from rest_framework import status
@@ -126,7 +126,7 @@ class TestNPSScoreView(APITestCase):
         # Disable throttle limits for testing
         patcher = patch("screener.views.NPSRateThrottle.allow_request", return_value=True)
         patcher.start()
-        self.addCleanup(patch.stopall)
+        self.addCleanup(patcher.stop)
 
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
         self.screen = Screen.objects.create(
@@ -313,7 +313,7 @@ class TestNPSScoreReasonView(APITestCase):
         # Disable throttle limits for testing
         patcher = patch("screener.views.NPSRateThrottle.allow_request", return_value=True)
         patcher.start()
-        self.addCleanup(patch.stopall)
+        self.addCleanup(patcher.stop)
 
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
         self.screen = Screen.objects.create(
