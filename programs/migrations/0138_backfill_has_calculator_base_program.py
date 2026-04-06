@@ -117,9 +117,6 @@ NAME_TO_BASE_PROGRAM = {
     "cesn_cowap": "wap",
     "ncwap": "wap",
     "tx_wap": "wap",
-    # AND-CS
-    "andcs": "andcs",
-    "cesn_andcs": "andcs",
     # Medicare Savings
     "nc_medicare_savings": "medicare_savings",
     "medicare_savings": "medicare_savings",

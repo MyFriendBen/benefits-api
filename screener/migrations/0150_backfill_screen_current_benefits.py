@@ -28,6 +28,7 @@ NAME_TO_FIELD = {
     "il_snap": "has_snap",
     "tx_snap": "has_snap",
     "lifeline": "has_lifeline",
+    "tx_lifeline": "has_lifeline",
     "acp": "has_acp",
     "eitc": "has_eitc",
     "tx_eitc": "has_eitc",
@@ -232,5 +233,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        # RunPython.noop as reverse: rolling back this migration would leave CurrentBenefit rows
+        # from before the backfill, which is acceptable — the authoritative source of truth is
+        # the has_* columns on Screen, not this join table (Phase 2 dual-write only).
+        # Re-running the migration forward will re-populate the table correctly.
         migrations.RunPython(backfill_current_benefits, migrations.RunPython.noop),
     ]

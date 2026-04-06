@@ -144,15 +144,17 @@ def _sync_current_benefits(screen):
     Reads still come from has_* columns — this is Phase 2 dual-write only.
 
     Uses select_for_update() inside a transaction to serialize concurrent PATCH requests
-    on the same screen and prevent races on the delete+bulk_create.
+    on the same screen and prevent races on the delete+bulk_create. The screen is re-fetched
+    inside the atomic block so program_ids_to_write reflects the post-lock committed state.
     """
-    program_ids_to_write = [
-        program.id
-        for program in Program.objects.filter(white_label=screen.white_label)
-        if screen.has_benefit(program.name_abbreviated)
-    ]
     with transaction.atomic():
-        Screen.objects.select_for_update().get(pk=screen.pk)
+        screen = Screen.objects.select_for_update().get(pk=screen.pk)
+        benefit_map = screen._build_benefit_map()
+        program_ids_to_write = [
+            program.id
+            for program in Program.objects.filter(white_label=screen.white_label)
+            if benefit_map.get(program.name_abbreviated, False)
+        ]
         CurrentBenefit.objects.filter(screen=screen).delete()
         if program_ids_to_write:
             CurrentBenefit.objects.bulk_create(
