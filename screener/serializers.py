@@ -502,8 +502,7 @@ class NPSScoreSerializer(serializers.Serializer):
         try:
             nps_score = NPSScore.objects.create(eligibility_snapshot=snapshot, **validated_data)
             logger.info(
-                f"NPS score created: score={nps_score.score}, "
-                f"snapshot_id={snapshot.id}, screen_uuid={uuid}"
+                f"NPS score created: score={nps_score.score}, " f"snapshot_id={snapshot.id}, screen_uuid={uuid}"
             )
             return nps_score
         except IntegrityError:
