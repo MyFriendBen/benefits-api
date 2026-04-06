@@ -490,7 +490,6 @@ def get_latest_eligibility_snapshot(screen_uuid):
 class NPSScoreSerializer(serializers.Serializer):
     uuid = serializers.UUIDField(write_only=True)
     score = serializers.IntegerField(min_value=1, max_value=10)
-    variant = serializers.ChoiceField(choices=NPSScore.Variant.choices, required=False, allow_null=True)
 
     def create(self, validated_data: dict) -> NPSScore:
         uuid = validated_data.pop("uuid")
@@ -503,7 +502,7 @@ class NPSScoreSerializer(serializers.Serializer):
         try:
             nps_score = NPSScore.objects.create(eligibility_snapshot=snapshot, **validated_data)
             logger.info(
-                f"NPS score created: score={nps_score.score}, variant={nps_score.variant}, "
+                f"NPS score created: score={nps_score.score}, "
                 f"snapshot_id={snapshot.id}, screen_uuid={uuid}"
             )
             return nps_score

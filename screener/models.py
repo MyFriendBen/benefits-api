@@ -1016,18 +1016,8 @@ class EligibilitySnapshot(models.Model):
 
 
 class NPSScore(models.Model):
-    class Variant(models.TextChoices):
-        FLOATING = "floating", "Floating Widget"
-        INLINE = "inline", "Inline Section"
-
     eligibility_snapshot = models.OneToOneField(EligibilitySnapshot, related_name="nps_score", on_delete=models.CASCADE)
     score = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(10)])
-    variant = models.CharField(
-        max_length=20,
-        choices=Variant.choices,
-        blank=True,
-        null=True,
-    )
     score_reason = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -1040,7 +1030,6 @@ class NPSScore(models.Model):
         ]
         indexes = [
             models.Index(fields=["-created_at"], name="nps_created_at_idx"),
-            models.Index(fields=["variant"], name="nps_variant_idx"),
         ]
 
     def __str__(self):

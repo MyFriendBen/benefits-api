@@ -211,30 +211,30 @@ Controls A/B test variant assignment. The frontend reads the variants list and u
 
 ```python
 experiments = {
-    "npsVariant": {"variants": ["floating", "inline"]},
+    "exampleExperiment": {"variants": ["A", "B"]},
 }
 ```
 
 - Each experiment key maps to a dict with a `"variants"` list
 - All active variants must be listed — the frontend picks one per user based on their UUID
 - Use the feature flag (not experiments) to disable a feature entirely
-- To skip the A/B test and show one variant to all users, use a single-item list: `"variants": ["floating"]`
+- To skip the A/B test and show one variant to all users, use a single-item list: `"variants": ["A"]`
 
 **Feature flags vs experiments (per white label):**
 
 | Want | Feature Flag | Experiment Config |
 |------|-------------|-------------------|
-| NPS off | `nps_survey: false` | doesn't matter |
-| NPS on, A/B test | `nps_survey: true` | `{"variants": ["floating", "inline"]}` |
-| NPS on, single variant | `nps_survey: true` | `{"variants": ["floating"]}` |
+| Feature off | `example_feature: false` | doesn't matter |
+| Feature on, A/B test | `example_feature: true` | `{"variants": ["A", "B"]}` |
+| Feature on, single variant | `example_feature: true` | `{"variants": ["A"]}` |
 
-- Experiments can be overridden per white label, e.g. to run the A/B test in Colorado but show only the floating widget in Illinois:
+- Experiments can be overridden per white label, e.g. to run the A/B test in Colorado but show only variant A in Illinois:
 
 ```python
-# In il.py — feature is on (via feature flag) but no A/B test, everyone sees floating
+# In il.py — feature is on (via feature flag) but no A/B test, everyone sees A
 class IlConfigurationData(ConfigurationData):
     experiments = {
-        "npsVariant": {"variants": ["floating"]},
+        "exampleExperiment": {"variants": ["A"]},
     }
 ```
 
@@ -242,6 +242,8 @@ class IlConfigurationData(ConfigurationData):
 1. Add the key and variants to `experiments` in `base.py`
 2. Run `python manage.py add_config --all` to update the database
 3. Read the experiment config on the frontend and implement variant logic
+
+> **Note:** NPS is no longer an A/B experiment. It is controlled solely by the `nps_survey` feature flag and always renders the inline variant.
 
 ### 6. Other Sections
 
