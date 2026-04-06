@@ -6,6 +6,7 @@ from django.test import TestCase, override_settings
 from rest_framework.test import APITestCase
 from unittest.mock import patch
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from screener.models import Screen, WhiteLabel, EligibilitySnapshot, NPSScore
 from screener.serializers import NPSScoreSerializer, NPSScoreReasonSerializer
 
@@ -72,7 +73,7 @@ class TestNPSScoreSerializer(TestCase):
         serializer = NPSScoreSerializer(data=data)
 
         self.assertTrue(serializer.is_valid())  # UUID format is valid
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             serializer.save()  # But no snapshot exists
 
     def test_duplicate_submission_rejected(self):
@@ -87,7 +88,7 @@ class TestNPSScoreSerializer(TestCase):
         # Second submission should fail
         serializer2 = NPSScoreSerializer(data={"uuid": str(self.screen.uuid), "score": 9})
         self.assertTrue(serializer2.is_valid())  # Data is valid
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             serializer2.save()  # But save should fail
 
     def test_uses_most_recent_snapshot(self):
@@ -113,7 +114,7 @@ class TestNPSScoreSerializer(TestCase):
         serializer = NPSScoreSerializer(data=data)
         self.assertTrue(serializer.is_valid())
 
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             serializer.save()  # No valid snapshot exists
 
 
@@ -246,7 +247,7 @@ class TestNPSScoreReasonSerializer(TestCase):
         serializer = NPSScoreReasonSerializer(data=data)
 
         self.assertTrue(serializer.is_valid())
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             serializer.get_nps_score(serializer.validated_data["uuid"])
 
     def test_no_nps_score_exists(self):
@@ -257,7 +258,7 @@ class TestNPSScoreReasonSerializer(TestCase):
         serializer = NPSScoreReasonSerializer(data=data)
 
         self.assertTrue(serializer.is_valid())
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             serializer.get_nps_score(serializer.validated_data["uuid"])
 
     def test_missing_score_reason(self):
@@ -300,7 +301,7 @@ class TestNPSScoreReasonSerializer(TestCase):
         serializer = NPSScoreReasonSerializer(data=data)
         self.assertTrue(serializer.is_valid())
 
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             serializer.get_nps_score(serializer.validated_data["uuid"])
 
 
