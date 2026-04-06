@@ -118,38 +118,41 @@ def create_tracking_programs(apps, schema_editor):
         if not WhiteLabel.objects.filter(code=p["white_label_code"]).exists():
             continue
 
-        # Skip if already exists
-        if Program.objects.filter(
+        existing = Program.objects.filter(
             white_label__code=p["white_label_code"],
             name_abbreviated=p["name_abbreviated"],
-        ).exists():
-            continue
+        ).first()
 
-        program = Program.objects.new_program(
-            white_label=p["white_label_code"],
-            name_abbreviated=p["name_abbreviated"],
-        )
-        program.active = False
-        program.has_calculator = False
-        program.show_in_has_benefits_step = True
-        program.base_program = p.get("base_program")
-        program.save()
+        if existing:
+            program = existing
+        else:
+            program = Program.objects.new_program(
+                white_label=p["white_label_code"],
+                name_abbreviated=p["name_abbreviated"],
+            )
+            program.active = False
+            program.has_calculator = False
+            program.show_in_has_benefits_step = True
+            program.base_program = p.get("base_program")
+            program.save()
 
-        # Set name and description translations from config text
-        Translation.objects.edit_translation(
+        # Always update translations — ensures correct text even if program was created
+        # by an earlier version of this migration that lacked or had wrong translation calls.
+        # Uses add_translation (not edit_translation) because add_translation explicitly calls
+        # set_current_language() before saving, which is required for parler to write to the
+        # correct language row. edit_translation skips that call and saves to whatever language
+        # happens to be active at runtime (in a migration context: "en", not "en-us").
+        Translation.objects.add_translation(
             f"program.{p['name_abbreviated']}_{program.id}-name",
-            "en",
-            p["name_text"],
+            default_message=p["name_text"],
         )
-        Translation.objects.edit_translation(
+        Translation.objects.add_translation(
             f"program.{p['name_abbreviated']}_{program.id}-description_short",
-            "en",
-            p["description_text"],
+            default_message=p["description_text"],
         )
-        Translation.objects.edit_translation(
+        Translation.objects.add_translation(
             f"program.{p['name_abbreviated']}_{program.id}-website_description",
-            "en",
-            p["description_text"],
+            default_message=p["description_text"],
         )
 
 
