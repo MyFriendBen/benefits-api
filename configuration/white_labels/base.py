@@ -148,12 +148,12 @@ class ConfigurationData:
 
     # "How did you hear about us?" options on referral source step
     referral_options = {
-        "[REPLACE_ME]": {"_label": "", "_default_message": ""},
+        "searchEngine": {"_label": "referralOptions.searchEngine", "_default_message": "Google or other search engine"},
+        "socialMedia": {"_label": "referralOptions.socialMedia", "_default_message": "Social Media"},
+        "friend": {"_label": "referralOptions.friend", "_default_message": "Friend / Family / Word of Mouth"},
+        "merit": {"_label": "referralOptions.merit", "_default_message": "Merit America"},
         "other": {"_label": "referralOptions.other", "_default_message": "Other"},
-        "testOrProspect": {
-            "_label": "referralOptions.testOrProspect",
-            "_default_message": "Test / Prospective Partner",
-        },
+        "testOrProspect": {"_label": "referralOptions.testOrProspect", "_default_message": "Test / Prospective Partner"},
     }
 
     # Languages available for translation (add/remove as needed for your state)
@@ -315,39 +315,11 @@ class ConfigurationData:
                     "_default_message": "Private (student or non-employer) health insurance",
                 },
             },
-            "medicaid": {
-                "icon": {"_icon": "Medicaid", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.medicaid",
-                    "_default_message": "Health First Colorado (Full Medicaid)",
-                },
-            },
             "medicare": {
                 "icon": {"_icon": "Medicare", "_classname": "option-card-icon"},
                 "text": {
                     "_label": "healthInsuranceOptions.medicare",
                     "_default_message": "Medicare",
-                },
-            },
-            "chp": {
-                "icon": {"_icon": "Chp", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.chp",
-                    "_default_message": "Child Health Plan Plus (CHP+)",
-                },
-            },
-            "emergency_medicaid": {
-                "icon": {"_icon": "Emergency_medicaid", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.emergency_medicaid",
-                    "_default_message": "Emergency Medicaid / Reproductive Health",
-                },
-            },
-            "family_planning": {
-                "icon": {"_icon": "Family_planning", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.family_planning",
-                    "_default_message": "Family Planning Limited Medicaid",
                 },
             },
             "va": {
@@ -380,39 +352,11 @@ class ConfigurationData:
                     "_default_message": "Private (student or non-employer) health insurance",
                 },
             },
-            "medicaid": {
-                "icon": {"_icon": "Medicaid", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.medicaid",
-                    "_default_message": "Health First Colorado (Full Medicaid)",
-                },
-            },
             "medicare": {
                 "icon": {"_icon": "Medicare", "_classname": "option-card-icon"},
                 "text": {
                     "_label": "healthInsuranceOptions.medicare",
                     "_default_message": "Medicare",
-                },
-            },
-            "chp": {
-                "icon": {"_icon": "Chp", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.chp",
-                    "_default_message": "Child Health Plan Plus (CHP+)",
-                },
-            },
-            "emergency_medicaid": {
-                "icon": {"_icon": "Emergency_medicaid", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.emergency_medicaid",
-                    "_default_message": "Emergency Medicaid / Reproductive Health",
-                },
-            },
-            "family_planning": {
-                "icon": {"_icon": "Family_planning", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.family_planning",
-                    "_default_message": "Family Planning Limited Medicaid",
                 },
             },
             "va": {

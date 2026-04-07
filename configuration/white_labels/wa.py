@@ -38,69 +38,13 @@ class WaConfigurationData(ConfigurationData):
     }
 
     # ==========================================================================================
-    # REFERRAL OPTIONS
-    # ==========================================================================================
-
-    referral_options = {
-        "searchEngine": {
-            "_label": "referralOptions.searchEngine",
-            "_default_message": "Google or other search engine",
-        },
-        "socialMedia": {
-            "_label": "referralOptions.socialMedia",
-            "_default_message": "Social Media",
-        },
-        "friend": {
-            "_label": "referralOptions.friend",
-            "_default_message": "Friend / Family / Word of Mouth",
-        },
-        "employer": {
-            "_label": "referralOptions.employer",
-            "_default_message": "Employer or workplace",
-        },
-        "communityOrg": {
-            "_label": "referralOptions.communityOrg",
-            "_default_message": "Community organization or nonprofit",
-        },
-        "governmentAgency": {
-            "_label": "referralOptions.governmentAgency",
-            "_default_message": "Government agency",
-        },
-        "other": {"_label": "referralOptions.other", "_default_message": "Other"},
-        "testOrProspect": {
-            "_label": "referralOptions.testOrProspect",
-            "_default_message": "Test / Prospective Partner",
-        },
-    }
-
-    # ==========================================================================================
     # HEALTH INSURANCE OPTIONS
     # Washington Medicaid is "Apple Health"; CHIP equivalent is "Apple Health for Kids"
     # ==========================================================================================
 
     health_insurance_options = {
         "you": {
-            "none": {
-                "icon": {"_icon": "None", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.none-dont-know-I",
-                    "_default_message": "I don't have or know if I have health insurance",
-                },
-            },
-            "employer": {
-                "icon": {"_icon": "Employer", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.employer",
-                    "_default_message": "Employer-provided health insurance",
-                },
-            },
-            "private": {
-                "icon": {"_icon": "PrivateInsurance", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.private",
-                    "_default_message": "Private (student or non-employer) health insurance",
-                },
-            },
+            **ConfigurationData.health_insurance_options["you"],
             "medicaid": {
                 "icon": {"_icon": "Medicaid", "_classname": "option-card-icon"},
                 "text": {
@@ -108,50 +52,16 @@ class WaConfigurationData(ConfigurationData):
                     "_default_message": "Apple Health (Medicaid)",
                 },
             },
-            "medicare": {
-                "icon": {"_icon": "Medicare", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.medicare",
-                    "_default_message": "Medicare",
-                },
-            },
             "chp": {
                 "icon": {"_icon": "Chp", "_classname": "option-card-icon"},
                 "text": {
                     "_label": "healthInsuranceOptions.chp.wa",
                     "_default_message": "Apple Health for Kids",
-                },
-            },
-            "va": {
-                "icon": {"_icon": "VA", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.va",
-                    "_default_message": "VA health care benefits",
                 },
             },
         },
         "them": {
-            "none": {
-                "icon": {"_icon": "None", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.none-dont-know-they",
-                    "_default_message": "They don't have or know if they have health insurance",
-                },
-            },
-            "employer": {
-                "icon": {"_icon": "Employer", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.employer",
-                    "_default_message": "Employer-provided health insurance",
-                },
-            },
-            "private": {
-                "icon": {"_icon": "PrivateInsurance", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.private",
-                    "_default_message": "Private (student or non-employer) health insurance",
-                },
-            },
+            **ConfigurationData.health_insurance_options["them"],
             "medicaid": {
                 "icon": {"_icon": "Medicaid", "_classname": "option-card-icon"},
                 "text": {
@@ -159,25 +69,11 @@ class WaConfigurationData(ConfigurationData):
                     "_default_message": "Apple Health (Medicaid)",
                 },
             },
-            "medicare": {
-                "icon": {"_icon": "Medicare", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.medicare",
-                    "_default_message": "Medicare",
-                },
-            },
             "chp": {
                 "icon": {"_icon": "Chp", "_classname": "option-card-icon"},
                 "text": {
                     "_label": "healthInsuranceOptions.chp.wa",
                     "_default_message": "Apple Health for Kids",
-                },
-            },
-            "va": {
-                "icon": {"_icon": "VA", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.va",
-                    "_default_message": "VA health care benefits",
                 },
             },
         },
