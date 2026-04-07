@@ -150,6 +150,7 @@ class CoConfigurationData(ConfigurationData):
     referral_options = {
         "211co": "2-1-1 Colorado",
         "cch": "Colorado Coalition for the Homeless",
+        "cwe": "Center for Work Education and Employment",
         "frca": "Family Resource Center Association",
         "achs": "Adams County Human Services",
         "arapahoectypublichealth": "Arapahoe County Public Health",
