@@ -455,7 +455,10 @@ class DocumentAdmin(SecureAdmin):
 
 
 class ReferrerAdmin(SecureAdmin):
-    search_fields = ("referrer_code",)
+    search_fields = ("referrer_code", "name")
+    list_display = ("referrer_code", "name", "white_label", "show_in_dropdown")
+    list_filter = ("white_label", "show_in_dropdown")
+    list_editable = ("show_in_dropdown",)
     white_label_filter_horizontal = (
         "primary_navigators",
         "remove_programs",

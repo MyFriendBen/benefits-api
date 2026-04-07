@@ -1712,15 +1712,21 @@ class Referrer(models.Model):
         blank=False,
         on_delete=models.CASCADE,
     )
-    referrer_code = models.CharField(max_length=64, unique=True)
+    referrer_code = models.CharField(max_length=64)
+    name = models.CharField(max_length=255, blank=True, default="")
+    show_in_dropdown = models.BooleanField(default=True)
     webhook_url = models.CharField(max_length=320, blank=True, null=True)
     webhook_functions = models.ManyToManyField(WebHookFunction, related_name="web_hook", blank=True)
     primary_navigators = models.ManyToManyField(Navigator, related_name="primary_navigators", blank=True)
     remove_programs = models.ManyToManyField(Program, related_name="removed_programs", blank=True)
 
+    class Meta:
+        unique_together = ("white_label", "referrer_code")
+
     def __str__(self):
         white_label_name = f"[{self.white_label.name}] " if self.white_label and self.white_label.name else ""
-        return f"{white_label_name}{self.referrer_code}"
+        display = self.name or self.referrer_code
+        return f"{white_label_name}{display}"
 
 
 class TranslationOverrideManager(models.Manager):

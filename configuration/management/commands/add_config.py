@@ -5,6 +5,7 @@ from configuration.models import (
     Configuration,
 )
 from configuration.white_labels import white_label_config
+from programs.models import Referrer
 from screener.models import NPSScore
 import argparse
 
@@ -156,12 +157,26 @@ class Command(BaseCommand):
                 defaults={"data": WhiteLabelData.relationship_options, "active": True},
             )
 
-            # Save referral_options to database
+            # Save referral_options to database (kept for backward compatibility)
             Configuration.objects.update_or_create(
                 name="referral_options",
                 white_label=white_label,
                 defaults={"data": WhiteLabelData.referral_options, "active": True},
             )
+
+            # Seed Referrer rows from referral_options
+            for code, value in WhiteLabelData.referral_options.items():
+                if isinstance(value, str):
+                    display_name = value
+                elif isinstance(value, dict) and "_default_message" in value:
+                    display_name = value["_default_message"]
+                else:
+                    display_name = ""
+                Referrer.objects.update_or_create(
+                    white_label=white_label,
+                    referrer_code=code,
+                    defaults={"name": display_name, "show_in_dropdown": True},
+                )
 
             # Save income_categories to database
             Configuration.objects.update_or_create(
