@@ -1859,7 +1859,7 @@ class CoConfigurationData(ConfigurationData):
             "benefits": {
                 "tanf": {
                     "name": {
-                        "_label": "cashAssistanceBenefits.tanf",
+                        "_label": "co.cashAssistanceBenefits.tanf",
                         "_default_message": "Temporary Assistance for Needy Families/Colorado Works (TANF): ",
                     },
                     "description": {
