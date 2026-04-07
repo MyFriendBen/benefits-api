@@ -15,7 +15,8 @@ def extract_display_name(value):
 
 
 def seed_referrer_rows(apps, schema_editor):
-    """Create Referrer rows from existing referral_options Configuration data.
+    """Create Referrer rows from existing referral_options Configuration data,
+    then delete the Configuration rows since nothing reads them anymore.
 
     For each WL's referral_options config, create a Referrer row per option.
     Uses update_or_create to avoid conflicting with existing Referrer rows
@@ -40,6 +41,10 @@ def seed_referrer_rows(apps, schema_editor):
                     "show_in_dropdown": True,
                 },
             )
+
+    # Note: we keep the referral_options Configuration rows in the DB because the
+    # frontend config loader expects them to exist. The ConfigurationSerializer
+    # overrides the data with Referrer model data at serialization time.
 
 
 def reverse_seed(apps, schema_editor):

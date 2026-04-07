@@ -12,4 +12,9 @@ urlpatterns = [
     path("api-auth/", include("rest_framework.urls", namespace="rest_framework")),
     path("eligibility/<id>", views.EligibilityTranslationView.as_view(), name="translated screen eligibility endpoint"),
     path("screens/<uuid:screen_uuid>/nps/", views.NPSScoreView.as_view(), name="nps-score"),
+    path(
+        "screener-options/<str:white_label>/referral-sources/",
+        views.ReferralSourcesView.as_view(),
+        name="referral-sources",
+    ),
 ]

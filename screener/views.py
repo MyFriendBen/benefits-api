@@ -1,8 +1,10 @@
 import hashlib
+from collections import OrderedDict
 from typing import Optional
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from integrations.services.communications import MessageUser
+from programs.models import Referrer
 from programs.programs.helpers import STATE_MEDICAID_OPTIONS
 from programs.programs.policyengine.calculators.registry import all_calculators
 from programs.programs.urgent_needs.base import UrgentNeedFunction
@@ -643,3 +645,25 @@ class NPSScoreView(views.APIView):
             serializer.update(nps_score, serializer.validated_data)
             return Response({"status": "success"}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ReferralSourcesView(views.APIView):
+    """Returns referral source options for the screener dropdown.
+
+    Response is an ordered dict of {referrer_code: display_name}.
+    """
+
+    permission_classes = [permissions.DjangoModelPermissions]
+    queryset = Referrer.objects.none()  # Required for DjangoModelPermissions
+
+    def get(self, request, white_label):
+        referrers = Referrer.objects.filter(
+            white_label__code=white_label,
+            show_in_dropdown=True,
+        ).order_by("pk")
+
+        options = OrderedDict()
+        for ref in referrers:
+            options[ref.referrer_code] = ref.name
+
+        return Response(options)
