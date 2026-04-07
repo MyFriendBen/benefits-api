@@ -52,6 +52,7 @@ class TxConfigurationData(ConfigurationData):
             "_label": "referralOptions.testOrProspect",
             "_default_message": "Test / Prospective Partner",
         },
+        "ctl": "Center for Transforming Lives",
     }
 
     acute_condition_options = {
