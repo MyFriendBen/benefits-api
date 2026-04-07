@@ -51,7 +51,7 @@ def reverse_seed(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("programs", "0140_add_referrer_name_dropdown_and_per_wl_uniqueness"),
+        ("programs", "0141_add_referrer_name_dropdown_and_per_wl_uniqueness"),
         ("configuration", "0005_alter_configuration_white_label"),
     ]
 

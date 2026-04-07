@@ -6,21 +6,10 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("screener", "0150_backfill_screen_current_benefits"),
         ("programs", "0139_delete_cocb_program"),
     ]
 
     operations = [
-        migrations.AddField(
-            model_name="referrer",
-            name="name",
-            field=models.CharField(blank=True, default="", max_length=255),
-        ),
-        migrations.AddField(
-            model_name="referrer",
-            name="show_in_dropdown",
-            field=models.BooleanField(default=True),
-        ),
         migrations.AlterField(
             model_name="program",
             name="base_program",
@@ -54,14 +43,5 @@ class Migration(migrations.Migration):
                 max_length=32,
                 null=True,
             ),
-        ),
-        migrations.AlterField(
-            model_name="referrer",
-            name="referrer_code",
-            field=models.CharField(max_length=64),
-        ),
-        migrations.AlterUniqueTogether(
-            name="referrer",
-            unique_together={("white_label", "referrer_code")},
         ),
     ]
