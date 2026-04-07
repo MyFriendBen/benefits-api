@@ -1,11 +1,12 @@
 import logging
 from datetime import date
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
-from programs.models import WarningMessage
+from programs.models import Program, WarningMessage
 from screener.models import (
+    CurrentBenefit,
     EnergyCalculatorMember,
     EnergyCalculatorScreen,
     Screen,
@@ -134,6 +135,31 @@ class HouseholdMemberSerializer(serializers.ModelSerializer):
             "is_care_worker",
         )
         read_only_fields = ("screen", "id")
+
+
+def _sync_current_benefits(screen):
+    """
+    Syncs CurrentBenefit rows for a screen based on has_* column values.
+    Called on every POST/PATCH so the join table stays in sync with the authoritative has_* columns.
+    Reads still come from has_* columns — this is Phase 2 dual-write only.
+
+    Uses select_for_update() inside a transaction to serialize concurrent PATCH requests
+    on the same screen and prevent races on the delete+bulk_create. The screen is re-fetched
+    inside the atomic block so program_ids_to_write reflects the post-lock committed state.
+    """
+    with transaction.atomic():
+        screen = Screen.objects.select_for_update().get(pk=screen.pk)
+        benefit_map = screen._build_benefit_map()
+        program_ids_to_write = [
+            program.id
+            for program in Program.objects.filter(white_label=screen.white_label)
+            if benefit_map.get(program.name_abbreviated, False)
+        ]
+        CurrentBenefit.objects.filter(screen=screen).delete()
+        if program_ids_to_write:
+            CurrentBenefit.objects.bulk_create(
+                [CurrentBenefit(screen=screen, program_id=pid) for pid in program_ids_to_write]
+            )
 
 
 class ScreenSerializer(serializers.ModelSerializer):
@@ -324,6 +350,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             Expense.objects.create(**expense, screen=screen)
         if energy_calculator_screen is not None:
             EnergyCalculatorScreen.objects.create(**energy_calculator_screen, screen=screen)
+        _sync_current_benefits(screen)
         return screen
 
     def update(self, instance, validated_data):
@@ -360,6 +387,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             EnergyCalculatorScreen.objects.create(**energy_calculator_screen, screen=instance)
         instance.refresh_from_db()
         instance.set_screen_is_test()
+        _sync_current_benefits(instance)
         return instance
 
 
