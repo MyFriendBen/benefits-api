@@ -6,6 +6,7 @@ from .il import il_calculators
 from .ma import ma_calculators
 from .nc import nc_calculators
 from .tx import tx_calculators
+from .wa import wa_calculators
 
 calculators: dict[str, type[ProgramCalculator]] = {
     **co_calculators,
@@ -15,4 +16,5 @@ calculators: dict[str, type[ProgramCalculator]] = {
     **ma_calculators,
     **nc_calculators,
     **tx_calculators,
+    **wa_calculators,
 }
