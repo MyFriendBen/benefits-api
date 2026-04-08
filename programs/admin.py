@@ -459,6 +459,20 @@ class ReferrerAdmin(SecureAdmin):
     list_display = ("referrer_code", "name", "white_label", "show_in_dropdown", "is_partner")
     list_filter = ("white_label", "show_in_dropdown", "is_partner")
     list_editable = ("show_in_dropdown", "is_partner")
+    help_texts = {
+        "referrer_code": (
+            "Used as the <code>referralSource</code> URL parameter to pre-fill the referral source field. "
+            "Example: <code>https://myfriendben.org/co/?referralSource=bia</code>"
+        ),
+    }
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        for field_name, help_text in self.help_texts.items():
+            if field_name in form.base_fields:
+                form.base_fields[field_name].help_text = help_text
+        return form
+
     white_label_filter_horizontal = (
         "primary_navigators",
         "remove_programs",
