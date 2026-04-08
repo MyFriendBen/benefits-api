@@ -1,6 +1,4 @@
-# Generated migration to remove the variant field from NPSScore.
-# The NPS survey is no longer an A/B experiment — it is controlled solely
-# by the 'nps_survey' feature flag and always renders the inline variant.
+# Migration to remove the variant field from NPSScore.
 
 from django.db import migrations
 
@@ -8,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("screener", "0149_backfill_has_head_start_from_has_chs"),
+        ("screener", "0150_backfill_screen_current_benefits"),
     ]
 
     operations = [

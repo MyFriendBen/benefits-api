@@ -243,7 +243,6 @@ class IlConfigurationData(ConfigurationData):
 2. Run `python manage.py add_config --all` to update the database
 3. Read the experiment config on the frontend and implement variant logic
 
-> **Note:** NPS is no longer an A/B experiment. It is controlled solely by the `nps_survey` feature flag and always renders the inline variant.
 
 ### 6. Other Sections
 
