@@ -45,12 +45,20 @@ This directory contains configuration files for MyFriendBen white labels (state/
 
 7. **Add referral options in Django admin:**
 
-   Referral options are managed via the `Referrer` model, not config files. After running `add_config`:
+   Referral options are managed via Django admin → Programs → Referrers. Add a row for each dropdown option with: `white_label` = your new WL, `referrer_code` = the stored key, `name` = the display label, `show_in_dropdown` = True.
 
-   - Go to Django admin → Programs → Referrers
-   - Add a row for each dropdown option with: `white_label` = your new WL, `referrer_code` = the stored key, `name` = the display label, `show_in_dropdown` = True
-   - Always include an `other` code — the frontend uses it as the free-text fallback
-   - Copy the standard generic options from an existing WL (searchEngine, socialMedia, friend, merit, other, testOrProspect) and add any WL-specific partner codes
+   Every WL should include these standard generic codes (copy from an existing WL):
+
+   | referrer_code | name |
+   |---|---|
+   | `searchEngine` | Google or other search engine |
+   | `socialMedia` | Social Media |
+   | `friend` | Friend / Family / Word of Mouth |
+   | `merit` | Merit America |
+   | `other` | Other |
+   | `testOrProspect` | Test / Prospective Partner |
+
+   Then add any WL-specific partner codes on top of those. The `referral_options` dict in the config file serves as documentation for what codes belong to each WL.
 
 8. **Update Fillout Feedback Form:**
 
@@ -256,7 +264,7 @@ class IlConfigurationData(ConfigurationData):
 
 - **`acute_condition_options`** - Urgent needs in the "Additional Resources" step
   - Icon names must be defined in `benefits-calculator/src/Components/Results/helpers.ts` (`ICON_OPTIONS_MAP`)
-- **`referral_options`** - "How did you hear about us?" options — **kept as documentation only**. These are no longer loaded by `add_config`. After running `add_config`, you must manually create `Referrer` rows for the new WL via Django admin (Programs → Referrers). Each option needs a `referrer_code` (the stored value), a `name` (the display label), and `show_in_dropdown=True`. The `other` code must always be present for the free-text fallback to work. See existing WL config files for the standard set of generic options to include.
+- **`referral_options`** - "How did you hear about us?" options — defined here as documentation/reference, but managed via Django admin (Programs → Referrers). See step 7 above for how to add them when setting up a new WL.
 - **`language_options`** - Available translations
 - **`income_categories`** - Translatable category labels for income (e.g. `incomeCategories.employment`)
 - **`income_options_by_category`** - Income types grouped by category. When overriding, use the spread pattern to inherit base and only override the categories that differ.
