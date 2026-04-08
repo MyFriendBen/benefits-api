@@ -461,8 +461,8 @@ class ReferrerAdmin(SecureAdmin):
     list_editable = ("show_in_dropdown", "is_partner")
     help_texts = {
         "referrer_code": (
-            "Used as the <code>referralSource</code> URL parameter to pre-fill the referral source field. "
-            "Example: <code>https://myfriendben.org/co/?referralSource=bia</code>"
+            "Used as the <code>referrer</code> URL parameter to pre-fill the referral source field. "
+            "Example: <code>https://screener.myfriendben.org/co?referrer=bia</code>"
         ),
     }
 
