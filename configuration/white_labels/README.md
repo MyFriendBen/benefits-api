@@ -264,7 +264,6 @@ class IlConfigurationData(ConfigurationData):
 
 - **`acute_condition_options`** - Urgent needs in the "Additional Resources" step
   - Icon names must be defined in `benefits-calculator/src/Components/Results/helpers.ts` (`ICON_OPTIONS_MAP`)
-- **`referral_options`** - "How did you hear about us?" options — defined here as documentation/reference, but managed via Django admin (Programs → Referrers). See step 7 above for how to add them when setting up a new WL.
 - **`language_options`** - Available translations
 - **`income_categories`** - Translatable category labels for income (e.g. `incomeCategories.employment`)
 - **`income_options_by_category`** - Income types grouped by category. When overriding, use the spread pattern to inherit base and only override the categories that differ.
