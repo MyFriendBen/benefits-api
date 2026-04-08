@@ -112,6 +112,35 @@ class TestReferralSourcesView(APITestCase):
         self.assertEqual(response.data["generic"]["searchEngine"], "Google or other search engine")
         self.assertEqual(response.data["partners"]["bia"], "Benefits in Action")
 
+    def test_generic_sorted_alphabetically(self):
+        """Generic options are returned in alphabetical order by name."""
+        response = self.client.get(self.url)
+
+        names = list(response.data["generic"].values())
+        self.assertEqual(names, sorted(names))
+
+    def test_partners_sorted_alphabetically(self):
+        """Partner options are returned in alphabetical order by name."""
+        Referrer.objects.create(
+            white_label=self.white_label,
+            referrer_code="zzz",
+            name="Zzz Partner",
+            show_in_dropdown=True,
+            is_partner=True,
+        )
+        Referrer.objects.create(
+            white_label=self.white_label,
+            referrer_code="aaa",
+            name="Aaa Partner",
+            show_in_dropdown=True,
+            is_partner=True,
+        )
+
+        response = self.client.get(self.url)
+
+        names = list(response.data["partners"].values())
+        self.assertEqual(names, sorted(names))
+
     def test_blank_name_is_rejected(self):
         """Referrer name must be non-blank — the DB constraint rejects empty strings."""
         from django.db import IntegrityError
