@@ -1715,6 +1715,7 @@ class Referrer(models.Model):
     referrer_code = models.CharField(max_length=64)
     name = models.CharField(max_length=255)
     show_in_dropdown = models.BooleanField(default=True)
+    is_partner = models.BooleanField(default=False)
     webhook_url = models.CharField(max_length=320, blank=True, null=True)
     webhook_functions = models.ManyToManyField(WebHookFunction, related_name="web_hook", blank=True)
     primary_navigators = models.ManyToManyField(Navigator, related_name="primary_navigators", blank=True)

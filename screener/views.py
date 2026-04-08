@@ -1,5 +1,4 @@
 import hashlib
-from collections import OrderedDict
 from typing import Optional
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -649,9 +648,15 @@ class NPSScoreView(views.APIView):
 
 
 class ReferralSourcesView(views.APIView):
-    """Returns referral source options for the screener dropdown.
+    """Returns referral source options for the screener dropdown, grouped by type.
 
-    Response is an ordered dict of {referrer_code: display_name}.
+    Response shape:
+        {
+            "generic": {"friend": "Friend / Family", ...},
+            "partners": {"bia": "Benefits in Action", ...}
+        }
+
+    Both groups are sorted alphabetically by display name.
     """
 
     permission_classes = [permissions.DjangoModelPermissions]
@@ -661,10 +666,14 @@ class ReferralSourcesView(views.APIView):
         referrers = Referrer.objects.filter(
             white_label__code=white_label,
             show_in_dropdown=True,
-        ).order_by("pk")
+        ).order_by("name")
 
-        options = OrderedDict()
+        generic = {}
+        partners = {}
         for ref in referrers:
-            options[ref.referrer_code] = ref.name or ref.referrer_code
+            if ref.is_partner:
+                partners[ref.referrer_code] = ref.name
+            else:
+                generic[ref.referrer_code] = ref.name
 
-        return Response(options)
+        return Response({"generic": generic, "partners": partners})

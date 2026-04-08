@@ -21,6 +21,11 @@ class Migration(migrations.Migration):
             name="show_in_dropdown",
             field=models.BooleanField(default=True),
         ),
+        migrations.AddField(
+            model_name="referrer",
+            name="is_partner",
+            field=models.BooleanField(default=False),
+        ),
         migrations.AlterField(
             model_name="referrer",
             name="referrer_code",
