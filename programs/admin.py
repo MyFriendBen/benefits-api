@@ -465,6 +465,10 @@ class ReferrerAdmin(SecureAdmin):
             "Example: <code>https://screener.myfriendben.org/co?referrer=bia</code>"
         ),
         "name": "The label displayed to users in the referral source dropdown.",
+        "is_partner": (
+            "If checked, this referrer is treated as a named partner organization and grouped under "
+            '"Partners" in the screener dropdown. Leave unchecked for generic options like Friend, Google, etc.'
+        ),
     }
 
     def get_form(self, request, obj=None, **kwargs):
