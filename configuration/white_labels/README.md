@@ -58,7 +58,7 @@ This directory contains configuration files for MyFriendBen white labels (state/
    | `other` | Other |
    | `testOrProspect` | Test / Prospective Partner |
 
-   Then add any WL-specific partner codes on top of those. The `referral_options` dict in the config file serves as documentation for what codes belong to each WL.
+   Then add any WL-specific partner codes on top of those.
 
 8. **Update Fillout Feedback Form:**
 
