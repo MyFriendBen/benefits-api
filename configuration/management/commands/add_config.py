@@ -156,9 +156,6 @@ class Command(BaseCommand):
                 defaults={"data": WhiteLabelData.relationship_options, "active": True},
             )
 
-            # referral_options are now managed via the Referrer model in Django admin.
-            # The data migration (0142) handles the initial seed from config files.
-
             # Save income_categories to database
             Configuration.objects.update_or_create(
                 name="income_categories",
