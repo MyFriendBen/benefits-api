@@ -215,7 +215,8 @@ def translations_prefetch_name(prefix: str, fields):
 def eligibility_results(screen: Screen, batch=False):
     try:
         referrer = Referrer.objects.prefetch_related("remove_programs", "primary_navigators").get(
-            referrer_code=screen.referrer_code
+            white_label=screen.white_label,
+            referrer_code=screen.referrer_code,
         )
     except ObjectDoesNotExist:
         referrer = None
@@ -664,6 +665,6 @@ class ReferralSourcesView(views.APIView):
 
         options = OrderedDict()
         for ref in referrers:
-            options[ref.referrer_code] = ref.name
+            options[ref.referrer_code] = ref.name or ref.referrer_code
 
         return Response(options)

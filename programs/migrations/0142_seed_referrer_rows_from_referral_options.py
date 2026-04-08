@@ -1,3 +1,5 @@
+import json
+
 from django.db import migrations
 
 
@@ -15,8 +17,7 @@ def extract_display_name(value):
 
 
 def seed_referrer_rows(apps, schema_editor):
-    """Create Referrer rows from existing referral_options Configuration data,
-    then delete the Configuration rows since nothing reads them anymore.
+    """Create Referrer rows from existing referral_options Configuration data.
 
     For each WL's referral_options config, create a Referrer row per option.
     Uses update_or_create to avoid conflicting with existing Referrer rows
@@ -31,6 +32,15 @@ def seed_referrer_rows(apps, schema_editor):
         white_label = config.white_label
         options = config.data or {}
 
+        # Configuration.data is stored via OrderedJSONField which double-encodes
+        # values as JSON strings. Handle both the double-encoded (str) and
+        # properly-decoded (dict) cases.
+        if isinstance(options, str):
+            try:
+                options = json.loads(options)
+            except (json.JSONDecodeError, ValueError):
+                options = {}
+
         for code, value in options.items():
             display_name = extract_display_name(value)
             Referrer.objects.update_or_create(
@@ -42,9 +52,8 @@ def seed_referrer_rows(apps, schema_editor):
                 },
             )
 
-    # Note: we keep the referral_options Configuration rows in the DB because the
-    # frontend config loader expects them to exist. The ConfigurationSerializer
-    # overrides the data with Referrer model data at serialization time.
+    # Note: we keep the referral_options Configuration rows in the DB as a
+    # safe rollback path. They are no longer read by the frontend or API.
 
 
 def reverse_seed(apps, schema_editor):
