@@ -2,16 +2,16 @@
 Tests for the ReferralSourcesView endpoint.
 """
 
-from django.contrib.auth.models import User
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
+from authentication.models import User
 from screener.models import WhiteLabel
 from programs.models import Referrer
 
 
 class TestReferralSourcesView(APITestCase):
-    """Tests for GET /screener-options/{wl}/referral-options/"""
+    """Tests for GET /api/screener-options/{wl}/referral-options/"""
 
     def setUp(self):
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
@@ -39,8 +39,8 @@ class TestReferralSourcesView(APITestCase):
             white_label=self.other_wl, referrer_code="friend", name="Friend (Other WL)", show_in_dropdown=True
         )
 
-        self.url = "/screener-options/test/referral-options/"
-        self.user = User.objects.create_user(username="testuser", password="password")
+        self.url = "/api/screener-options/test/referral-options/"
+        self.user = User.objects.create_user(email_or_cell="testuser@example.com", password="password")
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
 
@@ -88,7 +88,7 @@ class TestReferralSourcesView(APITestCase):
 
     def test_unknown_white_label_returns_empty(self):
         """Unknown WL code returns empty dict, not 404."""
-        response = self.client.get("/screener-options/doesnotexist/referral-options/")
+        response = self.client.get("/api/screener-options/doesnotexist/referral-options/")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, {})
