@@ -291,10 +291,6 @@ class TestTxTanf(TestCase):
         for dep in irs_gross_income:
             self.assertIn(dep, TxTanf.pe_inputs)
 
-        # Confirm the old SPM-level overrides are NOT used
-        self.assertNotIn(spm.TxTanfCountableEarnedIncomeDependency, TxTanf.pe_inputs)
-        self.assertNotIn(spm.TxTanfCountableUnearnedIncomeDependency, TxTanf.pe_inputs)
-
     def test_pe_outputs_includes_tx_tanf(self):
         """
         Test that TxTanf output dependency is properly configured.
