@@ -17,7 +17,9 @@ def extract_display_name(value):
 
 
 # Codes that are generic "how did you hear" options, not named partner orgs.
-# Everything else in referral_options is treated as a partner.
+# Everything else in referral_options is treated as a partner (is_partner=True).
+# Note: "merit" is intentionally generic here — it appears in base config shared across WLs
+# and is not a named partner org in the partner-reporting sense.
 GENERIC_REFERRER_CODES = {"searchEngine", "socialMedia", "friend", "other", "testOrProspect"}
 
 

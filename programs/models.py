@@ -1729,8 +1729,7 @@ class Referrer(models.Model):
 
     def __str__(self):
         white_label_name = f"[{self.white_label.name}] " if self.white_label and self.white_label.name else ""
-        display = self.name or self.referrer_code
-        return f"{white_label_name}{display}"
+        return f"{white_label_name}{self.name}"
 
 
 class TranslationOverrideManager(models.Manager):
