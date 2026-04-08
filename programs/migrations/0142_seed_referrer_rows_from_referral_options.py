@@ -16,6 +16,11 @@ def extract_display_name(value):
     return ""
 
 
+# Codes that are generic "how did you hear" options, not named partner orgs.
+# Everything else in referral_options is treated as a partner.
+GENERIC_REFERRER_CODES = {"searchEngine", "socialMedia", "friend", "other", "testOrProspect"}
+
+
 def seed_referrer_rows(apps, schema_editor):
     """Create Referrer rows from existing referral_options Configuration data.
 
@@ -23,6 +28,8 @@ def seed_referrer_rows(apps, schema_editor):
     Uses raw SQL to avoid django-parler incompatibility with historical models
     in migrations. Skips codes that already have a Referrer row (e.g. existing
     webhook/navigator config) to avoid overwriting operational data.
+
+    is_partner is set to True for any code not in GENERIC_REFERRER_CODES.
     """
     Configuration = apps.get_model("configuration", "Configuration")
     db = schema_editor.connection
@@ -44,22 +51,24 @@ def seed_referrer_rows(apps, schema_editor):
 
         for code, value in options.items():
             display_name = extract_display_name(value)
+            is_partner = code not in GENERIC_REFERRER_CODES
             with db.cursor() as cursor:
                 # Insert if no row exists for this (white_label, referrer_code).
                 # If a row already exists (e.g. has webhook config), update only
-                # name and show_in_dropdown to avoid clobbering other fields.
+                # name, show_in_dropdown, and is_partner to avoid clobbering other fields.
                 cursor.execute(
                     """
                     INSERT INTO programs_referrer
                         (white_label_id, referrer_code, name, show_in_dropdown,
-                         webhook_url)
-                    VALUES (%s, %s, %s, %s, NULL)
+                         is_partner, webhook_url)
+                    VALUES (%s, %s, %s, %s, %s, NULL)
                     ON CONFLICT (white_label_id, referrer_code)
                     DO UPDATE SET
                         name = EXCLUDED.name,
-                        show_in_dropdown = EXCLUDED.show_in_dropdown
+                        show_in_dropdown = EXCLUDED.show_in_dropdown,
+                        is_partner = EXCLUDED.is_partner
                     """,
-                    [white_label.id, code, display_name, True],
+                    [white_label.id, code, display_name, True, is_partner],
                 )
 
     # Note: we keep the referral_options Configuration rows in the DB as a
