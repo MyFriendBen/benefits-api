@@ -224,12 +224,14 @@ class TestTxTanfPeInput(TxPeInputTestBase):
         """Test that TxTanf includes TX-specific dependencies."""
         result = pe_input(self.screen, [TxTanf])
         household = result["household"]
-        spm_unit = household["spm_units"]["spm_unit"]
+        people = household["people"]
         household_unit = household["households"]["household"]
 
-        # TX TANF income dependencies
-        self.assertIn("tx_tanf_countable_earned_income", spm_unit)
-        self.assertIn("tx_tanf_countable_unearned_income", spm_unit)
+        # Income is provided at the person level so PE can apply the $120 work expense
+        # deduction and 1/3 earned income disregard (§ 372.409) through its own formula.
+        head_id = str(self.head.id)
+        self.assertIn("employment_income", people[head_id])
+        self.assertIn("self_employment_income", people[head_id])
 
         # TX state code
         self.assertIn("state_code", household_unit)
@@ -248,6 +250,19 @@ class TestTxTanfPeInput(TxPeInputTestBase):
 
         self.assertIn("age", people[head_id])
         self.assertIn("is_full_time_college_student", people[head_id])
+
+    def test_includes_tax_unit_dependent_dependency(self):
+        """Test that TxTanf populates is_tax_unit_dependent for all members.
+
+        This is required by PolicyEngine's tx_tanf_age_eligible_child formula, which
+        gates child eligibility on is_tax_unit_dependent. Without it the field defaults
+        to False and tx_tanf always returns $0.
+        """
+        result = pe_input(self.screen, [TxTanf])
+        people = result["household"]["people"]
+
+        for member in [self.head, self.spouse, self.child]:
+            self.assertIn("is_tax_unit_dependent", people[str(member.id)])
 
 
 # =============================================================================
