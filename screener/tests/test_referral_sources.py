@@ -77,14 +77,14 @@ class TestReferralSourcesView(APITestCase):
         self.assertEqual(response.data["searchEngine"], "Google or other search engine")
         self.assertEqual(response.data["other"], "Other")
 
-    def test_blank_name_falls_back_to_referrer_code(self):
-        """When name is blank, the referrer_code is used as the display value."""
-        Referrer.objects.create(white_label=self.white_label, referrer_code="noname", name="", show_in_dropdown=True)
+    def test_blank_name_is_rejected(self):
+        """Referrer name must be non-blank — the DB constraint rejects empty strings."""
+        from django.db import IntegrityError
 
-        response = self.client.get(self.url)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["noname"], "noname")
+        with self.assertRaises(IntegrityError):
+            Referrer.objects.create(
+                white_label=self.white_label, referrer_code="noname", name="", show_in_dropdown=True
+            )
 
     def test_unknown_white_label_returns_empty(self):
         """Unknown WL code returns empty dict, not 404."""

@@ -1,6 +1,6 @@
 import json
 
-from django.db import migrations
+from django.db import migrations, models
 
 
 def extract_display_name(value):
@@ -20,11 +20,12 @@ def seed_referrer_rows(apps, schema_editor):
     """Create Referrer rows from existing referral_options Configuration data.
 
     For each WL's referral_options config, create a Referrer row per option.
-    Uses update_or_create to avoid conflicting with existing Referrer rows
-    (which may already have webhook_url, webhook_functions, etc. configured).
+    Uses raw SQL to avoid django-parler incompatibility with historical models
+    in migrations. Skips codes that already have a Referrer row (e.g. existing
+    webhook/navigator config) to avoid overwriting operational data.
     """
     Configuration = apps.get_model("configuration", "Configuration")
-    Referrer = apps.get_model("programs", "Referrer")
+    db = schema_editor.connection
 
     referral_configs = Configuration.objects.filter(name="referral_options", active=True)
 
@@ -43,17 +44,32 @@ def seed_referrer_rows(apps, schema_editor):
 
         for code, value in options.items():
             display_name = extract_display_name(value)
-            Referrer.objects.update_or_create(
-                white_label=white_label,
-                referrer_code=code,
-                defaults={
-                    "name": display_name,
-                    "show_in_dropdown": True,
-                },
-            )
+            with db.cursor() as cursor:
+                # Insert if no row exists for this (white_label, referrer_code).
+                # If a row already exists (e.g. has webhook config), update only
+                # name and show_in_dropdown to avoid clobbering other fields.
+                cursor.execute(
+                    """
+                    INSERT INTO programs_referrer
+                        (white_label_id, referrer_code, name, show_in_dropdown,
+                         webhook_url)
+                    VALUES (%s, %s, %s, %s, NULL)
+                    ON CONFLICT (white_label_id, referrer_code)
+                    DO UPDATE SET
+                        name = EXCLUDED.name,
+                        show_in_dropdown = EXCLUDED.show_in_dropdown
+                    """,
+                    [white_label.id, code, display_name, True],
+                )
 
     # Note: we keep the referral_options Configuration rows in the DB as a
     # safe rollback path. They are no longer read by the frontend or API.
+
+    # Back-fill name for any existing Referrer rows that have a blank name,
+    # using referrer_code as the fallback so the NOT NULL / non-blank
+    # constraint added below can be applied cleanly.
+    with db.cursor() as cursor:
+        cursor.execute("UPDATE programs_referrer SET name = referrer_code WHERE name = ''")
 
 
 def reverse_seed(apps, schema_editor):
@@ -71,4 +87,16 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunPython(seed_referrer_rows, reverse_seed),
+        migrations.AlterField(
+            model_name="referrer",
+            name="name",
+            field=models.CharField(max_length=255),
+        ),
+        migrations.AddConstraint(
+            model_name="referrer",
+            constraint=models.CheckConstraint(
+                check=~models.Q(name=""),
+                name="referrer_name_not_blank",
+            ),
+        ),
     ]

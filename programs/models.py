@@ -1713,7 +1713,7 @@ class Referrer(models.Model):
         on_delete=models.CASCADE,
     )
     referrer_code = models.CharField(max_length=64)
-    name = models.CharField(max_length=255, blank=True, default="")
+    name = models.CharField(max_length=255)
     show_in_dropdown = models.BooleanField(default=True)
     webhook_url = models.CharField(max_length=320, blank=True, null=True)
     webhook_functions = models.ManyToManyField(WebHookFunction, related_name="web_hook", blank=True)
@@ -1722,6 +1722,9 @@ class Referrer(models.Model):
 
     class Meta:
         unique_together = ("white_label", "referrer_code")
+        constraints = [
+            models.CheckConstraint(check=~models.Q(name=""), name="referrer_name_not_blank"),
+        ]
 
     def __str__(self):
         white_label_name = f"[{self.white_label.name}] " if self.white_label and self.white_label.name else ""
