@@ -464,6 +464,7 @@ class ReferrerAdmin(SecureAdmin):
             "Used as the <code>referrer</code> URL parameter to pre-fill the referral source field. "
             "Example: <code>https://screener.myfriendben.org/co?referrer=bia</code>"
         ),
+        "name": "The label displayed to users in the referral source dropdown.",
     }
 
     def get_form(self, request, obj=None, **kwargs):
