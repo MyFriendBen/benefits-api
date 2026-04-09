@@ -33,7 +33,7 @@
     "expected_results": {
       "program_name": "wa_snap",
       "eligible": true,
-      "value": 72
+      "value": 864
     }
   },
   {
@@ -108,7 +108,7 @@
     "expected_results": {
       "program_name": "wa_snap",
       "eligible": true,
-      "value": 72
+      "value": 864
     }
   }
 ]

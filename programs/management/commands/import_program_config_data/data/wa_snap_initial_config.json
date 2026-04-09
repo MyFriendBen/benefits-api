@@ -3,7 +3,9 @@
     "code": "wa"
   },
   "program_category": {
-    "external_name": "wa_food"
+    "external_name": "wa_food",
+    "name": "Food and Nutrition",
+    "icon": "food"
   },
   "program": {
     "name_abbreviated": "wa_snap",
