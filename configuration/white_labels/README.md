@@ -43,7 +43,24 @@ This directory contains configuration files for MyFriendBen white labels (state/
    python manage.py add_config
    ```
 
-7. **Update Fillout Feedback Form:**
+7. **Add referral options in Django admin:**
+
+   Referral options are managed via Django admin → Programs → Referrers. Add a row for each dropdown option with: `white_label` = your new WL, `referrer_code` = the stored key, `name` = the display label, `show_in_dropdown` = True.
+
+   Every WL should include these standard generic codes (copy from an existing WL):
+
+   | referrer_code | name |
+   |---|---|
+   | `searchEngine` | Google or other search engine |
+   | `socialMedia` | Social Media |
+   | `friend` | Friend / Family / Word of Mouth |
+   | `merit` | Merit America |
+   | `other` | Other |
+   | `testOrProspect` | Test / Prospective Partner |
+
+   Then add any WL-specific partner codes on top of those.
+
+8. **Update Fillout Feedback Form:**
 
    Add the new state to the feedback form so users can report issues/feedback for the new white label:
 
@@ -247,7 +264,6 @@ class IlConfigurationData(ConfigurationData):
 
 - **`acute_condition_options`** - Urgent needs in the "Additional Resources" step
   - Icon names must be defined in `benefits-calculator/src/Components/Results/helpers.ts` (`ICON_OPTIONS_MAP`)
-- **`referral_options`** - "How did you hear about us?" options
 - **`language_options`** - Available translations
 - **`income_categories`** - Translatable category labels for income (e.g. `incomeCategories.employment`)
 - **`income_options_by_category`** - Income types grouped by category. When overriding, use the spread pattern to inherit base and only override the categories that differ.

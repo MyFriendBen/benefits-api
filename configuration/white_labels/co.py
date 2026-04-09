@@ -173,6 +173,7 @@ class CoConfigurationData(ConfigurationData):
         },
         "ccig": "Colorado Design Insight Group",
         "coAccess": "Colorado Access",
+        "salud": "Salud",
         "searchEngine": {"_label": "referralOptions.searchEngine", "_default_message": "Google or other search engine"},
         "socialMedia": {"_label": "referralOptions.socialMedia", "_default_message": "Social Media"},
         "friend": {"_label": "referralOptions.friend", "_default_message": "Friend / Family / Word of Mouth"},
