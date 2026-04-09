@@ -1722,8 +1722,8 @@ class Referrer(models.Model):
     remove_programs = models.ManyToManyField(Program, related_name="removed_programs", blank=True)
 
     class Meta:
-        unique_together = ("white_label", "referrer_code")
         constraints = [
+            models.UniqueConstraint(fields=["white_label", "referrer_code"], name="referrer_unique_wl_code"),
             models.CheckConstraint(check=~models.Q(name=""), name="referrer_name_not_blank"),
         ]
 

@@ -31,8 +31,11 @@ class Migration(migrations.Migration):
             name="referrer_code",
             field=models.CharField(max_length=64),
         ),
-        migrations.AlterUniqueTogether(
-            name="referrer",
-            unique_together={("white_label", "referrer_code")},
+        migrations.AddConstraint(
+            model_name="referrer",
+            constraint=models.UniqueConstraint(
+                fields=["white_label", "referrer_code"],
+                name="referrer_unique_wl_code",
+            ),
         ),
     ]
