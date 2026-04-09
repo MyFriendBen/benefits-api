@@ -1,13 +1,10 @@
 from django.db import migrations
 from django.db.models import Q
 
-# Programs audited as categorical/presumptive eligibility inputs — either:
-#   - their presence grants automatic eligibility for another program (positive has_benefit check)
-#   - their presence excludes eligibility for a different program (cross-program not has_benefit check)
-#
-# Organized as (white_label_code, name_abbreviated) pairs.
-# Gap tracking programs created in 0141 already have show_in_has_benefits_step=True;
-# included here for completeness and idempotency.
+# All programs that should appear on the current benefits step.
+# Includes both programs used as categorical/presumptive eligibility inputs in calculators
+# and tracking-only programs (has_calculator=False) created in 0137/0141.
+# Both show_in_has_benefits_step and active must be True to appear on the step.
 PROGRAMS_TO_FLAG = [
     # CO
     ("co", "co_snap"),
@@ -22,7 +19,6 @@ PROGRAMS_TO_FLAG = [
     ("co", "cccap"),
     ("co", "cowap"),
     ("co", "rtdlive"),
-    # CO gap programs (created in 0141)
     ("co", "section_8"),
     ("co", "co_andso"),
     ("co", "co_care"),
@@ -34,7 +30,6 @@ PROGRAMS_TO_FLAG = [
     ("il", "ssdi"),
     ("il", "il_liheap"),
     ("il", "il_ccap"),
-    # IL gap program (created in 0141)
     ("il", "il_chp"),
     # MA
     ("ma", "ma_snap"),
@@ -42,7 +37,6 @@ PROGRAMS_TO_FLAG = [
     ("ma", "ssi"),
     ("ma", "ssdi"),
     ("ma", "ma_heap"),
-    # MA gap program (created in 0141)
     ("ma", "section_8"),
     # NC
     ("nc", "nc_snap"),
@@ -51,33 +45,26 @@ PROGRAMS_TO_FLAG = [
     ("nc", "ssi"),
     ("nc", "ssdi"),
     ("nc", "nc_aca"),
+    ("nc", "nc_leap"),
+    ("nc", "nc_cccap"),
     # TX
     ("tx", "tx_snap"),
     ("tx", "tx_tanf"),
     ("tx", "tx_wic"),
     ("tx", "tx_ssi"),
     ("tx", "tx_ssdi"),
-]
-
-# Tracking-only programs (has_calculator=False) that were set active=False in 0137
-# as a workaround to prevent calculator runs. Now that views.py gates on has_calculator,
-# these can be active=True so they appear in the Program API and current benefits step.
-TRACKING_PROGRAM_NAMES = [
-    # cesn (from 0137, renamed in 0140)
-    "cesn_snap",
-    "cesn_tanf",
-    "cesn_wic",
-    "cesn_ssi",
-    "cesn_ssdi",
-    "cesn_chp",
-    "cesn_oap",
-    "cesn_section_8",
-    "cesn_rtdlive",
-    "cesn_andso",
-    "cesn_medicaid",
-    # nc (from 0137)
-    "nc_leap",
-    "nc_cccap",
+    # CESN
+    ("cesn", "cesn_snap"),
+    ("cesn", "cesn_tanf"),
+    ("cesn", "cesn_wic"),
+    ("cesn", "cesn_ssi"),
+    ("cesn", "cesn_ssdi"),
+    ("cesn", "cesn_chp"),
+    ("cesn", "cesn_oap"),
+    ("cesn", "cesn_section_8"),
+    ("cesn", "cesn_rtdlive"),
+    ("cesn", "cesn_andso"),
+    ("cesn", "cesn_medicaid"),
 ]
 
 
@@ -90,26 +77,12 @@ def _programs_q():
 
 def forward(apps, schema_editor):
     Program = apps.get_model("programs", "Program")
-
     Program.objects.filter(_programs_q()).update(show_in_has_benefits_step=True, active=True)
-
-    # Activate tracking-only programs and set show_in_has_benefits_step.
-    # Filter by has_calculator=False to avoid touching any real calculator programs.
-    Program.objects.filter(
-        name_abbreviated__in=TRACKING_PROGRAM_NAMES,
-        has_calculator=False,
-    ).update(active=True, show_in_has_benefits_step=True)
 
 
 def reverse(apps, schema_editor):
     Program = apps.get_model("programs", "Program")
-
     Program.objects.filter(_programs_q()).update(show_in_has_benefits_step=False)
-
-    Program.objects.filter(
-        name_abbreviated__in=TRACKING_PROGRAM_NAMES,
-        has_calculator=False,
-    ).update(active=False)
 
 
 class Migration(migrations.Migration):
