@@ -314,13 +314,13 @@ def eligibility_results(screen: Screen, batch=False):
 
     for program in all_programs:
         skip = False
-        if program.name_abbreviated not in pe_programs and program.active:
+        if program.name_abbreviated not in pe_programs and program.active and program.has_calculator:
             try:
                 eligibility = program.eligibility(screen, program_eligibility, missing_dependencies)
             except DependencyError:
                 missing_programs = True
                 continue
-        elif program.active:
+        elif program.active and program.has_calculator:
             if program.name_abbreviated not in pe_eligibility:
                 missing_programs = True
                 continue

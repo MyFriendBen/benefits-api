@@ -39,9 +39,6 @@ class MaMiddleIncomeRental(ProgramCalculator):
     dependencies = ["age", "zipcode", "income_amount", "income_frequency", "household_size", "household_assets"]
 
     def household_eligible(self, e: Eligibility) -> None:
-        # Check if user already has this benefit
-        e.condition(not self.screen.has_benefit("ma_middle_income_rental"))
-
         # Location check - must be Cambridge resident
         is_cambridge = self.screen.county == self.eligible_city
         e.condition(is_cambridge, messages.location())
