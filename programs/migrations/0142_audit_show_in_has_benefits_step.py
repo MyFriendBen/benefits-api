@@ -96,7 +96,7 @@ def _programs_q():
 def forward(apps, schema_editor):
     Program = apps.get_model("programs", "Program")
 
-    Program.objects.filter(_programs_q()).update(show_in_has_benefits_step=True)
+    Program.objects.filter(_programs_q()).update(show_in_has_benefits_step=True, active=True)
 
     # Activate tracking-only programs now that has_calculator gates calculator runs.
     # Filter by has_calculator=False to avoid touching any real calculator programs.
