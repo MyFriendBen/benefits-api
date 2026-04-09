@@ -64,6 +64,7 @@ PROGRAMS_TO_FLAG = [
     ("cesn", "cesn_section_8"),
     ("cesn", "cesn_rtdlive"),
     ("cesn", "cesn_andso"),
+    ("cesn", "cesn_care"),
     ("cesn", "cesn_medicaid"),
 ]
 
