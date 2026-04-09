@@ -156,6 +156,13 @@ class Command(BaseCommand):
                 defaults={"data": WhiteLabelData.relationship_options, "active": True},
             )
 
+            # Save referral_options to database (kept for migration compatibility)
+            Configuration.objects.update_or_create(
+                name="referral_options",
+                white_label=white_label,
+                defaults={"data": WhiteLabelData.referral_options, "active": True},
+            )
+
             # Save income_categories to database
             Configuration.objects.update_or_create(
                 name="income_categories",

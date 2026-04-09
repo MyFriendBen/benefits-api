@@ -20,7 +20,7 @@ def extract_display_name(value):
 # Everything else in referral_options is treated as a partner (is_partner=True).
 # Note: "merit" is intentionally generic here — it appears in base config shared across WLs
 # and is not a named partner org in the partner-reporting sense.
-GENERIC_REFERRER_CODES = {"searchEngine", "socialMedia", "friend", "other", "testOrProspect"}
+GENERIC_REFERRER_CODES = {"searchEngine", "socialMedia", "friend", "flyers", "other", "testOrProspect"}
 
 
 def seed_referrer_rows(apps, schema_editor):
@@ -90,6 +90,11 @@ def reverse_seed(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
+    # atomic=False so the RunPython data seed commits before the subsequent
+    # ALTER TABLE / AddConstraint DDL runs. PostgreSQL raises
+    # "cannot ALTER TABLE because it has pending trigger events" if both
+    # happen inside the same transaction (deferred FK triggers fire at commit).
+    atomic = False
 
     dependencies = [
         ("programs", "0141_add_referrer_name_dropdown_and_per_wl_uniqueness"),
