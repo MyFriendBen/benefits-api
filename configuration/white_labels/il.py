@@ -124,7 +124,6 @@ class IlConfigurationData(ConfigurationData):
             "_default_message": "Friend / Family / Word of Mouth",
         },
         "merit": {"_label": "referralOptions.merit", "_default_message": "Merit America"},
-        "flyers": {"_label": "referralOptions.flyers", "_default_message": "Flyer"},
         "other": {"_label": "referralOptions.other", "_default_message": "Other"},
         "testOrProspect": {
             "_label": "referralOptions.testOrProspect",

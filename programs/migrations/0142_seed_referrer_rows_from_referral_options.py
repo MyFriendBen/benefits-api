@@ -73,6 +73,27 @@ def seed_referrer_rows(apps, schema_editor):
                     [white_label.id, code, display_name, True, is_partner],
                 )
 
+    # Ensure generic codes that belong on every WL are present, even if they
+    # were missing from a WL's config snapshot at migration time (e.g. "flyers"
+    # was added to base config after some WL snapshots were already written).
+    WhiteLabel = apps.get_model("screener", "WhiteLabel")
+    GENERIC_ALWAYS_PRESENT = {
+        "flyers": "Flyer",
+    }
+    for wl in WhiteLabel.objects.all():
+        for code, name in GENERIC_ALWAYS_PRESENT.items():
+            with db.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO programs_referrer
+                        (white_label_id, referrer_code, name, show_in_dropdown,
+                         is_partner, webhook_url)
+                    VALUES (%s, %s, %s, %s, %s, NULL)
+                    ON CONFLICT (white_label_id, referrer_code) DO NOTHING
+                    """,
+                    [wl.id, code, name, True, False],
+                )
+
     # Note: we keep the referral_options Configuration rows in the DB as a
     # safe rollback path. They are no longer read by the frontend or API.
 
