@@ -93,12 +93,12 @@ def forward(apps, schema_editor):
 
     Program.objects.filter(_programs_q()).update(show_in_has_benefits_step=True, active=True)
 
-    # Activate tracking-only programs now that has_calculator gates calculator runs.
+    # Activate tracking-only programs and set show_in_has_benefits_step.
     # Filter by has_calculator=False to avoid touching any real calculator programs.
     Program.objects.filter(
         name_abbreviated__in=TRACKING_PROGRAM_NAMES,
         has_calculator=False,
-    ).update(active=True)
+    ).update(active=True, show_in_has_benefits_step=True)
 
 
 def reverse(apps, schema_editor):
