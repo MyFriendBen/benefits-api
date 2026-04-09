@@ -59,7 +59,7 @@ PROGRAMS_TO_FLAG = [
     ("tx", "tx_ssdi"),
 ]
 
-# Tracking-only programs (has_calculator=False) that were set active=False in 0137/0141
+# Tracking-only programs (has_calculator=False) that were set active=False in 0137
 # as a workaround to prevent calculator runs. Now that views.py gates on has_calculator,
 # these can be active=True so they appear in the Program API and current benefits step.
 TRACKING_PROGRAM_NAMES = [
@@ -78,11 +78,6 @@ TRACKING_PROGRAM_NAMES = [
     # nc (from 0137)
     "nc_leap",
     "nc_cccap",
-    # gap programs (from 0141) — co_andso, co_care, section_8 (co+ma), il_chp
-    "co_andso",
-    "co_care",
-    "section_8",
-    "il_chp",
 ]
 
 

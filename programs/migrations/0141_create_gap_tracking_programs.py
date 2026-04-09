@@ -68,7 +68,7 @@ def create_gap_tracking_programs(apps, schema_editor):
                 white_label=p["white_label_code"],
                 name_abbreviated=p["name_abbreviated"],
             )
-            program.active = False
+            program.active = True
             program.has_calculator = False
             program.show_in_has_benefits_step = True
             program.base_program = p.get("base_program")
