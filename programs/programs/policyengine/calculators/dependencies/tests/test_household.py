@@ -28,6 +28,24 @@ class TestTxStateCodeDependency(TestCase):
         self.assertEqual(dep.field, "state_code")
 
 
+class TestWaStateCodeDependency(TestCase):
+    """Tests for WaStateCodeDependency class used by WaSnap calculator."""
+
+    def setUp(self):
+        """Set up test data for state dependency tests."""
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="98101", county="King County", household_size=1, completed=False
+        )
+
+    def test_value_returns_wa_state_code(self):
+        """Test value() returns WA state code."""
+        dep = household.WaStateCodeDependency(self.screen, None, {})
+        self.assertEqual(dep.value(), "WA")
+        self.assertEqual(dep.field, "state_code")
+
+
 class TestCountyDependency(TestCase):
     """Tests for CountyDependency class and its subclasses."""
 
