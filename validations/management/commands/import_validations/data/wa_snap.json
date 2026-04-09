@@ -1,0 +1,114 @@
+[
+  {
+    "notes": "WA Basic Food (SNAP) - Single Adult, Income Well Below 200% FPL - Clearly Eligible",
+    "household": {
+      "white_label": "wa",
+      "household_size": 1,
+      "zipcode": "98101",
+      "county": "King",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 6,
+          "birth_year": 1992,
+          "age": 34,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1200.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_snap",
+      "eligible": true,
+      "value": 72
+    }
+  },
+  {
+    "notes": "WA Basic Food (SNAP) - Single Adult, Gross Income $1 Above 200% FPL ($2,661/mo) - Should NOT Be Eligible. Patmanson correction: 2026 200% FPL for 1 person is $2,660/mo; original scenario incorrectly used $2,431.",
+    "household": {
+      "white_label": "wa",
+      "household_size": 1,
+      "zipcode": "98101",
+      "county": "King",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 6,
+          "birth_year": 1992,
+          "age": 34,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2661.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_snap",
+      "eligible": false,
+      "value": 0
+    }
+  },
+  {
+    "notes": "WA Basic Food (SNAP) - Pregnant Woman Living Alone, Below Income Threshold - Should Be Eligible with HH Size 1. Patmanson correction: federal SNAP (WAC 388-408-0015) does NOT count unborn children as household members; pregnancy only affects the work requirement exemption. Original scenario 14 incorrectly treated household as size 2.",
+    "household": {
+      "white_label": "wa",
+      "household_size": 1,
+      "zipcode": "98101",
+      "county": "King",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 3,
+          "birth_year": 1994,
+          "age": 32,
+          "pregnant": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1200.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_snap",
+      "eligible": true,
+      "value": 72
+    }
+  }
+]
