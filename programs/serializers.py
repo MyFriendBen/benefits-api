@@ -83,3 +83,13 @@ class UrgentNeedTypeSerializer(serializers.ModelSerializer):
 
     def get_urgent_needs(self, obj: UrgentNeedType):
         return UrgentNeedSerializer(obj.urgent_needs.filter(active=True, show_on_current_benefits=True), many=True).data
+
+
+class HasBenefitsProgramSerializer(serializers.ModelSerializer):
+    name = ModelTranslationSerializer()
+    website_description = ModelTranslationSerializer()
+    category = ModelTranslationSerializer(source="category.name")
+
+    class Meta:
+        model = Program
+        fields = ("name_abbreviated", "name", "website_description", "category")

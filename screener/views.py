@@ -643,3 +643,40 @@ class NPSScoreView(views.APIView):
             serializer.update(nps_score, serializer.validated_data)
             return Response({"status": "success"}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class HasBenefitsProgramsView(views.APIView):
+    """Returns programs shown in the 'already has benefits' screener step, grouped by category.
+
+    Response shape:
+        [
+            {
+                "name_abbreviated": "SNAP",
+                "name": {"label": "...", "default_message": "Supplemental Nutrition Assistance Program"},
+                "website_description": {"label": "...", "default_message": "Monthly food assistance for groceries"},
+                "category": {"label": "...", "default_message": "Food and Nutrition"}
+            },
+            ...
+        ]
+
+    Results are sorted by category name, then by program name within each category.
+    """
+
+    permission_classes = [permissions.DjangoModelPermissions]
+    queryset = Program.objects.none()  # Required for DjangoModelPermissions
+
+    def get(self, request, white_label):
+        from programs.serializers import HasBenefitsProgramSerializer
+
+        programs = (
+            Program.objects.filter(
+                active=True,
+                show_in_has_benefits_step=True,
+                white_label__code=white_label,
+            )
+            .select_related("name", "website_description", "category__name")
+            .order_by("category__name__default_message", "name__default_message")
+        )
+
+        serializer = HasBenefitsProgramSerializer(programs, many=True)
+        return Response(serializer.data)
