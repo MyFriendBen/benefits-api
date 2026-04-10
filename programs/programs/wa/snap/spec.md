@@ -32,9 +32,9 @@
    - Screener fields: `has_snap`
    - Source: General SNAP policy — households cannot receive duplicate benefits.
 
-6. **Student eligibility: College students aged 18–49 enrolled at least half-time in an institution of higher education must meet an exemption to be eligible**
+6. **Student eligibility: College students enrolled at least half-time in an institution of higher education must meet an exemption to be eligible, unless they are age 17 or younger**
    - Screener fields: `student`, `student_full_time`, `student_works_20_plus_hrs`, `student_has_work_study`, `student_job_training_program`, `age`
-   - Source: 7 CFR 273.5; 7 U.S.C. § 2015(e); WAC 388-482-0005. Students enrolled at least half-time in higher education are ineligible unless they meet an exemption (working 20+ hours/week, participating in work-study, in a job training program, caring for a dependent child under 6, etc.).
+   - Source: 7 CFR 273.5; 7 U.S.C. § 2015(e); WAC 388-482-0005. Students enrolled at least half-time in higher education are ineligible unless they meet an exemption. Exemptions include: age 17 or younger, working 20+ hours/week, participating in work-study, in a job training program, caring for a dependent child under 6, etc. The student restriction effectively applies to students aged 18–49; students aged 17 or younger are categorically exempt.
 
 7. **Elderly or disabled household member — alternative eligibility path** ⚠️ *complex edge case — recommend disclaimer rather than evaluating in screener*
    - Screener fields: `age`, `disabled`
@@ -153,7 +153,7 @@
 - [ ] Scenario 4 (Couple Household — Gross Income Exactly at 200% FPL): User should be **eligible**
 - [ ] Scenario 5 (Single Adult — Gross Income $1 Above 200% FPL): User should be **ineligible**
 - [ ] Scenario 6 (Person Exactly Age 18 — Minimum Adult Age): User should be **eligible**
-- [ ] Scenario 7 (17-Year-Old Living Alone — Half-Time Student, No Exemption): User should be **ineligible**
+- [ ] Scenario 7 (17-Year-Old Living Alone — Half-Time Student, Age Exemption Applies): User should be **eligible**
 - [ ] Scenario 8 (75-Year-Old Elderly Individual — Elderly Exemption): User should be **eligible**
 - [ ] Scenario 9 (Washington State Resident in Seattle — Valid Location): User should be **eligible**
 - [ ] Scenario 10 (Already Receiving Basic Food/SNAP — Duplicate Benefit Exclusion): User should be **ineligible**
@@ -271,20 +271,20 @@
 
 ---
 
-### Scenario 7: 17-Year-Old Living Alone — Half-Time Student, No Exemption, Ineligible
+### Scenario 7: 17-Year-Old Living Alone — Half-Time Student, Age Exemption Applies, Eligible
 
-**What we're checking**: Validates that a 17-year-old (just below age 18) who is a college student enrolled half-time with no student exemption does NOT qualify independently.
+**What we're checking**: Validates that a 17-year-old (just below age 18) who is a college student enrolled half-time is eligible, because WAC 388-482-0005 explicitly lists "age 17 or younger" as a qualifying exemption from the student eligibility restriction.
 
-**Expected**: Not eligible
+**Expected**: Eligible
 
 **Steps**:
 - **Location**: Enter ZIP code `98101`, Select county `King`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `June 2008` (age 17 — will turn 18 in June 2026), Relationship: Head of Household, Student status: enrolled in higher education at least half-time, Working: No (does not meet any student exemption), No disability, Not pregnant
+- **Person 1**: Birth month/year: `June 2008` (age 17 — will turn 18 in June 2026), Relationship: Head of Household, Student status: enrolled in higher education at least half-time, Working: No, No disability, Not pregnant
 - **Income**: No earned income, No unearned income, Total gross monthly income: `$0`
 - **Current Benefits**: Not currently receiving SNAP/Basic Food, Not receiving TANF, Not receiving SSI
 
-**Why this matters**: Tests the age boundary just below 18. A 17-year-old applying independently as a half-time college student with no student exemptions should not be eligible. This tests the interaction between age thresholds and student eligibility rules. Note: age 18 is not explicitly a threshold in WA SNAP rules, but the combination of being a minor and a half-time student without exemption makes this an edge case scenario.
+**Why this matters**: Tests the age exemption in the student eligibility rule. WAC 388-482-0005 states that students age 17 or younger are categorically exempt from the student eligibility restriction — being a minor is itself a qualifying exemption. A 17-year-old half-time student with $0 income is well below 200% FPL and should receive the maximum benefit for a household of 1 ($298/mo).
 
 ---
 
@@ -413,8 +413,8 @@ File: `validations/management/commands/import_validations/data/wa_snap.json`
 Scenarios 1–13 (scenario 14 removed — the premise that a pregnant woman's unborn child counts as a second household member is incorrect for WA SNAP under federal rules and WAC 388-408-0015).
 
 Updated `eligible` values:
-- Scenarios 1, 2, 3, 4, 6, 8, 9, 12, 13: `true`
-- Scenarios 5, 7, 10, 11: `false`
+- Scenarios 1, 2, 3, 4, 6, 7, 8, 9, 12, 13: `true`
+- Scenarios 5, 10, 11: `false`
 
 Updated income amounts for 2026 FPL:
 - Scenario 3 (HH=2, $1 below 200% FPL): `$3,606/mo` (was $2,429)
