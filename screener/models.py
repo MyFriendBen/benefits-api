@@ -404,6 +404,7 @@ class Screen(models.Model):
             "nc_snap": self.has_snap,
             "il_snap": self.has_snap,
             "tx_snap": self.has_snap,
+            "wa_snap": self.has_snap,
             "lifeline": self.has_lifeline,
             "tx_lifeline": self.has_lifeline,
             "acp": self.has_acp,
