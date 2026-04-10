@@ -668,7 +668,6 @@ class TestMaMiddleIncomeRentalHasBenefit(TestCase):
         self.assertTrue(eligibility.eligible)
 
 
-
 class TestMaMiddleIncomeRentalValue(TestCase):
     """Tests for benefit value calculation."""
 

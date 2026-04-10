@@ -316,7 +316,6 @@ class TestMaHomeBridgeHasBenefit(TestCase):
         self.assertTrue(eligibility.eligible)
 
 
-
 class TestMaHomeBridgeValue(TestCase):
     """Tests for benefit value calculation."""
 

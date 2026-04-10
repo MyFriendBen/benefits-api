@@ -267,4 +267,3 @@ class TestMaDoorToDoorHasBenefit(TestCase):
         calculator.household_eligible(eligibility)
 
         self.assertTrue(eligibility.eligible)
-

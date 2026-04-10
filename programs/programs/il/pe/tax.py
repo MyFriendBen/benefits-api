@@ -12,7 +12,6 @@ class Ileitc(PolicyEngineTaxUnitCalulator):
     pe_outputs = [dependency.tax.Ileitc]
 
 
-
 class Ilctc(PolicyEngineTaxUnitCalulator):
     pe_name = "il_ctc"
     pe_inputs = [
