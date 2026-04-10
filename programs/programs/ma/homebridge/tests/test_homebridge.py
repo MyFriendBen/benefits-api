@@ -315,17 +315,6 @@ class TestMaHomeBridgeHasBenefit(TestCase):
 
         self.assertTrue(eligibility.eligible)
 
-    @patch("programs.programs.ma.homebridge.calculator.hud_client")
-    def test_user_with_benefit_is_ineligible(self, mock_hud_client):
-        """Test that users who already have the benefit are ineligible."""
-        self._mock_ami_values(mock_hud_client)
-
-        calculator = self._create_calculator(has_benefit=True, income=70000)
-        eligibility = Eligibility()
-
-        calculator.household_eligible(eligibility)
-
-        self.assertFalse(eligibility.eligible)
 
 
 class TestMaHomeBridgeValue(TestCase):

@@ -307,10 +307,6 @@ class TxHarrisCountyRides(PolicyEngineMembersCalculator):
     dependencies = ["county"]
 
     def member_value(self, member):
-        # Check if household already has the benefit
-        if self.screen.has_benefit("tx_harris_rides"):
-            return 0
-
         pe_eligible = self.get_member_variable(member.id)
 
         return 1 if pe_eligible else 0

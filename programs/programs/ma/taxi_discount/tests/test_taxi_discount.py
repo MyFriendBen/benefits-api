@@ -276,11 +276,3 @@ class TestMaTaxiDiscountHasBenefit(TestCase):
 
         self.assertTrue(eligibility.eligible)
 
-    def test_user_with_benefit_is_ineligible(self):
-        """Test that users who already have the benefit are ineligible."""
-        calculator = self._create_calculator(has_benefit=True, age=65)
-
-        eligibility = Eligibility()
-        calculator.household_eligible(eligibility)
-
-        self.assertFalse(eligibility.eligible)

@@ -11,10 +11,6 @@ class Ileitc(PolicyEngineTaxUnitCalulator):
     ]
     pe_outputs = [dependency.tax.Ileitc]
 
-    def household_eligible(self, e):
-        e.condition(not self.screen.has_benefit("il_eitc"))
-
-        super().household_eligible(e)
 
 
 class Ilctc(PolicyEngineTaxUnitCalulator):
@@ -24,8 +20,3 @@ class Ilctc(PolicyEngineTaxUnitCalulator):
         dependency.household.IlStateCodeDependency,
     ]
     pe_outputs = [dependency.tax.Ilctc]
-
-    def household_eligible(self, e):
-        e.condition(not self.screen.has_benefit("il_ctc"))
-
-        super().household_eligible(e)

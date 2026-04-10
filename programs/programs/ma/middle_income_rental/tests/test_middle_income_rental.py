@@ -667,17 +667,6 @@ class TestMaMiddleIncomeRentalHasBenefit(TestCase):
 
         self.assertTrue(eligibility.eligible)
 
-    @patch("programs.programs.ma.middle_income_rental.calculator.hud_client")
-    def test_user_with_benefit_is_ineligible(self, mock_hud_client):
-        """Test that users who already have the benefit are ineligible."""
-        mock_hud_client.get_screen_il_ami.return_value = 80000
-
-        calculator = self._create_calculator(has_benefit=True, income=90000)
-        eligibility = Eligibility()
-
-        calculator.household_eligible(eligibility)
-
-        self.assertFalse(eligibility.eligible)
 
 
 class TestMaMiddleIncomeRentalValue(TestCase):
