@@ -647,22 +647,33 @@ class NPSScoreView(views.APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ReferralSourcesView(views.APIView):
-    """Returns referral source options for the screener dropdown, grouped by type.
+class ScreenerOptionsView(views.APIView):
+    """Returns all dynamic question options for a white label's screener in one request.
 
     Response shape:
         {
-            "generic": {"friend": "Friend / Family", ...},
-            "partners": {"bia": "Benefits in Action", ...}
+            "referral_options": {
+                "generic": {"friend": "Friend / Family", ...},
+                "partners": {"bia": "Benefits in Action", ...}
+            },
+            "has_benefits_programs": [
+                {
+                    "name_abbreviated": "SNAP",
+                    "name": {"label": "...", "default_message": "Supplemental Nutrition Assistance Program"},
+                    "website_description": {"label": "...", "default_message": "Monthly food assistance"},
+                    "category": {"label": "...", "default_message": "Food and Nutrition"}
+                },
+                ...
+            ]
         }
-
-    Both groups are sorted alphabetically by display name.
     """
 
     permission_classes = [permissions.DjangoModelPermissions]
-    queryset = Referrer.objects.none()  # Required for DjangoModelPermissions
+    queryset = Program.objects.none()  # Required for DjangoModelPermissions
 
     def get(self, request, white_label):
+        from programs.serializers import HasBenefitsProgramSerializer
+
         referrers = Referrer.objects.filter(
             white_label__code=white_label,
             show_in_dropdown=True,
@@ -676,4 +687,19 @@ class ReferralSourcesView(views.APIView):
             else:
                 generic[ref.referrer_code] = ref.name
 
-        return Response({"generic": generic, "partners": partners})
+        has_benefits_programs = (
+            Program.objects.filter(
+                active=True,
+                show_in_has_benefits_step=True,
+                white_label__code=white_label,
+            )
+            .select_related("name", "website_description", "category__name")
+            .order_by("category__name__default_message", "name__default_message")
+        )
+
+        return Response(
+            {
+                "referral_options": {"generic": generic, "partners": partners},
+                "has_benefits_programs": HasBenefitsProgramSerializer(has_benefits_programs, many=True).data,
+            }
+        )
