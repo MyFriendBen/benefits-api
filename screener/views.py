@@ -313,6 +313,8 @@ def eligibility_results(screen: Screen, batch=False):
     program_eligibility = {}
 
     for program in all_programs:
+        if not program.has_calculator:
+            continue
         skip = False
         if program.name_abbreviated not in pe_programs and program.active and program.has_calculator:
             try:

@@ -8,6 +8,10 @@ from django.db import migrations
 # Pre-existing gaps noted but not fixed here:
 #   - co_andso / co_care not in CO category_benefits config (users can't select them yet)
 #   - co_section_8 / ma_section_8 not in respective WL category_benefits configs
+#
+# Note: il_chp is intentionally excluded. IL CHP+ eligibility in All Kids uses
+# member.has_benefit("chp") which routes through member.insurance.chp (set during
+# the per-member insurance questions step), not a screen-level tracking program.
 GAP_TRACKING_PROGRAMS = [
     {
         "white_label_code": "co",
@@ -36,13 +40,6 @@ GAP_TRACKING_PROGRAMS = [
         "name_text": "Colorado's Affordable Residential Energy (CARE) via Energy Outreach Colorado",
         "description_text": "Home energy upgrades",
         "base_program": "care",
-    },
-    {
-        "white_label_code": "il",
-        "name_abbreviated": "il_chp",
-        "name_text": "Child Health Plan Plus (CHP+)",
-        "description_text": "Low-cost health insurance for children and pregnant women",
-        "base_program": "chp",
     },
 ]
 

@@ -462,7 +462,6 @@ class Screen(models.Model):
             "ubp": self.has_ubp,
             "cesn_ubp": self.has_ubp,
             "chp": self.has_chp or self.has_chp_hi,
-            "il_chp": self.has_chp or self.has_chp_hi,
             "nfp": self.has_nfp,
             "section_8": self.has_section_8,
             "co_section_8": self.has_section_8,

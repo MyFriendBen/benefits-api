@@ -1,10 +1,14 @@
 from django.db import migrations
 from django.db.models import Q
 
-# All programs that should appear on the current benefits step.
-# Includes both programs used as categorical/presumptive eligibility inputs in calculators
-# and tracking-only programs (has_calculator=False) created in 0137/0141.
-# Both show_in_has_benefits_step and active must be True to appear on the step.
+# Programs with real calculators that should appear on the has-benefits step.
+# show_in_has_benefits_step=True means the program appears as a selectable tile
+# so users can declare they already have it — used for categorical/presumptive eligibility.
+#
+# Tracking-only programs (has_calculator=False, created in 0137/0141) are intentionally
+# NOT listed here: they exist purely as dependency inputs, not as tiles users select.
+# The forward() migration also explicitly resets any has_calculator=False programs
+# to show_in_has_benefits_step=False as a safety measure.
 PROGRAMS_TO_FLAG = [
     # CO
     ("co", "co_snap"),
@@ -30,7 +34,8 @@ PROGRAMS_TO_FLAG = [
     ("il", "ssdi"),
     ("il", "il_liheap"),
     ("il", "il_ccap"),
-    ("il", "il_chp"),
+    # Note: il_chp excluded — IL CHP+ is captured via member.insurance.chp,
+    # not a screen-level tracking program.
     # MA
     ("ma", "ma_snap"),
     ("ma", "ma_wic"),
@@ -78,7 +83,11 @@ def _programs_q():
 
 def forward(apps, schema_editor):
     Program = apps.get_model("programs", "Program")
+    # Set show_in_has_benefits_step=True for programs in the explicit allow-list.
     Program.objects.filter(_programs_q()).update(show_in_has_benefits_step=True, active=True)
+    # Safety: tracking-only programs must never appear as selectable tiles.
+    # Any has_calculator=False program that somehow got flagged True is reset here.
+    Program.objects.filter(has_calculator=False).update(show_in_has_benefits_step=False)
 
 
 def reverse(apps, schema_editor):
