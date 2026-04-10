@@ -39,9 +39,6 @@ class MaMiddleIncomeRental(ProgramCalculator):
     dependencies = ["age", "zipcode", "income_amount", "income_frequency", "household_size", "household_assets"]
 
     def household_eligible(self, e: Eligibility) -> None:
-        # Check if user already has this benefit
-        e.condition(not self.screen.has_benefit("ma_middle_income_rental"))
-
         # Location check - must be Cambridge resident
         is_cambridge = self.screen.county == self.eligible_city
         e.condition(is_cambridge, messages.location())
@@ -66,7 +63,7 @@ class MaMiddleIncomeRental(ProgramCalculator):
             ami_max = ami_min * self.ami_max_multiplier
             gross_income = self.screen.calc_gross_income("yearly", ["all"])
             # Minimum Income Limits do not apply to households who have tenant based or mobile housing vouchers
-            if self.screen.has_benefit("section_8"):
+            if self.screen.has_benefit("ma_section_8"):
                 income_eligible = gross_income <= ami_max
             else:
                 income_eligible = ami_min <= gross_income <= ami_max
