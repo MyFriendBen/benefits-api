@@ -222,7 +222,9 @@ class TestMaMiddleIncomeRentalIncomeEligibility(TestCase):
         mock_screen.white_label = Mock()
         mock_screen.white_label.state_code = "MA"
         mock_screen.calc_gross_income = Mock(return_value=income)
-        mock_screen.has_benefit = Mock(side_effect=lambda name: has_section_8 if name == "ma_section_8" else has_benefit)
+        mock_screen.has_benefit = Mock(
+            side_effect=lambda name: has_section_8 if name == "ma_section_8" else has_benefit
+        )
         mock_head = Mock()
         mock_head.age = 35
         mock_screen.get_head = Mock(return_value=mock_head)
