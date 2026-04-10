@@ -15,14 +15,14 @@ from django.db import migrations
 GAP_TRACKING_PROGRAMS = [
     {
         "white_label_code": "co",
-        "name_abbreviated": "section_8",
+        "name_abbreviated": "co_section_8",
         "name_text": "Housing Choice Voucher (Section 8)",
         "description_text": "Rent subsidy",
         "base_program": "section_8",
     },
     {
         "white_label_code": "ma",
-        "name_abbreviated": "section_8",
+        "name_abbreviated": "ma_section_8",
         "name_text": "Housing Choice Voucher (Section 8)",
         "description_text": "Rent subsidy",
         "base_program": "section_8",

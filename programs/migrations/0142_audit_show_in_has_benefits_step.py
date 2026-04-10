@@ -17,12 +17,11 @@ PROGRAMS_TO_FLAG = [
     ("co", "leap"),
     ("co", "ssi"),
     ("co", "ssdi"),
-    ("co", "chp"),
     ("co", "oap"),
     ("co", "cccap"),
     ("co", "cowap"),
     ("co", "rtdlive"),
-    ("co", "section_8"),
+    ("co", "co_section_8"),
     ("co", "co_andso"),
     ("co", "co_care"),
     # IL
@@ -33,15 +32,13 @@ PROGRAMS_TO_FLAG = [
     ("il", "ssdi"),
     ("il", "il_liheap"),
     ("il", "il_ccap"),
-    # Note: il_chp excluded — IL CHP+ is captured via member.insurance.chp,
-    # not a screen-level tracking program.
     # MA
     ("ma", "ma_snap"),
     ("ma", "ma_wic"),
     ("ma", "ssi"),
     ("ma", "ssdi"),
     ("ma", "ma_heap"),
-    ("ma", "section_8"),
+    ("ma", "ma_section_8"),
     # NC
     ("nc", "nc_snap"),
     ("nc", "nc_tanf"),
@@ -63,7 +60,6 @@ PROGRAMS_TO_FLAG = [
     ("cesn", "cesn_wic"),
     ("cesn", "cesn_ssi"),
     ("cesn", "cesn_ssdi"),
-    ("cesn", "cesn_chp"),
     ("cesn", "cesn_oap"),
     ("cesn", "cesn_section_8"),
     ("cesn", "cesn_rtdlive"),
@@ -83,6 +79,8 @@ def _programs_q():
 def forward(apps, schema_editor):
     Program = apps.get_model("programs", "Program")
     Program.objects.filter(_programs_q()).update(show_in_has_benefits_step=True, active=True)
+    # Reset anything not in the explicit list — PROGRAMS_TO_FLAG is the authoritative source.
+    Program.objects.exclude(_programs_q()).update(show_in_has_benefits_step=False)
 
 
 def reverse(apps, schema_editor):
