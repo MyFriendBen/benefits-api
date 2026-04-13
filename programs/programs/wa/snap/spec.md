@@ -233,20 +233,20 @@
 
 ---
 
-### Scenario 5: Single Adult — Gross Income $1 Above 200% FPL, Should Be Ineligible
+### Scenario 5: Single Adult — Gross Income Above 200% FPL, Should Be Ineligible
 
-**What we're checking**: Validates that a single-person household with gross monthly income just $1 above the 2026 200% FPL threshold for a household of 1 ($2,660/mo) is correctly denied Basic Food benefits.
+**What we're checking**: Validates that a single-person household with gross monthly income above the 200% FPL threshold for a household of 1 is correctly denied Basic Food benefits.
 
 **Expected**: Not eligible
 
 **Steps**:
 - **Location**: Enter ZIP code `98103`, Select county `King`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `June 1991` (age 34), Relationship: Head of Household, Sex: Male, Not a student, Not pregnant, No disability, US citizen, Employment income: `$2,661` per month ($1 above 200% FPL for HH of 1 in 2026: 200% FPL = $2,660/mo)
+- **Person 1**: Birth month/year: `June 1991` (age 34), Relationship: Head of Household, Sex: Male, Not a student, Not pregnant, No disability, US citizen, Employment income: `$2,661` per month
 - **Expenses**: Rent/mortgage: `$900` per month, No other deductions or expenses
 - **Current Benefits**: Not currently receiving SNAP/Basic Food, Not receiving TANF, Not receiving SSI
 
-**Why this matters**: This tests the upper boundary of the gross income test under Washington's BBCE policy. A household exceeding this threshold by even $1 should be denied, confirming the screener correctly enforces the boundary rather than rounding or allowing a tolerance. Note: income updated from original spec to reflect 2026 FPL values (200% FPL for HH of 1 = $2,660/mo; use $2,661 to be $1 above).
+**Why this matters**: This tests the upper boundary of the gross income test under Washington's BBCE policy. A household exceeding this threshold should be denied, confirming the screener correctly enforces the limit. The income of $2,661/mo exceeds both the SNAP FY2026 threshold ($2,608/mo, based on 2025 FPL: $15,650/yr ÷ 12 × 2, effective Oct 2025–Sep 2026) and the upcoming SNAP FY2027 threshold ($2,660/mo, based on 2026 FPL: $15,960/yr ÷ 12 × 2, effective Oct 2026+), making the test robust across the annual FPL-year transition. Note: scenarios 3 and 4 anchor to the same 2025 FPL base year; this scenario is intentionally set above both thresholds rather than exactly $1 above the current one.
 
 ---
 
