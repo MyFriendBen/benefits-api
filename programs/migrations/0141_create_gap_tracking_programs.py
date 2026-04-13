@@ -35,14 +35,12 @@ GAP_TRACKING_PROGRAMS = [
         "name_abbreviated": "co_andso",
         "name_text": "Aid to the Needy Disabled - State Only (AND-SO)",
         "description_text": "State cash assistance for individuals who are disabled and not yet receiving SSI",
-        "base_program": "andso",
     },
     {
         "white_label_code": "co",
         "name_abbreviated": "co_care",
         "name_text": "Colorado's Affordable Residential Energy (CARE) via Energy Outreach Colorado",
         "description_text": "Home energy upgrades",
-        "base_program": "care",
     },
 ]
 
