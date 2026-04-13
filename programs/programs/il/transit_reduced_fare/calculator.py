@@ -23,8 +23,6 @@ class IlTransitReducedFare(IlTransportationMixin, ProgramCalculator):
     }
 
     def household_eligible(self, e: Eligibility):
-        e.condition(not self.screen.has_benefit("il_transit_reduced_fare"))
-
         # Note: SSI/SSDI presumptive eligibility is not checked here because
         # there are currently no eligibility requirements to bypass. County eligibility is the
         # only household-level requirement. Medicare eligibility is checked

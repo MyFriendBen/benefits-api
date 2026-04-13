@@ -34,9 +34,6 @@ class MaDhspAfterschool(ProgramCalculator):
     dependencies = ["zipcode", "household_size"]
 
     def household_eligible(self, e: Eligibility):
-        # Check if user already has this benefit
-        e.condition(not self.screen.has_benefit("ma_dhsp_afterschool"))
-
         # Location check - must be Cambridge resident
         is_cambridge = self.screen.county == self.eligible_city
         e.condition(is_cambridge, messages.location())
