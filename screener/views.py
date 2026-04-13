@@ -315,14 +315,16 @@ def eligibility_results(screen: Screen, batch=False):
     program_eligibility = {}
 
     for program in all_programs:
+        if not program.has_calculator:
+            continue
         skip = False
-        if program.name_abbreviated not in pe_programs and program.active:
+        if program.name_abbreviated not in pe_programs and program.active and program.has_calculator:
             try:
                 eligibility = program.eligibility(screen, program_eligibility, missing_dependencies)
             except DependencyError:
                 missing_programs = True
                 continue
-        elif program.active:
+        elif program.active and program.has_calculator:
             if program.name_abbreviated not in pe_eligibility:
                 missing_programs = True
                 continue
@@ -694,7 +696,7 @@ class ScreenerOptionsView(views.APIView):
                 white_label__code=white_label,
             )
             .select_related("name", "website_description", "category__name")
-            .order_by("category__name__default_message", "name__default_message")
+            .order_by("category__name__label", "name__label")
         )
 
         return Response(
