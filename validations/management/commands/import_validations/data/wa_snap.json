@@ -37,7 +37,7 @@
     }
   },
   {
-    "notes": "WA Basic Food (SNAP) - Single Adult, Gross Income $1 Above 200% FPL ($2,661/mo) - Should NOT Be Eligible. Patmanson correction: 2026 200% FPL for 1 person is $2,660/mo; original scenario incorrectly used $2,431.",
+    "notes": "WA Basic Food (SNAP) - Single Adult, Gross Income Above 200% FPL ($2,661/mo) - Should NOT Be Eligible. Income of $2,661/mo exceeds both the SNAP FY2026 threshold ($2,608/mo, based on 2025 FPL: $15,650/yr ÷ 12 × 2) and the upcoming SNAP FY2027 threshold ($2,660/mo, based on 2026 FPL: $15,960/yr ÷ 12 × 2, effective Oct 2026). Value chosen to remain robustly ineligible across the Oct 2026 FPL-year transition.",
     "household": {
       "white_label": "wa",
       "household_size": 1,

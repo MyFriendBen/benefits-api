@@ -36,15 +36,12 @@
    - Screener fields: `student`, `student_full_time`, `student_works_20_plus_hrs`, `student_has_work_study`, `student_job_training_program`, `age`
    - Source: 7 CFR 273.5; 7 U.S.C. § 2015(e); WAC 388-482-0005. Students enrolled at least half-time in higher education are ineligible unless they meet an exemption. Exemptions include: age 17 or younger, working 20+ hours/week, participating in work-study, in a job training program, caring for a dependent child under 6, etc. The student restriction effectively applies to students aged 18–49; students aged 17 or younger are categorically exempt.
 
-7. **Elderly or disabled household member — alternative eligibility path** ⚠️ *complex edge case — recommend disclaimer rather than evaluating in screener*
-   - Screener fields: `age`, `disabled`
+7. **Elderly or disabled household member — alternative eligibility path**
+   - Screener fields: `age`, `disabled`, `calc_gross_income`, `calc_net_income`, `household_assets`
    - Note: Households with a member aged 60+ or with a disability have **two paths** to eligibility:
      - **Option A (pass gross income test)**: Gross income ≤ 200% FPL → eligible; net income test is not required.
      - **Option B (fail gross income test)**: Gross income > 200% FPL → can still be eligible if net income ≤ 100% FPL. A $4,500 asset limit also applies under this path.
-   - **Recommendation**: Ignore this edge case in the screener logic and surface a disclaimer for any result returned to a household where a member is 60+ or has a disability:
-     > *"If you got an ineligible result for SNAP and your household includes a person over the age of 60 or with a disability, there is an alternate path to qualify, so consider applying."*
-   - The same disclaimer can be extended if a user did not submit citizenship status:
-     > *"If you did not provide citizenship status, your result may not reflect your full eligibility. Meet citizenship or immigration status requirements to qualify."*
+   - **Implementation**: Evaluate Option B in the screener. Check: (1) household has a member aged 60+ or with a disability, (2) gross income > 200% FPL, (3) net income ≤ 100% FPL, (4) assets ≤ $4,500. If all four conditions are met → eligible. Note: the screener approximates net income as gross minus housing/care expenses; the actual SNAP deduction formula (standard deduction, excess shelter, earned income deduction) is more complex — see criterion 21.
    - Source: 7 CFR 273.9(b)(1); 7 U.S.C. § 2014(c)(1); WAC 388-470-0005.
    - Impact: Medium
 
@@ -137,11 +134,10 @@
 
 ## Implementation Coverage
 
-- ✅ Evaluable criteria: 10
+- ✅ Evaluable criteria: 11
 - ⚠️  Data gaps: 10
-- ⚠️  Complex edge case (recommend disclaimer): 1 (criterion 7 — elderly/disabled alternative path)
 
-10 of 21 total eligibility criteria can be evaluated with current screener fields. The most critical evaluable criteria are: gross income test (200% FPL under WA BBCE), net income test (100% FPL), household size, state residency, current SNAP receipt status, and student eligibility exemptions. Washington's BBCE significantly simplifies screening by eliminating the asset test for most households and raising the gross income limit to 200% FPL. Key corrections from original spec: (1) pregnant women count as **one** household member for Basic Food — pregnancy only affects the work requirement exemption, not household size; (2) the elderly/disabled alternative path (criterion 7) is too complex to reliably evaluate in the screener — recommend a disclaimer instead. Primary gaps are citizenship/immigration status (medium impact), ABAWD work requirements (medium impact, frequently waived in WA), and precise net income deduction calculations (medium impact, approximated).
+11 of 21 total eligibility criteria can be evaluated with current screener fields. The most critical evaluable criteria are: gross income test (200% FPL under WA BBCE), net income test (100% FPL), elderly/disabled Option B alternative path, household size, state residency, current SNAP receipt status, and student eligibility exemptions. Washington's BBCE significantly simplifies screening by eliminating the asset test for most households and raising the gross income limit to 200% FPL. Key corrections from original spec: (1) pregnant women count as **one** household member for Basic Food — pregnancy only affects the work requirement exemption, not household size; (2) the elderly/disabled Option B path (criterion 7) is now evaluated in the screener using an approximated net income calculation. Primary gaps are citizenship/immigration status (medium impact), ABAWD work requirements (medium impact, frequently waived in WA), and precise net income deduction calculations (medium impact, approximated).
 
 
 
@@ -154,12 +150,11 @@
 - [ ] Scenario 5 (Single Adult — Gross Income $1 Above 200% FPL): User should be **ineligible**
 - [ ] Scenario 6 (Person Exactly Age 18 — Minimum Adult Age): User should be **eligible**
 - [ ] Scenario 7 (17-Year-Old Living Alone — Half-Time Student, Age Exemption Applies): User should be **eligible**
-- [ ] Scenario 8 (75-Year-Old Elderly Individual — Elderly Exemption): User should be **eligible**
-- [ ] Scenario 9 (Washington State Resident in Seattle — Valid Location): User should be **eligible**
+- [ ] Scenario 8 (75-Year-Old Elderly Individual — Option B: Gross Above 200% FPL, Net Below 100% FPL): User should be **eligible**
+- [ ] Scenario 9 (Single Adult — Gross Income Below 200% FPL, Net Income Exceeds 100% FPL): User should be **ineligible**
 - [ ] Scenario 10 (Already Receiving Basic Food/SNAP — Duplicate Benefit Exclusion): User should be **ineligible**
-- [ ] Scenario 11 (Household Already Receiving SNAP — Duplicate Benefit Exclusion): User should be **ineligible**
-- [ ] Scenario 12 (Mixed Household — Elderly Member, College Student with Exemption, Working Adult): User should be **eligible**
-- [ ] Scenario 13 (Family of Five — Two Working Adults, Pregnant Member, Two Children): User should be **eligible**
+- [ ] Scenario 11 (Mixed Household — Elderly Member, College Student with Exemption, Working Adult): User should be **eligible**
+- [ ] Scenario 12 (Family of Five — Two Working Adults, Pregnant Member, Two Children): User should be **eligible**
 
 
 ## Test Scenarios
@@ -288,9 +283,9 @@
 
 ---
 
-### Scenario 8: 75-Year-Old Elderly Individual — Eligible with Elderly Exemption
+### Scenario 8: 75-Year-Old Elderly Individual — Option B: Gross Above 200% FPL, Net Below 100% FPL
 
-**What we're checking**: Validates that a person aged 75 is eligible for Basic Food and that the elderly exemption (age 60+) correctly applies — in this scenario the person passes the gross income test directly.
+**What we're checking**: Validates the Option B alternative eligibility path for elderly/disabled households (criterion 7). The person's gross income exceeds the 200% FPL threshold, so they fail the standard gross income test. However, high housing costs bring their net income below 100% FPL, which qualifies them under Option B. This tests the distinctive edge case: gross income > 200% FPL AND net income ≤ 100% FPL for a household with a member aged 60+.
 
 **Expected**: Eligible
 
@@ -298,27 +293,30 @@
 - **Location**: Enter ZIP code `98101`, Select county `King`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `January 1951` (age 75), Relationship: Head of Household, Not a student, Not pregnant, Not disabled (using age 60+ exemption, not disability)
-- **Income**: Social Security Retirement income: `$1,200` per month, No other income sources
+- **Income**: Social Security Retirement income: `$2,700` per month (above 200% FPL of $2,660/mo for HH of 1), No other income sources
+- **Expenses**: Monthly rent/housing cost: `$1,500`
+- **Assets**: `$0` (well below the $4,500 asset limit that applies under Option B)
 - **Current Benefits**: Not currently receiving SNAP/Basic Food, Not receiving TANF, Not receiving SSI
 
-**Why this matters**: Confirms that a person well above the minimum age threshold is correctly recognized as eligible. Also validates the critical elderly exemption (age 60+) pathway. At $1,200/mo income for HH of 1, this household is well below 200% FPL ($2,660/mo), so it qualifies directly via the gross income test without needing the alternative net-income-only path.
+**Why this matters**: Tests the Option B path that is unique to elderly/disabled households. At $2,700/mo gross, this person fails the 200% FPL gross income test ($2,660 threshold for HH=1), so they are not eligible under Option A. But $1,500/mo rent brings approximated net income to $1,200/mo ($2,700 − $1,500), which is below the 100% FPL threshold of $1,255/mo for HH=1 — qualifying under Option B. This is the scenario that Scenario 1 does not cover: an elderly person whose gross income slightly exceeds the standard limit but whose housing costs create genuine financial need.
 
 ---
 
-### Scenario 9: Washington State Resident in Seattle — Eligible Location Within Service Area
+### Scenario 9: Single Adult — Passes Gross Income Test, Fails Net Income Test
 
-**What we're checking**: Validates that a household residing within Washington State (valid WA ZIP code) is recognized as within the Basic Food service area and can proceed with eligibility determination.
+**What we're checking**: A household whose gross income falls below the 200% FPL gross limit ($2,660/mo for HH of 1 in SNAP FY2026) but whose net income — after the 20% earned income deduction and standard deduction — exceeds the 100% FPL net limit ($1,330/mo). This isolates criterion 2 (net income test) independently from the gross income boundary.
 
-**Expected**: Eligible
+**Expected**: Not eligible
 
 **Steps**:
 - **Location**: Enter ZIP code `98101`, Select county `King`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `June 1991` (age 34), Relationship: Head of Household, No disability, Not pregnant, Not a student enrolled in higher education, U.S. citizen
-- **Income**: Employment income: `$1,200` per month, No other income sources
+- **Person 1**: Birth month/year: `June 1991` (age 34), Relationship: Head of Household, Not a student enrolled in higher education, Not pregnant, No disability, U.S. citizen
+- **Income**: Employment income: `$2,200` per month, No other income sources
+- **Expenses**: No significant shelter or dependent care expenses
 - **Current Benefits**: Not currently receiving SNAP/Basic Food, Not receiving TANF or SSI
 
-**Why this matters**: Confirms that a valid Washington State ZIP code (98101 — downtown Seattle, King County) is properly recognized as within the Basic Food service area. Geographic validation is essential because SNAP is state-administered and applicants must reside in the state where they apply (7 CFR 273.3; WAC 388-468-0005).
+**Why this matters**: Tests the net income test (criterion 2) as a standalone ineligible gate. Gross income ($2,200/mo) is well under the 200% FPL limit ($2,660/mo), so the household passes the gross test. After applying the 20% earned income deduction ($440) and the FY2025 standard deduction for HH of 1 ($219), net income is approximately $1,541/mo — above the 100% FPL net limit of $1,330/mo — making the household ineligible. Without significant shelter or dependent care costs, no additional deductions reduce net income below the threshold. Every other eligible scenario in this spec already uses a WA ZIP code, so geographic validation is implicitly covered.
 
 ---
 
@@ -339,24 +337,7 @@
 
 ---
 
-### Scenario 11: Household Already Receiving SNAP — Duplicate Benefit Exclusion (Parent-Child Household)
-
-**What we're checking**: Whether a parent-child household that is already receiving SNAP/Basic Food benefits is correctly excluded, confirming the exclusion applies regardless of household composition.
-
-**Expected**: Not eligible
-
-**Steps**:
-- **Location**: Enter ZIP code `98103`, Select county `King`
-- **Household**: Number of people: `2`
-- **Person 1**: Birth month/year: `June 1986` (age 39), Relationship: Head of Household, No disability, Not pregnant, Not a student, Employment income: `$1,800` per month
-- **Person 2**: Birth month/year: `September 2018` (age 7), Relationship: Child, No disability
-- **Current Benefits**: Indicate that the household is currently receiving SNAP/Basic Food (`has_snap` = Yes)
-
-**Why this matters**: This scenario differs from Scenario 10 by using a parent-child household rather than a single adult, ensuring the duplicate benefit exclusion applies regardless of household composition.
-
----
-
-### Scenario 12: Mixed Household — Elderly Exempt Member, College Student with Work Exemption, Working Adult
+### Scenario 11: Mixed Household — Elderly Exempt Member, College Student with Work Exemption, Working Adult
 
 **What we're checking**: Validates a mixed household where one member is elderly (age 65), one is a college student aged 22 enrolled half-time who qualifies via the 20+ hours/week work exemption, and one is a working adult. Tests interaction of elderly gross income exemption (criterion 7), student eligibility rules (criterion 6), household size determination (criterion 4), and net income test (criterion 2).
 
@@ -374,7 +355,7 @@
 
 ---
 
-### Scenario 13: Family of Five — Two Working Adults, Pregnant Member, and Two Children
+### Scenario 12: Family of Five — Two Working Adults, Pregnant Member, and Two Children
 
 **What we're checking**: Validates that a multi-member household with two working adults (one pregnant), and two children correctly determines eligibility for a household of 5. Pregnancy does NOT change household size for SNAP — the household remains 5 members.
 
@@ -410,11 +391,11 @@
 
 File: `validations/management/commands/import_validations/data/wa_snap.json`
 
-Scenarios 1–13 (scenario 14 removed — the premise that a pregnant woman's unborn child counts as a second household member is incorrect for WA SNAP under federal rules and WAC 388-408-0015).
+Scenarios 1–12 (scenario 14 removed — the premise that a pregnant woman's unborn child counts as a second household member is incorrect for WA SNAP under federal rules and WAC 388-408-0015).
 
 Updated `eligible` values:
-- Scenarios 1, 2, 3, 4, 6, 7, 8, 9, 12, 13: `true`
-- Scenarios 5, 10, 11: `false`
+- Scenarios 1, 2, 3, 4, 6, 7, 8, 9, 11, 12: `true`
+- Scenarios 5, 10: `false`
 
 Updated income amounts for 2026 FPL:
 - Scenario 3 (HH=2, $1 below 200% FPL): `$3,606/mo` (was $2,429)
@@ -431,6 +412,9 @@ File: `programs/management/commands/import_program_config_data/data/wa_snap_init
 
 | Date | Author | Change |
 |---|---|---|
+| 2026-04-13 | catonph (review) | Removed redundant Scenario 11 (duplicate `has_snap` check, parent-child household); renumbered Scenarios 12→11 and 13→12 |
 | 2026-03-23 | Josh Mejia | Initial research and spec |
 | 2026-04-07 | patmanson | Corrections: pregnant women count as 1 HH member (not 2); updated 2026 FPL thresholds in scenarios 3/4/5; clarified elderly/disabled alternative path (criteria 2, 3, 7); recommended disclaimer for 60+/disabled edge case; removed scenario 14; estimated_value deferred to PolicyEngine |
+| 2026-04-13 | catonph | Scenario 9 replaced: geographic validation was redundant (all eligible scenarios use WA ZIP codes); new Scenario 9 isolates net income test failure — gross passes 200% FPL, net fails 100% FPL after standard SNAP deductions |
+| 2026-04-13 | catonph/patrickwey | Scenario 8 updated to exercise Option B path (gross > 200% FPL, net ≤ 100% FPL via $1,500/mo rent) instead of the low-income Option A path; criterion 7 updated to implement Option B in screener rather than disclaimer-only; evaluable criteria count increased from 10 to 11 |
 | 2026-04-13 | patmanson | Fix FPL year inconsistency (catonph review): scenarios 3/4 text still referenced 2025 FPL ($3,525/mo) — updated to 2026 FPL ($3,607/mo for HH=2, matching the program's year=2026 PolicyEngine config); scenario 3 income $3,400→$3,606 (tight boundary, $1 below threshold); scenario 4 income $3,500→$3,607 (exactly at threshold, matching acceptance criteria); added note explaining calendar-year vs. SNAP fiscal-year FPL distinction |
