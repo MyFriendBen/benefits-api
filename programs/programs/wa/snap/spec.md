@@ -204,25 +204,25 @@
 
 ### Scenario 3: Single Parent with Child — Gross Income Below 200% FPL Threshold
 
-**What we're checking**: Validates that a household of 2 with gross monthly income below the SNAP FY2026 200% FPL threshold for a household of 2 ($3,525/mo) is correctly found eligible.
+**What we're checking**: Validates that a household of 2 with gross monthly income $1 below the 2026 200% FPL threshold for a household of 2 ($3,607/mo) is correctly found eligible.
 
 **Expected**: Eligible
 
 **Steps**:
 - **Location**: Enter ZIP code `98103`, Select county `King`
 - **Household**: Number of people: `2`
-- **Person 1**: Birth month/year: `June 1991` (age 34), Relationship: Head of Household, Sex: Female, Not a student, Not pregnant, No disability, U.S. citizen, Employment income: `$3,400` per month (below 200% FPL for HH of 2 in SNAP FY2026: threshold = $3,525/mo, based on 2025 FPL values effective Oct 2025–Sep 2026)
+- **Person 1**: Birth month/year: `June 1991` (age 34), Relationship: Head of Household, Sex: Female, Not a student, Not pregnant, No disability, U.S. citizen, Employment income: `$3,606` per month ($1 below 200% FPL for HH of 2 in 2026: threshold = $3,607/mo, based on 2026 FPL: $21,640/yr ÷ 12 × 2)
 - **Person 2**: Birth month/year: `September 2020` (age 5), Relationship: Child, Sex: Male, No income, U.S. citizen
 - **Expenses**: Rent/housing cost: `$1,200` per month, Child care costs: `$400` per month
 - **Current Benefits**: Not currently receiving SNAP/Basic Food, Not receiving TANF, Not receiving SSI
 
-**Why this matters**: This test validates that a single-parent household under the 200% FPL gross income limit is correctly identified as eligible under Washington's BBCE policy. Note: SNAP updates income thresholds each October using the FPL published earlier that calendar year. For SNAP FY2026 (Oct 2025–Sep 2026), the applicable 200% FPL for HH of 2 is $3,525/mo (based on 2025 FPL: $21,150/yr ÷ 12 × 2), not the 2026 calendar-year FPL ($3,607/mo) which won't apply to SNAP until October 2026.
+**Why this matters**: This test validates that a single-parent household just under the 200% FPL gross income limit is correctly identified as eligible under Washington's BBCE policy. Income is set at $3,606/mo — $1 below the 2026 FPL threshold of $3,607/mo (200% of $21,640/yr for HH=2). Note: the screener calls PolicyEngine with period "2026-01", which applies 2026 calendar-year FPL values. This differs from SNAP FY2026 (Oct 2025–Sep 2026), which technically uses 2025 HHS guidelines ($21,150/yr → $3,525/mo); the calendar-year vs. fiscal-year distinction is a deliberate screener design choice.
 
 ---
 
-### Scenario 4: Couple Household — Gross Income Below 200% FPL Threshold
+### Scenario 4: Couple Household — Gross Income Exactly at 200% FPL Threshold
 
-**What we're checking**: Validates that a 2-person household with gross monthly income below the SNAP FY2026 200% FPL threshold ($3,525/month for HH of 2) is eligible under Washington's BBCE gross income test, and net income after standard deduction passes 100% FPL.
+**What we're checking**: Validates that a 2-person household with gross monthly income exactly at the 2026 200% FPL threshold ($3,607/month for HH of 2) is eligible under Washington's BBCE gross income test ("at or below" per WAC 388-414-0001), and net income after standard deduction passes 100% FPL.
 
 **Expected**: Eligible
 
@@ -230,11 +230,11 @@
 - **Location**: Enter ZIP code `98103`, Select county `King`
 - **Household**: Number of people: `2`
 - **Person 1**: Birth month/year: `June 1986` (age 39), Relationship: Head of Household, Sex: Male, Not a student, Not pregnant, Not disabled, US citizen, Employment income: `$2,000` per month
-- **Person 2**: Birth month/year: `September 1988` (age 37), Relationship: Spouse, Sex: Female, Not a student, Not pregnant, Not disabled, US citizen, Employment income: `$1,500` per month
-- **Combined gross income**: `$3,500/month` (below 200% FPL for HH of 2 in SNAP FY2026: threshold = $3,525/mo, based on 2025 FPL values effective Oct 2025–Sep 2026).
+- **Person 2**: Birth month/year: `September 1988` (age 37), Relationship: Spouse, Sex: Female, Not a student, Not pregnant, Not disabled, US citizen, Employment income: `$1,607` per month
+- **Combined gross income**: `$3,607/month` (exactly at 200% FPL for HH of 2 in 2026: threshold = $3,607/mo, based on 2026 FPL: $21,640/yr ÷ 12 × 2).
 - **Current Benefits**: Not currently receiving SNAP/Basic Food, Not receiving TANF, Not receiving SSI
 
-**Why this matters**: Validates that a couple household under the 200% FPL gross income limit is correctly found eligible under Washington's BBCE policy. Note: SNAP updates income thresholds each October using the FPL published earlier that calendar year. For SNAP FY2026 (Oct 2025–Sep 2026), the applicable 200% FPL for HH of 2 is $3,525/mo (based on 2025 FPL: $21,150/yr ÷ 12 × 2), not the 2026 calendar-year FPL ($3,607/mo) which won't apply to SNAP until October 2026.
+**Why this matters**: Validates that a couple household at exactly the 200% FPL gross income limit is correctly found eligible under Washington's BBCE policy — the criterion is "at or below" (WAC 388-414-0001), so the boundary value must be eligible. Income is set to exactly $3,607/mo (2026 FPL for HH=2: $21,640/yr ÷ 12 × 2). The screener uses PolicyEngine period "2026-01", applying 2026 calendar-year FPL. This is consistent with Scenarios 3 and 5 — all boundary tests use 2026 FPL values.
 
 ---
 
@@ -433,3 +433,4 @@ File: `programs/management/commands/import_program_config_data/data/wa_snap_init
 |---|---|---|
 | 2026-03-23 | Josh Mejia | Initial research and spec |
 | 2026-04-07 | patmanson | Corrections: pregnant women count as 1 HH member (not 2); updated 2026 FPL thresholds in scenarios 3/4/5; clarified elderly/disabled alternative path (criteria 2, 3, 7); recommended disclaimer for 60+/disabled edge case; removed scenario 14; estimated_value deferred to PolicyEngine |
+| 2026-04-13 | patmanson | Fix FPL year inconsistency (catonph review): scenarios 3/4 text still referenced 2025 FPL ($3,525/mo) — updated to 2026 FPL ($3,607/mo for HH=2, matching the program's year=2026 PolicyEngine config); scenario 3 income $3,400→$3,606 (tight boundary, $1 below threshold); scenario 4 income $3,500→$3,607 (exactly at threshold, matching acceptance criteria); added note explaining calendar-year vs. SNAP fiscal-year FPL distinction |
