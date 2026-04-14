@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "tx" },
+  "need": {
+    "external_name": "tx_dallas_college_red_bird",
+    "category_type": {
+      "external_name": "job_resources",
+      "name": "Job resources",
+      "icon": "job resources"
+    },
+    "type_short": ["job resources"],
+    "translations": {
+      "name": "Dallas College Red Bird Workforce Training Center",
+      "description": "Offers short-term workforce training programs, continuing education, and career development courses at the Red Bird campus to help residents gain job-ready skills in high-demand fields.",
+      "link": "https://www.dallascollege.edu/locations/pages/redbird.aspx",
+      "warning": "",
+      "website_description": "Workforce training and continuing education programs at the Red Bird campus.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": ["Dallas"],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}
