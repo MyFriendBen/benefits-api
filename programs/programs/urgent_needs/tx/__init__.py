@@ -20,7 +20,6 @@ from .arete_health_shield import AreteHealthShield
 from .oak_cliff_veggie_project import OakCliffVeggieProject
 from .west_dallas_multipurpose_center import WestDallasMultipurposeCenter
 from .grocery_clearance_outlet import GroceryClearanceOutlet
-from .do_more_good_store import DoMoreGoodStore
 from .dallas_college_red_bird import DallasCollegeRedBird
 from .workforce_solutions_greater_dallas import WorkforceSolutionsGreaterDallas
 from .oak_cliff_lena import OakCliffLena
@@ -54,7 +53,6 @@ tx_urgent_need_functions: dict[str, type[UrgentNeedFunction]] = {
     "tx_oak_cliff_veggie_project": OakCliffVeggieProject,
     "tx_west_dallas_multipurpose_center": WestDallasMultipurposeCenter,
     "tx_grocery_clearance_outlet": GroceryClearanceOutlet,
-    "tx_do_more_good_store": DoMoreGoodStore,
     "tx_dallas_college_red_bird": DallasCollegeRedBird,
     "tx_workforce_solutions_greater_dallas": WorkforceSolutionsGreaterDallas,
     "tx_oak_cliff_lena": OakCliffLena,

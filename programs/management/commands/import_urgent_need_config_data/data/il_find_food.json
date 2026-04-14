@@ -18,7 +18,7 @@
     },
     "functions": ["il_find_food"],
     "counties": ["Cook", "Mercer"],
-    "required_expense_types": ["rent", "telephone", "internet"],
+    "required_expense_types": [],
     "active": true,
     "low_confidence": false,
     "show_on_current_benefits": true
