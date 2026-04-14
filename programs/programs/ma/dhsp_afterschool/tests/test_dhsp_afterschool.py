@@ -233,7 +233,6 @@ class TestMaDhspAfterschoolHasBenefit(TestCase):
         self.assertTrue(eligibility.eligible)
 
 
-
 class TestMaDhspAfterschoolValue(TestCase):
     """Tests for benefit value calculation via the value() method."""
 

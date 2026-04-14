@@ -35,25 +35,43 @@ GAP_TRACKING_PROGRAMS = [
         "name_abbreviated": "co_andso",
         "name_text": "Aid to the Needy Disabled - State Only (AND-SO)",
         "description_text": "State cash assistance for individuals who are disabled and not yet receiving SSI",
-        "base_program": "andso",
     },
     {
         "white_label_code": "co",
         "name_abbreviated": "co_care",
         "name_text": "Colorado's Affordable Residential Energy (CARE) via Energy Outreach Colorado",
         "description_text": "Home energy upgrades",
-        "base_program": "care",
     },
 ]
 
 
+TRANSLATED_FIELDS = (
+    "description_short",
+    "name",
+    "description",
+    "learn_more_link",
+    "apply_button_link",
+    "apply_button_description",
+    "value_type",
+    "estimated_delivery_time",
+    "estimated_application_time",
+    "estimated_value",
+    "website_description",
+)
+NO_AUTO_FIELDS = ("apply_button_link", "learn_more_link")
+BLANK_TRANSLATION_PLACEHOLDER = "[PLACEHOLDER]"
+
+
 def create_gap_tracking_programs(apps, schema_editor):
-    from programs.models import Program
-    from screener.models import WhiteLabel
     from translations.models import Translation
 
+    Program = apps.get_model("programs", "Program")
+    WhiteLabel = apps.get_model("screener", "WhiteLabel")
+
     for p in GAP_TRACKING_PROGRAMS:
-        if not WhiteLabel.objects.filter(code=p["white_label_code"]).exists():
+        try:
+            white_label = WhiteLabel.objects.get(code=p["white_label_code"])
+        except WhiteLabel.DoesNotExist:
             continue
 
         existing = Program.objects.filter(
@@ -64,15 +82,33 @@ def create_gap_tracking_programs(apps, schema_editor):
         if existing:
             program = existing
         else:
-            program = Program.objects.new_program(
-                white_label=p["white_label_code"],
-                name_abbreviated=p["name_abbreviated"],
+            name_abbreviated = p["name_abbreviated"]
+            translations = {}
+            for field in TRANSLATED_FIELDS:
+                default_message = "" if field == "apply_button_description" else BLANK_TRANSLATION_PLACEHOLDER
+                translations[field] = Translation.objects.add_translation(
+                    f"program.{name_abbreviated}_temporary_key-{field}",
+                    default_message=default_message,
+                    no_auto=(field in NO_AUTO_FIELDS),
+                )
+
+            external_name_exists = Program.objects.filter(external_name=name_abbreviated).exists()
+            program = Program.objects.create(
+                name_abbreviated=name_abbreviated,
+                external_name=name_abbreviated if not external_name_exists else None,
+                year=None,
+                active=True,
+                low_confidence=False,
+                has_calculator=False,
+                show_in_has_benefits_step=True,
+                base_program=p.get("base_program"),
+                white_label=white_label,
+                **translations,
             )
-            program.active = True
-            program.has_calculator = False
-            program.show_in_has_benefits_step = True
-            program.base_program = p.get("base_program")
-            program.save()
+
+            for field, translation in translations.items():
+                translation.label = f"program.{name_abbreviated}_{program.id}-{field}"
+                translation.save()
 
         Translation.objects.add_translation(
             f"program.{p['name_abbreviated']}_{program.id}-name",
