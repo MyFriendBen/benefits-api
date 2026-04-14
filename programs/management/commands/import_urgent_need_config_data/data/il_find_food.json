@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "il" },
+  "need": {
+    "external_name": "il_find_food",
+    "category_type": {
+      "external_name": "food_or_groceries",
+      "name": "Food or groceries",
+      "icon": "food or groceries"
+    },
+    "type_short": ["food"],
+    "translations": {
+      "name": "Find Food IL",
+      "description": "Use the Find Food IL map to find free food or meals near you.",
+      "link": "https://eat-move-save.extension.illinois.edu/#food-finder",
+      "warning": "",
+      "website_description": "Map to find free food or meals near you.",
+      "notification_message": ""
+    },
+    "functions": ["il_find_food"],
+    "counties": ["Cook", "Mercer"],
+    "required_expense_types": ["rent", "telephone", "internet"],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

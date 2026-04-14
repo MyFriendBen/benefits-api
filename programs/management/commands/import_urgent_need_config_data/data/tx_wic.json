@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "tx" },
+  "need": {
+    "external_name": "tx_wic",
+    "category_type": {
+      "external_name": "food_or_groceries",
+      "name": "Food or groceries",
+      "icon": "food or groceries"
+    },
+    "type_short": ["food"],
+    "translations": {
+      "name": "WIC / Farmers Market Nutrition Program",
+      "description": "WIC provides supplemental foods, healthcare referrals, and nutrition education for low-income pregnant, breastfeeding, and postpartum women, and infants and children up to age 5. The Farmers Market Nutrition Program provides vouchers to buy fresh produce at authorized farmers markets.",
+      "link": "https://www.dshs.texas.gov/wic",
+      "warning": "",
+      "website_description": "Texas WIC program information and how to apply.",
+      "notification_message": ""
+    },
+    "functions": ["tx_wic"],
+    "counties": ["Dallas"],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}
