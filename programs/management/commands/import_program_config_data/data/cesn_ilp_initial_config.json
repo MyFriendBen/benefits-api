@@ -9,23 +9,26 @@
     "name_abbreviated": "cesn_ilp",
     "external_name": "cesn_ilp",
     "show_on_current_benefits": true,
+    "has_calculcator": true,
+    "show_in_has_benefits_step": false,
     "legal_status_required": ["citizen", "non_citizen", "gc_5plus", "gc_18plus_no5", "gc_under18_no5"],
     "name": "Induction Lending Program",
     "description_short": "Free 3-week loan of a portable induction cooktop for Boulder County residents",
     "description": "Boulder County residents can rent a portable induction cooktop with cooking utensils included for three weeks at a time at no cost.",
     "learn_more_link": "https://energysmartyes.com/electrification/induction-cooking/",
     "apply_button_link": "https://forms.office.com/Pages/ResponsePage.aspx?id=fJSyNwqOoEeiE0PL0SvxN5ewLcKedppPhq9gYXOoZv1UREg4OU81UEM4TEFPMldJUURaQVdFRDVWMyQlQCN0PWcu",
-    "apply_button_description": "Apply Now",
+    "apply_button_description": "",
     "estimated_application_time": "20 minutes",
     "estimated_delivery_time": "1–2 days",
-    "estimated_value": "Free (3-week equipment loan)",
+    "estimated_value": "",
+    "value_format": "lump_sum",
     "website_description": "Free 3-week loan of a portable induction cooktop for Boulder County residents"
   },
   "navigators": [
     {
       "external_name": "energy_smart_yes",
       "name": "Energy Smart Yes",
-      "email": "",
+      "email": "info@energysmartyes.com",
       "description": "Energy Smart Yes helps Boulder County residents with energy efficiency and electrification programs.",
       "assistance_link": "https://energysmartyes.com/"
     }
