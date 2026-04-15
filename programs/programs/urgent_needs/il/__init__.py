@@ -5,6 +5,7 @@ from .rentervention import Rentervention
 from .il_eviction_help import IlEvictionHelp
 from .il_save_home import IlSaveHome
 from .il_rent_asst import IlRenterAssistance
+from .find_food_il import FindFoodIl
 from ..base import UrgentNeedFunction
 
 il_urgent_need_functions: dict[str, type[UrgentNeedFunction]] = {
@@ -15,4 +16,5 @@ il_urgent_need_functions: dict[str, type[UrgentNeedFunction]] = {
     "il_eviction_help": IlEvictionHelp,
     "il_save_home": IlSaveHome,
     "il_rent_asst": IlRenterAssistance,
+    "il_find_food": FindFoodIl,
 }

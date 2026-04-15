@@ -535,5 +535,5 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # See README.md for full documentation.
     # ==========================================================================================
     # experiments = {
-    #     "npsVariant": {"variants": ["floating"]},  # Single variant = no A/B test
+    #     "exampleExperiment": {"variants": ["A", "B"]},
     # }

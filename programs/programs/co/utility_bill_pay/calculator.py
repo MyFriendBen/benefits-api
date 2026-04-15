@@ -4,8 +4,8 @@ import programs.programs.messages as messages
 
 
 class UtilityBillPay(ProgramCalculator):
-    presumptive_eligibility = ("snap", "ssi", "andcs", "tanf", "wic", "chp")
-    member_presumptive_eligibility = ("co_medicaid", "emergency_medicaid")
+    presumptive_eligibility = ("snap", "ssi", "andcs", "tanf", "wic")
+    member_presumptive_eligibility = ("co_medicaid", "emergency_medicaid", "chp")
     amount = 400
 
     def __init__(self, *args, **kwargs):

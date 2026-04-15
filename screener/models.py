@@ -461,9 +461,10 @@ class Screen(models.Model):
             "ncwap": self.has_ncwap,
             "ubp": self.has_ubp,
             "cesn_ubp": self.has_ubp,
-            "chp": self.has_chp or self.has_chp_hi,
             "nfp": self.has_nfp,
             "section_8": self.has_section_8,
+            "co_section_8": self.has_section_8,
+            "ma_section_8": self.has_section_8,
             "aca": self.has_aca,
             "medicaid": self.has_medicaid,
             "nc_aca": self.has_aca,
@@ -491,7 +492,9 @@ class Screen(models.Model):
             "ma_early_head_start": self.has_early_head_start,
             "tx_early_head_start": self.has_early_head_start,
             "co_andso": self.has_co_andso,
+            "cesn_andso": self.has_co_andso,
             "co_care": self.has_co_care,
+            "cesn_care": self.has_co_care,
             "cfhc": self.has_cfhc,
             "shitc": self.has_shitc,
             "nc_medicare_savings": self.has_nc_medicare_savings,
@@ -505,12 +508,10 @@ class Screen(models.Model):
             "cesn_wic": self.has_wic,
             "cesn_ssi": has_ssi_or_ssi_income,
             "cesn_ssdi": self.has_ssdi,
-            "cesn_chp": self.has_chp or self.has_chp_hi,
             "cesn_oap": self.has_oap,
             "cesn_section_8": self.has_section_8,
             "cesn_rtdlive": self.has_rtdlive,
             "cesn_andcs": self.has_andcs,
-            "cesn_medicaid": self.has_medicaid,
             "nc_leap": self.has_leap,
             "nc_cccap": self.has_ccap,
         }
@@ -1031,18 +1032,8 @@ class EligibilitySnapshot(models.Model):
 
 
 class NPSScore(models.Model):
-    class Variant(models.TextChoices):
-        FLOATING = "floating", "Floating Widget"
-        INLINE = "inline", "Inline Section"
-
     eligibility_snapshot = models.OneToOneField(EligibilitySnapshot, related_name="nps_score", on_delete=models.CASCADE)
     score = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(10)])
-    variant = models.CharField(
-        max_length=20,
-        choices=Variant.choices,
-        blank=True,
-        null=True,
-    )
     score_reason = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -1055,7 +1046,6 @@ class NPSScore(models.Model):
         ]
         indexes = [
             models.Index(fields=["-created_at"], name="nps_created_at_idx"),
-            models.Index(fields=["variant"], name="nps_variant_idx"),
         ]
 
     def __str__(self):

@@ -1935,7 +1935,7 @@ class CesnConfigurationData(ConfigurationData):
                         "_default_message": "State cash assistance for individuals who are disabled and receiving SSI",
                     },
                 },
-                "co_andso": {
+                "cesn_andso": {
                     "name": {
                         "_label": "cashAssistanceBenefits.co_andso",
                         "_default_message": "Aid to the Needy Disabled - State Only (AND-SO): ",
@@ -2031,7 +2031,7 @@ class CesnConfigurationData(ConfigurationData):
                         "_default_message": "Free home energy upgrades",
                     },
                 },
-                "co_care": {
+                "cesn_care": {
                     "name": {
                         "_label": "housingAndUtilities.care",
                         "_default_message": "Colorado's Affordable Residential Energy (CARE) via Energy Outreach Colorado: ",

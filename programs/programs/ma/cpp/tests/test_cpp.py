@@ -289,12 +289,6 @@ class TestMaCppHasBenefit(TestCase):
         eligibility = calculator.eligible()
         self.assertTrue(eligibility.eligible)
 
-    def test_scenario8_already_has_benefit_ineligible(self):
-        """Scenario 8: Household already enrolled in CPP → Not eligible."""
-        calculator = self._create_calculator(has_benefit=True)
-        eligibility = calculator.eligible()
-        self.assertFalse(eligibility.eligible)
-
 
 class TestMaCppFosterCare(TestCase):
     """Tests for foster care eligibility — foster children bypass the 3yo income restriction."""

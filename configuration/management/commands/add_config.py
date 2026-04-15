@@ -56,20 +56,6 @@ class Command(BaseCommand):
             # Save experiments to database (with validation)
             experiments_data = WhiteLabelData.experiments
 
-            # Validate npsVariant experiment config against model choices
-            if "npsVariant" in experiments_data:
-                valid_variants = [choice[0] for choice in NPSScore.Variant.choices]
-                config_variants = experiments_data["npsVariant"].get("variants", [])
-                invalid = set(config_variants) - set(valid_variants)
-                if invalid:
-                    self.stdout.write(
-                        self.style.ERROR(
-                            f"Invalid NPS variants in {white_label_code} experiments config: {invalid}. "
-                            f"Valid options: {valid_variants}"
-                        )
-                    )
-                    raise ValueError(f"Invalid NPS variants: {invalid}")
-
             Configuration.objects.update_or_create(
                 name="experiments",
                 white_label=white_label,

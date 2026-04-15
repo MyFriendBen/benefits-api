@@ -222,7 +222,9 @@ class TestMaMiddleIncomeRentalIncomeEligibility(TestCase):
         mock_screen.white_label = Mock()
         mock_screen.white_label.state_code = "MA"
         mock_screen.calc_gross_income = Mock(return_value=income)
-        mock_screen.has_benefit = Mock(side_effect=lambda name: has_section_8 if name == "section_8" else has_benefit)
+        mock_screen.has_benefit = Mock(
+            side_effect=lambda name: has_section_8 if name == "ma_section_8" else has_benefit
+        )
         mock_head = Mock()
         mock_head.age = 35
         mock_screen.get_head = Mock(return_value=mock_head)
@@ -328,7 +330,7 @@ class TestMaMiddleIncomeRentalSection8Voucher(TestCase):
         mock_screen.white_label = Mock()
         mock_screen.white_label.state_code = "MA"
         mock_screen.calc_gross_income = Mock(return_value=income)
-        mock_screen.has_benefit = Mock(side_effect=lambda name: has_section_8 if name == "section_8" else False)
+        mock_screen.has_benefit = Mock(side_effect=lambda name: has_section_8 if name == "ma_section_8" else False)
         mock_head = Mock()
         mock_head.age = 35
         mock_screen.get_head = Mock(return_value=mock_head)
@@ -666,18 +668,6 @@ class TestMaMiddleIncomeRentalHasBenefit(TestCase):
         calculator.household_eligible(eligibility)
 
         self.assertTrue(eligibility.eligible)
-
-    @patch("programs.programs.ma.middle_income_rental.calculator.hud_client")
-    def test_user_with_benefit_is_ineligible(self, mock_hud_client):
-        """Test that users who already have the benefit are ineligible."""
-        mock_hud_client.get_screen_il_ami.return_value = 80000
-
-        calculator = self._create_calculator(has_benefit=True, income=90000)
-        eligibility = Eligibility()
-
-        calculator.household_eligible(eligibility)
-
-        self.assertFalse(eligibility.eligible)
 
 
 class TestMaMiddleIncomeRentalValue(TestCase):

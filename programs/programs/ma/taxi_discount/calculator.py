@@ -25,9 +25,6 @@ class MaTaxiDiscount(ProgramCalculator):
     dependencies = ["zipcode", "age"]
 
     def household_eligible(self, e: Eligibility) -> None:
-        # Check if user already has this benefit
-        e.condition(not self.screen.has_benefit("ma_taxi_discount"))
-
         # Location check - must be Cambridge resident
         # (MA stores city name in county field, see MFB-548)
         is_cambridge = self.screen.county == self.eligible_city

@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "tx" },
+  "need": {
+    "external_name": "tx_find_a_dentist",
+    "category_type": {
+      "external_name": "dental_care",
+      "name": "Low-cost dental care",
+      "icon": "low-cost dental care"
+    },
+    "type_short": ["dental care"],
+    "translations": {
+      "name": "Find a Dentist (Texas DSHS)",
+      "description": "State directory guiding residents to free/low-cost dental clinics and programs.",
+      "link": "https://www.dshs.texas.gov/dental-health/find-a-dentist",
+      "warning": "",
+      "website_description": "Searchable low or no cost dentist tool.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

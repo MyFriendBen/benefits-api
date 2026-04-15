@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "tx" },
+  "need": {
+    "external_name": "tx_oak_cliff_lena",
+    "category_type": {
+      "external_name": "child_development",
+      "name": "Concern about your child's development",
+      "icon": "child's development"
+    },
+    "type_short": ["child dev"],
+    "translations": {
+      "name": "For Oak Cliff Language Environment Program (LENA)",
+      "description": "A 10-week family engagement program helping parents increase quality conversations with young children using personalized feedback and a word-count tracking device, plus books and resources for building early literacy.",
+      "link": "https://www.foroakcliff.org/lena.html",
+      "warning": "",
+      "website_description": "Early language development program using LENA technology for families with young children.",
+      "notification_message": ""
+    },
+    "functions": ["tx_oak_cliff_lena"],
+    "counties": ["Dallas"],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

@@ -40,3 +40,6 @@ tasks/todo.md
 
 # Readability check output files in readability-output folder
 readability-output/
+
+# Script for adding specific resources
+programs/management/commands/import_urgent_need_config_data/import_new_resources.sh

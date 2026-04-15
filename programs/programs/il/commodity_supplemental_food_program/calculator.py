@@ -35,8 +35,6 @@ class IlCommoditySupplementalFoodProgram(ProgramCalculator):
     member_amount = 50 * 12  # $50/month - estimated value of food package
 
     def household_eligible(self, e: Eligibility):
-        e.condition(not self.screen.has_benefit("il_csfp"))
-
         # 1. eligible county
         e.condition(self.screen.county in self.eligible_counties)
 

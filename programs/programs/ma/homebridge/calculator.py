@@ -33,9 +33,6 @@ class MaHomeBridge(ProgramCalculator):
     dependencies = ["zipcode", "income_amount", "income_frequency", "household_size"]
 
     def household_eligible(self, e: Eligibility):
-        # Check if user already has this benefit
-        e.condition(not self.screen.has_benefit("ma_homebridge"))
-
         # Location check - must be Cambridge resident
         is_cambridge = self.screen.county == self.eligible_city
         e.condition(is_cambridge, messages.location())

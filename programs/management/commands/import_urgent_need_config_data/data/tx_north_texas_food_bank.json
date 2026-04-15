@@ -1,0 +1,40 @@
+{
+  "white_label": { "code": "tx" },
+  "need": {
+    "external_name": "tx_north_texas_food_bank",
+    "category_type": {
+      "external_name": "food_or_groceries",
+      "name": "Food or groceries",
+      "icon": "food or groceries"
+    },
+    "type_short": ["food"],
+    "translations": {
+      "name": "North Texas Food Bank (NTFB) – Food Assistance & Mobile Pantries",
+      "description": "Regional food bank serving Dallas/North Texas with free food pantries, mobile distributions, and SNAP application help.",
+      "link": "https://ntfb.org/food-assistance/",
+      "warning": "",
+      "website_description": "Local, searchable food support like food banks and drives.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Collin",
+      "Dallas",
+      "Delta",
+      "Denton",
+      "Ellis",
+      "Fannin",
+      "Grayson",
+      "Hopkins",
+      "Hunt",
+      "Kaufman",
+      "Lamar",
+      "Navarro",
+      "Rockwall"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

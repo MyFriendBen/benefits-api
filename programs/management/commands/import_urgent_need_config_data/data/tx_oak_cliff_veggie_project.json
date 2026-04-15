@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "tx" },
+  "need": {
+    "external_name": "tx_oak_cliff_veggie_project",
+    "category_type": {
+      "external_name": "food_or_groceries",
+      "name": "Food or groceries",
+      "icon": "food or groceries"
+    },
+    "type_short": ["food"],
+    "translations": {
+      "name": "Oak Cliff Veggie Project",
+      "description": "A nonprofit that increases access to fresh produce through cooperative growing spaces and community education, operating a veggie store serving 1,000+ families monthly and managing community garden spaces in food deserts.",
+      "link": "https://www.oakcliffveggieproject.org/",
+      "warning": "",
+      "website_description": "Fresh produce access and community garden spaces in Oak Cliff.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": ["Dallas"],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}
