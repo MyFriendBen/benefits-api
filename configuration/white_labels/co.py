@@ -147,6 +147,7 @@ class CoConfigurationData(ConfigurationData):
         },
     }
 
+    # Deprecated: managed via Django admin → Programs → Referrers. Remove as part of MFB-864.
     referral_options = {
         "211co": "2-1-1 Colorado",
         "cch": "Colorado Coalition for the Homeless",

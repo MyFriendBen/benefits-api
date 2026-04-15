@@ -48,6 +48,7 @@ class CesnConfigurationData(ConfigurationData):
 
     sign_up_options = {}
 
+    # Deprecated: managed via Django admin → Programs → Referrers. Remove as part of MFB-864.
     referral_options = {}
 
     language_options = {
