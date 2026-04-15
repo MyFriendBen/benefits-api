@@ -67,6 +67,7 @@ def create_gap_tracking_programs(apps, schema_editor):
 
     Program = apps.get_model("programs", "Program")
     WhiteLabel = apps.get_model("screener", "WhiteLabel")
+    db = schema_editor.connection
 
     for p in GAP_TRACKING_PROGRAMS:
         try:
@@ -93,18 +94,63 @@ def create_gap_tracking_programs(apps, schema_editor):
                 )
 
             external_name_exists = Program.objects.filter(external_name=name_abbreviated).exists()
-            program = Program.objects.create(
-                name_abbreviated=name_abbreviated,
-                external_name=name_abbreviated if not external_name_exists else None,
-                year=None,
-                active=True,
-                low_confidence=False,
-                has_calculator=False,
-                show_in_has_benefits_step=True,
-                base_program=p.get("base_program"),
-                white_label=white_label,
-                **translations,
-            )
+            external_name = name_abbreviated if not external_name_exists else None
+            base_program = p.get("base_program")
+
+            # Use raw SQL to avoid django-parler crash on historical ORM models.
+            # apps.get_model() returns a frozen historical model that parler never
+            # registers _parler_meta on, so Program.objects.create() with translated
+            # field kwargs raises AttributeError: 'NoneType'.get_all_fields().
+            with db.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO programs_program (
+                        name_abbreviated, external_name, year_id,
+                        active, low_confidence, has_calculator,
+                        show_in_has_benefits_step, show_on_current_benefits,
+                        base_program, white_label_id,
+                        name_id, description_short_id, description_id,
+                        learn_more_link_id, apply_button_link_id,
+                        apply_button_description_id, value_type_id,
+                        estimated_delivery_time_id, estimated_application_time_id,
+                        estimated_value_id, website_description_id
+                    ) VALUES (
+                        %s, %s, NULL,
+                        TRUE, FALSE, FALSE,
+                        TRUE, FALSE,
+                        %s, %s,
+                        %s, %s, %s,
+                        %s, %s,
+                        %s, %s,
+                        %s, %s,
+                        %s, %s
+                    ) RETURNING id
+                    """,
+                    [
+                        name_abbreviated,
+                        external_name,
+                        base_program,
+                        white_label.id,
+                        translations["name"].id,
+                        translations["description_short"].id,
+                        translations["description"].id,
+                        translations["learn_more_link"].id,
+                        translations["apply_button_link"].id,
+                        translations["apply_button_description"].id,
+                        translations["value_type"].id,
+                        translations["estimated_delivery_time"].id,
+                        translations["estimated_application_time"].id,
+                        translations["estimated_value"].id,
+                        translations["website_description"].id,
+                    ],
+                )
+                program_id = cursor.fetchone()[0]
+
+            # Wrap in a simple object so the label-update loop below can use program.id
+            class _Program:
+                id = program_id
+
+            program = _Program()
 
             for field, translation in translations.items():
                 translation.label = f"program.{name_abbreviated}_{program.id}-{field}"
