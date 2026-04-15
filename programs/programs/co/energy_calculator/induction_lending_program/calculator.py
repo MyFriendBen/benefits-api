@@ -13,8 +13,9 @@ class EnergyCalculatorInductionLendingProgram(ProgramCalculator):
     Eligibility criteria:
     - Must be a Boulder County resident (verified via ZIP code)
     """
+
     # Equpiment retails ~$150; value set to reflect that + loan access benefit
-    amount = 100 
+    amount = 100
     county = "Boulder County"
     dependencies = ["energy_calculator", "zipcode"]
 
