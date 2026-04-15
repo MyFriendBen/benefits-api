@@ -8,6 +8,7 @@
   "program": {
     "name_abbreviated": "cesn_ilp",
     "external_name": "cesn_ilp",
+    "year": 2026,
     "show_on_current_benefits": true,
     "has_calculcator": true,
     "show_in_has_benefits_step": false,
