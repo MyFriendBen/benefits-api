@@ -3,9 +3,9 @@
   "need": {
     "external_name": "tx_trust_her",
     "category_type": {
-      "external_name": "family_planning",
-      "name": "Family planning or birth control",
-      "icon": "family planning"
+      "external_name": "tx_family_planning",
+      "name": "Family planning",
+      "icon": "family_planning"
     },
     "type_short": ["family planning"],
     "translations": {
@@ -19,7 +19,7 @@
     "functions": [],
     "counties": ["Dallas"],
     "required_expense_types": [],
-    "active": true,
+    "active": false,
     "low_confidence": false,
     "show_on_current_benefits": true
   }
