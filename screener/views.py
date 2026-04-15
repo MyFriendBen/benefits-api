@@ -677,7 +677,7 @@ class HasBenefitsProgramsView(views.APIView):
                 white_label__code=white_label,
             )
             .select_related("name", "website_description", "category__name")
-            .order_by("category__name__default_message", "name__default_message")
+            .order_by("category__name__label", "name__label")
         )
 
         serializer = HasBenefitsProgramSerializer(programs, many=True)

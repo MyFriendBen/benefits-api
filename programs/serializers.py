@@ -88,8 +88,13 @@ class UrgentNeedTypeSerializer(serializers.ModelSerializer):
 class HasBenefitsProgramSerializer(serializers.ModelSerializer):
     name = ModelTranslationSerializer()
     website_description = ModelTranslationSerializer()
-    category = ModelTranslationSerializer(source="category.name")
+    category = serializers.SerializerMethodField()
 
     class Meta:
         model = Program
         fields = ("name_abbreviated", "name", "website_description", "category")
+
+    def get_category(self, obj):
+        if obj.category is None:
+            return None
+        return ModelTranslationSerializer(obj.category.name).data
