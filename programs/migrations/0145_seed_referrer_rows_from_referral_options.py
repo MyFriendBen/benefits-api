@@ -118,6 +118,7 @@ class Migration(migrations.Migration):
     atomic = False
 
     dependencies = [
+        ("programs", "0141_add_referrer_name_dropdown_and_per_wl_uniqueness"),
         ("programs", "0144_alter_program_base_program"),
         ("configuration", "0005_alter_configuration_white_label"),
     ]
