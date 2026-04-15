@@ -39,6 +39,7 @@ from .assistance_programs.project_cope.calculator import (
     EnergyCalculatorProjectCOPE,
 )
 from .larimer_county_conservation_corps.calculator import EnergyCalculatorLarimerConservationCorps
+from .induction_lending_program.calculator import EnergyCalculatorInductionLendingProgram
 
 cesn_calculators: dict[str, type[ProgramCalculator]] = {
     "cesn_care": EnergyCalculatorAffordableResidentialEnergy,
@@ -63,4 +64,5 @@ cesn_calculators: dict[str, type[ProgramCalculator]] = {
     "cesn_cope": EnergyCalculatorProjectCOPE,
     "cesn_heap": EnergyCalculatorHomeEfficiencyAssistance,
     "cesn_lccc": EnergyCalculatorLarimerConservationCorps,
+    "cesn_ilp": EnergyCalculatorInductionLendingProgram,
 }
