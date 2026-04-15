@@ -3,9 +3,9 @@
   "need": {
     "external_name": "tx_hippy",
     "category_type": {
-      "external_name": "child_development",
-      "name": "Concern about your child's development",
-      "icon": "child's development"
+      "external_name": "tx_child_development",
+      "name": "Child development",
+      "icon": "child_development"
     },
     "type_short": ["child dev"],
     "translations": {
@@ -19,7 +19,7 @@
     "functions": ["tx_hippy"],
     "counties": ["Dallas"],
     "required_expense_types": [],
-    "active": true,
+    "active": false,
     "low_confidence": false,
     "show_on_current_benefits": true
   }

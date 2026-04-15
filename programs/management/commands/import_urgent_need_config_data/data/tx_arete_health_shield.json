@@ -3,9 +3,9 @@
   "need": {
     "external_name": "tx_arete_health_shield",
     "category_type": {
-      "external_name": "behavioral_health",
+      "external_name": "tx_behavioral_health",
       "name": "Behavioral Health",
-      "icon": "behavioral health"
+      "icon": "behavioral_health"
     },
     "type_short": ["mental health"],
     "translations": {
@@ -19,7 +19,7 @@
     "functions": [],
     "counties": ["Dallas"],
     "required_expense_types": [],
-    "active": true,
+    "active": false,
     "low_confidence": false,
     "show_on_current_benefits": true
   }

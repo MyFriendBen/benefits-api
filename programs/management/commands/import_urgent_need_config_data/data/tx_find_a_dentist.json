@@ -3,9 +3,9 @@
   "need": {
     "external_name": "tx_find_a_dentist",
     "category_type": {
-      "external_name": "dental_care",
+      "external_name": "tx_low-cost_dental_care",
       "name": "Low-cost dental care",
-      "icon": "low-cost dental care"
+      "icon": "dental_care"
     },
     "type_short": ["dental care"],
     "translations": {
@@ -19,7 +19,7 @@
     "functions": [],
     "counties": [],
     "required_expense_types": [],
-    "active": true,
+    "active": false,
     "low_confidence": false,
     "show_on_current_benefits": true
   }

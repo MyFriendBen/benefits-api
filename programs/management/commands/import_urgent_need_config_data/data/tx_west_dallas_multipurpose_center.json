@@ -3,9 +3,9 @@
   "need": {
     "external_name": "tx_west_dallas_multipurpose_center",
     "category_type": {
-      "external_name": "managing_housing_costs",
-      "name": "Help with managing your mortgage, rent, or utilities",
-      "icon": "managing housing costs"
+      "external_name": "tx_managing_housing_cost",
+      "name": "Managing Housing Cost",
+      "icon": "housing"
     },
     "type_short": ["housing"],
     "translations": {
@@ -19,7 +19,7 @@
     "functions": [],
     "counties": ["Dallas"],
     "required_expense_types": [],
-    "active": true,
+    "active": false,
     "low_confidence": false,
     "show_on_current_benefits": true
   }

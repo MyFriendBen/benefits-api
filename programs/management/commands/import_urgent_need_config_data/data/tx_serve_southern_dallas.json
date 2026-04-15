@@ -5,7 +5,7 @@
     "category_type": {
       "external_name": "diapers_and_baby_supplies",
       "name": "Diapers and baby supplies",
-      "icon": "baby supplies"
+      "icon": "Baby_supplies"
     },
     "type_short": ["baby supplies"],
     "translations": {
@@ -19,7 +19,7 @@
     "functions": ["tx_serve_southern_dallas"],
     "counties": ["Dallas", "Ellis", "Navarro"],
     "required_expense_types": [],
-    "active": true,
+    "active": false,
     "low_confidence": false,
     "show_on_current_benefits": true
   }

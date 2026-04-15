@@ -3,9 +3,9 @@
   "need": {
     "external_name": "tx_snap_employment",
     "category_type": {
-      "external_name": "job_resources",
+      "external_name": "tx_job_resources",
       "name": "Job resources",
-      "icon": "job resources"
+      "icon": "job_resources"
     },
     "type_short": ["job resources"],
     "translations": {
@@ -19,7 +19,7 @@
     "functions": ["tx_snap_employment"],
     "counties": [],
     "required_expense_types": [],
-    "active": true,
+    "active": false,
     "low_confidence": false,
     "show_on_current_benefits": true
   }

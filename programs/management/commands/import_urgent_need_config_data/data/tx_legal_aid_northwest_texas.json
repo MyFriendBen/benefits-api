@@ -3,9 +3,9 @@
   "need": {
     "external_name": "tx_legal_aid_northwest_texas",
     "category_type": {
-      "external_name": "civil_legal_needs",
-      "name": "Free or low cost help with civil legal needs or identity documents",
-      "icon": "civil legal needs"
+      "external_name": "tx_civil_legal_needs",
+      "name": "Civil Legal Needs",
+      "icon": "legal_services"
     },
     "type_short": ["legal services"],
     "translations": {
@@ -19,7 +19,7 @@
     "functions": [],
     "counties": ["Dallas"],
     "required_expense_types": [],
-    "active": true,
+    "active": false,
     "low_confidence": false,
     "show_on_current_benefits": true
   }
