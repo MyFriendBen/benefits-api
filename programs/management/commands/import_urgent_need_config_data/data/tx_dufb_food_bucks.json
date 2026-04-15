@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "tx" },
+  "need": {
+    "external_name": "tx_dufb_food_bucks",
+    "category_type": {
+      "external_name": "food_or_groceries",
+      "name": "Food or groceries",
+      "icon": "food or groceries"
+    },
+    "type_short": ["food"],
+    "translations": {
+      "name": "DUFB Double Up Food Bucks",
+      "description": "Doubles the value of SNAP/EBT dollars when used to purchase fresh fruits and vegetables at participating Texas farmers markets, helping families stretch their food budget further.",
+      "link": "https://squaremeals.org/FandNResources/OtherFoodPrograms/TexasDoubleUpFoodBucks.aspx",
+      "warning": "",
+      "website_description": "Texas Health and Human Services page for the Double Up Food Bucks SNAP matching program at farmers markets.",
+      "notification_message": ""
+    },
+    "functions": ["tx_double_up_food_bucks"],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

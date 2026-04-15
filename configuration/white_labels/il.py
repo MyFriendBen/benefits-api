@@ -110,6 +110,7 @@ class IlConfigurationData(ConfigurationData):
         },
     }
 
+    # Deprecated: managed via Django admin → Programs → Referrers. Remove as part of MFB-864.
     referral_options = {
         "searchEngine": {
             "_label": "referralOptions.searchEngine",

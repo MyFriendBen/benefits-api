@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "tx" },
+  "need": {
+    "external_name": "tx_trust_her",
+    "category_type": {
+      "external_name": "family_planning",
+      "name": "Family planning or birth control",
+      "icon": "family planning"
+    },
+    "type_short": ["family planning"],
+    "translations": {
+      "name": "Trust Her",
+      "description": "Provides free or low-cost birth control and reproductive health services to Dallas women and teens, with same-day access to all contraception methods and enrollment support for Medicaid and coverage programs.",
+      "link": "https://www.trust-her.org/",
+      "warning": "",
+      "website_description": "Free and low-cost birth control and reproductive health services for women and teens in Dallas.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": ["Dallas"],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

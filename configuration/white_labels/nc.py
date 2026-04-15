@@ -127,6 +127,7 @@ class NcConfigurationData(ConfigurationData):
         },
     }
 
+    # Deprecated: managed via Django admin → Programs → Referrers. Remove as part of MFB-864.
     referral_options = {
         "ctd": {"_label": "referralOptions.ctd", "_default_message": "Code the Dream"},
         "211nc": {

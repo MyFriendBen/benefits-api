@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "tx" },
+  "need": {
+    "external_name": "tx_harmony_community_development",
+    "category_type": {
+      "external_name": "managing_housing_costs",
+      "name": "Help with managing your mortgage, rent, or utilities",
+      "icon": "managing housing costs"
+    },
+    "type_short": ["housing"],
+    "translations": {
+      "name": "Harmony Community Development Corporation",
+      "description": "A nonprofit serving South Oak Cliff and southern suburbs offering rent assistance, legal aid, financial planning, and self-sufficiency programs including the H.E.L.P. program for unemployed/underemployed adults.",
+      "link": "https://www.harmonycdc.org/",
+      "warning": "",
+      "website_description": "Community development and self-sufficiency programs for South Dallas residents.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": ["Dallas"],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

@@ -455,7 +455,29 @@ class DocumentAdmin(SecureAdmin):
 
 
 class ReferrerAdmin(SecureAdmin):
-    search_fields = ("referrer_code",)
+    search_fields = ("referrer_code", "name")
+    list_display = ("referrer_code", "name", "white_label", "show_in_dropdown", "is_partner")
+    list_filter = ("white_label", "show_in_dropdown", "is_partner")
+    list_editable = ("show_in_dropdown", "is_partner")
+    help_texts = {
+        "referrer_code": (
+            "Used as the <code>referrer</code> URL parameter to pre-fill the referral source field. "
+            "Example: <code>https://screener.myfriendben.org/co?referrer=bia</code>"
+        ),
+        "name": "The label displayed to users in the referral source dropdown.",
+        "is_partner": (
+            "If checked, this referrer is treated as a named partner organization and grouped under "
+            '"Partners" in the screener dropdown. Leave unchecked for generic options like Friend, Google, etc.'
+        ),
+    }
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        for field_name, help_text in self.help_texts.items():
+            if field_name in form.base_fields:
+                form.base_fields[field_name].help_text = help_text
+        return form
+
     white_label_filter_horizontal = (
         "primary_navigators",
         "remove_programs",
