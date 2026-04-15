@@ -146,7 +146,9 @@ class ConfigurationData:
         "relatedOther": {"_label": "relationshipOptions.relatedOther", "_default_message": "Related in some other way"},
     }
 
-    # "How did you hear about us?" options on referral source step
+    # Deprecated: referral_options in config files is no longer the source of truth.
+    # Referral options are now managed via Django admin → Programs → Referrers.
+    # This field will be removed as part of MFB-864.
     referral_options = {
         "searchEngine": {"_label": "referralOptions.searchEngine", "_default_message": "Google or other search engine"},
         "socialMedia": {"_label": "referralOptions.socialMedia", "_default_message": "Social Media"},

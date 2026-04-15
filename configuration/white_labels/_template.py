@@ -106,13 +106,13 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # }
 
     # ==========================================================================================
-    # REFERRAL OPTIONS - Always customized
+    # REFERRAL OPTIONS - Deprecated
     # ==========================================================================================
-    # "How did you hear about us?" options
-    # Add community partners, organizations, websites relevant to your state
+    # Deprecated: referral_options in config files is no longer the source of truth.
+    # Referral options are now managed via Django admin → Programs → Referrers.
+    # This field will be removed as part of MFB-864.
     # ==========================================================================================
 
-    # TODO: Add state-specific referral options
     referral_options = {
         "[REPLACE_ME]": {"_label": "", "_default_message": ""},
         "other": {"_label": "referralOptions.other", "_default_message": "Other"},
