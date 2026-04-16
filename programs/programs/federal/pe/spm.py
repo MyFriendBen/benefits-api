@@ -36,9 +36,24 @@ class Snap(PolicyEngineSpmCalulator):
         return int(self.sim.value(self.pe_category, self.pe_sub_category, self.pe_name, self.pe_output_period)) * 12
 
 
+class Tanf(PolicyEngineSpmCalulator):
+    pe_name = "tanf"
+    pe_inputs = [
+        dependency.member.AgeDependency,
+        dependency.member.FullTimeCollegeStudentDependency,
+    ]
+    pe_outputs = [dependency.spm.Tanf]
+
+
 class SchoolLunch(PolicyEngineSpmCalulator):
     pe_name = "school_meal_daily_subsidy"
-    pe_inputs = [dependency.spm.SchoolMealCountableIncomeDependency]
+    pe_inputs = [
+        dependency.spm.SchoolMealCountableIncomeDependency,
+        dependency.member.AgeDependency,
+        *Snap.pe_inputs,  # categorical eligibility
+        # NOTE: We don't use PE for Head Start and TANF changes by state,
+        # so we can't capture categorical eligibility for those here like we do for SNAP
+    ]
     pe_outputs = [dependency.spm.SchoolMealDailySubsidy, dependency.spm.SchoolMealTier]
 
     amount = 120
@@ -49,18 +64,9 @@ class SchoolLunch(PolicyEngineSpmCalulator):
 
         if self.get_variable() > 0 and num_children > 0:
             if self.get_dependency_value(dependency.spm.SchoolMealTier) != "PAID":
-                value = SchoolLunch.amount * num_children
+                value = self.amount * num_children
 
         return value
-
-
-class Tanf(PolicyEngineSpmCalulator):
-    pe_name = "tanf"
-    pe_inputs = [
-        dependency.member.AgeDependency,
-        dependency.member.FullTimeCollegeStudentDependency,
-    ]
-    pe_outputs = [dependency.spm.Tanf]
 
 
 class Acp(PolicyEngineSpmCalulator):

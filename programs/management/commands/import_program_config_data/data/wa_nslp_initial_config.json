@@ -1,0 +1,51 @@
+{
+  "white_label": {
+    "code": "wa"
+  },
+  "program_category": {
+    "external_name": "wa_food"
+  },
+  "program": {
+    "name_abbreviated": "wa_nslp",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission",
+      "non_citizen"
+    ],
+    "name": "National School Lunch Program (NSLP)",
+    "description": "The National School Lunch Program gives free or low-cost meals to children at school. In Washington state, both free and reduced-price meals come at no cost. The state covers the cost for all qualifying families. Meals include lunch and may include breakfast too.\n\nFamilies with low income can apply. If you get SNAP (food stamps) or TANF (cash help), your children qualify right away for free meals. Children in Head Start also qualify. Almost all public schools in Washington take part in this program. All children can apply no matter their immigration status. Check with your child's school to learn more.",
+    "description_short": "Free school meals for children from low-income families",
+    "learn_more_link": "https://www.fns.usda.gov/nslp",
+    "apply_button_link": "https://www.washingtonconnection.org/home/",
+    "apply_button_description": "Apply for WA National School Lunch Program",
+    "estimated_application_time": "15 - 30 minutes",
+    "estimated_delivery_time": "10 business days",
+    "estimated_value": "",
+    "website_description": "Free school meals for children in low-income families in Washington state"
+  },
+  "documents": [
+    {
+      "external_name": "wa_earned_income",
+      "text": "Proof of household income (ex: pay stubs, tax return, employer letter)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_snap_tanf_proof",
+      "text": "Proof of SNAP or TANF benefits, if applicable (ex: benefit letter, EBT card)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_ssn",
+      "text": "Last four digits of Social Security Number of the adult signing the application (or indicate if you do not have one)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": []
+}
