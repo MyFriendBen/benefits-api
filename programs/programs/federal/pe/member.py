@@ -1,32 +1,7 @@
 from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
+from programs.programs.federal.pe.spm import Snap
 import programs.programs.policyengine.calculators.dependencies as dependency
 from screener.models import HouseholdMember
-
-
-class Wic(PolicyEngineMembersCalculator):
-    wic_categories = {
-        "NONE": 0,
-        "INFANT": 0,
-        "CHILD": 0,
-        "PREGNANT": 0,
-        "POSTPARTUM": 0,
-        "BREASTFEEDING": 0,
-    }
-    pe_name = "wic"
-    pe_inputs = [
-        dependency.member.PregnancyDependency,
-        dependency.member.ExpectedChildrenPregnancyDependency,
-        dependency.member.AgeDependency,
-        dependency.spm.SchoolMealCountableIncomeDependency,
-    ]
-    pe_outputs = [dependency.member.Wic, dependency.member.WicCategory]
-
-    def member_value(self, member: HouseholdMember):
-        if self.get_member_variable(member.id) <= 0:
-            return 0
-
-        wic_category = self.get_member_dependency_value(dependency.member.WicCategory, member.id)
-        return self.wic_categories[wic_category] * 12
 
 
 class Medicaid(PolicyEngineMembersCalculator):
@@ -93,6 +68,36 @@ class Medicaid(PolicyEngineMembersCalculator):
         medicaid_category = self.get_member_dependency_value(dependency.member.MedicaidCategory, member.id)
 
         return self.medicaid_categories[medicaid_category] * 12
+
+
+class Wic(PolicyEngineMembersCalculator):
+    wic_categories = {
+        "NONE": 0,
+        "INFANT": 0,
+        "CHILD": 0,
+        "PREGNANT": 0,
+        "POSTPARTUM": 0,
+        "BREASTFEEDING": 0,
+    }
+    pe_name = "wic"
+    pe_inputs = [
+        dependency.member.PregnancyDependency,
+        dependency.member.ExpectedChildrenPregnancyDependency,
+        dependency.member.AgeDependency,
+        dependency.spm.SchoolMealCountableIncomeDependency,
+        *Snap.pe_inputs,  # categorical eligibility
+        *Medicaid.pe_inputs,  # categorical eligibility
+        # NOTE: TANF changes by state, so we can't capture categorical
+        # eligibility for it here like we do for SNAP and Medicaid
+    ]
+    pe_outputs = [dependency.member.Wic, dependency.member.WicCategory]
+
+    def member_value(self, member: HouseholdMember):
+        if self.get_member_variable(member.id) <= 0:
+            return 0
+
+        wic_category = self.get_member_dependency_value(dependency.member.WicCategory, member.id)
+        return self.wic_categories[wic_category] * 12
 
 
 class Chip(PolicyEngineMembersCalculator):

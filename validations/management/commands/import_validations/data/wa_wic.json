@@ -56,11 +56,11 @@
     "expected_results": {
       "program_name": "wa_wic",
       "eligible": true,
-      "value": 509
+      "value": 816
     }
   },
   {
-    "notes": "WA WIC - Household of 2, Income $1 Above 185% FPL, No Adjunctive - Should NOT Be Eligible (2026 threshold: $3,261/mo for HH of 2)",
+    "notes": "WA WIC - Household of 2, Income Above Child Medicaid Cap, No Adjunctive - Should NOT Be Eligible ($5,500/mo exceeds both WIC 185% FPL and the child's WA Apple Health for Kids Medicaid threshold of ~312% FPL for HH of 2)",
     "household": {
       "white_label": "wa",
       "household_size": 2,
@@ -79,7 +79,7 @@
           "income_streams": [
             {
               "type": "wages",
-              "amount": 3262.0,
+              "amount": 5500.0,
               "frequency": "monthly"
             }
           ],
@@ -193,7 +193,7 @@
     "expected_results": {
       "program_name": "wa_wic",
       "eligible": true,
-      "value": 509
+      "value": 816
     }
   }
 ]

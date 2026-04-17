@@ -3,16 +3,19 @@ import programs.programs.policyengine.calculators.dependencies as dependency
 
 
 class WaWic(Wic):
-    # WIC uses a hybrid model: fixed Cash Value Benefit (CVB) for produce + quantity-based
-    # food credits (milk, eggs, cereal, formula, etc.) estimated at local WA retail prices.
-    # Total = CVB + estimated retail cost of food quantities. FY 2025/2026 values.
-    #
-    # INFANT ($135): No CVB; entire value is infant formula (~9 cans/mo) + jarred foods.
-    # BREASTFEEDING ($114): Highest adult package — max CVB ($52) + expanded food (canned
-    #   fish, extra cheese, double eggs).
-    # PREGNANT ($92): $47 CVB + $45 food (larger dairy/grain package than postpartum).
-    # POSTPARTUM ($78): $47 CVB + $31 food (reduced dairy/grains vs. pregnant).
-    # CHILD ($68): $26 CVB + $42 food.
+    class NotTanfEligibility(dependency.spm.SpmUnit):
+        # TODO: remove this when we add calculation for WaTanf
+        # the issue is that we can't add tanf to the base class
+        # like we did for SNAP because TANF differs by state
+        field = "wa_tanf"
+
+        def value(self):
+            return 0
+
+    # Monthly values per participant category. Hybrid model: fixed Cash Value
+    # Benefit (CVB) for produce + estimated retail cost of the quantity-based
+    # food package (milk, eggs, cereal, formula, etc.). See spec.md "Benefit
+    # Value" section for the CVB/food split and citations.
     wic_categories = {
         "NONE": 0,
         "INFANT": 135,
@@ -23,5 +26,6 @@ class WaWic(Wic):
     }
     pe_inputs = [
         *Wic.pe_inputs,
-        dependency.household.NcStateCodeDependency,
+        NotTanfEligibility,
+        dependency.household.WaStateCodeDependency,
     ]

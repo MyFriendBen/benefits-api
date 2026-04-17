@@ -85,17 +85,32 @@
 
 ## Benefit Value
 
-- **Estimated value**: $50–$165 per eligible household member per month
+WIC uses a hybrid benefit model: a fixed federal **Cash Value Benefit (CVB)** that can be spent only on fruits and vegetables, plus a **quantity-based food package** (milk, eggs, cheese, cereal, beans, infant formula, etc.) where participants receive credits for specific maximum quantities rather than cash. The value assigned in the calculator sums both: the fixed CVB cash amount plus an estimate of the retail cost of the food package quantities at WA grocery stores.
 
-**Methodology**: WIC provides food benefits that vary by participant category (pregnant/breastfeeding women, infants, and children each receive different monthly food packages). The national average WIC benefit was **$81.51 per participant per month in FY2024**. King County WA specifically reports approximately **$150/month for a family of two**.
+**Formula**: `total_monthly_value = CVB_cash + estimated_retail_cost_of_food_quantities`
 
-For calculator purposes: multiply the number of WIC-eligible household members by $80, expressed as a range of $50–$165 per eligible person per month.
+**Monthly values per participant category (FY 2025/2026)**:
 
-Note: the initial config estimated "$50–$75/month per participant" — this is too low and should be updated to $50–$165 per eligible person per month.
+| Participant Category | CVB (Produce Cash) | Food Portion (Retail Est.) | Total Monthly Value |
+| :---- | :---- | :---- | :---- |
+| **INFANT** | $0 | $135 | **$135** |
+| **CHILD** | $26 | $42 | **$68** |
+| **POSTPARTUM** | $47 | $31 | **$78** |
+| **PREGNANT** | $47 | $45 | **$92** |
+| **BREASTFEEDING** | $52 | $62 | **$114** |
 
-**Value Estimate Sources**:
-- [CBPP — WIC average $81.51/participant/month in FY2024](https://www.cbpp.org/research/food-assistance/special-supplemental-nutrition-program-for-women-infants-and-children)
-- [King County WA WIC (~$150/month for a family of two)](https://kingcounty.gov/en/dept/dph/health-safety/health-centers-programs-services/maternity-support-wic/wic-supplemental-nutrition-program)
+**Why the values differ by category**:
+- **Infants ($135)**: No CVB for infants; value is driven by infant formula (up to 9 cans/month) and jarred baby food.
+- **Breastfeeding ($114)**: Highest adult package — max CVB ($52) plus an expanded food allowance (canned fish, extra cheese, double eggs).
+- **Pregnant ($92) vs. Postpartum ($78)**: Non-breastfeeding postpartum women receive a reduced dairy/grain package ($31) vs. pregnancy ($45).
+- **Child ($68)**: Smallest total — lower CVB ($26) and smaller food package ($42).
+
+CVB amounts are set federally by USDA FNS and are the same across states. Food package quantities are also federally mandated (7 CFR Part 246); the retail cost estimates are specific to WA.
+
+**Sources**:
+- [USDA FNS — WIC Food Packages](https://www.fns.usda.gov/wic/food-packages) — federal CVB amounts and food package composition
+- [7 CFR § 246.10 — Supplemental foods](https://www.ecfr.gov/current/title-7/subtitle-B/chapter-II/subchapter-A/part-246/subpart-C/section-246.10) — maximum monthly quantities by participant category
+- [Washington State Department of Health — WIC Food List](https://doh.wa.gov/you-and-your-family/wic/wic-foods) — WA-specific approved foods used for retail estimates
 
 ## Implementation Coverage
 
@@ -138,7 +153,7 @@ Note: the initial config estimated "$50–$75/month per participant" — this is
 
 ## Test Scenarios
 
-> ⚠️ **Income threshold note**: Scenarios involving income at or near the 185% FPL boundary use 2026 estimates derived from the 2026 HHS poverty guidelines (HH of 4 confirmed at $5,088/month per WA DOH). Verify all boundary thresholds against [https://doh.wa.gov/you-and-your-family/wic/wic-eligibility](https://doh.wa.gov/you-and-your-family/wic/wic-eligibility) before running threshold-sensitive tests. Approximate 2026 185% FPL monthly values: HH of 1 ≈ $2,503, HH of 2 ≈ $3,364, HH of 3 ≈ $4,226, HH of 4 = $5,088.
+> ⚠️ **Income threshold note**: Scenarios involving income at or near the 185% FPL boundary use the **2025 HHS poverty guidelines** (the set in effect for the WIC program year this config targets; `year: "2025"` in the initial config). 2025 185% FPL monthly values: HH of 1 = $2,413, HH of 2 = $3,261, HH of 3 = $4,109, HH of 4 = $4,956. Verify all boundary thresholds against [https://doh.wa.gov/you-and-your-family/wic/wic-eligibility](https://doh.wa.gov/you-and-your-family/wic/wic-eligibility) before running threshold-sensitive tests.
 
 ---
 
@@ -149,7 +164,7 @@ Note: the initial config estimated "$50–$75/month per participant" — this is
 **Steps**:
 - **Location**: Enter ZIP code `98101`, Select county `King`
 - **Household**: Number of people: `2`
-- **Person 1**: Birth month/year: `June 1996` (age 29), Relationship: Head of Household, Pregnant: `Yes`, Employment income: `$1,800` per month (well below 185% FPL for HH of 2: ~$3,364/month)
+- **Person 1**: Birth month/year: `June 1996` (age 29), Relationship: Head of Household, Pregnant: `Yes`, Employment income: `$1,800` per month (well below 185% FPL for HH of 2: ~$3,261/month)
 - **Person 2**: Birth month/year: `March 2019` (age 7), Relationship: Child, No income
 - **Current Benefits**: Do NOT select SNAP, Medicaid, or TANF
 
@@ -164,11 +179,11 @@ Note: the initial config estimated "$50–$75/month per participant" — this is
 **Steps**:
 - **Location**: Enter ZIP code `98001`, Select county `King`
 - **Household**: Number of people: `2`
-- **Person 1**: Birth month/year: `June 1990` (age 35), Relationship: Head of Household, Employment income: `$3,364` per month (approximately 185% FPL for HH of 2 in 2026 — verify against WA DOH income limits page before running)
+- **Person 1**: Birth month/year: `June 1990` (age 35), Relationship: Head of Household, Employment income: `$3,261` per month (exactly 185% FPL for HH of 2 in 2025 — verify against WA DOH income limits page before running)
 - **Person 2**: Birth month/year: `May 2021` (age 4 years 11 months — will turn 5 in May 2026), Relationship: Child, No income
 - **Current Benefits**: Do NOT select SNAP, Medicaid, or TANF
 
-**Why this matters**: Tests two boundaries simultaneously: the child's age (just under 5) and the income ceiling (exactly at 185% FPL). Both should be inclusive. If either gate is misconfigured as strictly less than, this scenario will catch it.
+**Why this matters**: Tests two boundaries simultaneously: the child's age (just under 5) and the income ceiling (exactly at 185% FPL for 2025, $3,261/month for HH of 2). Both should be inclusive. If either gate is misconfigured as strictly less than, this scenario will catch it.
 
 ---
 
@@ -179,7 +194,7 @@ Note: the initial config estimated "$50–$75/month per participant" — this is
 **Steps**:
 - **Location**: Enter ZIP code `98103`, Select county `King`
 - **Household**: Number of people: `3`
-- **Person 1**: Birth month/year: `June 1988` (age 37), Relationship: Head of Household, Employment income: `$4,225` per month (approximately $1 below 185% FPL for HH of 3 in 2026 — verify against WA DOH income limits page)
+- **Person 1**: Birth month/year: `June 1988` (age 37), Relationship: Head of Household, Employment income: `$4,108` per month ($1 below 185% FPL for HH of 3 in 2025: $4,109/month)
 - **Person 2**: Birth month/year: `September 1990` (age 35), Relationship: Spouse, No income
 - **Person 3**: Birth month/year: `January 2024` (age 2), Relationship: Child, No income
 - **Current Benefits**: Do NOT select SNAP, Medicaid, or TANF
@@ -195,13 +210,13 @@ Note: the initial config estimated "$50–$75/month per participant" — this is
 **Steps**:
 - **Location**: Enter ZIP code `98101`, Select county `King`
 - **Household**: Number of people: `4`
-- **Person 1**: Birth month/year: `June 1988` (age 37), Relationship: Head of Household, Employment income: `$5,088` per month (exactly 185% FPL for HH of 4 in 2026 — confirmed per WA DOH)
+- **Person 1**: Birth month/year: `June 1988` (age 37), Relationship: Head of Household, Employment income: `$4,956` per month (exactly 185% FPL for HH of 4 in 2025)
 - **Person 2**: Birth month/year: `September 1990` (age 35), Relationship: Spouse, No income
 - **Person 3**: Birth month/year: `January 2024` (age 2), Relationship: Child, No income
 - **Person 4**: Birth month/year: `March 2025` (age 1), Relationship: Child, No income
 - **Current Benefits**: Do NOT select SNAP, Medicaid, or TANF
 
-**Why this matters**: Validates the income threshold is evaluated as ≤ 185% FPL (not strictly <). At exactly $5,088/month for a 4-person household, this is the confirmed 2026 WIC income ceiling.
+**Why this matters**: Validates the income threshold is evaluated as ≤ 185% FPL (not strictly <). At exactly $4,956/month for a 4-person household, this is the 2025 WIC income ceiling.
 
 ---
 
@@ -212,7 +227,7 @@ Note: the initial config estimated "$50–$75/month per participant" — this is
 **Steps**:
 - **Location**: Enter ZIP code `98101`, Select county `King`
 - **Household**: Number of people: `2`
-- **Person 1**: Birth month/year: `June 1990` (age 35), Relationship: Head of Household, Employment income: `$3,365` per month (approximately $1 above 185% FPL for HH of 2 in 2026 — verify against WA DOH income limits page)
+- **Person 1**: Birth month/year: `June 1990` (age 35), Relationship: Head of Household, Employment income: `$3,262` per month ($1 above 185% FPL for HH of 2 in 2025: $3,261/month)
 - **Person 2**: Birth month/year: `May 2021` (age 4), Relationship: Child, No income
 - **Current Benefits**: Do NOT select SNAP, Medicaid, or TANF
 
@@ -378,7 +393,7 @@ Note: the initial config estimated "$50–$75/month per participant" — this is
 **Steps**:
 - **Location**: Enter ZIP code `98101`, Select county `King`
 - **Household**: Number of people: `3`
-- **Person 1**: Birth month/year: `June 1988` (age 37), Relationship: Head of Household, Employment income: `$4,500` per month (above 185% FPL for HH of 3: ~$4,226/month)
+- **Person 1**: Birth month/year: `June 1988` (age 37), Relationship: Head of Household, Employment income: `$4,500` per month (above 185% FPL for HH of 3: $4,109/month in 2025)
 - **Person 2**: Birth month/year: `September 1990` (age 35), Relationship: Spouse, No income
 - **Person 3**: Birth month/year: `January 2024` (age 2), Relationship: Child, No income
 - **Current Benefits**: Select `SNAP` — do NOT select Medicaid or TANF

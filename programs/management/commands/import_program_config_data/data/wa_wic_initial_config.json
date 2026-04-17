@@ -11,14 +11,17 @@
         "legal_status_required": ["citizen", "non_citizen", "refugee", "gc_5plus", "gc_18plus_no5", "gc_under18_no5", "otherWithWorkPermission"],
         "name": "Women, Infants, and Children (WIC) Nutrition Program",
         "description_short": "Food and nutrition help for pregnant and breastfeeding people and for families with children under 5 years of age.",
-        "description": "Food and nutrition help for pregnant and breastfeeding people and for families with children under 5 years of age.\n\nWIC provides healthy food, breastfeeding support, nutrition information, and referrals to other services. Pregnant people and children under 5 may qualify. New moms may qualify if they had a baby in the last 6 months or are breastfeeding a child under 1.\n\nWIC helps you buy fruits and vegetables, whole grains, iron-rich foods, milk, cheese, yogurt, eggs, canned fish, baby formula, and more. Your income must be at or below 185% of the federal poverty level. If you already receive SNAP, Medicaid, or TANF, you automatically meet the income requirement and do not need to provide proof of income.\n\nWashington WIC is open to all residents regardless of immigration status. To apply, contact your local WIC office. You will complete a nutrition and health assessment at your first appointment. Benefits can begin the same day in some cases.\n\nFor more information and to find your local WIC office, visit the Washington State Department of Health website.",
+        "description": "WIC provides healthy food, breastfeeding support, nutrition information, and referrals to other services for pregnant and breastfeeding people and for families with children under 5 years of age.\n\nEach month, WIC loads money onto a card you can use at grocery stores to buy specific foods like fruits and vegetables, whole grains, milk, eggs, cheese, yogurt, canned fish, peanut butter, and baby formula. The foods available to you depend on your situation — a pregnant person gets a different set than a toddler does.\n\nWIC also offers breastfeeding support (including free breast pumps), nutrition advice at regular check-in appointments, and help connecting to other programs like Medicaid or SNAP if you need them.\n\nClick \"Apply Now\" to learn more and contact your local WIC office to apply. You will complete a nutrition and health assessment at your first appointment. Benefits can begin the same day in some cases.",
         "learn_more_link": "https://doh.wa.gov/you-and-your-family/wic/wic-eligibility",
         "apply_button_link": "https://doh.wa.gov/you-and-your-family/wic/wic-eligibility",
-        "apply_button_description": "Apply for WA WIC",
+        "apply_button_description": "",
         "estimated_application_time": "60 minutes",
         "estimated_delivery_time": "Same day to 2 weeks",
-        "estimated_value": "Varies; typically $50 - $165 per person per month",
-        "website_description": "Free healthy food and nutrition support for pregnant women, babies, and children under 5"
+        "estimated_value": "",
+        "website_description": "Free healthy food and nutrition support for pregnant women, babies, and children under 5",
+        "has_calculator": true,
+        "show_in_has_benefits_step": true,
+        "show_on_current_benefits": true
     },
     "documents": [
         {

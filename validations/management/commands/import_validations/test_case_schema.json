@@ -17,8 +17,8 @@
       "properties": {
         "white_label": {
           "type": "string",
-          "description": "White label code (e.g., 'co', 'tx', 'nc', 'ma', 'il')",
-          "enum": ["co", "tx", "nc", "ma", "il"]
+          "description": "White label code (e.g., 'co', 'tx', 'nc', 'ma', 'il', 'wa')",
+          "enum": ["co", "tx", "nc", "ma", "il", "wa"]
         },
         "completed": {
           "type": "boolean",
