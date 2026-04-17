@@ -60,7 +60,7 @@
     }
   },
   {
-    "notes": "WA WIC - Household of 2, Income Above Child Medicaid Cap, No Adjunctive - Should NOT Be Eligible ($5,500/mo exceeds both WIC 185% FPL and the child's WA Apple Health for Kids Medicaid threshold of ~312% FPL for HH of 2)",
+    "notes": "WA WIC - Household of 2, Income Above 185% FPL and Above Child Medicaid Cap - Should NOT Be Eligible. Income must exceed both WIC's 185% FPL and WA's Apple Health for Kids Medicaid cap (~312% FPL) to avoid presumptive (adjunctive) eligibility via the child.",
     "household": {
       "white_label": "wa",
       "household_size": 2,
