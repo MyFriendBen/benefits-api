@@ -236,6 +236,7 @@ def eligibility_results(screen: Screen, batch=False):
             "program_navigators__navigator",
             "program_navigators__navigator__counties",
             "program_navigators__navigator__languages",
+            "program_navigators__navigator__eligibility_programs",
             *translations_prefetch_name("program_navigators__navigator__", Navigator.objects.translated_fields),
             "documents",
             *translations_prefetch_name("documents__", Document.objects.translated_fields),
@@ -360,15 +361,21 @@ def eligibility_results(screen: Screen, batch=False):
                 ):
                     county_navigators.append(nav)
 
+            eligibility_filtered = []
+            for nav in county_navigators:
+                required = nav.eligibility_programs.all()
+                if not required or all(
+                    getattr(program_eligibility.get(p.name_abbreviated), "eligible", False)
+                    for p in required
+                ):
+                    eligibility_filtered.append(nav)
+
             if referrer is None:
-                navigators = county_navigators
+                navigators = eligibility_filtered
             else:
                 primary_navigators = referrer.primary_navigators.all()
-                referrer_navigators = [nav for nav in primary_navigators if nav in county_navigators]
-                if len(referrer_navigators) == 0:
-                    navigators = county_navigators
-                else:
-                    navigators = referrer_navigators
+                referrer_navigators = [nav for nav in primary_navigators if nav in eligibility_filtered]
+                navigators = referrer_navigators if referrer_navigators else eligibility_filtered
 
             for warning in program.warning_messages.all():
                 if warning.calculator not in warning_calculators:
