@@ -21,11 +21,14 @@
     "description_short": "Free school meals for children from low-income families",
     "learn_more_link": "https://www.fns.usda.gov/nslp",
     "apply_button_link": "https://www.washingtonconnection.org/home/",
-    "apply_button_description": "Apply for WA National School Lunch Program",
+    "apply_button_description": "",
     "estimated_application_time": "15 - 30 minutes",
     "estimated_delivery_time": "10 business days",
     "estimated_value": "",
-    "website_description": "Free school meals for children in low-income families in Washington state"
+    "website_description": "Free school meals for children in low-income families in Washington state",
+    "has_calculator": true,
+    "show_in_has_benefits_step": true,
+    "show_on_current_benefits": true
   },
   "documents": [
     {

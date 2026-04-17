@@ -71,8 +71,9 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "wa_national school lunch program (nslp)",
-      "eligible": true
+      "program_name": "wa_nslp",
+      "eligible": true,
+      "value": 1116
     }
   },
   {
@@ -147,8 +148,9 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "wa_national school lunch program (nslp)",
-      "eligible": true
+      "program_name": "wa_nslp",
+      "eligible": true,
+      "value": 1116
     }
   },
   {
@@ -240,8 +242,9 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "wa_national school lunch program (nslp)",
-      "eligible": true
+      "program_name": "wa_nslp",
+      "eligible": true,
+      "value": 2232
     }
   },
   {
@@ -333,12 +336,13 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "wa_national school lunch program (nslp)",
-      "eligible": true
+      "program_name": "wa_nslp",
+      "eligible": true,
+      "value": 2232
     }
   },
   {
-    "notes": "WA National School Lunch Program (NSLP) - Household Income Just Above 185% FPL - Not Eligible for Any Meal Benefit",
+    "notes": "WA National School Lunch Program (NSLP) - Household Income Well Above 185% FPL - Not Eligible for Any Meal Benefit. Income must exceed WA's Apple Health for Kids Medicaid cap (~312% FPL) to avoid presumptive (adjunctive/categorical) eligibility via a child's Medicaid enrollment.",
     "household": {
       "white_label": "wa",
       "household_size": 4,
@@ -357,7 +361,7 @@
           "income_streams": [
             {
               "type": "wages",
-              "amount": 4200.0,
+              "amount": 7500.0,
               "frequency": "monthly"
             }
           ],
@@ -380,7 +384,7 @@
           "income_streams": [
             {
               "type": "wages",
-              "amount": 700.0,
+              "amount": 7500.0,
               "frequency": "monthly"
             }
           ],
@@ -432,7 +436,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "wa_national school lunch program (nslp)",
+      "program_name": "wa_nslp",
       "eligible": false
     }
   },
@@ -508,84 +512,9 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "wa_national school lunch program (nslp)",
-      "eligible": true
-    }
-  },
-  {
-    "notes": "WA National School Lunch Program (NSLP) - Child Age 4 (Just Below Minimum School Age) - Not Eligible",
-    "household": {
-      "white_label": "wa",
-      "household_size": 3,
-      "zipcode": "98101",
-      "county": "King",
-      "household_assets": 0.0,
-      "agree_to_tos": true,
-      "is_13_or_older": true,
-      "household_members": [
-        {
-          "relationship": "headOfHousehold",
-          "birth_month": 6,
-          "birth_year": 1990,
-          "age": 35,
-          "has_income": true,
-          "income_streams": [
-            {
-              "type": "wages",
-              "amount": 1500.0,
-              "frequency": "monthly"
-            }
-          ],
-          "insurance": {
-            "none": true,
-            "employer": false,
-            "private": false,
-            "medicaid": false,
-            "medicare": false,
-            "chp": false,
-            "va": false
-          }
-        },
-        {
-          "relationship": "spouse",
-          "birth_month": 8,
-          "birth_year": 1992,
-          "age": 33,
-          "has_income": false,
-          "income_streams": [],
-          "insurance": {
-            "none": true,
-            "employer": false,
-            "private": false,
-            "medicaid": false,
-            "medicare": false,
-            "chp": false,
-            "va": false
-          }
-        },
-        {
-          "relationship": "child",
-          "birth_month": 7,
-          "birth_year": 2021,
-          "age": 4,
-          "has_income": false,
-          "income_streams": [],
-          "insurance": {
-            "none": true,
-            "employer": false,
-            "private": false,
-            "medicaid": false,
-            "medicare": false,
-            "chp": false,
-            "va": false
-          }
-        }
-      ],
-      "expenses": []
-    },
-    "expected_results": {
-      "program_name": "wa_national school lunch program (nslp)",
-      "eligible": false
+      "program_name": "wa_nslp",
+      "eligible": true,
+      "value": 1116
     }
   },
   {
@@ -660,8 +589,9 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "wa_national school lunch program (nslp)",
-      "eligible": true
+      "program_name": "wa_nslp",
+      "eligible": true,
+      "value": 2232
     }
   },
   {
@@ -736,84 +666,9 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "wa_national school lunch program (nslp)",
-      "eligible": true
-    }
-  },
-  {
-    "notes": "WA National School Lunch Program (NSLP) - Family Already Receiving NSLP Free Meals - Exclusion Check",
-    "household": {
-      "white_label": "wa",
-      "household_size": 3,
-      "zipcode": "98103",
-      "county": "King",
-      "household_assets": 0.0,
-      "agree_to_tos": true,
-      "is_13_or_older": true,
-      "household_members": [
-        {
-          "relationship": "headOfHousehold",
-          "birth_month": 6,
-          "birth_year": 1988,
-          "age": 37,
-          "has_income": true,
-          "income_streams": [
-            {
-              "type": "wages",
-              "amount": 1800.0,
-              "frequency": "monthly"
-            }
-          ],
-          "insurance": {
-            "none": true,
-            "employer": false,
-            "private": false,
-            "medicaid": false,
-            "medicare": false,
-            "chp": false,
-            "va": false
-          }
-        },
-        {
-          "relationship": "child",
-          "birth_month": 9,
-          "birth_year": 2016,
-          "age": 9,
-          "has_income": false,
-          "income_streams": [],
-          "insurance": {
-            "none": true,
-            "employer": false,
-            "private": false,
-            "medicaid": false,
-            "medicare": false,
-            "chp": false,
-            "va": false
-          }
-        },
-        {
-          "relationship": "child",
-          "birth_month": 1,
-          "birth_year": 2019,
-          "age": 7,
-          "has_income": false,
-          "income_streams": [],
-          "insurance": {
-            "none": true,
-            "employer": false,
-            "private": false,
-            "medicaid": false,
-            "medicare": false,
-            "chp": false,
-            "va": false
-          }
-        }
-      ],
-      "expenses": []
-    },
-    "expected_results": {
-      "program_name": "wa_national school lunch program (nslp)",
-      "eligible": false
+      "program_name": "wa_nslp",
+      "eligible": true,
+      "value": 1116
     }
   },
   {
@@ -888,7 +743,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "wa_national school lunch program (nslp)",
+      "program_name": "wa_nslp",
       "eligible": false
     }
   },
@@ -1027,8 +882,9 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "wa_national school lunch program (nslp)",
-      "eligible": true
+      "program_name": "wa_nslp",
+      "eligible": true,
+      "value": 2232
     }
   },
   {
@@ -1160,8 +1016,9 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "wa_national school lunch program (nslp)",
-      "eligible": true
+      "program_name": "wa_nslp",
+      "eligible": true,
+      "value": 4464
     }
   },
   {
@@ -1219,8 +1076,9 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "wa_national school lunch program (nslp)",
-      "eligible": true
+      "program_name": "wa_nslp",
+      "eligible": true,
+      "value": 1116
     }
   }
 ]

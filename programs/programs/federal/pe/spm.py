@@ -58,9 +58,12 @@ class SchoolLunch(PolicyEngineSpmCalulator):
 
     amount = 120
 
+    min_age = 3
+    max_age = 18
+
     def household_value(self):
         value = 0
-        num_children = self.screen.num_children(3, 18)
+        num_children = self.screen.num_children(self.min_age, self.max_age)
 
         if self.get_variable() > 0 and num_children > 0:
             if self.get_dependency_value(dependency.spm.SchoolMealTier) != "PAID":
