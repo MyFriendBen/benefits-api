@@ -23,8 +23,6 @@ class TxHse(ProgramCalculator):
     - $600/year for seniors (age 65+) or people with disabilities (estimated
       typical savings under the general + senior/disabled exemption combined)
     Note: actual savings vary by taxing unit and appraised value.
-    Source: Texas Tax Code § 11.13(b) (general), § 11.13(c)–(d) (senior/disabled)
-    https://statutes.capitol.texas.gov/Docs/TX/htm/TX.11.htm#11.13
     """
     amount = 400
     senior_disabled_amount = 600
