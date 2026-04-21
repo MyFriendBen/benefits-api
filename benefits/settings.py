@@ -86,7 +86,12 @@ REST_FRAMEWORK = {
     },
 }
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.herokuapp\.com$",
+    r"^http://localhost(:\d+)?$",
+    r"^http://127\.0\.0\.1(:\d+)?$",
+]
 
 # Contact Management
 CONTACT_SERVICE = os.getenv("CONTACT_SERVICE", "hubspot")
