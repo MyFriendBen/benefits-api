@@ -1,0 +1,42 @@
+{
+  "white_label": {
+    "code": "tx"
+  },
+  "program_category": {
+    "external_name": "tx_housing"
+  },
+  "program": {
+    "name_abbreviated": "tx_hse",
+    "year": "2026",
+    "legal_status_required": ["citizen", "non_citizen", "gc_5plus", "gc_5less", "refugee", "otherWithWorkPermission"],
+    "name": "Texas Homestead Exemption (HSE)",
+    "description": "All Texas homeowners are eligible for a significant decrease or refund on their property taxes as long as they live in the home they own. The Homestead Exemption reduces the taxable value of your home, lowering your annual property tax bill.\n\nSeniors (age 65 or older) and people with disabilities may receive an additional, higher exemption.\n\nTo apply, contact your county appraisal district. You will need a Texas ID and proof of address. The application typically takes about 30 minutes.",
+    "description_short": "Property tax reduction for Texas homeowners",
+    "learn_more_link": "https://www.dallascad.org/AcctDetailRes.aspx?ID=00000275710000000",
+    "apply_button_link": "https://www.dallascad.org/AcctDetailRes.aspx?ID=00000275710000000",
+    "apply_button_description": "Apply at Your County Appraisal District",
+    "estimated_application_time": "30 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "website_description": "Property tax reduction for Texas homeowners who live in their own home",
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": false,
+    "value_format": null
+  },
+  "documents": [
+    {
+      "external_name": "tx_state_id",
+      "text": "Texas ID (ex: driver's license, Texas state ID card)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_home",
+      "text": "Proof of home address (ex: mortgage statement, utility bill)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": []
+}
