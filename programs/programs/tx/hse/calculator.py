@@ -18,10 +18,11 @@ class TxHse(ProgramCalculator):
     https://statutes.capitol.texas.gov/Docs/TX/htm/TX.11.htm#11.13
 
     Benefit amount:
-    - $400/year (base general homestead exemption: $140,000 reduction in
-      appraised value × statewide average school district tax rate of ~$0.40/$100)
-    - $600/year for seniors (age 65+) or people with disabilities (additional
-      $60,000 exemption on top of the general exemption, same rate applied)
+    - $400/year (estimated typical tax savings for a low-income TX homeowner
+      with a ~$120K home value under the general homestead exemption)
+    - $600/year for seniors (age 65+) or people with disabilities (estimated
+      typical savings under the general + senior/disabled exemption combined)
+    Note: actual savings vary by taxing unit and appraised value.
     Source: Texas Tax Code § 11.13(b) (general), § 11.13(c)–(d) (senior/disabled)
     https://statutes.capitol.texas.gov/Docs/TX/htm/TX.11.htm#11.13
     """
