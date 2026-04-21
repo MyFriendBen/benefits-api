@@ -14,7 +14,7 @@ class TxHse(ProgramCalculator):
     - Applicant must own and occupy the property as their principal residence
       (proxied here by the presence of a mortgage expense).
     - Texas residency is handled automatically by the TX white label.
-    Source: Texas Tax Code § 11.13(a)–(b)
+    Source: Texas Tax Code § 11.13(j) (definition of residence homestead)
     https://statutes.capitol.texas.gov/Docs/TX/htm/TX.11.htm#11.13
 
     Benefit amount:
