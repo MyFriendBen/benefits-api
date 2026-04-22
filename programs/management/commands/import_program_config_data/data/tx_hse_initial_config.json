@@ -24,7 +24,7 @@
     "show_on_current_benefits": true,
     "show_in_has_benefits_step": false,
     "has_calculator": true,
-    "value_format": "lump_sum"
+    "value_format": "estimated_annual"
   },
   "documents": [
     {
