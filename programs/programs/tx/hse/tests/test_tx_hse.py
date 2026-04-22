@@ -11,14 +11,14 @@ Benefit value:
 """
 
 from django.test import TestCase
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock
 
 from programs.programs.tx import tx_calculators
 from programs.programs.tx.hse.calculator import TxHse
 from programs.programs.calc import ProgramCalculator, Eligibility
 
 
-def make_member(age=40, disabled=False, visually_impaired=False, long_term_disability=False):
+def make_member(age: int | None = 40, disabled=False, visually_impaired=False, long_term_disability=False):
     member = Mock()
     member.age = age
     member.disabled = disabled
@@ -125,3 +125,36 @@ class TestTxHseValue(TestCase):
         members = [make_member(age=30), make_member(age=50)]
         calc = make_calculator(members=members)
         self.assertEqual(calc.household_value(), 400)
+
+    def test_zero_member_household_gets_400(self):
+        calc = make_calculator(members=[])
+        self.assertEqual(calc.household_value(), 400)
+
+    def test_member_with_none_age_does_not_raise(self):
+        members = [make_member(age=None)]
+        calc = make_calculator(members=members)
+        self.assertEqual(calc.household_value(), 400)
+
+    def test_senior_and_disabled_member_gets_600(self):
+        members = [make_member(age=70, disabled=True)]
+        calc = make_calculator(members=members)
+        self.assertEqual(calc.household_value(), 600)
+
+
+class TestTxHseCalc(TestCase):
+    def test_calc_eligible_with_mortgage(self):
+        calc = make_calculator(has_mortgage=True, members=[make_member(age=40)])
+        e = calc.calc()
+        self.assertTrue(e.eligible)
+        self.assertEqual(e.value, 400)
+
+    def test_calc_ineligible_without_mortgage(self):
+        calc = make_calculator(has_mortgage=False, members=[make_member(age=40)])
+        e = calc.calc()
+        self.assertFalse(e.eligible)
+
+    def test_calc_eligible_senior_gets_600(self):
+        calc = make_calculator(has_mortgage=True, members=[make_member(age=65)])
+        e = calc.calc()
+        self.assertTrue(e.eligible)
+        self.assertEqual(e.value, 600)
