@@ -38,6 +38,12 @@
       "text": "Proof of home address (ex: mortgage statement, utility bill)",
       "link_url": "",
       "link_text": ""
+    },
+    {
+      "external_name": "tx_form_50_114_hse_app",
+      "text":"Form 50-114, Application for Residence Homestead Exemption (PDF)",
+      "link_url": "https://comptroller.texas.gov/forms/50-114.pdf",
+      "link_text": "Application Form"
     }
   ],
   "navigators": []
