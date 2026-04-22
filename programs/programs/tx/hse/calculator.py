@@ -24,6 +24,7 @@ class TxHse(ProgramCalculator):
       typical savings under the general + senior/disabled exemption combined)
     Note: actual savings vary by taxing unit and appraised value.
     """
+
     amount = 400
     senior_disabled_amount = 600
     senior_age = 65
