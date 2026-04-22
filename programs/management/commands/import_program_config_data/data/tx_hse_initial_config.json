@@ -1,0 +1,50 @@
+{
+  "white_label": {
+    "code": "tx"
+  },
+  "program_category": {
+    "external_name": "tx_housing"
+  },
+  "program": {
+    "name_abbreviated": "tx_hse",
+    "year": "2026",
+    "legal_status_required": ["citizen", "non_citizen", "gc_5plus", "gc_5less", "refugee", "otherWithWorkPermission"],
+    "name": "Texas Homestead Exemption (HSE)",
+    "description": "All Texas homeowners are eligible for a significant decrease or refund on their property taxes as long as they live in the home they own. The Homestead Exemption reduces the taxable value of your home, lowering your annual property tax bill.\n\nSeniors (age 65 or older) and people with disabilities may receive an additional, higher exemption.\n\nTo apply, select 'Find Local Appraisal District', select your county, and use the information shown to contact your county appraisal district.",
+    "description_short": "Property tax reduction for Texas homeowners who live in their own home",
+    "learn_more_link": "https://comptroller.texas.gov/taxes/property-tax/exemptions/",
+    "apply_button_link": "https://comptroller.texas.gov/taxes/property-tax/county-directory/index.php",
+    "apply_button_description": "Find Local Appraisal District",
+    "estimated_application_time": "30 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "website_description": "Property tax reduction for Texas homeowners who live in their own home",
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true,
+    "show_in_has_benefits_step": false,
+    "has_calculator": true,
+    "value_format": "lump_sum"
+  },
+  "documents": [
+    {
+      "external_name": "tx_state_id",
+      "text": "Texas ID (ex: driver's license, Texas state ID card)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_home",
+      "text": "Proof of home address (ex: mortgage statement, utility bill)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_form_50_114_hse_app",
+      "text":"Form 50-114, Application for Residence Homestead Exemption (PDF)",
+      "link_url": "https://comptroller.texas.gov/forms/50-114.pdf",
+      "link_text": "Application Form"
+    }
+  ],
+  "navigators": []
+}
