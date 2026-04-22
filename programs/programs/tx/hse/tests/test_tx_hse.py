@@ -6,7 +6,8 @@ Eligibility:
 - Texas residency is handled by the TX white label (not tested here)
 
 Benefit value:
-- $600 if any household member is age 65+ or has a disability
+- $600 if any household member is age 65+, has long_term_disability, has disabled
+  status (unable to work now or in the future), or is age 55+ and visually impaired
 - $400 otherwise
 """
 
@@ -66,6 +67,9 @@ class TestTxHseClassAttributes(TestCase):
     def test_senior_age_is_65(self):
         self.assertEqual(TxHse.senior_age, 65)
 
+    def test_blind_senior_age_is_55(self):
+        self.assertEqual(TxHse.blind_senior_age, 55)
+
     def test_age_in_dependencies(self):
         self.assertIn("age", TxHse.dependencies)
 
@@ -106,10 +110,25 @@ class TestTxHseValue(TestCase):
         calc = make_calculator(members=members)
         self.assertEqual(calc.household_value(), 600)
 
-    def test_visually_impaired_member_gets_600(self):
-        members = [make_member(age=40, visually_impaired=True)]
+    def test_visually_impaired_age_55_gets_600(self):
+        members = [make_member(age=55, visually_impaired=True)]
         calc = make_calculator(members=members)
         self.assertEqual(calc.household_value(), 600)
+
+    def test_visually_impaired_age_60_gets_600(self):
+        members = [make_member(age=60, visually_impaired=True)]
+        calc = make_calculator(members=members)
+        self.assertEqual(calc.household_value(), 600)
+
+    def test_visually_impaired_under_55_gets_400(self):
+        members = [make_member(age=40, visually_impaired=True)]
+        calc = make_calculator(members=members)
+        self.assertEqual(calc.household_value(), 400)
+
+    def test_visually_impaired_age_54_gets_400(self):
+        members = [make_member(age=54, visually_impaired=True)]
+        calc = make_calculator(members=members)
+        self.assertEqual(calc.household_value(), 400)
 
     def test_long_term_disability_gets_600(self):
         members = [make_member(age=40, long_term_disability=True)]
