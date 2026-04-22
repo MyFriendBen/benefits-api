@@ -4,14 +4,17 @@ from ..base import UrgentNeedFunction
 class NationalDiaperBankNetwork(UrgentNeedFunction):
     """Texas Diaper Bank Program via the National Diaper Bank Network.
 
-    Provides diaper assistance to families with young children in specific counties.
-    Eligibility criteria include having a child under 5 years old, needing baby supplies,
-    and having child support expenses.
+    Provides diaper assistance to families with young children in specific counties
+    who have a need for diapers and other baby supplies.
+
+    Code-level eligibility requires at least one child under 5 years old.
+    County restrictions and the "Diapers and other baby supplies" need check
+    are configured via the admin UI (county eligibility and required needs fields).
 
     More info: https://nationaldiaperbanknetwork.org/member-directory/
     """
 
-    dependencies = ["age"]
+    dependencies = ["age", "county"]
     max_age = 4
 
     def eligible(self) -> bool:
