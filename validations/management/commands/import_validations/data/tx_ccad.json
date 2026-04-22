@@ -1,0 +1,129 @@
+[
+  {
+    "notes": "TX Community Care for the Aged and Disabled (CCAD) - 65-Year-Old Retiree with Social Security Income Below 300% FPL",
+    "household": {
+      "white_label": "tx",
+      "household_size": 1,
+      "zipcode": "78701",
+      "county": "Travis County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1961,
+          "age": 65,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 1500.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_ccad",
+      "eligible": true
+    }
+  },
+  {
+    "notes": "TX Community Care for the Aged and Disabled (CCAD) - 72-Year-Old Single Adult with Income Just Above 300% FPL Threshold",
+    "household": {
+      "white_label": "tx",
+      "household_size": 1,
+      "zipcode": "75201",
+      "county": "Dallas County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1954,
+          "age": 72,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 4900.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_ccad",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "TX Community Care for the Aged and Disabled (CCAD) - Categorically Eligible SNAP Recipient Above 300% FPL",
+    "household": {
+      "white_label": "tx",
+      "household_size": 1,
+      "zipcode": "78701",
+      "county": "Travis County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1958,
+          "age": 68,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 4500.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": [],
+      "has_snap": true
+    },
+    "expected_results": {
+      "program_name": "tx_ccad",
+      "eligible": true
+    }
+  }
+]

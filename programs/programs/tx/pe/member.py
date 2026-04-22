@@ -307,10 +307,6 @@ class TxHarrisCountyRides(PolicyEngineMembersCalculator):
     dependencies = ["county"]
 
     def member_value(self, member):
-        # Check if household already has the benefit
-        if self.screen.has_benefit("tx_harris_rides"):
-            return 0
-
         pe_eligible = self.get_member_variable(member.id)
 
         return 1 if pe_eligible else 0
@@ -401,3 +397,118 @@ class TxFpp(PolicyEngineMembersCalculator):
 
         # Return PolicyEngine-calculated value (handles age and income eligibility)
         return self.get_member_variable(member.id)
+
+
+class TxHeadStart(PolicyEngineMembersCalculator):
+    """
+    Texas Head Start calculator using PolicyEngine.
+
+    Federal early childhood program providing comprehensive education, health,
+    and family support services to low-income children (ages 3-5) and their families.
+
+    Eligibility (determined by PolicyEngine):
+        - Child must be age 3-5 (Early Head Start covers 0-2)
+        - Household income at or below 130% FPL
+        - Automatic eligibility for families eligible for or receiving SNAP, TANF, or SSI
+    """
+
+    pe_name = "head_start"
+    pe_inputs = [
+        dependency.member.AgeDependency,
+        dependency.member.FosterCareDependency,
+        dependency.household.TxStateCodeDependency,
+        *dependency.irs_gross_income,
+        dependency.member.Ssi,
+        dependency.spm.Snap,
+        dependency.spm.Tanf,
+    ]
+    pe_outputs = [dependency.member.HeadStart]
+
+
+class TxEarlyHeadStart(PolicyEngineMembersCalculator):
+    """
+    Texas Early Head Start calculator using PolicyEngine.
+
+    Provides comprehensive early childhood services (education, health, nutrition,
+    and family support) to income-eligible families with children under age 3 or
+    pregnant women in Texas.
+
+    Eligibility pathways (45 CFR 1302.12):
+    - Age: child under 36 months OR pregnant woman
+    - Income: family income at or below 130% FPL (covers both the primary 100% FPL
+      threshold and the over-income band up to 130% FPL per 45 CFR 1302.12(d))
+    - Categorical: family receives SNAP, TANF, or SSI (income test waived)
+    - Foster care: child is in foster care (income test waived)
+    """
+
+    pe_name = "early_head_start"
+    pe_inputs = [
+        dependency.member.AgeDependency,
+        dependency.member.PregnancyDependency,
+        dependency.member.FosterCareDependency,
+        dependency.household.TxStateCodeDependency,
+        *dependency.irs_gross_income,
+        dependency.member.Ssi,
+        dependency.spm.Snap,
+        dependency.spm.Tanf,
+    ]
+    pe_outputs = [dependency.member.EarlyHeadStart]
+
+
+class TxMsp(PolicyEngineMembersCalculator):
+    """
+    Texas Medicare Savings Program (MSP) calculator using PolicyEngine.
+
+    Helps pay Medicare premiums, deductibles, and coinsurance for low-income
+    Medicare-eligible Texas residents.
+
+    Categories (determined by PolicyEngine):
+        - QMB (≤100% FPL): Part A/B premiums, deductibles, coinsurance
+        - SLMB (100-120% FPL): Part B premium only
+        - QI (120-135% FPL, not Medicaid-eligible): Part B premium only
+
+    Limitations:
+        - SSDI pathway partially supported: we don't collect months_receiving_social_security_disability,
+          but IsMedicareEligibleDependency short-circuits for users who have Medicare selected
+        - Assumes 40 quarters of Medicare-covered employment (Part A is free); ~99% of beneficiaries
+          meet this threshold (per CMS)
+        - household_assets (household-level total) is passed directly to PolicyEngine for all household
+          sizes. MSP only counts the applicant's and spouse's resources, so for households with
+          non-eligible members (e.g., adult children), this may be stricter than the actual rule (known data gap)
+        - Benefit value is premium savings only; QMB deductible/coinsurance coverage is not included
+
+    Note: Includes Medicaid pe_inputs + IsMedicaidEligibleDependency because QI requires checking
+    that the individual is not eligible for other Medicaid benefits.
+
+    References:
+        - TX MSP: https://www.hhs.texas.gov/handbooks/medicaid-elderly-people-disabilities-handbook/q-1000-medicare-savings-programs-overview
+        - 2026 Medicare costs: https://www.cms.gov/newsroom/fact-sheets/2026-medicare-parts-b-premiums-deductibles
+    """
+
+    pe_name = "msp"
+    pe_inputs = [
+        # is_medicare_eligible - override PE's calculation when user has Medicare selected
+        dependency.member.IsMedicareEligibleDependency,
+        dependency.member.AgeDependency,
+        dependency.member.SsdiReportedDependency,
+        # months_receiving_social_security_disability - not collected (see limitation above)
+        # msp_countable_income (uses SSI methodology)
+        dependency.member.SsiEarnedIncomeDependency,
+        dependency.member.SsiUnearnedIncomeDependency,
+        # msp_asset_eligible
+        dependency.spm.CashAssetsDependency,
+        # state
+        dependency.household.TxStateCodeDependency,
+        # Sends 40 quarters → is_premium_free_part_a=True → base_part_a_premium=$0
+        # QMB benefit value = Part B premium only (~99% of beneficiaries have free Part A)
+        dependency.member.MedicareQuartersOfCoverageDependency,
+        # is_medicaid_eligible (for QI exclusion) - override when user reports Medicaid
+        dependency.member.IsMedicaidEligibleDependency,
+        # Medicaid dependencies (for PolicyEngine's is_medicaid_eligible calculation)
+        *Medicaid.pe_inputs,
+    ]
+    pe_outputs = [
+        dependency.member.MspEligible,
+        dependency.member.MspCategory,
+        dependency.member.Msp,
+    ]

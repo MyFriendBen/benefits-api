@@ -48,62 +48,7 @@ class CesnConfigurationData(ConfigurationData):
 
     sign_up_options = {}
 
-    relationship_options = {
-        "child": {"_label": "relationshipOptions.child", "_default_message": "Child"},
-        "fosterChild": {
-            "_label": "relationshipOptions.fosterChildOrKinshipChild",
-            "_default_message": "Foster Child / Kinship Care",
-        },
-        "stepChild": {
-            "_label": "relationshipOptions.stepChild",
-            "_default_message": "Step-child",
-        },
-        "grandChild": {
-            "_label": "relationshipOptions.grandChild",
-            "_default_message": "Grandchild",
-        },
-        "spouse": {
-            "_label": "relationshipOptions.spouse",
-            "_default_message": "Spouse",
-        },
-        "parent": {
-            "_label": "relationshipOptions.parent",
-            "_default_message": "Parent",
-        },
-        "fosterParent": {
-            "_label": "relationshipOptions.fosterParent",
-            "_default_message": "Foster Parent",
-        },
-        "stepParent": {
-            "_label": "relationshipOptions.stepParent",
-            "_default_message": "Step-parent",
-        },
-        "grandParent": {
-            "_label": "relationshipOptions.grandParent",
-            "_default_message": "Grandparent",
-        },
-        "sisterOrBrother": {
-            "_label": "relationshipOptions.sisterOrBrother",
-            "_default_message": "Sister/Brother",
-        },
-        "stepSisterOrBrother": {
-            "_label": "relationshipOptions.stepSisterOrBrother",
-            "_default_message": "Step-sister/Step-brother",
-        },
-        "boyfriendOrGirlfriend": {
-            "_label": "relationshipOptions.boyfriendOrGirlfriend",
-            "_default_message": "Boyfriend/Girlfriend",
-        },
-        "domesticPartner": {
-            "_label": "relationshipOptions.domesticPartner",
-            "_default_message": "Domestic Partner",
-        },
-        "relatedOther": {
-            "_label": "relationshipOptions.relatedOther",
-            "_default_message": "Related in some other way",
-        },
-    }
-
+    # Deprecated: managed via Django admin → Programs → Referrers. Remove as part of MFB-864.
     referral_options = {}
 
     language_options = {
@@ -1962,7 +1907,7 @@ class CesnConfigurationData(ConfigurationData):
             "benefits": {
                 "tanf": {
                     "name": {
-                        "_label": "cashAssistanceBenefits.tanf",
+                        "_label": "co.cashAssistanceBenefits.tanf",
                         "_default_message": "Temporary Assistance for Needy Families/Colorado Works (TANF): ",
                     },
                     "description": {
@@ -1990,7 +1935,7 @@ class CesnConfigurationData(ConfigurationData):
                         "_default_message": "State cash assistance for individuals who are disabled and receiving SSI",
                     },
                 },
-                "co_andso": {
+                "cesn_andso": {
                     "name": {
                         "_label": "cashAssistanceBenefits.co_andso",
                         "_default_message": "Aid to the Needy Disabled - State Only (AND-SO): ",
@@ -2086,7 +2031,7 @@ class CesnConfigurationData(ConfigurationData):
                         "_default_message": "Free home energy upgrades",
                     },
                 },
-                "co_care": {
+                "cesn_care": {
                     "name": {
                         "_label": "housingAndUtilities.care",
                         "_default_message": "Colorado's Affordable Residential Energy (CARE) via Energy Outreach Colorado: ",
@@ -2227,7 +2172,7 @@ class CesnConfigurationData(ConfigurationData):
                 "default": [
                     "zipcode",
                     "householdSize",
-                    "energyCalculatorHouseholdData",
+                    "householdData",
                     "energyCalculatorElectricityProvider",
                     "energyCalculatorGasProvider",
                     "energyCalculatorUtilityStatus",
@@ -2238,7 +2183,7 @@ class CesnConfigurationData(ConfigurationData):
                     "energyCalculatorExpenses",
                     "zipcode",
                     "householdSize",
-                    "energyCalculatorHouseholdData",
+                    "householdData",
                     "energyCalculatorElectricityProvider",
                     "energyCalculatorGasProvider",
                     "energyCalculatorUtilityStatus",
@@ -2282,10 +2227,6 @@ class CesnConfigurationData(ConfigurationData):
         "defaultLanguage": {"default": "en-us"},
     }
 
-    experiments = {
-        "npsVariant": {"variants": ["inline"]},
-    }
-
     current_benefits = {
         "title": {
             "_label": "energyCalculator.currentBenefits.title",
@@ -2318,4 +2259,21 @@ class CesnConfigurationData(ConfigurationData):
             "_label": "energyCalculator.nps.prompt",
             "_default_message": "How likely are you to recommend the Colorado Energy Savings Calculator to a friend?",
         },
+    }
+
+    communications = {
+        "save_results": {
+            "from_name": {
+                "_label": "energyCalculator.sendResults.email-fromName",
+                "_default_message": "Colorado Energy Savings Navigator",
+            },
+            "subject": {
+                "_label": "energyCalculator.sendResults.email-subject",
+                "_default_message": "Results from the Colorado Energy Savings Navigator",
+            },
+            "body": {
+                "_label": "energyCalculator.sendResults.email",
+                "_default_message": "Thank you for using the Colorado Energy Savings Navigator. Click here to review your results.",
+            },
+        }
     }

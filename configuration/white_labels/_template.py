@@ -106,13 +106,13 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # }
 
     # ==========================================================================================
-    # REFERRAL OPTIONS - Always customized
+    # REFERRAL OPTIONS - Deprecated
     # ==========================================================================================
-    # "How did you hear about us?" options
-    # Add community partners, organizations, websites relevant to your state
+    # Deprecated: referral_options in config files is no longer the source of truth.
+    # Referral options are now managed via Django admin → Programs → Referrers.
+    # This field will be removed as part of MFB-864.
     # ==========================================================================================
 
-    # TODO: Add state-specific referral options
     referral_options = {
         "[REPLACE_ME]": {"_label": "", "_default_message": ""},
         "other": {"_label": "referralOptions.other", "_default_message": "Other"},
@@ -494,6 +494,30 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # }
 
     # ==========================================================================================
+    # COMMUNICATIONS - Optional, usually inherited as is from ConfigurationData
+    # ==========================================================================================
+    # Text for "Save Results" email and SMS communications.
+    # Standard labels are registered in the translation system.
+    # Override if you need custom sender names, subjects, or bodies.
+    # ==========================================================================================
+    # communications = {
+    #     "save_results": {
+    #         "from_name": {
+    #             "_label": "sendResults.email-fromName",
+    #             "_default_message": "screener",
+    #         },
+    #         "subject": {
+    #             "_label": "sendResults.email-subject",
+    #             "_default_message": "Benefits Results from MyFriendBen",
+    #         },
+    #         "body": {
+    #             "_label": "sendResults.email",
+    #             "_default_message": "Thank you for using MyFriendBen. Click here to review your results.",
+    #         },
+    #     }
+    # }
+
+    # ==========================================================================================
     # OVERRIDE TEXT - Optional, delete if not needed
     # ==========================================================================================
     # Custom translation overrides for specific text strings
@@ -511,5 +535,5 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # See README.md for full documentation.
     # ==========================================================================================
     # experiments = {
-    #     "npsVariant": {"variants": ["floating"]},  # Single variant = no A/B test
+    #     "exampleExperiment": {"variants": ["A", "B"]},
     # }

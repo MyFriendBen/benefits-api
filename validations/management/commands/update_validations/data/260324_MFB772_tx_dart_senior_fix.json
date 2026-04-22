@@ -1,0 +1,11 @@
+{
+  "description": "Fixing the tx_dart boundary test expected value to match 65yo reduced fare.",
+  "updates": [
+    {
+      "screen_uuid": "3def178a-c405-41b0-ad7c-5781b3ffa194",
+      "program_name": "tx_dart",
+      "value": 756,
+      "reason": "MFB-772: Reduced fare for seniors 65+ is $756"
+    }
+  ]
+}

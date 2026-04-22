@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "tx" },
+  "need": {
+    "external_name": "tx_west_dallas_multipurpose_center",
+    "category_type": {
+      "external_name": "tx_managing_housing_cost",
+      "name": "Managing Housing Cost",
+      "icon": "housing"
+    },
+    "type_short": ["housing"],
+    "translations": {
+      "name": "West Dallas Multipurpose Center",
+      "description": "A city facility offering free programs in education, health and wellness, senior services, and community engagement, plus financial assistance including rental assistance, utility payments, and security deposit help.",
+      "link": "https://westdallasmultipurposecenter.com/",
+      "warning": "",
+      "website_description": "Community center offering education, health, and financial assistance programs.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": ["Dallas"],
+    "required_expense_types": [],
+    "active": false,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

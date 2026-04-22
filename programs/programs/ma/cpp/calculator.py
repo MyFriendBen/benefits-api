@@ -33,9 +33,6 @@ class MaCpp(ProgramCalculator):
     dependencies = ["income_amount", "income_frequency", "household_size", "county"]
 
     def household_eligible(self, e: Eligibility):
-        # Exclude households already enrolled in CPP
-        e.condition(not self.screen.has_benefit("ma_cpp"))
-
         # Cambridge residency required
         # Note: MA stores city name in county field (see MFB-548)
         is_cambridge = self.screen.county == self.eligible_city

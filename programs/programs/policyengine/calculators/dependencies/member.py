@@ -7,7 +7,7 @@ class AgeDependency(Member):
     dependencies = ("age",)
 
     def value(self):
-        return self.member.age
+        return self.member.calc_age()
 
 
 class PregnancyDependency(Member):
@@ -704,5 +704,37 @@ class IsMedicareEligibleDependency(Member):
     def value(self):
         has_medicare = self.member.has_insurance_types(("medicare",), strict=False)
         if has_medicare:
+            return True
+        return None
+
+
+class IsMedicaidEligibleDependency(Member):
+    """
+    Override PolicyEngine's is_medicaid_eligible calculation when we know the user has Medicaid.
+
+    This is used by MSP to enforce the QI exclusion: QI is only available to Medicare beneficiaries
+    who are NOT eligible for Medicaid. If the user has indicated they have Medicaid, we return True
+    directly (they are definitionally Medicaid-eligible and thus ineligible for QI). If they have not
+    indicated Medicaid, we return None so PolicyEngine can calculate Medicaid eligibility from age,
+    income, disability, and pregnancy — ensuring applicants who would qualify for Medicaid are
+    excluded from QI even if they haven't explicitly reported Medicaid enrollment.
+    """
+
+    field = "is_medicaid_eligible"
+
+    def value(self):
+        has_medicaid = self.member.has_insurance_types(("medicaid",), strict=False)
+        if has_medicaid:
+            return True
+        return None
+
+
+class FosterCareDependency(Member):
+    field = "was_in_foster_care"
+    dependencies = ("relationship",)
+
+    def value(self):
+
+        if self.member.relationship == "fosterChild":
             return True
         return None

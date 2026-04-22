@@ -33,7 +33,7 @@ class Command(BaseCommand):
         {"abbr": "cdhcs", "external": "cdhcs"},
         {"abbr": "nslp", "external": "nslp"},
         {"abbr": "erc", "external": "erc"},
-        {"abbr": "chs", "external": "chs"},
+        {"abbr": "co_head_start", "external": "co_head_start"},
         {"abbr": "cccap", "external": "cccap"},
         {"abbr": "chp", "external": "chp"},
         {"abbr": "coeitc", "external": "coexeitc"},

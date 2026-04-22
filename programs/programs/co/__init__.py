@@ -2,7 +2,6 @@ from .nurse_family_partnership.calculator import CoNurseFamilyPartnership
 from .rtdlive.calculator import RtdLive
 from .child_care_assistance.calculator import ChildCareAssistance
 from .mydenver.calculator import MyDenver
-from .cash_back.calculator import CashBack
 from .energy_assistance.calculator import EnergyAssistance
 from .energy_resource_center.calculator import EnergyResourceCenter
 from .omnisalud.calculator import OmniSalud
@@ -32,13 +31,13 @@ from .energy_calculator import cesn_calculators
 from .denver_sidewalk_rebate.calculator import DenverSidewalkRebate
 from .senior_housing_tax_credit.calculator import SeniorHousingIncomeTaxCredit
 from .jeffco_student_benefits.calculator import JeffcoStudentBenefits
+from .head_start.calculator import CoHeadStart
 from ..calc import ProgramCalculator
 
 co_calculators: dict[str, type[ProgramCalculator]] = {
     "rtdlive": RtdLive,
     "cccap": ChildCareAssistance,
     "mydenver": MyDenver,
-    "cocb": CashBack,
     "leap": EnergyAssistance,
     "erc": EnergyResourceCenter,
     "omnisalud": OmniSalud,
@@ -68,5 +67,6 @@ co_calculators: dict[str, type[ProgramCalculator]] = {
     "dsr": DenverSidewalkRebate,
     "shitc": SeniorHousingIncomeTaxCredit,
     "jeffco_student_benefits": JeffcoStudentBenefits,
+    "co_head_start": CoHeadStart,
     **cesn_calculators,
 }

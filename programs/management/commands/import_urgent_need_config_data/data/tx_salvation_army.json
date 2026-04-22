@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "tx" },
+  "need": {
+    "external_name": "tx_salvation_army",
+    "category_type": {
+      "external_name": "tx_managing_housing_cost",
+      "name": "Managing Housing Cost",
+      "icon": "housing"
+    },
+    "type_short": ["housing"],
+    "translations": {
+      "name": "Salvation Army Texas – Emergency Rent/Utility Help",
+      "description": "Local Salvation Army centers provide short-term rent and utility assistance for families in crisis when funds are available.",
+      "link": "https://www.salvationarmyusa.org/usa-southern-territory/texas/utility-rent-assistance/",
+      "warning": "",
+      "website_description": "Salvation Army Texas page explaining emergency rent/utility assistance and how to find local help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": ["rent"],
+    "active": false,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

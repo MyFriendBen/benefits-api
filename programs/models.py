@@ -428,6 +428,31 @@ class Document(models.Model):
         return f"{white_label_name}{name}"
 
 
+class BaseProgram(models.TextChoices):
+    ACA = "aca", "ACA"
+    CCAP = "ccap", "CCAP"
+    CHP = "chp", "CHP"
+    CSFP = "csfp", "CSFP"
+    CTC = "ctc", "CTC"
+    EARLY_HEAD_START = "early_head_start", "Early Head Start"
+    EITC = "eitc", "EITC"
+    HEAD_START = "head_start", "Head Start"
+    LIHEAP = "liheap", "LIHEAP"
+    LIFELINE = "lifeline", "Lifeline"
+    MEDICAID = "medicaid", "Medicaid"
+    MEDICARE_SAVINGS = "medicare_savings", "Medicare Savings"
+    NFP = "nfp", "NFP"
+    NSLP = "nslp", "NSLP"
+    OAP = "oap", "OAP"
+    SECTION_8 = "section_8", "Section 8"
+    SNAP = "snap", "SNAP"
+    SSI = "ssi", "SSI"
+    SSDI = "ssdi", "SSDI"
+    TANF = "tanf", "TANF"
+    WAP = "wap", "WAP"
+    WIC = "wic", "WIC"
+
+
 class ProgramManager(models.Manager):
     translated_fields = (
         "description_short",
@@ -630,6 +655,17 @@ class Program(models.Model):
     low_confidence = models.BooleanField(blank=True, null=False, default=False)
     show_on_current_benefits = models.BooleanField(
         default=True, help_text="Display this program on the current benefits page"
+    )
+    show_in_has_benefits_step = models.BooleanField(
+        default=False, help_text="Show this program in the 'already has benefits' screener step"
+    )
+    has_calculator = models.BooleanField(default=True, help_text="Whether this program has an eligibility calculator")
+    base_program = models.CharField(
+        max_length=32,
+        choices=BaseProgram.choices,
+        blank=True,
+        null=True,
+        help_text="Cross-white-label program grouping for analytics (e.g. co_snap, il_snap → snap)",
     )
     year = models.ForeignKey(
         FederalPoveryLimit,
@@ -1676,15 +1712,24 @@ class Referrer(models.Model):
         blank=False,
         on_delete=models.CASCADE,
     )
-    referrer_code = models.CharField(max_length=64, unique=True)
+    referrer_code = models.CharField(max_length=64)
+    name = models.CharField(max_length=255)
+    show_in_dropdown = models.BooleanField(default=True)
+    is_partner = models.BooleanField(default=False)
     webhook_url = models.CharField(max_length=320, blank=True, null=True)
     webhook_functions = models.ManyToManyField(WebHookFunction, related_name="web_hook", blank=True)
     primary_navigators = models.ManyToManyField(Navigator, related_name="primary_navigators", blank=True)
     remove_programs = models.ManyToManyField(Program, related_name="removed_programs", blank=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["white_label", "referrer_code"], name="referrer_unique_wl_code"),
+            models.CheckConstraint(check=~models.Q(name=""), name="referrer_name_not_blank"),
+        ]
+
     def __str__(self):
         white_label_name = f"[{self.white_label.name}] " if self.white_label and self.white_label.name else ""
-        return f"{white_label_name}{self.referrer_code}"
+        return f"{white_label_name}{self.name}"
 
 
 class TranslationOverrideManager(models.Manager):

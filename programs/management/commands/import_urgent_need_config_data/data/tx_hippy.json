@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "tx" },
+  "need": {
+    "external_name": "tx_hippy",
+    "category_type": {
+      "external_name": "tx_child_development",
+      "name": "Child development",
+      "icon": "child_development"
+    },
+    "type_short": ["child dev"],
+    "translations": {
+      "name": "HIPPY (Home Instruction for Parents of Preschool Youngsters)",
+      "description": "A home-based early education program that helps parents be their child's first teacher through curriculum packets and biweekly home visits or group meetings with a parent educator.",
+      "link": "https://hippyusa.org/",
+      "warning": "",
+      "website_description": "Home-based early childhood education program empowering parents to teach children ages 3–5.",
+      "notification_message": ""
+    },
+    "functions": ["tx_hippy"],
+    "counties": ["Dallas"],
+    "required_expense_types": [],
+    "active": false,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

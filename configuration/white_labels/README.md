@@ -43,7 +43,24 @@ This directory contains configuration files for MyFriendBen white labels (state/
    python manage.py add_config
    ```
 
-7. **Update Fillout Feedback Form:**
+7. **Add referral options in Django admin:**
+
+   Referral options are managed via Django admin → Programs → Referrers (not in config files — the `referral_options` field in config files is deprecated and will be removed as part of MFB-864). Add a row for each dropdown option with: `white_label` = your new WL, `referrer_code` = the stored key, `name` = the display label, `show_in_dropdown` = True.
+
+   Every WL should include these standard generic codes (copy from an existing WL):
+
+   | referrer_code | name |
+   |---|---|
+   | `searchEngine` | Google or other search engine |
+   | `socialMedia` | Social Media |
+   | `friend` | Friend / Family / Word of Mouth |
+   | `merit` | Merit America |
+   | `other` | Other |
+   | `testOrProspect` | Test / Prospective Partner |
+
+   Then add any WL-specific partner codes on top of those.
+
+8. **Update Fillout Feedback Form:**
 
    Add the new state to the feedback form so users can report issues/feedback for the new white label:
 
@@ -211,30 +228,30 @@ Controls A/B test variant assignment. The frontend reads the variants list and u
 
 ```python
 experiments = {
-    "npsVariant": {"variants": ["floating", "inline"]},
+    "exampleExperiment": {"variants": ["A", "B"]},
 }
 ```
 
 - Each experiment key maps to a dict with a `"variants"` list
 - All active variants must be listed — the frontend picks one per user based on their UUID
 - Use the feature flag (not experiments) to disable a feature entirely
-- To skip the A/B test and show one variant to all users, use a single-item list: `"variants": ["floating"]`
+- To skip the A/B test and show one variant to all users, use a single-item list: `"variants": ["A"]`
 
 **Feature flags vs experiments (per white label):**
 
 | Want | Feature Flag | Experiment Config |
 |------|-------------|-------------------|
-| NPS off | `nps_survey: false` | doesn't matter |
-| NPS on, A/B test | `nps_survey: true` | `{"variants": ["floating", "inline"]}` |
-| NPS on, single variant | `nps_survey: true` | `{"variants": ["floating"]}` |
+| Feature off | `example_feature: false` | doesn't matter |
+| Feature on, A/B test | `example_feature: true` | `{"variants": ["A", "B"]}` |
+| Feature on, single variant | `example_feature: true` | `{"variants": ["A"]}` |
 
-- Experiments can be overridden per white label, e.g. to run the A/B test in Colorado but show only the floating widget in Illinois:
+- Experiments can be overridden per white label, e.g. to run the A/B test in Colorado but show only variant A in Illinois:
 
 ```python
-# In il.py — feature is on (via feature flag) but no A/B test, everyone sees floating
+# In il.py — feature is on (via feature flag) but no A/B test, everyone sees A
 class IlConfigurationData(ConfigurationData):
     experiments = {
-        "npsVariant": {"variants": ["floating"]},
+        "exampleExperiment": {"variants": ["A"]},
     }
 ```
 
@@ -243,11 +260,11 @@ class IlConfigurationData(ConfigurationData):
 2. Run `python manage.py add_config --all` to update the database
 3. Read the experiment config on the frontend and implement variant logic
 
+
 ### 6. Other Sections
 
 - **`acute_condition_options`** - Urgent needs in the "Additional Resources" step
   - Icon names must be defined in `benefits-calculator/src/Components/Results/helpers.ts` (`ICON_OPTIONS_MAP`)
-- **`referral_options`** - "How did you hear about us?" options
 - **`language_options`** - Available translations
 - **`income_categories`** - Translatable category labels for income (e.g. `incomeCategories.employment`)
 - **`income_options_by_category`** - Income types grouped by category. When overriding, use the spread pattern to inherit base and only override the categories that differ.
@@ -261,6 +278,16 @@ class IlConfigurationData(ConfigurationData):
 - **`feedback_links`** - Contact links:
   - `email`: Linked when user selects "CONTACT US"
   - `survey`: Linked when user selects "REPORT AN ISSUE"
+- **`communications`** - Optional settings for "Save Results" email/SMS. Use this to override default sender names, subjects, or bodies.
+  ```python
+  communications = {
+      "save_results": {
+          "from_name": {"_label": "...", "_default_message": "..."},
+          "subject": {"_label": "...", "_default_message": "..."},
+          "body": {"_label": "...", "_default_message": "..."}
+      }
+  }
+  ```
 
 Most of these rarely need customization and can be inherited from `base.py`.
 

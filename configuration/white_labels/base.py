@@ -142,12 +142,18 @@ class ConfigurationData:
             "_default_message": "Boyfriend/Girlfriend",
         },
         "domesticPartner": {"_label": "relationshipOptions.domesticPartner", "_default_message": "Domestic Partner"},
+        "roommate": {"_label": "relationshipOptions.roommate", "_default_message": "Roommate"},
         "relatedOther": {"_label": "relationshipOptions.relatedOther", "_default_message": "Related in some other way"},
     }
 
-    # "How did you hear about us?" options on referral source step
+    # Deprecated: referral_options in config files is no longer the source of truth.
+    # Referral options are now managed via Django admin → Programs → Referrers.
+    # This field will be removed as part of MFB-864.
     referral_options = {
-        "[REPLACE_ME]": {"_label": "", "_default_message": ""},
+        "searchEngine": {"_label": "referralOptions.searchEngine", "_default_message": "Google or other search engine"},
+        "socialMedia": {"_label": "referralOptions.socialMedia", "_default_message": "Social Media"},
+        "friend": {"_label": "referralOptions.friend", "_default_message": "Friend / Family / Word of Mouth"},
+        "merit": {"_label": "referralOptions.merit", "_default_message": "Merit America"},
         "other": {"_label": "referralOptions.other", "_default_message": "Other"},
         "testOrProspect": {
             "_label": "referralOptions.testOrProspect",
@@ -179,7 +185,7 @@ class ConfigurationData:
     # Types of income to collect (customize for state-specific income types)
     # Organized by category for two-level dropdown selection
     income_categories = {
-        "employment": {"_label": "incomeCategories.employment", "_default_message": "Employment Income"},
+        "employment": {"_label": "incomeCategories.employment", "_default_message": "Work & Self-Employment Income"},
         "government": {"_label": "incomeCategories.government", "_default_message": "Government Benefits"},
         "investment": {"_label": "incomeCategories.investment", "_default_message": "Investment & Retirement"},
         "property": {"_label": "incomeCategories.property", "_default_message": "Property Income"},
@@ -314,39 +320,11 @@ class ConfigurationData:
                     "_default_message": "Private (student or non-employer) health insurance",
                 },
             },
-            "medicaid": {
-                "icon": {"_icon": "Medicaid", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.medicaid",
-                    "_default_message": "Health First Colorado (Full Medicaid)",
-                },
-            },
             "medicare": {
                 "icon": {"_icon": "Medicare", "_classname": "option-card-icon"},
                 "text": {
                     "_label": "healthInsuranceOptions.medicare",
                     "_default_message": "Medicare",
-                },
-            },
-            "chp": {
-                "icon": {"_icon": "Chp", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.chp",
-                    "_default_message": "Child Health Plan Plus (CHP+)",
-                },
-            },
-            "emergency_medicaid": {
-                "icon": {"_icon": "Emergency_medicaid", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.emergency_medicaid",
-                    "_default_message": "Emergency Medicaid / Reproductive Health",
-                },
-            },
-            "family_planning": {
-                "icon": {"_icon": "Family_planning", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.family_planning",
-                    "_default_message": "Family Planning Limited Medicaid",
                 },
             },
             "va": {
@@ -379,39 +357,11 @@ class ConfigurationData:
                     "_default_message": "Private (student or non-employer) health insurance",
                 },
             },
-            "medicaid": {
-                "icon": {"_icon": "Medicaid", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.medicaid",
-                    "_default_message": "Health First Colorado (Full Medicaid)",
-                },
-            },
             "medicare": {
                 "icon": {"_icon": "Medicare", "_classname": "option-card-icon"},
                 "text": {
                     "_label": "healthInsuranceOptions.medicare",
                     "_default_message": "Medicare",
-                },
-            },
-            "chp": {
-                "icon": {"_icon": "Chp", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.chp",
-                    "_default_message": "Child Health Plan Plus (CHP+)",
-                },
-            },
-            "emergency_medicaid": {
-                "icon": {"_icon": "Emergency_medicaid", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.emergency_medicaid",
-                    "_default_message": "Emergency Medicaid / Reproductive Health",
-                },
-            },
-            "family_planning": {
-                "icon": {"_icon": "Family_planning", "_classname": "option-card-icon"},
-                "text": {
-                    "_label": "healthInsuranceOptions.family_planning",
-                    "_default_message": "Family Planning Limited Medicaid",
                 },
             },
             "va": {
@@ -667,9 +617,7 @@ class ConfigurationData:
     # A/B test experiments with multi-variant support
     # Each experiment maps to a list of active variants (not just on/off like featureFlags)
     # Frontend uses UUID hash to deterministically assign a variant
-    experiments = {
-        "npsVariant": {"variants": ["floating", "inline"]},
-    }
+    experiments = {}
 
     # Footer contact information
     footer_data = {
@@ -698,3 +646,21 @@ class ConfigurationData:
     # Custom translation overrides for specific text strings (optional)
     # should follow format {"[REPLACE_ME]": {"_label": "[REPLACE_ME]", "_default_message": "[REPLACE_ME]"}}
     override_text = {}
+
+    # Email and SMS communication configuration
+    communications = {
+        "save_results": {
+            "from_name": {
+                "_label": "sendResults.email-fromName",
+                "_default_message": "screener",
+            },
+            "subject": {
+                "_label": "sendResults.email-subject",
+                "_default_message": "Benefits Results from MyFriendBen",
+            },
+            "body": {
+                "_label": "sendResults.email",
+                "_default_message": "Thank you for using MyFriendBen. Click here to review your results.",
+            },
+        }
+    }

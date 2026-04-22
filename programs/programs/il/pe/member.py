@@ -354,7 +354,8 @@ class IlMsp(PolicyEngineMembersCalculator):
         spm_dependency.CashAssetsDependency,
         # state
         household_dependency.IlStateCodeDependency,
-        # msp_standard_part_a_premium (for benefit value calculation)
+        # Sends 40 quarters → is_premium_free_part_a=True → base_part_a_premium=$0
+        # QMB benefit value = Part B premium only (~99% of beneficiaries have free Part A)
         member_dependency.MedicareQuartersOfCoverageDependency,
         # Medicaid dependencies (for is_medicaid_eligible check in MSP)
         *IlMedicaid.pe_inputs,

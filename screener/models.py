@@ -95,7 +95,6 @@ class Screen(models.Model):
     has_ccb = models.BooleanField(default=False, blank=True, null=True)
     has_ssi = models.BooleanField(default=False, blank=True, null=True)
     has_andcs = models.BooleanField(default=False, blank=True, null=True)
-    has_chs = models.BooleanField(default=False, blank=True, null=True)
     has_cpcr = models.BooleanField(default=False, blank=True, null=True)
     has_cdhcs = models.BooleanField(default=False, blank=True, null=True)
     has_dpp = models.BooleanField(default=False, blank=True, null=True)
@@ -378,6 +377,145 @@ class Screen(models.Model):
 
         return False
 
+    def _build_benefit_map(self) -> dict:
+        """
+        Builds and returns the full name_abbreviated → bool map for this screen.
+
+        Callers that need to check many programs should call this once and reuse
+        the result rather than calling has_benefit() in a loop (which rebuilds the
+        dict on every call).
+        """
+        has_ssi_or_ssi_income = self.has_ssi or self.calc_gross_income("yearly", ("sSI",)) > 0
+
+        return {
+            "tanf": self.has_tanf,
+            "nc_tanf": self.has_tanf,
+            "co_tanf": self.has_tanf,
+            "il_tanf": self.has_tanf,
+            "tx_tanf": self.has_tanf,
+            "wic": self.has_wic,
+            "co_wic": self.has_wic,
+            "il_wic": self.has_wic,
+            "nc_wic": self.has_wic,
+            "tx_wic": self.has_wic,
+            "snap": self.has_snap,
+            "sunbucks": self.has_sunbucks,
+            "co_snap": self.has_snap,
+            "nc_snap": self.has_snap,
+            "il_snap": self.has_snap,
+            "tx_snap": self.has_snap,
+            "lifeline": self.has_lifeline,
+            "tx_lifeline": self.has_lifeline,
+            "acp": self.has_acp,
+            "eitc": self.has_eitc,
+            "tx_eitc": self.has_eitc,
+            "coeitc": self.has_coeitc,
+            "il_eitc": self.has_il_eitc,
+            "nslp": self.has_nslp,
+            "tx_nslp": self.has_nslp,
+            "ctc": self.has_ctc,
+            "tx_ctc": self.has_ctc,
+            "il_ctc": self.has_il_ctc,
+            "il_transit_reduced_fare": self.has_il_transit_reduced_fare,
+            "il_bap": self.has_il_bap,
+            "il_csfp": self.has_csfp,
+            "il_hbwd": self.has_il_hbwd,
+            "il_ccap": self.has_ccap,
+            "cesn_cope": self.has_project_cope,
+            "cesn_heap": self.has_cesn_heap,
+            "rtdlive": self.has_rtdlive,
+            "cccap": self.has_ccap,
+            "mydenver": self.has_mydenver,
+            "ssi": has_ssi_or_ssi_income,
+            "tx_ssi": has_ssi_or_ssi_income,
+            "tx_csfp": self.has_csfp,
+            "tx_harris_rides": self.has_harris_county_rides,
+            "andcs": self.has_andcs,
+            "co_head_start": self.has_head_start,
+            "cpcr": self.has_cpcr,
+            "cesn_cpcr": self.has_cpcr,
+            "cdhcs": self.has_cdhcs,
+            "dpp": self.has_dpp,
+            "ede": self.has_ede,
+            "erc": self.has_erc,
+            "leap": self.has_leap,
+            "cesn_leap": self.has_leap,
+            "ma_heap": self.has_ma_heap,
+            "il_liheap": self.has_il_liheap,
+            "nc_lieap": self.has_nc_lieap,
+            "oap": self.has_oap,
+            "nccip": self.has_nccip,
+            "nc_scca": self.has_ncscca,
+            "nc_head_start": self.has_head_start,
+            "coctc": self.has_coctc,
+            "upk": self.has_upk,
+            "ssdi": self.has_ssdi,
+            "pell_grant": self.has_pell_grant,
+            "rag": self.has_rag,
+            "co_nfp": self.has_nfp,
+            "il_nfp": self.has_nfp,
+            "fatc": self.has_fatc,
+            "ma_cha": self.has_section_8,
+            "cowap": self.has_cowap,
+            "cesn_cowap": self.has_cowap,
+            "ncwap": self.has_ncwap,
+            "ubp": self.has_ubp,
+            "cesn_ubp": self.has_ubp,
+            "nfp": self.has_nfp,
+            "section_8": self.has_section_8,
+            "co_section_8": self.has_section_8,
+            "ma_section_8": self.has_section_8,
+            "aca": self.has_aca,
+            "medicaid": self.has_medicaid,
+            "nc_aca": self.has_aca,
+            "ma_aca": self.has_aca,
+            "tx_aca": self.has_aca,
+            "ma_mbta": self.has_ma_mbta,
+            "ma_snap": self.has_snap,
+            "ma_ccdf": self.has_ccdf,
+            "ma_wic": self.has_wic,
+            "ma_eaedc": self.has_ma_eaedc,
+            "ma_maeitc": self.has_ma_maeitc,
+            "ma_cfc": self.has_ma_macfc,
+            "ma_homebridge": self.has_ma_homebridge,
+            "ma_dhsp_afterschool": self.has_ma_dhsp_afterschool,
+            "ma_door_to_door": self.has_ma_door_to_door,
+            "ma_taxi_discount": self.has_ma_taxi_discount,
+            "ma_cpp": self.has_ma_cpp,
+            "ma_middle_income_rental": self.has_ma_middle_income_rental,
+            "ma_cmsp": self.has_ma_cmsp,
+            "ma_tafdc": self.has_tanf,
+            "ma_mass_health": self.has_medicaid or self.has_medicaid_hi,
+            "ma_head_start": self.has_head_start,
+            "tx_head_start": self.has_head_start,
+            "ma_csfp": self.has_csfp,
+            "ma_early_head_start": self.has_early_head_start,
+            "tx_early_head_start": self.has_early_head_start,
+            "co_andso": self.has_co_andso,
+            "cesn_andso": self.has_co_andso,
+            "co_care": self.has_co_care,
+            "cesn_care": self.has_co_care,
+            "cfhc": self.has_cfhc,
+            "shitc": self.has_shitc,
+            "nc_medicare_savings": self.has_nc_medicare_savings,
+            "tx_dart": self.has_tx_dart,
+            "ccs": self.has_ccs,
+            "tx_ccs": self.has_ccs,
+            "tx_ssdi": self.has_ssdi,
+            "ma_ssp": self.has_ma_ssp,
+            "cesn_snap": self.has_snap,
+            "cesn_tanf": self.has_tanf,
+            "cesn_wic": self.has_wic,
+            "cesn_ssi": has_ssi_or_ssi_income,
+            "cesn_ssdi": self.has_ssdi,
+            "cesn_oap": self.has_oap,
+            "cesn_section_8": self.has_section_8,
+            "cesn_rtdlive": self.has_rtdlive,
+            "cesn_andcs": self.has_andcs,
+            "nc_leap": self.has_leap,
+            "nc_cccap": self.has_ccap,
+        }
+
     def has_benefit(self, name_abbreviated: str):
         """
         Maps a program's name_abbreviated to the corresponding has_* field on the Screen model.
@@ -408,128 +546,7 @@ class Screen(models.Model):
             → This method: has_benefit("leap") → returns self.has_leap (True)
             → Serializer: "already_has": True → Frontend filters out LEAP from results
         """
-
-        has_ssi_or_ssi_income = self.has_ssi or self.calc_gross_income("yearly", ("sSI",)) > 0
-
-        name_map = {
-            "tanf": self.has_tanf,
-            "nc_tanf": self.has_tanf,
-            "co_tanf": self.has_tanf,
-            "il_tanf": self.has_tanf,
-            "tx_tanf": self.has_tanf,
-            "wic": self.has_wic,
-            "co_wic": self.has_wic,
-            "il_wic": self.has_wic,
-            "nc_wic": self.has_wic,
-            "tx_wic": self.has_wic,
-            "snap": self.has_snap,
-            "sunbucks": self.has_sunbucks,
-            "co_snap": self.has_snap,
-            "nc_snap": self.has_snap,
-            "il_snap": self.has_snap,
-            "tx_snap": self.has_snap,
-            "lifeline": self.has_lifeline,
-            "acp": self.has_acp,
-            "eitc": self.has_eitc,
-            "tx_eitc": self.has_eitc,
-            "coeitc": self.has_coeitc,
-            "il_eitc": self.has_il_eitc,
-            "nslp": self.has_nslp,
-            "tx_nslp": self.has_nslp,
-            "ctc": self.has_ctc,
-            "tx_ctc": self.has_ctc,
-            "il_ctc": self.has_il_ctc,
-            "il_transit_reduced_fare": self.has_il_transit_reduced_fare,
-            "il_bap": self.has_il_bap,
-            "il_csfp": self.has_csfp,
-            "il_hbwd": self.has_il_hbwd,
-            "il_ccap": self.has_ccap,
-            "project_cope": self.has_project_cope,
-            "cesn_cope": self.has_project_cope,
-            "cesn_heap": self.has_cesn_heap,
-            "rtdlive": self.has_rtdlive,
-            "cccap": self.has_ccap,
-            "mydenver": self.has_mydenver,
-            "ccb": self.has_ccb,
-            "ssi": has_ssi_or_ssi_income,
-            "tx_ssi": has_ssi_or_ssi_income,
-            "tx_csfp": self.has_csfp,
-            "tx_harris_rides": self.has_harris_county_rides,
-            "andcs": self.has_andcs,
-            "chs": self.has_chs,
-            "cpcr": self.has_cpcr,
-            "cesn_cpcr": self.has_cpcr,
-            "cdhcs": self.has_cdhcs,
-            "dpp": self.has_dpp,
-            "ede": self.has_ede,
-            "erc": self.has_erc,
-            "leap": self.has_leap,
-            "cesn_leap": self.has_leap,
-            "ma_heap": self.has_ma_heap,
-            "il_liheap": self.has_il_liheap,
-            "nc_lieap": self.has_nc_lieap,
-            "oap": self.has_oap,
-            "nccip": self.has_nccip,
-            "nc_scca": self.has_ncscca,
-            "nc_head_start": self.has_head_start,
-            "coctc": self.has_coctc,
-            "upk": self.has_upk,
-            "ssdi": self.has_ssdi,
-            "pell_grant": self.has_pell_grant,
-            "rag": self.has_rag,
-            "nfp": self.has_nfp,
-            "co_nfp": self.has_nfp,
-            "il_nfp": self.has_nfp,
-            "fatc": self.has_fatc,
-            "section_8": self.has_section_8,
-            "ma_cha": self.has_section_8,
-            "cowap": self.has_cowap,
-            "cesn_cowap": self.has_cowap,
-            "ncwap": self.has_ncwap,
-            "ubp": self.has_ubp,
-            "cesn_ubp": self.has_ubp,
-            "medicare": self.has_medicare_hi,
-            "chp": self.has_chp or self.has_chp_hi,
-            "va": self.has_va,
-            "aca": self.has_aca,
-            "nc_aca": self.has_aca,
-            "ma_aca": self.has_aca,
-            "tx_aca": self.has_aca,
-            "ma_mbta": self.has_ma_mbta,
-            "ma_snap": self.has_snap,
-            "ma_ccdf": self.has_ccdf,
-            "ma_wic": self.has_wic,
-            "ma_eaedc": self.has_ma_eaedc,
-            "ma_maeitc": self.has_ma_maeitc,
-            "ma_macfc": self.has_ma_macfc,
-            "ma_homebridge": self.has_ma_homebridge,
-            "ma_dhsp_afterschool": self.has_ma_dhsp_afterschool,
-            "ma_door_to_door": self.has_ma_door_to_door,
-            "ma_taxi_discount": self.has_ma_taxi_discount,
-            "ma_cpp": self.has_ma_cpp,
-            "ma_middle_income_rental": self.has_ma_middle_income_rental,
-            "ma_cmsp": self.has_ma_cmsp,
-            "ma_tafdc": self.has_tanf,
-            "ma_mass_health": self.has_medicaid or self.has_medicaid_hi,
-            "ma_head_start": self.has_head_start,
-            "ma_csfp": self.has_csfp,
-            "ma_early_head_start": self.has_early_head_start,
-            "co_andso": self.has_co_andso,
-            "co_care": self.has_co_care,
-            "cfhc": self.has_cfhc,
-            "shitc": self.has_shitc,
-            "nc_medicare_savings": self.has_nc_medicare_savings,
-            "tx_dart": self.has_tx_dart,
-            "ccs": self.has_ccs,
-            "tx_ccs": self.has_ccs,
-        }
-
-        if name_abbreviated in name_map:
-            has_benefit = name_map[name_abbreviated]
-        else:
-            has_benefit = False
-
-        return has_benefit
+        return self._build_benefit_map().get(name_abbreviated, False)
 
     def set_screen_is_test(self):
         referral_source_tests = ["testorprospect", "test"]
@@ -585,6 +602,15 @@ class Screen(models.Model):
             missing_fields.update(expence.missing_fields())
 
         return missing_fields
+
+
+class CurrentBenefit(models.Model):
+    screen = models.ForeignKey(Screen, on_delete=models.CASCADE, related_name="current_benefits")
+    program = models.ForeignKey("programs.Program", on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = "screener_current_benefits"
+        unique_together = ("screen", "program")
 
 
 # Log table for any messages sent by the application via text or email
@@ -1006,18 +1032,8 @@ class EligibilitySnapshot(models.Model):
 
 
 class NPSScore(models.Model):
-    class Variant(models.TextChoices):
-        FLOATING = "floating", "Floating Widget"
-        INLINE = "inline", "Inline Section"
-
     eligibility_snapshot = models.OneToOneField(EligibilitySnapshot, related_name="nps_score", on_delete=models.CASCADE)
     score = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(10)])
-    variant = models.CharField(
-        max_length=20,
-        choices=Variant.choices,
-        blank=True,
-        null=True,
-    )
     score_reason = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -1030,7 +1046,6 @@ class NPSScore(models.Model):
         ]
         indexes = [
             models.Index(fields=["-created_at"], name="nps_created_at_idx"),
-            models.Index(fields=["variant"], name="nps_variant_idx"),
         ]
 
     def __str__(self):

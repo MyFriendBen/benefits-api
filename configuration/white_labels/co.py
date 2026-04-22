@@ -147,35 +147,11 @@ class CoConfigurationData(ConfigurationData):
         },
     }
 
-    relationship_options = {
-        "child": {"_label": "relationshipOptions.child", "_default_message": "Child"},
-        "fosterChild": {
-            "_label": "relationshipOptions.fosterChildOrKinshipChild",
-            "_default_message": "Foster Child / Kinship Care",
-        },
-        "stepChild": {"_label": "relationshipOptions.stepChild", "_default_message": "Step-child"},
-        "grandChild": {"_label": "relationshipOptions.grandChild", "_default_message": "Grandchild"},
-        "spouse": {"_label": "relationshipOptions.spouse", "_default_message": "Spouse"},
-        "parent": {"_label": "relationshipOptions.parent", "_default_message": "Parent"},
-        "fosterParent": {"_label": "relationshipOptions.fosterParent", "_default_message": "Foster Parent"},
-        "stepParent": {"_label": "relationshipOptions.stepParent", "_default_message": "Step-parent"},
-        "grandParent": {"_label": "relationshipOptions.grandParent", "_default_message": "Grandparent"},
-        "sisterOrBrother": {"_label": "relationshipOptions.sisterOrBrother", "_default_message": "Sister/Brother"},
-        "stepSisterOrBrother": {
-            "_label": "relationshipOptions.stepSisterOrBrother",
-            "_default_message": "Step-sister/Step-brother",
-        },
-        "boyfriendOrGirlfriend": {
-            "_label": "relationshipOptions.boyfriendOrGirlfriend",
-            "_default_message": "Boyfriend/Girlfriend",
-        },
-        "domesticPartner": {"_label": "relationshipOptions.domesticPartner", "_default_message": "Domestic Partner"},
-        "relatedOther": {"_label": "relationshipOptions.relatedOther", "_default_message": "Related in some other way"},
-    }
-
+    # Deprecated: managed via Django admin → Programs → Referrers. Remove as part of MFB-864.
     referral_options = {
         "211co": "2-1-1 Colorado",
         "cch": "Colorado Coalition for the Homeless",
+        "cwe": "Center for Work Education and Employment",
         "frca": "Family Resource Center Association",
         "achs": "Adams County Human Services",
         "arapahoectypublichealth": "Arapahoe County Public Health",
@@ -191,12 +167,14 @@ class CoConfigurationData(ConfigurationData):
         "theactioncenter": "The Action Center",
         "gac": "Get Ahead Colorado",
         "bia": "Benefits in Action",
+        "yab": "Youth Advisory Board",
         "fircsummitresourcecenter": {
             "_label": "referralOptions.fircsummitresourcecenter",
             "_default_message": "FIRC Summit Resource Center",
         },
         "ccig": "Colorado Design Insight Group",
         "coAccess": "Colorado Access",
+        "salud": "Salud",
         "searchEngine": {"_label": "referralOptions.searchEngine", "_default_message": "Google or other search engine"},
         "socialMedia": {"_label": "referralOptions.socialMedia", "_default_message": "Social Media"},
         "friend": {"_label": "referralOptions.friend", "_default_message": "Friend / Family / Word of Mouth"},
@@ -1884,7 +1862,7 @@ class CoConfigurationData(ConfigurationData):
             "benefits": {
                 "tanf": {
                     "name": {
-                        "_label": "cashAssistanceBenefits.tanf",
+                        "_label": "co.cashAssistanceBenefits.tanf",
                         "_default_message": "Temporary Assistance for Needy Families/Colorado Works (TANF): ",
                     },
                     "description": {
@@ -1927,6 +1905,16 @@ class CoConfigurationData(ConfigurationData):
                     "description": {
                         "_label": "cashAssistanceBenefits.ssdi_desc",
                         "_default_message": "Social security benefit for people with disabilities",
+                    },
+                },
+                "trump_account": {
+                    "name": {
+                        "_label": "cashAssistanceBenefits.trump_account",
+                        "_default_message": '530A ("Trump") Accounts: ',
+                    },
+                    "description": {
+                        "_label": "cashAssistanceBenefits.trump_account_desc",
+                        "_default_message": "$1,000 government investment account for kids born 2025-2028",
                     },
                 },
             },
@@ -1996,7 +1984,7 @@ class CoConfigurationData(ConfigurationData):
                         "_default_message": "Tuition credits for Denver preschoolers",
                     },
                 },
-                "coheadstart": {
+                "head_start": {
                     "name": {"_label": "childCareBenefits.coheadstart", "_default_message": "Colorado Head Start: "},
                     "description": {
                         "_label": "childCareBenefits.coheadstart_desc",

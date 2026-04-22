@@ -1090,3 +1090,117 @@ class TestIsMedicareEligibleDependency(TestCase):
         self.assertEqual(self.member_with_medicare.age, 55)
         self.assertTrue(self.member_with_medicare.disabled)
         self.assertTrue(dep.value())
+
+
+class TestIsMedicaidEligibleDependency(TestCase):
+    """Tests for IsMedicaidEligibleDependency class used by IL MSP calculator.
+
+    This dependency overrides PolicyEngine's is_medicaid_eligible calculation
+    when we know the user has Medicaid selected, enforcing the QI exclusion:
+    QI is only available to Medicare beneficiaries who are NOT eligible for Medicaid.
+    """
+
+    def setUp(self):
+        """Set up test data for Medicaid eligibility tests."""
+        from screener.models import Insurance
+
+        self.white_label = WhiteLabel.objects.create(name="Illinois", code="il", state_code="IL")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="60601",
+            county="Cook",
+            household_size=1,
+            completed=False,
+        )
+
+        # Member with Medicaid
+        self.member_with_medicaid = HouseholdMember.objects.create(
+            screen=self.screen, relationship="headOfHousehold", age=68
+        )
+        Insurance.objects.create(household_member=self.member_with_medicaid, medicaid=True, medicare=True, none=False)
+
+        # Member without any insurance record
+        self.member_without_insurance = HouseholdMember.objects.create(
+            screen=self.screen, relationship="spouse", age=70
+        )
+
+    def test_value_returns_true_when_member_has_medicaid(self):
+        """Test IsMedicaidEligibleDependency.value() returns True when member has Medicaid selected."""
+        dep = member.IsMedicaidEligibleDependency(self.screen, self.member_with_medicaid, {})
+        self.assertTrue(dep.value())
+
+    def test_value_returns_none_when_member_has_no_insurance_record(self):
+        """Test IsMedicaidEligibleDependency.value() returns None when member has no insurance record."""
+        dep = member.IsMedicaidEligibleDependency(self.screen, self.member_without_insurance, {})
+        self.assertIsNone(dep.value())
+
+    def test_value_returns_none_when_member_has_other_insurance_only(self):
+        """Test IsMedicaidEligibleDependency.value() returns None when member has Medicare but not Medicaid."""
+        from screener.models import Insurance
+
+        member_with_medicare_only = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=66)
+        Insurance.objects.create(household_member=member_with_medicare_only, medicare=True, medicaid=False, none=False)
+
+        dep = member.IsMedicaidEligibleDependency(self.screen, member_with_medicare_only, {})
+        self.assertIsNone(dep.value())
+
+    def test_field_name_is_correct(self):
+        """Test that field name matches PolicyEngine's is_medicaid_eligible variable."""
+        dep = member.IsMedicaidEligibleDependency(self.screen, self.member_with_medicaid, {})
+        self.assertEqual(dep.field, "is_medicaid_eligible")
+
+    def test_is_member_level_dependency(self):
+        """Test that IsMedicaidEligibleDependency is a member-level dependency."""
+        from programs.programs.policyengine.calculators.dependencies.base import Member
+
+        self.assertTrue(issubclass(member.IsMedicaidEligibleDependency, Member))
+
+    def test_member_with_medicaid_is_excluded_from_qi(self):
+        """Test that a member with Medicaid returns True, enforcing the QI exclusion.
+
+        QI (Qualified Individual) is only available to Medicare beneficiaries who are
+        NOT eligible for Medicaid. By returning True here, PolicyEngine will correctly
+        exclude this member from QI even if they haven't provided full income/asset data.
+        """
+        dep = member.IsMedicaidEligibleDependency(self.screen, self.member_with_medicaid, {})
+        # Member has both Medicare and Medicaid — Medicaid dependency returns True,
+        # which causes PolicyEngine to exclude them from QI.
+        self.assertTrue(dep.value())
+
+
+class TestFosterCareDependency(TestCase):
+    """Tests for FosterCareDependency which maps fosterChild relationship to was_in_foster_care."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=2,
+            completed=False,
+        )
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=30)
+        self.foster_child = HouseholdMember.objects.create(screen=self.screen, relationship="fosterChild", age=4)
+        self.biological_child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=4)
+
+    def test_field_name(self):
+        """FosterCareDependency maps to the was_in_foster_care PE variable."""
+        dep = member.FosterCareDependency(self.screen, self.foster_child, {})
+        self.assertEqual(dep.field, "was_in_foster_care")
+
+    def test_value_returns_true_for_foster_child(self):
+        """Returns True when the member's relationship is fosterChild."""
+        dep = member.FosterCareDependency(self.screen, self.foster_child, {})
+        self.assertTrue(dep.value())
+
+    def test_value_returns_none_for_biological_child(self):
+        """Returns None for a child with a non-foster relationship (let PE calculate)."""
+        dep = member.FosterCareDependency(self.screen, self.biological_child, {})
+        self.assertIsNone(dep.value())
+
+    def test_value_returns_none_for_head_of_household(self):
+        """Returns None for the head of household (not a foster child)."""
+        dep = member.FosterCareDependency(self.screen, self.head, {})
+        self.assertIsNone(dep.value())

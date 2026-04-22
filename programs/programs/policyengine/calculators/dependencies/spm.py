@@ -137,7 +137,20 @@ class SnapEmergencyAllotmentDependency(SpmUnit):
 
 
 class Snap(SpmUnit):
+    """
+    snap as both PE input and output.
+
+    - If user reports having snap: send 1 so PE treats the household as
+      receiving SNAP, enabling categorical eligibility for programs like
+      Early Head Start.
+    - If no reported snap: return None so PE calculates the SNAP benefit
+      amount the household is eligible for.
+    """
+
     field = "snap"
+
+    def value(self):
+        return 1 if self.screen.has_benefit("snap") else None
 
 
 class Acp(SpmUnit):
@@ -157,7 +170,20 @@ class Lifeline(SpmUnit):
 
 
 class Tanf(SpmUnit):
+    """
+    tanf as both PE input and output.
+
+    - If user reports having tanf: send 1 so PE treats the household as
+      receiving TANF, enabling categorical eligibility for programs like
+      Early Head Start.
+    - If no reported tanf: return None so PE calculates the TANF benefit
+      amount the household is eligible for.
+    """
+
     field = "tanf"
+
+    def value(self):
+        return 1 if self.screen.has_benefit("tanf") else None
 
 
 class CoTanf(SpmUnit):
@@ -254,30 +280,6 @@ class IlTanfCountableGrossUnearnedIncomeDependency(SpmUnit):
 
 class TxTanf(SpmUnit):
     field = "tx_tanf"
-
-
-class TxTanfCountableEarnedIncomeDependency(SpmUnit):
-    field = "tx_tanf_countable_earned_income"
-    dependencies = (
-        "income_type",
-        "income_amount",
-        "income_frequency",
-    )
-
-    def value(self):
-        return int(self.screen.calc_gross_income("yearly", ["earned"]))
-
-
-class TxTanfCountableUnearnedIncomeDependency(SpmUnit):
-    field = "tx_tanf_countable_unearned_income"
-    dependencies = (
-        "income_type",
-        "income_amount",
-        "income_frequency",
-    )
-
-    def value(self):
-        return int(self.screen.calc_gross_income("yearly", ["unearned"], exclude=["cashAssistance"]))
 
 
 class PreSubsidyChildcareExpensesDependency(SpmUnit):

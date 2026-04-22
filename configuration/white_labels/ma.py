@@ -128,35 +128,19 @@ class MaConfigurationData(ConfigurationData):
     }
 
     relationship_options = {
-        "child": {"_label": "relationshipOptions.child", "_default_message": "Child"},
+        **ConfigurationData.relationship_options,
         "fosterChild": {
             "_label": "relationshipOptions.fosterChildOrKinshipChild.ma",
             "_default_message": "Foster Child / Kinship-Guardianship Care",
         },
-        "stepChild": {"_label": "relationshipOptions.stepChild", "_default_message": "Step-child"},
-        "grandChild": {"_label": "relationshipOptions.grandChild", "_default_message": "Grandchild"},
-        "spouse": {"_label": "relationshipOptions.spouse", "_default_message": "Spouse"},
-        "parent": {"_label": "relationshipOptions.parent", "_default_message": "Parent"},
-        "fosterParent": {"_label": "relationshipOptions.fosterParent", "_default_message": "Foster Parent"},
-        "stepParent": {"_label": "relationshipOptions.stepParent", "_default_message": "Step-parent"},
-        "grandParent": {"_label": "relationshipOptions.grandParent", "_default_message": "Grandparent"},
-        "sisterOrBrother": {"_label": "relationshipOptions.sisterOrBrother", "_default_message": "Sister/Brother"},
-        "stepSisterOrBrother": {
-            "_label": "relationshipOptions.stepSisterOrBrother",
-            "_default_message": "Step-sister/Step-brother",
-        },
-        "boyfriendOrGirlfriend": {
-            "_label": "relationshipOptions.boyfriendOrGirlfriend",
-            "_default_message": "Boyfriend/Girlfriend",
-        },
-        "domesticPartner": {"_label": "relationshipOptions.domesticPartner", "_default_message": "Domestic Partner"},
-        "relatedOther": {"_label": "relationshipOptions.relatedOther", "_default_message": "Related in some other way"},
     }
 
+    # Deprecated: managed via Django admin → Programs → Referrers. Remove as part of MFB-864.
     referral_options = {
         "bch": "Boston Children's Hospital",
         "masscap": "MASSCAP",
         "ccf": "Cambridge Community Foundation",
+        "pce": "PACE",
         "socialMedia": {"_label": "referralOptions.socialMedia", "_default_message": "Social Media"},
         "friend": {"_label": "referralOptions.friend", "_default_message": "Friend / Family / Word of Mouth"},
         "merit": {"_label": "referralOptions.merit", "_default_message": "Merit America"},
@@ -1168,7 +1152,7 @@ class MaConfigurationData(ConfigurationData):
         "02777": {"Swansea": "Swansea"},
         "02779": {"Berkley": "Berkley"},
         "02780": {"Taunton": "Taunton"},
-        "02783": {"Taunton ": "Taunton "},
+        "02783": {"Taunton": "Taunton"},
         "02790": {"Westport": "Westport"},
         "02791": {"Westport": "Westport"},
         "05501": {"Andover": "Andover"},
@@ -1226,6 +1210,16 @@ class MaConfigurationData(ConfigurationData):
                     "description": {
                         "_label": "cashAssistanceBenefits.ssdi_desc",
                         "_default_message": "Social security benefit for people with disabilities",
+                    },
+                },
+                "trump_account": {
+                    "name": {
+                        "_label": "cashAssistanceBenefits.trump_account",
+                        "_default_message": '530A ("Trump") Accounts: ',
+                    },
+                    "description": {
+                        "_label": "cashAssistanceBenefits.trump_account_desc",
+                        "_default_message": "$1,000 government investment account for kids born 2025-2028",
                     },
                 },
             },
@@ -1431,6 +1425,16 @@ class MaConfigurationData(ConfigurationData):
                     "description": {
                         "_label": "healthCareBenefits.aca_desc.ma",
                         "_default_message": "Health insurance marketplace premium tax credit",
+                    },
+                },
+                "ma_cmsp": {
+                    "name": {
+                        "_label": "healthCareBenefits.ma_cmsp",
+                        "_default_message": "Children's Medical Security Plan (CMSP): ",
+                    },
+                    "description": {
+                        "_label": "healthCareBenefits.ma_cmsp_desc",
+                        "_default_message": "Low-cost health coverage for uninsured children under 19",
                     },
                 },
             },

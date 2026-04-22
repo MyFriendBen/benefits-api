@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "tx" },
+  "need": {
+    "external_name": "tx_grocery_clearance_outlet",
+    "category_type": {
+      "external_name": "tx_food_or_groceries",
+      "name": "Food or groceries",
+      "icon": "food_groceries"
+    },
+    "type_short": ["food"],
+    "translations": {
+      "name": "Grocery Clearance Outlet",
+      "description": "A surplus and salvage grocery store offering name-brand products at approximately 50% off retail prices, specializing in overstock and manufacturer excess goods for budget-conscious shoppers.",
+      "link": "https://groceryclearancecenter.com/",
+      "warning": "",
+      "website_description": "Discounted surplus grocery store with deeply reduced name-brand items.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": ["Dallas"],
+    "required_expense_types": [],
+    "active": false,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

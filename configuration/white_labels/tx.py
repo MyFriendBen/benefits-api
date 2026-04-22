@@ -33,6 +33,7 @@ class TxConfigurationData(ConfigurationData):
         ]
     }
 
+    # Deprecated: managed via Django admin → Programs → Referrers. Remove as part of MFB-864.
     referral_options = {
         "searchEngine": {
             "_label": "referralOptions.searchEngine",
@@ -52,6 +53,7 @@ class TxConfigurationData(ConfigurationData):
             "_label": "referralOptions.testOrProspect",
             "_default_message": "Test / Prospective Partner",
         },
+        "ctl": "Center for Transforming Lives",
     }
 
     acute_condition_options = {
@@ -2985,6 +2987,26 @@ class TxConfigurationData(ConfigurationData):
                         "_default_message": "Federal cash assistance for individuals who are disabled, blind, or 65 years of age or older",
                     },
                 },
+                "ssdi": {
+                    "name": {
+                        "_label": "cashAssistanceBenefits.ssdi",
+                        "_default_message": "Social Security Disability Insurance (SSDI): ",
+                    },
+                    "description": {
+                        "_label": "cashAssistanceBenefits.ssdi_desc",
+                        "_default_message": "Social security benefit for people with disabilities",
+                    },
+                },
+                "trump_account": {
+                    "name": {
+                        "_label": "cashAssistanceBenefits.trump_account",
+                        "_default_message": '530A ("Trump") Accounts: ',
+                    },
+                    "description": {
+                        "_label": "cashAssistanceBenefits.trump_account_desc",
+                        "_default_message": "$1,000 government investment account for kids born 2025-2028",
+                    },
+                },
             },
             "category_name": {
                 "_label": "cashAssistance",
@@ -3128,6 +3150,26 @@ class TxConfigurationData(ConfigurationData):
                     "description": {
                         "_label": "childCareBenefits.tx_ccs_desc",
                         "_default_message": "Subsidized child care assistance for eligible families",
+                    },
+                },
+                "head_start": {
+                    "name": {
+                        "_label": "childCareBenefits.tx_head_start",
+                        "_default_message": "Head Start: ",
+                    },
+                    "description": {
+                        "_label": "childCareBenefits.tx_head_start_desc",
+                        "_default_message": "Free child care and family support for families with children ages 3 to 5",
+                    },
+                },
+                "early_head_start": {
+                    "name": {
+                        "_label": "childCareBenefits.tx_early_head_start",
+                        "_default_message": "Early Head Start: ",
+                    },
+                    "description": {
+                        "_label": "childCareBenefits.tx_early_head_start_desc",
+                        "_default_message": "Free child care and family support for families with infants and toddlers under age 3",
                     },
                 },
             },

@@ -1,6 +1,6 @@
 from django.test import TestCase
 from unittest import skip
-from programs.programs.federal.head_start.calculator import HeadStart
+from programs.programs.co.head_start.calculator import CoHeadStart as HeadStart
 from screener.models import Screen, HouseholdMember, IncomeStream
 
 

@@ -35,6 +35,7 @@ class TestMedicaidSeniorEligibility(TestCase):
         member = Mock()
         member.id = 1
         member.age = age
+        member.calc_age = Mock(return_value=age)
         member.has_disability = Mock(return_value=is_disabled)
         return member
 
@@ -157,6 +158,7 @@ class TestMedicaidDisabledEligibility(TestCase):
         member = Mock()
         member.id = 1
         member.age = age
+        member.calc_age = Mock(return_value=age)
         member.has_disability = Mock(return_value=is_disabled)
         return member
 
@@ -211,6 +213,7 @@ class TestMedicaidDisabledEligibility(TestCase):
         member = Mock()
         member.id = 1
         member.age = 70
+        member.calc_age = Mock(return_value=70)
         member.has_disability = Mock(return_value=True)
 
         result = calculator.member_value(member)
@@ -249,6 +252,7 @@ class TestMedicaidAdultEligibility(TestCase):
         member = Mock()
         member.id = 1
         member.age = age
+        member.calc_age = Mock(return_value=age)
         member.has_disability = Mock(return_value=is_disabled)
         return member
 
@@ -299,6 +303,7 @@ class TestMedicaidParentEligibility(TestCase):
         member = Mock()
         member.id = 1
         member.age = age
+        member.calc_age = Mock(return_value=age)
         member.has_disability = Mock(return_value=is_disabled)
         return member
 
@@ -351,6 +356,7 @@ class TestMedicaidPregnantEligibility(TestCase):
         member = Mock()
         member.id = 1
         member.age = age
+        member.calc_age = Mock(return_value=age)
         member.has_disability = Mock(return_value=is_disabled)
         return member
 
@@ -403,6 +409,7 @@ class TestMedicaidChildEligibility(TestCase):
         member = Mock()
         member.id = 1
         member.age = age
+        member.calc_age = Mock(return_value=age)
         member.has_disability = Mock(return_value=is_disabled)
         return member
 
@@ -485,6 +492,7 @@ class TestMedicaidYoungAdultEligibility(TestCase):
         member = Mock()
         member.id = 1
         member.age = age
+        member.calc_age = Mock(return_value=age)
         member.has_disability = Mock(return_value=is_disabled)
         return member
 
@@ -519,6 +527,7 @@ class TestMedicaidSSIRecipientEligibility(TestCase):
         member = Mock()
         member.id = 1
         member.age = age
+        member.calc_age = Mock(return_value=age)
         member.has_disability = Mock(return_value=is_disabled)
         return member
 
@@ -554,6 +563,7 @@ class TestMedicaidNoneCategory(TestCase):
         member = Mock()
         member.id = 1
         member.age = age
+        member.calc_age = Mock(return_value=age)
         member.has_disability = Mock(return_value=is_disabled)
         return member
 
