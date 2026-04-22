@@ -1,0 +1,59 @@
+{
+    "white_label": {"code": "wa"},
+    "program_category": {
+        "external_name": "wa_food",
+        "name": "Food and Nutrition",
+        "icon": "food"
+    },
+    "program": {
+        "name_abbreviated": "wa_wic",
+        "year": "2025",
+        "legal_status_required": ["citizen", "non_citizen", "refugee", "gc_5plus", "gc_18plus_no5", "gc_under18_no5", "otherWithWorkPermission"],
+        "name": "Women, Infants, and Children (WIC) Nutrition Program",
+        "description_short": "Food and nutrition help for pregnant and breastfeeding people and for families with children under 5 years of age.",
+        "description": "WIC provides healthy food, breastfeeding support, nutrition information, and referrals to other services for pregnant and breastfeeding people and for families with children under 5 years of age.\n\nEach month, WIC loads money onto a card you can use at grocery stores to buy specific foods like fruits and vegetables, whole grains, milk, eggs, cheese, yogurt, canned fish, peanut butter, and baby formula. The foods available to you depend on your situation — a pregnant person gets a different set than a toddler does.\n\nWIC also offers breastfeeding support (including free breast pumps), nutrition advice at regular check-in appointments, and help connecting to other programs like Medicaid or SNAP if you need them.\n\nClick \"Apply Now\" to learn more and contact your local WIC office to apply. You will complete a nutrition and health assessment at your first appointment. Benefits can begin the same day in some cases.",
+        "learn_more_link": "https://doh.wa.gov/you-and-your-family/wic/wic-eligibility",
+        "apply_button_link": "https://doh.wa.gov/you-and-your-family/wic/wic-eligibility",
+        "apply_button_description": "",
+        "estimated_application_time": "60 minutes",
+        "estimated_delivery_time": "Same day to 2 weeks",
+        "estimated_value": "",
+        "website_description": "Free healthy food and nutrition support for pregnant women, babies, and children under 5",
+        "has_calculator": true,
+        "show_in_has_benefits_step": true,
+        "show_on_current_benefits": true
+    },
+    "documents": [
+        {
+            "external_name": "wa_home",
+            "text": "Proof of Washington home address (ex: lease, utility bill, official mail)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "wa_id_proof",
+            "text": "Proof of identity (ex: driver's license, official state ID, passport)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "wa_earned_income",
+            "text": "Proof of earned income (ex: pay stubs, tax returns, W-2, 1099)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "wa_unearned_income",
+            "text": "Proof of unearned income (ex: child support, social security, unemployment)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "wa_other_program",
+            "text": "Evidence of participation in SNAP, Medicaid, or TANF (if applicable — waives income verification)",
+            "link_url": "",
+            "link_text": ""
+        }
+    ],
+    "navigators": []
+}

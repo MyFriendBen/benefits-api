@@ -398,6 +398,7 @@ class Screen(models.Model):
             "il_wic": self.has_wic,
             "nc_wic": self.has_wic,
             "tx_wic": self.has_wic,
+            "wa_wic": self.has_wic,
             "snap": self.has_snap,
             "sunbucks": self.has_sunbucks,
             "co_snap": self.has_snap,
