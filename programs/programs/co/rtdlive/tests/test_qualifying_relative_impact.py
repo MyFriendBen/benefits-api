@@ -28,9 +28,7 @@ def _make_missing_deps():
 
 class TestRtdLiveQualifyingRelativeImpact(TestCase):
     def setUp(self):
-        self.white_label = WhiteLabel.objects.create(
-            name="Colorado", code="co", state_code="CO"
-        )
+        self.white_label = WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
 
     def _make_screen(self, zipcode: str) -> Screen:
         return Screen.objects.create(
@@ -46,9 +44,7 @@ class TestRtdLiveQualifyingRelativeImpact(TestCase):
     def test_eligible_when_household_income_is_low(self):
         """Parents $30k + adult child $0 → combined $30k < 3-person 2.5×FPL ($64,550) → eligible."""
         screen = self._make_screen(DENVER_ZIP)
-        head = HouseholdMember.objects.create(
-            screen=screen, relationship="headOfHousehold", age=40
-        )
+        head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=40)
         IncomeStream.objects.create(
             screen=screen, household_member=head, type="wages", amount=15000, frequency="yearly"
         )
@@ -56,9 +52,7 @@ class TestRtdLiveQualifyingRelativeImpact(TestCase):
         IncomeStream.objects.create(
             screen=screen, household_member=spouse, type="wages", amount=15000, frequency="yearly"
         )
-        adult_child = HouseholdMember.objects.create(
-            screen=screen, relationship="child", age=25, student=False
-        )
+        adult_child = HouseholdMember.objects.create(screen=screen, relationship="child", age=25, student=False)
 
         self.assertTrue(adult_child.is_in_tax_unit())
 
@@ -75,9 +69,7 @@ class TestRtdLiveQualifyingRelativeImpact(TestCase):
         After fix: joins main unit, evaluated on combined $80k > $64,550 → not eligible.
         """
         screen = self._make_screen(DENVER_ZIP)
-        head = HouseholdMember.objects.create(
-            screen=screen, relationship="headOfHousehold", age=40
-        )
+        head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=40)
         IncomeStream.objects.create(
             screen=screen, household_member=head, type="wages", amount=40000, frequency="yearly"
         )
@@ -85,9 +77,7 @@ class TestRtdLiveQualifyingRelativeImpact(TestCase):
         IncomeStream.objects.create(
             screen=screen, household_member=spouse, type="wages", amount=40000, frequency="yearly"
         )
-        adult_child = HouseholdMember.objects.create(
-            screen=screen, relationship="child", age=25, student=False
-        )
+        adult_child = HouseholdMember.objects.create(screen=screen, relationship="child", age=25, student=False)
 
         self.assertTrue(adult_child.is_in_tax_unit())
 
@@ -100,9 +90,7 @@ class TestRtdLiveQualifyingRelativeImpact(TestCase):
     def test_non_dependent_adult_evaluated_on_own_income(self):
         """Adult child earning $10k is above threshold → splits into secondary unit → eligible on own income."""
         screen = self._make_screen(DENVER_ZIP)
-        head = HouseholdMember.objects.create(
-            screen=screen, relationship="headOfHousehold", age=40
-        )
+        head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=40)
         IncomeStream.objects.create(
             screen=screen, household_member=head, type="wages", amount=40000, frequency="yearly"
         )
@@ -110,9 +98,7 @@ class TestRtdLiveQualifyingRelativeImpact(TestCase):
         IncomeStream.objects.create(
             screen=screen, household_member=spouse, type="wages", amount=40000, frequency="yearly"
         )
-        adult_child = HouseholdMember.objects.create(
-            screen=screen, relationship="child", age=25, student=False
-        )
+        adult_child = HouseholdMember.objects.create(screen=screen, relationship="child", age=25, student=False)
         IncomeStream.objects.create(
             screen=screen, household_member=adult_child, type="wages", amount=10000, frequency="yearly"
         )
@@ -128,9 +114,7 @@ class TestRtdLiveQualifyingRelativeImpact(TestCase):
     def test_county_gate_blocks_ineligible_county(self):
         """Households outside eligible counties are ineligible regardless of dependency status."""
         screen = self._make_screen(EL_PASO_ZIP)
-        head = HouseholdMember.objects.create(
-            screen=screen, relationship="headOfHousehold", age=40
-        )
+        head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=40)
         IncomeStream.objects.create(
             screen=screen, household_member=head, type="wages", amount=15000, frequency="yearly"
         )
@@ -138,9 +122,7 @@ class TestRtdLiveQualifyingRelativeImpact(TestCase):
         IncomeStream.objects.create(
             screen=screen, household_member=spouse, type="wages", amount=15000, frequency="yearly"
         )
-        HouseholdMember.objects.create(
-            screen=screen, relationship="child", age=25, student=False
-        )
+        HouseholdMember.objects.create(screen=screen, relationship="child", age=25, student=False)
 
         calc = self._make_calculator(screen)
         result = calc.eligible()

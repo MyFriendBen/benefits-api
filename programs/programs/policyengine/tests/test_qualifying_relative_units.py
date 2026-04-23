@@ -15,20 +15,17 @@ class TestQualifyingRelativeUnitSplitting(TestCase):
             last_tax_filing_year="2024",
             household_size=2,
         )
-        self.head = HouseholdMember.objects.create(
-            screen=self.screen, relationship="headOfHousehold", age=40
-        )
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=40)
         IncomeStream.objects.create(
             screen=self.screen, household_member=self.head, type="wages", amount=50000, frequency="yearly"
         )
 
         from programs.programs.tx.pe.spm import TxSnap
+
         self.calc_class = TxSnap
 
     def test_low_income_adult_child_stays_in_main_unit(self):
-        adult_child = HouseholdMember.objects.create(
-            screen=self.screen, relationship="child", age=25, student=False
-        )
+        adult_child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=25, student=False)
 
         result = pe_input(self.screen, [self.calc_class])
         tax_units = result["household"]["tax_units"]

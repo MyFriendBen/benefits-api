@@ -32,17 +32,13 @@ class TestIsDependent(TestCase):
         self.assertTrue(student.is_dependent())
 
     def test_qualifying_child_disabled(self):
-        disabled_adult = HouseholdMember.objects.create(
-            screen=self.screen, relationship="child", age=30, disabled=True
-        )
+        disabled_adult = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=30, disabled=True)
         self.assertTrue(disabled_adult.is_dependent())
 
     # Qualifying Relative
 
     def test_qualifying_relative_below_threshold(self):
-        adult_child = HouseholdMember.objects.create(
-            screen=self.screen, relationship="child", age=19, student=False
-        )
+        adult_child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=19, student=False)
         IncomeStream.objects.create(
             screen=self.screen, household_member=adult_child, type="wages", amount=1000, frequency="yearly"
         )
@@ -99,9 +95,7 @@ class TestIsDependent(TestCase):
     def test_mfb_307_texas_family(self):
         """The bug scenario: 19yo with $0 income should stay in the main tax unit."""
         spouse = HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=39)
-        child19 = HouseholdMember.objects.create(
-            screen=self.screen, relationship="child", age=19, student=False
-        )
+        child19 = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=19, student=False)
         child7 = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=7)
 
         IncomeStream.objects.create(
@@ -141,9 +135,7 @@ class TestIsDependent(TestCase):
         IncomeStream.objects.create(
             screen=self.screen, household_member=self.head, type="wages", amount=100000, frequency="yearly"
         )
-        disabled_adult = HouseholdMember.objects.create(
-            screen=self.screen, relationship="child", age=30, disabled=True
-        )
+        disabled_adult = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=30, disabled=True)
         IncomeStream.objects.create(
             screen=self.screen, household_member=disabled_adult, type="wages", amount=5000, frequency="yearly"
         )

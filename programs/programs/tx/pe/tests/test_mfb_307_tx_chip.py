@@ -19,23 +19,17 @@ class TestMfb307TxChipIntegration(TestCase):
             completed=False,
             last_tax_filing_year="2024",
         )
-        self.head = HouseholdMember.objects.create(
-            screen=self.screen, relationship="headOfHousehold", age=41
-        )
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=41)
         IncomeStream.objects.create(
             screen=self.screen, household_member=self.head, type="wages", amount=43800, frequency="yearly"
         )
 
-        self.spouse = HouseholdMember.objects.create(
-            screen=self.screen, relationship="spouse", age=39
-        )
+        self.spouse = HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=39)
         IncomeStream.objects.create(
             screen=self.screen, household_member=self.spouse, type="wages", amount=18000, frequency="yearly"
         )
 
-        self.child19 = HouseholdMember.objects.create(
-            screen=self.screen, relationship="child", age=19, student=False
-        )
+        self.child19 = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=19, student=False)
 
         self.child7 = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=7)
         Insurance.objects.create(household_member=self.child7)
