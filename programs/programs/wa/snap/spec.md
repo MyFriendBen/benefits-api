@@ -14,10 +14,10 @@
    - Screener fields: `household_size`, `calc_gross_income`
    - Source: WAC 388-414-0001; DSHS Basic Food overview page states households must meet income guidelines. Washington's BBCE raises the gross income limit to 200% FPL.
 
-2. **Net monthly income must be at or below 100% of the Federal Poverty Level**
+2. **Net monthly income test — waived under WA BBCE for households passing the gross income test**
    - Screener fields: `household_size`, `calc_net_income`
-   - Note: For most households, both the gross income test AND the net income test must be passed. However, for households with a member aged 60+ or with a disability, the net income test applies **only if the household did not pass the gross income test** (see criterion 7).
-   - Source: 7 CFR 273.9(b)(2); 7 U.S.C. § 2014(c)(2); WAC 388-450-0001. The net income test applies to all SNAP households regardless of BBCE status.
+   - Note: Under Washington's BBCE, any household that passes the 200% FPL gross income test is categorically eligible — the net income test is **waived**. The net income test (100% FPL) only applies to elderly/disabled households that **fail** the gross income test and are seeking eligibility via Option B (see criterion 7).
+   - Source: 7 CFR 273.9(b)(2); WAC 388-414-0001; WAC 388-450-0001. PolicyEngine implements this via `meets_tanf_non_cash_net_income_test` with `net_applies = false` for WA.
 
 3. **No asset/resource limit applies under Washington's Broad-Based Categorical Eligibility (BBCE)**
    - Screener fields: `household_assets`
@@ -151,7 +151,7 @@
 - [ ] Scenario 6 (Person Exactly Age 18 — Minimum Adult Age): User should be **eligible**
 - [ ] Scenario 7 (17-Year-Old Living Alone — Half-Time Student, Age Exemption Applies): User should be **eligible**
 - [ ] Scenario 8 (75-Year-Old Elderly Individual — Option B: Gross Above 200% FPL, Net Below 100% FPL): User should be **eligible**
-- [ ] Scenario 9 (Single Adult — Gross Income Below 200% FPL, Net Income Exceeds 100% FPL): User should be **ineligible**
+- [ ] Scenario 9 (BBCE Regression Test — Net Income Above 100% FPL But Still Eligible): User should be **eligible**
 - [ ] Scenario 10 (Already Receiving Basic Food/SNAP — Duplicate Benefit Exclusion): User should be **ineligible**
 - [ ] Scenario 11 (Mixed Household — Elderly Member, College Student with Exemption, Working Adult): User should be **eligible**
 - [ ] Scenario 12 (Family of Five — Two Working Adults, Pregnant Member, Two Children): User should be **eligible**
@@ -197,27 +197,27 @@
 
 ---
 
-### Scenario 3: Single Parent with Child — Gross Income Below 200% FPL Threshold
+### Scenario 3: Single Parent with Child — Gross Income $1 Below 200% FPL Threshold
 
-**What we're checking**: Validates that a household of 2 with gross monthly income $1 below the 2026 200% FPL threshold for a household of 2 ($3,607/mo) is correctly found eligible.
+**What we're checking**: Validates that a household of 2 with gross monthly income $1 below the 200% FPL threshold for a household of 2 ($3,525/mo) is correctly found eligible under WA BBCE.
 
 **Expected**: Eligible
 
 **Steps**:
 - **Location**: Enter ZIP code `98103`, Select county `King`
 - **Household**: Number of people: `2`
-- **Person 1**: Birth month/year: `June 1991` (age 34), Relationship: Head of Household, Sex: Female, Not a student, Not pregnant, No disability, U.S. citizen, Employment income: `$3,606` per month ($1 below 200% FPL for HH of 2 in 2026: threshold = $3,607/mo, based on 2026 FPL: $21,640/yr ÷ 12 × 2)
+- **Person 1**: Birth month/year: `June 1991` (age 34), Relationship: Head of Household, Sex: Female, Not a student, Not pregnant, No disability, U.S. citizen, Employment income: `$3,524` per month ($1 below 200% FPL for HH of 2: threshold = $3,525/mo, based on 2025 HHS guidelines: $21,150/yr ÷ 12 × 2)
 - **Person 2**: Birth month/year: `September 2020` (age 5), Relationship: Child, Sex: Male, No income, U.S. citizen
 - **Expenses**: Rent/housing cost: `$1,200` per month, Child care costs: `$400` per month
 - **Current Benefits**: Not currently receiving SNAP/Basic Food, Not receiving TANF, Not receiving SSI
 
-**Why this matters**: This test validates that a single-parent household just under the 200% FPL gross income limit is correctly identified as eligible under Washington's BBCE policy. Income is set at $3,606/mo — $1 below the 2026 FPL threshold of $3,607/mo (200% of $21,640/yr for HH=2). Note: the screener calls PolicyEngine with period "2026-01", which applies 2026 calendar-year FPL values. This differs from SNAP FY2026 (Oct 2025–Sep 2026), which technically uses 2025 HHS guidelines ($21,150/yr → $3,525/mo); the calendar-year vs. fiscal-year distinction is a deliberate screener design choice.
+**Why this matters**: This test validates that a single-parent household just under the 200% FPL gross income limit is correctly identified as eligible under Washington's BBCE policy. Income is set at $3,524/mo — $1 below the threshold of $3,525/mo (200% of $21,150/yr for HH=2, 2025 HHS guidelines). PolicyEngine's `snap_fpg.py` uses SNAP fiscal year logic: for any month Jan–Sep of year Y, it reads parameters at `{Y-1}-10-01`, so April 2026 uses the 2025 HHS guidelines ($21,150/yr for HH=2), not the 2026 guidelines ($21,640/yr).
 
 ---
 
 ### Scenario 4: Couple Household — Gross Income Exactly at 200% FPL Threshold
 
-**What we're checking**: Validates that a 2-person household with gross monthly income exactly at the 2026 200% FPL threshold ($3,607/month for HH of 2) is eligible under Washington's BBCE gross income test ("at or below" per WAC 388-414-0001), and net income after standard deduction passes 100% FPL.
+**What we're checking**: Validates that a 2-person household with gross monthly income exactly at the 200% FPL threshold ($3,525/month for HH of 2) is eligible under Washington's BBCE gross income test ("at or below" per WAC 388-414-0001).
 
 **Expected**: Eligible
 
@@ -225,11 +225,11 @@
 - **Location**: Enter ZIP code `98103`, Select county `King`
 - **Household**: Number of people: `2`
 - **Person 1**: Birth month/year: `June 1986` (age 39), Relationship: Head of Household, Sex: Male, Not a student, Not pregnant, Not disabled, US citizen, Employment income: `$2,000` per month
-- **Person 2**: Birth month/year: `September 1988` (age 37), Relationship: Spouse, Sex: Female, Not a student, Not pregnant, Not disabled, US citizen, Employment income: `$1,607` per month
-- **Combined gross income**: `$3,607/month` (exactly at 200% FPL for HH of 2 in 2026: threshold = $3,607/mo, based on 2026 FPL: $21,640/yr ÷ 12 × 2).
+- **Person 2**: Birth month/year: `September 1988` (age 37), Relationship: Spouse, Sex: Female, Not a student, Not pregnant, Not disabled, US citizen, Employment income: `$1,525` per month
+- **Combined gross income**: `$3,525/month` (exactly at 200% FPL for HH of 2: threshold = $3,525/mo, based on 2025 HHS guidelines: $21,150/yr ÷ 12 × 2).
 - **Current Benefits**: Not currently receiving SNAP/Basic Food, Not receiving TANF, Not receiving SSI
 
-**Why this matters**: Validates that a couple household at exactly the 200% FPL gross income limit is correctly found eligible under Washington's BBCE policy — the criterion is "at or below" (WAC 388-414-0001), so the boundary value must be eligible. Income is set to exactly $3,607/mo (2026 FPL for HH=2: $21,640/yr ÷ 12 × 2). The screener uses PolicyEngine period "2026-01", applying 2026 calendar-year FPL. This is consistent with Scenarios 3 and 5 — all boundary tests use 2026 FPL values.
+**Why this matters**: Validates that a couple household at exactly the 200% FPL gross income limit is correctly found eligible under Washington's BBCE policy — the criterion is "at or below" (WAC 388-414-0001), so the boundary value must be eligible. Income is set to exactly $3,525/mo (200% of 2025 HHS guidelines for HH=2: $21,150/yr ÷ 12 × 2). Under WA BBCE, no net income test applies.
 
 ---
 
@@ -302,11 +302,11 @@
 
 ---
 
-### Scenario 9: Single Adult — Passes Gross Income Test, Fails Net Income Test
+### Scenario 9: BBCE Regression Test — Net Income Above 100% FPL But Still Eligible
 
-**What we're checking**: A household whose gross income falls below the 200% FPL gross limit ($2,660/mo for HH of 1 in SNAP FY2026) but whose net income — after the 20% earned income deduction and standard deduction — exceeds the 100% FPL net limit ($1,330/mo). This isolates criterion 2 (net income test) independently from the gross income boundary.
+**What we're checking**: Regression test for WA's Broad-Based Categorical Eligibility. A household whose gross income falls below the 200% FPL gross limit ($2,608/mo for HH of 1) but whose net income (after standard SNAP deductions) would exceed the 100% FPL limit. Under WA BBCE the net income test is waived, so the household is eligible. This scenario is the only one in the suite that would flip to ineligible if WA's `net_applies = false` BBCE flag were accidentally disabled — every other eligible scenario has net income that passes 100% FPL anyway.
 
-**Expected**: Not eligible
+**Expected**: Eligible
 
 **Steps**:
 - **Location**: Enter ZIP code `98101`, Select county `King`
@@ -316,7 +316,7 @@
 - **Expenses**: No significant shelter or dependent care expenses
 - **Current Benefits**: Not currently receiving SNAP/Basic Food, Not receiving TANF or SSI
 
-**Why this matters**: Tests the net income test (criterion 2) as a standalone ineligible gate. Gross income ($2,200/mo) is well under the 200% FPL limit ($2,660/mo), so the household passes the gross test. After applying the 20% earned income deduction ($440) and the FY2025 standard deduction for HH of 1 ($219), net income is approximately $1,541/mo — above the 100% FPL net limit of $1,330/mo — making the household ineligible. Without significant shelter or dependent care costs, no additional deductions reduce net income below the threshold. Every other eligible scenario in this spec already uses a WA ZIP code, so geographic validation is implicitly covered.
+**Why this matters**: Validates that WA BBCE waives the net income test for households passing the 200% FPL gross test. Gross income ($2,200/mo) is below the 200% FPL limit ($2,608/mo for HH=1 using 2025 HHS guidelines), so the household is categorically eligible and receives the minimum benefit (~$23/mo). Although net income after deductions (~$1,541/mo) would exceed the 100% FPL limit ($1,330/mo), this is irrelevant under WA BBCE — the net income test does not apply. PolicyEngine implements this via `net_applies = false` for WA in `meets_tanf_non_cash_net_income_test`.
 
 ---
 
@@ -418,3 +418,4 @@ File: `programs/management/commands/import_program_config_data/data/wa_snap_init
 | 2026-04-13 | catonph | Scenario 9 replaced: geographic validation was redundant (all eligible scenarios use WA ZIP codes); new Scenario 9 isolates net income test failure — gross passes 200% FPL, net fails 100% FPL after standard SNAP deductions |
 | 2026-04-13 | catonph/patrickwey | Scenario 8 updated to exercise Option B path (gross > 200% FPL, net ≤ 100% FPL via $1,500/mo rent) instead of the low-income Option A path; criterion 7 updated to implement Option B in screener rather than disclaimer-only; evaluable criteria count increased from 10 to 11 |
 | 2026-04-13 | patmanson | Fix FPL year inconsistency (catonph review): scenarios 3/4 text still referenced 2025 FPL ($3,525/mo) — updated to 2026 FPL ($3,607/mo for HH=2, matching the program's year=2026 PolicyEngine config); scenario 3 income $3,400→$3,606 (tight boundary, $1 below threshold); scenario 4 income $3,500→$3,607 (exactly at threshold, matching acceptance criteria); added note explaining calendar-year vs. SNAP fiscal-year FPL distinction |
+| 2026-04-24 | patrickwey | Criterion 2 rewritten to state the 100% FPL net income test is *waived* under WA BBCE when the gross test passes (PolicyEngine `net_applies = false`); scenarios 3/4 reverted to 2025 HHS guidelines ($3,525/mo for HH=2) to match PolicyEngine's SNAP fiscal-year logic in `snap_fpg.py` (Jan–Sep of year Y reads parameters at `{Y-1}-10-01`); scenario 9 reframed from "pass gross / fail net → ineligible" (not achievable under BBCE) to a BBCE regression test — eligible despite net income exceeding 100% FPL after deductions |
