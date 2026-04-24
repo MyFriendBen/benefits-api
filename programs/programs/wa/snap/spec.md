@@ -339,7 +339,7 @@
 
 ### Scenario 11: Mixed Household — Elderly Exempt Member, College Student with Work Exemption, Working Adult
 
-**What we're checking**: Validates a mixed household where one member is elderly (age 65), one is a college student aged 22 enrolled half-time who qualifies via the 20+ hours/week work exemption, and one is a working adult. Tests interaction of elderly gross income exemption (criterion 7), student eligibility rules (criterion 6), household size determination (criterion 4), and net income test (criterion 2).
+**What we're checking**: Validates a mixed household where one member is elderly (age 65), one is a college student aged 22 enrolled half-time who qualifies via the 20+ hours/week work exemption, and one is a working adult. Tests household composition with an elderly member (criterion 7, Option A path), student eligibility via the 20+ hours/week work exemption (criterion 6), household size determination (criterion 4), and the BBCE gross income test (criteria 1 and 2).
 
 **Expected**: Eligible
 
@@ -347,11 +347,11 @@
 - **Location**: Enter ZIP code `98103`, Select county `King`
 - **Household**: Number of people: `3`
 - **Person 1**: Birth month/year: `June 1960` (age 65), Relationship: Head of Household, Not a student, Social Security Retirement income: `$1,200` per month, Not currently receiving SNAP/Basic Food
-- **Person 2**: Birth month/year: `September 1996` (age 29), Relationship: Child/Dependent adult, Not a student, No disability, Employment income: `$2,400` per month
+- **Person 2**: Birth month/year: `September 1996` (age 29), Relationship: Child/Dependent adult, Not a student, No disability, Employment income: `$1,500` per month
 - **Person 3**: Birth month/year: `January 2004` (age 22), Relationship: Grandchild, Student: Yes (enrolled at least half-time in higher education), Works 20+ hours per week (qualifies for student exemption), Employment income: `$900` per month, No disability
 - **Current Benefits**: Not currently receiving SNAP/Basic Food, Not receiving TANF or SSI
 
-**Why this matters**: Validates that the screener correctly applies the elderly/disabled gross income exemption while still enforcing the net income test, and properly handles student eligibility rules within a multi-member household.
+**Why this matters**: Validates that the screener correctly handles a mixed household containing an elderly member, a qualifying student, and a working adult. Under WA BBCE, once the household's gross income passes the 200% FPL test, categorical eligibility applies and the net income test is waived. PolicyEngine's WA SNAP implementation has no Option B path — gross > 200% FPL is a hard disqualification for all WA households including HHEOD.
 
 ---
 
@@ -396,11 +396,6 @@ Scenarios 1–12 (scenario 14 removed — the premise that a pregnant woman's un
 Updated `eligible` values:
 - Scenarios 1, 2, 3, 4, 6, 7, 8, 9, 11, 12: `true`
 - Scenarios 5, 10: `false`
-
-Updated income amounts for 2026 FPL:
-- Scenario 3 (HH=2, $1 below 200% FPL): `$3,606/mo` (was $2,429)
-- Scenario 4 (HH=2, exactly 200% FPL): `$3,607/mo` total combined wages (was $2,510); net income at exactly 100% FPL = `$1,803/mo`
-- Scenario 5 (HH=1, $1 above 200% FPL): `$2,661/mo` (was $2,431)
 
 
 ## Generated Program Configuration
