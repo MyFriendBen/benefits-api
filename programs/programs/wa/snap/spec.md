@@ -293,12 +293,12 @@
 - **Location**: Enter ZIP code `98101`, Select county `King`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `January 1951` (age 75), Relationship: Head of Household, Not a student, Not pregnant, Not disabled (using age 60+ exemption, not disability)
-- **Income**: Social Security Retirement income: `$2,700` per month (above 200% FPL of $2,660/mo for HH of 1), No other income sources
+- **Income**: Social Security Retirement income: `$2,700` per month (above 200% FPL of $2,608/mo for HH of 1), No other income sources
 - **Expenses**: Monthly rent/housing cost: `$1,500`
 - **Assets**: `$0` (well below the $4,500 asset limit that applies under Option B)
 - **Current Benefits**: Not currently receiving SNAP/Basic Food, Not receiving TANF, Not receiving SSI
 
-**Why this matters**: Tests the Option B path that is unique to elderly/disabled households. At $2,700/mo gross, this person fails the 200% FPL gross income test ($2,660 threshold for HH=1), so they are not eligible under Option A. But $1,500/mo rent brings approximated net income to $1,200/mo ($2,700 − $1,500), which is below the 100% FPL threshold of $1,255/mo for HH=1 — qualifying under Option B. This is the scenario that Scenario 1 does not cover: an elderly person whose gross income slightly exceeds the standard limit but whose housing costs create genuine financial need.
+**Why this matters**: Tests the Option B path that is unique to elderly/disabled households. At $2,700/mo gross, this person fails the 200% FPL gross income test ($2,608/mo threshold for HH=1), so they are not eligible under Option A. But $1,500/mo rent brings approximated net income to $1,200/mo ($2,700 − $1,500), which is below the 100% FPL threshold of ~$1,304/mo for HH=1 — qualifying under Option B. This is the scenario that Scenario 1 does not cover: an elderly person whose gross income slightly exceeds the standard limit but whose housing costs create genuine financial need.
 
 ---
 
@@ -316,7 +316,7 @@
 - **Expenses**: No significant shelter or dependent care expenses
 - **Current Benefits**: Not currently receiving SNAP/Basic Food, Not receiving TANF or SSI
 
-**Why this matters**: Validates that WA BBCE waives the net income test for households passing the 200% FPL gross test. Gross income ($2,200/mo) is below the 200% FPL limit ($2,608/mo for HH=1 using 2025 HHS guidelines), so the household is categorically eligible and receives the minimum benefit (~$23/mo). Although net income after deductions (~$1,541/mo) would exceed the 100% FPL limit ($1,330/mo), this is irrelevant under WA BBCE — the net income test does not apply. PolicyEngine implements this via `net_applies = false` for WA in `meets_tanf_non_cash_net_income_test`.
+**Why this matters**: Validates that WA BBCE waives the net income test for households passing the 200% FPL gross test. Gross income ($2,200/mo) is below the 200% FPL limit ($2,608/mo for HH=1 using 2025 HHS guidelines), so the household is categorically eligible and receives the minimum benefit (~$23/mo). Although net income after deductions (~$1,541/mo) would exceed the 100% FPL limit (~$1,304/mo), this is irrelevant under WA BBCE — the net income test does not apply. PolicyEngine implements this via `net_applies = false` for WA in `meets_tanf_non_cash_net_income_test`.
 
 ---
 
