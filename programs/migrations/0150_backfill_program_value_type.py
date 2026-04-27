@@ -5,6 +5,7 @@ TAX_CREDIT_PROGRAMS = {
     "ctc",
     "coctc",
     "coeitc",
+    "co_tax_credit_care_worker",
     "fatc",
     "il_ctc",
     "il_eitc",
