@@ -461,7 +461,6 @@ class ProgramManager(models.Manager):
         "learn_more_link",
         "apply_button_link",
         "apply_button_description",
-        "value_type",
         "estimated_delivery_time",
         "estimated_application_time",
         "estimated_value",
@@ -757,13 +756,13 @@ class Program(models.Model):
         null=False,
         on_delete=models.PROTECT,
     )
-    value_type = models.ForeignKey(
-        Translation,
-        related_name="program_value_type",
-        blank=False,
-        null=False,
-        on_delete=models.PROTECT,
-    )
+    VALUE_TYPE_BENEFIT = "benefit"
+    VALUE_TYPE_TAX_CREDIT = "tax_credit"
+    VALUE_TYPE_CHOICES = [
+        (VALUE_TYPE_BENEFIT, "Benefit"),
+        (VALUE_TYPE_TAX_CREDIT, "Tax Credit"),
+    ]
+    value_type = models.CharField(max_length=32, choices=VALUE_TYPE_CHOICES, default=VALUE_TYPE_BENEFIT)
     estimated_delivery_time = models.ForeignKey(
         Translation,
         related_name="program_estimated_delivery_time",
