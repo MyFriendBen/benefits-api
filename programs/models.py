@@ -534,6 +534,7 @@ class ProgramDataController(ModelDataController["Program"]):
             "required_programs": list[str],
             "excludes_programs": list[str],
             "value_format": Optional[str],
+            "value_type": str,
             "white_label": str,
         },
     )
@@ -560,6 +561,7 @@ class ProgramDataController(ModelDataController["Program"]):
             "required_programs": [p.external_name for p in program.required_programs.all()],
             "excludes_programs": [p.external_name for p in program.excludes_programs.all()],
             "value_format": program.value_format,
+            "value_type": program.value_type,
             "white_label": program.white_label.code,
         }
 
@@ -572,6 +574,7 @@ class ProgramDataController(ModelDataController["Program"]):
         program.low_confidence = data["low_confidence"]
         program.show_on_current_benefits = data.get("show_on_current_benefits", True)
         program.value_format = data["value_format"]
+        program.value_type = data.get("value_type", Program.VALUE_TYPE_BENEFIT)
 
         # get or create fpl
         fpl = data["fpl"]
