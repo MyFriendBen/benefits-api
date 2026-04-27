@@ -7,14 +7,21 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("programs", "0148_alter_program_external_name"),
+        ("translations", "0004_translation_no_auto"),
     ]
 
     operations = [
-        migrations.AlterField(
+        migrations.RemoveField(
+            model_name="program",
+            name="value_type",
+        ),
+        migrations.AddField(
             model_name="program",
             name="value_type",
             field=models.CharField(
-                choices=[("benefit", "Benefit"), ("tax_credit", "Tax Credit")], default="benefit", max_length=32
+                choices=[("benefit", "Benefit"), ("tax_credit", "Tax Credit")],
+                default="benefit",
+                max_length=32,
             ),
         ),
     ]
