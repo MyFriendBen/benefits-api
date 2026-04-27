@@ -350,4 +350,4 @@ File: `programs/management/commands/import_program_config_data/data/wa_ssi_initi
 
 | Date | Author | Change |
 |---|---|---|
-| 2026-04-27 | cdadams | Initial discovery spec authored manually using `program-researcher` output structure (canonical `_ticket.md` template + WA SNAP `spec.md` precedent) without running the official CLI; covers 11 evaluable criteria, 4 data gaps, 11 test scenarios, and 2026 FBR amounts. |
+| 2026-04-27 | cdadams | Initial discovery spec — 11 evaluable criteria, 4 data gaps, 11 test scenarios, 2026 FBR amounts ($994 individual / $1,491 couple). |
