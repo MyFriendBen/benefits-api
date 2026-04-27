@@ -96,7 +96,7 @@
     }
   },
   {
-    "notes": "WA SSI - Not eligible: unearned income above FBR ($1,200 SS retirement > $967 individual FBR)",
+    "notes": "WA SSI - Not eligible: unearned income above FBR ($1,200 SS retirement > $994 individual FBR for 2026)",
     "household": {
       "white_label": "wa",
       "is_test": true,
@@ -258,7 +258,7 @@
           "income_streams": [
             {
               "type": "sSI",
-              "amount": 967.00,
+              "amount": 994.00,
               "frequency": "monthly"
             }
           ],

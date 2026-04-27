@@ -34,10 +34,10 @@
 
 ## Benefit Value
 
-SSI benefits equal the Federal Benefit Rate (FBR) minus countable income. As of 2025:
+SSI benefits equal the Federal Benefit Rate (FBR) minus countable income. As of 2026 (after the 2.8% COLA):
 
-- **Individual FBR**: $967/month ($11,604/year)
-- **Eligible couple FBR**: $1,450/month ($17,400/year)
+- **Individual FBR**: $994/month ($11,928/year)
+- **Eligible couple FBR**: $1,491/month ($17,892/year)
 
 Washington does **not** pay a state supplement to SSI for most aged, blind, or disabled adults living independently. (Some narrow categories — e.g., individuals in certain residential care facilities — receive a small state supplement administered by Washington DSHS, but this is out of scope for the screener at launch.) The estimated benefit value should be the federal SSI amount as computed by PolicyEngine for the household, reduced by countable income via the SSA exclusions (general $20 + earned $65 + ½ remaining earned).
 
@@ -45,8 +45,9 @@ Washington does **not** pay a state supplement to SSI for most aged, blind, or d
 
 - [SSA — SSI Home](https://www.ssa.gov/ssi/)
 - [SSA — Apply for SSI](https://www.ssa.gov/apply/ssi)
-- [SSA — Understanding SSI 2025](https://www.ssa.gov/ssi/text-understanding-ssi.htm)
-- [SSA — 2025 SSI Federal Payment Amounts](https://www.ssa.gov/oact/cola/SSI.html)
+- [SSA — Understanding SSI](https://www.ssa.gov/ssi/text-understanding-ssi.htm)
+- [SSA — SSI Federal Payment Amounts (2026)](https://www.ssa.gov/oact/cola/SSI.html)
+- [SSA — 2026 COLA Fact Sheet](https://www.ssa.gov/news/en/cola/factsheets/2026.html)
 - [Washington DSHS — Cash Assistance Programs](https://www.dshs.wa.gov/esa/community-services-offices/cash-assistance)
 - [42 U.S.C. Chapter 7, Subchapter XVI — SSI](https://www.law.cornell.edu/uscode/text/42/chapter-7/subchapter-XVI)
 - [20 CFR Part 416 — Supplemental Security Income for the Aged, Blind, and Disabled](https://www.ecfr.gov/current/title-20/chapter-III/part-416)
@@ -109,7 +110,7 @@ Washington does **not** pay a state supplement to SSI for most aged, blind, or d
 - **Person 1**: Age `68`, Head of Household, U.S. Citizen, no disability, income: `$1,200/month Social Security retirement`, no insurance
 - **Household assets**: `$0`
 
-**Why this matters**: Confirms the income test enforces the FBR ceiling. $1,200 SS retirement minus the $20 general exclusion = $1,180 countable, which is above the 2025 individual FBR of $967.
+**Why this matters**: Confirms the income test enforces the FBR ceiling. $1,200 SS retirement minus the $20 general exclusion = $1,180 countable, which is above the 2026 individual FBR of $994.
 
 ---
 
@@ -131,7 +132,7 @@ Washington does **not** pay a state supplement to SSI for most aged, blind, or d
 ### Scenario 6: Eligible aged couple, no income
 
 **Checks**: Couple FBR path — both spouses age-eligible, no income or assets
-**Expected**: Eligible (couple benefit at $1,450/month FBR shared between members)
+**Expected**: Eligible (couple benefit at $1,491/month FBR shared between members)
 
 **Steps**:
 - **Location**: ZIP `98109`, County `King`
@@ -140,7 +141,7 @@ Washington does **not** pay a state supplement to SSI for most aged, blind, or d
 - **Person 2 (Spouse)**: Age `68`, U.S. Citizen, no disability, income: `$0`, no insurance
 - **Household assets**: `$0`
 
-**Why this matters**: Validates couple FBR application and that household composition is correctly evaluated for two-person eligibility.
+**Why this matters**: Validates couple FBR application ($1,491/month for 2026) and that household composition is correctly evaluated for two-person eligibility.
 
 ---
 
@@ -167,7 +168,7 @@ Washington does **not** pay a state supplement to SSI for most aged, blind, or d
 **Steps**:
 - **Location**: ZIP `98101`, County `King`
 - **Household**: 1 person
-- **Person 1**: Age `70`, Head of Household, U.S. Citizen, no disability, income: `$967/month SSI`, no insurance
+- **Person 1**: Age `70`, Head of Household, U.S. Citizen, no disability, income: `$994/month SSI`, no insurance
 - **Household assets**: `$0`
 - **Current benefits**: SSI (`has_ssi = true`)
 
@@ -218,7 +219,7 @@ Washington does **not** pay a state supplement to SSI for most aged, blind, or d
 - **Person 1**: Age `72`, Head of Household, U.S. Citizen, no disability, income: `$500/month Social Security retirement`, no insurance
 - **Household assets**: `$0`
 
-**Why this matters**: Validates that some unearned income reduces, but does not eliminate, the SSI benefit. Expected approximate value: $967 (FBR) − ($500 − $20 general exclusion) = `$487/month`. The screener should flag eligibility; PolicyEngine performs the precise math.
+**Why this matters**: Validates that some unearned income reduces, but does not eliminate, the SSI benefit. Expected approximate value: $994 (2026 FBR) − ($500 − $20 general exclusion) = `$514/month`. The screener should flag eligibility; PolicyEngine performs the precise math.
 
 ---
 
