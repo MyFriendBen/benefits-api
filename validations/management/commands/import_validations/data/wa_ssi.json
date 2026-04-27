@@ -1,0 +1,408 @@
+[
+  {
+    "notes": "WA SSI - Eligible: aged 65+, no income, no resources (full federal FBR)",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 70,
+          "birth_year": 1956,
+          "birth_month": 1,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_ssi",
+      "eligible": true
+    }
+  },
+  {
+    "notes": "WA SSI - Eligible: long-term disabled adult under 65, no income",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 45,
+          "birth_year": 1981,
+          "birth_month": 6,
+          "disabled": true,
+          "long_term_disability": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_ssi",
+      "eligible": true
+    }
+  },
+  {
+    "notes": "WA SSI - Eligible: visually impaired adult, no income (blind path)",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98052",
+      "county": "King",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 40,
+          "birth_year": 1986,
+          "birth_month": 4,
+          "visually_impaired": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_ssi",
+      "eligible": true
+    }
+  },
+  {
+    "notes": "WA SSI - Not eligible: unearned income above FBR ($1,200 SS retirement > $967 individual FBR)",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 68,
+          "birth_year": 1958,
+          "birth_month": 2,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 1200.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_ssi",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "WA SSI - Not eligible: countable resources above $2,000 individual limit",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King",
+      "household_size": 1,
+      "household_assets": 5000,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 70,
+          "birth_year": 1956,
+          "birth_month": 1,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_ssi",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "WA SSI - Eligible aged couple: both 65+, no income, household assets at $0 (couple FBR)",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98109",
+      "county": "King",
+      "household_size": 2,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 70,
+          "birth_year": 1956,
+          "birth_month": 1,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 68,
+          "birth_year": 1958,
+          "birth_month": 5,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_ssi",
+      "eligible": true
+    }
+  },
+  {
+    "notes": "WA SSI - Not eligible: adult under 65 without disability or visual impairment",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "birth_year": 1991,
+          "birth_month": 7,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_ssi",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "WA SSI - Not eligible: already receiving SSI (duplicate enrollment filter)",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King",
+      "household_size": 1,
+      "household_assets": 0,
+      "has_ssi": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 70,
+          "birth_year": 1956,
+          "birth_month": 1,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSI",
+              "amount": 967.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_ssi",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "WA SSI - Eligible: long-term disabled child with low-income parents (parental deeming under limits)",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King",
+      "household_size": 3,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 40,
+          "birth_year": 1986,
+          "birth_month": 3,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "employer": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 38,
+          "birth_year": 1988,
+          "birth_month": 9,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "employer": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 8,
+          "birth_year": 2018,
+          "birth_month": 5,
+          "disabled": true,
+          "long_term_disability": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "employer": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_ssi",
+      "eligible": true
+    }
+  },
+  {
+    "notes": "WA SSI - Not eligible: short-term disability flag without long_term_disability (fails 12-month duration test)",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 45,
+          "birth_year": 1981,
+          "birth_month": 1,
+          "disabled": true,
+          "long_term_disability": false,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_ssi",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "WA SSI - Eligible with reduced benefit: aged 65+ with partial SS retirement income below FBR",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 72,
+          "birth_year": 1954,
+          "birth_month": 1,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_ssi",
+      "eligible": true
+    }
+  }
+]
