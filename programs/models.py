@@ -461,7 +461,6 @@ class ProgramManager(models.Manager):
         "learn_more_link",
         "apply_button_link",
         "apply_button_description",
-        "value_type",
         "estimated_delivery_time",
         "estimated_application_time",
         "estimated_value",
@@ -535,6 +534,7 @@ class ProgramDataController(ModelDataController["Program"]):
             "required_programs": list[str],
             "excludes_programs": list[str],
             "value_format": Optional[str],
+            "value_type": str,
             "white_label": str,
         },
     )
@@ -561,6 +561,7 @@ class ProgramDataController(ModelDataController["Program"]):
             "required_programs": [p.external_name for p in program.required_programs.all()],
             "excludes_programs": [p.external_name for p in program.excludes_programs.all()],
             "value_format": program.value_format,
+            "value_type": program.value_type,
             "white_label": program.white_label.code,
         }
 
@@ -573,6 +574,7 @@ class ProgramDataController(ModelDataController["Program"]):
         program.low_confidence = data["low_confidence"]
         program.show_on_current_benefits = data.get("show_on_current_benefits", True)
         program.value_format = data["value_format"]
+        program.value_type = data.get("value_type", Program.VALUE_TYPE_BENEFIT)
 
         # get or create fpl
         fpl = data["fpl"]
@@ -757,13 +759,13 @@ class Program(models.Model):
         null=False,
         on_delete=models.PROTECT,
     )
-    value_type = models.ForeignKey(
-        Translation,
-        related_name="program_value_type",
-        blank=False,
-        null=False,
-        on_delete=models.PROTECT,
-    )
+    VALUE_TYPE_BENEFIT = "benefit"
+    VALUE_TYPE_TAX_CREDIT = "tax_credit"
+    VALUE_TYPE_CHOICES = [
+        (VALUE_TYPE_BENEFIT, "Benefit"),
+        (VALUE_TYPE_TAX_CREDIT, "Tax Credit"),
+    ]
+    value_type = models.CharField(max_length=32, choices=VALUE_TYPE_CHOICES, default=VALUE_TYPE_BENEFIT)
     estimated_delivery_time = models.ForeignKey(
         Translation,
         related_name="program_estimated_delivery_time",
