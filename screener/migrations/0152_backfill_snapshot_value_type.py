@@ -1,18 +1,24 @@
 from django.db import migrations
 
 TAX_CREDIT_PROGRAMS = {
-    "eitc",
-    "ctc",
+    "cesn_cpcr",
     "coctc",
     "coeitc",
     "co_tax_credit_care_worker",
+    "cpcr",
+    "ctc",
+    "eitc",
     "fatc",
+    "il_aca",
     "il_ctc",
     "il_eitc",
+    "ma_aca",
+    "ma_cfc",
     "ma_maeitc",
     "shitc",
-    "tx_eitc",
+    "tx_aca",
     "tx_ctc",
+    "tx_eitc",
 }
 
 
