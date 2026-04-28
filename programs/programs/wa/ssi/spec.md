@@ -14,9 +14,10 @@
    - Source: 42 U.S.C. § 1382c(a)(1)(A); 20 CFR § 416.202(a). Aged status is one of three categorical entry routes to SSI.
 
 2. **Disability — medically determinable physical or mental impairment expected to last 12+ continuous months or result in death; for adults, the impairment must prevent substantial gainful activity (SGA)**
-   - Screener fields: `household_member.long_term_disability`, `income_streams (wages, selfEmployment)`
-   - Note: The screener captures the 12-month duration test via `long_term_disability` (true/false). It cannot perform SSA's medical adjudication or vocational analysis (Listings of Impairments, Medical-Vocational Guidelines), so eligibility is treated as a *likely-eligible* signal pending SSA review. The general `disabled` flag without `long_term_disability` is **not** sufficient — see Scenario 10 below.
+   - Screener fields: `household_member.disabled` **OR** `household_member.long_term_disability`; `income_streams (wages, selfEmployment)`
+   - Note: Either disability flag should satisfy this criterion. The screener question backing `disabled` is *"Currently have any disabilities that make you unable to work now or in the future"*, which already captures the SSA-relevant signal of an inability to work that is expected to continue, so it should not be filtered out. `long_term_disability` is a narrower self-attestation of a clearly long-term/permanent condition. This matches the model's existing `HouseholdMember.has_disability()` helper, which ORs `disabled || visually_impaired || long_term_disability`. The screener cannot perform SSA's medical adjudication or vocational analysis (Listings of Impairments, Medical-Vocational Guidelines), so eligibility is treated as a *likely-eligible* signal pending SSA review.
    - SGA thresholds (2026): non-blind = **$1,690/month**, blind = **$2,830/month** (PolicyEngine `gov.ssa.sga.non_blind` / `gov.ssa.sga.blind`). Non-blind earned income above $1,690/month is treated as engaging in SGA and disqualifies disability claims (PolicyEngine variable: `ssi_engaged_in_sga`). The blind path is exempt from the SGA test.
+   - **Divergence from TX SSDI precedent**: `tx_ssdi`'s implementation requires `long_term_disability=true` and treats `disabled=true` alone as insufficient. Per product/review feedback, that interpretation is too strict for WA SSI. We accept either flag; recommend revisiting the TX SSDI rule in a follow-up.
    - Source: 42 U.S.C. § 1382c(a)(3); 20 CFR §§ 416.905, 416.906, 416.974; SSA Blue Book; [SSA — SGA amounts](https://www.ssa.gov/oact/cola/sga.html).
 
 3. **Statutory blindness — central visual acuity ≤ 20/200 in the better eye with corrective lens, or visual field ≤ 20°**
@@ -162,7 +163,7 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 - [ ] Scenario 7 (Adult Under 65 Without Disability or Visual Impairment): User should be **ineligible**
 - [ ] Scenario 8 (Already Receiving SSI — Duplicate Enrollment): User should be **ineligible**
 - [ ] Scenario 9 (Long-Term Disabled Child — Parental Deeming Under Limits): User should be **eligible** (exact value depends on PolicyEngine parental-deeming math)
-- [ ] Scenario 10 (General Disability Flag Only — Long-Term Disability Not Set): User should be **ineligible**
+- [ ] Scenario 10 (General Disability Flag Only — `disabled=true`, `long_term_disability=false`): User should be **eligible** with $994/month ($11,928/year)
 - [ ] Scenario 11 (Aged 65+ with Partial SS Retirement Income — Reduced Benefit): User should be **eligible** with $514/month ($6,168/year)
 - [ ] Scenario 12 (Long-Term Disabled Adult with Partial Earned Wages — Reduced Benefit): User should be **eligible** with $836.50/month ($10,038/year)
 - [ ] Scenario 13 (Disabled Adult with High-Income Ineligible Spouse — Spousal Deeming Disqualifies): User should be **ineligible**
@@ -201,7 +202,7 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 - **Household assets**: `$0`
 - **Current Benefits**: Not currently receiving SSI
 
-**Why this matters**: Validates the disability route is honored independently of age, and that `long_term_disability` (not the general `disabled`) is the field used to satisfy SSI's 12-month duration requirement.
+**Why this matters**: Validates that the disability route is honored independently of age. The `long_term_disability` flag is one of two valid disability signals (the other is the general `disabled` flag — see Scenario 10).
 
 ---
 
@@ -334,11 +335,11 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 
 ---
 
-### Scenario 10: General Disability Flag Only — Long-Term Disability Not Set
+### Scenario 10: General Disability Flag Only — `disabled=true`, `long_term_disability=false`
 
-**What we're checking**: SSI requires a disability of 12+ months. A short-term `disabled` flag without `long_term_disability` should not qualify, mirroring the TX SSDI guidance that the long-term flag is the correct field for the duration test.
+**What we're checking**: An adult who answers *"yes"* to the screener's general disability question (*"Currently have any disabilities that make you unable to work now or in the future"*) but has not separately set the long-term-disability flag should still surface SSI as a candidate. The screener question text already implies an ongoing inability to work, which is the SSA-relevant signal for SSI's disability path.
 
-**Expected**: Not eligible
+**Expected**: Eligible (full federal individual FBR — $994/month, $11,928/year)
 
 **Steps**:
 - **Location**: ZIP `98101`, County `King`
@@ -348,7 +349,7 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 - **Household assets**: `$0`
 - **Current Benefits**: Not currently receiving SSI
 
-**Why this matters**: Validates that the implementation reads `long_term_disability` (not the general `disabled` flag) as the field satisfying SSI's 12-month duration test. A general "disabled" flag without the long-term qualifier is not sufficient on its own.
+**Why this matters**: Validates that the calculator accepts either `disabled` or `long_term_disability` as a valid disability signal (matching the model's `HouseholdMember.has_disability()` OR-semantics). This corrects an earlier draft of this spec that treated `disabled=true, long_term_disability=false` as ineligible — that earlier interpretation mirrored TX SSDI's stricter rule but is too narrow for SSI per product/review feedback. Final disability adjudication remains with SSA at the application stage.
 
 ---
 
@@ -446,4 +447,5 @@ File: `programs/management/commands/import_program_config_data/data/wa_ssi_initi
 | 2026-04-28 | cdadams | Added `refugee` to `legal_status_required` (matches federal statute and PolicyEngine; diverges from `tx_ssi` precedent — recommend back-port). Added 2026 SGA thresholds ($1,690 non-blind / $2,830 blind) to disability criterion. Added PolicyEngine implementation references for income exclusions, ISM (VTR/PMV), countable resources, and noncitizen rules. Added "PolicyEngine Variable Mapping" section. Documented coverage gap (PE has 4 additional qualified-noncitizen categories — asylee, deportation-withheld, Cuban-Haitian, conditional-entrant, paroled — not exposed in MFB chip enum) and PE model limitation (no 7-year refugee cutoff enforced). Added Scenarios 12 (earned-income partial offset, $836.50/mo) and 13 (spousal deeming disqualification) with `value` fields validated against PolicyEngine `policyengine-us` parameters. |
 | 2026-04-28 | cdadams | Added two `navigators` entries to config: Northwest Justice Project CLEAR Hotline (statewide WA legal aid for SSI applications and appeals, 1-888-201-1014) and Solid Ground Benefits Legal Assistance (King County free SSI/SSDI denial representation, 206-694-6743). Addresses Caton's PR review note. |
 | 2026-04-28 | cdadams | Added 6 missing program-level fields to config (per Caton's PR review): `base_program: "ssi"` (cross-white-label grouping for analytics + has-benefits filtering), `value_type: "monthly"` (Translation FK), `estimated_delivery_time: "6 to 8 months"` (Translation FK), `show_on_current_benefits: true`, `show_in_has_benefits_step: true`, and `has_calculator: true`. Updated `import_program_config.py` to handle three previously-silently-ignored config keys (`show_in_has_benefits_step`, `has_calculator`, `base_program`) — `base_program` is validated against `BaseProgram.choices`. Verified end-to-end with `--override` import and direct ORM inspection. |
+| 2026-04-28 | cdadams | Disability criterion broadened per Caton's PR review: accept `disabled` **OR** `long_term_disability` as a valid disability signal for SSI (previously this spec required `long_term_disability` exclusively, mirroring TX SSDI). Caton confirmed the screener question backing `disabled` is *"Currently have any disabilities that make you unable to work now or in the future"*, which already captures the SSA-relevant ongoing-inability-to-work signal. This also aligns with the model's existing `HouseholdMember.has_disability()` helper which ORs `disabled || visually_impaired || long_term_disability`. Flipped Scenario 10 from **ineligible** → **eligible** (now validates that `disabled=true, long_term_disability=false` IS sufficient for the disability path) and updated its acceptance-criteria checkbox to match. Added a divergence note in the eligibility criterion calling out that the TX SSDI precedent should be revisited in a follow-up. |
 | 2026-04-28 | cdadams | Aligned all three artifacts to the canonical "Checking Program Researcher Output" reviewer guide: (a) corrected `value_type: "monthly"` → `"benefit"` (the model accepts any string but the canonical valid values are `"tax_credit"` or `"benefit"`); (b) added explicit `"value_format": null` for the monthly cadence default; (c) reformatted navigator phone numbers to E.164 (`+18882011014`, `+12066946743`); (d) filled in navigator emails (`webmaster@nwjustice.org`, `benefitslegalhelp@solid-ground.org`); (e) tightened the user-facing `description` to remove duplication of screener-checked eligibility criteria and added the application paths (online / 1-800-772-1213 / in person) per the description guidance; (f) pruned `wa_ssi.json` from 13 scenarios to the 3 representative scenarios called for by the guide (eligible standard, ineligible primary exclusion, edge case for the $20+$65+½ earned-income methodology); (g) removed `value: 0` from ineligible scenarios (guide says omit entirely); (h) added "Priority Criteria" section to this spec.md (N/A for SSI as a federal entitlement). The full 13-scenario coverage remains in the "Test Scenarios" section below for the implementation dev's reference. **Open question for reviewer**: per the guide, `year` should be omitted for non-FPL programs (SSI uses its own FBR, not FPL income tests), but `tx_ssdi_initial_config.json` keeps `"year": "2026"` and the calculator may need it at runtime — kept it for now to match TX SSDI precedent. |
