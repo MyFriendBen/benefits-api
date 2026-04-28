@@ -1,0 +1,105 @@
+[
+  {
+    "notes": "WA SSI - Eligible standard (golden path): aged 65+, no income, no countable resources. Receives full federal benefit rate (FBR) of $994/month for an individual in 2026 = $11,928/year (estimated_value is stored as an annual figure).",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 70,
+          "birth_year": 1956,
+          "birth_month": 1,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_ssi",
+      "eligible": true,
+      "value": 11928
+    }
+  },
+  {
+    "notes": "WA SSI - Ineligible primary exclusion: working-age adult (under 65) without disability or visual impairment fails categorical eligibility (must be aged, blind, or disabled).",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "birth_year": 1991,
+          "birth_month": 7,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_ssi",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "WA SSI - Edge case (income exclusion methodology): long-term disabled adult with $400/mo wages tests the $20 general + $65 earned + 1/2 earned exclusion formula. Math: $400 - $20 - $65 = $315; 1/2 of $315 = $157.50 countable income. SSI = $994 - $157.50 = $836.50/month = $10,038/year (estimated_value is stored as an annual figure; truncated to int per validate.py). Earnings well below 2026 SGA threshold ($1,690/mo non-blind), so disability path is preserved.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 45,
+          "birth_year": 1981,
+          "birth_month": 6,
+          "disabled": true,
+          "long_term_disability": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 400.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_ssi",
+      "eligible": true,
+      "value": 10038
+    }
+  }
+]
