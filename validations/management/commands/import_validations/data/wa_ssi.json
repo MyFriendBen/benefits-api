@@ -27,7 +27,8 @@
     },
     "expected_results": {
       "program_name": "wa_ssi",
-      "eligible": true
+      "eligible": true,
+      "value": 994
     }
   },
   {
@@ -60,7 +61,8 @@
     },
     "expected_results": {
       "program_name": "wa_ssi",
-      "eligible": true
+      "eligible": true,
+      "value": 994
     }
   },
   {
@@ -92,7 +94,8 @@
     },
     "expected_results": {
       "program_name": "wa_ssi",
-      "eligible": true
+      "eligible": true,
+      "value": 994
     }
   },
   {
@@ -129,7 +132,8 @@
     },
     "expected_results": {
       "program_name": "wa_ssi",
-      "eligible": false
+      "eligible": false,
+      "value": 0
     }
   },
   {
@@ -160,7 +164,8 @@
     },
     "expected_results": {
       "program_name": "wa_ssi",
-      "eligible": false
+      "eligible": false,
+      "value": 0
     }
   },
   {
@@ -202,7 +207,8 @@
     },
     "expected_results": {
       "program_name": "wa_ssi",
-      "eligible": true
+      "eligible": true,
+      "value": 1491
     }
   },
   {
@@ -233,7 +239,8 @@
     },
     "expected_results": {
       "program_name": "wa_ssi",
-      "eligible": false
+      "eligible": false,
+      "value": 0
     }
   },
   {
@@ -271,7 +278,8 @@
     },
     "expected_results": {
       "program_name": "wa_ssi",
-      "eligible": false
+      "eligible": false,
+      "value": 0
     }
   },
   {
@@ -365,7 +373,8 @@
     },
     "expected_results": {
       "program_name": "wa_ssi",
-      "eligible": false
+      "eligible": false,
+      "value": 0
     }
   },
   {
@@ -402,7 +411,99 @@
     },
     "expected_results": {
       "program_name": "wa_ssi",
-      "eligible": true
+      "eligible": true,
+      "value": 514
+    }
+  },
+  {
+    "notes": "WA SSI - Eligible with reduced benefit: long-term disabled adult with $400/mo wages (validates $65 + 1/2 earned exclusion). Math: $400 - $20 (general) - $65 (earned) = $315; 1/2 of $315 = $157.50 countable. SSI = $994 - $157.50 = $836.50/mo. Earnings well below 2026 SGA threshold ($1,690/mo) so disability path is preserved.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 45,
+          "birth_year": 1981,
+          "birth_month": 6,
+          "disabled": true,
+          "long_term_disability": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 400.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_ssi",
+      "eligible": true,
+      "value": 836.50
+    }
+  },
+  {
+    "notes": "WA SSI - Not eligible: disabled applicant with high-income ineligible spouse (validates spousal deeming disqualification). Math: spouse $4,000/mo > $483 deeming threshold; ($4,000 - $20 - $65) / 2 = $1,957.50 deemed countable. With deeming, couple FBR ($1,491) - $1,957.50 = -$466.50 capped at $0.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King",
+      "household_size": 2,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 60,
+          "birth_year": 1966,
+          "birth_month": 4,
+          "disabled": true,
+          "long_term_disability": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 58,
+          "birth_year": 1968,
+          "birth_month": 8,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_ssi",
+      "eligible": false,
+      "value": 0
     }
   }
 ]

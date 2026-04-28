@@ -14,9 +14,10 @@
    - Source: 42 U.S.C. § 1382c(a)(1)(A); 20 CFR § 416.202(a). Aged status is one of three categorical entry routes to SSI.
 
 2. **Disability — medically determinable physical or mental impairment expected to last 12+ continuous months or result in death; for adults, the impairment must prevent substantial gainful activity (SGA)**
-   - Screener fields: `household_member.long_term_disability`
+   - Screener fields: `household_member.long_term_disability`, `income_streams (wages, selfEmployment)`
    - Note: The screener captures the 12-month duration test via `long_term_disability` (true/false). It cannot perform SSA's medical adjudication or vocational analysis (Listings of Impairments, Medical-Vocational Guidelines), so eligibility is treated as a *likely-eligible* signal pending SSA review. The general `disabled` flag without `long_term_disability` is **not** sufficient — see Scenario 10 below.
-   - Source: 42 U.S.C. § 1382c(a)(3); 20 CFR §§ 416.905, 416.906; SSA Blue Book.
+   - SGA thresholds (2026): non-blind = **$1,690/month**, blind = **$2,830/month** (PolicyEngine `gov.ssa.sga.non_blind` / `gov.ssa.sga.blind`). Non-blind earned income above $1,690/month is treated as engaging in SGA and disqualifies disability claims (PolicyEngine variable: `ssi_engaged_in_sga`). The blind path is exempt from the SGA test.
+   - Source: 42 U.S.C. § 1382c(a)(3); 20 CFR §§ 416.905, 416.906, 416.974; SSA Blue Book; [SSA — SGA amounts](https://www.ssa.gov/oact/cola/sga.html).
 
 3. **Statutory blindness — central visual acuity ≤ 20/200 in the better eye with corrective lens, or visual field ≤ 20°**
    - Screener fields: `household_member.visually_impaired`
@@ -24,9 +25,12 @@
    - Source: 42 U.S.C. § 1382c(a)(2); 20 CFR §§ 416.981, 416.983.
 
 4. **U.S. citizen, U.S. national, or qualified alien meeting SSI's narrow PRWORA categories**
-   - Screener fields: program-level `legal_status_required` (set to `["citizen", "gc_5plus"]` in the program config); post-results citizenship filter chip
+   - Screener fields: program-level `legal_status_required` (set to `["citizen", "gc_5plus", "refugee"]` in the program config); post-results citizenship filter chip
    - Note: Most non-citizens face strict SSI alien restrictions: 7-year limits for refugees/asylees/Cuban-Haitian entrants, 40-quarter requirements for LPRs, and U.S.-military-service exemptions. The screener filters at the program-config level and via the citizenship chip on the Results UI; immigration sub-status is not collected as a household-member field.
-   - Source: 8 U.S.C. § 1612(a)(2); 42 U.S.C. § 1382c(a)(1)(B).
+   - **Divergence from TX SSI precedent**: `tx_ssi_initial_config.json` uses `["citizen", "gc_5plus"]` only. We add `refugee` because (a) it is statutorily eligible (8 U.S.C. § 1612(a)(2)(A)), (b) PolicyEngine treats `REFUGEE` as a qualified noncitizen with no time cutoff in the model (see `parameters/gov/ssa/ssi/eligibility/status/qualified_noncitizen_status.yaml`), and (c) inclusion is more user-protective than omission for a likely-eligible filter. Recommend back-porting this fix to TX SSI in a follow-up.
+   - **Coverage gap vs. PolicyEngine**: PE's qualified-noncitizen list also includes `ASYLEE`, `DEPORTATION_WITHHELD`, `CUBAN_HAITIAN_ENTRANT`, `CONDITIONAL_ENTRANT`, and `PAROLED_ONE_YEAR`. The MFB chip enum currently only exposes `refugee` from this set, so applicants in the other 4 PE-eligible noncitizen categories cannot self-select into SSI via the screener. Treat this as a known under-counting limitation pending a richer immigration-status capture.
+   - **Known PolicyEngine model limitation**: `is_ssi_qualified_noncitizen.py` enforces the LPR 40-quarter rule but does **not** enforce the 7-year cutoff for refugees/asylees/Cuban-Haitian entrants. Long-tenured refugees who have exhausted the 7-year window will be over-counted by PolicyEngine. The screener's chip-level filter does not correct for this either; it is a policy-modeling gap to revisit when SSI calculator implementation begins.
+   - Source: 8 U.S.C. § 1612(a)(2); 42 U.S.C. § 1382c(a)(1)(B); SSA POMS [SI 00502.100](https://secure.ssa.gov/poms.nsf/lnx/0500502100), [SI 00502.135](https://secure.ssa.gov/poms.nsf/lnx/0500502135).
 
 5. **Resident of one of the 50 states, DC, or the Northern Mariana Islands**
    - Screener fields: `screen.white_label`, `screen.zipcode`
@@ -40,12 +44,19 @@
 7. **Countable income below the Federal Benefit Rate (FBR)**
    - Screener fields: `household_member.has_income`, `income_streams (type, amount, frequency)`
    - Note: Income streams are collected, but countable-income computation (general $20 exclusion, earned-income $65 + ½ remaining exclusion, in-kind support and maintenance reductions, deeming) is non-trivial. Detailed math is delegated to PolicyEngine; the screener applies a conservative pre-filter against the 2026 FBR ($994 individual / $1,491 couple).
-   - Source: 42 U.S.C. § 1382(a); 20 CFR §§ 416.1100–416.1182.
+   - PolicyEngine implementation (verified against `policyengine-us` parameters and variables):
+     - General income exclusion: **$20/month** (`gov.ssa.ssi.income.exclusions.general`) — applied to unearned income first, remainder to earned.
+     - Earned income flat exclusion: **$65/month** (`gov.ssa.ssi.income.exclusions.earned`).
+     - Earned-income share excluded above flat: **0.5** (`gov.ssa.ssi.income.exclusions.earned_share`) — i.e., the standard "$65 + ½ remaining" rule.
+     - In-kind support and maintenance (ISM): PolicyEngine implements both VTR (one-third reduction; `gov.ssa.ssi.amount.one_third_reduction_rate = 0.3333`) and PMV (presumed maximum value capped at 1/3 FBR + $20; `gov.ssa.ssi.income.ism.pmv_fbr_fraction = 0.3333`). The screener does not collect housing/food-from-others fields (`ssi_lives_in_another_persons_household`, `ssi_receives_shelter_from_others_in_household`, `ssi_receives_food_from_others`), so PE will default these to `false` and ISM reductions will not fire — applicants in another's household may be slightly over-credited at the screener stage.
+     - Final variable: `ssi_countable_income`; eligibility check via `ssi_amount_if_eligible` and `ssi`.
+   - Source: 42 U.S.C. § 1382(a); 20 CFR §§ 416.1100–416.1182, 416.1131, 416.1140.
 
 8. **Countable resources at or below $2,000 (individual) or $3,000 (couple)**
    - Screener fields: `screen.household_assets`
    - Note: `household_assets` is a single conservative number; the screener cannot separate countable from excluded resources (home, one vehicle, household goods, burial space, etc.). Pre-filter on the raw asset value, then defer to PolicyEngine for the precise countable-resource calculation.
-   - Source: 42 U.S.C. § 1382(a)(3); 20 CFR §§ 416.1201, 416.1205, 416.1210.
+   - PolicyEngine implementation: Resource limits ($2,000 individual / $3,000 couple) have been unchanged since 1989 (`gov.ssa.ssi.eligibility.resources.limit.individual` / `couple`). The countable-resource list (`gov.ssa.ssi.eligibility.resources.countable`) includes only `bank_account_assets`, `stock_assets`, `bond_assets` — explicitly excluding home, one vehicle, household goods, burial plots, and retirement accounts. The screener's `household_assets` field is therefore a conservative over-estimate; some applicants flagged "ineligible" at the screener stage may pass once SSA's exclusions are applied.
+   - Source: 42 U.S.C. § 1382(a)(3); 20 CFR §§ 416.1201, 416.1205, 416.1210; SSA POMS [SI 01140.200](https://secure.ssa.gov/poms.nsf/lnx/0501140200).
 
 9. **Spousal income/resource deeming — for an eligible individual living with an ineligible spouse**
    - Screener fields: `household_member.relationship`, `income_streams`, `household_assets`
@@ -102,19 +113,48 @@ Washington does **not** pay a state supplement to SSI for most aged, blind, or d
 
 11 of 15 total eligibility criteria can be evaluated with current screener fields. The screener confidently identifies applicants who are demographically and categorically in scope (aged 65+, long-term disabled, visually impaired) with WA residence and a qualifying citizenship status, who are not already receiving SSI, and whose income/asset profile pre-filters within the 2026 FBR and resource ceilings. Spousal and parental deeming household composition is captured for PolicyEngine to evaluate. Income and resource feasibility are conservative pre-filters; the precise countable-income calculation, asset exclusions, and deeming math are delegated to PolicyEngine. Primary gaps are SSA's medical/vocational disability adjudication (handled at application), U.S. absence (Low impact), institutional-residence status (Low impact), and fugitive/incarceration status (Low impact) — all handled procedurally at the SSA application stage.
 
+## PolicyEngine Variable Mapping
+
+This program will be implemented as a PolicyEngine calculator in a follow-up PR. The mapping below was reviewed against `policyengine-us` to ensure each criterion has a corresponding PE variable or parameter and the values agree with our spec.
+
+| Criterion | PolicyEngine variable / parameter | File |
+|---|---|---|
+| Aged, blind, or disabled | `is_ssi_aged_blind_disabled` | `variables/gov/ssa/ssi/eligibility/status/is_ssi_aged_blind_disabled.py` |
+| Aged threshold (65) | `gov.ssa.ssi.eligibility.aged_threshold` | `parameters/gov/ssa/ssi/eligibility/aged_threshold.yaml` |
+| SGA disqualifier | `ssi_engaged_in_sga`, `gov.ssa.sga.non_blind`, `gov.ssa.sga.blind` | `variables/gov/ssa/ssi/eligibility/income/ssi_engaged_in_sga.py` |
+| Resource test ($2K / $3K) | `meets_ssi_resource_test`, `gov.ssa.ssi.eligibility.resources.limit.individual` / `couple` | `parameters/gov/ssa/ssi/eligibility/resources/limit/{individual,couple}.yaml` |
+| Countable resource sources | `ssi_countable_resources`, `gov.ssa.ssi.eligibility.resources.countable` | `parameters/gov/ssa/ssi/eligibility/resources/countable.yaml` |
+| Citizen / qualified noncitizen | `is_ssi_qualified_noncitizen`, `gov.ssa.ssi.eligibility.status.qualified_noncitizen_status` | `variables/gov/ssa/ssi/eligibility/status/is_ssi_qualified_noncitizen.py` |
+| LPR 40-quarter rule | `gov.ssa.ssi.income.sources.qualifying_quarters_threshold` | `parameters/gov/ssa/ssi/income/sources/qualifying_quarters_threshold.yaml` |
+| Top-level eligibility (no income test) | `is_ssi_eligible` | `variables/gov/ssa/ssi/is_ssi_eligible.py` |
+| 2026 FBR — individual ($994/mo) | `gov.ssa.ssi.amount.individual` | `parameters/gov/ssa/ssi/amount/individual.yaml` |
+| 2026 FBR — couple ($1,491/mo) | `gov.ssa.ssi.amount.couple` | `parameters/gov/ssa/ssi/amount/couple.yaml` |
+| Income exclusions ($20 / $65 / ½) | `gov.ssa.ssi.income.exclusions.{general,earned,earned_share}` | `parameters/gov/ssa/ssi/income/exclusions/*.yaml` |
+| Countable income | `ssi_countable_income` | `variables/gov/ssa/ssi/eligibility/income/ssi_countable_income.py` |
+| Spousal deeming | `is_ssi_spousal_deeming_applies`, `ssi_income_deemed_from_ineligible_spouse` | `variables/gov/ssa/ssi/eligibility/income/deemed/from_ineligible_spouse/` |
+| Parental deeming | `ssi_unearned_income_deemed_from_ineligible_parent`, `ssi_ineligible_parent_allocation` | `variables/gov/ssa/ssi/eligibility/income/deemed/` |
+| In-kind support — VTR | `gov.ssa.ssi.amount.one_third_reduction_rate` | `parameters/gov/ssa/ssi/amount/one_third_reduction_rate.yaml` |
+| In-kind support — PMV | `gov.ssa.ssi.income.ism.pmv_fbr_fraction`, `ssi_pmv_amount` | `parameters/gov/ssa/ssi/income/ism/pmv_fbr_fraction.yaml` |
+| Medical facility flat $30/mo | `gov.ssa.ssi.amount.medical_facility` | `parameters/gov/ssa/ssi/amount/medical_facility.yaml` |
+| Final benefit (capped, takeup) | `ssi`, `ssi_amount_if_eligible`, `uncapped_ssi`, `takes_up_ssi_if_eligible` | `variables/gov/ssa/ssi/{ssi,ssi_amount_if_eligible}.py` |
+
+**Living-arrangement reductions (additional data gap)**: PolicyEngine models VTR (one-third reduction for living in another's household), PMV (one-third FBR + $20 cap on in-kind support), and the $30/mo medical-facility rate. Our screener does not capture `ssi_lives_in_another_persons_household`, `ssi_receives_shelter_from_others_in_household`, or `ssi_lives_in_medical_treatment_facility`, so those PE variables will default to `false` and the standard FBR will be returned. Treat this as a known over-credit in fringe living arrangements; impact is low for typical WA SSI applicants.
+
 ## Acceptance Criteria
 
-- [ ] Scenario 1 (Aged 65+ — No Income, No Resources): User should be **eligible** with $11,928/year
-- [ ] Scenario 2 (Long-Term Disabled Adult Under 65 — No Income): User should be **eligible** with $11,928/year
-- [ ] Scenario 3 (Visually Impaired Adult — No Income): User should be **eligible** with $11,928/year
+- [ ] Scenario 1 (Aged 65+ — No Income, No Resources): User should be **eligible** with $994/month ($11,928/year)
+- [ ] Scenario 2 (Long-Term Disabled Adult Under 65 — No Income): User should be **eligible** with $994/month ($11,928/year)
+- [ ] Scenario 3 (Visually Impaired Adult — No Income): User should be **eligible** with $994/month ($11,928/year)
 - [ ] Scenario 4 (Aged 65+ with Unearned Income Above FBR): User should be **ineligible**
 - [ ] Scenario 5 (Aged 65+ with Countable Resources Above $2,000): User should be **ineligible**
-- [ ] Scenario 6 (Eligible Aged Couple — Both 65+, No Income): User should be **eligible** with $17,892/year
+- [ ] Scenario 6 (Eligible Aged Couple — Both 65+, No Income): User should be **eligible** with $1,491/month ($17,892/year, household total)
 - [ ] Scenario 7 (Adult Under 65 Without Disability or Visual Impairment): User should be **ineligible**
 - [ ] Scenario 8 (Already Receiving SSI — Duplicate Enrollment): User should be **ineligible**
-- [ ] Scenario 9 (Long-Term Disabled Child — Parental Deeming Under Limits): User should be **eligible**
+- [ ] Scenario 9 (Long-Term Disabled Child — Parental Deeming Under Limits): User should be **eligible** (exact value depends on PolicyEngine parental-deeming math)
 - [ ] Scenario 10 (General Disability Flag Only — Long-Term Disability Not Set): User should be **ineligible**
-- [ ] Scenario 11 (Aged 65+ with Partial SS Retirement Income — Reduced Benefit): User should be **eligible** with ~$6,168/year ($514/month)
+- [ ] Scenario 11 (Aged 65+ with Partial SS Retirement Income — Reduced Benefit): User should be **eligible** with $514/month ($6,168/year)
+- [ ] Scenario 12 (Long-Term Disabled Adult with Partial Earned Wages — Reduced Benefit): User should be **eligible** with $836.50/month ($10,038/year)
+- [ ] Scenario 13 (Disabled Adult with High-Income Ineligible Spouse — Spousal Deeming Disqualifies): User should be **ineligible**
 
 ## Test Scenarios
 
@@ -305,7 +345,7 @@ Washington does **not** pay a state supplement to SSI for most aged, blind, or d
 
 **What we're checking**: Partial offset — eligible with reduced SSI when unearned income is below FBR. Confirms that some unearned income reduces, but does not eliminate, the SSI benefit.
 
-**Expected**: Eligible (reduced benefit; approximately $514/month, $6,168/year)
+**Expected**: Eligible (reduced benefit; $514/month, $6,168/year)
 
 **Steps**:
 - **Location**: ZIP `98101`, County `King`
@@ -315,7 +355,44 @@ Washington does **not** pay a state supplement to SSI for most aged, blind, or d
 - **Household assets**: `$0`
 - **Current Benefits**: Not currently receiving SSI
 
-**Why this matters**: Validates that some unearned income reduces, but does not eliminate, the SSI benefit. Expected approximate value: $994 (2026 FBR) − ($500 − $20 general exclusion) = `$514/month`. The screener should flag eligibility; PolicyEngine performs the precise math.
+**Why this matters**: Validates that some unearned income reduces, but does not eliminate, the SSI benefit. Expected value math: $994 (2026 FBR) − ($500 − $20 general exclusion) = **$514/month**. The screener should flag eligibility; PolicyEngine performs the precise math via `ssi_countable_income` and `ssi_amount_if_eligible`.
+
+---
+
+### Scenario 12: Long-Term Disabled Adult with Partial Earned Wages — Reduced Benefit
+
+**What we're checking**: Earned-income exclusion path — confirms the screener applies the $65 + ½ remaining exclusion (distinct from the unearned-only Scenario 11), and that earned income reduces but does not eliminate the SSI benefit.
+
+**Expected**: Eligible (reduced benefit; $836.50/month, $10,038/year)
+
+**Steps**:
+- **Location**: ZIP `98101`, County `King`
+- **Household**: 1 person
+- **Person 1**: Age `45` (born 1981), Head of Household, U.S. Citizen, **long-term disability: true**, wages: `$400/month` (well below the 2026 SGA threshold of $1,690/mo)
+- **Insurance**: None
+- **Household assets**: `$0`
+- **Current Benefits**: Not currently receiving SSI
+
+**Why this matters**: Validates the earned-income exclusion stack. Math: $400 earned − $20 (general) − $65 (earned flat) = $315; ½ of $315 = **$157.50 countable**. SSI = $994 − $157.50 = **$836.50/month**. Distinct from Scenario 11 (unearned-only path) and Scenario 4 (over-FBR disqualification). Earnings stay below SGA so the disability path is preserved.
+
+---
+
+### Scenario 13: Disabled Adult with High-Income Ineligible Spouse — Spousal Deeming Disqualifies
+
+**What we're checking**: Spousal income deeming — when an ineligible spouse has income well above the deeming threshold, the deemed amount can exceed the couple FBR and zero out the SSI applicant's benefit.
+
+**Expected**: Not eligible (spousal deemed income exceeds couple FBR after exclusions)
+
+**Steps**:
+- **Location**: ZIP `98101`, County `King`
+- **Household**: 2 people
+- **Person 1 (Head)**: Age `60` (born 1966), U.S. Citizen, **long-term disability: true**, no income
+- **Person 2 (Spouse)**: Age `58` (born 1968), U.S. Citizen, no disability, wages: `$4,000/month`
+- **Insurance**: None for both
+- **Household assets**: `$0`
+- **Current Benefits**: Not currently receiving SSI
+
+**Why this matters**: Validates spousal deeming above the cutoff. Math: spouse gross $4,000 > $483/mo deeming threshold → deeming applies; ($4,000 − $20 − $65) ÷ 2 = **$1,957.50 deemed countable**. With deeming applied, couple FBR ($1,491) − countable ($1,957.50) = −$466.50, capped at $0. The eligible spouse's SSI is zeroed out by spousal income. PolicyEngine variables: `is_ssi_spousal_deeming_applies`, `ssi_income_deemed_from_ineligible_spouse`.
 
 ---
 
@@ -338,9 +415,13 @@ The SSI alien restriction (8 U.S.C. § 1612(a)(2)) is enforced through the progr
 
 File: `validations/management/commands/import_validations/data/wa_ssi.json`
 
-Scenarios 1–11. Updated `eligible` values:
-- Scenarios 1, 2, 3, 6, 9, 11: `true`
-- Scenarios 4, 5, 7, 8, 10: `false`
+Scenarios 1–13. Expected `eligible` and `value` (monthly, household total):
+- Scenarios 1, 2, 3: `eligible: true`, `value: 994` (full individual FBR)
+- Scenario 6: `eligible: true`, `value: 1491` (couple FBR)
+- Scenario 9: `eligible: true`, `value` omitted (depends on parental-deeming math)
+- Scenario 11: `eligible: true`, `value: 514` ($994 − ($500 − $20))
+- Scenario 12: `eligible: true`, `value: 836.50` ($994 − ($400 − $20 − $65) × ½)
+- Scenarios 4, 5, 7, 8, 10, 13: `eligible: false`, `value: 0`
 
 ## Generated Program Configuration
 
@@ -351,3 +432,4 @@ File: `programs/management/commands/import_program_config_data/data/wa_ssi_initi
 | Date | Author | Change |
 |---|---|---|
 | 2026-04-27 | cdadams | Initial discovery spec — 11 evaluable criteria, 4 data gaps, 11 test scenarios, 2026 FBR amounts ($994 individual / $1,491 couple). |
+| 2026-04-28 | cdadams | Added `refugee` to `legal_status_required` (matches federal statute and PolicyEngine; diverges from `tx_ssi` precedent — recommend back-port). Added 2026 SGA thresholds ($1,690 non-blind / $2,830 blind) to disability criterion. Added PolicyEngine implementation references for income exclusions, ISM (VTR/PMV), countable resources, and noncitizen rules. Added "PolicyEngine Variable Mapping" section. Documented coverage gap (PE has 4 additional qualified-noncitizen categories — asylee, deportation-withheld, Cuban-Haitian, conditional-entrant, paroled — not exposed in MFB chip enum) and PE model limitation (no 7-year refugee cutoff enforced). Added Scenarios 12 (earned-income partial offset, $836.50/mo) and 13 (spousal deeming disqualification) with `value` fields validated against PolicyEngine `policyengine-us` parameters. |

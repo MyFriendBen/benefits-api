@@ -4,7 +4,7 @@
     "program": {
         "name_abbreviated": "wa_ssi",
         "year": "2026",
-        "legal_status_required": ["citizen", "gc_5plus"],
+        "legal_status_required": ["citizen", "gc_5plus", "refugee"],
         "name": "Supplemental Security Income (SSI)",
         "description_short": "Federal cash assistance for individuals who are disabled, blind, or 65 years of age or older",
         "description": "Federal cash assistance for individuals who are disabled, blind, or 65 years of age or older. Supplemental Security Income (SSI) is a needs-based program. SSI may give you cash to help meet your food, shelter, and personal care needs. Adults and children may qualify if they have a disability or are blind. Adults 65 years and older may also qualify.\n\nWashington does not pay a state supplement to SSI for most people, so your benefit will be the federal amount.\n\nSSI may affect your household's ability to qualify for TANF. SSI may also affect the value of other cash assistance benefits. It may take up to 6 to 12 months to receive this benefit.",
