@@ -139,9 +139,24 @@ class Command(BaseCommand):
                     configuration=configuration,
                 )
 
-                # Step 3: Import warning message (after program exists)
+                # Step 3: Import warning message(s) (after program exists)
+                # Supports both:
+                #   - "warning_message"  (singular, object)  — original shape
+                #   - "warning_messages" (plural,   array)   — multi-warning shape
+                # Mutually exclusive; raises if both are present.
+                if "warning_message" in config and "warning_messages" in config:
+                    raise CommandError(
+                        "Config contains both 'warning_message' (singular) and 'warning_messages' (plural). "
+                        "Use one or the other, not both."
+                    )
                 if "warning_message" in config:
                     self._import_warning_message(program, config["warning_message"])
+                elif "warning_messages" in config:
+                    warning_messages = config["warning_messages"]
+                    if not isinstance(warning_messages, list):
+                        raise CommandError("'warning_messages' must be an array")
+                    for warning_config in warning_messages:
+                        self._import_warning_message(program, warning_config)
 
                 # Step 4: Import documents (after program exists)
                 if "documents" in config:
@@ -262,13 +277,21 @@ class Command(BaseCommand):
             for field_name, english_text in translations.items():
                 self.stdout.write(f"  {field_name}: {truncate(english_text)}")
 
-        # Warning message
+        # Warning message(s) — supports singular object or plural array
         if "warning_message" in config:
             warning = config["warning_message"]
             self.stdout.write(f"\n{self.style.SUCCESS('Warning Message:')}")
             self.stdout.write(f"  external_name: {warning.get('external_name', 'N/A')}")
             self.stdout.write(f"  calculator: {warning.get('calculator', '_show')}")
             self.stdout.write(f"  message: {truncate(warning.get('message', ''))}")
+        elif "warning_messages" in config:
+            warnings = config["warning_messages"]
+            self.stdout.write(f"\n{self.style.SUCCESS(f'Warning Messages ({len(warnings)}):')}")
+            for i, warning in enumerate(warnings, 1):
+                self.stdout.write(f"\n  Warning {i}:")
+                self.stdout.write(f"    external_name: {warning.get('external_name', 'N/A')}")
+                self.stdout.write(f"    calculator: {warning.get('calculator', '_show')}")
+                self.stdout.write(f"    message: {truncate(warning.get('message', ''))}")
 
         # Documents
         if "documents" in config:
