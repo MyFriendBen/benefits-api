@@ -80,12 +80,12 @@
             "counties": []
         },
         {
-            "external_name": "wa_solid_ground_bla",
-            "name": "Solid Ground - Benefits Legal Assistance",
-            "phone_number": "+12066946743",
-            "email": "benefitslegalhelp@solid-ground.org",
-            "description": "Free legal representation for low-income King County residents who have been denied Supplemental Security Income (SSI) or Social Security Disability Insurance (SSDI), including help with appeals before administrative law judges.",
-            "assistance_link": "https://www.solid-ground.org/get-help/benefits-legal-assistance/",
+            "external_name": "wa_benefits_law_center",
+            "name": "Benefits Law Center",
+            "phone_number": "+12066867252",
+            "email": "info@benefitslawcenter.org",
+            "description": "Free legal advocacy for people with disabilities who are homeless or low-income and have had their Supplemental Security Income (SSI) or Social Security Disability Insurance (SSDI) reduced, denied, or terminated. Primary intake serves King County and the greater Puget Sound area; targeted projects extend assistance to Western Washington through partner agencies. Office: 1404 E Yesler Way, Suite 203, Seattle, WA 98122.",
+            "assistance_link": "https://benefitslawcenter.org/",
             "languages": [],
             "counties": ["King"]
         }
