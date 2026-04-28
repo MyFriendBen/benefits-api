@@ -16,9 +16,17 @@
 2. **Disability — medically determinable physical or mental impairment expected to last 12+ continuous months or result in death; for adults, the impairment must prevent substantial gainful activity (SGA)**
    - Screener fields: `household_member.disabled` **OR** `household_member.long_term_disability`; `income_streams (wages, selfEmployment)`
    - Note: Either disability flag should satisfy this criterion. The screener question backing `disabled` is *"Currently have any disabilities that make you unable to work now or in the future"*, which already captures the SSA-relevant signal of an inability to work that is expected to continue, so it should not be filtered out. `long_term_disability` is a narrower self-attestation of a clearly long-term/permanent condition. This matches the model's existing `HouseholdMember.has_disability()` helper, which ORs `disabled || visually_impaired || long_term_disability`. The screener cannot perform SSA's medical adjudication or vocational analysis (Listings of Impairments, Medical-Vocational Guidelines), so eligibility is treated as a *likely-eligible* signal pending SSA review.
-   - SGA thresholds (2026): non-blind = **$1,690/month**, blind = **$2,830/month** (PolicyEngine `gov.ssa.sga.non_blind` / `gov.ssa.sga.blind`). Non-blind earned income above $1,690/month is treated as engaging in SGA and disqualifies disability claims (PolicyEngine variable: `ssi_engaged_in_sga`). The blind path is exempt from the SGA test.
+   - **SGA test is broken out as Criterion #2a below** (per Caton's PR review — promoted from a sub-bullet here so it is clearly an evaluable, screener-disqualifying criterion).
    - **Divergence from TX SSDI precedent**: `tx_ssdi`'s implementation requires `long_term_disability=true` and treats `disabled=true` alone as insufficient. Per product/review feedback, that interpretation is too strict for WA SSI. We accept either flag; recommend revisiting the TX SSDI rule in a follow-up.
-   - Source: 42 U.S.C. § 1382c(a)(3); 20 CFR §§ 416.905, 416.906, 416.974; SSA Blue Book; [SSA — SGA amounts](https://www.ssa.gov/oact/cola/sga.html).
+   - Source: 42 U.S.C. § 1382c(a)(3); 20 CFR §§ 416.905, 416.906; SSA Blue Book.
+
+2a. **Not engaged in Substantial Gainful Activity (SGA) — for non-blind disability claims**
+   - Screener fields: `household_member.disabled` / `household_member.long_term_disability`; `household_member.visually_impaired`; `income_streams (wages, selfEmployment)`
+   - Rule: A non-blind applicant claiming SSI on the disability path whose monthly earned income exceeds the SGA threshold is presumed to be **engaging in SGA** and is therefore **not disabled** for SSI purposes — disqualified at the screener stage. The blind path (Criterion #3) is statutorily exempt from the SGA test.
+   - SGA thresholds (2026): **non-blind = $1,690/month**, **blind = $2,830/month** (PolicyEngine `gov.ssa.sga.non_blind` / `gov.ssa.sga.blind`).
+   - PolicyEngine implementation: `ssi_engaged_in_sga` (in `variables/gov/ssa/ssi/eligibility/income/ssi_engaged_in_sga.py`) computes `monthly_income = ssi_earned_income / MONTHS_IN_YEAR` and returns `(monthly_income > p.non_blind) & ~is_blind`. The check uses earned income only — unearned income (e.g., SS retirement) does not affect SGA. The screener passes wages from `income_streams` to PE for evaluation.
+   - Note: This criterion overlaps logically with Criterion #2 (Disability) but is broken out per reviewer guidance because (a) it is a distinct, evaluable, monthly-earnings-based test, (b) the PE variable is a separate boolean check, and (c) it has its own ineligible test scenario (Scenario 14). Visually impaired applicants on the blindness path are exempt and should still surface SSI as a candidate even when earning above the non-blind SGA limit.
+   - Source: 42 U.S.C. § 1382c(a)(3)(D); 20 CFR §§ 416.971, 416.974; [SSA — SGA amounts](https://www.ssa.gov/oact/cola/sga.html).
 
 3. **Statutory blindness — central visual acuity ≤ 20/200 in the better eye with corrective lens, or visual field ≤ 20°**
    - Screener fields: `household_member.visually_impaired`
@@ -120,10 +128,10 @@ Washington does **not** pay a state supplement to SSI for most aged, blind, or d
 
 ## Implementation Coverage
 
-- ✅ Evaluable criteria: 11
+- ✅ Evaluable criteria: 12
 - ⚠️  Data gaps: 4
 
-11 of 15 total eligibility criteria can be evaluated with current screener fields. The screener confidently identifies applicants who are demographically and categorically in scope (aged 65+, long-term disabled, visually impaired) with WA residence and a qualifying citizenship status, who are not already receiving SSI, and whose income/asset profile pre-filters within the 2026 FBR and resource ceilings. Spousal and parental deeming household composition is captured for PolicyEngine to evaluate. Income and resource feasibility are conservative pre-filters; the precise countable-income calculation, asset exclusions, and deeming math are delegated to PolicyEngine. Primary gaps are SSA's medical/vocational disability adjudication (handled at application), U.S. absence (Low impact), institutional-residence status (Low impact), and fugitive/incarceration status (Low impact) — all handled procedurally at the SSA application stage.
+12 of 16 total eligibility criteria can be evaluated with current screener fields (criteria 1, 2, 2a, 3, 4, 5, 6, 7, 8, 9, 10, 11). The screener confidently identifies applicants who are demographically and categorically in scope (aged 65+, long-term disabled, visually impaired) with WA residence and a qualifying citizenship status, who are not already receiving SSI, and whose income/asset profile pre-filters within the 2026 FBR and resource ceilings. The SGA test (Criterion #2a) is enforced via PolicyEngine's `ssi_engaged_in_sga` against monthly earned income from `income_streams`. Spousal and parental deeming household composition is captured for PolicyEngine to evaluate. Income and resource feasibility are conservative pre-filters; the precise countable-income calculation, asset exclusions, and deeming math are delegated to PolicyEngine. Primary gaps are SSA's medical/vocational disability adjudication (handled at application), U.S. absence (Low impact), institutional-residence status (Low impact), and fugitive/incarceration status (Low impact) — all handled procedurally at the SSA application stage.
 
 ## PolicyEngine Variable Mapping
 
@@ -167,6 +175,8 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 - [ ] Scenario 11 (Aged 65+ with Partial SS Retirement Income — Reduced Benefit): User should be **eligible** with $514/month ($6,168/year)
 - [ ] Scenario 12 (Long-Term Disabled Adult with Partial Earned Wages — Reduced Benefit): User should be **eligible** with $836.50/month ($10,038/year)
 - [ ] Scenario 13 (Disabled Adult with High-Income Ineligible Spouse — Spousal Deeming Disqualifies): User should be **ineligible**
+- [ ] Scenario 14 (Long-Term Disabled Adult Above SGA Threshold — SGA Disqualification): User should be **ineligible** (non-blind earned income > $1,690/mo trips `ssi_engaged_in_sga`, even though countable income would otherwise leave them eligible)
+- [ ] Scenario 15 (Eligible Aged Spouse + Ineligible Working Spouse — Partial Spousal Deeming): User should be **eligible** with $933.50/month ($11,202/year) — couple FBR less spousal deemed countable income
 
 ## Test Scenarios
 
@@ -421,7 +431,53 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 - **Household assets**: `$0`
 - **Current Benefits**: Not currently receiving SSI
 
-**Why this matters**: Validates spousal deeming above the cutoff. Math: spouse gross $4,000 > $483/mo deeming threshold → deeming applies; ($4,000 − $20 − $65) ÷ 2 = **$1,957.50 deemed countable**. With deeming applied, couple FBR ($1,491) − countable ($1,957.50) = −$466.50, capped at $0. The eligible spouse's SSI is zeroed out by spousal income. PolicyEngine variables: `is_ssi_spousal_deeming_applies`, `ssi_income_deemed_from_ineligible_spouse`.
+**Why this matters**: Validates spousal deeming above the cutoff. Math: spouse gross $4,000 > $497/mo deeming threshold (FBR differential) → deeming applies; ($4,000 − $20 − $65) ÷ 2 = **$1,957.50 deemed countable**. With deeming applied, couple FBR ($1,491) − countable ($1,957.50) = −$466.50, capped at $0. The eligible spouse's SSI is zeroed out by spousal income. PolicyEngine variables: `is_ssi_spousal_deeming_applies`, `ssi_income_deemed_from_ineligible_spouse`.
+
+---
+
+### Scenario 14: Long-Term Disabled Adult Above SGA Threshold — SGA Disqualification
+
+**What we're checking**: SGA disqualification (Criterion #2a) — a non-blind disability claimant whose monthly earned income exceeds the 2026 SGA threshold ($1,690/mo) is disqualified by `ssi_engaged_in_sga` even though their countable income, after the standard $20 + $65 + ½ exclusions, would otherwise leave them eligible. This isolates the SGA logic from the FBR income test (Criterion #7).
+
+**Expected**: Not eligible (engaged in SGA — non-blind earned income > $1,690/month)
+**Expected `value`**: omitted (ineligible)
+
+**Steps**:
+- **Location**: ZIP `98101`, County `King`
+- **Household**: 1 person
+- **Person 1**: Age `50` (born 1976), Head of Household, U.S. Citizen, **long-term disability: true**, **not visually impaired**, wages: `$1,700/month` (just above the 2026 non-blind SGA threshold of $1,690/mo)
+- **Insurance**: None
+- **Household assets**: `$0`
+- **Current Benefits**: Not currently receiving SSI
+
+**Why this matters**: Validates the SGA cutoff at the screener level. Without the SGA test, this person would otherwise be eligible: countable income = ($1,700 − $20 − $65) × ½ = **$807.50/month**, which is below the individual FBR ($994), giving an apparent SSI payment of $994 − $807.50 = $186.50/mo. But because they earn above SGA on the non-blind disability path, PolicyEngine's `ssi_engaged_in_sga` flips to `True` and the disability claim is denied. Distinct from Scenario 4 (over-FBR unearned-income disqualification — purely income-test based) and Scenario 12 (earned wages well below SGA — disability path preserved). Also note: a *blind* applicant with the same wages would still be eligible because the blind path is exempt from the SGA test (`ssi_engaged_in_sga` returns `False & ~is_blind`).
+
+---
+
+### Scenario 15: Eligible Aged Spouse + Ineligible Working Spouse — Partial Spousal Deeming
+
+**What we're checking**: Partial spousal deeming (Criterion #9) — the missing companion case to Scenarios 6 and 13. The eligible spouse is aged 65+ with no income; the ineligible spouse has earned income that crosses the deeming-applies threshold (FBR differential = $497/month) but is not large enough to fully zero out the SSI payment. PolicyEngine should switch to the **couple FBR** as the base and subtract the deemed countable income.
+
+**Expected**: Eligible (reduced benefit; $933.50/month)
+**Expected `value`**: `11202` (couple FBR less spousal deemed income — math derivation below)
+
+**Deeming math (annualized; from PolicyEngine `is_ssi_spousal_deeming_applies` and `ssi_amount_if_eligible`)**:
+- Spouse's earned income: $1,200/mo × 12 = `$14,400/yr`
+- Spouse's deemed countable (after $20 general + $65 earned + ½ remainder, annualized): `($14,400 − $240 − $780) / 2 = $6,690/yr`
+- FBR differential (annualized): `($1,491 − $994) × 12 = $5,964/yr`
+- `$6,690 > $5,964` → **deeming applies** → benefit base switches to couple FBR
+- SSI = couple FBR (`$1,491 × 12 = $17,892/yr`) − deemed countable (`$6,690/yr`) = `$11,202/yr` = **$933.50/month**
+
+**Steps**:
+- **Location**: ZIP `98101`, County `King`
+- **Household**: 2 people
+- **Person 1 (Head)**: Age `70` (born 1956), U.S. Citizen, no disability, no income (eligible — aged path)
+- **Person 2 (Spouse)**: Age `60` (born 1966), U.S. Citizen, **no disability, no visual impairment** (ineligible spouse — not aged/blind/disabled), wages: `$1,200/month`
+- **Insurance**: None for both
+- **Household assets**: `$0`
+- **Current Benefits**: Not currently receiving SSI
+
+**Why this matters**: Closes the spousal-deeming coverage gap Caton flagged in PR review. Scenario 6 is the both-eligible joint claim (couple FBR, no deeming). Scenario 13 is the over-the-cutoff disqualification (deeming zeros out the benefit). This scenario is the in-between case — deeming applies and reduces the benefit but doesn't eliminate it. Validates that PolicyEngine's `is_ssi_spousal_deeming_applies` correctly switches the base from individual FBR to couple FBR (per the `where(deeming_applies, p.couple, p.individual)` branch in `ssi_amount_if_eligible`), and that `ssi_countable_income` correctly adds `ssi_income_deemed_from_ineligible_spouse` to the eligible person's countable income (via the `personal_countable + spousal_deemed` branch).
 
 ---
 
@@ -444,7 +500,7 @@ The SSI alien restriction (8 U.S.C. § 1612(a)(2)) is enforced through the progr
 
 File: `validations/management/commands/import_validations/data/wa_ssi.json`
 
-The validations file currently contains the 3 representative scenarios called for by the canonical "Checking Program Researcher Output" reviewer guide (eligible standard, ineligible primary exclusion, earned-income edge case). The full 13 scenarios listed above remain in this spec.md as the dev's reference for implementation and future expansion.
+The validations file currently contains the 3 representative scenarios called for by the canonical "Checking Program Researcher Output" reviewer guide (eligible standard, ineligible primary exclusion, earned-income edge case). The full 15 scenarios listed above remain in this spec.md as the dev's reference for implementation and future expansion.
 
 **Important — `value` is annual**: the screener stores `program_eligibility.estimated_value` as an **annual** dollar figure (see `screener/management/commands/export_screener_data.py` and the `* 12` pattern in calculator implementations). All `value` numbers in `wa_ssi.json` are monthly × 12. `validate.py` casts to `int(validation.value)`, so non-integer monthly amounts truncate after annualization.
 
@@ -465,6 +521,8 @@ Expected `value` per scenario (annual):
 | 11 — Aged 65+ with $500/mo SS retirement | true | `6168` | $994 − ($500 − $20) = $514/mo × 12 |
 | 12 — Long-term disabled with $400/mo wages | true | `10038` | $994 − ($400 − $20 − $65) × ½ = $836.50/mo × 12; truncated to int |
 | 13 — Spousal deeming disqualifies | false | omitted | — |
+| 14 — Long-term disabled, $1,700/mo wages (above SGA) | false | omitted | non-blind earned income > $1,690/mo SGA threshold → `ssi_engaged_in_sga` = true → disability claim denied |
+| 15 — Aged HoH + ineligible spouse with $1,200/mo wages (partial deeming) | true | `11202` | spouse's deemed countable ($6,690/yr) > FBR differential ($5,964/yr) → deeming applies → couple FBR ($17,892/yr) − deemed countable ($6,690/yr) = $11,202/yr |
 
 Per the canonical guide, `value` is omitted (not set to `0`) for ineligible scenarios.
 
@@ -483,3 +541,4 @@ File: `programs/management/commands/import_program_config_data/data/wa_ssi_initi
 | 2026-04-28 | cdadams | Disability criterion broadened per Caton's PR review: accept `disabled` **OR** `long_term_disability` as a valid disability signal for SSI (previously this spec required `long_term_disability` exclusively, mirroring TX SSDI). Caton confirmed the screener question backing `disabled` is *"Currently have any disabilities that make you unable to work now or in the future"*, which already captures the SSA-relevant ongoing-inability-to-work signal. This also aligns with the model's existing `HouseholdMember.has_disability()` helper which ORs `disabled || visually_impaired || long_term_disability`. Flipped Scenario 10 from **ineligible** → **eligible** (now validates that `disabled=true, long_term_disability=false` IS sufficient for the disability path) and updated its acceptance-criteria checkbox to match. Added a divergence note in the eligibility criterion calling out that the TX SSDI precedent should be revisited in a follow-up. |
 | 2026-04-28 | cdadams | Aligned all three artifacts to the canonical "Checking Program Researcher Output" reviewer guide: (a) corrected `value_type: "monthly"` → `"benefit"` (the model accepts any string but the canonical valid values are `"tax_credit"` or `"benefit"`); (b) added explicit `"value_format": null` for the monthly cadence default; (c) reformatted navigator phone numbers to E.164 (`+18882011014`, `+12066946743`); (d) filled in navigator emails (`webmaster@nwjustice.org`, `benefitslegalhelp@solid-ground.org`); (e) tightened the user-facing `description` to remove duplication of screener-checked eligibility criteria and added the application paths (online / 1-800-772-1213 / in person) per the description guidance; (f) pruned `wa_ssi.json` from 13 scenarios to the 3 representative scenarios called for by the guide (eligible standard, ineligible primary exclusion, edge case for the $20+$65+½ earned-income methodology); (g) removed `value: 0` from ineligible scenarios (guide says omit entirely); (h) added "Priority Criteria" section to this spec.md (N/A for SSI as a federal entitlement). The full 13-scenario coverage remains in the "Test Scenarios" section below for the implementation dev's reference. **Open question for reviewer**: per the guide, `year` should be omitted for non-FPL programs (SSI uses its own FBR, not FPL income tests), but `tx_ssdi_initial_config.json` keeps `"year": "2026"` and the calculator may need it at runtime — kept it for now to match TX SSDI precedent. |
 | 2026-04-28 | cdadams | Added explicit `value` numbers per Caton's PR review (annualized — the screener stores `program_eligibility.estimated_value` as an annual figure; see `screener/management/commands/export_screener_data.py` and the `* 12` pattern in calculator implementations like `medicare_savings`). Updated `wa_ssi.json` to use annual values (`994 → 11928`, `836.50 → 10038`). Added an explicit `Expected value` line to each scenario in spec.md with annualization math. Verified Caton's Scenario 9 deeming math against PolicyEngine `ssi_ineligible_parent_allocation` (returns `couple_fbr / 2 * MONTHS_IN_YEAR` per ineligible parent → 2 × $745.50/mo × 12 = $17,892/yr parent allocation, exceeds parents' $8,490/yr countable income → $0 deemed → child receives full individual FBR `$11,928/yr`). Added a "JSON Test Cases" summary table with all 13 scenarios' expected `value` numbers and math derivations for the implementation dev. |
+| 2026-04-28 | cdadams | Closed the two test-coverage gaps Caton flagged on PR #1467: (a) **SGA** — promoted the SGA test from a sub-bullet of Criterion #2 to its own evaluable Criterion #2a ("Not engaged in SGA — for non-blind disability claims") and added Scenario 14 (long-term disabled adult earning $1,700/mo, just above the 2026 non-blind SGA threshold of $1,690/mo, expected ineligible — wage chosen so that countable income alone would otherwise leave them eligible at $186.50/mo, isolating the SGA logic from the FBR income test); (b) **Spousal deeming partial case** — added Scenario 15 (aged HoH with no income + ineligible spouse age 60 with $1,200/mo wages → spouse's deemed countable $6,690/yr exceeds FBR differential $5,964/yr → deeming applies → couple FBR $17,892/yr − $6,690/yr = $11,202/yr, expected eligible at $933.50/mo). Verified PolicyEngine's `is_ssi_spousal_deeming_applies`, `ssi_amount_if_eligible` (which switches the base from individual to couple FBR when deeming applies), and `ssi_countable_income`. Updated Implementation Coverage from 11/15 → 12/16 evaluable, Acceptance Criteria checkboxes, and the JSON Test Cases summary table accordingly. **Note on Caton's "~$1,550/month in 2026" SGA threshold**: PolicyEngine's `gov.ssa.sga.non_blind` lists $1,550 for **2024**; the 2026 value is $1,690/mo (matches our spec). |
