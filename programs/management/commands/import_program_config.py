@@ -602,9 +602,7 @@ class Command(BaseCommand):
             base_program_value = configuration["base_program"]
             if base_program_value not in BaseProgram.values:
                 valid_choices = ", ".join(BaseProgram.values)
-                raise CommandError(
-                    f"Invalid base_program '{base_program_value}'. Must be one of: {valid_choices}"
-                )
+                raise CommandError(f"Invalid base_program '{base_program_value}'. Must be one of: {valid_choices}")
             program.base_program = base_program_value
             self.stdout.write(f"  base_program: {base_program_value}")
 
