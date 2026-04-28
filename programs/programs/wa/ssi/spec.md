@@ -155,8 +155,6 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 | Medical facility flat $30/mo | `gov.ssa.ssi.amount.medical_facility` | `parameters/gov/ssa/ssi/amount/medical_facility.yaml` |
 | Final benefit (capped, takeup) | `ssi`, `ssi_amount_if_eligible`, `uncapped_ssi`, `takes_up_ssi_if_eligible` | `variables/gov/ssa/ssi/{ssi,ssi_amount_if_eligible}.py` |
 
-**Living-arrangement reductions (additional data gap)**: PolicyEngine models VTR (one-third reduction for living in another's household), PMV (one-third FBR + $20 cap on in-kind support), and the $30/mo medical-facility rate. Our screener does not capture `ssi_lives_in_another_persons_household`, `ssi_receives_shelter_from_others_in_household`, or `ssi_lives_in_medical_treatment_facility`, so those PE variables will default to `false` and the standard FBR will be returned. Treat this as a known over-credit in fringe living arrangements; impact is low for typical WA SSI applicants.
-
 ## Acceptance Criteria
 
 - [ ] Scenario 1 (Aged 65+ — No Income, No Resources): User should be **eligible** with $994/month ($11,928/year)
