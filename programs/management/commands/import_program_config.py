@@ -12,6 +12,7 @@ from programs.models import (
     County,
     NavigatorLanguage,
     LegalStatus,
+    BaseProgram,
 )
 from screener.models import WhiteLabel
 from integrations.clients.google_translate import Translate
@@ -586,6 +587,8 @@ class Command(BaseCommand):
             "active",
             "low_confidence",
             "show_on_current_benefits",
+            "show_in_has_benefits_step",
+            "has_calculator",
             "value_format",
         ]
 
@@ -593,6 +596,17 @@ class Command(BaseCommand):
             if field_name in configuration:
                 setattr(program, field_name, configuration[field_name])
                 self.stdout.write(f"  {field_name}: {configuration[field_name]}")
+
+        # Handle base_program with validation against BaseProgram choices
+        if "base_program" in configuration:
+            base_program_value = configuration["base_program"]
+            if base_program_value not in BaseProgram.values:
+                valid_choices = ", ".join(BaseProgram.values)
+                raise CommandError(
+                    f"Invalid base_program '{base_program_value}'. Must be one of: {valid_choices}"
+                )
+            program.base_program = base_program_value
+            self.stdout.write(f"  base_program: {base_program_value}")
 
         program.save()
 

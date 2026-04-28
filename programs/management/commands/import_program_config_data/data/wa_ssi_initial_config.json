@@ -4,6 +4,7 @@
     "program": {
         "name_abbreviated": "wa_ssi",
         "year": "2026",
+        "base_program": "ssi",
         "legal_status_required": ["citizen", "gc_5plus", "refugee"],
         "name": "Supplemental Security Income (SSI)",
         "description_short": "Federal cash assistance for individuals who are disabled, blind, or 65 years of age or older",
@@ -12,8 +13,15 @@
         "apply_button_link": "https://www.ssa.gov/apply/ssi",
         "apply_button_description": "",
         "estimated_application_time": "90 minutes",
+        "estimated_delivery_time": "6 to 8 months",
         "estimated_value": "",
-        "website_description": "Federal cash assistance for individuals who are disabled, blind, or 65 years of age or older"
+        "value_type": "monthly",
+        "website_description": "Federal cash assistance for individuals who are disabled, blind, or 65 years of age or older",
+        "active": true,
+        "low_confidence": false,
+        "show_on_current_benefits": true,
+        "show_in_has_benefits_step": true,
+        "has_calculator": true
     },
     "warning_messages": [
         {
