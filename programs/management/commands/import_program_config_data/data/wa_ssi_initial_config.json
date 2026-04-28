@@ -22,7 +22,7 @@
         "low_confidence": false,
         "show_on_current_benefits": true,
         "show_in_has_benefits_step": true,
-        "has_calculator": true
+        "has_calculator": false
     },
     "warning_messages": [
         {
