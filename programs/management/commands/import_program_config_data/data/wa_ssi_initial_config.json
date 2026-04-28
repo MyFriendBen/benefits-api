@@ -58,5 +58,27 @@
             "link_url": "",
             "link_text": ""
         }
+    ],
+    "navigators": [
+        {
+            "external_name": "wa_njp_clear",
+            "name": "Northwest Justice Project - CLEAR Hotline",
+            "phone_number": "1-888-201-1014",
+            "email": "",
+            "description": "Statewide legal aid hotline for low-income Washington residents. CLEAR provides legal advice and referrals on SSI applications, denials, and appeals. Outside King County: 1-888-201-1014 (weekdays 9:15am - 12:15pm). King County residents: dial 2-1-1. Adults age 60+: 1-888-387-7111 (CLEAR*Sr).",
+            "assistance_link": "https://nwjustice.org/clear-hotline",
+            "languages": ["es"],
+            "counties": []
+        },
+        {
+            "external_name": "wa_solid_ground_bla",
+            "name": "Solid Ground - Benefits Legal Assistance",
+            "phone_number": "206-694-6743",
+            "email": "",
+            "description": "Free legal representation for low-income King County residents who have been denied Supplemental Security Income (SSI) or Social Security Disability Insurance (SSDI), including help with appeals before administrative law judges.",
+            "assistance_link": "https://www.solid-ground.org/get-help/benefits-legal-assistance/",
+            "languages": [],
+            "counties": ["King"]
+        }
     ]
 }
