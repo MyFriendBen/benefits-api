@@ -1,6 +1,6 @@
 [
   {
-    "notes": "WA SSI - Eligible standard (golden path): aged 65+, no income, no countable resources. Receives full federal benefit rate (FBR) of $994/month for an individual in 2026.",
+    "notes": "WA SSI - Eligible standard (golden path): aged 65+, no income, no countable resources. Receives full federal benefit rate (FBR) of $994/month for an individual in 2026 = $11,928/year (estimated_value is stored as an annual figure).",
     "household": {
       "white_label": "wa",
       "is_test": true,
@@ -28,7 +28,7 @@
     "expected_results": {
       "program_name": "wa_ssi",
       "eligible": true,
-      "value": 994
+      "value": 11928
     }
   },
   {
@@ -63,7 +63,7 @@
     }
   },
   {
-    "notes": "WA SSI - Edge case (income exclusion methodology): long-term disabled adult with $400/mo wages tests the $20 general + $65 earned + 1/2 earned exclusion formula. Math: $400 - $20 - $65 = $315; 1/2 of $315 = $157.50 countable income. SSI = $994 - $157.50 = $836.50/month. Earnings well below 2026 SGA threshold ($1,690/mo non-blind), so disability path is preserved.",
+    "notes": "WA SSI - Edge case (income exclusion methodology): long-term disabled adult with $400/mo wages tests the $20 general + $65 earned + 1/2 earned exclusion formula. Math: $400 - $20 - $65 = $315; 1/2 of $315 = $157.50 countable income. SSI = $994 - $157.50 = $836.50/month = $10,038/year (estimated_value is stored as an annual figure; truncated to int per validate.py). Earnings well below 2026 SGA threshold ($1,690/mo non-blind), so disability path is preserved.",
     "household": {
       "white_label": "wa",
       "is_test": true,
@@ -99,7 +99,7 @@
     "expected_results": {
       "program_name": "wa_ssi",
       "eligible": true,
-      "value": 836.50
+      "value": 10038
     }
   }
 ]

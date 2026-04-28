@@ -162,7 +162,7 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 - [ ] Scenario 6 (Eligible Aged Couple — Both 65+, No Income): User should be **eligible** with $1,491/month ($17,892/year, household total)
 - [ ] Scenario 7 (Adult Under 65 Without Disability or Visual Impairment): User should be **ineligible**
 - [ ] Scenario 8 (Already Receiving SSI — Duplicate Enrollment): User should be **ineligible**
-- [ ] Scenario 9 (Long-Term Disabled Child — Parental Deeming Under Limits): User should be **eligible** (exact value depends on PolicyEngine parental-deeming math)
+- [ ] Scenario 9 (Long-Term Disabled Child — Parental Deeming Under Limits): User should be **eligible** with $994/month ($11,928/year) — parent allocation absorbs deemed income; net deemed = $0
 - [ ] Scenario 10 (General Disability Flag Only — `disabled=true`, `long_term_disability=false`): User should be **eligible** with $994/month ($11,928/year)
 - [ ] Scenario 11 (Aged 65+ with Partial SS Retirement Income — Reduced Benefit): User should be **eligible** with $514/month ($6,168/year)
 - [ ] Scenario 12 (Long-Term Disabled Adult with Partial Earned Wages — Reduced Benefit): User should be **eligible** with $836.50/month ($10,038/year)
@@ -170,11 +170,14 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 
 ## Test Scenarios
 
+> **Note on `value` units**: All `value` numbers below and in `wa_ssi.json` are **annual** dollars (per the screener's `estimated_value` convention — see `screener/management/commands/export_screener_data.py` and the `* 12` pattern in calculator implementations). Monthly amounts are also shown for human readability.
+
 ### Scenario 1: Aged 65+, No Income, No Resources
 
 **What we're checking**: Cleanest aged-only path — confirms the screener treats age 65+ as a sufficient categorical entry into SSI when income and resources are clearly under thresholds.
 
-**Expected**: Eligible (full federal individual FBR — $994/month, $11,928/year)
+**Expected**: Eligible (full federal individual FBR — $994/month)
+**Expected `value`**: `11928` ($994/month × 12)
 
 **Steps**:
 - **Location**: ZIP `98101`, County `King`
@@ -192,7 +195,8 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 
 **What we're checking**: Disability path via the `long_term_disability` flag for an adult well below retirement age, with no income or resources.
 
-**Expected**: Eligible (full federal individual FBR — $994/month, $11,928/year)
+**Expected**: Eligible (full federal individual FBR — $994/month)
+**Expected `value`**: `11928` ($994/month × 12)
 
 **Steps**:
 - **Location**: ZIP `98101`, County `King`
@@ -210,7 +214,8 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 
 **What we're checking**: Blindness path via the `visually_impaired` flag for a working-age adult with no income or resources.
 
-**Expected**: Eligible (full federal individual FBR — $994/month, $11,928/year)
+**Expected**: Eligible (full federal individual FBR — $994/month)
+**Expected `value`**: `11928` ($994/month × 12)
 
 **Steps**:
 - **Location**: ZIP `98052`, County `King`
@@ -264,7 +269,8 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 
 **What we're checking**: Couple FBR path — both spouses age-eligible, no income or assets.
 
-**Expected**: Eligible (couple benefit at $1,491/month FBR for 2026, $17,892/year, shared between members)
+**Expected**: Eligible (couple benefit at $1,491/month FBR for 2026, shared between members)
+**Expected `value`**: `17892` ($1,491/month × 12 — MFB sums per-person PolicyEngine outputs so the household total equals the full couple rate)
 
 **Steps**:
 - **Location**: ZIP `98109`, County `King`
@@ -317,9 +323,17 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 
 ### Scenario 9: Long-Term Disabled Child — Parental Deeming Under Limits
 
-**What we're checking**: Child applicant — parental deeming math left to PolicyEngine; the screener should still surface SSI as a candidate for the household with a long-term disabled minor.
+**What we're checking**: Child applicant — parental deeming math handled by PolicyEngine. With one earner at $1,500/mo and a non-earning spouse, the parent allocation exceeds the parents' countable income, so $0 is deemed to the child and the child receives the full individual FBR.
 
-**Expected**: Eligible
+**Expected**: Eligible (child receives full individual FBR — $994/month)
+**Expected `value`**: `11928` (parental-deeming math, annualized below)
+
+**Deeming math (annualized; from PolicyEngine `ssi_ineligible_parent_allocation`)**:
+- Parents' gross income: $1,500/mo × 12 = `$18,000/yr`
+- After SSI exclusions ($20 general + $65 earned + ½ remainder): `($18,000 − $240 − $780) / 2 = $8,490/yr` countable parent income
+- Parent allocation (2 ineligible parents, per `ssi.couple / 2 * MONTHS_IN_YEAR`): `$1,491 / 2 × 12 × 2 parents = $17,892/yr`
+- Net deemed to child: `$8,490 − $17,892 = −$9,402 → capped at $0`
+- Child SSI: full individual FBR = `$994 × 12 = $11,928/yr`
 
 **Steps**:
 - **Location**: ZIP `98101`, County `King`
@@ -331,7 +345,7 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 - **Household assets**: `$0`
 - **Current Benefits**: Not currently receiving SSI
 
-**Why this matters**: Confirms child-SSI eligibility is surfaced when the disabled minor lives with low-income parents. Exact benefit value depends on PolicyEngine's parent-to-child deeming computation; the screener's job is to identify the household as a candidate.
+**Why this matters**: Confirms child-SSI eligibility is surfaced when the disabled minor lives with low-income parents and validates that PolicyEngine's parent-to-child deeming math returns the full FBR when the parent allocation absorbs the parents' countable income.
 
 ---
 
@@ -339,7 +353,8 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 
 **What we're checking**: An adult who answers *"yes"* to the screener's general disability question (*"Currently have any disabilities that make you unable to work now or in the future"*) but has not separately set the long-term-disability flag should still surface SSI as a candidate. The screener question text already implies an ongoing inability to work, which is the SSA-relevant signal for SSI's disability path.
 
-**Expected**: Eligible (full federal individual FBR — $994/month, $11,928/year)
+**Expected**: Eligible (full federal individual FBR — $994/month)
+**Expected `value`**: `11928` ($994/month × 12)
 
 **Steps**:
 - **Location**: ZIP `98101`, County `King`
@@ -357,7 +372,8 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 
 **What we're checking**: Partial offset — eligible with reduced SSI when unearned income is below FBR. Confirms that some unearned income reduces, but does not eliminate, the SSI benefit.
 
-**Expected**: Eligible (reduced benefit; $514/month, $6,168/year)
+**Expected**: Eligible (reduced benefit; $514/month)
+**Expected `value`**: `6168` (`$994 − ($500 − $20 general exclusion) = $514/month × 12`)
 
 **Steps**:
 - **Location**: ZIP `98101`, County `King`
@@ -375,7 +391,8 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 
 **What we're checking**: Earned-income exclusion path — confirms the screener applies the $65 + ½ remaining exclusion (distinct from the unearned-only Scenario 11), and that earned income reduces but does not eliminate the SSI benefit.
 
-**Expected**: Eligible (reduced benefit; $836.50/month, $10,038/year)
+**Expected**: Eligible (reduced benefit; $836.50/month)
+**Expected `value`**: `10038` (`$994 − ($400 − $20 − $65) × ½ = $836.50/month × 12`; truncated to int per `validate.py`)
 
 **Steps**:
 - **Location**: ZIP `98101`, County `King`
@@ -427,13 +444,29 @@ The SSI alien restriction (8 U.S.C. § 1612(a)(2)) is enforced through the progr
 
 File: `validations/management/commands/import_validations/data/wa_ssi.json`
 
-Scenarios 1–13. Expected `eligible` and `value` (monthly, household total):
-- Scenarios 1, 2, 3: `eligible: true`, `value: 994` (full individual FBR)
-- Scenario 6: `eligible: true`, `value: 1491` (couple FBR)
-- Scenario 9: `eligible: true`, `value` omitted (depends on parental-deeming math)
-- Scenario 11: `eligible: true`, `value: 514` ($994 − ($500 − $20))
-- Scenario 12: `eligible: true`, `value: 836.50` ($994 − ($400 − $20 − $65) × ½)
-- Scenarios 4, 5, 7, 8, 10, 13: `eligible: false`, `value: 0`
+The validations file currently contains the 3 representative scenarios called for by the canonical "Checking Program Researcher Output" reviewer guide (eligible standard, ineligible primary exclusion, earned-income edge case). The full 13 scenarios listed above remain in this spec.md as the dev's reference for implementation and future expansion.
+
+**Important — `value` is annual**: the screener stores `program_eligibility.estimated_value` as an **annual** dollar figure (see `screener/management/commands/export_screener_data.py` and the `* 12` pattern in calculator implementations). All `value` numbers in `wa_ssi.json` are monthly × 12. `validate.py` casts to `int(validation.value)`, so non-integer monthly amounts truncate after annualization.
+
+Expected `value` per scenario (annual):
+
+| Scenario | Eligible? | `value` | Math |
+|---|---|---|---|
+| 1 — Aged 65+, no income | true | `11928` | $994/mo × 12 (full individual FBR) |
+| 2 — Long-term disabled, no income | true | `11928` | $994/mo × 12 |
+| 3 — Visually impaired, no income | true | `11928` | $994/mo × 12 |
+| 4 — Aged 65+, unearned income above FBR | false | omitted | — |
+| 5 — Aged 65+, resources > $2,000 | false | omitted | — |
+| 6 — Eligible aged couple | true | `17892` | $1,491/mo × 12 (MFB sums per-person PE outputs to the household couple rate) |
+| 7 — Adult under 65, no disability | false | omitted | — |
+| 8 — Already receiving SSI | false | omitted | — |
+| 9 — Disabled child, parental deeming | true | `11928` | parent allocation $17,892/yr exceeds parents' countable $8,490/yr → $0 deemed → full individual FBR |
+| 10 — `disabled=true`, `long_term_disability=false` | true | `11928` | $994/mo × 12 |
+| 11 — Aged 65+ with $500/mo SS retirement | true | `6168` | $994 − ($500 − $20) = $514/mo × 12 |
+| 12 — Long-term disabled with $400/mo wages | true | `10038` | $994 − ($400 − $20 − $65) × ½ = $836.50/mo × 12; truncated to int |
+| 13 — Spousal deeming disqualifies | false | omitted | — |
+
+Per the canonical guide, `value` is omitted (not set to `0`) for ineligible scenarios.
 
 ## Generated Program Configuration
 
@@ -449,3 +482,4 @@ File: `programs/management/commands/import_program_config_data/data/wa_ssi_initi
 | 2026-04-28 | cdadams | Added 6 missing program-level fields to config (per Caton's PR review): `base_program: "ssi"` (cross-white-label grouping for analytics + has-benefits filtering), `value_type: "monthly"` (Translation FK), `estimated_delivery_time: "6 to 8 months"` (Translation FK), `show_on_current_benefits: true`, `show_in_has_benefits_step: true`, and `has_calculator: true`. Updated `import_program_config.py` to handle three previously-silently-ignored config keys (`show_in_has_benefits_step`, `has_calculator`, `base_program`) — `base_program` is validated against `BaseProgram.choices`. Verified end-to-end with `--override` import and direct ORM inspection. |
 | 2026-04-28 | cdadams | Disability criterion broadened per Caton's PR review: accept `disabled` **OR** `long_term_disability` as a valid disability signal for SSI (previously this spec required `long_term_disability` exclusively, mirroring TX SSDI). Caton confirmed the screener question backing `disabled` is *"Currently have any disabilities that make you unable to work now or in the future"*, which already captures the SSA-relevant ongoing-inability-to-work signal. This also aligns with the model's existing `HouseholdMember.has_disability()` helper which ORs `disabled || visually_impaired || long_term_disability`. Flipped Scenario 10 from **ineligible** → **eligible** (now validates that `disabled=true, long_term_disability=false` IS sufficient for the disability path) and updated its acceptance-criteria checkbox to match. Added a divergence note in the eligibility criterion calling out that the TX SSDI precedent should be revisited in a follow-up. |
 | 2026-04-28 | cdadams | Aligned all three artifacts to the canonical "Checking Program Researcher Output" reviewer guide: (a) corrected `value_type: "monthly"` → `"benefit"` (the model accepts any string but the canonical valid values are `"tax_credit"` or `"benefit"`); (b) added explicit `"value_format": null` for the monthly cadence default; (c) reformatted navigator phone numbers to E.164 (`+18882011014`, `+12066946743`); (d) filled in navigator emails (`webmaster@nwjustice.org`, `benefitslegalhelp@solid-ground.org`); (e) tightened the user-facing `description` to remove duplication of screener-checked eligibility criteria and added the application paths (online / 1-800-772-1213 / in person) per the description guidance; (f) pruned `wa_ssi.json` from 13 scenarios to the 3 representative scenarios called for by the guide (eligible standard, ineligible primary exclusion, edge case for the $20+$65+½ earned-income methodology); (g) removed `value: 0` from ineligible scenarios (guide says omit entirely); (h) added "Priority Criteria" section to this spec.md (N/A for SSI as a federal entitlement). The full 13-scenario coverage remains in the "Test Scenarios" section below for the implementation dev's reference. **Open question for reviewer**: per the guide, `year` should be omitted for non-FPL programs (SSI uses its own FBR, not FPL income tests), but `tx_ssdi_initial_config.json` keeps `"year": "2026"` and the calculator may need it at runtime — kept it for now to match TX SSDI precedent. |
+| 2026-04-28 | cdadams | Added explicit `value` numbers per Caton's PR review (annualized — the screener stores `program_eligibility.estimated_value` as an annual figure; see `screener/management/commands/export_screener_data.py` and the `* 12` pattern in calculator implementations like `medicare_savings`). Updated `wa_ssi.json` to use annual values (`994 → 11928`, `836.50 → 10038`). Added an explicit `Expected value` line to each scenario in spec.md with annualization math. Verified Caton's Scenario 9 deeming math against PolicyEngine `ssi_ineligible_parent_allocation` (returns `couple_fbr / 2 * MONTHS_IN_YEAR` per ineligible parent → 2 × $745.50/mo × 12 = $17,892/yr parent allocation, exceeds parents' $8,490/yr countable income → $0 deemed → child receives full individual FBR `$11,928/yr`). Added a "JSON Test Cases" summary table with all 13 scenarios' expected `value` numbers and math derivations for the implementation dev. |
