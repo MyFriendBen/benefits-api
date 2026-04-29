@@ -317,10 +317,3 @@ class WaSeattleFreshBucks(ProgramCalculator):
     def household_value(self) -> int:
         return self.monthly_benefit * 12
 ```
-
-Recommended additions for the implementation PR (out of scope here):
-
-1. Add a `has_seattle_fresh_bucks` boolean field to `Screen` and a corresponding entry in `Screen._build_benefit_map()` so duplicate-enrollment filtering matches the existing SSI/SNAP pattern. Then add a `screen.has_benefit("seattle_fresh_bucks")` short-circuit at the top of `household_eligible`.
-2. Add a 7th validation test case for the duplicate-enrollment path once the field exists.
-3. Re-verify the $60/mo benefit amount with the Fresh Bucks program team (see "Source discrepancy" note under **Benefit Value** above).
-4. Consider a `WaSeattleZipCodeDependency` (or similar) helper if more Seattle-specific programs land — the ZIP set will be reused.
