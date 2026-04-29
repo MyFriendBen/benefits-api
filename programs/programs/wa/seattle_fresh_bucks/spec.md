@@ -255,7 +255,7 @@ Key fields:
 - `estimated_delivery_time`: `"varies (waitlist)"` — reflects the lottery-based enrollment model
 - `apply_button_link`: `https://www.seattlefreshbucks.org/apply/`
 - `learn_more_link`: `https://www.seattle.gov/environment/food-policy-and-programs/fresh-bucks`
-- `show_in_has_benefits_step`: `false` *(recommended for the implementation PR — change to `true` once the `has_seattle_fresh_bucks` field is added)*
+- `show_in_has_benefits_step`: `true` — set so the duplicate-enrollment filter (Criterion #3) can take effect once the implementation PR adds the corresponding `Screen.has_seattle_fresh_bucks` field, `Screen._build_benefit_map()` entry, and frontend `category_benefits` tile (see "Has-benefits-step wiring" under *Implementation Notes for the Follow-Up PR* below). Fresh Bucks is the first city-specific program flipped on for this step — every other entry in `programs/migrations/0142_audit_show_in_has_benefits_step.py` is a federal or major statewide program — so the implementation PR should land all four pieces together to avoid a half-rendered state.
 
 ## Research Sources
 
@@ -290,6 +290,19 @@ This is the same pattern used by the existing IL housing programs (e.g. `program
 - Eliminates the FY2025-vs-FY2026 ambiguity called out in Criterion #1 above.
 
 The dev should set `program.year` on the `Program` row (the `import_program_config` flow already supports a `year` field on the config; if Fresh Bucks doesn't currently set one, add the desired HUD year there so `self.program.year.period` resolves) — or pass a fixed string like `"2025"` if a specific HUD vintage is required.
+
+### Has-benefits-step wiring (required by `show_in_has_benefits_step: true` in the import config)
+
+The discovery PR sets `show_in_has_benefits_step: true` so the program appears as a selectable tile in the screener's "I already receive these benefits" step (the same step that surfaces SNAP, TANF, SSI, etc.). For that to render and the duplicate-enrollment short-circuit (Criterion #3) to actually fire, the implementation PR must land all four pieces together — otherwise the backend will report the program as has-benefits-step-eligible while the frontend has no tile and the calculator can't read the user's selection:
+
+1. **Screen field** (`screener/models.py`): add `has_seattle_fresh_bucks = models.BooleanField(default=False, blank=True, null=True)` on `Screen`. Generate a migration (`python manage.py makemigrations screener`) and apply it.
+2. **Benefit map** (`screener/models.py`): in `Screen._build_benefit_map()`, add `"seattle_fresh_bucks": self.has_seattle_fresh_bucks` so `screen.has_benefit("seattle_fresh_bucks")` resolves consistently with the SSI / SNAP duplicate-enrollment pattern. Verify `screener/serializers.py` already exposes the new field (add it if not).
+3. **White label config** (`configuration/white_labels/wa.py`): add a `seattle_fresh_bucks` entry under the appropriate `category_benefits` category (likely the existing food category that already lists `wa_snap`) so the `wa` white label renders the tile.
+4. **Frontend** (separate frontend repo): mirror the new field in `Types/FormData.ts`, `Types/ApiFormData.ts`, `Assets/updateScreen.ts`, `Assets/updateFormData.tsx`, and `Components/Wrapper/Wrapper.tsx` per the canonical Step 5–7 + frontend section of the program-implementation guide.
+
+The calculator skeleton below already calls `self.screen.has_benefit("seattle_fresh_bucks")` at the top of `household_eligible`, so once steps 1–2 land the duplicate-enrollment filter is active end-to-end. Until then the call is a safe no-op (`has_benefit` returns `False` for unknown keys), so partial deployment of this PR is non-breaking.
+
+> **Note**: every other program in `programs/migrations/0142_audit_show_in_has_benefits_step.py` is a federal or major statewide program (SNAP, TANF, WIC, SSI, SSDI, LIHEAP/LEAP, CCAP, Section 8, OAP). Seattle Fresh Bucks is the first **city-specific** program to be flipped on for this step. Confirm with the team that this is the desired UX before merging the implementation PR — alternatively, the impl PR could leave step 4 (frontend tile) hidden behind a flag while the backend remains wired up.
 
 ### Suggested skeleton
 
