@@ -3,6 +3,7 @@
     "program_category": {"external_name": "wa_food", "name": "Food and Nutrition", "icon": "food"},
     "program": {
         "name_abbreviated": "wa_seattle_fresh_bucks",
+        "year": "2026",
         "legal_status_required": ["citizen", "non_citizen", "gc_5plus", "gc_5less", "refugee", "otherWithWorkPermission"],
         "name": "Seattle Fresh Bucks",
         "description_short": "Monthly $60 benefit for Seattle residents to buy fruits and vegetables at participating stores",
