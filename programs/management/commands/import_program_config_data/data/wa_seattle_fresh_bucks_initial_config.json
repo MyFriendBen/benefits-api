@@ -1,0 +1,81 @@
+{
+    "white_label": {"code": "wa"},
+    "program_category": {"external_name": "wa_food", "name": "Food and Nutrition", "icon": "food"},
+    "program": {
+        "name_abbreviated": "wa_seattle_fresh_bucks",
+        "year": "2026",
+        "legal_status_required": ["citizen", "gc_5plus", "gc_5less", "refugee", "otherWithWorkPermission"],
+        "name": "Seattle Fresh Bucks",
+        "description_short": "Monthly $60 benefit for Seattle residents to buy fruits and vegetables at participating stores",
+        "description": "Seattle Fresh Bucks is a city-funded healthy-food program that gives income-eligible Seattle households $60 each month to spend on fruits and vegetables. Benefits are loaded onto a Fresh Bucks card or the Healthy Benefits+ app and can be used at more than 45 participating Seattle farmers markets, independent grocers, and Seattle Safeway stores.\n\nFresh Bucks currently uses a waitlist with randomized selection. Eligible households submit an application and are entered into a lottery; selected households are notified by mail and email when funding becomes available. Households with the lowest income, those where a language other than English is primarily spoken, and those who have been on the waitlist longer receive additional entries to increase their chance of selection.\n\nThere is one benefit per household. If anyone in your household is already enrolled in Fresh Bucks, additional applications will not be accepted. To apply you will need your household size, monthly household income, current Seattle home address, and date of birth.",
+        "learn_more_link": "https://www.seattle.gov/environment/food-policy-and-programs/fresh-bucks",
+        "apply_button_link": "https://www.seattlefreshbucks.org/apply/",
+        "apply_button_description": "",
+        "estimated_application_time": "15 - 20 minutes",
+        "estimated_delivery_time": "varies (waitlist)",
+        "estimated_value": "",
+        "value_type": "benefit",
+        "value_format": null,
+        "website_description": "Monthly $60 benefit to buy fruits and vegetables at participating Seattle stores",
+        "active": false,
+        "low_confidence": false,
+        "show_on_current_benefits": false,
+        "show_in_has_benefits_step": false,
+        "has_calculator": true
+    },
+    "warning_messages": [
+        {
+            "external_name": "wa_seattle_fresh_bucks_waitlist",
+            "calculator": "_show",
+            "message": "Fresh Bucks currently uses a waitlist. Submitting an application places you on the waitlist; benefits are awarded through a randomized selection process when funding becomes available. Submitting multiple applications does not increase your chance of enrollment."
+        },
+        {
+            "external_name": "wa_seattle_fresh_bucks_one_per_household",
+            "calculator": "_show",
+            "message": "Only one Fresh Bucks benefit is allowed per household. If anyone in your household is already enrolled, additional applications will not be accepted."
+        },
+        {
+            "external_name": "wa_seattle_fresh_bucks_city_limits",
+            "calculator": "_show",
+            "message": "You must live within Seattle city limits to qualify. Some King County ZIP codes straddle the city boundary, so the program will verify your exact street address when you apply."
+        }
+    ],
+    "documents": [
+        {
+            "external_name": "wa_home",
+            "text": "Current home address within Seattle city limits",
+            "link_url": "https://www.seattle.gov/council/meet-the-council/find-your-district-and-councilmembers",
+            "link_text": "Check if your address is in Seattle"
+        },
+        {
+            "external_name": "wa_dob",
+            "text": "Date of birth",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "wa_household_size",
+            "text": "Number of people in your household",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "wa_household_income",
+            "text": "Monthly household income",
+            "link_url": "",
+            "link_text": ""
+        }
+    ],
+    "navigators": [
+        {
+            "external_name": "wa_fresh_bucks_program_office",
+            "name": "Seattle Office of Sustainability & Environment - Fresh Bucks",
+            "phone_number": "+12062565438",
+            "email": "freshbucks@seattle.gov",
+            "description": "Program staff at the Seattle Office of Sustainability & Environment can answer questions about Fresh Bucks eligibility, the waitlist application, and selection notifications. Available by phone Monday-Friday during business hours and by email anytime.",
+            "assistance_link": "https://www.seattlefreshbucks.org/apply/",
+            "languages": ["es", "vi", "zh", "so", "am"],
+            "counties": ["King"]
+        }
+    ]
+}

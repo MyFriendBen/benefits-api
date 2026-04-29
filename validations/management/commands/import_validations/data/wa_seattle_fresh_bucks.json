@@ -1,0 +1,115 @@
+[
+  {
+    "notes": "WA Seattle Fresh Bucks - Eligible standard (golden path): single Seattle adult well below the 1-person 80% AMI cap ($7,070/mo). Receives flat $60/mo benefit = $720/year (estimated_value is stored as an annual figure).",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 32,
+          "birth_year": 1994,
+          "birth_month": 5,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_seattle_fresh_bucks",
+      "eligible": true,
+      "value": 720
+    }
+  },
+  {
+    "notes": "WA Seattle Fresh Bucks - Ineligible primary exclusion (income above AMI): single Seattle adult earning $8,000/mo is above the 1-person 80% AMI cap of $7,070/mo. Fails the income test even though residency is satisfied.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 32,
+          "birth_year": 1994,
+          "birth_month": 5,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 8000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "employer": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_seattle_fresh_bucks",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "WA Seattle Fresh Bucks - Edge case (income exactly at 1-person AMI cap): single Seattle adult earning exactly $7,070/mo is the inclusive boundary of the income test. Pinned by the program's published 'equal to or less than' wording, so this household is eligible. Together with a hypothetical $7,071/mo case (Scenario 6 in spec.md, not exported here), this case isolates the comparison-operator decision (<= vs <).",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98109",
+      "county": "King",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 32,
+          "birth_year": 1994,
+          "birth_month": 5,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 7070.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "employer": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_seattle_fresh_bucks",
+      "eligible": true,
+      "value": 720
+    }
+  }
+]
