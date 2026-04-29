@@ -362,5 +362,3 @@ class WaSeattleFreshBucks(ProgramCalculator):
     def household_value(self) -> int:
         return self.monthly_benefit * 12
 ```
-
-The hard-coded `ami_monthly_by_size` table from earlier drafts of this spec has been removed intentionally — relying on `hud_client` is the canonical pattern.
