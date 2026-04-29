@@ -3,6 +3,7 @@
     "program_category": {"external_name": "wa_cash", "name": "Cash Assistance", "icon": "cash"},
     "program": {
         "name_abbreviated": "wa_ssi",
+        "year": "2026",
         "base_program": "ssi",
         "legal_status_required": ["citizen", "gc_5plus", "refugee"],
         "name": "Supplemental Security Income (SSI)",
