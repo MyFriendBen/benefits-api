@@ -15,7 +15,7 @@
           "relationship": "headOfHousehold",
           "age": 32,
           "birth_year": 1994,
-          "birth_month": 5,
+          "birth_month": 1,
           "has_income": true,
           "income_streams": [
             {
@@ -53,7 +53,7 @@
           "relationship": "headOfHousehold",
           "age": 32,
           "birth_year": 1994,
-          "birth_month": 5,
+          "birth_month": 1,
           "has_income": true,
           "income_streams": [
             {
@@ -90,7 +90,7 @@
           "relationship": "headOfHousehold",
           "age": 32,
           "birth_year": 1994,
-          "birth_month": 5,
+          "birth_month": 1,
           "has_income": true,
           "income_streams": [
             {

@@ -79,7 +79,7 @@ Seattle Fresh Bucks is a city-administered healthy-food assistance program funde
    - Impact: Low
 
 9. **No citizenship or immigration-status requirement is stated by the program**
-   - Note: Neither the seattle.gov program page nor the Fresh Bucks application FAQ lists a citizenship, SSN, or qualified-noncitizen requirement. The application asks only for household size, income, address, and DOB. We therefore set the program's `legal_status_required` to the broadest WA-supported list (`citizen`, `gc_5plus`, `gc_5less`, `refugee`, `otherWithWorkPermission`) so the post-results citizenship chip does not erroneously filter the program out for any user.
+   - Note: Neither the seattle.gov program page nor the Fresh Bucks application FAQ lists a citizenship, SSN, or qualified-noncitizen requirement. The application asks only for household size, income, address, and DOB. We therefore set the program's `legal_status_required` to all 6 base values (`citizen`, `non_citizen`, `gc_5plus`, `gc_5less`, `refugee`, `otherWithWorkPermission`) per the canonical reviewer guide's "no restriction → include all 6" rule, so the post-results citizenship chip does not erroneously filter the program out for any user.
    - Source: [seattlefreshbucks.org/apply/](https://www.seattlefreshbucks.org/apply/) — application requirements section.
 
 ## Implementation Coverage
@@ -249,7 +249,7 @@ Key fields:
 
 - `name_abbreviated`: `wa_seattle_fresh_bucks`
 - `program_category`: `wa_food` (Food and Nutrition) — same category used by `wa_snap`
-- `legal_status_required`: `["citizen", "gc_5plus", "gc_5less", "refugee", "otherWithWorkPermission"]` — broadest WA-supported set, because the program does not enforce any citizenship/immigration restriction
+- `legal_status_required`: `["citizen", "non_citizen", "gc_5plus", "gc_5less", "refugee", "otherWithWorkPermission"]` — all 6 base values, because the program does not enforce any citizenship/immigration restriction
 - `value_type`: `benefit`
 - `estimated_application_time`: `"15 - 20 minutes"` (per seattle.gov)
 - `estimated_delivery_time`: `"varies (waitlist)"` — reflects the lottery-based enrollment model
