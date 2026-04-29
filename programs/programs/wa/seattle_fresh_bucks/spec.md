@@ -19,7 +19,7 @@ Seattle Fresh Bucks is a city-administered healthy-food assistance program funde
 
 1. **Household income at or below 80% of King County Area Median Income (AMI), banded by household size**
    - Screener fields: `household_size`, income via `calc_gross_income`
-   - Note: Fresh Bucks publishes a per-household-size income table (current 2026 figures from the official application page; verify annually):
+   - Note: Fresh Bucks publishes a per-household-size income table on the official application page. The figures below are **HUD FY2025 80% AMI limits for the Seattle-Bellevue HMFA** — they match the Seattle Housing Authority's "April 2025" 80% AMI table byte-for-byte. As of this research date, the Fresh Bucks application page is still republishing the FY2025 figures; HUD's FY2026 income limits typically release in mid-April and the page will need to be re-checked once that update propagates. **The implementation calculator should not hard-code this table** — see "Implementation Notes for the Follow-Up PR" below for the `hud_client.get_screen_il_ami(...)` recommendation.
 
      | Household size | Annual income | Monthly income |
      | --- | --- | --- |
@@ -266,13 +266,39 @@ Key fields:
 
 ## Implementation Notes for the Follow-Up PR
 
-This program is **not** modeled by PolicyEngine and has no federal equivalent. The implementation should be a custom `ProgramCalculator` subclass in `programs/programs/wa/seattle_fresh_bucks/calculator.py`, registered in `wa_calculators` (not `wa_pe_calculators`) in `programs/programs/wa/__init__.py`. Suggested skeleton:
+This program is **not** modeled by PolicyEngine and has no federal equivalent. The implementation should be a custom `ProgramCalculator` subclass in `programs/programs/wa/seattle_fresh_bucks/calculator.py`, registered in `wa_calculators` (not `wa_pe_calculators`) in `programs/programs/wa/__init__.py`.
+
+### AMI source — use `hud_client`, do not hard-code the table
+
+The 80% AMI table in Criterion #1 above is included for **review and test-scenario reference only**. The implementation calculator must **not** hard-code those numbers. Instead, use the project's existing HUD income-limits client:
+
+```python
+from integrations.clients.hud_income_limits import hud_client, HudIncomeClientError
+```
+
+and read the Section 8 80% AMI for the screen's county directly:
+
+```python
+income_limit_yearly = hud_client.get_screen_il_ami(self.screen, "80%", self.program.year.period)
+```
+
+This is the same pattern used by the existing IL housing programs (e.g. `programs/programs/urgent_needs/il/il_rent_asst.py`) and by the MA `homebridge` / `cpp` / `middle_income_rental` calculators. Benefits over a hard-coded table:
+
+- Pulls the **HUD-published 80% AMI for King County (Seattle-Bellevue HMFA)** directly from HUD — no manual annual updates.
+- Automatically picks up HUD's FY2026 limits the moment HUD publishes them, then FY2027, etc.
+- Keeps the screener's AMI math consistent with every other AMI-based program in the codebase.
+- Eliminates the FY2025-vs-FY2026 ambiguity called out in Criterion #1 above.
+
+The dev should set `program.year` on the `Program` row (the `import_program_config` flow already supports a `year` field on the config; if Fresh Bucks doesn't currently set one, add the desired HUD year there so `self.program.year.period` resolves) — or pass a fixed string like `"2025"` if a specific HUD vintage is required.
+
+### Suggested skeleton
 
 ```python
 # programs/programs/wa/seattle_fresh_bucks/calculator.py
 from typing import ClassVar
+
+from integrations.clients.hud_income_limits import hud_client, HudIncomeClientError
 from programs.programs.calc import Eligibility, ProgramCalculator
-from screener.models import Screen
 
 
 class WaSeattleFreshBucks(ProgramCalculator):
@@ -282,6 +308,8 @@ class WaSeattleFreshBucks(ProgramCalculator):
     """
 
     monthly_benefit = 60
+    ami_percent = "80%"
+
     seattle_zips: ClassVar[set[str]] = {
         "98101", "98102", "98103", "98104", "98105", "98106", "98107", "98108",
         "98109", "98112", "98115", "98116", "98117", "98118", "98119", "98121",
@@ -289,13 +317,6 @@ class WaSeattleFreshBucks(ProgramCalculator):
         "98154", "98164", "98174", "98177", "98178", "98195", "98199",
         # plus a handful of Seattle-only secondary ZIPs as needed
     }
-
-    # 80% AMI by household size (Seattle, current per spec). Update annually.
-    ami_monthly_by_size = {
-        1: 7070, 2: 8079, 3: 9087, 4: 10095, 5: 10904,
-        6: 11712, 7: 12520, 8: 13329, 9: 14137,
-    }
-    ami_monthly_10_plus = 14945
 
     dependencies: ClassVar[list[str]] = [
         "household_size",
@@ -309,11 +330,24 @@ class WaSeattleFreshBucks(ProgramCalculator):
             e.eligible = False
             return
 
-        size = self.screen.household_size or 1
-        ami_cap = self.ami_monthly_by_size.get(size, self.ami_monthly_10_plus)
-        gross_monthly = self.screen.calc_gross_income("monthly", ["all"])
-        e.condition(gross_monthly <= ami_cap)
+        if self.screen.has_benefit("seattle_fresh_bucks"):
+            e.eligible = False
+            return
+
+        try:
+            income_limit_yearly = hud_client.get_screen_il_ami(
+                self.screen, self.ami_percent, self.program.year.period
+            )
+        except HudIncomeClientError:
+            # Conservative: if HUD lookup fails we cannot affirm eligibility.
+            e.eligible = False
+            return
+
+        gross_yearly = self.screen.calc_gross_income("yearly", ["all"])
+        e.condition(gross_yearly <= income_limit_yearly)
 
     def household_value(self) -> int:
         return self.monthly_benefit * 12
 ```
+
+The hard-coded `ami_monthly_by_size` table from earlier drafts of this spec has been removed intentionally — relying on `hud_client` is the canonical pattern.
