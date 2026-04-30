@@ -503,6 +503,7 @@ class Screen(models.Model):
             "ccs": self.has_ccs,
             "tx_ccs": self.has_ccs,
             "tx_ssdi": self.has_ssdi,
+            "wa_ssdi": self.has_ssdi,
             "ma_ssp": self.has_ma_ssp,
             "cesn_snap": self.has_snap,
             "cesn_tanf": self.has_tanf,
