@@ -1,0 +1,93 @@
+{
+    "white_label": {"code": "wa"},
+    "program_category": {"external_name": "wa_cash", "name": "Cash Assistance", "icon": "cash"},
+    "program": {
+        "name_abbreviated": "wa_ssi",
+        "year": "2026",
+        "base_program": "ssi",
+        "legal_status_required": ["citizen", "gc_5plus", "refugee"],
+        "name": "Supplemental Security Income (SSI)",
+        "description_short": "Federal cash assistance for individuals who are disabled, blind, or 65 years of age or older",
+        "description": "Supplemental Security Income (SSI) is a federal needs-based program that provides monthly cash to help meet your food, shelter, and personal care needs.\n\nIf approved, the Social Security Administration deposits your benefit directly to a bank account or onto a Direct Express debit card each month. Washington does not pay a state supplement for most people, so your benefit will be the federal amount.\n\nReceiving SSI may affect the value of other cash assistance benefits, including TANF. An additional resource limit may apply and is verified at the application stage. You also generally cannot get SSI while you are a resident of a public institution (jail, prison, hospital, nursing facility, etc.).\n\nIt may take 6 to 12 months to receive an initial decision. Many claims are denied at first and approved on appeal. Click 'Apply Now' to apply online. Otherwise, you can apply by phone at 1-800-772-1213, or in person at your local Social Security Office.",
+        "learn_more_link": "https://www.ssa.gov/ssi",
+        "apply_button_link": "https://www.ssa.gov/apply/ssi",
+        "apply_button_description": "",
+        "estimated_application_time": "90 minutes",
+        "estimated_delivery_time": "6 to 8 months",
+        "estimated_value": "",
+        "value_type": "benefit",
+        "value_format": null,
+        "website_description": "Federal cash assistance for individuals who are disabled, blind, or 65 years of age or older",
+        "active": true,
+        "low_confidence": false,
+        "show_on_current_benefits": true,
+        "show_in_has_benefits_step": true,
+        "has_calculator": true
+    },
+    "warning_messages": [
+        {
+            "external_name": "wa_ssi_ssdi_interaction",
+            "calculator": "_show",
+            "message": "If you get SSDI, the amount of your SSI payment may be lower. In some cases, you may not get SSI if you also get SSDI."
+        },
+        {
+            "external_name": "wa_ssi_approval_time",
+            "calculator": "_show",
+            "message": "It may take 6 to 8 months to get an initial decision. Your claim may be denied at first. Claims are often approved on appeal, but approval can sometimes take up to 3 years."
+        }
+    ],
+    "documents": [
+        {
+            "external_name": "wa_home",
+            "text": "Proof of home address (ex: lease, mortgage statement, utility bill)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "wa_unearned_income",
+            "text": "Proof of unearned income (ex: child support, social security, unemployment)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "wa_earned_income",
+            "text": "Proof of earned income (ex: pay stubs, tax returns, W-2, 1099) & employer information",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "wa_id_proof",
+            "text": "Proof of identity (ex: driver's license, official state ID card)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "wa_us_status",
+            "text": "Proof of status in U.S. (ex: birth certificate, green card, work permit)",
+            "link_url": "",
+            "link_text": ""
+        }
+    ],
+    "navigators": [
+        {
+            "external_name": "wa_njp_clear",
+            "name": "Northwest Justice Project - CLEAR Hotline",
+            "phone_number": "+18882011014",
+            "email": "webmaster@nwjustice.org",
+            "description": "Statewide legal aid hotline for low-income Washington residents. CLEAR provides legal advice and referrals on SSI applications, denials, and appeals. Outside King County: 1-888-201-1014 (weekdays 9:15am-12:15pm). King County residents: dial 2-1-1. Adults age 60+: 1-888-387-7111 (CLEAR*Sr).",
+            "assistance_link": "https://nwjustice.org/clear-hotline",
+            "languages": ["es"],
+            "counties": []
+        },
+        {
+            "external_name": "wa_benefits_law_center",
+            "name": "Benefits Law Center",
+            "phone_number": "+12066867252",
+            "email": "info@benefitslawcenter.org",
+            "description": "Free legal advocacy for people with disabilities who are homeless or low-income and have had their Supplemental Security Income (SSI) or Social Security Disability Insurance (SSDI) reduced, denied, or terminated. Primary intake serves King County and the greater Puget Sound area; targeted projects extend assistance to Western Washington through partner agencies. Office: 1404 E Yesler Way, Suite 203, Seattle, WA 98122.",
+            "assistance_link": "https://benefitslawcenter.org/",
+            "languages": [],
+            "counties": ["King"]
+        }
+    ]
+}

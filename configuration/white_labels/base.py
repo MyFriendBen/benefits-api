@@ -146,21 +146,6 @@ class ConfigurationData:
         "relatedOther": {"_label": "relationshipOptions.relatedOther", "_default_message": "Related in some other way"},
     }
 
-    # Deprecated: referral_options in config files is no longer the source of truth.
-    # Referral options are now managed via Django admin → Programs → Referrers.
-    # This field will be removed as part of MFB-864.
-    referral_options = {
-        "searchEngine": {"_label": "referralOptions.searchEngine", "_default_message": "Google or other search engine"},
-        "socialMedia": {"_label": "referralOptions.socialMedia", "_default_message": "Social Media"},
-        "friend": {"_label": "referralOptions.friend", "_default_message": "Friend / Family / Word of Mouth"},
-        "merit": {"_label": "referralOptions.merit", "_default_message": "Merit America"},
-        "other": {"_label": "referralOptions.other", "_default_message": "Other"},
-        "testOrProspect": {
-            "_label": "referralOptions.testOrProspect",
-            "_default_message": "Test / Prospective Partner",
-        },
-    }
-
     # Languages available for translation (add/remove as needed for your state)
     language_options = {
         "en-us": "English",

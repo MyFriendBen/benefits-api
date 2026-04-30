@@ -120,6 +120,7 @@ class ProgramAdmin(SecureAdmin):
         "name_abbreviated",
         "external_name",
         "year",
+        "value_type",
         "value_format",
         "category",
         "active",
