@@ -312,6 +312,7 @@ def eligibility_results(screen: Screen, batch=False):
     all_programs = sorted(all_programs, key=sort_first)
 
     program_snapshots = []
+    eligible_program_data: list[tuple] = []  # (program, data_index) for post-loop navigator pass
 
     program_eligibility = {}
 
@@ -344,39 +345,9 @@ def eligibility_results(screen: Screen, batch=False):
             new = False
 
         warnings = []
-        navigators = []
 
-        # don't calculate navigator and warnings for ineligible programs
+        # don't calculate warnings for ineligible programs
         if eligibility.eligible:
-            # Get navigators through ordered relationship (automatically sorted by order field)
-            # program_navigators uses ProgramNavigator through table with Meta.ordering
-            program_navigators = program.program_navigators.all()
-            all_navigators = [pn.navigator for pn in program_navigators]
-
-            county_navigators = []
-            for nav in all_navigators:
-                counties = nav.counties.all()
-                if len(counties) == 0 or (
-                    screen.county is not None and any(screen.county in county.name for county in counties)
-                ):
-                    county_navigators.append(nav)
-
-            eligibility_filtered = []
-            for nav in county_navigators:
-                required = nav.eligibility_programs.all()
-                if not required or all(
-                    getattr(program_eligibility.get(p.name_abbreviated), "eligible", False)
-                    for p in required
-                ):
-                    eligibility_filtered.append(nav)
-
-            if referrer is None:
-                navigators = eligibility_filtered
-            else:
-                primary_navigators = referrer.primary_navigators.all()
-                referrer_navigators = [nav for nav in primary_navigators if nav in eligibility_filtered]
-                navigators = referrer_navigators if referrer_navigators else eligibility_filtered
-
             for warning in program.warning_messages.all():
                 if warning.calculator not in warning_calculators:
                     raise Exception(f"{warning.calculator} is not a valid calculator name")
@@ -441,7 +412,7 @@ def eligibility_results(screen: Screen, batch=False):
                     "members": member_data,
                     "failed_tests": eligibility.fail_messages,
                     "passed_tests": eligibility.pass_messages,
-                    "navigators": [serialized_navigator(navigator) for navigator in navigators],
+                    "navigators": [],  # populated in second pass once program_eligibility is complete
                     "already_has": screen.has_benefit(program.name_abbreviated),
                     "new": new,
                     "low_confidence": program.low_confidence,
@@ -452,6 +423,43 @@ def eligibility_results(screen: Screen, batch=False):
                     "value_format": program.value_format,
                 }
             )
+
+            if eligibility.eligible:
+                eligible_program_data.append((program, len(data) - 1))
+
+    # Second pass: compute navigators now that program_eligibility is fully populated.
+    # Running this inside the loop would cause a timing bug — a navigator whose
+    # eligibility_programs list contains a program processed later in the loop would
+    # incorrectly fail the all() check because that program hadn't been evaluated yet.
+    for program, idx in eligible_program_data:
+        program_navigators = program.program_navigators.all()
+        all_navigators = [pn.navigator for pn in program_navigators]
+
+        county_navigators = []
+        for nav in all_navigators:
+            counties = nav.counties.all()
+            if len(counties) == 0 or (
+                screen.county is not None and any(screen.county in county.name for county in counties)
+            ):
+                county_navigators.append(nav)
+
+        eligibility_filtered = []
+        for nav in county_navigators:
+            required = nav.eligibility_programs.all()
+            if not required or all(
+                getattr(program_eligibility.get(p.name_abbreviated), "eligible", False)
+                for p in required
+            ):
+                eligibility_filtered.append(nav)
+
+        if referrer is None:
+            navigators = eligibility_filtered
+        else:
+            primary_navigators = referrer.primary_navigators.all()
+            referrer_navigators = [nav for nav in primary_navigators if nav in eligibility_filtered]
+            navigators = referrer_navigators if referrer_navigators else eligibility_filtered
+
+        data[idx]["navigators"] = [serialized_navigator(navigator) for navigator in navigators]
 
     category_map = {}
     program_ids = [p["program_id"] for p in data]
