@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "tx" },
+  "need": {
+    "external_name": "tx_serve_southern_dallas",
+    "category_type": {
+      "external_name": "diapers_and_baby_supplies",
+      "name": "Diapers and baby supplies",
+      "icon": "Baby_supplies"
+    },
+    "type_short": ["baby supplies"],
+    "translations": {
+      "name": "Serve Southern Dallas – Diaper Day / Emergency Diaper Assistance",
+      "description": "Coordinates monthly diaper distributions and emergency diaper support for families in South Dallas.",
+      "link": "https://servesouthdallas.org/service_type/diapers-and-formula/",
+      "warning": "",
+      "website_description": "Local, searchable resource for baby supplies and diapers.",
+      "notification_message": ""
+    },
+    "functions": ["tx_serve_southern_dallas"],
+    "counties": ["Dallas", "Ellis", "Navarro"],
+    "required_expense_types": [],
+    "active": false,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

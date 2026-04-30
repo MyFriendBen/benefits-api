@@ -461,7 +461,6 @@ class ProgramManager(models.Manager):
         "learn_more_link",
         "apply_button_link",
         "apply_button_description",
-        "value_type",
         "estimated_delivery_time",
         "estimated_application_time",
         "estimated_value",
@@ -469,7 +468,7 @@ class ProgramManager(models.Manager):
     )
     no_auto_fields = ("apply_button_link", "learn_more_link")
 
-    def new_program(self, white_label: str, name_abbreviated: str):
+    def new_program(self, white_label: str, name_abbreviated: str, external_name: Optional[str] = None):
         translations = {}
         for field in self.translated_fields:
             default_message = "" if field == "apply_button_description" else BLANK_TRANSLATION_PLACEHOLDER
@@ -479,14 +478,28 @@ class ProgramManager(models.Manager):
                 no_auto=(field in self.no_auto_fields),
             )
 
-        # try to set the external_name to the name_abbreviated
-        external_name_exists = self.filter(external_name=name_abbreviated).count() > 0
+        # external_name priority:
+        # 1. external_name (must be unique if provided)
+        if external_name:
+            if self.filter(external_name=external_name).exists():
+                raise ValueError(f"external_name='{external_name}' already exists.")
+            candidate_external_name = external_name
+
+        # 2. name_abbreviated (if unique)
+        elif not self.filter(external_name=name_abbreviated).exists():
+            candidate_external_name = name_abbreviated
+
+        # 3. {white_label}_{name_abbreviated} as final fallback
+        else:
+            candidate_external_name = f"{white_label}_{name_abbreviated}"
+            if self.filter(external_name=candidate_external_name).exists():
+                raise ValueError(f"Cannot generate unique external_name. Conflict on '{candidate_external_name}'")
 
         # set white label
         white_label = WhiteLabel.objects.get(code=white_label)
         program = self.create(
             name_abbreviated=name_abbreviated,
-            external_name=name_abbreviated if not external_name_exists else None,
+            external_name=candidate_external_name,
             year=None,
             active=False,
             low_confidence=False,
@@ -521,6 +534,7 @@ class ProgramDataController(ModelDataController["Program"]):
             "required_programs": list[str],
             "excludes_programs": list[str],
             "value_format": Optional[str],
+            "value_type": str,
             "white_label": str,
         },
     )
@@ -547,6 +561,7 @@ class ProgramDataController(ModelDataController["Program"]):
             "required_programs": [p.external_name for p in program.required_programs.all()],
             "excludes_programs": [p.external_name for p in program.excludes_programs.all()],
             "value_format": program.value_format,
+            "value_type": program.value_type,
             "white_label": program.white_label.code,
         }
 
@@ -559,6 +574,7 @@ class ProgramDataController(ModelDataController["Program"]):
         program.low_confidence = data["low_confidence"]
         program.show_on_current_benefits = data.get("show_on_current_benefits", True)
         program.value_format = data["value_format"]
+        program.value_type = data.get("value_type", Program.VALUE_TYPE_BENEFIT)
 
         # get or create fpl
         fpl = data["fpl"]
@@ -642,7 +658,7 @@ class Program(models.Model):
         on_delete=models.CASCADE,
     )
     name_abbreviated = models.CharField(max_length=120)
-    external_name = models.CharField(max_length=120, blank=True, null=True, unique=True)
+    external_name = models.CharField(max_length=120, unique=True)
     legal_status_required = models.ManyToManyField(
         LegalStatus,
         related_name="programs",
@@ -743,13 +759,13 @@ class Program(models.Model):
         null=False,
         on_delete=models.PROTECT,
     )
-    value_type = models.ForeignKey(
-        Translation,
-        related_name="program_value_type",
-        blank=False,
-        null=False,
-        on_delete=models.PROTECT,
-    )
+    VALUE_TYPE_BENEFIT = "benefit"
+    VALUE_TYPE_TAX_CREDIT = "tax_credit"
+    VALUE_TYPE_CHOICES = [
+        (VALUE_TYPE_BENEFIT, "Benefit"),
+        (VALUE_TYPE_TAX_CREDIT, "Tax Credit"),
+    ]
+    value_type = models.CharField(max_length=32, choices=VALUE_TYPE_CHOICES, default=VALUE_TYPE_BENEFIT)
     estimated_delivery_time = models.ForeignKey(
         Translation,
         related_name="program_estimated_delivery_time",
@@ -1712,15 +1728,24 @@ class Referrer(models.Model):
         blank=False,
         on_delete=models.CASCADE,
     )
-    referrer_code = models.CharField(max_length=64, unique=True)
+    referrer_code = models.CharField(max_length=64)
+    name = models.CharField(max_length=255)
+    show_in_dropdown = models.BooleanField(default=True)
+    is_partner = models.BooleanField(default=False)
     webhook_url = models.CharField(max_length=320, blank=True, null=True)
     webhook_functions = models.ManyToManyField(WebHookFunction, related_name="web_hook", blank=True)
     primary_navigators = models.ManyToManyField(Navigator, related_name="primary_navigators", blank=True)
     remove_programs = models.ManyToManyField(Program, related_name="removed_programs", blank=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["white_label", "referrer_code"], name="referrer_unique_wl_code"),
+            models.CheckConstraint(check=~models.Q(name=""), name="referrer_name_not_blank"),
+        ]
+
     def __str__(self):
         white_label_name = f"[{self.white_label.name}] " if self.white_label and self.white_label.name else ""
-        return f"{white_label_name}{self.referrer_code}"
+        return f"{white_label_name}{self.name}"
 
 
 class TranslationOverrideManager(models.Manager):

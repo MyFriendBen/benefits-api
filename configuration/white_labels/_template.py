@@ -106,22 +106,6 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # }
 
     # ==========================================================================================
-    # REFERRAL OPTIONS - Always customized
-    # ==========================================================================================
-    # "How did you hear about us?" options
-    # Add community partners, organizations, websites relevant to your state
-    # ==========================================================================================
-
-    # TODO: Add state-specific referral options
-    referral_options = {
-        "[REPLACE_ME]": {"_label": "", "_default_message": ""},
-        "other": {"_label": "referralOptions.other", "_default_message": "Other"},
-        "testOrProspect": {
-            "_label": "referralOptions.testOrProspect",
-            "_default_message": "Test / Prospective Partner",
-        },
-    }
-
     # ==========================================================================================
     # LANGUAGE OPTIONS - Usually inherited as is from ConfigurationData
     # ==========================================================================================

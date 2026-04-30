@@ -17,4 +17,9 @@ urlpatterns = [
         views.HasBenefitsProgramsView.as_view(),
         name="has-benefits-programs",
     ),
+    path(
+        "screener-options/<str:white_label>/referral-options/",
+        views.ReferralSourcesView.as_view(),
+        name="referral-options",
+    ),
 ]

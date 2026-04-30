@@ -253,6 +253,24 @@ class TestScreen(TestCase):
 
         self.assertFalse(self.screen.has_benefit("tx_snap"))
 
+    def test_has_benefit_returns_true_when_user_has_wa_snap(self):
+        """
+        Test that has_benefit('wa_snap') returns True when user has SNAP.
+        """
+        self.screen.has_snap = True
+        self.screen.save()
+
+        self.assertTrue(self.screen.has_benefit("wa_snap"))
+
+    def test_has_benefit_returns_false_when_user_does_not_have_wa_snap(self):
+        """
+        Test that has_benefit('wa_snap') returns False when user does not have SNAP.
+        """
+        self.screen.has_snap = False
+        self.screen.save()
+
+        self.assertFalse(self.screen.has_benefit("wa_snap"))
+
     def test_has_benefit_returns_true_for_ma_head_start_when_user_has_head_start(self):
         """
         Test that has_benefit('ma_head_start') returns True when user has Head Start.

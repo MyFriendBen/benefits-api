@@ -1,0 +1,79 @@
+{
+  "white_label": {
+    "code": "wa"
+  },
+  "program_category": {
+    "external_name": "wa_food",
+    "name": "Food and Nutrition",
+    "icon": "food"
+  },
+  "program": {
+    "name_abbreviated": "wa_snap",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission"
+    ],
+    "name": "Basic Food - Supplemental Nutrition Assistance Program (SNAP)",
+    "description": "Basic Food (also called SNAP or food stamps) helps you buy groceries each month. You get a card that works like a debit card at most grocery stores. The amount you get depends on your household size and income.\n\nMost people with low income can apply. Washington has higher income limits than many states. For most people, you do not need to meet an asset or savings test. If you get TANF (cash help) or SSI (disability benefits), you may qualify right away. College students may need to work at least 20 hours a week to qualify.",
+    "description_short": "Monthly help buying groceries for low-income households",
+    "learn_more_link": "https://www.dshs.wa.gov/esa/community-services-offices/basic-food",
+    "apply_button_link": "https://www.washingtonconnection.org/home/",
+    "apply_button_description": "",
+    "estimated_application_time": "45 - 90 minutes",
+    "estimated_delivery_time": "30 days",
+    "estimated_value": "",
+    "website_description": "Monthly assistance to buy food"
+  },
+  "documents": [
+    {
+      "external_name": "wa_id_proof",
+      "text": "Proof of identity (ex: driver's license, state ID, passport)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_ssn",
+      "text": "Social Security Number for each household member applying",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_home",
+      "text": "Proof of home address (ex: lease, utility bill, mail with your address)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_earned_income",
+      "text": "Proof of income (ex: pay stubs, employer letter, tax return)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_expenses",
+      "text": "Proof of expenses (ex: rent or mortgage statement, childcare bills, utility bills)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_us_status",
+      "text": "Proof of citizenship or immigration status (ex: birth certificate, green card, immigration documents)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "wa_help_me_grow",
+      "name": "Help Me Grow Washington",
+      "phone": "",
+      "email": "",
+      "assistance_link": "https://helpmegrowwa.org/basic-food-snap",
+      "description": "Help Me Grow WA connects families with children to food assistance and other benefits. They offer a free benefit finder tool to check what programs you may qualify for."
+    }
+  ]
+}

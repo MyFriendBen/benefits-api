@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "tx" },
+  "need": {
+    "external_name": "tx_arete_health_shield",
+    "category_type": {
+      "external_name": "tx_behavioral_health",
+      "name": "Behavioral Health",
+      "icon": "behavioral_health"
+    },
+    "type_short": ["mental health"],
+    "translations": {
+      "name": "Arete Health Shield",
+      "description": "Provides affordable health and wellness programs including virtual primary care, telemedicine, behavioral health services, and prescription access through their Creatives Care Dallas initiative.",
+      "link": "https://aretehealth.com/shield",
+      "warning": "",
+      "website_description": "Affordable health membership program for Dallas creatives.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": ["Dallas"],
+    "required_expense_types": [],
+    "active": false,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

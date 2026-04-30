@@ -48,8 +48,6 @@ class CesnConfigurationData(ConfigurationData):
 
     sign_up_options = {}
 
-    referral_options = {}
-
     language_options = {
         "en-us": "English",
         "es": "Español",

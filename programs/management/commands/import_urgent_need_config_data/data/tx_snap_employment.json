@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "tx" },
+  "need": {
+    "external_name": "tx_snap_employment",
+    "category_type": {
+      "external_name": "tx_job_resources",
+      "name": "Job resources",
+      "icon": "job_resources"
+    },
+    "type_short": ["job resources"],
+    "translations": {
+      "name": "SNAP Employment & Training (SNAP E&T) – TWC",
+      "description": "Employment, training, and support services specifically for people receiving SNAP to help them get higher-paying work.",
+      "link": "https://www.twc.texas.gov/programs/snap",
+      "warning": "",
+      "website_description": "TWC overview of SNAP Employment & Training services and how SNAP recipients can access workforce supports.",
+      "notification_message": ""
+    },
+    "functions": ["tx_snap_employment"],
+    "counties": [],
+    "required_expense_types": [],
+    "active": false,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

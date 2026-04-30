@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "tx" },
+  "need": {
+    "external_name": "tx_claim_it_texas",
+    "category_type": {
+      "external_name": "tx_managing_housing_cost",
+      "name": "Managing Housing Cost",
+      "icon": "housing"
+    },
+    "type_short": ["housing"],
+    "translations": {
+      "name": "Claimittexas.gov",
+      "description": "Free state tool to search for and claim unclaimed property held by Texas, such as forgotten bank accounts, insurance payouts, utility deposits, and other funds reported to the Texas Comptroller.",
+      "link": "https://claimittexas.gov",
+      "warning": "",
+      "website_description": "Official Texas Comptroller unclaimed property search and claims portal for Texas residents.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": false,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

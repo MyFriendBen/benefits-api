@@ -147,43 +147,6 @@ class CoConfigurationData(ConfigurationData):
         },
     }
 
-    referral_options = {
-        "211co": "2-1-1 Colorado",
-        "cch": "Colorado Coalition for the Homeless",
-        "cwe": "Center for Work Education and Employment",
-        "frca": "Family Resource Center Association",
-        "achs": "Adams County Human Services",
-        "arapahoectypublichealth": "Arapahoe County Public Health",
-        "dhs": "Denver Human Services",
-        "eaglecounty": "Eagle County",
-        "jeffcoHS": "Jeffco Human Services",
-        "jeffcoPS": "Jeffco Public Schools",
-        "larimercounty": "Larimer County",
-        "tellercounty": "Teller County",
-        "pueblo": "Pueblo County",
-        "pitkin": "Pitkin County",
-        "broomfield": "City and County of Broomfield",
-        "theactioncenter": "The Action Center",
-        "gac": "Get Ahead Colorado",
-        "bia": "Benefits in Action",
-        "yab": "Youth Advisory Board",
-        "fircsummitresourcecenter": {
-            "_label": "referralOptions.fircsummitresourcecenter",
-            "_default_message": "FIRC Summit Resource Center",
-        },
-        "ccig": "Colorado Design Insight Group",
-        "coAccess": "Colorado Access",
-        "searchEngine": {"_label": "referralOptions.searchEngine", "_default_message": "Google or other search engine"},
-        "socialMedia": {"_label": "referralOptions.socialMedia", "_default_message": "Social Media"},
-        "friend": {"_label": "referralOptions.friend", "_default_message": "Friend / Family / Word of Mouth"},
-        "merit": {"_label": "referralOptions.merit", "_default_message": "Merit America"},
-        "other": {"_label": "referralOptions.other", "_default_message": "Other"},
-        "testOrProspect": {
-            "_label": "referralOptions.testOrProspect",
-            "_default_message": "Test / Prospective Partner",
-        },
-    }
-
     language_options = {
         "en-us": "English",
         "es": "Español",

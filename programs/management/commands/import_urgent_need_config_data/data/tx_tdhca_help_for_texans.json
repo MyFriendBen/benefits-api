@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "tx" },
+  "need": {
+    "external_name": "tx_tdhca_help_for_texans",
+    "category_type": {
+      "external_name": "tx_managing_housing_cost",
+      "name": "Managing Housing Cost",
+      "icon": "housing"
+    },
+    "type_short": ["housing"],
+    "translations": {
+      "name": "TDHCA \"Help for Texans\" Housing & Eviction Resources",
+      "description": "State hub listing rental assistance, eviction help, public housing contacts, and emergency/homeless services.",
+      "link": "https://www.tdhca.texas.gov/help-for-texans",
+      "warning": "",
+      "website_description": "TDHCA \"Help for Texans\" portal that routes households to local housing/rental/utility assistance providers.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": ["rent"],
+    "active": false,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

@@ -3,6 +3,7 @@ from typing import Optional
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from integrations.services.communications import MessageUser
+from programs.models import Referrer
 from programs.programs.helpers import STATE_MEDICAID_OPTIONS
 from programs.programs.policyengine.calculators.registry import all_calculators
 from programs.programs.urgent_needs.base import UrgentNeedFunction
@@ -213,7 +214,8 @@ def translations_prefetch_name(prefix: str, fields):
 def eligibility_results(screen: Screen, batch=False):
     try:
         referrer = Referrer.objects.prefetch_related("remove_programs", "primary_navigators").get(
-            referrer_code=screen.referrer_code
+            white_label=screen.white_label,
+            referrer_code=screen.referrer_code,
         )
     except ObjectDoesNotExist:
         referrer = None
@@ -388,7 +390,7 @@ def eligibility_results(screen: Screen, batch=False):
                     eligibility_snapshot=snapshot,
                     name=program.name.text,
                     name_abbreviated=program.name_abbreviated,
-                    value_type=program.value_type.text,
+                    value_type=program.value_type,
                     estimated_value=eligibility.value,
                     estimated_delivery_time=program.estimated_delivery_time.text,
                     estimated_application_time=program.estimated_application_time.text,
@@ -424,7 +426,7 @@ def eligibility_results(screen: Screen, batch=False):
                     "description_short": program_translations.get_translation("description_short"),
                     "short_name": program.name_abbreviated,
                     "description": program_translations.get_translation("description"),
-                    "value_type": program_translations.get_translation("value_type"),
+                    "value_type": program.value_type,
                     "learn_more_link": program_translations.get_translation("learn_more_link"),
                     "apply_button_link": program_translations.get_translation("apply_button_link"),
                     "apply_button_description": program_translations.get_translation("apply_button_description"),
@@ -682,3 +684,35 @@ class HasBenefitsProgramsView(views.APIView):
 
         serializer = HasBenefitsProgramSerializer(programs, many=True)
         return Response(serializer.data)
+
+
+class ReferralSourcesView(views.APIView):
+    """Returns referral source options for the screener dropdown, grouped by type.
+
+    Response shape:
+        {
+            "generic": {"friend": "Friend / Family", ...},
+            "partners": {"bia": "Benefits in Action", ...}
+        }
+
+    Both groups are sorted alphabetically by display name.
+    """
+
+    permission_classes = [permissions.DjangoModelPermissions]
+    queryset = Referrer.objects.none()  # Required for DjangoModelPermissions
+
+    def get(self, request, white_label):
+        referrers = Referrer.objects.filter(
+            white_label__code=white_label,
+            show_in_dropdown=True,
+        ).order_by("name")
+
+        generic = {}
+        partners = {}
+        for ref in referrers:
+            if ref.is_partner:
+                partners[ref.referrer_code] = ref.name
+            else:
+                generic[ref.referrer_code] = ref.name
+
+        return Response({"generic": generic, "partners": partners})

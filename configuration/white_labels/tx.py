@@ -33,28 +33,6 @@ class TxConfigurationData(ConfigurationData):
         ]
     }
 
-    referral_options = {
-        "searchEngine": {
-            "_label": "referralOptions.searchEngine",
-            "_default_message": "Google or other search engine",
-        },
-        "socialMedia": {
-            "_label": "referralOptions.socialMedia",
-            "_default_message": "Social Media",
-        },
-        "friend": {
-            "_label": "referralOptions.friend",
-            "_default_message": "Friend / Family / Word of Mouth",
-        },
-        "merit": {"_label": "referralOptions.merit", "_default_message": "Merit America"},
-        "other": {"_label": "referralOptions.other", "_default_message": "Other"},
-        "testOrProspect": {
-            "_label": "referralOptions.testOrProspect",
-            "_default_message": "Test / Prospective Partner",
-        },
-        "ctl": "Center for Transforming Lives",
-    }
-
     acute_condition_options = {
         "food": {
             "icon": {"_icon": "Food", "_classname": "option-card-icon"},

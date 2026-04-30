@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "tx" },
+  "need": {
+    "external_name": "tx_dallas_eviction_advocacy",
+    "category_type": {
+      "external_name": "tx_civil_legal_needs",
+      "name": "Civil Legal Needs",
+      "icon": "legal_services"
+    },
+    "type_short": ["legal services"],
+    "translations": {
+      "name": "Dallas Eviction Advocacy Center",
+      "description": "Provides pro bono legal advice and representation to all Dallas County tenants facing eviction, regardless of income, race, immigration status, or native language.",
+      "link": "https://www.dallaseac.org/",
+      "warning": "",
+      "website_description": "Free legal representation and advice for tenants facing eviction in Dallas County.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": ["Dallas"],
+    "required_expense_types": ["rent"],
+    "active": false,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

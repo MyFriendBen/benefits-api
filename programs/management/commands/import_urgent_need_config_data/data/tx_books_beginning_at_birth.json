@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "tx" },
+  "need": {
+    "external_name": "tx_books_beginning_at_birth",
+    "category_type": {
+      "external_name": "tx_child_development",
+      "name": "Child development",
+      "icon": "child_development"
+    },
+    "type_short": ["child dev"],
+    "translations": {
+      "name": "Books Beginning at Birth",
+      "description": "A statewide family literacy program providing free print books twice yearly to Texas families with children birth to age 4, plus access to a digital library with hundreds of age-appropriate books and literacy activities.",
+      "link": "https://b3tx.org/",
+      "warning": "",
+      "website_description": "Free books and literacy resources for Texas families with children ages 0–4.",
+      "notification_message": ""
+    },
+    "functions": ["tx_books_beginning_at_birth"],
+    "counties": ["Dallas"],
+    "required_expense_types": [],
+    "active": false,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}
