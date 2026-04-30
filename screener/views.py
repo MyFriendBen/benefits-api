@@ -447,8 +447,7 @@ def eligibility_results(screen: Screen, batch=False):
         for nav in county_navigators:
             required = nav.eligibility_programs.all()
             if not required or all(
-                getattr(program_eligibility.get(p.name_abbreviated), "eligible", False)
-                for p in required
+                getattr(program_eligibility.get(p.name_abbreviated), "eligible", False) for p in required
             ):
                 eligibility_filtered.append(nav)
 
