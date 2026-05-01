@@ -1477,6 +1477,12 @@ class Navigator(models.Model):
     phone_number = PhoneNumberField(blank=True, null=True)
     counties = models.ManyToManyField(County, related_name="navigator", blank=True)
     languages = models.ManyToManyField(NavigatorLanguage, related_name="navigator", blank=True)
+    eligibility_programs = models.ManyToManyField(
+        Program,
+        related_name="eligibility_navigators",
+        blank=True,
+        help_text="Navigator is only shown when the household qualifies for ALL of these programs.",
+    )
 
     name = models.ForeignKey(
         Translation,
