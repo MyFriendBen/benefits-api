@@ -10,8 +10,10 @@ class WaSsi(Ssi):
     WA state code so PolicyEngine can apply state-specific SSI rules. Washington
     pays no general SSI state supplement (a small supplement exists for narrow
     residential-care categories that are out of scope for the screener), so the
-    output is the federal Federal Benefit Rate (FBR) — $994/mo individual,
-    $1,491/mo couple for 2026 — minus PolicyEngine's countable income.
+    output is the federal Federal Benefit Rate (FBR) — published annually by the
+    SSA — minus PolicyEngine's countable income. The current FBR is sourced from
+    PolicyEngine's parameters at calculation time, not pinned in this file, so
+    the calculator naturally tracks SSA cost-of-living adjustments year over year.
 
     All eligibility math (categorical entry: aged / disabled / blind, the
     $20 + $65 + 1/2 income exclusion stack, SGA cutoff, in-kind support and
