@@ -1,0 +1,143 @@
+[
+  {
+    "notes": "Scenario 1: Golden path — single adult in Seattle, income well below 80% AMI for 1 person",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98103",
+      "county": "King County",
+      "household_size": 1,
+      "household_assets": null,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 30,
+          "birth_year": 1996,
+          "birth_month": 1,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": { "none": false }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_seattle_fresh_bucks",
+      "eligible": true,
+      "value": 60
+    }
+  },
+  {
+    "notes": "Scenario 5: Primary exclusion — single adult, income $1/month above 1-person 80% AMI limit",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98103",
+      "county": "King County",
+      "household_size": 1,
+      "household_assets": null,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": null,
+          "birth_year": null,
+          "birth_month": null,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 7072.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": { "none": false }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_seattle_fresh_bucks",
+      "eligible": false,
+      "value": 0
+    }
+  },
+  {
+    "notes": "Scenario 10: Edge case — 4-person household; combined income exceeds 2-person AMI limit but falls below 4-person AMI limit, confirming household size expands the threshold",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98118",
+      "county": "King County",
+      "household_size": 4,
+      "household_assets": null,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": null,
+          "birth_year": null,
+          "birth_month": null,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 8000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": { "none": false }
+        },
+        {
+          "relationship": "spouse",
+          "age": null,
+          "birth_year": null,
+          "birth_month": null,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 300.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": { "none": false }
+        },
+        {
+          "relationship": "child",
+          "age": null,
+          "birth_year": null,
+          "birth_month": null,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "dependent",
+          "age": null,
+          "birth_year": null,
+          "birth_month": null,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_seattle_fresh_bucks",
+      "eligible": true,
+      "value": 60
+    }
+  }
+]

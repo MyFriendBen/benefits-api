@@ -1,0 +1,57 @@
+{
+  "white_label": {
+    "code": "wa"
+  },
+  "program_category": {
+    "external_name": "wa_food",
+    "name": "Food and Nutrition",
+    "icon": "food",
+    "description": "Programs that help with food and grocery costs."
+  },
+  "program": {
+    "name_abbreviated": "wa_seattle_fresh_bucks",
+    "legal_status_required": [
+      "citizen", "non_citizen", "refugee", "gc_5plus", "gc_5less", "otherWithWorkPermission"
+    ],
+    "name": "Seattle Fresh Bucks",
+    "description_short": "Monthly money for fresh fruits and vegetables at Seattle grocery stores and farmers markets",
+    "description": "Seattle Fresh Bucks provides monthly funds to help you buy fresh fruits and vegetables. You can spend these benefits on produce at participating grocery stores and farmers markets in Seattle. The goal is to make healthy food more affordable for your family.\n\nIf you are selected, you will receive a benefit card in the mail. This card works like a debit card at the register, but it is specifically for buying fresh produce. This gives you a dedicated monthly budget that can only be used to keep your kitchen stocked with healthy options.\n\nBecause so many people want to join, the program uses a lottery to choose new members from a waitlist. Anyone who meets the income and residency rules can apply. However, the program uses a lottery to choose who gets benefits. Some households have a better chance of being picked. This includes households with the lowest incomes and those who prefer to communicate in a language other than English. If you aren't chosen right away, staying on the waitlist can increase your chances in the future.\n\nApplying is simple and only takes a few minutes online. After you apply, the most important thing to do is check your email or mail often. If you are selected, you must respond to confirm your details before your benefits can start. Only one application is allowed per household, so please check with the people you live with before you apply.\n\nApplications are accepted on a rolling basis.",
+    "learn_more_link": "https://www.seattlefreshbucks.org/how-it-works/",
+    "apply_button_link": "https://www.seattlefreshbucks.org/apply/",
+    "apply_button_description": "",
+    "estimated_application_time": "10 to 15 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": null,
+    "website_description": "Monthly money for fresh fruits and vegetables at Seattle grocery stores and farmers markets",
+    "base_program": null,
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false,
+    "warning_message": {
+      "external_name": "wa_seattle_fresh_bucks_waitlist",
+      "calculator": "_show",
+      "message": "Enrollment is currently full. Submitting an application will place your household on the waitlist for the 2026 selection period."
+    }
+  },
+  "documents": [
+    {
+      "external_name": "wa_seattle_proof_address",
+      "text": "Proof of home address within Seattle city limits (ex: lease, utility bill, or mail with your name and address)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_earned_income",
+      "text": "Proof of household income (ex: pay stubs, tax return, benefit letter)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_id_proof",
+      "text": "Proof of identity (ex: driver's license, state ID, passport)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ]
+}
