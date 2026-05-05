@@ -316,6 +316,45 @@ def eligibility_results(screen: Screen, batch=False):
 
     program_eligibility = {}
 
+
+    def update_navigators():
+        def filter_by_county():
+            for nav in all_navigators:
+                counties = nav.counties.all()
+                if len(counties) == 0 or (
+                    screen.county is not None and any(screen.county in county.name for county in counties)
+                ):
+                    county_navigators.append(nav)
+
+        def filter_by_required_programs_eligibility():
+            for nav in county_navigators:
+                required = nav.eligibility_programs.all()
+                if not required or all(
+                    getattr(program_eligibility.get(p.name_abbreviated), "eligible", False) for p in required
+                ):
+                    eligibility_filtered.append(nav)
+
+        primary_navigators = list(referrer.primary_navigators.all()) if referrer is not None else []
+        def referrer_prioritization():
+            if not primary_navigators:
+                return eligibility_filtered
+            referrer_navigators = [nav for nav in primary_navigators if nav in eligibility_filtered]
+            return referrer_navigators if referrer_navigators else eligibility_filtered
+
+        for program, idx in eligible_program_data:
+            program_navigators = program.program_navigators.all()
+            all_navigators = [pn.navigator for pn in program_navigators]
+
+            county_navigators = []
+            filter_by_county()
+
+            eligibility_filtered = []
+            filter_by_required_programs_eligibility()
+
+            navigators = referrer_prioritization()
+
+            data[idx]["navigators"] = [serialized_navigator(navigator) for navigator in navigators]
+        
     for program in all_programs:
         skip = False
         if program.name_abbreviated not in pe_programs and program.active:
@@ -427,38 +466,7 @@ def eligibility_results(screen: Screen, batch=False):
             if eligibility.eligible:
                 eligible_program_data.append((program, len(data) - 1))
 
-    # Second pass: compute navigators now that program_eligibility is fully populated.
-    # Running this inside the loop would cause a timing bug — a navigator whose
-    # eligibility_programs list contains a program processed later in the loop would
-    # incorrectly fail the all() check because that program hadn't been evaluated yet.
-    for program, idx in eligible_program_data:
-        program_navigators = program.program_navigators.all()
-        all_navigators = [pn.navigator for pn in program_navigators]
-
-        county_navigators = []
-        for nav in all_navigators:
-            counties = nav.counties.all()
-            if len(counties) == 0 or (
-                screen.county is not None and any(screen.county in county.name for county in counties)
-            ):
-                county_navigators.append(nav)
-
-        eligibility_filtered = []
-        for nav in county_navigators:
-            required = nav.eligibility_programs.all()
-            if not required or all(
-                getattr(program_eligibility.get(p.name_abbreviated), "eligible", False) for p in required
-            ):
-                eligibility_filtered.append(nav)
-
-        if referrer is None:
-            navigators = eligibility_filtered
-        else:
-            primary_navigators = referrer.primary_navigators.all()
-            referrer_navigators = [nav for nav in primary_navigators if nav in eligibility_filtered]
-            navigators = referrer_navigators if referrer_navigators else eligibility_filtered
-
-        data[idx]["navigators"] = [serialized_navigator(navigator) for navigator in navigators]
+    update_navigators()
 
     category_map = {}
     program_ids = [p["program_id"] for p in data]
