@@ -30,7 +30,7 @@ class WaSsi(Ssi):
     PolicyEngine variable mapping, and the 15 reference test scenarios.
     """
 
-    pe_inputs = (
+    pe_inputs = [
         *Ssi.pe_inputs,
         dependency.household.WaStateCodeDependency,
-    )
+    ]
