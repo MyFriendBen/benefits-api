@@ -9,7 +9,6 @@
       "zipcode": "98103",
       "county": "King County",
       "household_size": 1,
-      "household_assets": null,
       "household_members": [
         {
           "relationship": "headOfHousehold",
@@ -45,13 +44,10 @@
       "zipcode": "98103",
       "county": "King County",
       "household_size": 1,
-      "household_assets": null,
       "household_members": [
         {
           "relationship": "headOfHousehold",
-          "age": null,
-          "birth_year": null,
-          "birth_month": null,
+          "age": 30,
           "has_income": true,
           "income_streams": [
             {
@@ -81,13 +77,10 @@
       "zipcode": "98118",
       "county": "King County",
       "household_size": 4,
-      "household_assets": null,
       "household_members": [
         {
           "relationship": "headOfHousehold",
-          "age": null,
-          "birth_year": null,
-          "birth_month": null,
+          "age": 40,
           "has_income": true,
           "income_streams": [
             {
@@ -100,9 +93,7 @@
         },
         {
           "relationship": "spouse",
-          "age": null,
-          "birth_year": null,
-          "birth_month": null,
+          "age": 38,
           "has_income": true,
           "income_streams": [
             {
@@ -115,18 +106,14 @@
         },
         {
           "relationship": "child",
-          "age": null,
-          "birth_year": null,
-          "birth_month": null,
+          "age": 10,
           "has_income": false,
           "income_streams": [],
           "insurance": { "none": true }
         },
         {
-          "relationship": "dependent",
-          "age": null,
-          "birth_year": null,
-          "birth_month": null,
+          "relationship": "other",
+          "age": 70,
           "has_income": false,
           "income_streams": [],
           "insurance": { "none": true }
