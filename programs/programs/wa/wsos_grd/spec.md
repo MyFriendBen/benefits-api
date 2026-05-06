@@ -195,13 +195,13 @@ These factors affect selection priority but not eligibility:
 ---
 
 ### Scenario 6: Eligible (Conditional) — 3-Person Household in Expanded 126–155% MFI Range
-**What's being tested:** 3-person household with income above the 3-person 125% MFI threshold ($12,208/month) but below the 3-person 155% MFI threshold ($15,125/month). Eligibility is conditional on demonstrating hardship. Income $10,000/month falls below 125% MFI for 1 person but is in the 126–155% range for a 3-person household.
+**What's being tested:** 3-person household with income above the 3-person 125% MFI threshold ($12,208/month, $146,500/year) but below the 3-person 155% MFI threshold ($15,125/month, $181,500/year). Eligibility is conditional on demonstrating hardship. Income $13,000/month ($156,000/year) lands inside the 126–155% MFI band for a 3-person household.
 **Expected:** Eligible, value: $25,000 (calculator returns `eligible: true` — UI must surface hardship caveat clearly)
 
 **Steps:**
 - **Location:** Enter ZIP code `98501`, Select county `Thurston`
 - **Household:** Number of people: `3`
-- **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `January 1990` (age 36), Student: `Yes`, Has income: `Yes`, Income type: `Wages`, Income amount: `$10,000`, Income frequency: `Monthly`, Insurance: `None`
+- **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `January 1990` (age 36), Student: `Yes`, Has income: `Yes`, Income type: `Wages`, Income amount: `$13,000`, Income frequency: `Monthly`, Insurance: `None`
 - **Person 2 (Spouse):** Relationship: `Spouse`, Birth month/year: `March 1992` (age 34), Has income: `No`, Insurance: `None`
 - **Person 3 (Child):** Relationship: `Child`, Birth month/year: `June 2022` (age 3), Has income: `No`, Insurance: `None`
 - **Current Benefits:** Select `None`

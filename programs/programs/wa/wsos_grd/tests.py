@@ -111,11 +111,13 @@ class TestWaWsosGrd(TestCase):
 
     def test_eligible_three_person_household_in_expanded_band(self):
         """
-        Scenario 6: 3-person household, $10k/mo = $120k/yr. In the 126-155% MFI band
-        for size 3 ($146,500 - $181,500). Eligible.
+        Scenario 6: 3-person household, $13k/mo = $156k/yr. Above the 3-person
+        125% MFI threshold ($146,500/yr) but below the 3-person 155% MFI cap
+        ($181,500/yr), so this exercises the 126-155% expanded eligibility band.
+        Eligible (UI surfaces the hardship caveat).
         """
         screen = self._make_screen(household_size=3, zipcode="98501", county="Thurston")
-        self._add_member(screen, student=True, monthly_wages=10000)
+        self._add_member(screen, student=True, monthly_wages=13000)
         self._add_member(screen, relationship="spouse", age=34, student=False)
         self._add_member(screen, relationship="child", age=3, student=False)
 

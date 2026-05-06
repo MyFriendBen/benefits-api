@@ -79,7 +79,12 @@ class WaWsosGrd(ProgramCalculator):
         return self.MFI_155_BY_SIZE[6] + (size - 6) * self.MFI_155_PER_EXTRA_PERSON_ABOVE_TABLE
 
     def household_eligible(self, e: Eligibility):
-        gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
+        # `calc_gross_income` returns a float; compare against the limit at full
+        # precision so a household whose annual income is fractionally above the
+        # 155% MFI cap (e.g. $181,500.50 for a 3-person household) is correctly
+        # screened out instead of being floored down onto the boundary.
+        # `messages.income` rounds for display, so passing a float is fine.
+        gross_income = self.screen.calc_gross_income("yearly", ["all"])
         income_limit = self.income_limit_155()
         e.condition(gross_income <= income_limit, messages.income(gross_income, income_limit))
 
