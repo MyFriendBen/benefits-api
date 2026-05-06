@@ -28,7 +28,7 @@ class FullTimeCollegeStudentDependency(Member):
     field = "is_full_time_college_student"
 
     def value(self):
-        # Use student_full_time if collected (MFB-480+), fall back to student for older screens
+        # Use student_full_time if collected, fall back to student for older screens
         if self.member.student_full_time is not None:
             return self.member.student_full_time
         return self.member.student or False
