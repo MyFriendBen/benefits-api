@@ -25,7 +25,7 @@
 
 4. **Must be between ages 25 and 64 (inclusive) OR have at least one qualifying child (under 19, or under 24 if a full-time student).**
 - Screener: `HouseholdMember.age`,`HouseholdMember.relationship` 
-- Note: Qualifying child definition per EITC rules is that the relationship must be; son, daughter, adopted child, foster child, sibling, or descendant of any of these. The child must also be under the age of 19 at the end of the year; OR under 24 and a fullt-ime student; OR permanently and totally disabled (any age)
+- Note: Qualifying child definition per EITC rules is that the relationship must be; son, daughter, adopted child, foster child, sibling, or descendant of any of these. The child must also be under the age of 19 at the end of the year; OR under 24 and a full-time student; OR permanently and totally disabled (any age)
 - Source: RCW 82.08.0206; workingfamiliescredit.wa.gov/eligibility — Who is eligible?; IRS: Qualifying Child Rules 
 
 5. **Filed (or be eligible to file) a federal tax return for the applicable tax year.⚠️ data gap**
@@ -60,7 +60,7 @@ None. WFTC is a non-competitive entitlement program.
 
 ## Test Scenarios
 
-All 8 scenarios below were approved.  
+All 9 scenarios below were approved.  
 
 ---
 
@@ -146,7 +146,7 @@ Person 5 (Child): Birth July 2019 (age 6)
 ---
 
 **Scenario 6: Single filer, one qualifying child, income within limit — Eligible (2-Person Household)**
-- What we're checking: Validates that a filer with no qualifying children who is exactly 25 years old (the minimum age for childless EITC/WFTC eligibility) is considered eligible.
+- What we're checking: Validates that a single filer with one qualifying child and earned income below the one-child EITC/WFTC limit is considered eligible.
 - Expected: Eligible, value: 335
 
 **Steps**:
