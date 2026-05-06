@@ -50,7 +50,9 @@ class WaSsdi(ProgramCalculator):
         if birth_month is None:
             birth_month = 1
 
-        fra_date = date(birth_year + fra_years + (birth_month + fra_months - 1) // 12, (birth_month + fra_months - 1) % 12 + 1, 1)
+        fra_date = date(
+            birth_year + fra_years + (birth_month + fra_months - 1) // 12, (birth_month + fra_months - 1) % 12 + 1, 1
+        )
 
         return reference_date < fra_date
 
@@ -60,11 +62,7 @@ class WaSsdi(ProgramCalculator):
         e.condition(member.long_term_disability is True)
 
         if member.birth_year is not None:
-            e.condition(self._is_under_fra(
-                member.birth_year, 
-                member.birth_month,
-                self.screen.get_reference_date()
-            ))
+            e.condition(self._is_under_fra(member.birth_year, member.birth_month, self.screen.get_reference_date()))
 
         earned_income = int(member.calc_gross_income("monthly", ["earned"]))
         sga_limit = self.sga_blind if member.visually_impaired else self.sga_non_blind
@@ -82,7 +80,5 @@ class WaSsdi(ProgramCalculator):
             messages.must_not_have_benefit("SSDI"),
         )
 
-        has_disability = any(
-            me.eligible for me in e.eligible_members
-        )
+        has_disability = any(me.eligible for me in e.eligible_members)
         e.condition(has_disability, messages.has_disability())
