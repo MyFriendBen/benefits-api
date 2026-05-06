@@ -2,6 +2,7 @@ from django.test import TestCase
 from unittest.mock import Mock, patch
 from datetime import date
 
+from programs.programs.federal.pe import member
 from programs.programs.wa import wa_calculators
 from programs.programs.wa.ssdi.calculator import WaSsdi
 from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
@@ -43,6 +44,7 @@ def make_calculator(has_ssdi=False):
     mock_screen = Mock()
     mock_screen.has_benefit = Mock(side_effect=lambda b: has_ssdi if b == "ssdi" else False)
     mock_screen.household_members.all.return_value = []
+    mock_screen.get_reference_date.return_value = date(2026, 4, 30)
 
     mock_program = Mock()
     mock_missing_deps = Mock()
@@ -117,18 +119,13 @@ class TestWaSsdiMemberEligibility(TestCase):
 
     @patch("programs.programs.wa.ssdi.calculator.date")
     def test_over_fra_ineligible(self, mock_date):
-        mock_date.today.return_value = date(2026, 4, 30)
-        mock_date.side_effect = lambda *a, **kw: date(*a, **kw)
         member = make_member(age=68, birth_year=1957, birth_month=1)
         self.assertFalse(self._run(member))
 
     @patch("programs.programs.wa.ssdi.calculator.date")
     def test_under_fra_born_1960_eligible(self, mock_date):
-        mock_date.today.return_value = date(2026, 4, 30)
-        mock_date.side_effect = lambda *a, **kw: date(*a, **kw)
         member = make_member(age=65, birth_year=1960, birth_month=11)
         self.assertTrue(self._run(member))
-
 
 class TestWaSsdiHouseholdEligibility(TestCase):
     def _run(self, has_ssdi=False, eligible_members=None):

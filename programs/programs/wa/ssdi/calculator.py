@@ -44,7 +44,7 @@ class WaSsdi(ProgramCalculator):
         return (67, 0)
 
     @staticmethod
-    def _is_under_fra(birth_year: int, birth_month: Optional[int]) -> bool:
+    def _is_under_fra(birth_year: int, birth_month: Optional[int], reference_date: date) -> bool:
         fra_years, fra_months = WaSsdi._get_fra(birth_year)
 
         if birth_month is None:
@@ -52,8 +52,7 @@ class WaSsdi(ProgramCalculator):
 
         fra_date = date(birth_year + fra_years + (birth_month + fra_months - 1) // 12, (birth_month + fra_months - 1) % 12 + 1, 1)
 
-        today = self.screen.get_reference_date()
-        return today < fra_date
+        return reference_date < fra_date
 
     def member_eligible(self, e: MemberEligibility):
         member = e.member
@@ -61,7 +60,11 @@ class WaSsdi(ProgramCalculator):
         e.condition(member.long_term_disability is True)
 
         if member.birth_year is not None:
-            e.condition(self._is_under_fra(member.birth_year, member.birth_month))
+            e.condition(self._is_under_fra(
+                member.birth_year, 
+                member.birth_month,
+                self.screen.reference_date()
+            ))
 
         earned_income = int(member.calc_gross_income("monthly", ["earned"]))
         sga_limit = self.sga_blind if member.visually_impaired else self.sga_non_blind
