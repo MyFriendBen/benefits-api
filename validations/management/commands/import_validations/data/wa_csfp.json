@@ -37,7 +37,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "wa_commodity supplemental food program (csfp)",
+      "program_name": "wa_csfp",
       "eligible": true,
       "value": 50
     }
@@ -80,7 +80,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "wa_commodity supplemental food program (csfp)",
+      "program_name": "wa_csfp",
       "eligible": true,
       "value": 50
     }
@@ -123,7 +123,7 @@
       "expenses": []
     },
     "expected_results": {
-      "program_name": "wa_commodity supplemental food program (csfp)",
+      "program_name": "wa_csfp",
       "eligible": false
     }
   }
