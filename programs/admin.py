@@ -189,7 +189,7 @@ class NavigatorLanguageAdmin(SecureAdmin):
 class NavigatorAdmin(SecureAdmin):
     search_fields = ("name__translations__text",)
     list_display = ["get_str", "external_name", "action_buttons"]
-    white_label_filter_horizontal = ("counties",)
+    white_label_filter_horizontal = ("counties", "eligibility_programs")
     filter_horizontal = ("counties", "languages", "eligibility_programs")
     exclude = [
         "name",

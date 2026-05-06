@@ -1,14 +1,12 @@
 """
 Tests for navigator filtering logic in update_navigators() (MFB-666).
 
-Covers the three filtering steps applied inside eligibility_results():
+Covers the three filtering steps:
   1. filter_by_county          - tested by TestNavigatorCountyFilter
   2. filter_by_required_programs_eligibility - tested by TestNavigatorEligibilityProgramsFilter
   3. referrer_prioritization   - tested by TestNavigatorReferrerPrioritization
+  4. update_navigators      - tested by TestUpdateNavigators
 
-Each test class uses a local mirror helper that reproduces the exact branching
-logic from screener/views.py so that tests remain readable and stay in sync with
-the real implementation without requiring the closure to be importable.
 """
 
 from django.test import TestCase
@@ -278,7 +276,7 @@ class TestUpdateNavigators(TestCase):
         self.assertIn(self.statewide_nav.id, ids)
 
     def test_data_navigators_field_is_populated(self):
-        """update_navigators mutates the data list in place with serialized navigator dicts."""
+        """update_navigators populates data in place; county-restricted navigators excluded when screen_county is None."""
         data = [{"navigators": []}]
         update_navigators(
             eligible_program_data=[(self.program, 0)],
@@ -287,5 +285,6 @@ class TestUpdateNavigators(TestCase):
             screen_county=None,
             referrer=None,
         )
-        self.assertIsInstance(data[0]["navigators"], list)
-        self.assertTrue(all("id" in n for n in data[0]["navigators"]))
+        navigators = data[0]["navigators"]
+        self.assertEqual(len(navigators), 1)
+        self.assertEqual(navigators[0]["id"], self.statewide_nav.id)
