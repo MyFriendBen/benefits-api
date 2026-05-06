@@ -16,6 +16,7 @@ def make_calculator(yearly_income=10_000, fpl_limit=15_000, members=None):
     mock_screen = Mock()
     mock_screen.calc_gross_income = Mock(return_value=yearly_income)
     mock_screen.household_members.all = Mock(return_value=members or [make_member()])
+    mock_screen.has_benefit = Mock(return_value=False)
 
     mock_program = Mock()
     mock_program.year.get_limit = Mock(return_value=fpl_limit)
@@ -64,8 +65,9 @@ class TestWaCsfpMemberEligibility(TestCase):
 class TestWaCsfpHouseholdEligibility(TestCase):
     # FPL limit = 15_000; income threshold = 1.5 * 15_000 = 22_500
 
-    def _run(self, yearly_income, fpl_limit=15_000):
+    def _run(self, yearly_income, fpl_limit=15_000, already_has_csfp=False):
         calc = make_calculator(yearly_income=yearly_income, fpl_limit=fpl_limit)
+        calc.screen.has_benefit = Mock(return_value=already_has_csfp)
         e = Eligibility()
         me = MemberEligibility(make_member())
         me.eligible = True
@@ -85,6 +87,9 @@ class TestWaCsfpHouseholdEligibility(TestCase):
 
     def test_income_well_above_limit_ineligible(self):
         self.assertFalse(self._run(yearly_income=50_000))
+
+    def test_already_receiving_csfp_ineligible(self):
+        self.assertFalse(self._run(yearly_income=10_000, already_has_csfp=True))
 
 
 class TestWaCsfpValue(TestCase):

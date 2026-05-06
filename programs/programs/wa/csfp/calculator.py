@@ -1,3 +1,4 @@
+import math
 import programs.programs.messages as messages
 from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
 
@@ -35,6 +36,10 @@ class WaCsfp(ProgramCalculator):
         e.condition(member.age is not None and member.age >= self.min_age)
 
     def household_eligible(self, e: Eligibility):
+        e.condition(
+            not self.screen.has_benefit("wa_csfp"),
+            messages.must_not_have_benefit("CSFP"),
+        )
         gross_income = self.screen.calc_gross_income("yearly", ["all"])
-        income_limit = int(self.fpl_percent * self.program.year.get_limit(self.screen.household_size))
+        income_limit = math.ceil(self.fpl_percent * self.program.year.get_limit(self.screen.household_size))
         e.condition(gross_income <= income_limit, messages.income(gross_income, income_limit))

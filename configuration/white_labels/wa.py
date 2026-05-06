@@ -1158,6 +1158,16 @@ class WaConfigurationData(ConfigurationData):
                         "_default_message": "Free school meals",
                     },
                 },
+                "csfp": {
+                    "name": {
+                        "_label": "foodAndNutritionBenefits.csfp",
+                        "_default_message": "Commodity Supplemental Food Program (CSFP): ",
+                    },
+                    "description": {
+                        "_label": "foodAndNutritionBenefits.csfp_desc",
+                        "_default_message": "Food support for people 60 years of age or older",
+                    },
+                },
             },
             "category_name": {
                 "_label": "foodAndNutrition",
