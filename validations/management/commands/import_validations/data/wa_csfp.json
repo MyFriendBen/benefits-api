@@ -1,0 +1,130 @@
+[
+  {
+    "notes": "WA Commodity Supplemental Food Program (CSFP) - Clearly Eligible Senior - Single 68-Year-Old with Low Income",
+    "household": {
+      "white_label": "wa",
+      "household_size": 1,
+      "zipcode": "98101",
+      "county": "King",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 6,
+          "birth_year": 1957,
+          "age": 68,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 950.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_csfp",
+      "eligible": true,
+      "value": 50
+    }
+  },
+  {
+    "notes": "WA Commodity Supplemental Food Program (CSFP) - Minimally Eligible - Just Turned 60 with Income at Exactly 150% FPL",
+    "household": {
+      "white_label": "wa",
+      "household_size": 1,
+      "zipcode": "98101",
+      "county": "King",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 3,
+          "birth_year": 1966,
+          "age": 60,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 1956.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_csfp",
+      "eligible": true,
+      "value": 50
+    }
+  },
+  {
+    "notes": "WA Commodity Supplemental Food Program (CSFP) - Age 59 - One Year Below Minimum Age Threshold",
+    "household": {
+      "white_label": "wa",
+      "household_size": 1,
+      "zipcode": "98103",
+      "county": "King",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 6,
+          "birth_year": 1966,
+          "age": 59,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 800.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_csfp",
+      "eligible": false
+    }
+  }
+]
