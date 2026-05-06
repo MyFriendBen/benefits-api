@@ -124,11 +124,12 @@ class TestWaSsdiMemberEligibility(TestCase):
         member = make_member(age=65, birth_year=1960, birth_month=11)
         self.assertTrue(self._run(member))
 
+
 class TestWaSsdiHouseholdEligibility(TestCase):
     def _run(self, has_ssdi=False, eligible_members=None):
         calc = make_calculator(has_ssdi=has_ssdi)
         e = Eligibility()
-        for member in (eligible_members or [make_member()]):
+        for member in eligible_members or [make_member()]:
             me = MemberEligibility(member)
             me.eligible = True
             e.add_member_eligibility(me)
