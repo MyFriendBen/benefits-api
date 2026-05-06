@@ -238,6 +238,22 @@ def referrer_prioritization(eligibility_filtered: list, primary_navigators: list
     return referrer_navigators if referrer_navigators else eligibility_filtered
 
 
+def update_navigators(
+    eligible_program_data: list,
+    program_eligibility: dict,
+    data: list,
+    screen_county: Optional[str],
+    referrer,
+) -> None:
+    primary_navs = list(referrer.primary_navigators.all()) if referrer is not None else []
+    for program, idx in eligible_program_data:
+        all_navigators = [pn.navigator for pn in program.program_navigators.all()]
+        county_filtered = filter_by_county(all_navigators, screen_county)
+        eligibility_filtered = filter_by_required_programs_eligibility(county_filtered, program_eligibility)
+        navigators = referrer_prioritization(eligibility_filtered, primary_navs)
+        data[idx]["navigators"] = [serialized_navigator(navigator) for navigator in navigators]
+
+
 def eligibility_results(screen: Screen, batch=False):
     try:
         referrer = Referrer.objects.prefetch_related("remove_programs", "primary_navigators").get(
@@ -343,17 +359,6 @@ def eligibility_results(screen: Screen, batch=False):
 
     program_eligibility = {}
 
-
-    def update_navigators():
-        primary_navigators = list(referrer.primary_navigators.all()) if referrer is not None else []
-
-        for program, idx in eligible_program_data:
-            all_navigators = [pn.navigator for pn in program.program_navigators.all()]
-            county_filtered = filter_by_county(all_navigators, screen.county)
-            eligibility_filtered = filter_by_required_programs_eligibility(county_filtered, program_eligibility)
-            navigators = referrer_prioritization(eligibility_filtered, primary_navigators)
-            data[idx]["navigators"] = [serialized_navigator(navigator) for navigator in navigators]
-        
     for program in all_programs:
         skip = False
         if program.name_abbreviated not in pe_programs and program.active:
@@ -465,7 +470,7 @@ def eligibility_results(screen: Screen, batch=False):
             if eligibility.eligible:
                 eligible_program_data.append((program, len(data) - 1))
 
-    update_navigators()
+    update_navigators(eligible_program_data, program_eligibility, data, screen.county, referrer)
 
     category_map = {}
     program_ids = [p["program_id"] for p in data]
