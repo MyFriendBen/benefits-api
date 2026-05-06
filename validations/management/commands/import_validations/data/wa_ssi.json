@@ -47,7 +47,7 @@
           "relationship": "headOfHousehold",
           "age": 35,
           "birth_year": 1991,
-          "birth_month": 7,
+          "birth_month": 1,
           "has_income": false,
           "income_streams": [],
           "insurance": {
@@ -78,7 +78,7 @@
           "relationship": "headOfHousehold",
           "age": 45,
           "birth_year": 1981,
-          "birth_month": 6,
+          "birth_month": 1,
           "disabled": true,
           "long_term_disability": true,
           "has_income": true,

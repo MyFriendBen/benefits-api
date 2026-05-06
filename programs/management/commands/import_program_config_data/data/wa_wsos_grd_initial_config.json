@@ -1,0 +1,76 @@
+{
+  "white_label": {
+    "code": "wa"
+  },
+  "program_category": {
+    "external_name": "wa_education",
+    "name": "Education",
+    "icon": "education"
+  },
+  "program": {
+    "name_abbreviated": "wa_wsos_grd",
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "refugee",
+      "gc_5plus",
+      "gc_5less",
+      "otherWithWorkPermission"
+    ],
+    "name": "Washington State Opportunity Scholarship Graduate Scholarship (GRD)",
+    "description_short": "Scholarship for Washington nurse practitioner students",
+    "description": "The WSOS Graduate Scholarship helps Washington nurse practitioner students pay for graduate school. It supports students in approved nursing programs. The money goes to your school. It can help pay for tuition, housing, transportation, and other school costs. The scholarship gives up to $25,000 over three years, with funding capped at $6,250 per term. If you train at a remote clinical site, you can also get a $500 travel stipend per term.\n\nYou must attend an approved nursing program in Washington. You must have enough clinical hours left in your program. You must also be in good academic standing. After graduation, you must plan to work in an underserved area in Washington for at least two years. If your income is near the upper end of the income cap for this program, you may need to show proof of financial hardship to qualify.\n\nBefore you apply, you will need to complete a FAFSA or WASFA — these are free forms that show your financial need. To apply, click Apply Now. You will answer essay questions and upload your unofficial transcript and current course plan. You will also need a professional or academic reference to fill out a recommendation form.",
+    "learn_more_link": "https://waopportunityscholarship.org/applicants/grd/",
+    "apply_button_link": "https://waopportunityscholarship.caspio.com/dp/d6868000fc394872a8ef46beace8",
+    "apply_button_description": "",
+    "estimated_application_time": "30 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": "lump_sum",
+    "value_type": "benefit",
+    "website_description": "Scholarship for Washington nurse practitioner students",
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": [
+    {
+      "external_name": "wa_wsos_fafsa",
+      "text": "Free Application for Federal Student Aid (FAFSA)",
+      "link_url": "https://studentaid.gov/h/apply-for-aid/fafsa",
+      "link_text": "Apply for FAFSA at studentaid.gov"
+    },
+    {
+      "external_name": "wa_wsos_wasfa",
+      "text": "Washington Application for State Financial Aid (WASFA)",
+      "link_url": "https://wsac.wa.gov/wasfa",
+      "link_text": "Apply for WASFA at wsac.wa.gov"
+    },
+    {
+      "external_name": "wa_wsos_grd_unofficial_transcript",
+      "text": "Recent unofficial transcript from your DNP or MSN program",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_wsos_grd_course_progression_plan",
+      "text": "Current course progression plan",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_wsos_grd_recommendation_form",
+      "text": "Recommendation form from a professional or academic reference",
+      "link_url": "https://waopportunityscholarship.org/wp-content/uploads/2025/12/recommendation-form.pdf",
+      "link_text": "Recommendation form guide"
+    },
+    {
+      "external_name": "wa_wsos_grd_essay_question",
+      "text": "Two essay questions",
+      "link_url": "https://waopportunityscholarship.org/wp-content/uploads/2026/04/GRD-Scholarship-Application-Essay-Guide-2026.pdf",
+      "link_text": "Essay question guide"
+    }
+  ]
+}

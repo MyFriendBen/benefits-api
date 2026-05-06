@@ -429,6 +429,7 @@ class Screen(models.Model):
             "mydenver": self.has_mydenver,
             "ssi": has_ssi_or_ssi_income,
             "tx_ssi": has_ssi_or_ssi_income,
+            "wa_ssi": has_ssi_or_ssi_income,
             "tx_csfp": self.has_csfp,
             "tx_harris_rides": self.has_harris_county_rides,
             "andcs": self.has_andcs,
