@@ -1,0 +1,84 @@
+{
+  "white_label": {
+    "code": "wa"
+  },
+  "program_category": {
+    "external_name": "wa_tax",
+    "name": "Tax Credits",
+    "icon": "tax"
+  },
+  "program": {
+    "name_abbreviated": "wa_wftc",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission",
+      "non_citizen"
+    ],
+    "name": "Working Families Tax Credit (WFTC)",
+    "description": "The Working Families Tax Credit is a cash refund from Washington State to help individuals and families who work. It is designed to put money back into your household to help cover basic needs like food, bills, or savings.\n\nIf you qualify, the state will send your payment directly to you after you apply. You can choose to get your money as a paper check in the mail or as a direct deposit into your bank account. Once you get the money, it is yours to spend however you need at any store or for any bill.\n\nThere are a few extra rules we cannot check here. To qualify, you must have been physically present in Washington State for at least 183 days during the tax year. If you are claiming children, they must have lived with you for more than half of the year. If you are married, this screener assumes you file taxes jointly with your spouse, which is the most common filing status — if you file separately, your eligibility may differ.\n\nApplying is free, and you can apply online or by mail. There are community partners ready to help you fill out the forms at no additional cost. You will need to file a federal tax return prior to submitting your application to the Washington Department of Revenue.",
+    "description_short": "Cash refund for working Washingtonians to help cover basic needs like food, bills, or savings",
+    "learn_more_link": "https://workingfamiliescredit.wa.gov/eligibility",
+    "apply_button_link": "https://workingfamiliescredit.wa.gov/apply",
+    "apply_button_description": "",
+    "estimated_application_time": "30 - 45 minutes",
+    "estimated_delivery_time": "up to 90 days",
+    "estimated_value": "",
+    "value_type": "tax_credit",
+    "value_format": "estimated_annual",
+    "website_description": "Cash refund for working Washingtonians to help cover basic needs like food, bills, or savings",
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": false,
+    "show_in_has_benefits_step": false,
+    "has_calculator": true,
+    "warning_message": null
+  },
+  "documents": [
+    {
+      "external_name": "wa_home",
+      "text": "Proof of Washington State home address (ex: lease, utility bill)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_id_proof",
+      "text": "Proof of identity (ex: driver's license, state ID, passport)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_ssn",
+      "text": "Social Security Number (SSN) or Individual Taxpayer Identification Number (ITIN)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_earned_income",
+      "text": "Proof of earned income (ex: W-2, pay stubs, self-employment records)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_tax_return",
+      "text": "Copy of your federal tax return for the applicable tax year",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "wa_dor",
+      "name": "Washington State Department of Revenue",
+      "email": "WorkingFamiliesCredit@dor.wa.gov",
+      "description": "Map of Community Partner Locations helps Washington residents locate local assistance during the WA Working Families Tax Credit application process.",
+      "assistance_link": "https://workingfamiliescredit.wa.gov/resources/map-community-partner-locations",
+      "phone_number": "+13607637300",
+      "languages": ["en", "es"],
+      "counties": []
+    }
+  ]
+}
