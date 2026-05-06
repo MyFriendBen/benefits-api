@@ -52,7 +52,7 @@ class WaSsdi(ProgramCalculator):
 
         fra_date = date(birth_year + fra_years + (birth_month + fra_months - 1) // 12, (birth_month + fra_months - 1) % 12 + 1, 1)
 
-        today = date.today()
+        today = self.screen.get_reference_date()
         return today < fra_date
 
     def member_eligible(self, e: MemberEligibility):
