@@ -1,0 +1,93 @@
+{
+  "white_label": {
+    "code": "wa"
+  },
+  "program_category": {
+    "external_name": "wa_cash"
+  },
+  "program": {
+    "name_abbreviated": "wa_ssdi",
+    "year": 2026,
+    "legal_status_required": [
+      "citizen", "non_citizen", "refugee", "gc_5plus", "gc_5less", "otherWithWorkPermission"
+    ],
+    "name": "Social Security Disability Insurance (SSDI)",
+    "description_short": "Monthly cash benefits for people who cannot work due to disability",
+    "description": "SSDI is a federal program. It provides monthly payments to people who cannot work due to a disability or blindness. Social Security taxes you paid while working fund these payments.\n\nYour work history determines your monthly payment amount. The more you paid into Social Security, the higher your payment. After two years on SSDI, you can get Medicare health coverage — no matter your age.\n\nTo qualify, you must have worked and paid into Social Security for enough years. You can check your work credits by logging into your my Social Security account at ssa.gov/myaccount. SSA reviews your medical records and work history to decide if you qualify. This process can take several months. Others may also qualify, like surviving spouses and some adults with lifelong disabilities.\n\nTo apply online, click 'Apply Now.' Otherwise, you can apply by phone at 1-800-772-1213 or in person at your local Social Security office. Having your medical records and work history ready can speed up the process.",
+    "learn_more_link": "https://www.ssa.gov/benefits/disability/qualify.html",
+    "apply_button_link": "https://secure.ssa.gov/iClaim/dib",
+    "apply_button_description": "Apply for SSDI",
+    "estimated_application_time": "1 to 2 hours",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": null,
+    "value_type": "benefit",
+    "website_description": "Monthly cash benefits for people who cannot work due to disability",
+    "base_program": "ssdi",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": true
+  },
+  "documents": [
+    {
+      "external_name": "wa_ssdi_birth_certificate",
+      "text": "Birth certificate or other proof of birth",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_ssdi_id_proof",
+      "text": "Proof of identity (e.g. driver's license, state ID, passport)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_ssdi_ssn_proof",
+      "text": "Your Social Security Number",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_ssdi_medical_records",
+      "text": "Medical records and documents from your doctors, hospitals, or clinics",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_ssdi_work_history",
+      "text": "Work history for the last 5 years (job titles, dates, and duties)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_ssdi_earned_income",
+      "text": "Proof of current earnings (e.g. W-2 forms, pay stubs, or self-employment tax returns)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_ssdi_medical_contacts",
+      "text": "Names, addresses, and phone numbers of your doctors and treatment providers",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_ssdi_workers_comp",
+      "text": "Workers compensation claim information, including date of injury and claim number (if applicable)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_ssdi_marriage_records",
+      "text": "Marriage or divorce records, including spouse or former spouse's name and date of marriage or divorce (if applicable)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_ssdi_dependent_info",
+      "text": "Names and dates of birth of any children who may be eligible for benefits based on your work history",
+      "link_url": "",
+      "link_text": ""
+    }
+  ]
+}
