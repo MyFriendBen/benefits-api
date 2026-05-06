@@ -1,8 +1,7 @@
 from django.test import TestCase
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from datetime import date
 
-from programs.programs.federal.pe import member
 from programs.programs.wa import wa_calculators
 from programs.programs.wa.ssdi.calculator import WaSsdi
 from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
@@ -117,13 +116,11 @@ class TestWaSsdiMemberEligibility(TestCase):
     def test_already_receiving_ss_retirement_ineligible(self):
         self.assertFalse(self._run(make_member(ss_retirement_yearly=18000)))
 
-    @patch("programs.programs.wa.ssdi.calculator.date")
-    def test_over_fra_ineligible(self, mock_date):
+    def test_over_fra_ineligible(self):
         member = make_member(age=68, birth_year=1957, birth_month=1)
         self.assertFalse(self._run(member))
 
-    @patch("programs.programs.wa.ssdi.calculator.date")
-    def test_under_fra_born_1960_eligible(self, mock_date):
+    def test_under_fra_born_1960_eligible(self):
         member = make_member(age=65, birth_year=1960, birth_month=11)
         self.assertTrue(self._run(member))
 
@@ -155,10 +152,7 @@ class TestWaSsdiHouseholdEligibility(TestCase):
 
 
 class TestWaSsdiValue(TestCase):
-    @patch("programs.programs.wa.ssdi.calculator.date")
-    def test_eligible_member_gets_1634(self, mock_date):
-        mock_date.today.return_value = date(2026, 4, 30)
-        mock_date.side_effect = lambda *a, **kw: date(*a, **kw)
+    def test_eligible_member_gets_1634(self):
         calc = make_calculator()
         member = make_member()
         calc.screen.household_members.all.return_value = [member]
@@ -166,10 +160,7 @@ class TestWaSsdiValue(TestCase):
         self.assertTrue(result.eligible)
         self.assertEqual(result.value, 1634)
 
-    @patch("programs.programs.wa.ssdi.calculator.date")
-    def test_multi_member_one_eligible(self, mock_date):
-        mock_date.today.return_value = date(2026, 4, 30)
-        mock_date.side_effect = lambda *a, **kw: date(*a, **kw)
+    def test_multi_member_one_eligible(self):
         calc = make_calculator()
         eligible = make_member(age=44, birth_year=1981, long_term_disability=True, earned_monthly=500)
         ineligible = make_member(age=24, birth_year=2001, long_term_disability=False, earned_monthly=2500)

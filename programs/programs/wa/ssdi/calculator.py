@@ -63,7 +63,7 @@ class WaSsdi(ProgramCalculator):
             e.condition(self._is_under_fra(
                 member.birth_year, 
                 member.birth_month,
-                self.screen.reference_date()
+                self.screen.get_reference_date()
             ))
 
         earned_income = int(member.calc_gross_income("monthly", ["earned"]))
