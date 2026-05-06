@@ -15,7 +15,7 @@
 | 3 | 1-person student, $10k/mo (above 155% MFI for size 1) | Ineligible | 0 programs found | PASS | `8c32da02-91f1-4892-a748-1155bb573f36` |
 | 4 | 3-person student head, $12,208/mo (at 125% MFI for size 3) | Eligible $25,000 | Eligible $25,000 | PASS | `395e24d7-7823-4cb6-9158-b99447ba20b2` |
 | 5 | 1-person student, $8,500/mo (in 126-155% MFI band, size 1) | Eligible $25,000 | Eligible $25,000 | PASS | `ee3e5f3e-666c-46ce-9137-4636c03e7b8e` |
-| 6 | 3-person student head, $10k/mo (in 126-155% MFI band, size 3) | Eligible $25,000 | Eligible $25,000 | PASS | `856320a3-4b0a-47d2-b0e2-a0a71712c5f3` |
+| 6 | 3-person student head, $13k/mo (in 126-155% MFI band, size 3) | Eligible $25,000 | Eligible $25,000 | PASS | `075312eb-228c-4f1d-9188-f24ef595cf55` |
 | 7 | 3-person student head, $16k/mo (above 155% MFI for size 3) | Ineligible | 0 programs found | PASS | `0793bac5-39da-4828-a589-b7deb167e7c0` |
 
 **Pass rate: 7 / 7 (100%)**
@@ -73,9 +73,16 @@ hardship caveat is surfaced in the program description so the user knows that fi
 in this band is conditional on demonstrating financial hardship.
 
 ### Scenario 6: Eligible — 3-person, head is student, in 126-155% MFI band — **PASS**
-$10,000/mo × 12 = $120,000/yr is below the size-3 125% threshold ($146,500), but the spec
-explicitly tests this scenario as the "expanded band, multi-person household" case. Program
-appears with **Estimated Savings: $25,000**.
+$13,000/mo × 12 = $156,000/yr lands inside the size-3 expanded eligibility band — above the
+size-3 125% threshold ($146,500) and below the 155% cap ($181,500). Program appears with
+**Estimated Savings: $25,000**. Per spec, the hardship caveat is surfaced in the program
+description for applicants in this band.
+
+> Note: this scenario originally walked at $10,000/mo (which also resolved to "eligible
+> $25,000" because $120k/yr is below the 3-person 155% cap). The income was raised to
+> $13,000/mo across the spec, validations, and unit tests during pre-merge code review so
+> that scenario 6 actually exercises the 126–155% expanded band rather than duplicating
+> Scenario 1's "well below 125%" coverage.
 
 ### Scenario 7: Ineligible — 3-person at $16k/mo above 155% MFI for size 3 — **PASS**
 $16,000/mo × 12 = $192,000/yr > $181,500 (size-3 155% MFI cap). Results page shows
