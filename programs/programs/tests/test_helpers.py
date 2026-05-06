@@ -180,13 +180,15 @@ class TestSnapIneligibleStudentHelperNC(TestCase):
         self.screen = Screen.objects.create(
             white_label=self.white_label, zipcode="27601", county="Test County", household_size=1, completed=False
         )
-    
+
     def test_exempt_when_full_time_student_single_parent_with_child(self):
         """Test that NC full-time student single parent with child under 12 is exempt."""
         self.screen.household_size = 2
         self.screen.save()
 
-        head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=25, student=True, student_full_time=True)
+        head = HouseholdMember.objects.create(
+            screen=self.screen, relationship="headOfHousehold", age=25, student=True, student_full_time=True
+        )
         # No spouse = single parent
 
         # Add child under 12
@@ -210,7 +212,7 @@ class TestSnapIneligibleStudentHelperNC(TestCase):
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=8)
 
         result = snap_ineligible_student(self.screen, head)
-        self.assertTrue(result)   # E5 does NOT apply, no other exemption → ineligible
+        self.assertTrue(result)  # E5 does NOT apply, no other exemption → ineligible
 
     def test_exempt_via_job_training_program(self):
         """Student in job training program is exempt from SNAP student restriction."""
@@ -222,7 +224,7 @@ class TestSnapIneligibleStudentHelperNC(TestCase):
             student_job_training_program=True,
         )
         result = snap_ineligible_student(self.screen, member)
-        self.assertFalse(result)   # job training → exempt
+        self.assertFalse(result)  # job training → exempt
 
     def test_exempt_via_work_study(self):
         """Student with federal work study is exempt from SNAP student restriction."""
@@ -234,7 +236,7 @@ class TestSnapIneligibleStudentHelperNC(TestCase):
             student_has_work_study=True,
         )
         result = snap_ineligible_student(self.screen, member)
-        self.assertFalse(result)   # work study → exempt
+        self.assertFalse(result)  # work study → exempt
 
     def test_exempt_via_works_20_plus_hours(self):
         """Student working 20+ hours per week is exempt from SNAP student restriction."""
@@ -246,7 +248,7 @@ class TestSnapIneligibleStudentHelperNC(TestCase):
             student_works_20_plus_hrs=True,
         )
         result = snap_ineligible_student(self.screen, member)
-        self.assertFalse(result)   # 20+ hrs → exempt
+        self.assertFalse(result)  # 20+ hrs → exempt
 
     def test_ineligible_when_all_step3_fields_are_false(self):
         """Student with all employment fields explicitly False is ineligible."""
@@ -260,7 +262,8 @@ class TestSnapIneligibleStudentHelperNC(TestCase):
             student_works_20_plus_hrs=False,
         )
         result = snap_ineligible_student(self.screen, member)
-        self.assertTrue(result)   # no exemption met → ineligible
+        self.assertTrue(result)  # no exemption met → ineligible
+
 
 class TestFullTimeCollegeStudentDependency(TestCase):
     """Tests for FullTimeCollegeStudentDependency.value()."""
@@ -287,7 +290,6 @@ class TestFullTimeCollegeStudentDependency(TestCase):
         dep = member.FullTimeCollegeStudentDependency(self.screen, head, {})
         self.assertTrue(dep.value())
 
-
     def test_falls_back_to_student_false_when_full_time_is_none(self):
         """When student_full_time is None, fall back returns False if student is False."""
         head = HouseholdMember.objects.create(
@@ -300,19 +302,17 @@ class TestFullTimeCollegeStudentDependency(TestCase):
         dep = member.FullTimeCollegeStudentDependency(self.screen, head, {})
         self.assertFalse(dep.value())
 
-
     def test_uses_student_full_time_true_over_student_false(self):
         """student_full_time=True takes priority even if student=False."""
         head = HouseholdMember.objects.create(
             screen=self.screen,
             relationship="headOfHousehold",
             age=22,
-            student=False,          # would return False without the new logic
-            student_full_time=True, # new field wins
+            student=False,  # would return False without the new logic
+            student_full_time=True,  # new field wins
         )
         dep = member.FullTimeCollegeStudentDependency(self.screen, head, {})
         self.assertTrue(dep.value())
-
 
     def test_uses_student_full_time_false_over_student_true(self):
         """student_full_time=False takes priority even if student=True."""
@@ -320,8 +320,8 @@ class TestFullTimeCollegeStudentDependency(TestCase):
             screen=self.screen,
             relationship="headOfHousehold",
             age=22,
-            student=True,            # would return True without the new logic
-            student_full_time=False, # new field wins
+            student=True,  # would return True without the new logic
+            student_full_time=False,  # new field wins
         )
         dep = member.FullTimeCollegeStudentDependency(self.screen, head, {})
         self.assertFalse(dep.value())
