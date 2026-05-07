@@ -39,7 +39,7 @@
     "expected_results": {
       "program_name": "wa_csfp",
       "eligible": true,
-      "value": 50
+      "value": 600
     }
   },
   {
@@ -82,7 +82,7 @@
     "expected_results": {
       "program_name": "wa_csfp",
       "eligible": true,
-      "value": 50
+      "value": 600
     }
   },
   {
