@@ -39,7 +39,7 @@ class TestWaCsfpClassAttributes(TestCase):
         self.assertEqual(WaCsfp.fpl_percent, 1.5)
 
     def test_member_amount(self):
-        self.assertEqual(WaCsfp.member_amount, 50)
+        self.assertEqual(WaCsfp.member_amount, 50 * 12)
 
 
 class TestWaCsfpMemberEligibility(TestCase):
@@ -93,29 +93,29 @@ class TestWaCsfpHouseholdEligibility(TestCase):
 
 
 class TestWaCsfpValue(TestCase):
-    def test_single_eligible_senior_value_50(self):
+    def test_single_eligible_senior_value_600(self):
         senior = make_member(age=65)
         calc = make_calculator(yearly_income=10_000, members=[senior])
         result = calc.calc()
         self.assertTrue(result.eligible)
-        self.assertEqual(result.value, 50)
+        self.assertEqual(result.value, 600)
 
-    def test_two_eligible_seniors_value_100(self):
+    def test_two_eligible_seniors_value_1200(self):
         senior1 = make_member(age=72)
         senior2 = make_member(age=68)
         calc = make_calculator(yearly_income=10_000, members=[senior1, senior2])
         result = calc.calc()
         self.assertTrue(result.eligible)
-        self.assertEqual(result.value, 100)
+        self.assertEqual(result.value, 1200)
 
-    def test_mixed_household_one_senior_one_young_value_50(self):
+    def test_mixed_household_one_senior_one_young_value_600(self):
         # Only the 65-year-old is eligible; 45-year-old is not
         senior = make_member(age=65)
         young = make_member(age=45)
         calc = make_calculator(yearly_income=10_000, members=[senior, young])
         result = calc.calc()
         self.assertTrue(result.eligible)
-        self.assertEqual(result.value, 50)
+        self.assertEqual(result.value, 600)
 
     def test_no_eligible_members_value_0(self):
         # No member is 60+, so household is ineligible
