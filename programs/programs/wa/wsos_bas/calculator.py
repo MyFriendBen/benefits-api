@@ -94,26 +94,40 @@ class WaWsosBas(ProgramCalculator):
         return self.MFI_125_BY_SIZE[6] + (size - 6) * self.MFI_125_PER_EXTRA_PERSON_ABOVE_TABLE
 
     def household_eligible(self, e: Eligibility):
-        # `calc_gross_income` returns a float; compare against the limit at
-        # full precision so a household whose annual income is fractionally
-        # above the 125% MFI cap (e.g. $174,500.50 for a 4-person household)
-        # is correctly screened out instead of being floored down onto the
-        # boundary. `messages.income` rounds for display, so passing a float
-        # is fine. Same approach as WaWsosGrd.
+        """
+        Apply the 125% MFI income gate against household annual gross income.
+
+        `calc_gross_income` returns a float; compare against the limit at full
+        precision so a household whose annual income is fractionally above the
+        125% MFI cap (e.g. $174,500.50 for a 4-person household) is correctly
+        screened out instead of being floored down onto the boundary.
+        `messages.income` rounds for display, so passing a float is fine.
+        Same approach as `WaWsosGrd`.
+        """
         gross_income = self.screen.calc_gross_income("yearly", ["all"])
         income_limit = self.income_limit_125()
         e.condition(gross_income <= income_limit, messages.income(gross_income, income_limit))
 
     def member_eligible(self, e: MemberEligibility):
-        # Any student counts as the BaS applicant. The base ProgramCalculator
-        # auto-fails the household if no member is eligible, which is what we
-        # want when nobody in the household is a student.
+        """
+        Apply the per-member student gate.
+
+        Any member with `student == True` is treated as a potential BaS applicant.
+        `bool(...)` collapses the BooleanField's three states (`True`, `False`,
+        `None`) to a single eligibility decision: only `True` qualifies. The base
+        `ProgramCalculator` auto-fails the household when no member is eligible,
+        which is the behavior we want when nobody in the household is a student.
+        """
         e.condition(bool(e.member.student))
 
     def household_value(self) -> int:
+        """Lump-sum scholarship is awarded once at the household level."""
         return self.amount
 
     def member_value(self, member):
-        # The scholarship is a single lump-sum award per household; all of
-        # the value is reported at the household level via household_value().
+        """
+        Per-member value is always 0; the entire BaS award is reported via
+        `household_value()`. Returning 0 here prevents multi-student households
+        from multiplying the lifetime cap.
+        """
         return 0

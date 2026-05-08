@@ -23,10 +23,12 @@ class TestWaWsosBas(TestCase):
     """
 
     def setUp(self):
+        """Create a WA white label and a mock Program for each test."""
         self.white_label = WhiteLabel.objects.create(name="Washington", code="wa", state_code="WA")
         self.mock_program = Mock()
 
     def _make_screen(self, household_size=1, zipcode="98101", county="King"):
+        """Build an in-memory `Screen` for the WA white label with the given size."""
         return Screen.objects.create(
             white_label=self.white_label,
             agree_to_tos=True,
@@ -37,6 +39,7 @@ class TestWaWsosBas(TestCase):
         )
 
     def _add_member(self, screen, *, age=20, relationship="headOfHousehold", student=False, monthly_wages=0):
+        """Add a `HouseholdMember` (and optional monthly wages) to the screen."""
         member = HouseholdMember.objects.create(
             screen=screen,
             relationship=relationship,
@@ -54,6 +57,7 @@ class TestWaWsosBas(TestCase):
         return member
 
     def _calc(self, screen):
+        """Construct a `WaWsosBas` calculator bound to the given screen."""
         return WaWsosBas(screen, self.mock_program, {}, Dependencies())
 
     # --- Class wiring --------------------------------------------------------
@@ -163,6 +167,45 @@ class TestWaWsosBas(TestCase):
         eligibility = self._calc(screen).eligible()
 
         self.assertFalse(eligibility.eligible)
+
+    def test_ineligible_when_student_field_is_unanswered(self):
+        """
+        `Screen.student` is BooleanField(null=True), so an unanswered field
+        comes through as None. `bool(None) -> False -> ineligible`. Pinning
+        this explicitly catches a future refactor that might confuse `is False`
+        with a generic falsy check.
+        """
+        screen = self._make_screen()
+        member = HouseholdMember.objects.create(
+            screen=screen,
+            relationship="headOfHousehold",
+            age=20,
+            student=None,
+        )
+        IncomeStream.objects.create(
+            screen=screen,
+            household_member=member,
+            type="wages",
+            amount=2000,
+            frequency="monthly",
+        )
+
+        eligibility = self._calc(screen).eligible()
+
+        self.assertFalse(eligibility.eligible)
+
+    def test_eligible_zero_income_student(self):
+        """
+        Common BaS persona: unemployed student (e.g. HS senior pre-application)
+        with zero household income. Lower-side income boundary, complementing
+        `test_eligible_at_exact_125_pct_mfi_boundary` on the upper side.
+        """
+        screen = self._make_screen()
+        self._add_member(screen, age=18, student=True)  # no income stream
+
+        eligibility = self._calc(screen).eligible()
+
+        self.assertTrue(eligibility.eligible)
 
     def test_eligible_at_exact_125_pct_mfi_boundary(self):
         """`<=` boundary: income exactly equal to the 125% MFI cap is eligible."""
