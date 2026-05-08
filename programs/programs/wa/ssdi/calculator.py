@@ -12,7 +12,7 @@ class WaSsdi(ProgramCalculator):
 
     sga_non_blind = 1_690
     sga_blind = 2_830
-    member_amount = 1_634
+    member_amount = 1_634 * 12
     dependencies = [
         "age",
         "income_amount",

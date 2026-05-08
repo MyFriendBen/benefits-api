@@ -130,7 +130,7 @@ Source: https://www.ssa.gov/oact/STATS/dib-g3.html (Disabled Worker Average Bene
 **Steps:**
 - **Location:** Enter ZIP code `98103`, Select county `King`
 - **Household:** Number of people: `1`
-- **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `June 1981` (age 44), Special Circumstances: select `Currently have any disabilities that make you unable to work now or in the future`, Has income: `Yes`, Income type: `Wages`, Income amount: `$500`, Income frequency: `Monthly`, Insurance: `None`
+- **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `June 1981` (age 44), Special Circumstances: select `Currently have any disabilities that make you unable to work now or in the future` and `Any medical or developmental condition that has lasted, or is expected to last, more than 12 months`, Has income: `Yes`, Income type: `Wages`, Income amount: `$500`, Income frequency: `Monthly`, Insurance: `None`
 - **Current Benefits:** Select `None`
 
 **Why this matters:** Primary regression test confirming the standard eligible case.
@@ -158,7 +158,7 @@ Source: https://www.ssa.gov/oact/STATS/dib-g3.html (Disabled Worker Average Bene
 **Steps:**
 - **Location:** Enter ZIP code `98103`, Select county `King`
 - **Household:** Number of people: `1`
-- **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `March 1978` (age 47), Special Circumstances: select `Currently have any disabilities that make you unable to work now or in the future`, Has income: `Yes`, Income type: `Wages`, Income amount: `$1,700`, Income frequency: `Monthly`, Insurance: `None`
+- **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `March 1978` (age 47), Special Circumstances: select `Currently have any disabilities that make you unable to work now or in the future` and `Any medical or developmental condition that has lasted, or is expected to last, more than 12 months`, Has income: `Yes`, Income type: `Wages`, Income amount: `$1,700`, Income frequency: `Monthly`, Insurance: `None`
 - **Current Benefits:** Select `None`
 
 **Why this matters:** Confirms income above SGA correctly screens out applicants even when disability criterion is met.
@@ -172,7 +172,7 @@ Source: https://www.ssa.gov/oact/STATS/dib-g3.html (Disabled Worker Average Bene
 **Steps:**
 - **Location:** Enter ZIP code `98103`, Select county `King`
 - **Household:** Number of people: `1`
-- **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `June 1959` (age 66), Special Circumstances: select `Currently have any disabilities that make you unable to work now or in the future`, Has income: `Yes`, Income type: `Social Security Retirement`, Income amount: `$1,500`, Income frequency: `Monthly`, Insurance: `None`
+- **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `June 1959` (age 66), Special Circumstances: select `Currently have any disabilities that make you unable to work now or in the future` and `Any medical or developmental condition that has lasted, or is expected to last, more than 12 months`, Has income: `Yes`, Income type: `Social Security Retirement`, Income amount: `$1,500`, Income frequency: `Monthly`, Insurance: `None`
 - **Current Benefits:** Select `Social Security Retirement`
 
 **Why this matters:** Confirms that current retirement benefit recipients are correctly screened out.
@@ -186,7 +186,7 @@ Source: https://www.ssa.gov/oact/STATS/dib-g3.html (Disabled Worker Average Bene
 **Steps:**
 - **Location:** Enter ZIP code `98103`, Select county `King`
 - **Household:** Number of people: `1`
-- **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `March 1978` (age 47), Special Circumstances: select `Currently have any disabilities that make you unable to work now or in the future`, Has income: `Yes`, Income type: `Wages`, Income amount: `$1,690`, Income frequency: `Monthly`, Insurance: `None`
+- **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `March 1978` (age 47), Special Circumstances: select `Currently have any disabilities that make you unable to work now or in the future` and `Any medical or developmental condition that has lasted, or is expected to last, more than 12 months`, Has income: `Yes`, Income type: `Wages`, Income amount: `$1,690`, Income frequency: `Monthly`, Insurance: `None`
 - **Current Benefits:** Select `None`
 
 **Why this matters:** Confirms the SGA threshold is inclusive — income at exactly the limit should not disqualify the applicant.
@@ -200,7 +200,7 @@ Source: https://www.ssa.gov/oact/STATS/dib-g3.html (Disabled Worker Average Bene
 **Steps:**
 - **Location:** Enter ZIP code `98103`, Select county `King`
 - **Household:** Number of people: `1`
-- **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `January 1957` (age 68), Special Circumstances: select `Currently have any disabilities that make you unable to work now or in the future`, Has income: `Yes`, Income type: `Wages`, Income amount: `$500`, Income frequency: `Monthly`, Insurance: `None`
+- **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `January 1957` (age 68), Special Circumstances: select `Currently have any disabilities that make you unable to work now or in the future` and `Any medical or developmental condition that has lasted, or is expected to last, more than 12 months`, Has income: `Yes`, Income type: `Wages`, Income amount: `$500`, Income frequency: `Monthly`, Insurance: `None`
 - **Current Benefits:** Select `None`
 
 **Why this matters:** Confirms the FRA upper age cutoff is correctly applied using the birth-year FRA schedule.
@@ -214,7 +214,7 @@ Source: https://www.ssa.gov/oact/STATS/dib-g3.html (Disabled Worker Average Bene
 **Steps:**
 - **Location:** Enter ZIP code `98103`, Select county `King`
 - **Household:** Number of people: `1`
-- **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `June 1981` (age 44), Special Circumstances: select `Currently have any disabilities that make you unable to work now or in the future` and `Blind or visually impaired`, Has income: `Yes`, Income type: `Wages`, Income amount: `$2,500`, Income frequency: `Monthly`, Insurance: `None`
+- **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `June 1981` (age 44), Special Circumstances: select `Currently have any disabilities that make you unable to work now or in the future`, `Any medical or developmental condition that has lasted, or is expected to last, more than 12 months`, and `Blind or visually impaired`, Has income: `Yes`, Income type: `Wages`, Income amount: `$2,500`, Income frequency: `Monthly`, Insurance: `None`
 - **Current Benefits:** Select `None`
 
 **Why this matters:** Confirms the higher blind SGA threshold is applied correctly — without it this applicant would be incorrectly screened out.
@@ -228,7 +228,7 @@ Source: https://www.ssa.gov/oact/STATS/dib-g3.html (Disabled Worker Average Bene
 **Steps:**
 - **Location:** Enter ZIP code `98103`, Select county `King`
 - **Household:** Number of people: `1`
-- **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `November 1960` (age 65), Special Circumstances: select `Currently have any disabilities that make you unable to work now or in the future`, Has income: `Yes`, Income type: `Wages`, Income amount: `$500`, Income frequency: `Monthly`, Insurance: `None`
+- **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `November 1960` (age 65), Special Circumstances: select `Currently have any disabilities that make you unable to work now or in the future` and `Any medical or developmental condition that has lasted, or is expected to last, more than 12 months`, Has income: `Yes`, Income type: `Wages`, Income amount: `$500`, Income frequency: `Monthly`, Insurance: `None`
 - **Current Benefits:** Select `None`
 
 **Why this matters:** Validates that the calculator uses the SSA birth-year FRA schedule rather than a fixed age cutoff — a 65-year-old born in 1960 is still under FRA.
@@ -242,8 +242,8 @@ Source: https://www.ssa.gov/oact/STATS/dib-g3.html (Disabled Worker Average Bene
 **Steps:**
 - **Location:** Enter ZIP code `98501`, Select county `Thurston`
 - **Household:** Number of people: `3`
-- **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `January 1976` (age 49), Special Circumstances: select `Currently have any disabilities that make you unable to work now or in the future`, Has income: `Yes`, Income type: `Wages`, Income amount: `$800`, Income frequency: `Monthly`, Insurance: `None`
-- **Person 2 (Spouse):** Relationship: `Spouse`, Birth month/year: `March 1978` (age 47), Special Circumstances: select `Currently have any disabilities that make you unable to work now or in the future`, Has income: `Yes`, Income type: `SSDI`, Income amount: `$1,200`, Income frequency: `Monthly`, Insurance: `None`
+- **Person 1 (Head of Household):** Relationship: `Head of Household`, Birth month/year: `January 1976` (age 49), Special Circumstances: select `Currently have any disabilities that make you unable to work now or in the future` and `Any medical or developmental condition that has lasted, or is expected to last, more than 12 months`, Has income: `Yes`, Income type: `Wages`, Income amount: `$800`, Income frequency: `Monthly`, Insurance: `None`
+- **Person 2 (Spouse):** Relationship: `Spouse`, Birth month/year: `March 1978` (age 47), Special Circumstances: select `Currently have any disabilities that make you unable to work now or in the future` and `Any medical or developmental condition that has lasted, or is expected to last, more than 12 months`, Has income: `Yes`, Income type: `SSDI`, Income amount: `$1,200`, Income frequency: `Monthly`, Insurance: `None`
 - **Person 3 (Adult Child):** Relationship: `Dependent`, Birth month/year: `May 2001` (age 24), Special Circumstances: select `None`, Has income: `Yes`, Income type: `Wages`, Income amount: `$2,500`, Income frequency: `Monthly`, Insurance: `None`
 - **Current Benefits:** `None` for head; `SSDI` for spouse
 
