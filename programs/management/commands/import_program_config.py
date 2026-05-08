@@ -38,6 +38,7 @@ class Command(BaseCommand):
     Usage:
       python manage.py import_program_config <path/to/config.json>
       python manage.py import_program_config <path/to/config.json> --dry-run
+      python manage.py import_program_config <path/to/config.json> --skip-translation
 
     For detailed documentation on JSON configuration format and examples,
     see: programs/management/commands/import_program_config_data/README.md
@@ -59,11 +60,18 @@ class Command(BaseCommand):
             action="store_true",
             help="Delete existing program and its navigators/documents before importing",
         )
+        parser.add_argument(
+            "--skip-translation",
+            action="store_true",
+            help="Copy English text to all languages instead of calling Google Translate "
+            "(for local dev when GOOGLE_APPLICATION_CREDENTIALS is unavailable)",
+        )
 
     def handle(self, *args: Any, **options: Any) -> None:
         config_file = options["config_file"]
         dry_run = options.get("dry_run", False)
         override = options.get("override", False)
+        self.skip_translation = bool(options.get("skip_translation", False))
 
         try:
             config = json.load(config_file)
@@ -545,7 +553,7 @@ class Command(BaseCommand):
         Translation.objects.edit_translation_by_id(translation_obj.id, settings.LANGUAGE_CODE, text, manual=True)
 
         # Handle no_auto fields (copy English to all languages)
-        if translation_obj.no_auto:
+        if translation_obj.no_auto or getattr(self, "skip_translation", False):
             for lang in Translate.languages:
                 Translation.objects.edit_translation_by_id(translation_obj.id, lang, text, manual=False)
         else:
