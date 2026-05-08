@@ -274,6 +274,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             "has_chp_hi",
             "has_no_hi",
             "has_va",
+            "has_wa_wftc",
             "has_nc_medicare_savings",
             "has_tx_dart",
             "needs_food",

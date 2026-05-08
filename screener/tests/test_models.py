@@ -271,6 +271,20 @@ class TestScreen(TestCase):
 
         self.assertFalse(self.screen.has_benefit("wa_snap"))
 
+    def test_has_benefit_returns_true_when_user_has_wa_wftc(self):
+        """has_benefit('wa_wftc') is True when Screen.has_wa_wftc is True (already-enrolled flag)."""
+        self.screen.has_wa_wftc = True
+        self.screen.save()
+
+        self.assertTrue(self.screen.has_benefit("wa_wftc"))
+
+    def test_has_benefit_returns_false_when_user_does_not_have_wa_wftc(self):
+        """has_benefit('wa_wftc') is False when Screen.has_wa_wftc is False."""
+        self.screen.has_wa_wftc = False
+        self.screen.save()
+
+        self.assertFalse(self.screen.has_benefit("wa_wftc"))
+
     def test_has_benefit_returns_true_for_ma_head_start_when_user_has_head_start(self):
         """
         Test that has_benefit('ma_head_start') returns True when user has Head Start.

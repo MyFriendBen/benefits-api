@@ -147,6 +147,7 @@ class Screen(models.Model):
     has_chp_hi = models.BooleanField(default=None, blank=True, null=True)
     has_no_hi = models.BooleanField(default=None, blank=True, null=True)
     has_va = models.BooleanField(default=None, blank=True, null=True)
+    has_wa_wftc = models.BooleanField(default=False, blank=True, null=True)
     has_project_cope = models.BooleanField(default=False, blank=True, null=True)
     has_cesn_heap = models.BooleanField(default=False, blank=True, null=True)
     has_tx_dart = models.BooleanField(default=False, blank=True, null=True)
@@ -405,6 +406,7 @@ class Screen(models.Model):
             "il_snap": self.has_snap,
             "tx_snap": self.has_snap,
             "wa_snap": self.has_snap,
+            "wa_wftc": self.has_wa_wftc,
             "lifeline": self.has_lifeline,
             "tx_lifeline": self.has_lifeline,
             "acp": self.has_acp,

@@ -77,6 +77,143 @@
     }
   },
   {
+    "notes": "Scenario 2: Childless single filer \u2014 income intended to probe the 0-QC WA WFTC income ceiling using PolicyEngine 2026 rules. Discovery's $1,593/mo (~$19,116/yr) assumed ~$1 above a 2025-era $19,104 limit; PE 2026 still credits that income ($99). This row uses $1,630/mo so PE returns ineligible / $0 under the current-year curve (end-to-end income gate).",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98103",
+      "county": "King County",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 34,
+          "birth_year": 1991,
+          "birth_month": 6,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1630.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wftc",
+      "eligible": false,
+      "value": 0
+    }
+  },
+  {
+    "notes": "Scenario 3: Single filer with no qualifying children, age 24, $1,200/month wages. Below the 25-year minimum age floor for childless WFTC eligibility \u2014 PolicyEngine should return ineligible / $0.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King County",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 24,
+          "birth_year": 2002,
+          "birth_month": 5,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1200.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wftc",
+      "eligible": false,
+      "value": 0
+    }
+  },
+  {
+    "notes": "Scenario 4: Same household economics as spec's \u201calready receiving WFTC\u201d walkthrough (single head + two qualifying children, $2,500/mo wages). PolicyEngine credits $1,017/yr; the import sets has_wa_wftc=true so results API exposes already_has=true for wa_wftc (frontend may filter the tile even though the calculator stays eligible). Structured validate still checks calculator output vs $1,017; FE should hide/filter when already_has is honored.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98103",
+      "county": "King County",
+      "household_size": 3,
+      "household_assets": 0,
+      "has_wa_wftc": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 34,
+          "birth_year": 1991,
+          "birth_month": 6,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2500.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 9,
+          "birth_year": 2016,
+          "birth_month": 9,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 6,
+          "birth_year": 2020,
+          "birth_month": 3,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wftc",
+      "eligible": true,
+      "value": 1017
+    }
+  },
+  {
     "notes": "Scenario 5: Three-child MFJ income-ceiling probe. Spec assumed $68,675 MFJ + 3-child EITC ceiling for tax year 2025 and expected ineligible at annual ~$68,676. PolicyEngine's 2026 parameters have a higher ceiling (the household is still in the phase-out band at this income), so the household is eligible at $460. To preserve the income-ceiling test intent, the test case in Discovery should be re-derived against the 2026 limit; for now the expected value is updated to match PolicyEngine's authoritative 2026 output.",
     "household": {
       "white_label": "wa",
@@ -159,6 +296,181 @@
     }
   },
   {
+    "notes": "Scenario 6: Single filer with one qualifying child, $4,000/mo wages (annual $48,000), below the one-child EITC band in spec. PolicyEngine 2026 returns $499/yr (spec's $335 tier-max was a 2025 approximation).",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98103",
+      "county": "King County",
+      "household_size": 2,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "birth_year": 1990,
+          "birth_month": 6,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4000.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 9,
+          "birth_year": 2016,
+          "birth_month": 9,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wftc",
+      "eligible": true,
+      "value": 499
+    }
+  },
+  {
+    "notes": "Scenario 7: Single filer, age 72, sole income is Social Security retirement ($1,400/month, unearned). WFTC requires earned income > $0 \u2014 PolicyEngine should return ineligible / $0.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98144",
+      "county": "King County",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 72,
+          "birth_year": 1954,
+          "birth_month": 3,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 1400.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wftc",
+      "eligible": false,
+      "value": 0
+    }
+  },
+  {
+    "notes": "Scenario 8: MFJ with three qualifying children; combined $4,000/mo wages (under spec's 2025 ceiling narrative). PolicyEngine 2026 max for this tier is $1,360/yr (spec listed $1,330 from 2025 tier table).",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98103",
+      "county": "King County",
+      "household_size": 5,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 40,
+          "birth_year": 1985,
+          "birth_month": 6,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2500.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 38,
+          "birth_year": 1987,
+          "birth_month": 9,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1500.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 16,
+          "birth_year": 2010,
+          "birth_month": 1,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 12,
+          "birth_year": 2014,
+          "birth_month": 3,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 6,
+          "birth_year": 2019,
+          "birth_month": 7,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wftc",
+      "eligible": true,
+      "value": 1360
+    }
+  },
+  {
     "notes": "Scenario 9: Edge case \u2014 single filer, no qualifying children, exactly age 25 (minimum age for childless WFTC eligibility). Income $1,200/month (annual $14,400), within the $19,104 single + 0-child limit. Spec expected the $50 minimum-credit floor, but $14,400 sits in the WFTC plateau (full max benefit) for a 0-child filer per PolicyEngine's actual 2026 phase-in/phase-out, so PE returns the inflation-adjusted 2026 max ($342). Expected value updated to PE's authoritative 2026 output.",
     "household": {
       "white_label": "wa",
@@ -194,70 +506,6 @@
       "program_name": "wa_wftc",
       "eligible": true,
       "value": 342
-    }
-  },
-  {
-    "notes": "Scenario 3: Single filer with no qualifying children, age 24, $1,200/month wages. Below the 25-year minimum age floor for childless WFTC eligibility \u2014 PolicyEngine should return ineligible / $0.",
-    "household": {
-      "white_label": "wa",
-      "is_test": true,
-      "agree_to_tos": true,
-      "is_13_or_older": true,
-      "zipcode": "98101",
-      "county": "King County",
-      "household_size": 1,
-      "household_assets": 0,
-      "household_members": [
-        {
-          "relationship": "headOfHousehold",
-          "age": 24,
-          "birth_year": 2002,
-          "birth_month": 5,
-          "has_income": true,
-          "income_streams": [
-            {"type": "wages", "amount": 1200.0, "frequency": "monthly"}
-          ],
-          "insurance": {"none": false}
-        }
-      ],
-      "expenses": []
-    },
-    "expected_results": {
-      "program_name": "wa_wftc",
-      "eligible": false,
-      "value": 0
-    }
-  },
-  {
-    "notes": "Scenario 7: Single filer, age 72, sole income is Social Security retirement ($1,400/month, unearned). WFTC requires earned income > $0 \u2014 PolicyEngine should return ineligible / $0.",
-    "household": {
-      "white_label": "wa",
-      "is_test": true,
-      "agree_to_tos": true,
-      "is_13_or_older": true,
-      "zipcode": "98144",
-      "county": "King County",
-      "household_size": 1,
-      "household_assets": 0,
-      "household_members": [
-        {
-          "relationship": "headOfHousehold",
-          "age": 72,
-          "birth_year": 1954,
-          "birth_month": 3,
-          "has_income": true,
-          "income_streams": [
-            {"type": "sSRetirement", "amount": 1400.0, "frequency": "monthly"}
-          ],
-          "insurance": {"none": false}
-        }
-      ],
-      "expenses": []
-    },
-    "expected_results": {
-      "program_name": "wa_wftc",
-      "eligible": false,
-      "value": 0
     }
   }
 ]

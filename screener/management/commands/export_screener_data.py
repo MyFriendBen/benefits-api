@@ -439,6 +439,7 @@ class Command(BaseCommand):
             "screen.has_chp_hi": "Has CHP+ health insurance",
             "screen.has_no_hi": "Has no health insurance",
             "screen.has_va": "Has Veterans Affairs benefits",
+            "screen.has_wa_wftc": "Has Washington Working Families Tax Credit",
             "screen.has_project_cope": "Has Project COPE assistance",
             "screen.has_cesn_heap": "Has CESN HEAP energy assistance",
             # Screen fields - needs_* (self-reported needs)
