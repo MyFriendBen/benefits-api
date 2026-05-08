@@ -8,23 +8,67 @@
 **Spec:** `programs/programs/wa/wftc/spec.md`
 **Local dev QA (pre-merge):** `qa/MFB-810-wa-wftc-results.md`
 
-This document follows the same **staging acceptance testing** shape as **[PR #1481 — MFB-850 WA SSI staging acceptance](https://github.com/MyFriendBen/benefits-api/pull/1481)**: summarize each canonical validation scenario against staging, explain methodology (FE + backend), capture screen URLs, call out deltas vs spec where PolicyEngine is authoritative.
+This document follows the same **staging acceptance testing** layout as **[PR #1482 — MFB-778 WA WSOS GRD staging QA](https://github.com/MyFriendBen/benefits-api/pull/1482)** (four QA steps plus a numbered **staging screen UUID** table per scenario row in scope). Methodological notes overlap **[PR #1481 — MFB-850 WA SSI staging acceptance](https://github.com/MyFriendBen/benefits-api/pull/1481)** (how `import_validations` URLs and `validate` are used).
+
+**Important:** Unlike GRD (`spec.md` row count equals `validate` row count), WFTC’s importer file **`wa_wftc.json` contains five households** keyed to **`spec.md` scenarios 1, 3, 5, 7, and 9** only. Scenarios **2, 4, 6, and 8** are **not imported** — they are **`DEFERRED`** on staging (same rationale as `qa/MFB-810-wa-wftc-results.md`). The matrices below spell out **PASS** vs **`DEFERRED`** for **all nine** spec rows so reviewers never have to hunt footnotes.
 
 Staging program **`wa_wftc`** Django ID on import: **1614** (seen in eligibility URLs `/results/benefits/1614`). Category **`wa_tax`** ("Tax Credits") ID **602** when first created.
 
-## Summary
+## Results — all 4 staging QA steps PASS
 
-| # | Scenario | Expected (`wa_wftc.json` / PE 2026) | Actual (staging FE) | Result | Screen UUID / notes |
-|---|----------|-------------------------------------|---------------------|--------|---------------------|
-| 1 | Golden path — married MFJ, 2 qualifying children, $4,700/mo wages | Eligible **$1,017/yr** | WFTC present, **$1,017/year** on tile; detail page Average Annual Savings **$1,017** | **PASS** | Staging FE: [`48b8bcc6-4167-49b7-bb9f-cfa75e01d0e1`](https://benefits-calculator-staging.herokuapp.com/wa/48b8bcc6-4167-49b7-bb9f-cfa75e01d0e1/results/benefits) |
-| 3 | Single, age 24, **$1,200/mo** wages, 0 qualifying children — below 25yo childless floor | Ineligible — WFTC must not appear | WFTC **absent**; only SNAP eligibility surfaced for this persona | **PASS** | FE: [`2182b662-43e1-451c-8c64-0ce7da2cd9f8`](https://benefits-calculator-staging.herokuapp.com/wa/2182b662-43e1-451c-8c64-0ce7da2cd9f8/results/benefits) |
-| 5 | Married MFJ, **three** qualifying children — income in PE 2026 phase-out band (spec drift vs 2025 ceiling) | Eligible **$460/yr** | Validated **`460 => 460`** on staging (`validate`); same URL pattern as other rows | **PASS** | FE: [`4bebc1a4-50e3-4777-b264-b4ca27ce00a7`](https://benefits-calculator-staging.herokuapp.com/wa/4bebc1a4-50e3-4777-b264-b4ca27ce00a7/results/benefits) |
-| 7 | Single, age **72**, only Social Security retirement — **zero** earned income | Ineligible | WFTC **absent** (earned-income > 0 rule) | **PASS** | Backend + URL: [`caed2671-4e7f-49ec-8171-2ad448ac8325`](https://benefits-calculator-staging.herokuapp.com/wa/caed2671-4e7f-49ec-8171-2ad448ac8325/results/benefits) |
-| 9 | Single, age **25**, 0 kids, **$1,200/mo** — childless plateau (**PE ≠ spec $50** floor) | Eligible **$342/yr** | WFTC present, **$342/year**; co-listed with SNAP for this persona | **PASS** | FE: [`ee7ef9fa-cd4b-480f-9512-048bb10be8f8`](https://benefits-calculator-staging.herokuapp.com/wa/ee7ef9fa-cd4b-480f-9512-048bb10be8f8/results/benefits) |
+| Step | What | Outcome |
+| ---- | --- | ------- |
+| 1 | `import_all_program_configs --file wa_wftc_initial_config.json` on cobenefits-api-staging | **PASS** — program id **1614**, `active=True`, metadata + translations as expected |
+| 2 | All **5** households in **`wa_wftc.json`** on staging FE (`import_validations` URLs) | **PASS — 5 / 5** |
+| 3 | `validate --program wa_wftc` on cobenefits-api-staging | **PASS — 5 / 5** (`Passed: 5`, `Failed: 0`, `Skipped: 0`) |
+| 4 | Manual visual check (Scenario 1 program detail, EN + ES) | **PASS** — tile, `$1,017` value, navigator, five documents, bilingual copy after reload |
 
-**Structured validations on staging (`manage.py validate`): 5 / 5 PASS** (`Passed: 5  Failed: 0  Skipped: 0`)
+### Step 2 — staging screen UUIDs for all 5 validation scenarios
 
-**Pass rate (table above): 5 / 5 (100%)**
+Each `#` matches the **`programs/programs/wa/wftc/spec.md` scenario index** carried through `wa_wftc.json` notes (not a 1–5-only internal index).
+
+| # | Scenario | Expected (`wa_wftc.json` / PE 2026) | Staging FE | Result | Screen UUID |
+| - | ---------- | ----------------------------------- | ---------- | ------ | ----------- |
+| 1 | MFJ golden path — 4-person, $4.7k/mo wages combined | Eligible **$1,017/yr** | WFTC present, **$1,017/year** on tile | **PASS** | `48b8bcc6-4167-49b7-bb9f-cfa75e01d0e1` |
+| 3 | Single age **24**, $1.2k/mo, 0 QC — childless < 25 guardrail | **Ineligible** — WFTC absent | SNAP may show for low income; **no WFTC tile** | **PASS** | `2182b662-43e1-451c-8c64-0ce7da2cd9f8` |
+| 5 | MFJ + **three** QC — income probing 2026 phase-out ceiling | Eligible **`$460/yr`** (see local drift notes) | `validate`: **`460 => 460`**; FE parity at results URL | **PASS** | `4bebc1a4-50e3-4777-b264-b4ca27ce00a7` |
+| 7 | Single age **72**, SS retirement only — **zero** earned income | **Ineligible** | **No WFTC** | **PASS** | `caed2671-4e7f-49ec-8171-2ad448ac8325` |
+| 9 | Single age **25**, $1.2k/mo, childless plateau (**PE `$342`** vs spec **`$50`**) | Eligible **`$342/yr`** | WFTC **$342/year** (+ SNAP on staging catalog) | **PASS** | `ee7ef9fa-cd4b-480f-9512-048bb10be8f8` |
+
+Full SPA paths (same shape as GRD QA):  
+`https://benefits-calculator-staging.herokuapp.com/wa/<uuid>/results/benefits`
+
+### Where every `spec.md` scenario landed on staging — PASS / DEFERRED
+
+Nine rows explicitly; this is the analogue of counting **every** GRD scenario in PR **#1482** even though three WFTC spec rows never enter the staging validation file.
+
+| Spec # | In `wa_wftc.json` + Step 2 / `validate`? | Staging result | Notes |
+| ------ | ------------------------------------------ | -------------- | ----- |
+| 1 | Yes | **PASS** | Documented in Step 2 table |
+| 2 | No | **`DEFERRED`** | Not in importer — 2026 PE / Discovery re-pin (local QA) |
+| 3 | Yes | **PASS** | Step 2 table |
+| 4 | No | **`DEFERRED`** | “Already receiving WFTC” exclusion — `show_in_has_benefits_step: false` blocks structured FE path |
+| 5 | Yes | **PASS** | Step 2 table |
+| 6 | No | **`DEFERRED`** | Not in importer — child + income band vs 2026 PE |
+| 7 | Yes | **PASS** | Step 2 table |
+| 8 | No | **`DEFERRED`** | Not in importer — married + 3-kid band vs 2026 PE |
+| 9 | Yes | **PASS** | Step 2 table |
+
+**Counts:** **5 `PASS`** on staging for imported rows; **4 `DEFERRED`** (not **FAIL** — no staging evidence contradicts spec intent; they were never run as structured imports).
+
+### Step 4 — manual visual checks (Scenario 1 program detail)
+
+Detail page on staging for Scenario **1**: [https://benefits-calculator-staging.herokuapp.com/wa/48b8bcc6-4167-49b7-bb9f-cfa75e01d0e1/results/benefits/1614](https://benefits-calculator-staging.herokuapp.com/wa/48b8bcc6-4167-49b7-bb9f-cfa75e01d0e1/results/benefits/1614)
+
+**English** — Working Families Tax Credit tile and detail: policy copy, **$1,017** estimated value, navigator to **Washington State Department of Revenue**, Apply / web / phone affordances, document list incl. **`wa_tax_return`**, no raw `_label` keys.
+
+**Spanish (`es`)** — after **full reload** following language toggle (same caching caveat as WA GRD in PR **#1482**): translated category/navigator/doc tiles and body text coherent with EN.
+
+## Health observations during the run
+
+- Staging FE and API behaved normally for sampled eligibility loads — **no 500s, no CORS errors** in MCP-driven runs.
+- Cold-start latency on staging is elevated on first results-page hit per persona (tens of seconds); subsequent navigations are faster — consistent with staging behavior noted in **#1482**.
+- FE quirk unrelated to **`wa_wftc` correctness:** Scenario **9** can show **`Annual Tax Credits $0`** in the aggregate header while the WFTC tile shows **`$342/year`** — same inconsistency flagged in detailed notes below.
 
 ## Methodology
 
@@ -83,8 +127,8 @@ heroku run "python manage.py import_all_program_configs --file wa_wftc_initial_c
 
 ## Notes
 
-- Staging behaved healthily throughout: PE-backed requests completed without 500s in sampled runs; bilingual content showed no **`_label`** leaks after reload.
-- Deferred spec scenarios (**2**, **4**, **6**, **8**) behave per local QA deferral rationale (`qa/MFB-810-wa-wftc-results.md`). Scenario **4** still blocked (`show_in_has_benefits_step: false`; no **`taxCredits`** category in WA white-label `category_benefits` checkbox surface).
+- Deferred **`spec.md` rows 2, 4, 6, 8** match the rationale in **`qa/MFB-810-wa-wftc-results.md`** and are enumerated as **`DEFERRED`** in the nine-row matrix above (not hidden in prose).
+- Scenario **4** remains structurally blocked for Discovery-style automation (`show_in_has_benefits_step: false`; no **`taxCredits`** category in WA white-label `category_benefits` checkbox surface).
 - This PR is **acceptance/documentation only** — no code edits.
 
 ---
@@ -97,12 +141,13 @@ heroku run "python manage.py import_all_program_configs --file wa_wftc_initial_c
 ```
 Staging QA — PASS — WA WFTC (MFB-810)
 
-Refs: qa/MFB-810-wa-wftc-staging-results.md • Draft PR documenting acceptance (parity with gh pr 1481 style)
+Refs: qa/MFB-810-wa-wftc-staging-results.md • Acceptance doc mirrors PR #1482 (4 steps + UUID table + full spec matrix) & PR #1481 methodology
 
 Heroku staging:
 • import_all_program_configs --file wa_wftc_initial_config.json → wa_wftc id 1614, active=true
-• import_validations …/wa_wftc.json → 5 staging screen UUIDs
+• import_validations …/wa_wftc.json → 5 staging screen UUIDs (spec rows 1,3,5,7,9)
 • validate --program wa_wftc → Passed: 5 Failed: 0
+• spec rows 2,4,6,8 DEFERRED (see nine-row matrix in doc)
 
 FE MCP spot-check URLs:
 • S1 eligible $1017 …/wa/48b8bcc6-4167-49b7-bb9f-cfa75e01d0e1/results/benefits
