@@ -52,7 +52,11 @@ WHITELABEL_FEATURE_FLAGS: dict[str, FeatureFlagConfig] = {
     ),
     "cesn_heat_pump_journey": FeatureFlagConfig(
         label="CESN Heat Pump Journey",
-        description="Enable the Colorado Energy Savings Network (CESN) heat pump results journey in the screener.",
+        description=(
+            "Show the 3-card heat pump journey section "
+            "(Why get a heat pump? / Will it impact my bills? / Whom should I hire?) "
+            "on the water heater results page."
+        ),
         scope="frontend",
     ),
 }
