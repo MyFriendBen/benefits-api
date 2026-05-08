@@ -8,6 +8,7 @@ wa_member_calculators = {
 }
 
 wa_spm_calculators = {
+    "wa_lifeline": spm.WaLifeline,
     "wa_snap": spm.WaSnap,
 }
 

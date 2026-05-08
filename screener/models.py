@@ -407,6 +407,7 @@ class Screen(models.Model):
             "wa_snap": self.has_snap,
             "lifeline": self.has_lifeline,
             "tx_lifeline": self.has_lifeline,
+            "wa_lifeline": self.has_lifeline,
             "acp": self.has_acp,
             "eitc": self.has_eitc,
             "tx_eitc": self.has_eitc,
