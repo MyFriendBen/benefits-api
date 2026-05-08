@@ -62,7 +62,7 @@
     }
   },
   {
-    "notes": "WA WIC - Household of 2, Income $1 Above 185% FPL, No Adjunctive - Should NOT Be Eligible (2026 threshold: $3,261/mo for HH of 2)",
+    "notes": "WA WIC - Household of 2, Income Above 185% FPL, No Adjunctive - Should NOT Be Eligible (2026 threshold: $40,034/yr for HH of 2)",
     "household": {
       "white_label": "wa",
       "is_test": true,
@@ -83,7 +83,7 @@
           "income_streams": [
             {
               "type": "wages",
-              "amount": 3262.0,
+              "amount": 3337.0,
               "frequency": "monthly"
             }
           ],

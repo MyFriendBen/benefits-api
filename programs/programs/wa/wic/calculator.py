@@ -28,7 +28,6 @@ class WaWic(ProgramCalculator):
         "household_size",
         "income_amount",
         "income_frequency",
-        "pregnant",
     ]
 
     def member_eligible(self, e: MemberEligibility):
