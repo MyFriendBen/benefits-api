@@ -62,7 +62,7 @@ class TestWaSsdiClassAttributes(TestCase):
         self.assertEqual(WaSsdi.sga_blind, 2_830)
 
     def test_member_amount(self):
-        self.assertEqual(WaSsdi.member_amount, 1_634)
+        self.assertEqual(WaSsdi.member_amount, 1_634 * 12)
 
 
 class TestWaSsdiFraSchedule(TestCase):
@@ -159,7 +159,7 @@ class TestWaSsdiValue(TestCase):
         calc.screen.household_members.all.return_value = [member]
         result = calc.calc()
         self.assertTrue(result.eligible)
-        self.assertEqual(result.value, 1634)
+        self.assertEqual(result.value, 1634 * 12)
 
     def test_multi_member_one_eligible(self):
         calc = make_calculator()
@@ -168,4 +168,4 @@ class TestWaSsdiValue(TestCase):
         calc.screen.household_members.all.return_value = [eligible, ineligible]
         result = calc.calc()
         self.assertTrue(result.eligible)
-        self.assertEqual(result.value, 1634)
+        self.assertEqual(result.value, 1634 * 12)
