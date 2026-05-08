@@ -1,0 +1,95 @@
+{
+  "white_label": {
+    "code": "wa"
+  },
+  "program_category": {
+    "external_name": "wa_food",
+    "name": "Food and Nutrition",
+    "icon": "food"
+  },
+  "program": {
+    "name_abbreviated": "wa_csfp",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission",
+      "non_citizen"
+    ],
+    "value_format": null,
+    "value_type": "benefit",
+    "base_program": "csfp",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false,
+    "name": "Commodity Supplemental Food Program (CSFP)",
+    "description": "The Commodity Supplemental Food Program (CSFP) provides free monthly food boxes to seniors aged 60 and older in Washington State. Each box includes healthy foods like cereal, rice, pasta, canned fruits and vegetables, meat, cheese, and milk. The food is meant to add to a senior's diet, not replace all of their groceries.\n\nCSFP provides food, not cash. Each month, you pick up your food box at a local distribution site. Food banks and senior nutrition agencies across Washington run these sites. Northwest Harvest is the main statewide distributor and works with local partners in many counties.\n\nCSFP does not serve every area of Washington. Local agencies operate the program in approved service areas, so check with a nearby food bank to confirm coverage. The program also has a limited number of slots set by the federal government. If all slots are full when you apply, you will be placed on a waiting list until a spot opens.\n\nTo apply, contact a local CSFP distribution site or food bank in your area. The Washington State Department of Agriculture website lists participating agencies. You will need to complete an application and show proof of your age, identity, Washington residency, and source of income. Once approved, you can begin picking up your monthly food box at your assigned site.",
+    "description_short": "Free monthly food boxes for seniors 60 and older with low income in Washington State",
+    "learn_more_link": "https://agr.wa.gov/services/food-access/programs-and-services/commodity-supplemental-food-program-(csfp)",
+    "apply_button_link": "https://agr.wa.gov/foodnearyou",
+    "apply_button_description": "Find a Lead Agency for Food Assistance Programs",
+    "estimated_application_time": "10 - 15 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "website_description": "Free monthly food boxes for seniors 60 and older with low income in Washington State"
+  },
+  "documents": [
+    {
+      "external_name": "id_proof",
+      "text": "Proof of identity (ex: driver's license, state ID, passport)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_home",
+      "text": "Proof of home address (ex: lease, utility bill, mail with your name and address)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_proof_income",
+      "text": "Proof of income (ex: Social Security statement, pension statement, pay stubs)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+  {
+    "external_name": "wsda_food_assistance",
+    "name": "Washington State Department of Agriculture Food Assistance Team",
+    "email": "foodassistance@agr.wa.gov",
+    "phone_number": "+13607255640",
+    "description": "Statewide office that oversees CSFP and other food assistance programs in Washington. Contact this team for general questions about CSFP, help finding a local distribution site, or information about how to apply.",
+    "assistance_link": "https://agr.wa.gov/services/food-access/programs-and-services/commodity-supplemental-food-program-(csfp)"
+  },
+  {
+    "external_name": "oic_of_wa",
+    "name": "Opportunities Industrialization Center of Washington",
+    "counties": ["Yakima"],
+    "email": "contact.us@oicofwa.org",
+    "phone_number": "+15099552316",
+    "description": "Local CSFP distributor serving Central Washington. Contact this agency to apply for CSFP, find a nearby distribution site, or get help with the application process.",
+    "assistance_link": "https://www.oicofwa.org/"
+  },
+  {
+    "external_name": "partners_inland_northwest",
+    "name": "Partners Inland Northwest",
+    "counties": ["Spokane"],
+    "email": "admin@partnersinw.org",
+    "phone_number": "+15099271153",
+    "description": "Local CSFP distributor serving the Inland Northwest region of Washington, including the Spokane area. Contact this agency to apply for CSFP or find a distribution site.",
+    "assistance_link": "https://www.partnersinw.org/"
+  },
+  {
+    "external_name": "rural_resources_community_action",
+    "name": "Rural Resources Community Action",
+    "counties": ["Stevens"],
+    "email": "info@ruralresources.org",
+    "phone_number": "+15096848421",
+    "description": "Local CSFP distributor serving rural Northeast Washington. Contact this agency to apply for CSFP, find a distribution site, or get help with the application process.",
+    "assistance_link": "https://ruralresources.org/"
+  }
+]
+}
