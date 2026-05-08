@@ -1,3 +1,4 @@
+from decimal import Decimal
 from unittest.mock import Mock
 
 from django.test import TestCase
@@ -79,12 +80,38 @@ class TestWaWsosCts(TestCase):
         self.assertFalse(self._calc(screen).eligible().eligible)
 
     def test_scenario_4_three_person_at_exact_mfi_boundary(self):
-        """Scenario 4: 3-person HH, $12,208/mo = $146,500/yr exactly — eligible."""
+        """Scenario 4: 3-person HH at exactly $146,500/yr — spec lists ~$12,208/mo (rounded); * 12 ≠ cap.
+
+        Income streams store amounts to cents; `146500/12` is not representable as an exact annual sum in
+        monthly form. Use a yearly wage of $146,500 so gross income equals the MFI cap and `<=` is tested.
+        """
         screen = self._make_screen(household_size=3, zipcode="98501", county="Thurston")
-        self._add_member(screen, age=31, student=True, monthly_wages=12208)
+        head = self._add_member(screen, age=31, student=True, monthly_wages=0)
+        IncomeStream.objects.create(
+            screen=screen,
+            household_member=head,
+            type="wages",
+            amount=Decimal("146500"),
+            frequency="yearly",
+        )
         self._add_member(screen, relationship="spouse", age=30, student=False)
         self._add_member(screen, relationship="child", age=3, student=False)
         self.assertTrue(self._calc(screen).eligible().eligible)
+
+    def test_scenario_4_three_person_one_cent_above_annual_mfi_ineligible(self):
+        """Rejects income strictly above the cap (same 3p limit); would pass if ``<`` were used instead of ``<=``."""
+        screen = self._make_screen(household_size=3, zipcode="98501", county="Thurston")
+        head = self._add_member(screen, age=31, student=True, monthly_wages=0)
+        IncomeStream.objects.create(
+            screen=screen,
+            household_member=head,
+            type="wages",
+            amount=Decimal("146500.01"),
+            frequency="yearly",
+        )
+        self._add_member(screen, relationship="spouse", age=30, student=False)
+        self._add_member(screen, relationship="child", age=3, student=False)
+        self.assertFalse(self._calc(screen).eligible().eligible)
 
     def test_scenario_5_rji_candidate_still_cts_eligible(self):
         """Scenario 5: Whatcom, 2p, combined income under 2-person cap."""
