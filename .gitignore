@@ -38,6 +38,7 @@ tasks/todo.md
 .claude/settings.local.json
 .claude/
 pull-request-reviews/
+qa/
 
 # Readability check output files in readability-output folder
 readability-output/
