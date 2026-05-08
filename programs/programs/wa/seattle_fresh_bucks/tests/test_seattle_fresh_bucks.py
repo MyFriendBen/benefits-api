@@ -50,8 +50,8 @@ class TestWaSeattleFreshBucks(TestCase):
         self.assertIn("wa_seattle_fresh_bucks", wa_calculators)
         self.assertIs(wa_calculators["wa_seattle_fresh_bucks"], WaSeattleFreshBucks)
 
-    def test_amount_is_60(self):
-        self.assertEqual(WaSeattleFreshBucks.amount, 60)
+    def test_amount_is_yearly(self):
+        self.assertEqual(WaSeattleFreshBucks.amount, 60 * 12)
 
     def test_min_age_is_18(self):
         self.assertEqual(WaSeattleFreshBucks.min_age, 18)
@@ -168,16 +168,16 @@ class TestWaSeattleFreshBucks(TestCase):
     # --- Benefit value ---
 
     @patch("programs.programs.wa.seattle_fresh_bucks.calculator.hud_client")
-    def test_value_is_60_when_eligible(self, mock_hud):
+    def test_value_is_yearly_when_eligible(self, mock_hud):
         mock_hud.get_screen_il_ami.return_value = 100_000
         calc = self.create_calculator()
         e = calc.eligible()
         calc.value(e)
-        self.assertEqual(e.value, 60)
+        self.assertEqual(e.value, 60 * 12)
 
     @patch("programs.programs.wa.seattle_fresh_bucks.calculator.hud_client")
     def test_value_is_household_level_not_per_member(self, mock_hud):
-        """Multi-adult household still gets a single $60 benefit."""
+        """Multi-adult household still gets a single $60/mo ($720/yr) benefit."""
         mock_hud.get_screen_il_ami.return_value = 200_000
         self.screen.household_size = 2
         self.screen.save()
@@ -190,7 +190,7 @@ class TestWaSeattleFreshBucks(TestCase):
         calc = self.create_calculator()
         e = calc.eligible()
         calc.value(e)
-        self.assertEqual(e.value, 60)
+        self.assertEqual(e.value, 60 * 12)
 
     @patch("programs.programs.wa.seattle_fresh_bucks.calculator.hud_client")
     def test_value_is_0_when_ineligible(self, mock_hud):
