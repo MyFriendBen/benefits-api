@@ -5,7 +5,7 @@ import programs.programs.messages as messages
 
 class WaSeattleFreshBucks(ProgramCalculator):
     """
-    Seattle Fresh Bucks — monthly $60 produce benefit for low-income Seattle residents.
+    Seattle Fresh Bucks — $60/month ($720/year) produce benefit for low-income Seattle residents.
 
     Eligibility:
     - Household income ≤ 80% AMI (King County/Seattle area)
@@ -17,7 +17,7 @@ class WaSeattleFreshBucks(ProgramCalculator):
     language preference) is not modeled.
     """
 
-    amount = 60
+    amount = 60 * 12
     min_age = 18
     max_ami_percent = "80%"
 

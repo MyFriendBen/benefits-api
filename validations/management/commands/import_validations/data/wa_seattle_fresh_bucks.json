@@ -31,7 +31,7 @@
     "expected_results": {
       "program_name": "wa_seattle_fresh_bucks",
       "eligible": true,
-      "value": 60
+      "value": 720
     }
   },
   {
@@ -124,7 +124,7 @@
     "expected_results": {
       "program_name": "wa_seattle_fresh_bucks",
       "eligible": true,
-      "value": 60
+      "value": 720
     }
   }
 ]
