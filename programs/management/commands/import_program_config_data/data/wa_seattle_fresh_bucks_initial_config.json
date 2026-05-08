@@ -10,6 +10,7 @@
   },
   "program": {
     "name_abbreviated": "wa_seattle_fresh_bucks",
+    "year": "2026",
     "legal_status_required": [
       "citizen", "non_citizen", "refugee", "gc_5plus", "gc_5less", "otherWithWorkPermission"
     ],
