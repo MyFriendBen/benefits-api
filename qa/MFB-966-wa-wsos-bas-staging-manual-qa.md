@@ -14,7 +14,7 @@
 
 | Item | Status |
 |------|--------|
-| **BaS appears for Scenario 1 (eligible profile)** | **FAIL** — no “Baccalaureate” / BaS program on the results page; in-page search for `Baccalaureate` had no matches. |
+| **BaS in results** | **FAIL** — Expected eligible **$22,500** lump sum per spec/calculator; program card **not** present. No “Baccalaureate” / BaS on the results page; in-page search for `Baccalaureate` had no matches. |
 | **GRD appears instead** | **OBSERVED** — *Washington State Opportunity Scholarship Graduate Scholarship (GRD)* appeared under Education with **~$2,083/mo** summary and **$25,000** estimated savings on the card. |
 | **Root cause hypothesis** | Staging API DB likely missing imported/active `wa_wsos_bas` program row and/or frontend not yet receiving BaS in the program payload after deploy. **Action:** confirm Heroku deploy from `main`, then `import_program_config` (or `import_all_program_configs`) on **`cobenefits-api-staging`**, re-test. |
 | **Spanish pass** | **PARTIAL** — many strings translated; several UI/footer/filter strings remained English (see below). |
