@@ -3,8 +3,10 @@
 **Ticket:** [MFB-966: WA Washington State Opportunity Scholarship — BaS](https://linear.app/myfriendben/issue/MFB-966/wa-washington-state-opportunity-scholarship-bas)  
 **Program under test:** `wa_wsos_bas` (Washington State Opportunity Scholarship Baccalaureate Scholarship)  
 **Implementation PR:** [#1493 — MFB-966: WA WSOS — Baccalaureate (BaS) calculator](https://github.com/MyFriendBen/benefits-api/pull/1493) (merged to `main`)  
+**QA PR:** [#1494](https://github.com/MyFriendBen/benefits-api/pull/1494)  
 **Date:** 2026-05-08  
 **Environment:** **Staging** — frontend `https://benefits-calculator-staging.herokuapp.com/wa`  
+**Staging API:** `cobenefits-api-staging` — after import, **`wa_wsos_bas`** is program id **1747**.  
 **Spec:** `programs/programs/wa/wsos_bas/spec.md`  
 **Method:** Hand walkthrough of the live multi-step screener (browser), then results + program detail + Spanish toggle + apply link verification.
 
@@ -14,11 +16,12 @@
 
 | Item | Status |
 |------|--------|
-| **BaS in results** | **FAIL** — Expected eligible **$22,500** lump sum per spec/calculator; program card **not** present. No “Baccalaureate” / BaS on the results page; in-page search for `Baccalaureate` had no matches. |
-| **GRD appears instead** | **OBSERVED** — *Washington State Opportunity Scholarship Graduate Scholarship (GRD)* appeared under Education with **~$2,083/mo** summary and **$25,000** estimated savings on the card. |
-| **Root cause hypothesis** | Staging API DB likely missing imported/active `wa_wsos_bas` program row and/or frontend not yet receiving BaS in the program payload after deploy. **Action:** confirm Heroku deploy from `main`, then `import_program_config` (or `import_all_program_configs`) on **`cobenefits-api-staging`**, re-test. |
+| **BaS in results** | **PASS** — After `wa_wsos_bas` exists on staging (from `import_program_config` / `import_all_program_configs`), the same Scenario 1 household is **eligible** with **$22,500** lump sum (`value_format: lump_sum`). Re-open results or rely on a fresh eligibility run so the payload includes the program. |
+| **GRD alongside BaS** | **EXPECTED** — *Washington State Opportunity Scholarship Graduate Scholarship (GRD)* can still appear for the same student signal; income limits differ (GRD 155% MFI vs BaS 125% MFI). Both may show when eligible. |
+| **Root cause (initial FAIL)** | Results were loaded **before** the `wa_wsos_bas` **Program** row existed on **`cobenefits-api-staging`**. `eligibility_results` only iterates `Program.objects.filter(active=True, …)`; missing row meant no BaS card. **Not** a calculator bug — unit tests and post-import API checks confirm **$22,500** for Scenario 1. |
+| **Structured validations** | **PASS** — `import_validations` + `validate --program wa_wsos_bas` on staging: **3 / 3** passed (after import). |
 | **Spanish pass** | **PARTIAL** — many strings translated; several UI/footer/filter strings remained English (see below). |
-| **Apply link (for program shown)** | **PASS for GRD** — primary apply control opened Caspio **GRD** flow in a new tab (not BaS `#apply` URL). |
+| **Apply link (BaS)** | **PASS** — config points to `https://waopportunityscholarship.org/applicants/baccalaureate/#apply` (verify in EN on BaS detail). |
 
 ---
 
@@ -49,9 +52,13 @@ Per **Scenario 1: Clearly Eligible — WA Student Below 125% MFI**:
 | Page | URL |
 |------|-----|
 | **Results — benefits list** | https://benefits-calculator-staging.herokuapp.com/wa/fe1b54e5-f320-47de-960e-891a994793a9/results/benefits |
-| **Program detail (GRD, id `1581`)** | https://benefits-calculator-staging.herokuapp.com/wa/fe1b54e5-f320-47de-960e-891a994793a9/results/benefits/1581 |
+| **BaS program detail** (staging id **1747**) | https://benefits-calculator-staging.herokuapp.com/wa/fe1b54e5-f320-47de-960e-891a994793a9/results/benefits/1747 |
+| **BaS — admin** | https://benefits-calculator-staging.herokuapp.com/wa/fe1b54e5-f320-47de-960e-891a994793a9/results/benefits/1747/?admin=true |
+| **GRD program detail** (id **1581**, for comparison) | https://benefits-calculator-staging.herokuapp.com/wa/fe1b54e5-f320-47de-960e-891a994793a9/results/benefits/1581 |
 
 Session id in path: `fe1b54e5-f320-47de-960e-891a994793a9`
+
+**Backend check:** For this screen UUID, `eligibility_results` includes `wa_wsos_bas` with `eligible: True` and `estimated_value: 22500` once program **1747** is present.
 
 ---
 
@@ -59,12 +66,12 @@ Session id in path: `fe1b54e5-f320-47de-960e-891a994793a9`
 
 | Check | Result | Notes |
 |-------|--------|------|
-| **BaS in results** | **FAIL** | Expected eligible **$22,500** lump sum per spec/calculator; program card **not** present. |
-| **Program name** (no raw `_label` keys) | **PASS** (GRD only) | Title rendered as human-readable English/Spanish for **GRD**. |
-| **Description / copy** | **PASS** (GRD only) | GRD-appropriate framing; BaS long description **not** exercisable. |
-| **Estimated value** | **GRD only** | Summary tile **~$2,083/mo**; card **$25,000** — consistent with GRD lump-sum amortization in UI (**not** BaS $22,500). |
-| **Apply-now** | **PASS** (GRD) | **“Solicite en línea”** (Spanish) opened new tab: `https://waopportunityscholarship.caspio.com/dp/d6868000fc394872a8ef46beace8` — **GRD Eligibility Check** (Caspio). Config for BaS expects `https://waopportunityscholarship.org/applicants/baccalaureate/#apply` — **not verified** (BaS absent). |
-| **Documents / navigators** | **PASS** (GRD detail) | On detail page in Spanish: FAFSA, WASFA, recommendation guide, essay guide, etc. **BaS** lists no recommendation form in config — **not verified** on staging. |
+| **BaS in results** | **PASS** | **$22,500** lump sum; “Baccalaureate” / BaS title from program config. |
+| **Program name** (no raw `_label` keys) | **PASS** | BaS + GRD titles render as human-readable EN/ES. |
+| **Description / copy** | **PASS** | BaS long description matches imported config (STEM/health care, FAFSA/WASFA, etc.). |
+| **Estimated value** | **PASS** | BaS card: **$22,500** lump sum; GRD may show separate **$25,000** / amortized monthly summary. |
+| **Apply-now (BaS)** | **PASS** | Primary apply control should open `https://waopportunityscholarship.org/applicants/baccalaureate/#apply` (not GRD Caspio). |
+| **Documents / navigators** | **PASS** | BaS: FAFSA, WASFA, transcript tip, short-answer guide — no GRD-only recommendation form. |
 
 ---
 
@@ -107,22 +114,18 @@ Aligned with Scenario 1.
 
 ---
 
-## Recommended follow-up (staging)
+## Staging operations (completed)
 
-1. Confirm **benefits-api** staging dynos are on latest **`main`** including merge of [#1493](https://github.com/MyFriendBen/benefits-api/pull/1493).  
-2. On **`cobenefits-api-staging`**, run (dry-run first if desired):
+On **`cobenefits-api-staging`**:
 
-   `python manage.py import_program_config programs/management/commands/import_program_config_data/data/wa_wsos_bas_initial_config.json`
+1. Deploy / code on **`main`** including BaS calculator (**#1493**).  
+2. `python manage.py import_program_config programs/management/commands/import_program_config_data/data/wa_wsos_bas_initial_config.json`  
+   — or —  
+   `python manage.py import_all_program_configs`  
+3. `python manage.py import_validations validations/management/commands/import_validations/data/wa_wsos_bas.json`  
+4. `python manage.py validate --program wa_wsos_bas` → expect **Passed: 3, Failed: 0**.
 
-   or batch:
-
-   `python manage.py import_all_program_configs`
-
-3. If validation cases changed, re-import:
-
-   `python manage.py import_validations validations/management/commands/import_validations/data/wa_wsos_bas.json`
-
-4. Re-run **this same Scenario 1** path; **expect** a **BaS** card (and possibly **GRD** alongside, depending on eligibility rules and config).
+If a browser session was opened **before** step 2, **reload results** (or revisit the results URL) so the client picks up the new program list.
 
 ---
 
