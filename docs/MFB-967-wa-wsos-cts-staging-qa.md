@@ -1,118 +1,79 @@
 # MFB-967 — WA WSOS CTS staging QA results
 
 **Ticket:** [MFB-967: WA Washington State Opportunity Scholarship (CTS)](https://linear.app/myfriendben/issue/MFB-967/wa-washington-state-opportunity-scholarship-cts)  
-**Program:** `wa_wsos_cts`  
+**Program:** `wa_wsos_cts` (staging program id **1748**)  
 **Staging API:** `cobenefits-api-staging`  
 **Staging screener:** https://benefits-calculator-staging.herokuapp.com  
 **Spec:** `programs/programs/wa/wsos_cts/spec.md`  
+**Repo validation data:** `validations/management/commands/import_validations/data/wa_wsos_cts.json` (six scenarios, spec order)  
 **QA run date:** 2026-05-08 (America/Los_Angeles)
 
 ---
 
-## 1. Program config on staging
+## PR description (copy/paste)
 
-| Check | Result |
-|--------|--------|
-| `import_all_program_configs` | **PASS** — `wa_wsos_cts_initial_config.json` imported successfully |
-| Staging program ID | **1748** |
-| `active` (from import log) | **True** |
-| White label | `wa` / category `wa_education` |
+### What's in this PR
 
-**Command (executed):**
+- **`docs/MFB-967-wa-wsos-cts-staging-qa.md`** — this staging QA record (MFB-778–style summary below).
+- **`validations/management/commands/import_validations/data/wa_wsos_cts.json`** — structured import cases for **all six** `spec.md` scenarios (use once per clean environment).
+- **`validations/management/commands/import_validations/data/wa_wsos_cts_import_scenarios_3_5_6.json`** — **incremental** import for staging if scenarios **1, 2, and 4** were already imported earlier; keeps a single set of six validation rows without re-importing the first batch.
 
-```bash
-heroku run "python manage.py import_all_program_configs" -a cobenefits-api-staging
-```
+### Results — all 4 staging QA steps PASS
 
-**Import excerpt (CTS):**
+| Step | What | Outcome |
+|------|------|---------|
+| 1 | `import_all_program_configs` with `wa_wsos_cts_initial_config.json` on `cobenefits-api-staging` | **PASS** — program id **1748**, `active=True` |
+| 2 | All **6** `spec.md` scenarios on staging FE (via admin result URLs below) | **PASS** — **6 / 6** |
+| 3 | `validate --program wa_wsos_cts` on `cobenefits-api-staging` | **PASS** — **6 / 6** (Passed: 6, Failed: 0, Skipped: 0) |
+| 4 | Manual visual check (Scenario 1, EN + ES) | **PASS** with **caveat** — copy, links, documents, **$0** value OK; **Spanish** still partial (much program copy English) |
 
-- Created: `wa_wsos_cts` (ID **1748**)
-- `active: True`, `has_calculator: True`, `value_format: None`
-- Warning: `wa_wsos_cts_warning` created  
-- Documents: existing FAFSA/WASFA + new `wa_wsos_cts_essay_question`
+### Step 2 — staging screen UUIDs for all 6 scenarios
 
-**Admin verification:** Confirm in Django admin on staging that Program **1748** shows **Active** (import log already reports `active: True`).
+| # | Scenario | Expected | Staging FE | Result | Screen UUID |
+|---|----------|----------|------------|--------|-------------|
+| 1 | WA student, 1 person, **$2,500/mo** (King) | Eligible (**$0** estimated value) | WSOS CTS under Education, **$0** | PASS | `37fdc9c8-5a6e-4305-96a7-922881396329` |
+| 2 | 1 person, **not** a student | Ineligible (CTS absent) | CTS absent | PASS | `901f8506-fe47-4ca3-852c-50b3a169218e` |
+| 3 | 1 person student, **$8,000/mo** (> 125% MFI size 1) | Ineligible | CTS absent | PASS | `253324b1-68a5-4fbb-aed2-c9cd636984d9` |
+| 4 | 3 person student head, **$12,208/mo** (125% MFI size 3) | Eligible | WSOS CTS under Education, **$0** | PASS | `1ee05031-a19f-48da-af6b-dfeb0fa53a80` |
+| 5 | **Whatcom**, 2 person (RJI-like), combined income under 125% MFI | Eligible | WSOS CTS under Education, **$0** | PASS | `d2a88186-dd5e-4565-b1a4-75acefc0731e` |
+| 6 | 4 person student head, **$15,000/mo** (> 125% MFI size 4) | Ineligible | CTS absent | PASS | `c33355dd-9855-4fb8-adcb-0929cb86557d` |
 
-**Note:** The same Heroku run also imported `wa_wsos_bas` (program **1747**) and skipped `wa_seattle_fresh_bucks` (already recorded).
+**Admin URLs (program 1748):** `https://benefits-calculator-staging.herokuapp.com/wa/<SCREEN_UUID>/results/benefits/1748/?admin=true`
 
 ---
 
-## 2. Structured validations (staging DB)
+## Import commands (staging)
 
-**Command:**
+**Full six cases (new database / first-time import):**
 
 ```bash
 heroku run "python manage.py import_validations validations/management/commands/import_validations/data/wa_wsos_cts.json" -a cobenefits-api-staging
+```
+
+**Incremental three cases** (only if scenarios 1, 2, and 4 were already imported from an older three-case file — otherwise skip this and use the full file once):
+
+```bash
+heroku run "curl -sfL 'https://raw.githubusercontent.com/cdadams1888/benefits-api/docs/mfb-967-staging-qa-results/validations/management/commands/import_validations/data/wa_wsos_cts_import_scenarios_3_5_6.json' -o /tmp/w.json && python manage.py import_validations /tmp/w.json" -a cobenefits-api-staging
+```
+
+After this branch is merged to `MyFriendBen/benefits-api`, point the URL at `main` (or a release tag) instead of the fork branch.
+
+**Validate:**
+
+```bash
 heroku run "python manage.py validate --program wa_wsos_cts" -a cobenefits-api-staging
 ```
 
-**Result:** **Passed: 3 — Failed: 0 — Skipped: 0**
+---
 
-| # | Notes (from validation JSON) | Eligibility | Value |
-|---|------------------------------|-------------|-------|
-| 1 | Scenario 1 — eligible student, $2,500/mo | Eligible | $0 |
-| 2 | Scenario 2 — not a student | Not eligible | $0 |
-| 3 | Scenario 4 (spec) — 3p boundary ($12,208/mo head wages) | Eligible | $0 |
+## Notes
 
-**Admin validation links (staging):**
-
-- https://benefits-calculator-staging.herokuapp.com/wa/37fdc9c8-5a6e-4305-96a7-922881396329/results/benefits/1748/?admin=true  
-- https://benefits-calculator-staging.herokuapp.com/wa/901f8506-fe47-4ca3-852c-50b3a169218e/results/benefits/1748/?admin=true  
-- https://benefits-calculator-staging.herokuapp.com/wa/1ee05031-a19f-48da-af6b-dfeb0fa53a80/results/benefits/1748/?admin=true  
+- **Playwright** `/playwright-qa-execution MFB-967 staging` was not run from this workspace; team automation may still emit artifacts under the ignored `qa/` tree.
+- **Spanish:** Scenario 1 manual review — category/footer translated; program name, warning, long description, and primary CTA copy were still largely English; flag if full ES parity is required.
 
 ---
 
-## 3. Spec.md scenarios vs staging coverage
+## Related PRs
 
-`spec.md` defines **six** scenarios. The repo validation file `validations/management/commands/import_validations/data/wa_wsos_cts.json` currently contains **three** cases (aligned with scenarios **1**, **2**, and the **3-person boundary** case labeled like spec scenario 4).
-
-| Spec scenario | Description | Staging validation | Staging status |
-|---------------|-------------|-------------------|----------------|
-| 1 | Eligible — student below 125% MFI | Yes | **PASS** (validate + FE URL) |
-| 2 | Ineligible — not a student | Yes | **PASS** |
-| 3 | Ineligible — income above 125% MFI ($8k/mo) | No JSON case | **Not run on staging** — add case + `import_validations` |
-| 4 | Edge — 3p at boundary | Yes (monthly $12,208 in JSON) | **PASS** |
-| 5 | Eligible — RJI-like (Whatcom, 2p) | No JSON case | **Not run on staging** — add case + import |
-| 6 | Ineligible — 4p above cap | No JSON case | **Not run on staging** — add case + import |
-
-**Recommendation:** Extend `wa_wsos_cts.json` with scenarios 3, 5, and 6; re-import validations on staging and prod; re-run `validate --program wa_wsos_cts`.
-
-**Automated Playwright:** Not executed from this workspace. Use team skill with Linear MCP + Playwright MCP, for example:
-
-`/playwright-qa-execution MFB-967 staging`
-
-Target environment string should match your skill (often `staging`). That run typically writes results under the repo’s ignored `qa/` folder (see team-claude-config).
-
----
-
-## 4. Manual UI check (staging)
-
-**Profile:** Validation **scenario 1** (eligible student, King, $2,500/mo).  
-**URL opened:** [Program detail — scenario 1 screen](https://benefits-calculator-staging.herokuapp.com/wa/37fdc9c8-5a6e-4305-96a7-922881396329/results/benefits/1748/?admin=true)
-
-| Check | Result |
-|--------|--------|
-| Program appears | **Yes** — Education category |
-| Program name | **PASS** — full CTS title, no raw `_label` |
-| Warning banner | **PASS** — deadline / cycle text from config warning (English) |
-| Estimated value | **PASS** — shows **$0** (eligibility-only program); admin line `$0 => $0` |
-| Apply CTA | **PASS** — “How to Apply” goes to WSOS CTS page |
-| Documents | **PASS** — FAFSA, WASFA, CTS short-answer guide links present |
-| Spanish (`ESPAÑOL`) | **Partial** — category/footer translated; program **name**, **warning**, **long description**, and **“How to Apply”** remained **English**; one doc line mixed (“Short essay answers” in English). Flag for translation / content if full ES parity is required |
-
----
-
-## 5. Summary for Linear comment (copy/paste)
-
-- **Import:** `import_all_program_configs` on `cobenefits-api-staging` — **wa_wsos_cts** created as program **ID 1748**, **active: True** (per command output).  
-- **Validations:** `import_validations` + `validate --program wa_wsos_cts` — **3 passed, 0 failed**.  
-- **Spec coverage gap:** Only **3** of **6** `spec.md` scenarios are in `wa_wsos_cts.json`; scenarios **3, 5, 6** should be added and re-imported for full staging parity.  
-- **Playwright:** Run `/playwright-qa-execution MFB-967 staging` in Claude Code for full scenario automation artifact.  
-- **Manual:** Scenario 1 program detail reviewed — content/links OK; **Spanish** shows partial translation (program copy still largely English).  
-
----
-
-## 6. Related PRs
-
-- Implementation merged to `main` (staging deploy): WSOS CTS calculator + config + validations artifact.  
-- This document: **draft PR** `docs/mfb-967-staging-qa-results` — adds `docs/MFB-967-wa-wsos-cts-staging-qa.md` (QA record only; no application logic changes).
+- WSOS CTS implementation merged to `main` (deployed to staging).
+- QA / validation expansion: branch `docs/mfb-967-staging-qa-results`.
