@@ -1,0 +1,70 @@
+{
+  "white_label": {
+    "code": "wa"
+  },
+  "program_category": {
+    "external_name": "wa_education",
+    "name": "Education",
+    "icon": "education"
+  },
+  "program": {
+    "name_abbreviated": "wa_wsos_bas",
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "refugee",
+      "gc_5plus",
+      "gc_5less",
+      "otherWithWorkPermission"
+    ],
+    "name": "Washington State Opportunity Scholarship Baccalaureate Scholarship (BaS)",
+    "description_short": "Scholarship for Washington undergraduates in STEM or health care",
+    "description": "The WSOS Baccalaureate Scholarship helps Washington students pay for a bachelor's degree. The scholarship gives up to $22,500 over your degree.\n\nThe money goes to your school. It can help pay for tuition, housing, transportation, food, and other school costs. You can use it with other financial aid.\n\nYou must plan to study a STEM or health care major at an approved Washington college or university. You must have a Washington high school credential, or earn one by June of the application year. The scholarship is for students who do not already have a bachelor's degree. You also need to meet WSOS academic requirements or have passing GED scores. You need to plan to take at least three credits in each fall, winter, and spring term while using the scholarship. WSOS welcomes undocumented students who meet the program’s education and residency rules.\n\nBefore you apply, you will need to complete a FAFSA or WASFA — these are free forms that show your financial need. Click How to Apply to see the steps. You will write short essays and upload a recent unofficial transcript. You don't need references or recommendation forms.",
+    "learn_more_link": "https://waopportunityscholarship.org/applicants/baccalaureate/",
+    "apply_button_link": "https://waopportunityscholarship.org/applicants/baccalaureate/#apply",
+    "apply_button_description": "How to Apply",
+    "estimated_application_time": "60 to 90 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": "lump_sum",
+    "value_type": "benefit",
+    "website_description": "Scholarship for Washington undergraduates in STEM or health care",
+    "base_program": null,
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": [
+    {
+      "external_name": "wa_wsos_bas_fafsa",
+      "text": "Free Application for Federal Student Aid (FAFSA)",
+      "link_url": "https://studentaid.gov/h/apply-for-aid/fafsa",
+      "link_text": "Apply for FAFSA at studentaid.gov"
+    },
+    {
+      "external_name": "wa_wsos_bas_wasfa",
+      "text": "Washington Application for State Financial Aid (WASFA)",
+      "link_url": "https://wsac.wa.gov/wasfa",
+      "link_text": "Apply for WASFA at wsac.wa.gov"
+    },
+    {
+      "external_name": "wa_wsos_bas_unofficial_transcript",
+      "text": "High school or college transcript, or passing GED scores",
+      "link_url": "https://waopportunityscholarship.org/transcript-tips/",
+      "link_text": "Transcript tips"
+    },
+    {
+      "external_name": "wa_wsos_bas_essay_question",
+      "text": "Short essay answers",
+      "link_url": "https://waopportunityscholarship.org/bas-short-answer-guide/",
+      "link_text": "BaS short answer guide"
+    }
+  ],
+  "warning_message": {
+    "external_name": "wa_wsos_bas_warning",
+    "calculator": "_show",
+    "message": "The 2026 BaS application deadline was February 26, 2026. Accepted students must respond by May 6, 2026, at 9 p.m. PST. Check the program page for future application dates."
+  }
+}
