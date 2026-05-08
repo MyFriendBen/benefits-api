@@ -197,8 +197,8 @@ class TestSnapIneligibleStudentHelperNC(TestCase):
         result = snap_ineligible_student(self.screen, head)
         self.assertFalse(result)
 
-    def test_not_exempt_when_part_time_student_single_parent_with_child(self):
-        """NC part-time student single parent with child under 12 is NOT exempt via E5."""
+    def test_exempt_when_part_time_student(self):
+        """NC part-time student (student_full_time=False) is fully exempt from SNAP restriction."""
         self.screen.household_size = 2
         self.screen.save()
 
@@ -207,12 +207,12 @@ class TestSnapIneligibleStudentHelperNC(TestCase):
             relationship="headOfHousehold",
             age=25,
             student=True,
-            student_full_time=False,  # NC explicitly collected as part-time
+            student_full_time=False,  # NC explicitly collected as part-time → exempt
         )
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=8)
 
         result = snap_ineligible_student(self.screen, head)
-        self.assertTrue(result)  # E5 does NOT apply, no other exemption → ineligible
+        self.assertFalse(result)  # part-time → SNAP restriction does not apply
 
     def test_exempt_via_job_training_program(self):
         """Student in job training program is exempt from SNAP student restriction."""
