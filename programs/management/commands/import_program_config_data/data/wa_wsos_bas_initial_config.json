@@ -29,7 +29,6 @@
     "value_format": "lump_sum",
     "value_type": "benefit",
     "website_description": "Scholarship for Washington undergraduates in STEM or health care",
-    "base_program": null,
     "active": true,
     "low_confidence": false,
     "show_on_current_benefits": true,
