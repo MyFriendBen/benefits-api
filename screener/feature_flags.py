@@ -50,4 +50,9 @@ WHITELABEL_FEATURE_FLAGS: dict[str, FeatureFlagConfig] = {
         description="Show a popup in results that lets users share MyFriendBen with friends via email, SMS, or link.",
         scope="frontend",
     ),
+    "cesn_heat_pump_journey": FeatureFlagConfig(
+        label="CESN Heat Pump Journey",
+        description="Enable the Colorado Energy Savings Network (CESN) heat pump results journey in the screener.",
+        scope="frontend",
+    ),
 }
