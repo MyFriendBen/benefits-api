@@ -216,43 +216,43 @@ class TestSnapIneligibleStudentHelperNC(TestCase):
 
     def test_exempt_via_job_training_program(self):
         """Student in job training program is exempt from SNAP student restriction."""
-        member = HouseholdMember.objects.create(
+        hm = HouseholdMember.objects.create(
             screen=self.screen,
             relationship="headOfHousehold",
             age=25,
             student=True,
             student_job_training_program=True,
         )
-        result = snap_ineligible_student(self.screen, member)
+        result = snap_ineligible_student(self.screen, hm)
         self.assertFalse(result)  # job training → exempt
 
     def test_exempt_via_work_study(self):
         """Student with federal work study is exempt from SNAP student restriction."""
-        member = HouseholdMember.objects.create(
+        hm = HouseholdMember.objects.create(
             screen=self.screen,
             relationship="headOfHousehold",
             age=25,
             student=True,
             student_has_work_study=True,
         )
-        result = snap_ineligible_student(self.screen, member)
+        result = snap_ineligible_student(self.screen, hm)
         self.assertFalse(result)  # work study → exempt
 
     def test_exempt_via_works_20_plus_hours(self):
         """Student working 20+ hours per week is exempt from SNAP student restriction."""
-        member = HouseholdMember.objects.create(
+        hm = HouseholdMember.objects.create(
             screen=self.screen,
             relationship="headOfHousehold",
             age=25,
             student=True,
             student_works_20_plus_hrs=True,
         )
-        result = snap_ineligible_student(self.screen, member)
+        result = snap_ineligible_student(self.screen, hm)
         self.assertFalse(result)  # 20+ hrs → exempt
 
     def test_ineligible_when_all_step3_fields_are_false(self):
         """Student with all employment fields explicitly False is ineligible."""
-        member = HouseholdMember.objects.create(
+        hm = HouseholdMember.objects.create(
             screen=self.screen,
             relationship="headOfHousehold",
             age=25,
@@ -261,7 +261,7 @@ class TestSnapIneligibleStudentHelperNC(TestCase):
             student_has_work_study=False,
             student_works_20_plus_hrs=False,
         )
-        result = snap_ineligible_student(self.screen, member)
+        result = snap_ineligible_student(self.screen, hm)
         self.assertTrue(result)  # no exemption met → ineligible
 
 

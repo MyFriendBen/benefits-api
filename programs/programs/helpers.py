@@ -19,7 +19,7 @@ def snap_ineligible_student(screen: Screen, member: HouseholdMember) -> bool:
         return False
 
     if member.student_full_time is False:
-        return False    
+        return False
 
     # Step 2: Automatic exemptions derived from existing screener data
 
