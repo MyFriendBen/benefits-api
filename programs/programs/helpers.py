@@ -38,17 +38,14 @@ def snap_ineligible_student(screen: Screen, member: HouseholdMember) -> bool:
     if head_or_spouse and screen.num_children(age_max=5) > 0:
         return False
 
-    # E5: Single adult with child under 12 (federal law requires full-time enrollment)
-    # Treat None (not collected by this white label) as lenient to preserve prior behavior.
-    # NC collects student_full_time explicitly, so False correctly blocks the exemption there.
+    # E5: Single adult with child under 12
     single_parent = member.is_head() and not member.is_married()["is_married"]
 
-    # if single_parent and member.student_full_time is not False and screen.num_children(age_max=11) > 0:
     if single_parent and screen.num_children(age_max=11) > 0:
         return False
 
-    # E6: Household currently receives TANF/NC Work First
-    if nc_screen and screen.has_tanf:
+    # E6: Household currently receives TANF
+    if screen.has_tanf:
         return False
 
     # Step 3: Employment/program exemptions (fields added in MFB-480)

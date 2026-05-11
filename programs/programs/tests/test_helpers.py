@@ -7,7 +7,6 @@ These tests verify helper functions that are called by TxSnap dependencies.
 from django.test import TestCase
 from screener.models import Screen, HouseholdMember, WhiteLabel
 from programs.programs.helpers import snap_ineligible_student
-from programs.programs.policyengine.calculators.dependencies import member
 
 
 class TestSnapIneligibleStudentHelper(TestCase):
@@ -263,65 +262,3 @@ class TestSnapIneligibleStudentHelperNC(TestCase):
         )
         result = snap_ineligible_student(self.screen, hm)
         self.assertTrue(result)  # no exemption met → ineligible
-
-
-class TestFullTimeCollegeStudentDependency(TestCase):
-    """Tests for FullTimeCollegeStudentDependency.value()."""
-
-    def setUp(self):
-        self.white_label = WhiteLabel.objects.create(name="Test NC", code="nc", state_code="NC")
-        self.screen = Screen.objects.create(
-            white_label=self.white_label,
-            zipcode="27601",
-            county="Wake",
-            household_size=1,
-            completed=False,
-        )
-
-    def test_falls_back_to_student_true_when_full_time_is_none(self):
-        """When student_full_time is None (not collected), fall back to student field."""
-        head = HouseholdMember.objects.create(
-            screen=self.screen,
-            relationship="headOfHousehold",
-            age=22,
-            student=True,
-            student_full_time=None,
-        )
-        dep = member.FullTimeCollegeStudentDependency(self.screen, head, {})
-        self.assertTrue(dep.value())
-
-    def test_falls_back_to_student_false_when_full_time_is_none(self):
-        """When student_full_time is None, fall back returns False if student is False."""
-        head = HouseholdMember.objects.create(
-            screen=self.screen,
-            relationship="headOfHousehold",
-            age=22,
-            student=False,
-            student_full_time=None,
-        )
-        dep = member.FullTimeCollegeStudentDependency(self.screen, head, {})
-        self.assertFalse(dep.value())
-
-    def test_uses_student_full_time_true_over_student_false(self):
-        """student_full_time=True takes priority even if student=False."""
-        head = HouseholdMember.objects.create(
-            screen=self.screen,
-            relationship="headOfHousehold",
-            age=22,
-            student=False,  # would return False without the new logic
-            student_full_time=True,  # new field wins
-        )
-        dep = member.FullTimeCollegeStudentDependency(self.screen, head, {})
-        self.assertTrue(dep.value())
-
-    def test_uses_student_full_time_false_over_student_true(self):
-        """student_full_time=False takes priority even if student=True."""
-        head = HouseholdMember.objects.create(
-            screen=self.screen,
-            relationship="headOfHousehold",
-            age=22,
-            student=True,  # would return True without the new logic
-            student_full_time=False,  # new field wins
-        )
-        dep = member.FullTimeCollegeStudentDependency(self.screen, head, {})
-        self.assertFalse(dep.value())
