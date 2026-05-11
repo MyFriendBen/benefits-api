@@ -30,7 +30,7 @@ def snap_ineligible_student(screen: Screen, member: HouseholdMember) -> bool:
         return False
 
     # E3: Any disability type
-    if member.disabled or member.long_term_disability or member.visually_impaired:
+    if member.has_disability():
         return False
 
     # E4: Parent (head or spouse) with a dependent child under 6
@@ -49,15 +49,9 @@ def snap_ineligible_student(screen: Screen, member: HouseholdMember) -> bool:
         return False
 
     # Step 3: Employment/program exemptions (fields added in MFB-480)
-    # These are None for states that don't collect these questions, so falsy by default
-
-    if nc_screen and member.student_job_training_program:
-        return False
-
-    if nc_screen and member.student_has_work_study:
-        return False
-
-    if nc_screen and member.student_works_20_plus_hrs:
+    if nc_screen and (
+        member.student_job_training_program or member.student_has_work_study or member.student_works_20_plus_hrs
+    ):
         return False
 
     # Step 4: No exemption met — exclude from SNAP household
