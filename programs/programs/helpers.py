@@ -19,12 +19,11 @@ def snap_ineligible_student(screen: Screen, member: HouseholdMember) -> bool:
         return False
 
     if member.student_full_time is False:
-        return False
-    # else:
+        return False    
 
-        # Step 2: Automatic exemptions derived from existing screener data
+    # Step 2: Automatic exemptions derived from existing screener data
 
-        # E1/E2: Age exemptions (under 18 or 50+)
+    # E1/E2: Age exemptions (under 18 or 50+)
     if member.age < 18 or member.age >= 50:
         return False
 
