@@ -20,47 +20,47 @@ def snap_ineligible_student(screen: Screen, member: HouseholdMember) -> bool:
 
     if member.student_full_time is False:
         return False
-    else:
+    # else:
 
         # Step 2: Automatic exemptions derived from existing screener data
 
         # E1/E2: Age exemptions (under 18 or 50+)
-        if member.age < 18 or member.age >= 50:
-            return False
+    if member.age < 18 or member.age >= 50:
+        return False
 
-        # E3: Any disability type
-        if member.disabled or member.long_term_disability or member.visually_impaired:
-            return False
+    # E3: Any disability type
+    if member.disabled or member.long_term_disability or member.visually_impaired:
+        return False
 
-        # E4: Parent (head or spouse) with a dependent child under 6
-        head_or_spouse = member.is_head() or member.is_spouse()
-        if head_or_spouse and screen.num_children(age_max=5) > 0:
-            return False
+    # E4: Parent (head or spouse) with a dependent child under 6
+    head_or_spouse = member.is_head() or member.is_spouse()
+    if head_or_spouse and screen.num_children(age_max=5) > 0:
+        return False
 
-        # E5: Single adult with child under 12 (federal law requires full-time enrollment)
-        # Treat None (not collected by this white label) as lenient to preserve prior behavior.
-        # NC collects student_full_time explicitly, so False correctly blocks the exemption there.
-        single_parent = member.is_head() and not member.is_married()["is_married"]
+    # E5: Single adult with child under 12 (federal law requires full-time enrollment)
+    # Treat None (not collected by this white label) as lenient to preserve prior behavior.
+    # NC collects student_full_time explicitly, so False correctly blocks the exemption there.
+    single_parent = member.is_head() and not member.is_married()["is_married"]
 
-        # if single_parent and member.student_full_time is not False and screen.num_children(age_max=11) > 0:
-        if single_parent and screen.num_children(age_max=11) > 0:
-            return False
+    # if single_parent and member.student_full_time is not False and screen.num_children(age_max=11) > 0:
+    if single_parent and screen.num_children(age_max=11) > 0:
+        return False
 
-        # E6: Household currently receives TANF/NC Work First
-        if screen.has_tanf:
-            return False
+    # E6: Household currently receives TANF/NC Work First
+    if screen.has_tanf:
+        return False
 
-        # Step 3: Employment/program exemptions (fields added in MFB-480)
-        # These are None for states that don't collect these questions, so falsy by default
+    # Step 3: Employment/program exemptions (fields added in MFB-480)
+    # These are None for states that don't collect these questions, so falsy by default
 
-        if member.student_job_training_program:
-            return False
+    if member.student_job_training_program:
+        return False
 
-        if member.student_has_work_study:
-            return False
+    if member.student_has_work_study:
+        return False
 
-        if member.student_works_20_plus_hrs:
-            return False
+    if member.student_works_20_plus_hrs:
+        return False
 
     # Step 4: No exemption met — exclude from SNAP household
     return True
