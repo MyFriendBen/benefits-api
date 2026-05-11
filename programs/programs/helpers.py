@@ -18,7 +18,9 @@ def snap_ineligible_student(screen: Screen, member: HouseholdMember) -> bool:
     if not member.student:
         return False
 
-    if member.student_full_time is False:
+    # Only apply part-time exemption for states that collect this field (currently NC only)
+    nc_screen = screen.white_label.state_code == "NC"
+    if nc_screen and member.student_full_time is False:
         return False
 
     # Step 2: Automatic exemptions derived from existing screener data
@@ -46,19 +48,19 @@ def snap_ineligible_student(screen: Screen, member: HouseholdMember) -> bool:
         return False
 
     # E6: Household currently receives TANF/NC Work First
-    if screen.has_tanf:
+    if nc_screen and screen.has_tanf:
         return False
 
     # Step 3: Employment/program exemptions (fields added in MFB-480)
     # These are None for states that don't collect these questions, so falsy by default
 
-    if member.student_job_training_program:
+    if nc_screen and member.student_job_training_program:
         return False
 
-    if member.student_has_work_study:
+    if nc_screen and member.student_has_work_study:
         return False
 
-    if member.student_works_20_plus_hrs:
+    if nc_screen and member.student_works_20_plus_hrs:
         return False
 
     # Step 4: No exemption met — exclude from SNAP household
