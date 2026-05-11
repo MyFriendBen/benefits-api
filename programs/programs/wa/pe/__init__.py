@@ -13,6 +13,7 @@ wa_spm_calculators = {
 }
 
 wa_tax_calculators = {
+    "wa_eitc": tax.WaEitc,
     "wa_wftc": tax.WaWftc,
 }
 
