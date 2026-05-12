@@ -1,0 +1,194 @@
+[
+  {
+    "notes": "Scenario 1: Single adult on SNAP with low income in Washington State — eligible via income-based (below 135% FPL) and SNAP program-based pathways",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_size": 1,
+      "zipcode": "98101",
+      "county": "King County",
+      "has_snap": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 6,
+          "birth_year": 1986,
+          "age": 39,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1200.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_lifeline",
+      "eligible": true,
+      "value": 111
+    }
+  },
+  {
+    "notes": "Scenario 2: Household of 2 with income above 200% FPL and no qualifying programs — ineligible via both income and categorical pathways. Combined income $45,600/year vs 135% FPL threshold $29,214/year. Income set above 200% FPL ($43,280) to avoid PE-calculated SNAP/Medicaid categorical eligibility.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_size": 2,
+      "zipcode": "98101",
+      "county": "King County",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 6,
+          "birth_year": 1980,
+          "age": 45,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3100.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "spouse",
+          "birth_month": 9,
+          "birth_year": 1982,
+          "age": 43,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 700.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_lifeline",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "Scenario 3: Mixed household — head of household on Medicaid qualifies via program-based pathway; combined income $21,600/year is also below 135% FPL for household of 3 ($36,882/year in 2026). Tests household-level eligibility aggregation.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_size": 3,
+      "zipcode": "98103",
+      "county": "King County",
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 6,
+          "birth_year": 1986,
+          "age": 39,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 800.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": false,
+            "private": false,
+            "medicaid": true,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "spouse",
+          "birth_month": 9,
+          "birth_year": 1988,
+          "age": 37,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1000.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 1,
+          "birth_year": 2018,
+          "age": 8,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_lifeline",
+      "eligible": true,
+      "value": 111
+    }
+  }
+]

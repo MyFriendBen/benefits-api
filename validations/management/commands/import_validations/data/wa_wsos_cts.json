@@ -1,0 +1,138 @@
+[
+  {
+    "notes": "Scenario 1: Clearly eligible — WA student with income well below 2026 125% MFI threshold for 1 person ($90,500/year). Student status confirmed, income $2,500/month.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King",
+      "household_size": 1,
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 24,
+          "birth_year": 2002,
+          "birth_month": 1,
+          "student": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2500.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wsos_cts",
+      "eligible": true
+    }
+  },
+  {
+    "notes": "Scenario 2: Clearly ineligible — applicant is not a student. CTS requires current or intended enrollment in an eligible associate, certificate, or apprenticeship program.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King",
+      "household_size": 1,
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 36,
+          "birth_year": 1990,
+          "birth_month": 1,
+          "student": false,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3000.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wsos_cts",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "Scenario 4 (spec): 3-person household at 125% MFI boundary — head $12,208/mo (within 2026 cap $146,500/yr), inclusive <= check and household size scaling.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98501",
+      "county": "Thurston",
+      "household_size": 3,
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 31,
+          "birth_year": 1995,
+          "birth_month": 1,
+          "student": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 12208.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 30,
+          "birth_year": 1996,
+          "birth_month": 3,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 3,
+          "birth_year": 2022,
+          "birth_month": 6,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wsos_cts",
+      "eligible": true
+    }
+  }
+]

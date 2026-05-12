@@ -1,0 +1,74 @@
+{
+  "white_label": {
+    "code": "wa"
+  },
+  "program_category": {
+    "external_name": "wa_housing",
+    "name": "Housing and Utilities",
+    "icon": "housing"
+  },
+  "program": {
+    "name_abbreviated": "wa_lifeline",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission",
+      "non_citizen"
+    ],
+    "name": "Lifeline",
+    "description": "Lifeline is a federal program that helps you pay for your phone or internet service. It gives you a monthly discount that can be used for a cell phone, home phone, or home internet plan. In Washington, some companies offer free plans by using this full discount. If you live on qualifying Tribal lands, you can get an additional discount each month to help lower your costs. \n\nTo get this benefit, you must choose an approved company in Washington and sign up for service. The company will then apply the discount directly to your bill every month. You must be at least 18 years old to apply. People living in full-time care facilities where Medicaid covers their care are not able to get this discount. \n\nOnly one Lifeline benefit is allowed per household. A household is a group of people who live together and share money. This might be different from how other programs count your household. You can qualify through Tribal or Veterans assistance programs. \n\nYou can apply online at the Lifeline Support website or by contacting an approved phone company in Washington. You will need to show a photo ID and proof of income. Once you are in the program, you must show you are still eligible once a year. You also need to use your service at least once every 30 days to keep your discount active.",
+    "description_short": "Lifeline is a federal program that helps you pay for your phone or internet service",
+    "learn_more_link": "https://www.lifelinesupport.org/how-to-qualify/",
+    "apply_button_link": "https://www.lifelinesupport.org/",
+    "apply_button_description": "",
+    "estimated_application_time": "10 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "website_description": "Lifeline is a federal program that helps you pay for your phone or internet service",
+    "base_program": "lifeline",
+    "value_format": null,
+    "value_type": "benefit",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": [
+    {
+      "external_name": "wa_id_proof",
+      "text": "Proof of identity (ex: driver's license, state ID, passport, or Tribal ID)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_home",
+      "text": "Proof of home address (ex: lease, utility bill, or mortgage statement)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_earned_income",
+      "text": "Proof of income (ex: pay stubs, tax return, or benefits statement) if applying based on income",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_program_participation",
+      "text": "Proof of participation in a qualifying program (ex: Medicaid card, SNAP letter, SSI award letter)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "lifeline_support_center",
+      "name": "Universal Service Administrative Co - Lifeline Support Center",
+      "description": "Federal funding that provides support for the Lifeline program, including assistance with applications and eligibility questions.",
+      "phone_number": "+18005626150",
+      "email": "LifelineSupport@usac.org",
+      "assistance_link": "https://www.lifelinesupport.org/"
+    }
+  ]
+}
