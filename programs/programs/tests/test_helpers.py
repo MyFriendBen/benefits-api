@@ -207,6 +207,9 @@ class TestSnapIneligibleStudentHelperNC(TestCase):
             age=25,
             student=True,
             student_full_time=False,  # NC explicitly collected as part-time → exempt
+            student_job_training_program=False,
+            student_has_work_study=False,
+            student_works_20_plus_hrs=False,
         )
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=8)
 
