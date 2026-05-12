@@ -22,7 +22,6 @@
 
 from django.db import migrations
 
-
 # New (WL_code, external_name, display_name) tuples. We create these only if
 # they don't already exist. Display name matches the other WLs' phrasing for
 # consistency across the platform.
@@ -80,9 +79,16 @@ def forward(apps, schema_editor):
     from programs.models import Program, ProgramCategory, WhiteLabel
     from translations.models import Translation
 
-    # Step 1: create missing categories.
+    wl_by_code = {wl.code: wl for wl in WhiteLabel.objects.all()}
+
+    # Step 1: create missing categories. Scope the existence check by
+    # (white_label, external_name) — not external_name alone — so a future
+    # cross-WL collision can't silently make us skip our intended row.
     for wl_code, external_name, display_name in NEW_CATEGORIES:
-        if ProgramCategory.objects.filter(external_name=external_name).exists():
+        wl = wl_by_code.get(wl_code)
+        if wl is None:
+            continue
+        if ProgramCategory.objects.filter(white_label=wl, external_name=external_name).exists():
             continue
 
         category = ProgramCategory.objects.new_program_category(
@@ -104,13 +110,18 @@ def forward(apps, schema_editor):
     # Step 2: link programs to categories, but only where currently NULL,
     # so this migration can re-run safely and won't clobber admin edits
     # made between deploy and migrate.
-    category_by_name = {pc.external_name: pc for pc in ProgramCategory.objects.all()}
-    wl_by_code = {wl.code: wl for wl in WhiteLabel.objects.all()}
+    #
+    # Key the category lookup by (white_label_id, external_name) so a future
+    # cross-WL external_name collision can't cause a Program to be linked
+    # to the wrong WL's category row.
+    category_by_wl_name = {(pc.white_label_id, pc.external_name): pc for pc in ProgramCategory.objects.all()}
 
     for wl_code, program_name, category_external_name in PROGRAM_CATEGORY_LINKS:
         wl = wl_by_code.get(wl_code)
-        category = category_by_name.get(category_external_name)
-        if wl is None or category is None:
+        if wl is None:
+            continue
+        category = category_by_wl_name.get((wl.id, category_external_name))
+        if category is None:
             # Defensive: should never happen given the lists above, but
             # don't crash a deploy if someone hand-edits prod state.
             continue
@@ -123,24 +134,31 @@ def forward(apps, schema_editor):
 
 
 def reverse(apps, schema_editor):
-    # Only reverse what *this* migration set: clear category for the linked
-    # programs (matching on both WL and name_abbreviated to avoid touching
-    # unrelated programs), and delete the categories we created.
+    # Only reverse what *this* migration set:
+    #   1. Clear category for the linked programs (matching on WL +
+    #      name_abbreviated + the exact category we set, so we never touch
+    #      a row a different migration or admin action linked elsewhere).
+    #   2. Delete categories we created. We can't tell categories we created
+    #      apart from pre-existing rows with the same external_name, so we
+    #      use an emptiness check: only delete a category whose programs set
+    #      is empty AFTER step 1. A pre-existing category will still have
+    #      its pre-existing program references and won't be touched.
     Program = apps.get_model("programs", "Program")
     ProgramCategory = apps.get_model("programs", "ProgramCategory")
     WhiteLabel = apps.get_model("programs", "WhiteLabel")
 
     wl_by_code = {wl.code: wl for wl in WhiteLabel.objects.all()}
-    new_category_names = {ext for _, ext, _ in NEW_CATEGORIES}
-    category_by_name = {
-        pc.external_name: pc
-        for pc in ProgramCategory.objects.filter(external_name__in={c[2] for c in PROGRAM_CATEGORY_LINKS})
-    }
+
+    # Step 1: clear program links. Scope category lookup by (wl, external_name)
+    # so a cross-WL collision can't cause us to clear the wrong row.
+    category_by_wl_name = {(pc.white_label_id, pc.external_name): pc for pc in ProgramCategory.objects.all()}
 
     for wl_code, program_name, category_external_name in PROGRAM_CATEGORY_LINKS:
         wl = wl_by_code.get(wl_code)
-        category = category_by_name.get(category_external_name)
-        if wl is None or category is None:
+        if wl is None:
+            continue
+        category = category_by_wl_name.get((wl.id, category_external_name))
+        if category is None:
             continue
         Program.objects.filter(
             white_label=wl,
@@ -148,13 +166,25 @@ def reverse(apps, schema_editor):
             category=category,
         ).update(category=None)
 
-    ProgramCategory.objects.filter(external_name__in=new_category_names).delete()
+    # Step 2: delete the categories we (likely) created. Scope by both the
+    # exact (wl, external_name) AND emptiness — a pre-existing category that
+    # admin had set up before this migration ran will still have its other
+    # program references, so it won't match the empty check and stays put.
+    for wl_code, external_name, _ in NEW_CATEGORIES:
+        wl = wl_by_code.get(wl_code)
+        if wl is None:
+            continue
+        ProgramCategory.objects.filter(
+            white_label=wl,
+            external_name=external_name,
+            programs__isnull=True,
+        ).delete()
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("programs", "0150_backfill_program_value_type"),
+        ("programs", "0151_merge_20260430_0616"),
     ]
 
     operations = [
