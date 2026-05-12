@@ -10,7 +10,6 @@
       "county": "King County",
       "household_size": 3,
       "household_assets": 0.0,
-      "has_benefits": false,
       "household_members": [
         {
           "relationship": "headOfHousehold",
@@ -89,7 +88,6 @@
       "county": "Snohomish County",
       "household_size": 3,
       "household_assets": 0.0,
-      "has_benefits": false,
       "household_members": [
         {
           "relationship": "headOfHousehold",
@@ -173,7 +171,6 @@
       "county": "Pierce County",
       "household_size": 1,
       "household_assets": 0.0,
-      "has_benefits": false,
       "household_members": [
         {
           "relationship": "headOfHousehold",
