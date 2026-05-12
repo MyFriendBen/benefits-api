@@ -1,0 +1,80 @@
+{
+  "white_label": {
+    "code": "wa"
+  },
+  "program_category": {
+    "external_name": "wa_housing",
+    "name": "Housing and Utilities",
+    "icon": "housing"
+  },
+  "program": {
+    "name_abbreviated": "wa_liheap",
+    "year": 2026,
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission",
+      "non_citizen"
+    ],
+    "name": "Low Income Home Energy Assistance Program (LIHEAP)",
+    "description": "The Low Income Home Energy Assistance Program (LIHEAP) helps Washington households pay for home energy costs. The program covers heating bills and emergency assistance during energy crisis situations — like getting a shutoff notice or running low on heating fuel. Benefits are free, and you never owe anything back.\n\nIn most cases, payments go directly to your energy provider. Renters who pay heating costs through their rent can also qualify. Your local provider may also be able to help with repairing or replacing unsafe heating equipment, and additional weatherization assistance may be available separately.\n\nHouseholds with elderly members, people with disabilities, or young children may receive priority scheduling. You can still apply even if your household has no income or you do not have a Social Security number. You can receive a LIHEAP grant once per program year (October–September).\n\nTo apply, use the 'Find a LIHEAP provider' link to locate the agency that serves your area, then contact them to schedule an appointment. Each agency has its own process — you may be able to apply in person, by mail, by email, or online.",
+    "description_short": "Help with home energy costs for low-income households in Washington",
+    "learn_more_link": "https://www.commerce.wa.gov/community-opportunities/liheap/",
+    "apply_button_link": "https://fortress.wa.gov/com/liheappublic/map.aspx",
+    "apply_button_description": "Find a LIHEAP provider in your area",
+    "estimated_application_time": "30 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": "lump_sum",
+    "value_type": "benefit",
+    "website_description": "Help with home energy costs for low-income households in Washington",
+    "base_program": "liheap",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": [
+    {
+      "external_name": "wa_liheap_home",
+      "text": "Proof of home address (ex: lease, utility bill, or mail with your address)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_liheap_id_proof",
+      "text": "Proof of identity for all adult household members (ex: driver's license, state ID, passport, or naturalization papers)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_liheap_ssn",
+      "text": "Social Security numbers are requested (not required) for all household members. Infants 12 months and under are exempt — provide proof of birth instead. Non-citizens must provide immigration documentation.",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_liheap_earned_income",
+      "text": "Proof of income for all adult household members (ex: pay stubs, benefit award letters, bank statements, unemployment letters). Households with no income must provide a written zero-income statement.",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_liheap_utility_bill",
+      "text": "Most recent home energy bill (electric, gas, propane, oil, coal, or wood)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "wa_commerce_liheap",
+      "name": "Washington State Department of Commerce — LIHEAP Program",
+      "email": "LIHEAP@commerce.wa.gov",
+      "description": "Use the map tool to find the LIHEAP provider in your area and schedule an appointment. WA Commerce does not process applications directly — eligibility is determined by your local provider.",
+      "assistance_link": "https://fortress.wa.gov/com/liheappublic/map.aspx",
+      "phone_number": "+13607252857"
+    }
+  ]
+}

@@ -1,0 +1,212 @@
+[
+  {
+    "notes": "Scenario 1: Clearly eligible — elderly couple, SSA retirement income $1,600/month, well under 150% FPG for HH of 2 ($32,460/year). Elderly priority flag triggered for both members. Expected value computed from spec formula: income $19,200/yr at 88.73% FPL (2026 FPG HH of 2 = $21,640); benefit_pct = 0.90 - (88.73/125) * 0.40 = 0.6161; benefit = 0.6161 * $1,800 annual heat cost = $1,108.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King County",
+      "household_size": 2,
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 68,
+          "birth_year": 1958,
+          "birth_month": 3,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 950.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 65,
+          "birth_year": 1960,
+          "birth_month": 7,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 650.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": [
+        {
+          "type": "heating",
+          "amount": 150.0,
+          "frequency": "monthly"
+        }
+      ]
+    },
+    "expected_results": {
+      "program_name": "wa_liheap",
+      "eligible": true,
+      "value": 1108
+    }
+  },
+  {
+    "notes": "Scenario 2: Clearly ineligible — single adult wages $2,000/month = $24,000/year, exceeds 150% FPG for HH of 1 ($23,940/year, using 2026 FPG $15,960).",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King County",
+      "household_size": 1,
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 39,
+          "birth_year": 1986,
+          "birth_month": 6,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2000.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_liheap",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "Scenario 3: Edge case — HH of 6, wages + SSA + SSI, total $3,693/month = $44,316/year, under 150% FPG for HH of 6 ($66,540/year). Elderly (age 72), disabled, and young children (ages 4 and 1) priority flags all triggered. Expected value computed from spec formula: income $44,316/yr at 99.90% FPL (2026 FPG HH of 6 = $44,360); benefit_pct = 0.90 - (99.90/125) * 0.40 = 0.5803; benefit = 0.5803 * $2,400 annual heat cost = $1,392, capped at $1,250 max.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98103",
+      "county": "King County",
+      "household_size": 6,
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 37,
+          "birth_year": 1988,
+          "birth_month": 6,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1800.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "parent",
+          "age": 72,
+          "birth_year": 1954,
+          "birth_month": 1,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 950.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 45,
+          "birth_year": 1980,
+          "birth_month": 9,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSI",
+              "amount": 943.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          },
+          "disabled": true
+        },
+        {
+          "relationship": "child",
+          "age": 4,
+          "birth_year": 2022,
+          "birth_month": 3,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 1,
+          "birth_year": 2024,
+          "birth_month": 11,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 11,
+          "birth_year": 2014,
+          "birth_month": 8,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": [
+        {
+          "type": "heating",
+          "amount": 200.0,
+          "frequency": "monthly"
+        }
+      ]
+    },
+    "expected_results": {
+      "program_name": "wa_liheap",
+      "eligible": true,
+      "value": 1250
+    }
+  }
+]
