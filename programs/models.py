@@ -1354,6 +1354,7 @@ class NavigatorDataController(ModelDataController["Navigator"]):
             "counties": CountiesType,
             "languages": LanugagesType,
             "programs": list[str],
+            "eligibility_programs": list[str],
             "white_label": str,
         },
     )
@@ -1371,6 +1372,7 @@ class NavigatorDataController(ModelDataController["Navigator"]):
             "counties": self._counties(),
             "languages": self._languages(),
             "programs": [p.external_name for p in navigator.programs.all()],
+            "eligibility_programs": [p.external_name for p in navigator.eligibility_programs.all()],
             "white_label": navigator.white_label.code,
         }
 
@@ -1444,6 +1446,17 @@ class NavigatorDataController(ModelDataController["Navigator"]):
         if getattr(through, "__name__", str(through)) != "ProgramNavigator":
             navigator.programs.set(programs)
 
+        eligibility_programs = []
+        for item in data.get("eligibility_programs", []):
+            external_name = item if isinstance(item, str) else (item.get("external_name") or item.get("name"))
+            if not external_name:
+                continue
+            program_instance = Program.objects.get(external_name=external_name)
+            if program_instance.white_label_id != navigator.white_label_id:
+                raise self.DeferCreation()
+            eligibility_programs.append(program_instance)
+        navigator.eligibility_programs.set(eligibility_programs)
+
         navigator.save()
 
     @classmethod
@@ -1477,6 +1490,12 @@ class Navigator(models.Model):
     phone_number = PhoneNumberField(blank=True, null=True)
     counties = models.ManyToManyField(County, related_name="navigator", blank=True)
     languages = models.ManyToManyField(NavigatorLanguage, related_name="navigator", blank=True)
+    eligibility_programs = models.ManyToManyField(
+        Program,
+        related_name="eligibility_navigators",
+        blank=True,
+        help_text="Navigator is only shown when the household qualifies for ALL of these programs.",
+    )
 
     name = models.ForeignKey(
         Translation,

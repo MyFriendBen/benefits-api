@@ -8,10 +8,12 @@ wa_member_calculators = {
 }
 
 wa_spm_calculators = {
+    "wa_lifeline": spm.WaLifeline,
     "wa_snap": spm.WaSnap,
 }
 
 wa_tax_calculators = {
+    "wa_eitc": tax.WaEitc,
     "wa_wftc": tax.WaWftc,
 }
 

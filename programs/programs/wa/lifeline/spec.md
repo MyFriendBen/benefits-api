@@ -153,9 +153,9 @@
 
 ---
 
-### Scenario 2: Household of 2 with income just above 135% FPL - should NOT be eligible
+### Scenario 2: Household of 2 with income above 200% FPL and no qualifying programs - should NOT be eligible
 
-**What we're checking**: Verifies that a 2-person household with gross annual income slightly above the 135% FPL threshold is correctly denied Lifeline eligibility when no qualifying programs are present. Combined income ($1,800 + $700) × 12 = $30,000/year vs. 2026 threshold of $29,214/year for household of 2.
+**What we're checking**: Verifies that a 2-person household with gross annual income above 135% FPL (and above 200% FPL to avoid PE-calculated SNAP/Medicaid categorical eligibility thresholds) is correctly denied Lifeline eligibility when no qualifying programs are present. Combined income ($3,100 + $700) × 12 = $45,600/year vs. 2026 threshold of $29,214/year for household of 2.
 
 **Expected**: Not eligible
 
