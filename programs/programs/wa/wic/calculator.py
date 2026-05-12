@@ -20,7 +20,6 @@ class WaWic(ProgramCalculator):
 
     max_child_age = 5
     fpl_percent = 1.85
-    monthly_value_per_participant = 80
     member_amount = 80 * 12
 
     dependencies = [

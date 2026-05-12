@@ -46,7 +46,7 @@
    * Screener fields:
      * `zipcode`
      * `county`
-   * Source: WA HCA Lifeline Phone Services; 47 CFR § 54.410(b); https://www.lifelinesupport.org/how-to-qualify/
+   * Source: WA HCA Lifeline Phone Services page; 47 CFR § 54.410(b); https://www.lifelinesupport.org/how-to-qualify/
 9. **Program-based eligibility: Participation in Pell Grant program (current award year)** ⚠️ *data gap*
 
 * Note: `has_pell_grant` is not a field in the screener schema. No screener field captures Pell Grant participation. Additionally, Pell Grant is not in PolicyEngine's Lifeline categorical eligibility list (see PolicyEngine Implementation Notes below).
@@ -153,9 +153,9 @@
 
 ---
 
-### Scenario 2: Household of 2 with income just above 135% FPL - should NOT be eligible
+### Scenario 2: Household of 2 with income above 200% FPL and no qualifying programs - should NOT be eligible
 
-**What we're checking**: Verifies that a 2-person household with gross annual income slightly above the 135% FPL threshold is correctly denied Lifeline eligibility when no qualifying programs are present. Combined income ($1,800 + $700) × 12 = $30,000/year vs. 2026 threshold of $29,214/year for household of 2.
+**What we're checking**: Verifies that a 2-person household with gross annual income above 135% FPL (and above 200% FPL to avoid PE-calculated SNAP/Medicaid categorical eligibility thresholds) is correctly denied Lifeline eligibility when no qualifying programs are present. Combined income ($3,100 + $700) × 12 = $45,600/year vs. 2026 threshold of $29,214/year for household of 2.
 
 **Expected**: Not eligible
 
@@ -163,7 +163,7 @@
 
 * **Location**: Enter ZIP code `98101`, Select county `King County`
 * **Household**: Number of people: `2`
-* **Person 1**: Birth month/year: `June 1980` (age 45), Relationship: Head of Household, Monthly employment income: `$1,800`
+* **Person 1**: Birth month/year: `June 1980` (age 45), Relationship: Head of Household, Monthly employment income: `$3,100`
 * **Person 2**: Birth month/year: `September 1982` (age 43), Relationship: Spouse, Monthly employment income: `$700`
 * **Current Benefits**: Do NOT select any qualifying programs
 
