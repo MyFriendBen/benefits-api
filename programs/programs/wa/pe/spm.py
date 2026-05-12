@@ -1,5 +1,12 @@
 import programs.programs.policyengine.calculators.dependencies as dependency
-from programs.programs.federal.pe.spm import Snap
+from programs.programs.federal.pe.spm import Lifeline, Snap
+
+
+class WaLifeline(Lifeline):
+    pe_inputs = [
+        *Lifeline.pe_inputs,
+        dependency.household.WaStateCodeDependency,
+    ]
 
 
 class WaSnap(Snap):

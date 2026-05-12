@@ -491,6 +491,7 @@ class Screen(models.Model):
             "ma_mass_health": self.has_medicaid or self.has_medicaid_hi,
             "ma_head_start": self.has_head_start,
             "tx_head_start": self.has_head_start,
+            "wa_head_start": self.has_head_start,
             "ma_csfp": self.has_csfp,
             "ma_early_head_start": self.has_early_head_start,
             "tx_early_head_start": self.has_early_head_start,
