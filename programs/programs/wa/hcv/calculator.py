@@ -49,11 +49,7 @@ class WaHcv(ProgramCalculator):
         for member in self.screen.household_members.all():
             if member.relationship in ("headOfHousehold", "spouse"):
                 continue
-            is_dependent = (
-                (member.age is not None and member.age < 18)
-                or member.student
-                or member.has_disability()
-            )
+            is_dependent = (member.age is not None and member.age < 18) or member.student or member.has_disability()
             if is_dependent:
                 count += 1
         return count
