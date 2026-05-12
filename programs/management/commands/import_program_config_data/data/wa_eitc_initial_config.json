@@ -1,0 +1,93 @@
+{
+  "white_label": {
+    "code": "wa"
+  },
+  "program_category": {
+    "external_name": "wa_tax",
+    "name": "Tax Credits",
+    "icon": "tax_credit",
+    "tax_category": true
+  },
+  "program": {
+    "name_abbreviated": "wa_eitc",
+    "year": 2025,
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission"
+    ],
+    "name": "Earned Income Tax Credit (EITC)",
+    "description": "The Earned Income Tax Credit (EITC) is a federal tax credit for workers with low to moderate income. It can lower the taxes you owe and may increase your refund, even if you do not have children or are self-employed.\n\nYou claim the EITC by filing a federal tax return. The amount depends on your income, filing status, and how many qualifying children you claim. This screener shows an estimated maximum credit, so your actual refund may be lower.\n\nSome EITC rules cannot be checked here. You, your spouse, and any qualifying children must have Social Security numbers that are valid for work. You also may need to meet rules about living in the United States for more than half the year, not being claimed as someone else's dependent, not filing Form 2555, and filing jointly if married unless a separated-spouse rule applies.\n\nFile a federal tax return to claim the EITC, even if you owe no tax. You can file for free through IRS Free File or get free help from a VITA tax site. Washington's Working Families Tax Credit is separate and may have different rules.",
+    "description_short": "Tax credit for workers with low to moderate income",
+    "learn_more_link": "https://www.irs.gov/credits-deductions/individuals/earned-income-tax-credit-eitc",
+    "apply_button_link": "https://www.irs.gov/e-file-do-your-taxes-for-free",
+    "apply_button_description": "File for free",
+    "estimated_application_time": "About 1–2 hours",
+    "estimated_delivery_time": "About 21 days after e-filing; EITC refunds may be held until mid-February",
+    "estimated_value": "",
+    "value_format": "estimated_annual",
+    "value_type": "tax_credit",
+    "website_description": "Tax credit for workers with low to moderate income",
+    "base_program": "eitc",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": [
+    {
+      "external_name": "wa_eitc_ssn",
+      "text": "Social Security Number (SSN) for you, your spouse, and any qualifying children",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_eitc_earned_income",
+      "text": "Proof of earned income (ex: W-2 forms, 1099 forms, self-employment records)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_eitc_investment_income",
+      "text": "Records of investment income (ex: 1099-INT, 1099-DIV, 1099-B)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_eitc_prior_year_return",
+      "text": "Last year's federal tax return (used to verify your identity when e-filing)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_eitc_id_proof",
+      "text": "Proof of identity (ex: driver's license, state ID)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_eitc_home",
+      "text": "Proof of home address (ex: lease, utility bill, bank statement)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_eitc_child_records",
+      "text": "Records for qualifying children (ex: birth certificate, school records, adoption/foster papers, or doctor's letter if disabled)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "wa_211",
+      "name": "Washington 211",
+      "email": "info@wa211.org",
+      "description": "Washington 211 connects residents to local health and human service resources. During tax season, it can help people find free tax preparation options such as VITA, AARP Tax-Aide, and other local tax help.",
+      "assistance_link": "https://wa211.org/contact-washington-211/",
+      "phone_number": "+18772119274"
+    }
+  ]
+}
