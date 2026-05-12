@@ -7,7 +7,7 @@
   },
   "program": {
     "name_abbreviated": "wa_ssdi",
-    "year": 2026,
+    "year": "2026",
     "legal_status_required": [
       "citizen", "non_citizen", "refugee", "gc_5plus", "gc_5less", "otherWithWorkPermission"
     ],

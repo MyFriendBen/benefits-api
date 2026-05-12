@@ -62,6 +62,11 @@ class WaHcv(ProgramCalculator):
                     return True
         return False
 
+    def _get_year_period(self) -> str:
+        if self.program.year is None:
+            raise HudIncomeClientError("Program year not configured")
+        return self.program.year.period
+
     def household_eligible(self, e: Eligibility):
         has_section_8 = self.screen.has_benefit("section_8")
         e.condition(not has_section_8, messages.must_not_have_benefit("Section 8"))
@@ -70,12 +75,13 @@ class WaHcv(ProgramCalculator):
         e.condition(assets <= self.asset_limit, messages.assets(self.asset_limit))
 
         try:
+            year_period = self._get_year_period()
             gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
             effective_hh = self._effective_household_size()
             original_hh = self.screen.household_size
             try:
                 self.screen.household_size = effective_hh
-                income_limit = hud_client.get_screen_il_ami(self.screen, "50%", self.program.year.period)
+                income_limit = hud_client.get_screen_il_ami(self.screen, "50%", year_period)
             finally:
                 self.screen.household_size = original_hh
             e.condition(gross_income <= income_limit, messages.income(gross_income, income_limit))
@@ -95,7 +101,7 @@ class WaHcv(ProgramCalculator):
             ttp = max(0.30 * monthly_adjusted, 0.10 * monthly_gross, self.min_rent_monthly)
 
             bedrooms = self._estimate_bedrooms()
-            fmr = hud_client.get_screen_fmr(self.screen, bedrooms, self.program.year.period)
+            fmr = hud_client.get_screen_fmr(self.screen, bedrooms, self._get_year_period())
 
             hap = max(0, fmr - ttp)
             return int(hap * 12)
