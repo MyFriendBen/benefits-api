@@ -1,4 +1,5 @@
 from .csfp.calculator import WaCsfp
+from .hcv.calculator import WaHcv
 from .head_start.calculator import WaHeadStart
 from .liheap.calculator import WaLiheap
 from .wsos_bas.calculator import WaWsosBas
@@ -11,6 +12,7 @@ from .wic.calculator import WaWic
 
 wa_calculators: dict[str, type[ProgramCalculator]] = {
     "wa_csfp": WaCsfp,
+    "wa_hcv": WaHcv,
     "wa_head_start": WaHeadStart,
     "wa_liheap": WaLiheap,
     "wa_ssdi": WaSsdi,
