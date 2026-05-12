@@ -352,7 +352,11 @@ class Command(BaseCommand):
             "screen.agree_to_tos": "Whether user agreed to terms of service",
             "screen.is_13_or_older": "Whether user confirmed they are 13 or older",
             "screen.zipcode": "User's 5-digit ZIP code",
-            "screen.county": "User's county name",
+            "screen.county": (
+                "User's county name (may be NULL if zip/county step not completed or legacy rows). "
+                "For Metabase/SQL analytics, optional county filters must use IS NULL / optional [[AND ...]] "
+                "clauses—never `county = {{param}}` when param can be NULL (see docs/analytics/MFB-975-metabase-urgent-needs-texas.md)."
+            ),
             "screen.household_size": "Total number of people in household",
             "screen.household_assets": "Total household assets in dollars",
             "screen.housing_situation": "Type of housing (e.g., rent, own, homeless)",
