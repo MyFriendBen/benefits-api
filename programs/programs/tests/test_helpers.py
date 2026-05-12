@@ -262,3 +262,18 @@ class TestSnapIneligibleStudentHelperNC(TestCase):
         )
         result = snap_ineligible_student(self.screen, hm)
         self.assertTrue(result)  # no exemption met → ineligible
+
+    def test_exempt_when_household_receives_tanf(self):
+        """Student in NC household receiving TANF/Work First is exempt from SNAP restriction."""
+        self.screen.has_tanf = True
+        self.screen.save()
+
+        hm = HouseholdMember.objects.create(
+            screen=self.screen,
+            relationship="headOfHousehold",
+            age=25,
+            student=True,
+        )
+
+        result = snap_ineligible_student(self.screen, hm)
+        self.assertFalse(result)  # TANF/Work First → exempt

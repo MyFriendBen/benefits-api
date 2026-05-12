@@ -25,26 +25,26 @@ def snap_ineligible_student(screen: Screen, member: HouseholdMember) -> bool:
 
     # Step 2: Automatic exemptions derived from existing screener data
 
-    # E1/E2: Age exemptions (under 18 or 50+)
+    # Exemption 1 and 2: Age exemptions (under 18 or 50+)
     if member.age < 18 or member.age >= 50:
         return False
 
-    # E3: Any disability type
+    # Exemption 3: Any disability type
     if member.has_disability():
         return False
 
-    # E4: Parent (head or spouse) with a dependent child under 6
+    # Exemption 4: Parent (head or spouse) with a dependent child under 6
     head_or_spouse = member.is_head() or member.is_spouse()
     if head_or_spouse and screen.num_children(age_max=5) > 0:
         return False
 
-    # E5: Single adult with child under 12
+    # Exemption 5: Single adult with child under 12
     single_parent = member.is_head() and not member.is_married()["is_married"]
 
     if single_parent and screen.num_children(age_max=11) > 0:
         return False
 
-    # E6: Household currently receives TANF
+    # Exemption 6: Household currently receives TANF
     if screen.has_tanf:
         return False
 
