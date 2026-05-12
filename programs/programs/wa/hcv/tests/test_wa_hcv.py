@@ -373,3 +373,19 @@ class TestWaHcvCalc(TestCase):
             e = calc.calc()
             self.assertTrue(e.eligible)
             self.assertEqual(e.value, 10620)
+
+    def test_calc_null_year_does_not_crash(self):
+        """Program.year = None must not raise AttributeError (crashes all WA programs)."""
+        head = make_member(age=35)
+        calc = make_calculator(members=[head], gross_income=21600)
+        calc.program.year = None
+        with patch_hud_client(il_ami_value=50000, fmr_value=2000):
+            e = calc.calc()
+            self.assertFalse(e.eligible)
+
+    def test_household_value_null_year_returns_zero(self):
+        head = make_member(age=35)
+        calc = make_calculator(members=[head], gross_income=21600)
+        calc.program.year = None
+        with patch_hud_client(fmr_value=2000):
+            self.assertEqual(calc.household_value(), 0)
