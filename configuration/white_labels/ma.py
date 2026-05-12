@@ -179,23 +179,6 @@ class MaConfigurationData(ConfigurationData):
         },
     }
 
-    # Flattened income options (backward compatible with current FE)
-    income_options = {
-        **ConfigurationData.income_options,
-        "pension": {
-            "_label": "incomeOptions.pension.ma",
-            "_default_message": "Military, Government, or Private Pension",
-        },
-        "cashAssistance": {
-            "_label": "incomeOptions.cashAssistance.ma",
-            "_default_message": "Government Cash Assistance (including TAFDC and EAEDC)",
-        },
-        "stateDisability": {
-            "_label": "incomeOptions.stateDisability.ma",
-            "_default_message": "State Disability Benefits",
-        },
-    }
-
     health_insurance_options = {
         "you": {
             "none": {
@@ -297,30 +280,6 @@ class MaConfigurationData(ConfigurationData):
                 "_default_message": "Rent (Public / Subsidized Housing)",
             },
         },
-    }
-
-    expense_options = {
-        "rent": {"_label": "expenseOptions.nonSubsidizedRent", "_default_message": "Rent (Non-Subsidized)"},
-        "subsidizedRent": {
-            "_label": "expenseOptions.subsidizedRent",
-            "_default_message": "Rent (Public / Subsidized Housing)",
-        },
-        "telephone": {"_label": "expenseOptions.telephone", "_default_message": "Telephone"},
-        "internet": {"_label": "expenseOptions.internet", "_default_message": "Internet"},
-        "otherUtilities": {"_label": "expenseOptions.otherUtilities", "_default_message": "Other Utilities"},
-        "heating": {"_label": "expenseOptions.heating", "_default_message": "Heating"},
-        "mortgage": {"_label": "expenseOptions.mortgage", "_default_message": "Mortgage"},
-        "propertyTax": {"_label": "expenseOptions.propertyTax", "_default_message": "Property Taxes"},
-        "hoa": {"_label": "expenseOptions.hoa", "_default_message": "Homeowners or Condo Association Fees and Dues"},
-        "homeownersInsurance": {
-            "_label": "expenseOptions.homeownersInsurance",
-            "_default_message": "Homeowners Insurance",
-        },
-        "medical": {"_label": "expenseOptions.medical", "_default_message": "Medical Insurance Premium &/or Bills"},
-        "cooling": {"_label": "expenseOptions.cooling", "_default_message": "Cooling"},
-        "childCare": {"_label": "expenseOptions.childCare", "_default_message": "Child Care"},
-        "childSupport": {"_label": "expenseOptions.childSupport", "_default_message": "Child Support (Paid)"},
-        "dependentCare": {"_label": "expenseOptions.dependentCare", "_default_message": "Dependent Care"},
     }
 
     condition_options = {
@@ -1506,7 +1465,6 @@ class MaConfigurationData(ConfigurationData):
             ],
         },
         "uiOptions": {"default": []},
-        "featureFlags": {"default": []},  # Deprecated: use uiOptions. Remove as part of MFB-635.
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",

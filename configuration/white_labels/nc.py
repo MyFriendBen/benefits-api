@@ -167,18 +167,6 @@ class NcConfigurationData(ConfigurationData):
         },
     }
 
-    # Flattened income options (backward compatible with current FE)
-    income_options = {
-        **ConfigurationData.income_options,
-        "pension": {
-            "_label": "incomeOptions.nc_pension",
-            "_default_message": "Military, Government, or Private Pension",
-        },
-        "cashAssistance": {
-            "_label": "incomeOptions.nc_cashAssistance",
-            "_default_message": "Cash Assistance Grant",
-        },
-    }
     health_insurance_options = {
         "you": {
             "none": {
@@ -2638,13 +2626,6 @@ class NcConfigurationData(ConfigurationData):
             ],
         },
         "uiOptions": {
-            "default": ["nc_show_211_link"],
-            "211nc": ["no_results_more_help", "nc_show_211_link", "211nc"],
-            "hfed": ["no_results_more_help", "hfed"],
-            "lanc": ["no_results_more_help", "nc_show_211_link", "lanc"],
-        },
-        # Deprecated: use uiOptions. Remove as part of MFB-635.
-        "featureFlags": {
             "default": ["nc_show_211_link"],
             "211nc": ["no_results_more_help", "nc_show_211_link", "211nc"],
             "hfed": ["no_results_more_help", "hfed"],
