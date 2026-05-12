@@ -37,7 +37,9 @@ class WaLiheap(ProgramCalculator):
         income_pct_fpl = (gross_income / fpl_100) * 100
         income_pct_fpl = min(income_pct_fpl, self.benefit_pct_fpl_upper)
 
-        benefit_pct = self.benefit_pct_at_zero_fpl - (income_pct_fpl / self.benefit_pct_fpl_upper) * self.benefit_pct_slope
+        benefit_pct = (
+            self.benefit_pct_at_zero_fpl - (income_pct_fpl / self.benefit_pct_fpl_upper) * self.benefit_pct_slope
+        )
 
         annual_heat_cost = self.screen.calc_expenses("yearly", ["heating"])
         benefit = benefit_pct * annual_heat_cost
