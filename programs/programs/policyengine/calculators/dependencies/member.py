@@ -186,9 +186,6 @@ class HeatingExpensePersonDependency(Member):
     from a person-level field (heating_expense_person) and auto-aggregate
     back to the spm_unit/household total used in the payment cap formula.
 
-    Federal SNAP still uses the household-level heating_cooling_expense field;
-    sending both is supported by PE and does not double-count.
-
     Our screener captures heating as a household-level expense, so we attribute
     the full amount to the head; other members get 0.
     """
