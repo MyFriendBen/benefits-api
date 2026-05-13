@@ -460,7 +460,9 @@ class MaLiheap(SpmUnit):
 class MaLiheapReceivesHousingAssistance(SpmUnit):
     field = "receives_housing_assistance"
 
-    # Fixed to True: required for MA LIHEAP calculation; True produces conservative benefit estimate
+    # Fixed to True: produces a conservative benefit estimate (subsidized payment
+    # table has lower amounts than non-subsidized) and keeps the household eligible
+    # via the (is_subsidized & ~heat_in_rent) branch of ma_liheap_eligible_subsidized_housing.
     def value(self):
         return True
 

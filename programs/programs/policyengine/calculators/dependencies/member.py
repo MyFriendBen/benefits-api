@@ -180,6 +180,25 @@ class PropertyTaxExpenseDependency(Member):
         return int(total_property_tax)
 
 
+class HeatingExpensePersonDependency(Member):
+    """
+    PolicyEngine's state LIHEAP calculators (MA, DC, IL) read heating expense
+    from a person-level field (heating_expense_person) and auto-aggregate
+    back to the spm_unit/household total used in the payment cap formula.
+
+    Our screener captures heating as a household-level expense, so we attribute
+    the full amount to the head; other members get 0.
+    """
+
+    field = "heating_expense_person"
+
+    def value(self):
+        if not self.member.is_head():
+            return 0
+
+        return int(self.screen.calc_expenses("yearly", ["heating", "cooling"]))
+
+
 class IsBlindDependency(Member):
     field = "is_blind"
 
