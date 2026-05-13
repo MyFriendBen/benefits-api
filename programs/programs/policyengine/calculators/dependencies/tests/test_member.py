@@ -88,7 +88,7 @@ class TestMemberExpenseDependency(TestCase):
         dep = member.MedicalExpenseDependency(self.screen, elderly_member, {})
         # $200/month * 12 / 1 elderly or disabled member
         self.assertEqual(dep.value(), 2400)
-        self.assertEqual(dep.field, "medical_out_of_pocket_expenses")
+        self.assertEqual(dep.field, "other_medical_expenses")
 
     def test_value_returns_zero_for_non_elderly_non_disabled(self):
         """Test MedicalExpenseDependency.value() returns 0 for non-elderly, non-disabled member."""

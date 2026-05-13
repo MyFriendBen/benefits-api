@@ -140,7 +140,7 @@ class IsDisabledDependency(Member):
 # are only counted once and only if a member is elderly or disabled; the medical expense is divided
 # by the total number of elderly or disabled members.
 class MedicalExpenseDependency(Member):
-    field = "medical_out_of_pocket_expenses"
+    field = "other_medical_expenses"
     dependencies = ["age"]
 
     def value(self):
