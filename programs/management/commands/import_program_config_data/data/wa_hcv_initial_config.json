@@ -1,0 +1,98 @@
+{
+  "white_label": {
+    "code": "wa"
+  },
+  "program_category": {
+    "external_name": "wa_housing",
+    "name": "Housing and Utilities",
+    "icon": "housing",
+    "description": "Programs that help with rent, housing, utilities, or home energy costs.",
+    "tax_category": false
+  },
+  "program": {
+    "name_abbreviated": "wa_hcv",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "refugee",
+      "gc_5plus",
+      "gc_5less",
+      "otherWithWorkPermission"
+    ],
+    "name": "Housing Choice Voucher Program (Section 8)",
+    "description_short": "Help paying rent for people with low income",
+    "description": "The Housing Choice Voucher Program, also called Section 8, helps people pay rent. If you get a voucher, a local housing agency pays part of your rent to your landlord. You pay the rest.\n\nYou can use the voucher for a home or apartment you choose. The landlord must accept the voucher. The home must also meet program rules. The amount of help depends on your income, family size, rent, and local housing agency rules.\n\nWaitlists can be long. Many local housing agencies only open their lists at certain times. Some agencies help certain groups first. This may include seniors, veterans, and families with children. It may also include people with disabilities or people without stable housing.\n\nYour local housing agency will check more rules when you apply. They may ask for citizenship or immigration documents. They may also check student rules, assets, property, and background history. To get started, use the link to find the public housing agency that serves your area.",
+    "learn_more_link": "https://www.hud.gov/helping-americans/housing-choice-vouchers-tenants",
+    "apply_button_link": "https://www.hud.gov/contactus/public-housing-contacts",
+    "apply_button_description": "Find Your Local Housing Agency",
+    "estimated_application_time": "30–90 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": "estimated_annual",
+    "value_type": "benefit",
+    "website_description": "Help paying rent for people with low income",
+    "base_program": "section_8",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": true
+  },
+  "documents": [
+    {
+      "external_name": "wa_hcv_id_proof",
+      "text": "Proof of identity, if requested (for example, driver's license, state ID, passport, or birth certificate)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_hcv_ssn",
+      "text": "Social Security numbers or cards for household members, if requested",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_hcv_us_status",
+      "text": "Proof of citizenship or eligible immigration status, if requested (for example, birth certificate, passport, or immigration documents)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_hcv_income_proof",
+      "text": "Proof of household income, if requested (for example, pay stubs, benefit letters, or tax records)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_hcv_asset_proof",
+      "text": "Asset documents, if requested by your local housing agency. They will tell you what to provide.",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_hcv_home",
+      "text": "Proof of where you live, if requested (for example, lease, utility bill, or mail with your address)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_hcv_birth_certificate",
+      "text": "Birth certificates for household members, if requested",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "wa_211",
+      "name": "Washington 211",
+      "email": "info@wa211.org",
+      "description": "Washington 211 helps people across Washington find local housing, rent, utility, food, health, and other community resources. They can help users find the housing authority or local resource that fits their area.",
+      "assistance_link": "https://wa211.org/",
+      "phone_number": "+18772119274",
+      "languages": [
+        "en",
+        "es"
+      ]
+    }
+  ]
+}

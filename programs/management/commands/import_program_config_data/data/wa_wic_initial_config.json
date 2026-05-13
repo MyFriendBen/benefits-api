@@ -1,0 +1,70 @@
+{
+    "white_label": {"code": "wa"},
+    "program_category": {
+        "external_name": "wa_food"
+    },
+    "program": {
+        "name_abbreviated": "wa_wic",
+        "year": "2026",
+        "base_program": "wic",
+        "legal_status_required": ["citizen", "non_citizen", "refugee", "gc_5plus", "gc_5less", "otherWithWorkPermission"],
+        "name": "Women, Infants, and Children (WIC) Nutrition Program",
+        "description_short": "WIC provides healthy food and nutrition support for pregnant people, new parents, and children under age five",
+        "description": "WIC provides healthy food and nutrition support for pregnant people, new parents, and children under age five. The program helps you buy items like fruits, vegetables, whole grains, milk, eggs, and baby formula. It also offers breastfeeding support and health information to help families stay strong and healthy.\n\nYou can qualify if you are pregnant, had a baby in the last six months, or are breastfeeding a child under age one. Children can stay on the program until their fifth birthday. To join, your household income must fall within the program's limits. If you already have SNAP, Medicaid, or TANF, you automatically meet these income rules.\n\nThis program is open to all residents in Washington. You do not need to be a U.S. citizen to apply, and you do not need a permanent home or address to qualify. During your first appointment, a staff member will do a quick health and nutrition check with you. This is a normal part of the process to see how the program can best help your family.\n\nTo start, you can fill out a quick interest form online. After that, you must contact a local WIC clinic to set up an appointment. You will need to show proof of who you are and where you live. At this meeting, staff will help you finish your forms, and you may even receive your food benefits the same day. These benefits are usually given to you on a WIC card that works like a debit card at the grocery store.",
+        "learn_more_link": "https://doh.wa.gov/you-and-your-family/wic/wic-eligibility",
+        "apply_button_link": "https://doh.wa.gov/you-and-your-family/wic/apply-wic",
+        "apply_button_description": "",
+        "estimated_application_time": "30-45 minutes",
+        "estimated_delivery_time": "",
+        "estimated_value": "",
+        "value_format": null,
+        "value_type": "benefit",
+        "website_description": "WIC provides healthy food and nutrition support for pregnant people, new parents, and children under age five",
+        "show_on_current_benefits": true,
+        "has_calculator": true,
+        "show_in_has_benefits_step": false
+    },
+    "documents": [
+        {
+            "external_name": "wa_home",
+            "text": "Proof of Washington home address (ex: lease, utility bill, official mail)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "wa_id_proof",
+            "text": "Proof of identity (ex: driver's license, official state ID, passport)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "wa_earned_income",
+            "text": "Proof of earned income (ex: pay stubs, tax returns, W-2, 1099)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "wa_unearned_income",
+            "text": "Proof of unearned income (ex: child support, social security, unemployment)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "wa_other_program",
+            "text": "Evidence of participation in SNAP, Medicaid, or TANF (if applicable — waives income verification)",
+            "link_url": "",
+            "link_text": ""
+        }
+    ],
+    "navigators": [
+        {
+            "external_name": "wa_wic_navigator",
+            "name": "Help Me Grow WA",
+            "phone_number": "+18003222588",
+            "email": "",
+            "description": "Get help applying for WA WIC benefits from a local navigator",
+            "assistance_link": "https://helpmegrowwa.org/hotline",
+            "languages": ["English", "Spanish"]
+        }
+    ]
+}

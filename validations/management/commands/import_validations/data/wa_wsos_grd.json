@@ -1,0 +1,312 @@
+[
+  {
+    "notes": "Scenario 1: Clearly eligible — WA student with income well below 2026 125% MFI threshold for 1 person ($90,500/year). Student status confirmed, income $4,000/month.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King",
+      "household_size": 1,
+      "household_assets": 0.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 36,
+          "birth_year": 1990,
+          "birth_month": 1,
+          "student": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wsos_grd",
+      "eligible": true,
+      "value": 25000
+    }
+  },
+  {
+    "notes": "Scenario 2: Clearly ineligible — applicant is not a student. GRD requires current enrollment in an eligible graduate program.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King",
+      "household_size": 1,
+      "household_assets": 0.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 36,
+          "birth_year": 1990,
+          "birth_month": 1,
+          "student": false,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wsos_grd",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "Scenario 3: Clearly ineligible — 1-person student household with income above 155% MFI cap of $112,500/yr ($10,000/mo = $120,000/yr).",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King",
+      "household_size": 1,
+      "household_assets": 0.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 36,
+          "birth_year": 1990,
+          "birth_month": 1,
+          "student": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 10000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wsos_grd",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "Scenario 4: Edge case — 3-person household with income exactly at the 2026 125% MFI boundary ($146,500/year = $12,208/month). Confirms the threshold is inclusive (<=) and scales correctly with household size.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98501",
+      "county": "Thurston",
+      "household_size": 3,
+      "household_assets": 0.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 36,
+          "birth_year": 1990,
+          "birth_month": 1,
+          "student": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 12208.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "spouse",
+          "age": 34,
+          "birth_year": 1992,
+          "birth_month": 3,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "child",
+          "age": 3,
+          "birth_year": 2022,
+          "birth_month": 6,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wsos_grd",
+      "eligible": true,
+      "value": 25000
+    }
+  },
+  {
+    "notes": "Scenario 5: Conditional eligibility — 1-person student household with income $8,500/mo = $102,000/yr. Above 125% MFI cap ($90,500) but below 155% MFI cap ($112,500). Calculator returns eligible; UI surfaces the hardship caveat for the 126-155% MFI band.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King",
+      "household_size": 1,
+      "household_assets": 0.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 36,
+          "birth_year": 1990,
+          "birth_month": 1,
+          "student": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 8500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wsos_grd",
+      "eligible": true,
+      "value": 25000
+    }
+  },
+  {
+    "notes": "Scenario 6: Conditional eligibility — 3-person household, head is student, $13,000/mo = $156,000/yr. Above the 3-person 125% MFI threshold ($146,500/yr) but below the 3-person 155% MFI cap ($181,500/yr), so this falls in the 126-155% expanded band. Calculator returns eligible; UI surfaces the hardship caveat.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98501",
+      "county": "Thurston",
+      "household_size": 3,
+      "household_assets": 0.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 36,
+          "birth_year": 1990,
+          "birth_month": 1,
+          "student": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 13000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "spouse",
+          "age": 34,
+          "birth_year": 1992,
+          "birth_month": 3,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "child",
+          "age": 3,
+          "birth_year": 2022,
+          "birth_month": 6,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wsos_grd",
+      "eligible": true,
+      "value": 25000
+    }
+  },
+  {
+    "notes": "Scenario 7: Clearly ineligible — 3-person household, head is student, $16,000/mo = $192,000/yr. Above the 3-person 155% MFI cap of $181,500. No hardship path applies above 155% MFI.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98501",
+      "county": "Thurston",
+      "household_size": 3,
+      "household_assets": 0.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 36,
+          "birth_year": 1990,
+          "birth_month": 1,
+          "student": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 16000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "spouse",
+          "age": 34,
+          "birth_year": 1992,
+          "birth_month": 3,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "child",
+          "age": 3,
+          "birth_year": 2022,
+          "birth_month": 6,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wsos_grd",
+      "eligible": false
+    }
+  }
+]

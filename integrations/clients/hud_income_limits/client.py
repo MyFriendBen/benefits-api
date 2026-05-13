@@ -253,6 +253,63 @@ class HudIncomeClient:
 
         return int(value)
 
+    FMR_BEDROOM_FIELDS = {
+        0: "Efficiency",
+        1: "One-Bedroom",
+        2: "Two-Bedroom",
+        3: "Three-Bedroom",
+        4: "Four-Bedroom",
+    }
+
+    def get_screen_fmr(
+        self,
+        screen: Screen,
+        bedrooms: int,
+        year: Union[int, str],
+        county_override: Optional[str] = None,
+    ) -> int:
+        """
+        Get Fair Market Rent for a Screen's county and bedroom size.
+
+        Uses HUD's FMR endpoint to look up the monthly FMR for the given
+        county/metro area and number of bedrooms (0–4).
+
+        Args:
+            screen: Screen object with white_label.state_code and county
+            bedrooms: Number of bedrooms (0=Efficiency, 1–4=standard sizes)
+            year: Year for FMR data (e.g., 2026 or "2026")
+            county_override: Optional county name to use instead of screen.county
+
+        Returns:
+            Monthly Fair Market Rent in dollars
+
+        Example:
+            >>> hud_client.get_screen_fmr(screen, 2, "2026")
+            2082
+        """
+        year = int(year) if isinstance(year, str) else year
+        if bedrooms < 0 or bedrooms > 4:
+            raise HudIncomeClientError(f"Bedroom count must be 0–4, got {bedrooms}")
+
+        county = county_override if county_override else screen.county
+        entity_id = self._get_entity_id(screen.white_label.state_code, county, year)
+
+        cache_key = f"hud_fmr_{entity_id}_{year}"
+        data = self._fetch_cached_data(cache_key, f"fmr/data/{entity_id}", year)
+
+        if not data or "data" not in data:
+            raise HudIncomeClientError(f"No FMR data found for {county}, {screen.white_label.state_code}")
+
+        area_data = data["data"]
+        basic_data = area_data.get("basicdata", {})
+
+        field = self.FMR_BEDROOM_FIELDS[bedrooms]
+        value = basic_data.get(field)
+        if value is None:
+            raise HudIncomeClientError(f"No FMR data for {bedrooms}-bedroom in {county}")
+
+        return int(value)
+
     # Derived from MtspAmiPercent so the two stay in sync automatically
     MTSP_THRESHOLDS: list[int] = sorted(int(p.rstrip("%")) for p in get_args(MtspAmiPercent))
 
