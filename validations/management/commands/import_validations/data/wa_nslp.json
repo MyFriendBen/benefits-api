@@ -1,0 +1,250 @@
+[
+  {
+    "notes": "WA NSLP - eligible by income: household of 3 with one school-age child below the free-meal income limit",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King County",
+      "household_size": 3,
+      "household_assets": 0.0,
+      "has_benefits": "false",
+      "has_snap": false,
+      "has_tanf": false,
+      "has_nslp": false,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 3,
+          "birth_year": 1990,
+          "age": 36,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2000.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "spouse",
+          "birth_month": 7,
+          "birth_year": 1991,
+          "age": 34,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 9,
+          "birth_year": 2018,
+          "age": 7,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": [],
+      "has_medicaid": false
+    },
+    "expected_results": {
+      "program_name": "wa_nslp",
+      "eligible": true,
+      "value": 828
+    }
+  },
+  {
+    "notes": "WA NSLP - ineligible: household just above reduced-price income limit; Medicaid alone is not enough",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98103",
+      "county": "King County",
+      "household_size": 3,
+      "household_assets": 0.0,
+      "has_benefits": "true",
+      "has_snap": false,
+      "has_tanf": false,
+      "has_nslp": false,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1987,
+          "age": 39,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4110.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "spouse",
+          "birth_month": 6,
+          "birth_year": 1988,
+          "age": 37,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 9,
+          "birth_year": 2013,
+          "age": 12,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "employer": false,
+            "private": false,
+            "medicaid": true,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": [],
+      "has_medicaid": true
+    },
+    "expected_results": {
+      "program_name": "wa_nslp",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "WA NSLP - eligible by categorical pathway: household receives Basic Food/SNAP despite income above the reduced-price limit",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "99201",
+      "county": "Spokane County",
+      "household_size": 3,
+      "household_assets": 0.0,
+      "has_benefits": "true",
+      "has_snap": true,
+      "has_tanf": false,
+      "has_nslp": false,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 6,
+          "birth_year": 1985,
+          "age": 40,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 7000.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "spouse",
+          "birth_month": 2,
+          "birth_year": 1987,
+          "age": 39,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 3,
+          "birth_year": 2016,
+          "age": 10,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": [],
+      "has_medicaid": false
+    },
+    "expected_results": {
+      "program_name": "wa_nslp",
+      "eligible": true,
+      "value": 828
+    }
+  }
+]
