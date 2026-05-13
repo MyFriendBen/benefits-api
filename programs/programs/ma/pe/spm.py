@@ -60,9 +60,11 @@ class MaHeap(PolicyEngineSpmCalulator):
         dependency.spm.MaLiheapReceivesHousingAssistance,
         dependency.spm.MaLiheapHeatExpenseIncludedInRent,
         dependency.spm.HasHeatingCoolingExpenseDependency,
-        # Final payment is min(payment_amount, heating_cooling_expense + gas_expense + electricity_expense).
-        # Without these inputs PolicyEngine sees $0 of actual expenses and caps the benefit at $0.
-        dependency.spm.HeatingCoolingExpenseDependency,
+        # Final payment is min(payment_amount, heating + gas + electricity expense).
+        # PE's state LIHEAP reads heating from heating_expense_person (person-level)
+        # and auto-aggregates to the spm_unit total. Without this PE sees $0 of
+        # heating expense and caps the benefit at $0.
+        dependency.member.HeatingExpensePersonDependency,
         dependency.spm.ElectricityExpenseDependency,
     ]
 

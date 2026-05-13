@@ -98,6 +98,44 @@ class TestMemberExpenseDependency(TestCase):
         self.assertEqual(dep.value(), 0)
 
 
+class TestHeatingExpensePersonDependency(TestCase):
+    """Tests for HeatingExpensePersonDependency (used by MaHeap and other LIHEAP calculators)."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="02108",
+            county="Suffolk",
+            household_size=2,
+            completed=False,
+        )
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
+        self.spouse = HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=33)
+
+    def test_field_name(self):
+        dep = member.HeatingExpensePersonDependency(self.screen, self.head, {})
+        self.assertEqual(dep.field, "heating_expense_person")
+
+    def test_head_gets_full_annual_heating_and_cooling_amount(self):
+        Expense.objects.create(screen=self.screen, type="heating", amount=100, frequency="monthly")
+        Expense.objects.create(screen=self.screen, type="cooling", amount=50, frequency="monthly")
+
+        dep = member.HeatingExpensePersonDependency(self.screen, self.head, {})
+        # ($100 + $50) * 12
+        self.assertEqual(dep.value(), 1800)
+
+    def test_non_head_returns_zero(self):
+        Expense.objects.create(screen=self.screen, type="heating", amount=100, frequency="monthly")
+
+        dep = member.HeatingExpensePersonDependency(self.screen, self.spouse, {})
+        self.assertEqual(dep.value(), 0)
+
+    def test_head_returns_zero_when_no_expense(self):
+        dep = member.HeatingExpensePersonDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 0)
+
+
 class TestSnapIneligibleStudentDependency(TestCase):
     """Tests for SnapIneligibleStudentDependency class used by TxSnap calculator."""
 
