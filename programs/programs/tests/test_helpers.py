@@ -1,7 +1,8 @@
 """
 Unit tests for helper functions used by PolicyEngine dependencies.
 
-These tests verify helper functions that are called by TxSnap dependencies.
+These tests verify the federal snap_ineligible_student() helper function.
+NC-specific exemptions are tested in test_member.py via NcSnapIneligibleStudentDependency.
 """
 
 from django.test import TestCase
@@ -163,120 +164,30 @@ class TestSnapIneligibleStudentHelper(TestCase):
         result = snap_ineligible_student(self.screen, head)
         self.assertTrue(result)
 
-
-class TestSnapIneligibleStudentHelperNC(TestCase):
-    """
-    Tests for snap_ineligible_student() helper function.
-
-    This helper is called by SnapIneligibleStudentDependency to determine
-    if a student is ineligible for SNAP benefits for NC state.
-    """
-
-    def setUp(self):
-        """Set up test data for snap_ineligible_student tests."""
-        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="NC")
-
-        self.screen = Screen.objects.create(
-            white_label=self.white_label, zipcode="27601", county="Test County", household_size=1, completed=False
-        )
-
-    def test_exempt_when_full_time_student_single_parent_with_child(self):
-        """Test that NC full-time student single parent with child under 12 is exempt."""
-        self.screen.household_size = 2
-        self.screen.save()
-
-        head = HouseholdMember.objects.create(
-            screen=self.screen, relationship="headOfHousehold", age=25, student=True, student_full_time=True
-        )
-        # No spouse = single parent
-
-        # Add child under 12
-        HouseholdMember.objects.create(screen=self.screen, relationship="child", age=10)
-
-        result = snap_ineligible_student(self.screen, head)
-        self.assertFalse(result)
-
-    def test_exempt_when_part_time_student(self):
-        """NC part-time student (student_full_time=False) is fully exempt from SNAP restriction."""
-        self.screen.household_size = 2
-        self.screen.save()
-
-        head = HouseholdMember.objects.create(
-            screen=self.screen,
-            relationship="headOfHousehold",
-            age=25,
-            student=True,
-            student_full_time=False,  # NC explicitly collected as part-time → exempt
-            student_job_training_program=False,
-            student_has_work_study=False,
-            student_works_20_plus_hrs=False,
-        )
-        HouseholdMember.objects.create(screen=self.screen, relationship="child", age=8)
-
-        result = snap_ineligible_student(self.screen, head)
-        self.assertFalse(result)  # part-time → SNAP restriction does not apply
-
-    def test_exempt_via_job_training_program(self):
-        """Student in job training program is exempt from SNAP student restriction."""
-        hm = HouseholdMember.objects.create(
-            screen=self.screen,
-            relationship="headOfHousehold",
-            age=25,
-            student=True,
-            student_job_training_program=True,
-        )
-        result = snap_ineligible_student(self.screen, hm)
-        self.assertFalse(result)  # job training → exempt
-
-    def test_exempt_via_work_study(self):
-        """Student with federal work study is exempt from SNAP student restriction."""
-        hm = HouseholdMember.objects.create(
-            screen=self.screen,
-            relationship="headOfHousehold",
-            age=25,
-            student=True,
-            student_has_work_study=True,
-        )
-        result = snap_ineligible_student(self.screen, hm)
-        self.assertFalse(result)  # work study → exempt
-
-    def test_exempt_via_works_20_plus_hours(self):
-        """Student working 20+ hours per week is exempt from SNAP student restriction."""
-        hm = HouseholdMember.objects.create(
-            screen=self.screen,
-            relationship="headOfHousehold",
-            age=25,
-            student=True,
-            student_works_20_plus_hrs=True,
-        )
-        result = snap_ineligible_student(self.screen, hm)
-        self.assertFalse(result)  # 20+ hrs → exempt
-
-    def test_ineligible_when_all_step3_fields_are_false(self):
-        """Student with all employment fields explicitly False is ineligible."""
-        hm = HouseholdMember.objects.create(
-            screen=self.screen,
-            relationship="headOfHousehold",
-            age=25,
-            student=True,
-            student_job_training_program=False,
-            student_has_work_study=False,
-            student_works_20_plus_hrs=False,
-        )
-        result = snap_ineligible_student(self.screen, hm)
-        self.assertTrue(result)  # no exemption met → ineligible
-
-    def test_exempt_when_household_receives_tanf(self):
-        """Student in NC household receiving TANF/Work First is exempt from SNAP restriction."""
+    def test_snap_ineligible_student_returns_false_for_tanf_household(self):
+        """Test that student in a household receiving TANF is exempt (Exemption 6)."""
         self.screen.has_tanf = True
         self.screen.save()
 
-        hm = HouseholdMember.objects.create(
+        member = HouseholdMember.objects.create(
+            screen=self.screen, relationship="headOfHousehold", age=25, student=True
+        )
+
+        result = snap_ineligible_student(self.screen, member)
+        self.assertFalse(result)
+
+    def test_nc_fields_do_not_affect_federal_helper(self):
+        """NC-specific fields (student_full_time, job training, etc.) are ignored by the federal helper."""
+        member = HouseholdMember.objects.create(
             screen=self.screen,
             relationship="headOfHousehold",
             age=25,
             student=True,
+            student_full_time=False,
+            student_job_training_program=True,
+            student_has_work_study=True,
+            student_works_20_plus_hrs=True,
         )
-
-        result = snap_ineligible_student(self.screen, hm)
-        self.assertFalse(result)  # TANF/Work First → exempt
+        # Federal helper ignores these fields — no other exemption applies → ineligible
+        result = snap_ineligible_student(self.screen, member)
+        self.assertTrue(result)
