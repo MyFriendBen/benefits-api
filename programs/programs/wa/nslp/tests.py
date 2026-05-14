@@ -145,6 +145,24 @@ class TestWaNslp(TestCase):
         result = self._calc(screen).calc()
         self.assertFalse(result.eligible)
 
+    def test_eligible_early_head_start_flag_high_income(self):
+        screen = self._screen_base(
+            zipcode="98402",
+            county="Pierce County",
+            has_early_head_start=True,
+            has_benefits="true",
+        )
+        head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=33, has_income=True)
+        IncomeStream.objects.create(
+            screen=screen, household_member=head, type="wages", amount=5000, frequency="monthly"
+        )
+        HouseholdMember.objects.create(screen=screen, relationship="spouse", age=32, has_income=False)
+        HouseholdMember.objects.create(screen=screen, relationship="child", age=5, has_income=False)
+
+        result = self._calc(screen).calc()
+        self.assertTrue(result.eligible)
+        self.assertEqual(result.value, 828)
+
     def test_eligible_head_start_flag_high_income(self):
         screen = self._screen_base(
             zipcode="98402",
@@ -162,6 +180,25 @@ class TestWaNslp(TestCase):
         result = self._calc(screen).calc()
         self.assertTrue(result.eligible)
         self.assertEqual(result.value, 828)
+
+    def test_snap_categorical_uses_presumed_eligibility_pass_message_not_income(self):
+        screen = self._screen_base(
+            zipcode="99201",
+            county="Spokane County",
+            has_snap=True,
+            has_benefits="true",
+        )
+        head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=40, has_income=True)
+        IncomeStream.objects.create(
+            screen=screen, household_member=head, type="wages", amount=7000, frequency="monthly"
+        )
+        HouseholdMember.objects.create(screen=screen, relationship="spouse", age=39, has_income=False)
+        HouseholdMember.objects.create(screen=screen, relationship="child", age=10, has_income=False)
+
+        result = self._calc(screen).calc()
+        self.assertTrue(result.eligible)
+        self.assertTrue(any("Presumed eligibility" in str(m) for m in result.pass_messages))
+        self.assertFalse(any("Household makes" in str(m) for m in result.pass_messages))
 
     def test_eligible_foster_child_categorical(self):
         screen = self._screen_base(household_size=3)

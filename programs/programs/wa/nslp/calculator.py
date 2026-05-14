@@ -157,10 +157,13 @@ class WaNslp(ProgramCalculator):
         categorical = self._household_categorical() or self._foster_school_age_categorical()
         income_ok = self._income_at_or_below_reduced_cap()
 
-        e.condition(
-            categorical or income_ok,
-            messages.income(gross_for_message, income_limit_message),
-        )
+        # Do not attach the income tuple when categorical applies: `Eligibility.condition`
+        # treats the message as a pass message if the flag is True, which would incorrectly
+        # imply an income test was met for high-income SNAP/TANF/Head Start households.
+        if categorical:
+            e.condition(True, messages.presumed_eligibility())
+        else:
+            e.condition(income_ok, messages.income(gross_for_message, income_limit_message))
 
     def member_value(self, member: HouseholdMember) -> int:
         if self._is_school_meal_proxy_student(member):
