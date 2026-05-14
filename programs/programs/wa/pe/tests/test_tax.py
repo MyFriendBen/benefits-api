@@ -2,10 +2,12 @@
 Unit tests for WA tax-level PolicyEngine calculator classes.
 
 These tests verify WA-specific calculator wiring including:
+- WaCtc (federal `Ctc` / `ctc_value` with `WaStateCodeDependency`)
 - WaWftc calculator registration (in wa_pe_calculators, wa_tax_calculators,
   and the global PE tax-unit registry)
-- WA-specific pe_inputs (WaStateCodeDependency)
-- Federal Eitc inputs are inherited
+- WA-specific pe_inputs (`WaStateCodeDependency`)
+- Federal `Eitc` inputs are inherited by `WaEitc`/`WaWftc`; federal `Ctc`
+  inputs flow through `WaCtc`
 
 The eligibility math itself (federal EITC phase-in/phase-out, MFJ adjustments,
 investment-income cap, the 25-64 age floor for childless filers, qualifying-
@@ -18,13 +20,13 @@ exercises against PolicyEngine via `python manage.py validate --program wa_wftc`
 
 from django.test import TestCase
 
-from programs.programs.federal.pe.tax import Eitc
+from programs.programs.federal.pe.tax import Ctc, Eitc
 from programs.programs.policyengine.calculators.base import PolicyEngineTaxUnitCalulator
 from programs.programs.policyengine.calculators.dependencies import tax as tax_dependency
 from programs.programs.policyengine.calculators.dependencies.household import WaStateCodeDependency
 from programs.programs.policyengine.calculators.registry import all_tax_unit_calculators
 from programs.programs.wa.pe import wa_pe_calculators, wa_tax_calculators
-from programs.programs.wa.pe.tax import WaEitc, WaWftc
+from programs.programs.wa.pe.tax import WaCtc, WaEitc, WaWftc
 
 
 class TestWaEitc(TestCase):
@@ -73,6 +75,54 @@ class TestWaEitc(TestCase):
     def test_eitc_tax_dependency_targets_correct_field(self):
         """The Eitc tax dependency points at PE's `eitc` field."""
         self.assertEqual(tax_dependency.Eitc.field, "eitc")
+
+
+class TestWaCtc(TestCase):
+    """Tests for WaCtc calculator class wiring."""
+
+    def test_exists_and_is_subclass_of_policy_engine_tax_unit_calculator(self):
+        """WaCtc is a `PolicyEngineTaxUnitCalulator` (lives in the tax-unit entity)."""
+        self.assertTrue(issubclass(WaCtc, PolicyEngineTaxUnitCalulator))
+
+    def test_pe_name_targets_ctc_value(self):
+        """`pe_name` resolves to PolicyEngine's `ctc_value` variable."""
+        self.assertEqual(WaCtc.pe_name, "ctc_value")
+
+    def test_is_registered_in_wa_pe_calculators(self):
+        """WaCtc is registered in the WA PE calculators dictionary as `wa_ctc`."""
+        self.assertIn("wa_ctc", wa_pe_calculators)
+        self.assertEqual(wa_pe_calculators["wa_ctc"], WaCtc)
+
+    def test_is_registered_in_wa_tax_calculators(self):
+        """WaCtc is registered in the WA tax-unit subset (not member/SPM)."""
+        self.assertIn("wa_ctc", wa_tax_calculators)
+        self.assertEqual(wa_tax_calculators["wa_ctc"], WaCtc)
+
+    def test_is_registered_in_global_tax_unit_registry(self):
+        """WaCtc flows up into the global PE tax-unit registry (so the engine sees it)."""
+        self.assertIn("wa_ctc", all_tax_unit_calculators)
+        self.assertEqual(all_tax_unit_calculators["wa_ctc"], WaCtc)
+
+    def test_pe_inputs_includes_wa_state_code_dependency(self):
+        """The WA state code is added on top of the federal Ctc inputs."""
+        self.assertIn(WaStateCodeDependency, WaCtc.pe_inputs)
+
+    def test_pe_inputs_includes_all_federal_ctc_inputs(self):
+        """All federal Ctc inputs flow through to WaCtc unchanged."""
+        for parent_input in Ctc.pe_inputs:
+            self.assertIn(parent_input, WaCtc.pe_inputs)
+
+    def test_pe_inputs_adds_exactly_one_dependency_to_ctc(self):
+        """WaCtc adds exactly one input on top of federal Ctc (the WA state code)."""
+        self.assertEqual(len(WaCtc.pe_inputs), len(Ctc.pe_inputs) + 1)
+
+    def test_pe_outputs_is_ctc(self):
+        """Output is the federal Child Tax Credit value (`ctc_value`)."""
+        self.assertEqual(WaCtc.pe_outputs, [tax_dependency.Ctc])
+
+    def test_ctc_tax_dependency_targets_correct_field(self):
+        """The Ctc tax dependency points at PE's `ctc_value` field."""
+        self.assertEqual(tax_dependency.Ctc.field, "ctc_value")
 
 
 class TestWaWftc(TestCase):

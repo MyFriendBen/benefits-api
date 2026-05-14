@@ -1,0 +1,69 @@
+{
+  "white_label": {
+    "code": "wa"
+  },
+  "program_category": {
+    "external_name": "wa_tax",
+    "name": "Tax Credits",
+    "icon": "tax_credit",
+    "tax_category": true
+  },
+  "program": {
+    "name_abbreviated": "wa_ctc",
+    "year": "2025",
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission"
+    ],
+    "name": "Federal Child Tax Credit (CTC) / Credit for Other Dependents",
+    "description_short": "Federal tax credit for families with children or other dependents",
+    "description": "Tax credits for families with children and other dependents. You may claim the federal Child Tax Credit for qualifying children. You may be able to claim the Credit for Other Dependents if your children do not qualify for the child tax credit or you can claim other dependents on your tax return. Your earned income must be below a certain limit to claim these credits.\n\nChildren and dependents must meet U.S. citizenship rules. Children must also have social security numbers. Other dependents must have social security numbers or individual taxpayer identification numbers (ITINs). A tax expert can help determine if you may claim these credits.\n\nOn average, it takes 21 days after filing to receive these credits.",
+    "learn_more_link": "https://www.irs.gov/credits-deductions/individuals/child-tax-credit",
+    "apply_button_link": "https://www.irs.gov/e-file-do-your-taxes-for-free",
+    "apply_button_description": "File for free",
+    "estimated_application_time": "About 45 minutes",
+    "estimated_delivery_time": "About 21 days after e-filing",
+    "estimated_value": "",
+    "value_format": "estimated_annual",
+    "value_type": "tax_credit",
+    "website_description": "Federal tax credit for families with children or other dependents",
+    "base_program": "ctc",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": true
+  },
+  "documents": [
+    {
+      "external_name": "wa_ctc_ssn_or_itin",
+      "text": "Social security number or individual taxpayer identification number (ITIN)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_ctc_w2",
+      "text": "Form W-2 for all household members in tax unit",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_ctc_1099",
+      "text": "1099 for all household members in tax unit",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "wa_211",
+      "name": "Washington 211",
+      "email": "info@wa211.org",
+      "description": "Washington 211 connects residents to local health and human service resources. During tax season, it can help people find free tax preparation options such as VITA, AARP Tax-Aide, and other local tax help.",
+      "assistance_link": "https://wa211.org/contact-washington-211/",
+      "phone_number": "+18772119274"
+    }
+  ]
+}
