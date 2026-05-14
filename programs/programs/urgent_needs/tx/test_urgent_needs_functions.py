@@ -319,7 +319,7 @@ class TestTrustHer(TestCase):
         self.assertFalse(self._calc(gross_income=self.INCOME_LIMIT + 1, uninsured=True))
 
     def test_not_eligible_high_income_and_insured(self):
-        self.assertFalse(self._calc(gross_income=50_000, uninsured=False))
+        self.assertFalse(self._calc(gross_income=self.INCOME_LIMIT + 1, uninsured=False))
 
     def test_fpl_percent(self):
         self.assertEqual(TrustHer.fpl_percent, 2.5)
