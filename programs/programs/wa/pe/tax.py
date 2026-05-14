@@ -1,4 +1,4 @@
-from programs.programs.federal.pe.tax import Ctc, Eitc
+from programs.programs.federal.pe.tax import Eitc
 from programs.programs.policyengine.calculators.base import PolicyEngineTaxUnitCalulator
 import programs.programs.policyengine.calculators.dependencies as dependency
 
@@ -10,15 +10,6 @@ class WaEitc(PolicyEngineTaxUnitCalulator):
         dependency.household.WaStateCodeDependency,
     ]
     pe_outputs = [dependency.tax.Eitc]
-
-
-class WaCtc(PolicyEngineTaxUnitCalulator):
-    pe_name = "ctc_value"
-    pe_inputs = [
-        *Ctc.pe_inputs,
-        dependency.household.WaStateCodeDependency,
-    ]
-    pe_outputs = [dependency.tax.Ctc]
 
 
 class WaWftc(PolicyEngineTaxUnitCalulator):
