@@ -9,6 +9,7 @@
     },
     "program": {
         "name_abbreviated": "trump_account",
+        "external_name": "wa_trump_account",
         "year": "2025",
         "legal_status_required": [
             "citizen"
