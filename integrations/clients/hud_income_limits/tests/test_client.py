@@ -697,3 +697,27 @@ class TestHudIncomeClientHTTPErrors(TestCase):
         self.assertEqual(retry_config.backoff_factor, 1)
         self.assertEqual(retry_config.status_forcelist, [429, 500, 502, 503, 504])
         self.assertIn("GET", retry_config.allowed_methods)
+
+
+class TestHudIncomeClientFmrBasicdata(TestCase):
+    """Regression: HUD sometimes returns data.basicdata as a list of dicts."""
+
+    def test_normalize_dict_passthrough(self) -> None:
+        d = {"Two-Bedroom": 2082}
+        self.assertEqual(HudIncomeClient._normalize_fmr_basicdata(d, "Two-Bedroom"), d)
+
+    def test_normalize_list_selects_row_with_bedroom_field(self) -> None:
+        rows = [{"One-Bedroom": 1500}, {"Two-Bedroom": 2082, "Efficiency": 950}]
+        out = HudIncomeClient._normalize_fmr_basicdata(rows, "Two-Bedroom")
+        self.assertEqual(out["Two-Bedroom"], 2082)
+
+    def test_normalize_list_fallback_first_dict(self) -> None:
+        rows = [{"Two-Bedroom": 1500}]
+        self.assertEqual(HudIncomeClient._normalize_fmr_basicdata(rows, "Two-Bedroom"), rows[0])
+
+    def test_normalize_empty_list(self) -> None:
+        self.assertEqual(HudIncomeClient._normalize_fmr_basicdata([], "Two-Bedroom"), {})
+
+    def test_normalize_non_dict_non_list(self) -> None:
+        self.assertEqual(HudIncomeClient._normalize_fmr_basicdata(None, "Two-Bedroom"), {})
+        self.assertEqual(HudIncomeClient._normalize_fmr_basicdata("bad", "Two-Bedroom"), {})
