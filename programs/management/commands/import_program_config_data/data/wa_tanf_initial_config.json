@@ -24,7 +24,7 @@
     "value_format": null,
     "value_type": "benefit",
     "website_description": "Temporary Assistance for Needy Families (TANF) gives families monthly cash to help pay for things like food and rent",
-    "year": 2026,
+    "year": "2026",
     "base_program": "tanf",
     "show_on_current_benefits": true,
     "has_calculator": true,
