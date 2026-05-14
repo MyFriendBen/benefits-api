@@ -59,7 +59,7 @@ class IlConfigurationData(ConfigurationData):
             "icon": {"_icon": "Support", "_classname": "option-card-icon"},
             "text": {
                 "_label": "acuteConditionOptions.support",
-                "_default_message": "A challenge you or your child would like to talk about",
+                "_default_message": "Mental health support",
             },
         },
         "childDevelopment": {
