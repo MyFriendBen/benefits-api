@@ -80,8 +80,6 @@ class WaSeniorDisabledPte(ProgramCalculator):
         "income_amount",
         "income_frequency",
         "county",
-        "long_term_disability",
-        "veteran",
     ]
 
     def _income_threshold_3(self) -> int:
