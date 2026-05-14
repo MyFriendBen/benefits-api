@@ -261,6 +261,24 @@ class HudIncomeClient:
         4: "Four-Bedroom",
     }
 
+    @staticmethod
+    def _normalize_fmr_basicdata(basic_data: object, bedroom_field: str) -> dict:
+        """
+        HUD's fmr/data payload usually has data.basicdata as a dict of bedroom
+        columns. Some responses return basicdata as a list of per-area dicts
+        instead, which caused AttributeError when calling .get on a list.
+        """
+        if isinstance(basic_data, dict):
+            return basic_data
+        if isinstance(basic_data, list):
+            for item in basic_data:
+                if isinstance(item, dict) and item.get(bedroom_field) is not None:
+                    return item
+            for item in basic_data:
+                if isinstance(item, dict):
+                    return item
+        return {}
+
     def get_screen_fmr(
         self,
         screen: Screen,
@@ -301,9 +319,8 @@ class HudIncomeClient:
             raise HudIncomeClientError(f"No FMR data found for {county}, {screen.white_label.state_code}")
 
         area_data = data["data"]
-        basic_data = area_data.get("basicdata", {})
-
         field = self.FMR_BEDROOM_FIELDS[bedrooms]
+        basic_data = self._normalize_fmr_basicdata(area_data.get("basicdata", {}), field)
         value = basic_data.get(field)
         if value is None:
             raise HudIncomeClientError(f"No FMR data for {bedrooms}-bedroom in {county}")
