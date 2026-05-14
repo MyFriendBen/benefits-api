@@ -757,3 +757,13 @@ class FosterCareDependency(Member):
         if self.member.relationship == "fosterChild":
             return True
         return None
+
+
+class EmploymentIncomeBeforeLsrDependency(IncomeDependency):
+    field = "employment_income_before_lsr"
+    income_types = ["wages"]
+
+
+class SelfEmploymentIncomeBeforeLsrDependency(IncomeDependency):
+    field = "self_employment_income_before_lsr"
+    income_types = ["selfEmployment"]
