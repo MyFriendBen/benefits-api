@@ -1,14 +1,16 @@
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from django.test import TestCase
 
 from programs.models import UrgentNeed
+from programs.models import FederalPoveryLimit
 from programs.programs.urgent_needs.tx.books_beginning_at_birth import BooksBeginningAtBirth
 from programs.programs.urgent_needs.tx.double_up_food_bucks import DoubleUpFoodBucks
 from programs.programs.urgent_needs.tx.hippy import Hippy
 from programs.programs.urgent_needs.tx.oak_cliff_lena import OakCliffLena
 from programs.programs.urgent_needs.tx.serve_southern_dallas import ServeSouthernDallas
 from programs.programs.urgent_needs.tx.snap_employment import SnapEmploymentTraining
+from programs.programs.urgent_needs.tx.trust_her import TrustHer
 from programs.programs.urgent_needs.tx.wic import Wic
 from programs.util import Dependencies
 from screener.models import HouseholdMember, Screen, WhiteLabel
@@ -273,3 +275,57 @@ class TestHippy(TestCase):
 
     def test_not_eligible_no_children(self):
         self.assertFalse(self._calc())
+
+
+# ---------------------------------------------------------------------------
+# TrustHer
+# ---------------------------------------------------------------------------
+
+
+class TestTrustHer(TestCase):
+    # 2026 FPL for household_size=2 is $21,640 (make_tx_screen default); 250% = $54,100
+    FPL_SIZE_2 = 21_640
+    INCOME_LIMIT = int(2.5 * FPL_SIZE_2)  # 54_100
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")
+        self.urgent_need = make_urgent_need(self.white_label, "tx_trust_her")
+        fpl, _ = FederalPoveryLimit.objects.get_or_create(year="2026", defaults={"period": "2026"})
+        self.urgent_need.year = fpl
+        self.urgent_need.save()
+        self.screen = make_tx_screen(self.white_label)
+        HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=30)
+
+    def _calc(self, gross_income=0, uninsured=True):
+        with (
+            patch.object(self.screen.__class__, "calc_gross_income", return_value=gross_income),
+            patch.object(self.screen.__class__, "has_insurance_types", return_value=uninsured),
+        ):
+            return TrustHer(self.screen, self.urgent_need, Dependencies(), {}).eligible()
+
+    def test_eligible_with_low_income_and_no_insurance(self):
+        self.assertTrue(self._calc(gross_income=20_000, uninsured=True))
+
+    def test_not_eligible_income_too_high(self):
+        self.assertFalse(self._calc(gross_income=self.INCOME_LIMIT + 1, uninsured=True))
+
+    def test_not_eligible_has_insurance(self):
+        self.assertFalse(self._calc(gross_income=20_000, uninsured=False))
+
+    def test_eligible_at_income_boundary(self):
+        self.assertTrue(self._calc(gross_income=self.INCOME_LIMIT, uninsured=True))
+
+    def test_not_eligible_one_dollar_over_limit(self):
+        self.assertFalse(self._calc(gross_income=self.INCOME_LIMIT + 1, uninsured=True))
+
+    def test_not_eligible_high_income_and_insured(self):
+        self.assertFalse(self._calc(gross_income=50_000, uninsured=False))
+
+    def test_fpl_percent(self):
+        self.assertEqual(TrustHer.fpl_percent, 2.5)
+
+    def test_dependencies(self):
+        self.assertIn("income_amount", TrustHer.dependencies)
+        self.assertIn("income_frequency", TrustHer.dependencies)
+        self.assertIn("household_size", TrustHer.dependencies)
+        self.assertIn("health_insurance", TrustHer.dependencies)
