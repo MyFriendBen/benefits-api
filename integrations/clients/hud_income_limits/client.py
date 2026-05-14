@@ -261,6 +261,24 @@ class HudIncomeClient:
         4: "Four-Bedroom",
     }
 
+    @staticmethod
+    def _normalize_fmr_basicdata(basic_data: object, bedroom_field: str) -> dict:
+        """
+        HUD's fmr/data payload usually has data.basicdata as a dict of bedroom
+        columns. Some responses return basicdata as a list of per-area dicts
+        instead, which caused AttributeError when calling .get on a list.
+        """
+        if isinstance(basic_data, dict):
+            return basic_data
+        if isinstance(basic_data, list):
+            for item in basic_data:
+                if isinstance(item, dict) and item.get(bedroom_field) is not None:
+                    return item
+            for item in basic_data:
+                if isinstance(item, dict):
+                    return item
+        return {}
+
     def get_screen_fmr(
         self,
         screen: Screen,
@@ -301,9 +319,20 @@ class HudIncomeClient:
             raise HudIncomeClientError(f"No FMR data found for {county}, {screen.white_label.state_code}")
 
         area_data = data["data"]
-        basic_data = area_data.get("basicdata", {})
+        if not isinstance(area_data, dict):
+            # SAFMR areas (e.g. Seattle-Bellevue) return a list of ZIP-level records
+            # rather than a single county dict. We cannot use those for a county-level
+            # estimate, so surface a typed error instead of crashing on .get().
+            raise HudIncomeClientError(
+                f"FMR data for {county}, {screen.white_label.state_code} is in an unsupported "
+                f"format (got {type(area_data).__name__} instead of dict). "
+                f"This county may be a Small Area FMR (SAFMR) area."
+            )
+
+        basic_data = area_data.get("basicdata") or {}
 
         field = self.FMR_BEDROOM_FIELDS[bedrooms]
+        basic_data = self._normalize_fmr_basicdata(area_data.get("basicdata", {}), field)
         value = basic_data.get(field)
         if value is None:
             raise HudIncomeClientError(f"No FMR data for {bedrooms}-bedroom in {county}")
@@ -455,7 +484,11 @@ class HudIncomeClient:
         try:
             response = self._session.get(f"{self.BASE_URL}/{endpoint}", headers=self.headers, params=params, timeout=30)
             response.raise_for_status()
-            return response.json()
+            try:
+                return response.json()
+            except ValueError as e:
+                capture_exception(e)
+                raise HudIncomeClientError(f"Non-JSON response from HUD API ({endpoint}): {response.text[:200]}") from e
         except requests.exceptions.HTTPError as e:
             capture_exception(e)
             status_code = e.response.status_code

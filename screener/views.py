@@ -48,6 +48,7 @@ from programs.models import (
 from programs.programs.categories import ProgramCategoryCapCalculator, category_cap_calculators
 from django.core.exceptions import ObjectDoesNotExist
 from programs.programs.warnings import warning_calculators
+from programs.serializers import HasBenefitsProgramSerializer
 from validations.serializers import ValidationSerializer
 from .webhooks import get_web_hook
 from drf_yasg.utils import swagger_auto_schema
@@ -360,14 +361,20 @@ def eligibility_results(screen: Screen, batch=False):
     program_eligibility = {}
 
     for program in all_programs:
+        # Tracking-only programs (has_calculator=False) and disabled programs
+        # (active=False) are skipped before any eligibility lookup. Without this
+        # guard, the loop would fall through and reuse the previous iteration's
+        # `eligibility` value when writing program_snapshots.
+        if not (program.active and program.has_calculator):
+            continue
         skip = False
-        if program.name_abbreviated not in pe_programs and program.active:
+        if program.name_abbreviated not in pe_programs:
             try:
                 eligibility = program.eligibility(screen, program_eligibility, missing_dependencies)
             except DependencyError:
                 missing_programs = True
                 continue
-        elif program.active:
+        else:
             if program.name_abbreviated not in pe_eligibility:
                 missing_programs = True
                 continue
@@ -671,6 +678,40 @@ class NPSScoreView(views.APIView):
             serializer.update(nps_score, serializer.validated_data)
             return Response({"status": "success"}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class HasBenefitsProgramsView(views.APIView):
+    """Returns programs shown in the 'already has benefits' screener step.
+
+    Response is a flat, unsorted list. Each program includes its `category`.
+    Callers are responsible for sorting and grouping by the user-facing
+    `default_message` of `name` and `category` (sorting server-side would order
+    by translation label, which is the internal i18n key, not the display text).
+
+    Response shape:
+        [
+            {
+                "name_abbreviated": "SNAP",
+                "name": {"label": "...", "default_message": "Supplemental Nutrition Assistance Program"},
+                "website_description": {"label": "...", "default_message": "Monthly food assistance for groceries"},
+                "category": {"label": "...", "default_message": "Food and Nutrition"}
+            },
+            ...
+        ]
+    """
+
+    permission_classes = [permissions.DjangoModelPermissions]
+    queryset = Program.objects.none()  # Required for DjangoModelPermissions
+
+    def get(self, request, white_label):
+        programs = Program.objects.filter(
+            active=True,
+            show_in_has_benefits_step=True,
+            white_label__code=white_label,
+        ).select_related("name", "website_description", "category__name")
+
+        serializer = HasBenefitsProgramSerializer(programs, many=True)
+        return Response(serializer.data)
 
 
 class ReferralSourcesView(views.APIView):

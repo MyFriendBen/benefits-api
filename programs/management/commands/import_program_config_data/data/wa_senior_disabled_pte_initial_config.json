@@ -1,0 +1,98 @@
+{
+  "white_label": {
+    "code": "wa"
+  },
+  "program_category": {
+    "external_name": "wa_tax"
+  },
+  "program": {
+    "name_abbreviated": "wa_senior_disabled_pte",
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "refugee",
+      "gc_5plus",
+      "gc_5less",
+      "otherWithWorkPermission"
+    ],
+    "name": "Property Tax Exemption for Seniors and People with Disabilities",
+    "description_short": "Property tax relief for seniors and people with disabilities",
+    "description": "This Washington program can lower property taxes for some homeowners. It may also freeze the taxable value of the home. This can help keep future tax bills from rising as fast.\n\nThe exact savings depend on your county, income tier, home value, and local taxes. MyFriendBen may give a rough estimate based on the property tax amount you entered. Your county assessor decides the final amount.\n\nSome rules are hard to check in this screener. You must own and live in the home as your main home. The county assessor will use special income rules. They may count income from a spouse, domestic partner, or some co-owners.\n\nThere is no single statewide online application. To apply, use the WA Department of Revenue page to find your county assessor. Your county may ask for documents. These documents can show your age, income, disability, veteran status, or that you own and live in your home.",
+    "learn_more_link": "https://dor.wa.gov/taxes-rates/property-tax/property-tax-exemption-seniors-people-retired-due-disability-and-veterans-disabilities",
+    "apply_button_link": "https://dor.wa.gov/taxes-rates/property-tax/property-tax-exemption-seniors-people-retired-due-disability-and-veterans-disabilities",
+    "apply_button_description": "Learn More",
+    "estimated_application_time": "30-60 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": "estimated_annual",
+    "value_type": "benefit",
+    "website_description": "Property tax relief for seniors and people with disabilities",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": [
+    {
+      "external_name": "wa_pte_age_proof",
+      "text": "Proof of age (e.g. driver's license, state ID, birth certificate)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_pte_income_proof",
+      "text": "Proof of household income for you, your spouse, and any cotenants (e.g. tax return, W-2, Social Security or pension statement)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_pte_combined_disposable_income_worksheet",
+      "text": "Completed Combined Disposable Income Worksheet",
+      "link_url": "https://dor.wa.gov/forms-publications/forms-subject/property-tax-forms",
+      "link_text": "Find the income worksheet"
+    },
+    {
+      "external_name": "wa_pte_deductible_expense_proof",
+      "text": "Proof of deductible medical or care expenses, if claimed (e.g. Medicare premiums, prescription receipts)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_pte_homeownership_proof",
+      "text": "Proof of homeownership, if not on county records (e.g. deed or trust documents)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_pte_occupancy_proof",
+      "text": "Proof you live in the home (e.g. driver's license, voter registration)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_pte_disability_proof",
+      "text": "Proof of disability, if applying via the disability pathway (e.g. SSA/VA award letter or physician statement)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_pte_veteran_proof",
+      "text": "Proof of VA service-connected or total disability rating, if applying as a veteran",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "wa_homeownership_resource_center",
+      "name": "Washington Homeownership Resource Center",
+      "email": "info@homeownership-wa.org",
+      "description": "WHRC is a statewide nonprofit hotline and referral service for Washington homeowners. Their hotline connects callers to free support for the Senior/Disabled Property Tax Exemption and other homeowner programs, with interpretation available in over 220 languages and a website translated into 16 languages.",
+      "assistance_link": "https://www.homeownership-wa.org/contact/",
+      "phone_number": "+18778944663",
+      "languages": [
+        "en",
+        "es"
+      ]
+    }
+  ]
+}

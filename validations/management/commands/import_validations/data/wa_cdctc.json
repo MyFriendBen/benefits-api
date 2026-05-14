@@ -1,0 +1,151 @@
+[
+  {
+    "notes": "MFB-923 — WA CDCTC draft scaffold. Household with childcare expense signal; calculator not wired — expectations are intentionally ineligible pending implementation.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_size": 2,
+      "zipcode": "98101",
+      "county": "King County",
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 6,
+          "birth_year": 1992,
+          "age": 33,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3500,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 1,
+          "birth_year": 2020,
+          "age": 5,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": [
+        {
+          "type": "dependentCare",
+          "amount": 800,
+          "frequency": "monthly"
+        }
+      ]
+    },
+    "expected_results": {
+      "program_name": "wa_cdctc",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "MFB-923 — Household without childcare expenses; expectation ineligible pending WA rules (may change when calculator validates expense minimums).",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_size": 3,
+      "zipcode": "99201",
+      "county": "Spokane County",
+      "household_assets": 5000,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 4,
+          "birth_year": 1988,
+          "age": 37,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 5200,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "spouse",
+          "birth_month": 8,
+          "birth_year": 1991,
+          "age": 34,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2800,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 9,
+          "birth_year": 2019,
+          "age": 6,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_cdctc",
+      "eligible": false
+    }
+  }
+]
