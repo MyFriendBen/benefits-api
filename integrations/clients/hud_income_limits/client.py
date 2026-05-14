@@ -469,9 +469,7 @@ class HudIncomeClient:
                 return response.json()
             except ValueError as e:
                 capture_exception(e)
-                raise HudIncomeClientError(
-                    f"Non-JSON response from HUD API ({endpoint}): {response.text[:200]}"
-                ) from e
+                raise HudIncomeClientError(f"Non-JSON response from HUD API ({endpoint}): {response.text[:200]}") from e
         except requests.exceptions.HTTPError as e:
             capture_exception(e)
             status_code = e.response.status_code
