@@ -171,7 +171,7 @@ Source: [WAC 388-478-0035](https://app.leg.wa.gov/WAC/default.aspx?cite=388-478-
 
 ### Scenario 7: 18-Year-Old Child, Income Above 2-Person Payment Standard — Ineligible
 
-**What we're checking**: Reframed from the draft. Under the inclusivity assumption documented in Criterion 1 (all individuals under age 19 are treated as qualifying dependents), an 18-year-old counts as a qualifying dependent, so this scenario no longer isolates the dependent-child age branch. The household is ineligible on income — $800/month gross exceeds the 2-person payment standard of $440/month and would still exceed it after disregards (($800 − $90) × 0.5 = $355, but still subject to other deduction rules).
+**What we're checking**: Under the inclusivity assumption in Criterion 1 (all individuals under age 19 are treated as qualifying dependents), an 18-year-old counts as a qualifying dependent. The household is ineligible on income — $1,800/month gross exceeds the 2-person payment standard after disregards. With PE's $500+50% disregard: ($1,800 − $500) × 0.5 = $650 countable earned income, which exceeds the 2-person payment standard ($570).
 
 **Expected**: Ineligible
 
@@ -179,7 +179,7 @@ Source: [WAC 388-478-0035](https://app.leg.wa.gov/WAC/default.aspx?cite=388-478-
 
 * **Location**: Enter ZIP code `98117`, Select county `King County`
 * **Household**: Number of people: `2`
-* **Person 1 (Head)**: Birth month/year: `May 1985` (age 41), Employment income: `$800/month`
+* **Person 1 (Head)**: Birth month/year: `May 1985` (age 41), Employment income: `$1,800/month`
 * **Person 2 (Child)**: Birth month/year: `April 2008` (age 18), No income
 * **Assets**: `$1,000`
 

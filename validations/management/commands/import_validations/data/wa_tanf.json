@@ -1,7 +1,7 @@
 [
   {
     "notes": "Scenario 1: Clearly eligible single parent with two young children. Income $800/month, assets $1,500, WA resident, not receiving TANF.",
-       "household": {
+    "household": {
       "white_label": "wa",
       "is_test": true,
       "agree_to_tos": true,
@@ -78,7 +78,7 @@
     }
   },
   {
-    "notes": "Scenario 2: Minimally eligible — single parent with one child (age 17, turns 18 in May 2026), income $521/month, assets exactly at $6,000 limit.",
+    "notes": "Scenario 2: Minimally eligible — single parent with one child (age 17, turns 18 in June 2026), income $521/month, assets exactly at $6,000 limit.",
     "household": {
       "white_label": "wa",
       "is_test": true,
