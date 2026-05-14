@@ -209,6 +209,8 @@ class Command(BaseCommand):
         for program in programs:
             if program["external_name"] == validation.program_name:
                 return program
+            if program["name_abbreviated"] == validation.program_name:
+                return program
 
     def _stdout_display(self, results: ValidationResults, hide_skipped: bool):
         for result in results.results:
