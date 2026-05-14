@@ -79,22 +79,21 @@ class TestMemberExpenseDependency(TestCase):
         self.assertEqual(dep.value(), 0)
         self.assertEqual(dep.field, "real_estate_taxes")
 
-    def test_value_calculates_annual_for_elderly_member(self):
-        """Test MedicalExpenseDependency.value() calculates annual medical expenses for elderly member."""
-        elderly_member = HouseholdMember.objects.create(screen=self.screen, relationship="parent", age=65)
-
-        Expense.objects.create(screen=self.screen, type="medical", amount=200, frequency="monthly")
-
-        dep = member.MedicalExpenseDependency(self.screen, elderly_member, {})
-        # $200/month * 12 / 1 elderly or disabled member
-        self.assertEqual(dep.value(), 2400)
-        self.assertEqual(dep.field, "other_medical_expenses")
-
-    def test_value_returns_zero_for_non_elderly_non_disabled(self):
-        """Test MedicalExpenseDependency.value() returns 0 for non-elderly, non-disabled member."""
+    def test_value_head_gets_full_annual_medical_amount(self):
+        """Test MedicalExpenseDependency.value() assigns full medical expenses to head."""
         Expense.objects.create(screen=self.screen, type="medical", amount=200, frequency="monthly")
 
         dep = member.MedicalExpenseDependency(self.screen, self.head, {})
+        # $200/month * 12
+        self.assertEqual(dep.value(), 2400)
+        self.assertEqual(dep.field, "other_medical_expenses")
+
+    def test_value_non_head_returns_zero(self):
+        """Test MedicalExpenseDependency.value() returns 0 for non-head members."""
+        elderly_member = HouseholdMember.objects.create(screen=self.screen, relationship="parent", age=65)
+        Expense.objects.create(screen=self.screen, type="medical", amount=200, frequency="monthly")
+
+        dep = member.MedicalExpenseDependency(self.screen, elderly_member, {})
         self.assertEqual(dep.value(), 0)
 
 

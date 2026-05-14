@@ -136,23 +136,21 @@ class IsDisabledDependency(Member):
         return self.member.disabled or self.member.long_term_disability or self.member.visually_impaired
 
 
-# The Member class runs once per each household member, to ensure that the medical expenses
-# are only counted once and only if a member is elderly or disabled; the medical expense is divided
-# by the total number of elderly or disabled members.
 class MedicalExpenseDependency(Member):
+    """
+    Medical expenses for PolicyEngine SNAP and other deduction calculations.
+
+    Our screener captures medical expenses as a household-level expense, so we
+    attribute the full amount to the head; other members get 0.
+    """
+
     field = "other_medical_expenses"
-    dependencies = ["age"]
 
     def value(self):
-        elderly_or_disabled_members = [
-            member for member in self.screen.household_members.all() if member.age >= 60 or member.has_disability()
-        ]
-        count_of_elderly_or_disabled_members = len(elderly_or_disabled_members)
+        if not self.member.is_head():
+            return 0
 
-        if self.member.age >= 60 or self.member.has_disability():
-            return self.screen.calc_expenses("yearly", ["medical"]) / count_of_elderly_or_disabled_members
-
-        return 0
+        return int(self.screen.calc_expenses("yearly", ["medical"]))
 
 
 class PropertyTaxExpenseDependency(Member):
