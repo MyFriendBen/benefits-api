@@ -10,6 +10,7 @@ from .seattle_fresh_bucks.calculator import WaSeattleFreshBucks
 from .senior_disabled_pte.calculator import WaSeniorDisabledPte
 from .ssdi.calculator import WaSsdi
 from .wic.calculator import WaWic
+from .nslp.calculator import WaNslp
 
 wa_calculators: dict[str, type[ProgramCalculator]] = {
     "wa_csfp": WaCsfp,
@@ -23,4 +24,5 @@ wa_calculators: dict[str, type[ProgramCalculator]] = {
     "wa_seattle_fresh_bucks": WaSeattleFreshBucks,
     "wa_senior_disabled_pte": WaSeniorDisabledPte,
     "wa_wic": WaWic,
+    "wa_nslp": WaNslp,
 }
