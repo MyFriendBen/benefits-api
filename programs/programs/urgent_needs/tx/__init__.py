@@ -30,6 +30,7 @@ from .hippy import Hippy
 from .trust_her import TrustHer
 from .legal_aid_northwest_texas import LegalAidNorthwestTexas
 from .crossroads_community_services import CrossroadsCommunitySvcs
+from .first_step_staffing import FirstStepStaffing
 
 tx_urgent_need_functions: dict[str, type[UrgentNeedFunction]] = {
     "tx_early_intervention": EarlyIntervention,
@@ -63,4 +64,5 @@ tx_urgent_need_functions: dict[str, type[UrgentNeedFunction]] = {
     "tx_trust_her": TrustHer,
     "tx_legal_aid_northwest_texas": LegalAidNorthwestTexas,
     "tx_crossroads_community_services": CrossroadsCommunitySvcs,
+    "tx_first_step_staffing": FirstStepStaffing,
 }
