@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.test import TestCase
 
 from programs.models import Program, FederalPoveryLimit
@@ -57,6 +59,19 @@ class TestWaNslp(TestCase):
         result = self._calc(screen).calc()
         self.assertTrue(result.eligible)
         self.assertEqual(result.value, 828)
+
+    def test_ineligible_monthly_income_cents_over_reduced_cap(self):
+        """HH3 monthly cap $4,109 — cents must not be truncated (CodeRabbit / Decimal)."""
+        screen = self._screen_base(zipcode="98103", county="King County", household_size=3)
+        head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=39, has_income=True)
+        IncomeStream.objects.create(
+            screen=screen, household_member=head, type="wages", amount=Decimal("4109.99"), frequency="monthly"
+        )
+        HouseholdMember.objects.create(screen=screen, relationship="spouse", age=37, has_income=False)
+        HouseholdMember.objects.create(screen=screen, relationship="child", age=12, has_income=False)
+
+        result = self._calc(screen).calc()
+        self.assertFalse(result.eligible)
 
     def test_ineligible_income_one_dollar_over_reduced_monthly(self):
         """$4,110/mo for HH3 — over $4,109 monthly reduced-price cap; Medicaid irrelevant."""

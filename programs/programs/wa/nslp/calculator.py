@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import programs.programs.messages as messages
 from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
 from screener.models import HouseholdMember, IncomeStream
@@ -91,7 +93,7 @@ class WaNslp(ProgramCalculator):
         streams: list[IncomeStream] = []
         for m in self.screen.household_members.all():
             for inc in m.income_streams.all():
-                if inc.amount is not None and float(inc.amount) > 0 and inc.frequency:
+                if inc.amount is not None and inc.amount > 0 and inc.frequency:
                     streams.append(inc)
         return streams
 
@@ -101,32 +103,27 @@ class WaNslp(ProgramCalculator):
             return True
 
         freqs = {s.frequency for s in streams}
-        hh = self._household_size_for_limits()
-        red_ann = self._reduced_annual_limit()
-        red_mo = self._reduced_monthly_limit()
+        red_ann = Decimal(self._reduced_annual_limit())
+        red_mo = Decimal(self._reduced_monthly_limit())
 
         if len(freqs) > 1:
-            gross = int(self.screen.calc_gross_income("yearly", ["all"]))
+            gross = Decimal(str(self.screen.calc_gross_income("yearly", ["all"])))
             return gross <= red_ann
 
         f = next(iter(freqs))
+        total = sum((s.amount for s in streams), Decimal(0))
         if f == "monthly":
-            total = sum(float(s.amount) for s in streams)
-            return int(total) <= red_mo
+            return total <= red_mo
         if f == "yearly":
-            total = sum(float(s.amount) for s in streams)
-            return int(total) <= red_ann
+            return total <= red_ann
         if f == "weekly":
-            total = sum(float(s.amount) for s in streams)
-            return int(total * 52) <= red_ann
+            return (total * Decimal(52)) <= red_ann
         if f == "biweekly":
-            total = sum(float(s.amount) for s in streams)
-            return int(total * 26) <= red_ann
+            return (total * Decimal(26)) <= red_ann
         if f == "semimonthly":
-            total = sum(float(s.amount) for s in streams)
-            return int(total * 24) <= red_ann
+            return (total * Decimal(24)) <= red_ann
         # Hourly (and any other): use annualized gross from screener conversion rules.
-        gross = int(self.screen.calc_gross_income("yearly", ["all"]))
+        gross = Decimal(str(self.screen.calc_gross_income("yearly", ["all"])))
         return gross <= red_ann
 
     def _household_categorical(self) -> bool:
