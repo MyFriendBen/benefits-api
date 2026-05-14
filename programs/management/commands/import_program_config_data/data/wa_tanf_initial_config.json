@@ -3,7 +3,9 @@
     "code": "wa"
   },
   "program_category": {
-    "external_name": "wa_cash"
+    "external_name": "wa_cash",
+    "name": "Cash Assistance",
+    "icon": "cash"
   },
   "program": {
     "name_abbreviated": "wa_tanf",
@@ -22,6 +24,7 @@
     "value_format": null,
     "value_type": "benefit",
     "website_description": "Temporary Assistance for Needy Families (TANF) gives families monthly cash to help pay for things like food and rent",
+    "year": 2026,
     "base_program": "tanf",
     "show_on_current_benefits": true,
     "has_calculator": true,

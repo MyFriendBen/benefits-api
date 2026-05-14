@@ -74,7 +74,7 @@
     "expected_results": {
       "program_name": "wa_tanf",
       "eligible": true,
-      "value": 654
+      "value": 6672
     }
   },
   {
@@ -135,11 +135,11 @@
     "expected_results": {
       "program_name": "wa_tanf",
       "eligible": true,
-      "value": 440
+      "value": 6714
     }
   },
   {
-    "notes": "Scenario 5: Single parent with two children, income $700/month — exceeds 3-person payment standard ($654/month) by $46. Ineligible per screener gross income approximation.",
+    "notes": "Scenario 5: Single parent with two children, income $2,500/month — countable earned income after disregard ($1,000) exceeds 3-person payment standard ($706). Ineligible.",
     "household": {
       "white_label": "wa",
       "is_test": true,
@@ -159,7 +159,7 @@
           "income_streams": [
             {
               "type": "wages",
-              "amount": 700,
+              "amount": 2500,
               "frequency": "monthly"
             }
           ],
