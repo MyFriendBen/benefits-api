@@ -415,6 +415,7 @@ class Screen(models.Model):
             "il_eitc": self.has_il_eitc,
             "nslp": self.has_nslp,
             "tx_nslp": self.has_nslp,
+            "wa_nslp": self.has_nslp,
             "ctc": self.has_ctc,
             "tx_ctc": self.has_ctc,
             "il_ctc": self.has_il_ctc,
