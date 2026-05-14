@@ -16,6 +16,9 @@ class TrustHer(UrgentNeedFunction):
     fpl_percent = 2.5
 
     def eligible(self) -> bool:
+        if self.urgent_need.year is None:
+            return False
+
         income = self.screen.calc_gross_income("yearly", ["all"])
         income_limit = int(self.urgent_need.year.get_limit(self.screen.household_size) * self.fpl_percent)
 

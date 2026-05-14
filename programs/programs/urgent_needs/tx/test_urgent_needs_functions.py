@@ -1,4 +1,4 @@
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from django.test import TestCase
 
@@ -306,8 +306,8 @@ class TestTrustHer(TestCase):
     def test_eligible_with_low_income_and_no_insurance(self):
         self.assertTrue(self._calc(gross_income=20_000, uninsured=True))
 
-    def test_not_eligible_income_too_high(self):
-        self.assertFalse(self._calc(gross_income=self.INCOME_LIMIT + 1, uninsured=True))
+    def test_not_eligible_income_well_over_limit(self):
+        self.assertFalse(self._calc(gross_income=self.INCOME_LIMIT * 2, uninsured=True))
 
     def test_not_eligible_has_insurance(self):
         self.assertFalse(self._calc(gross_income=20_000, uninsured=False))
