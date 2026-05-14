@@ -1,0 +1,86 @@
+{
+  "white_label": {
+    "code": "wa"
+  },
+  "program_category": {
+    "external_name": "wa_cash"
+  },
+  "program": {
+    "name_abbreviated": "wa_tanf",
+    "legal_status_required": [
+      "citizen", "gc_5plus", "gc_5less", "refugee", "otherWithWorkPermission"
+    ],
+    "name": "Temporary Assistance for Needy Families (TANF)",
+    "description_short": "Temporary Assistance for Needy Families (TANF) gives families monthly cash to help pay for things like food and rent",
+    "description": "Temporary Assistance for Needy Families (TANF) gives families monthly cash to help pay for things like food and rent. This program is meant to help you take care of your family’s basic needs while you look for work or go to school. \n\nOnce approved, the money is put onto an EBT card, which works just like a debit card. You can use this card to get cash at an ATM or pay for items at most stores. The program also helps you find a job, get training, or find child care so you can start working. \n\nMost adults in the program must take part in work activities through WorkFirst. There are some exceptions for people with disabilities or those caring for a baby. There is a five-year lifetime limit on these cash benefits, and you may be asked to work with the state to seek child support if a parent does not live in the home. Some other rules apply that we cannot check here. For example, if you are 18, you must still be in school. You also cannot get these benefits if you are living in a prison or a similar facility. \n\nYou can apply online at the Washington Connection website or by calling the Department of Social and Health Services (DSHS). You can also visit a local Community Services Office to fill out an application in person. After you send in your forms, you will talk to a worker to finish your application. They will check your information and tell you if you can get help right away.",
+    "learn_more_link": "https://www.dshs.wa.gov/esa/community-services-offices/temporary-assistance-needy-families",
+    "apply_button_link": "https://www.washingtonconnection.org/",
+    "apply_button_description": "",
+    "estimated_application_time": "30 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": null,
+    "value_type": "benefit",
+    "website_description": "Temporary Assistance for Needy Families (TANF) gives families monthly cash to help pay for things like food and rent",
+    "base_program": "tanf",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": true
+  },
+  "documents": [
+    {
+      "external_name": "wa_id_proof",
+      "text": "Proof of identity (ex: driver's license, state ID, passport)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_ssn",
+      "text": "Last four digits of your Social Security number or Tribal ID number for each person applying for help",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_home",
+      "text": "Proof of home address (ex: lease, utility bill, mail with your address)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_earned_income",
+      "text": "Proof of income (ex: pay stubs, employer letter, self-employment records)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_us_status",
+      "text": "Proof of citizenship or immigration status (ex: birth certificate, passport, immigration documents)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_expenses",
+      "text": "Proof of expenses (ex: rent receipts, childcare costs, medical bills)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_resources",
+      "text": "Proof of resources (ex: bank statements, vehicle titles)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "wa_dshs_cso",
+      "name": "DSHS Community Services Offices",
+      "email": "",
+      "phone_number": "+18775012233",
+      "description": "The Washington State Department of Social and Health Services (DSHS) runs the TANF program. You can visit a local office to get help with cash aid and other benefit programs. Workers at these offices can help you fill out forms, answer questions about who can get help, and fix problems with your benefits.\n\nThe offices are open from 8 a.m. to 5 p.m. every day from Monday to Friday. You can go in person or call them if you need help understanding the rules or starting your application. These workers are there to make sure you get the support your family needs.",
+      "assistance_link": "https://www.dshs.wa.gov/esa/community-services-offices/community-services-offices-cso",
+      "counties": [],
+      "languages": []
+    }
+  ]
+}

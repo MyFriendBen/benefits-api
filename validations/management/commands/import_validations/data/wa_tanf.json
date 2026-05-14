@@ -1,0 +1,218 @@
+[
+  {
+    "notes": "Scenario 1: Clearly eligible single parent with two young children. Income $800/month, assets $1,500, WA resident, not receiving TANF.",
+       "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King",
+      "household_size": 3,
+      "household_assets": 1500,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 29,
+          "birth_year": 1996,
+          "birth_month": 6,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 800,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 7,
+          "birth_year": 2019,
+          "birth_month": 4,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 3,
+          "birth_year": 2022,
+          "birth_month": 7,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_tanf",
+      "eligible": true,
+      "value": 654
+    }
+  },
+  {
+    "notes": "Scenario 2: Minimally eligible — single parent with one child (age 17, turns 18 in May 2026), income $521/month, assets exactly at $6,000 limit.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98109",
+      "county": "King",
+      "household_size": 2,
+      "household_assets": 6000,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 36,
+          "birth_year": 1990,
+          "birth_month": 3,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 521,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 17,
+          "birth_year": 2008,
+          "birth_month": 6,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_tanf",
+      "eligible": true,
+      "value": 440
+    }
+  },
+  {
+    "notes": "Scenario 5: Single parent with two children, income $700/month — exceeds 3-person payment standard ($654/month) by $46. Ineligible per screener gross income approximation.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98115",
+      "county": "King",
+      "household_size": 3,
+      "household_assets": 2000,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 32,
+          "birth_year": 1993,
+          "birth_month": 7,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 700,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 8,
+          "birth_year": 2018,
+          "birth_month": 3,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 4,
+          "birth_year": 2021,
+          "birth_month": 11,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_tanf",
+      "eligible": false
+    }
+  }
+]
