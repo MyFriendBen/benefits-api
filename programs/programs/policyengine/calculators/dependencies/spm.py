@@ -484,3 +484,14 @@ class MortgageDependency(SpmUnit):
 
 class TxCcs(SpmUnit):
     field = "tx_ccs"
+
+
+class WaTanf(SpmUnit):
+    field = "wa_tanf"
+
+
+class WaShowAllCashAssistanceProgramsDependency(SpmUnit):
+    field = "wa_show_all_cash_assistance_programs"
+
+    def value(self):
+        return True

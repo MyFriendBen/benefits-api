@@ -1242,3 +1242,77 @@ class TestFosterCareDependency(TestCase):
         """Returns None for the head of household (not a foster child)."""
         dep = member.FosterCareDependency(self.screen, self.head, {})
         self.assertIsNone(dep.value())
+
+
+class TestEmploymentIncomeBeforeLsrDependency(TestCase):
+    """Tests for EmploymentIncomeBeforeLsrDependency used by WaTanf calculator."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="98101",
+            county="King",
+            household_size=2,
+            completed=False,
+        )
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
+
+    def test_field_name(self):
+        dep = member.EmploymentIncomeBeforeLsrDependency(self.screen, self.head, {})
+        self.assertEqual(dep.field, "employment_income_before_lsr")
+
+    def test_value_calculates_annual_wages(self):
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="wages", amount=800, frequency="monthly"
+        )
+        dep = member.EmploymentIncomeBeforeLsrDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 9600)  # $800/month * 12
+
+    def test_value_returns_zero_when_no_wages(self):
+        dep = member.EmploymentIncomeBeforeLsrDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 0)
+
+    def test_value_excludes_self_employment(self):
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="selfEmployment", amount=500, frequency="monthly"
+        )
+        dep = member.EmploymentIncomeBeforeLsrDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 0)
+
+
+class TestSelfEmploymentIncomeBeforeLsrDependency(TestCase):
+    """Tests for SelfEmploymentIncomeBeforeLsrDependency used by WaTanf calculator."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="98101",
+            county="King",
+            household_size=2,
+            completed=False,
+        )
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
+
+    def test_field_name(self):
+        dep = member.SelfEmploymentIncomeBeforeLsrDependency(self.screen, self.head, {})
+        self.assertEqual(dep.field, "self_employment_income_before_lsr")
+
+    def test_value_calculates_annual_self_employment(self):
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="selfEmployment", amount=600, frequency="monthly"
+        )
+        dep = member.SelfEmploymentIncomeBeforeLsrDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 7200)  # $600/month * 12
+
+    def test_value_returns_zero_when_no_self_employment(self):
+        dep = member.SelfEmploymentIncomeBeforeLsrDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 0)
+
+    def test_value_excludes_wages(self):
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="wages", amount=1000, frequency="monthly"
+        )
+        dep = member.SelfEmploymentIncomeBeforeLsrDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 0)
