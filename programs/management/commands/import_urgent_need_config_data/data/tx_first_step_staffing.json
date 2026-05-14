@@ -17,7 +17,7 @@
       "notification_message": ""
     },
     "phone_number": "+14698993867",
-    "functions": [],
+    "functions": ["tx_first_step_staffing"],
     "counties": ["Dallas"],
     "required_expense_types": [],
     "active": true,
