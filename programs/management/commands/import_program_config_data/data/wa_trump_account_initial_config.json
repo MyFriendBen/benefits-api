@@ -27,7 +27,7 @@
         "website_description": "$1,000 government investment account for U.S. citizen children born 2025-2028",
         "show_on_current_benefits": true,
         "has_calculator": true,
-        "show_in_has_benefits_step": true
+        "show_in_has_benefits_step": false
     },
     "documents": [
         {
