@@ -1,0 +1,86 @@
+{
+  "white_label": {
+    "code": "wa"
+  },
+  "program_category": {
+    "external_name": "wa_tax",
+    "name": "Tax Credits",
+    "icon": "tax_credit",
+    "tax_category": true
+  },
+  "program": {
+    "name_abbreviated": "wa_cdctc",
+    "year": "2025",
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission"
+    ],
+    "name": "Child and Dependent Care Tax Credit",
+    "description_short": "Refundable Washington credit for childcare or dependent care when you meet program rules.",
+    "description": "Washington offers a refundable child and dependent care tax credit for taxpayers who paid care expenses so they could work or look for work, when they meet eligibility and income rules.\n\nThe credit parallels many concepts from the federal Child and Dependent Care Credit — for example, qualifying persons, work-related expenses, care provider identification, earned income floors, and limitations based on qualifying expenses — but Washington sets its own benefit levels, thresholds, filing rules, and application process. Exact amounts and income phase-outs must be verified against Washington Department of Revenue guidance and statutes for each tax year.\n\nUnlike an income-tax state, Washington administers refundable credits separately (similar to the Working Families Tax Credit). Confirm the official application channel and timelines with the Washington Department of Revenue before tax season outreach.\n\nThis screener entry is Discovery-only until a calculator and PolicyEngine linkage are finalized (MFB-923).",
+    "learn_more_link": "https://www.irs.gov/credits-deductions/individuals/child-and-dependent-care-credit-and-reimbursement",
+    "apply_button_link": "https://dor.wa.gov/individuals-families",
+    "apply_button_description": "Washington tax resources",
+    "estimated_application_time": "Varies — confirm when applications open",
+    "estimated_delivery_time": "Varies by tax year — confirm processing times with DOR",
+    "estimated_value": "",
+    "website_description": "Refundable credit for childcare or dependent care expenses when eligibility rules are met.",
+    "has_calculator": false,
+    "show_on_current_benefits": false,
+    "show_in_has_benefits_step": false,
+    "value_format": "estimated_annual",
+    "value_type": "tax_credit"
+  },
+  "documents": [
+    {
+      "external_name": "wa_cdctc_proof_of_identity",
+      "text": "Proof of identity (for example driver's license or state ID)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_cdctc_ssn_or_itin",
+      "text": "Social Security numbers or ITINs for people listed on the application, as required by program rules",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_cdctc_earned_income",
+      "text": "Proof of earned income for the tax year (for example W-2s, Schedule C, pay stubs)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_cdctc_care_expenses",
+      "text": "Receipts or statements showing qualifying care expenses and care provider identification (name, address, tax identification number)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_cdctc_dependent_documents",
+      "text": "Records showing qualifying dependents (for example birth certificate, custody order, disability documentation)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_cdctc_prior_year_return",
+      "text": "Prior-year tax return copies if filing or verifying carryover eligibility",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "wa_211",
+      "name": "Washington 211",
+      "email": "info@wa211.org",
+      "description": "Washington 211 connects residents to local services. During tax season it can point people to free tax preparation and statewide credit information.",
+      "assistance_link": "https://wa211.org/contact-washington-211/",
+      "phone_number": "+18772119274"
+    }
+  ]
+}
