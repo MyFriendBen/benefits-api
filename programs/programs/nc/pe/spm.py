@@ -1,11 +1,12 @@
 import programs.programs.policyengine.calculators.dependencies as dependency
 from programs.programs.policyengine.calculators.base import PolicyEngineSpmCalulator
-from programs.programs.federal.pe.spm import Snap, Tanf
+from programs.programs.federal.pe.spm import SNAP_BASE_INPUTS, Snap, Tanf
 
 
 class NcSnap(Snap):
     pe_inputs = [
-        *Snap.pe_inputs,
+        *SNAP_BASE_INPUTS,
+        dependency.member.NcSnapIneligibleStudentDependency,
         dependency.household.NcStateCodeDependency,
     ]
 

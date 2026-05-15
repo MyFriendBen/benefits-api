@@ -1,7 +1,9 @@
 """
 Unit tests for helper functions used by PolicyEngine dependencies.
 
-These tests verify helper functions that are called by TxSnap dependencies.
+These tests verify the federal snap_ineligible_student() helper function.
+NC-specific exemptions are tested in test_member.py via NcSnapIneligibleStudentDependency.
+
 """
 
 from django.test import TestCase
@@ -161,4 +163,32 @@ class TestSnapIneligibleStudentHelper(TestCase):
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=12)
 
         result = snap_ineligible_student(self.screen, head)
+        self.assertTrue(result)
+
+    def test_snap_ineligible_student_returns_false_for_tanf_household(self):
+        """Test that student in a household receiving TANF is exempt (Exemption 6)."""
+        self.screen.has_tanf = True
+        self.screen.save()
+
+        member = HouseholdMember.objects.create(
+            screen=self.screen, relationship="headOfHousehold", age=25, student=True
+        )
+
+        result = snap_ineligible_student(self.screen, member)
+        self.assertFalse(result)
+
+    def test_nc_fields_do_not_affect_federal_helper(self):
+        """NC-specific fields (student_full_time, job training, etc.) are ignored by the federal helper."""
+        member = HouseholdMember.objects.create(
+            screen=self.screen,
+            relationship="headOfHousehold",
+            age=25,
+            student=True,
+            student_full_time=False,
+            student_job_training_program=True,
+            student_has_work_study=True,
+            student_works_20_plus_hrs=True,
+        )
+        # Federal helper ignores these fields — no other exemption applies → ineligible
+        result = snap_ineligible_student(self.screen, member)
         self.assertTrue(result)
