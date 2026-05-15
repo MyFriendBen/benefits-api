@@ -3,6 +3,7 @@ Unit tests for helper functions used by PolicyEngine dependencies.
 
 These tests verify the federal snap_ineligible_student() helper function.
 NC-specific exemptions are tested in test_member.py via NcSnapIneligibleStudentDependency.
+
 """
 
 from django.test import TestCase
