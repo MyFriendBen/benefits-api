@@ -358,8 +358,14 @@ class TestScreen(TestCase):
 
         # Other tax unit: grandparent couple
         grandparent1 = HouseholdMember.objects.create(screen=self.screen, relationship="grandParent", age=65)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=grandparent1, type="social_security", amount=10000, frequency="yearly"
+        )
 
         grandparent2 = HouseholdMember.objects.create(screen=self.screen, relationship="grandParent", age=63)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=grandparent2, type="social_security", amount=10000, frequency="yearly"
+        )
 
         result = self.screen.other_tax_unit_structure()
 
@@ -380,8 +386,14 @@ class TestScreen(TestCase):
 
         # Other tax unit: parent couple
         parent1 = HouseholdMember.objects.create(screen=self.screen, relationship="parent", age=60)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=parent1, type="social_security", amount=10000, frequency="yearly"
+        )
 
         parent2 = HouseholdMember.objects.create(screen=self.screen, relationship="parent", age=58)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=parent2, type="social_security", amount=10000, frequency="yearly"
+        )
 
         result = self.screen.other_tax_unit_structure()
 
@@ -786,6 +798,9 @@ class TestHouseholdMember(TestCase):
         adult_child = HouseholdMember.objects.create(
             screen=self.screen, relationship="child", age=25, student=False, disabled=False
         )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=adult_child, type="wages", amount=6000, frequency="yearly"
+        )
 
         result = adult_child.is_dependent()
         self.assertFalse(result)
@@ -825,8 +840,11 @@ class TestHouseholdMember(TestCase):
         member = HouseholdMember.objects.create(
             screen=self.screen, relationship="child", age=19, student=False, disabled=False
         )
+        # Income above threshold so only the qualifying-child path is tested here
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=member, type="wages", amount=6000, frequency="yearly"
+        )
 
-        # Age > 18 and not student, so not dependent
         result = member.is_dependent()
         self.assertFalse(result)
 
@@ -843,8 +861,11 @@ class TestHouseholdMember(TestCase):
         student = HouseholdMember.objects.create(
             screen=self.screen, relationship="child", age=24, student=True, disabled=False
         )
+        # Income above threshold so only the qualifying-child path is tested here
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=student, type="wages", amount=6000, frequency="yearly"
+        )
 
-        # Age > 23, so not dependent (even though student)
         result = student.is_dependent()
         self.assertFalse(result)
 
