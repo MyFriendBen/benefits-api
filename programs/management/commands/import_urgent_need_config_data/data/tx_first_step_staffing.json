@@ -1,0 +1,27 @@
+{
+  "white_label": { "code": "tx" },
+  "need": {
+    "external_name": "tx_first_step_staffing",
+    "category_type": {
+      "external_name": "tx_job_resources",
+      "name": "Job resources",
+      "icon": "job_resources"
+    },
+    "type_short": ["job resources"],
+    "translations": {
+      "name": "First Step Staffing",
+      "description": "First Step Staffing helps people get jobs — and stay in them. They match job seekers with local employers and offer extra help along the way. This includes rides to and from work, coaching to prepare for a job, and support for talking with coworkers and bosses. They also check in over time to help people stay employed.",
+      "link": "https://www.firststepstaffing.com/application",
+      "warning": "",
+      "website_description": "Staffing agency that helps Dallas-area job seekers find work and stay employed.",
+      "notification_message": ""
+    },
+    "phone_number": "+14698993867",
+    "functions": ["tx_first_step_staffing"],
+    "counties": ["Dallas"],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

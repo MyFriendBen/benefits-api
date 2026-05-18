@@ -16,9 +16,10 @@
       "website_description": "Free and low-cost birth control and reproductive health services for women and teens in Dallas.",
       "notification_message": ""
     },
-    "functions": [],
+    "functions": ["tx_trust_her"],
     "counties": ["Dallas"],
     "required_expense_types": [],
+    "fpl": { "year": "2026", "period": "2026" },
     "active": false,
     "low_confidence": false,
     "show_on_current_benefits": true

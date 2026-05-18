@@ -389,3 +389,14 @@ class TestWaHcvCalc(TestCase):
         calc.program.year = None
         with patch_hud_client(fmr_value=2000):
             self.assertEqual(calc.household_value(), 0)
+
+    def test_household_value_unexpected_fmr_error_returns_zero(self):
+        """Non-HudIncomeClientError from get_screen_fmr must not propagate as a 500."""
+        head = make_member(age=35)
+        calc = make_calculator(members=[head], household_size=1, gross_income=21600)
+        with patch.multiple(
+            "programs.programs.wa.hcv.calculator.hud_client",
+            get_screen_il_ami=Mock(return_value=50000),
+            get_screen_fmr=Mock(side_effect=KeyError("unexpected")),
+        ):
+            self.assertEqual(calc.household_value(), 0)

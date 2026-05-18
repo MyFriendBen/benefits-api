@@ -136,23 +136,21 @@ class IsDisabledDependency(Member):
         return self.member.disabled or self.member.long_term_disability or self.member.visually_impaired
 
 
-# The Member class runs once per each household member, to ensure that the medical expenses
-# are only counted once and only if a member is elderly or disabled; the medical expense is divided
-# by the total number of elderly or disabled members.
 class MedicalExpenseDependency(Member):
-    field = "medical_out_of_pocket_expenses"
-    dependencies = ["age"]
+    """
+    Medical expenses for PolicyEngine SNAP and other deduction calculations.
+
+    Our screener captures medical expenses as a household-level expense, so we
+    attribute the full amount to the head; other members get 0.
+    """
+
+    field = "other_medical_expenses"
 
     def value(self):
-        elderly_or_disabled_members = [
-            member for member in self.screen.household_members.all() if member.age >= 60 or member.has_disability()
-        ]
-        count_of_elderly_or_disabled_members = len(elderly_or_disabled_members)
+        if not self.member.is_head():
+            return 0
 
-        if self.member.age >= 60 or self.member.has_disability():
-            return self.screen.calc_expenses("yearly", ["medical"]) / count_of_elderly_or_disabled_members
-
-        return 0
+        return int(self.screen.calc_expenses("yearly", ["medical"]))
 
 
 class PropertyTaxExpenseDependency(Member):
@@ -178,6 +176,25 @@ class PropertyTaxExpenseDependency(Member):
             return int(total_property_tax / 2)
 
         return int(total_property_tax)
+
+
+class HeatingExpensePersonDependency(Member):
+    """
+    PolicyEngine's state LIHEAP calculators (MA, DC, IL) read heating expense
+    from a person-level field (heating_expense_person) and auto-aggregate
+    back to the spm_unit/household total used in the payment cap formula.
+
+    Our screener captures heating as a household-level expense, so we attribute
+    the full amount to the head; other members get 0.
+    """
+
+    field = "heating_expense_person"
+
+    def value(self):
+        if not self.member.is_head():
+            return 0
+
+        return int(self.screen.calc_expenses("yearly", ["heating", "cooling"]))
 
 
 class IsBlindDependency(Member):
@@ -777,3 +794,13 @@ class FosterCareDependency(Member):
         if self.member.relationship == "fosterChild":
             return True
         return None
+
+
+class EmploymentIncomeBeforeLsrDependency(IncomeDependency):
+    field = "employment_income_before_lsr"
+    income_types = ["wages"]
+
+
+class SelfEmploymentIncomeBeforeLsrDependency(IncomeDependency):
+    field = "self_employment_income_before_lsr"
+    income_types = ["selfEmployment"]

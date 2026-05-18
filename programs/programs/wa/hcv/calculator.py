@@ -107,3 +107,5 @@ class WaHcv(ProgramCalculator):
             return int(hap * 12)
         except HudIncomeClientError:
             return 0
+        except Exception:
+            return 0
