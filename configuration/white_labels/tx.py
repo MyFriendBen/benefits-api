@@ -69,6 +69,13 @@ class TxConfigurationData(ConfigurationData):
                 "_default_message": "Concern about your child's development",
             },
         },
+        "familyPlanning": {
+            "icon": {"_icon": "Family_planning", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.familyPlanning",
+                "_default_message": "Family planning or birth control",
+            },
+        },
         "jobResources": {
             "icon": {"_icon": "Job_resources", "_classname": "option-card-icon"},
             "text": {

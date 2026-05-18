@@ -3,6 +3,15 @@ from programs.programs.policyengine.calculators.base import PolicyEngineTaxUnitC
 import programs.programs.policyengine.calculators.dependencies as dependency
 
 
+class WaEitc(PolicyEngineTaxUnitCalulator):
+    pe_name = "eitc"
+    pe_inputs = [
+        *Eitc.pe_inputs,
+        dependency.household.WaStateCodeDependency,
+    ]
+    pe_outputs = [dependency.tax.Eitc]
+
+
 class WaWftc(PolicyEngineTaxUnitCalulator):
     """
     Washington Working Families Tax Credit — state EITC piggyback.

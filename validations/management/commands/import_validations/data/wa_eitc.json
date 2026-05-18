@@ -1,0 +1,189 @@
+[
+  {
+    "notes": "WA EITC - Single Parent, 2 Qualifying Children, Income Below TY2025 Threshold - Should Be Eligible (golden path)",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_size": 3,
+      "zipcode": "98101",
+      "county": "King County",
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1990,
+          "age": 36,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2800.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 3,
+          "birth_year": 2018,
+          "age": 7,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 6,
+          "birth_year": 2020,
+          "age": 5,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_eitc",
+      "eligible": true,
+      "value": 4993
+    }
+  },
+  {
+    "notes": "WA EITC - Single Childless Filer, Income Just Above $19,104 TY2025 No-Child Threshold - Should NOT Be Eligible (primary exclusion: income too high)",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_size": 1,
+      "zipcode": "98101",
+      "county": "King County",
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 4,
+          "birth_year": 1985,
+          "age": 41,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1600.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_eitc",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "WA EITC - Single Parent, 1 Qualifying Child, Investment Income Just Over $11,950 TY2025 Limit - PE does not enforce investment income cap due to input mapping limitation (capital_gains does not flow to eitc_relevant_investment_income)",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_size": 2,
+      "zipcode": "98101",
+      "county": "King County",
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1985,
+          "age": 41,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2500.0,
+              "frequency": "monthly"
+            },
+            {
+              "type": "investment",
+              "amount": 1000.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 6,
+          "birth_year": 2015,
+          "age": 10,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_eitc",
+      "eligible": true,
+      "value": 1347
+    }
+  }
+]

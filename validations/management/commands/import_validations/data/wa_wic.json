@@ -1,0 +1,206 @@
+[
+  {
+    "notes": "WA WIC - Pregnant Woman with Child Under 5, Income Below 185% FPL - Clearly Eligible",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "household_size": 2,
+      "zipcode": "98101",
+      "county": "King",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 6,
+          "birth_year": 1996,
+          "age": 29,
+          "pregnant": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1800.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 9,
+          "birth_year": 2023,
+          "age": 2,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wic",
+      "eligible": true,
+      "value": 2880
+    }
+  },
+  {
+    "notes": "WA WIC - Household of 2, Income Above 185% FPL, No Adjunctive - Should NOT Be Eligible (2026 threshold: $40,034/yr for HH of 2)",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "household_size": 2,
+      "zipcode": "98101",
+      "county": "King",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 6,
+          "birth_year": 1996,
+          "age": 29,
+          "pregnant": false,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3337.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 9,
+          "birth_year": 2023,
+          "age": 2,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wic",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "WA WIC - SNAP Recipient with Child Under 5, Income Above 185% FPL - Adjunctive Auto-Qualify (income check bypassed)",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "household_size": 3,
+      "zipcode": "98103",
+      "county": "King",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "has_snap": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 6,
+          "birth_year": 1992,
+          "age": 33,
+          "pregnant": false,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4500.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "spouse",
+          "birth_month": 1,
+          "birth_year": 1993,
+          "age": 33,
+          "pregnant": false,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 5,
+          "birth_year": 2023,
+          "age": 3,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wic",
+      "eligible": true,
+      "value": 960
+    }
+  }
+]

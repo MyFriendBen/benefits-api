@@ -1,0 +1,129 @@
+[
+  {
+    "notes": "Eligible senior in King County with low income; estimated annual value uses reported yearly property tax expense as proxy",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King County",
+      "household_size": 1,
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 3,
+          "birth_year": 1959,
+          "age": 67,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 1200.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": [
+        {
+          "type": "propertyTax",
+          "amount": 1200.0,
+          "frequency": "yearly"
+        }
+      ]
+    },
+    "expected_results": {
+      "program_name": "wa_senior_disabled_pte",
+      "eligible": true,
+      "value": 1200
+    }
+  },
+  {
+    "notes": "Ineligible because applicant is age 60 and has no screenable qualifying pathway",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King County",
+      "household_size": 1,
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1966,
+          "age": 60,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "other",
+              "amount": 1200.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_senior_disabled_pte",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "Eligible under-61 veteran with long_term_disability in Spokane County; disabled-veteran pathway tested via inclusivity assumption (screener cannot verify VA service-connected disability rating)",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "99201",
+      "county": "Spokane County",
+      "household_size": 1,
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 9,
+          "birth_year": 1980,
+          "age": 45,
+          "veteran": true,
+          "long_term_disability": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "veteran",
+              "amount": 2500.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "va": true
+          }
+        }
+      ],
+      "expenses": [
+        {
+          "type": "propertyTax",
+          "amount": 1200.0,
+          "frequency": "yearly"
+        }
+      ]
+    },
+    "expected_results": {
+      "program_name": "wa_senior_disabled_pte",
+      "eligible": true,
+      "value": 1200
+    }
+  }
+]

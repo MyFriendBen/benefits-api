@@ -1,0 +1,208 @@
+[
+  {
+    "notes": "WA HCV Scenario 1 — clearly eligible single mother with two children in King County",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98108",
+      "county": "King County",
+      "household_size": 3,
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "birth_year": 1991,
+          "birth_month": 3,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1800.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 9,
+          "birth_year": 2016,
+          "birth_month": 9,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 5,
+          "birth_year": 2021,
+          "birth_month": 1,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_hcv",
+      "eligible": true,
+      "value": 23832
+    }
+  },
+  {
+    "notes": "WA HCV Scenario 4 — ineligible family of three in Snohomish County with income just above VLI",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98201",
+      "county": "Snohomish County",
+      "household_size": 3,
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 39,
+          "birth_year": 1986,
+          "birth_month": 8,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3542.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 37,
+          "birth_year": 1988,
+          "birth_month": 11,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1250.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 8,
+          "birth_year": 2018,
+          "birth_month": 3,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_hcv",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "WA HCV Scenario 12 — eligible single pregnant adult in Pierce County (tests the pregnant-as-2-person family rule per 24 CFR § 982.402(b)(5))",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98402",
+      "county": "Pierce County",
+      "household_size": 1,
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 31,
+          "birth_year": 1995,
+          "birth_month": 5,
+          "pregnant": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2400.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_hcv",
+      "eligible": true,
+      "value": 10620
+    }
+  }
+]

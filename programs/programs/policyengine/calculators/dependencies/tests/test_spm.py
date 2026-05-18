@@ -499,3 +499,30 @@ class TestTanfDependency(TestCase):
 
         dep = spm.Tanf(self.screen, None, {})
         self.assertIsNone(dep.value())
+
+
+class TestWaTanfDependency(TestCase):
+    """Tests for WaTanf output dependency and WaShowAllCashAssistanceProgramsDependency."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Washington", code="wa", state_code="WA")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="98101",
+            county="King",
+            household_size=3,
+            completed=False,
+        )
+
+    def test_wa_tanf_field_name(self):
+        dep = spm.WaTanf(self.screen, None, {})
+        self.assertEqual(dep.field, "wa_tanf")
+
+    def test_wa_show_all_field_name(self):
+        dep = spm.WaShowAllCashAssistanceProgramsDependency(self.screen, None, {})
+        self.assertEqual(dep.field, "wa_show_all_cash_assistance_programs")
+
+    def test_wa_show_all_returns_true(self):
+        """WaShowAllCashAssistanceProgramsDependency always returns True to bypass PE immigration checks."""
+        dep = spm.WaShowAllCashAssistanceProgramsDependency(self.screen, None, {})
+        self.assertTrue(dep.value())
