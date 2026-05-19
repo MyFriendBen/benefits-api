@@ -44,9 +44,7 @@ class TestCoCollegeInvestFirstStep(TestCase):
         """Denver family with newborn child (born 2026, age 0) is eligible."""
         screen = self._make_screen(household_size=2)
         HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=34)
-        HouseholdMember.objects.create(
-            screen=screen, relationship="child", age=0, birth_year_month=date(2026, 1, 1)
-        )
+        HouseholdMember.objects.create(screen=screen, relationship="child", age=0, birth_year_month=date(2026, 1, 1))
 
         calc = self._make_calculator(screen)
         eligibility = calc.eligible()
@@ -57,9 +55,7 @@ class TestCoCollegeInvestFirstStep(TestCase):
         """Child exactly age 7 is still eligible."""
         screen = self._make_screen(household_size=2)
         HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=35)
-        HouseholdMember.objects.create(
-            screen=screen, relationship="child", age=7, birth_year_month=date(2020, 1, 1)
-        )
+        HouseholdMember.objects.create(screen=screen, relationship="child", age=7, birth_year_month=date(2020, 1, 1))
 
         calc = self._make_calculator(screen)
         eligibility = calc.eligible()
@@ -70,9 +66,7 @@ class TestCoCollegeInvestFirstStep(TestCase):
         """Child born January 2020 (minimum birth year) is eligible."""
         screen = self._make_screen(zipcode="80903", county="El Paso County", household_size=2)
         HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=35)
-        HouseholdMember.objects.create(
-            screen=screen, relationship="child", age=6, birth_year_month=date(2020, 1, 1)
-        )
+        HouseholdMember.objects.create(screen=screen, relationship="child", age=6, birth_year_month=date(2020, 1, 1))
 
         calc = self._make_calculator(screen)
         eligibility = calc.eligible()
@@ -124,9 +118,7 @@ class TestCoCollegeInvestFirstStep(TestCase):
         """Child aged 8 or older is not eligible — primary exclusion."""
         screen = self._make_screen(household_size=2)
         HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=36)
-        HouseholdMember.objects.create(
-            screen=screen, relationship="child", age=9, birth_year_month=date(2017, 1, 1)
-        )
+        HouseholdMember.objects.create(screen=screen, relationship="child", age=9, birth_year_month=date(2017, 1, 1))
 
         calc = self._make_calculator(screen)
         eligibility = calc.eligible()
@@ -137,9 +129,7 @@ class TestCoCollegeInvestFirstStep(TestCase):
         """Child exactly age 8 is not eligible."""
         screen = self._make_screen(household_size=2)
         HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=35)
-        HouseholdMember.objects.create(
-            screen=screen, relationship="child", age=8, birth_year_month=date(2018, 1, 1)
-        )
+        HouseholdMember.objects.create(screen=screen, relationship="child", age=8, birth_year_month=date(2018, 1, 1))
 
         calc = self._make_calculator(screen)
         eligibility = calc.eligible()
@@ -150,9 +140,7 @@ class TestCoCollegeInvestFirstStep(TestCase):
         """Child born in 2019 (age ≤ 7) is excluded by the birth year cutoff."""
         screen = self._make_screen(household_size=2)
         HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=35)
-        HouseholdMember.objects.create(
-            screen=screen, relationship="child", age=6, birth_year_month=date(2019, 6, 1)
-        )
+        HouseholdMember.objects.create(screen=screen, relationship="child", age=6, birth_year_month=date(2019, 6, 1))
 
         calc = self._make_calculator(screen)
         eligibility = calc.eligible()
@@ -176,9 +164,7 @@ class TestCoCollegeInvestFirstStep(TestCase):
         HouseholdMember.objects.create(
             screen=screen, relationship="headOfHousehold", age=5, birth_year_month=date(2021, 1, 1)
         )
-        HouseholdMember.objects.create(
-            screen=screen, relationship="sibling", age=3, birth_year_month=date(2023, 1, 1)
-        )
+        HouseholdMember.objects.create(screen=screen, relationship="sibling", age=3, birth_year_month=date(2023, 1, 1))
 
         calc = self._make_calculator(screen)
         eligibility = calc.eligible()
@@ -191,9 +177,7 @@ class TestCoCollegeInvestFirstStep(TestCase):
         """Single eligible child yields $121."""
         screen = self._make_screen(household_size=2)
         HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=34)
-        HouseholdMember.objects.create(
-            screen=screen, relationship="child", age=0, birth_year_month=date(2026, 1, 1)
-        )
+        HouseholdMember.objects.create(screen=screen, relationship="child", age=0, birth_year_month=date(2026, 1, 1))
 
         calc = self._make_calculator(screen)
         eligibility = calc.eligible()
@@ -206,12 +190,8 @@ class TestCoCollegeInvestFirstStep(TestCase):
         screen = self._make_screen(household_size=4)
         HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=35)
         HouseholdMember.objects.create(screen=screen, relationship="spouse", age=34)
-        HouseholdMember.objects.create(
-            screen=screen, relationship="child", age=3, birth_year_month=date(2023, 2, 1)
-        )
-        HouseholdMember.objects.create(
-            screen=screen, relationship="child", age=0, birth_year_month=date(2026, 3, 1)
-        )
+        HouseholdMember.objects.create(screen=screen, relationship="child", age=3, birth_year_month=date(2023, 2, 1))
+        HouseholdMember.objects.create(screen=screen, relationship="child", age=0, birth_year_month=date(2026, 3, 1))
 
         calc = self._make_calculator(screen)
         eligibility = calc.eligible()
@@ -223,12 +203,8 @@ class TestCoCollegeInvestFirstStep(TestCase):
         """Only qualifying children count toward the value; over-age child excluded."""
         screen = self._make_screen(household_size=3)
         HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=35)
-        HouseholdMember.objects.create(
-            screen=screen, relationship="child", age=9, birth_year_month=date(2017, 1, 1)
-        )
-        HouseholdMember.objects.create(
-            screen=screen, relationship="child", age=2, birth_year_month=date(2024, 1, 1)
-        )
+        HouseholdMember.objects.create(screen=screen, relationship="child", age=9, birth_year_month=date(2017, 1, 1))
+        HouseholdMember.objects.create(screen=screen, relationship="child", age=2, birth_year_month=date(2024, 1, 1))
 
         calc = self._make_calculator(screen)
         eligibility = calc.eligible()
