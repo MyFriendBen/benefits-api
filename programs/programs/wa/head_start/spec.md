@@ -42,13 +42,15 @@ Additionally, two **discretionary enrollment pathways** exist outside the federa
 
    **2026 FPL reference (48 contiguous states, including WA):**
 
-   | Family size | 100% FPL (annual) | 100% FPL (monthly) | 130% FPL (annual) |
+   | Family size | 100% FPL (annual) | 100% FPL (monthly, approx.) | 130% FPL (annual) |
    |---|---|---|---|
-   | 1 | $15,960 | $1,330 | $20,748 |
-   | 2 | $21,640 | $1,803 | $28,132 |
-   | 3 | $27,320 | $2,277 | $35,516 |
-   | 4 | $33,000 | $2,750 | $42,900 |
-   | 5 | $38,680 | $3,223 | $50,284 |
+   | 1 | $15,960 | $1,330.00 | $20,748 |
+   | 2 | $21,640 | $1,803.33 | $28,132 |
+   | 3 | $27,320 | $2,276.67 | $35,516 |
+   | 4 | $33,000 | $2,750.00 | $42,900 |
+   | 5 | $38,680 | $3,223.33 | $50,284 |
+
+   > **Note:** Monthly amounts are annual ÷ 12 and do not always divide into whole dollars. The screener compares annual income, so use yearly frequency for exact-boundary tests. For HH sizes 2, 3, and 5, the monthly equivalent includes cents and cannot be entered as a whole-dollar monthly amount without rounding error.
 
 ---
 
@@ -249,7 +251,7 @@ WA doesn't add state-specific eligibility criteria beyond federal requirements. 
 
 - **Location:** ZIP `98101`, County `King`
 - **Household size:** 3
-- **Person 1:** Birth `June 1994` (age 31), HoH, Employment income `$27,320` per year (frequency: `yearly`)
+- **Person 1:** Birth `June 1994` (age 31), HoH, Employment income `$27,320` per year (frequency: **`yearly`**)
 - **Person 2:** Birth `January 1996` (age 30), Spouse, no income
 - **Person 3:** Birth `April 2023` (age 3), Child, no income
 - **Current Benefits:** None
@@ -257,6 +259,8 @@ WA doesn't add state-specific eligibility criteria beyond federal requirements. 
 **Annual income:** $27,320 — exactly at 2026 FPL of $27,320 for HH 3. Per § 1302.12(c)(1)(i), at-or-below is eligible.
 
 **Why:** Tests two boundaries simultaneously — minimum eligible age + income exactly at FPL.
+
+> **QA note (2026-05-12):** This scenario **must** use yearly frequency. The HH3 FPL of $27,320 does not divide evenly into whole-dollar monthly amounts ($27,320 ÷ 12 = $2,276.67). Entering $2,277/month yields $27,324/year — $4 above FPL, causing a false negative. Entering $2,276/month yields $27,312/year — $8 below FPL, which passes but does not test the exact boundary. Use yearly frequency to test the exact FPL boundary for HH3.
 
 ---
 
