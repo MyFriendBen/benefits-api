@@ -1,28 +1,32 @@
 from programs.programs.policyengine.calculators.base import PolicyEngineSpmCalulator
 import programs.programs.policyengine.calculators.dependencies as dependency
 
+SNAP_BASE_INPUTS = [
+    dependency.spm.SnapUnearnedIncomeDependency,
+    dependency.spm.SnapEarnedIncomeDependency,
+    dependency.spm.SnapAssetsDependency,
+    dependency.member.SnapChildSupportDependency,
+    dependency.member.PropertyTaxExpenseDependency,
+    dependency.member.AgeDependency,
+    dependency.member.MedicalExpenseDependency,
+    dependency.member.IsDisabledDependency,
+    dependency.spm.SnapEmergencyAllotmentDependency,
+    dependency.spm.HousingCostDependency,
+    dependency.spm.HasPhoneExpenseDependency,
+    dependency.spm.HasHeatingCoolingExpenseDependency,
+    dependency.spm.HeatingCoolingExpenseDependency,
+    dependency.spm.ChildCareDependency,
+    dependency.spm.WaterExpenseDependency,
+    dependency.spm.PhoneExpenseDependency,
+    dependency.spm.HoaFeesExpenseDependency,
+    dependency.spm.HomeownersInsuranceExpenseDependency,
+]
+
 
 class Snap(PolicyEngineSpmCalulator):
     pe_name = "snap"
     pe_inputs = [
-        dependency.spm.SnapUnearnedIncomeDependency,
-        dependency.spm.SnapEarnedIncomeDependency,
-        dependency.spm.SnapAssetsDependency,
-        dependency.spm.SnapEmergencyAllotmentDependency,
-        dependency.spm.HousingCostDependency,
-        dependency.spm.HasPhoneExpenseDependency,
-        dependency.spm.HasHeatingCoolingExpenseDependency,
-        dependency.spm.HeatingCoolingExpenseDependency,
-        dependency.spm.ChildCareDependency,
-        dependency.spm.WaterExpenseDependency,
-        dependency.spm.PhoneExpenseDependency,
-        dependency.spm.HoaFeesExpenseDependency,
-        dependency.spm.HomeownersInsuranceExpenseDependency,
-        dependency.member.SnapChildSupportDependency,
-        dependency.member.PropertyTaxExpenseDependency,
-        dependency.member.AgeDependency,
-        dependency.member.MedicalExpenseDependency,
-        dependency.member.IsDisabledDependency,
+        *SNAP_BASE_INPUTS,
         dependency.member.SnapIneligibleStudentDependency,
     ]
     pe_outputs = [dependency.spm.Snap]
