@@ -37,16 +37,16 @@ def deduplicate_nc_categories(apps, schema_editor):
         moved = Program.objects.filter(category=old_cash).update(category=canonical_cash)
         old_cash.delete()
         print(f"  Repointed {moved} program(s) and deleted 'nc cash'")
-        
+
     elif old_cash and not canonical_cash:
         # Only old exists (local testing scenario): just rename it directly
         ProgramCategory.objects.filter(pk=old_cash.pk).update(external_name="nc_cash")
         print("  Renamed 'nc cash' → 'nc_cash'")
-        
+
     elif canonical_cash and not old_cash:
         # Already cleaned up
         print("  'nc cash' already cleaned up; skipping")
-        
+
     else:
         print("  No NC cash categories found; skipping")
 
@@ -57,17 +57,14 @@ def deduplicate_nc_categories(apps, schema_editor):
         ("nc healthcare", "nc_healthcare"),
     ]
     for old_name, new_name in renames:
-        updated = ProgramCategory.objects.filter(
-            white_label=wl, external_name=old_name
-        ).update(external_name=new_name)
+        updated = ProgramCategory.objects.filter(white_label=wl, external_name=old_name).update(external_name=new_name)
         if updated:
             print(f"  Renamed '{old_name}' → '{new_name}'")
 
 
 def reverse_deduplicate_nc_categories(apps, schema_editor):
     raise NotImplementedError(
-        "This migration is not reversible because 'nc cash' was deleted. "
-        "Restore from a DB snapshot if needed."
+        "This migration is not reversible because 'nc cash' was deleted. " "Restore from a DB snapshot if needed."
     )
 
 
