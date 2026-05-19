@@ -1,0 +1,61 @@
+{
+  "white_label": {
+    "code": "co"
+  },
+  "program_category": {
+    "external_name": "co_education",
+    "name": "Education and Savings",
+    "icon": "education",
+    "description": "Programs that support education savings and college readiness.",
+    "tax_category": false
+  },
+  "program": {
+    "name_abbreviated": "co_collegeinvest_first_step",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less"
+    ],
+    "name": "CollegeInvest First Step",
+    "description_short": "Free college savings deposit for children born or adopted in Colorado",
+    "description": "CollegeInvest First Step gives every child born or adopted in Colorado a free seed deposit into a college savings account. The deposit is placed into a CollegeInvest 529 college savings plan in your child's name — a tax-advantaged account that can grow over time to help pay for college, vocational school, and other qualifying education expenses.\n\nOnce enrolled, your 529 account is eligible for dollar-for-dollar matching on contributions you make. This means every dollar you save toward your child's education is matched by CollegeInvest, helping your savings grow faster.\n\nThe deposit must be claimed before your child's 8th birthday. Applications received by December 31, 2026 may be eligible for an enhanced award amount. Active military families with permanent Colorado residence may also qualify even if their child was born outside Colorado.\n\nTo apply, open a free CollegeInvest 529 account online and claim your First Step deposit through the portal. The process takes about 15 minutes.",
+    "learn_more_link": "https://www.collegeinvest.org/first-step/",
+    "apply_button_link": "https://firststep.collegeinvest.org/",
+    "apply_button_description": "Claim Your Deposit",
+    "estimated_application_time": "15 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": "lump_sum",
+    "value_type": "benefit",
+    "website_description": "Free college savings deposit for children born or adopted in Colorado",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": [
+    {
+      "external_name": "home",
+      "text": "Proof of home address (ex: lease, mortgage statement, utility bill)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ID proof",
+      "text": "Proof of identity (ex: driver's license, official state ID card)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "co_collegeinvest_first_step_birth_certificate",
+      "text": "Child's birth certificate or adoption documents",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "SSN / ITIN",
+      "text": "Social security number or individual taxpayer identification number (ITIN)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ]
+}
