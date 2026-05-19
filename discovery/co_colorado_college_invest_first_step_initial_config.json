@@ -3,11 +3,7 @@
     "code": "co"
   },
   "program_category": {
-    "external_name": "co_education",
-    "name": "Education and Savings",
-    "icon": "education",
-    "description": "Programs that support education savings and college readiness.",
-    "tax_category": false
+    "external_name": "child_care"
   },
   "program": {
     "name_abbreviated": "co_collegeinvest_first_step",
