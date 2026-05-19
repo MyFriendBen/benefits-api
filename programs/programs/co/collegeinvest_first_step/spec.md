@@ -60,8 +60,8 @@
 ## Test Scenarios
 
 ### Scenario 1: Clearly Eligible — Denver Family with Newborn
-**What we're checking**: Standard CO household with a newborn qualifies for the $118 deposit.
-**Expected**: Eligible, value: $118
+**What we're checking**: Standard CO household with a newborn qualifies for the $121 deposit.
+**Expected**: Eligible, value: $121
 
 **Steps**:
 - **Location**: ZIP `80202`, county `Denver County`
@@ -84,7 +84,7 @@
 
 ### Scenario 3: Edge Case — Child Born January 2020 (Minimum Birth Year)
 **What we're checking**: A child born exactly at the January 2020 threshold is still eligible.
-**Expected**: Eligible, value: $118
+**Expected**: Eligible, value: $121
 
 **Steps**:
 - **Location**: ZIP `80903`, county `El Paso County`
@@ -94,8 +94,8 @@
 ---
 
 ### Scenario 4: Multiple Eligible Children
-**What we're checking**: Household with two eligible children receives $236 (2 × $118).
-**Expected**: Eligible, value: $236
+**What we're checking**: Household with two eligible children receives $242 (2 × $121).
+**Expected**: Eligible, value: $242
 
 **Steps**:
 - **Location**: ZIP `80204`, county `Denver County`
