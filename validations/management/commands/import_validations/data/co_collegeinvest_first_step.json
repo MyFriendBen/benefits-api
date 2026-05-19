@@ -1,0 +1,195 @@
+[
+  {
+    "notes": "Clearly eligible — Denver family with newborn; golden path",
+    "household": {
+      "white_label": "co",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_size": 3,
+      "zipcode": "80202",
+      "county": "Denver County",
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 3,
+          "birth_year": 1992,
+          "age": 34,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4500.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {"none": false, "employer": true}
+        },
+        {
+          "relationship": "spouse",
+          "birth_month": 7,
+          "birth_year": 1993,
+          "age": 32,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3500.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {"none": false, "employer": true}
+        },
+        {
+          "relationship": "child",
+          "birth_month": 1,
+          "birth_year": 2026,
+          "age": 0,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {"none": true}
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "co_collegeinvest_first_step",
+      "eligible": true,
+      "value": 121
+    }
+  },
+  {
+    "notes": "Ineligible — no children under age 8; primary exclusion case",
+    "household": {
+      "white_label": "co",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_size": 2,
+      "zipcode": "80202",
+      "county": "Denver County",
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 3,
+          "birth_year": 1990,
+          "age": 36,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4000.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {"none": false, "employer": true}
+        },
+        {
+          "relationship": "child",
+          "birth_month": 1,
+          "birth_year": 2017,
+          "age": 9,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {"none": true}
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "co_collegeinvest_first_step",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "Edge case — child born January 2020 (minimum birth year boundary); age 6",
+    "household": {
+      "white_label": "co",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_size": 2,
+      "zipcode": "80903",
+      "county": "El Paso County",
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 6,
+          "birth_year": 1990,
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3500.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {"none": false, "employer": true}
+        },
+        {
+          "relationship": "child",
+          "birth_month": 1,
+          "birth_year": 2020,
+          "age": 6,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {"none": true}
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "co_collegeinvest_first_step",
+      "eligible": true,
+      "value": 121
+    }
+  },
+  {
+    "notes": "Ineligible — no children in household",
+    "household": {
+      "white_label": "co",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_size": 2,
+      "zipcode": "80202",
+      "county": "Denver County",
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 5,
+          "birth_year": 1988,
+          "age": 38,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4000.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {"none": false, "employer": true}
+        },
+        {
+          "relationship": "spouse",
+          "birth_month": 9,
+          "birth_year": 1990,
+          "age": 35,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {"none": false, "employer": true}
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "co_collegeinvest_first_step",
+      "eligible": false
+    }
+  }
+]
