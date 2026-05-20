@@ -33,7 +33,6 @@
     "value_format": null,
     "value_type": "benefit",
     "website_description": "Discounted $1.00 transit fares for lower-income adults in the Puget Sound region",
-    "base_program": null,
     "show_on_current_benefits": true,
     "has_calculator": true,
     "show_in_has_benefits_step": false
