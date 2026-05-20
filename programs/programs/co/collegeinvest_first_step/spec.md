@@ -33,10 +33,8 @@
    - Note: The program requires birth or adoption to have occurred in Colorado. The screener verifies current CO residency via `zipcode`/`county` but cannot verify birth or adoption location. We use current CO residency as a proxy (inclusivity assumption). Exception: active military families with permanent CO residence qualify even if the child was born outside Colorado — this exception is also a data gap since the screener does not capture military status. Both gaps are noted in the program description.
    - Source: C.R.S. § 23-3.1-308.5; [CollegeInvest First Step Overview](https://www.collegeinvest.org/first-step/)
 
-5. **Applicant must be a U.S. citizen or resident alien**
-   - Screener fields:
-     - `legal_status (HouseholdMember)`
-   - Note: Maps to `citizen`, `gc_5plus`, `gc_5less`. Verify with program documentation whether refugee or other statuses qualify under the "resident alien" definition.
+5. **Applicant must be a U.S. citizen or resident alien** *(config-enforced, not evaluated in calculator)*
+   - Screener fields: none — `HouseholdMember` has no `legal_status` field; this requirement is declared via the `legal_status_required` program config (`citizen`, `gc_5plus`, `gc_5less`) and surfaced to users by the frontend, consistent with the codebase pattern for citizenship requirements (see trump_account).
    - Source: [MFB-958](https://linear.app/myfriendben/issue/MFB-958); [CollegeInvest First Step Overview](https://www.collegeinvest.org/first-step/)
 
 ## Priority Criteria
@@ -56,6 +54,7 @@
 
 - ✅ Evaluable criteria: 3 (CO residency, age 0–7, birth year ≥ 2020)
 - ⚠️ Data gaps: 2 (birth/adoption location; military exception)
+- ℹ️ Config-enforced: 1 (citizenship via `legal_status_required`: `citizen`, `gc_5plus`, `gc_5less`)
 
 ## Test Scenarios
 
