@@ -1,5 +1,6 @@
 from .udp.calculator import WaUdp
 from .csfp.calculator import WaCsfp
+from .orca_lift.calculator import WaOrcaLift
 from .hcv.calculator import WaHcv
 from .head_start.calculator import WaHeadStart
 from .liheap.calculator import WaLiheap
@@ -27,4 +28,5 @@ wa_calculators: dict[str, type[ProgramCalculator]] = {
     "wa_wic": WaWic,
     "wa_nslp": WaNslp,
     "wa_udp": WaUdp,
+    "wa_orca_lift": WaOrcaLift,
 }
