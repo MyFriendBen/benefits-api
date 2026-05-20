@@ -1,0 +1,145 @@
+[
+  {
+    "notes": "Eligible golden path — single adult age 35 in King County, monthly wages $2,000 (below 2026 200% FPL of $2,660 for size 1), no categorical benefits. Expected value: 1 cardholder × $72/month × 12 = $864/year (stored annual; frontend displays $72/month).",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King County",
+      "household_size": 1,
+      "household_assets": 500.00,
+      "has_snap": false,
+      "has_medicaid": false,
+      "has_wic": false,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "birth_year": 1991,
+          "birth_month": 3,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_orca_lift",
+      "eligible": true,
+      "value": 864
+    }
+  },
+  {
+    "notes": "Ineligible — single adult age 35, monthly wages $4,500 (well above 2026 200% FPL of $2,660 for size 1), no categorical pathway available.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King County",
+      "household_size": 1,
+      "household_assets": 2000.00,
+      "has_snap": false,
+      "has_medicaid": false,
+      "has_wic": false,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "birth_year": 1991,
+          "birth_month": 3,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": { "none": false, "employer": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_orca_lift",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "Edge case — 4-person household with monthly income $6,000 (above 2026 200% FPL of $5,500 for size 4) but receives Washington Basic Food (has_snap=true), which qualifies the household via the categorical pathway. Only the 30-year-old falls in the 19-64 ORCA LIFT age range — the 65-year-old would use Senior RRFP (separate program) and the children would use Youth Ride Free (separate program). Expected value: 1 cardholder × $72/month × 12 = $864/year (stored annual; frontend displays $72/month).",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98402",
+      "county": "Pierce County",
+      "household_size": 4,
+      "household_assets": 1500.00,
+      "has_snap": true,
+      "has_medicaid": false,
+      "has_wic": false,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 30,
+          "birth_year": 1996,
+          "birth_month": 1,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 6000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": { "none": false, "employer": true }
+        },
+        {
+          "relationship": "spouse",
+          "age": 65,
+          "birth_year": 1961,
+          "birth_month": 1,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": false, "medicare": true }
+        },
+        {
+          "relationship": "child",
+          "age": 17,
+          "birth_year": 2009,
+          "birth_month": 4,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "child",
+          "age": 8,
+          "birth_year": 2018,
+          "birth_month": 2,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_orca_lift",
+      "eligible": true,
+      "value": 864
+    }
+  }
+]
