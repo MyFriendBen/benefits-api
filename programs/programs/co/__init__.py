@@ -32,6 +32,7 @@ from .denver_sidewalk_rebate.calculator import DenverSidewalkRebate
 from .senior_housing_tax_credit.calculator import SeniorHousingIncomeTaxCredit
 from .jeffco_student_benefits.calculator import JeffcoStudentBenefits
 from .head_start.calculator import CoHeadStart
+from .collegeinvest_first_step.calculator import CoCollegeInvestFirstStep
 from ..calc import ProgramCalculator
 
 co_calculators: dict[str, type[ProgramCalculator]] = {
@@ -68,5 +69,6 @@ co_calculators: dict[str, type[ProgramCalculator]] = {
     "shitc": SeniorHousingIncomeTaxCredit,
     "jeffco_student_benefits": JeffcoStudentBenefits,
     "co_head_start": CoHeadStart,
+    "co_collegeinvest_first_step": CoCollegeInvestFirstStep,
     **cesn_calculators,
 }
