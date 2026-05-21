@@ -697,7 +697,6 @@ class Program(models.Model):
     ]
     year_type = models.CharField(
         max_length=32,
-        blank=True,
         default="hardcoded",
         choices=YEAR_TYPE_CHOICES,
     )
