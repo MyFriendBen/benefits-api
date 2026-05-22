@@ -204,6 +204,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             "has_snap",
             "has_sunbucks",
             "has_lifeline",
+            "has_udp",
             "has_acp",
             "has_eitc",
             "has_coeitc",
