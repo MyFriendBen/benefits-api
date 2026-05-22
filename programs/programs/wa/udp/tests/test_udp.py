@@ -12,9 +12,9 @@ def make_member(age, yearly_income=0, ssi_income=0):
     member.age = age
 
     def gross_income(freq, types):
-        if types == ["sSI"]:
+        if "sSI" in types:
             return ssi_income * 12 if freq == "yearly" else ssi_income
-        return yearly_income
+        return yearly_income if freq == "yearly" else yearly_income / 12
 
     member.calc_gross_income = Mock(side_effect=gross_income)
     return member
@@ -34,7 +34,9 @@ def make_calculator(
     mock_screen.county = county
     mock_screen.household_size = household_size
     mock_screen.has_benefit = Mock(side_effect=lambda b: has_snap if b == "snap" else False)
-    mock_screen.household_members.all = Mock(return_value=members or [make_member(age=35, yearly_income=24_000)])
+    mock_screen.household_members.all = Mock(
+        return_value=members if members is not None else [make_member(age=35, yearly_income=24_000)]
+    )
     mock_missing_deps = Mock()
     mock_missing_deps.has.return_value = False
     return WaUdp(mock_screen, mock_program, {}, mock_missing_deps)

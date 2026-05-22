@@ -406,9 +406,9 @@ For the landlord-paid utility credit path: the screener can't identify these hou
 
 ---
 
-### Scenario 10 — Eligible, large household requiring per-member SMI extension
+### Scenario 10 — Eligible, large household with multiple minor children
 
-**What we're checking**: SMI table extension beyond core size range using the +$247/mo per-member step.
+**What we're checking**: Multi-adult, multi-child household using a mid-range SMI table lookup (HH=6); guards against a cap bug that truncates the table at HH=4.
 
 **Expected**: Eligible, value $732/year
 
@@ -419,9 +419,11 @@ For the landlord-paid utility credit path: the screener can't identify these hou
 - Persons 3, 4, 5, 6: minor children (ages 12, 10, 6, 3)
 - Total adult monthly income: $9,500 (< $10,836 HH=6 limit)
 
-**Covers**: HH-size lookup at upper end of MFB-supported range; multi-child household.
+**Covers**: Correct HH=6 table lookup ($10,836/mo); multi-child household; adult-only income aggregation.
 
-**Why this matters**: Large families have higher utility costs and are often among the lowest-income-per-capita households. A bug that caps the HH-size lookup at 4 or 8 (a common copy-paste error when porting other programs' logic) would exclude families of 5+ — punishing those with the heaviest utility burden.
+**Note**: The per-member SMI extension (`SMI_70_ANNUAL[10] + (size - 10) * 2,964`) activates only for HH > 10. MFB caps household size at 8, so the extension code is never reachable via the screener and is not covered by any spec scenario.
+
+**Why this matters**: Large families have higher utility costs and are often among the lowest-income-per-capita households. A bug that caps the HH-size lookup at 4 (a common copy-paste error when porting other programs' logic) would exclude families of 5+ — punishing those with the heaviest utility burden.
 
 ---
 
