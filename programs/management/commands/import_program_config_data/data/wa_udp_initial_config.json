@@ -29,7 +29,6 @@
     "value_format": null,
     "value_type": "benefit",
     "website_description": "Discounts on Seattle water, sewer, garbage, and electric bills",
-    "base_program": null,
     "show_on_current_benefits": true,
     "has_calculator": true,
     "show_in_has_benefits_step": false
