@@ -90,7 +90,7 @@ class WaUdp(ProgramCalculator):
         return sum(
             member.calc_gross_income("yearly", ["all"])
             for member in self.screen.household_members.all()
-            if member.age is not None and member.age >= 18
+            if member.calc_age() is not None and member.calc_age() >= 18
         )
 
     def _has_ssi_recipient(self) -> bool:

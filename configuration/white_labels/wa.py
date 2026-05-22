@@ -1196,16 +1196,6 @@ class WaConfigurationData(ConfigurationData):
                         "_default_message": "Internet discount",
                     },
                 },
-                "udp": {
-                    "name": {
-                        "_label": "housingAndUtilities.udp",
-                        "_default_message": "Seattle Utility Discount Program (UDP): ",
-                    },
-                    "description": {
-                        "_label": "housingAndUtilities.udp_desc",
-                        "_default_message": "Discounts on Seattle utility bills",
-                    },
-                },
             },
             "category_name": {
                 "_label": "housing",
