@@ -1,0 +1,99 @@
+{
+  "white_label": {
+    "code": "wa"
+  },
+  "program_category": {
+    "external_name": "wa_housing",
+    "name": "Housing and Utilities",
+    "icon": "housing"
+  },
+  "program": {
+    "name_abbreviated": "wa_udp",
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "refugee",
+      "gc_5plus",
+      "gc_5less",
+      "otherWithWorkPermission"
+    ],
+    "name": "Seattle Utility Discount Program (UDP)",
+    "description_short": "Discounts on Seattle water, sewer, garbage, and electric bills",
+    "description": "The Utility Discount Program (UDP) lowers your monthly utility bills. It covers electricity from Seattle City Light. It also covers water, sewer, and garbage from Seattle Public Utilities.\n\nAfter you enroll, the discount appears on your bill each month. Renters can also qualify if their landlord pays the utilities. Ask your landlord if they're in the UDP Voucher Program.\n\nYou'll need a Seattle City Light or Seattle Public Utilities bill in your name to apply. Self-employed people who use over half their home for business may not qualify. Some homes share one utility meter. If yours does, you may need to apply together.\n\nApply online, by phone, or in person. Get help in seven languages. Most applications take 4 to 6 weeks. If you have a shutoff notice, ask about Emergency Bill Assistance instead. If you don't qualify, you can apply again after 30 days.",
+    "learn_more_link": "https://www.seattle.gov/human-services/services-and-programs/utility-discount-program#howwilliknowifivebeenapproved",
+    "apply_button_link": "https://utilityassistance.seattle.gov/uap/public/landing",
+    "apply_button_description": "",
+    "estimated_application_time": "30 - 40 minutes",
+    "estimated_delivery_time": "Within 2 months",
+    "estimated_value": "",
+    "value_format": null,
+    "value_type": "benefit",
+    "website_description": "Discounts on Seattle water, sewer, garbage, and electric bills",
+    "base_program": null,
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": [
+    {
+      "external_name": "seattle_udp_photo_id",
+      "text": "Government-issued photo ID for all adult household members (ex: driver's license, state ID, passport, permanent resident card, Matricula Consular, U.S. military card, Native American tribal document, school ID)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "seattle_udp_proof_of_income",
+      "text": "Proof of gross income for all adult household members covering the month before you apply (ex: pay stubs, benefit award letters such as SNAP, SSA, SSI, TANF, unemployment, child support records, rental income records)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "seattle_udp_financial_aid_documentation",
+      "text": "Financial aid award letters, grant documentation, or loan verification (only if you receive scholarships, grants, or have loans to your household)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "seattle_udp_self_employment_declaration",
+      "text": "Declaration of Self-Employment form (only if you work for yourself)",
+      "link_url": "https://www.seattle.gov/documents/Departments/HumanServices/UtilityDiscountProgram/Declaration-of-Self-Employment_Q325.pdf",
+      "link_text": "Declaration of Self-Employment form"
+    },
+    {
+      "external_name": "seattle_udp_limited_income_declaration",
+      "text": "Declaration of Limited Income form (only if you have very little or no income)",
+      "link_url": "https://www.seattle.gov/documents/Departments/HumanServices/UtilityDiscountProgram/Declaration-of-Limited-Income_Q325.pdf",
+      "link_text": "Declaration of Limited Income form"
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "byrd_barr_place",
+      "name": "Byrd Barr Place",
+      "email": "energyassistance@byrdbarr.place",
+      "phone_number": "+12068124940",
+      "description": "Byrd Barr Place is a Seattle community energy-assistance organization that administers related energy programs (LIHEAP, PSE HELP, SHEAP) for Seattle residents. UDP applicants often qualify for these programs too, and Byrd Barr's staff can help you find and apply for additional energy assistance.",
+      "assistance_link": "https://byrdbarrplace.org/programs-services/energy-assistance",
+      "counties": ["King County"],
+      "languages": ["en", "es", "vi", "zh", "am"]
+    },
+    {
+      "external_name": "familyworks_seattle",
+      "name": "FamilyWorks",
+      "email": "info@familyworksseattle.org",
+      "phone_number": "+12066946727",
+      "description": "FamilyWorks is a Seattle family resource center that partners with UDP staff for in-person application help sessions on the first Thursday of each month. They focus on helping households with language barriers or eligibility questions.",
+      "assistance_link": "https://www.familyworksseattle.org/contact/",
+      "counties": ["King County"]
+    },
+    {
+      "external_name": "king_county_chap",
+      "name": "Community Health Access Program (CHAP) - King County Public Health",
+      "email": "chap@kingcounty.gov",
+      "phone_number": "+12062840331",
+      "description": "CHAP is a free phone line run by Public Health - Seattle & King County that connects residents to health insurance, healthcare, and assistance programs including UDP. They also accept UDP applications by mail, fax (206-296-0881), or email at 401 5th Avenue, Suite 1000, Seattle, WA 98104.",
+      "assistance_link": "https://kingcounty.gov/en/dept/dph/health-safety/health-centers-programs-services/access-outreach-program/energy-assistance",
+      "counties": ["King County"]
+    }
+  ]
+}
