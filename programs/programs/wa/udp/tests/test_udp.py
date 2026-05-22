@@ -10,6 +10,7 @@ def make_member(age, yearly_income=0, ssi_income=0):
     """Create a mock household member."""
     member = Mock()
     member.age = age
+    member.calc_age = Mock(return_value=age)
 
     def gross_income(freq, types):
         if "sSI" in types:
