@@ -36,12 +36,41 @@ class WaUdp(ProgramCalculator):
     }
     SMI_70_PER_EXTRA_ANNUAL = 2_964  # +$2,964/year per person above HH=10
 
-    SEATTLE_ZIP_CODES: ClassVar[frozenset[str]] = frozenset([
-        "98101", "98102", "98103", "98104", "98105", "98106", "98107", "98108",
-        "98109", "98112", "98115", "98116", "98117", "98118", "98119", "98121",
-        "98122", "98125", "98126", "98133", "98134", "98136", "98144", "98146",
-        "98154", "98164", "98174", "98177", "98178", "98195", "98199",
-    ])
+    SEATTLE_ZIP_CODES: ClassVar[frozenset[str]] = frozenset(
+        [
+            "98101",
+            "98102",
+            "98103",
+            "98104",
+            "98105",
+            "98106",
+            "98107",
+            "98108",
+            "98109",
+            "98112",
+            "98115",
+            "98116",
+            "98117",
+            "98118",
+            "98119",
+            "98121",
+            "98122",
+            "98125",
+            "98126",
+            "98133",
+            "98134",
+            "98136",
+            "98144",
+            "98146",
+            "98154",
+            "98164",
+            "98174",
+            "98177",
+            "98178",
+            "98195",
+            "98199",
+        ]
+    )
 
     dependencies: ClassVar[list[str]] = [
         "income_amount",
@@ -65,17 +94,11 @@ class WaUdp(ProgramCalculator):
         )
 
     def _has_ssi_recipient(self) -> bool:
-        return any(
-            member.calc_gross_income("yearly", ["sSI"]) > 0
-            for member in self.screen.household_members.all()
-        )
+        return any(member.calc_gross_income("yearly", ["sSI"]) > 0 for member in self.screen.household_members.all())
 
     def household_eligible(self, e: Eligibility) -> None:
         # Criterion 1: Seattle SCL/SPU service area (ZIP + county proxy)
-        in_seattle = (
-            self.screen.zipcode in self.SEATTLE_ZIP_CODES
-            and self.screen.county == "King County"
-        )
+        in_seattle = self.screen.zipcode in self.SEATTLE_ZIP_CODES and self.screen.county == "King County"
         e.condition(in_seattle, messages.location())
 
         # Financial pathway: SSI categorical (Criterion 4) OR SNAP streamlined (Criterion 5)

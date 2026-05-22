@@ -99,10 +99,37 @@ class TestWaUdpLocationCriterion(TestCase):
 
     def test_all_31_seattle_zips_accepted(self):
         expected = {
-            "98101", "98102", "98103", "98104", "98105", "98106", "98107", "98108",
-            "98109", "98112", "98115", "98116", "98117", "98118", "98119", "98121",
-            "98122", "98125", "98126", "98133", "98134", "98136", "98144", "98146",
-            "98154", "98164", "98174", "98177", "98178", "98195", "98199",
+            "98101",
+            "98102",
+            "98103",
+            "98104",
+            "98105",
+            "98106",
+            "98107",
+            "98108",
+            "98109",
+            "98112",
+            "98115",
+            "98116",
+            "98117",
+            "98118",
+            "98119",
+            "98121",
+            "98122",
+            "98125",
+            "98126",
+            "98133",
+            "98134",
+            "98136",
+            "98144",
+            "98146",
+            "98154",
+            "98164",
+            "98174",
+            "98177",
+            "98178",
+            "98195",
+            "98199",
         }
         self.assertEqual(WaUdp.SEATTLE_ZIP_CODES, frozenset(expected))
 
@@ -225,9 +252,7 @@ class TestWaUdpSnapStreamlinedPathway(TestCase):
     def test_snap_does_not_override_location(self):
         # SNAP pathway cannot override the location requirement
         members = [make_member(age=40, yearly_income=1_000 * 12)]
-        calc = make_calculator(
-            zipcode="98003", county="King County", household_size=2, members=members, has_snap=True
-        )
+        calc = make_calculator(zipcode="98003", county="King County", household_size=2, members=members, has_snap=True)
         self.assertFalse(run_household_eligible(calc))
 
     def test_zero_income_with_snap_is_eligible(self):
