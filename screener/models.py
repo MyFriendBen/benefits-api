@@ -76,7 +76,6 @@ class Screen(models.Model):
     has_snap = models.BooleanField(default=False, blank=True, null=True)
     has_sunbucks = models.BooleanField(default=False, blank=True, null=True)
     has_lifeline = models.BooleanField(default=False, blank=True, null=True)
-    has_udp = models.BooleanField(default=False, blank=True, null=True)
     has_acp = models.BooleanField(default=False, blank=True, null=True)
     has_eitc = models.BooleanField(default=False, blank=True, null=True)
     has_coeitc = models.BooleanField(default=False, blank=True, null=True)
@@ -409,8 +408,6 @@ class Screen(models.Model):
             "lifeline": self.has_lifeline,
             "tx_lifeline": self.has_lifeline,
             "wa_lifeline": self.has_lifeline,
-            "udp": self.has_udp,
-            "wa_udp": self.has_udp,
             "acp": self.has_acp,
             "eitc": self.has_eitc,
             "tx_eitc": self.has_eitc,
