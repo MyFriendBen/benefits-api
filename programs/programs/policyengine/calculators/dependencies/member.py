@@ -524,7 +524,7 @@ class SocialSecurityIncomeDependency(IncomeDependency):
 
 
 class InvestmentIncomeDependency(IncomeDependency):
-    field = "capital_gains"
+    field = "long_term_capital_gains"
     income_types = ["investment"]
 
 
