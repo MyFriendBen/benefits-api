@@ -1009,8 +1009,8 @@ class TestChildcareAttendingDaysPerMonthDependency(TestCase):
         self.parent = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=30)
         self.child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=3)
 
-    def test_value_returns_default_20_days(self):
-        """Test ChildcareAttendingDaysPerMonthDependency.value() returns default of 20 days per month."""
+    def test_value_returns_10_days(self):
+        """Test ChildcareAttendingDaysPerMonthDependency.value() returns 10 days per month."""
         dep = member.ChildcareAttendingDaysPerMonthDependency(self.screen, self.child, {})
         self.assertEqual(dep.value(), 10)
 
@@ -1026,14 +1026,14 @@ class TestChildcareAttendingDaysPerMonthDependency(TestCase):
         self.assertTrue(issubclass(member.ChildcareAttendingDaysPerMonthDependency, Member))
 
     def test_value_same_for_all_children(self):
-        """Test that all children get the same default value of 20 days."""
+        """Test that all children get the same value of 10 days."""
         child2 = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=5)
 
         dep1 = member.ChildcareAttendingDaysPerMonthDependency(self.screen, self.child, {})
         dep2 = member.ChildcareAttendingDaysPerMonthDependency(self.screen, child2, {})
 
-        self.assertEqual(dep1.value(), 20)
-        self.assertEqual(dep2.value(), 20)
+        self.assertEqual(dep1.value(), 10)
+        self.assertEqual(dep2.value(), 10)
 
     def test_works_with_relationship_map(self):
         """Test that dependency works correctly with relationship_map parameter."""
@@ -1042,7 +1042,7 @@ class TestChildcareAttendingDaysPerMonthDependency(TestCase):
         dep = member.ChildcareAttendingDaysPerMonthDependency(self.screen, self.child, relationship_map)
 
         self.assertIsNotNone(dep)
-        self.assertEqual(dep.value(), 20)
+        self.assertEqual(dep.value(), 10)
 
     def test_has_correct_unit(self):
         """Test that dependency has correct unit (people) for PolicyEngine."""
