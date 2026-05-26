@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_birth_to_three",
+    "category_type": {
+      "external_name": "wa_child_development",
+      "name": "Concern about your child's development",
+      "icon": "child_development"
+    },
+    "type_short": ["child development"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "Washington State Birth to Three (Early Intervention)",
+      "description": "Washington's Early Support for Infants and Toddlers (ESIT) program provides evaluation and early intervention services for children under age 3 with developmental concerns.",
+      "link": "https://www.dcyf.wa.gov/services/child-dev-support/early-support-infants-toddlers",
+      "warning": "",
+      "website_description": "Free developmental evaluation and early intervention services for children under 3 in Washington.",
+      "notification_message": ""
+    },
+    "active": false,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

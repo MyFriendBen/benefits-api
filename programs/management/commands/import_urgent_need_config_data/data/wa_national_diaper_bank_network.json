@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_national_diaper_bank_network",
+    "category_type": {
+      "external_name": "wa_diapers_and_baby_supplies",
+      "name": "Diapers and other baby supplies",
+      "icon": "baby_supplies"
+    },
+    "type_short": ["baby supplies"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "National Diaper Bank Network",
+      "description": "Helps connect families to local diaper banks and baby supply programs across Washington State and nationwide.",
+      "link": "https://nationaldiaperbanknetwork.org/member-directory/",
+      "warning": "",
+      "website_description": "Map to find local diaper banks and baby supply programs in your area.",
+      "notification_message": ""
+    },
+    "active": false,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

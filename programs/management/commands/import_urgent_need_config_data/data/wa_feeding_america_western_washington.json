@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_feeding_america_western_washington",
+    "category_type": {
+      "external_name": "wa_food_or_groceries",
+      "name": "Food or groceries",
+      "icon": "food_groceries"
+    },
+    "type_short": ["food"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "Feeding America Western Washington",
+      "description": "Connects individuals and families in Western Washington to free, nutritious food through a network of food banks and pantries across the region.",
+      "link": "https://www.feedingamericawa.org",
+      "warning": "",
+      "website_description": "Searchable tool to find food banks and meal programs in Western Washington.",
+      "notification_message": ""
+    },
+    "active": false,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

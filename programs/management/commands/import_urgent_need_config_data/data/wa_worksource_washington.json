@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_worksource_washington",
+    "category_type": {
+      "external_name": "wa_job_resources",
+      "name": "Job resources",
+      "icon": "job_resources"
+    },
+    "type_short": ["job resources"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "WorkSource Washington",
+      "description": "WorkSource is Washington's statewide employment service system, offering job search support, career counseling, training programs, and workforce development resources at locations across the state.",
+      "link": "https://worksourcewa.com",
+      "warning": "",
+      "website_description": "Searchable job, workforce training, and career services tool for Washington State.",
+      "notification_message": ""
+    },
+    "active": false,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

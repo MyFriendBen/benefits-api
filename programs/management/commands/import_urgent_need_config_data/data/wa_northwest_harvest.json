@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_northwest_harvest",
+    "category_type": {
+      "external_name": "wa_food_or_groceries",
+      "name": "Food or groceries",
+      "icon": "food_groceries"
+    },
+    "type_short": ["food"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "Northwest Harvest",
+      "description": "Northwest Harvest is Washington's statewide hunger relief agency, distributing food to food banks and meal programs across the state and operating the Cherry Street Food Bank in Seattle.",
+      "link": "https://www.northwestharvest.org",
+      "warning": "",
+      "website_description": "Statewide hunger relief agency with food bank locator for Washington residents.",
+      "notification_message": ""
+    },
+    "active": false,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

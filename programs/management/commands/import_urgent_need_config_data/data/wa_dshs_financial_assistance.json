@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_dshs_financial_assistance",
+    "category_type": {
+      "external_name": "wa_cash_assistance",
+      "name": "Cash assistance",
+      "icon": "cash"
+    },
+    "type_short": ["cash assistance"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "Washington State DSHS – Financial Assistance",
+      "description": "The Washington State Department of Social and Health Services provides cash assistance programs including WorkFirst (TANF), Aged Blind or Disabled (ABD) assistance, and other financial support for eligible residents.",
+      "link": "https://www.dshs.wa.gov/esa/community-services-offices/financial-assistance",
+      "warning": "",
+      "website_description": "State cash assistance programs including TANF and disability benefits for eligible Washington residents.",
+      "notification_message": ""
+    },
+    "active": false,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

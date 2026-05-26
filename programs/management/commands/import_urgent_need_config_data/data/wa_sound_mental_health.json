@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_sound_mental_health",
+    "category_type": {
+      "external_name": "wa_behavioral_health",
+      "name": "Behavioral health",
+      "icon": "behavioral_health"
+    },
+    "type_short": ["behavioral health"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "Sound Mental Health",
+      "description": "Provides mental health and substance use disorder treatment services to individuals and families in King County, regardless of ability to pay.",
+      "link": "https://www.soundmh.org",
+      "warning": "",
+      "website_description": "Mental health and substance use treatment services in King County.",
+      "notification_message": ""
+    },
+    "active": false,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

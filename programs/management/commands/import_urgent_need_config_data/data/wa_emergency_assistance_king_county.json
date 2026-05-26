@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_emergency_assistance_king_county",
+    "category_type": {
+      "external_name": "wa_cash_assistance",
+      "name": "Cash assistance",
+      "icon": "cash"
+    },
+    "type_short": ["cash assistance"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "Emergency Assistance Program – King County",
+      "description": "Solid Ground and partner organizations provide emergency financial assistance to King County residents facing crisis situations including eviction, utility shut-off, or loss of income.",
+      "link": "https://www.solid-ground.org/get-help/",
+      "warning": "",
+      "website_description": "Emergency financial and case management support for King County residents in crisis.",
+      "notification_message": ""
+    },
+    "active": false,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

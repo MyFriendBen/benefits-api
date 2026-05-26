@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_washington_211",
+    "category_type": {
+      "external_name": "wa_housing_rent_utilities",
+      "name": "Help with managing your mortgage, rent, or utilities",
+      "icon": "managing_housing"
+    },
+    "type_short": ["housing"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "Washington 211",
+      "description": "A free, confidential service connecting Washington residents to local health and human services including rental assistance, utilities help, and housing resources. Call 2-1-1 or search online.",
+      "link": "https://www.211.org/get-help/wa",
+      "warning": "",
+      "website_description": "Free helpline and searchable database for housing, utility, and community assistance.",
+      "notification_message": ""
+    },
+    "active": false,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_seattle_goodwill_job_training",
+    "category_type": {
+      "external_name": "wa_job_resources",
+      "name": "Job resources",
+      "icon": "job_resources"
+    },
+    "type_short": ["job resources"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "Seattle Goodwill Job Training",
+      "description": "Goodwill's job training programs in Seattle help individuals build skills and find employment, offering free or low-cost training in sectors like healthcare, retail, construction, and technology.",
+      "link": "https://seattlegoodwill.org/job-training-employment",
+      "warning": "",
+      "website_description": "Free and low-cost job skills training and employment programs in the Seattle area.",
+      "notification_message": ""
+    },
+    "active": false,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_cares_fund",
+    "category_type": {
+      "external_name": "wa_cash_assistance",
+      "name": "Cash assistance",
+      "icon": "cash"
+    },
+    "type_short": ["cash assistance"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "WA Cares Fund",
+      "description": "Washington's long-term care insurance program providing eligible workers with financial support for long-term care needs, including in-home care, assisted living, and nursing facilities.",
+      "link": "https://wacaresfund.wa.gov/how-it-works",
+      "warning": "",
+      "website_description": "Washington State's long-term care benefit program for workers.",
+      "notification_message": ""
+    },
+    "active": false,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

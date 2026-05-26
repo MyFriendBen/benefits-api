@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_baby2baby_washington_resources",
+    "category_type": {
+      "external_name": "wa_diapers_and_baby_supplies",
+      "name": "Diapers and other baby supplies",
+      "icon": "baby_supplies"
+    },
+    "type_short": ["baby supplies"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "Baby2Baby Washington Resources",
+      "description": "Provides diapers, clothing, and essential baby items to children in need across Washington through local partner organizations.",
+      "link": "https://baby2baby.org/get-help/",
+      "warning": "",
+      "website_description": "Connects families with free diapers, clothing, and baby essentials.",
+      "notification_message": ""
+    },
+    "active": false,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

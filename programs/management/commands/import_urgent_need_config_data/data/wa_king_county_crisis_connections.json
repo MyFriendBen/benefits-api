@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_king_county_crisis_connections",
+    "category_type": {
+      "external_name": "wa_behavioral_health",
+      "name": "Behavioral health",
+      "icon": "behavioral_health"
+    },
+    "type_short": ["behavioral health"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "King County Crisis Connections",
+      "description": "24/7 crisis line and behavioral health services for King County residents experiencing a mental health or substance use crisis. Call 866-427-4747.",
+      "link": "https://www.crisisconnections.org",
+      "warning": "",
+      "website_description": "24/7 mental health and crisis support line and resources for King County.",
+      "notification_message": ""
+    },
+    "active": false,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

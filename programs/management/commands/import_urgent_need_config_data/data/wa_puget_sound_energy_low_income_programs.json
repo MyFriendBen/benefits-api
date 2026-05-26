@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_puget_sound_energy_low_income_programs",
+    "category_type": {
+      "external_name": "wa_housing_rent_utilities",
+      "name": "Help with managing your mortgage, rent, or utilities",
+      "icon": "managing_housing"
+    },
+    "type_short": ["housing"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "Puget Sound Energy (PSE) Low Income Programs",
+      "description": "PSE offers energy assistance programs for low-income customers including bill discounts, weatherization, and emergency energy assistance for qualifying Washington households.",
+      "link": "https://www.pse.com/en/account-and-billing/assistance-programs/low-income-programs",
+      "warning": "",
+      "website_description": "Utility bill assistance and energy efficiency programs for qualifying PSE customers.",
+      "notification_message": ""
+    },
+    "active": false,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

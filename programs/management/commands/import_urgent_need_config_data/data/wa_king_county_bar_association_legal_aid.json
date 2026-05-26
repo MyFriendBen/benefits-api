@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_king_county_bar_association_legal_aid",
+    "category_type": {
+      "external_name": "wa_legal_services",
+      "name": "Free or low cost help with civil legal needs or identity documents",
+      "icon": "legal_services"
+    },
+    "type_short": ["legal services"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "King County Bar Association – Legal Aid",
+      "description": "Offers free and reduced-cost legal assistance to low-income King County residents through referrals and direct services.",
+      "link": "https://www.kcba.org/For-the-Public/Free-Legal-Assistance",
+      "warning": "",
+      "website_description": "Free legal aid referrals and services for low-income King County residents.",
+      "notification_message": ""
+    },
+    "active": false,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}
