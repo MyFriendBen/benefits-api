@@ -39,15 +39,16 @@ In plain English: a household must be in Seattle's SCL/SPU service area (Criteri
 
    - **Screener proxy**: The screener can't verify account status (data gap), so we proxy with ZIP + county: **include if `county == "King County"` AND `zipcode IN <seattle_zip_list>`**. Non-customers who pass this filter are caught at application time. Inclusivity assumption: any qualifying Seattle household has utility access — directly or via Voucher.
 
-   - **Seattle ZIP list for the calculator** — **31 ZIPs** that fall within Seattle city limits and plausibly have residential households (cross-referenced between USPS Seattle-named ZIPs and the seattle.gov Census 2010 Census Tracts and ZIP Code Boundaries map):
+   - **Seattle ZIP list for the calculator** — **52 ZIPs** that fall within Seattle city limits and plausibly have residential households (cross-referenced between USPS Seattle-named ZIPs and the seattle.gov Census 2010 Census Tracts and ZIP Code Boundaries map):
 
       ```
-      98101, 98102, 98103, 98104, 98105, 98106, 98107, 98108, 98109, 98112,
-      98115, 98116, 98117, 98118, 98119, 98121, 98122, 98125, 98126, 98133,
-      98134, 98136, 98144, 98146, 98154, 98164, 98174, 98177, 98178, 98195, 98199
+      98101, 98102, 98103, 98104, 98105, 98106, 98107, 98108, 98109, 98111,
+      98112, 98113, 98114, 98115, 98116, 98117, 98118, 98119, 98121, 98122,
+      98124, 98125, 98126, 98127, 98129, 98131, 98133, 98134, 98136, 98138,
+      98139, 98141, 98144, 98145, 98146, 98154, 98160, 98161, 98164, 98165,
+      98170, 98174, 98175, 98177, 98178, 98181, 98185, 98190, 98191, 98194,
+      98195, 98199
       ```
-
-      Breakdown: 27 standard residential + 3 Downtown unique (98154, 98164, 98174) + 1 UW campus (98195). The seattle.gov map alone shows 28 residential; the 3 Downtown unique ZIPs are confirmed via USPS as standard-residential within city limits.
 
       Sources:
       - https://www.seattle.gov/documents/Departments/LaborStandards/2010CensusTractsandZipCodeBoundaries.pdf
@@ -55,13 +56,10 @@ In plain English: a household must be in Seattle's SCL/SPU service area (Criteri
 
       **Excluded** (with rationale):
       - **8 USPS-Seattle-named ZIPs that fall outside Seattle city limits** (suburbs, not served by SCL/SPU): 98110 (Bainbridge Island), 98148 (Burien), 98155 (Lake Forest Park / Kenmore), 98158 (SeaTac), 98166 (Burien Three Tree Point), 98168 (Tukwila / unincorporated King County), 98188 (SeaTac), 98198 (Des Moines)
-      - **13 PO Box only ZIPs** (no residential addresses): 98111, 98113, 98114, 98124, 98127, 98138, 98139, 98141, 98145, 98160, 98165, 98175, 98194
-      - **6 company/organization-specific ZIPs** (single-building, no residential): 98129, 98170, 98181, 98185, 98190, 98191
-      - **2 uncertain ZIPs** (USPS lists as Seattle but not in seattle.gov authoritative map): 98131, 98161
 
    - **Voucher Program for landlord-billed utilities** (DPP III-428 §5.1.5 / CS-700 §3.B.5): Tenants under a written lease whose landlord pays utilities can qualify if the property owner participates in UDP. Surface in description: "You must have an SCL/SPU bill in your name, OR live in a property where your landlord participates in the UDP Voucher Program."
 
-   - **The list is still slightly over-inclusive**: Both service areas are bounded by Seattle city limits, but a few of the 31 ZIPs (98146 includes White Center; 98178 includes Skyway) extend slightly beyond. Application-stage verification catches affected households; over-inclusion is acceptable at the screener level.
+   - **The list is still slightly over-inclusive**: Both service areas are bounded by Seattle city limits, but a few of the 52 ZIPs (98146 includes White Center; 98178 includes Skyway) extend slightly beyond. Application-stage verification catches affected households; over-inclusion is acceptable at the screener level.
 
    - **Suggested screener enhancement to close this data gap** (priority: HIGH): Under Expenses → Utilities, add two follow-up questions when a Utilities expense is entered:
       1. **Utility provider dropdown** (multi-select) — Seattle City Light, Seattle Public Utilities, Tacoma Public Utilities, Puget Sound Energy, Snohomish County PUD, Avista, Clark Public Utilities, Pacific Power, Other.
