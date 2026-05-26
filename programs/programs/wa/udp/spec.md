@@ -41,7 +41,7 @@ In plain English: a household must be in Seattle's SCL/SPU service area (Criteri
 
    - **Seattle ZIP list for the calculator** — **52 ZIPs** that fall within Seattle city limits and plausibly have residential households (cross-referenced between USPS Seattle-named ZIPs and the seattle.gov Census 2010 Census Tracts and ZIP Code Boundaries map):
 
-      ```
+      ```text
       98101, 98102, 98103, 98104, 98105, 98106, 98107, 98108, 98109, 98111,
       98112, 98113, 98114, 98115, 98116, 98117, 98118, 98119, 98121, 98122,
       98124, 98125, 98126, 98127, 98129, 98131, 98133, 98134, 98136, 98138,
