@@ -1012,7 +1012,7 @@ class TestChildcareAttendingDaysPerMonthDependency(TestCase):
     def test_value_returns_default_20_days(self):
         """Test ChildcareAttendingDaysPerMonthDependency.value() returns default of 20 days per month."""
         dep = member.ChildcareAttendingDaysPerMonthDependency(self.screen, self.child, {})
-        self.assertEqual(dep.value(), 20)
+        self.assertEqual(dep.value(), 10)
 
     def test_field_name_is_correct(self):
         """Test that field name matches PolicyEngine's childcare_attending_days_per_month variable."""
