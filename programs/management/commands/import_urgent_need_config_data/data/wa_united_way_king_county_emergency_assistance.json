@@ -3,11 +3,11 @@
   "need": {
     "external_name": "wa_united_way_king_county_emergency_assistance",
     "category_type": {
-      "external_name": "wa_community_resources",
-      "name": "Community resources",
-      "icon": "savings"
+      "external_name": "wa_housing_rent_utilities",
+      "name": "Help with managing your mortgage, rent, or utilities",
+      "icon": "managing_housing"
     },
-    "type_short": ["community resources"],
+    "type_short": ["housing"],
     "functions": [],
     "counties": ["King County"],
     "required_expense_types": [],

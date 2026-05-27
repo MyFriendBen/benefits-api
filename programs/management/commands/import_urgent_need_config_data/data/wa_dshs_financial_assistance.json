@@ -3,11 +3,11 @@
   "need": {
     "external_name": "wa_dshs_financial_assistance",
     "category_type": {
-      "external_name": "wa_cash_assistance",
-      "name": "Cash assistance",
-      "icon": "cash"
+      "external_name": "wa_job_resources",
+      "name": "Job resources",
+      "icon": "job_resources"
     },
-    "type_short": ["cash assistance"],
+    "type_short": ["job resources"],
     "functions": [],
     "counties": ["King County"],
     "required_expense_types": [],

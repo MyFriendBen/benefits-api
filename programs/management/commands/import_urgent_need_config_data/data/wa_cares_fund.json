@@ -3,11 +3,11 @@
   "need": {
     "external_name": "wa_cares_fund",
     "category_type": {
-      "external_name": "wa_cash_assistance",
-      "name": "Cash assistance",
-      "icon": "cash"
+      "external_name": "wa_behavioral_health",
+      "name": "Behavioral health",
+      "icon": "behavioral_health"
     },
-    "type_short": ["cash assistance"],
+    "type_short": ["behavioral health"],
     "functions": [],
     "counties": ["King County"],
     "required_expense_types": [],
