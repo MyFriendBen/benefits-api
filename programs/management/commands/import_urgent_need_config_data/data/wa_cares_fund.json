@@ -7,7 +7,7 @@
       "name": "Behavioral health",
       "icon": "behavioral_health"
     },
-    "type_short": ["behavioral health"],
+    "type_short": ["mental health"],
     "functions": [],
     "counties": ["King County"],
     "required_expense_types": [],

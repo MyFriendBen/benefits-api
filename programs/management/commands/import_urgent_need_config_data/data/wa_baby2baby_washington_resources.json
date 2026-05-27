@@ -1,7 +1,7 @@
 {
   "white_label": { "code": "wa" },
   "need": {
-    "external_name": "wa_baby2baby_washington_resources",
+    "external_name": "wa_wellspring_family_store",
     "category_type": {
       "external_name": "wa_diapers_and_baby_supplies",
       "name": "Diapers and other baby supplies",
@@ -12,9 +12,9 @@
     "counties": ["King County"],
     "required_expense_types": [],
     "translations": {
-      "name": "Baby2Baby Washington Resources",
-      "description": "Provides diapers, clothing, and essential baby items to children in need across Washington through local partner organizations.",
-      "link": "https://baby2baby.org/get-help/",
+      "name": "Wellspring Family Store",
+      "description": "Provides free new and gently used children's items including clothing, shoes, diapers, formula, toys, books, and baby gear.",
+      "link": "https://wellspringfs.org/services/family-store/",
       "warning": "",
       "website_description": "Connects families with free diapers, clothing, and baby essentials.",
       "notification_message": ""

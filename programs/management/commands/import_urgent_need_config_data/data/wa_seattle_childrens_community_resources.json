@@ -7,14 +7,14 @@
       "name": "Concern about your child's development",
       "icon": "child_development"
     },
-    "type_short": ["child development"],
+    "type_short": ["child dev"],
     "functions": [],
     "counties": ["King County"],
     "required_expense_types": [],
     "translations": {
       "name": "Seattle Children's – Community Resources",
-      "description": "Seattle Children's provides developmental assessments, specialty care, and connects families to community resources for children with health or developmental concerns.",
-      "link": "https://www.seattlechildrens.org/clinics/community-resources/",
+      "description": "Seattle Children's provides developmental assessments and specialty care, and connects families to community resources for children with health or developmental concerns.",
+      "link": "https://www.seattlechildrens.org/clinics/paying-for-care/financial-assistance/",
       "warning": "",
       "website_description": "Pediatric developmental assessment and community resource connection for Seattle-area families.",
       "notification_message": ""

@@ -4,7 +4,7 @@
     "external_name": "wa_king_county_bar_association_legal_aid",
     "category_type": {
       "external_name": "wa_legal_services",
-      "name": "Free or low cost help with civil legal needs or identity documents",
+      "name": "Free or low-cost help with civil legal needs or identity documents",
       "icon": "legal_services"
     },
     "type_short": ["legal services"],

@@ -13,8 +13,8 @@
     "required_expense_types": [],
     "translations": {
       "name": "Solid Ground",
-      "description": "Solid Ground and partner organizations provide emergency financial assistance to King County residents facing crisis situations including eviction, utility shut-off, or loss of income.",
-      "link": "https://www.solid-ground.org/get-help/",
+      "description": "Solid Ground helps people stay in their homes or find new housing quickly through financial support, case management, and advocacy.",
+      "link": "https://www.solid-ground.org/what-we-do/housing-homelessness/",
       "warning": "",
       "website_description": "Emergency financial and case management support for King County residents in crisis.",
       "notification_message": ""
