@@ -15,11 +15,12 @@ from programs.models import Program
 from screener.models import CurrentBenefit, Screen, WhiteLabel
 
 
-def seed_program(white_label: WhiteLabel, name_abbreviated: str) -> Program:
-    """Create a Program (with required Translation FKs) so the join-table read
-    path can resolve `program__name_abbreviated=name`. Thin wrapper around the
-    canonical `Program.objects.new_program` manager method."""
-    return Program.objects.new_program(white_label.code, name_abbreviated)
+def seed_program(white_label: WhiteLabel, *name_abbreviateds: str) -> None:
+    """Create one or more Programs (with required Translation FKs) so the
+    join-table read path can resolve `program__name_abbreviated=name`. Thin
+    wrapper around the canonical `Program.objects.new_program` manager method."""
+    for name in name_abbreviateds:
+        Program.objects.new_program(white_label.code, name)
 
 
 def sync_current_benefits(screen: Screen) -> None:

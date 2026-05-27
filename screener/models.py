@@ -384,10 +384,14 @@ class Screen(models.Model):
         compound conditions (ssi via has_ssi OR sSI income; ma_mass_health via
         has_medicaid OR has_medicaid_hi).
 
-        Only used by `_sync_current_benefits()` to write CurrentBenefit rows
-        during the dual-write phase. Removed in MFB-869 alongside
-        `_sync_current_benefits` once the serializer writes join-table rows
-        directly from the frontend's `current_benefits: [...]` payload.
+        Only used by `_sync_current_benefits()` (and its test-helper mirror in
+        `screener/tests/helpers.py`) to write CurrentBenefit rows during the
+        dual-write phase. `HouseholdMember.has_benefit()` does NOT route through
+        here — it has its own member-level `name_map` keyed off `self.insurance`.
+
+        Removed in MFB-869 alongside `_sync_current_benefits` once the serializer
+        writes join-table rows directly from the frontend's `current_benefits: [...]`
+        payload.
         """
         has_ssi_or_ssi_income = self.has_ssi or self.calc_gross_income("yearly", ("sSI",)) > 0
 

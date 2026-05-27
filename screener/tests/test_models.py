@@ -233,13 +233,9 @@ class TestScreen(TestCase):
     # phase) and invoke sync_current_benefits() to populate the join table —
     # mirroring what every POST/PATCH does in production.
 
-    def _seed_programs(self, *name_abbreviateds: str):
-        for name in name_abbreviateds:
-            seed_program(self.white_label, name)
-
     def test_has_benefit_returns_true_when_user_has_snap(self):
         """has_benefit('tx_snap') is True when has_snap=True and the join table is synced."""
-        self._seed_programs("tx_snap")
+        seed_program(self.white_label, "tx_snap")
         self.screen.has_snap = True
         self.screen.save()
         sync_current_benefits(self.screen)
@@ -248,7 +244,7 @@ class TestScreen(TestCase):
 
     def test_has_benefit_returns_false_when_user_does_not_have_snap(self):
         """has_benefit('tx_snap') is False when has_snap=False."""
-        self._seed_programs("tx_snap")
+        seed_program(self.white_label, "tx_snap")
         self.screen.has_snap = False
         self.screen.save()
         sync_current_benefits(self.screen)
@@ -257,7 +253,7 @@ class TestScreen(TestCase):
 
     def test_has_benefit_returns_true_when_user_has_wa_snap(self):
         """has_benefit('wa_snap') is True when has_snap=True (multi-WL variant)."""
-        self._seed_programs("wa_snap")
+        seed_program(self.white_label, "wa_snap")
         self.screen.has_snap = True
         self.screen.save()
         sync_current_benefits(self.screen)
@@ -266,7 +262,7 @@ class TestScreen(TestCase):
 
     def test_has_benefit_returns_false_when_user_does_not_have_wa_snap(self):
         """has_benefit('wa_snap') is False when has_snap=False."""
-        self._seed_programs("wa_snap")
+        seed_program(self.white_label, "wa_snap")
         self.screen.has_snap = False
         self.screen.save()
         sync_current_benefits(self.screen)
@@ -275,7 +271,7 @@ class TestScreen(TestCase):
 
     def test_has_benefit_returns_true_for_ma_head_start_when_user_has_head_start(self):
         """has_benefit('ma_head_start') is True when has_head_start=True."""
-        self._seed_programs("ma_head_start")
+        seed_program(self.white_label, "ma_head_start")
         self.screen.has_head_start = True
         self.screen.save()
         sync_current_benefits(self.screen)
@@ -284,7 +280,7 @@ class TestScreen(TestCase):
 
     def test_has_benefit_returns_false_for_ma_head_start_when_user_does_not_have_head_start(self):
         """has_benefit('ma_head_start') is False when has_head_start=False."""
-        self._seed_programs("ma_head_start")
+        seed_program(self.white_label, "ma_head_start")
         self.screen.has_head_start = False
         self.screen.save()
         sync_current_benefits(self.screen)
@@ -293,7 +289,7 @@ class TestScreen(TestCase):
 
     def test_has_benefit_returns_true_for_ma_early_head_start_when_user_has_early_head_start(self):
         """has_benefit('ma_early_head_start') is True when has_early_head_start=True."""
-        self._seed_programs("ma_early_head_start")
+        seed_program(self.white_label, "ma_early_head_start")
         self.screen.has_early_head_start = True
         self.screen.save()
         sync_current_benefits(self.screen)
@@ -302,7 +298,7 @@ class TestScreen(TestCase):
 
     def test_has_benefit_returns_false_for_ma_early_head_start_when_user_does_not_have_early_head_start(self):
         """has_benefit('ma_early_head_start') is False when has_early_head_start=False."""
-        self._seed_programs("ma_early_head_start")
+        seed_program(self.white_label, "ma_early_head_start")
         self.screen.has_early_head_start = False
         self.screen.save()
         sync_current_benefits(self.screen)
@@ -319,7 +315,7 @@ class TestScreen(TestCase):
         is True for both keys, validating that name fan-out works at the
         program-FK level on the join table.
         """
-        self._seed_programs("snap", "co_snap")
+        seed_program(self.white_label, "snap", "co_snap")
         self.screen.has_snap = True
         self.screen.save()
         sync_current_benefits(self.screen)
@@ -329,7 +325,7 @@ class TestScreen(TestCase):
 
     def test_has_benefit_multi_wl_variants_tanf(self):
         """Same fan-out check for has_tanf → tanf / co_tanf / il_tanf."""
-        self._seed_programs("tanf", "co_tanf", "il_tanf")
+        seed_program(self.white_label, "tanf", "co_tanf", "il_tanf")
         self.screen.has_tanf = True
         self.screen.save()
         sync_current_benefits(self.screen)
@@ -340,7 +336,7 @@ class TestScreen(TestCase):
 
     def test_has_benefit_compound_ssi_via_has_ssi_column(self):
         """ssi resolves True when has_ssi=True (one half of the OR)."""
-        self._seed_programs("ssi", "tx_ssi", "cesn_ssi")
+        seed_program(self.white_label, "ssi", "tx_ssi", "cesn_ssi")
         self.screen.has_ssi = True
         self.screen.save()
         sync_current_benefits(self.screen)
@@ -355,7 +351,7 @@ class TestScreen(TestCase):
         even when has_ssi=False. This is the case that would silently break
         without the compound-at-write-time path.
         """
-        self._seed_programs("ssi")
+        seed_program(self.white_label, "ssi")
         self.screen.has_ssi = False
         self.screen.save()
         IncomeStream.objects.create(
@@ -371,7 +367,7 @@ class TestScreen(TestCase):
 
     def test_has_benefit_compound_ma_mass_health_via_has_medicaid(self):
         """ma_mass_health resolves True when has_medicaid=True."""
-        self._seed_programs("ma_mass_health")
+        seed_program(self.white_label, "ma_mass_health")
         self.screen.has_medicaid = True
         self.screen.save()
         sync_current_benefits(self.screen)
@@ -380,7 +376,7 @@ class TestScreen(TestCase):
 
     def test_has_benefit_compound_ma_mass_health_via_has_medicaid_hi(self):
         """ma_mass_health resolves True when only has_medicaid_hi=True."""
-        self._seed_programs("ma_mass_health")
+        seed_program(self.white_label, "ma_mass_health")
         self.screen.has_medicaid = False
         self.screen.has_medicaid_hi = True
         self.screen.save()
@@ -398,7 +394,9 @@ class TestScreen(TestCase):
         a CurrentBenefit on a different screen with the same program must
         not leak through.
         """
-        self._seed_programs("snap")
+        seed_program(self.white_label, "snap")
+        # zipcode is arbitrary — isolation is enforced by the screen FK on
+        # CurrentBenefit, not by anything zip-dependent.
         other_screen = Screen.objects.create(
             white_label=self.white_label, zipcode="78701", household_size=1, completed=False
         )
@@ -415,7 +413,7 @@ class TestScreen(TestCase):
         N times must not issue N additional queries. The prefetch path serves
         the lookup from the in-memory cache.
         """
-        self._seed_programs("snap", "tanf", "wic", "ssi")
+        seed_program(self.white_label, "snap", "tanf", "wic", "ssi")
         self.screen.has_snap = True
         self.screen.has_tanf = True
         self.screen.save()
