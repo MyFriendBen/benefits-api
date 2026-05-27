@@ -1,5 +1,27 @@
 import programs.programs.policyengine.calculators.dependencies as dependency
-from programs.programs.federal.pe.member import Ssi
+from programs.programs.federal.pe.member import Medicaid, Ssi
+
+
+class WaAppleHealthMedicaid(Medicaid):
+    pe_inputs = [
+        *Medicaid.pe_inputs,
+        dependency.household.WaStateCodeDependency,
+    ]
+
+    # KFF 2023 WA Medicaid Spending Per Full-Benefit Enrollee (monthly)
+    medicaid_categories = {
+        "NONE": 0,
+        "ADULT": 471,
+        "INFANT": 233,
+        "YOUNG_CHILD": 233,
+        "OLDER_CHILD": 233,
+        "PREGNANT": 445,
+        "YOUNG_ADULT": 471,
+        "PARENT": 445,
+        "SSI_RECIPIENT": 2627,
+        "AGED": 1921,
+        "DISABLED": 2627,
+    }
 
 
 class WaSsi(Ssi):
