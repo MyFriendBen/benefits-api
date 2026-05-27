@@ -14,6 +14,7 @@ from programs.programs.urgent_needs.tx.trust_her import TrustHer
 from programs.programs.urgent_needs.tx.wic import Wic
 from programs.util import Dependencies
 from screener.models import HouseholdMember, Screen, WhiteLabel
+from screener.tests.helpers import seed_program, sync_current_benefits
 from translations.models import Translation
 
 
@@ -63,8 +64,10 @@ class TestSnapEmploymentTraining(TestCase):
         self.assertTrue(self._calc([{"name_abbreviated": "tx_snap", "eligible": True}]))
 
     def test_eligible_when_screen_has_snap(self):
+        seed_program(self.white_label, "tx_snap")
         self.screen.has_snap = True
         self.screen.save()
+        sync_current_benefits(self.screen)
         self.assertTrue(self._calc([]))
 
     def test_not_eligible_without_snap(self):
@@ -93,8 +96,10 @@ class TestDoubleUpFoodBucks(TestCase):
         self.assertTrue(self._calc([{"name_abbreviated": "tx_snap", "eligible": True}]))
 
     def test_eligible_when_screen_has_snap(self):
+        seed_program(self.white_label, "tx_snap")
         self.screen.has_snap = True
         self.screen.save()
+        sync_current_benefits(self.screen)
         self.assertTrue(self._calc([]))
 
     def test_not_eligible_without_snap(self):
