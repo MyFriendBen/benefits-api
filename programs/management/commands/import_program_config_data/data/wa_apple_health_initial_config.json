@@ -3,7 +3,9 @@
     "code": "wa"
   },
   "program_category": {
-    "external_name": "wa_healthcare"
+    "external_name": "wa_healthcare",
+    "icon": 20,
+    "name": "Health Care"
   },
   "program": {
     "name_abbreviated": "wa_apple_health_medicaid",
