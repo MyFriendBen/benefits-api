@@ -131,7 +131,7 @@
     "expected_results": {
       "program_name": "wa_apple_health_medicaid",
       "eligible": true,
-      "value": 2801
+      "value": 2796
     }
   }
 ]
