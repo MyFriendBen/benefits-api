@@ -1,0 +1,122 @@
+{
+  "white_label": {
+    "code": "wa"
+  },
+  "program_category": {
+    "external_name": "wa_healthcare"
+  },
+  "program": {
+    "name_abbreviated": "wa_apple_health_medicaid",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "refugee",
+      "gc_5plus",
+      "gc_5less",
+      "otherWithWorkPermission"
+    ],
+    "name": "Apple Health (Medicaid)",
+    "description_short": "Free or low-cost health coverage for Washington residents",
+    "description": "Apple Health is Washington's free or low-cost health coverage. It pays for doctor visits, hospital care, dental, vision, mental health, and prescriptions.\n\nYou'll get a ProviderOne card about two weeks after approval. Most people join a managed care plan. Coverage starts the first day of the month you applied. It can also cover up to three months before that.\n\nA few special pathways help in common situations. After pregnancy ends, you keep coverage for 12 months (After-Pregnancy Coverage). If you earn too much to qualify, you may keep coverage for 12 more months (Health Care Extension). Foster care youth qualify with no income test. Immigrants can get emergency coverage through Alien Emergency Medical.\n\nTo apply, most people use Washington Healthplanfinder. Use Washington Connection if you are 65 or older, blind, disabled, or need long-term care. You can also apply in person at a DSHS office, by mail, or by phone at 1-877-501-2233. Standard processing takes up to 45 days; pregnancy and emergencies are faster.",
+    "learn_more_link": "https://www.hca.wa.gov/free-or-low-cost-health-care/i-need-medical-dental-or-vision-care/eligibility-overview",
+    "apply_button_link": "https://www.wahealthplanfinder.org/us/en/health-coverage/get-started/steps-apply.html",
+    "apply_button_description": "",
+    "estimated_application_time": "15 - 30 minutes",
+    "estimated_delivery_time": "45 days",
+    "estimated_value": "",
+    "value_format": null,
+    "value_type": "benefit",
+    "website_description": "Free or low-cost health coverage for Washington residents",
+    "base_program": "medicaid",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": true
+  },
+  "documents": [
+    {
+      "external_name": "wa_home",
+      "text": "Proof of home address (ex: lease, utility bill, mail with your name and address)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_id_proof",
+      "text": "Proof of identity (ex: driver's license, state ID, passport)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_ssn",
+      "text": "Social Security Number (if you have one)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_earned_income",
+      "text": "Proof of earned income (ex: W-2, pay stubs, self-employment records)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_unearned_income",
+      "text": "Proof of unearned income (ex: Social Security, unemployment, child support, pension, retirement distributions)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_us_status",
+      "text": "Proof of citizenship or immigration status (if applicable)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_pregnancy",
+      "text": "Statement of pregnancy and expected due date (self-attestation accepted) — only if applying through the pregnant pathway",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "wa_hca_apple_health",
+      "name": "HCA Apple Health Customer Service",
+      "email": "askmedicaid@hca.wa.gov",
+      "phone_number": "+18005623022",
+      "description": "Washington Health Care Authority's customer service line for Apple Health (Medicaid) enrollees. Help with ProviderOne cards, managed care plan questions, benefit coverage, and post-enrollment issues.",
+      "assistance_link": "https://www.hca.wa.gov/about-hca/contact-hca",
+      "counties": [],
+      "languages": []
+    },
+    {
+      "external_name": "wa_healthplanfinder_support",
+      "name": "Washington Healthplanfinder Customer Support Center",
+      "email": "customersupport@wahbexchange.org",
+      "phone_number": "+18559234633",
+      "description": "Free application help for Apple Health and Qualified Health Plans through Washington Healthplanfinder. Phone and online support for MAGI-based pathways (most adults, kids, parents, and pregnant applicants).",
+      "assistance_link": "https://www.wahealthplanfinder.org/us/en/tools-and-resources/connect-with-us/contact-us.html",
+      "counties": [],
+      "languages": ["es", "so", "vi", "ru", "uk", "ar", "tl", "ko", "zh", "ja", "lo", "km", "am", "pa", "de"]
+    },
+    {
+      "external_name": "wa_healthplanfinder_navigators",
+      "name": "Washington Healthplanfinder Navigator Network",
+      "email": "navigators@wahbexchange.org",
+      "phone_number": "+18559234633",
+      "description": "Free, in-person and virtual help from trained Navigators across Washington State. Assists with applications, eligibility, and plan selection for Apple Health and Qualified Health Plans.",
+      "assistance_link": "https://www.wahealthplanfinder.org/us/en/tools-and-resources/connect-with-us/navigators.html",
+      "counties": [],
+      "languages": []
+    },
+    {
+      "external_name": "wa_211",
+      "name": "Washington 211",
+      "email": "info@wa211.org",
+      "phone_number": "+18772119274",
+      "description": "Washington State's free helpline connecting residents to health and social services, including Apple Health (Medicaid) for aged, blind, disabled, and long-term care applicants. Available statewide. Dial 211 or 1-877-211-9274.",
+      "assistance_link": "https://wa211.org/contact-washington-211/",
+      "counties": [],
+      "languages": []
+    }
+  ]
+}
