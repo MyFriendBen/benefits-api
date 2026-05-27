@@ -159,11 +159,11 @@ Apple Health is health insurance coverage. Per MFB convention, insurance benefit
 | Eligibility pathway | KFF category | Annual | Monthly |
 |---|---|---|---|
 | Adults 19-64 (ACA Expansion at 138% FPL) | ACA Expansion Adults | $5,652 | $471 |
-| Parents/Caretaker (§1931 standard, lower-income parents) | Adults (NON_EXPANSION_ADULT) | $5,343 | $445 |
-| Pregnant (215% FPL effective) | Adults | $5,343 | $445 |
-| Children 0-18 (up to 317% FPL effective; includes free and premium tiers) | Children | $2,801 | $233 |
-| Aged 65+ (ABD pathway) | Seniors | $23,048 | $1,921 |
-| Blind/Disabled (ABD pathway) | People with Disabilities | $31,523 | $2,627 |
+| Parents/Caretaker (§1931 standard, lower-income parents) | Adults (NON_EXPANSION_ADULT) | $5,340 | $445 |
+| Pregnant (215% FPL effective) | Adults | $5,340 | $445 |
+| Children 0-18 (up to 317% FPL effective; includes free and premium tiers) | Children | $2,796 | $233 |
+| Aged 65+ (ABD pathway) | Seniors | $23,052 | $1,921 |
+| Blind/Disabled (ABD pathway) | People with Disabilities | $31,524 | $2,627 |
 
 **Sources:**
 * KFF State Health Facts (2023) — Medicaid Spending Per Full-Benefit Enrollee, Washington: https://www.kff.org/statedata/
@@ -197,7 +197,7 @@ The following changes to the MFB screener would close data gaps identified in th
 
 ## Test Scenarios
 
-*All scenarios use 2026 FPL values (matching the config's `year` field). Scenarios 1, 3, and 7 below are reflected in the validation JSON (`wa_apple_health_medicaid.json`) as the validation suite's core 3 (golden path, primary exclusion, edge case). All other scenarios are documented here for broader QA coverage and traceability.*
+*All scenarios use 2026 FPL values (matching the config's `year` field). Scenarios 1, 3, and 7 below are reflected in the validation JSON (`wa_apple_health.json`) as the validation suite's core 3 (golden path, primary exclusion, edge case). All other scenarios are documented here for broader QA coverage and traceability.*
 
 ### Scenario 1: Low-Income Single Adult Eligible (Golden Path) ✓ in validation JSON
 
@@ -250,7 +250,7 @@ The following changes to the MFB screener would close data gaps identified in th
 ### Scenario 5: Parent at §1931 Income — NON_EXPANSION_ADULT Routing
 
 **What we're checking**: Parent with a dependent child at income below WA's §1931 standard ($658/mo HH2 at 2026) qualifies under the §1931 Parent/Caretaker pathway, routing to NON_EXPANSION_ADULT (criterion 3).
-**Expected**: Eligible — parent at $5,343 annual (NON_EXPANSION_ADULT × $5,343/yr; displays as $445/month with `value_format: null`); child at $2,801 annual (CHILD × $2,801/yr; displays as $233/month); household total displays as **$678/month**.
+**Expected**: Eligible — parent at $5,340 annual (NON_EXPANSION_ADULT × $5,340/yr; displays as $445/month with `value_format: null`); child at $2,796 annual (CHILD × $2,796/yr; displays as $233/month); household total displays as **$678/month**.
 **Steps**:
 * Location: ZIP `98101`, county `King County`
 * Household size: 2
@@ -263,7 +263,7 @@ The following changes to the MFB screener would close data gaps identified in th
 ### Scenario 6: Pregnant Individual at 215% Effective FPL
 
 **What we're checking**: Pregnant person with income under the 215% FPL effective threshold ($3,879/mo HH2 at 2026 FPL) qualifies for Apple Health (criterion 5). Spouse at same income remains ineligible at 138% threshold ($2,490 HH2).
-**Expected**: Eligible (pregnant person only); value $5,343 annual (1 NON_EXPANSION_ADULT × $5,343/yr; displays as $445/month with `value_format: null`); spouse ineligible and contributes $0.
+**Expected**: Eligible (pregnant person only); value $5,340 annual (1 NON_EXPANSION_ADULT × $5,340/yr; displays as $445/month with `value_format: null`); spouse ineligible and contributes $0.
 **Steps**:
 * Location: ZIP `98103`, county `King County`
 * Household size: 2 (per WAC 182-506-0010 the unborn child should also count — using `household_size` approximation per criterion 5 data-gap note)
@@ -276,7 +276,7 @@ The following changes to the MFB screener would close data gaps identified in th
 ### Scenario 7: Mixed Household — Eligible Child, Ineligible Parents ✓ in validation JSON
 
 **What we're checking**: In a multi-member household, eligibility is independent per member. Parents over 138% FPL ($3,142 HH3) but child under 215% effective free tier ($4,896 HH3) for kids (criterion 4 free tier).
-**Expected**: Eligible (child only); value $2,801 annual (1 CHILD × $2,801/yr; displays as $233/month with `value_format: null`); parents ineligible and contribute $0.
+**Expected**: Eligible (child only); value $2,796 annual (1 CHILD × $2,796/yr; displays as $233/month with `value_format: null`); parents ineligible and contribute $0.
 **Steps**:
 * Location: ZIP `98103`, county `King County`
 * Household size: 3
@@ -290,7 +290,7 @@ The following changes to the MFB screener would close data gaps identified in th
 ### Scenario 8: Child at Premium Tier
 
 **What we're checking**: Child in household with income between 215% and 317% effective FPL qualifies for the premium tier of Apple Health for Kids (criterion 4). Premium tier requires the child to be uninsured.
-**Expected**: Eligible (child only); value $2,801 annual (1 CHILD × $2,801/yr; displays as $233/month). Family pays $20/child/month premium (Tier 1).
+**Expected**: Eligible (child only); value $2,796 annual (1 CHILD × $2,796/yr; displays as $233/month). Family pays $20/child/month premium (Tier 1).
 **Steps**:
 * Location: ZIP `98101`, county `King County`
 * Household size: 3
@@ -304,7 +304,7 @@ The following changes to the MFB screener would close data gaps identified in th
 ### Scenario 9: ABD Pathway — Eligible at 65+ with Assets Under Limit
 
 **What we're checking**: Aged 65+ individual at ≤74% FPL with assets under $2,000 individual limit qualifies via SSI-related Medicaid (criterion 6).
-**Expected**: Eligible, value $23,048 annual (1 Seniors × $23,048/yr; displays as $1,921/month with `value_format: null`).
+**Expected**: Eligible, value $23,052 annual (1 Seniors × $23,052/yr; displays as $1,921/month with `value_format: null`).
 **Steps**:
 * Location: ZIP `98101`, county `King County`
 * Household size: 1
@@ -328,7 +328,7 @@ The following changes to the MFB screener would close data gaps identified in th
 ### Scenario 11: Foster Care Child via `relationship: fosterChild`
 
 **What we're checking**: Child placed in foster care via `relationship: fosterChild` is eligible under the federal Foster Care categorical pathway regardless of household income (criterion 13).
-**Expected**: Eligible (foster child only); value $2,801 annual (1 CHILD × $2,801/yr; displays as $233/month with `value_format: null`); foster parent ineligible at this income.
+**Expected**: Eligible (foster child only); value $2,796 annual (1 CHILD × $2,796/yr; displays as $233/month with `value_format: null`); foster parent ineligible at this income.
 **Steps**:
 * Location: ZIP `98103`, county `King County`
 * Household size: 2
