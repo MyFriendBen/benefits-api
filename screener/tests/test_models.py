@@ -228,7 +228,7 @@ class TestScreen(TestCase):
 
     # Tests for Screen.has_benefit() method
     #
-    # has_benefit() reads from the ScreenCurrentBenefit join table. Tests set
+    # has_benefit() reads from the CurrentBenefit join table. Tests set
     # has_* columns (still the canonical write target during the dual-write
     # phase) and invoke sync_current_benefits() to populate the join table —
     # mirroring what every POST/PATCH does in production.

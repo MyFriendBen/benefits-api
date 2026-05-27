@@ -384,8 +384,8 @@ class Screen(models.Model):
         compound conditions (ssi via has_ssi OR sSI income; ma_mass_health via
         has_medicaid OR has_medicaid_hi).
 
-        Only used by `_sync_current_benefits()` to write ScreenCurrentBenefit
-        rows during the dual-write phase. Removed in MFB-869 alongside
+        Only used by `_sync_current_benefits()` to write CurrentBenefit rows
+        during the dual-write phase. Removed in MFB-869 alongside
         `_sync_current_benefits` once the serializer writes join-table rows
         directly from the frontend's `current_benefits: [...]` payload.
         """
@@ -536,6 +536,13 @@ class Screen(models.Model):
     def _current_benefit_names(self) -> set[str]:
         # Serves from prefetch cache when `current_benefits__program` is prefetched
         # (zero queries); otherwise one query on first access, cached thereafter.
+        #
+        # Per-instance cache: a Screen loaded *before* a write will not see rows
+        # written after. Callers that mutate has_* columns and then call
+        # has_benefit() on the same instance (admin actions, management commands)
+        # must refetch the screen between write and read. The eligibility hot
+        # path is safe — the view fetches a fresh Screen on every request.
+        # This concern disappears in MFB-720 when has_* writes go away.
         return {cb.program.name_abbreviated for cb in self.current_benefits.all()}
 
     def has_benefit(self, name_abbreviated: str) -> bool:
@@ -544,7 +551,7 @@ class Screen(models.Model):
         identified by `name_abbreviated`. Drives the "already_has" flag on
         eligibility results so the frontend can filter the program out.
 
-        Reads from the ScreenCurrentBenefit join table. The has_* columns are
+        Reads from the CurrentBenefit join table. The has_* columns are
         still written by the serializer (Phase 2 dual-write) and synced to the
         join table on every POST/PATCH via _sync_current_benefits(), so this
         query is the authoritative read path while rollback remains a single

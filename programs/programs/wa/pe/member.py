@@ -24,7 +24,7 @@ class WaSsi(Ssi):
 
     Duplicate-enrollment filtering ("not already receiving SSI") is enforced
     one layer up via `Screen.has_benefit("wa_ssi")`, which reads from the
-    `ScreenCurrentBenefit` join table.
+    `CurrentBenefit` join table.
 
     See `programs/programs/wa/ssi/spec.md` for the full eligibility criteria,
     PolicyEngine variable mapping, and the 15 reference test scenarios.
