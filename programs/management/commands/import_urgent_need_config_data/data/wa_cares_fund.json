@@ -19,7 +19,7 @@
       "website_description": "Washington State's long-term care benefit program for workers.",
       "notification_message": ""
     },
-    "active": false,
+    "active": true,
     "low_confidence": false,
     "show_on_current_benefits": true
   }

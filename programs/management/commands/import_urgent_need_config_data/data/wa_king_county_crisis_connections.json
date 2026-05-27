@@ -19,7 +19,7 @@
       "website_description": "24/7 mental health and crisis support line and resources for King County.",
       "notification_message": ""
     },
-    "active": false,
+    "active": true,
     "low_confidence": false,
     "show_on_current_benefits": true
   }

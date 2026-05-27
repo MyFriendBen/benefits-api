@@ -19,7 +19,7 @@
       "website_description": "24/7 statewide support line for mental health and substance use recovery.",
       "notification_message": ""
     },
-    "active": false,
+    "active": true,
     "low_confidence": false,
     "show_on_current_benefits": true
   }

@@ -19,7 +19,7 @@
       "website_description": "Statewide hunger relief agency with food bank locator for Washington residents.",
       "notification_message": ""
     },
-    "active": false,
+    "active": true,
     "low_confidence": false,
     "show_on_current_benefits": true
   }

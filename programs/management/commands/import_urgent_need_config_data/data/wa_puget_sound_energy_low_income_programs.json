@@ -19,7 +19,7 @@
       "website_description": "Utility bill assistance and energy efficiency programs for qualifying PSE customers.",
       "notification_message": ""
     },
-    "active": false,
+    "active": true,
     "low_confidence": false,
     "show_on_current_benefits": true
   }

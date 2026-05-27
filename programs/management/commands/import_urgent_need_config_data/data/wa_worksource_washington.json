@@ -19,7 +19,7 @@
       "website_description": "Searchable job, workforce training, and career services tool for Washington State.",
       "notification_message": ""
     },
-    "active": false,
+    "active": true,
     "low_confidence": false,
     "show_on_current_benefits": true
   }

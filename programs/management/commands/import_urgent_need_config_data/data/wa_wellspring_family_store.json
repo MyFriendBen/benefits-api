@@ -19,7 +19,7 @@
       "website_description": "Connects families with free diapers, clothing, and baby essentials.",
       "notification_message": ""
     },
-    "active": false,
+    "active": true,
     "low_confidence": false,
     "show_on_current_benefits": true
   }

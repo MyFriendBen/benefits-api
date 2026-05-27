@@ -19,7 +19,7 @@
       "website_description": "Statewide housing locator and rental assistance resource portal.",
       "notification_message": ""
     },
-    "active": false,
+    "active": true,
     "low_confidence": false,
     "show_on_current_benefits": true
   }

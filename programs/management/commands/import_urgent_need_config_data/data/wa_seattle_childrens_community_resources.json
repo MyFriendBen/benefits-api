@@ -19,7 +19,7 @@
       "website_description": "Pediatric developmental assessment and community resource connection for Seattle-area families.",
       "notification_message": ""
     },
-    "active": false,
+    "active": true,
     "low_confidence": false,
     "show_on_current_benefits": true
   }

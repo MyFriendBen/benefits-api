@@ -19,7 +19,7 @@
       "website_description": "City of Seattle rental assistance, eviction prevention, and tenant resource hub.",
       "notification_message": ""
     },
-    "active": false,
+    "active": true,
     "low_confidence": false,
     "show_on_current_benefits": true
   }

@@ -19,7 +19,7 @@
       "website_description": "Free developmental evaluation and early intervention services for children under 3 in Washington.",
       "notification_message": ""
     },
-    "active": false,
+    "active": true,
     "low_confidence": false,
     "show_on_current_benefits": true
   }

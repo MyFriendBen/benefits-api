@@ -19,7 +19,7 @@
       "website_description": "Food bank network connecting Western WA residents to food assistance programs.",
       "notification_message": ""
     },
-    "active": false,
+    "active": true,
     "low_confidence": false,
     "show_on_current_benefits": true
   }

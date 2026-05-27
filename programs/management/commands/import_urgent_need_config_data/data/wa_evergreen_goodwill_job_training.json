@@ -19,7 +19,7 @@
       "website_description": "Free and low-cost job skills training and employment programs in the Seattle area.",
       "notification_message": ""
     },
-    "active": false,
+    "active": true,
     "low_confidence": false,
     "show_on_current_benefits": true
   }

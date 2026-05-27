@@ -19,7 +19,7 @@
       "website_description": "Free legal aid referrals and services for low-income King County residents.",
       "notification_message": ""
     },
-    "active": false,
+    "active": true,
     "low_confidence": false,
     "show_on_current_benefits": true
   }

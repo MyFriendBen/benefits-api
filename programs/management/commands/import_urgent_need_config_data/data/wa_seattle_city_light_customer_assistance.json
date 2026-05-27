@@ -19,7 +19,7 @@
       "website_description": "Discounted utility rates and assistance for income-qualified Seattle City Light customers.",
       "notification_message": ""
     },
-    "active": false,
+    "active": true,
     "low_confidence": false,
     "show_on_current_benefits": true
   }

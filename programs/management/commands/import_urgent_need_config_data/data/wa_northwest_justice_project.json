@@ -19,7 +19,7 @@
       "website_description": "Free civil legal services for low-income Washington residents across a range of legal issues.",
       "notification_message": ""
     },
-    "active": false,
+    "active": true,
     "low_confidence": false,
     "show_on_current_benefits": true
   }
