@@ -11,13 +11,13 @@
     "functions": [],
     "translations": {
       "name": "Attainable® Savings Plan (ABLE Account)",
-      "description": "The Attainable® Savings Plan helps people with disabilities save money — without losing their SSI or Medicaid benefits. It's an ABLE account, which is a tax-free way to save. The funds help pay for disability-related costs like housing, transportation, health care, and education. Anyone can contribute to the account, including family and friends. Accounts can be opened online or by phone through Fidelity.",
+      "description": "The Attainable® Savings Plan helps people with disabilities save money — without losing their SSI or Medicaid benefits. It's an ABLE account, which is a tax-free way to save. The funds help pay for disability-related costs like housing, transportation, health care, and education. To qualify, your disability must have begun before age 46, and you must qualify via SSI/SSDI, blindness, or a qualifying medical condition.",
       "link": "https://www.fidelity.com/able/attainable/overview",
       "warning": "",
       "website_description": "A tax-free savings account for people with disabilities. Does not affect SSI or Medicaid.",
       "notification_message": ""
     },
-    "phone_number": "1-844-458-2253",
+    "phone_number": "1-844-458-2253 (TTY: 800-544-0118)",
     "counties": [],
     "required_expense_types": [],
     "active": true,
