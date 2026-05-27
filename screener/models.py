@@ -379,11 +379,14 @@ class Screen(models.Model):
 
     def _build_benefit_map(self) -> dict:
         """
-        Builds and returns the full name_abbreviated → bool map for this screen.
+        Returns the full name_abbreviated → bool map for this screen, including
+        compound conditions (ssi via has_ssi OR sSI income; ma_mass_health via
+        has_medicaid OR has_medicaid_hi).
 
-        Callers that need to check many programs should call this once and reuse
-        the result rather than calling has_benefit() in a loop (which rebuilds the
-        dict on every call).
+        Only used by `_sync_current_benefits()` to write ScreenCurrentBenefit
+        rows during the dual-write phase. Removed in MFB-869 alongside
+        `_sync_current_benefits` once the serializer writes join-table rows
+        directly from the frontend's `current_benefits: [...]` payload.
         """
         has_ssi_or_ssi_income = self.has_ssi or self.calc_gross_income("yearly", ("sSI",)) > 0
 

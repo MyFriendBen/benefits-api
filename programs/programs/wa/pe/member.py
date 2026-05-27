@@ -23,8 +23,8 @@ class WaSsi(Ssi):
       - the WA state code so PE knows which state to model
 
     Duplicate-enrollment filtering ("not already receiving SSI") is enforced
-    one layer up via `Screen.has_benefit("wa_ssi")` -> `_build_benefit_map`,
-    matching the existing `ssi` and `tx_ssi` mapping.
+    one layer up via `Screen.has_benefit("wa_ssi")`, which reads from the
+    `ScreenCurrentBenefit` join table.
 
     See `programs/programs/wa/ssi/spec.md` for the full eligibility criteria,
     PolicyEngine variable mapping, and the 15 reference test scenarios.
