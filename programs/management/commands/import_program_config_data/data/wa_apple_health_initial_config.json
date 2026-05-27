@@ -4,7 +4,7 @@
   },
   "program_category": {
     "external_name": "wa_healthcare",
-    "icon": 20,
+    "icon": "health_care",
     "name": "Health Care"
   },
   "program": {
