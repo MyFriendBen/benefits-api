@@ -541,12 +541,28 @@ class Screen(models.Model):
         # Serves from prefetch cache when `current_benefits__program` is prefetched
         # (zero queries); otherwise one query on first access, cached thereafter.
         #
-        # Per-instance cache: a Screen loaded *before* a write will not see rows
-        # written after. Callers that mutate has_* columns and then call
-        # has_benefit() on the same instance (admin actions, management commands)
-        # must refetch the screen between write and read. The eligibility hot
-        # path is safe — the view fetches a fresh Screen on every request.
-        # This concern disappears in MFB-720 when has_* writes go away.
+        # ⚠️  STALENESS WARNING — read before reusing this pattern.
+        # This is a per-instance cache. A Screen loaded *before* a write will
+        # NOT see rows written after, even on the same instance. Concretely:
+        #
+        #     screen.has_snap = True
+        #     screen.save()                  # triggers _sync_current_benefits via serializer
+        #     screen.has_benefit("snap")     # ❌ may return False — cache populated pre-write
+        #
+        # Do NOT reach for `del screen._current_benefit_names` to invalidate —
+        # that's a sharp edge that future refactors will silently break. The
+        # supported recovery is to re-fetch the Screen:
+        #
+        #     screen = Screen.objects.get(pk=screen.pk)
+        #     screen.has_benefit("snap")     # ✅
+        #
+        # The eligibility hot path is safe — the view fetches a fresh Screen
+        # on every request. Only admin actions / management commands / tests
+        # that mutate has_* and then read on the same instance are at risk.
+        #
+        # This whole cache (and has_benefit itself) disappears in MFB-720 when
+        # the has_* columns are dropped and current_benefits becomes the only
+        # write target, so we are intentionally NOT adding an invalidation hook.
         return {cb.program.name_abbreviated for cb in self.current_benefits.all()}
 
     def has_benefit(self, name_abbreviated: str) -> bool:
