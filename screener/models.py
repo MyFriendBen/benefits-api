@@ -3,6 +3,7 @@ from datetime import date
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
+from django.utils.functional import cached_property
 from decimal import Decimal
 import uuid
 from authentication.models import User
@@ -531,7 +532,13 @@ class Screen(models.Model):
             "nc_cccap": self.has_ccap,
         }
 
-    def has_benefit(self, name_abbreviated: str):
+    @cached_property
+    def _current_benefit_names(self) -> set[str]:
+        # Serves from prefetch cache when `current_benefits__program` is prefetched
+        # (zero queries); otherwise one query on first access, cached thereafter.
+        return {cb.program.name_abbreviated for cb in self.current_benefits.all()}
+
+    def has_benefit(self, name_abbreviated: str) -> bool:
         """
         Returns True if the user has declared they already receive the benefit
         identified by `name_abbreviated`. Drives the "already_has" flag on
@@ -547,13 +554,8 @@ class Screen(models.Model):
         has_medicaid OR has_medicaid_hi) are resolved at write time by
         _sync_current_benefits → _build_benefit_map, so this read path needs
         no special-casing.
-
-        Callers that check many names per screen should ensure
-        `current_benefits__program` is prefetched to avoid N+1 queries.
         """
-        if hasattr(self, "_prefetched_objects_cache") and "current_benefits" in self._prefetched_objects_cache:
-            return any(cb.program.name_abbreviated == name_abbreviated for cb in self.current_benefits.all())
-        return self.current_benefits.filter(program__name_abbreviated=name_abbreviated).exists()
+        return name_abbreviated in self._current_benefit_names
 
     def set_screen_is_test(self):
         referral_source_tests = ["testorprospect", "test"]
