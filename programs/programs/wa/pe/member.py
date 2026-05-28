@@ -55,9 +55,7 @@ class WaAppleHealthMedicaid(Medicaid):
             is_disabled = member.has_disability()
 
             if is_senior or is_disabled:
-                qualifies = self.get_member_dependency_value(
-                    dependency.member.MedicaidSeniorOrDisabled, member.id
-                )
+                qualifies = self.get_member_dependency_value(dependency.member.MedicaidSeniorOrDisabled, member.id)
                 if not qualifies:
                     return 0
                 if is_disabled:
@@ -99,9 +97,7 @@ class WaAppleHealthMedicaid(Medicaid):
         if household_size <= 7:
             return cls._PREMIUM_CHIP_ANNUAL_CEILING[household_size]
         extra_members = household_size - 7
-        return cls._PREMIUM_CHIP_ANNUAL_CEILING[7] + (
-            extra_members * cls._PREMIUM_CHIP_ADDITIONAL_MEMBER
-        )
+        return cls._PREMIUM_CHIP_ANNUAL_CEILING[7] + (extra_members * cls._PREMIUM_CHIP_ADDITIONAL_MEMBER)
 
 
 class WaSsi(Ssi):

@@ -48,16 +48,12 @@ class TestWaAppleHealthMedicaid(TestCase):
     def test_is_registered_in_wa_member_calculators(self):
         """Registered as `wa_apple_health_medicaid` in the WA member-level subset."""
         self.assertIn("wa_apple_health_medicaid", wa_member_calculators)
-        self.assertEqual(
-            wa_member_calculators["wa_apple_health_medicaid"], WaAppleHealthMedicaid
-        )
+        self.assertEqual(wa_member_calculators["wa_apple_health_medicaid"], WaAppleHealthMedicaid)
 
     def test_is_registered_in_wa_pe_calculators(self):
         """Registered in the combined WA PE calculators dict."""
         self.assertIn("wa_apple_health_medicaid", wa_pe_calculators)
-        self.assertEqual(
-            wa_pe_calculators["wa_apple_health_medicaid"], WaAppleHealthMedicaid
-        )
+        self.assertEqual(wa_pe_calculators["wa_apple_health_medicaid"], WaAppleHealthMedicaid)
 
     def test_pe_inputs_includes_wa_state_code(self):
         """WA state code is added on top of the federal Medicaid inputs."""
@@ -70,9 +66,7 @@ class TestWaAppleHealthMedicaid(TestCase):
 
     def test_pe_inputs_adds_exactly_one_input(self):
         """Only WaStateCodeDependency is added beyond the parent inputs."""
-        self.assertEqual(
-            len(WaAppleHealthMedicaid.pe_inputs), len(Medicaid.pe_inputs) + 1
-        )
+        self.assertEqual(len(WaAppleHealthMedicaid.pe_inputs), len(Medicaid.pe_inputs) + 1)
 
     def test_pe_outputs_inherited_from_medicaid(self):
         """pe_outputs are unchanged from the federal parent."""
@@ -93,9 +87,7 @@ class TestWaAppleHealthMedicaid(TestCase):
             "AGED",
             "DISABLED",
         }
-        self.assertEqual(
-            set(WaAppleHealthMedicaid.medicaid_categories.keys()), expected_keys
-        )
+        self.assertEqual(set(WaAppleHealthMedicaid.medicaid_categories.keys()), expected_keys)
 
     def test_medicaid_categories_values_are_monthly(self):
         """Spot-check that category values are the KFF 2023 monthly figures."""
@@ -157,9 +149,7 @@ class TestWaAppleHealthMedicaid(TestCase):
 
         result = calc.member_value(member)
 
-        expected = (
-            WaAppleHealthMedicaid.medicaid_categories["OLDER_CHILD"] * 12
-        )  # $2,796
+        expected = WaAppleHealthMedicaid.medicaid_categories["OLDER_CHILD"] * 12  # $2,796
         self.assertEqual(result, expected)
 
     def test_foster_child_age_20_is_eligible(self):
@@ -211,9 +201,7 @@ class TestWaAppleHealthMedicaid(TestCase):
 
         expected = WaAppleHealthMedicaid.medicaid_categories["AGED"] * 12  # $23,052
         self.assertEqual(result, expected)
-        calc.get_member_dependency_value.assert_called_once_with(
-            member_deps.MedicaidSeniorOrDisabled, member.id
-        )
+        calc.get_member_dependency_value.assert_called_once_with(member_deps.MedicaidSeniorOrDisabled, member.id)
 
     def test_medicare_adult_65_plus_abd_not_qualifying_returns_zero(self):
         """Medicare-entitled senior who fails ABD income test returns 0."""
@@ -283,17 +271,13 @@ class TestWaAppleHealthMedicaid(TestCase):
 
         result = calc.member_value(member)
 
-        expected = (
-            WaAppleHealthMedicaid.medicaid_categories["OLDER_CHILD"] * 12
-        )  # $2,796
+        expected = WaAppleHealthMedicaid.medicaid_categories["OLDER_CHILD"] * 12  # $2,796
         self.assertEqual(result, expected)
 
     def test_premium_chip_child_with_employer_insurance_returns_zero(self):
         """Child with employer insurance in premium income range is not eligible."""
         calc = self._make_calculator(household_size=3, gross_income=72_000)
-        member = self._make_member(
-            age=7, relationship="child", has_none_insurance=False
-        )
+        member = self._make_member(age=7, relationship="child", has_none_insurance=False)
         calc.get_member_variable = Mock(return_value=0)
         calc.get_member_dependency_value = Mock(return_value=False)
 
