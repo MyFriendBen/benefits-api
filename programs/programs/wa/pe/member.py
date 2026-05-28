@@ -97,9 +97,7 @@ class WaAppleHealthMedicaid(Medicaid):
         if household_size <= 7:
             return cls._PREMIUM_CHIP_ANNUAL_CEILING[household_size]
         extra_members = household_size - 7
-        return cls._PREMIUM_CHIP_ANNUAL_CEILING[7] + (
-            extra_members * cls._PREMIUM_CHIP_ADDITIONAL_MEMBER
-        )
+        return cls._PREMIUM_CHIP_ANNUAL_CEILING[7] + (extra_members * cls._PREMIUM_CHIP_ADDITIONAL_MEMBER)
 
 
 class WaSsi(Ssi):
