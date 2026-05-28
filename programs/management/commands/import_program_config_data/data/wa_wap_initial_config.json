@@ -29,7 +29,7 @@
     "value_type": "benefit",
     "website_description": "Free home energy upgrades to lower your bills",
     "show_on_current_benefits": true,
-    "has_calculator": false,
+    "has_calculator": true,
     "show_in_has_benefits_step": false
   },
   "documents": [
