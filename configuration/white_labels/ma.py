@@ -114,6 +114,13 @@ class MaConfigurationData(ConfigurationData):
                 "_default_message": "Resources for veterans and their families",
             },
         },
+        "disabilityResources": {
+            "icon": {"_icon": "Disabled", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.disabilityResources",
+                "_default_message": "Resources for people with disabilities",
+            },
+        },
     }
 
     sign_up_options = {
