@@ -3,6 +3,7 @@ from datetime import date
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
+from django.utils.functional import cached_property
 from decimal import Decimal
 import uuid
 from authentication.models import User
@@ -380,11 +381,18 @@ class Screen(models.Model):
 
     def _build_benefit_map(self) -> dict:
         """
-        Builds and returns the full name_abbreviated → bool map for this screen.
+        Returns the full name_abbreviated → bool map for this screen, including
+        compound conditions (ssi via has_ssi OR sSI income; ma_mass_health via
+        has_medicaid OR has_medicaid_hi).
 
-        Callers that need to check many programs should call this once and reuse
-        the result rather than calling has_benefit() in a loop (which rebuilds the
-        dict on every call).
+        Only used by `_sync_current_benefits()` (and its test-helper mirror in
+        `screener/tests/helpers.py`) to write CurrentBenefit rows during the
+        dual-write phase. `HouseholdMember.has_benefit()` does NOT route through
+        here — it has its own member-level `name_map` keyed off `self.insurance`.
+
+        Removed in MFB-869 alongside `_sync_current_benefits` once the serializer
+        writes join-table rows directly from the frontend's `current_benefits: [...]`
+        payload.
         """
         has_ssi_or_ssi_income = self.has_ssi or self.calc_gross_income("yearly", ("sSI",)) > 0
 
@@ -529,37 +537,53 @@ class Screen(models.Model):
             "nc_cccap": self.has_ccap,
         }
 
-    def has_benefit(self, name_abbreviated: str):
+    @cached_property
+    def _current_benefit_names(self) -> set[str]:
+        # Serves from prefetch cache when `current_benefits__program` is prefetched
+        # (zero queries); otherwise one query on first access, cached thereafter.
+        #
+        # ⚠️  STALENESS WARNING — read before reusing this pattern.
+        # This is a per-instance cache. A Screen loaded *before* a write will
+        # NOT see rows written after, even on the same instance. Concretely:
+        #
+        #     screen.has_snap = True
+        #     screen.save()                  # triggers _sync_current_benefits via serializer
+        #     screen.has_benefit("snap")     # ❌ may return False — cache populated pre-write
+        #
+        # Do NOT reach for `del screen._current_benefit_names` to invalidate —
+        # that's a sharp edge that future refactors will silently break. The
+        # supported recovery is to re-fetch the Screen:
+        #
+        #     screen = Screen.objects.get(pk=screen.pk)
+        #     screen.has_benefit("snap")     # ✅
+        #
+        # The eligibility hot path is safe — the view fetches a fresh Screen
+        # on every request. Only admin actions / management commands / tests
+        # that mutate has_* and then read on the same instance are at risk.
+        #
+        # This whole cache (and has_benefit itself) disappears in MFB-720 when
+        # the has_* columns are dropped and current_benefits becomes the only
+        # write target, so we are intentionally NOT adding an invalidation hook.
+        return {cb.program.name_abbreviated for cb in self.current_benefits.all()}
+
+    def has_benefit(self, name_abbreviated: str) -> bool:
         """
-        Maps a program's name_abbreviated to the corresponding has_* field on the Screen model.
+        Returns True if the user has declared they already receive the benefit
+        identified by `name_abbreviated`. Drives the "already_has" flag on
+        eligibility results so the frontend can filter the program out.
 
-        This is used to determine if a user already has a benefit (selected in step 10) so it can be
-        filtered from results on the frontend via the "already_has" flag.
+        Reads from the CurrentBenefit join table. The has_* columns are
+        still written by the serializer (Phase 2 dual-write) and synced to the
+        join table on every POST/PATCH via _sync_current_benefits(), so this
+        query is the authoritative read path while rollback remains a single
+        revert.
 
-        Map Structure:
-            Key: Program name_abbreviated (from program registration, e.g., co/__init__.py)
-            Value: Boolean field on Screen model indicating user has that benefit
-
-        Common Pattern:
-            Multiple program variants (e.g., different states or screener types) map to the same field:
-            - "snap", "co_snap", "il_snap" → all map to self.has_snap (same real-world benefit)
-            - "leap", "cesn_leap" → both map to self.has_leap (same benefit, different flows)
-
-        Adding New Mappings:
-            1. Ensure the benefit key exists in white_label config's category_benefits (e.g., "leap")
-            2. Ensure updateScreen.ts maps formData.benefits.{key} → has_{key}
-            3. Add all program name_abbreviated variants that represent the same benefit
-
-        Example Flow:
-            Config (co.py): "leap": {"name": "LEAP", ...}
-            → User checks LEAP in step 10
-            → Frontend: formData.benefits.leap = true
-            → API (updateScreen.ts): has_leap = formData.benefits.leap
-            → Database: screen.has_leap = True
-            → This method: has_benefit("leap") → returns self.has_leap (True)
-            → Serializer: "already_has": True → Frontend filters out LEAP from results
+        Compound conditions (ssi → has_ssi OR sSI income; ma_mass_health →
+        has_medicaid OR has_medicaid_hi) are resolved at write time by
+        _sync_current_benefits → _build_benefit_map, so this read path needs
+        no special-casing.
         """
-        return self._build_benefit_map().get(name_abbreviated, False)
+        return name_abbreviated in self._current_benefit_names
 
     def set_screen_is_test(self):
         referral_source_tests = ["testorprospect", "test"]

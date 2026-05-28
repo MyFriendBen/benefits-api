@@ -146,6 +146,7 @@ class EligibilityTranslationView(views.APIView):
             "household_members__energy_calculator",
             "expenses",
             "energy_calculator",
+            "current_benefits__program",
         ).get(uuid=id)
 
         is_admin = request.query_params.get("admin")
