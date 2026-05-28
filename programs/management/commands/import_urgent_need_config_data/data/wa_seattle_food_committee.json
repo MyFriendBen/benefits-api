@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_seattle_food_committee",
+    "category_type": {
+      "external_name": "wa_food_or_groceries",
+      "name": "Food or groceries",
+      "icon": "food_groceries"
+    },
+    "type_short": ["food"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "Seattle Food Committee",
+      "description": "Helps Seattle residents find nearby food banks and meal programs.",
+      "link": "https://www.seattlefoodcommittee.org",
+      "warning": "",
+      "website_description": "Food bank directory and emergency food resource network for Seattle.",
+      "notification_message": ""
+    },
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

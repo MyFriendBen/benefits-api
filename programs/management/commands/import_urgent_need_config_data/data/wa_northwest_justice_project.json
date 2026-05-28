@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_northwest_justice_project",
+    "category_type": {
+      "external_name": "wa_legal_services",
+      "name": "Free or low-cost help with civil legal needs or identity documents",
+      "icon": "legal_services"
+    },
+    "type_short": ["legal services"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "Northwest Justice Project",
+      "description": "Free legal help for low-income people in Washington.",
+      "link": "https://nwjustice.org",
+      "warning": "",
+      "website_description": "Free civil legal services for low-income Washington residents across a range of legal issues.",
+      "notification_message": ""
+    },
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

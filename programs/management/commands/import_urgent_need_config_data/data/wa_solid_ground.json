@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_solid_ground",
+    "category_type": {
+      "external_name": "wa_housing_rent_utilities",
+      "name": "Help with managing your mortgage, rent, or utilities",
+      "icon": "managing_housing"
+    },
+    "type_short": ["housing"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "Solid Ground",
+      "description": "Solid Ground helps people find housing or stay in their homes.",
+      "link": "https://www.solid-ground.org/what-we-do/housing-homelessness/",
+      "warning": "",
+      "website_description": "Emergency financial and case management support for King County residents in crisis.",
+      "notification_message": ""
+    },
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

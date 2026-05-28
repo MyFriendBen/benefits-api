@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_seattle_childrens_community_resources",
+    "category_type": {
+      "external_name": "wa_child_development",
+      "name": "Concern about your child's development",
+      "icon": "child_development"
+    },
+    "type_short": ["child dev"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "Seattle Children's – Community Resources",
+      "description": "Seattle Children's provides health checkups and special care for kids who need support.",
+      "link": "https://www.seattlechildrens.org/clinics/paying-for-care/financial-assistance/",
+      "warning": "",
+      "website_description": "Pediatric developmental assessment and community resource connection for Seattle-area families.",
+      "notification_message": ""
+    },
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}
