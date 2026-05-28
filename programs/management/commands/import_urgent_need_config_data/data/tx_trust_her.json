@@ -20,7 +20,7 @@
     "counties": ["Dallas"],
     "required_expense_types": [],
     "fpl": { "year": "2026", "period": "2026" },
-    "active": false,
+    "active": true,
     "low_confidence": false,
     "show_on_current_benefits": true
   }
