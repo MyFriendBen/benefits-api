@@ -239,11 +239,11 @@ Tracked in `CLAUDE.md` "Screener improvement suggestions" section, originally fl
 
 * **Location**: Enter ZIP code `98103`, Select county `King`
 * **Household**: Number of people: `3`
-* **Person 1**: Birth month/year: `June 1990` (age 35), Relationship: `headOfHousehold`, Has income: Yes, Monthly gross income: `$7,218`, Income type: Employment/wages, Insurance: None
+* **Person 1**: Birth month/year: `June 1990` (age 35), Relationship: `headOfHousehold`, Has income: Yes, Monthly gross income: `$7,217`, Income type: Employment/wages, Insurance: None
 * **Person 2**: Birth month/year: `September 1992` (age 33), Relationship: `spouse`, Has income: No, Insurance: None
 * **Person 3**: Birth month/year: `January 2026` (age 0, infant), Relationship: `child`, Has income: No, Insurance: None
 
-**Why this matters**: All children under 19 — including infants — share the same income tiers: free at ≤210% nominal (215% effective), and premium-based at 210%–312% nominal (215%–317% effective). This test validates that the calculator correctly determines eligibility at the absolute upper boundary of the premium tier for a child who happens to be an infant. At $7,218/month for HH3, the household is at exactly 317% effective FPL (312% nominal + 5pp MAGI disregard), placing the infant in Premium Tier 2 ($30/child/month premium at application). Catches off-by-one errors in the ceiling comparison and confirms that the premium tier ceiling applies correctly to infants as well as older children. Note: the infant in this scenario has no other health insurance (`insurance.none: true`), satisfying criterion 6 for premium-tier eligibility.
+**Why this matters**: All children under 19 — including infants — share the same income tiers: free at ≤210% nominal (215% effective), and premium-based at 210%–312% nominal (215%–317% effective). This test validates that the calculator correctly determines eligibility at the absolute upper boundary of the premium tier for a child who happens to be an infant. At $7,217/month for HH3, the household is at exactly 317% effective FPL (312% nominal + 5pp MAGI disregard), placing the infant in Premium Tier 2 ($30/child/month premium at application). Catches off-by-one errors in the ceiling comparison and confirms that the premium tier ceiling applies correctly to infants as well as older children. Note: the infant in this scenario has no other health insurance (`insurance.none: true`), satisfying criterion 6 for premium-tier eligibility.
 
 ---
 
@@ -455,7 +455,7 @@ Tracked in `CLAUDE.md` "Screener improvement suggestions" section, originally fl
 * **Assets**: Enter `$0` for household assets
 * **Current Benefits**: No current benefits selected
 
-**Why this matters**: Tests the upper income tier of Apple Health for Kids — Premium Tier 2 (WAC 182-505-0215). For 2026 FPL household of 3 ($27,322): 265% effective = $6,034/month; 317% effective = $7,218/month. Setting income to $6,500/month puts the household in Tier 2 (≈286% effective). Validates that the calculator routes the child to Tier 2 (not Tier 1, not ineligibility), and that the higher per-child premium ($30/child = $30/month here, under the $60 family cap) is reflected. Together with scenario 15 (Tier 1), scenario 4 (free infant boundary), and scenario 5 (above-ceiling ineligibility), these four scenarios bracket all four MAGI-tier branches of criterion 2.
+**Why this matters**: Tests the upper income tier of Apple Health for Kids — Premium Tier 2 (WAC 182-505-0215). For 2026 FPL household of 3 ($27,322): 265% effective = $6,034/month; 317% effective = $7,217/month. Setting income to $6,500/month puts the household in Tier 2 (≈286% effective). Validates that the calculator routes the child to Tier 2 (not Tier 1, not ineligibility), and that the higher per-child premium ($30/child = $30/month here, under the $60 family cap) is reflected. Together with scenario 15 (Tier 1), scenario 4 (free infant boundary), and scenario 5 (above-ceiling ineligibility), these four scenarios bracket all four MAGI-tier branches of criterion 2.
 
 ---
 
