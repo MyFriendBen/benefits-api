@@ -230,6 +230,23 @@ class TestWaAppleHealthMedicaid(TestCase):
 
         self.assertEqual(calc.member_value(member), 0)
 
+    def test_medicare_child_bypasses_exclusion_and_uses_standard_pe(self):
+        """Medicare-covered child is NOT blocked by the adult Medicare exclusion.
+
+        Children with Medicare (e.g. ESRD) should fall through to the standard
+        PE pathway for child MAGI Medicaid, not hit ``return 0``.
+        """
+        calc = self._make_calculator()
+        member = self._make_member(age=10, relationship="child", has_medicare=True)
+        # PE says child is eligible for standard Medicaid
+        calc.get_member_variable = Mock(return_value=1)
+        calc.get_member_dependency_value = Mock(return_value="OLDER_CHILD")
+
+        result = calc.member_value(member)
+
+        expected = WaAppleHealthMedicaid.medicaid_categories["OLDER_CHILD"] * 12
+        self.assertEqual(result, expected)
+
     # ------------------------------------------------------------------
     # Standard PE pathway tests
     # ------------------------------------------------------------------

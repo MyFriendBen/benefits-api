@@ -48,9 +48,11 @@ class WaAppleHealthMedicaid(Medicaid):
             return self.medicaid_categories["OLDER_CHILD"] * 12
 
         # 2. Medicare exclusion (42 CFR § 435.119(b)(3))
-        #    Medicare-entitled adults cannot use ACA expansion. Route to ABD if
+        #    Medicare-entitled *adults* cannot use ACA expansion. Route to ABD if
         #    senior/disabled; otherwise ineligible for this program.
-        if member.has_insurance_types(("medicare",), strict=False):
+        #    Children with Medicare are not subject to this exclusion — they use
+        #    standard child MAGI pathways handled by PE in step 3.
+        if age is not None and age >= 19 and member.has_insurance_types(("medicare",), strict=False):
             is_senior = age is not None and age >= self.aged_min_age
             is_disabled = member.has_disability()
 
