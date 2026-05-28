@@ -1,0 +1,133 @@
+[
+  {
+    "notes": "WA Weatherization Assistance Program - Low-Income Senior Homeowner on SSI - Clearly Eligible",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "household_size": 1,
+      "zipcode": "98101",
+      "county": "King County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 3,
+          "birth_year": 1958,
+          "age": 68,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSI",
+              "amount": 943.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wap",
+      "eligible": true,
+      "value": 7669
+    }
+  },
+  {
+    "notes": "WA Weatherization Assistance Program - Single Adult with Income Just Above 200% FPL - Not Eligible",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "household_size": 1,
+      "zipcode": "98103",
+      "county": "King County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 8,
+          "birth_year": 1986,
+          "age": 39,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2700.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wap",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "WA Weatherization Assistance Program - Apple Health (Medicaid) Recipient Above 200% FPL - State Categorical Eligibility [NOTE: Apple Health categorical pathway is in progress in the MFB system; this scenario is expected to fail validation until the screener's Apple Health/Medicaid handling is wired up. Re-run after that work lands.]",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "household_size": 1,
+      "zipcode": "98101",
+      "county": "King County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 5,
+          "birth_year": 1985,
+          "age": 40,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3500.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": false,
+            "private": false,
+            "medicaid": true,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wap",
+      "eligible": true,
+      "value": 7669
+    }
+  }
+]
