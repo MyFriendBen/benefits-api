@@ -27,6 +27,8 @@ def make_member(age=35, birth_year_month=None, yearly_income=24_000):
 
 def make_calculator(
     has_medicaid=False,
+    has_wa_apple_health_medicaid=False,
+    has_wa_apple_health_for_kids=False,
     has_snap=False,
     has_wic=False,
     members=None,
@@ -37,7 +39,13 @@ def make_calculator(
     mock_screen = Mock()
 
     def has_benefit(name):
-        return {"medicaid": has_medicaid, "snap": has_snap, "wic": has_wic}.get(name, False)
+        return {
+            "medicaid": has_medicaid,
+            "wa_apple_health_medicaid": has_wa_apple_health_medicaid,
+            "wa_apple_health_for_kids": has_wa_apple_health_for_kids,
+            "snap": has_snap,
+            "wic": has_wic,
+        }.get(name, False)
 
     mock_screen.has_benefit = Mock(side_effect=has_benefit)
     mock_screen.household_size = household_size
@@ -166,6 +174,18 @@ class TestWaOrcaLiftHouseholdEligibility(TestCase):
 
     def test_wic_bypasses_income(self):
         calc = make_calculator(has_wic=True, yearly_income=60_000, fpl_annual=15_960)
+        e = self._run_household(calc)
+        self.assertTrue(e.eligible)
+
+    def test_wa_apple_health_medicaid_bypasses_income(self):
+        # WA Apple Health (Medicaid) program triggers categorical eligibility
+        calc = make_calculator(has_wa_apple_health_medicaid=True, yearly_income=60_000, fpl_annual=15_960)
+        e = self._run_household(calc)
+        self.assertTrue(e.eligible)
+
+    def test_wa_apple_health_for_kids_bypasses_income(self):
+        # WA Apple Health for Kids program triggers categorical eligibility for the household
+        calc = make_calculator(has_wa_apple_health_for_kids=True, yearly_income=60_000, fpl_annual=15_960)
         e = self._run_household(calc)
         self.assertTrue(e.eligible)
 

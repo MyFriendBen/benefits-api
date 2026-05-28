@@ -38,10 +38,12 @@ The benefit value scales with the number of household members aged 19–64.
 ### Criterion 2 — Pathway A: enrolled in a qualifying Washington benefit program
 
 - **Screener fields** (Screen level — household-wide flags):
-  - `has_medicaid` — Apple Health is Washington's Medicaid brand
+  - `has_medicaid` — legacy general Medicaid flag
+  - `wa_apple_health_medicaid` — WA Apple Health (Medicaid) program (name_abbreviated)
+  - `wa_apple_health_for_kids` — WA Apple Health for Kids program (name_abbreviated)
   - `has_snap` — Washington Basic Food / EBT
   - `has_wic`
-- **Note**: If any household member is enrolled in Apple Health/Medicaid, Washington Basic Food, or WIC, the entire household qualifies for ORCA LIFT regardless of income. The Screen-level `has_medicaid` is what the categorical check uses — the per-member `medicaid` insurance flag is separate and should not be substituted.
+- **Note**: If any household member is enrolled in Apple Health/Medicaid, Washington Basic Food, or WIC, the entire household qualifies for ORCA LIFT regardless of income. The calculator checks both the legacy `has_medicaid` flag and the dedicated WA Apple Health programs (`wa_apple_health_medicaid`, `wa_apple_health_for_kids`) via `has_benefit()` — both pathways trigger the same categorical bypass. The per-member `medicaid` insurance flag is separate and should not be substituted.
 - **Source**: [King County Metro — ORCA LIFT](https://kingcounty.gov/en/dept/metro/fares-and-payment/reduced-fares/orca-lift) ("Those receiving Apple Health Medicaid, WIC and Basic Food are eligible for the program."); [Reduced Fare Portal](https://reducedfare.kingcounty.gov/en-US/orca-lift-main/)
 
 ---
@@ -99,7 +101,7 @@ Complete inventory of the data the calculator needs, mapped to available screene
 | Data needed | Screener field | Status | Handling |
 |---|---|---|---|
 | Age 19–64 | `birth_year`, `birth_month` (HouseholdMember) | ✓ Available | Calculator computes age per member; counts those in range to scale benefit |
-| Apple Health / Medicaid enrollment | `has_medicaid` (Screen) | ✓ Available | Used directly for Criterion 2 |
+| Apple Health / Medicaid enrollment | `has_medicaid` (Screen, legacy); `wa_apple_health_medicaid` / `wa_apple_health_for_kids` (CurrentBenefit join table) | ✓ Available | All three checked via `has_benefit()` for Criterion 2 |
 | SNAP / Basic Food enrollment | `has_snap` (Screen) | ✓ Available | Used directly for Criterion 2 |
 | WIC enrollment | `has_wic` (Screen) | ✓ Available | Used directly for Criterion 2 |
 | WA State Opportunity Grant enrollment | *(no field — suggested: add `has_opportunity_grant` to Section 10 "Current Public Assistance Benefits" follow-up list, alongside `has_pell_grant`)* | ⚠️ **Data gap** | **Inclusive assumption** — calculator skips Pathway B (Criterion 3) entirely. Opportunity Grant recipients are caught via Criterion 4 (the grant itself requires ≤200% FPL). Surfaced in description so users can apply via this pathway directly. **Closing this gap**: adding the suggested field would let the calculator check it directly. |
@@ -339,7 +341,7 @@ The remaining 5 scenarios (4–8) live in this spec as documentation for the dev
 
 - Eligibility is a household-level OR across three pathways (categorical / Opportunity Grant data gap / income). The data gap is intentionally skipped in the calculator (inclusivity assumption).
 - Benefit value scales linearly with `count(household_members where 19 <= age <= 64)`. Use `birth_year`/`birth_month` for age — `age` is deprecated.
-- `has_medicaid` is assumed to cover Apple Health (Washington's Medicaid brand). Confirm against the WA white-label has_benefits options.
+- The categorical Apple Health check covers three cases: legacy `has_medicaid` flag, the `wa_apple_health_medicaid` program, and the `wa_apple_health_for_kids` program. All three are checked via `has_benefit()` — if any returns true, the household qualifies categorically.
 - Use the 2026 HHS Poverty Guidelines for the 200% threshold (table above).
 - The service-area limitation is surfaced in the description, not enforced by the calculator.
 - No `base_program` value currently fits ORCA LIFT — flag for the dev team to consider adding `"orca_lift"` or a generic `"transit_reduced_fare"` once the related ORCA programs (Youth, Senior RRFP, Disability RRFP, Subsidized Annual Pass) are added.
