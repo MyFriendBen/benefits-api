@@ -1,0 +1,104 @@
+{
+  "white_label": {
+    "code": "wa"
+  },
+  "program_category": {
+    "external_name": "wa_healthcare"
+  },
+  "program": {
+    "name_abbreviated": "wa_apple_health_for_kids",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission",
+      "non_citizen"
+    ],
+    "name": "Apple Health for Kids",
+    "description_short": "Free or low-cost health coverage for kids in Washington",
+    "description": "Apple Health for Kids is health insurance for children in Washington. It is free or low-cost for most families. It covers doctor visits, dental, vision, mental health, prescriptions, and hospital care.\n\nAfter approval, the child gets a ProviderOne card in about two weeks. They join a managed care plan. Some children get a special plan called Apple Health Core Connections (AHCC). This includes foster kids, adopted kids, and former foster youth. Kids usually stay covered for 12 months at a time. This is true even if family income goes up. Children under 6 keep coverage through the month they turn 6.\n\nAll children in Washington can qualify. Cover All Kids is a state program. It covers kids no matter their immigration status. There is no limit on savings or assets. Higher-income households may pay a small monthly premium. Children with private employer health insurance are generally not eligible for the premium plan. However, children whose parent works for a Washington state agency, public university, community college, or school district may still qualify for the premium plan even with that employer coverage — apply to find out. You can also ask for coverage going back up to three months for past medical needs.\n\nYou can apply in several ways. Go online to Washington Healthplanfinder. Call 1-877-501-2233. Visit a DSHS Community Services Office. Or mail a paper application. A Social Security Number helps but isn't required. Kids without one can still get coverage paid by the state. You usually hear back within 45 days.",
+    "learn_more_link": "https://www.hca.wa.gov/free-or-low-cost-health-care/i-need-medical-dental-or-vision-care/children",
+    "apply_button_link": "https://www.wahealthplanfinder.org/us/en/health-coverage/get-started/steps-apply.html",
+    "apply_button_description": "",
+    "estimated_application_time": "15 - 30 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": null,
+    "value_type": "benefit",
+    "website_description": "Free or low-cost health coverage for kids in Washington",
+    "base_program": "medicaid",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": true
+  },
+  "documents": [
+    {
+      "external_name": "wa_id_proof",
+      "text": "Proof of identity (ex: driver's license, state ID, passport)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_home",
+      "text": "Proof of home address (ex: lease, utility bill, mail with your name and address)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_child_proof_of_age",
+      "text": "Proof of child's age (ex: birth certificate, passport, school records)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_ssn",
+      "text": "Social Security Number (if you have one)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_us_status",
+      "text": "Proof of citizenship or immigration status (if applicable)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_earned_income",
+      "text": "Proof of earned income (ex: W-2, pay stubs, self-employment records)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_unearned_income",
+      "text": "Proof of unearned income (ex: SSI/SSDI award letter, child support records, pension statement, unemployment letter)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_apple_health_paper_application",
+      "text": "Paper application (if applying by mail or fax instead of online)",
+      "link_url": "https://www.hca.wa.gov/assets/free-or-low-cost/18-001P.pdf",
+      "link_text": "Download Form HCA 18-001"
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "wa_withinreach",
+      "name": "WithinReach (Help Me Grow Washington)",
+      "email": "info@withinreachwa.org",
+      "phone_number": "+18003222588",
+      "description": "Statewide Washington family resource organization. Help Me Grow Washington helps families with young children apply for Apple Health and connect with related services like dental, behavioral health, and child development resources.",
+      "assistance_link": "https://helpmegrowwa.org/health-insurance"
+    },
+    {
+      "external_name": "wa_hca",
+      "name": "Washington Health Care Authority (HCA)",
+      "email": "askmagi@hca.wa.gov",
+      "phone_number": "+18005623022",
+      "description": "The state agency that administers Apple Health (Medicaid) in Washington. Call or email for help with Apple Health eligibility, enrollment, and coverage questions. Available Monday through Friday, 7 a.m. to 5 p.m. Pacific.",
+      "assistance_link": "https://fortress.wa.gov/hca/p1contactus/"
+    }
+  ]
+}

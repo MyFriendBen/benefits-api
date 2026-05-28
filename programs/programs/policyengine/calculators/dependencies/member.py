@@ -804,3 +804,7 @@ class EmploymentIncomeBeforeLsrDependency(IncomeDependency):
 class SelfEmploymentIncomeBeforeLsrDependency(IncomeDependency):
     field = "self_employment_income_before_lsr"
     income_types = ["selfEmployment"]
+
+
+class WaAppleHealthKidsEligible(Member):
+    field = "wa_apple_health_kids_eligible"
