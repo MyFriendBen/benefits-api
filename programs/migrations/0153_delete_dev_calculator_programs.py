@@ -30,8 +30,12 @@ ROWS_TO_DELETE = [
 
 
 def forward(apps, schema_editor):
+    # WhiteLabel lives in the screener app (re-exported from programs.models
+    # for convenience). Importing directly avoids needing screener as an
+    # explicit migration dependency for a read-only `code` lookup.
+    from programs.models import WhiteLabel
+
     Program = apps.get_model("programs", "Program")
-    WhiteLabel = apps.get_model("programs", "WhiteLabel")
 
     wl_by_code = {wl.code: wl for wl in WhiteLabel.objects.all()}
 
