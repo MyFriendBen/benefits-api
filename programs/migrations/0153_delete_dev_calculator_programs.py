@@ -21,7 +21,6 @@
 
 from django.db import migrations
 
-
 # (white_label_code, name_abbreviated, external_name) for each row to delete.
 ROWS_TO_DELETE = [
     ("co", "_dev_ineligible", "_dev_ineligible"),
