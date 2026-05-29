@@ -23,12 +23,12 @@ from django.db import migrations
 
 
 def forward(apps, schema_editor):
-    # WhiteLabel lives in the screener app (re-exported from programs.models
-    # for convenience). Importing directly avoids needing screener as an
-    # explicit migration dependency for a read-only `code` lookup.
-    from programs.models import WhiteLabel
-
-    Program = apps.get_model("programs", "Program")
+    # Use live models throughout (mirrors the pattern established in
+    # 0152_backfill_has_benefits_categories). Mixing live WhiteLabel with
+    # a historical Program from apps.get_model causes
+    # `ValueError: Cannot query "Colorado": Must be "WhiteLabel" instance.`
+    # because the historical Program's FK expects a historical WhiteLabel.
+    from programs.models import Program, WhiteLabel
 
     try:
         co = WhiteLabel.objects.get(code="co")
@@ -43,9 +43,7 @@ def forward(apps, schema_editor):
 
 
 def reverse(apps, schema_editor):
-    from programs.models import WhiteLabel
-
-    Program = apps.get_model("programs", "Program")
+    from programs.models import Program, WhiteLabel
 
     try:
         co = WhiteLabel.objects.get(code="co")
