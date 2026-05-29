@@ -762,24 +762,19 @@ class HouseholdMember(models.Model):
         return self.is_head() or self.is_spouse() or self.is_dependent()
 
     def has_benefit(self, name_abbreviated: str):
-        name_map = {}
 
-        if hasattr(self, "insurance"):
-            name_map = {
-                "nc_medicaid": self.insurance.medicaid,
-                "co_medicaid": self.insurance.medicaid,
-                "medicaid": self.insurance.medicaid,
-                "emergency_medicaid": self.insurance.emergency_medicaid,
-            }
+        # if hasattr(self, "insurance"):
+        #     name_map = {
+        #         "nc_medicaid": self.insurance.medicaid,
+        #         "co_medicaid": self.insurance.medicaid,
+        #         "medicaid": self.insurance.medicaid,
+        #         "chp": self.insurance.chp,
+        #         "emergency_medicaid": self.insurance.emergency_medicaid,
+        #     }
 
         has_insurance = self.has_insurance_types((name_abbreviated,), strict=False)
 
-        if name_abbreviated in name_map:
-            has_benefit = name_map[name_abbreviated]
-        else:
-            has_benefit = False
-
-        return has_insurance or has_benefit
+        return has_insurance
 
     def has_insurance_types(self, types, strict=True):
         if not hasattr(self, "insurance"):
@@ -1006,13 +1001,15 @@ class Insurance(models.Model):
             "medicaid": self.medicaid,
             "nc_medicaid": self.medicaid,
             "co_medicaid": self.medicaid,
-            "wa_apple_health_for_kids": self.medicaid,
+            "wa_apple_health_medicaid": self.medicaid,
+            "wa_apple_health_for_kids": self.chp,
             "ma_mass_health": self.mass_health or self.medicaid,
             "medicare": self.medicare,
             "emergency_medicaid": self.emergency_medicaid,
             "family_planning": self.family_planning,
             "va": self.va,
         }
+
 
 
 class EnergyCalculatorScreen(models.Model):

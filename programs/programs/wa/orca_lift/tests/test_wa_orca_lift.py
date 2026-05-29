@@ -6,7 +6,7 @@ from programs.programs.wa.orca_lift.calculator import WaOrcaLift
 from programs.programs.calc import Eligibility, MemberEligibility
 
 
-def make_member(age=35, birth_year_month=None, yearly_income=24_000):
+def make_member(age=35, birth_year_month=None, yearly_income=24_000, insurance_medicaid=False):
     member = Mock()
     member.age = age
     member.birth_year_month = birth_year_month
@@ -22,6 +22,13 @@ def make_member(age=35, birth_year_month=None, yearly_income=24_000):
         return yearly_income / 12
 
     member.calc_gross_income = Mock(side_effect=calc_gross_income)
+
+    def has_benefit(name):
+        if name in ("wa_apple_health_medicaid", "wa_apple_health_for_kids"):
+            return insurance_medicaid
+        return False
+
+    member.has_benefit = Mock(side_effect=has_benefit)
     return member
 
 
@@ -197,6 +204,20 @@ class TestWaOrcaLiftHouseholdEligibility(TestCase):
         calc = make_calculator(has_wa_snap=True, members=members, yearly_income=10_000, fpl_annual=15_960)
         e = calc.eligible()
         self.assertFalse(e.eligible)
+
+    def test_member_wa_apple_health_medicaid_insurance_bypasses_income(self):
+        # Apple Health selected on member Step 5 insurance triggers categorical eligibility
+        members = [make_member(age=35, insurance_medicaid=True)]
+        calc = make_calculator(yearly_income=60_000, fpl_annual=15_960, members=members)
+        e = calc.eligible()
+        self.assertTrue(e.eligible)
+
+    def test_member_wa_apple_health_for_kids_insurance_bypasses_income(self):
+        # Apple Health for Kids selected on member Step 5 insurance triggers categorical eligibility
+        members = [make_member(age=35, insurance_medicaid=True)]
+        calc = make_calculator(yearly_income=60_000, fpl_annual=15_960, members=members)
+        e = calc.eligible()
+        self.assertTrue(e.eligible)
 
     def test_no_member_19_64_ineligible_even_with_low_income(self):
         members = [make_member(age=70), make_member(age=15)]
