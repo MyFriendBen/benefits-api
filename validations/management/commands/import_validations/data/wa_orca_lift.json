@@ -11,7 +11,6 @@
       "household_size": 1,
       "household_assets": 500.00,
       "has_snap": false,
-      "has_medicaid": false,
       "has_wic": false,
       "household_members": [
         {
@@ -50,7 +49,6 @@
       "household_size": 1,
       "household_assets": 2000.00,
       "has_snap": false,
-      "has_medicaid": false,
       "has_wic": false,
       "household_members": [
         {
@@ -88,7 +86,6 @@
       "household_size": 4,
       "household_assets": 1500.00,
       "has_snap": true,
-      "has_medicaid": false,
       "has_wic": false,
       "household_members": [
         {
@@ -132,6 +129,91 @@
           "has_income": false,
           "income_streams": [],
           "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_orca_lift",
+      "eligible": true,
+      "value": 864
+    }
+  },
+  {
+    "notes": "Categorical pathway — Apple Health (adult Medicaid) selected on Step 5 member insurance. Income above 200% FPL but member insurance.medicaid triggers categorical eligibility. Expected value: 1 cardholder × $864/year.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King County",
+      "household_size": 1,
+      "household_assets": 500.00,
+      "has_snap": false,
+      "has_wic": false,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "birth_year": 1991,
+          "birth_month": 3,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": { "none": false, "medicaid": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_orca_lift",
+      "eligible": true,
+      "value": 864
+    }
+  },
+  {
+    "notes": "Categorical pathway — Apple Health for Kids (CHIP) selected on Step 5 for a child. Parent aged 35 passes the 19-64 age gate. Child's insurance.chp triggers categorical eligibility for the household. Expected value: 1 cardholder (the parent) × $864/year.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King County",
+      "household_size": 2,
+      "household_assets": 500.00,
+      "has_snap": false,
+      "has_wic": false,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "birth_year": 1991,
+          "birth_month": 3,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": { "none": false, "employer": true }
+        },
+        {
+          "relationship": "child",
+          "age": 8,
+          "birth_year": 2018,
+          "birth_month": 5,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": false, "chp": true }
         }
       ],
       "expenses": []

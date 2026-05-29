@@ -1011,7 +1011,6 @@ class Insurance(models.Model):
         }
 
 
-
 class EnergyCalculatorScreen(models.Model):
     screen = models.OneToOneField(Screen, related_name="energy_calculator", null=False, on_delete=models.CASCADE)
     is_home_owner = models.BooleanField(default=False, null=True, blank=True)
