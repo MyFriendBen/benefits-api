@@ -29,8 +29,8 @@ def make_calculator(
     has_medicaid=False,
     has_wa_apple_health_medicaid=False,
     has_wa_apple_health_for_kids=False,
-    has_snap=False,
-    has_wic=False,
+    has_wa_snap=False,
+    has_wa_wic=False,
     members=None,
     yearly_income=24_000,
     household_size=1,
@@ -43,8 +43,8 @@ def make_calculator(
             "medicaid": has_medicaid,
             "wa_apple_health_medicaid": has_wa_apple_health_medicaid,
             "wa_apple_health_for_kids": has_wa_apple_health_for_kids,
-            "snap": has_snap,
-            "wic": has_wic,
+            "wa_snap": has_wa_snap,
+            "wa_wic": has_wa_wic,
         }.get(name, False)
 
     mock_screen.has_benefit = Mock(side_effect=has_benefit)
@@ -168,12 +168,12 @@ class TestWaOrcaLiftHouseholdEligibility(TestCase):
         self.assertTrue(e.eligible)
 
     def test_snap_bypasses_income(self):
-        calc = make_calculator(has_snap=True, yearly_income=60_000, fpl_annual=15_960)
+        calc = make_calculator(has_wa_snap=True, yearly_income=60_000, fpl_annual=15_960)
         e = self._run_household(calc)
         self.assertTrue(e.eligible)
 
     def test_wic_bypasses_income(self):
-        calc = make_calculator(has_wic=True, yearly_income=60_000, fpl_annual=15_960)
+        calc = make_calculator(has_wa_wic=True, yearly_income=60_000, fpl_annual=15_960)
         e = self._run_household(calc)
         self.assertTrue(e.eligible)
 
@@ -194,7 +194,7 @@ class TestWaOrcaLiftHouseholdEligibility(TestCase):
     def test_no_member_19_64_ineligible_even_with_snap(self):
         # Household has SNAP and low income but no one aged 19–64 → ineligible
         members = [make_member(age=70), make_member(age=12), make_member(age=8)]
-        calc = make_calculator(has_snap=True, members=members, yearly_income=10_000, fpl_annual=15_960)
+        calc = make_calculator(has_wa_snap=True, members=members, yearly_income=10_000, fpl_annual=15_960)
         e = calc.eligible()
         self.assertFalse(e.eligible)
 
@@ -230,7 +230,7 @@ class TestWaOrcaLiftValue(TestCase):
             make_member(age=17),
             make_member(age=8),
         ]
-        calc = make_calculator(has_snap=True, members=members, yearly_income=72_000, fpl_annual=15_960)
+        calc = make_calculator(has_wa_snap=True, members=members, yearly_income=72_000, fpl_annual=15_960)
         result = calc.calc()
         self.assertTrue(result.eligible)
         self.assertEqual(result.value, 864)

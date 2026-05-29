@@ -45,8 +45,8 @@ class WaOrcaLift(ProgramCalculator):
             self.screen.has_benefit("medicaid")
             or self.screen.has_benefit("wa_apple_health_medicaid")
             or self.screen.has_benefit("wa_apple_health_for_kids")
-            or self.screen.has_benefit("snap")
-            or self.screen.has_benefit("wic")
+            or self.screen.has_benefit("wa_snap")
+            or self.screen.has_benefit("wa_wic")
         )
 
         if categorical:
