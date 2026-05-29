@@ -859,7 +859,7 @@ class UrgentNeedCategory(models.Model):
 class ExpenseType(models.Model):
     """
     Represents types of expenses that can be used to filter urgent needs.
-    Matches expense types from configuration/white_labels/base.py expense_options
+    Matches expense types from configuration/white_labels/base.py expense_options_by_category
     """
 
     name = models.CharField(max_length=120, unique=True)
