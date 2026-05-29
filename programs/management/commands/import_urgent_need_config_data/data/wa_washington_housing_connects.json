@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_washington_housing_connects",
+    "category_type": {
+      "external_name": "wa_housing_rent_utilities",
+      "name": "Help with managing your mortgage, rent, or utilities",
+      "icon": "managing_housing"
+    },
+    "type_short": ["housing"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "Washington Housing Connects",
+      "description": "Washington Housing Connects helps people find affordable housing and rental help across Washington.",
+      "link": "https://www.washingtonconnection.org/home/explorecategories.go?locale=en_us&category=HA",
+      "warning": "",
+      "website_description": "Statewide housing locator and rental assistance resource portal.",
+      "notification_message": ""
+    },
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

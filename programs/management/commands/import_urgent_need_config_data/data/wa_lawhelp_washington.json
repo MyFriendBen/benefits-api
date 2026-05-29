@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_lawhelp_washington",
+    "category_type": {
+      "external_name": "wa_legal_services",
+      "name": "Free or low-cost help with civil legal needs or identity documents",
+      "icon": "legal_services"
+    },
+    "type_short": ["legal services"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "LawHelp Washington",
+      "description": "Free online legal help for people in Washington.",
+      "link": "https://www.lawhelp.org/wa",
+      "warning": "",
+      "website_description": "Free legal information and self-help resources for Washington residents.",
+      "notification_message": ""
+    },
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

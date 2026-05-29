@@ -146,6 +146,7 @@ class EligibilityTranslationView(views.APIView):
             "household_members__energy_calculator",
             "expenses",
             "energy_calculator",
+            "current_benefits__program",
         ).get(uuid=id)
 
         is_admin = request.query_params.get("admin")
@@ -582,6 +583,7 @@ def urgent_need_results(screen: Screen, data):
         "legal services": screen.needs_legal_services,
         "veteran services": screen.needs_veteran_services,
         "savings": screen.needs_college_savings,
+        "disability resources": screen.needs_disability_resources,
     }
 
     missing_dependencies = screen.missing_fields()
