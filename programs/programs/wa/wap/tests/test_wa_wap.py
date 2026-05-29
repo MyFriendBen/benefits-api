@@ -6,25 +6,40 @@ from programs.programs.wa.wap.calculator import WaWap
 from programs.programs.calc import Eligibility, MemberEligibility
 
 
-def make_member():
+def make_member(insurance_medicaid=False, insurance_chp=False):
     member = Mock()
     member.age = 40
+
+    def has_benefit(name):
+        if name == "wa_apple_health_medicaid":
+            return insurance_medicaid
+        if name == "wa_apple_health_for_kids":
+            return insurance_chp
+        return False
+
+    member.has_benefit = Mock(side_effect=has_benefit)
     return member
 
 
-def make_calculator(yearly_income=10_000, fpl_limit=15_960, has_snap=False, has_tanf=False, has_ssi=False,
-                    has_section_8=False, has_medicaid=False, members=None):
+def make_calculator(
+    yearly_income=10_000,
+    fpl_limit=15_960,
+    has_wa_snap=False,
+    has_wa_tanf=False,
+    has_wa_ssi=False,
+    has_wa_hcv=False,
+    members=None,
+):
     mock_screen = Mock()
     mock_screen.calc_gross_income = Mock(return_value=yearly_income)
     mock_screen.household_members.all = Mock(return_value=members or [make_member()])
 
     def benefit_side_effect(name):
         return {
-            "snap": has_snap,
-            "tanf": has_tanf,
-            "ssi": has_ssi,
-            "section_8": has_section_8,
-            "medicaid": has_medicaid,
+            "wa_snap": has_wa_snap,
+            "wa_tanf": has_wa_tanf,
+            "wa_ssi": has_wa_ssi,
+            "wa_hcv": has_wa_hcv,
         }.get(name, False)
 
     mock_screen.has_benefit = Mock(side_effect=benefit_side_effect)
@@ -62,6 +77,8 @@ class TestWaWapHouseholdEligibility(TestCase):
         calc.household_eligible(e)
         return e.eligible
 
+    # --- Income pathway ---
+
     def test_income_below_limit_eligible(self):
         self.assertTrue(self._run(20_000))
 
@@ -78,24 +95,43 @@ class TestWaWapHouseholdEligibility(TestCase):
     def test_zero_income_eligible(self):
         self.assertTrue(self._run(0))
 
+    # --- Categorical pathway: screen-level (Step 8 current benefits) ---
+
     def test_snap_bypasses_income(self):
-        # income above FPL but SNAP → eligible
-        self.assertTrue(self._run(50_000, has_snap=True))
+        self.assertTrue(self._run(50_000, has_wa_snap=True))
 
     def test_tanf_bypasses_income(self):
-        self.assertTrue(self._run(50_000, has_tanf=True))
+        self.assertTrue(self._run(50_000, has_wa_tanf=True))
 
     def test_ssi_bypasses_income(self):
-        self.assertTrue(self._run(50_000, has_ssi=True))
+        self.assertTrue(self._run(50_000, has_wa_ssi=True))
 
-    def test_section_8_bypasses_income(self):
-        self.assertTrue(self._run(50_000, has_section_8=True))
-
-    def test_medicaid_bypasses_income(self):
-        self.assertTrue(self._run(50_000, has_medicaid=True))
+    def test_hcv_bypasses_income(self):
+        self.assertTrue(self._run(50_000, has_wa_hcv=True))
 
     def test_no_categorical_no_income_ineligible(self):
         self.assertFalse(self._run(40_000))
+
+    # --- Categorical pathway: member-level insurance (Step 5) ---
+
+    def test_apple_health_medicaid_bypasses_income(self):
+        # Apple Health (adult Medicaid) selected on Step 5 triggers categorical eligibility
+        members = [make_member(insurance_medicaid=True)]
+        self.assertTrue(self._run(50_000, members=members))
+
+    def test_apple_health_for_kids_bypasses_income(self):
+        # Apple Health for Kids (CHIP) selected on Step 5 triggers categorical eligibility
+        members = [make_member(insurance_chp=True)]
+        self.assertTrue(self._run(50_000, members=members))
+
+    def test_child_apple_health_for_kids_triggers_household_eligibility(self):
+        # Any member with Apple Health for Kids qualifies the whole household
+        members = [make_member(), make_member(insurance_chp=True)]
+        self.assertTrue(self._run(50_000, members=members))
+
+    def test_no_apple_health_high_income_ineligible(self):
+        members = [make_member(insurance_medicaid=False, insurance_chp=False)]
+        self.assertFalse(self._run(50_000, members=members))
 
 
 class TestWaWapValue(TestCase):
@@ -112,7 +148,7 @@ class TestWaWapValue(TestCase):
         self.assertEqual(result.value, 0)
 
     def test_categorical_eligible_value_7669(self):
-        calc = make_calculator(yearly_income=50_000, has_snap=True)
+        calc = make_calculator(yearly_income=50_000, has_wa_snap=True)
         result = calc.calc()
         self.assertTrue(result.eligible)
         self.assertEqual(result.value, 7_669)

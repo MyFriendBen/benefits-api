@@ -31,12 +31,18 @@ class WaWap(ProgramCalculator):
     ]
 
     def household_eligible(self, e: Eligibility):
+        has_wa_wap_eligible_benefit = (
+            self.screen.has_benefit("wa_snap")
+            or self.screen.has_benefit("wa_tanf")
+            or self.screen.has_benefit("wa_ssi")
+            or self.screen.has_benefit("wa_hcv")
+        )
+
         categorically_eligible = (
-            self.screen.has_benefit("snap")
-            or self.screen.has_benefit("tanf")
-            or self.screen.has_benefit("ssi")
-            or self.screen.has_benefit("section_8")
-            or self.screen.has_benefit("medicaid")
+            has_wa_wap_eligible_benefit or any(
+                member.has_benefit("wa_apple_health_medicaid") or member.has_benefit("wa_apple_health_for_kids")
+                for member in self.screen.household_members.all()
+            )
         )
 
         if categorically_eligible:
