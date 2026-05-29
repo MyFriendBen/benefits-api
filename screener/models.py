@@ -763,15 +763,6 @@ class HouseholdMember(models.Model):
 
     def has_benefit(self, name_abbreviated: str):
 
-        # if hasattr(self, "insurance"):
-        #     name_map = {
-        #         "nc_medicaid": self.insurance.medicaid,
-        #         "co_medicaid": self.insurance.medicaid,
-        #         "medicaid": self.insurance.medicaid,
-        #         "chp": self.insurance.chp,
-        #         "emergency_medicaid": self.insurance.emergency_medicaid,
-        #     }
-
         has_insurance = self.has_insurance_types((name_abbreviated,), strict=False)
 
         return has_insurance
