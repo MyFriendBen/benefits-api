@@ -12,9 +12,8 @@ class MySpark(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility):
         # Qualify for FRL
-        is_frl_eligible = False
-
-        is_frl_eligible = self.data["nslp"].eligible
+        nslp = self.data.get("nslp")
+        is_frl_eligible = nslp is not None and nslp.eligible
         e.condition(is_frl_eligible, messages.must_have_benefit("Free or Reduced Lunch"))
 
         counties = counties_from_screen(self.screen)
