@@ -35,7 +35,7 @@ class LowWageCovidRelief(ProgramCalculator):
         for benefit in LowWageCovidRelief.auto_eligible_benefits:
             entry = self.data.get(benefit)
             if self.screen.has_benefit(benefit) or (entry is not None and entry.eligible):
-                has_benefit = self.screen.has_benefit(benefit)
+                has_benefit = True
                 break
 
         for benefit in LowWageCovidRelief.member_auto_eligible_benefits:
