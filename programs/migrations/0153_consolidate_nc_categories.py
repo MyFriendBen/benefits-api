@@ -72,6 +72,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("programs", "0152_backfill_has_benefits_categories"),
+        ("screener", "0152_backfill_snapshot_value_type"),
     ]
 
     operations = [
