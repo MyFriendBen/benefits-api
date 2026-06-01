@@ -1,0 +1,45 @@
+name: Weekly On-Call Rotation
+
+# Cycles the engineering on-call assignment in Slack every week.
+# Updates the @oncall user group, posts a handoff message, and sets the
+# channel topic. Driven entirely by oncall/rotation.json.
+
+on:
+  schedule:
+    # 09:00 America/Denver. Cron runs in UTC and has no DST awareness, so we
+    # schedule both 15:00 UTC (MDT, summer) and 16:00 UTC (MST, winter); the
+    # script is idempotent, so the "wrong" one for the current season simply
+    # re-applies the same assignment harmlessly.
+    - cron: "0 15 * * 1"
+    - cron: "0 16 * * 1"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (print actions, do not call Slack)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: oncall-rotation
+  cancel-in-progress: false
+
+jobs:
+  rotate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Rotate on-call
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_USERGROUP_ID: ${{ secrets.SLACK_USERGROUP_ID }}
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+          ONCALL_DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
+        run: python oncall/rotate_oncall.py
