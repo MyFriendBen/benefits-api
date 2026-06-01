@@ -183,15 +183,17 @@ class Command(BaseCommand):
             raise CommandError(f"Translation API call failed; English rows were saved. Re-run to retry. Error: {e}")
 
         translated_records = 0
+        langs_written = set()
         for text, lang_map in results.items():
             for translation_obj in by_text[text]:
                 for lang, translated_text in lang_map.items():
                     Translation.objects.edit_translation_by_id(translation_obj.id, lang, translated_text, manual=False)
                     translated_records += 1
+                    langs_written.add(lang)
 
         self.stdout.write(
             self.style.SUCCESS(
                 f"Added/updated {len(data)} label(s); wrote {translated_records} "
-                f"translated record(s) across {len(target_languages)} language(s)."
+                f"translated record(s) across {len(langs_written)} language(s)."
             )
         )
