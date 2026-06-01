@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_sound_behavioral_health",
+    "category_type": {
+      "external_name": "wa_behavioral_health",
+      "name": "Behavioral health",
+      "icon": "behavioral_health"
+    },
+    "type_short": ["mental health"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "Sound Behavioral Health",
+      "description": "Free mental health and drug or alcohol treatment for people in King County.",
+      "link": "https://www.sound.health/",
+      "warning": "",
+      "website_description": "Mental health and substance use treatment services in King County.",
+      "notification_message": ""
+    },
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

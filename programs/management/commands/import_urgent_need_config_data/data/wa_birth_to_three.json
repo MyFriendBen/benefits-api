@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_birth_to_three",
+    "category_type": {
+      "external_name": "wa_child_development",
+      "name": "Concern about your child's development",
+      "icon": "child_development"
+    },
+    "type_short": ["child dev"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "Washington State Birth to Three (Early Intervention)",
+      "description": "The Birth to Three program helps children under age 3 who might be a little behind in learning to walk, talk, or grow.",
+      "link": "https://birthtothree.org/start-here/",
+      "warning": "",
+      "website_description": "Free developmental evaluation and early intervention services for children under 3 in Washington.",
+      "notification_message": ""
+    },
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

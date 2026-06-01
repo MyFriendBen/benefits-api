@@ -11,7 +11,7 @@
 
 1. **Household income must be at or below 80% Area Median Income (AMI) of the Seattle/King County Area**
    - Screener fields: `household_size`, income streams across all household members
-   - Note: AMI thresholds are updated annually. Approximate 2025 80% AMI values for King County: 1-person: $84,850/yr ($7,071/mo) | 2-person: $96,950/yr ($8,079/mo) | 3-person: $109,050/yr ($9,088/mo) | 4-person: $121,150/yr ($10,096/mo) | 5-person: $130,850/yr ($10,904/mo). Priority is given to households at the lowest income tiers (see Priority Criteria).
+   - Note: AMI thresholds are updated annually. Approximate 2025 80% AMI values for King County: 1-person: $84,850/yr ($7,071/mo) | 2-person: $96,950/yr ($8,079/mo) | 3-person: $109,050/yr ($9,087/mo) | 4-person: $121,150/yr ($10,096/mo) | 5-person: $130,850/yr ($10,904/mo). Priority is given to households at the lowest income tiers (see Priority Criteria).
    - Source: [Seattle Fresh Bucks Eligibility](https://www.seattlefreshbucks.org/apply/)
 
 2. **Applicant must reside within Seattle city limits**
@@ -90,10 +90,10 @@ All 12 scenarios below were approved (KEEP or KEEP BUT REVISE).
 - **Location**: Enter ZIP code `98103`
 - **Household**: Number of people: `3`
 - **Person 1 (Head of Household)**: Relationship: `Head of Household`, Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$6,588`, Income frequency: `Monthly`
-- **Person 2 (Spouse)**: Relationship: `Spouse`, Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$2,500`, Income frequency: `Monthly`
+- **Person 2 (Spouse)**: Relationship: `Spouse`, Has income: `Yes`, Income type: `Wages/Salaries`, Income amount: `$2,499`, Income frequency: `Monthly`
 - **Person 3 (Child)**: Relationship: `Child`, Has income: `No`, Income type: `None`, Income amount: `$0`, Income frequency: `Null`
 
-**Why this matters**: Confirms the threshold logic handles values immediately below the cutoff.
+**Why this matters**: Confirms the threshold logic handles values immediately below the cutoff. Combined income: $9,087/mo ($109,044/yr), which is $6 below the FY2025 3-person 80% AMI limit of $109,050.
 
 ---
 

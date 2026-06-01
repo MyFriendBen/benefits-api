@@ -288,6 +288,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             "needs_legal_services",
             "needs_college_savings",
             "needs_veteran_services",
+            "needs_disability_resources",
             "utm_id",
             "utm_source",
             "utm_medium",
