@@ -8,7 +8,7 @@ def fix_new_hanover_county_typo(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("screener", "0152_backfill_snapshot_value_type"),
+        ("screener", "0153_add_needs_disability_resources"),
     ]
 
     operations = [
