@@ -33,6 +33,16 @@ from pathlib import Path
 
 SLACK_API = "https://slack.com/api"
 
+# What the on-call person owns for the week. Edit this list to change the
+# responsibilities shown in the weekly Slack announcement. Slack mrkdwn +
+# :emoji: are supported.
+RESPONSIBILITIES = [
+    ":rocket: Owns the deploy",
+    ":speech_balloon: Answers ad-hoc questions",
+    ":bug: Triages Sentry alerts and the #bugs channel",
+    ":sunrise: Runs standup",
+]
+
 
 def _bool_env(name: str) -> bool:
     return os.environ.get(name, "").strip().lower() in {"1", "true", "yes"}
@@ -122,8 +132,11 @@ def main() -> int:
 
     mention = f"<@{on_call['slack_id']}>"
     prev_mention = f"<@{previous['slack_id']}>"
+    duties = "\n".join(f"• {d}" for d in RESPONSIBILITIES)
     announce = (
-        f":pager: *On-call this week:* {mention} ({on_call['name']})\n" f"Thanks for your shift, {prev_mention}! :wave:"
+        f":pager: *On-call this week:* {mention}\n"
+        f"Thanks for your shift, {prev_mention}! :wave:\n\n"
+        f"*This week you own:*\n{duties}"
     )
     topic = f"On-call: {on_call['name']}"
 
