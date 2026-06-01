@@ -350,7 +350,6 @@ class Command(BaseCommand):
             "learn_more_link",
             "apply_button_link",
             "apply_button_description",
-            "value_type",
             "estimated_delivery_time",
             "estimated_application_time",
             "estimated_value",

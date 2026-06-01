@@ -1,0 +1,110 @@
+{
+  "white_label": {
+    "code": "wa"
+  },
+  "program_category": {
+    "external_name": "wa_child_care",
+    "name": "Child Care, Youth, and Education",
+    "icon": "child_care"
+  },
+  "program": {
+    "name_abbreviated": "wa_head_start",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "refugee",
+      "gc_5plus",
+      "gc_5less",
+      "otherWithWorkPermission"
+    ],
+    "name": "Head Start",
+    "description_short": "Free preschool, meals, and health services for young children and pregnant women",
+    "description": "Head Start is a free program that helps young children learn, stay healthy, and get ready for school. Children receive learning activities and healthy meals. They also get checkups for their health, vision, hearing, and teeth.\n\nLocal agencies run Head Start programs. Classes can be in classrooms, in family homes, or through family child care. Each program serves a specific area. You need to find the program that covers your address.\n\nSome families may qualify even if Head Start doesn't show up in your results. This includes families experiencing homelessness, families with farm-work income, and Tribal families. Contact your local program to learn more. Many programs serve families with the lowest income first. They also save seats for children with disabilities. Some programs may also enroll a few families with a little more income.\n\nThere is no central application for Head Start. Click \"How to Apply\" to find a program near you, then contact that program. Each program runs its own application, forms, and timeline.",
+    "learn_more_link": "https://headstart.gov/about-us",
+    "apply_button_link": "https://headstart.gov/how-apply",
+    "apply_button_description": "How to Apply",
+    "estimated_application_time": "30 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": "estimated_annual",
+    "value_type": "benefit",
+    "website_description": "Free preschool, meals, and health services for young children and pregnant women",
+    "base_program": "head_start",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": true
+  },
+  "documents": [
+    {
+      "external_name": "wa_home",
+      "text": "Proof of home address (ex: lease, mortgage statement, utility bill)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_id_proof",
+      "text": "Proof of identity (ex: driver's license, official state ID card)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_earned_income",
+      "text": "Proof of earned income (ex: pay stubs, tax returns, W-2, 1099) & employer information",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_unearned_income",
+      "text": "Proof of unearned income (ex: child support, social security, unemployment)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_other_program",
+      "text": "Evidence of participation in a qualifying benefits program (if applicable)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_foster_care",
+      "text": "If a child is in foster care: court order, written statement from a child welfare official, or proof of a foster care payment",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_headstart_homelessness_verification",
+      "text": "If your child is experiencing homelessness: a written statement from a school, shelter, or service agency, or a signed family declaration",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_birth_certificate",
+      "text": "Child's birth certificate or proof of age",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_pregnancy",
+      "text": "Proof of pregnancy (if applicable)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_immunization_records",
+      "text": "Child's immunization records",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "wa_headstart_dcyf",
+      "name": "DCYF Head Start Collaboration Office",
+      "email": "michelle.roberts@dcyf.wa.gov",
+      "description": "The Head Start Collaboration Office is part of Washington State DCYF. It coordinates Head Start services across the state and answers systems-level questions. For help applying to a specific local Head Start program, contact the program in your area directly.",
+      "assistance_link": "https://dcyf.wa.gov/services/early-learning-providers/head-start",
+      "phone_number": "+13607424715"
+    }
+  ]
+}

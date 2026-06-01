@@ -26,6 +26,10 @@ class Maeitc(TaxUnit):
     field = "ma_eitc"
 
 
+class WaWftc(TaxUnit):
+    field = "wa_working_families_tax_credit"
+
+
 class Ileitc(TaxUnit):
     field = "il_eitc"
 

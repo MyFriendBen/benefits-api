@@ -45,7 +45,7 @@ This directory contains configuration files for MyFriendBen white labels (state/
 
 7. **Add referral options in Django admin:**
 
-   Referral options are managed via Django admin → Programs → Referrers (not in config files — the `referral_options` field in config files is deprecated and will be removed as part of MFB-864). Add a row for each dropdown option with: `white_label` = your new WL, `referrer_code` = the stored key, `name` = the display label, `show_in_dropdown` = True.
+   Referral options are managed via Django admin → Programs → Referrers. Add a row for each dropdown option with: `white_label` = your new WL, `referrer_code` = the stored key, `name` = the display label, `show_in_dropdown` = True.
 
    Every WL should include these standard generic codes (copy from an existing WL):
 

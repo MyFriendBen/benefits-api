@@ -1,0 +1,162 @@
+[
+  {
+    "notes": "WA UDP - Eligible: single adult Seattle household, modest wages clearly below 70% SMI (standard income pathway)",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98103",
+      "county": "King County",
+      "household_size": 1,
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "birth_year": 1991,
+          "birth_month": 3,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_udp",
+      "eligible": true,
+      "value": 732
+    }
+  },
+  {
+    "notes": "WA UDP - Ineligible: HH=4 with combined adult income $1 above 70% SMI monthly limit; no SSI or SNAP categorical pathway",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98118",
+      "county": "King County",
+      "household_size": 4,
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 40,
+          "birth_year": 1986,
+          "birth_month": 3,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "spouse",
+          "age": 37,
+          "birth_year": 1988,
+          "birth_month": 7,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3710.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "child",
+          "age": 9,
+          "birth_year": 2016,
+          "birth_month": 9,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "child",
+          "age": 6,
+          "birth_year": 2020,
+          "birth_month": 1,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_udp",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "WA UDP - Eligible via SSI categorical pathway: senior with SSI plus additional household income that exceeds 70% SMI; SSI presence bypasses income tests",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98109",
+      "county": "King County",
+      "household_size": 2,
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 67,
+          "birth_year": 1959,
+          "birth_month": 2,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSI",
+              "amount": 943.00,
+              "frequency": "monthly"
+            },
+            {
+              "type": "wages",
+              "amount": 4000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "spouse",
+          "age": 65,
+          "birth_year": 1960,
+          "birth_month": 6,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 2000.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_udp",
+      "eligible": true,
+      "value": 732
+    }
+  }
+]

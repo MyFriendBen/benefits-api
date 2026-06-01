@@ -48,6 +48,7 @@ from programs.models import (
 from programs.programs.categories import ProgramCategoryCapCalculator, category_cap_calculators
 from django.core.exceptions import ObjectDoesNotExist
 from programs.programs.warnings import warning_calculators
+from programs.serializers import HasBenefitsProgramSerializer
 from validations.serializers import ValidationSerializer
 from .webhooks import get_web_hook
 from drf_yasg.utils import swagger_auto_schema
@@ -145,6 +146,7 @@ class EligibilityTranslationView(views.APIView):
             "household_members__energy_calculator",
             "expenses",
             "energy_calculator",
+            "current_benefits__program",
         ).get(uuid=id)
 
         is_admin = request.query_params.get("admin")
@@ -211,6 +213,49 @@ def translations_prefetch_name(prefix: str, fields):
     return [f"{prefix}{f}__translations" for f in fields]
 
 
+def filter_by_county(navigators: list, county: Optional[str]) -> list:
+    result = []
+    for nav in navigators:
+        counties = nav.counties.all()
+        if len(counties) == 0 or (county is not None and any(county in c.name for c in counties)):
+            result.append(nav)
+    return result
+
+
+def filter_by_required_programs_eligibility(navigators: list, program_eligibility: dict) -> list:
+    result = []
+    for nav in navigators:
+        required = nav.eligibility_programs.all()
+        if not required or all(
+            getattr(program_eligibility.get(p.name_abbreviated), "eligible", False) for p in required
+        ):
+            result.append(nav)
+    return result
+
+
+def referrer_prioritization(eligibility_filtered: list, primary_navigators: list) -> list:
+    if not primary_navigators:
+        return eligibility_filtered
+    referrer_navigators = [nav for nav in primary_navigators if nav in eligibility_filtered]
+    return referrer_navigators if referrer_navigators else eligibility_filtered
+
+
+def update_navigators(
+    eligible_program_data: list,
+    program_eligibility: dict,
+    data: list,
+    screen_county: Optional[str],
+    referrer,
+) -> None:
+    primary_navs = list(referrer.primary_navigators.all()) if referrer is not None else []
+    for program, idx in eligible_program_data:
+        all_navigators = [pn.navigator for pn in program.program_navigators.all()]
+        county_filtered = filter_by_county(all_navigators, screen_county)
+        eligibility_filtered = filter_by_required_programs_eligibility(county_filtered, program_eligibility)
+        navigators = referrer_prioritization(eligibility_filtered, primary_navs)
+        data[idx]["navigators"] = [serialized_navigator(navigator) for navigator in navigators]
+
+
 def eligibility_results(screen: Screen, batch=False):
     try:
         referrer = Referrer.objects.prefetch_related("remove_programs", "primary_navigators").get(
@@ -236,6 +281,7 @@ def eligibility_results(screen: Screen, batch=False):
             "program_navigators__navigator",
             "program_navigators__navigator__counties",
             "program_navigators__navigator__languages",
+            "program_navigators__navigator__eligibility_programs",
             *translations_prefetch_name("program_navigators__navigator__", Navigator.objects.translated_fields),
             "documents",
             *translations_prefetch_name("documents__", Document.objects.translated_fields),
@@ -311,18 +357,25 @@ def eligibility_results(screen: Screen, batch=False):
     all_programs = sorted(all_programs, key=sort_first)
 
     program_snapshots = []
+    eligible_program_data: list[tuple] = []  # (program, data_index) for post-loop navigator pass
 
     program_eligibility = {}
 
     for program in all_programs:
+        # Tracking-only programs (has_calculator=False) and disabled programs
+        # (active=False) are skipped before any eligibility lookup. Without this
+        # guard, the loop would fall through and reuse the previous iteration's
+        # `eligibility` value when writing program_snapshots.
+        if not (program.active and program.has_calculator):
+            continue
         skip = False
-        if program.name_abbreviated not in pe_programs and program.active:
+        if program.name_abbreviated not in pe_programs:
             try:
                 eligibility = program.eligibility(screen, program_eligibility, missing_dependencies)
             except DependencyError:
                 missing_programs = True
                 continue
-        elif program.active:
+        else:
             if program.name_abbreviated not in pe_eligibility:
                 missing_programs = True
                 continue
@@ -343,33 +396,9 @@ def eligibility_results(screen: Screen, batch=False):
             new = False
 
         warnings = []
-        navigators = []
 
-        # don't calculate navigator and warnings for ineligible programs
+        # don't calculate warnings for ineligible programs
         if eligibility.eligible:
-            # Get navigators through ordered relationship (automatically sorted by order field)
-            # program_navigators uses ProgramNavigator through table with Meta.ordering
-            program_navigators = program.program_navigators.all()
-            all_navigators = [pn.navigator for pn in program_navigators]
-
-            county_navigators = []
-            for nav in all_navigators:
-                counties = nav.counties.all()
-                if len(counties) == 0 or (
-                    screen.county is not None and any(screen.county in county.name for county in counties)
-                ):
-                    county_navigators.append(nav)
-
-            if referrer is None:
-                navigators = county_navigators
-            else:
-                primary_navigators = referrer.primary_navigators.all()
-                referrer_navigators = [nav for nav in primary_navigators if nav in county_navigators]
-                if len(referrer_navigators) == 0:
-                    navigators = county_navigators
-                else:
-                    navigators = referrer_navigators
-
             for warning in program.warning_messages.all():
                 if warning.calculator not in warning_calculators:
                     raise Exception(f"{warning.calculator} is not a valid calculator name")
@@ -388,7 +417,7 @@ def eligibility_results(screen: Screen, batch=False):
                     eligibility_snapshot=snapshot,
                     name=program.name.text,
                     name_abbreviated=program.name_abbreviated,
-                    value_type=program.value_type.text,
+                    value_type=program.value_type,
                     estimated_value=eligibility.value,
                     estimated_delivery_time=program.estimated_delivery_time.text,
                     estimated_application_time=program.estimated_application_time.text,
@@ -424,7 +453,7 @@ def eligibility_results(screen: Screen, batch=False):
                     "description_short": program_translations.get_translation("description_short"),
                     "short_name": program.name_abbreviated,
                     "description": program_translations.get_translation("description"),
-                    "value_type": program_translations.get_translation("value_type"),
+                    "value_type": program.value_type,
                     "learn_more_link": program_translations.get_translation("learn_more_link"),
                     "apply_button_link": program_translations.get_translation("apply_button_link"),
                     "apply_button_description": program_translations.get_translation("apply_button_description"),
@@ -434,7 +463,7 @@ def eligibility_results(screen: Screen, batch=False):
                     "members": member_data,
                     "failed_tests": eligibility.fail_messages,
                     "passed_tests": eligibility.pass_messages,
-                    "navigators": [serialized_navigator(navigator) for navigator in navigators],
+                    "navigators": [],  # populated in second pass once program_eligibility is complete
                     "already_has": screen.has_benefit(program.name_abbreviated),
                     "new": new,
                     "low_confidence": program.low_confidence,
@@ -445,6 +474,11 @@ def eligibility_results(screen: Screen, batch=False):
                     "value_format": program.value_format,
                 }
             )
+
+            if eligibility.eligible:
+                eligible_program_data.append((program, len(data) - 1))
+
+    update_navigators(eligible_program_data, program_eligibility, data, screen.county, referrer)
 
     category_map = {}
     program_ids = [p["program_id"] for p in data]
@@ -549,6 +583,7 @@ def urgent_need_results(screen: Screen, data):
         "legal services": screen.needs_legal_services,
         "veteran services": screen.needs_veteran_services,
         "savings": screen.needs_college_savings,
+        "disability resources": screen.needs_disability_resources,
     }
 
     missing_dependencies = screen.missing_fields()
@@ -645,6 +680,40 @@ class NPSScoreView(views.APIView):
             serializer.update(nps_score, serializer.validated_data)
             return Response({"status": "success"}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class HasBenefitsProgramsView(views.APIView):
+    """Returns programs shown in the 'already has benefits' screener step.
+
+    Response is a flat, unsorted list. Each program includes its `category`.
+    Callers are responsible for sorting and grouping by the user-facing
+    `default_message` of `name` and `category` (sorting server-side would order
+    by translation label, which is the internal i18n key, not the display text).
+
+    Response shape:
+        [
+            {
+                "name_abbreviated": "SNAP",
+                "name": {"label": "...", "default_message": "Supplemental Nutrition Assistance Program"},
+                "website_description": {"label": "...", "default_message": "Monthly food assistance for groceries"},
+                "category": {"label": "...", "default_message": "Food and Nutrition"}
+            },
+            ...
+        ]
+    """
+
+    permission_classes = [permissions.DjangoModelPermissions]
+    queryset = Program.objects.none()  # Required for DjangoModelPermissions
+
+    def get(self, request, white_label):
+        programs = Program.objects.filter(
+            active=True,
+            show_in_has_benefits_step=True,
+            white_label__code=white_label,
+        ).select_related("name", "website_description", "category__name")
+
+        serializer = HasBenefitsProgramSerializer(programs, many=True)
+        return Response(serializer.data)
 
 
 class ReferralSourcesView(views.APIView):

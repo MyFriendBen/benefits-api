@@ -288,6 +288,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             "needs_legal_services",
             "needs_college_savings",
             "needs_veteran_services",
+            "needs_disability_resources",
             "utm_id",
             "utm_source",
             "utm_medium",
@@ -427,7 +428,7 @@ class EligibilitySerializer(serializers.Serializer):
     name_abbreviated = serializers.CharField()
     external_name = serializers.CharField()
     description = TranslationSerializer()
-    value_type = TranslationSerializer()
+    value_type = serializers.CharField()
     learn_more_link = TranslationSerializer()
     apply_button_link = TranslationSerializer()
     apply_button_description = TranslationSerializer()

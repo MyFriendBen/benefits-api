@@ -1,0 +1,113 @@
+[
+  {
+    "notes": "Scenario 1: Clearly eligible — disabled worker under retirement age with earnings well below 2026 SGA threshold ($500/month vs $1,690/month). Has qualifying long-term disability, not currently receiving SSDI or Social Security retirement.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98103",
+      "county": "King",
+      "household_size": 1,
+      "household_assets": 0.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 44,
+          "birth_year": 1981,
+          "birth_month": 6,
+          "long_term_disability": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_ssdi",
+      "eligible": true,
+      "value": 1634
+    }
+  },
+  {
+    "notes": "Scenario 2: Clearly ineligible — applicant does not have a qualifying long-term disability. Disability is the core requirement of SSDI — without it the applicant should be screened out regardless of income or age.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98103",
+      "county": "King",
+      "household_size": 1,
+      "household_assets": 0.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 44,
+          "birth_year": 1981,
+          "birth_month": 6,
+          "long_term_disability": false,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_ssdi",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "Scenario 3: Edge case — blind applicant with income above standard 2026 SGA ($1,690/month) but below blind SGA threshold ($2,830/month). Should be eligible due to higher blind SGA rule.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98103",
+      "county": "King",
+      "household_size": 1,
+      "household_assets": 0.00,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 44,
+          "birth_year": 1981,
+          "birth_month": 6,
+          "long_term_disability": true,
+          "visually_impaired": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_ssdi",
+      "eligible": true,
+      "value": 1634
+    }
+  }
+]

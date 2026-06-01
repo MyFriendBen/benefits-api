@@ -15,7 +15,6 @@ class Command(BaseCommand):
             "description",
             "learn_more_link",
             "apply_button_link",
-            "value_type",
             "estimated_delivery_time",
             "estimated_application_time",
             "warning",

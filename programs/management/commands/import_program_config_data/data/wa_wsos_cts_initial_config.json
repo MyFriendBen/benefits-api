@@ -1,0 +1,63 @@
+{
+  "white_label": {
+    "code": "wa"
+  },
+  "program_category": {
+    "external_name": "wa_education",
+    "name": "Education",
+    "icon": "education"
+  },
+  "program": {
+    "name_abbreviated": "wa_wsos_cts",
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "refugee",
+      "gc_5plus",
+      "gc_5less",
+      "otherWithWorkPermission"
+    ],
+    "name": "Washington State Opportunity Scholarship Career & Technical Scholarship (CTS)",
+    "description_short": "Scholarship for Washington students earning an associate degree, certificate, or apprenticeship",
+    "description": "The WSOS Career & Technical Scholarship helps Washington students pay for school. It supports students in approved associate degree, certificate, and apprenticeship programs. The money goes to your school. It can help pay for tuition, housing, transportation, food, and other school costs. The scholarship gives up to $1,500 per quarter while you are in your program.\n\nYou must attend an approved school. This includes Washington community and technical colleges. Two apprenticeship sponsors are also approved. You must take at least three credits each quarter — apprentices may be exempt. You must have or plan to earn a high school credential by June of the year you apply. You cannot already have a bachelor's degree. Want a bachelor's degree next? Apply for the Baccalaureate Scholarship instead. Rural Washington students may get more funding. This is called the Rural Jobs Initiative. There is no separate application.\n\nBefore you apply, complete a FAFSA or WASFA. These are free forms that show your financial need. The application includes short answer questions you fill out online. You do not need transcripts or references. The application opens twice a year — visit the WSOS page to see current deadlines.",
+    "learn_more_link": "https://waopportunityscholarship.org/applicants/career-technical/",
+    "apply_button_link": "https://waopportunityscholarship.org/applicants/career-technical/#how-to-apply",
+    "apply_button_description": "How to Apply",
+    "estimated_application_time": "60 to 90 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": null,
+    "value_type": "benefit",
+    "website_description": "Scholarship for Washington students earning an associate degree, certificate, or apprenticeship",
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": [
+    {
+      "external_name": "wa_wsos_fafsa",
+      "text": "Free Application for Federal Student Aid (FAFSA)",
+      "link_url": "https://studentaid.gov/h/apply-for-aid/fafsa",
+      "link_text": "Apply for FAFSA at studentaid.gov"
+    },
+    {
+      "external_name": "wa_wsos_wasfa",
+      "text": "Washington Application for State Financial Aid (WASFA)",
+      "link_url": "https://wsac.wa.gov/wasfa",
+      "link_text": "Apply for WASFA at wsac.wa.gov"
+    },
+    {
+      "external_name": "wa_wsos_cts_essay_question",
+      "text": "Short essay answers",
+      "link_url": "https://waopportunityscholarship.org/cts-short-answer-guide/",
+      "link_text": "CTS short answer guide"
+    }
+  ],
+  "warning_message": {
+    "external_name": "wa_wsos_cts_warning",
+    "calculator": "_show",
+    "message": "The fall 2026-27 CTS application cycle is closed. The application deadline was April 15, 2026. The winter-spring 2026-27 application cycle opens September 29, 2026 — check the program page for upcoming application dates."
+  }
+}

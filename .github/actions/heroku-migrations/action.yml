@@ -28,7 +28,7 @@ runs:
       run: |
         echo "Running migrations..."
         set +e
-        OUTPUT=$(heroku run -a ${{ inputs.heroku-app-name }} "python manage.py migrate" 2>&1)
+        OUTPUT=$(heroku run --exit-code -a ${{ inputs.heroku-app-name }} "python manage.py migrate" 2>&1)
         STATUS=$?
         set -e
         echo "$OUTPUT"
@@ -53,7 +53,7 @@ runs:
       run: |
         echo "Syncing feature flags..."
         set +e
-        OUTPUT=$(heroku run -a ${{ inputs.heroku-app-name }} "python manage.py sync_feature_flags" 2>&1)
+        OUTPUT=$(heroku run --exit-code -a ${{ inputs.heroku-app-name }} "python manage.py sync_feature_flags" 2>&1)
         STATUS=$?
         set -e
         echo "$OUTPUT"

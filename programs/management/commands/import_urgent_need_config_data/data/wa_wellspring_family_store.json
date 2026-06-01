@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_wellspring_family_store",
+    "category_type": {
+      "external_name": "wa_diapers_and_baby_supplies",
+      "name": "Diapers and other baby supplies",
+      "icon": "baby_supplies"
+    },
+    "type_short": ["baby supplies"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "Wellspring Family Store",
+      "description": "Free clothes, diapers, toys, and other items for kids.",
+      "link": "https://wellspringfs.org/services/family-store/",
+      "warning": "",
+      "website_description": "Connects families with free diapers, clothing, and baby essentials.",
+      "notification_message": ""
+    },
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "white_label": {
+    "code": "wa"
+  },
+  "program_category": {
+    "external_name": "wa_food",
+    "name": "Food and Nutrition",
+    "icon": "food"
+  },
+  "program": {
+    "name_abbreviated": "wa_nslp",
+    "active": true,
+    "year": "2025",
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "refugee",
+      "gc_5plus",
+      "gc_5less",
+      "otherWithWorkPermission"
+    ],
+    "name": "National School Lunch Program (NSLP)",
+    "description_short": "Free or low-cost school lunches for kids",
+    "description": "The National School Lunch Program helps students get lunch at school. Some students get free meals. Some families may qualify for lower-cost meals.\n\nStudents get meals at school during the school day. The program does not give cash or a card. Your child usually needs a school or district that takes part in school meal programs.\n\nSome children may also qualify through pathways the screener doesn't capture, such as foster care, unstable housing, or migrant status. Schools may also enroll children automatically using FDPIR or state Medicaid records. Your child's school or district makes the final decision.\n\nTo apply, open the Washington School Meals Application Finder. Choose your school district. Then follow the district's meal application link. You can also ask your child's school or district for help.",
+    "learn_more_link": "https://ospi.k12.wa.us/policy-funding/child-nutrition/school-meals/national-school-lunch-program",
+    "apply_button_link": "https://ospi.k12.wa.us/policy-funding/child-nutrition/school-meals/washington-school-meals-application-finder",
+    "apply_button_description": "Find Your School Meal Application",
+    "estimated_application_time": "15-30 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": "estimated_annual",
+    "value_type": "benefit",
+    "website_description": "Free or low-cost school lunches for kids",
+    "base_program": "nslp",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": true
+  },
+  "documents": [
+    {
+      "external_name": "wa_nslp_cneeb_application",
+      "text": "Completed Child Nutrition Eligibility & Education Benefit (CNEEB) application",
+      "link_url": "https://ospi.k12.wa.us/policy-funding/child-nutrition/school-meals/national-school-lunch-program/meal-application-and-verification-information",
+      "link_text": "Get the OSPI application from the meal information page"
+    },
+    {
+      "external_name": "wa_nslp_income_proof",
+      "text": "Proof of household income (e.g., wages, benefits, child support, pensions, Social Security)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_nslp_basic_food_tanf_fdpir_case_number",
+      "text": "Basic Food, TANF, or FDPIR case number (if applicable)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_nslp_adult_ssn_last_four",
+      "text": "Last four digits of the signing adult's Social Security number (if not exempt)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "wa_ospi_school_meal_programs",
+      "name": "Washington OSPI School Meal Programs",
+      "email": "schoolmeals@k12.wa.us",
+      "description": "OSPI School Meal Programs administers Washington's National School Lunch Program and School Breakfast Program. The team can answer general questions about school meal eligibility, applications, and program rules. For district-specific application help, proof of enrollment, or eligibility letters, contact your child's school district directly.",
+      "assistance_link": "https://ospi.k12.wa.us/policy-funding/child-nutrition/child-nutrition-contacts",
+      "phone_number": "+13607256203"
+    }
+  ]
+}

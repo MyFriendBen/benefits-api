@@ -12,6 +12,7 @@ from programs.models import (
     County,
     NavigatorLanguage,
     LegalStatus,
+    BaseProgram,
 )
 from screener.models import WhiteLabel
 from integrations.clients.google_translate import Translate
@@ -37,6 +38,7 @@ class Command(BaseCommand):
     Usage:
       python manage.py import_program_config <path/to/config.json>
       python manage.py import_program_config <path/to/config.json> --dry-run
+      python manage.py import_program_config <path/to/config.json> --skip-translation
 
     For detailed documentation on JSON configuration format and examples,
     see: programs/management/commands/import_program_config_data/README.md
@@ -58,11 +60,18 @@ class Command(BaseCommand):
             action="store_true",
             help="Delete existing program and its navigators/documents before importing",
         )
+        parser.add_argument(
+            "--skip-translation",
+            action="store_true",
+            help="Copy English text to all languages instead of calling Google Translate "
+            "(for local dev when GOOGLE_APPLICATION_CREDENTIALS is unavailable)",
+        )
 
     def handle(self, *args: Any, **options: Any) -> None:
         config_file = options["config_file"]
         dry_run = options.get("dry_run", False)
         override = options.get("override", False)
+        self.skip_translation = bool(options.get("skip_translation", False))
 
         try:
             config = json.load(config_file)
@@ -139,9 +148,24 @@ class Command(BaseCommand):
                     configuration=configuration,
                 )
 
-                # Step 3: Import warning message (after program exists)
+                # Step 3: Import warning message(s) (after program exists)
+                # Supports both:
+                #   - "warning_message"  (singular, object)  — original shape
+                #   - "warning_messages" (plural,   array)   — multi-warning shape
+                # Mutually exclusive; raises if both are present.
+                if "warning_message" in config and "warning_messages" in config:
+                    raise CommandError(
+                        "Config contains both 'warning_message' (singular) and 'warning_messages' (plural). "
+                        "Use one or the other, not both."
+                    )
                 if "warning_message" in config:
                     self._import_warning_message(program, config["warning_message"])
+                elif "warning_messages" in config:
+                    warning_messages = config["warning_messages"]
+                    if not isinstance(warning_messages, list):
+                        raise CommandError("'warning_messages' must be an array")
+                    for warning_config in warning_messages:
+                        self._import_warning_message(program, warning_config)
 
                 # Step 4: Import documents (after program exists)
                 if "documents" in config:
@@ -262,13 +286,21 @@ class Command(BaseCommand):
             for field_name, english_text in translations.items():
                 self.stdout.write(f"  {field_name}: {truncate(english_text)}")
 
-        # Warning message
+        # Warning message(s) — supports singular object or plural array
         if "warning_message" in config:
             warning = config["warning_message"]
             self.stdout.write(f"\n{self.style.SUCCESS('Warning Message:')}")
             self.stdout.write(f"  external_name: {warning.get('external_name', 'N/A')}")
             self.stdout.write(f"  calculator: {warning.get('calculator', '_show')}")
             self.stdout.write(f"  message: {truncate(warning.get('message', ''))}")
+        elif "warning_messages" in config:
+            warnings = config["warning_messages"]
+            self.stdout.write(f"\n{self.style.SUCCESS(f'Warning Messages ({len(warnings)}):')}")
+            for i, warning in enumerate(warnings, 1):
+                self.stdout.write(f"\n  Warning {i}:")
+                self.stdout.write(f"    external_name: {warning.get('external_name', 'N/A')}")
+                self.stdout.write(f"    calculator: {warning.get('calculator', '_show')}")
+                self.stdout.write(f"    message: {truncate(warning.get('message', ''))}")
 
         # Documents
         if "documents" in config:
@@ -521,7 +553,7 @@ class Command(BaseCommand):
         Translation.objects.edit_translation_by_id(translation_obj.id, settings.LANGUAGE_CODE, text, manual=True)
 
         # Handle no_auto fields (copy English to all languages)
-        if translation_obj.no_auto:
+        if translation_obj.no_auto or getattr(self, "skip_translation", False):
             for lang in Translate.languages:
                 Translation.objects.edit_translation_by_id(translation_obj.id, lang, text, manual=False)
         else:
@@ -563,6 +595,8 @@ class Command(BaseCommand):
             "active",
             "low_confidence",
             "show_on_current_benefits",
+            "show_in_has_benefits_step",
+            "has_calculator",
             "value_format",
         ]
 
@@ -570,6 +604,15 @@ class Command(BaseCommand):
             if field_name in configuration:
                 setattr(program, field_name, configuration[field_name])
                 self.stdout.write(f"  {field_name}: {configuration[field_name]}")
+
+        # Handle base_program with validation against BaseProgram choices
+        if "base_program" in configuration:
+            base_program_value = configuration["base_program"]
+            if base_program_value not in BaseProgram.values:
+                valid_choices = ", ".join(BaseProgram.values)
+                raise CommandError(f"Invalid base_program '{base_program_value}'. Must be one of: {valid_choices}")
+            program.base_program = base_program_value
+            self.stdout.write(f"  base_program: {base_program_value}")
 
         program.save()
 

@@ -136,23 +136,21 @@ class IsDisabledDependency(Member):
         return self.member.disabled or self.member.long_term_disability or self.member.visually_impaired
 
 
-# The Member class runs once per each household member, to ensure that the medical expenses
-# are only counted once and only if a member is elderly or disabled; the medical expense is divided
-# by the total number of elderly or disabled members.
 class MedicalExpenseDependency(Member):
-    field = "medical_out_of_pocket_expenses"
-    dependencies = ["age"]
+    """
+    Medical expenses for PolicyEngine SNAP and other deduction calculations.
+
+    Our screener captures medical expenses as a household-level expense, so we
+    attribute the full amount to the head; other members get 0.
+    """
+
+    field = "other_medical_expenses"
 
     def value(self):
-        elderly_or_disabled_members = [
-            member for member in self.screen.household_members.all() if member.age >= 60 or member.has_disability()
-        ]
-        count_of_elderly_or_disabled_members = len(elderly_or_disabled_members)
+        if not self.member.is_head():
+            return 0
 
-        if self.member.age >= 60 or self.member.has_disability():
-            return self.screen.calc_expenses("yearly", ["medical"]) / count_of_elderly_or_disabled_members
-
-        return 0
+        return int(self.screen.calc_expenses("yearly", ["medical"]))
 
 
 class PropertyTaxExpenseDependency(Member):
@@ -178,6 +176,25 @@ class PropertyTaxExpenseDependency(Member):
             return int(total_property_tax / 2)
 
         return int(total_property_tax)
+
+
+class HeatingExpensePersonDependency(Member):
+    """
+    PolicyEngine's state LIHEAP calculators (MA, DC, IL) read heating expense
+    from a person-level field (heating_expense_person) and auto-aggregate
+    back to the spm_unit/household total used in the payment cap formula.
+
+    Our screener captures heating as a household-level expense, so we attribute
+    the full amount to the head; other members get 0.
+    """
+
+    field = "heating_expense_person"
+
+    def value(self):
+        if not self.member.is_head():
+            return 0
+
+        return int(self.screen.calc_expenses("yearly", ["heating", "cooling"]))
 
 
 class IsBlindDependency(Member):
@@ -313,6 +330,45 @@ class SnapIneligibleStudentDependency(Member):
     # PE does not take the age of the children into acount, so we calculate this ourselves
     def value(self):
         return snap_ineligible_student(self.screen, self.member)
+
+
+class NcSnapIneligibleStudentDependency(SnapIneligibleStudentDependency):
+    def value(self):
+        member = self.member
+        screen = self.screen
+
+        if not member.student:
+            return False
+
+        # NC part-time exemption
+        if member.student_full_time is False:
+            return False
+
+        # Shared federal exemptions (E1–E6)
+        if member.age < 18 or member.age >= 50:
+            return False
+
+        if member.has_disability():
+            return False
+
+        head_or_spouse = member.is_head() or member.is_spouse()
+
+        if head_or_spouse and screen.num_children(age_max=5) > 0:
+            return False
+
+        single_parent = member.is_head() and not member.is_married()["is_married"]
+
+        if single_parent and screen.num_children(age_max=11) > 0:
+            return False
+
+        if screen.has_tanf:
+            return False
+
+        # NC Step 3: employment exemptions
+        if member.student_job_training_program or member.student_has_work_study or member.student_works_20_plus_hrs:
+            return False
+
+        return True
 
 
 class TotalHoursWorkedDependency(Member):
@@ -468,7 +524,7 @@ class SocialSecurityIncomeDependency(IncomeDependency):
 
 
 class InvestmentIncomeDependency(IncomeDependency):
-    field = "capital_gains"
+    field = "long_term_capital_gains"
     income_types = ["investment"]
 
 
@@ -738,3 +794,17 @@ class FosterCareDependency(Member):
         if self.member.relationship == "fosterChild":
             return True
         return None
+
+
+class EmploymentIncomeBeforeLsrDependency(IncomeDependency):
+    field = "employment_income_before_lsr"
+    income_types = ["wages"]
+
+
+class SelfEmploymentIncomeBeforeLsrDependency(IncomeDependency):
+    field = "self_employment_income_before_lsr"
+    income_types = ["selfEmployment"]
+
+
+class WaAppleHealthKidsEligible(Member):
+    field = "wa_apple_health_kids_eligible"

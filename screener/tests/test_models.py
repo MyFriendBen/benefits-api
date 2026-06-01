@@ -7,6 +7,7 @@ from unittest.mock import patch
 from django.test import TestCase
 from screener.models import Screen, HouseholdMember, WhiteLabel, IncomeStream, Expense
 from screener.feature_flags import FeatureFlagConfig
+from screener.tests.helpers import seed_program, sync_current_benefits
 
 
 class TestScreen(TestCase):
@@ -226,68 +227,206 @@ class TestScreen(TestCase):
         self.assertEqual(result, 0)
 
     # Tests for Screen.has_benefit() method
+    #
+    # has_benefit() reads from the CurrentBenefit join table. Tests set
+    # has_* columns (still the canonical write target during the dual-write
+    # phase) and invoke sync_current_benefits() to populate the join table —
+    # mirroring what every POST/PATCH does in production.
 
     def test_has_benefit_returns_true_when_user_has_snap(self):
-        """
-        Test that has_benefit('tx_snap') returns True when user has SNAP.
-
-        When screen.has_snap is True, has_benefit('tx_snap') should return True,
-        indicating the user already receives this benefit and it should be filtered
-        from eligibility results.
-        """
+        """has_benefit('tx_snap') is True when has_snap=True and the join table is synced."""
+        seed_program(self.white_label, "tx_snap")
         self.screen.has_snap = True
         self.screen.save()
+        sync_current_benefits(self.screen)
 
         self.assertTrue(self.screen.has_benefit("tx_snap"))
 
     def test_has_benefit_returns_false_when_user_does_not_have_snap(self):
-        """
-        Test that has_benefit('tx_snap') returns False when user does not have SNAP.
-
-        When screen.has_snap is False, has_benefit('tx_snap') should return False,
-        indicating the user does not currently receive this benefit and it should
-        appear in eligibility results.
-        """
+        """has_benefit('tx_snap') is False when has_snap=False."""
+        seed_program(self.white_label, "tx_snap")
         self.screen.has_snap = False
         self.screen.save()
+        sync_current_benefits(self.screen)
 
         self.assertFalse(self.screen.has_benefit("tx_snap"))
 
+    def test_has_benefit_returns_true_when_user_has_wa_snap(self):
+        """has_benefit('wa_snap') is True when has_snap=True (multi-WL variant)."""
+        seed_program(self.white_label, "wa_snap")
+        self.screen.has_snap = True
+        self.screen.save()
+        sync_current_benefits(self.screen)
+
+        self.assertTrue(self.screen.has_benefit("wa_snap"))
+
+    def test_has_benefit_returns_false_when_user_does_not_have_wa_snap(self):
+        """has_benefit('wa_snap') is False when has_snap=False."""
+        seed_program(self.white_label, "wa_snap")
+        self.screen.has_snap = False
+        self.screen.save()
+        sync_current_benefits(self.screen)
+
+        self.assertFalse(self.screen.has_benefit("wa_snap"))
+
     def test_has_benefit_returns_true_for_ma_head_start_when_user_has_head_start(self):
-        """
-        Test that has_benefit('ma_head_start') returns True when user has Head Start.
-        """
+        """has_benefit('ma_head_start') is True when has_head_start=True."""
+        seed_program(self.white_label, "ma_head_start")
         self.screen.has_head_start = True
         self.screen.save()
+        sync_current_benefits(self.screen)
 
         self.assertTrue(self.screen.has_benefit("ma_head_start"))
 
     def test_has_benefit_returns_false_for_ma_head_start_when_user_does_not_have_head_start(self):
-        """
-        Test that has_benefit('ma_head_start') returns False when user does not have Head Start.
-        """
+        """has_benefit('ma_head_start') is False when has_head_start=False."""
+        seed_program(self.white_label, "ma_head_start")
         self.screen.has_head_start = False
         self.screen.save()
+        sync_current_benefits(self.screen)
 
         self.assertFalse(self.screen.has_benefit("ma_head_start"))
 
     def test_has_benefit_returns_true_for_ma_early_head_start_when_user_has_early_head_start(self):
-        """
-        Test that has_benefit('ma_early_head_start') returns True when user has Early Head Start.
-        """
+        """has_benefit('ma_early_head_start') is True when has_early_head_start=True."""
+        seed_program(self.white_label, "ma_early_head_start")
         self.screen.has_early_head_start = True
         self.screen.save()
+        sync_current_benefits(self.screen)
 
         self.assertTrue(self.screen.has_benefit("ma_early_head_start"))
 
     def test_has_benefit_returns_false_for_ma_early_head_start_when_user_does_not_have_early_head_start(self):
-        """
-        Test that has_benefit('ma_early_head_start') returns False when user does not have Early Head Start.
-        """
+        """has_benefit('ma_early_head_start') is False when has_early_head_start=False."""
+        seed_program(self.white_label, "ma_early_head_start")
         self.screen.has_early_head_start = False
         self.screen.save()
+        sync_current_benefits(self.screen)
 
         self.assertFalse(self.screen.has_benefit("ma_early_head_start"))
+
+    # Cross-cutting cases — these are the ones MFB-719 specifically wants to
+    # lock in: multi-WL variants over the same column, compound conditions
+    # resolved at write time, and no N+1 on the eligibility read path.
+
+    def test_has_benefit_multi_wl_variants_resolve_to_same_column(self):
+        """
+        Both 'snap' and 'co_snap' point at has_snap. After sync, has_benefit
+        is True for both keys, validating that name fan-out works at the
+        program-FK level on the join table.
+        """
+        seed_program(self.white_label, "snap", "co_snap")
+        self.screen.has_snap = True
+        self.screen.save()
+        sync_current_benefits(self.screen)
+
+        self.assertTrue(self.screen.has_benefit("snap"))
+        self.assertTrue(self.screen.has_benefit("co_snap"))
+
+    def test_has_benefit_multi_wl_variants_tanf(self):
+        """Same fan-out check for has_tanf → tanf / co_tanf / il_tanf."""
+        seed_program(self.white_label, "tanf", "co_tanf", "il_tanf")
+        self.screen.has_tanf = True
+        self.screen.save()
+        sync_current_benefits(self.screen)
+
+        self.assertTrue(self.screen.has_benefit("tanf"))
+        self.assertTrue(self.screen.has_benefit("co_tanf"))
+        self.assertTrue(self.screen.has_benefit("il_tanf"))
+
+    def test_has_benefit_compound_ssi_via_has_ssi_column(self):
+        """ssi resolves True when has_ssi=True (one half of the OR)."""
+        seed_program(self.white_label, "ssi", "tx_ssi", "cesn_ssi")
+        self.screen.has_ssi = True
+        self.screen.save()
+        sync_current_benefits(self.screen)
+
+        self.assertTrue(self.screen.has_benefit("ssi"))
+        self.assertTrue(self.screen.has_benefit("tx_ssi"))
+        self.assertTrue(self.screen.has_benefit("cesn_ssi"))
+
+    def test_has_benefit_compound_ssi_via_ssi_income(self):
+        """
+        ssi resolves True via reported sSI income (the other half of the OR),
+        even when has_ssi=False. This is the case that would silently break
+        without the compound-at-write-time path.
+        """
+        seed_program(self.white_label, "ssi")
+        self.screen.has_ssi = False
+        self.screen.save()
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=self.head,
+            type="sSI",
+            amount=500,
+            frequency="monthly",
+        )
+        sync_current_benefits(self.screen)
+
+        self.assertTrue(self.screen.has_benefit("ssi"))
+
+    def test_has_benefit_compound_ma_mass_health_via_has_medicaid(self):
+        """ma_mass_health resolves True when has_medicaid=True."""
+        seed_program(self.white_label, "ma_mass_health")
+        self.screen.has_medicaid = True
+        self.screen.save()
+        sync_current_benefits(self.screen)
+
+        self.assertTrue(self.screen.has_benefit("ma_mass_health"))
+
+    def test_has_benefit_compound_ma_mass_health_via_has_medicaid_hi(self):
+        """ma_mass_health resolves True when only has_medicaid_hi=True."""
+        seed_program(self.white_label, "ma_mass_health")
+        self.screen.has_medicaid = False
+        self.screen.has_medicaid_hi = True
+        self.screen.save()
+        sync_current_benefits(self.screen)
+
+        self.assertTrue(self.screen.has_benefit("ma_mass_health"))
+
+    def test_has_benefit_unknown_program_returns_false(self):
+        """Unknown name_abbreviated returns False (no row in join table)."""
+        self.assertFalse(self.screen.has_benefit("not_a_real_program"))
+
+    def test_has_benefit_only_matches_screen_owned_rows(self):
+        """
+        has_benefit only returns True for rows on this screen's join table —
+        a CurrentBenefit on a different screen with the same program must
+        not leak through.
+        """
+        seed_program(self.white_label, "snap")
+        # zipcode is arbitrary — isolation is enforced by the screen FK on
+        # CurrentBenefit, not by anything zip-dependent.
+        other_screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="78701", household_size=1, completed=False
+        )
+        other_screen.has_snap = True
+        other_screen.save()
+        sync_current_benefits(other_screen)
+
+        # self.screen has no current_benefits rows
+        self.assertFalse(self.screen.has_benefit("snap"))
+
+    def test_has_benefit_no_n_plus_one_with_prefetch(self):
+        """
+        When current_benefits__program is prefetched, calling has_benefit()
+        N times must not issue N additional queries. The prefetch path serves
+        the lookup from the in-memory cache.
+        """
+        seed_program(self.white_label, "snap", "tanf", "wic", "ssi")
+        self.screen.has_snap = True
+        self.screen.has_tanf = True
+        self.screen.save()
+        sync_current_benefits(self.screen)
+
+        prefetched = Screen.objects.prefetch_related("current_benefits__program").get(pk=self.screen.pk)
+
+        # 0 queries: prefetch already loaded current_benefits + program
+        with self.assertNumQueries(0):
+            self.assertTrue(prefetched.has_benefit("snap"))
+            self.assertTrue(prefetched.has_benefit("tanf"))
+            self.assertFalse(prefetched.has_benefit("wic"))
+            self.assertFalse(prefetched.has_benefit("ssi"))
 
     # Tests for Screen.other_tax_unit_structure() method
 

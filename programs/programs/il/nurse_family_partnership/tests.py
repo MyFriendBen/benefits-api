@@ -10,6 +10,7 @@ Tests verify:
 from django.test import TestCase
 from programs.programs.il.nurse_family_partnership.calculator import IlNurseFamilyPartnership
 from screener.models import Screen, HouseholdMember, IncomeStream, WhiteLabel
+from screener.tests.helpers import seed_program, sync_current_benefits
 from programs.models import Program, FederalPoveryLimit
 from programs.util import Dependencies
 
@@ -69,8 +70,10 @@ class TestIlNurseFamilyPartnership(TestCase):
 
     def test_household_eligible_with_wic_regardless_of_income(self):
         """Test household is eligible with WIC (presumed eligibility) regardless of income."""
+        seed_program(self.il_white_label, "wic")
         self.screen.has_wic = True
         self.screen.save()
+        sync_current_benefits(self.screen)
 
         parent = HouseholdMember.objects.create(
             screen=self.screen,

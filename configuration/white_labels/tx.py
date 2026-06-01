@@ -33,29 +33,6 @@ class TxConfigurationData(ConfigurationData):
         ]
     }
 
-    # Deprecated: managed via Django admin → Programs → Referrers. Remove as part of MFB-864.
-    referral_options = {
-        "searchEngine": {
-            "_label": "referralOptions.searchEngine",
-            "_default_message": "Google or other search engine",
-        },
-        "socialMedia": {
-            "_label": "referralOptions.socialMedia",
-            "_default_message": "Social Media",
-        },
-        "friend": {
-            "_label": "referralOptions.friend",
-            "_default_message": "Friend / Family / Word of Mouth",
-        },
-        "merit": {"_label": "referralOptions.merit", "_default_message": "Merit America"},
-        "other": {"_label": "referralOptions.other", "_default_message": "Other"},
-        "testOrProspect": {
-            "_label": "referralOptions.testOrProspect",
-            "_default_message": "Test / Prospective Partner",
-        },
-        "ctl": "Center for Transforming Lives",
-    }
-
     acute_condition_options = {
         "food": {
             "icon": {"_icon": "Food", "_classname": "option-card-icon"},
@@ -82,7 +59,7 @@ class TxConfigurationData(ConfigurationData):
             "icon": {"_icon": "Support", "_classname": "option-card-icon"},
             "text": {
                 "_label": "acuteConditionOptions.support",
-                "_default_message": "A challenge you or your child would like to talk about",
+                "_default_message": "Mental health support",
             },
         },
         "childDevelopment": {
@@ -90,6 +67,13 @@ class TxConfigurationData(ConfigurationData):
             "text": {
                 "_label": "acuteConditionOptions.childDevelopment",
                 "_default_message": "Concern about your child's development",
+            },
+        },
+        "familyPlanning": {
+            "icon": {"_icon": "Family_planning", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.familyPlanning",
+                "_default_message": "Family planning or birth control",
             },
         },
         "jobResources": {

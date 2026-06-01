@@ -2,7 +2,7 @@ name: PR Validation
 
 # Validates pull requests to main branch with:
 # - Full test suite using VCR (replays existing cassettes, records new interactions)
-# - Coverage upload to Codecov
+# - Coverage upload to Codecov (same-repo PRs only; fork PRs skip upload — no secrets)
 # - Code formatting checks
 
 on:
@@ -50,7 +50,9 @@ jobs:
         uses: ./.github/actions/run-tests
         with:
           vcr-mode: new_episodes
-          upload-coverage: 'true'
+          # Secrets (incl. CODECOV_TOKEN) are not available to workflows on fork PRs.
+          # Still run the full suite; upload coverage only for same-repo PRs.
+          upload-coverage: ${{ !github.event.pull_request.head.repo.fork && 'true' || 'false' }}
           codecov-token: ${{ secrets.CODECOV_TOKEN }}
           hud-api-token: ${{ secrets.HUD_API_TOKEN }}
 

@@ -461,7 +461,6 @@ class ProgramManager(models.Manager):
         "learn_more_link",
         "apply_button_link",
         "apply_button_description",
-        "value_type",
         "estimated_delivery_time",
         "estimated_application_time",
         "estimated_value",
@@ -535,6 +534,7 @@ class ProgramDataController(ModelDataController["Program"]):
             "required_programs": list[str],
             "excludes_programs": list[str],
             "value_format": Optional[str],
+            "value_type": str,
             "white_label": str,
         },
     )
@@ -561,6 +561,7 @@ class ProgramDataController(ModelDataController["Program"]):
             "required_programs": [p.external_name for p in program.required_programs.all()],
             "excludes_programs": [p.external_name for p in program.excludes_programs.all()],
             "value_format": program.value_format,
+            "value_type": program.value_type,
             "white_label": program.white_label.code,
         }
 
@@ -573,6 +574,7 @@ class ProgramDataController(ModelDataController["Program"]):
         program.low_confidence = data["low_confidence"]
         program.show_on_current_benefits = data.get("show_on_current_benefits", True)
         program.value_format = data["value_format"]
+        program.value_type = data.get("value_type", Program.VALUE_TYPE_BENEFIT)
 
         # get or create fpl
         fpl = data["fpl"]
@@ -757,13 +759,13 @@ class Program(models.Model):
         null=False,
         on_delete=models.PROTECT,
     )
-    value_type = models.ForeignKey(
-        Translation,
-        related_name="program_value_type",
-        blank=False,
-        null=False,
-        on_delete=models.PROTECT,
-    )
+    VALUE_TYPE_BENEFIT = "benefit"
+    VALUE_TYPE_TAX_CREDIT = "tax_credit"
+    VALUE_TYPE_CHOICES = [
+        (VALUE_TYPE_BENEFIT, "Benefit"),
+        (VALUE_TYPE_TAX_CREDIT, "Tax Credit"),
+    ]
+    value_type = models.CharField(max_length=32, choices=VALUE_TYPE_CHOICES, default=VALUE_TYPE_BENEFIT)
     estimated_delivery_time = models.ForeignKey(
         Translation,
         related_name="program_estimated_delivery_time",
@@ -810,6 +812,14 @@ class Program(models.Model):
         eligibility = calculator.calc()
 
         return eligibility
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["white_label", "name_abbreviated"],
+                name="program_unique_wl_name_abbreviated",
+            ),
+        ]
 
     def __str__(self):
         white_label_name = f"[{self.white_label.name}] " if self.white_label and self.white_label.name else ""
@@ -1352,6 +1362,7 @@ class NavigatorDataController(ModelDataController["Navigator"]):
             "counties": CountiesType,
             "languages": LanugagesType,
             "programs": list[str],
+            "eligibility_programs": list[str],
             "white_label": str,
         },
     )
@@ -1369,6 +1380,7 @@ class NavigatorDataController(ModelDataController["Navigator"]):
             "counties": self._counties(),
             "languages": self._languages(),
             "programs": [p.external_name for p in navigator.programs.all()],
+            "eligibility_programs": [p.external_name for p in navigator.eligibility_programs.all()],
             "white_label": navigator.white_label.code,
         }
 
@@ -1442,6 +1454,17 @@ class NavigatorDataController(ModelDataController["Navigator"]):
         if getattr(through, "__name__", str(through)) != "ProgramNavigator":
             navigator.programs.set(programs)
 
+        eligibility_programs = []
+        for item in data.get("eligibility_programs", []):
+            external_name = item if isinstance(item, str) else (item.get("external_name") or item.get("name"))
+            if not external_name:
+                continue
+            program_instance = Program.objects.get(external_name=external_name)
+            if program_instance.white_label_id != navigator.white_label_id:
+                raise self.DeferCreation()
+            eligibility_programs.append(program_instance)
+        navigator.eligibility_programs.set(eligibility_programs)
+
         navigator.save()
 
     @classmethod
@@ -1475,6 +1498,12 @@ class Navigator(models.Model):
     phone_number = PhoneNumberField(blank=True, null=True)
     counties = models.ManyToManyField(County, related_name="navigator", blank=True)
     languages = models.ManyToManyField(NavigatorLanguage, related_name="navigator", blank=True)
+    eligibility_programs = models.ManyToManyField(
+        Program,
+        related_name="eligibility_navigators",
+        blank=True,
+        help_text="Navigator is only shown when the household qualifies for ALL of these programs.",
+    )
 
     name = models.ForeignKey(
         Translation,

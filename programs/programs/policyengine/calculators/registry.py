@@ -41,6 +41,7 @@ from programs.programs.tx.pe import (
     tx_spm_calculators,
     tx_tax_unit_calculators,
 )
+from programs.programs.wa.pe import wa_member_calculators, wa_spm_calculators, wa_tax_calculators
 
 all_member_calculators: dict[str, type[PolicyEngineMembersCalculator]] = {
     **co_member_calculators,
@@ -49,6 +50,7 @@ all_member_calculators: dict[str, type[PolicyEngineMembersCalculator]] = {
     **ma_member_calculators,
     **nc_member_calculators,
     **tx_member_calculators,
+    **wa_member_calculators,
 }
 
 all_spm_unit_calculators: dict[str, type[PolicyEngineSpmCalulator]] = {
@@ -58,6 +60,7 @@ all_spm_unit_calculators: dict[str, type[PolicyEngineSpmCalulator]] = {
     **ma_spm_calculators,
     **nc_spm_calculators,
     **tx_spm_calculators,
+    **wa_spm_calculators,
 }
 
 all_tax_unit_calculators: dict[str, type[PolicyEngineTaxUnitCalulator]] = {
@@ -66,6 +69,7 @@ all_tax_unit_calculators: dict[str, type[PolicyEngineTaxUnitCalulator]] = {
     **il_tax_unit_calculators,
     **ma_tax_unit_calculators,
     **tx_tax_unit_calculators,
+    **wa_tax_calculators,
 }
 
 all_calculators: dict[str, type[PolicyEngineCalulator]] = {

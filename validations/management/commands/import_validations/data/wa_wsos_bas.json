@@ -1,0 +1,154 @@
+[
+  {
+    "notes": "Scenario 1: Clearly eligible — WA student with income well below the 2026 1-person 125% MFI cap ($90,500/year). Student status confirmed, income $2,000/month. Baseline BaS golden path: residency + student + income all clearly satisfied.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King",
+      "household_size": 1,
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 20,
+          "birth_year": 2006,
+          "birth_month": 1,
+          "student": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2000.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wsos_bas",
+      "eligible": true,
+      "value": 22500
+    }
+  },
+  {
+    "notes": "Scenario 2: Clearly ineligible — 1-person Washington household above the 2026 1-person 125% MFI cap ($90,500/year). Applicant is a student, so the failure is income only.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King",
+      "household_size": 1,
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 21,
+          "birth_year": 2005,
+          "birth_month": 3,
+          "student": true,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 8000.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wsos_bas",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "Scenario 3: Near-boundary edge case — 4-person household with applicant (HS senior, age 17) just below the 2026 4-person 125% MFI cap because monthly income is rounded down ($14,541/month = $174,492/year vs. $174,500/year cap). Tests household-size scaling and a realistic BaS persona (HS senior in a family of 4). Only the 17-year-old student is the BaS applicant; other household members count toward household size and income.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98501",
+      "county": "Thurston",
+      "household_size": 4,
+      "household_assets": 0.0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 46,
+          "birth_year": 1980,
+          "birth_month": 1,
+          "student": false,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 14541.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "age": 44,
+          "birth_year": 1982,
+          "birth_month": 3,
+          "student": false,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 17,
+          "birth_year": 2008,
+          "birth_month": 9,
+          "student": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "age": 13,
+          "birth_year": 2012,
+          "birth_month": 6,
+          "student": false,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wsos_bas",
+      "eligible": true,
+      "value": 22500
+    }
+  }
+]

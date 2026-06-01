@@ -212,6 +212,25 @@ def integration_requires_token():
         # Test code that needs HUD_API_TOKEN
         ...
     """
-    has_token = config("HUD_API_TOKEN", default=None) is not None
+    has_token = bool(config("HUD_API_TOKEN", default=None))
     if not has_token:
         pytest.skip("HUD_API_TOKEN not set - skipping integration test")
+
+
+def pytest_collection_modifyitems(config, items):
+    """
+    Skip HUD integration tests when no API token is configured.
+
+    Fork PR workflows do not receive repository secrets, so ``HUD_API_TOKEN`` is
+    unset. Unittest TestCase subclasses do not always honor ``pytest_runtest_setup``;
+    applying a skip marker at collection time is reliable.
+    """
+    from decouple import config as decouple_config
+
+    token = decouple_config("HUD_API_TOKEN", default=None)
+    if token:
+        return
+    skip_integration = pytest.mark.skip(reason="HUD_API_TOKEN not set - skipping integration tests")
+    for item in items:
+        if item.get_closest_marker("integration"):
+            item.add_marker(skip_integration)

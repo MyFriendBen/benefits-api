@@ -106,22 +106,6 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # }
 
     # ==========================================================================================
-    # REFERRAL OPTIONS - Deprecated
-    # ==========================================================================================
-    # Deprecated: referral_options in config files is no longer the source of truth.
-    # Referral options are now managed via Django admin → Programs → Referrers.
-    # This field will be removed as part of MFB-864.
-    # ==========================================================================================
-
-    referral_options = {
-        "[REPLACE_ME]": {"_label": "", "_default_message": ""},
-        "other": {"_label": "referralOptions.other", "_default_message": "Other"},
-        "testOrProspect": {
-            "_label": "referralOptions.testOrProspect",
-            "_default_message": "Test / Prospective Partner",
-        },
-    }
-
     # ==========================================================================================
     # LANGUAGE OPTIONS - Usually inherited as is from ConfigurationData
     # ==========================================================================================

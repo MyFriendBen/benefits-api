@@ -69,7 +69,7 @@ class MaConfigurationData(ConfigurationData):
             "icon": {"_icon": "Support", "_classname": "option-card-icon"},
             "text": {
                 "_label": "acuteConditionOptions.support",
-                "_default_message": "A challenge you or your child would like to talk about",
+                "_default_message": "Mental health support",
             },
         },
         "childDevelopment": {
@@ -114,6 +114,13 @@ class MaConfigurationData(ConfigurationData):
                 "_default_message": "Resources for veterans and their families",
             },
         },
+        "disabilityResources": {
+            "icon": {"_icon": "Disabled", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.disabilityResources",
+                "_default_message": "Resources for people with disabilities",
+            },
+        },
     }
 
     sign_up_options = {
@@ -132,22 +139,6 @@ class MaConfigurationData(ConfigurationData):
         "fosterChild": {
             "_label": "relationshipOptions.fosterChildOrKinshipChild.ma",
             "_default_message": "Foster Child / Kinship-Guardianship Care",
-        },
-    }
-
-    # Deprecated: managed via Django admin → Programs → Referrers. Remove as part of MFB-864.
-    referral_options = {
-        "bch": "Boston Children's Hospital",
-        "masscap": "MASSCAP",
-        "ccf": "Cambridge Community Foundation",
-        "pce": "PACE",
-        "socialMedia": {"_label": "referralOptions.socialMedia", "_default_message": "Social Media"},
-        "friend": {"_label": "referralOptions.friend", "_default_message": "Friend / Family / Word of Mouth"},
-        "merit": {"_label": "referralOptions.merit", "_default_message": "Merit America"},
-        "other": {"_label": "referralOptions.other", "_default_message": "Other"},
-        "testOrProspect": {
-            "_label": "referralOptions.testOrProspect",
-            "_default_message": "Test / Prospective Partner",
         },
     }
 

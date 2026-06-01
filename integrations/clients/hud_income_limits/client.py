@@ -253,6 +253,92 @@ class HudIncomeClient:
 
         return int(value)
 
+    FMR_BEDROOM_FIELDS = {
+        0: "Efficiency",
+        1: "One-Bedroom",
+        2: "Two-Bedroom",
+        3: "Three-Bedroom",
+        4: "Four-Bedroom",
+    }
+
+    @staticmethod
+    def _normalize_fmr_basicdata(basic_data: object, bedroom_field: str) -> dict:
+        """
+        HUD's fmr/data payload usually has data.basicdata as a dict of bedroom
+        columns. Some responses return basicdata as a list of per-area dicts
+        instead, which caused AttributeError when calling .get on a list.
+        """
+        if isinstance(basic_data, dict):
+            return basic_data
+        if isinstance(basic_data, list):
+            for item in basic_data:
+                if isinstance(item, dict) and item.get(bedroom_field) is not None:
+                    return item
+            for item in basic_data:
+                if isinstance(item, dict):
+                    return item
+        return {}
+
+    def get_screen_fmr(
+        self,
+        screen: Screen,
+        bedrooms: int,
+        year: Union[int, str],
+        county_override: Optional[str] = None,
+    ) -> int:
+        """
+        Get Fair Market Rent for a Screen's county and bedroom size.
+
+        Uses HUD's FMR endpoint to look up the monthly FMR for the given
+        county/metro area and number of bedrooms (0–4).
+
+        Args:
+            screen: Screen object with white_label.state_code and county
+            bedrooms: Number of bedrooms (0=Efficiency, 1–4=standard sizes)
+            year: Year for FMR data (e.g., 2026 or "2026")
+            county_override: Optional county name to use instead of screen.county
+
+        Returns:
+            Monthly Fair Market Rent in dollars
+
+        Example:
+            >>> hud_client.get_screen_fmr(screen, 2, "2026")
+            2082
+        """
+        year = int(year) if isinstance(year, str) else year
+        if bedrooms < 0 or bedrooms > 4:
+            raise HudIncomeClientError(f"Bedroom count must be 0–4, got {bedrooms}")
+
+        county = county_override if county_override else screen.county
+        entity_id = self._get_entity_id(screen.white_label.state_code, county, year)
+
+        cache_key = f"hud_fmr_{entity_id}_{year}"
+        data = self._fetch_cached_data(cache_key, f"fmr/data/{entity_id}", year)
+
+        if not data or "data" not in data:
+            raise HudIncomeClientError(f"No FMR data found for {county}, {screen.white_label.state_code}")
+
+        area_data = data["data"]
+        if not isinstance(area_data, dict):
+            # SAFMR areas (e.g. Seattle-Bellevue) return a list of ZIP-level records
+            # rather than a single county dict. We cannot use those for a county-level
+            # estimate, so surface a typed error instead of crashing on .get().
+            raise HudIncomeClientError(
+                f"FMR data for {county}, {screen.white_label.state_code} is in an unsupported "
+                f"format (got {type(area_data).__name__} instead of dict). "
+                f"This county may be a Small Area FMR (SAFMR) area."
+            )
+
+        basic_data = area_data.get("basicdata") or {}
+
+        field = self.FMR_BEDROOM_FIELDS[bedrooms]
+        basic_data = self._normalize_fmr_basicdata(area_data.get("basicdata", {}), field)
+        value = basic_data.get(field)
+        if value is None:
+            raise HudIncomeClientError(f"No FMR data for {bedrooms}-bedroom in {county}")
+
+        return int(value)
+
     # Derived from MtspAmiPercent so the two stay in sync automatically
     MTSP_THRESHOLDS: list[int] = sorted(int(p.rstrip("%")) for p in get_args(MtspAmiPercent))
 
@@ -398,7 +484,11 @@ class HudIncomeClient:
         try:
             response = self._session.get(f"{self.BASE_URL}/{endpoint}", headers=self.headers, params=params, timeout=30)
             response.raise_for_status()
-            return response.json()
+            try:
+                return response.json()
+            except ValueError as e:
+                capture_exception(e)
+                raise HudIncomeClientError(f"Non-JSON response from HUD API ({endpoint}): {response.text[:200]}") from e
         except requests.exceptions.HTTPError as e:
             capture_exception(e)
             status_code = e.response.status_code
