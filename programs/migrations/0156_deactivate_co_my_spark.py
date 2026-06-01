@@ -9,7 +9,7 @@ def deactivate_my_spark(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0152_backfill_has_benefits_categories"),
+        ("programs", "0155_program_unique_wl_name_abbreviated"),
     ]
     operations = [
         # noop reverse: rolling back should not reactivate — reactivation should be handled separately
