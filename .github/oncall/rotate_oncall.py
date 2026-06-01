@@ -39,6 +39,7 @@ SLACK_API = "https://slack.com/api"
 RESPONSIBILITIES = [
     ":sunrise: Daily standup",
     ":speech_balloon: Ad-hoc eng questions",
+    ":handshake: PolicyEngine comms",
     ":bug: Sentry + #bugs triage",
     ":rocket: The weekly deploy",
 ]

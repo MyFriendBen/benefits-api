@@ -71,10 +71,10 @@ That's it. The workflow runs automatically every Monday at ~9am Denver time.
 Dry-run locally (no Slack calls, no tokens needed):
 
 ```bash
-ONCALL_DRY_RUN=1 python oncall/rotate_oncall.py
+ONCALL_DRY_RUN=1 python .github/oncall/rotate_oncall.py
 
 # See who's on-call for a specific week:
-ONCALL_DRY_RUN=1 ONCALL_TODAY=2026-07-15 python oncall/rotate_oncall.py
+ONCALL_DRY_RUN=1 ONCALL_TODAY=2026-07-15 python .github/oncall/rotate_oncall.py
 ```
 
 Or trigger the real workflow on demand: **Actions → Weekly On-Call Rotation →

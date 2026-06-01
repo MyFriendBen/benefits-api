@@ -42,4 +42,4 @@ jobs:
           SLACK_USERGROUP_ID: ${{ secrets.SLACK_USERGROUP_ID }}
           SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
           ONCALL_DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
-        run: python oncall/rotate_oncall.py
+        run: python .github/oncall/rotate_oncall.py
