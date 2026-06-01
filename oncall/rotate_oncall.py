@@ -37,10 +37,10 @@ SLACK_API = "https://slack.com/api"
 # responsibilities shown in the weekly Slack announcement. Slack mrkdwn +
 # :emoji: are supported.
 RESPONSIBILITIES = [
-    ":rocket: Owns the deploy",
-    ":speech_balloon: Answers ad-hoc questions",
-    ":bug: Triages Sentry alerts and the #bugs channel",
-    ":sunrise: Runs standup",
+    ":sunrise: Daily standup",
+    ":speech_balloon: Ad-hoc eng questions",
+    ":bug: Sentry + #bugs triage",
+    ":rocket: The weekly deploy",
 ]
 
 
@@ -133,11 +133,20 @@ def main() -> int:
     mention = f"<@{on_call['slack_id']}>"
     prev_mention = f"<@{previous['slack_id']}>"
     duties = "\n".join(f"• {d}" for d in RESPONSIBILITIES)
-    announce = (
-        f":pager: *On-call this week:* {mention}\n"
-        f"Thanks for your shift, {prev_mention}! :wave:\n\n"
-        f"*This week you own:*\n{duties}"
-    )
+    handoff = f":pager: *On-call this week:* {mention}\n" f"Thanks for your shift, {prev_mention}! :wave:"
+    # Block Kit gives a real horizontal divider between the handoff and the
+    # duties list. (Slack collapses repeated newlines, so a divider block is
+    # the only way to get visible separation.) `text` is the notification /
+    # accessibility fallback.
+    fallback = f"{handoff}\n\n*This week you own:*\n{duties}"
+    blocks = [
+        {"type": "section", "text": {"type": "mrkdwn", "text": handoff}},
+        {"type": "divider"},
+        {
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": f"*This week you own:*\n{duties}"},
+        },
+    ]
     topic = f"On-call: {on_call['name']}"
 
     if dry_run:
@@ -147,7 +156,7 @@ def main() -> int:
         print(f"  Previous:    {previous['name']} ({previous['slack_id']})")
         print(f"  Usergroup:   {usergroup or '(unset)'} -> [{on_call['slack_id']}]")
         print(f"  Channel:     {channel or '(unset)'}")
-        print(f"  Announce:    {announce!r}")
+        print(f"  Announce:    {fallback!r}")
         print(f"  Topic:       {topic!r}")
         return 0
 
@@ -169,8 +178,12 @@ def main() -> int:
         token,
         {"usergroup": usergroup, "users": on_call["slack_id"]},
     )
-    # 2. Announce the handoff.
-    slack_post("chat.postMessage", token, {"channel": channel, "text": announce})
+    # 2. Announce the handoff (blocks for layout, text for the notification).
+    slack_post(
+        "chat.postMessage",
+        token,
+        {"channel": channel, "text": fallback, "blocks": blocks},
+    )
     # 3. Update the channel topic (best effort; don't fail the run on topic error).
     try:
         slack_post(
