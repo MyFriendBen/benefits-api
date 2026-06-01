@@ -31,9 +31,17 @@ class Command(BaseCommand):
         python manage.py add_translations strings.json --dry-run
         python manage.py add_translations strings.json --no-translate
 
-    Idempotent: re-running updates English text and backfills missing languages.
+    Idempotent for *text*: re-running updates English text and backfills missing
+    languages. CAVEAT: re-running also rewrites the `active` and `no_auto` flags
+    on a pre-existing label to match this command's options. A plain re-run uses
+    active=True / no_auto=False, so it will silently reactivate a label that was
+    deliberately set inactive in the admin (and clear no_auto). Pass --inactive /
+    --no-auto to preserve those, or scope the input map to genuinely new labels.
+
     Use --dry-run first to preview exactly what would change without writing
-    anything or calling the translation API.
+    anything or calling the translation API. (Dry-run compares English text only,
+    so a label whose English is unchanged but which is missing other-language rows
+    is reported as "unchanged" even though a real run would backfill those rows.)
 
     For importing a *pre-translated* full export (per-language text plus the
     no_auto/active/edited flags), use `bulk_add_translations` instead — that
@@ -61,12 +69,19 @@ class Command(BaseCommand):
         parser.add_argument(
             "--no-auto",
             action="store_true",
-            help="Set no_auto=True on the labels (protects manually-edited translations from being overwritten).",
+            help=(
+                "Set no_auto=True on the labels. NOTE: this only protects translations that have "
+                "ALREADY been manually edited; freshly-created blank non-English rows are still "
+                "auto-filled on this same run. To skip auto-translation entirely, use --no-translate."
+            ),
         )
         parser.add_argument(
             "--inactive",
             action="store_true",
-            help="Create the labels as inactive (active=False).",
+            help=(
+                "Create/keep the labels as inactive (active=False). Without this flag a re-run "
+                "sets active=True, which will reactivate a previously-inactivated label."
+            ),
         )
 
     def _load_data(self, options):

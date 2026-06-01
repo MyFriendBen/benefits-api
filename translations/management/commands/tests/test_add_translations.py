@@ -135,6 +135,24 @@ class AddTranslationsCommandTest(TestCase):
         written_ids = {call.args[0] for call in mock_translation.objects.edit_translation_by_id.call_args_list}
         self.assertEqual(written_ids, {"x", "y", "z"})
 
+    @patch("translations.management.commands.add_translations.Translate")
+    @patch("translations.management.commands.add_translations.Translation")
+    def test_bulk_translate_failure_raises_after_english_saved(self, mock_translation, mock_translate):
+        # The English rows are written before bulk_translate is attempted; if the
+        # translation API raises, the command must surface a CommandError while the
+        # already-saved English rows remain (the documented "re-run to recover" contract).
+        mock_translation.objects = self._mock_existing({})
+        mock_translate.return_value.bulk_translate.side_effect = Exception("Google API down")
+
+        with self.assertRaises(CommandError) as ctx:
+            self._run({"a": "Alpha", "b": "Beta"})
+
+        # English rows were saved before the failure.
+        self.assertEqual(mock_translation.objects.add_translation.call_count, 2)
+        # No translated rows written, and the error tells the operator re-running recovers.
+        mock_translation.objects.edit_translation_by_id.assert_not_called()
+        self.assertIn("English rows were saved", str(ctx.exception))
+
     @patch("translations.management.commands.add_translations.Translation")
     def test_invalid_json_raises(self, mock_translation):
         path = self._write_json("not json")
