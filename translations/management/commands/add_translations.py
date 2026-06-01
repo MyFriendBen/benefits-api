@@ -136,7 +136,9 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING(f"  ~ {label}  (was: {current!r})"))
 
         if no_translate:
-            self.stdout.write(f"Auto-translate: disabled (--no-translate). Target languages would be: {target_languages}")
+            self.stdout.write(
+                f"Auto-translate: disabled (--no-translate). Target languages would be: {target_languages}"
+            )
         else:
             self.stdout.write(f"Auto-translate target languages: {target_languages}")
 
@@ -154,7 +156,9 @@ class Command(BaseCommand):
             translation_objects.append((translation_obj, text))
 
         if no_translate:
-            self.stdout.write(self.style.SUCCESS(f"Added/updated {len(data)} English label(s). Skipped auto-translate."))
+            self.stdout.write(
+                self.style.SUCCESS(f"Added/updated {len(data)} English label(s). Skipped auto-translate.")
+            )
             return
 
         # ---- Auto-translate, batched: dedup identical English strings, one bulk call per unique text. ----
@@ -182,9 +186,7 @@ class Command(BaseCommand):
         for text, lang_map in results.items():
             for translation_obj in by_text[text]:
                 for lang, translated_text in lang_map.items():
-                    Translation.objects.edit_translation_by_id(
-                        translation_obj.id, lang, translated_text, manual=False
-                    )
+                    Translation.objects.edit_translation_by_id(translation_obj.id, lang, translated_text, manual=False)
                     translated_records += 1
 
         self.stdout.write(

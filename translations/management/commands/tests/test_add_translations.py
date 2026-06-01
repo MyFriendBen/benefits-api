@@ -60,9 +60,7 @@ class AddTranslationsCommandTest(TestCase):
 
         def filter_side_effect(label=None, **_):
             qs = MagicMock()
-            qs.first.return_value = (
-                make_obj(label_to_english[label]) if label in label_to_english else None
-            )
+            qs.first.return_value = make_obj(label_to_english[label]) if label in label_to_english else None
             return qs
 
         objects = MagicMock()
@@ -77,9 +75,7 @@ class AddTranslationsCommandTest(TestCase):
         # "keep" already exists with identical text (unchanged),
         # "change" exists with different text (update),
         # "brand_new" does not exist (new).
-        mock_translation.objects = self._mock_existing(
-            {"keep": "Same", "change": "Old text"}
-        )
+        mock_translation.objects = self._mock_existing({"keep": "Same", "change": "Old text"})
         mock_translate.return_value.bulk_translate.return_value = {}
 
         self._run(
@@ -125,9 +121,7 @@ class AddTranslationsCommandTest(TestCase):
         mock_translation.objects = self._mock_existing({})
         translate_instance = mock_translate.return_value
         # Echo back a translation per requested lang so fan-out has something to write.
-        translate_instance.bulk_translate.side_effect = lambda langs, texts: {
-            t: {"es": f"{t}-es"} for t in texts
-        }
+        translate_instance.bulk_translate.side_effect = lambda langs, texts: {t: {"es": f"{t}-es"} for t in texts}
 
         # Three labels, two of which share identical English text.
         self._run({"x": "Shared", "y": "Shared", "z": "Unique"})
@@ -138,9 +132,7 @@ class AddTranslationsCommandTest(TestCase):
         self.assertCountEqual(called_texts, ["Shared", "Unique"])
 
         # ...but the translated result fans out to all 3 labels (x and y both get it).
-        written_ids = {
-            call.args[0] for call in mock_translation.objects.edit_translation_by_id.call_args_list
-        }
+        written_ids = {call.args[0] for call in mock_translation.objects.edit_translation_by_id.call_args_list}
         self.assertEqual(written_ids, {"x", "y", "z"})
 
     @patch("translations.management.commands.add_translations.Translation")
