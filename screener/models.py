@@ -113,6 +113,7 @@ class Screen(models.Model):
     has_ssdi = models.BooleanField(default=False, blank=True, null=True)
     has_cowap = models.BooleanField(default=False, blank=True, null=True)
     has_ncwap = models.BooleanField(default=False, blank=True, null=True)
+    has_wa_wap = models.BooleanField(default=False, blank=True, null=True)
     has_ubp = models.BooleanField(default=False, blank=True, null=True)
     has_pell_grant = models.BooleanField(default=False, blank=True, null=True)
     has_rag = models.BooleanField(default=False, blank=True, null=True)
@@ -473,6 +474,7 @@ class Screen(models.Model):
             "cowap": self.has_cowap,
             "cesn_cowap": self.has_cowap,
             "ncwap": self.has_ncwap,
+            "wa_wap": self.has_wa_wap,
             "ubp": self.has_ubp,
             "cesn_ubp": self.has_ubp,
             "nfp": self.has_nfp,
