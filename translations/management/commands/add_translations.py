@@ -34,6 +34,10 @@ class Command(BaseCommand):
     Idempotent: re-running updates English text and backfills missing languages.
     Use --dry-run first to preview exactly what would change without writing
     anything or calling the translation API.
+
+    For importing a *pre-translated* full export (per-language text plus the
+    no_auto/active/edited flags), use `bulk_add_translations` instead — that
+    command takes the export shape and does not auto-translate.
     """
 
     def add_arguments(self, parser):
