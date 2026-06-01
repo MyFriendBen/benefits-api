@@ -813,6 +813,14 @@ class Program(models.Model):
 
         return eligibility
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["white_label", "name_abbreviated"],
+                name="program_unique_wl_name_abbreviated",
+            ),
+        ]
+
     def __str__(self):
         white_label_name = f"[{self.white_label.name}] " if self.white_label and self.white_label.name else ""
         return f"{white_label_name}{self.name.text}"

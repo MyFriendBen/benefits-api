@@ -26,7 +26,8 @@
     "estimated_application_time": "45 - 90 minutes",
     "estimated_delivery_time": "30 days",
     "estimated_value": "",
-    "website_description": "Monthly assistance to buy food"
+    "website_description": "Monthly assistance to buy food",
+    "show_in_has_benefits_step": true
   },
   "documents": [
     {

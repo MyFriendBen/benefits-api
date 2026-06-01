@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_cares_fund",
+    "category_type": {
+      "external_name": "wa_behavioral_health",
+      "name": "Behavioral health",
+      "icon": "behavioral_health"
+    },
+    "type_short": ["mental health"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "WA Cares Fund",
+      "description": "Washington has a program that helps pay for care when you get older or can't do everything on your own. This could mean getting help at home, moving to an assisted living place, or staying in a nursing home.",
+      "link": "https://wacaresfund.wa.gov/how-it-works",
+      "warning": "",
+      "website_description": "Washington State's long-term care benefit program for workers.",
+      "notification_message": ""
+    },
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_united_way_king_county_emergency_assistance",
+    "category_type": {
+      "external_name": "wa_housing_rent_utilities",
+      "name": "Help with managing your mortgage, rent, or utilities",
+      "icon": "managing_housing"
+    },
+    "type_short": ["housing"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "United Way King County Emergency Assistance",
+      "description": "Helps people in King County with money and finding food, housing, and utility help.",
+      "link": "https://www.uwkc.org/need-help/",
+      "warning": "",
+      "website_description": "Emergency financial help and community resource navigation for King County.",
+      "notification_message": ""
+    },
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

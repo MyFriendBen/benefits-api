@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_king_county_crisis_connections",
+    "category_type": {
+      "external_name": "wa_behavioral_health",
+      "name": "Behavioral health",
+      "icon": "behavioral_health"
+    },
+    "type_short": ["mental health"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "King County Crisis Connections",
+      "description": "A free, 24/7 helpline for people in King County who are struggling with drugs or alcohol. Call 866-427-4747.",
+      "link": "https://www.crisisconnections.org",
+      "warning": "",
+      "website_description": "24/7 mental health and crisis support line and resources for King County.",
+      "notification_message": ""
+    },
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "white_label": {
+    "code": "co"
+  },
+  "program_category": {
+    "external_name": "child_care"
+  },
+  "program": {
+    "name_abbreviated": "co_collegeinvest_first_step",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less"
+    ],
+    "name": "CollegeInvest First Step",
+    "description_short": "Free college savings deposit for children born or adopted in Colorado",
+    "description": "CollegeInvest First Step gives every child born or adopted in Colorado a free deposit into a college savings account. The money goes into a special account called a 529 plan — it's in your child's name and grows over time to help pay for college, trade school, or other education after high school.\n\nOnce you sign up, CollegeInvest will match every dollar you save. So if you put in $50, they add $50 too — helping you save twice as fast.\n\nYou must claim the deposit before your child turns 8. Applications submitted by December 31, 2026 may qualify for a bigger award. Military families living in Colorado can apply even if their child was born in another state.\n\nTo get started, click 'Apply Now' and follow the instructions.",
+    "learn_more_link": "https://www.collegeinvest.org/first-step/",
+    "apply_button_link": "https://firststep.collegeinvest.org/",
+    "apply_button_description": "",
+    "estimated_application_time": "15 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": "lump_sum",
+    "value_type": "benefit",
+    "website_description": "Free college savings deposit for children born or adopted in Colorado",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": [
+    {
+      "external_name": "home",
+      "text": "Proof of home address (ex: lease, mortgage statement, utility bill)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ID proof",
+      "text": "Proof of identity (ex: driver's license, official state ID card)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "co_birth_certificate",
+      "text": "Child's birth certificate or adoption documents",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "SSN / ITIN",
+      "text": "Social security number or individual taxpayer identification number (ITIN)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ]
+}
