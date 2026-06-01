@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_seattle_office_of_housing_rental_assistance",
+    "category_type": {
+      "external_name": "wa_housing_rent_utilities",
+      "name": "Help with managing your mortgage, rent, or utilities",
+      "icon": "managing_housing"
+    },
+    "type_short": ["housing"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "Seattle Office of Housing – Rental Assistance",
+      "description": "Seattle's Office of Housing helps renters with money, rights, and staying in their home.",
+      "link": "https://www.seattlehousing.org/current-tenants/community-resources/rent-assistance",
+      "warning": "",
+      "website_description": "City of Seattle rental assistance, eviction prevention, and tenant resource hub.",
+      "notification_message": ""
+    },
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

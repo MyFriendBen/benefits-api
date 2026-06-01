@@ -14,8 +14,13 @@ co_member_calculators = {
     "ede": member.EveryDayEats,
 }
 
+# co_expanded_eitc aliases the standard Coeitc calculator pending MFB-1093,
+# which will introduce a real calculator that recognizes ITIN filers and
+# under-25 childless filers (the population CO's Expanded EITC was created
+# for). Today both rows produce identical eligibility output.
 co_tax_unit_calculators = {
     "coeitc": tax.Coeitc,
+    "co_expanded_eitc": tax.Coeitc,
     "coctc": tax.Coctc,
     "co_tax_credit_care_worker": tax.CoCareWorkerCredit,
 }

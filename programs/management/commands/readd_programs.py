@@ -36,7 +36,7 @@ class Command(BaseCommand):
         {"abbr": "co_head_start", "external": "co_head_start"},
         {"abbr": "cccap", "external": "cccap"},
         {"abbr": "chp", "external": "chp"},
-        {"abbr": "coeitc", "external": "coexeitc"},
+        {"abbr": "co_expanded_eitc", "external": "coexeitc"},
         {"abbr": "acp", "external": "acp"},
         {"abbr": "rtdlive", "external": "rtdlive"},
         {"abbr": "coctc", "external": "coctc"},

@@ -1,0 +1,10 @@
+{
+  "_comment": "Engineering on-call rotation config. Edit `members` to change the order or team. Slack member IDs look like U01ABC2DEF — find one via the Slack profile menu (the ⋮ button) → 'Copy member ID'.",
+  "members": [
+    { "name": "David", "slack_id": "U0B2PB87YPR" },
+    { "name": "Elliott", "slack_id": "U0ANHPCQRAS" },
+    { "name": "Caton", "slack_id": "U09HN2DMXEZ" }
+  ],
+  "anchor_monday": "2026-06-01",
+  "_anchor_comment": "A Monday (YYYY-MM-DD) used as week 0. The person at members[0] is on-call the week of anchor_monday; the rotation advances by one each subsequent week. Keep this fixed once set."
+}
