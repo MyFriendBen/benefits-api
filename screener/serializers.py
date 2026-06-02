@@ -576,10 +576,7 @@ _KG_TO_LBS = 2.20462
 
 def _convert_emissions_to_lbs(emissions: dict) -> dict:
     """Convert each stat in an emissions dict from kgCO2e to lbCO2e in-place."""
-    return {
-        key: {"value": stat["value"] * _KG_TO_LBS, "unit": "lbCO2e"}
-        for key, stat in emissions.items()
-    }
+    return {key: {"value": stat["value"] * _KG_TO_LBS, "unit": "lbCO2e"} for key, stat in emissions.items()}
 
 
 class RemImpactSerializer(serializers.Serializer):
