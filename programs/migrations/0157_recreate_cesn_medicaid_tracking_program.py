@@ -1,6 +1,5 @@
 from django.db import migrations
 
-
 # Re-create the CESN Medicaid tracking-only program.
 #
 # History: cesn_medicaid was created in 0137_create_tracking_programs, then
