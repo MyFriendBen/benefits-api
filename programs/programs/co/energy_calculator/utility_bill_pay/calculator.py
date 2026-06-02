@@ -5,6 +5,12 @@ from programs.programs.co.utility_bill_pay.calculator import UtilityBillPay
 
 class EnergyCalculatorUtilityBillPay(UtilityBillPay):
     dependencies = [*UtilityBillPay.dependencies, "energy_calculator"]
+    # CESN does not collect health insurance, so the base member-level Medicaid
+    # check (member_presumptive_eligibility) never fires. CESN instead collects
+    # Medicaid at the household level via the "already has benefits" step, so add
+    # it to the household-level presumptive set here. Only regular Medicaid has a
+    # household-level field; chp/emergency_medicaid remain member-level only.
+    presumptive_eligibility = (*UtilityBillPay.presumptive_eligibility, "medicaid")
     electricity_providers = ["co-xcel-energy", "co-black-hills-energy"]
     gas_providers = [
         "co-atmos-energy",
