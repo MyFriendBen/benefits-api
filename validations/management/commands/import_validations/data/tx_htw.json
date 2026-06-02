@@ -16,6 +16,7 @@
           "birth_month": 1,
           "birth_year": 1998,
           "age": 28,
+          "pregnant": false,
           "has_income": true,
           "income_streams": [
             {
@@ -59,6 +60,7 @@
           "birth_month": 9,
           "birth_year": 1996,
           "age": 29,
+          "pregnant": false,
           "has_income": true,
           "income_streams": [
             {
@@ -102,6 +104,7 @@
           "birth_month": 3,
           "birth_year": 1994,
           "age": 32,
+          "pregnant": false,
           "has_income": true,
           "income_streams": [
             {
@@ -125,6 +128,7 @@
           "birth_month": 7,
           "birth_year": 1992,
           "age": 33,
+          "pregnant": false,
           "has_income": true,
           "income_streams": [
             {
@@ -148,6 +152,7 @@
           "birth_month": 1,
           "birth_year": 2020,
           "age": 6,
+          "pregnant": false,
           "has_income": false,
           "income_streams": [],
           "insurance": {

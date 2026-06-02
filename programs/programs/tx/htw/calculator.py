@@ -36,11 +36,8 @@ class TxHtw(ProgramCalculator):
         # Not pregnant (pregnant women referred to Medicaid for Pregnant Women)
         e.condition(not member.pregnant)
 
-        # Not enrolled in Medicaid or CHIP
-        e.condition(not member.insurance.has_insurance_types(["medicaid", "chp"]))
-
-        # No other comprehensive health insurance (Medicare, employer, private, or VA)
-        e.condition(not member.insurance.has_insurance_types(["medicare", "employer", "private", "va"]))
+        # Not enrolled in Medicaid or CHIP, and no other comprehensive health insurance (Medicare, employer, private, or VA)
+        e.condition(not member.insurance.has_insurance_types(["medicaid", "chp", "medicare", "employer", "private", "va"]))
 
     def household_eligible(self, e: Eligibility):
         gross_income = self.screen.calc_gross_income("yearly", ["all"])
