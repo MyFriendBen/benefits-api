@@ -22,4 +22,9 @@ urlpatterns = [
         views.ReferralSourcesView.as_view(),
         name="referral-options",
     ),
+    path(
+        "screener-options/<str:white_label>/rem-impact/",
+        views.RemImpactView.as_view(),
+        name="rem-impact",
+    ),
 ]

@@ -415,6 +415,8 @@ UNFOLD = {
     },
 }
 
+REWIRING_AMERICA_API_KEY = config("REWIRING_AMERICA_API_KEY", default="")
+
 # generate uml with: ./manage.py graph_models --pydot
 # adding -d will exclude the fields
 GRAPH_MODELS = {
