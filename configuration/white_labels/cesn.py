@@ -63,6 +63,21 @@ class CesnConfigurationData(ConfigurationData):
         "sw": "Kiswahili",
     }
 
+    income_options_by_category = {
+        **ConfigurationData.income_options_by_category,
+        "government": {
+            **ConfigurationData.income_options_by_category["government"],
+            "cashAssistance": {
+                "_label": "incomeOptions.cashAssistance",
+                "_default_message": "Government Cash Assistance (including Colorado Works/TANF)",
+            },
+            "cOSDisability": {
+                "_label": "incomeOptions.cOSDisability",
+                "_default_message": "Colorado State Disability Benefits",
+            },
+        },
+    }
+
     health_insurance_options = {
         "you": {},
         "them": {},
