@@ -37,15 +37,24 @@ class TestPolicyEngineConfigSingleton(TestCase):
         config = PolicyEngineConfig(policyengine_version="")
         config.clean()  # blank => omit version, allowed
 
-    def test_clean_rejects_frontier_alias(self):
+    def test_clean_rejects_aliases(self):
+        # The floating aliases are not valid here (only on the ?pe_version= override).
         for alias in ("frontier", "current", "Frontier", " CURRENT "):
             with self.assertRaises(ValidationError):
                 PolicyEngineConfig(policyengine_version=alias).clean()
 
-    def test_save_rejects_frontier_via_full_clean(self):
-        # save() calls full_clean(), so the floating alias can't be persisted.
-        with self.assertRaises(ValidationError):
-            PolicyEngineConfig.objects.create(policyengine_version="frontier")
+    def test_clean_rejects_non_version_strings(self):
+        # Regression: arbitrary strings (e.g. "xcZX") must not be accepted as a version,
+        # nor partial/prefixed numbers.
+        for value in ("xcZX", "1.7", "1.715", "v1.715.2", "1.715.2-beta", "latest"):
+            with self.assertRaises(ValidationError):
+                PolicyEngineConfig(policyengine_version=value).clean()
+
+    def test_save_rejects_invalid_via_full_clean(self):
+        # save() calls full_clean(), so an invalid value can't be persisted.
+        for value in ("frontier", "xcZX"):
+            with self.assertRaises(ValidationError):
+                PolicyEngineConfig.objects.create(policyengine_version=value)
 
 
 class TestResolvePeVersion(TestCase):

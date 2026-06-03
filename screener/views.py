@@ -1,9 +1,9 @@
 import hashlib
-import re
 from typing import Optional
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from integrations.services.communications import MessageUser
+from configuration.models import PolicyEngineConfig
 from programs.models import Referrer
 from programs.programs.helpers import STATE_MEDICAID_OPTIONS
 from programs.programs.policyengine.calculators.registry import all_calculators
@@ -137,17 +137,15 @@ class EligibilityView(views.APIView):
         return Response(results)
 
 
-# Accepted ?pe_version= override values: the two stable PolicyEngine aliases, or an
-# exact package version (e.g. "1.715.2"). The version pattern means new releases need
-# no code change here. Anything else is rejected so a typo'd value doesn't silently
-# test the wrong version. The config field (PolicyEngineConfig) separately disallows
-# the aliases — they may only be used via this test-only override.
+# The floating aliases are only accepted on the test-only ?pe_version= override, never
+# in PolicyEngineConfig (which requires an exact version number).
 PE_VERSION_ALIASES = ("current", "frontier")
-PE_VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
 
 
 def is_valid_pe_version_override(value: str) -> bool:
-    return value in PE_VERSION_ALIASES or PE_VERSION_RE.match(value) is not None
+    """Accepted ?pe_version= values: an exact version number (shares PolicyEngineConfig's
+    pattern, so new releases need no code change) OR a floating alias."""
+    return value in PE_VERSION_ALIASES or PolicyEngineConfig.VERSION_RE.match(value) is not None
 
 
 class EligibilityTranslationView(views.APIView):
