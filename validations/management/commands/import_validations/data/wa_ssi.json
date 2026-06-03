@@ -63,6 +63,39 @@
     }
   },
   {
+    "notes": "WA SSI - Disabled non-aged/non-blind, no income (MFB-1102 frontier guard): a 45yo with disabled=true, under 65 and not blind, qualifies via the disability pathway and receives the full FBR of $994/month = $11,928/year. This is the case that breaks on frontier without meets_ssi_disability_criteria — PE no longer infers SSI-disability from is_disabled, so omitting that input would zero out ssi here. Guards the MFB-1102 fix.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "98101",
+      "county": "King",
+      "household_size": 1,
+      "household_assets": 0,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 45,
+          "birth_year": 1981,
+          "birth_month": 1,
+          "disabled": true,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_ssi",
+      "eligible": true,
+      "value": 11928
+    }
+  },
+  {
     "notes": "WA SSI - Edge case (income exclusion methodology): long-term disabled adult with $400/mo wages tests the $20 general + $65 earned + 1/2 earned exclusion formula. Math: $400 - $20 - $65 = $315; 1/2 of $315 = $157.50 countable income. SSI = $994 - $157.50 = $836.50/month = $10,038/year (estimated_value is stored as an annual figure; truncated to int per validate.py). Earnings well below 2026 SGA threshold ($1,690/mo non-blind), so disability path is preserved.",
     "household": {
       "white_label": "wa",
