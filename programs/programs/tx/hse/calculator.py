@@ -18,9 +18,9 @@ class TxHse(ProgramCalculator):
     https://statutes.capitol.texas.gov/Docs/TX/htm/TX.11.htm#11.13
 
     Benefit amount:
-    - $400/year (estimated typical tax savings for a low-income TX homeowner
+    - $800/year (estimated typical tax savings for a low-income TX homeowner
       with a ~$120K home value under the general homestead exemption)
-    - $600/year for seniors (age 65+) or people with disabilities (estimated
+    - $1200/year for seniors (age 65+) or people with disabilities (estimated
       typical savings under the general + senior/disabled exemption combined)
     Note: actual savings vary by taxing unit and appraised value.
 
@@ -33,8 +33,8 @@ class TxHse(ProgramCalculator):
     Source: https://statutes.capitol.texas.gov/?tab=1&code=TX&chapter=TX.11&artSec=
     """
 
-    amount = 400
-    senior_disabled_amount = 600
+    amount = 800
+    senior_disabled_amount = 1200
     senior_age = 65
     blind_senior_age = 55
     dependencies: ClassVar[list[str]] = ["age"]
