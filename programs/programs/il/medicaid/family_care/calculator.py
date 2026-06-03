@@ -36,4 +36,4 @@ class FamilyCare(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
         e.condition(is_pregnant or (has_qualifying_children and is_caretaker))
 
         # Must not have Medicaid
-        e.condition(not member.has_benefit("medicaid"))
+        e.condition(not member.has_insurance("medicaid"))

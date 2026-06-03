@@ -388,8 +388,8 @@ class Screen(models.Model):
 
         Only used by `_sync_current_benefits()` (and its test-helper mirror in
         `screener/tests/helpers.py`) to write CurrentBenefit rows during the
-        dual-write phase. `HouseholdMember.has_benefit()` does NOT route through
-        here — it has its own member-level `name_map` keyed off `self.insurance`.
+        dual-write phase. `HouseholdMember.has_insurance()` does NOT route through
+        here — it delegates directly to `has_insurance_types()` on the member's Insurance row.
 
         Removed in MFB-869 alongside `_sync_current_benefits` once the serializer
         writes join-table rows directly from the frontend's `current_benefits: [...]`
@@ -763,11 +763,8 @@ class HouseholdMember(models.Model):
     def is_in_tax_unit(self):
         return self.is_head() or self.is_spouse() or self.is_dependent()
 
-    def has_benefit(self, name_abbreviated: str):
-
-        has_insurance = self.has_insurance_types((name_abbreviated,), strict=False)
-
-        return has_insurance
+    def has_insurance(self, name_abbreviated: str) -> bool:
+        return self.has_insurance_types((name_abbreviated,), strict=False)
 
     def has_insurance_types(self, types, strict=True):
         if not hasattr(self, "insurance"):

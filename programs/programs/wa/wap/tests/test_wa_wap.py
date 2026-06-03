@@ -17,7 +17,7 @@ def make_member(insurance_medicaid=False, insurance_chp=False):
             return insurance_chp
         return False
 
-    member.has_benefit = Mock(side_effect=has_benefit)
+    member.has_insurance = Mock(side_effect=has_benefit)
     return member
 
 

@@ -30,7 +30,7 @@ def make_member(age=35, birth_year_month=None, yearly_income=24_000, insurance_m
             return insurance_chp
         return False
 
-    member.has_benefit = Mock(side_effect=has_benefit)
+    member.has_insurance = Mock(side_effect=has_benefit)
     return member
 
 

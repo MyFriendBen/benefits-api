@@ -436,7 +436,7 @@ def eligibility_results(screen: Screen, batch=False):
                         "frontend_id": str(member_eligibility.member.frontend_id),
                         "eligible": member_eligibility.eligible,
                         "value": member_eligibility.value,
-                        "already_has": member_eligibility.member.has_benefit(program.name_abbreviated),
+                        "already_has": member_eligibility.member.has_insurance(program.name_abbreviated),
                     }
                 )
 
