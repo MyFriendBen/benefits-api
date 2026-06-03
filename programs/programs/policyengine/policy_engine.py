@@ -58,15 +58,22 @@ def _parse_version(version: Optional[str]) -> Optional[tuple]:
         return None
 
 
-def _version_supports(parsed_version: Optional[tuple], min_pe_version: tuple) -> bool:
-    """Whether a request at parsed_version may send an input requiring min_pe_version.
-    Ungated inputs (empty min) are always sent; gated inputs need a known version that
-    meets the floor (an unknown/current/None version omits them)."""
-    if not min_pe_version:
-        return True
-    if parsed_version is None:
-        return False
-    return parsed_version >= min_pe_version
+def _version_supports(parsed_version: Optional[tuple], min_pe_version: tuple, max_pe_version: tuple) -> bool:
+    """Whether a request at parsed_version may send an input that exists in the version
+    window [min_pe_version, max_pe_version] (each bound optional). Ungated inputs (both
+    empty) are always sent.
+
+    parsed_version is None for an unknown/current/unpinned request. We treat that
+    asymmetrically: it FAILS any min floor (don't send a not-yet-existing variable to
+    the current model) but SATISFIES any max ceiling (a variable that still exists on
+    the current model should keep being sent until we pin a version past its removal)."""
+    if min_pe_version:
+        if parsed_version is None or parsed_version < min_pe_version:
+            return False
+    if max_pe_version:
+        if parsed_version is not None and parsed_version > max_pe_version:
+            return False
+    return True
 
 
 def calc_pe_eligibility(
@@ -195,7 +202,11 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: 
             # an unknown variable 400s the whole request (e.g. meets_ssi_disability_criteria
             # on 1.691.1). With no pin (parsed_version is None) we omit gated inputs too,
             # since the unpinned default is the current model that lacks them.
-            if not _version_supports(parsed_version, getattr(Data, "min_pe_version", ())):
+            if not _version_supports(
+                parsed_version,
+                getattr(Data, "min_pe_version", ()),
+                getattr(Data, "max_pe_version", ()),
+            ):
                 continue
 
             period = program.pe_period

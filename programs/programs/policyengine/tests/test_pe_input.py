@@ -335,3 +335,47 @@ class TestPeInputVersionGating(PeInputTestBase):
         # A non-gated input (is_disabled) is sent regardless of version.
         result = pe_input(self.screen, [self.ssi], pe_version=None)
         self.assertIn("is_disabled", result["household"]["people"][self.head_id])
+
+
+class TestVersionSupports(TestCase):
+    """Unit tests for the min/max version window logic, covering all three gating
+    shapes (new / removed / windowed variable) and the asymmetric unknown-version rule."""
+
+    def setUp(self):
+        from programs.programs.policyengine import policy_engine
+
+        self.supports = policy_engine._version_supports
+        self.v = policy_engine._parse_version
+
+    def test_ungated_always_supported(self):
+        # No bounds => always sent, including on unknown version.
+        self.assertTrue(self.supports(None, (), ()))
+        self.assertTrue(self.supports(self.v("1.715.2"), (), ()))
+
+    def test_min_only_new_variable(self):
+        new = (1, 715, 2)  # added at 1.715.2
+        self.assertFalse(self.supports(None, new, ()))  # unknown/current: omit
+        self.assertFalse(self.supports(self.v("1.691.1"), new, ()))  # older: omit
+        self.assertTrue(self.supports(self.v("1.715.2"), new, ()))  # at floor: send
+        self.assertTrue(self.supports(self.v("1.800.0"), new, ()))  # newer: send
+
+    def test_max_only_removed_variable(self):
+        # Variable existed through 1.719.999, removed after.
+        last = (1, 719, 999)
+        self.assertTrue(self.supports(None, (), last))  # unknown/current still has it: send
+        self.assertTrue(self.supports(self.v("1.691.1"), (), last))  # older: send
+        self.assertTrue(self.supports(self.v("1.719.999"), (), last))  # at ceiling: send
+        self.assertFalse(self.supports(self.v("1.720.0"), (), last))  # past removal: omit
+
+    def test_windowed_variable(self):
+        # Existed only 1.700.0 .. 1.715.0.
+        lo, hi = (1, 700, 0), (1, 715, 0)
+        self.assertFalse(self.supports(None, lo, hi))  # unknown fails the floor
+        self.assertFalse(self.supports(self.v("1.699.0"), lo, hi))  # below window
+        self.assertTrue(self.supports(self.v("1.700.0"), lo, hi))  # at floor
+        self.assertTrue(self.supports(self.v("1.710.0"), lo, hi))  # inside
+        self.assertTrue(self.supports(self.v("1.715.0"), lo, hi))  # at ceiling
+        self.assertFalse(self.supports(self.v("1.715.2"), lo, hi))  # above window
+
+    def test_frontier_alias_satisfies_floor(self):
+        self.assertTrue(self.supports(self.v("frontier"), (1, 715, 2), ()))
