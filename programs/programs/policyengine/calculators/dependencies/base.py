@@ -12,6 +12,15 @@ class PolicyEngineScreenInput:
     field = ""
     dependencies = tuple()
 
+    # Minimum PolicyEngine package version (major, minor, patch) that defines this
+    # variable. Empty = available in all versions. pe_input() omits a dependency whose
+    # min_pe_version exceeds the resolved request version, so a frontier-only variable
+    # isn't sent to an older model (which would 400 the whole request).
+    #
+    # Scope: this only gates whether a variable is SENT (add/remove across versions).
+    # It does NOT handle a variable whose accepted value/format changes per version
+    min_pe_version: tuple = ()
+
     def __init__(self, screen: Screen, members: List[HouseholdMember], relationship_map):
         self.screen = screen
         self.members = members

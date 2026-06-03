@@ -104,6 +104,11 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: 
             "marital_units": {},
         }
     }
+    # Resolve once: used both to gate version-specific inputs below and to set the
+    # top-level "version" field. None => no pin (PolicyEngine's current default).
+    version = pe_versions.determine_pe_version(pe_version)
+    comparable_version = pe_versions.to_comparable_pe_version(version)
+
     members: list[HouseholdMember] = screen.household_members.all()
     relationship_map = screen.relationship_map()
 
@@ -137,6 +142,17 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: 
 
     for program in programs:
         for Data in program.pe_inputs + program.pe_outputs:
+            # Skip inputs that the resolved model version doesn't define yet — sending
+            # an unknown variable 400s the whole request (e.g. meets_ssi_disability_criteria
+            # on 1.691.1). With no pin (comparable_version is None) we omit gated inputs
+            # too, since the unpinned default is the current model that lacks them.
+            if not pe_versions.version_supports(
+                comparable_version,
+                getattr(Data, "min_pe_version", ()),
+                getattr(Data, "max_pe_version", ()),
+            ):
+                continue
+
             period = program.pe_period
             if hasattr(program, "pe_output_period") and Data in program.pe_outputs:
                 period = program.pe_output_period
@@ -170,7 +186,6 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: 
         del raw_input["household"]["tax_units"][SECONDARY_TAX_UNIT]
 
     # Inject the resolved version (override > config); None means omit the field.
-    version = pe_versions.determine_pe_version(pe_version)
     if version is not None:
         raw_input["version"] = version
 

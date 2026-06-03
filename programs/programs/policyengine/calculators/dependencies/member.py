@@ -143,12 +143,16 @@ class MeetsSsiDisabilityCriteriaDependency(Member):
     reported SSI receipt. Without it, a disabled non-aged/non-blind person gets
     ssi: 0 (MFB-1102).
 
-    Source mirrors IsDisabledDependency for now. NOTE: pending PolicyEngine
-    confirmation on whether this should match "meets SSA disability criteria"
-    exactly (e.g. excluding blindness, which SSI treats as a separate category).
+    Source mirrors IsDisabledDependency: SSI eligibility is
+    is_ssi_aged OR is_blind OR is_ssi_disabled (verified in policyengine-us source),
+    so including blindness here only adds to an OR and can never reduce eligibility.
+
+    min_pe_version gates this so it's only sent to models that define the variable —
+    it does not exist in 1.691.1 (current), where sending it 400s the whole request.
     """
 
     field = "meets_ssi_disability_criteria"
+    min_pe_version = (1, 715, 2)
 
     def value(self):
         return self.member.disabled or self.member.long_term_disability or self.member.visually_impaired

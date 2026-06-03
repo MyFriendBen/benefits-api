@@ -293,3 +293,45 @@ class TestPeInputMultipleCalculators(PeInputTestBase):
         # WIC adds pregnancy/breastfeeding fields to people
         head_id = str(self.head.id)
         self.assertIn("age", people[head_id])
+
+
+class TestPeInputVersionGating(PeInputTestBase):
+    """Tests that version-gated inputs (min_pe_version) are only sent to models that
+    support them. meets_ssi_disability_criteria (min 1.715.2) is the canonical case:
+    it does not exist in the current model (1.691.1) and 400s the whole request there."""
+
+    def setUp(self):
+        super().setUp()
+        from programs.programs.federal.pe.member import Ssi
+
+        self.ssi = Ssi
+        self.head_id = str(self.head.id)
+
+    def _meets_ssi_field_present(self, version):
+        result = pe_input(self.screen, [self.ssi], pe_version=version)
+        return "meets_ssi_disability_criteria" in result["household"]["people"][self.head_id]
+
+    def test_omitted_when_no_version_pinned(self):
+        # No pin => current default model (1.691.1), which lacks the variable.
+        self.assertFalse(self._meets_ssi_field_present(None))
+
+    def test_omitted_on_current_alias(self):
+        self.assertFalse(self._meets_ssi_field_present("current"))
+
+    def test_omitted_on_older_pinned_version(self):
+        self.assertFalse(self._meets_ssi_field_present("1.691.1"))
+
+    def test_sent_on_supporting_version(self):
+        self.assertTrue(self._meets_ssi_field_present("1.715.2"))
+
+    def test_sent_on_newer_version(self):
+        self.assertTrue(self._meets_ssi_field_present("1.800.0"))
+
+    def test_sent_on_frontier_alias(self):
+        # frontier is the newest released model, so gated inputs are sent.
+        self.assertTrue(self._meets_ssi_field_present("frontier"))
+
+    def test_ungated_input_always_present(self):
+        # A non-gated input (is_disabled) is sent regardless of version.
+        result = pe_input(self.screen, [self.ssi], pe_version=None)
+        self.assertIn("is_disabled", result["household"]["people"][self.head_id])
