@@ -45,9 +45,9 @@ class PolicyEngineConfig(models.Model):
         default="",
         help_text=(
             'Pinned PolicyEngine package version sent as the top-level "version" '
-            'field, e.g. "1.715.2" (must be an exact MAJOR.MINOR.PATCH number). Leave '
-            'blank to use PolicyEngine\'s default. The floating aliases "frontier" / '
-            '"current" are not allowed here.'
+            'field, e.g. "1.715.2" (must be an exact MAJOR.MINOR.PATCH number). '
+            "Clear this field (leave blank) and save to fall back to PolicyEngine's "
+            'default. The floating aliases "frontier" / "current" are not allowed here.'
         ),
     )
 

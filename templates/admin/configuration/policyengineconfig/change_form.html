@@ -1,0 +1,29 @@
+{% extends "admin/change_form.html" %}
+
+{% comment %}
+Adds a "Clear to default" button to the submit row for PolicyEngineConfig. It blanks
+the version input client-side; the operator then clicks Save to commit the reset
+(blank => omit the "version" field => PolicyEngine's default). See PolicyEngineConfigAdmin.
+{% endcomment %}
+
+{% block submit_buttons_bottom %}
+<button type="button" id="pe-clear-to-default"
+        style="margin-right: 8px; padding: 8px 14px; border-radius: 6px; cursor: pointer;
+               border: 1px solid var(--border-color, #444); background: transparent;
+               color: var(--body-fg, inherit);">
+  Clear to default
+</button>
+{{ block.super }}
+<script>
+  (function () {
+    var btn = document.getElementById("pe-clear-to-default");
+    var input = document.getElementById("id_policyengine_version");
+    if (btn && input) {
+      btn.addEventListener("click", function () {
+        input.value = "";
+        input.focus();
+      });
+    }
+  })();
+</script>
+{% endblock %}

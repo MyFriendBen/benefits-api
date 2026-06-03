@@ -3,9 +3,11 @@ Tests for the PolicyEngineConfig singleton and the PolicyEngine version
 resolution / injection used by the frontier migration (MFB-1112).
 """
 
+from django.contrib.admin.sites import AdminSite
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 
+from configuration.admin import PolicyEngineConfigAdmin
 from configuration.models import PolicyEngineConfig
 from programs.programs.policyengine.policy_engine import pe_input, resolve_pe_version
 from screener.models import Screen, WhiteLabel
@@ -55,6 +57,26 @@ class TestPolicyEngineConfigSingleton(TestCase):
         for value in ("frontier", "xcZX"):
             with self.assertRaises(ValidationError):
                 PolicyEngineConfig.objects.create(policyengine_version=value)
+
+
+class TestPolicyEngineConfigAdminDisplay(TestCase):
+    def setUp(self):
+        self.admin = PolicyEngineConfigAdmin(PolicyEngineConfig, AdminSite())
+
+    def test_version_display_shows_pinned_value(self):
+        config = PolicyEngineConfig(policyengine_version="1.715.2")
+        self.assertEqual(self.admin.version_display(config), "1.715.2")
+
+    def test_version_display_shows_default_when_blank(self):
+        config = PolicyEngineConfig(policyengine_version="")
+        self.assertEqual(self.admin.version_display(config), PolicyEngineConfigAdmin.DEFAULT_LABEL)
+
+    def test_current_version_readonly_mirrors_value(self):
+        self.assertEqual(self.admin.current_version(PolicyEngineConfig(policyengine_version="1.715.2")), "1.715.2")
+        self.assertEqual(
+            self.admin.current_version(PolicyEngineConfig(policyengine_version="")),
+            PolicyEngineConfigAdmin.DEFAULT_LABEL,
+        )
 
 
 class TestResolvePeVersion(TestCase):
