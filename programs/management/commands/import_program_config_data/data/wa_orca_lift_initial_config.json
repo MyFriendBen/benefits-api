@@ -1,0 +1,85 @@
+{
+  "white_label": {
+    "code": "wa"
+  },
+  "program_category": {
+    "external_name": "wa_transportation",
+    "name": "Transportation",
+    "icon": "transportation",
+    "description": "Programs that help with transit, transportation, and travel costs.",
+    "tax_category": false
+  },
+  "program": {
+    "name_abbreviated": "wa_orca_lift",
+    "external_name": "wa_orca_lift",
+    "year": 2026,
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "refugee",
+      "gc_5plus",
+      "gc_5less",
+      "otherWithWorkPermission"
+    ],
+    "name": "ORCA LIFT Reduced Fare Program",
+    "description_short": "Discounted $1.00 transit fares for lower-income adults in the Puget Sound region",
+    "description": "ORCA LIFT is a reduced-fare transit card for the Puget Sound region. It lowers what you pay to ride buses, trains, and other transit. The card is free and lasts for two years.\n\nAfter you apply, your card arrives in the mail. Add money or a monthly pass at myORCA.com, at stores that sell ORCA cards, or by phone. Tap your card when you board to pay the lower fare.\n\nThe discount works in four Puget Sound counties: King, Pierce, Snohomish, and Kitsap. It covers buses, trains, light rail, and water taxis. You can apply with any legal status. You do not need to be a US citizen. College students who receive the Washington State Opportunity Grant also qualify. If you receive certain state benefits like TANF or SSI, you may qualify for a free annual pass instead.\n\nYou can apply online, by phone, or in person. Call 1-800-756-5437 for phone help. In-person offices are in Seattle, Federal Way, and other locations. Bring a photo ID and proof of your income from the last 30 days. This can be recent pay stubs, an award letter, or a benefits enrollment card.",
+    "learn_more_link": "https://info.myorca.com/lift/",
+    "apply_button_link": "https://reducedfare.kingcounty.gov/en-US/orca-lift-main/",
+    "apply_button_description": "",
+    "estimated_application_time": "5-10 minutes",
+    "estimated_delivery_time": "2 weeks",
+    "estimated_value": "",
+    "value_format": null,
+    "value_type": "benefit",
+    "website_description": "Discounted $1.00 transit fares for lower-income adults in the Puget Sound region",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": [
+    {
+      "external_name": "wa_orca_lift_photo_id",
+      "text": "Government-issued photo ID (e.g., driver's license, passport, or state ID)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_orca_lift_proof_of_income",
+      "text": "Proof of income (e.g., pay stubs, award letter, or benefits enrollment card)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "wa_chap_orca_lift",
+      "name": "Community Health Access Program (CHAP)",
+      "email": "chap@kingcounty.gov",
+      "description": "Public Health — Seattle & King County's Community Health Access Program helps residents apply for ORCA LIFT, Apple Health/Medicaid, and other reduced-cost services by phone or in person at authorized enrollment sites.",
+      "assistance_link": "https://kingcounty.gov/en/dept/dph/health-safety/health-centers-programs-services/health-insurance/enrollment-and-orca-cards",
+      "phone_number": "+18007565437",
+      "counties": ["King County", "Pierce County", "Snohomish County", "Kitsap County"],
+      "languages": ["en", "es", "vi", "zh", "tl", "ru", "ko"]
+    },
+    {
+      "external_name": "wa_help_me_grow_orca_lift",
+      "name": "Help Me Grow Washington (WithinReach)",
+      "email": "info@withinreachwa.org",
+      "description": "Help Me Grow Washington is a statewide hotline run by WithinReach. Call to check ORCA LIFT eligibility and enroll over the phone in multiple languages. Staff can also help check eligibility for Apple Health/Medicaid, Basic Food (SNAP), and WIC at the same time.",
+      "assistance_link": "https://helpmegrowwa.org/orca-lift",
+      "phone_number": "+18003222588",
+      "languages": ["en", "es", "ru", "vi", "so", "am"]
+    },
+    {
+      "external_name": "wa_ccsww_orca_lift",
+      "name": "Catholic Community Services of Western Washington",
+      "email": "info@ccsww.org",
+      "description": "Catholic Community Services enrolls eligible King and Pierce County residents in ORCA LIFT in person at the Randolph Carter Center in Seattle and by phone. Service providers can also contact CCS to schedule on-site enrollment events.",
+      "assistance_link": "https://ccsww.org/services/orca-lift/",
+      "phone_number": "+12063285696",
+      "counties": ["King County", "Pierce County"],
+      "languages": ["en"]
+    }
+  ]
+}
