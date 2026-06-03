@@ -19,9 +19,28 @@ class EligibilityPEResult(TypedDict):
     _pe_data: PEData
 
 
+def resolve_pe_version(pe_version_override: Optional[str] = None) -> Optional[str]:
+    """
+    Resolve the PolicyEngine model version to send: per-request override (test-only,
+    passed down from the view) wins, then the global PolicyEngineConfig pin, else None
+    (omit the field, i.e. PolicyEngine's default). The override may be a floating alias
+    ("frontier"/"current"); the config value may not (enforced on the model).
+    """
+    if pe_version_override:
+        return pe_version_override
+
+    # Imported here to avoid a circular import (configuration imports from screener,
+    # which this module also depends on).
+    from configuration.models import PolicyEngineConfig
+
+    version = PolicyEngineConfig.load().policyengine_version
+    return version or None
+
+
 def calc_pe_eligibility(
     screen: Screen,
     calculators: dict[str, PolicyEngineCalulator],
+    pe_version: Optional[str] = None,
 ) -> EligibilityPEResult:
     valid_programs: dict[str, PolicyEngineCalulator] = {}
 
@@ -38,7 +57,7 @@ def calc_pe_eligibility(
     if not valid_programs or not screen.household_members.all():
         return empty_result
 
-    input_data = pe_input(screen, valid_programs.values())
+    input_data = pe_input(screen, valid_programs.values(), pe_version=pe_version)
 
     for Method in pe_engines:
         try:
@@ -77,7 +96,7 @@ def all_eligibility(method: Sim, valid_programs: dict[str, PolicyEngineCalulator
     return all_eligibility
 
 
-def pe_input(screen: Screen, programs: List[PolicyEngineCalulator]):
+def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: Optional[str] = None):
     """
     Generate Policy Engine API request from the list of programs.
     """
@@ -166,6 +185,12 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator]):
     # delete the second tax unit if it is empty because PE can't handle empty tax units
     if len(secondary_tax_members) == 0:
         del raw_input["household"]["tax_units"][SECONDARY_TAX_UNIT]
+
+    # Pin the PolicyEngine model version when configured/overridden; otherwise omit the
+    # field entirely so PolicyEngine uses its default ("current").
+    version = resolve_pe_version(pe_version)
+    if version is not None:
+        raw_input["version"] = version
 
     return raw_input
 

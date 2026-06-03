@@ -150,7 +150,18 @@ class EligibilityTranslationView(views.APIView):
         ).get(uuid=id)
 
         is_admin = request.query_params.get("admin")
-        results = all_results(screen, is_admin=is_admin)
+
+        # A ?pe_version= override is a test-only preview of a specific PolicyEngine
+        # version. Promote the screen to a test screen BEFORE calculating so the
+        # resulting snapshot is excluded from exports/marts and the referrer webhook
+        # stays inert (test referrers have no configured webhook). Must run before
+        # all_results(), which writes the EligibilitySnapshot. See test_pe_version_*.
+        pe_version = request.query_params.get("pe_version")
+        if pe_version and not screen.is_test:
+            screen.is_test = True
+            screen.save(update_fields=["is_test"])
+
+        results = all_results(screen, is_admin=is_admin, pe_version=pe_version)
 
         if screen.submission_date is None:
             screen.submission_date = datetime.now(timezone.utc)
@@ -187,8 +198,8 @@ class MessageViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         return Response({}, status=status.HTTP_201_CREATED)
 
 
-def all_results(screen: Screen, batch=False, is_admin: bool = False):
-    eligibility, missing_programs, categories, _pe_data = eligibility_results(screen, batch)
+def all_results(screen: Screen, batch=False, is_admin: bool = False, pe_version: Optional[str] = None):
+    eligibility, missing_programs, categories, _pe_data = eligibility_results(screen, batch, pe_version=pe_version)
     urgent_needs = urgent_need_results(screen, eligibility)
     validations = ValidationSerializer(screen.validations.all(), many=True).data
 
@@ -256,7 +267,7 @@ def update_navigators(
         data[idx]["navigators"] = [serialized_navigator(navigator) for navigator in navigators]
 
 
-def eligibility_results(screen: Screen, batch=False):
+def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] = None):
     try:
         referrer = Referrer.objects.prefetch_related("remove_programs", "primary_navigators").get(
             white_label=screen.white_label,
@@ -322,7 +333,7 @@ def eligibility_results(screen: Screen, batch=False):
         if program is not None:
             pe_calculators[calculator_name] = Calculator(screen, program, missing_dependencies)
 
-    result = calc_pe_eligibility(screen, pe_calculators)
+    result = calc_pe_eligibility(screen, pe_calculators, pe_version=pe_version)
     pe_eligibility = result["eligibility"]
     pe_data = result["_pe_data"]
 
