@@ -17,7 +17,21 @@ from rest_framework.permissions import AllowAny
 from rest_framework.test import APIRequestFactory
 
 from screener.models import Screen, WhiteLabel
-from screener.views import EligibilityTranslationView
+from screener.views import EligibilityTranslationView, is_valid_pe_version_override
+
+
+class TestIsValidPeVersionOverride(TestCase):
+    def test_accepts_aliases(self):
+        self.assertTrue(is_valid_pe_version_override("current"))
+        self.assertTrue(is_valid_pe_version_override("frontier"))
+
+    def test_accepts_version_number(self):
+        self.assertTrue(is_valid_pe_version_override("1.715.2"))
+        self.assertTrue(is_valid_pe_version_override("1.800.0"))
+
+    def test_rejects_garbage_and_typos(self):
+        for value in ("banana", "fronteir", "1.7", "1.715", "v1.715.2", "1.715.2 "):
+            self.assertFalse(is_valid_pe_version_override(value), value)
 
 
 class TestPeVersionOverrideFlipsIsTest(TestCase):
@@ -48,11 +62,11 @@ class TestPeVersionOverrideFlipsIsTest(TestCase):
         with patch("screener.views.all_results", side_effect=fake_all_results), patch(
             "screener.views.get_web_hook", return_value=None
         ):
-            view(request, id=str(self.screen.uuid))
-        return captured
+            response = view(request, id=str(self.screen.uuid))
+        return captured, response
 
     def test_override_flips_is_test_before_calc(self):
-        captured = self._call_view({"pe_version": "frontier"})
+        captured, _ = self._call_view({"pe_version": "frontier"})
 
         # The screen was is_test=False; the override must flip it BEFORE the calc runs.
         self.assertTrue(captured["is_test"])
@@ -63,9 +77,19 @@ class TestPeVersionOverrideFlipsIsTest(TestCase):
         self.assertTrue(self.screen.is_test)
 
     def test_no_override_leaves_is_test_untouched(self):
-        captured = self._call_view({})
+        captured, _ = self._call_view({})
 
         self.assertFalse(captured["is_test"])
         self.assertIsNone(captured["pe_version"])
+        self.screen.refresh_from_db()
+        self.assertFalse(self.screen.is_test)
+
+    def test_invalid_override_returns_400_and_does_not_flip_or_calc(self):
+        captured, response = self._call_view({"pe_version": "fronteir"})
+
+        # Rejected before any work: 400, no calc, and is_test untouched.
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("pe_version", response.data)
+        self.assertEqual(captured, {})  # all_results never called
         self.screen.refresh_from_db()
         self.assertFalse(self.screen.is_test)

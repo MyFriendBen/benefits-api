@@ -1,4 +1,5 @@
 import hashlib
+import re
 from typing import Optional
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -136,6 +137,19 @@ class EligibilityView(views.APIView):
         return Response(results)
 
 
+# Accepted ?pe_version= override values: the two stable PolicyEngine aliases, or an
+# exact package version (e.g. "1.715.2"). The version pattern means new releases need
+# no code change here. Anything else is rejected so a typo'd value doesn't silently
+# test the wrong version. The config field (PolicyEngineConfig) separately disallows
+# the aliases — they may only be used via this test-only override.
+PE_VERSION_ALIASES = ("current", "frontier")
+PE_VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
+
+
+def is_valid_pe_version_override(value: str) -> bool:
+    return value in PE_VERSION_ALIASES or PE_VERSION_RE.match(value) is not None
+
+
 class EligibilityTranslationView(views.APIView):
     @swagger_auto_schema(responses={200: ResultsSerializer()})
     def get(self, request, id):
@@ -152,14 +166,21 @@ class EligibilityTranslationView(views.APIView):
         is_admin = request.query_params.get("admin")
 
         # A ?pe_version= override is a test-only preview of a specific PolicyEngine
-        # version. Promote the screen to a test screen BEFORE calculating so the
-        # resulting snapshot is excluded from exports/marts and the referrer webhook
-        # stays inert (test referrers have no configured webhook). Must run before
-        # all_results(), which writes the EligibilitySnapshot. See test_pe_version_*.
+        # version. Validate it first (reject typos rather than silently testing the
+        # wrong version), then promote the screen to a test screen BEFORE calculating
+        # so the resulting snapshot is excluded from exports/marts and the referrer
+        # webhook stays inert. Must run before all_results(), which writes the
+        # EligibilitySnapshot. See test_pe_version_*.
         pe_version = request.query_params.get("pe_version")
-        if pe_version and not screen.is_test:
-            screen.is_test = True
-            screen.save(update_fields=["is_test"])
+        if pe_version:
+            if not is_valid_pe_version_override(pe_version):
+                return Response(
+                    {"pe_version": "must be a version number like '1.715.2', or 'current'/'frontier'"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if not screen.is_test:
+                screen.is_test = True
+                screen.save(update_fields=["is_test"])
 
         results = all_results(screen, is_admin=is_admin, pe_version=pe_version)
 
