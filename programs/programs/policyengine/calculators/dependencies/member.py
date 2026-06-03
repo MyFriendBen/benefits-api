@@ -136,6 +136,24 @@ class IsDisabledDependency(Member):
         return self.member.disabled or self.member.long_term_disability or self.member.visually_impaired
 
 
+class MeetsSsiDisabilityCriteriaDependency(Member):
+    """
+    PolicyEngine frontier (policyengine-us 1.715.2) requires this person input to
+    classify someone as SSI-disabled — it no longer falls back to is_disabled /
+    reported SSI receipt. Without it, a disabled non-aged/non-blind person gets
+    ssi: 0 (MFB-1102).
+
+    Source mirrors IsDisabledDependency for now. NOTE: pending PolicyEngine
+    confirmation on whether this should match "meets SSA disability criteria"
+    exactly (e.g. excluding blindness, which SSI treats as a separate category).
+    """
+
+    field = "meets_ssi_disability_criteria"
+
+    def value(self):
+        return self.member.disabled or self.member.long_term_disability or self.member.visually_impaired
+
+
 class MedicalExpenseDependency(Member):
     """
     Medical expenses for PolicyEngine SNAP and other deduction calculations.
