@@ -155,9 +155,10 @@ class EligibilityTranslationView(views.APIView):
         A ?pe_version= override is a test-only preview of a specific PolicyEngine
         version. We validate it (rejecting typos rather than silently testing the wrong
         version) and promote the screen to a test screen so the resulting snapshot is
-        excluded from exports/marts and the referrer webhook stays inert. The flip must
-        happen before all_results(), which writes the EligibilitySnapshot — that
-        ordering is locked by screener/tests/test_pe_version_override.py.
+        excluded from exports/marts; the referrer webhook is also skipped for test
+        screens (see below). The flip must happen before all_results(), which writes the
+        EligibilitySnapshot — that ordering is locked by
+        screener/tests/test_pe_version_override.py.
         """
         screen = Screen.objects.prefetch_related(
             "household_members",
@@ -188,9 +189,12 @@ class EligibilityTranslationView(views.APIView):
         if screen.submission_date is None:
             screen.submission_date = datetime.now(timezone.utc)
 
-        hook = get_web_hook(screen)
-        if hook is not None:
-            hook.send(screen, results)
+        # Never deliver a test screen's results to a partner's webhook — covers the
+        # ?pe_version= preview (which flips is_test above) and any other test screen.
+        if not screen.is_test:
+            hook = get_web_hook(screen)
+            if hook is not None:
+                hook.send(screen, results)
 
         screen.completed = True
         screen.save()

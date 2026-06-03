@@ -10,7 +10,7 @@ permission layer) so the test stays focused on the get() ordering logic and does
 depend on the full eligibility/serialization machinery (all_results is patched).
 """
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
 from rest_framework.permissions import AllowAny
@@ -93,3 +93,20 @@ class TestPeVersionOverrideFlipsIsTest(TestCase):
         self.assertEqual(captured, {})  # all_results never called
         self.screen.refresh_from_db()
         self.assertFalse(self.screen.is_test)
+
+    def test_webhook_not_sent_for_test_screen(self):
+        """A test screen (incl. one promoted by ?pe_version=) must never POST to a
+        partner webhook."""
+        hook = MagicMock()
+
+        def fake_all_results(screen, *args, **kwargs):
+            return {"programs": [], "urgent_needs": [], "screen_id": screen.id}
+
+        view = EligibilityTranslationView.as_view(permission_classes=[AllowAny])
+        request = self.factory.get("/api/eligibility/", {"pe_version": "frontier"})
+        with patch("screener.views.all_results", side_effect=fake_all_results), patch(
+            "screener.views.get_web_hook", return_value=hook
+        ):
+            view(request, id=str(self.screen.uuid))
+
+        hook.send.assert_not_called()

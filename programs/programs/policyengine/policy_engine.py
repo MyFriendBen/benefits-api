@@ -33,8 +33,8 @@ def resolve_pe_version(pe_version_override: Optional[str] = None) -> Optional[st
     # which this module also depends on).
     from configuration.models import PolicyEngineConfig
 
-    version = PolicyEngineConfig.load().policyengine_version
-    return version or None
+    # Read-only accessor: must not write a row on the eligibility hot path.
+    return PolicyEngineConfig.current_version() or None
 
 
 def calc_pe_eligibility(

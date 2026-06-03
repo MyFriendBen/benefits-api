@@ -59,7 +59,11 @@ class PolicyEngineConfig(models.Model):
         return f"PolicyEngine version: {self.policyengine_version or '(default)'}"
 
     def clean(self):
+        # Normalize first so the stored/served value is exactly what we validate — a
+        # value with surrounding whitespace would otherwise pass validation here but be
+        # sent to PolicyEngine verbatim.
         value = self.policyengine_version.strip()
+        self.policyengine_version = value
 
         # Blank is allowed (omits the "version" field); otherwise must be an exact
         # version number. This also rejects the floating "frontier"/"current" aliases,
@@ -81,6 +85,14 @@ class PolicyEngineConfig(models.Model):
 
     @classmethod
     def load(cls) -> "PolicyEngineConfig":
-        """Return the singleton row, creating an empty (default) one if absent."""
+        """Return the singleton row, creating an empty (default) one if absent.
+        Materializes the row, so use from write/admin contexts — not the calc path."""
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
+
+    @classmethod
+    def current_version(cls) -> str:
+        """Read-only accessor for the configured version on the eligibility hot path.
+        Returns "" (default) when no row exists, without writing one."""
+        obj = cls.objects.filter(pk=1).first()
+        return obj.policyengine_version if obj else ""

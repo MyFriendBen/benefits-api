@@ -31,6 +31,27 @@ class TestPolicyEngineConfigSingleton(TestCase):
         self.assertEqual(config.policyengine_version, "")
         self.assertEqual(PolicyEngineConfig.objects.count(), 1)
 
+    def test_current_version_does_not_write_when_absent(self):
+        # Read-only accessor for the hot path: must not materialize a row.
+        self.assertEqual(PolicyEngineConfig.objects.count(), 0)
+        self.assertEqual(PolicyEngineConfig.current_version(), "")
+        self.assertEqual(PolicyEngineConfig.objects.count(), 0)
+
+    def test_current_version_returns_stored_value(self):
+        PolicyEngineConfig.objects.create(policyengine_version="1.715.2")
+        self.assertEqual(PolicyEngineConfig.current_version(), "1.715.2")
+
+    def test_clean_strips_whitespace(self):
+        # Whitespace must be normalized so the stored/served value matches what we
+        # validated (otherwise " 1.715.2 " reaches PolicyEngine verbatim).
+        config = PolicyEngineConfig(policyengine_version="  1.715.2  ")
+        config.clean()
+        self.assertEqual(config.policyengine_version, "1.715.2")
+
+    def test_save_persists_stripped_value(self):
+        PolicyEngineConfig.objects.create(policyengine_version="  1.715.2  ")
+        self.assertEqual(PolicyEngineConfig.load().policyengine_version, "1.715.2")
+
     def test_clean_accepts_pinned_version(self):
         config = PolicyEngineConfig(policyengine_version="1.715.2")
         config.clean()  # should not raise
@@ -77,6 +98,10 @@ class TestPolicyEngineConfigAdminDisplay(TestCase):
             self.admin.current_version(PolicyEngineConfig(policyengine_version="")),
             PolicyEngineConfigAdmin.DEFAULT_LABEL,
         )
+
+    def test_current_version_handles_none_on_add_form(self):
+        # Add form passes obj=None (fresh DB) — must not AttributeError.
+        self.assertEqual(self.admin.current_version(None), PolicyEngineConfigAdmin.DEFAULT_LABEL)
 
 
 class TestResolvePeVersion(TestCase):

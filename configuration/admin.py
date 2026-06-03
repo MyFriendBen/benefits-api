@@ -59,6 +59,9 @@ class PolicyEngineConfigAdmin(SecureAdmin):
     def current_version(self, obj):
         # Readonly echo of the active value, so the form states what is in effect (the
         # editable field below is empty when on default, which alone reads as "unset").
+        # obj is None on the add form (fresh DB, no row yet) — show the default label.
+        if obj is None:
+            return self.DEFAULT_LABEL
         return obj.policyengine_version or self.DEFAULT_LABEL
 
     def has_add_permission(self, request):
