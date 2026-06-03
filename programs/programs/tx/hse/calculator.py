@@ -19,7 +19,7 @@ class TxHse(ProgramCalculator):
 
     Benefit amount:
     - $800/year (estimated typical tax savings for a low-income TX homeowner
-      with a ~$120K home value under the general homestead exemption)
+      under the general homestead exemption)
     - $1200/year for seniors (age 65+) or people with disabilities (estimated
       typical savings under the general + senior/disabled exemption combined)
     Note: actual savings vary by taxing unit and appraised value.
