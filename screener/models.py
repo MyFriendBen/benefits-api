@@ -525,7 +525,7 @@ class Screen(models.Model):
             "wa_wftc": self.has_eitc,
             "wa_wic": self.has_wic,
             "wa_apple_health_medicaid": self.has_medicaid,
-            "wa_apple_health_for_kids": self.has_medicaid,
+            "wa_apple_health_for_kids": self.has_chp,
             "wa_hcv": self.has_section_8,
             "ma_ssp": self.has_ma_ssp,
             "cesn_snap": self.has_snap,
