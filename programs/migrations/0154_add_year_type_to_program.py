@@ -14,7 +14,6 @@ class Migration(migrations.Migration):
             model_name="program",
             name="year_type",
             field=models.CharField(
-                blank=True,
                 choices=[
                     ("hardcoded", "Hardcoded"),
                     ("fiscal_year", "Fiscal Year"),

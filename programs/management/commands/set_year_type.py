@@ -1,3 +1,5 @@
+import argparse
+from typing import Any
 from django.core.management.base import BaseCommand
 from programs.models import Program
 
@@ -5,12 +7,12 @@ from programs.models import Program
 class Command(BaseCommand):
     help = "Assign year_type to programs"
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument("year_type", choices=["calendar_year", "fiscal_year", "hardcoded"])
         parser.add_argument("--programs", nargs="+", help="External names to target (e.g. co_snap il_medicaid)")
         parser.add_argument("--all", action="store_true", help="Apply to all programs")
 
-    def handle(self, *args, **options):
+    def handle(self, *args: Any, **options: Any) -> None:
         year_type = options["year_type"]
 
         if options["all"]:
