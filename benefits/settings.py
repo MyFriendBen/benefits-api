@@ -83,6 +83,7 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "benefits.views.drf_exception_handler",
     "DEFAULT_THROTTLE_RATES": {
         "nps": "3/hour",  # Limit NPS submissions to prevent abuse
+        "rem": "30/hour",  # Limit REM impact proxy requests to protect the upstream API key
     },
 }
 

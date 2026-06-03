@@ -639,6 +639,23 @@ def urgent_need_results(screen: Screen, data):
     return eligible_urgent_needs
 
 
+class RemRateThrottle(throttling.AnonRateThrottle):
+    """
+    Rate throttle for REM impact proxy requests to prevent API key abuse.
+    Rate is configured via DEFAULT_THROTTLE_RATES["rem"] in settings.
+    Uses a hashed IP as the cache key to avoid storing raw IPs.
+    """
+
+    scope = "rem"
+
+    def get_cache_key(self, request, view):
+        ident = self.get_ident(request)
+        if ident is None:
+            return None
+        hashed = hashlib.sha256(ident.encode()).hexdigest()
+        return self.cache_format % {"scope": self.scope, "ident": hashed}
+
+
 class NPSRateThrottle(throttling.AnonRateThrottle):
     """
     Rate throttle for NPS submissions to prevent abuse.
@@ -759,6 +776,7 @@ class RemImpactView(views.APIView):
     """
 
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [RemRateThrottle]
 
     def get(self, request, white_label: str) -> Response:
         upgrade = request.query_params.get("upgrade")
@@ -782,6 +800,16 @@ class RemImpactView(views.APIView):
                 detail = e.response.text
             return Response(
                 {"error": f"Rewiring America API error: {e.response.status_code}", "detail": detail},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+        except requests.RequestException as e:
+            return Response(
+                {"error": "Rewiring America request failed.", "detail": str(e)},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+        except ValueError as e:
+            return Response(
+                {"error": "Rewiring America returned an invalid response.", "detail": str(e)},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 
