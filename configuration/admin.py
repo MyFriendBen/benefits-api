@@ -39,9 +39,8 @@ class PolicyEngineConfigAdmin(SecureAdmin):
     """Global singleton. SecureAdmin already restricts a white-label-less model to
     superusers; we additionally enforce single-row UX (no add once it exists, no delete).
 
-    The change form (templates/admin/configuration/policyengineconfig/change_form.html)
-    shows a readonly "Current version" line and a "Clear to default" button that blanks
-    the version input client-side; you then Save to commit the reset."""
+    The change form shows a readonly "Current version" line above the editable field;
+    to reset to PolicyEngine's default, clear the field and save (per its help_text)."""
 
     DEFAULT_LABEL = "(default — PolicyEngine current)"
 

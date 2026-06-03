@@ -29,8 +29,8 @@ def resolve_pe_version(pe_version_override: Optional[str] = None) -> Optional[st
     if pe_version_override:
         return pe_version_override
 
-    # Imported here to avoid a circular import (configuration imports from screener,
-    # which this module also depends on).
+    # Deferred to keep this calculator module's import graph light (it avoids pulling
+    # the configuration model layer at import time); there is no import cycle.
     from configuration.models import PolicyEngineConfig
 
     # Read-only accessor: must not write a row on the eligibility hot path.

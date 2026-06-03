@@ -24,7 +24,8 @@ class PolicyEngineConfig(models.Model):
     sent on every household /calculate request. Editing this row is how we cut over
     to a new PolicyEngine version without a deploy.
 
-    Only ever one row (enforced by save()/load()). Read via PolicyEngineConfig.load().
+    Only ever one row (enforced by save()/load()). Read via current_version() on the
+    hot path (no write); load() materializes the row for write/admin contexts.
 
     Pinned version numbers only (e.g. "1.715.2"), enforced by clean(). The floating
     "frontier"/"current" aliases are deliberately not valid here: PolicyEngine repoints
