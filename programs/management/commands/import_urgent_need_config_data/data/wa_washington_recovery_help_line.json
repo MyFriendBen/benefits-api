@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_washington_recovery_help_line",
+    "category_type": {
+      "external_name": "wa_behavioral_health",
+      "name": "Behavioral health",
+      "icon": "behavioral_health"
+    },
+    "type_short": ["mental health"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "Washington Recovery Help Line",
+      "description": "A free helpline for people in Washington struggling with drugs, alcohol, or gambling. Call 866-789-1511.",
+      "link": "https://www.warecoveryhelpline.org",
+      "warning": "",
+      "website_description": "24/7 statewide support line for mental health and substance use recovery.",
+      "notification_message": ""
+    },
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

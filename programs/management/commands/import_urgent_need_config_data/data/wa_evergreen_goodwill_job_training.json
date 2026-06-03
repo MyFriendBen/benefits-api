@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_evergreen_goodwill_job_training",
+    "category_type": {
+      "external_name": "wa_job_resources",
+      "name": "Job resources",
+      "icon": "job_resources"
+    },
+    "type_short": ["job resources"],
+    "functions": [],
+    "counties": ["King County"],
+    "required_expense_types": [],
+    "translations": {
+      "name": "Evergreen Goodwill Job Training",
+      "description": "Goodwill in Seattle offers free or low-cost classes to help you learn new skills and find a job. You can get training in areas like healthcare, construction, retail, and technology.",
+      "link": "https://evergreengoodwill.org/job-training-and-education/",
+      "warning": "",
+      "website_description": "Free and low-cost job skills training and employment programs in the Seattle area.",
+      "notification_message": ""
+    },
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

@@ -5,6 +5,8 @@ import programs.programs.wa.pe.tax as tax
 from programs.programs.policyengine.calculators.base import PolicyEngineCalulator
 
 wa_member_calculators = {
+    "wa_apple_health_for_kids": member.WaAppleHealthForKids,
+    "wa_apple_health_medicaid": member.WaAppleHealthMedicaid,
     "wa_ssi": member.WaSsi,
 }
 

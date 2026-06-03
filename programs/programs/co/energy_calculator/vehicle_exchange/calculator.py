@@ -23,7 +23,8 @@ class EnergyCalculatorVehicleExchange(ProgramCalculator):
                 has_benefit = True
 
         for program in self.calculated_presumptive_eligibility:
-            if self.data[program].eligible:
+            entry = self.data.get(program)
+            if entry is not None and entry.eligible:
                 has_benefit = True
 
         # income
