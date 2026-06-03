@@ -153,6 +153,14 @@ def is_valid_pe_version_override(value: str) -> bool:
 class EligibilityTranslationView(views.APIView):
     @swagger_auto_schema(responses={200: ResultsSerializer()})
     def get(self, request, id):
+        """
+        A ?pe_version= override is a test-only preview of a specific PolicyEngine
+        version. We validate it (rejecting typos rather than silently testing the wrong
+        version) and promote the screen to a test screen so the resulting snapshot is
+        excluded from exports/marts and the referrer webhook stays inert. The flip must
+        happen before all_results(), which writes the EligibilitySnapshot — that
+        ordering is locked by screener/tests/test_pe_version_override.py.
+        """
         screen = Screen.objects.prefetch_related(
             "household_members",
             "household_members__income_streams",
@@ -165,12 +173,6 @@ class EligibilityTranslationView(views.APIView):
 
         is_admin = request.query_params.get("admin")
 
-        # A ?pe_version= override is a test-only preview of a specific PolicyEngine
-        # version. Validate it first (reject typos rather than silently testing the
-        # wrong version), then promote the screen to a test screen BEFORE calculating
-        # so the resulting snapshot is excluded from exports/marts and the referrer
-        # webhook stays inert. Must run before all_results(), which writes the
-        # EligibilitySnapshot. See test_pe_version_*.
         pe_version = request.query_params.get("pe_version")
         if pe_version:
             if not is_valid_pe_version_override(pe_version):
@@ -178,6 +180,7 @@ class EligibilityTranslationView(views.APIView):
                     {"pe_version": "must be a version number like '1.715.2', or 'current'/'frontier'"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+            # Flip before the calc so the snapshot is born under is_test (see docstring).
             if not screen.is_test:
                 screen.is_test = True
                 screen.save(update_fields=["is_test"])

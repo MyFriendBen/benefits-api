@@ -23,14 +23,17 @@ class PolicyEngineConfig(models.Model):
     to a new PolicyEngine version without a deploy.
 
     Only ever one row (enforced by save()/load()). Read via PolicyEngineConfig.load().
+
+    Pinned version numbers only (e.g. "1.715.2"): the "frontier"/"current" aliases are
+    floating — PolicyEngine repoints them when it promotes a release — so storing one
+    here would let our served version change under us with no action on our side. The
+    per-request ?pe_version= override (a test-only preview) is the only place those
+    aliases may be used. clean() rejects them here; blank means omit the "version"
+    field entirely, i.e. PolicyEngine's default.
     """
 
-    # The floating aliases move under us when PolicyEngine promotes a release, so we
-    # only ever pin an exact package version here (e.g. "1.715.2"). The per-request
-    # ?pe_version= override is the only place "frontier"/"current" may be used.
     DISALLOWED_VERSIONS = ("frontier", "current")
 
-    # Blank => omit the "version" field entirely, i.e. PolicyEngine's default ("current").
     policyengine_version = models.CharField(
         max_length=32,
         blank=True,

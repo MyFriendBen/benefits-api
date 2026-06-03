@@ -186,8 +186,7 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: 
     if len(secondary_tax_members) == 0:
         del raw_input["household"]["tax_units"][SECONDARY_TAX_UNIT]
 
-    # Pin the PolicyEngine model version when configured/overridden; otherwise omit the
-    # field entirely so PolicyEngine uses its default ("current").
+    # Inject the resolved version (override > config); None means omit the field.
     version = resolve_pe_version(pe_version)
     if version is not None:
         raw_input["version"] = version
