@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("screener", "0153_add_needs_disability_resources"),
+        ("screener", "0154_fix_new_hanover_county_typo"),
     ]
 
     operations = [
