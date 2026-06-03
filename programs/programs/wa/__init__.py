@@ -13,6 +13,7 @@ from .senior_disabled_pte.calculator import WaSeniorDisabledPte
 from .ssdi.calculator import WaSsdi
 from .wic.calculator import WaWic
 from .nslp.calculator import WaNslp
+from .wap.calculator import WaWap
 
 wa_calculators: dict[str, type[ProgramCalculator]] = {
     "wa_csfp": WaCsfp,
@@ -28,5 +29,6 @@ wa_calculators: dict[str, type[ProgramCalculator]] = {
     "wa_wic": WaWic,
     "wa_nslp": WaNslp,
     "wa_udp": WaUdp,
+    "wa_wap": WaWap,
     "wa_orca_lift": WaOrcaLift,
 }
