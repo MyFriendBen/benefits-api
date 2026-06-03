@@ -37,6 +37,38 @@ def resolve_pe_version(pe_version_override: Optional[str] = None) -> Optional[st
     return PolicyEngineConfig.current_version() or None
 
 
+# Sentinel meaning "newest released model" — supports any gated variable.
+_LATEST = (float("inf"),)
+
+
+def _parse_version(version: Optional[str]) -> Optional[tuple]:
+    """
+    Turn a resolved version into a comparable tuple for input gating:
+      - "1.715.2"  -> (1, 715, 2)
+      - "frontier" -> _LATEST (newest released model, supports gated inputs)
+      - "current" / None / unparseable -> None (treat as the current default model)
+    """
+    if version == "frontier":
+        return _LATEST
+    if not version or version == "current":
+        return None
+    try:
+        return tuple(int(part) for part in version.split("."))
+    except ValueError:
+        return None
+
+
+def _version_supports(parsed_version: Optional[tuple], min_pe_version: tuple) -> bool:
+    """Whether a request at parsed_version may send an input requiring min_pe_version.
+    Ungated inputs (empty min) are always sent; gated inputs need a known version that
+    meets the floor (an unknown/current/None version omits them)."""
+    if not min_pe_version:
+        return True
+    if parsed_version is None:
+        return False
+    return parsed_version >= min_pe_version
+
+
 def calc_pe_eligibility(
     screen: Screen,
     calculators: dict[str, PolicyEngineCalulator],
@@ -121,6 +153,11 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: 
             "marital_units": {},
         }
     }
+    # Resolve once: used both to gate version-specific inputs below and to set the
+    # top-level "version" field. None => no pin (PolicyEngine's current default).
+    version = resolve_pe_version(pe_version)
+    parsed_version = _parse_version(version)
+
     members: list[HouseholdMember] = screen.household_members.all()
     relationship_map = screen.relationship_map()
 
@@ -154,6 +191,13 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: 
 
     for program in programs:
         for Data in program.pe_inputs + program.pe_outputs:
+            # Skip inputs that the resolved model version doesn't define yet — sending
+            # an unknown variable 400s the whole request (e.g. meets_ssi_disability_criteria
+            # on 1.691.1). With no pin (parsed_version is None) we omit gated inputs too,
+            # since the unpinned default is the current model that lacks them.
+            if not _version_supports(parsed_version, getattr(Data, "min_pe_version", ())):
+                continue
+
             period = program.pe_period
             if hasattr(program, "pe_output_period") and Data in program.pe_outputs:
                 period = program.pe_output_period
@@ -187,7 +231,6 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: 
         del raw_input["household"]["tax_units"][SECONDARY_TAX_UNIT]
 
     # Inject the resolved version (override > config); None means omit the field.
-    version = resolve_pe_version(pe_version)
     if version is not None:
         raw_input["version"] = version
 
