@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, TypedDict
 from sentry_sdk import capture_exception, capture_message
 from .engines import Sim, pe_engines
 from .calculators.constants import MAIN_TAX_UNIT, SECONDARY_TAX_UNIT
+from . import versions as pe_versions
 from django.conf import settings
 
 
@@ -17,24 +18,6 @@ class PEData(TypedDict):
 class EligibilityPEResult(TypedDict):
     eligibility: Dict[str, Eligibility]
     _pe_data: PEData
-
-
-def resolve_pe_version(pe_version_override: Optional[str] = None) -> Optional[str]:
-    """
-    Resolve the PolicyEngine model version to send: per-request override (test-only,
-    passed down from the view) wins, then the global PolicyEngineConfig pin, else None
-    (omit the field, i.e. PolicyEngine's default). The override may be a floating alias
-    ("frontier"/"current"); the config value may not (enforced on the model).
-    """
-    if pe_version_override:
-        return pe_version_override
-
-    # Deferred to keep this calculator module's import graph light (it avoids pulling
-    # the configuration model layer at import time); there is no import cycle.
-    from configuration.models import PolicyEngineConfig
-
-    # Read-only accessor: must not write a row on the eligibility hot path.
-    return PolicyEngineConfig.current_version() or None
 
 
 def calc_pe_eligibility(
@@ -187,7 +170,7 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: 
         del raw_input["household"]["tax_units"][SECONDARY_TAX_UNIT]
 
     # Inject the resolved version (override > config); None means omit the field.
-    version = resolve_pe_version(pe_version)
+    version = pe_versions.determine_pe_version(pe_version)
     if version is not None:
         raw_input["version"] = version
 

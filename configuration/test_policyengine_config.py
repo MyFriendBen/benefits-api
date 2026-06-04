@@ -9,7 +9,8 @@ from django.test import TestCase
 
 from configuration.admin import PolicyEngineConfigAdmin
 from configuration.models import PolicyEngineConfig
-from programs.programs.policyengine.policy_engine import pe_input, resolve_pe_version
+from programs.programs.policyengine.policy_engine import pe_input
+from programs.programs.policyengine.versions import determine_pe_version
 from screener.models import Screen, WhiteLabel
 
 
@@ -110,19 +111,19 @@ class TestResolvePeVersion(TestCase):
     def test_override_wins_over_config(self):
         PolicyEngineConfig.objects.create(policyengine_version="1.715.2")
         # The override is test-only and may be a floating alias.
-        self.assertEqual(resolve_pe_version("frontier"), "frontier")
+        self.assertEqual(determine_pe_version("frontier"), "frontier")
 
     def test_falls_back_to_config_when_no_override(self):
         PolicyEngineConfig.objects.create(policyengine_version="1.715.2")
-        self.assertEqual(resolve_pe_version(None), "1.715.2")
+        self.assertEqual(determine_pe_version(None), "1.715.2")
 
     def test_returns_none_when_unset_and_no_override(self):
         # No config row, no override => omit the version field.
-        self.assertIsNone(resolve_pe_version(None))
+        self.assertIsNone(determine_pe_version(None))
 
     def test_blank_config_returns_none(self):
         PolicyEngineConfig.objects.create(policyengine_version="")
-        self.assertIsNone(resolve_pe_version(None))
+        self.assertIsNone(determine_pe_version(None))
 
 
 class TestPeInputVersionInjection(TestCase):

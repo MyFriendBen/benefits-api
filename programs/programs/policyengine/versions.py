@@ -56,3 +56,20 @@ def to_comparable_pe_version(version: Optional[str]) -> Optional[tuple]:
         return tuple(int(part) for part in version.split("."))
     except ValueError:
         return None
+
+
+def determine_pe_version(pe_version_override: Optional[str] = None) -> Optional[str]:
+    """Determine the PolicyEngine version string to send: per-request override
+    (test-only, passed down as a url param) wins, then the global DB PolicyEngineConfig
+    pin, else None (omit the field, i.e. PolicyEngine's default version). The override
+    may be a floating alias ("frontier"/"current"); the config value must be an exact
+    MAJOR.MINOR.PATCH version (enforced on the model)."""
+    if pe_version_override:
+        return pe_version_override
+
+    # Deferred to keep this module import-light (avoids pulling the configuration model
+    # layer at import time); there is no import cycle.
+    from configuration.models import PolicyEngineConfig
+
+    # Read-only accessor: must not write a row on the eligibility hot path.
+    return PolicyEngineConfig.current_version() or None
