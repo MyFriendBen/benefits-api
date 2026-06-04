@@ -343,9 +343,10 @@ class TestVersionSupports(TestCase):
 
     def setUp(self):
         from programs.programs.policyengine import policy_engine
+        from programs.programs.policyengine import versions as pe_versions
 
         self.supports = policy_engine._version_supports
-        self.v = policy_engine._parse_version
+        self.v = pe_versions.to_comparable_pe_version
 
     def test_ungated_always_supported(self):
         # No bounds => always sent, including on unknown version.
