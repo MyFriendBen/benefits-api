@@ -25,7 +25,12 @@ class Cache:
         except Exception as e:
             if settings.DEBUG:
                 print(e)
-            capture_exception(e, level="warning")
+            level = "error" if self.invalid else "warning"
+            capture_exception(e, level=level)
+
+    def is_valid(self) -> bool:
+        """Returns True if the cache has been successfully populated at least once."""
+        return not self.invalid
 
     def save(self, data):
         self.data = data
