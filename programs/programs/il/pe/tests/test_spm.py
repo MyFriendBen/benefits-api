@@ -163,6 +163,7 @@ class TestIlLiheap(TestCase):
     def test_pe_inputs_includes_heating_expense_person_dependency(self):
         """Test that HeatingExpensePersonDependency is in pe_inputs."""
         from programs.programs.policyengine.calculators.dependencies import member as member_dependency
+
         self.assertIn(member_dependency.HeatingExpensePersonDependency, IlLiheap.pe_inputs)
 
     def test_pe_outputs_includes_il_liheap(self):
