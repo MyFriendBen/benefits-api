@@ -6,9 +6,9 @@ Eligibility:
 - Texas residency is handled by the TX white label (not tested here)
 
 Benefit value:
-- $600 if any household member is age 65+, has long_term_disability, has disabled
+- $1200 if any household member is age 65+, has long_term_disability, has disabled
   status (unable to work now or in the future), or is age 55+ and visually impaired
-- $400 otherwise
+- $800 otherwise
 """
 
 from django.test import TestCase
@@ -58,11 +58,11 @@ class TestTxHseClassAttributes(TestCase):
         self.assertIn("tx_hse", tx_calculators)
         self.assertEqual(tx_calculators["tx_hse"], TxHse)
 
-    def test_base_amount_is_400(self):
-        self.assertEqual(TxHse.amount, 400)
+    def test_base_amount_is_800(self):
+        self.assertEqual(TxHse.amount, 800)
 
-    def test_senior_disabled_amount_is_600(self):
-        self.assertEqual(TxHse.senior_disabled_amount, 600)
+    def test_senior_disabled_amount_is_1200(self):
+        self.assertEqual(TxHse.senior_disabled_amount, 1200)
 
     def test_senior_age_is_65(self):
         self.assertEqual(TxHse.senior_age, 65)
@@ -85,79 +85,79 @@ class TestTxHseEligibility(TestCase):
 
 
 class TestTxHseValue(TestCase):
-    def test_non_senior_non_disabled_gets_400(self):
+    def test_non_senior_non_disabled_gets_800(self):
         members = [make_member(age=40)]
         calc = make_calculator(members=members)
-        self.assertEqual(calc.household_value(), 400)
+        self.assertEqual(calc.household_value(), 800)
 
-    def test_member_age_65_gets_600(self):
+    def test_member_age_65_gets_1200(self):
         members = [make_member(age=65)]
         calc = make_calculator(members=members)
-        self.assertEqual(calc.household_value(), 600)
+        self.assertEqual(calc.household_value(), 1200)
 
-    def test_member_age_80_gets_600(self):
+    def test_member_age_80_gets_1200(self):
         members = [make_member(age=80)]
         calc = make_calculator(members=members)
-        self.assertEqual(calc.household_value(), 600)
+        self.assertEqual(calc.household_value(), 1200)
 
-    def test_member_age_64_gets_400(self):
+    def test_member_age_64_gets_800(self):
         members = [make_member(age=64)]
         calc = make_calculator(members=members)
-        self.assertEqual(calc.household_value(), 400)
+        self.assertEqual(calc.household_value(), 800)
 
-    def test_disabled_member_gets_600(self):
+    def test_disabled_member_gets_1200(self):
         members = [make_member(age=40, disabled=True)]
         calc = make_calculator(members=members)
-        self.assertEqual(calc.household_value(), 600)
+        self.assertEqual(calc.household_value(), 1200)
 
-    def test_visually_impaired_age_55_gets_600(self):
+    def test_visually_impaired_age_55_gets_1200(self):
         members = [make_member(age=55, visually_impaired=True)]
         calc = make_calculator(members=members)
-        self.assertEqual(calc.household_value(), 600)
+        self.assertEqual(calc.household_value(), 1200)
 
-    def test_visually_impaired_age_60_gets_600(self):
+    def test_visually_impaired_age_60_gets_1200(self):
         members = [make_member(age=60, visually_impaired=True)]
         calc = make_calculator(members=members)
-        self.assertEqual(calc.household_value(), 600)
+        self.assertEqual(calc.household_value(), 1200)
 
-    def test_visually_impaired_under_55_gets_400(self):
+    def test_visually_impaired_under_55_gets_800(self):
         members = [make_member(age=40, visually_impaired=True)]
         calc = make_calculator(members=members)
-        self.assertEqual(calc.household_value(), 400)
+        self.assertEqual(calc.household_value(), 800)
 
-    def test_visually_impaired_age_54_gets_400(self):
+    def test_visually_impaired_age_54_gets_800(self):
         members = [make_member(age=54, visually_impaired=True)]
         calc = make_calculator(members=members)
-        self.assertEqual(calc.household_value(), 400)
+        self.assertEqual(calc.household_value(), 800)
 
-    def test_long_term_disability_gets_600(self):
+    def test_long_term_disability_gets_1200(self):
         members = [make_member(age=40, long_term_disability=True)]
         calc = make_calculator(members=members)
-        self.assertEqual(calc.household_value(), 600)
+        self.assertEqual(calc.household_value(), 1200)
 
-    def test_mixed_household_with_senior_gets_600(self):
+    def test_mixed_household_with_senior_gets_1200(self):
         members = [make_member(age=40), make_member(age=70)]
         calc = make_calculator(members=members)
-        self.assertEqual(calc.household_value(), 600)
+        self.assertEqual(calc.household_value(), 1200)
 
-    def test_mixed_household_no_senior_no_disability_gets_400(self):
+    def test_mixed_household_no_senior_no_disability_gets_800(self):
         members = [make_member(age=30), make_member(age=50)]
         calc = make_calculator(members=members)
-        self.assertEqual(calc.household_value(), 400)
+        self.assertEqual(calc.household_value(), 800)
 
-    def test_zero_member_household_gets_400(self):
+    def test_zero_member_household_gets_800(self):
         calc = make_calculator(members=[])
-        self.assertEqual(calc.household_value(), 400)
+        self.assertEqual(calc.household_value(), 800)
 
     def test_member_with_none_age_does_not_raise(self):
         members = [make_member(age=None)]
         calc = make_calculator(members=members)
-        self.assertEqual(calc.household_value(), 400)
+        self.assertEqual(calc.household_value(), 800)
 
-    def test_senior_and_disabled_member_gets_600(self):
+    def test_senior_and_disabled_member_gets_1200(self):
         members = [make_member(age=70, disabled=True)]
         calc = make_calculator(members=members)
-        self.assertEqual(calc.household_value(), 600)
+        self.assertEqual(calc.household_value(), 1200)
 
 
 class TestTxHseCalc(TestCase):
@@ -165,15 +165,15 @@ class TestTxHseCalc(TestCase):
         calc = make_calculator(has_mortgage=True, members=[make_member(age=40)])
         e = calc.calc()
         self.assertTrue(e.eligible)
-        self.assertEqual(e.value, 400)
+        self.assertEqual(e.value, 800)
 
     def test_calc_ineligible_without_mortgage(self):
         calc = make_calculator(has_mortgage=False, members=[make_member(age=40)])
         e = calc.calc()
         self.assertFalse(e.eligible)
 
-    def test_calc_eligible_senior_gets_600(self):
+    def test_calc_eligible_senior_gets_1200(self):
         calc = make_calculator(has_mortgage=True, members=[make_member(age=65)])
         e = calc.calc()
         self.assertTrue(e.eligible)
-        self.assertEqual(e.value, 600)
+        self.assertEqual(e.value, 1200)
