@@ -104,6 +104,13 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: 
             "marital_units": {},
         }
     }
+    # Two values from one resolved version, for two consumers:
+    #   version (string)            -> version to send in PE API request body (if None/omitted,
+    #                                   PE defaults to current version)
+    #   comparable_version (tuple)  -> tuple representation to gate which inputs are sent
+    version = pe_versions.determine_pe_version(pe_version)
+    comparable_version = pe_versions.to_comparable_pe_version(version)
+
     members: list[HouseholdMember] = screen.household_members.all()
     relationship_map = screen.relationship_map()
 
@@ -137,6 +144,17 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: 
 
     for program in programs:
         for Data in program.pe_inputs + program.pe_outputs:
+            # Skip inputs that the resolved model version doesn't define yet — sending
+            # an unknown variable 400s the whole request (e.g. meets_ssi_disability_criteria
+            # on 1.691.1). With no pin (comparable_version is None) we omit gated inputs
+            # too, since the unpinned default is the current model that lacks them.
+            if not pe_versions.version_supports(
+                comparable_version,
+                getattr(Data, "min_pe_version", ()),
+                getattr(Data, "max_pe_version", ()),
+            ):
+                continue
+
             period = program.pe_period
             if hasattr(program, "pe_output_period") and Data in program.pe_outputs:
                 period = program.pe_output_period
@@ -170,7 +188,6 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: 
         del raw_input["household"]["tax_units"][SECONDARY_TAX_UNIT]
 
     # Inject the resolved version (override > config); None means omit the field.
-    version = pe_versions.determine_pe_version(pe_version)
     if version is not None:
         raw_input["version"] = version
 

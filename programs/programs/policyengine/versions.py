@@ -73,3 +73,22 @@ def determine_pe_version(pe_version_override: Optional[str] = None) -> Optional[
 
     # Read-only accessor: must not write a row on the eligibility hot path.
     return PolicyEngineConfig.current_version() or None
+
+
+def version_supports(comparable_version: Optional[tuple], min_pe_version: tuple, max_pe_version: tuple) -> bool:
+    """Whether a request at comparable_version may send an input that exists in the
+    version window [min_pe_version, max_pe_version] (each bound optional, from a
+    dependency's min_pe_version/max_pe_version). Ungated inputs (both empty) are always
+    sent. comparable_version is the output of to_comparable_pe_version().
+
+    comparable_version is None for an unknown/current/unpinned request. We treat that
+    asymmetrically: it FAILS any min floor (don't send a not-yet-existing variable to
+    the current model) but SATISFIES any max ceiling (a variable that still exists on
+    the current model should keep being sent until we pin a version past its removal)."""
+    if min_pe_version:
+        if comparable_version is None or comparable_version < min_pe_version:
+            return False
+    if max_pe_version:
+        if comparable_version is not None and comparable_version > max_pe_version:
+            return False
+    return True
