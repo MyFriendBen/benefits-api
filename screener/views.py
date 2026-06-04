@@ -778,7 +778,7 @@ class RemImpactView(views.APIView):
     permission_classes = [permissions.AllowAny]
     throttle_classes = [RemRateThrottle]
 
-    def get(self, request, white_label: str) -> Response:
+    def get(self, request, **_kwargs) -> Response:
         upgrade = request.query_params.get("upgrade")
         address = request.query_params.get("address")
         heating_fuel = request.query_params.get("heating_fuel")
