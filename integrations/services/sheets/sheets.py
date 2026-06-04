@@ -49,13 +49,12 @@ class GoogleSheets:
                 )
                 return result.get("values", [])
             except Exception as exc:
-                is_transient = (
-                    isinstance(exc, (ssl.SSLError, TimeoutError, socket.timeout))
-                    or (isinstance(exc, HttpError) and exc.resp is not None and exc.resp.status in {429, 500, 502, 503, 504})
+                is_transient = isinstance(exc, (ssl.SSLError, TimeoutError, socket.timeout)) or (
+                    isinstance(exc, HttpError) and exc.resp is not None and exc.resp.status in {429, 500, 502, 503, 504}
                 )
                 if attempt == max_attempts - 1 or not is_transient:
                     raise
-                time.sleep(2 ** attempt)
+                time.sleep(2**attempt)
 
     def data_by_column(self, *column_names: str) -> list[dict[str, any]]:
         """
