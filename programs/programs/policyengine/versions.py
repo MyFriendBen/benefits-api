@@ -28,7 +28,7 @@ ALIASES = (CURRENT, FRONTIER)
 
 # Sentinel tuple meaning "newest released model" — compares greater than any real
 # version, so it satisfies any min_pe_version floor.
-LATEST = (float("inf"),)
+NEWEST_VERSION = (float("inf"),)
 
 
 def is_valid_version_number(value: str) -> bool:
@@ -45,11 +45,11 @@ def is_valid_override(value: str) -> bool:
 def to_comparable_pe_version(version: Optional[str]) -> Optional[tuple]:
     """Turn a given PE version into a comparable tuple for PE API input gating:
     - "1.715.2"  -> (1, 715, 2)
-    - "frontier" -> LATEST (newest released model, supports gated inputs)
+    - "frontier" -> NEWEST_VERSION (newest released model, supports gated inputs)
     - "current" / None / unparseable -> None (treat as the current default model)
     """
     if version == FRONTIER:
-        return LATEST
+        return NEWEST_VERSION
     if not version or version == CURRENT:
         return None
     try:

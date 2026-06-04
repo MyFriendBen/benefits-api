@@ -45,8 +45,8 @@ class PolicyEngineConfigAdmin(SecureAdmin):
     DEFAULT_LABEL = "(default — PolicyEngine current)"
 
     list_display = ("version_display",)
-    readonly_fields = ("current_version",)
-    fields = ("current_version", "policyengine_version")
+    readonly_fields = ("active_version_display",)
+    fields = ("active_version_display", "policyengine_version")
 
     @admin.display(description="Version")
     def version_display(self, obj):
@@ -55,10 +55,11 @@ class PolicyEngineConfigAdmin(SecureAdmin):
         return obj.policyengine_version or self.DEFAULT_LABEL
 
     @admin.display(description="Current version")
-    def current_version(self, obj):
+    def active_version_display(self, obj):
         # Readonly echo of the active value, so the form states what is in effect (the
         # editable field below is empty when on default, which alone reads as "unset").
-        # obj is None on the add form (fresh DB, no row yet) — show the default label.
+        # Display-only — distinct from PolicyEngineConfig.current_version(), the model
+        # accessor the calc reads. obj is None on the add form (fresh DB) — show default.
         if obj is None:
             return self.DEFAULT_LABEL
         return obj.policyengine_version or self.DEFAULT_LABEL

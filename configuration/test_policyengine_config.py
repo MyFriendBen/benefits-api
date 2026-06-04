@@ -92,16 +92,18 @@ class TestPolicyEngineConfigAdminDisplay(TestCase):
         config = PolicyEngineConfig(policyengine_version="")
         self.assertEqual(self.admin.version_display(config), PolicyEngineConfigAdmin.DEFAULT_LABEL)
 
-    def test_current_version_readonly_mirrors_value(self):
-        self.assertEqual(self.admin.current_version(PolicyEngineConfig(policyengine_version="1.715.2")), "1.715.2")
+    def test_active_version_display_mirrors_value(self):
         self.assertEqual(
-            self.admin.current_version(PolicyEngineConfig(policyengine_version="")),
+            self.admin.active_version_display(PolicyEngineConfig(policyengine_version="1.715.2")), "1.715.2"
+        )
+        self.assertEqual(
+            self.admin.active_version_display(PolicyEngineConfig(policyengine_version="")),
             PolicyEngineConfigAdmin.DEFAULT_LABEL,
         )
 
-    def test_current_version_handles_none_on_add_form(self):
+    def test_active_version_display_handles_none_on_add_form(self):
         # Add form passes obj=None (fresh DB) — must not AttributeError.
-        self.assertEqual(self.admin.current_version(None), PolicyEngineConfigAdmin.DEFAULT_LABEL)
+        self.assertEqual(self.admin.active_version_display(None), PolicyEngineConfigAdmin.DEFAULT_LABEL)
 
 
 class TestResolvePeVersion(TestCase):
