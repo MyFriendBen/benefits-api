@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, TypedDict
 from sentry_sdk import capture_exception, capture_message
 from .engines import Sim, pe_engines
 from .calculators.constants import MAIN_TAX_UNIT, SECONDARY_TAX_UNIT
+from . import versions as pe_versions
 from django.conf import settings
 
 
@@ -22,6 +23,7 @@ class EligibilityPEResult(TypedDict):
 def calc_pe_eligibility(
     screen: Screen,
     calculators: dict[str, PolicyEngineCalulator],
+    pe_version: Optional[str] = None,
 ) -> EligibilityPEResult:
     valid_programs: dict[str, PolicyEngineCalulator] = {}
 
@@ -38,7 +40,7 @@ def calc_pe_eligibility(
     if not valid_programs or not screen.household_members.all():
         return empty_result
 
-    input_data = pe_input(screen, valid_programs.values())
+    input_data = pe_input(screen, valid_programs.values(), pe_version=pe_version)
 
     for Method in pe_engines:
         try:
@@ -77,7 +79,7 @@ def all_eligibility(method: Sim, valid_programs: dict[str, PolicyEngineCalulator
     return all_eligibility
 
 
-def pe_input(screen: Screen, programs: List[PolicyEngineCalulator]):
+def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: Optional[str] = None):
     """
     Generate Policy Engine API request from the list of programs.
     """
@@ -166,6 +168,11 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator]):
     # delete the second tax unit if it is empty because PE can't handle empty tax units
     if len(secondary_tax_members) == 0:
         del raw_input["household"]["tax_units"][SECONDARY_TAX_UNIT]
+
+    # Inject the resolved version (override > config); None means omit the field.
+    version = pe_versions.determine_pe_version(pe_version)
+    if version is not None:
+        raw_input["version"] = version
 
     return raw_input
 

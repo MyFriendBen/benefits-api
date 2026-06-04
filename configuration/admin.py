@@ -2,7 +2,7 @@ from django.contrib import admin
 from django_json_widget.widgets import JSONEditorWidget
 from django.db.models import JSONField
 from authentication.admin import SecureAdmin
-from .models import Configuration
+from .models import Configuration, PolicyEngineConfig
 import json
 
 
@@ -33,3 +33,44 @@ class ConfigurationAdmin(SecureAdmin):
 
 
 admin.site.register(Configuration, ConfigurationAdmin)
+
+
+class PolicyEngineConfigAdmin(SecureAdmin):
+    """Global singleton. SecureAdmin already restricts a white-label-less model to
+    superusers; we additionally enforce single-row UX (no add once it exists, no delete).
+
+    The change form shows a readonly "Current version" line above the editable field;
+    to reset to PolicyEngine's default, clear the field and save (per its help_text)."""
+
+    DEFAULT_LABEL = "(default — PolicyEngine current)"
+
+    list_display = ("version_display",)
+    readonly_fields = ("active_version_display",)
+    fields = ("active_version_display", "policyengine_version")
+
+    @admin.display(description="Version")
+    def version_display(self, obj):
+        # Make the "blank = use PolicyEngine's default" state explicit rather than an
+        # empty cell.
+        return obj.policyengine_version or self.DEFAULT_LABEL
+
+    @admin.display(description="Current version")
+    def active_version_display(self, obj):
+        # Readonly echo of the active value, so the form states what is in effect (the
+        # editable field below is empty when on default, which alone reads as "unset").
+        # Display-only — distinct from PolicyEngineConfig.current_version(), the model
+        # accessor the calc reads. obj is None on the add form (fresh DB) — show default.
+        if obj is None:
+            return self.DEFAULT_LABEL
+        return obj.policyengine_version or self.DEFAULT_LABEL
+
+    def has_add_permission(self, request):
+        if PolicyEngineConfig.objects.exists():
+            return False
+        return super().has_add_permission(request)
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+admin.site.register(PolicyEngineConfig, PolicyEngineConfigAdmin)

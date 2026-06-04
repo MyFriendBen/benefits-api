@@ -3,6 +3,7 @@ from typing import Optional
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from integrations.services.communications import MessageUser
+from programs.programs.policyengine import versions as pe_versions
 from programs.models import Referrer
 from programs.programs.helpers import STATE_MEDICAID_OPTIONS
 from programs.programs.policyengine.calculators.registry import all_calculators
@@ -139,6 +140,15 @@ class EligibilityView(views.APIView):
 class EligibilityTranslationView(views.APIView):
     @swagger_auto_schema(responses={200: ResultsSerializer()})
     def get(self, request, id):
+        """
+        A ?pe_version= override is a test-only preview of a specific PolicyEngine
+        version. We validate it (rejecting typos rather than silently testing the wrong
+        version) and promote the screen to a test screen so the resulting snapshot is
+        excluded from exports/marts; the referrer webhook is also skipped for test
+        screens (see below). The flip must happen before all_results(), which writes the
+        EligibilitySnapshot — that ordering is locked by
+        screener/tests/test_pe_version_override.py.
+        """
         screen = Screen.objects.prefetch_related(
             "household_members",
             "household_members__income_streams",
@@ -150,14 +160,30 @@ class EligibilityTranslationView(views.APIView):
         ).get(uuid=id)
 
         is_admin = request.query_params.get("admin")
-        results = all_results(screen, is_admin=is_admin)
+
+        pe_version = request.query_params.get("pe_version")
+        if pe_version:
+            if not pe_versions.is_valid_override(pe_version):
+                return Response(
+                    {"pe_version": "must be a version number like '1.715.2', or 'current'/'frontier'"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            # Flip before the calc so the snapshot is born under is_test (see docstring).
+            if not screen.is_test:
+                screen.is_test = True
+                screen.save(update_fields=["is_test"])
+
+        results = all_results(screen, is_admin=is_admin, pe_version=pe_version)
 
         if screen.submission_date is None:
             screen.submission_date = datetime.now(timezone.utc)
 
-        hook = get_web_hook(screen)
-        if hook is not None:
-            hook.send(screen, results)
+        # Never deliver a test screen's results to a partner's webhook — covers the
+        # ?pe_version= preview (which flips is_test above) and any other test screen.
+        if not screen.is_test:
+            hook = get_web_hook(screen)
+            if hook is not None:
+                hook.send(screen, results)
 
         screen.completed = True
         screen.save()
@@ -187,8 +213,8 @@ class MessageViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         return Response({}, status=status.HTTP_201_CREATED)
 
 
-def all_results(screen: Screen, batch=False, is_admin: bool = False):
-    eligibility, missing_programs, categories, _pe_data = eligibility_results(screen, batch)
+def all_results(screen: Screen, batch=False, is_admin: bool = False, pe_version: Optional[str] = None):
+    eligibility, missing_programs, categories, _pe_data = eligibility_results(screen, batch, pe_version=pe_version)
     urgent_needs = urgent_need_results(screen, eligibility)
     validations = ValidationSerializer(screen.validations.all(), many=True).data
 
@@ -256,7 +282,7 @@ def update_navigators(
         data[idx]["navigators"] = [serialized_navigator(navigator) for navigator in navigators]
 
 
-def eligibility_results(screen: Screen, batch=False):
+def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] = None):
     try:
         referrer = Referrer.objects.prefetch_related("remove_programs", "primary_navigators").get(
             white_label=screen.white_label,
@@ -322,7 +348,7 @@ def eligibility_results(screen: Screen, batch=False):
         if program is not None:
             pe_calculators[calculator_name] = Calculator(screen, program, missing_dependencies)
 
-    result = calc_pe_eligibility(screen, pe_calculators)
+    result = calc_pe_eligibility(screen, pe_calculators, pe_version=pe_version)
     pe_eligibility = result["eligibility"]
     pe_data = result["_pe_data"]
 
