@@ -42,6 +42,44 @@ class TestAgeDependency(TestCase):
         self.assertEqual(dep.field, "is_disabled")
 
 
+class TestMeetsSsiDisabilityCriteriaDependency(TestCase):
+    """Tests for MeetsSsiDisabilityCriteriaDependency, required by PolicyEngine frontier
+    to classify a person as SSI-disabled (MFB-1102)."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=1,
+            completed=False,
+        )
+
+    def _member(self, **kwargs):
+        return HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=40, **kwargs)
+
+    def test_field_name(self):
+        dep = member.MeetsSsiDisabilityCriteriaDependency(self.screen, self._member(), {})
+        self.assertEqual(dep.field, "meets_ssi_disability_criteria")
+
+    def test_true_when_disabled(self):
+        dep = member.MeetsSsiDisabilityCriteriaDependency(self.screen, self._member(disabled=True), {})
+        self.assertTrue(dep.value())
+
+    def test_true_when_long_term_disability(self):
+        dep = member.MeetsSsiDisabilityCriteriaDependency(self.screen, self._member(long_term_disability=True), {})
+        self.assertTrue(dep.value())
+
+    def test_true_when_visually_impaired(self):
+        dep = member.MeetsSsiDisabilityCriteriaDependency(self.screen, self._member(visually_impaired=True), {})
+        self.assertTrue(dep.value())
+
+    def test_falsy_when_none_apply(self):
+        dep = member.MeetsSsiDisabilityCriteriaDependency(self.screen, self._member(), {})
+        self.assertFalse(dep.value())
+
+
 class TestMemberExpenseDependency(TestCase):
     """Tests for member-level expense dependency classes: SnapChildSupportDependency, PropertyTaxExpenseDependency, and MedicalExpenseDependency."""
 
