@@ -453,6 +453,10 @@ class IlLiheapIncomeEligible(SpmUnit):
     field = "il_liheap_income_eligible"
 
 
+class IlLiheap(SpmUnit):
+    field = "il_liheap"
+
+
 class MaLiheap(SpmUnit):
     field = "ma_liheap"
 
