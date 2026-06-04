@@ -23,14 +23,7 @@ class TestPolicyEngineConfigSingleton(TestCase):
         self.assertEqual(a.pk, 1)
         self.assertEqual(b.pk, 1)
         self.assertEqual(PolicyEngineConfig.objects.count(), 1)
-        self.assertEqual(PolicyEngineConfig.load().policyengine_version, "1.700.0")
-
-    def test_load_creates_default_when_absent(self):
-        self.assertEqual(PolicyEngineConfig.objects.count(), 0)
-        config = PolicyEngineConfig.load()
-        self.assertEqual(config.pk, 1)
-        self.assertEqual(config.policyengine_version, "")
-        self.assertEqual(PolicyEngineConfig.objects.count(), 1)
+        self.assertEqual(PolicyEngineConfig.objects.get(pk=1).policyengine_version, "1.700.0")
 
     def test_current_version_does_not_write_when_absent(self):
         # Read-only accessor for the hot path: must not materialize a row.
@@ -51,7 +44,7 @@ class TestPolicyEngineConfigSingleton(TestCase):
 
     def test_save_persists_stripped_value(self):
         PolicyEngineConfig.objects.create(policyengine_version="  1.715.2  ")
-        self.assertEqual(PolicyEngineConfig.load().policyengine_version, "1.715.2")
+        self.assertEqual(PolicyEngineConfig.objects.get(pk=1).policyengine_version, "1.715.2")
 
     def test_clean_accepts_pinned_version(self):
         config = PolicyEngineConfig(policyengine_version="1.715.2")

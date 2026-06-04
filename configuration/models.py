@@ -79,13 +79,6 @@ class PolicyEngineConfig(models.Model):
         super().save(*args, **kwargs)
 
     @classmethod
-    def load(cls) -> "PolicyEngineConfig":
-        """Return the singleton row, creating an empty (default) one if absent.
-        Materializes the row, so use from write/admin contexts — not the calc path."""
-        obj, _ = cls.objects.get_or_create(pk=1)
-        return obj
-
-    @classmethod
     def current_version(cls) -> str:
         """Read-only accessor for the configured version on the eligibility hot path.
         Returns "" (default) when no row exists, without writing one."""
