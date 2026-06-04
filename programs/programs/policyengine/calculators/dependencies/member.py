@@ -451,19 +451,19 @@ class ChildcareAttendingDaysPerMonthDependency(Member):
     """
     Number of days per month a child attends childcare.
 
-    Default: 20 days/month (typical full-time childcare for working parents).
+    Set to 10 days/month instead of default 20 days/month to align with Texas CCS (Child Care Services) validation
+    references and provider payment rate calculations. Using 20 days resulted in
+    tx_ccs benefit values approximately 2x higher than expected, because the Board's
+    maximum daily reimbursement rate is multiplied by attending days per month.
 
-    This represents standard full-time childcare usage (5 days/week × ~4 weeks/month).
-    Used by childcare subsidy programs to calculate benefit amounts.
-
-    Note: 20 days is a reasonable default for families seeking childcare subsidies,
-    as they typically need care to support full-time work.
+    Note: If other state childcare subsidy programs require a different default,
+    this value may need to be made program-specific.
     """
 
     field = "childcare_attending_days_per_month"
 
     def value(self):
-        return 20
+        return 10
 
 
 class MaStateSupplementProgram(Member):
