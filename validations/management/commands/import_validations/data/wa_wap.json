@@ -1,0 +1,194 @@
+[
+  {
+    "notes": "WA Weatherization Assistance Program - Low-Income Senior Homeowner on SSI - Clearly Eligible",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "household_size": 1,
+      "zipcode": "98101",
+      "county": "King County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 3,
+          "birth_year": 1958,
+          "age": 68,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSI",
+              "amount": 943.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wap",
+      "eligible": true,
+      "value": 7669
+    }
+  },
+  {
+    "notes": "WA Weatherization Assistance Program - Single Adult with Income Just Above 200% FPL - Not Eligible",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "household_size": 1,
+      "zipcode": "98103",
+      "county": "King County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 8,
+          "birth_year": 1986,
+          "age": 39,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2700.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wap",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "WA Weatherization Assistance Program - Apple Health (adult Medicaid) selected on Step 5 member insurance. Income above 200% FPL but insurance.medicaid triggers categorical eligibility via member-level Apple Health check.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "household_size": 1,
+      "zipcode": "98101",
+      "county": "King County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 5,
+          "birth_year": 1985,
+          "age": 40,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3500.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": false,
+            "private": false,
+            "medicaid": true,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wap",
+      "eligible": true,
+      "value": 7669
+    }
+  },
+  {
+    "notes": "WA Weatherization Assistance Program - Apple Health for Kids (CHIP) selected on Step 5 for a child. Parent's income is above 200% FPL but child's insurance.chp triggers categorical eligibility for the household.",
+    "household": {
+      "white_label": "wa",
+      "is_test": true,
+      "household_size": 2,
+      "zipcode": "98101",
+      "county": "King County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 5,
+          "birth_year": 1985,
+          "age": 40,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3500.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": false,
+            "employer": true,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 6,
+          "birth_year": 2018,
+          "age": 7,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": false,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": true,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "wa_wap",
+      "eligible": true,
+      "value": 7669
+    }
+  }
+]

@@ -1,8 +1,11 @@
 import hashlib
+import requests
 from typing import Optional
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from integrations.clients.rewiring_america import RewiringAmericaClient
 from integrations.services.communications import MessageUser
+from programs.programs.policyengine import versions as pe_versions
 from programs.models import Referrer
 from programs.programs.helpers import STATE_MEDICAID_OPTIONS
 from programs.programs.policyengine.calculators.registry import all_calculators
@@ -30,6 +33,7 @@ from screener.serializers import (
     WarningMessageSerializer,
     NPSScoreSerializer,
     NPSScoreReasonSerializer,
+    RemImpactSerializer,
 )
 from programs.programs.policyengine.policy_engine import calc_pe_eligibility
 from programs.util import DependencyError, Dependencies
@@ -139,6 +143,15 @@ class EligibilityView(views.APIView):
 class EligibilityTranslationView(views.APIView):
     @swagger_auto_schema(responses={200: ResultsSerializer()})
     def get(self, request, id):
+        """
+        A ?pe_version= override is a test-only preview of a specific PolicyEngine
+        version. We validate it (rejecting typos rather than silently testing the wrong
+        version) and promote the screen to a test screen so the resulting snapshot is
+        excluded from exports/marts; the referrer webhook is also skipped for test
+        screens (see below). The flip must happen before all_results(), which writes the
+        EligibilitySnapshot — that ordering is locked by
+        screener/tests/test_pe_version_override.py.
+        """
         screen = Screen.objects.prefetch_related(
             "household_members",
             "household_members__income_streams",
@@ -150,14 +163,30 @@ class EligibilityTranslationView(views.APIView):
         ).get(uuid=id)
 
         is_admin = request.query_params.get("admin")
-        results = all_results(screen, is_admin=is_admin)
+
+        pe_version = request.query_params.get("pe_version")
+        if pe_version:
+            if not pe_versions.is_valid_override(pe_version):
+                return Response(
+                    {"pe_version": "must be a version number like '1.715.2', or 'current'/'frontier'"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            # Flip before the calc so the snapshot is born under is_test (see docstring).
+            if not screen.is_test:
+                screen.is_test = True
+                screen.save(update_fields=["is_test"])
+
+        results = all_results(screen, is_admin=is_admin, pe_version=pe_version)
 
         if screen.submission_date is None:
             screen.submission_date = datetime.now(timezone.utc)
 
-        hook = get_web_hook(screen)
-        if hook is not None:
-            hook.send(screen, results)
+        # Never deliver a test screen's results to a partner's webhook — covers the
+        # ?pe_version= preview (which flips is_test above) and any other test screen.
+        if not screen.is_test:
+            hook = get_web_hook(screen)
+            if hook is not None:
+                hook.send(screen, results)
 
         screen.completed = True
         screen.save()
@@ -187,8 +216,8 @@ class MessageViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         return Response({}, status=status.HTTP_201_CREATED)
 
 
-def all_results(screen: Screen, batch=False, is_admin: bool = False):
-    eligibility, missing_programs, categories, _pe_data = eligibility_results(screen, batch)
+def all_results(screen: Screen, batch=False, is_admin: bool = False, pe_version: Optional[str] = None):
+    eligibility, missing_programs, categories, _pe_data = eligibility_results(screen, batch, pe_version=pe_version)
     urgent_needs = urgent_need_results(screen, eligibility)
     validations = ValidationSerializer(screen.validations.all(), many=True).data
 
@@ -256,7 +285,7 @@ def update_navigators(
         data[idx]["navigators"] = [serialized_navigator(navigator) for navigator in navigators]
 
 
-def eligibility_results(screen: Screen, batch=False):
+def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] = None):
     try:
         referrer = Referrer.objects.prefetch_related("remove_programs", "primary_navigators").get(
             white_label=screen.white_label,
@@ -322,7 +351,7 @@ def eligibility_results(screen: Screen, batch=False):
         if program is not None:
             pe_calculators[calculator_name] = Calculator(screen, program, missing_dependencies)
 
-    result = calc_pe_eligibility(screen, pe_calculators)
+    result = calc_pe_eligibility(screen, pe_calculators, pe_version=pe_version)
     pe_eligibility = result["eligibility"]
     pe_data = result["_pe_data"]
 
@@ -636,6 +665,23 @@ def urgent_need_results(screen: Screen, data):
     return eligible_urgent_needs
 
 
+class RemRateThrottle(throttling.AnonRateThrottle):
+    """
+    Rate throttle for REM impact proxy requests to prevent API key abuse.
+    Rate is configured via DEFAULT_THROTTLE_RATES["rem"] in settings.
+    Uses a hashed IP as the cache key to avoid storing raw IPs.
+    """
+
+    scope = "rem"
+
+    def get_cache_key(self, request, view):
+        ident = self.get_ident(request)
+        if ident is None:
+            return None
+        hashed = hashlib.sha256(ident.encode()).hexdigest()
+        return self.cache_format % {"scope": self.scope, "ident": hashed}
+
+
 class NPSRateThrottle(throttling.AnonRateThrottle):
     """
     Rate throttle for NPS submissions to prevent abuse.
@@ -746,3 +792,52 @@ class ReferralSourcesView(views.APIView):
                 generic[ref.referrer_code] = ref.name
 
         return Response({"generic": generic, "partners": partners})
+
+
+class RemImpactView(views.APIView):
+    """
+    Proxies a request to the Rewiring America REM /api/v1/rem/address endpoint
+    and returns only the total cost delta (bill impact) and total emissions delta
+    that the frontend needs to render the Calculate Impact results view.
+    """
+
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [RemRateThrottle]
+
+    def get(self, request, **_kwargs) -> Response:
+        upgrade = request.query_params.get("upgrade")
+        address = request.query_params.get("address")
+        heating_fuel = request.query_params.get("heating_fuel")
+        water_heater_fuel = request.query_params.get("water_heater_fuel") or None
+
+        if not all([upgrade, address, heating_fuel]):
+            return Response(
+                {"error": "upgrade, address, and heating_fuel are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            client = RewiringAmericaClient()
+            raw = client.fetch_rem_impact(upgrade, address, heating_fuel, water_heater_fuel)
+        except requests.HTTPError as e:
+            try:
+                detail = e.response.json()
+            except Exception:
+                detail = e.response.text
+            return Response(
+                {"error": f"Rewiring America API error: {e.response.status_code}", "detail": detail},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+        except requests.RequestException as e:
+            return Response(
+                {"error": "Rewiring America request failed.", "detail": str(e)},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+        except ValueError as e:
+            return Response(
+                {"error": "Rewiring America returned an invalid response.", "detail": str(e)},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        serializer = RemImpactSerializer(raw)
+        return Response(serializer.data)

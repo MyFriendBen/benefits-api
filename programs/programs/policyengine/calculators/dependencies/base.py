@@ -12,6 +12,23 @@ class PolicyEngineScreenInput:
     field = ""
     dependencies = tuple()
 
+    # PolicyEngine package-version window (major, minor, patch tuples) in which this
+    # variable exists, so pe_input() never sends a variable to a model that doesn't
+    # define it (which would 400 the whole request). Both bounds are optional:
+    #   min_pe_version  - first version that defines it; () = no floor (always existed)
+    #   max_pe_version  - last version that still defines it; () = no ceiling (current)
+    # Examples:
+    #   new variable (added 1.715.2):     min_pe_version = (1, 715, 2)
+    #   removed variable (dropped after X): max_pe_version = (last version that had it)
+    #   windowed variable (existed A..B):  min_pe_version = A; max_pe_version = B
+    #
+    # Scope: this gates whether a variable is SENT (add/remove across versions). It does
+    # NOT handle a variable whose accepted value/format changes per version (e.g.
+    # county_str -> county_fips); value() has no access to the resolved version today.
+    # Design that against the first real value-changing migration (MFB-1104).
+    min_pe_version: tuple = ()
+    max_pe_version: tuple = ()
+
     def __init__(self, screen: Screen, members: List[HouseholdMember], relationship_map):
         self.screen = screen
         self.members = members
