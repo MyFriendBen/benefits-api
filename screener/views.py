@@ -1,7 +1,9 @@
 import hashlib
+import requests
 from typing import Optional
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from integrations.clients.rewiring_america import RewiringAmericaClient
 from integrations.services.communications import MessageUser
 from programs.programs.policyengine import versions as pe_versions
 from programs.models import Referrer
@@ -31,6 +33,7 @@ from screener.serializers import (
     WarningMessageSerializer,
     NPSScoreSerializer,
     NPSScoreReasonSerializer,
+    RemImpactSerializer,
 )
 from programs.programs.policyengine.policy_engine import calc_pe_eligibility
 from programs.util import DependencyError, Dependencies
@@ -662,6 +665,23 @@ def urgent_need_results(screen: Screen, data):
     return eligible_urgent_needs
 
 
+class RemRateThrottle(throttling.AnonRateThrottle):
+    """
+    Rate throttle for REM impact proxy requests to prevent API key abuse.
+    Rate is configured via DEFAULT_THROTTLE_RATES["rem"] in settings.
+    Uses a hashed IP as the cache key to avoid storing raw IPs.
+    """
+
+    scope = "rem"
+
+    def get_cache_key(self, request, view):
+        ident = self.get_ident(request)
+        if ident is None:
+            return None
+        hashed = hashlib.sha256(ident.encode()).hexdigest()
+        return self.cache_format % {"scope": self.scope, "ident": hashed}
+
+
 class NPSRateThrottle(throttling.AnonRateThrottle):
     """
     Rate throttle for NPS submissions to prevent abuse.
@@ -772,3 +792,52 @@ class ReferralSourcesView(views.APIView):
                 generic[ref.referrer_code] = ref.name
 
         return Response({"generic": generic, "partners": partners})
+
+
+class RemImpactView(views.APIView):
+    """
+    Proxies a request to the Rewiring America REM /api/v1/rem/address endpoint
+    and returns only the total cost delta (bill impact) and total emissions delta
+    that the frontend needs to render the Calculate Impact results view.
+    """
+
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [RemRateThrottle]
+
+    def get(self, request, **_kwargs) -> Response:
+        upgrade = request.query_params.get("upgrade")
+        address = request.query_params.get("address")
+        heating_fuel = request.query_params.get("heating_fuel")
+        water_heater_fuel = request.query_params.get("water_heater_fuel") or None
+
+        if not all([upgrade, address, heating_fuel]):
+            return Response(
+                {"error": "upgrade, address, and heating_fuel are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            client = RewiringAmericaClient()
+            raw = client.fetch_rem_impact(upgrade, address, heating_fuel, water_heater_fuel)
+        except requests.HTTPError as e:
+            try:
+                detail = e.response.json()
+            except Exception:
+                detail = e.response.text
+            return Response(
+                {"error": f"Rewiring America API error: {e.response.status_code}", "detail": detail},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+        except requests.RequestException as e:
+            return Response(
+                {"error": "Rewiring America request failed.", "detail": str(e)},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+        except ValueError as e:
+            return Response(
+                {"error": "Rewiring America returned an invalid response.", "detail": str(e)},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        serializer = RemImpactSerializer(raw)
+        return Response(serializer.data)
