@@ -104,8 +104,10 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: 
             "marital_units": {},
         }
     }
-    # Resolve once: used both to gate version-specific inputs below and to set the
-    # top-level "version" field. None => no pin (PolicyEngine's current default).
+    # Two values from one resolved version, for two consumers:
+    #   version (string)            -> version to send in PE API request body (if None/omitted,
+    #                                   PE defaults to current version)
+    #   comparable_version (tuple)  -> tuple representation to gate which inputs are sent
     version = pe_versions.determine_pe_version(pe_version)
     comparable_version = pe_versions.to_comparable_pe_version(version)
 
@@ -144,17 +146,10 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: 
         for Data in program.pe_inputs + program.pe_outputs:
             # Skip inputs that the resolved model version doesn't define yet — sending
             # an unknown variable 400s the whole request (e.g. meets_ssi_disability_criteria
-<<<<<<< HEAD
             # on 1.691.1). With no pin (comparable_version is None) we omit gated inputs
             # too, since the unpinned default is the current model that lacks them.
             if not pe_versions.version_supports(
                 comparable_version,
-=======
-            # on 1.691.1). With no pin (parsed_version is None) we omit gated inputs too,
-            # since the unpinned default is the current model that lacks them.
-            if not _version_supports(
-                parsed_version,
->>>>>>> c6aff7e3 (MFB-1102: add max_pe_version — full version-window gating (all 3 shapes))
                 getattr(Data, "min_pe_version", ()),
                 getattr(Data, "max_pe_version", ()),
             ):
