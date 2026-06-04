@@ -36,7 +36,7 @@ class TestToComparablePeVersion(SimpleTestCase):
 
     def test_frontier_is_latest(self):
         # frontier compares greater than any real version (satisfies any floor).
-        self.assertEqual(v.to_comparable_pe_version("frontier"), v.LATEST)
+        self.assertEqual(v.to_comparable_pe_version("frontier"), v.NEWEST_VERSION)
         self.assertGreater(v.to_comparable_pe_version("frontier"), (1, 715, 2))
 
     def test_current_none_and_unparseable_are_none(self):

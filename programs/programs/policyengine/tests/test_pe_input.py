@@ -342,10 +342,9 @@ class TestVersionSupports(TestCase):
     shapes (new / removed / windowed variable) and the asymmetric unknown-version rule."""
 
     def setUp(self):
-        from programs.programs.policyengine import policy_engine
         from programs.programs.policyengine import versions as pe_versions
 
-        self.supports = policy_engine._version_supports
+        self.supports = pe_versions.version_supports
         self.v = pe_versions.to_comparable_pe_version
 
     def test_ungated_always_supported(self):
