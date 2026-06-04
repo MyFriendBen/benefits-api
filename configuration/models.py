@@ -1,8 +1,7 @@
-import re
-
 from django.core.exceptions import ValidationError
 from django.db import models
 from screener.models import WhiteLabel
+from programs.programs.policyengine import versions as pe_versions
 from .fields import OrderedJSONField
 
 
@@ -35,11 +34,6 @@ class PolicyEngineConfig(models.Model):
     PolicyEngine's default.
     """
 
-    # An exact package version, e.g. "1.715.2". The shape (not a hardcoded list) means
-    # new PolicyEngine releases need no code change. Shared with the ?pe_version=
-    # override validation in screener.views.
-    VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
-
     policyengine_version = models.CharField(
         max_length=32,
         blank=True,
@@ -69,7 +63,7 @@ class PolicyEngineConfig(models.Model):
         # Blank is allowed (omits the "version" field); otherwise must be an exact
         # version number. This also rejects the floating "frontier"/"current" aliases,
         # which simply aren't valid here.
-        if value and not self.VERSION_RE.match(value):
+        if value and not pe_versions.is_valid_version_number(value):
             raise ValidationError(
                 {"policyengine_version": 'Must be an exact version number like "1.715.2", or left blank.'}
             )
