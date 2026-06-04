@@ -16,22 +16,23 @@ from django.test import TestCase
 from rest_framework.permissions import AllowAny
 from rest_framework.test import APIRequestFactory
 
+from programs.programs.policyengine import versions as pe_versions
 from screener.models import Screen, WhiteLabel
-from screener.views import EligibilityTranslationView, is_valid_pe_version_override
+from screener.views import EligibilityTranslationView
 
 
 class TestIsValidPeVersionOverride(TestCase):
     def test_accepts_aliases(self):
-        self.assertTrue(is_valid_pe_version_override("current"))
-        self.assertTrue(is_valid_pe_version_override("frontier"))
+        self.assertTrue(pe_versions.is_valid_override("current"))
+        self.assertTrue(pe_versions.is_valid_override("frontier"))
 
     def test_accepts_version_number(self):
-        self.assertTrue(is_valid_pe_version_override("1.715.2"))
-        self.assertTrue(is_valid_pe_version_override("1.800.0"))
+        self.assertTrue(pe_versions.is_valid_override("1.715.2"))
+        self.assertTrue(pe_versions.is_valid_override("1.800.0"))
 
     def test_rejects_garbage_and_typos(self):
         for value in ("banana", "fronteir", "1.7", "1.715", "v1.715.2", "1.715.2 "):
-            self.assertFalse(is_valid_pe_version_override(value), value)
+            self.assertFalse(pe_versions.is_valid_override(value), value)
 
 
 class TestPeVersionOverrideFlipsIsTest(TestCase):

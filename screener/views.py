@@ -3,7 +3,7 @@ from typing import Optional
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from integrations.services.communications import MessageUser
-from configuration.models import PolicyEngineConfig
+from programs.programs.policyengine import versions as pe_versions
 from programs.models import Referrer
 from programs.programs.helpers import STATE_MEDICAID_OPTIONS
 from programs.programs.policyengine.calculators.registry import all_calculators
@@ -137,17 +137,6 @@ class EligibilityView(views.APIView):
         return Response(results)
 
 
-# The floating aliases are only accepted on the test-only ?pe_version= override, never
-# in PolicyEngineConfig (which requires an exact version number).
-PE_VERSION_ALIASES = ("current", "frontier")
-
-
-def is_valid_pe_version_override(value: str) -> bool:
-    """Accepted ?pe_version= values: an exact version number (shares PolicyEngineConfig's
-    pattern, so new releases need no code change) OR a floating alias."""
-    return value in PE_VERSION_ALIASES or PolicyEngineConfig.VERSION_RE.match(value) is not None
-
-
 class EligibilityTranslationView(views.APIView):
     @swagger_auto_schema(responses={200: ResultsSerializer()})
     def get(self, request, id):
@@ -174,7 +163,7 @@ class EligibilityTranslationView(views.APIView):
 
         pe_version = request.query_params.get("pe_version")
         if pe_version:
-            if not is_valid_pe_version_override(pe_version):
+            if not pe_versions.is_valid_override(pe_version):
                 return Response(
                     {"pe_version": "must be a version number like '1.715.2', or 'current'/'frontier'"},
                     status=status.HTTP_400_BAD_REQUEST,
