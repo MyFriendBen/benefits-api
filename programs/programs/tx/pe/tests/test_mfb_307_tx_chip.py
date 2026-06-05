@@ -46,4 +46,3 @@ class TestMfb307TxChipIntegration(TestCase):
         self.assertIn(str(self.child19.id), main_members)
         self.assertNotIn(SECONDARY_TAX_UNIT, tax_units)
         self.assertIn(str(self.child19.id), people)
-

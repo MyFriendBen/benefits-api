@@ -771,7 +771,6 @@ class HouseholdMember(models.Model):
         return self.is_head() or self.is_spouse() or self.is_dependent()
 
     def has_benefit(self, name_abbreviated: str):
-
         has_insurance = self.has_insurance_types((name_abbreviated,), strict=False)
 
         return has_insurance
