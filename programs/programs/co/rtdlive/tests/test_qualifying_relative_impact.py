@@ -42,7 +42,7 @@ class TestRtdLiveQualifyingRelativeImpact(TestCase):
         return RtdLive(screen, _make_program(), {}, _make_missing_deps())
 
     def test_eligible_when_household_income_is_low(self):
-        """Parents $30k + adult child $0 → combined $30k < 3-person 2.5×FPL ($64,550) → eligible."""
+        """Parents $30k + adult child $0 → combined $30k < 3-person 2.5xFPL ($64,550) → eligible."""
         screen = self._make_screen(DENVER_ZIP)
         head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=40)
         IncomeStream.objects.create(

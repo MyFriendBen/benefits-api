@@ -137,6 +137,6 @@ class TestIsDependent(TestCase):
         )
         disabled_adult = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=30, disabled=True)
         IncomeStream.objects.create(
-            screen=self.screen, household_member=disabled_adult, type="wages", amount=5000, frequency="yearly"
+            screen=self.screen, household_member=disabled_adult, type="wages", amount=8000, frequency="yearly"
         )
         self.assertTrue(disabled_adult.is_dependent())
