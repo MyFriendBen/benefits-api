@@ -124,7 +124,7 @@ class WaUdp(ProgramCalculator):
 
         # Financial pathway: SSI categorical (Criterion 4) OR SNAP streamlined (Criterion 5)
         # OR standard income test (Criteria 2+3)
-        if self._has_ssi_recipient() or self.screen.has_benefit("snap"):
+        if self._has_ssi_recipient() or self.screen.has_benefit("wa_snap"):
             e.condition(True, messages.presumed_eligibility())
         else:
             adult_income = self._adult_income_yearly()

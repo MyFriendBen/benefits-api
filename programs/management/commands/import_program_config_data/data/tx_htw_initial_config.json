@@ -1,0 +1,74 @@
+{
+  "white_label": {
+    "code": "tx"
+  },
+  "program_category": {
+    "external_name": "tx_healthcare"
+  },
+  "program": {
+    "name_abbreviated": "tx_htw",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission"
+    ],
+    "name": "Healthy Texas Women (HTW)",
+    "description": "Healthy Texas Women provides free health care to women who do not have health insurance. The program covers family planning, birth control, annual checkups, and health screenings. It also pays for medical tests to check for diabetes, high blood pressure, and certain types of cancer. All covered services are completely free to you.\n\nThis program also includes a special option called Healthy Texas Women Plus. This option provides extra mental health and health care services for up to 12 months for women who were pregnant in the past year. The state runs this program through local doctors and clinics. When you go to a doctor who takes this program, you will not pay anything for your approved care.\n\nThis screener checks your general details, but the state must verify a few extra rules that we cannot check here. For example, you cannot be currently in prison, and you cannot be enrolled in Medicare. You must also have a valid Social Security Number or apply for one to get this benefit.\n\nYou can apply online through the Your Texas Benefits website or call your local health department. You can also print out a paper application or apply in person at a local benefits office. When you apply, you must provide proof of your identity, your Texas address, your income, and your citizenship or legal immigration status.",
+    "description_short": "Free health care for uninsured Texas women",
+    "learn_more_link": "https://www.healthytexaswomen.org/healthcare-programs/healthy-texas-women",
+    "apply_button_link": "https://www.yourtexasbenefits.com/Learn/Home",
+    "apply_button_description": "Apply for Healthy Texas Women",
+    "estimated_application_time": "30 - 60 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "Varies based on services used",
+    "website_description": "Free health care for uninsured Texas women",
+    "value_type": "benefit",
+    "show_in_has_benefits_step": false,
+    "has_calculator": true
+  },
+  "documents": [
+    {
+      "external_name": "tx_state_id",
+      "text": "Proof of identity (ex: driver's license, state ID, passport)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_home",
+      "text": "Proof of Texas home address (ex: lease, utility bill, mail with your address)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_ssn",
+      "text": "Social Security Number (or proof you have applied for one)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_earned_income",
+      "text": "Proof of income (ex: pay stubs, tax return, employer letter)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_us_status",
+      "text": "Proof of U.S. citizenship or immigration status (ex: birth certificate, passport, green card)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "tx_htw_helpline",
+      "name": "Healthy Texas Women Helpline",
+      "phone_number": "+18775417905",
+      "email": "",
+      "description": "Call 2-1-1 (or 1-877-541-7905 toll-free) to speak with someone about health care options for women with low income. Representatives can help you apply by phone. Available Monday–Friday, 8 a.m. to 6 p.m. Central Time.",
+      "assistance_link": "https://www.healthytexaswomen.org/healthcare-programs/healthy-texas-women/htw-how-apply"
+    }
+  ]
+}

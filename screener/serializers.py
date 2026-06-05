@@ -241,6 +241,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             "has_ssdi",
             "has_cowap",
             "has_ncwap",
+            "has_wa_wap",
             "has_ubp",
             "has_rag",
             "has_nfp",
@@ -569,3 +570,35 @@ class NPSScoreReasonSerializer(serializers.Serializer):
             return snapshot.nps_score
         except NPSScore.DoesNotExist:
             raise serializers.ValidationError({"uuid": "No NPS score found for this session"})
+
+
+KG_TO_LBS = 2.20462
+
+
+def _convert_emissions_to_lbs(emissions: dict) -> dict:
+    """Convert each stat in an emissions dict from kgCO2e to lbCO2e."""
+    return {key: {"value": (stat.get("value") or 0) * KG_TO_LBS, "unit": "lbCO2e"} for key, stat in emissions.items()}
+
+
+class RemImpactSerializer(serializers.Serializer):
+    """
+    Strips the Rewiring America /api/v1/rem/address response to the two values
+    the frontend needs: the total cost delta (bill impact) and the total
+    emissions delta (CO₂e impact).
+
+    Emissions are converted from kgCO2e → lbCO2e so the frontend can display
+    lb values and feed them directly into the EPA equivalencies utility.
+
+    Input: raw dict from RewiringAmericaClient.fetch_rem_impact()
+    Output: { bill_delta: {...}, emissions_delta: {...} }
+    """
+
+    bill_delta = serializers.DictField()
+    emissions_delta = serializers.DictField()
+
+    def to_representation(self, instance: dict) -> dict:
+        total_delta = instance.get("fuel_results", {}).get("total", {}).get("delta", {})
+        return {
+            "bill_delta": total_delta.get("cost", {}),
+            "emissions_delta": _convert_emissions_to_lbs(total_delta.get("emissions", {})),
+        }
