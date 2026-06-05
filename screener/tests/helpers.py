@@ -9,10 +9,9 @@ the has_* columns are gone and tests write CurrentBenefit rows directly via
 the new `current_benefits: [...]` serializer payload.
 """
 
-from django.db import transaction
-
 from programs.models import Program
-from screener.models import CurrentBenefit, Screen, WhiteLabel
+from screener.models import Screen, WhiteLabel
+from screener.serializers import _write_current_benefits
 
 
 def seed_program(white_label: WhiteLabel, *name_abbreviateds: str) -> None:
@@ -23,25 +22,27 @@ def seed_program(white_label: WhiteLabel, *name_abbreviateds: str) -> None:
         Program.objects.new_program(white_label.code, name)
 
 
-def sync_current_benefits(screen: Screen) -> None:
-    """Mirror the serializer's dual-write: rebuild CurrentBenefit rows from the
-    current has_* column state on `screen`.
+def set_current_benefits(screen: Screen, *name_abbreviateds: str) -> None:
+    """Write CurrentBenefit join-table rows directly for `screen`, exercising the
+    primary write path (Step 5a / MFB-869) instead of the legacy
+    `has_* = True; sync_current_benefits()` mirror.
 
-    Body is intentionally inlined (rather than calling screener.serializers.
-    _sync_current_benefits) so this helper survives MFB-869, which deletes the
-    serializer function. The helper itself is deleted in MFB-720 once tests
-    can write join-table rows directly.
+    Delegates to the serializer's `_write_current_benefits()` with an explicit
+    `current_benefits` list — the same branch a new-frontend PATCH takes. Each
+    name must already exist as a Program in the screen's white label (call
+    `seed_program()` first). Replaces any existing rows for the screen.
     """
-    with transaction.atomic():
-        screen = Screen.objects.select_for_update().get(pk=screen.pk)
-        benefit_map = screen._build_benefit_map()
-        program_ids_to_write = [
-            program.id
-            for program in Program.objects.filter(white_label=screen.white_label)
-            if benefit_map.get(program.name_abbreviated, False)
-        ]
-        CurrentBenefit.objects.filter(screen=screen).delete()
-        if program_ids_to_write:
-            CurrentBenefit.objects.bulk_create(
-                [CurrentBenefit(screen=screen, program_id=pid) for pid in program_ids_to_write]
-            )
+    _write_current_benefits(screen, list(name_abbreviateds))
+
+
+def sync_current_benefits(screen: Screen) -> None:
+    """Mirror the serializer's backward-compat write: rebuild CurrentBenefit rows
+    from the current has_* column state on `screen`.
+
+    Delegates to the serializer's `_write_current_benefits(..., current_benefits=None)`
+    backward-compat branch — the same code path an old-frontend PATCH takes — so the
+    helper can't drift from production behavior. Tests that still set has_* columns
+    and call this remain valid until Step 6 (MFB-720) drops the has_* write path and
+    removes both the helper and the has_* branch.
+    """
+    _write_current_benefits(screen, None)

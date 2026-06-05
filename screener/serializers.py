@@ -137,24 +137,212 @@ class HouseholdMemberSerializer(serializers.ModelSerializer):
         read_only_fields = ("screen", "id")
 
 
-def _sync_current_benefits(screen):
+def _benefit_map_from_has_columns(screen) -> dict:
     """
-    Syncs CurrentBenefit rows for a screen based on has_* column values.
-    Called on every POST/PATCH so the join table stays in sync with the authoritative has_* columns.
-    Reads still come from has_* columns — this is Phase 2 dual-write only.
+    Returns the full `name_abbreviated → bool` map for a screen derived from its
+    legacy `has_*` columns, including the fan-out (one `has_*` column → many WL
+    program variants, e.g. `has_tanf` → tanf / co_tanf / il_tanf / …) and the
+    compound conditions (`ssi` via has_ssi OR sSI income; `ma_mass_health` via
+    has_medicaid OR has_medicaid_hi).
 
-    Uses select_for_update() inside a transaction to serialize concurrent PATCH requests
-    on the same screen and prevent races on the delete+bulk_create. The screen is re-fetched
-    inside the atomic block so program_ids_to_write reflects the post-lock committed state.
+    Only used by the backward-compat write path in `_write_current_benefits()`:
+    when an old frontend PATCHes `has_*` fields (and no `current_benefits` list),
+    we mirror those columns into the CurrentBenefit join table so `has_benefit()`
+    (which reads the join table per Step 3a / MFB-719) stays correct.
+
+    Relocated here from `Screen._build_benefit_map()` in Step 5a (MFB-869). Dies
+    together with the `has_*` write path in Step 6 (MFB-720), once the frontend
+    sends `current_benefits` exclusively.
+    """
+    has_ssi_or_ssi_income = screen.has_ssi or screen.calc_gross_income("yearly", ("sSI",)) > 0
+
+    return {
+        "tanf": screen.has_tanf,
+        "nc_tanf": screen.has_tanf,
+        "co_tanf": screen.has_tanf,
+        "il_tanf": screen.has_tanf,
+        "tx_tanf": screen.has_tanf,
+        "wic": screen.has_wic,
+        "co_wic": screen.has_wic,
+        "il_wic": screen.has_wic,
+        "nc_wic": screen.has_wic,
+        "tx_wic": screen.has_wic,
+        "snap": screen.has_snap,
+        "sunbucks": screen.has_sunbucks,
+        "co_snap": screen.has_snap,
+        "nc_snap": screen.has_snap,
+        "il_snap": screen.has_snap,
+        "tx_snap": screen.has_snap,
+        "wa_snap": screen.has_snap,
+        "lifeline": screen.has_lifeline,
+        "tx_lifeline": screen.has_lifeline,
+        "wa_lifeline": screen.has_lifeline,
+        "acp": screen.has_acp,
+        "eitc": screen.has_eitc,
+        "tx_eitc": screen.has_eitc,
+        "coeitc": screen.has_coeitc,
+        "il_eitc": screen.has_il_eitc,
+        "nslp": screen.has_nslp,
+        "tx_nslp": screen.has_nslp,
+        "wa_nslp": screen.has_nslp,
+        "ctc": screen.has_ctc,
+        "tx_ctc": screen.has_ctc,
+        "wa_ctc": screen.has_ctc,
+        "il_ctc": screen.has_il_ctc,
+        "il_transit_reduced_fare": screen.has_il_transit_reduced_fare,
+        "il_bap": screen.has_il_bap,
+        "il_csfp": screen.has_csfp,
+        "il_hbwd": screen.has_il_hbwd,
+        "il_ccap": screen.has_ccap,
+        "cesn_cope": screen.has_project_cope,
+        "cesn_heap": screen.has_cesn_heap,
+        "rtdlive": screen.has_rtdlive,
+        "cccap": screen.has_ccap,
+        "mydenver": screen.has_mydenver,
+        "ssi": has_ssi_or_ssi_income,
+        "tx_ssi": has_ssi_or_ssi_income,
+        "wa_ssi": has_ssi_or_ssi_income,
+        "tx_csfp": screen.has_csfp,
+        "tx_harris_rides": screen.has_harris_county_rides,
+        "andcs": screen.has_andcs,
+        "co_head_start": screen.has_head_start,
+        "cpcr": screen.has_cpcr,
+        "cesn_cpcr": screen.has_cpcr,
+        "cdhcs": screen.has_cdhcs,
+        "dpp": screen.has_dpp,
+        "ede": screen.has_ede,
+        "erc": screen.has_erc,
+        "leap": screen.has_leap,
+        "cesn_leap": screen.has_leap,
+        "ma_heap": screen.has_ma_heap,
+        "il_liheap": screen.has_il_liheap,
+        "nc_lieap": screen.has_nc_lieap,
+        "oap": screen.has_oap,
+        "nccip": screen.has_nccip,
+        "nc_scca": screen.has_ncscca,
+        "nc_head_start": screen.has_head_start,
+        "coctc": screen.has_coctc,
+        "upk": screen.has_upk,
+        "ssdi": screen.has_ssdi,
+        "pell_grant": screen.has_pell_grant,
+        "rag": screen.has_rag,
+        "co_nfp": screen.has_nfp,
+        "il_nfp": screen.has_nfp,
+        "fatc": screen.has_fatc,
+        "ma_cha": screen.has_section_8,
+        "cowap": screen.has_cowap,
+        "cesn_cowap": screen.has_cowap,
+        "ncwap": screen.has_ncwap,
+        "wa_wap": screen.has_wa_wap,
+        "ubp": screen.has_ubp,
+        "cesn_ubp": screen.has_ubp,
+        "nfp": screen.has_nfp,
+        "section_8": screen.has_section_8,
+        "co_section_8": screen.has_section_8,
+        "ma_section_8": screen.has_section_8,
+        "aca": screen.has_aca,
+        "medicaid": screen.has_medicaid,
+        "nc_aca": screen.has_aca,
+        "ma_aca": screen.has_aca,
+        "tx_aca": screen.has_aca,
+        "ma_mbta": screen.has_ma_mbta,
+        "ma_snap": screen.has_snap,
+        "ma_ccdf": screen.has_ccdf,
+        "ma_wic": screen.has_wic,
+        "ma_eaedc": screen.has_ma_eaedc,
+        "ma_maeitc": screen.has_ma_maeitc,
+        "ma_cfc": screen.has_ma_macfc,
+        "ma_homebridge": screen.has_ma_homebridge,
+        "ma_dhsp_afterschool": screen.has_ma_dhsp_afterschool,
+        "ma_door_to_door": screen.has_ma_door_to_door,
+        "ma_taxi_discount": screen.has_ma_taxi_discount,
+        "ma_cpp": screen.has_ma_cpp,
+        "ma_middle_income_rental": screen.has_ma_middle_income_rental,
+        "ma_cmsp": screen.has_ma_cmsp,
+        "ma_tafdc": screen.has_tanf,
+        "ma_mass_health": screen.has_medicaid or screen.has_medicaid_hi,
+        "ma_head_start": screen.has_head_start,
+        "tx_head_start": screen.has_head_start,
+        "wa_head_start": screen.has_head_start,
+        "ma_csfp": screen.has_csfp,
+        "ma_early_head_start": screen.has_early_head_start,
+        "tx_early_head_start": screen.has_early_head_start,
+        "co_andso": screen.has_co_andso,
+        "cesn_andso": screen.has_co_andso,
+        "co_care": screen.has_co_care,
+        "cesn_care": screen.has_co_care,
+        "cfhc": screen.has_cfhc,
+        "shitc": screen.has_shitc,
+        "nc_medicare_savings": screen.has_nc_medicare_savings,
+        "tx_dart": screen.has_tx_dart,
+        "ccs": screen.has_ccs,
+        "tx_ccs": screen.has_ccs,
+        "tx_ssdi": screen.has_ssdi,
+        "wa_ssdi": screen.has_ssdi,
+        "wa_csfp": screen.has_csfp,
+        "wa_eitc": screen.has_eitc,
+        "wa_wftc": screen.has_eitc,
+        "wa_wic": screen.has_wic,
+        "wa_apple_health_medicaid": screen.has_medicaid,
+        "wa_apple_health_for_kids": screen.has_chp,
+        "wa_hcv": screen.has_section_8,
+        "ma_ssp": screen.has_ma_ssp,
+        "cesn_snap": screen.has_snap,
+        "cesn_tanf": screen.has_tanf,
+        "cesn_wic": screen.has_wic,
+        "cesn_ssi": has_ssi_or_ssi_income,
+        "cesn_ssdi": screen.has_ssdi,
+        "cesn_oap": screen.has_oap,
+        "cesn_section_8": screen.has_section_8,
+        "cesn_rtdlive": screen.has_rtdlive,
+        "cesn_andcs": screen.has_andcs,
+        "nc_leap": screen.has_leap,
+        "nc_cccap": screen.has_ccap,
+    }
+
+
+def _write_current_benefits(screen, current_benefits):
+    """
+    Write the CurrentBenefit join table for `screen`, replacing any existing rows.
+
+    The join table is the primary write target as of Step 5a (MFB-869):
+
+    * New frontend — passes `current_benefits` as a list of `name_abbreviated`
+      strings (e.g. ["tx_snap", "tanf"]). Each is resolved to a Program via the
+      WL-scoped unique (white_label, name_abbreviated) lookup and written directly.
+      Unknown names are skipped (a name the current WL doesn't offer is a no-op,
+      mirroring the old map's behavior of only writing programs in this WL).
+    * Old frontend (backward compat) — passes `current_benefits=None`; we derive
+      the program set from the legacy `has_*` columns via
+      `_benefit_map_from_has_columns()`. Removed in Step 6 (MFB-720).
+
+    Uses select_for_update() inside a transaction to serialize concurrent PATCH
+    requests on the same screen and prevent races on the delete+bulk_create. The
+    screen is re-fetched inside the atomic block so the write reflects the
+    post-lock committed state.
     """
     with transaction.atomic():
         screen = Screen.objects.select_for_update().get(pk=screen.pk)
-        benefit_map = screen._build_benefit_map()
-        program_ids_to_write = [
-            program.id
-            for program in Program.objects.filter(white_label=screen.white_label)
-            if benefit_map.get(program.name_abbreviated, False)
-        ]
+
+        if current_benefits is None:
+            # Backward-compat path: mirror legacy has_* columns into the join table.
+            benefit_map = _benefit_map_from_has_columns(screen)
+            program_ids_to_write = [
+                program.id
+                for program in Program.objects.filter(white_label=screen.white_label)
+                if benefit_map.get(program.name_abbreviated, False)
+            ]
+        else:
+            # Primary path: frontend sent explicit program names. Resolve each in
+            # this screen's white label; silently drop any this WL doesn't offer.
+            requested = set(current_benefits)
+            program_ids_to_write = list(
+                Program.objects.filter(
+                    white_label=screen.white_label,
+                    name_abbreviated__in=requested,
+                ).values_list("id", flat=True)
+            )
+
         CurrentBenefit.objects.filter(screen=screen).delete()
         if program_ids_to_write:
             CurrentBenefit.objects.bulk_create(
@@ -168,6 +356,12 @@ class ScreenSerializer(serializers.ModelSerializer):
     user = UserOffersSerializer(read_only=True)
     white_label = serializers.CharField(source="white_label.code")
     energy_calculator = EnergyCalculatorScreenSerializer(required=False, allow_null=True)
+    # Primary write target for current benefits (Step 5a / MFB-869): a list of
+    # `name_abbreviated` strings the household already receives. Write-only — reads
+    # still surface per-program via the eligibility "already_has" flag. When absent
+    # the legacy has_* columns drive the join-table write (backward compat, removed
+    # in Step 6 / MFB-720).
+    current_benefits = serializers.ListField(child=serializers.CharField(), required=False, write_only=True)
 
     class Meta:
         model = Screen
@@ -198,6 +392,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             "user",
             "external_id",
             "request_language_code",
+            "current_benefits",
             "has_benefits",
             "has_tanf",
             "has_wic",
@@ -335,6 +530,8 @@ class ScreenSerializer(serializers.ModelSerializer):
         household_members = validated_data.pop("household_members")
         expenses = validated_data.pop("expenses")
         energy_calculator_screen = validated_data.pop("energy_calculator", None)
+        # None (key absent) → old frontend, mirror from has_*; a list → new frontend.
+        current_benefits = validated_data.pop("current_benefits", None)
         screen = Screen.objects.create(**validated_data, completed=False)
         screen.set_screen_is_test()
         for member in household_members:
@@ -352,7 +549,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             Expense.objects.create(**expense, screen=screen)
         if energy_calculator_screen is not None:
             EnergyCalculatorScreen.objects.create(**energy_calculator_screen, screen=screen)
-        _sync_current_benefits(screen)
+        _write_current_benefits(screen, current_benefits)
         return screen
 
     def update(self, instance, validated_data):
@@ -362,6 +559,9 @@ class ScreenSerializer(serializers.ModelSerializer):
         household_members = validated_data.pop("household_members")
         expenses = validated_data.pop("expenses")
         energy_calculator_screen = validated_data.pop("energy_calculator", None)
+        # Not a Screen column — pop before the bulk .update(). None (key absent) →
+        # old frontend, mirror from has_*; a list → new frontend writes directly.
+        current_benefits = validated_data.pop("current_benefits", None)
 
         # don't update create only fields
         for field in self.Meta.create_only_fields:
@@ -389,7 +589,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             EnergyCalculatorScreen.objects.create(**energy_calculator_screen, screen=instance)
         instance.refresh_from_db()
         instance.set_screen_is_test()
-        _sync_current_benefits(instance)
+        _write_current_benefits(instance, current_benefits)
         return instance
 
 
