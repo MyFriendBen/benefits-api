@@ -388,8 +388,7 @@ class Screen(models.Model):
 
         Only used by `_sync_current_benefits()` (and its test-helper mirror in
         `screener/tests/helpers.py`) to write CurrentBenefit rows during the
-        dual-write phase. `HouseholdMember.has_insurance()` does NOT route through
-        here — it delegates directly to `has_insurance_types()` on the member's Insurance row.
+        dual-write phase.
 
         Removed in MFB-869 alongside `_sync_current_benefits` once the serializer
         writes join-table rows directly from the frontend's `current_benefits: [...]`
