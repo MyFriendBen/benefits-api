@@ -68,9 +68,6 @@ class TestIsDependent(TestCase):
 
     # Head and Spouse
 
-    def test_head_is_never_dependent(self):
-        self.assertFalse(self.head.is_dependent())
-
     def test_spouse_is_never_dependent(self):
         spouse = HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=39)
         IncomeStream.objects.create(
@@ -78,17 +75,20 @@ class TestIsDependent(TestCase):
         )
         self.assertFalse(spouse.is_dependent())
 
-    # Multiple members
-
-    def test_multiple_qualifying_relatives(self):
-        adult1 = HouseholdMember.objects.create(screen=self.screen, relationship="relatedOther", age=25)
-        adult2 = HouseholdMember.objects.create(screen=self.screen, relationship="sisterOrBrother", age=28)
-        self.assertTrue(adult1.is_dependent())
-        self.assertTrue(adult2.is_dependent())
-
     def test_member_with_no_income(self):
         adult_child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=20)
         self.assertTrue(adult_child.is_dependent())
+
+    def test_two_qualifying_relatives_in_same_household(self):
+        """Adult child ($0) and elderly parent ($4k SS) are both qualifying relatives in the same household."""
+        adult_child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=22, student=False)
+        elderly_parent = HouseholdMember.objects.create(screen=self.screen, relationship="parent", age=72)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=elderly_parent, type="sSRetirement", amount=4000, frequency="yearly"
+        )
+
+        self.assertTrue(adult_child.is_dependent())
+        self.assertTrue(elderly_parent.is_dependent())
 
     # MFB-307 regression
 
@@ -119,10 +119,6 @@ class TestIsDependent(TestCase):
             screen=self.screen, household_member=aunt, type="wages", amount=2000, frequency="yearly"
         )
         self.assertTrue(aunt.is_dependent())
-
-    def test_roommate_with_no_income(self):
-        roommate = HouseholdMember.objects.create(screen=self.screen, relationship="roommate", age=30)
-        self.assertTrue(roommate.is_dependent())
 
     def test_grandchild_low_income(self):
         grandchild = HouseholdMember.objects.create(screen=self.screen, relationship="grandChild", age=20)

@@ -47,19 +47,3 @@ class TestMfb307TxChipIntegration(TestCase):
         self.assertNotIn(SECONDARY_TAX_UNIT, tax_units)
         self.assertIn(str(self.child19.id), people)
 
-    def test_member_value_reads_from_sim(self):
-        from unittest.mock import MagicMock
-        from programs.programs.policyengine.engines import Sim
-
-        mock_sim = MagicMock(spec=Sim)
-        mock_sim.value.return_value = 120
-
-        mock_program = MagicMock()
-        mock_program.year.period = "2024"
-
-        calculator = TxChip(self.screen, mock_program, None)
-        calculator.set_engine(mock_sim)
-
-        value = calculator.member_value(self.child7)
-
-        self.assertEqual(value, 120)

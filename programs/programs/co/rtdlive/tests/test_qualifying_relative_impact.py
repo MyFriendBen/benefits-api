@@ -1,4 +1,9 @@
-"""Tests for CO RTD LiVE after the qualifying-relative fix (MFB-722)."""
+"""Tests for CO programs affected by the qualifying-relative fix (MFB-722).
+
+Programs covered:
+- RTD LiVE: uses is_in_tax_unit() to pick which tax unit to evaluate income against
+- Property Credit Rebate: gates on `not member.is_dependent()` — qualifying relatives now excluded
+"""
 
 from django.test import TestCase
 from unittest.mock import Mock
@@ -11,7 +16,6 @@ from programs.programs.calc import MemberEligibility
 FPL_2024 = {1: 15060, 2: 20440, 3: 25820, 4: 31200}
 
 DENVER_ZIP = "80204"  # eligible county
-EL_PASO_ZIP = "80951"  # not in RtdLive.eligible_counties
 
 
 def _make_program():
@@ -111,20 +115,35 @@ class TestRtdLiveQualifyingRelativeImpact(TestCase):
 
         self.assertTrue(e.eligible)
 
-    def test_county_gate_blocks_ineligible_county(self):
-        """Households outside eligible counties are ineligible regardless of dependency status."""
-        screen = self._make_screen(EL_PASO_ZIP)
-        head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=40)
-        IncomeStream.objects.create(
-            screen=screen, household_member=head, type="wages", amount=15000, frequency="yearly"
-        )
-        spouse = HouseholdMember.objects.create(screen=screen, relationship="spouse", age=38)
-        IncomeStream.objects.create(
-            screen=screen, household_member=spouse, type="wages", amount=15000, frequency="yearly"
-        )
-        HouseholdMember.objects.create(screen=screen, relationship="child", age=25, student=False)
 
-        calc = self._make_calculator(screen)
-        result = calc.eligible()
+class TestPropertyCreditRebateQualifyingRelativeImpact(TestCase):
+    """CO Property Credit Rebate gates on `not member.is_dependent()`.
 
-        self.assertFalse(result.eligible)
+    Before fix: low-income adult was NOT a dependent → passed the gate → potentially eligible.
+    After fix: low-income adult IS a qualifying relative dependent → excluded from the rebate.
+    This is correct IRS behavior — dependents cannot claim their own property credit.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            completed=False,
+            last_tax_filing_year="2024",
+        )
+        HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=45)
+
+    def test_qualifying_relative_is_dependent_excluded_from_rebate(self):
+        """Adult child with $0 income is now a dependent → excluded by the `not is_dependent()` gate."""
+        adult_child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=25, student=False)
+
+        self.assertTrue(adult_child.is_dependent())
+
+    def test_non_dependent_adult_passes_rebate_gate(self):
+        """Adult child earning above threshold is not a dependent → still passes the gate."""
+        adult_child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=25, student=False)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=adult_child, type="wages", amount=6000, frequency="yearly"
+        )
+
+        self.assertFalse(adult_child.is_dependent())

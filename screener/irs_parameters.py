@@ -31,4 +31,4 @@ def get_qualifying_relative_threshold(tax_year=None):
     if tax_year and tax_year in IRS_THRESHOLDS:
         return IRS_THRESHOLDS[tax_year]
 
-    return IRS_THRESHOLDS[max(IRS_THRESHOLDS.keys())]
+    return IRS_THRESHOLDS[max(IRS_THRESHOLDS.keys(), key=int)]
