@@ -14,7 +14,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import permissions, status, views
 from rest_framework.response import Response
 
-from .models import Screen
+from .models import EligibilitySnapshot, Screen
 
 # Where mfb-ai-service lives, and the shared service token (must match the
 # service's SERVICE_AUTH_TOKEN). Both come from the environment.
@@ -30,15 +30,50 @@ def _ai_headers() -> dict:
     return headers
 
 
+def _latest_snapshot(screen: Screen):
+    """Most recent successful, non-batch eligibility snapshot for this screen.
+
+    The results page computes one of these on load, so by the time the user
+    opens the assistant there is normally a fresh snapshot to read — far cheaper
+    than recomputing eligibility (which calls PolicyEngine).
+    """
+    try:
+        return (
+            EligibilitySnapshot.objects.filter(screen=screen, is_batch=False, had_error=False)
+            .prefetch_related("program_snapshots")
+            .latest("submission_date")
+        )
+    except EligibilitySnapshot.DoesNotExist:
+        return None
+
+
 def _build_context(screen: Screen) -> dict:
     """Assemble the screen context passed to mfb-ai-service.
 
-    NOTE (v0): eligible_programs is left empty for now. Populating it from the
-    eligibility calculation is a follow-up; the API contract allows an empty list.
+    Pulls the eligible programs from the latest snapshot, highest-value first,
+    so the assistant can prioritize and explain them. Returns an empty list if
+    no snapshot exists yet (the contract allows this).
     """
+    eligible_programs = []
+    snapshot = _latest_snapshot(screen)
+    if snapshot is not None:
+        rows = [p for p in snapshot.program_snapshots.all() if p.eligible]
+        rows.sort(key=lambda p: p.estimated_value or 0, reverse=True)
+        for p in rows:
+            eligible_programs.append(
+                {
+                    "external_name": p.name_abbreviated,
+                    "name": p.name,
+                    # Whole dollars. Frequency is governed by value_type; see the
+                    # API contract's open question on units.
+                    "estimated_value": int(p.estimated_value) if p.estimated_value is not None else None,
+                    "estimated_application_time": p.estimated_application_time,
+                }
+            )
+
     return {
         "household": {"size": screen.household_size},
-        "eligible_programs": [],  # TODO: populate from eligibility results
+        "eligible_programs": eligible_programs,
     }
 
 
