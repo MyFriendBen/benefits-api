@@ -14,6 +14,9 @@ from django.shortcuts import get_object_or_404
 from rest_framework import permissions, status, views
 from rest_framework.response import Response
 
+from programs.models import Program
+from translations.models import BLANK_TRANSLATION_PLACEHOLDER
+
 from .models import EligibilitySnapshot, Screen
 
 # Where mfb-ai-service lives, and the shared service token (must match the
@@ -47,6 +50,32 @@ def _latest_snapshot(screen: Screen):
         return None
 
 
+def _apply_urls_by_name(screen: Screen, name_abbreviations: list[str]) -> dict[str, str]:
+    """Map name_abbreviated -> apply link for the given programs (one query).
+
+    apply_button_link is a translated field; `.text` resolves it the same way
+    eligibility_results resolves program.name.text. Blank/placeholder links are
+    skipped so the assistant never receives an empty or placeholder URL.
+    """
+    if not name_abbreviations:
+        return {}
+
+    programs = Program.objects.filter(
+        white_label=screen.white_label,
+        name_abbreviated__in=name_abbreviations,
+    ).select_related("apply_button_link")
+
+    urls: dict[str, str] = {}
+    for program in programs:
+        try:
+            link = (program.apply_button_link.text or "").strip()
+        except Exception:
+            link = ""
+        if link and link != BLANK_TRANSLATION_PLACEHOLDER:
+            urls[program.name_abbreviated] = link
+    return urls
+
+
 def _build_context(screen: Screen) -> dict:
     """Assemble the screen context passed to mfb-ai-service.
 
@@ -59,17 +88,20 @@ def _build_context(screen: Screen) -> dict:
     if snapshot is not None:
         rows = [p for p in snapshot.program_snapshots.all() if p.eligible]
         rows.sort(key=lambda p: p.estimated_value or 0, reverse=True)
+        apply_urls = _apply_urls_by_name(screen, [p.name_abbreviated for p in rows])
         for p in rows:
-            eligible_programs.append(
-                {
-                    "external_name": p.name_abbreviated,
-                    "name": p.name,
-                    # Whole dollars. Frequency is governed by value_type; see the
-                    # API contract's open question on units.
-                    "estimated_value": int(p.estimated_value) if p.estimated_value is not None else None,
-                    "estimated_application_time": p.estimated_application_time,
-                }
-            )
+            program = {
+                "external_name": p.name_abbreviated,
+                "name": p.name,
+                # Whole dollars. Frequency is governed by value_type; see the
+                # API contract's open question on units.
+                "estimated_value": int(p.estimated_value) if p.estimated_value is not None else None,
+                "estimated_application_time": p.estimated_application_time,
+            }
+            apply_url = apply_urls.get(p.name_abbreviated)
+            if apply_url:
+                program["apply_url"] = apply_url
+            eligible_programs.append(program)
 
     return {
         "household": {"size": screen.household_size},
