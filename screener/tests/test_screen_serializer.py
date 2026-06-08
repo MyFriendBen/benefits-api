@@ -67,6 +67,59 @@ class WriteCurrentBenefitsTests(TestCase):
 
         self.assertEqual(self._benefit_names(self.screen), {"snap"})
 
+    def test_new_path_injects_ssi_from_income_without_tile(self):
+        """sSI income implies SSI even when the user didn't tick the SSI tile."""
+        seed_program(self.white_label, "ssi")
+        head = HouseholdMember.objects.create(
+            screen=self.screen, relationship="headOfHousehold", age=40, has_income=True
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=head, type="sSI", amount=500, frequency="monthly"
+        )
+
+        # Frontend sends SNAP only — no SSI tile — but sSI income is present.
+        _write_current_benefits(self.screen, ["snap"])
+
+        self.assertEqual(self._benefit_names(self.screen), {"snap", "ssi"})
+
+    def test_new_path_income_wins_over_explicit_deselect(self):
+        """An explicit deselect can't remove SSI when sSI income is present (OR semantics)."""
+        seed_program(self.white_label, "ssi")
+        head = HouseholdMember.objects.create(
+            screen=self.screen, relationship="headOfHousehold", age=40, has_income=True
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=head, type="sSI", amount=500, frequency="monthly"
+        )
+
+        # Deselect-all: empty list, yet income still forces SSI on.
+        _write_current_benefits(self.screen, [])
+
+        self.assertEqual(self._benefit_names(self.screen), {"ssi"})
+
+    def test_new_path_no_ssi_without_income_or_tile(self):
+        """No SSI tile and no sSI income → SSI is not written."""
+        seed_program(self.white_label, "ssi")
+
+        _write_current_benefits(self.screen, ["snap"])
+
+        self.assertEqual(self._benefit_names(self.screen), {"snap"})
+
+    def test_new_path_derived_ssi_variant_not_in_other_wl(self):
+        """Derived SSI variants for other WLs (e.g. wa_ssi) aren't written to this WL."""
+        seed_program(self.white_label, "ssi")  # this WL only offers "ssi"
+        head = HouseholdMember.objects.create(
+            screen=self.screen, relationship="headOfHousehold", age=40, has_income=True
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=head, type="sSI", amount=500, frequency="monthly"
+        )
+
+        _write_current_benefits(self.screen, [])
+
+        # Only the variant this WL offers is written; tx_ssi / wa_ssi / cesn_ssi are dropped.
+        self.assertEqual(self._benefit_names(self.screen), {"ssi"})
+
     def test_backward_compat_path_mirrors_has_columns(self):
         """current_benefits=None mirrors the legacy has_* columns (fan-out included)."""
         seed_program(self.white_label, "co_snap")

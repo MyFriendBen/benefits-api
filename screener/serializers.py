@@ -2,6 +2,7 @@ import logging
 from datetime import date
 from django.db import IntegrityError, transaction
 from django.utils import timezone
+from sentry_sdk import capture_message
 
 logger = logging.getLogger(__name__)
 from programs.models import Program, WarningMessage
@@ -301,6 +302,33 @@ def _benefit_map_from_has_columns(screen) -> dict:
     }
 
 
+# SSI program variants across white labels. An sSI income stream implies SSI
+# receipt regardless of whether the user ticked the tile, so all variants are
+# listed here; the WL-scoped resolve in `_write_current_benefits()` drops the
+# ones a given white label doesn't offer (e.g. `wa_ssi` on a CO screen).
+_SSI_BENEFIT_NAMES = frozenset({"ssi", "tx_ssi", "wa_ssi", "cesn_ssi"})
+
+
+def _derived_current_benefit_names(screen) -> set[str]:
+    """`name_abbreviated` values implied by screen state, independent of the
+    frontend's current-benefits toggles.
+
+    OR'd into the frontend's `current_benefits` list inside `_write_current_benefits()`
+    so the join table reflects benefits the household demonstrably receives even when
+    the tile wasn't ticked (or was explicitly unticked) — preserving the long-standing
+    compound semantics of `Screen.has_benefit()`.
+
+    Today there is one rule: an sSI income stream implies SSI. The `chp` and
+    `ma_mass_health` compounds are deliberately NOT here — those are member-level
+    insurance checks (`HouseholdMember.has_benefit()` / `member.insurance.*`) and never
+    flow through `current_benefits`. Add new derivable compounds here as they appear.
+    """
+    derived: set[str] = set()
+    if screen.calc_gross_income("yearly", ("sSI",)) > 0:
+        derived |= _SSI_BENEFIT_NAMES
+    return derived
+
+
 def _write_current_benefits(screen, current_benefits):
     """
     Write the CurrentBenefit join table for `screen`, replacing any existing rows.
@@ -312,6 +340,9 @@ def _write_current_benefits(screen, current_benefits):
       WL-scoped unique (white_label, name_abbreviated) lookup and written directly.
       Unknown names are skipped (a name the current WL doesn't offer is a no-op,
       mirroring the old map's behavior of only writing programs in this WL).
+      Names derivable from screen state (currently SSI, via an sSI income stream)
+      are OR'd in via `_derived_current_benefit_names()` so the join table keeps
+      the long-standing compound semantics even when the tile wasn't ticked.
     * Old frontend (backward compat) — passes `current_benefits=None`; we derive
       the program set from the legacy `has_*` columns via
       `_benefit_map_from_has_columns()`. Removed in Step 6 (MFB-720).
@@ -333,27 +364,34 @@ def _write_current_benefits(screen, current_benefits):
                 if benefit_map.get(program.name_abbreviated, False)
             ]
         else:
-            # Primary path: frontend sent explicit program names. Resolve each in
-            # this screen's white label; silently drop any this WL doesn't offer.
+            # Primary path: frontend sent explicit program names, plus any names
+            # derivable from screen state (e.g. SSI from an sSI income stream).
+            # Resolve each in this screen's white label; silently drop any this WL
+            # doesn't offer.
             requested = set(current_benefits)
+            derived = _derived_current_benefit_names(screen)
             resolved = Program.objects.filter(
                 white_label=screen.white_label,
-                name_abbreviated__in=requested,
+                name_abbreviated__in=requested | derived,
             ).values_list("id", "name_abbreviated")
             program_ids_to_write = [program_id for program_id, _ in resolved]
 
-            # A requested name with no Program in this WL is dropped rather than
-            # erroring (a WL only writes the programs it offers). During the Step 6
-            # FE cutover that's also how a typo'd / stale name_abbreviated vanishes,
-            # so log it — visible in Heroku logs (heroku logs -a cobenefits-api),
-            # not Sentry, since it's info-level and benign.
+            # A *frontend-requested* name with no Program in this WL is dropped
+            # rather than erroring (a WL only writes the programs it offers). During
+            # the Step 6 FE cutover that's also how a typo'd / stale name_abbreviated
+            # vanishes — a config problem worth surfacing, so report it to Sentry.
+            # capture_message groups identical messages, so a recurring bad name
+            # collapses into one counted issue rather than paging per request; level
+            # is "warning" (not "error") because a dropped name is benign per request.
+            # Derived names (e.g. wa_ssi injected on a CO screen) are excluded — those
+            # are expected cross-WL non-matches, not client errors.
             dropped = requested - {name for _, name in resolved}
             if dropped:
-                logger.info(
-                    "current_benefits: dropped %d name(s) not offered by white_label %s: %s",
-                    len(dropped),
-                    screen.white_label_id,
-                    sorted(dropped),
+                capture_message(
+                    f"current_benefits: dropped {len(dropped)} name(s) not offered by white_label "
+                    f"{screen.white_label_id}: {sorted(dropped)}",
+                    level="warning",
+                    extras={"white_label_id": screen.white_label_id, "dropped": sorted(dropped)},
                 )
 
         CurrentBenefit.objects.filter(screen=screen).delete()
@@ -374,7 +412,16 @@ class ScreenSerializer(serializers.ModelSerializer):
     # still surface per-program via the eligibility "already_has" flag. When absent
     # the legacy has_* columns drive the join-table write (backward compat, removed
     # in Step 6 / MFB-720).
-    current_benefits = serializers.ListField(child=serializers.CharField(), required=False, write_only=True)
+    # Bounded to defend against unbounded/abusive payloads: there are ~130 distinct
+    # name_abbreviated values across all white labels, so 256 is a comfortable ceiling
+    # while still rejecting a degenerate list. Unknown names are dropped in
+    # _write_current_benefits(), so element content needn't be validated here.
+    current_benefits = serializers.ListField(
+        child=serializers.CharField(max_length=64),
+        required=False,
+        write_only=True,
+        max_length=256,
+    )
 
     class Meta:
         model = Screen
