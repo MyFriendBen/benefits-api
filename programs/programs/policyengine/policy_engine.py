@@ -61,8 +61,7 @@ def calc_pe_eligibility(
             # it here for visibility, then re-raise so the shutdown proceeds normally.
             capture_exception(e, level="error")
             capture_message(
-                f"Worker exited mid-request while calculating eligibility with the "
-                f"{Method.method_name} method",
+                f"Worker exited mid-request while calculating eligibility with the " f"{Method.method_name} method",
                 level="error",
             )
             raise
