@@ -8,7 +8,8 @@ from programs.programs.wa import wa_calculators
 from programs.programs.wa.nslp.calculator import WaNslp
 from programs.util import Dependencies
 from screener.models import HouseholdMember, IncomeStream, Screen, WhiteLabel
-from screener.tests.helpers import seed_program, set_current_benefits
+from screener.tests.helpers import seed_program
+from screener.serializers import _write_current_benefits
 
 
 class TestWaNslp(TestCase):
@@ -152,7 +153,7 @@ class TestWaNslp(TestCase):
     def test_ineligible_already_has_nslp(self):
         seed_program(self.white_label, "nslp")
         screen = self._screen_base()
-        set_current_benefits(screen, "nslp")
+        _write_current_benefits(screen, ["nslp"])
         head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=36, has_income=True)
         IncomeStream.objects.create(
             screen=screen, household_member=head, type="wages", amount=2000, frequency="monthly"

@@ -382,9 +382,8 @@ class Screen(models.Model):
         # This is a per-instance cache. A Screen loaded *before* a write will
         # NOT see rows written after, even on the same instance. Concretely:
         #
-        #     screen.has_snap = True
-        #     screen.save()                  # serializer writes the join table
-        #     screen.has_benefit("snap")     # ❌ may return False — cache populated pre-write
+        #     _write_current_benefits(screen, ["snap"])  # writes the join table
+        #     screen.has_benefit("snap")                 # ❌ may return False — cache populated pre-write
         #
         # Do NOT reach for `del screen._current_benefit_names` to invalidate —
         # that's a sharp edge that future refactors will silently break. The
@@ -396,10 +395,8 @@ class Screen(models.Model):
         # The eligibility hot path is safe — the view fetches a fresh Screen
         # on every request. Only admin actions / management commands / tests
         # that write current_benefits and then read on the same instance are at risk.
-        #
-        # This whole cache (and has_benefit itself) disappears in MFB-720 when
-        # the has_* columns are dropped and current_benefits becomes the only
-        # write target, so we are intentionally NOT adding an invalidation hook.
+        # A real invalidation hook is deferred to MFB-878 (which removes the legacy
+        # has_* write path this cache predates); we are intentionally NOT adding one here.
         return {cb.program.name_abbreviated for cb in self.current_benefits.all()}
 
     def has_benefit(self, name_abbreviated: str) -> bool:
@@ -408,16 +405,15 @@ class Screen(models.Model):
         identified by `name_abbreviated`. Drives the "already_has" flag on
         eligibility results so the frontend can filter the program out.
 
-        Reads from the CurrentBenefit join table — the primary write target as
-        of Step 5a (MFB-869). The join table is written on every POST/PATCH by
-        the serializer's `_write_current_benefits()`: directly from the
-        frontend's `current_benefits` list, or (backward compat, until Step 6)
-        mirrored from the legacy has_* columns.
+        Reads from the CurrentBenefit join table, written on every POST/PATCH by
+        the serializer's `_write_current_benefits()`.
 
-        Compound conditions (ssi → has_ssi OR sSI income; ma_mass_health →
-        has_medicaid OR has_medicaid_hi) are resolved at write time in the
-        has_* backward-compat path (`_benefit_map_from_has_columns()`), so this
-        read path needs no special-casing.
+        SSI is the one compound case: an sSI income stream implies `ssi` even if
+        the tile wasn't ticked. That's resolved at write time by
+        `_derived_current_benefit_names()`, so this read path needs no special-casing.
+        (`ma_mass_health` is a member-level insurance check via
+        `HouseholdMember.has_benefit()`, not a screen-level current benefit, so it
+        never flows through here.)
         """
         return name_abbreviated in self._current_benefit_names
 
