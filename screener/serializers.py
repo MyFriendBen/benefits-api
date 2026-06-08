@@ -336,12 +336,25 @@ def _write_current_benefits(screen, current_benefits):
             # Primary path: frontend sent explicit program names. Resolve each in
             # this screen's white label; silently drop any this WL doesn't offer.
             requested = set(current_benefits)
-            program_ids_to_write = list(
-                Program.objects.filter(
-                    white_label=screen.white_label,
-                    name_abbreviated__in=requested,
-                ).values_list("id", flat=True)
-            )
+            resolved = Program.objects.filter(
+                white_label=screen.white_label,
+                name_abbreviated__in=requested,
+            ).values_list("id", "name_abbreviated")
+            program_ids_to_write = [program_id for program_id, _ in resolved]
+
+            # A requested name with no Program in this WL is dropped rather than
+            # erroring (a WL only writes the programs it offers). During the Step 6
+            # FE cutover that's also how a typo'd / stale name_abbreviated vanishes,
+            # so log it — visible in Heroku logs (heroku logs -a cobenefits-api),
+            # not Sentry, since it's info-level and benign.
+            dropped = requested - {name for _, name in resolved}
+            if dropped:
+                logger.info(
+                    "current_benefits: dropped %d name(s) not offered by white_label %s: %s",
+                    len(dropped),
+                    screen.white_label_id,
+                    sorted(dropped),
+                )
 
         CurrentBenefit.objects.filter(screen=screen).delete()
         if program_ids_to_write:

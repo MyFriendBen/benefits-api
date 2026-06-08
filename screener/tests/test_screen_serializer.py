@@ -14,7 +14,7 @@ serializer `update()` path end to end.
 
 from django.test import TestCase
 
-from screener.models import CurrentBenefit, Screen, WhiteLabel
+from screener.models import CurrentBenefit, HouseholdMember, IncomeStream, Screen, WhiteLabel
 from screener.serializers import ScreenSerializer, _write_current_benefits
 from screener.tests.helpers import seed_program
 
@@ -80,8 +80,6 @@ class WriteCurrentBenefitsTests(TestCase):
 
     def test_backward_compat_path_compound_ssi_via_income(self):
         """current_benefits=None resolves the ssi compound condition from sSI income."""
-        from screener.models import HouseholdMember, IncomeStream
-
         seed_program(self.white_label, "ssi")
         head = HouseholdMember.objects.create(
             screen=self.screen, relationship="headOfHousehold", age=40, has_income=True
@@ -149,3 +147,43 @@ class ScreenSerializerUpdateTests(TestCase):
     def test_current_benefits_is_write_only(self):
         """current_benefits is a write-only field — it is not echoed in serialized output."""
         self.assertNotIn("current_benefits", ScreenSerializer(self.screen).data)
+
+
+class ScreenSerializerCreateTests(TestCase):
+    """End-to-end coverage of `current_benefits` flowing through serializer.create().
+
+    create() pops and writes current_benefits independently of update(), so it
+    needs its own coverage — a regression in one wouldn't be caught by the other.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        seed_program(self.white_label, "snap", "tanf")
+
+    def _base_payload(self, **extra):
+        payload = {
+            "white_label": self.white_label.code,
+            "household_members": [],
+            "expenses": [],
+        }
+        payload.update(extra)
+        return payload
+
+    def _benefit_names(self, screen):
+        return set(CurrentBenefit.objects.filter(screen=screen).values_list("program__name_abbreviated", flat=True))
+
+    def test_create_with_current_benefits_writes_join_table(self):
+        """A POST carrying current_benefits writes the join table directly."""
+        serializer = ScreenSerializer(data=self._base_payload(current_benefits=["snap", "tanf"]))
+        serializer.is_valid(raise_exception=True)
+        screen = serializer.save()
+
+        self.assertEqual(self._benefit_names(screen), {"snap", "tanf"})
+
+    def test_create_without_current_benefits_falls_back_to_has_columns(self):
+        """A POST with no current_benefits key mirrors from has_* (old frontend)."""
+        serializer = ScreenSerializer(data=self._base_payload(has_snap=True))
+        serializer.is_valid(raise_exception=True)
+        screen = serializer.save()
+
+        self.assertEqual(self._benefit_names(screen), {"snap"})
