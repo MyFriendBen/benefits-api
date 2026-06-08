@@ -7,7 +7,7 @@ from unittest.mock import patch
 from django.test import TestCase
 from screener.models import Screen, HouseholdMember, WhiteLabel, IncomeStream, Expense
 from screener.feature_flags import FeatureFlagConfig
-from screener.tests.helpers import seed_program, sync_current_benefits
+from screener.tests.helpers import seed_program, set_current_benefits, sync_current_benefits
 
 
 class TestScreen(TestCase):
@@ -228,86 +228,75 @@ class TestScreen(TestCase):
 
     # Tests for Screen.has_benefit() method
     #
-    # has_benefit() reads from the CurrentBenefit join table. Tests set
-    # has_* columns (still the canonical write target during the dual-write
-    # phase) and invoke sync_current_benefits() to populate the join table —
-    # mirroring what every POST/PATCH does in production.
+    # has_benefit() reads from the CurrentBenefit join table (the primary write
+    # target as of Step 5a / MFB-869). These tests write join-table rows directly
+    # via set_current_benefits() — the same path a new-frontend `current_benefits`
+    # PATCH takes — instead of the legacy `has_* = True; sync_current_benefits()`
+    # mirror. The fan-out / compound cases below still use the has_* mirror on
+    # purpose, since that logic only lives on the backward-compat write path.
 
     def test_has_benefit_returns_true_when_user_has_snap(self):
-        """has_benefit('tx_snap') is True when has_snap=True and the join table is synced."""
+        """has_benefit('tx_snap') is True when the join table has the row."""
         seed_program(self.white_label, "tx_snap")
-        self.screen.has_snap = True
-        self.screen.save()
-        sync_current_benefits(self.screen)
+        set_current_benefits(self.screen, "tx_snap")
 
         self.assertTrue(self.screen.has_benefit("tx_snap"))
 
     def test_has_benefit_returns_false_when_user_does_not_have_snap(self):
-        """has_benefit('tx_snap') is False when has_snap=False."""
+        """has_benefit('tx_snap') is False when no row was written."""
         seed_program(self.white_label, "tx_snap")
-        self.screen.has_snap = False
-        self.screen.save()
-        sync_current_benefits(self.screen)
+        set_current_benefits(self.screen)
 
         self.assertFalse(self.screen.has_benefit("tx_snap"))
 
     def test_has_benefit_returns_true_when_user_has_wa_snap(self):
-        """has_benefit('wa_snap') is True when has_snap=True (multi-WL variant)."""
+        """has_benefit('wa_snap') is True when the join table has the row."""
         seed_program(self.white_label, "wa_snap")
-        self.screen.has_snap = True
-        self.screen.save()
-        sync_current_benefits(self.screen)
+        set_current_benefits(self.screen, "wa_snap")
 
         self.assertTrue(self.screen.has_benefit("wa_snap"))
 
     def test_has_benefit_returns_false_when_user_does_not_have_wa_snap(self):
-        """has_benefit('wa_snap') is False when has_snap=False."""
+        """has_benefit('wa_snap') is False when no row was written."""
         seed_program(self.white_label, "wa_snap")
-        self.screen.has_snap = False
-        self.screen.save()
-        sync_current_benefits(self.screen)
+        set_current_benefits(self.screen)
 
         self.assertFalse(self.screen.has_benefit("wa_snap"))
 
     def test_has_benefit_returns_true_for_ma_head_start_when_user_has_head_start(self):
-        """has_benefit('ma_head_start') is True when has_head_start=True."""
+        """has_benefit('ma_head_start') is True when the join table has the row."""
         seed_program(self.white_label, "ma_head_start")
-        self.screen.has_head_start = True
-        self.screen.save()
-        sync_current_benefits(self.screen)
+        set_current_benefits(self.screen, "ma_head_start")
 
         self.assertTrue(self.screen.has_benefit("ma_head_start"))
 
     def test_has_benefit_returns_false_for_ma_head_start_when_user_does_not_have_head_start(self):
-        """has_benefit('ma_head_start') is False when has_head_start=False."""
+        """has_benefit('ma_head_start') is False when no row was written."""
         seed_program(self.white_label, "ma_head_start")
-        self.screen.has_head_start = False
-        self.screen.save()
-        sync_current_benefits(self.screen)
+        set_current_benefits(self.screen)
 
         self.assertFalse(self.screen.has_benefit("ma_head_start"))
 
     def test_has_benefit_returns_true_for_ma_early_head_start_when_user_has_early_head_start(self):
-        """has_benefit('ma_early_head_start') is True when has_early_head_start=True."""
+        """has_benefit('ma_early_head_start') is True when the join table has the row."""
         seed_program(self.white_label, "ma_early_head_start")
-        self.screen.has_early_head_start = True
-        self.screen.save()
-        sync_current_benefits(self.screen)
+        set_current_benefits(self.screen, "ma_early_head_start")
 
         self.assertTrue(self.screen.has_benefit("ma_early_head_start"))
 
     def test_has_benefit_returns_false_for_ma_early_head_start_when_user_does_not_have_early_head_start(self):
-        """has_benefit('ma_early_head_start') is False when has_early_head_start=False."""
+        """has_benefit('ma_early_head_start') is False when no row was written."""
         seed_program(self.white_label, "ma_early_head_start")
-        self.screen.has_early_head_start = False
-        self.screen.save()
-        sync_current_benefits(self.screen)
+        set_current_benefits(self.screen)
 
         self.assertFalse(self.screen.has_benefit("ma_early_head_start"))
 
-    # Cross-cutting cases — these are the ones MFB-719 specifically wants to
-    # lock in: multi-WL variants over the same column, compound conditions
-    # resolved at write time, and no N+1 on the eligibility read path.
+    # Backward-compat fan-out / compound cases — these specifically lock in the
+    # has_* → join-table mapping that lives on the backward-compat write path
+    # (`_benefit_map_from_has_columns`, exercised via sync_current_benefits()).
+    # They intentionally keep the `has_* = True; sync_current_benefits()` pattern
+    # because that mapping is the thing under test; both go away in Step 6
+    # (MFB-720) when the has_* write path is removed.
 
     def test_has_benefit_multi_wl_variants_resolve_to_same_column(self):
         """
@@ -400,9 +389,7 @@ class TestScreen(TestCase):
         other_screen = Screen.objects.create(
             white_label=self.white_label, zipcode="78701", household_size=1, completed=False
         )
-        other_screen.has_snap = True
-        other_screen.save()
-        sync_current_benefits(other_screen)
+        set_current_benefits(other_screen, "snap")
 
         # self.screen has no current_benefits rows
         self.assertFalse(self.screen.has_benefit("snap"))
@@ -414,10 +401,7 @@ class TestScreen(TestCase):
         the lookup from the in-memory cache.
         """
         seed_program(self.white_label, "snap", "tanf", "wic", "ssi")
-        self.screen.has_snap = True
-        self.screen.has_tanf = True
-        self.screen.save()
-        sync_current_benefits(self.screen)
+        set_current_benefits(self.screen, "snap", "tanf")
 
         prefetched = Screen.objects.prefetch_related("current_benefits__program").get(pk=self.screen.pk)
 
