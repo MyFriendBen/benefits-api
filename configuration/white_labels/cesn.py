@@ -63,15 +63,18 @@ class CesnConfigurationData(ConfigurationData):
         "sw": "Kiswahili",
     }
 
-    income_options = {
-        **ConfigurationData.income_options,
-        "cashAssistance": {
-            "_label": "incomeOptions.cashAssistance",
-            "_default_message": "Government Cash Assistance (including Colorado Works/TANF)",
-        },
-        "cOSDisability": {
-            "_label": "incomeOptions.cOSDisability",
-            "_default_message": "Colorado State Disability Benefits",
+    income_options_by_category = {
+        **ConfigurationData.income_options_by_category,
+        "government": {
+            **ConfigurationData.income_options_by_category["government"],
+            "cashAssistance": {
+                "_label": "incomeOptions.cashAssistance",
+                "_default_message": "Government Cash Assistance (including Colorado Works/TANF)",
+            },
+            "cOSDisability": {
+                "_label": "incomeOptions.cOSDisability",
+                "_default_message": "Colorado State Disability Benefits",
+            },
         },
     }
 
@@ -83,8 +86,6 @@ class CesnConfigurationData(ConfigurationData):
     expense_categories = {}
 
     expense_options_by_category = {}
-
-    expense_options = {}
 
     condition_options = {
         "you": {
@@ -2189,20 +2190,6 @@ class CesnConfigurationData(ConfigurationData):
             }
         },
         "uiOptions": {
-            "default": [
-                "no_zipcode_change_state",
-                "no_confirmation_return_zipcode",
-                "white_header",
-                "white_multi_select_tile_icon",
-                "dont_show_category_values",
-                "logo_landing_page_link",
-                "no_lets_get_started",
-                "help_bubble_always_open",
-                "small_header_language_dropdown",
-            ]
-        },
-        # Deprecated: use uiOptions. Remove as part of MFB-635.
-        "featureFlags": {
             "default": [
                 "no_zipcode_change_state",
                 "no_confirmation_return_zipcode",
