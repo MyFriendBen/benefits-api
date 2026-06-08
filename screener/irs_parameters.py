@@ -28,7 +28,9 @@ def get_qualifying_relative_threshold(tax_year=None):
     Look up the IRS threshold for the given tax year.
     If tax_year is None or unknown, fall back to the most recent year in the list.
     """
-    if tax_year and tax_year in IRS_THRESHOLDS:
-        return IRS_THRESHOLDS[tax_year]
+    if tax_year is not None:
+        normalized_tax_year = str(tax_year).strip()
+        if normalized_tax_year in IRS_THRESHOLDS:
+            return IRS_THRESHOLDS[normalized_tax_year]
 
     return IRS_THRESHOLDS[max(IRS_THRESHOLDS.keys(), key=int)]
