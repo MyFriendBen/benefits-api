@@ -531,3 +531,31 @@ class TestWaTanfDependency(TestCase):
         """WaShowAllCashAssistanceProgramsDependency always returns True to bypass PE immigration checks."""
         dep = spm.WaShowAllCashAssistanceProgramsDependency(self.screen, None, {})
         self.assertTrue(dep.value())
+
+
+class TestSnapEnrolledDependency(TestCase):
+    """Tests for SnapEnrolled, which reports SNAP enrollment for adjunctive eligibility (e.g. TX FPP §4140)."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="78701", county="Test County", household_size=2, completed=False
+        )
+
+    def test_field_name(self):
+        dep = spm.SnapEnrolled(self.screen, None, {})
+        self.assertEqual(dep.field, "snap")
+
+    def test_value_returns_one_when_enrolled(self):
+        """value() returns 1 when the screen reports SNAP enrollment."""
+        self.screen.has_snap = True
+        self.screen.save()
+        dep = spm.SnapEnrolled(self.screen, None, {})
+        self.assertEqual(dep.value(), 1)
+
+    def test_value_returns_none_when_not_enrolled(self):
+        """value() returns None when SNAP is not reported, so PE calculates SNAP normally."""
+        self.screen.has_snap = False
+        self.screen.save()
+        dep = spm.SnapEnrolled(self.screen, None, {})
+        self.assertIsNone(dep.value())

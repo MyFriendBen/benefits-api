@@ -2011,12 +2011,35 @@ class TestTxFpp(TestCase):
         self.assertIn(TxFppDependency, TxFpp.pe_outputs)
         self.assertEqual(TxFppDependency.field, "tx_fpp_benefit")
 
-    def test_member_value_returns_pe_value_when_member_has_no_insurance(self):
+    def test_pe_inputs_includes_adjunctive_enrollment_dependencies(self):
         """
-        Test that member_value returns PolicyEngine value when member has no insurance.
+        Test that TxFpp reports SNAP, WIC, and CHIP enrollment to PolicyEngine.
 
-        When a member has no insurance (insurance type 'none'), they should be eligible
-        for FPP and the full PolicyEngine-calculated value should be returned.
+        Per §4140, enrollment in any of these programs confers adjunctive income
+        eligibility. These inputs let PolicyEngine's tx_fpp_income_eligible bypass
+        the 250% FPL income test once the PE-side change lands.
+        """
+        from programs.programs.policyengine.calculators.dependencies.spm import SnapEnrolled
+        from programs.programs.policyengine.calculators.dependencies.member import (
+            WicEnrolled,
+            ChipEnrolled,
+        )
+
+        self.assertIn(SnapEnrolled, TxFpp.pe_inputs)
+        self.assertIn(WicEnrolled, TxFpp.pe_inputs)
+        self.assertIn(ChipEnrolled, TxFpp.pe_inputs)
+        self.assertEqual(SnapEnrolled.field, "snap")
+        self.assertEqual(WicEnrolled.field, "wic")
+        self.assertEqual(ChipEnrolled.field, "chip")
+
+    def test_member_value_returns_pe_value_when_member_has_no_medicaid(self):
+        """
+        Test that member_value returns the PolicyEngine value when the member is
+        not enrolled in (full) Medicaid.
+
+        Per §4100, FPP serves those who earn too much for regular Medicaid, so only
+        Medicaid enrollees are excluded. A member without Medicaid is eligible and
+        the full PolicyEngine-calculated value is returned.
         """
         # Create a mock TxFpp calculator instance
         calculator = TxFpp(Mock(), Mock(), Mock())
@@ -2026,25 +2049,24 @@ class TestTxFpp(TestCase):
         pe_value = 431
         calculator.get_member_variable = Mock(return_value=pe_value)
 
-        # Create a mock member with no insurance
+        # Create a mock member without Medicaid
         member_obj = Mock()
         member_obj.id = 1
-        member_obj.has_insurance_types = Mock(return_value=True)  # has_insurance_types(("none",)) returns True
+        member_obj.has_insurance_types = Mock(return_value=False)  # has_insurance_types(("medicaid",)) returns False
 
         # Call member_value
         result = calculator.member_value(member_obj)
 
         # Verify the result is the PolicyEngine value
         self.assertEqual(result, pe_value)
-        member_obj.has_insurance_types.assert_called_once_with(("none",))
+        member_obj.has_insurance_types.assert_called_once_with(("medicaid",))
 
-    def test_member_value_returns_zero_when_member_has_insurance(self):
+    def test_member_value_returns_zero_when_member_has_medicaid(self):
         """
-        Test that member_value returns 0 when member has insurance.
+        Test that member_value returns 0 when the member is enrolled in Medicaid.
 
-        If a member has any insurance type other than 'none', they are not eligible
-        for FPP (which is designed for those without Medicaid coverage) and
-        member_value should return 0.
+        Per §4100, FPP is designed for those who earn too much for regular Medicaid,
+        so members already on (full) Medicaid are excluded.
         """
         # Create a mock TxFpp calculator instance
         calculator = TxFpp(Mock(), Mock(), Mock())
@@ -2054,17 +2076,44 @@ class TestTxFpp(TestCase):
         pe_value = 431
         calculator.get_member_variable = Mock(return_value=pe_value)
 
-        # Create a mock member with insurance
+        # Create a mock member with Medicaid
         member_obj = Mock()
         member_obj.id = 1
-        member_obj.has_insurance_types = Mock(return_value=False)  # has_insurance_types(("none",)) returns False
+        member_obj.has_insurance_types = Mock(return_value=True)  # has_insurance_types(("medicaid",)) returns True
 
         # Call member_value
         result = calculator.member_value(member_obj)
 
         # Verify the result is 0
         self.assertEqual(result, 0)
-        member_obj.has_insurance_types.assert_called_once_with(("none",))
+        member_obj.has_insurance_types.assert_called_once_with(("medicaid",))
+
+    def test_member_value_excludes_only_medicaid_not_emergency_medicaid(self):
+        """
+        Test that Emergency Medicaid recipients remain FPP-eligible (§4100).
+
+        Emergency Medicaid recipients are classified as underinsured and are NOT
+        excluded. Only the ("medicaid",) insurance type triggers exclusion, so a
+        member with emergency_medicaid (but not full medicaid) gets the PE value.
+        """
+        # Create a mock TxFpp calculator instance
+        calculator = TxFpp(Mock(), Mock(), Mock())
+        calculator._sim = MagicMock()
+
+        pe_value = 431
+        calculator.get_member_variable = Mock(return_value=pe_value)
+
+        # Simulate a real member: has emergency_medicaid but not full medicaid, so
+        # has_insurance_types(("medicaid",)) is False.
+        member_obj = Mock()
+        member_obj.id = 1
+        member_obj.has_insurance_types = Mock(side_effect=lambda types: "medicaid" in types and False)
+
+        result = calculator.member_value(member_obj)
+
+        # Not excluded — returns the PolicyEngine value
+        self.assertEqual(result, pe_value)
+        member_obj.has_insurance_types.assert_called_once_with(("medicaid",))
 
     def test_member_value_calls_get_member_variable_with_member_id(self):
         """
@@ -2079,10 +2128,10 @@ class TestTxFpp(TestCase):
         # Mock the get_member_variable method
         calculator.get_member_variable = Mock(return_value=431)
 
-        # Create a mock member
+        # Create a mock member without Medicaid (so the PE lookup is reached)
         member_obj = Mock()
         member_obj.id = 42
-        member_obj.has_insurance_types = Mock(return_value=True)
+        member_obj.has_insurance_types = Mock(return_value=False)
 
         # Call member_value
         calculator.member_value(member_obj)
@@ -2090,12 +2139,12 @@ class TestTxFpp(TestCase):
         # Verify get_member_variable was called with the correct member ID
         calculator.get_member_variable.assert_called_once_with(42)
 
-    def test_member_value_insurance_check_happens_before_pe_lookup(self):
+    def test_member_value_medicaid_check_happens_before_pe_lookup(self):
         """
-        Test that insurance eligibility check occurs before PolicyEngine lookup.
+        Test that the Medicaid exclusion check occurs before the PolicyEngine lookup.
 
-        If a member has insurance, we should return 0 without needing to look up
-        the PolicyEngine value.
+        If a member is enrolled in Medicaid, we should return 0 without needing to
+        look up the PolicyEngine value.
         """
         # Create a mock TxFpp calculator instance
         calculator = TxFpp(Mock(), Mock(), Mock())
@@ -2104,10 +2153,10 @@ class TestTxFpp(TestCase):
         # Mock get_member_variable - should NOT be called
         calculator.get_member_variable = Mock(return_value=500)
 
-        # Create a mock member with insurance (not eligible)
+        # Create a mock member with Medicaid (not eligible)
         member_obj = Mock()
         member_obj.id = 1
-        member_obj.has_insurance_types = Mock(return_value=False)
+        member_obj.has_insurance_types = Mock(return_value=True)
 
         # Call member_value
         result = calculator.member_value(member_obj)
@@ -2115,15 +2164,15 @@ class TestTxFpp(TestCase):
         # Should return 0
         self.assertEqual(result, 0)
 
-        # Verify insurance check was performed
-        member_obj.has_insurance_types.assert_called_once_with(("none",))
+        # Verify Medicaid check was performed
+        member_obj.has_insurance_types.assert_called_once_with(("medicaid",))
 
         # Verify get_member_variable was NOT called (optimization)
         calculator.get_member_variable.assert_not_called()
 
-    def test_member_value_with_zero_pe_value_and_no_insurance(self):
+    def test_member_value_with_zero_pe_value_and_no_medicaid(self):
         """
-        Test that member_value returns 0 when PolicyEngine returns 0, even without insurance.
+        Test that member_value returns 0 when PolicyEngine returns 0, even without Medicaid.
 
         If PolicyEngine determines no benefit value (e.g., due to age or income ineligibility),
         it should be returned as-is.
@@ -2135,10 +2184,10 @@ class TestTxFpp(TestCase):
         # Mock zero PolicyEngine value
         calculator.get_member_variable = Mock(return_value=0)
 
-        # Create a mock member with no insurance
+        # Create a mock member without Medicaid
         member_obj = Mock()
         member_obj.id = 1
-        member_obj.has_insurance_types = Mock(return_value=True)
+        member_obj.has_insurance_types = Mock(return_value=False)
 
         # Call member_value
         result = calculator.member_value(member_obj)
@@ -2146,12 +2195,12 @@ class TestTxFpp(TestCase):
         # Should return 0 (PE says not eligible - likely due to age/income)
         self.assertEqual(result, 0)
 
-    def test_member_value_with_high_pe_value_but_has_insurance(self):
+    def test_member_value_with_high_pe_value_but_has_medicaid(self):
         """
-        Test that insurance eligibility check occurs regardless of PolicyEngine value.
+        Test that the Medicaid exclusion applies regardless of PolicyEngine value.
 
-        Even if PolicyEngine returns a high value, the insurance check should still
-        determine the final eligibility.
+        Even if PolicyEngine returns a high value, a member enrolled in Medicaid is
+        excluded (§4100).
         """
         # Create a mock TxFpp calculator instance
         calculator = TxFpp(Mock(), Mock(), Mock())
@@ -2160,10 +2209,10 @@ class TestTxFpp(TestCase):
         # Mock high PolicyEngine value
         calculator.get_member_variable = Mock(return_value=500)
 
-        # Create a mock member with insurance (not eligible)
+        # Create a mock member with Medicaid (not eligible)
         member_obj = Mock()
         member_obj.id = 1
-        member_obj.has_insurance_types = Mock(return_value=False)
+        member_obj.has_insurance_types = Mock(return_value=True)
 
         # Call member_value
         result = calculator.member_value(member_obj)
@@ -2171,5 +2220,5 @@ class TestTxFpp(TestCase):
         # Should return 0 despite high PE value
         self.assertEqual(result, 0)
 
-        # Verify insurance check was performed
-        member_obj.has_insurance_types.assert_called_once_with(("none",))
+        # Verify Medicaid check was performed
+        member_obj.has_insurance_types.assert_called_once_with(("medicaid",))
