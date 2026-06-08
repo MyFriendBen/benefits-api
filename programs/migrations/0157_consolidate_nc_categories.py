@@ -60,7 +60,7 @@ def reverse_deduplicate_nc_categories(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("programs", "0155_program_unique_wl_name_abbreviated"),
+        ("programs", "0156_deactivate_co_my_spark"),
         ("screener", "0153_add_needs_disability_resources"),
     ]
 
