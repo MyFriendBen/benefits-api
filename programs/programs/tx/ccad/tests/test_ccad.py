@@ -48,7 +48,7 @@ def make_member(age, disabled=False, long_term_disability=False, visually_impair
     member.has_disability = Mock(return_value=disabled or long_term_disability or visually_impaired)
     # Argument-sensitive: only return ssi_income when called as calc_gross_income("yearly", ["sSI"])
     member.calc_gross_income = Mock(side_effect=lambda period, types: ssi_income if types == ["sSI"] else 0)
-    member.has_benefit = Mock(side_effect=lambda b: medicaid if b == "medicaid" else False)
+    member.has_insurance = Mock(side_effect=lambda b: medicaid if b == "medicaid" else False)
     return member
 
 

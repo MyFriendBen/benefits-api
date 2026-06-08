@@ -23,14 +23,14 @@ def make_member(age=35, birth_year_month=None, yearly_income=24_000, insurance_m
 
     member.calc_gross_income = Mock(side_effect=calc_gross_income)
 
-    def has_benefit(name):
+    def has_insurance(name):
         if name == "wa_apple_health_medicaid":
             return insurance_medicaid
         if name == "wa_apple_health_for_kids":
             return insurance_chp
         return False
 
-    member.has_benefit = Mock(side_effect=has_benefit)
+    member.has_insurance = Mock(side_effect=has_insurance)
     return member
 
 

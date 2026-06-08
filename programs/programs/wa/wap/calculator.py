@@ -43,7 +43,7 @@ class WaWap(ProgramCalculator):
         )
 
         categorically_eligible = has_wa_wap_eligible_benefit or any(
-            member.has_benefit("wa_apple_health_medicaid") or member.has_benefit("wa_apple_health_for_kids")
+            member.has_insurance("wa_apple_health_medicaid") or member.has_insurance("wa_apple_health_for_kids")
             for member in self.screen.household_members.all()
         )
 

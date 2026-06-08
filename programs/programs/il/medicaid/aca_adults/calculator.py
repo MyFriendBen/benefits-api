@@ -51,4 +51,4 @@ class AcaAdults(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
         e.condition(not (is_caretaker and has_children))
 
         # Must not have Medicaid
-        e.condition(not member.has_benefit("medicaid"))
+        e.condition(not member.has_insurance("medicaid"))
