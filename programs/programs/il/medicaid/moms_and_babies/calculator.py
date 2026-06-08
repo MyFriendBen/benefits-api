@@ -45,7 +45,7 @@ class MomsAndBabies(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
         e.condition(is_eligible_adult or (is_eligible_newborn and household_has_eligible_adult))
 
         # Must not have Medicaid
-        e.condition(not member.has_benefit("medicaid"))
+        e.condition(not member.has_insurance("medicaid"))
 
     def member_value(self, member: HouseholdMember) -> int:
         if self._is_eligible_newborn(member):

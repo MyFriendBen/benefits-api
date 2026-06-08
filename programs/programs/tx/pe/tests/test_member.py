@@ -1185,7 +1185,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         mock_child = Mock()
         mock_child.id = 2
         mock_child.age = 10
-        mock_child.has_benefit = Mock(return_value=True)  # Child has Medicaid
+        mock_child.has_insurance = Mock(return_value=True)  # Child has Medicaid
 
         # Create a mock screen with the child
         mock_screen = Mock()
@@ -1226,7 +1226,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         mock_child = Mock()
         mock_child.id = 2
         mock_child.age = 10
-        mock_child.has_benefit = Mock(return_value=False)  # Child doesn't have Medicaid yet
+        mock_child.has_insurance = Mock(return_value=False)  # Child doesn't have Medicaid yet
 
         # Create a mock screen with the child
         mock_screen = Mock()
@@ -1265,7 +1265,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         mock_child = Mock()
         mock_child.id = 2
         mock_child.age = 5
-        mock_child.has_benefit = Mock(return_value=True)
+        mock_child.has_insurance = Mock(return_value=True)
 
         # Create a mock screen
         mock_screen = Mock()
@@ -1330,7 +1330,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         mock_child = Mock()
         mock_child.id = 2
         mock_child.age = 10
-        mock_child.has_benefit = Mock(return_value=True)
+        mock_child.has_insurance = Mock(return_value=True)
 
         # Create a mock screen
         mock_screen = Mock()
@@ -1369,7 +1369,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         mock_child = Mock()
         mock_child.id = 2
         mock_child.age = 8
-        mock_child.has_benefit = Mock(return_value=True)
+        mock_child.has_insurance = Mock(return_value=True)
 
         # Create a mock screen
         mock_screen = Mock()
@@ -1431,7 +1431,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         mock_child = Mock()
         mock_child.id = 2
         mock_child.age = 10
-        mock_child.has_benefit = Mock(return_value=True)
+        mock_child.has_insurance = Mock(return_value=True)
 
         # Create a mock screen with the child
         mock_screen = Mock()
@@ -1448,7 +1448,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
 
         # Should return True
         self.assertTrue(result)
-        mock_child.has_benefit.assert_called_once_with("medicaid")
+        mock_child.has_insurance.assert_called_once_with("medicaid")
 
     def test_has_child_with_medicaid_returns_true_for_child_qualifying_via_pe(self):
         """
@@ -1458,7 +1458,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         mock_child = Mock()
         mock_child.id = 2
         mock_child.age = 12
-        mock_child.has_benefit = Mock(return_value=False)  # Doesn't have it yet
+        mock_child.has_insurance = Mock(return_value=False)  # Doesn't have it yet
 
         # Create a mock screen with the child
         mock_screen = Mock()

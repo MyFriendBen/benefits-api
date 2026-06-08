@@ -27,7 +27,7 @@ def make_member(
     member.long_term_disability = long_term_disability
     member.has_disability = Mock(return_value=(disabled or visually_impaired or long_term_disability))
     member.calc_gross_income = Mock(return_value=income)
-    member.has_benefit = Mock(return_value=False)
+    member.has_insurance = Mock(return_value=False)
 
     insurance = Mock()
     insurance.has_insurance_types = Mock(return_value=bool(insurance_types))

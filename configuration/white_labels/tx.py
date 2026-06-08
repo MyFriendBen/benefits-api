@@ -122,23 +122,6 @@ class TxConfigurationData(ConfigurationData):
         },
     }
 
-    # Flattened income options (backward compatible with current FE)
-    income_options = {
-        **ConfigurationData.income_options,
-        "pension": {
-            "_label": "incomeOptions.pension.tx",
-            "_default_message": "Military, Government, or Private Pension",
-        },
-        "cashAssistance": {
-            "_label": "incomeOptions.cashAssistance.tx",
-            "_default_message": "Government Cash Assistance (including TANF)",
-        },
-        "stateDisability": {
-            "_label": "incomeOptions.stateDisability",
-            "_default_message": "State Disability Benefits",
-        },
-    }
-
     health_insurance_options = {
         "you": {
             "none": {
@@ -3208,7 +3191,6 @@ class TxConfigurationData(ConfigurationData):
             ],
         },
         "uiOptions": {"default": []},
-        "featureFlags": {"default": []},  # Deprecated: use uiOptions. Remove as part of MFB-635.
         "defaultLanguage": {"default": "en-us"},
         "stateName": {"default": "Texas"},
         "noResultMessage": {
