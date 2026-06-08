@@ -1,0 +1,67 @@
+{
+  "white_label": {
+    "code": "wa"
+  },
+  "program_category": {
+    "external_name": "wa_housing"
+  },
+  "program": {
+    "name_abbreviated": "wa_wap",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission",
+      "non_citizen"
+    ],
+    "name": "Weatherization Assistance Program (WAP)",
+    "description": "The Weatherization Assistance Program helps make your home warmer in the winter and cooler in the summer. It pays for upgrades like new insulation, fixing heaters, and sealing air leaks. These changes help lower your monthly energy bills. The program is completely free for families who qualify.\n\nLocal agencies run this program in every county. If you qualify, a local team will visit your home for an energy check. They will see which upgrades will help you save the most money. Seniors, people with disabilities, and families with kids get help first. Both homeowners and renters can apply. If you rent, your landlord must give written permission before any work can start.\n\nThis screener checks your general details, but the local agency must verify a few extra things. For example, your home cannot have major safety issues like severe mold or broken walls that make the work unsafe. Also, you cannot get these same upgrades from another program at the same time.\n\nTo apply, you must contact the local agency in your area. You will need to show paperwork to prove your identity, your address, and your income. You can also show proof that you get other public benefits. Wait times for the home check depend on local funding and how many people are waiting.",
+    "description_short": "Free home energy upgrades to lower your bills",
+    "learn_more_link": "https://www.commerce.wa.gov/weatherization/",
+    "apply_button_link": "https://www.commerce.wa.gov/weatherization/",
+    "apply_button_description": "Find Local Agency",
+    "estimated_application_time": "1 - 2 hours",
+    "estimated_delivery_time": "",
+    "estimated_value": "Up to $7,669 per home",
+    "value_format": "lump_sum",
+    "value_type": "benefit",
+    "website_description": "Free home energy upgrades to lower your bills",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": true
+  },
+  "documents": [
+    {
+      "external_name": "wa_home",
+      "text": "Proof of home address (ex: lease, utility bill, mortgage statement)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_id_proof",
+      "text": "Proof of identity (ex: driver's license, state ID)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_earned_income",
+      "text": "Proof of income (ex: pay stubs, tax returns, benefit award letters)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_utility_bills",
+      "text": "Recent utility bills (ex: electric, gas, or heating bills)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "wa_public_assistance",
+      "text": "Proof of benefits if applicable (ex: SNAP, TANF, or SSI award letter)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ]
+}

@@ -3,6 +3,17 @@ from decouple import config
 import requests
 
 
+def _request_failed_message(method_name: str, error: Exception) -> str:
+    """Build the failure message, including PolicyEngine's response body when present.
+    raise_for_status() omits the body, but that's where PE explains *why* (e.g. an
+    unknown version or variable) — surface it so the error is diagnosable in Sentry."""
+    body = ""
+    response = getattr(error, "response", None)
+    if response is not None:
+        body = f" — {response.text}"
+    return f"{method_name} request failed {error}{body}"
+
+
 class Sim:
     method_name = ""
 
@@ -33,7 +44,7 @@ class ApiSim(Sim):
             res.raise_for_status()
             self.response_json = res.json()
         except requests.RequestException as e:
-            raise RuntimeError(f"{self.method_name} request failed {e}") from e
+            raise RuntimeError(_request_failed_message(self.method_name, e)) from e
         except ValueError as e:
             raise RuntimeError(f"{self.method_name} returned non-JSON {e}") from e
         if "result" not in self.response_json:
@@ -91,7 +102,7 @@ class PrivateApiSim(ApiSim):
             res.raise_for_status()
             self.response_json = res.json()
         except requests.RequestException as e:
-            raise RuntimeError(f"{self.method_name} request failed {e}") from e
+            raise RuntimeError(_request_failed_message(self.method_name, e)) from e
         except ValueError as e:
             raise RuntimeError(f"{self.method_name} returned non-JSON {e}") from e
         if "result" not in self.response_json:

@@ -34,7 +34,7 @@ def make_calculator(
     mock_screen.zipcode = zipcode
     mock_screen.county = county
     mock_screen.household_size = household_size
-    mock_screen.has_benefit = Mock(side_effect=lambda b: has_snap if b == "snap" else False)
+    mock_screen.has_benefit = Mock(side_effect=lambda b: has_snap if b == "wa_snap" else False)
     mock_screen.household_members.all = Mock(
         return_value=members if members is not None else [make_member(age=35, yearly_income=24_000)]
     )

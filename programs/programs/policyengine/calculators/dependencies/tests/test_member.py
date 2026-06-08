@@ -42,6 +42,44 @@ class TestAgeDependency(TestCase):
         self.assertEqual(dep.field, "is_disabled")
 
 
+class TestMeetsSsiDisabilityCriteriaDependency(TestCase):
+    """Tests for MeetsSsiDisabilityCriteriaDependency, required by PolicyEngine frontier
+    to classify a person as SSI-disabled (MFB-1102)."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=1,
+            completed=False,
+        )
+
+    def _member(self, **kwargs):
+        return HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=40, **kwargs)
+
+    def test_field_name(self):
+        dep = member.MeetsSsiDisabilityCriteriaDependency(self.screen, self._member(), {})
+        self.assertEqual(dep.field, "meets_ssi_disability_criteria")
+
+    def test_true_when_disabled(self):
+        dep = member.MeetsSsiDisabilityCriteriaDependency(self.screen, self._member(disabled=True), {})
+        self.assertTrue(dep.value())
+
+    def test_true_when_long_term_disability(self):
+        dep = member.MeetsSsiDisabilityCriteriaDependency(self.screen, self._member(long_term_disability=True), {})
+        self.assertTrue(dep.value())
+
+    def test_true_when_visually_impaired(self):
+        dep = member.MeetsSsiDisabilityCriteriaDependency(self.screen, self._member(visually_impaired=True), {})
+        self.assertTrue(dep.value())
+
+    def test_falsy_when_none_apply(self):
+        dep = member.MeetsSsiDisabilityCriteriaDependency(self.screen, self._member(), {})
+        self.assertFalse(dep.value())
+
+
 class TestMemberExpenseDependency(TestCase):
     """Tests for member-level expense dependency classes: SnapChildSupportDependency, PropertyTaxExpenseDependency, and MedicalExpenseDependency."""
 
@@ -1009,10 +1047,10 @@ class TestChildcareAttendingDaysPerMonthDependency(TestCase):
         self.parent = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=30)
         self.child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=3)
 
-    def test_value_returns_default_20_days(self):
-        """Test ChildcareAttendingDaysPerMonthDependency.value() returns default of 20 days per month."""
+    def test_value_returns_10_days(self):
+        """Test ChildcareAttendingDaysPerMonthDependency.value() returns 10 days per month."""
         dep = member.ChildcareAttendingDaysPerMonthDependency(self.screen, self.child, {})
-        self.assertEqual(dep.value(), 20)
+        self.assertEqual(dep.value(), 10)
 
     def test_field_name_is_correct(self):
         """Test that field name matches PolicyEngine's childcare_attending_days_per_month variable."""
@@ -1026,14 +1064,14 @@ class TestChildcareAttendingDaysPerMonthDependency(TestCase):
         self.assertTrue(issubclass(member.ChildcareAttendingDaysPerMonthDependency, Member))
 
     def test_value_same_for_all_children(self):
-        """Test that all children get the same default value of 20 days."""
+        """Test that all children get the same value of 10 days."""
         child2 = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=5)
 
         dep1 = member.ChildcareAttendingDaysPerMonthDependency(self.screen, self.child, {})
         dep2 = member.ChildcareAttendingDaysPerMonthDependency(self.screen, child2, {})
 
-        self.assertEqual(dep1.value(), 20)
-        self.assertEqual(dep2.value(), 20)
+        self.assertEqual(dep1.value(), 10)
+        self.assertEqual(dep2.value(), 10)
 
     def test_works_with_relationship_map(self):
         """Test that dependency works correctly with relationship_map parameter."""
@@ -1042,7 +1080,7 @@ class TestChildcareAttendingDaysPerMonthDependency(TestCase):
         dep = member.ChildcareAttendingDaysPerMonthDependency(self.screen, self.child, relationship_map)
 
         self.assertIsNotNone(dep)
-        self.assertEqual(dep.value(), 20)
+        self.assertEqual(dep.value(), 10)
 
     def test_has_correct_unit(self):
         """Test that dependency has correct unit (people) for PolicyEngine."""
