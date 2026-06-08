@@ -20,7 +20,7 @@ class UtilityBillPay(ProgramCalculator):
 
         if not presumed_eligibility:
             for benefit in self.member_presumptive_eligibility:
-                if any(member.has_benefit(benefit) for member in self.screen.household_members.all()):
+                if any(member.has_insurance(benefit) for member in self.screen.household_members.all()):
                     presumed_eligibility = True
                     break
 

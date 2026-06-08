@@ -20,7 +20,7 @@ class AllKids(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
         e.condition(member.age <= self.max_age)
 
         # Must not have Medicaid
-        e.condition(not member.has_benefit("medicaid"))
+        e.condition(not member.has_insurance("medicaid"))
 
         # Must not already have All Kids (chp)
-        e.condition(not member.has_benefit("chp"))
+        e.condition(not member.has_insurance("chp"))

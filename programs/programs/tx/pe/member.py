@@ -195,7 +195,7 @@ class TxMedicaidForParentsAndCaretakers(Medicaid):
                 continue
 
             # Check if child has Medicaid already
-            if member.has_benefit("medicaid"):
+            if member.has_insurance("medicaid"):
                 return True
 
             # Check if child qualifies for Medicaid (PE value > 0)

@@ -32,7 +32,7 @@ class TxCcad(ProgramCalculator):
                     continue
                 member = member_e.member
                 has_ssi = member.calc_gross_income("yearly", ["sSI"]) > 0
-                has_medicaid = member.has_benefit("medicaid")
+                has_medicaid = member.has_insurance("medicaid")
                 if has_ssi or has_medicaid:
                     presumed_eligible = True
                     break

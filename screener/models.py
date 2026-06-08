@@ -363,15 +363,8 @@ class Screen(models.Model):
 
         return unit
 
-    def has_insurance_types(self, types, strict=True):
-        for member in self.household_members.all():
-            if not hasattr(member, "insurance"):
-                continue
-
-            if member.insurance.has_insurance_types(types, strict):
-                return True
-
-        return False
+    def has_insurance_types(self, types, strict=True) -> bool:
+        return any(member.has_insurance_types(types, strict) for member in self.household_members.all())
 
     def has_benefit_from_list(self, names: list[str]):
         for program in names:
@@ -388,8 +381,7 @@ class Screen(models.Model):
 
         Only used by `_sync_current_benefits()` (and its test-helper mirror in
         `screener/tests/helpers.py`) to write CurrentBenefit rows during the
-        dual-write phase. `HouseholdMember.has_benefit()` does NOT route through
-        here — it has its own member-level `name_map` keyed off `self.insurance`.
+        dual-write phase.
 
         Removed in MFB-869 alongside `_sync_current_benefits` once the serializer
         writes join-table rows directly from the frontend's `current_benefits: [...]`
@@ -763,20 +755,13 @@ class HouseholdMember(models.Model):
     def is_in_tax_unit(self):
         return self.is_head() or self.is_spouse() or self.is_dependent()
 
-    def has_benefit(self, name_abbreviated: str):
+    def has_insurance(self, name_abbreviated: str) -> bool:
+        return self.has_insurance_types((name_abbreviated,), strict=False)
 
-        has_insurance = self.has_insurance_types((name_abbreviated,), strict=False)
-
-        return has_insurance
-
-    def has_insurance_types(self, types, strict=True):
+    def has_insurance_types(self, types, strict=True) -> bool:
         if not hasattr(self, "insurance"):
             return False
-
-        if self.insurance.has_insurance_types(types, strict):
-            return True
-
-        return False
+        return self.insurance.has_insurance_types(types, strict)
 
     @property
     def birth_year(self) -> Optional[int]:
@@ -968,7 +953,7 @@ class Insurance(models.Model):
     # NOTE: Massachusetts combines Medicaid and CHIP into one program called MassHealth
     mass_health = models.BooleanField(default=False)
 
-    def has_insurance_types(self, types, strict=True):
+    def has_insurance_types(self, types, strict=True) -> bool:
         if "none" in types:
             types = (*types, "dont_know")
 
