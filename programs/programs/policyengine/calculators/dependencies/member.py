@@ -500,6 +500,39 @@ class Chip(Member):
     field = "chip"
 
 
+class WicEnrolled(Member):
+    """
+    Reports WIC enrollment to PolicyEngine as a `wic` input (1 = enrolled), for
+    adjunctive eligibility pathways such as Texas FPP §4140.
+
+    WIC is tracked at the screen level (`has_wic`), so enrollment is reported for
+    every member; PE aggregates `wic` across the SPM unit. Returns None when not
+    enrolled so PE calculates WIC normally.
+    """
+
+    field = "wic"
+
+    def value(self):
+        return 1 if self.screen.has_wic else None
+
+
+class ChipEnrolled(Member):
+    """
+    Reports CHIP enrollment to PolicyEngine as a `chip` input (1 = enrolled), for
+    adjunctive eligibility pathways such as Texas FPP §4140, where enrollment of
+    the applicant *or their child* confers categorical income eligibility.
+
+    CHIP is tracked at the screen level (`has_chp`), so enrollment is reported for
+    every member; PE aggregates `chip` across the SPM unit. Returns None when not
+    enrolled so PE calculates CHIP normally.
+    """
+
+    field = "chip"
+
+    def value(self):
+        return 1 if self.screen.has_chp else None
+
+
 class IncomeDependency(Member):
     dependencies = (
         "income_type",
