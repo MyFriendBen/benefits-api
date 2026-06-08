@@ -53,6 +53,19 @@ def calc_pe_eligibility(
                     "response": getattr(method_instance, "response_json", None),
                 },
             }
+        except (SystemExit, KeyboardInterrupt) as e:
+            # Worker is being torn down: gunicorn's SIGABRT handler (fired when a request
+            # exceeds the worker --timeout, e.g. while a PE HTTP call hangs on DNS) calls
+            # sys.exit(), raising SystemExit. That is a BaseException, so the `except
+            # Exception` below never sees it and the death is invisible in Sentry. Capture
+            # it here for visibility, then re-raise so the shutdown proceeds normally.
+            capture_exception(e, level="error")
+            capture_message(
+                f"Worker exited mid-request while calculating eligibility with the "
+                f"{Method.method_name} method",
+                level="error",
+            )
+            raise
         except Exception as e:
             if settings.DEBUG:
                 print(repr(e))
