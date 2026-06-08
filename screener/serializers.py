@@ -138,7 +138,7 @@ class HouseholdMemberSerializer(serializers.ModelSerializer):
         read_only_fields = ("screen", "id")
 
 
-def _benefit_map_from_has_columns(screen) -> dict:
+def _benefit_map_from_has_columns(screen: Screen) -> dict[str, bool]:
     """
     Returns the full `name_abbreviated → bool` map for a screen derived from its
     legacy `has_*` columns, including the fan-out (one `has_*` column → many WL
@@ -309,7 +309,7 @@ def _benefit_map_from_has_columns(screen) -> dict:
 _SSI_BENEFIT_NAMES = frozenset({"ssi", "tx_ssi", "wa_ssi", "cesn_ssi"})
 
 
-def _derived_current_benefit_names(screen) -> set[str]:
+def _derived_current_benefit_names(screen: Screen) -> set[str]:
     """`name_abbreviated` values implied by screen state, independent of the
     frontend's current-benefits toggles.
 
@@ -329,7 +329,7 @@ def _derived_current_benefit_names(screen) -> set[str]:
     return derived
 
 
-def _write_current_benefits(screen, current_benefits):
+def _write_current_benefits(screen: Screen, current_benefits: list[str] | None) -> None:
     """
     Write the CurrentBenefit join table for `screen`, replacing any existing rows.
 
