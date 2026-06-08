@@ -480,12 +480,12 @@ class TestScreen(TestCase):
         # Other tax unit: grandparent couple
         grandparent1 = HouseholdMember.objects.create(screen=self.screen, relationship="grandParent", age=65)
         IncomeStream.objects.create(
-            screen=self.screen, household_member=grandparent1, type="social_security", amount=10000, frequency="yearly"
+            screen=self.screen, household_member=grandparent1, type="social_security", amount=10_000, frequency="yearly"
         )
 
         grandparent2 = HouseholdMember.objects.create(screen=self.screen, relationship="grandParent", age=63)
         IncomeStream.objects.create(
-            screen=self.screen, household_member=grandparent2, type="social_security", amount=10000, frequency="yearly"
+            screen=self.screen, household_member=grandparent2, type="social_security", amount=10_000, frequency="yearly"
         )
 
         result = self.screen.other_tax_unit_structure()
@@ -508,12 +508,12 @@ class TestScreen(TestCase):
         # Other tax unit: parent couple
         parent1 = HouseholdMember.objects.create(screen=self.screen, relationship="parent", age=60)
         IncomeStream.objects.create(
-            screen=self.screen, household_member=parent1, type="social_security", amount=10000, frequency="yearly"
+            screen=self.screen, household_member=parent1, type="social_security", amount=10_000, frequency="yearly"
         )
 
         parent2 = HouseholdMember.objects.create(screen=self.screen, relationship="parent", age=58)
         IncomeStream.objects.create(
-            screen=self.screen, household_member=parent2, type="social_security", amount=10000, frequency="yearly"
+            screen=self.screen, household_member=parent2, type="social_security", amount=10_000, frequency="yearly"
         )
 
         result = self.screen.other_tax_unit_structure()

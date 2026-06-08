@@ -38,7 +38,7 @@ class TestRtdLiveQualifyingRelativeImpact(TestCase):
         return Screen.objects.create(
             white_label=self.white_label,
             completed=False,
-            last_tax_filing_year="2024",
+            last_tax_filing_year="2025",
             zipcode=zipcode,
         )
 
@@ -50,11 +50,11 @@ class TestRtdLiveQualifyingRelativeImpact(TestCase):
         screen = self._make_screen(DENVER_ZIP)
         head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=40)
         IncomeStream.objects.create(
-            screen=screen, household_member=head, type="wages", amount=15000, frequency="yearly"
+            screen=screen, household_member=head, type="wages", amount=15_000, frequency="yearly"
         )
         spouse = HouseholdMember.objects.create(screen=screen, relationship="spouse", age=38)
         IncomeStream.objects.create(
-            screen=screen, household_member=spouse, type="wages", amount=15000, frequency="yearly"
+            screen=screen, household_member=spouse, type="wages", amount=15_000, frequency="yearly"
         )
         adult_child = HouseholdMember.objects.create(screen=screen, relationship="child", age=25, student=False)
 
@@ -75,11 +75,11 @@ class TestRtdLiveQualifyingRelativeImpact(TestCase):
         screen = self._make_screen(DENVER_ZIP)
         head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=40)
         IncomeStream.objects.create(
-            screen=screen, household_member=head, type="wages", amount=40000, frequency="yearly"
+            screen=screen, household_member=head, type="wages", amount=40_000, frequency="yearly"
         )
         spouse = HouseholdMember.objects.create(screen=screen, relationship="spouse", age=38)
         IncomeStream.objects.create(
-            screen=screen, household_member=spouse, type="wages", amount=40000, frequency="yearly"
+            screen=screen, household_member=spouse, type="wages", amount=40_000, frequency="yearly"
         )
         adult_child = HouseholdMember.objects.create(screen=screen, relationship="child", age=25, student=False)
 
@@ -96,15 +96,15 @@ class TestRtdLiveQualifyingRelativeImpact(TestCase):
         screen = self._make_screen(DENVER_ZIP)
         head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=40)
         IncomeStream.objects.create(
-            screen=screen, household_member=head, type="wages", amount=40000, frequency="yearly"
+            screen=screen, household_member=head, type="wages", amount=40_000, frequency="yearly"
         )
         spouse = HouseholdMember.objects.create(screen=screen, relationship="spouse", age=38)
         IncomeStream.objects.create(
-            screen=screen, household_member=spouse, type="wages", amount=40000, frequency="yearly"
+            screen=screen, household_member=spouse, type="wages", amount=40_000, frequency="yearly"
         )
         adult_child = HouseholdMember.objects.create(screen=screen, relationship="child", age=25, student=False)
         IncomeStream.objects.create(
-            screen=screen, household_member=adult_child, type="wages", amount=10000, frequency="yearly"
+            screen=screen, household_member=adult_child, type="wages", amount=10_000, frequency="yearly"
         )
 
         self.assertFalse(adult_child.is_in_tax_unit())
@@ -129,7 +129,7 @@ class TestPropertyCreditRebateQualifyingRelativeImpact(TestCase):
         self.screen = Screen.objects.create(
             white_label=self.white_label,
             completed=False,
-            last_tax_filing_year="2024",
+            last_tax_filing_year="2025",
         )
         HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=45)
 
@@ -143,7 +143,7 @@ class TestPropertyCreditRebateQualifyingRelativeImpact(TestCase):
         """Adult child earning above threshold is not a dependent → still passes the gate."""
         adult_child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=25, student=False)
         IncomeStream.objects.create(
-            screen=self.screen, household_member=adult_child, type="wages", amount=6000, frequency="yearly"
+            screen=self.screen, household_member=adult_child, type="wages", amount=6_000, frequency="yearly"
         )
 
         self.assertFalse(adult_child.is_dependent())
