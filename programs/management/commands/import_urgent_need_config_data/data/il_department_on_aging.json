@@ -5,13 +5,13 @@
     "category_type": {
       "external_name": "il_aging_resources",
       "name": "Aging community resources",
-      "icon": "heart_hand"
+      "icon": "aging"
     },
     "type_short": ["aging resources"],
     "functions": [],
     "translations": {
       "name": "Illinois Department on Aging Programs",
-      "description": "The Illinois Department on Aging offers programs for older adults, including in-home care, adult day services, and caregiver support. These services help older residents stay independent and connected in their communities.",
+      "description": "The Illinois Department on Aging helps older people. They offer help at home, daytime programs, and support for families. These programs help older people live on their own and stay connected to their community.",
       "link": "https://ilaging.illinois.gov/programs.html",
       "warning": "",
       "website_description": "Programs for older adults including home care, adult day services, and caregiver support.",
