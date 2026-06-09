@@ -408,12 +408,8 @@ class Screen(models.Model):
         Reads from the CurrentBenefit join table, written on every POST/PATCH by
         the serializer's `_write_current_benefits()`.
 
-        SSI is the one compound case: an sSI income stream implies `ssi` even if
-        the tile wasn't ticked. That's resolved at write time by
+        Compound cases like SSI are resolved at write time by
         `_derived_current_benefit_names()`, so this read path needs no special-casing.
-        (`ma_mass_health` is a member-level insurance check via
-        `HouseholdMember.has_benefit()`, not a screen-level current benefit, so it
-        never flows through here.)
         """
         return name_abbreviated in self._current_benefit_names
 
