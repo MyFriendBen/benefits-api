@@ -10,8 +10,9 @@ Designed to run weekly via GitHub Actions, but works locally too.
 
 Required environment variables:
   SLACK_BOT_TOKEN     Bot token (xoxb-...) with scopes:
-                        usergroups:write, chat:write, channels:manage
-                        (groups:write for private channels)
+                        usergroups:write, chat:write, channels:manage,
+                        channels:history
+                        (groups:write / groups:history for private channels)
   SLACK_USERGROUP_ID  The user group ID to update (e.g. S01ABC2DEF).
   SLACK_CHANNEL_ID    Channel to announce in + set topic on (e.g. C01ABC2DEF).
 
@@ -120,6 +121,37 @@ def slack_post(method: str, token: str, payload: dict) -> dict:
     return body
 
 
+def already_announced_this_week(token: str, channel: str, ref: date) -> bool:
+    """True if the handoff for `ref`'s week was already posted in `channel`.
+
+    Lets a daily catch-up cron re-apply the (idempotent) usergroup + topic
+    updates without re-spamming the announcement. We look at messages posted
+    since this week's Monday and match our handoff marker (":pager: *On-call
+    this week:*"). conversations.history needs `channels:history` (public) /
+    `groups:history` (private); if that scope is missing or the call fails we
+    return False and fall back to posting — better a duplicate than silence.
+    """
+    week_monday = ref.fromordinal(ref.toordinal() - ref.weekday())
+    oldest = datetime(week_monday.year, week_monday.month, week_monday.day).timestamp()
+    req = urllib.request.Request(
+        f"{SLACK_API}/conversations.history?channel={channel}&oldest={oldest:.0f}&limit=200",
+        headers={"Authorization": f"Bearer {token}"},
+        method="GET",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            body = json.loads(resp.read().decode())
+    except urllib.error.URLError:
+        return False
+    if not body.get("ok"):
+        print(
+            f"Warning: conversations.history failed ({body.get('error')}); " "will post announcement (may duplicate).",
+            file=sys.stderr,
+        )
+        return False
+    return any(":pager: *On-call this week:*" in (m.get("text") or "") for m in body.get("messages", []))
+
+
 def main() -> int:
     config = load_config()
     ref = today()
@@ -173,18 +205,24 @@ def main() -> int:
     if missing:
         sys.exit(f"Missing required env vars: {', '.join(missing)}")
 
-    # 1. Point the user group at the current on-call person.
+    # 1. Point the user group at the current on-call person. Idempotent, so we
+    #    always re-apply it — a catch-up run self-heals a missed Monday.
     slack_post(
         "usergroups.users.update",
         token,
         {"usergroup": usergroup, "users": on_call["slack_id"]},
     )
-    # 2. Announce the handoff (blocks for layout, text for the notification).
-    slack_post(
-        "chat.postMessage",
-        token,
-        {"channel": channel, "text": fallback, "blocks": blocks},
-    )
+    # 2. Announce the handoff — but only once per week. The daily catch-up cron
+    #    re-runs this script; without this guard it would re-post every weekday.
+    if already_announced_this_week(token, channel, ref):
+        print(f"Handoff for week of {ref} already announced; skipping post.")
+    else:
+        # blocks for layout, text for the notification.
+        slack_post(
+            "chat.postMessage",
+            token,
+            {"channel": channel, "text": fallback, "blocks": blocks},
+        )
     # 3. Update the channel topic (best effort; don't fail the run on topic error).
     try:
         slack_post(

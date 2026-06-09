@@ -12,6 +12,13 @@ on:
     # re-applies the same assignment harmlessly.
     - cron: "0 15 * * 1"
     - cron: "0 16 * * 1"
+    # Catch-up safety net. GitHub's scheduled-workflow trigger is best-effort
+    # and silently drops runs under load — the Monday fire can simply never
+    # happen. So we also run mid-morning Tue–Fri: the script re-applies the
+    # (idempotent) usergroup + topic, and posts the handoff announcement only
+    # if it wasn't already posted this week, so a missed Monday self-heals
+    # without spamming the channel on the days Monday worked fine.
+    - cron: "30 16 * * 2-5"
   workflow_dispatch:
     inputs:
       dry_run:
