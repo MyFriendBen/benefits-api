@@ -4,7 +4,7 @@ from screener.models import Screen, HouseholdMember
 STATE_MEDICAID_OPTIONS = ("co_medicaid", "nc_medicaid", "il_medicaid")
 
 # name_abbreviated variants of TANF across white labels.
-TANF_BENEFITS = ["tanf", "nc_tanf", "co_tanf", "il_tanf", "tx_tanf", "ma_tafdc", "cesn_tanf"]
+TANF_BENEFITS = ["tanf", "nc_tanf", "co_tanf", "il_tanf", "tx_tanf", "ma_tafdc", "cesn_tanf", "wa_tanf"]
 
 
 def medicaid_eligible(data: dict[str, Eligibility]):
