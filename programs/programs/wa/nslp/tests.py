@@ -68,15 +68,20 @@ class TestWaNslp(TestCase):
         result = self._calc(screen).calc()
         self.assertFalse(result.eligible)
 
-    def test_ineligible_income_one_dollar_over_reduced_monthly(self):
-        """$4,110/mo for HH3 — over $4,109 monthly reduced-price cap; Medicaid irrelevant."""
+    def test_medicaid_does_not_confer_categorical_eligibility(self):
+        """Medicaid must NOT be a categorical pathway (spec: Medicaid alone must not
+        create categorical eligibility). A school-age child is present, so the only
+        thing that could make this over-income HH3 eligible is wrongly treating
+        Medicaid as presumptive — it stays ineligible because Medicaid isn't in
+        `presumptive_eligibility`. ($4,110/mo > $4,109 monthly reduced-price cap.)"""
+        seed_program(self.white_label, "wa_medicaid")
         screen = self._screen_base(
             zipcode="98103",
             county="King County",
             household_size=3,
-            has_medicaid=True,
             has_benefits="true",
         )
+        set_current_benefits(screen, "wa_medicaid")
         head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=39, has_income=True)
         IncomeStream.objects.create(
             screen=screen, household_member=head, type="wages", amount=4110, frequency="monthly"
