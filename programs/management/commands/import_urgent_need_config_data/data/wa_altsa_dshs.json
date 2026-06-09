@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "wa" },
+  "need": {
+    "external_name": "wa_altsa_dshs",
+    "category_type": {
+      "external_name": "wa_aging_resources",
+      "name": "Aging community resources",
+      "icon": "heart_hand"
+    },
+    "type_short": ["aging resources"],
+    "functions": [],
+    "translations": {
+      "name": "Washington ALTSA / DSHS",
+      "description": "Washington's Aging and Long-Term Support Administration (ALTSA), part of DSHS, provides free information on long-term care, caregiver support, and disability services. These programs help older adults and people with disabilities live safely and as independently as possible.",
+      "link": "https://www.dshs.wa.gov/ALTSA/resources",
+      "warning": "",
+      "website_description": "Free long-term care information, caregiver support, and disability services.",
+      "notification_message": ""
+    },
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

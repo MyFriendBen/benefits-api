@@ -38,6 +38,21 @@ class WaConfigurationData(ConfigurationData):
     }
 
     # ==========================================================================================
+    # ADDITIONAL RESOURCES (Acute conditions step)
+    # ==========================================================================================
+
+    acute_condition_options = {
+        **ConfigurationData.acute_condition_options,
+        "agingResources": {
+            "icon": {"_icon": "Aging", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.agingResources",
+                "_default_message": "Aging Community Resources",
+            },
+        },
+    }
+
+    # ==========================================================================================
     # HEALTH INSURANCE OPTIONS
     # Washington Medicaid is "Apple Health"; CHIP equivalent is "Apple Health for Kids"
     # ==========================================================================================

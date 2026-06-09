@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "tx" },
+  "need": {
+    "external_name": "tx_texas_adrc",
+    "category_type": {
+      "external_name": "tx_aging_resources",
+      "name": "Aging community resources",
+      "icon": "heart_hand"
+    },
+    "type_short": ["aging resources"],
+    "functions": [],
+    "translations": {
+      "name": "Texas Aging and Disability Resource Center (ADRC)",
+      "description": "Aging and Disability Resource Centers (ADRCs) provide free information, referrals, and options counseling for long-term services and supports. They help older adults, people with disabilities, and caregivers understand and connect to the care and support options available to them.",
+      "link": "https://www.hhs.texas.gov/services/aging/long-term-care/aging-disability-resource-centers",
+      "warning": "",
+      "website_description": "Free information, referral, and options counseling for long-term services and supports.",
+      "notification_message": ""
+    },
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

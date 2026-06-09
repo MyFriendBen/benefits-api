@@ -97,6 +97,20 @@ class IlConfigurationData(ConfigurationData):
                 "_default_message": "Free or low-cost help with civil legal needs or IDs",
             },
         },
+        "disabilityResources": {
+            "icon": {"_icon": "Disabled", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.disabilityResources",
+                "_default_message": "Resources for people with disabilities",
+            },
+        },
+        "agingResources": {
+            "icon": {"_icon": "Aging", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.agingResources",
+                "_default_message": "Aging Community Resources",
+            },
+        },
     }
 
     sign_up_options = {

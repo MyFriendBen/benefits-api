@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "il" },
+  "need": {
+    "external_name": "il_department_on_aging",
+    "category_type": {
+      "external_name": "il_aging_resources",
+      "name": "Aging community resources",
+      "icon": "heart_hand"
+    },
+    "type_short": ["aging resources"],
+    "functions": [],
+    "translations": {
+      "name": "Illinois Department on Aging Programs",
+      "description": "The Illinois Department on Aging offers programs for older adults, including in-home care, adult day services, and caregiver support. These services help older residents stay independent and connected in their communities.",
+      "link": "https://ilaging.illinois.gov/programs.html",
+      "warning": "",
+      "website_description": "Programs for older adults including home care, adult day services, and caregiver support.",
+      "notification_message": ""
+    },
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

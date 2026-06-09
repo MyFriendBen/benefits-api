@@ -97,6 +97,13 @@ class TxConfigurationData(ConfigurationData):
                 "_default_message": "Free or low-cost help with civil legal needs or identity documents",
             },
         },
+        "agingResources": {
+            "icon": {"_icon": "Aging", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.agingResources",
+                "_default_message": "Aging Community Resources",
+            },
+        },
     }
 
     # Nested income options organized by category (for future use with categorized UI)

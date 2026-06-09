@@ -613,6 +613,7 @@ def urgent_need_results(screen: Screen, data):
         "veteran services": screen.needs_veteran_services,
         "savings": screen.needs_college_savings,
         "disability resources": screen.needs_disability_resources,
+        "aging resources": screen.needs_aging_resources,
     }
 
     missing_dependencies = screen.missing_fields()
