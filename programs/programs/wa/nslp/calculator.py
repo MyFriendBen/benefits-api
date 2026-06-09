@@ -127,9 +127,7 @@ class WaNslp(ProgramCalculator):
         gross = Decimal(str(self.screen.calc_gross_income("yearly", ["all"])))
         return gross <= red_ann
 
-    # The WA programs that confer NSLP categorical eligibility. Read from the
-    # CurrentBenefit join table (has_benefit_from_list), not the legacy has_*
-    # columns — those are no longer written as of the Step 6 cutover (MFB-720).
+    # WA programs whose receipt confers NSLP categorical eligibility.
     _CATEGORICAL_BENEFITS = ("wa_snap", "wa_tanf", "wa_head_start")
 
     def _household_categorical(self) -> bool:
