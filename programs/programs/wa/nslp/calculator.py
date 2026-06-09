@@ -145,11 +145,9 @@ class WaNslp(ProgramCalculator):
         e.condition(self._is_school_meal_proxy_student(e.member))
 
     def household_eligible(self, e: Eligibility):
-        e.condition(
-            not self.screen.has_benefit("nslp"),
-            messages.must_not_have_benefit("NSLP"),
-        )
-
+        # "Already receives NSLP" is handled centrally by the results layer's
+        # already_has flag (screen.has_benefit(program.name_abbreviated)), so no
+        # in-calculator guard is needed here.
         gross_for_message = int(self.screen.calc_gross_income("yearly", ["all"]))
         income_limit_message = self._reduced_annual_limit()
 

@@ -148,20 +148,6 @@ class TestWaNslp(TestCase):
         result = self._calc(screen).calc()
         self.assertFalse(result.eligible)
 
-    def test_ineligible_already_has_nslp(self):
-        seed_program(self.white_label, "nslp")
-        screen = self._screen_base()
-        set_current_benefits(screen, "nslp")
-        head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=36, has_income=True)
-        IncomeStream.objects.create(
-            screen=screen, household_member=head, type="wages", amount=2000, frequency="monthly"
-        )
-        HouseholdMember.objects.create(screen=screen, relationship="spouse", age=34, has_income=False)
-        HouseholdMember.objects.create(screen=screen, relationship="child", age=7, has_income=False)
-
-        result = self._calc(screen).calc()
-        self.assertFalse(result.eligible)
-
     def test_eligible_head_start_categorical_high_income(self):
         seed_program(self.white_label, "wa_head_start")
         screen = self._screen_base(
