@@ -3,9 +3,6 @@ from screener.models import Screen, HouseholdMember
 
 STATE_MEDICAID_OPTIONS = ("co_medicaid", "nc_medicaid", "il_medicaid")
 
-# name_abbreviated variants of TANF across white labels.
-TANF_BENEFITS = ["tanf", "nc_tanf", "co_tanf", "il_tanf", "tx_tanf", "ma_tafdc", "cesn_tanf", "wa_tanf"]
-
 
 def medicaid_eligible(data: dict[str, Eligibility]):
     for name in STATE_MEDICAID_OPTIONS:
@@ -38,7 +35,7 @@ def snap_ineligible_student(screen: Screen, member: HouseholdMember) -> bool:
         return False
 
     # Exemption 6: Household currently receives TANF
-    if screen.has_benefit_from_list(TANF_BENEFITS):
+    if screen.has_base_benefit("tanf"):
         return False
 
     return True

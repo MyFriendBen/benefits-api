@@ -1,4 +1,4 @@
-from programs.programs.helpers import snap_ineligible_student, TANF_BENEFITS
+from programs.programs.helpers import snap_ineligible_student
 from .base import Member
 
 
@@ -383,7 +383,7 @@ class NcSnapIneligibleStudentDependency(SnapIneligibleStudentDependency):
         if single_parent and screen.num_children(age_max=11) > 0:
             return False
 
-        if screen.has_benefit_from_list(TANF_BENEFITS):
+        if screen.has_base_benefit("tanf"):
             return False
 
         # NC Step 3: employment exemptions
