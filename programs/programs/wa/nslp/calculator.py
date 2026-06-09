@@ -29,6 +29,9 @@ class WaNslp(ProgramCalculator):
 
     ANNUAL_VALUE_PER_CHILD = 828
 
+    # WA programs whose receipt confers NSLP categorical eligibility.
+    presumptive_eligibility = ["wa_snap", "wa_tanf", "wa_head_start"]
+
     # OSPI / USDA Child Nutrition income guidelines, Jul 2025 – Jun 2026 (reduced-price cap).
     _RED_ANN = {
         1: 28_953,
@@ -127,18 +130,6 @@ class WaNslp(ProgramCalculator):
         gross = Decimal(str(self.screen.calc_gross_income("yearly", ["all"])))
         return gross <= red_ann
 
-    # WA programs whose receipt confers NSLP categorical eligibility.
-    _CATEGORICAL_BENEFITS = ("wa_snap", "wa_tanf", "wa_head_start")
-
-    def _household_categorical(self) -> bool:
-        return self.screen.has_benefit_from_list(list(self._CATEGORICAL_BENEFITS))
-
-    def _foster_school_age_categorical(self) -> bool:
-        for m in self.screen.household_members.all():
-            if m.relationship == "fosterChild" and self._is_school_meal_proxy_student(m):
-                return True
-        return False
-
     def member_eligible(self, e: MemberEligibility):
         e.condition(self._is_school_meal_proxy_student(e.member))
 
@@ -146,7 +137,12 @@ class WaNslp(ProgramCalculator):
         gross_for_message = int(self.screen.calc_gross_income("yearly", ["all"]))
         income_limit_message = self._reduced_annual_limit()
 
-        categorical = self._household_categorical() or self._foster_school_age_categorical()
+        # Categorical eligibility: the household receives a qualifying benefit, or a
+        # school-age foster child is present (a foster child is categorically eligible).
+        categorical = any(self.screen.has_benefit(program) for program in self.presumptive_eligibility) or any(
+            m.relationship == "fosterChild" and self._is_school_meal_proxy_student(m)
+            for m in self.screen.household_members.all()
+        )
         income_ok = self._income_at_or_below_reduced_cap()
 
         # Do not attach the income tuple when categorical applies: `Eligibility.condition`
