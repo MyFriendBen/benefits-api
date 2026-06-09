@@ -127,25 +127,13 @@ class WaNslp(ProgramCalculator):
         gross = Decimal(str(self.screen.calc_gross_income("yearly", ["all"])))
         return gross <= red_ann
 
-    # name_abbreviated values that count as each categorical benefit. The current
-    # benefits step records the white-label-specific variant the user selected
-    # (e.g. wa_snap on a WA screen), so we check every variant. Read via the
+    # The WA programs that confer NSLP categorical eligibility. Read from the
     # CurrentBenefit join table (has_benefit_from_list), not the legacy has_*
     # columns — those are no longer written as of the Step 6 cutover (MFB-720).
-    _SNAP_NAMES = ("snap", "co_snap", "il_snap", "ma_snap", "nc_snap", "tx_snap", "cesn_snap", "wa_snap")
-    _TANF_NAMES = ("tanf", "co_tanf", "il_tanf", "nc_tanf", "tx_tanf", "cesn_tanf", "wa_tanf")
-    _HEAD_START_NAMES = ("head_start", "co_head_start", "ma_head_start", "tx_head_start", "wa_head_start")
-    _EARLY_HEAD_START_NAMES = ("early_head_start", "ma_early_head_start", "tx_early_head_start")
+    _CATEGORICAL_BENEFITS = ("wa_snap", "wa_tanf", "wa_head_start")
 
     def _household_categorical(self) -> bool:
-        return self.screen.has_benefit_from_list(
-            [
-                *self._SNAP_NAMES,
-                *self._TANF_NAMES,
-                *self._HEAD_START_NAMES,
-                *self._EARLY_HEAD_START_NAMES,
-            ]
-        )
+        return self.screen.has_benefit_from_list(list(self._CATEGORICAL_BENEFITS))
 
     def _foster_school_age_categorical(self) -> bool:
         for m in self.screen.household_members.all():

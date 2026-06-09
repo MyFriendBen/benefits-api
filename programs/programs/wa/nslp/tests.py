@@ -162,28 +162,6 @@ class TestWaNslp(TestCase):
         result = self._calc(screen).calc()
         self.assertFalse(result.eligible)
 
-    def test_eligible_early_head_start_categorical_high_income(self):
-        # WA's config doesn't currently offer an Early Head Start program, but the
-        # calculator screens on it via _EARLY_HEAD_START_NAMES — seed the bare name
-        # to exercise that pathway.
-        seed_program(self.white_label, "early_head_start")
-        screen = self._screen_base(
-            zipcode="98402",
-            county="Pierce County",
-            has_benefits="true",
-        )
-        set_current_benefits(screen, "early_head_start")
-        head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=33, has_income=True)
-        IncomeStream.objects.create(
-            screen=screen, household_member=head, type="wages", amount=5000, frequency="monthly"
-        )
-        HouseholdMember.objects.create(screen=screen, relationship="spouse", age=32, has_income=False)
-        HouseholdMember.objects.create(screen=screen, relationship="child", age=5, has_income=False)
-
-        result = self._calc(screen).calc()
-        self.assertTrue(result.eligible)
-        self.assertEqual(result.value, 828)
-
     def test_eligible_head_start_categorical_high_income(self):
         seed_program(self.white_label, "wa_head_start")
         screen = self._screen_base(
