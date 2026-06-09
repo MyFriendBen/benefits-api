@@ -9,6 +9,7 @@ NC-specific exemptions are tested in test_member.py via NcSnapIneligibleStudentD
 from django.test import TestCase
 from screener.models import Screen, HouseholdMember, WhiteLabel
 from programs.programs.helpers import snap_ineligible_student
+from screener.tests.helpers import seed_program, set_current_benefits
 
 
 class TestSnapIneligibleStudentHelper(TestCase):
@@ -167,8 +168,8 @@ class TestSnapIneligibleStudentHelper(TestCase):
 
     def test_snap_ineligible_student_returns_false_for_tanf_household(self):
         """Test that student in a household receiving TANF is exempt (Exemption 6)."""
-        self.screen.has_tanf = True
-        self.screen.save()
+        seed_program(self.white_label, "tanf")
+        set_current_benefits(self.screen, "tanf")
 
         member = HouseholdMember.objects.create(
             screen=self.screen, relationship="headOfHousehold", age=25, student=True
