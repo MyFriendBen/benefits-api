@@ -375,29 +375,31 @@ class Screen(models.Model):
 
     @cached_property
     def _current_benefit_names(self) -> set[str]:
-        # Serves from prefetch cache when `current_benefits__program` is prefetched
-        # (zero queries); otherwise one query on first access, cached thereafter.
+        # Serves from the prefetch cache when `current_benefits__program` is
+        # prefetched (zero queries); otherwise one query on first access, cached
+        # thereafter — so repeated has_benefit() checks across a calculator run are
+        # cheap.
         #
-        # ⚠️  STALENESS WARNING — read before reusing this pattern.
-        # This is a per-instance cache. A Screen loaded *before* a write will
-        # NOT see rows written after, even on the same instance. Concretely:
-        #
-        #     _write_current_benefits(screen, ["snap"])  # writes the join table
-        #     screen.has_benefit("snap")                 # ❌ may return False — cache populated pre-write
-        #
-        # Do NOT reach for `del screen._current_benefit_names` to invalidate —
-        # that's a sharp edge that future refactors will silently break. The
-        # supported recovery is to re-fetch the Screen:
-        #
-        #     screen = Screen.objects.get(pk=screen.pk)
-        #     screen.has_benefit("snap")     # ✅
-        #
-        # The eligibility hot path is safe — the view fetches a fresh Screen
-        # on every request. Only admin actions / management commands / tests
-        # that write current_benefits and then read on the same instance are at risk.
-        # A real invalidation hook is deferred to MFB-878 (which removes the legacy
-        # has_* write path this cache predates); we are intentionally NOT adding one here.
+        # Per-instance cache: a Screen loaded before a write won't reflect rows
+        # written after, on the same instance. If you write current_benefits and
+        # then read them back on the same Screen object, call
+        # invalidate_current_benefits_cache() in between (the write path in
+        # serializers.py does this). The eligibility hot path never writes mid-run,
+        # so it needs no invalidation.
         return {cb.program.name_abbreviated for cb in self.current_benefits.all()}
+
+    def invalidate_current_benefits_cache(self) -> None:
+        """Drop the per-instance caches of this screen's current benefits so the
+        next read reflects rows written after this instance was loaded.
+
+        Clears both layers: the `_current_benefit_names` cached_property (backs
+        has_benefit()) and the `current_benefits` relation prefetch cache (backs
+        the serializer read). Call after writing the join table when the same
+        instance will be read again in the request. Safe to call when neither is
+        populated."""
+        self.__dict__.pop("_current_benefit_names", None)
+        if hasattr(self, "_prefetched_objects_cache"):
+            self._prefetched_objects_cache.pop("current_benefits", None)
 
     def has_benefit(self, name_abbreviated: str) -> bool:
         """

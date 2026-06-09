@@ -183,9 +183,34 @@ class ScreenSerializerUpdateTests(TestCase):
 
         self.assertEqual(self._benefit_names(), {"tanf"})
 
-    def test_current_benefits_is_write_only(self):
-        """current_benefits is a write-only field — it is not echoed in serialized output."""
-        self.assertNotIn("current_benefits", ScreenSerializer(self.screen).data)
+    def test_read_returns_join_table_names(self):
+        """The serialized output echoes current_benefits as the sorted join-table names."""
+        _write_current_benefits(self.screen, ["tanf", "snap"])
+
+        data = ScreenSerializer(self.screen).data
+
+        self.assertEqual(data["current_benefits"], ["snap", "tanf"])
+
+    def test_read_empty_when_no_current_benefits(self):
+        """A screen with no current benefits serializes current_benefits as []."""
+        self.assertEqual(ScreenSerializer(self.screen).data["current_benefits"], [])
+
+    def test_update_response_reflects_new_set_with_prefetched_instance(self):
+        """Regression: updating current_benefits returns the NEW set in the response
+        even when the instance was loaded with current_benefits__program prefetched
+        (as the viewset loads it). Without cache invalidation after the write, the
+        stale prefetch cache would echo the pre-write set."""
+        _write_current_benefits(self.screen, ["snap"])
+
+        # Load via the same prefetch the viewset uses — this is what makes the
+        # relation cache stale after the write.
+        instance = Screen.objects.prefetch_related("current_benefits__program").get(pk=self.screen.pk)
+
+        serializer = ScreenSerializer(instance, data=self._base_payload(current_benefits=["tanf"]))
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        self.assertEqual(serializer.data["current_benefits"], ["tanf"])
 
 
 class ScreenSerializerCreateTests(TestCase):
@@ -221,6 +246,14 @@ class ScreenSerializerCreateTests(TestCase):
         screen = serializer.save()
 
         self.assertEqual(self._benefit_names(screen), {"snap", "tanf"})
+
+    def test_create_response_echoes_current_benefits(self):
+        """The create response reflects the written current_benefits (sorted names)."""
+        serializer = ScreenSerializer(data=self._base_payload(current_benefits=["tanf", "snap"]))
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        self.assertEqual(serializer.data["current_benefits"], ["snap", "tanf"])
 
     def test_create_without_current_benefits_is_invalid(self):
         """current_benefits is required on create: omitting it fails validation."""

@@ -227,9 +227,16 @@ class ScreenSerializer(serializers.ModelSerializer):
     user = UserOffersSerializer(read_only=True)
     white_label = serializers.CharField(source="white_label.code")
     energy_calculator = EnergyCalculatorScreenSerializer(required=False, allow_null=True)
-    # The current benefits the household receives: a list of `name_abbreviated`
-    # strings. Write-only — reads surface per-program via the eligibility
-    # "already_has" flag. An empty list clears the join table.
+    # The current benefits the household receives, as a list of `name_abbreviated`
+    # strings. Read and write use the same JSON key but different mechanisms:
+    #
+    #   * Write: this ListField (write_only). The value is popped in create()/update()
+    #     and written to the CurrentBenefit join table by _write_current_benefits().
+    #     An empty list clears the join table.
+    #   * Read: get_read_current_benefits() below, injected under the same key in
+    #     to_representation(). The model attribute `current_benefits` is the reverse
+    #     relation (a manager), not a list of names, so it can't be serialized directly.
+    #
     # max_length bounds an otherwise-unbounded payload: there are ~130 distinct
     # name_abbreviated values across all white labels, so 256 is a comfortable
     # ceiling. Unknown names are dropped in _write_current_benefits(), so element
@@ -333,6 +340,16 @@ class ScreenSerializer(serializers.ModelSerializer):
 
         return attrs
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # current_benefits is write_only as a field; supply the read value here.
+        # Iterate the relation (serves from the current_benefits__program prefetch
+        # the viewset sets up; otherwise one query). create()/update() invalidate the
+        # instance's current-benefits caches after writing, so this reflects the
+        # committed rows even on a write request.
+        data["current_benefits"] = sorted(cb.program.name_abbreviated for cb in instance.current_benefits.all())
+        return data
+
     def create(self, validated_data):
         household_members = validated_data.pop("household_members")
         expenses = validated_data.pop("expenses")
@@ -357,6 +374,7 @@ class ScreenSerializer(serializers.ModelSerializer):
         if energy_calculator_screen is not None:
             EnergyCalculatorScreen.objects.create(**energy_calculator_screen, screen=screen)
         _write_current_benefits(screen, current_benefits)
+        screen.invalidate_current_benefits_cache()
         return screen
 
     def update(self, instance, validated_data):
@@ -396,6 +414,11 @@ class ScreenSerializer(serializers.ModelSerializer):
         instance.refresh_from_db()
         instance.set_screen_is_test()
         _write_current_benefits(instance, current_benefits)
+        # The instance was loaded with current_benefits__program prefetched (the
+        # viewset) and _write_current_benefits replaced those rows on a separately
+        # locked Screen — so this instance's cached view is now stale. Invalidate so
+        # to_representation re-reads the committed rows.
+        instance.invalidate_current_benefits_cache()
         return instance
 
 

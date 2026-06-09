@@ -371,6 +371,57 @@ class TestScreen(TestCase):
             self.assertFalse(prefetched.has_benefit("wic"))
             self.assertFalse(prefetched.has_benefit("ssi"))
 
+    # Tests for Screen.invalidate_current_benefits_cache()
+    #
+    # The hazard: a Screen whose current-benefits cache was populated BEFORE a write
+    # serves stale data on the same instance. invalidate_current_benefits_cache()
+    # clears both cache layers so a subsequent read reflects the write.
+
+    def test_has_benefit_stale_without_invalidation(self):
+        """Documents the hazard: reading has_benefit() before a write caches the
+        empty result, and without invalidation the same instance stays stale."""
+        seed_program(self.white_label, "snap")
+
+        # Populate the cached_property while there are no rows.
+        self.assertFalse(self.screen.has_benefit("snap"))
+        # Write on the same instance.
+        _write_current_benefits(self.screen, ["snap"])
+
+        # Still stale — the cached set was frozen pre-write.
+        self.assertFalse(self.screen.has_benefit("snap"))
+
+    def test_invalidate_refreshes_has_benefit_after_write(self):
+        """After invalidation, has_benefit() reflects rows written post-load on the
+        same instance (clears the _current_benefit_names cached_property)."""
+        seed_program(self.white_label, "snap")
+
+        self.assertFalse(self.screen.has_benefit("snap"))  # populate cache pre-write
+        _write_current_benefits(self.screen, ["snap"])
+        self.screen.invalidate_current_benefits_cache()
+
+        self.assertTrue(self.screen.has_benefit("snap"))
+
+    def test_invalidate_refreshes_prefetched_relation_after_write(self):
+        """After invalidation, the current_benefits relation re-reads post-write rows
+        even when it was loaded with a prefetch (clears the prefetch cache)."""
+        seed_program(self.white_label, "snap", "tanf")
+        _write_current_benefits(self.screen, ["snap"])
+
+        prefetched = Screen.objects.prefetch_related("current_benefits__program").get(pk=self.screen.pk)
+        # Prime the prefetch cache.
+        self.assertEqual({cb.program.name_abbreviated for cb in prefetched.current_benefits.all()}, {"snap"})
+
+        _write_current_benefits(prefetched, ["tanf"])
+        prefetched.invalidate_current_benefits_cache()
+
+        self.assertEqual({cb.program.name_abbreviated for cb in prefetched.current_benefits.all()}, {"tanf"})
+
+    def test_invalidate_is_safe_when_caches_unpopulated(self):
+        """invalidate_current_benefits_cache() is a no-op (no error) when neither
+        the cached_property nor the prefetch cache has been populated."""
+        # Neither _current_benefit_names accessed nor current_benefits prefetched.
+        self.screen.invalidate_current_benefits_cache()  # must not raise
+
     # Tests for Screen.other_tax_unit_structure() method
 
     def test_other_tax_unit_structure_empty_when_all_in_primary_unit(self):
