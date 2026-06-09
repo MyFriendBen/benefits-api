@@ -161,15 +161,18 @@ class ScreenSerializerUpdateTests(TestCase):
 
         self.assertEqual(self._benefit_names(), set())
 
-    def test_update_without_current_benefits_is_invalid(self):
-        """current_benefits is required: a payload omitting it fails validation."""
+    def test_update_without_current_benefits_clears_join_table(self):
+        """current_benefits is optional; an absent key is treated as empty, so a
+        payload omitting it clears the join table (non-frontend clients don't 400)."""
+        _write_current_benefits(self.screen, ["snap"])
         payload = self._base_payload()
         del payload["current_benefits"]
 
         serializer = ScreenSerializer(self.screen, data=payload)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
 
-        self.assertFalse(serializer.is_valid())
-        self.assertIn("current_benefits", serializer.errors)
+        self.assertEqual(self._benefit_names(), set())
 
     def test_update_does_not_accept_has_columns(self):
         """current_benefits is authoritative; a stray has_snap in the payload is
@@ -255,15 +258,18 @@ class ScreenSerializerCreateTests(TestCase):
 
         self.assertEqual(serializer.data["current_benefits"], ["snap", "tanf"])
 
-    def test_create_without_current_benefits_is_invalid(self):
-        """current_benefits is required on create: omitting it fails validation."""
+    def test_create_without_current_benefits_writes_no_rows(self):
+        """current_benefits is optional; an absent key is treated as empty, so a
+        screen created without it has no current-benefit rows (non-frontend clients
+        like validation imports / screen-pull commands don't 400)."""
         payload = self._base_payload()
         del payload["current_benefits"]
 
         serializer = ScreenSerializer(data=payload)
+        serializer.is_valid(raise_exception=True)
+        screen = serializer.save()
 
-        self.assertFalse(serializer.is_valid())
-        self.assertIn("current_benefits", serializer.errors)
+        self.assertEqual(self._benefit_names(screen), set())
 
     def test_create_empty_current_benefits_writes_no_rows(self):
         """A POST with an empty current_benefits list creates a screen with no rows."""

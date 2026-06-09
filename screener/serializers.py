@@ -232,10 +232,12 @@ class ScreenSerializer(serializers.ModelSerializer):
     #
     #   * Write: this ListField (write_only). The value is popped in create()/update()
     #     and written to the CurrentBenefit join table by _write_current_benefits().
-    #     An empty list clears the join table.
-    #   * Read: get_read_current_benefits() below, injected under the same key in
-    #     to_representation(). The model attribute `current_benefits` is the reverse
-    #     relation (a manager), not a list of names, so it can't be serialized directly.
+    #     An empty list clears the join table; an absent key is treated as empty
+    #     (so non-frontend clients that build screens without it — validation
+    #     imports, screen-pull commands — don't 400).
+    #   * Read: to_representation() injects the value under the same key. The model
+    #     attribute `current_benefits` is the reverse relation (a manager), not a
+    #     list of names, so it can't be serialized directly.
     #
     # max_length bounds an otherwise-unbounded payload: there are ~130 distinct
     # name_abbreviated values across all white labels, so 256 is a comfortable
@@ -243,7 +245,7 @@ class ScreenSerializer(serializers.ModelSerializer):
     # content needn't be validated here.
     current_benefits = serializers.ListField(
         child=serializers.CharField(max_length=64),
-        required=True,
+        required=False,
         write_only=True,
         max_length=256,
     )
@@ -355,7 +357,8 @@ class ScreenSerializer(serializers.ModelSerializer):
         expenses = validated_data.pop("expenses")
         energy_calculator_screen = validated_data.pop("energy_calculator", None)
         # Not a Screen column — pop before the create() and write separately.
-        current_benefits = validated_data.pop("current_benefits")
+        # Absent (non-frontend clients) is treated as no current benefits.
+        current_benefits = validated_data.pop("current_benefits", [])
         screen = Screen.objects.create(**validated_data, completed=False)
         screen.set_screen_is_test()
         for member in household_members:
@@ -385,7 +388,8 @@ class ScreenSerializer(serializers.ModelSerializer):
         expenses = validated_data.pop("expenses")
         energy_calculator_screen = validated_data.pop("energy_calculator", None)
         # Not a Screen column — pop before the bulk .update() and write separately.
-        current_benefits = validated_data.pop("current_benefits")
+        # Absent (non-frontend clients) is treated as no current benefits.
+        current_benefits = validated_data.pop("current_benefits", [])
 
         # don't update create only fields
         for field in self.Meta.create_only_fields:
