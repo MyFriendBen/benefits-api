@@ -383,7 +383,7 @@ class NcSnapIneligibleStudentDependency(SnapIneligibleStudentDependency):
         if single_parent and screen.num_children(age_max=11) > 0:
             return False
 
-        if screen.has_tanf:
+        if screen.has_base_benefit("tanf"):
             return False
 
         # NC Step 3: employment exemptions

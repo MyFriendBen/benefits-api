@@ -7,8 +7,10 @@ NC-specific exemptions are tested in test_member.py via NcSnapIneligibleStudentD
 """
 
 from django.test import TestCase
+from programs.models import Program
 from screener.models import Screen, HouseholdMember, WhiteLabel
 from programs.programs.helpers import snap_ineligible_student
+from screener.tests.helpers import seed_program, set_current_benefits
 
 
 class TestSnapIneligibleStudentHelper(TestCase):
@@ -166,9 +168,30 @@ class TestSnapIneligibleStudentHelper(TestCase):
         self.assertTrue(result)
 
     def test_snap_ineligible_student_returns_false_for_tanf_household(self):
-        """Test that student in a household receiving TANF is exempt (Exemption 6)."""
-        self.screen.has_tanf = True
-        self.screen.save()
+        """Test that student in a household receiving TANF is exempt (Exemption 6).
+
+        E6 keys off `Program.base_program == "tanf"`, so the seeded program must
+        carry that grouping.
+        """
+        seed_program(self.white_label, "tanf")
+        Program.objects.filter(white_label=self.white_label, name_abbreviated="tanf").update(base_program="tanf")
+        set_current_benefits(self.screen, "tanf")
+
+        member = HouseholdMember.objects.create(
+            screen=self.screen, relationship="headOfHousehold", age=25, student=True
+        )
+
+        result = snap_ineligible_student(self.screen, member)
+        self.assertFalse(result)
+
+    def test_snap_ineligible_student_exemption_matches_any_tanf_variant(self):
+        """A prefixed TANF variant (e.g. wa_tanf) with base_program="tanf" still
+        triggers Exemption 6 — has_base_benefit groups by base_program, so a newly
+        added state variant is covered without editing any name list. (wa_tanf was
+        the variant the old hand-maintained TANF list missed.)"""
+        seed_program(self.white_label, "wa_tanf")
+        Program.objects.filter(white_label=self.white_label, name_abbreviated="wa_tanf").update(base_program="tanf")
+        set_current_benefits(self.screen, "wa_tanf")
 
         member = HouseholdMember.objects.create(
             screen=self.screen, relationship="headOfHousehold", age=25, student=True

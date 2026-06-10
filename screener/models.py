@@ -402,6 +402,16 @@ class Screen(models.Model):
         # write target, so we are intentionally NOT adding an invalidation hook.
         return {cb.program.name_abbreviated for cb in self.current_benefits.all()}
 
+    @cached_property
+    def _current_benefit_base_programs(self) -> set[str]:
+        # The `base_program` grouping of the household's current benefits — e.g. a
+        # screen receiving wa_tanf / co_tanf / ma_tafdc all contribute "tanf". Backs
+        # has_base_benefit(), letting callers ask "any variant of program X?" without
+        # a hand-maintained name list that goes stale when a new state program is
+        # added. Same prefetch / per-instance cache behavior (and staleness caveat)
+        # as _current_benefit_names above; base_program is nullable, so drop None.
+        return {cb.program.base_program for cb in self.current_benefits.all() if cb.program.base_program is not None}
+
     def has_benefit(self, name_abbreviated: str) -> bool:
         """
         Returns True if the user has declared they already receive the benefit
@@ -420,6 +430,20 @@ class Screen(models.Model):
         read path needs no special-casing.
         """
         return name_abbreviated in self._current_benefit_names
+
+    def has_base_benefit(self, base_program: str) -> bool:
+        """
+        Returns True if the household receives any current benefit whose
+        `Program.base_program` matches — i.e. any white-label variant of that
+        program. `has_base_benefit("tanf")` covers tanf / co_tanf / il_tanf /
+        wa_tanf / ma_tafdc / … without enumerating the names.
+
+        Prefer this over `has_benefit_from_list([...])` when the intent is "any
+        variant of program X across white labels": it reads the structural
+        `base_program` grouping, so a newly added state variant is included
+        automatically as long as its `base_program` is set.
+        """
+        return base_program in self._current_benefit_base_programs
 
     def set_screen_is_test(self):
         referral_source_tests = ["testorprospect", "test"]

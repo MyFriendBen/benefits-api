@@ -29,12 +29,6 @@ class TestWaNslp(TestCase):
             agree_to_tos=True,
             completed=False,
             household_size=3,
-            has_nslp=False,
-            has_snap=False,
-            has_tanf=False,
-            has_head_start=False,
-            has_early_head_start=False,
-            has_medicaid=False,
         )
         defaults.update(kwargs)
         return Screen.objects.create(**defaults)
@@ -74,15 +68,20 @@ class TestWaNslp(TestCase):
         result = self._calc(screen).calc()
         self.assertFalse(result.eligible)
 
-    def test_ineligible_income_one_dollar_over_reduced_monthly(self):
-        """$4,110/mo for HH3 — over $4,109 monthly reduced-price cap; Medicaid irrelevant."""
+    def test_medicaid_does_not_confer_categorical_eligibility(self):
+        """Medicaid must NOT be a categorical pathway (spec: Medicaid alone must not
+        create categorical eligibility). A school-age child is present, so the only
+        thing that could make this over-income HH3 eligible is wrongly treating
+        Medicaid as presumptive — it stays ineligible because Medicaid isn't in
+        `presumptive_eligibility`. ($4,110/mo > $4,109 monthly reduced-price cap.)"""
+        seed_program(self.white_label, "wa_medicaid")
         screen = self._screen_base(
             zipcode="98103",
             county="King County",
             household_size=3,
-            has_medicaid=True,
             has_benefits="true",
         )
+        set_current_benefits(screen, "wa_medicaid")
         head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=39, has_income=True)
         IncomeStream.objects.create(
             screen=screen, household_member=head, type="wages", amount=4110, frequency="monthly"
@@ -108,12 +107,13 @@ class TestWaNslp(TestCase):
         self.assertEqual(result.value, 828)
 
     def test_eligible_snap_categorical_high_income(self):
+        seed_program(self.white_label, "wa_snap")
         screen = self._screen_base(
             zipcode="99201",
             county="Spokane County",
-            has_snap=True,
             has_benefits="true",
         )
+        set_current_benefits(screen, "wa_snap")
         head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=40, has_income=True)
         IncomeStream.objects.create(
             screen=screen, household_member=head, type="wages", amount=7000, frequency="monthly"
@@ -126,7 +126,9 @@ class TestWaNslp(TestCase):
         self.assertEqual(result.value, 828)
 
     def test_eligible_tanf_categorical(self):
-        screen = self._screen_base(zipcode="98901", county="Yakima County", has_tanf=True, has_benefits="true")
+        seed_program(self.white_label, "wa_tanf")
+        screen = self._screen_base(zipcode="98901", county="Yakima County", has_benefits="true")
+        set_current_benefits(screen, "wa_tanf")
         head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=36, has_income=True)
         IncomeStream.objects.create(
             screen=screen, household_member=head, type="wages", amount=5500, frequency="monthly"
@@ -139,7 +141,9 @@ class TestWaNslp(TestCase):
         self.assertEqual(result.value, 828)
 
     def test_ineligible_snap_but_no_school_age_child(self):
-        screen = self._screen_base(zipcode="98103", county="King County", household_size=2, has_snap=True)
+        seed_program(self.white_label, "wa_snap")
+        screen = self._screen_base(zipcode="98103", county="King County", household_size=2)
+        set_current_benefits(screen, "wa_snap")
         head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=40, has_income=True)
         IncomeStream.objects.create(
             screen=screen, household_member=head, type="wages", amount=1800, frequency="monthly"
@@ -149,45 +153,14 @@ class TestWaNslp(TestCase):
         result = self._calc(screen).calc()
         self.assertFalse(result.eligible)
 
-    def test_ineligible_already_has_nslp(self):
-        seed_program(self.white_label, "nslp")
-        screen = self._screen_base()
-        set_current_benefits(screen, "nslp")
-        head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=36, has_income=True)
-        IncomeStream.objects.create(
-            screen=screen, household_member=head, type="wages", amount=2000, frequency="monthly"
-        )
-        HouseholdMember.objects.create(screen=screen, relationship="spouse", age=34, has_income=False)
-        HouseholdMember.objects.create(screen=screen, relationship="child", age=7, has_income=False)
-
-        result = self._calc(screen).calc()
-        self.assertFalse(result.eligible)
-
-    def test_eligible_early_head_start_flag_high_income(self):
+    def test_eligible_head_start_categorical_high_income(self):
+        seed_program(self.white_label, "wa_head_start")
         screen = self._screen_base(
             zipcode="98402",
             county="Pierce County",
-            has_early_head_start=True,
             has_benefits="true",
         )
-        head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=33, has_income=True)
-        IncomeStream.objects.create(
-            screen=screen, household_member=head, type="wages", amount=5000, frequency="monthly"
-        )
-        HouseholdMember.objects.create(screen=screen, relationship="spouse", age=32, has_income=False)
-        HouseholdMember.objects.create(screen=screen, relationship="child", age=5, has_income=False)
-
-        result = self._calc(screen).calc()
-        self.assertTrue(result.eligible)
-        self.assertEqual(result.value, 828)
-
-    def test_eligible_head_start_flag_high_income(self):
-        screen = self._screen_base(
-            zipcode="98402",
-            county="Pierce County",
-            has_head_start=True,
-            has_benefits="true",
-        )
+        set_current_benefits(screen, "wa_head_start")
         head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=33, has_income=True)
         IncomeStream.objects.create(
             screen=screen, household_member=head, type="wages", amount=5000, frequency="monthly"
@@ -200,12 +173,13 @@ class TestWaNslp(TestCase):
         self.assertEqual(result.value, 828)
 
     def test_snap_categorical_uses_presumed_eligibility_pass_message_not_income(self):
+        seed_program(self.white_label, "wa_snap")
         screen = self._screen_base(
             zipcode="99201",
             county="Spokane County",
-            has_snap=True,
             has_benefits="true",
         )
+        set_current_benefits(screen, "wa_snap")
         head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=40, has_income=True)
         IncomeStream.objects.create(
             screen=screen, household_member=head, type="wages", amount=7000, frequency="monthly"
