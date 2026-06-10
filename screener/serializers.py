@@ -545,6 +545,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             "needs_college_savings",
             "needs_veteran_services",
             "needs_disability_resources",
+            "needs_aging_resources",
             "utm_id",
             "utm_source",
             "utm_medium",

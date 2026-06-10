@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "ma" },
+  "need": {
+    "external_name": "ma_massoptions",
+    "category_type": {
+      "external_name": "ma_aging_resources",
+      "name": "Aging community resources",
+      "icon": "aging"
+    },
+    "type_short": ["aging resources"],
+    "functions": [],
+    "translations": {
+      "name": "MassOptions",
+      "description": "MassOptions is a free service for older adults, people with disabilities, and caregivers. They help connect you to the services you need. You can search for local resources or talk to someone who can help. They can help you find long-term care, help at home, and more.",
+      "link": "https://massoptions.org/",
+      "warning": "",
+      "website_description": "Free service connecting older adults, people with disabilities, and caregivers to local services.",
+      "notification_message": ""
+    },
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

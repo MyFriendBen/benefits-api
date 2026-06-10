@@ -121,6 +121,13 @@ class MaConfigurationData(ConfigurationData):
                 "_default_message": "Resources for people with disabilities",
             },
         },
+        "agingResources": {
+            "icon": {"_icon": "Aging", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.agingResources",
+                "_default_message": "Aging Community Resources",
+            },
+        },
     }
 
     sign_up_options = {

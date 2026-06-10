@@ -1,0 +1,26 @@
+{
+  "white_label": { "code": "il" },
+  "need": {
+    "external_name": "il_equip_for_equality",
+    "category_type": {
+      "external_name": "il_disability_resources",
+      "name": "Disability resources",
+      "icon": "disability"
+    },
+    "type_short": ["disability resources"],
+    "functions": [],
+    "translations": {
+      "name": "Equip for Equality",
+      "description": "Equip for Equality helps people with disabilities in Illinois. They offer free legal help and teach people how to stand up for themselves. They work to protect the rights of people with physical and mental disabilities. They can help you learn about your rights and speak up for yourself.",
+      "link": "https://www.equipforequality.org/",
+      "warning": "",
+      "website_description": "Free legal advocacy and self-advocacy assistance for people with disabilities.",
+      "notification_message": ""
+    },
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}
