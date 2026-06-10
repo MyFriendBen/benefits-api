@@ -153,23 +153,6 @@ class Snap(SpmUnit):
         return 1 if self.screen.has_benefit("snap") else None
 
 
-class SnapEnrolled(SpmUnit):
-    """
-    Reports SNAP enrollment to PolicyEngine as a `snap` input (1 = enrolled), for
-    adjunctive eligibility pathways such as Texas FPP §4140.
-
-    Reads the authoritative `has_snap` column directly rather than has_benefit(),
-    whose generic "snap" key does not resolve for state-prefixed programs like
-    "tx_snap" (the join table stores the white-label program name). Returns None
-    when not enrolled so PE calculates SNAP normally.
-    """
-
-    field = "snap"
-
-    def value(self):
-        return 1 if self.screen.has_snap else None
-
-
 class Acp(SpmUnit):
     field = "acp"
 

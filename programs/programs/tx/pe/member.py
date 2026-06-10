@@ -360,64 +360,6 @@ class TxDart(PolicyEngineMembersCalculator):
         return self.get_member_variable(member.id)
 
 
-class TxFpp(PolicyEngineMembersCalculator):
-    """
-    Texas Family Planning Program (FPP) calculator using PolicyEngine.
-
-    This program provides family planning benefits to help individuals choose when to become
-    a parent. Services may include birth control, pregnancy testing, and health care screenings.
-
-    Eligibility requirements (handled by PolicyEngine):
-    - Age eligibility (64 or younger per tx_fpp_age_eligible)
-    - Income at or below 250% of Federal Poverty Level (per tx_fpp_income_eligible),
-      or adjunctive income eligibility via enrollment in SNAP, WIC, or CHIP (§4140)
-
-    Additional eligibility requirements (handled in member_value):
-    - Must not be enrolled in (full) Medicaid — FPP serves those who earn too much
-      for regular Medicaid (§4100). Emergency Medicaid recipients are classified as
-      underinsured and remain eligible, so they are NOT excluded here.
-    """
-
-    pe_name = "tx_fpp_benefit"
-    pe_inputs = [
-        dependency.member.AgeDependency,
-        dependency.household.TxStateCodeDependency,
-        *dependency.irs_gross_income,
-        # §4140 adjunctive income eligibility: report enrollment in SNAP, WIC, and
-        # CHIP so PolicyEngine's tx_fpp_income_eligible can bypass the 250% FPL
-        # income test. (CHIP Perinatal — the 4th §4140 program — is not yet
-        # collected by the screener; tracked as a gap.) These inputs are inert
-        # until the PE-side bypass lands; see the recommended change to
-        # tx_fpp_income_eligible.
-        dependency.spm.SnapEnrolled,
-        dependency.member.WicEnrolled,
-        dependency.member.ChipEnrolled,
-    ]
-    pe_outputs = [dependency.member.TxFpp]
-
-    def member_value(self, member: HouseholdMember):
-        """
-        Returns the FPP benefit value for this member.
-
-        PolicyEngine calculates age and income eligibility. We additionally apply
-        the §4100 cascading insurance screen: only (full) Medicaid enrollees are
-        excluded, since FPP is for those who earn too much for regular Medicaid.
-
-        Emergency Medicaid recipients are explicitly classified as underinsured and
-        remain eligible (§4100), so they are intentionally NOT excluded. Other
-        insured clients may still qualify under the §4200 exception (confidentiality
-        concern OR an annual deductible > 5% of annual income); that exception is
-        surfaced in the program description rather than enforced here.
-        """
-        # §4100: exclude only (full) Medicaid enrollees. Emergency Medicaid is a
-        # separate insurance flag and is intentionally not matched here.
-        if member.has_insurance_types(("medicaid",)):
-            return 0
-
-        # Return PolicyEngine-calculated value (handles age and income eligibility)
-        return self.get_member_variable(member.id)
-
-
 class TxHeadStart(PolicyEngineMembersCalculator):
     """
     Texas Head Start calculator using PolicyEngine.
