@@ -183,7 +183,7 @@ class TestTxCeapEnergyExpenseDependency(TestCase):
         Expense.objects.create(screen=self.screen, type="otherUtilities", amount=25, frequency="monthly")
 
         dep = spm.TxCeapEnergyExpenseDependency(self.screen, None, {})
-        self.assertEqual(dep.value(), 2100)  # ($100 + $50 + $25) * 12
+        self.assertEqual(dep.value(), 2100.0)  # ($100 + $50 + $25) * 12
         self.assertEqual(dep.field, "electricity_expense")
 
     def test_value_counts_heating_only(self):
@@ -191,12 +191,12 @@ class TestTxCeapEnergyExpenseDependency(TestCase):
         Expense.objects.create(screen=self.screen, type="heating", amount=200, frequency="monthly")
 
         dep = spm.TxCeapEnergyExpenseDependency(self.screen, None, {})
-        self.assertEqual(dep.value(), 2400)  # $200 * 12
+        self.assertEqual(dep.value(), 2400.0)  # $200 * 12
 
     def test_value_returns_zero_when_no_energy_expense(self):
         """No energy expense yields 0, which caps the tx_ceap benefit at $0."""
         dep = spm.TxCeapEnergyExpenseDependency(self.screen, None, {})
-        self.assertEqual(dep.value(), 0)
+        self.assertEqual(dep.value(), 0.0)
 
 
 class TestMortgageDependency(TestCase):

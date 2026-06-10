@@ -497,7 +497,7 @@ class TxCeapEnergyExpenseDependency(SpmUnit):
     field = "electricity_expense"
 
     def value(self):
-        return int(self.screen.calc_expenses("yearly", ["heating", "cooling", "otherUtilities"]))
+        return self.screen.calc_expenses("yearly", ["heating", "cooling", "otherUtilities"])
 
 
 class TxCcs(SpmUnit):

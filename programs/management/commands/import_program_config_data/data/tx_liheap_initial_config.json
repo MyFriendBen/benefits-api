@@ -64,10 +64,10 @@
     {
       "external_name": "211_texas",
       "name": "2-1-1 Texas",
-      "email": "",
-      "description": "2-1-1 Texas connects residents with local health and human services resources. Call 2-1-1 to find the Comprehensive Energy Assistance Program (CEAP/LIHEAP) provider in your area.",
+      "email": "211@hhs.texas.gov",
+      "description": "2-1-1 Texas connects residents with local health and human services resources. Call 2-1-1 (press Option 1) to find the Comprehensive Energy Assistance Program (CEAP/LIHEAP) provider in your area.",
       "assistance_link": "https://www.211texas.org/",
-      "phone_number": "877-541-7905",
+      "phone_number": "+18775417905",
       "counties": [],
       "languages": []
     }
