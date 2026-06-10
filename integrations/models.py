@@ -49,7 +49,7 @@ class Link(models.Model):
         ]
         rand_agent_index = random.randint(0, len(user_agents) - 1)
         header = {"User-agent": user_agents[rand_agent_index]}
-        req = requests.get(self.link, headers=header)
+        req = requests.get(self.link, headers=header, timeout=(5, 30))
 
         return req
 

@@ -26,7 +26,7 @@ class Hook:
             request_data[key] = value
 
         try:
-            res = requests.post(self.hook.webhook_url, json=request_data)
+            res = requests.post(self.hook.webhook_url, json=request_data, timeout=(5, 30))
             if res.status_code != 200:
                 capture_message(f"{res.text}", level="error")
                 return Exception(f"{res.status_code}: {res.text}")
