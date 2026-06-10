@@ -12,7 +12,8 @@ class WaNslp(ProgramCalculator):
     Estimates free or reduced-price school lunch eligibility using OSPI 2025–26
     income guidelines (not raw FPL math), frequency-matched income comparison
     when a single pay frequency applies, and screenable categorical pathways
-    (SNAP/Basic Food, TANF, Head Start flags, foster-child proxy).
+    (SNAP/Basic Food, TANF, Head Start, foster-child proxy) read from the
+    household's current benefits.
 
     Value: $828/year per likely eligible student ($4.60 × 180 days, SY 2025–26).
 
@@ -27,6 +28,9 @@ class WaNslp(ProgramCalculator):
     MAX_SCHOOL_MEAL_AGE = 18
 
     ANNUAL_VALUE_PER_CHILD = 828
+
+    # WA programs whose receipt confers NSLP categorical eligibility.
+    presumptive_eligibility = ["wa_snap", "wa_tanf", "wa_head_start"]
 
     # OSPI / USDA Child Nutrition income guidelines, Jul 2025 – Jun 2026 (reduced-price cap).
     _RED_ANN = {
@@ -126,32 +130,19 @@ class WaNslp(ProgramCalculator):
         gross = Decimal(str(self.screen.calc_gross_income("yearly", ["all"])))
         return gross <= red_ann
 
-    def _household_categorical(self) -> bool:
-        if self.screen.has_snap or self.screen.has_tanf:
-            return True
-        if self.screen.has_head_start or self.screen.has_early_head_start:
-            return True
-        return False
-
-    def _foster_school_age_categorical(self) -> bool:
-        for m in self.screen.household_members.all():
-            if m.relationship == "fosterChild" and self._is_school_meal_proxy_student(m):
-                return True
-        return False
-
     def member_eligible(self, e: MemberEligibility):
         e.condition(self._is_school_meal_proxy_student(e.member))
 
     def household_eligible(self, e: Eligibility):
-        e.condition(
-            not self.screen.has_benefit("nslp"),
-            messages.must_not_have_benefit("NSLP"),
-        )
-
         gross_for_message = int(self.screen.calc_gross_income("yearly", ["all"]))
         income_limit_message = self._reduced_annual_limit()
 
-        categorical = self._household_categorical() or self._foster_school_age_categorical()
+        # Categorical eligibility: the household receives a qualifying benefit, or a
+        # school-age foster child is present (a foster child is categorically eligible).
+        categorical = any(self.screen.has_benefit(program) for program in self.presumptive_eligibility) or any(
+            m.relationship == "fosterChild" and self._is_school_meal_proxy_student(m)
+            for m in self.screen.household_members.all()
+        )
         income_ok = self._income_at_or_below_reduced_cap()
 
         # Do not attach the income tuple when categorical applies: `Eligibility.condition`

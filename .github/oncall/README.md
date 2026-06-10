@@ -33,6 +33,11 @@ Grab its ID: open the group, and the URL ends in something like
    - `chat:write` — post the handoff message
    - `channels:manage` — set the topic of a public channel
      (use `groups:write` instead if the channel is private)
+   - `channels:history` — read recent messages so the daily catch-up run can
+     tell whether this week's handoff was already announced
+     (use `groups:history` instead if the channel is private). If this scope
+     is missing the script still works — it just falls back to posting, which
+     may duplicate the announcement on catch-up days.
 3. **Install to Workspace** and copy the **Bot User OAuth Token** (`xoxb-...`).
    This is your `SLACK_BOT_TOKEN`.
 4. Invite the bot to your channel: in the channel, `/invite @YourAppName`.
@@ -89,6 +94,20 @@ The script computes whole weeks elapsed since `anchor_monday` and indexes into
 `members` with modulo, so it's **stateless and idempotent** — running it twice
 in a week (e.g. the two DST-spanning cron entries) just re-applies the same
 assignment. No database, no drift.
+
+### Catch-up safety net
+
+GitHub Actions' `schedule` trigger is **best-effort**: under load it delays
+runs and sometimes drops them entirely, so the Monday fire can silently never
+happen. To cover that, the workflow also runs mid-morning Tue–Fri. On those
+catch-up runs the script re-applies the (idempotent) usergroup + topic, and
+posts the handoff announcement **only if it wasn't already posted this week**
+(checked via `conversations.history`). So a missed Monday self-heals by the
+next morning without re-spamming the channel on weeks Monday worked fine.
+
+If GitHub ever drops a run, you can also force one immediately: **Actions →
+Weekly On-Call Rotation → Run workflow**, or `gh workflow run
+oncall-rotation.yml --ref main`.
 
 ## Changing the rotation
 

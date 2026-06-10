@@ -35,7 +35,7 @@ def snap_ineligible_student(screen: Screen, member: HouseholdMember) -> bool:
         return False
 
     # Exemption 6: Household currently receives TANF
-    if screen.has_tanf:
+    if screen.has_base_benefit("tanf"):
         return False
 
     return True

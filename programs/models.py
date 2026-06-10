@@ -106,12 +106,12 @@ class FplCache(Cache):
         """
         Request the FPL from the API for the indicated year and household size
         """
-        response = requests.get(self._fpl_url(year, household_size), allow_redirects=False)
+        response = requests.get(self._fpl_url(year, household_size), allow_redirects=False, timeout=(5, 30))
         if "Location" in response.headers:
             new_url = response.headers["Location"].replace("http", "https")
             if "https://" not in new_url:
                 new_url = response.headers["Location"].replace("http", "https")
-            response = requests.get(new_url)
+            response = requests.get(new_url, timeout=(5, 30))
 
         response.raise_for_status()
         data = response.json()["data"]
