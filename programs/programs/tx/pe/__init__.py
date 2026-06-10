@@ -32,6 +32,7 @@ tx_spm_calculators = {
     "tx_nslp": spm.TxNslp,
     "tx_tanf": spm.TxTanf,
     "tx_ccs": spm.TxCcs,
+    "tx_liheap": spm.TxCeap,
 }
 
 tx_pe_calculators: dict[str, type[PolicyEngineCalulator]] = {

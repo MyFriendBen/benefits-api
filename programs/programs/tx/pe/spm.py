@@ -87,3 +87,24 @@ class TxCcs(PolicyEngineSpmCalulator):
         dependency.member.AlimonyIncomeDependency,
     ]
     pe_outputs = [dependency.spm.TxCcs]
+
+
+class TxCeap(PolicyEngineSpmCalulator):
+    """
+    Texas Comprehensive Energy Assistance Program (CEAP) — the state's LIHEAP
+    implementation. Helps low-income Texas households pay home heating and cooling
+    costs. Households are eligible at or below 150% FPL, or categorically via
+    TANF/SNAP/SSI receipt (42 U.S.C. § 8624(b)(2)(A)). The benefit is a tiered
+    annual utility-assistance amount (1,800 / 1,500 / 1,200 by FPG bracket per
+    10 TAC § 6.309(e)), capped by the household's reported energy expenses.
+    """
+
+    pe_name = "tx_ceap"
+    pe_inputs = [
+        dependency.household.TxStateCodeDependency,
+        *dependency.irs_gross_income,
+        # tx_ceap caps the payment at electricity_expense + gas_expense; route the
+        # screener's energy expenses into electricity_expense so the cap is non-zero.
+        dependency.spm.TxCeapEnergyExpenseDependency,
+    ]
+    pe_outputs = [dependency.spm.TxCeap]
