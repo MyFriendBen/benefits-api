@@ -5,7 +5,7 @@
     "category_type": {
       "external_name": "ma_disability_resources",
       "name": "Disability resources",
-      "icon": "savings"
+      "icon": "disability"
     },
     "type_short": ["disability resources"],
     "functions": [],
