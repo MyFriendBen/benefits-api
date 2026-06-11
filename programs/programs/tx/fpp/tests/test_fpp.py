@@ -35,8 +35,7 @@ def make_member(age=30, medicaid=False, emergency_medicaid=False, employer=False
 
 
 def make_calculator(
-    has_snap=False,
-    has_wic=False,
+    current_benefits=None,
     has_chp=False,
     household_income=0,
     household_size=1,
@@ -46,25 +45,29 @@ def make_calculator(
     """Create a TxFpp calculator with a mocked screen and program.
 
     The §4140 adjunctive bypass reads enrollment the way a real screen exposes it:
-    SNAP/WIC from the CurrentBenefit join table via has_benefit("tx_snap"/"tx_wic"),
-    and CHIP from per-member insurance via has_insurance_types(("chp",)) — tx_chip is
-    a PolicyEngine eligibility program, never a current benefit. The mocks below
-    mirror those methods rather than the legacy has_snap/has_wic/has_chp columns,
-    which the serializer no longer populates (MFB-720) — so a regression back to
-    reading those dead columns (or to has_benefit("tx_chip"), which is always
-    False) would fail these tests.
+    SNAP/WIC from the CurrentBenefit join table via has_benefit(), and CHIP from
+    per-member insurance via has_insurance_types(("chp",)). The mocks below mirror
+    those methods rather than the legacy has_snap/has_wic/has_chp columns, which the
+    serializer no longer populates (MFB-720) — so a regression back to those dead
+    columns would fail these tests.
+
+    Args:
+        current_benefits: name_abbreviated strings the household already receives,
+            as written to the CurrentBenefit join table — e.g. ["tx_snap", "tx_wic"].
+            Drives has_benefit(). Note tx_chip is never a current benefit (it's a
+            PolicyEngine eligibility program), so passing it here is a no-op; use
+            has_chp for CHIP.
+        has_chp: whether a household member has CHIP coverage — a per-member
+            insurance flag, read via has_insurance_types(("chp",)), not a current
+            benefit.
     """
     mock_program = Mock()
     mock_program.year.get_limit.return_value = fpl_limit
 
-    current_benefits = set()
-    if has_snap:
-        current_benefits.add("tx_snap")
-    if has_wic:
-        current_benefits.add("tx_wic")
+    benefits = set(current_benefits or [])
 
     mock_screen = Mock()
-    mock_screen.has_benefit = Mock(side_effect=lambda name_abbreviated: name_abbreviated in current_benefits)
+    mock_screen.has_benefit = Mock(side_effect=lambda name_abbreviated: name_abbreviated in benefits)
     mock_screen.has_insurance_types = Mock(side_effect=lambda types, strict=True: has_chp and "chp" in types)
     mock_screen.household_size = household_size
     mock_screen.calc_gross_income = Mock(return_value=household_income)
@@ -162,10 +165,9 @@ class TestTxFppHouseholdIncome(TestCase):
 class TestTxFppAdjunctiveBypass(TestCase):
     """§4140 — SNAP / WIC / CHIP enrollment bypasses the income test."""
 
-    def _run(self, has_snap=False, has_wic=False, has_chp=False, household_income=99_999, fpl_limit=15_000):
+    def _run(self, current_benefits=None, has_chp=False, household_income=99_999, fpl_limit=15_000):
         calc = make_calculator(
-            has_snap=has_snap,
-            has_wic=has_wic,
+            current_benefits=current_benefits,
             has_chp=has_chp,
             household_income=household_income,
             fpl_limit=fpl_limit,
@@ -176,10 +178,10 @@ class TestTxFppAdjunctiveBypass(TestCase):
         return e.eligible
 
     def test_snap_bypasses_income_test(self):
-        self.assertTrue(self._run(has_snap=True))
+        self.assertTrue(self._run(current_benefits=["tx_snap"]))
 
     def test_wic_bypasses_income_test(self):
-        self.assertTrue(self._run(has_wic=True))
+        self.assertTrue(self._run(current_benefits=["tx_wic"]))
 
     def test_chip_bypasses_income_test(self):
         self.assertTrue(self._run(has_chp=True))

@@ -73,13 +73,13 @@ class TxFpp(ProgramCalculator):
         # Do NOT read the legacy Screen.has_snap/has_wic/has_chp boolean columns:
         # the join-table migration (MFB-720) dropped them from the serializer write
         # contract, so they are never populated and are permanently False.
-        adjunctive_eligible = (
+        presumptive_eligibility = (
             self.screen.has_benefit("tx_snap")
             or self.screen.has_benefit("tx_wic")
             or self.screen.has_insurance_types(("chp",))
         )
 
-        if adjunctive_eligible:
+        if presumptive_eligibility:
             e.condition(True, messages.presumed_eligibility())
             return
 
