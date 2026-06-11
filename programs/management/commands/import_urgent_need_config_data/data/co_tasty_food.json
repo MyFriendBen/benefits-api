@@ -1,0 +1,27 @@
+{
+  "white_label": { "code": "co" },
+  "need": {
+    "external_name": "co_tasty_food",
+    "category_type": {
+      "external_name": "co_food_or_groceries",
+      "name": "Food or groceries",
+      "icon": "food_groceries"
+    },
+    "type_short": ["food"],
+    "translations": {
+      "name": "Tasty Food (Denver Youth Meals)",
+      "description": "Free meals and snacks for Denver youth ages 3-18, served fresh daily at recreation centers and outdoor pools across the city. No ID or registration required.",
+      "link": "https://www.denvergov.org/Government/Agencies-Departments-Offices/Agencies-Departments-Offices-Directory/Public-Health-Environment/Community-Behavioral-Health/Food-System-Policies/Tasty-Food",
+      "warning": "",
+      "website_description": "Free, fresh meals and snacks for Denver youth ages 3-18 at local rec centers and pools.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "phone_number": "+18558554626",
+    "counties": ["Denver"],
+    "required_expense_types": [],
+    "active": false,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}
