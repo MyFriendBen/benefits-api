@@ -212,9 +212,16 @@ def main() -> int:
         token,
         {"usergroup": usergroup, "users": on_call["slack_id"]},
     )
+    # Has this week's handoff already been announced? If so, this is a catch-up
+    # run on a week that already fired — the announcement and topic are already
+    # correct, so we skip both. (setTopic isn't idempotent from Slack's view: it
+    # emits a "set the channel topic" system line on every call even when the
+    # value is unchanged, so re-applying it would noise the channel daily.)
+    already_announced = already_announced_this_week(token, channel, ref)
+
     # 2. Announce the handoff — but only once per week. The daily catch-up cron
     #    re-runs this script; without this guard it would re-post every weekday.
-    if already_announced_this_week(token, channel, ref):
+    if already_announced:
         print(f"Handoff for week of {ref} already announced; skipping post.")
     else:
         # blocks for layout, text for the notification.
@@ -223,15 +230,20 @@ def main() -> int:
             token,
             {"channel": channel, "text": fallback, "blocks": blocks},
         )
-    # 3. Update the channel topic (best effort; don't fail the run on topic error).
-    try:
-        slack_post(
-            "conversations.setTopic",
-            token,
-            {"channel": channel, "topic": topic},
-        )
-    except SystemExit as exc:
-        print(f"Warning: could not set channel topic: {exc}", file=sys.stderr)
+    # 3. Update the channel topic (best effort; don't fail the run on topic
+    #    error). Skipped on catch-up runs where the handoff already posted — the
+    #    topic was set then and re-applying only emits a noisy system message.
+    if already_announced:
+        print(f"Topic already set for week of {ref}; skipping setTopic.")
+    else:
+        try:
+            slack_post(
+                "conversations.setTopic",
+                token,
+                {"channel": channel, "topic": topic},
+            )
+        except SystemExit as exc:
+            print(f"Warning: could not set channel topic: {exc}", file=sys.stderr)
 
     print(f"On-call updated: {on_call['name']} ({on_call['slack_id']}) for week of {ref}.")
     return 0
