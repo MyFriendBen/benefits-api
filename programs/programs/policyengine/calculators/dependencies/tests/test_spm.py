@@ -167,6 +167,38 @@ class TestUtilityExpenseDependency(TestCase):
         self.assertEqual(dep.field, "water_expense")
 
 
+class TestTxCeapEnergyExpenseDependency(TestCase):
+    """Tests for TxCeapEnergyExpenseDependency, which feeds the tx_ceap (TX LIHEAP) benefit cap."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="78701", county="Travis", household_size=1, completed=False
+        )
+
+    def test_value_sums_heating_cooling_and_other_utilities(self):
+        """value() totals heating, cooling, and otherUtilities into the annual electricity_expense field."""
+        Expense.objects.create(screen=self.screen, type="heating", amount=100, frequency="monthly")
+        Expense.objects.create(screen=self.screen, type="cooling", amount=50, frequency="monthly")
+        Expense.objects.create(screen=self.screen, type="otherUtilities", amount=25, frequency="monthly")
+
+        dep = spm.TxCeapEnergyExpenseDependency(self.screen, None, {})
+        self.assertEqual(dep.value(), 2100.0)  # ($100 + $50 + $25) * 12
+        self.assertEqual(dep.field, "electricity_expense")
+
+    def test_value_counts_heating_only(self):
+        """A heating-only expense (the validation scenario shape) flows through to the cap."""
+        Expense.objects.create(screen=self.screen, type="heating", amount=200, frequency="monthly")
+
+        dep = spm.TxCeapEnergyExpenseDependency(self.screen, None, {})
+        self.assertEqual(dep.value(), 2400.0)  # $200 * 12
+
+    def test_value_returns_zero_when_no_energy_expense(self):
+        """No energy expense yields 0, which caps the tx_ceap benefit at $0."""
+        dep = spm.TxCeapEnergyExpenseDependency(self.screen, None, {})
+        self.assertEqual(dep.value(), 0.0)
+
+
 class TestMortgageDependency(TestCase):
     """Tests for MortgageDependency class used by IL AABD calculator."""
 
