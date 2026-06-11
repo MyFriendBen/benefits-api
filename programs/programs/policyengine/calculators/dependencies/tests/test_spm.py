@@ -7,7 +7,8 @@ by PolicyEngine to determine TX SNAP eligibility and benefit amounts.
 
 from django.test import TestCase
 from screener.models import Screen, HouseholdMember, WhiteLabel, IncomeStream, Expense
-from screener.tests.helpers import seed_program, set_current_benefits
+from screener.tests.helpers import seed_program
+from screener.serializers import _write_current_benefits
 from programs.programs.policyengine.calculators.dependencies import spm
 
 
@@ -485,7 +486,7 @@ class TestSnapDependency(TestCase):
     def test_value_returns_1_when_screen_has_snap(self):
         """When user reports having SNAP, send 1 to PE to enable categorical eligibility."""
         seed_program(self.white_label, "snap")
-        set_current_benefits(self.screen, "snap")
+        _write_current_benefits(self.screen, ["snap"])
 
         dep = spm.Snap(self.screen, None, {})
         self.assertEqual(dep.value(), 1)
@@ -520,7 +521,7 @@ class TestTanfDependency(TestCase):
     def test_value_returns_1_when_screen_has_tanf(self):
         """When user reports having TANF, send 1 to PE to enable categorical eligibility."""
         seed_program(self.white_label, "tanf")
-        set_current_benefits(self.screen, "tanf")
+        _write_current_benefits(self.screen, ["tanf"])
 
         dep = spm.Tanf(self.screen, None, {})
         self.assertEqual(dep.value(), 1)

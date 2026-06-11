@@ -7,7 +7,8 @@ from unittest.mock import patch
 from django.test import TestCase
 from screener.models import Screen, HouseholdMember, WhiteLabel, IncomeStream, Expense
 from screener.feature_flags import FeatureFlagConfig
-from screener.tests.helpers import seed_program, set_current_benefits, sync_current_benefits
+from screener.serializers import _write_current_benefits
+from screener.tests.helpers import seed_program
 
 
 class TestScreen(TestCase):
@@ -228,121 +229,89 @@ class TestScreen(TestCase):
 
     # Tests for Screen.has_benefit() method
     #
-    # has_benefit() reads from the CurrentBenefit join table (the primary write
-    # target as of Step 5a / MFB-869). These tests write join-table rows directly
-    # via set_current_benefits() — the same path a new-frontend `current_benefits`
-    # PATCH takes — instead of the legacy `has_* = True; sync_current_benefits()`
-    # mirror. The fan-out / compound cases below still use the has_* mirror on
-    # purpose, since that logic only lives on the backward-compat write path.
+    # has_benefit() reads from the CurrentBenefit join table. These tests write
+    # rows via `_write_current_benefits(screen, [...])` — the same production path
+    # a `current_benefits` POST/PATCH takes.
 
     def test_has_benefit_returns_true_when_user_has_snap(self):
         """has_benefit('tx_snap') is True when the join table has the row."""
         seed_program(self.white_label, "tx_snap")
-        set_current_benefits(self.screen, "tx_snap")
+        _write_current_benefits(self.screen, ["tx_snap"])
 
         self.assertTrue(self.screen.has_benefit("tx_snap"))
 
     def test_has_benefit_returns_false_when_user_does_not_have_snap(self):
         """has_benefit('tx_snap') is False when no row was written."""
         seed_program(self.white_label, "tx_snap")
-        set_current_benefits(self.screen)
+        _write_current_benefits(self.screen, [])
 
         self.assertFalse(self.screen.has_benefit("tx_snap"))
 
     def test_has_benefit_returns_true_when_user_has_wa_snap(self):
         """has_benefit('wa_snap') is True when the join table has the row."""
         seed_program(self.white_label, "wa_snap")
-        set_current_benefits(self.screen, "wa_snap")
+        _write_current_benefits(self.screen, ["wa_snap"])
 
         self.assertTrue(self.screen.has_benefit("wa_snap"))
 
     def test_has_benefit_returns_false_when_user_does_not_have_wa_snap(self):
         """has_benefit('wa_snap') is False when no row was written."""
         seed_program(self.white_label, "wa_snap")
-        set_current_benefits(self.screen)
+        _write_current_benefits(self.screen, [])
 
         self.assertFalse(self.screen.has_benefit("wa_snap"))
 
     def test_has_benefit_returns_true_for_ma_head_start_when_user_has_head_start(self):
         """has_benefit('ma_head_start') is True when the join table has the row."""
         seed_program(self.white_label, "ma_head_start")
-        set_current_benefits(self.screen, "ma_head_start")
+        _write_current_benefits(self.screen, ["ma_head_start"])
 
         self.assertTrue(self.screen.has_benefit("ma_head_start"))
 
     def test_has_benefit_returns_false_for_ma_head_start_when_user_does_not_have_head_start(self):
         """has_benefit('ma_head_start') is False when no row was written."""
         seed_program(self.white_label, "ma_head_start")
-        set_current_benefits(self.screen)
+        _write_current_benefits(self.screen, [])
 
         self.assertFalse(self.screen.has_benefit("ma_head_start"))
 
     def test_has_benefit_returns_true_for_ma_early_head_start_when_user_has_early_head_start(self):
         """has_benefit('ma_early_head_start') is True when the join table has the row."""
         seed_program(self.white_label, "ma_early_head_start")
-        set_current_benefits(self.screen, "ma_early_head_start")
+        _write_current_benefits(self.screen, ["ma_early_head_start"])
 
         self.assertTrue(self.screen.has_benefit("ma_early_head_start"))
 
     def test_has_benefit_returns_false_for_ma_early_head_start_when_user_does_not_have_early_head_start(self):
         """has_benefit('ma_early_head_start') is False when no row was written."""
         seed_program(self.white_label, "ma_early_head_start")
-        set_current_benefits(self.screen)
+        _write_current_benefits(self.screen, [])
 
         self.assertFalse(self.screen.has_benefit("ma_early_head_start"))
 
-    # Backward-compat fan-out / compound cases — these specifically lock in the
-    # has_* → join-table mapping that lives on the backward-compat write path
-    # (`_benefit_map_from_has_columns`, exercised via sync_current_benefits()).
-    # They intentionally keep the `has_* = True; sync_current_benefits()` pattern
-    # because that mapping is the thing under test; both go away in Step 6
-    # (MFB-720) when the has_* write path is removed.
-
-    def test_has_benefit_multi_wl_variants_resolve_to_same_column(self):
+    def test_has_benefit_writes_each_requested_name(self):
         """
-        Both 'snap' and 'co_snap' point at has_snap. After sync, has_benefit
-        is True for both keys, validating that name fan-out works at the
-        program-FK level on the join table.
+        The frontend sends each white-label variant explicitly (no server-side
+        fan-out): a list of ['snap', 'co_snap'] writes a row for each, so
+        has_benefit is True for both and untouched names stay False.
         """
-        seed_program(self.white_label, "snap", "co_snap")
-        self.screen.has_snap = True
-        self.screen.save()
-        sync_current_benefits(self.screen)
+        seed_program(self.white_label, "snap", "co_snap", "tanf")
+        _write_current_benefits(self.screen, ["snap", "co_snap"])
 
         self.assertTrue(self.screen.has_benefit("snap"))
         self.assertTrue(self.screen.has_benefit("co_snap"))
+        self.assertFalse(self.screen.has_benefit("tanf"))
 
-    def test_has_benefit_multi_wl_variants_tanf(self):
-        """Same fan-out check for has_tanf → tanf / co_tanf / il_tanf."""
-        seed_program(self.white_label, "tanf", "co_tanf", "il_tanf")
-        self.screen.has_tanf = True
-        self.screen.save()
-        sync_current_benefits(self.screen)
+    # Compound: an sSI income stream implies SSI even when the tile wasn't ticked
+    # (the one derived rule, via `_derived_current_benefit_names()`).
 
-        self.assertTrue(self.screen.has_benefit("tanf"))
-        self.assertTrue(self.screen.has_benefit("co_tanf"))
-        self.assertTrue(self.screen.has_benefit("il_tanf"))
-
-    def test_has_benefit_compound_ssi_via_has_ssi_column(self):
-        """ssi resolves True when has_ssi=True (one half of the OR)."""
-        seed_program(self.white_label, "ssi", "tx_ssi", "cesn_ssi")
-        self.screen.has_ssi = True
-        self.screen.save()
-        sync_current_benefits(self.screen)
-
-        self.assertTrue(self.screen.has_benefit("ssi"))
-        self.assertTrue(self.screen.has_benefit("tx_ssi"))
-        self.assertTrue(self.screen.has_benefit("cesn_ssi"))
-
-    def test_has_benefit_compound_ssi_via_ssi_income(self):
+    def test_has_benefit_ssi_derived_from_income_without_tile(self):
         """
-        ssi resolves True via reported sSI income (the other half of the OR),
-        even when has_ssi=False. This is the case that would silently break
-        without the compound-at-write-time path.
+        ssi resolves True via reported sSI income even when the SSI tile wasn't
+        selected (empty current_benefits). This is the case that would silently
+        break without the derive-at-write-time path.
         """
         seed_program(self.white_label, "ssi")
-        self.screen.has_ssi = False
-        self.screen.save()
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=self.head,
@@ -350,28 +319,18 @@ class TestScreen(TestCase):
             amount=500,
             frequency="monthly",
         )
-        sync_current_benefits(self.screen)
+        _write_current_benefits(self.screen, [])
 
         self.assertTrue(self.screen.has_benefit("ssi"))
 
-    def test_has_benefit_compound_ma_mass_health_via_has_medicaid(self):
-        """ma_mass_health resolves True when has_medicaid=True."""
-        seed_program(self.white_label, "ma_mass_health")
-        self.screen.has_medicaid = True
-        self.screen.save()
-        sync_current_benefits(self.screen)
+    def test_has_benefit_ssi_from_explicit_tile(self):
+        """ssi (and offered variants) resolve True when sent explicitly."""
+        seed_program(self.white_label, "ssi", "tx_ssi", "cesn_ssi")
+        _write_current_benefits(self.screen, ["ssi", "tx_ssi", "cesn_ssi"])
 
-        self.assertTrue(self.screen.has_benefit("ma_mass_health"))
-
-    def test_has_benefit_compound_ma_mass_health_via_has_medicaid_hi(self):
-        """ma_mass_health resolves True when only has_medicaid_hi=True."""
-        seed_program(self.white_label, "ma_mass_health")
-        self.screen.has_medicaid = False
-        self.screen.has_medicaid_hi = True
-        self.screen.save()
-        sync_current_benefits(self.screen)
-
-        self.assertTrue(self.screen.has_benefit("ma_mass_health"))
+        self.assertTrue(self.screen.has_benefit("ssi"))
+        self.assertTrue(self.screen.has_benefit("tx_ssi"))
+        self.assertTrue(self.screen.has_benefit("cesn_ssi"))
 
     def test_has_benefit_unknown_program_returns_false(self):
         """Unknown name_abbreviated returns False (no row in join table)."""
@@ -389,7 +348,7 @@ class TestScreen(TestCase):
         other_screen = Screen.objects.create(
             white_label=self.white_label, zipcode="78701", household_size=1, completed=False
         )
-        set_current_benefits(other_screen, "snap")
+        _write_current_benefits(other_screen, ["snap"])
 
         # self.screen has no current_benefits rows
         self.assertFalse(self.screen.has_benefit("snap"))
@@ -401,7 +360,7 @@ class TestScreen(TestCase):
         the lookup from the in-memory cache.
         """
         seed_program(self.white_label, "snap", "tanf", "wic", "ssi")
-        set_current_benefits(self.screen, "snap", "tanf")
+        _write_current_benefits(self.screen, ["snap", "tanf"])
 
         prefetched = Screen.objects.prefetch_related("current_benefits__program").get(pk=self.screen.pk)
 
@@ -411,6 +370,57 @@ class TestScreen(TestCase):
             self.assertTrue(prefetched.has_benefit("tanf"))
             self.assertFalse(prefetched.has_benefit("wic"))
             self.assertFalse(prefetched.has_benefit("ssi"))
+
+    # Tests for Screen.invalidate_current_benefits_cache()
+    #
+    # The hazard: a Screen whose current-benefits cache was populated BEFORE a write
+    # serves stale data on the same instance. invalidate_current_benefits_cache()
+    # clears both cache layers so a subsequent read reflects the write.
+
+    def test_has_benefit_stale_without_invalidation(self):
+        """Documents the hazard: reading has_benefit() before a write caches the
+        empty result, and without invalidation the same instance stays stale."""
+        seed_program(self.white_label, "snap")
+
+        # Populate the cached_property while there are no rows.
+        self.assertFalse(self.screen.has_benefit("snap"))
+        # Write on the same instance.
+        _write_current_benefits(self.screen, ["snap"])
+
+        # Still stale — the cached set was frozen pre-write.
+        self.assertFalse(self.screen.has_benefit("snap"))
+
+    def test_invalidate_refreshes_has_benefit_after_write(self):
+        """After invalidation, has_benefit() reflects rows written post-load on the
+        same instance (clears the _current_benefit_names cached_property)."""
+        seed_program(self.white_label, "snap")
+
+        self.assertFalse(self.screen.has_benefit("snap"))  # populate cache pre-write
+        _write_current_benefits(self.screen, ["snap"])
+        self.screen.invalidate_current_benefits_cache()
+
+        self.assertTrue(self.screen.has_benefit("snap"))
+
+    def test_invalidate_refreshes_prefetched_relation_after_write(self):
+        """After invalidation, the current_benefits relation re-reads post-write rows
+        even when it was loaded with a prefetch (clears the prefetch cache)."""
+        seed_program(self.white_label, "snap", "tanf")
+        _write_current_benefits(self.screen, ["snap"])
+
+        prefetched = Screen.objects.prefetch_related("current_benefits__program").get(pk=self.screen.pk)
+        # Prime the prefetch cache.
+        self.assertEqual({cb.program.name_abbreviated for cb in prefetched.current_benefits.all()}, {"snap"})
+
+        _write_current_benefits(prefetched, ["tanf"])
+        prefetched.invalidate_current_benefits_cache()
+
+        self.assertEqual({cb.program.name_abbreviated for cb in prefetched.current_benefits.all()}, {"tanf"})
+
+    def test_invalidate_is_safe_when_caches_unpopulated(self):
+        """invalidate_current_benefits_cache() is a no-op (no error) when neither
+        the cached_property nor the prefetch cache has been populated."""
+        # Neither _current_benefit_names accessed nor current_benefits prefetched.
+        self.screen.invalidate_current_benefits_cache()  # must not raise
 
     # Tests for Screen.other_tax_unit_structure() method
 

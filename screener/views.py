@@ -76,7 +76,9 @@ class ScreenViewSet(
     API endpoint that allows screens to be viewed or edited.
     """
 
-    queryset = Screen.objects.all().order_by("-submission_date")
+    # Prefetch current_benefits__program so ScreenSerializer.to_representation can
+    # build the current_benefits list without a per-screen query.
+    queryset = Screen.objects.all().prefetch_related("current_benefits__program").order_by("-submission_date")
     serializer_class = ScreenSerializer
     permission_classes = [permissions.DjangoModelPermissions]
     filterset_fields = ["agree_to_tos", "is_test"]

@@ -1,15 +1,10 @@
 """
-Tests for the ScreenSerializer current-benefits write path (Step 5a / MFB-869).
+Tests for the ScreenSerializer current-benefits write path.
 
-The CurrentBenefit join table is the primary write target. Two write paths feed it:
-
-* New frontend — `current_benefits: ["snap", "tanf"]` (list of name_abbreviated),
-  written directly via a WL-scoped Program lookup.
-* Old frontend (backward compat) — legacy `has_*` columns, mirrored into the join
-  table through `_benefit_map_from_has_columns()`. Removed in Step 6 (MFB-720).
-
-These cover `_write_current_benefits()` (the shared helper) directly and the
-serializer `update()` path end to end.
+The frontend sends `current_benefits: ["snap", "tanf"]` (a list of
+name_abbreviated, a required field), written to the CurrentBenefit join table via
+a white-label-scoped Program lookup. These cover `_write_current_benefits()` (the
+shared helper) directly and the serializer `create()` / `update()` paths end to end.
 """
 
 from django.test import TestCase
@@ -120,31 +115,6 @@ class WriteCurrentBenefitsTests(TestCase):
         # Only the variant this WL offers is written; tx_ssi / wa_ssi / cesn_ssi are dropped.
         self.assertEqual(self._benefit_names(self.screen), {"ssi"})
 
-    def test_backward_compat_path_mirrors_has_columns(self):
-        """current_benefits=None mirrors the legacy has_* columns (fan-out included)."""
-        seed_program(self.white_label, "co_snap")
-        self.screen.has_snap = True
-        self.screen.save()
-
-        _write_current_benefits(self.screen, None)
-
-        # has_snap fans out to every snap variant Program in this WL.
-        self.assertEqual(self._benefit_names(self.screen), {"snap", "co_snap"})
-
-    def test_backward_compat_path_compound_ssi_via_income(self):
-        """current_benefits=None resolves the ssi compound condition from sSI income."""
-        seed_program(self.white_label, "ssi")
-        head = HouseholdMember.objects.create(
-            screen=self.screen, relationship="headOfHousehold", age=40, has_income=True
-        )
-        IncomeStream.objects.create(
-            screen=self.screen, household_member=head, type="sSI", amount=500, frequency="monthly"
-        )
-
-        _write_current_benefits(self.screen, None)
-
-        self.assertIn("ssi", self._benefit_names(self.screen))
-
 
 class ScreenSerializerUpdateTests(TestCase):
     """End-to-end coverage of `current_benefits` flowing through serializer.update()."""
@@ -157,10 +127,13 @@ class ScreenSerializerUpdateTests(TestCase):
         seed_program(self.white_label, "snap", "tanf")
 
     def _base_payload(self, **extra):
+        # current_benefits is required; default to an empty list so each test
+        # can override it explicitly.
         payload = {
             "white_label": self.white_label.code,
             "household_members": [],
             "expenses": [],
+            "current_benefits": [],
         }
         payload.update(extra)
         return payload
@@ -178,16 +151,32 @@ class ScreenSerializerUpdateTests(TestCase):
 
         self.assertEqual(self._benefit_names(), {"snap", "tanf"})
 
-    def test_update_without_current_benefits_falls_back_to_has_columns(self):
-        """A PATCH with no current_benefits key mirrors from has_* (old frontend)."""
-        serializer = ScreenSerializer(self.screen, data=self._base_payload(has_snap=True))
+    def test_update_empty_current_benefits_clears_join_table(self):
+        """A PATCH with an empty current_benefits list clears the join table."""
+        _write_current_benefits(self.screen, ["snap"])
+
+        serializer = ScreenSerializer(self.screen, data=self._base_payload(current_benefits=[]))
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        self.assertEqual(self._benefit_names(), {"snap"})
+        self.assertEqual(self._benefit_names(), set())
 
-    def test_update_current_benefits_takes_precedence_over_has_columns(self):
-        """When both are sent, the explicit current_benefits list is authoritative."""
+    def test_update_without_current_benefits_clears_join_table(self):
+        """current_benefits is optional; an absent key is treated as empty, so a
+        payload omitting it clears the join table (non-frontend clients don't 400)."""
+        _write_current_benefits(self.screen, ["snap"])
+        payload = self._base_payload()
+        del payload["current_benefits"]
+
+        serializer = ScreenSerializer(self.screen, data=payload)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        self.assertEqual(self._benefit_names(), set())
+
+    def test_update_does_not_accept_has_columns(self):
+        """current_benefits is authoritative; a stray has_snap in the payload is
+        ignored (not a serializer field)."""
         serializer = ScreenSerializer(
             self.screen,
             data=self._base_payload(current_benefits=["tanf"], has_snap=True),
@@ -197,9 +186,34 @@ class ScreenSerializerUpdateTests(TestCase):
 
         self.assertEqual(self._benefit_names(), {"tanf"})
 
-    def test_current_benefits_is_write_only(self):
-        """current_benefits is a write-only field — it is not echoed in serialized output."""
-        self.assertNotIn("current_benefits", ScreenSerializer(self.screen).data)
+    def test_read_returns_join_table_names(self):
+        """The serialized output echoes current_benefits as the sorted join-table names."""
+        _write_current_benefits(self.screen, ["tanf", "snap"])
+
+        data = ScreenSerializer(self.screen).data
+
+        self.assertEqual(data["current_benefits"], ["snap", "tanf"])
+
+    def test_read_empty_when_no_current_benefits(self):
+        """A screen with no current benefits serializes current_benefits as []."""
+        self.assertEqual(ScreenSerializer(self.screen).data["current_benefits"], [])
+
+    def test_update_response_reflects_new_set_with_prefetched_instance(self):
+        """Regression: updating current_benefits returns the NEW set in the response
+        even when the instance was loaded with current_benefits__program prefetched
+        (as the viewset loads it). Without cache invalidation after the write, the
+        stale prefetch cache would echo the pre-write set."""
+        _write_current_benefits(self.screen, ["snap"])
+
+        # Load via the same prefetch the viewset uses — this is what makes the
+        # relation cache stale after the write.
+        instance = Screen.objects.prefetch_related("current_benefits__program").get(pk=self.screen.pk)
+
+        serializer = ScreenSerializer(instance, data=self._base_payload(current_benefits=["tanf"]))
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        self.assertEqual(serializer.data["current_benefits"], ["tanf"])
 
 
 class ScreenSerializerCreateTests(TestCase):
@@ -214,10 +228,13 @@ class ScreenSerializerCreateTests(TestCase):
         seed_program(self.white_label, "snap", "tanf")
 
     def _base_payload(self, **extra):
+        # current_benefits is required; default to an empty list so each test
+        # can override it explicitly.
         payload = {
             "white_label": self.white_label.code,
             "household_members": [],
             "expenses": [],
+            "current_benefits": [],
         }
         payload.update(extra)
         return payload
@@ -233,10 +250,31 @@ class ScreenSerializerCreateTests(TestCase):
 
         self.assertEqual(self._benefit_names(screen), {"snap", "tanf"})
 
-    def test_create_without_current_benefits_falls_back_to_has_columns(self):
-        """A POST with no current_benefits key mirrors from has_* (old frontend)."""
-        serializer = ScreenSerializer(data=self._base_payload(has_snap=True))
+    def test_create_response_echoes_current_benefits(self):
+        """The create response reflects the written current_benefits (sorted names)."""
+        serializer = ScreenSerializer(data=self._base_payload(current_benefits=["tanf", "snap"]))
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        self.assertEqual(serializer.data["current_benefits"], ["snap", "tanf"])
+
+    def test_create_without_current_benefits_writes_no_rows(self):
+        """current_benefits is optional; an absent key is treated as empty, so a
+        screen created without it has no current-benefit rows (non-frontend clients
+        like validation imports / screen-pull commands don't 400)."""
+        payload = self._base_payload()
+        del payload["current_benefits"]
+
+        serializer = ScreenSerializer(data=payload)
         serializer.is_valid(raise_exception=True)
         screen = serializer.save()
 
-        self.assertEqual(self._benefit_names(screen), {"snap"})
+        self.assertEqual(self._benefit_names(screen), set())
+
+    def test_create_empty_current_benefits_writes_no_rows(self):
+        """A POST with an empty current_benefits list creates a screen with no rows."""
+        serializer = ScreenSerializer(data=self._base_payload(current_benefits=[]))
+        serializer.is_valid(raise_exception=True)
+        screen = serializer.save()
+
+        self.assertEqual(self._benefit_names(screen), set())

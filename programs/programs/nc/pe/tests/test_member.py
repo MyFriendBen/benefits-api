@@ -6,7 +6,8 @@ from django.test import TestCase
 from programs.models import Program
 from screener.models import Screen, HouseholdMember, WhiteLabel
 from programs.programs.policyengine.calculators.dependencies.member import NcSnapIneligibleStudentDependency
-from screener.tests.helpers import seed_program, set_current_benefits
+from screener.tests.helpers import seed_program
+from screener.serializers import _write_current_benefits
 
 
 class TestNcSnapIneligibleStudentDependency(TestCase):
@@ -124,7 +125,7 @@ class TestNcSnapIneligibleStudentDependency(TestCase):
         """
         seed_program(self.white_label, "nc_tanf")
         Program.objects.filter(white_label=self.white_label, name_abbreviated="nc_tanf").update(base_program="tanf")
-        set_current_benefits(self.screen, "nc_tanf")
+        _write_current_benefits(self.screen, ["nc_tanf"])
 
         member = HouseholdMember.objects.create(
             screen=self.screen, relationship="headOfHousehold", age=25, student=True, student_full_time=True

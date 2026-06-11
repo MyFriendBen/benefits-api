@@ -8,7 +8,8 @@ from programs.programs.wa import wa_calculators
 from programs.programs.wa.nslp.calculator import WaNslp
 from programs.util import Dependencies
 from screener.models import HouseholdMember, IncomeStream, Screen, WhiteLabel
-from screener.tests.helpers import seed_program, set_current_benefits
+from screener.tests.helpers import seed_program
+from screener.serializers import _write_current_benefits
 
 
 class TestWaNslp(TestCase):
@@ -81,7 +82,7 @@ class TestWaNslp(TestCase):
             household_size=3,
             has_benefits="true",
         )
-        set_current_benefits(screen, "wa_medicaid")
+        _write_current_benefits(screen, ["wa_medicaid"])
         head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=39, has_income=True)
         IncomeStream.objects.create(
             screen=screen, household_member=head, type="wages", amount=4110, frequency="monthly"
@@ -113,7 +114,7 @@ class TestWaNslp(TestCase):
             county="Spokane County",
             has_benefits="true",
         )
-        set_current_benefits(screen, "wa_snap")
+        _write_current_benefits(screen, ["wa_snap"])
         head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=40, has_income=True)
         IncomeStream.objects.create(
             screen=screen, household_member=head, type="wages", amount=7000, frequency="monthly"
@@ -128,7 +129,7 @@ class TestWaNslp(TestCase):
     def test_eligible_tanf_categorical(self):
         seed_program(self.white_label, "wa_tanf")
         screen = self._screen_base(zipcode="98901", county="Yakima County", has_benefits="true")
-        set_current_benefits(screen, "wa_tanf")
+        _write_current_benefits(screen, ["wa_tanf"])
         head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=36, has_income=True)
         IncomeStream.objects.create(
             screen=screen, household_member=head, type="wages", amount=5500, frequency="monthly"
@@ -143,7 +144,7 @@ class TestWaNslp(TestCase):
     def test_ineligible_snap_but_no_school_age_child(self):
         seed_program(self.white_label, "wa_snap")
         screen = self._screen_base(zipcode="98103", county="King County", household_size=2)
-        set_current_benefits(screen, "wa_snap")
+        _write_current_benefits(screen, ["wa_snap"])
         head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=40, has_income=True)
         IncomeStream.objects.create(
             screen=screen, household_member=head, type="wages", amount=1800, frequency="monthly"
@@ -160,7 +161,7 @@ class TestWaNslp(TestCase):
             county="Pierce County",
             has_benefits="true",
         )
-        set_current_benefits(screen, "wa_head_start")
+        _write_current_benefits(screen, ["wa_head_start"])
         head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=33, has_income=True)
         IncomeStream.objects.create(
             screen=screen, household_member=head, type="wages", amount=5000, frequency="monthly"
@@ -179,7 +180,7 @@ class TestWaNslp(TestCase):
             county="Spokane County",
             has_benefits="true",
         )
-        set_current_benefits(screen, "wa_snap")
+        _write_current_benefits(screen, ["wa_snap"])
         head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=40, has_income=True)
         IncomeStream.objects.create(
             screen=screen, household_member=head, type="wages", amount=7000, frequency="monthly"
