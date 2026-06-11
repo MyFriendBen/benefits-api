@@ -43,14 +43,27 @@ def make_calculator(
     fpl_limit=15_000,
     members=None,
 ):
-    """Create a TxFpp calculator with a mocked screen and program."""
+    """Create a TxFpp calculator with a mocked screen and program.
+
+    The §4140 adjunctive bypass reads enrollment the way a real screen exposes it:
+    SNAP/WIC from the CurrentBenefit join table via has_base_benefit("snap"/"wic"),
+    and CHIP from per-member insurance via has_insurance_types(("chp",)). The mocks
+    below mirror those methods rather than the legacy has_snap/has_wic/has_chp
+    columns, which the serializer no longer populates (MFB-720) — so a regression
+    back to reading those dead columns would fail these tests.
+    """
     mock_program = Mock()
     mock_program.year.get_limit.return_value = fpl_limit
 
+    base_benefits = set()
+    if has_snap:
+        base_benefits.add("snap")
+    if has_wic:
+        base_benefits.add("wic")
+
     mock_screen = Mock()
-    mock_screen.has_snap = has_snap
-    mock_screen.has_wic = has_wic
-    mock_screen.has_chp = has_chp
+    mock_screen.has_base_benefit = Mock(side_effect=lambda base_program: base_program in base_benefits)
+    mock_screen.has_insurance_types = Mock(side_effect=lambda types, strict=True: has_chp and "chp" in types)
     mock_screen.household_size = household_size
     mock_screen.calc_gross_income = Mock(return_value=household_income)
     mock_screen.household_members.all = Mock(return_value=members if members is not None else [])
