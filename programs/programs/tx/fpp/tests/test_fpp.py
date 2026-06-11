@@ -46,23 +46,25 @@ def make_calculator(
     """Create a TxFpp calculator with a mocked screen and program.
 
     The §4140 adjunctive bypass reads enrollment the way a real screen exposes it:
-    SNAP/WIC from the CurrentBenefit join table via has_base_benefit("snap"/"wic"),
-    and CHIP from per-member insurance via has_insurance_types(("chp",)). The mocks
-    below mirror those methods rather than the legacy has_snap/has_wic/has_chp
-    columns, which the serializer no longer populates (MFB-720) — so a regression
-    back to reading those dead columns would fail these tests.
+    SNAP/WIC from the CurrentBenefit join table via has_benefit("tx_snap"/"tx_wic"),
+    and CHIP from per-member insurance via has_insurance_types(("chp",)) — tx_chip is
+    a PolicyEngine eligibility program, never a current benefit. The mocks below
+    mirror those methods rather than the legacy has_snap/has_wic/has_chp columns,
+    which the serializer no longer populates (MFB-720) — so a regression back to
+    reading those dead columns (or to has_benefit("tx_chip"), which is always
+    False) would fail these tests.
     """
     mock_program = Mock()
     mock_program.year.get_limit.return_value = fpl_limit
 
-    base_benefits = set()
+    current_benefits = set()
     if has_snap:
-        base_benefits.add("snap")
+        current_benefits.add("tx_snap")
     if has_wic:
-        base_benefits.add("wic")
+        current_benefits.add("tx_wic")
 
     mock_screen = Mock()
-    mock_screen.has_base_benefit = Mock(side_effect=lambda base_program: base_program in base_benefits)
+    mock_screen.has_benefit = Mock(side_effect=lambda name_abbreviated: name_abbreviated in current_benefits)
     mock_screen.has_insurance_types = Mock(side_effect=lambda types, strict=True: has_chp and "chp" in types)
     mock_screen.household_size = household_size
     mock_screen.calc_gross_income = Mock(return_value=household_income)

@@ -61,18 +61,21 @@ class TxFpp(ProgramCalculator):
         # §4140 adjunctive income eligibility: enrollment in SNAP, WIC, or CHIP
         # (applicant or their child) bypasses the 250% FPL income test.
         #
-        # SNAP/WIC enrollment lives in the CurrentBenefit join table, read via
-        # has_base_benefit() against the cross-white-label `base_program` grouping
-        # (tx_snap → "snap", tx_wic → "wic"). CHIP is collected as a per-member
-        # insurance question, not a current benefit, so it is read from member
-        # insurance (matches any household member — "applicant or their child").
+        # SNAP/WIC enrollment lives in the CurrentBenefit join table under their
+        # TX-scoped names (tx_snap, tx_wic — the "already have this" tiles flagged
+        # in migration 0142), read via has_benefit(). CHIP is NOT a current-benefits
+        # tile: tx_chip is a PolicyEngine eligibility program, never written to the
+        # join table, so has_benefit("tx_chip") is always False. CHIP enrollment is
+        # captured as a per-member insurance question, so it is read from member
+        # insurance (matches any household member — "applicant or their child"),
+        # mirroring the sibling Healthy Texas Women calculator.
         #
         # Do NOT read the legacy Screen.has_snap/has_wic/has_chp boolean columns:
         # the join-table migration (MFB-720) dropped them from the serializer write
         # contract, so they are never populated and are permanently False.
         adjunctive_eligible = (
-            self.screen.has_base_benefit("snap")
-            or self.screen.has_base_benefit("wic")
+            self.screen.has_benefit("tx_snap")
+            or self.screen.has_benefit("tx_wic")
             or self.screen.has_insurance_types(("chp",))
         )
 
