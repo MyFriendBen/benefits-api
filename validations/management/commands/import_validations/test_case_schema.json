@@ -98,6 +98,11 @@
         "energy_calculator": {
           "$ref": "#/definitions/energyCalculatorScreen"
         },
+        "current_benefits": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "name_abbreviated strings written to the CurrentBenefit join table (e.g. ['tx_snap']). This is the supported way to record current-benefit enrollment; the legacy has_* booleans below are no longer persisted by ScreenSerializer (MFB-720)."
+        },
         "has_tanf": { "type": "boolean" },
         "has_wic": { "type": "boolean" },
         "has_snap": { "type": "boolean" },

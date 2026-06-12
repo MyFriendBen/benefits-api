@@ -319,7 +319,7 @@
       "county": "Collin",
       "household_size": 1,
       "household_assets": 5000.00,
-      "has_snap": true,
+      "current_benefits": ["tx_snap"],
       "household_members": [
         {
           "relationship": "headOfHousehold",
