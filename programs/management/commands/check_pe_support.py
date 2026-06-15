@@ -66,9 +66,7 @@ class Command(BaseCommand):
         parser.add_argument("terms", nargs="*", help="Search terms (all must match the variable name or label).")
         parser.add_argument("--exact", metavar="NAME", help="Exact variable-name lookup (a known pe_name).")
         parser.add_argument("--state", metavar="XX", help="Filter to a state module, e.g. co, ma, tx.")
-        parser.add_argument(
-            "--entity", choices=sorted(ENTITY_TO_BASE_CLASS), help="Filter by PolicyEngine entity."
-        )
+        parser.add_argument("--entity", choices=sorted(ENTITY_TO_BASE_CLASS), help="Filter by PolicyEngine entity.")
         parser.add_argument(
             "--computed-only",
             action="store_true",
@@ -129,9 +127,7 @@ class Command(BaseCommand):
             data = json.load(f)
         variables = data.get("result", {}).get("variables")
         if not variables:
-            raise CommandError(
-                "Metadata had no 'result.variables' — cache may be corrupt; rerun with --refresh."
-            )
+            raise CommandError("Metadata had no 'result.variables' — cache may be corrupt; rerun with --refresh.")
         return variables
 
     # --- handlers -----------------------------------------------------------
@@ -139,9 +135,7 @@ class Command(BaseCommand):
     def _handle_exact(self, variables, name):
         entry = variables.get(name)
         if entry is None:
-            raise CommandError(
-                f"{name!r}: NOT in PolicyEngine — no data available; a PE calculator is not an option."
-            )
+            raise CommandError(f"{name!r}: NOT in PolicyEngine — no data available; a PE calculator is not an option.")
         self.stdout.write(self.style.SUCCESS(f"PolicyEngine supports {name!r}:\n"))
         self.stdout.write(self._describe(name, entry))
 
@@ -160,17 +154,13 @@ class Command(BaseCommand):
         more = len(matches) - len(shown)
         suffix = f" (showing {len(shown)})" if more else ""
         self.stdout.write(
-            self.style.SUCCESS(
-                f"Found {len(matches)} PolicyEngine variable(s) matching {query!r}{suffix}:\n"
-            )
+            self.style.SUCCESS(f"Found {len(matches)} PolicyEngine variable(s) matching {query!r}{suffix}:\n")
         )
         for name, entry in shown:
             self.stdout.write(self._describe(name, entry))
             self.stdout.write("")
         if more:
-            self.stdout.write(
-                f"... {more} more. Narrow with --state / --entity / --computed-only or more terms."
-            )
+            self.stdout.write(f"... {more} more. Narrow with --state / --entity / --computed-only or more terms.")
 
     # --- helpers ------------------------------------------------------------
 
