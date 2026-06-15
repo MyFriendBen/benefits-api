@@ -28,7 +28,7 @@ class WaConfigurationData(ConfigurationData):
                     "_default_message": "211 Washington",
                     "_label": "moreHelp.211.name.wa",
                 },
-                "link": "https://www.211wa.org/",
+                "link": "https://wa211.org/",
                 "phone": {
                     "_default_message": "Dial 2-1-1",
                     "_label": "moreHelp.211.phone.wa",
