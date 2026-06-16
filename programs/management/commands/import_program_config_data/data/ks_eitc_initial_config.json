@@ -1,0 +1,77 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "program_category": {
+    "external_name": "ks_tax"
+  },
+  "program": {
+    "name_abbreviated": "ks_eitc",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission"
+    ],
+    "name": "Kansas Earned Income Tax Credit (EITC)",
+    "description": "The Kansas Earned Income Tax Credit (EITC) gives extra money back when you file your state taxes. It equals 17% of your federal EITC amount, per K.S.A. § 79-32,205. This credit can reduce what you owe in Kansas income tax — and if the refundable portion exceeds your tax liability, you may receive money back.\n\nYou claim the Kansas EITC on your Kansas individual income tax return (Form K-40). The amount you receive depends on your earned income, family size, and filing status — the same factors that determine your federal EITC.\n\nFree tax preparation help is available through VITA (Volunteer Income Tax Assistance). Trained IRS volunteers can help you file your federal and Kansas returns and make sure you claim every credit you qualify for.\n\nTo apply, file a Kansas income tax return (Form K-40) using Kansas WebFile or by mailing a paper return to the Kansas Department of Revenue.",
+    "description_short": "A state tax credit that gives extra money back to working families",
+    "learn_more_link": "https://www.ksrevenue.gov/incomebook25.html",
+    "apply_button_link": "https://www.kansas.gov/kdor/webfile/",
+    "apply_button_description": "",
+    "estimated_application_time": "30 - 60 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_type": "tax_credit",
+    "value_format": "estimated_annual",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false,
+    "base_program": "eitc",
+    "website_description": "A state tax credit that gives extra money back to working families"
+  },
+  "documents": [
+    {
+      "external_name": "ks_ssn",
+      "text": "Valid Social Security Number (SSN) for you, your spouse, and any qualifying children",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_earned_income",
+      "text": "Proof of earned income (ex: W-2 forms, 1099 forms, self-employment records)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "id_proof",
+      "text": "Proof of identity (ex: driver's license, state ID)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_home",
+      "text": "Proof of Kansas home address (ex: lease, utility bill)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_federal_return",
+      "text": "Copy of your federal tax return showing your federal EITC amount",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "ks_vita_free_tax_prep",
+      "name": "VITA Free Tax Preparation (IRS Volunteer Income Tax Assistance)",
+      "phone_number": "+18008291040",
+      "email": "",
+      "assistance_link": "https://irs.treasury.gov/freetaxprep/",
+      "description": "Free tax preparation help for people who earn low to moderate income. Trained volunteers can help you file your federal and Kansas returns and claim the EITC."
+    }
+  ]
+}

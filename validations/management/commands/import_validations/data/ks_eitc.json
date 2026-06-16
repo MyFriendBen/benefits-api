@@ -1,0 +1,167 @@
+[
+  {
+    "notes": "KS eitc - Single Parent with Two Qualifying Children - Clearly Eligible for Kansas EITC",
+    "household": {
+      "white_label": "ks",
+      "is_test": true,
+      "household_size": 3,
+      "zipcode": "67202",
+      "county": "Sedgwick",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 3,
+          "birth_year": 1991,
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2333.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 9,
+          "birth_year": 2016,
+          "age": 9,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 1,
+          "birth_year": 2020,
+          "age": 6,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ks_eitc",
+      "eligible": true,
+      "value": 960
+    }
+  },
+  {
+    "notes": "KS eitc - Single Filer, No Qualifying Children, Age 24 - Below Minimum Age Requirement",
+    "household": {
+      "white_label": "ks",
+      "is_test": true,
+      "household_size": 1,
+      "zipcode": "67202",
+      "county": "Sedgwick",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 9,
+          "birth_year": 2001,
+          "age": 24,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1250.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ks_eitc",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "KS eitc - Single Childless Filer, Age 25 - Meets Minimum Age Requirement (Age Boundary)",
+    "household": {
+      "white_label": "ks",
+      "is_test": true,
+      "household_size": 1,
+      "zipcode": "67202",
+      "county": "Sedgwick",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 3,
+          "birth_year": 2001,
+          "age": 25,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1250.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ks_eitc",
+      "eligible": true,
+      "value": 47
+    }
+  }
+]
