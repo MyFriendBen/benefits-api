@@ -6,6 +6,7 @@ ks_member_calculators = {}
 
 ks_tax_unit_calculators = {
     "ks_eitc": tax.Kseitc,
+    "ks_cdcc": tax.KsCdcc,
 }
 
 ks_spm_calculators = {

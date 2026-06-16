@@ -25,6 +25,9 @@ from programs.programs.federal.pe import (
     federal_spm_unit_calculators,
     federal_tax_unit_calculators,
 )
+from programs.programs.ks.pe import (
+    ks_tax_unit_calculators,
+)
 from programs.programs.il.pe import (
     il_member_calculators,
     il_spm_calculators,
@@ -79,6 +82,7 @@ all_tax_unit_calculators: dict[str, type[PolicyEngineTaxUnitCalulator]] = {
     **ma_tax_unit_calculators,
     **tx_tax_unit_calculators,
     **wa_tax_calculators,
+    **ks_tax_unit_calculators,
 }
 
 all_calculators: dict[str, type[PolicyEngineCalulator]] = {
