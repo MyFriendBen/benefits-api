@@ -1,6 +1,5 @@
 from django.db import migrations
 
-
 # Standard generic "how did you hear about us" referral options that belong on
 # every white label, mirroring the generic set already present on existing WLs
 # (e.g. wa). Partner-org referrers are added separately via the Django admin.
