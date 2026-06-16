@@ -124,6 +124,21 @@ class TestKsSsdiMemberEligibility(TestCase):
         member = make_member(age=65, birth_year=1960, birth_month=11)
         self.assertTrue(self._run(member))
 
+    def test_missing_birth_year_uses_age_under_max_fra_eligible(self):
+        # No birth year, but age is under the max FRA (67) → still gated, eligible
+        member = make_member(age=50, birth_year=None, birth_month=None)
+        self.assertTrue(self._run(member))
+
+    def test_missing_birth_year_uses_age_over_max_fra_ineligible(self):
+        # No birth year, age at/over max FRA (67) → gated out, not let through
+        member = make_member(age=70, birth_year=None, birth_month=None)
+        self.assertFalse(self._run(member))
+
+    def test_missing_birth_year_and_age_ineligible(self):
+        # Neither birth year nor age → working age cannot be established → ineligible
+        member = make_member(age=None, birth_year=None, birth_month=None)
+        self.assertFalse(self._run(member))
+
 
 class TestKsSsdiHouseholdEligibility(TestCase):
     def _run(self, has_ssdi=False, eligible_members=None):

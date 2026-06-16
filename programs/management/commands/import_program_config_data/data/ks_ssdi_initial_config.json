@@ -3,7 +3,9 @@
     "code": "ks"
   },
   "program_category": {
-    "external_name": "ks_cash"
+    "external_name": "ks_cash",
+    "name": "Cash Assistance",
+    "icon": "cash"
   },
   "program": {
     "name_abbreviated": "ks_ssdi",

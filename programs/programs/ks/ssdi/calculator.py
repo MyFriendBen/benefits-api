@@ -22,6 +22,10 @@ class KsSsdi(ProgramCalculator):
         "income_frequency",
     ]
 
+    # Maximum SSA Full Retirement Age (born 1960+); used as a conservative
+    # fallback when an exact birth year is unavailable.
+    MAX_FRA_YEARS = 67
+
     # SSA Full Retirement Age schedule by birth year
     # Born 1943–1954: FRA = 66y 0m
     # Born 1955: 66y 2m, 1956: 66y 4m, 1957: 66y 6m, 1958: 66y 8m, 1959: 66y 10m
@@ -64,8 +68,18 @@ class KsSsdi(ProgramCalculator):
 
         e.condition(member.long_term_disability is True)
 
+        # Applicant must be under Full Retirement Age. Always gate on this so a
+        # member with a missing birth year is not let through unchecked: use the
+        # precise SSA birth-year schedule when birth year is known, otherwise fall
+        # back to age vs the maximum FRA (67), and treat a member with neither
+        # birth year nor age as not established to be of working age.
         if member.birth_year is not None:
-            e.condition(self._is_under_fra(member.birth_year, member.birth_month, self.screen.get_reference_date()))
+            under_fra = self._is_under_fra(member.birth_year, member.birth_month, self.screen.get_reference_date())
+        elif member.age is not None:
+            under_fra = member.age < self.MAX_FRA_YEARS
+        else:
+            under_fra = False
+        e.condition(under_fra)
 
         earned_income = int(member.calc_gross_income("monthly", ["earned"]))
         sga_limit = self.sga_blind if member.visually_impaired else self.sga_non_blind
