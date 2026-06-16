@@ -7,3 +7,14 @@ extend-exclude = '''
   | migrations/\d{4}.*\.py
 )
 '''
+# force-exclude applies even to files passed explicitly on the command line
+# (extend-exclude only applies during recursive discovery). CI passes the list
+# of changed files explicitly, so without this, excluded files like migrations
+# and Jinja templates would still get checked. Keep this in sync with extend-exclude.
+force-exclude = '''
+(
+    _template\.py
+  | programs/templates/new_white_label/
+  | migrations/\d{4}.*\.py
+)
+'''

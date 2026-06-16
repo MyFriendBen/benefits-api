@@ -4,10 +4,13 @@ from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibi
 from programs.programs import messages
 
 
-class WaSsdi(ProgramCalculator):
+class KsSsdi(ProgramCalculator):
     """SSDI provides monthly payments to people who cannot work due to disability or blindness.
     Uses per-member eligibility with birth-year-based FRA schedule and dual SGA thresholds.
     Assumes sufficient work credits (data gap — screener does not capture work history).
+
+    SSDI is a federal program with no state variance, so this calculator mirrors the
+    federal rules used by other states (e.g. wa_ssdi).
     """
 
     sga_non_blind = 1_690
@@ -18,6 +21,10 @@ class WaSsdi(ProgramCalculator):
         "income_amount",
         "income_frequency",
     ]
+
+    # Maximum SSA Full Retirement Age (born 1960+); used as a conservative
+    # fallback when an exact birth year is unavailable.
+    MAX_FRA_YEARS = 67
 
     # SSA Full Retirement Age schedule by birth year
     # Born 1943–1954: FRA = 66y 0m
@@ -38,14 +45,14 @@ class WaSsdi(ProgramCalculator):
             return (66, 0)
         if birth_year >= 1960:
             return (67, 0)
-        for max_year, years, months in WaSsdi.FRA_SCHEDULE:
+        for max_year, years, months in KsSsdi.FRA_SCHEDULE:
             if birth_year <= max_year:
                 return (years, months)
         return (67, 0)
 
     @staticmethod
     def _is_under_fra(birth_year: int, birth_month: Optional[int], reference_date: date) -> bool:
-        fra_years, fra_months = WaSsdi._get_fra(birth_year)
+        fra_years, fra_months = KsSsdi._get_fra(birth_year)
 
         if birth_month is None:
             birth_month = 1
@@ -61,10 +68,20 @@ class WaSsdi(ProgramCalculator):
 
         e.condition(member.long_term_disability is True)
 
+        # Applicant must be under Full Retirement Age. Always gate on this so a
+        # member with a missing birth year is not let through unchecked: use the
+        # precise SSA birth-year schedule when birth year is known, otherwise fall
+        # back to age vs the maximum FRA (67), and treat a member with neither
+        # birth year nor age as not established to be of working age.
         if member.birth_year is not None:
-            e.condition(self._is_under_fra(member.birth_year, member.birth_month, self.screen.get_reference_date()))
+            under_fra = self._is_under_fra(member.birth_year, member.birth_month, self.screen.get_reference_date())
+        elif member.age is not None:
+            under_fra = member.age < self.MAX_FRA_YEARS
+        else:
+            under_fra = False
+        e.condition(under_fra)
 
-        earned_income = member.calc_gross_income("monthly", ["earned"])
+        earned_income = int(member.calc_gross_income("monthly", ["earned"]))
         sga_limit = self.sga_blind if member.visually_impaired else self.sga_non_blind
         e.condition(earned_income <= sga_limit)
 
