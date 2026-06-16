@@ -1,0 +1,91 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "program_category": {
+    "external_name": "ks_healthcare"
+  },
+  "program": {
+    "name_abbreviated": "ks_medicare_savings",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission"
+    ],
+    "name": "Medicare Savings Program (MSP)",
+    "description": "People pay a monthly fee called a premium to keep their Medicare. MSP helps pay these premiums if you have a low income.\n\nHow much help you get depends on your income:\n- Very low income: MSP pays your premium, plus your deductibles (the amount you pay before Medicare starts paying) and the copayments and coinsurance you pay when you get care.\n- A little higher income: MSP pays your premium only.\n\nThe estimated savings shown above only includes what you save on premiums. Your actual savings could be much higher if you qualify for the very low income level, which also covers your deductibles and other costs when you get care.\n\nThe estimated savings assumes you or your spouse worked at least 10 years. If not, your savings may be slightly lower.\n\nMSP also has a limit on the value of assets you own. Many things are not counted toward this limit, including your home, one vehicle, household goods, personal belongings, burial funds up to $1,500, and life insurance with a face value up to $1,500. When estimating your assets, do not include these items.\n\nTo apply, you must already be enrolled in Medicare.",
+    "description_short": "Help paying for Medicare premiums and costs",
+    "learn_more_link": "https://www.kdads.ks.gov/services-programs/aging/medicare-programs/senior-health-insurance-counseling-for-kansas-shick",
+    "apply_button_link": "https://www.applyforkancare.ks.gov",
+    "apply_button_description": "",
+    "estimated_application_time": "1 hour",
+    "estimated_delivery_time": "30 days",
+    "estimated_value": "",
+    "website_description": "Helps pay Medicare premiums, deductibles, and copays for people with low income"
+  },
+  "documents": [
+    {
+      "external_name": "ks_home",
+      "text": "Proof of home address (ex: lease, utility bill)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_id_proof",
+      "text": "Proof of identity",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_ssn_proof",
+      "text": "Social Security Number or proof you applied for one",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_medicare_card",
+      "text": "Medicare card showing Part A enrollment",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_earned_income",
+      "text": "Proof of income (ex: pay stubs, Social Security statement, pension statement)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_assets",
+      "text": "Proof of assets (ex: bank statements, investment accounts). Do not include your home, one vehicle, household goods, or burial funds up to $1,500",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_us_status",
+      "text": "Proof of U.S. citizenship or qualified immigration status",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_disability_proof",
+      "text": "Proof of disability (for QDWI program only)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "ks_shick",
+      "name": "Senior Health Insurance Counseling for Kansas (SHICK)",
+      "email": "",
+      "description": "SHICK provides free, unbiased Medicare counseling statewide through trained community volunteers. SHICK counselors can help you understand and apply for Medicare Savings Programs. Call to be connected with a certified counselor near you.",
+      "assistance_link": "https://www.kdads.ks.gov/services-programs/aging/medicare-programs/senior-health-insurance-counseling-for-kansas-shick/locating-help",
+      "phone_number": "800-860-5260",
+      "counties": [],
+      "languages": []
+    }
+  ]
+}
