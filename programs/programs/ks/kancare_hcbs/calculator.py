@@ -1,0 +1,69 @@
+from programs.programs.calc import ProgramCalculator, Eligibility
+from programs.programs import messages
+
+
+class KsKancareHcbs(ProgramCalculator):
+    """KanCare HCBS (Home and Community-Based Services) Waivers.
+
+    Kansas operates seven HCBS waivers through KanCare (Kansas Medicaid) that
+    provide in-home/community services to people who would otherwise require
+    institutional care (Frail Elderly, Physical Disability, I/DD, Autism,
+    Brain Injury, Serious Emotional Disturbance, Technology Assisted).
+
+    Per the spec, this is modeled as a single program rather than split per
+    waiver. The only hard screener-testable gate is the financial asset test;
+    the formal KDADS assessment process gates functional eligibility downstream.
+
+    Eligibility (per spec):
+      - Asset limit: countable assets <= $2,000 (single applicant; conservative
+        default since the screener cannot detect whether both spouses are
+        applying or split household assets by member).
+      - SSI auto-eligibility: SSI recipients (the `has_ssi` checkbox or any SSI
+        income stream) are automatically KanCare-financially-eligible and bypass
+        the asset test.
+      - Income does NOT disqualify: income above the $2,982/month (300% SSI FBR,
+        2026) cost-share threshold triggers a patient-liability/Miller-Trust
+        obligation but does not gate screener eligibility.
+      - Age does NOT filter: Brain Injury (0-64) plus Frail Elderly (65+) cover
+        every age, so at least one waiver applies regardless of age.
+      - Disability flags do NOT gate: informational only; functional/diagnostic
+        eligibility is a downstream assessment.
+
+    Data gaps (handled with inclusivity assumptions per spec): nursing-facility
+    level of care, specific disability type / SSA determination, community-living
+    intent, citizenship/immigration status, AU 3-year limit, 5-year asset
+    transfer look-back, and the $2k-vs-$3k spousal asset limit. The waitlist
+    caveat is surfaced via the config warning message and program description.
+    """
+
+    asset_limit = 2_000
+    amount = 35_000
+    dependencies = [
+        "household_assets",
+    ]
+
+    def _has_ssi(self) -> bool:
+        """SSI confers automatic KanCare financial eligibility.
+
+        Catches both the Screen `has_ssi` checkbox and any member SSI income
+        stream, consistent with how other programs treat SSI categorical
+        eligibility.
+        """
+        if self.screen.has_ssi:
+            return True
+        return any(
+            member.calc_gross_income("yearly", ["sSI"]) > 0 for member in self.screen.household_members.all()
+        )
+
+    def household_eligible(self, e: Eligibility):
+        # SSI recipients are automatically KanCare-financially-eligible and
+        # bypass the asset test entirely.
+        if self._has_ssi():
+            e.condition(True, messages.presumed_eligibility())
+            return
+
+        # The only hard screener-testable gate: countable assets must be at or
+        # below the individual asset limit (inclusive). Conservatively apply the
+        # $2,000 single-applicant limit (see spec data gap on spousal applicants).
+        assets = self.screen.household_assets if self.screen.household_assets is not None else 0
+        e.condition(assets <= self.asset_limit, messages.assets(self.asset_limit))
