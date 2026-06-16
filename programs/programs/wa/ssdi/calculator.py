@@ -64,7 +64,7 @@ class WaSsdi(ProgramCalculator):
         if member.birth_year is not None:
             e.condition(self._is_under_fra(member.birth_year, member.birth_month, self.screen.get_reference_date()))
 
-        earned_income = int(member.calc_gross_income("monthly", ["earned"]))
+        earned_income = member.calc_gross_income("monthly", ["earned"])
         sga_limit = self.sga_blind if member.visually_impaired else self.sga_non_blind
         e.condition(earned_income <= sga_limit)
 
