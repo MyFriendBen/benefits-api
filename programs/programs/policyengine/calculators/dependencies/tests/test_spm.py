@@ -79,6 +79,37 @@ class TestSnapAssetsDependency(TestCase):
         self.assertEqual(dep.value(), 0)
 
 
+class TestCashAssetsDependency(TestCase):
+    """Tests for CashAssetsDependency class used by the KsTanf calculator's $3,000 resource test."""
+
+    def setUp(self):
+        """Set up test data for cash asset tests."""
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="67202",
+            county="Sedgwick County",
+            household_size=3,
+            household_assets=500,
+            completed=False,
+        )
+
+    def test_value_returns_household_assets(self):
+        """Test value() returns household assets value from screen."""
+        dep = spm.CashAssetsDependency(self.screen, None, {})
+        self.assertEqual(dep.value(), 500)
+        self.assertEqual(dep.field, "spm_unit_cash_assets")
+
+    def test_value_returns_zero_when_assets_null(self):
+        """Test value() returns 0 when household assets are null."""
+        self.screen.household_assets = None
+        self.screen.save()
+
+        dep = spm.CashAssetsDependency(self.screen, None, {})
+        self.assertEqual(dep.value(), 0)
+
+
 class TestHousingCostDependency(TestCase):
     """Tests for HousingCostDependency class used by TxSnap calculator."""
 
