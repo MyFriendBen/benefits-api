@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("programs", "0158_program_program_name_abbreviated_lowercase"),
+        ("programs", "0159_seed_ks_generic_referrers"),
     ]
 
     operations = [
