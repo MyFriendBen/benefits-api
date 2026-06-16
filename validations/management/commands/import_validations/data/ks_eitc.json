@@ -74,7 +74,7 @@
     "expected_results": {
       "program_name": "ks_eitc",
       "eligible": true,
-      "value": 960
+      "value": 1096
     }
   },
   {
@@ -161,7 +161,7 @@
     "expected_results": {
       "program_name": "ks_eitc",
       "eligible": true,
-      "value": 47
+      "value": 59
     }
   }
 ]
