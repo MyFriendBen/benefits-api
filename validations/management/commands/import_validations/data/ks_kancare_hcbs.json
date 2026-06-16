@@ -1,0 +1,144 @@
+[
+  {
+    "notes": "Clearly eligible: 72-year-old single Kansas resident, low income ($950/month SS, well under $2,982 cost-share threshold), assets under $2,000 ($1,200). Standard Frail Elderly (FE) waiver case.",
+    "household": {
+      "white_label": "ks",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "67202",
+      "county": "Sedgwick County",
+      "household_size": 1,
+      "household_assets": 1200,
+      "expenses": [],
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 72,
+          "birth_month": 3,
+          "birth_year": 1954,
+          "has_income": true,
+          "disabled": true,
+          "long_term_disability": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 950,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ]
+    },
+    "expected_results": {
+      "program_name": "ks_kancare_hcbs",
+      "eligible": true,
+      "value": 35000
+    }
+  },
+  {
+    "notes": "Clearly ineligible: 69-year-old single Kansas resident, countable assets of $8,500 exceed the $2,000 individual asset limit. Primary screener-testable exclusion.",
+    "household": {
+      "white_label": "ks",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "66604",
+      "county": "Shawnee County",
+      "household_size": 1,
+      "household_assets": 8500,
+      "expenses": [],
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 69,
+          "birth_month": 9,
+          "birth_year": 1956,
+          "has_income": true,
+          "disabled": true,
+          "long_term_disability": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 900,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ]
+    },
+    "expected_results": {
+      "program_name": "ks_kancare_hcbs",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "Edge case: 50-year-old single Kansas resident with income above the $2,982/month cost-share threshold ($3,800/month combined SSDI and pension) but assets well under $2,000 ($500). Tests key design decision — income above threshold triggers cost-sharing obligation but does NOT disqualify. Program should still surface as eligible. Physical Disability (PD) waiver target population.",
+    "household": {
+      "white_label": "ks",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "66604",
+      "county": "Shawnee County",
+      "household_size": 1,
+      "household_assets": 500,
+      "expenses": [],
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 50,
+          "birth_month": 9,
+          "birth_year": 1975,
+          "has_income": true,
+          "disabled": true,
+          "long_term_disability": true,
+          "income_streams": [
+            {
+              "type": "sSDisability",
+              "amount": 2200,
+              "frequency": "monthly"
+            },
+            {
+              "type": "pension",
+              "amount": 1600,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true,
+            "employer": false,
+            "private": false,
+            "medicaid": false,
+            "medicare": false,
+            "chp": false,
+            "va": false
+          }
+        }
+      ]
+    },
+    "expected_results": {
+      "program_name": "ks_kancare_hcbs",
+      "eligible": true,
+      "value": 35000
+    }
+  }
+]
