@@ -1,4 +1,6 @@
-from typing import ClassVar, Optional
+from __future__ import annotations
+
+from typing import ClassVar, Optional, TypedDict, Union
 from datetime import date
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -13,6 +15,12 @@ from django.conf import settings
 from .feature_flags import FeatureFlagConfig, WHITELABEL_FEATURE_FLAGS
 
 
+class TaxUnitStructure(TypedDict):
+    head: Optional[HouseholdMember]
+    spouse: Optional[HouseholdMember]
+    dependents: list[HouseholdMember]
+
+
 class WhiteLabel(models.Model):
     FEATURE_FLAGS: ClassVar[dict[str, FeatureFlagConfig]] = WHITELABEL_FEATURE_FLAGS
 
@@ -22,12 +30,12 @@ class WhiteLabel(models.Model):
     cms_method = models.CharField(max_length=32, blank=True, null=True)
     feature_flags = models.JSONField(default=dict, blank=True)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
     def _get_flag_value(self, key: str) -> bool:
         """Internal: Get flag value with default fallback. Assumes key is valid."""
-        return (self.feature_flags or {}).get(key, self.FEATURE_FLAGS[key].default)
+        return bool((self.feature_flags or {}).get(key, self.FEATURE_FLAGS[key].default))
 
     def has_feature(self, key: str) -> bool:
         """Check if a feature flag is enabled for this WhiteLabel."""
@@ -175,7 +183,7 @@ class Screen(models.Model):
     utm_term = models.CharField(max_length=128, blank=True, null=True)
 
     @property
-    def frozen(self):
+    def frozen(self) -> bool:
         return self.validations.count() > 0
 
     def get_reference_date(self) -> date:
@@ -189,17 +197,17 @@ class Screen(models.Model):
             return earliest_validation.created_date.date()
         return timezone.now().date()
 
-    def calc_gross_income(self, frequency, types, exclude=[]):
+    def calc_gross_income(self, frequency: str, types: list[str], exclude: list[str] = []) -> float:
         household_members = self.household_members.all()
-        gross_income = 0
+        gross_income = 0.0
 
         for household_member in household_members:
             gross_income += household_member.calc_gross_income(frequency, types, exclude)
         return float(gross_income)
 
-    def calc_expenses(self, frequency, types):
+    def calc_expenses(self, frequency: str, types: list[str]) -> float:
         expenses = self.expenses.all()
-        total_expense = 0
+        total_expense = 0.0
 
         for expense in expenses:
             if "all" in types or expense.type in types:
@@ -210,7 +218,7 @@ class Screen(models.Model):
 
         return float(total_expense)
 
-    def has_expense(self, expense_types):
+    def has_expense(self, expense_types: list[str]) -> bool:
         """
         Returns True if one household member has one of the expenses in expense_types
         """
@@ -226,30 +234,40 @@ class Screen(models.Model):
         Get list of unique expense types for this screen.
         Returns empty list if no expenses exist.
         """
-        return list(self.expenses.values_list("type", flat=True).distinct().filter(type__isnull=False))
+        return [
+            t
+            for t in self.expenses.values_list("type", flat=True).distinct().filter(type__isnull=False)
+            if t is not None
+        ]
 
-    def num_children(self, age_min=0, age_max=18, include_pregnant=False, child_relationship=["all"]):
+    def num_children(
+        self,
+        age_min: int = 0,
+        age_max: int = 18,
+        include_pregnant: bool = False,
+        child_relationship: list[str] = ["all"],
+    ) -> int:
         children = 0
 
         household_members = self.household_members.all()
         for household_member in household_members:
             has_child_relationship = household_member.relationship in child_relationship or "all" in child_relationship
-            if household_member.age >= age_min and household_member.age <= age_max and has_child_relationship:
+            if household_member.age and household_member.age >= age_min and household_member.age <= age_max and has_child_relationship:
                 children += 1
             if household_member.pregnant and include_pregnant:
                 children += 1
 
         return children
 
-    def num_adults(self, age_max=19):
+    def num_adults(self, age_max: int = 19) -> int:
         adults = 0
         household_members = self.household_members.all()
         for household_member in household_members:
-            if household_member.age >= age_max:
+            if household_member.age and household_member.age >= age_max:
                 adults += 1
         return adults
 
-    def num_guardians(self):
+    def num_guardians(self) -> int:
         parents = 0
         child_relationship = ["child", "fosterChild"]
         guardian_relationship = ["parent", "fosterParent"]
@@ -275,7 +293,7 @@ class Screen(models.Model):
 
         return parents
 
-    def is_joint(self):
+    def is_joint(self) -> bool:
         is_joint = False
         household_members = self.household_members.all()
         for household_member in household_members:
@@ -283,17 +301,17 @@ class Screen(models.Model):
                 is_joint = True
         return is_joint
 
-    def calc_net_income(self, frequency, income_types, expense_types):
-        net_income = None
+    def calc_net_income(self, frequency: str, income_types: list[str], expense_types: list[str]) -> float:
+        net_income: float = 0.0
         if frequency == "monthly":
             gross_income = self.calc_gross_income(frequency, income_types)
             expenses = self.calc_expenses(frequency, expense_types)
             net_income = gross_income - expenses
 
-        return float(net_income)
+        return net_income
 
-    def relationship_map(self):
-        relationship_map = {}
+    def relationship_map(self) -> dict[int, int | None]:
+        relationship_map: dict[int, int | None] = {}
 
         all_members = self.household_members.all()
         for member in all_members:
@@ -301,7 +319,7 @@ class Screen(models.Model):
                 continue
 
             relationship = member.relationship
-            probable_spouse = None
+            probable_spouse: int | None = None
 
             if relationship == "headOfHousehold":
                 for other_member in all_members:
@@ -337,24 +355,29 @@ class Screen(models.Model):
 
         return relationship_map
 
-    def other_tax_unit_structure(self):
+    def other_tax_unit_structure(self) -> TaxUnitStructure:
         other_tax_unit: list[HouseholdMember] = []
         for member in self.household_members.all():
             if not member.is_in_tax_unit():
                 other_tax_unit.append(member)
 
-        unit = {"head": None, "spouse": None, "dependents": []}
+        unit: TaxUnitStructure = {"head": None, "spouse": None, "dependents": []}
         if len(other_tax_unit) == 0:
             return unit
 
         for member in other_tax_unit:
-            if unit["head"] is None or member.age > unit["head"].age:
+            current_head = unit["head"]
+            if current_head is None or (
+                member.age is not None and current_head.age is not None and member.age > current_head.age
+            ):
                 unit["head"] = member
 
-        spouse_id = self.relationship_map()[unit["head"].id]
+        head = unit["head"]
+        assert head is not None
+        spouse_id = self.relationship_map()[head.id]
 
         for member in other_tax_unit:
-            if member.id == unit["head"].id:
+            if member.id == head.id:
                 continue
 
             if member.id == spouse_id:
@@ -364,10 +387,10 @@ class Screen(models.Model):
 
         return unit
 
-    def has_insurance_types(self, types, strict=True) -> bool:
+    def has_insurance_types(self, types: tuple[str, ...] | list[str], strict: bool = True) -> bool:
         return any(member.has_insurance_types(types, strict) for member in self.household_members.all())
 
-    def has_benefit_from_list(self, names: list[str]):
+    def has_benefit_from_list(self, names: list[str]) -> bool:
         for program in names:
             if self.has_benefit(program):
                 return True
@@ -442,7 +465,7 @@ class Screen(models.Model):
         """
         return base_program in self._current_benefit_base_programs
 
-    def set_screen_is_test(self):
+    def set_screen_is_test(self) -> None:
         referral_source_tests = ["testorprospect", "test"]
 
         self.is_test_data = (
@@ -452,14 +475,14 @@ class Screen(models.Model):
         )
         self.save()
 
-    def get_head(self):
+    def get_head(self) -> HouseholdMember:
         for member in self.household_members.all():
             if member.relationship == "headOfHousehold":
                 return member
 
         raise Exception("No head of household")
 
-    def get_language_code(self):
+    def get_language_code(self) -> str:
         language_code = settings.LANGUAGE_CODE
 
         if self.request_language_code:
@@ -467,14 +490,14 @@ class Screen(models.Model):
 
         return language_code
 
-    def has_members_outside_of_tax_unit(self):
+    def has_members_outside_of_tax_unit(self) -> bool:
         for member in self.household_members.all():
             if not member.is_in_tax_unit():
                 return True
 
         return False
 
-    def missing_fields(self):
+    def missing_fields(self) -> Dependencies:
         screen_fields = (
             "zipcode",
             "county",
@@ -542,8 +565,8 @@ class HouseholdMember(models.Model):
     has_expenses = models.BooleanField(blank=True, null=True)
     is_care_worker = models.BooleanField(blank=True, null=True)
 
-    def calc_gross_income(self, frequency, types, exclude=[]):
-        gross_income = 0
+    def calc_gross_income(self, frequency: str, types: list[str], exclude: list[str] = []) -> float:
+        gross_income = 0.0
         earned_income_types = ["wages", "selfEmployment"]
 
         income_streams = self.income_streams.all()
@@ -557,13 +580,13 @@ class HouseholdMember(models.Model):
             unearned_income_match = "unearned" in types and income_stream.type not in earned_income_types
             if include_all or earned_income_match or unearned_income_match or specific_match:
                 if frequency == "monthly":
-                    gross_income += income_stream.monthly()
+                    gross_income += float(income_stream.monthly())
                 elif frequency == "yearly":
-                    gross_income += income_stream.yearly()
+                    gross_income += float(income_stream.yearly())
         return float(gross_income)
 
-    def calc_expenses(self, frequency, types):
-        total_expense = 0
+    def calc_expenses(self, frequency: str, types: list[str]) -> float:
+        total_expense = 0.0
 
         expenses = self.expenses.all()
         for expense in expenses:
@@ -572,18 +595,18 @@ class HouseholdMember(models.Model):
                     total_expense += expense.monthly()
                 elif frequency == "yearly":
                     total_expense += expense.yearly()
-        return float(total_expense)
+        return total_expense
 
-    def calc_net_income(self, frequency, income_types, expense_types):
-        net_income = None
+    def calc_net_income(self, frequency: str, income_types: list[str], expense_types: list[str]) -> float:
+        net_income: float = 0.0
         if frequency == "monthly":
             gross_income = self.calc_gross_income(frequency, income_types)
             expenses = self.calc_expenses(frequency, expense_types)
             net_income = gross_income - expenses
 
-        return float(net_income)
+        return net_income
 
-    def is_married(self):
+    def is_married(self) -> dict[str, Union[bool, HouseholdMember]]:
         all_household_members = self.screen.household_members.all()
         if self.relationship in ("spouse", "domesticPartner"):
             return {"is_married": True, "married_to": self.screen.get_head()}
@@ -593,8 +616,8 @@ class HouseholdMember(models.Model):
                     return {"is_married": True, "married_to": member}
         return {"is_married": False}
 
-    def has_disability(self):
-        return self.disabled or self.visually_impaired or self.long_term_disability
+    def has_disability(self) -> bool:
+        return bool(self.disabled or self.visually_impaired or self.long_term_disability)
 
     def is_head(self) -> bool:
         return self.relationship == "headOfHousehold"
@@ -602,24 +625,25 @@ class HouseholdMember(models.Model):
     def is_spouse(self) -> bool:
         return self.screen.relationship_map()[self.screen.get_head().id] == self.id
 
-    def is_dependent(self):
+    def is_dependent(self) -> bool:
         is_tax_unit_spouse = self.is_spouse()
         is_tax_unit_head = self.is_head()
+        age = self.age or 0
         is_tax_unit_dependent = (
-            (self.age <= 18 or (self.student and self.age <= 23) or self.has_disability())
+            (age <= 18 or (self.student and age <= 23) or self.has_disability())
             and (self.calc_gross_income("yearly", ["all"]) <= self.screen.calc_gross_income("yearly", ["all"]) / 2)
             and (not (is_tax_unit_head or is_tax_unit_spouse))
         )
 
-        return is_tax_unit_dependent
+        return bool(is_tax_unit_dependent)
 
-    def is_in_tax_unit(self):
+    def is_in_tax_unit(self) -> bool:
         return self.is_head() or self.is_spouse() or self.is_dependent()
 
     def has_insurance(self, name_abbreviated: str) -> bool:
         return self.has_insurance_types((name_abbreviated,), strict=False)
 
-    def has_insurance_types(self, types, strict=True) -> bool:
+    def has_insurance_types(self, types: tuple[str, ...] | list[str], strict: bool = True) -> bool:
         if not hasattr(self, "insurance"):
             return False
         return self.insurance.has_insurance_types(types, strict)
@@ -640,7 +664,7 @@ class HouseholdMember(models.Model):
 
     def calc_age(self) -> int:
         if self.birth_year_month is None:
-            return self.age
+            return self.age if self.age is not None else 0
 
         reference_date = self.screen.get_reference_date()
         return self.age_from_date(self.birth_year_month, reference_date)
@@ -665,7 +689,7 @@ class HouseholdMember(models.Model):
 
         return current_year - birth_year
 
-    def missing_fields(self):
+    def missing_fields(self) -> Dependencies:
         member_fields = (
             "relationship",
             "age",
@@ -700,42 +724,42 @@ class IncomeStream(models.Model):
     frequency = models.CharField(max_length=30, blank=True, null=True)
     hours_worked = models.IntegerField(null=True, blank=True)
 
-    def monthly(self):
-        if self.frequency == "monthly":
-            monthly = self.amount
-        elif self.frequency == "weekly":
-            monthly = self.amount * Decimal(4.35)
+    def monthly(self) -> Decimal:
+        if self.amount is None:
+            return Decimal(0)
+        if self.frequency == "weekly":
+            return self.amount * Decimal("4.35")
         elif self.frequency == "biweekly":
-            monthly = self.amount * Decimal(2.175)
+            return self.amount * Decimal("2.175")
         elif self.frequency == "semimonthly":
-            monthly = self.amount * 2
+            return self.amount * 2
         elif self.frequency == "yearly":
-            monthly = self.amount / 12
+            return self.amount / 12
         elif self.frequency == "hourly":
-            monthly = self._hour_to_month()
+            return self._hour_to_month()
+        return self.amount  # "monthly" or default
 
-        return monthly
-
-    def yearly(self):
-        if self.frequency == "monthly":
-            yearly = self.amount * 12
-        elif self.frequency == "weekly":
-            yearly = self.amount * Decimal(52.1429)
+    def yearly(self) -> Decimal:
+        if self.amount is None:
+            return Decimal(0)
+        if self.frequency == "weekly":
+            return self.amount * Decimal("52.1429")
         elif self.frequency == "biweekly":
-            yearly = self.amount * Decimal(26.01745)
+            return self.amount * Decimal("26.01745")
         elif self.frequency == "semimonthly":
-            yearly = self.amount * 24
+            return self.amount * 24
         elif self.frequency == "yearly":
-            yearly = self.amount
+            return self.amount
         elif self.frequency == "hourly":
-            yearly = self._hour_to_month() * 12
+            return self._hour_to_month() * 12
+        return self.amount * 12  # "monthly" or default
 
-        return yearly
+    def _hour_to_month(self) -> Decimal:
+        if self.amount is None or self.hours_worked is None:
+            return Decimal(0)
+        return self.amount * self.hours_worked * Decimal("4.35")
 
-    def _hour_to_month(self):
-        return self.amount * self.hours_worked * Decimal(4.35)
-
-    def missing_fields(self):
+    def missing_fields(self) -> Dependencies:
         income_fields = (
             "type",
             "amount",
@@ -758,34 +782,35 @@ class Expense(models.Model):
     amount = models.DecimalField(decimal_places=2, max_digits=10, blank=True, null=True)
     frequency = models.CharField(max_length=30, blank=True, null=True)
 
-    def monthly(self):
-        if self.frequency == "monthly":
-            monthly = self.amount
-        elif self.frequency == "weekly":
-            monthly = self.amount * Decimal(4.35)
+    def monthly(self) -> float:
+        if self.amount is None:
+            return 0.0
+        monthly_amount = self.amount  # "monthly" or default
+        if self.frequency == "weekly":
+            monthly_amount = self.amount * Decimal("4.35")
         elif self.frequency == "biweekly":
-            monthly = self.amount * Decimal(2.175)
+            monthly_amount = self.amount * Decimal("2.175")
         elif self.frequency == "semimonthly":
-            monthly = self.amount * 2
+            monthly_amount = self.amount * 2
         elif self.frequency == "yearly":
-            monthly = self.amount / 12
-        return monthly
+            monthly_amount = self.amount / 12
+        return float(monthly_amount)
 
-    def yearly(self):
-        if self.frequency == "monthly":
-            yearly = self.amount * 12
-        elif self.frequency == "weekly":
-            yearly = self.amount * Decimal(52.1429)
+    def yearly(self) -> float:
+        if self.amount is None:
+            return 0.0
+        yearly_amount = self.amount * 12    # "monthly" or default
+        if self.frequency == "weekly":
+            yearly_amount = self.amount * Decimal("52.1429")
         elif self.frequency == "biweekly":
-            yearly = self.amount * Decimal(26.01745)
+            yearly_amount = self.amount * Decimal("26.01745")
         elif self.frequency == "semimonthly":
-            yearly = self.amount * 24
+            yearly_amount = self.amount * 24
         elif self.frequency == "yearly":
-            yearly = self.amount
+            yearly_amount = self.amount
+        return float(yearly_amount)
 
-        return yearly
-
-    def missing_fields(self):
+    def missing_fields(self) -> Dependencies:
         expense_fields = ("type", "amount")
 
         missing_fields = Dependencies()
@@ -814,7 +839,7 @@ class Insurance(models.Model):
     # NOTE: Massachusetts combines Medicaid and CHIP into one program called MassHealth
     mass_health = models.BooleanField(default=False)
 
-    def has_insurance_types(self, types, strict=True) -> bool:
+    def has_insurance_types(self, types: tuple[str, ...] | list[str], strict: bool = True) -> bool:
         if "none" in types:
             types = (*types, "dont_know")
 
@@ -830,7 +855,7 @@ class Insurance(models.Model):
 
         return False
 
-    def insurance_map(self):
+    def insurance_map(self) -> dict[str, bool]:
         return {
             "dont_know": self.dont_know,
             "none": self.none,
@@ -866,21 +891,21 @@ class EnergyCalculatorScreen(models.Model):
     needs_stove = models.BooleanField(default=False, null=True, blank=True)
     needs_dryer = models.BooleanField(default=False, null=True, blank=True)
 
-    def has_electricity_provider(self, providers: list[str]):
+    def has_electricity_provider(self, providers: list[str]) -> bool:
         for provider in providers:
             if provider == self.electric_provider:
                 return True
 
         return False
 
-    def has_gas_provider(self, providers: list[str]):
+    def has_gas_provider(self, providers: list[str]) -> bool:
         for provider in providers:
             if provider == self.gas_provider:
                 return True
 
         return False
 
-    def has_utility_provider(self, providers: list[str]):
+    def has_utility_provider(self, providers: list[str]) -> bool:
         return self.has_electricity_provider(providers) or self.has_gas_provider(providers)
 
 
@@ -914,7 +939,7 @@ class NPSScore(models.Model):
 
     class Meta:
         constraints = [
-            models.CheckConstraint(
+            models.CheckConstraint(  # type: ignore[call-arg]
                 check=models.Q(score__gte=1) & models.Q(score__lte=10),
                 name="nps_score_range",
             )
@@ -923,7 +948,7 @@ class NPSScore(models.Model):
             models.Index(fields=["-created_at"], name="nps_created_at_idx"),
         ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"NPS {self.score} for snapshot {self.eligibility_snapshot_id}"
 
 
