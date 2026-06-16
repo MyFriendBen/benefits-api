@@ -50,12 +50,18 @@
           }
         }
       ],
-      "expenses": []
+      "expenses": [
+        {
+          "type": "childCare",
+          "amount": 800.0,
+          "frequency": "monthly"
+        }
+      ]
     },
     "expected_results": {
       "program_name": "ks_cdcc",
       "eligible": true,
-      "value": 157
+      "value": 540
     }
   },
   {
@@ -109,7 +115,13 @@
           }
         }
       ],
-      "expenses": []
+      "expenses": [
+        {
+          "type": "childCare",
+          "amount": 800.0,
+          "frequency": "monthly"
+        }
+      ]
     },
     "expected_results": {
       "program_name": "ks_cdcc",
@@ -189,12 +201,17 @@
           }
         }
       ],
-      "expenses": []
+      "expenses": [
+        {
+          "type": "childCare",
+          "amount": 100.0,
+          "frequency": "monthly"
+        }
+      ]
     },
     "expected_results": {
       "program_name": "ks_cdcc",
-      "eligible": true,
-      "value": 93
+      "eligible": false
     }
   }
 ]
