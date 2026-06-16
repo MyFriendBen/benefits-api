@@ -91,7 +91,7 @@ class TestWaStateCodeDependency(TestCase):
 
 
 class TestKsStateCodeDependency(TestCase):
-    """Tests for KsStateCodeDependency class used by the Kseitc, KsSnap, and KsCdcc calculators."""
+    """Tests for KsStateCodeDependency class used by the Kseitc, KsSnap, KsCdcc, and KsMsp calculators."""
 
     def setUp(self):
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
