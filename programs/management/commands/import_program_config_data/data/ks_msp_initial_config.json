@@ -3,7 +3,9 @@
     "code": "ks"
   },
   "program_category": {
-    "external_name": "ks_healthcare"
+    "external_name": "ks_healthcare",
+    "name": "Healthcare",
+    "icon": "health_care"
   },
   "program": {
     "name_abbreviated": "ks_medicare_savings",
