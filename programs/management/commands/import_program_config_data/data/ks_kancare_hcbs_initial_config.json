@@ -34,11 +34,18 @@
     "has_calculator": true,
     "show_in_has_benefits_step": false
   },
-  "warning_message": {
-    "external_name": "ks_kancare_hcbs_waitlist",
-    "calculator": "_show",
-    "message": "The Physical Disability and Intellectual/Developmental Disability (I/DD) waivers currently have waiting lists. The Autism waiver also has limited spots available. If you qualify for one of these waivers, you may be approved but not start services right away. Other waivers do not currently have waiting lists, though this can change."
-  },
+  "warning_messages": [
+    {
+      "external_name": "ks_kancare_hcbs_waitlist",
+      "calculator": "_show",
+      "message": "The Physical Disability and Intellectual/Developmental Disability (I/DD) waivers currently have waiting lists. The Autism waiver also has limited spots available. If you qualify for one of these waivers, you may be approved but not start services right away. Other waivers do not currently have waiting lists, though this can change."
+    },
+    {
+      "external_name": "ks_kancare_hcbs_married_assets",
+      "calculator": "_show",
+      "message": "KanCare HCBS has an asset limit. Married couples have a higher limit than single people. If one spouse needs care and the other does not, the spouse staying home can keep more in savings. So a married person may qualify even with more savings. If you are married, your assets were not considered when checking HCBS eligibility. KanCare will check whether your assets qualify when you apply."
+    }
+  ],
   "documents": [
     {
       "external_name": "ks_home",

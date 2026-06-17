@@ -15,9 +15,16 @@ class KsKancareHcbs(ProgramCalculator):
     the formal KDADS assessment process gates functional eligibility downstream.
 
     Eligibility (per spec):
-      - Asset limit: countable assets <= $2,000 (single applicant; conservative
-        default since the screener cannot detect whether both spouses are
-        applying or split household assets by member).
+      - Asset limit: countable assets <= $2,000 for a single applicant. Married
+        applicants are NOT asset-gated: spousal-impoverishment rules protect a
+        large, applicant-dependent share (the Community Spouse Resource
+        Allowance, up to ~$162,660 in 2026) that the screener cannot compute
+        because it captures only a combined household-asset total with no
+        per-spouse split. Applying the single $2,000 limit to a couple would
+        wrongly exclude eligible married households, so the asset test is not
+        applied when a spouse/partner is present (inclusivity assumption — the
+        config warning message tells married users their assets were not
+        considered and KanCare verifies at application).
       - SSI auto-eligibility: SSI recipients (the `has_ssi` checkbox or any SSI
         income stream) are automatically KanCare-financially-eligible and bypass
         the asset test.
@@ -32,8 +39,9 @@ class KsKancareHcbs(ProgramCalculator):
     Data gaps (handled with inclusivity assumptions per spec): nursing-facility
     level of care, specific disability type / SSA determination, community-living
     intent, citizenship/immigration status, AU 3-year limit, 5-year asset
-    transfer look-back, and the $2k-vs-$3k spousal asset limit. The waitlist
-    caveat is surfaced via the config warning message and program description.
+    transfer look-back, and the spousal asset split (married applicants are not
+    asset-gated; see above). The waitlist caveat is surfaced via the config
+    warning message and program description.
     """
 
     asset_limit = 2_000
@@ -62,8 +70,18 @@ class KsKancareHcbs(ProgramCalculator):
             e.condition(True, messages.presumed_eligibility())
             return
 
-        # The only hard screener-testable gate: countable assets must be at or
-        # below the individual asset limit (inclusive). Conservatively apply the
-        # $2,000 single-applicant limit (see spec data gap on spousal applicants).
+        # Married applicants are not asset-gated. Spousal-impoverishment rules
+        # protect a large, applicant-dependent share of a couple's assets (the
+        # Community Spouse Resource Allowance) that the screener cannot compute
+        # from a single combined household-assets total. Applying the $2,000
+        # single limit to a couple would wrongly exclude eligible married
+        # households, so skip the asset test when a spouse/partner is present
+        # (the config warning message surfaces this to married users).
+        if self.screen.get_head().is_married()["is_married"]:
+            e.condition(True)
+            return
+
+        # Single applicant: the only hard screener-testable gate is countable
+        # assets at or below the individual asset limit (inclusive).
         assets = self.screen.household_assets if self.screen.household_assets is not None else 0
         e.condition(assets <= self.asset_limit, messages.assets(self.asset_limit))

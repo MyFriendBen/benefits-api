@@ -61,13 +61,12 @@ All HCBS waiver participants must be enrolled in KanCare (Kansas Medicaid). Fina
 
    **SSI auto-eligibility:** SSI recipients are automatically eligible for KanCare (Kansas Medicaid) and therefore automatically meet the financial eligibility criteria for HCBS waivers. `has_ssi` is a confirmed standalone `BooleanField` on Screen. In practice, use the Screen's `has_ssi_or_ssi_income` signal (`has_ssi OR calc_gross_income("yearly", ("sSI",)) > 0`), which catches both the checkbox and any SSI income streams — consistent with how other KS programs handle SSI categorical eligibility.
 
-3. **Asset limit: $2,000 (single applicant) / $3,000 (both spouses applying)**
+3. **Asset limit: $2,000 (single applicant); married applicants not asset-gated**
 
    Countable assets must be at or below:
 
    - Single applicant: $2,000
-   - Both spouses applying: $3,000 combined
-   - One spouse applying: $2,000 for applicant spouse; non-applicant spouse retains up to the Community Spouse Resource Allowance (CSRA) of up to $162,660 (2026)
+   - Married applicant: not screener-testable — the asset test is not applied (see data gap below). For reference, the underlying rules are $3,000 combined if both spouses apply, or $2,000 for the applicant spouse plus the Community Spouse Resource Allowance (CSRA, up to $162,660 in 2026) protected for a non-applying spouse.
 
    Countable assets include: bank accounts (checking, savings, money market), stocks, bonds, investments, CDs, retirement accounts (applicant's IRA/401k counts; non-applicant spouse's IRA/401k is exempt).
 
@@ -81,9 +80,9 @@ All HCBS waiver participants must be enrolled in KanCare (Kansas Medicaid). Fina
 
    Source: [KEESM 8210 — KanCare HCBS Eligibility Determination](https://khap.kdhe.ks.gov/KEESM/Oct_2023_Output/keesm8210.htm); [Kansas Medicaid Eligibility 2026 — MedicaidPlanningAssistance.org](https://www.medicaidplanningassistance.org/medicaid-eligibility-kansas/) *(third-party)*; [42 U.S.C. § 1396p(f) — Home Equity Limit](https://www.law.cornell.edu/uscode/text/42/1396p); [42 U.S.C. § 1396r-5 — Spousal Impoverishment Protections](https://www.law.cornell.edu/uscode/text/42/1396r-5)
 
-   Notes: The screener asset question captures liquid assets (cash, checking, savings, stocks, bonds, mutual funds) but not retirement accounts, vehicles, or life insurance separately. Since most non-liquid assets are exempt, this approximation is acceptable. Apply $2,000 limit for single-member household; $3,000 if both spouses are applying. For a married applicant with a non-applying spouse, the CSRA means combined household assets up to ~$164,660 may still qualify after protecting the community spouse's share.
+   Notes: The screener asset question captures liquid assets (cash, checking, savings, stocks, bonds, mutual funds) but not retirement accounts, vehicles, or life insurance separately. Since most non-liquid assets are exempt, this approximation is acceptable. Apply the $2,000 limit to single applicants. **Do not asset-gate married applicants** — see the data gap below.
 
-   **"Both spouses applying" is not screener-detectable** ⚠️ *data gap*: The screener cannot determine whether both spouses are applying for HCBS services or only one. This affects whether the $2,000 or $3,000 asset limit applies. Conservatively apply the $2,000 limit unless a spousal-applicant question is added to the screener. See scenario 8 and screener improvements #3 and #4.
+   **Spousal asset split is not screener-detectable** ⚠️ *data gap*: The screener captures one combined `household_assets` total and cannot split it between spouses or tell which spouse is applying. Because spousal-impoverishment rules protect a large, applicant-dependent share for a married couple (the CSRA, up to ~$162,660), the $2,000 single limit does not apply to couples — and we have no way to compute the correct couple figure. **Inclusivity assumption: do not apply the asset test when a spouse/partner is present** (rather than the conservative alternative of applying $2,000 to everyone, which would wrongly exclude eligible couples). The `ks_kancare_hcbs_married_assets` warning message surfaces this to married users: their assets were not considered and KanCare verifies at application. See scenario 8 and screener improvements #3 and #4.
 
    **Individual asset test:** As with income, HCBS financial eligibility is based on the individual applicant's assets only, not the household total — even for children. Only the assets of the person who will receive services are counted (with spousal protections applied where applicable).
 
@@ -238,7 +237,7 @@ Source: [KLRD — Medicaid HCBS Waivers (Nov 2023)](https://klrd.gov/2023/11/30/
 * ✅ Evaluable criteria: 4
 * ⚠️ Data gaps: 7
 
-The 4 evaluable criteria cover Kansas residency (zip/county), asset limit ($2,000 individual), income cost-share threshold ($2,982/month for patient liability flag), and age (captured via `birth_year`/`birth_month` for routing context). The only hard screener-testable gate is the asset limit — income does not disqualify and age covers all ages across the seven waivers. The 7 data gaps (criteria 5–11) cover disability type and SSA determination, nursing facility level of care, community living intent, immigration/citizenship, qualifying condition by waiver type, AU waiver participation duration, and the 5-year asset transfer look-back period. All data gaps are handled with inclusivity assumptions; the formal KDADS assessment process gates functional eligibility.
+The 4 evaluable criteria cover Kansas residency (zip/county), asset limit ($2,000 for single applicants), income cost-share threshold ($2,982/month for patient liability flag), and age (captured via `birth_year`/`birth_month` for routing context). The only hard screener-testable gate is the asset limit, and it applies to single applicants only — **married applicants are not asset-gated** because the screener cannot split a couple's combined assets to apply spousal-impoverishment protections (data gap under criterion 3, handled inclusively). Income does not disqualify and age covers all ages across the seven waivers. The remaining data gaps (criteria 5–11) cover disability type and SSA determination, nursing facility level of care, community living intent, immigration/citizenship, qualifying condition by waiver type, AU waiver participation duration, and the 5-year asset transfer look-back period. All data gaps are handled with inclusivity assumptions; the formal KDADS assessment process gates functional eligibility.
 
 ---
 
@@ -251,7 +250,7 @@ The following changes to the MFB screener would close data gaps or improve accur
 | 1 | Add disability/condition type follow-up question (physical disability, I/DD, autism, brain injury, SED, medical technology dependence) | Criteria 5 + 9 — improves waiver routing accuracy | Other disability-linked programs |
 | 2 | Add "Currently living in a nursing home, care facility, or other institution" checkbox to Special Circumstances | Criterion 7 — identifies institutional transition candidates who bypass waitlist | Other LTSS programs |
 | 3 | Add "Some or all of these assets belong to my spouse" checkbox near Liquid Assets | Criterion 3 — enables CSRA calculation for married applicants | Other Medicaid/LTSS programs |
-| 4 | Add "Is your spouse also applying for HCBS waiver services?" question when household includes a spouse | Criterion 3 — determines whether $2,000 or $3,000 asset limit applies | — |
+| 4 | Add "Is your spouse also applying for HCBS waiver services?" question when household includes a spouse | Criterion 3 — would let us apply a real asset test to married applicants (currently not asset-gated) instead of the inclusive assumption | — |
 | 5 | Add `has_kancare_hcbs` to KS current benefits step | Suppresses program for current enrollees (no data gap closure — UX improvement) | — |
 | 6 | Add veteran/military status checkbox to Special Circumstances | Priority Criteria — enables targeted waitlist bypass notice for military households | Other veteran-priority programs |
 | 7 | Add "I have given away or transferred assets for less than their value in the last 5 years" checkbox to Special Circumstances | Criterion 11 — surfaces look-back penalty warning rather than silently assuming eligible | Other Medicaid LTSS programs |
@@ -363,10 +362,10 @@ The following changes to the MFB screener would close data gaps or improve accur
 
 ---
 
-### Scenario 8: Both Spouses Applying — Combined Assets Between $2,000 and $3,000
+### Scenario 8: Married Applicant, Assets Above the Single Limit — Not Asset-Gated
 
-**What we're checking**: Married household with combined assets of $2,500 — above the $2,000 single-applicant limit but below the $3,000 both-spouses limit. Tests the data gap: the screener cannot detect whether both spouses are applying (criterion 3).
-**Expected**: **Ineligible** under the conservative $2,000 implementation (recommended until a spousal-applicant checkbox is added). Eligible if the dev implements $3,000 for any household containing a spouse member. Team to decide.
+**What we're checking**: Married household with combined assets of $2,500 — above the $2,000 single-applicant limit. Confirms that married applicants are **not** disqualified by the asset test (criterion 3 data gap: the screener cannot split assets between spouses, so the asset test is not applied when a spouse/partner is present). A dev who applied the $2,000 limit to couples would wrongly fail this scenario. The `ks_kancare_hcbs_married_assets` warning is surfaced.
+**Expected**: **Eligible**, value $35,000/year.
 **Steps**:
 * Location: ZIP `66606`, county `Shawnee County`
 * Household size: 2
@@ -374,7 +373,7 @@ The following changes to the MFB screener would close data gaps or improve accur
 * Person 1: Birth month/year `October 1957` (age 68), `headOfHousehold`, `disabled: true`, income: Social Security Retirement $1,600/month, insurance: none
 * Person 2: Birth month/year `October 1960` (age 65), `spouse`, `disabled: true`, no income, insurance: none
 
-**Why this matters**: Surfaces the implementation decision required for the $2k vs $3k threshold. See screener improvement #4.
+**Why this matters**: Confirms married applicants are not asset-gated (the inclusivity handling of the spousal-split data gap) and that they would otherwise be wrongly excluded by the $2,000 single limit. See screener improvements #3 and #4.
 
 ---
 

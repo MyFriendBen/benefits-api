@@ -2,7 +2,8 @@
 Unit tests for KsKancareHcbs calculator class.
 
 Eligibility (per spec):
-- Hard gate: countable assets <= $2,000 (inclusive). Conservative single-applicant limit.
+- Hard gate: countable assets <= $2,000 (inclusive) for single applicants. Married
+  applicants are NOT asset-gated (spousal-split data gap, handled inclusively).
 - SSI auto-eligibility bypasses the asset test (has_ssi checkbox OR any SSI income stream).
 - Income does NOT disqualify (cost-share threshold is informational only).
 - Age does NOT filter (BI 0-64 + FE 65+ cover all ages).
@@ -32,8 +33,12 @@ def make_member(age=70, disabled=False, long_term_disability=False, ssi_income=0
     return member
 
 
-def make_calculator(household_assets=0, has_ssi=False, members=None):
-    """Create a KsKancareHcbs calculator with a mocked screen and program."""
+def make_calculator(household_assets=0, has_ssi=False, members=None, married=False):
+    """Create a KsKancareHcbs calculator with a mocked screen and program.
+
+    `married=True` makes the head's is_married() report a spouse, which exercises
+    the married-applicant path (asset test not applied).
+    """
     mock_program = Mock()
 
     mock_screen = Mock()
@@ -42,6 +47,11 @@ def make_calculator(household_assets=0, has_ssi=False, members=None):
     if members is None:
         members = [make_member()]
     mock_screen.household_members.all = Mock(return_value=members)
+
+    # get_head().is_married() drives the married-applicant asset-test bypass.
+    head = members[0]
+    head.is_married = Mock(return_value={"is_married": married, "married_to": (members[1] if married and len(members) > 1 else None)})
+    mock_screen.get_head = Mock(return_value=head)
 
     mock_missing_deps = Mock()
     mock_missing_deps.has.return_value = False
@@ -177,14 +187,34 @@ class TestKsKancareHcbsNoAgeOrDisabilityGate(TestCase):
         self.assertTrue(e.eligible)
 
 
-class TestKsKancareHcbsMultiMemberAssets(TestCase):
-    """household_assets is the proxy for the applicant's assets (data gap)."""
+class TestKsKancareHcbsMarriedAssets(TestCase):
+    """Married applicants are not asset-gated (spousal-split data gap, criterion 3).
 
-    def test_two_member_combined_assets_over_limit_ineligible(self):
-        """Scenario 8: married couple, combined $2,500 > $2,000 conservative limit -> ineligible."""
+    The screener captures one combined household-assets total and cannot apply
+    spousal-impoverishment protections, so the $2,000 single limit is not applied
+    when a spouse/partner is present.
+    """
+
+    def test_married_assets_over_limit_eligible(self):
+        """Scenario 8: married couple, combined $2,500 > $2,000 single limit -> eligible (not asset-gated)."""
         m1 = make_member(age=68, disabled=True)
         m2 = make_member(age=65, disabled=True)
-        e = run_household(make_calculator(household_assets=2_500, members=[m1, m2]))
+        e = run_household(make_calculator(household_assets=2_500, members=[m1, m2], married=True))
+        self.assertTrue(e.eligible)
+
+    def test_married_high_assets_still_eligible(self):
+        """A married couple well over the single limit is still not asset-gated."""
+        m1 = make_member(age=68, disabled=True)
+        m2 = make_member(age=65, disabled=True)
+        e = run_household(make_calculator(household_assets=50_000, members=[m1, m2], married=True))
+        self.assertTrue(e.eligible)
+
+    def test_nonspousal_multimember_over_limit_ineligible(self):
+        """Non-spousal multi-member household (e.g. parent + adult child) is still
+        asset-gated on the combined total — only married applicants bypass."""
+        m1 = make_member(age=70, disabled=True)
+        m2 = make_member(age=40)
+        e = run_household(make_calculator(household_assets=2_500, members=[m1, m2], married=False))
         self.assertFalse(e.eligible)
 
 
