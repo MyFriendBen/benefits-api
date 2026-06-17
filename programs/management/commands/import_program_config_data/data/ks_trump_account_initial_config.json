@@ -1,0 +1,90 @@
+{
+    "white_label": {
+        "code": "ks"
+    },
+    "program_category": {
+        "external_name": "ks_cash",
+        "name": "Cash Assistance",
+        "icon": "cash"
+    },
+    "program": {
+        "name_abbreviated": "trump_account",
+        "external_name": "ks_trump_account",
+        "legal_status_required": [
+            "citizen"
+        ],
+        "name": "530A (\"Trump\") Accounts",
+        "description_short": "$1,000 government deposit into a savings and investment account for U.S. citizen children born 2025-2028",
+        "description": "A 530A (\"Trump\") Account is a savings and investment account for your child. The government adds a one-time $1,000 deposit to help the account grow.\n\nThe money stays invested so it can grow over the years. You manage the account for your child until they turn 18. After that, the money follows the same rules as a retirement savings account.\n\nYour child will need a Social Security Number to open the account and get the $1,000 deposit. If your child does not have one yet, you can apply for free at ssa.gov.\n\nTo open the account, a parent or guardian fills out IRS Form 4547. There is no income limit, so any family can apply. Each child can have only one account.",
+        "learn_more_link": "https://trumpaccounts.gov/",
+        "apply_button_link": "https://www.irs.gov/trumpaccounts",
+        "apply_button_description": "Fill out Form 4547",
+        "estimated_application_time": "5 - 10 minutes",
+        "estimated_delivery_time": "",
+        "estimated_value": "",
+        "value_format": "lump_sum",
+        "value_type": "benefit",
+        "website_description": "$1,000 government deposit into a savings and investment account for U.S. citizen children born 2025-2028",
+        "show_on_current_benefits": true,
+        "has_calculator": true,
+        "show_in_has_benefits_step": false
+    },
+    "documents": [
+        {
+            "external_name": "trump_account_child_ssn",
+            "text": "Child's Social Security Number (SSN)",
+            "link_url": "https://www.ssa.gov/number-card/request-number-first-time",
+            "link_text": "Apply for a child's SSN at ssa.gov"
+        },
+        {
+            "external_name": "trump_account_child_birth_certificate",
+            "text": "Child's birth certificate or other proof of age and U.S. citizenship",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "trump_account_parent_id",
+            "text": "Parent or guardian's government-issued photo ID (e.g., driver's license or passport), for account setup",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "trump_account_parent_ssn",
+            "text": "Parent or guardian's Social Security Number (SSN) or ITIN",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "trump_account_irs_form",
+            "text": "IRS Form 4547 (filed with your federal tax return)",
+            "link_url": "https://www.irs.gov/form4547",
+            "link_text": "IRS Form 4547 page"
+        }
+    ],
+    "navigators": [
+        {
+            "external_name": "united_way_of_the_plains_vita",
+            "name": "United Way of the Plains — Free Tax Filing (VITA)",
+            "email": "email@unitedwayplains.org",
+            "description": "Free help preparing and filing your federal tax return from IRS-certified volunteers (VITA), for income-limited households in south-central Kansas. The Trump Account election (Form 4547) is filed with your return.",
+            "assistance_link": "https://unitedwayplains.org/financial-security/free-tax-filing-services/",
+            "phone_number": "+13162671321",
+            "counties": ["Sedgwick County", "Butler County", "Cowley County", "Geary County", "Marion County", "Pratt County"],
+            "languages": ["en", "es"]
+        },
+        {
+            "external_name": "aarp_foundation_tax_aide_ks",
+            "name": "AARP Foundation Tax-Aide (Kansas)",
+            "email": "ksaarp@aarp.org",
+            "description": "Free in-person and virtual help preparing and filing your federal tax return from IRS-certified volunteers, at sites across Kansas. Open to all ages and incomes; AARP membership not required. The Trump Account election (Form 4547) is filed with your return. Book an appointment at kstaxaide.com.",
+            "assistance_link": "https://www.kstaxaide.com/appointments",
+            "phone_number": "+18664483619",
+            "languages": ["en"]
+        }
+    ],
+    "warning_message": {
+        "external_name": "trump_account_notices",
+        "calculator": "_show",
+        "message": "Trump Accounts are expected to become available on or after July 4, 2026. Check IRS.gov/trumpaccounts for updates."
+    }
+}
