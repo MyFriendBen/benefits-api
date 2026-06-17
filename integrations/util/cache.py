@@ -32,7 +32,8 @@ class Cache:
         except Exception as e:
             if settings.DEBUG:
                 print(e)
-            capture_exception(e, level="warning")
+            level = "error" if self.invalid else "warning"
+            capture_exception(e, level=level)
 
     def save(self, data):
         self.data = data
