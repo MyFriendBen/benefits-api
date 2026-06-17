@@ -827,6 +827,28 @@ class RemImpactView(views.APIView):
                 detail = e.response.json()
             except Exception:
                 detail = e.response.text
+            # REM returns 400 with a typed detail dict for address-level errors the frontend
+            # can surface meaningfully. Known types (per docs.rewiringamerica.org/api/
+            # residential-electrification-model#get-by-address):
+            #   multifamily_not_supported, building_type_not_supported,
+            #   address_not_parsable, building_not_supported
+            # Return 422 so the frontend can distinguish these from backend/network failures.
+            _ADDRESS_ERROR_TYPES = {
+                "multifamily_not_supported",
+                "building_type_not_supported",
+                "address_not_parsable",
+                "building_not_supported",
+            }
+            nested = detail.get("detail") if isinstance(detail, dict) else None
+            if (
+                e.response.status_code < 500
+                and isinstance(nested, dict)
+                and nested.get("type") in _ADDRESS_ERROR_TYPES
+            ):
+                return Response(
+                    {"error": "address_not_supported", "detail": detail},
+                    status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                )
             return Response(
                 {"error": f"Rewiring America API error: {e.response.status_code}", "detail": detail},
                 status=status.HTTP_502_BAD_GATEWAY,
