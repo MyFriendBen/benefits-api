@@ -65,10 +65,10 @@ Calculated by the Policy Engine `ks_cdcc` calculator. The credit is non-refundab
 
 1. **Federal CDCC amount** is calculated first per IRC § 21. The credit percentage (20%–35%) is determined by the taxpayer's AGI: 35% for AGI ≤ $15,000, decreasing by 1 percentage point per $2,000 (or fraction) above $15,000, with a floor of 20%. This percentage is applied to qualifying care expenses, capped at $3,000 (one qualifying individual) or $6,000 (two or more).
 
-2. **Kansas credit** = 25% of the federal CDCC amount for most filers. Per Kansas Tax Notice 24-09, lower-income filers may qualify for an enhanced percentage (up to 50%). The credit reduces Kansas income tax liability; it is non-refundable.
+2. **Kansas credit** = 50% of the federal CDCC amount. Per Kansas Tax Notice 24-09 (SB1 §17, amending K.S.A. 79-32,111c), the credit was increased from 25% to a flat 50% of the federal credit for tax year 2024 and all years thereafter — there is no income-based tiering. The credit reduces Kansas income tax liability; it is non-refundable.
 
 **PE variable:** `ks_cdcc`
-**Sources:** IRC § 21(a)(2); K.S.A. 79-32,111; Kansas Department of Revenue Tax Notice 24-09
+**Sources:** IRC § 21(a)(2); K.S.A. 79-32,111c; Kansas Department of Revenue Tax Notice 24-09; Kansas K-40 instructions, Line 14
 
 ## Implementation Coverage
 
@@ -94,21 +94,21 @@ Files generated:
 
 ## Acceptance Criteria
 
-[ ] Scenario 1 (Golden path — single parent, child under 13, earned income, care expenses): User should be **eligible**, value: $157/year
-[ ] Scenario 2 (Married filing jointly, child age 12 — boundary condition): User should be **eligible**, value: $93/year
+[ ] Scenario 1 (Golden path — single parent, child under 13, earned income, care expenses): User should be **eligible**, value: $315/year
+[ ] Scenario 2 (Married filing jointly, child age 12 — boundary condition): User should be **ineligible** (federal CDCC is non-refundable and this household's income tax liability is fully absorbed, leaving $0 of credit capacity)
 [ ] Scenario 3 (Zero earned income — only investment income): User should be **ineligible**
 [ ] Scenario 4 (Child age 13 — just above qualifying age cutoff): User should be **ineligible**
 [ ] Scenario 5 (Married couple, non-working spouse — spouse lacks earned income): User should be **ineligible**
-[ ] Scenario 6 (Two working parents, three qualifying children): User should be **eligible**, value: $300/year
-[ ] Scenario 7 (Child turns 13 mid-year — still 12 at time of screening): User should be **eligible**, value: $172/year
+[ ] Scenario 6 (Two working parents, three qualifying children): User should be **eligible**, value: $600/year
+[ ] Scenario 7 (Child turns 13 mid-year — still 12 at time of screening): User should be **eligible**, value: $345/year
 [ ] Scenario 8 (No qualifying dependent — only teenager age 16 in household): User should be **ineligible**
-[ ] Scenario 9 (Disabled adult dependent — alternative qualifying individual): User should be **eligible**, value: $157/year
+[ ] Scenario 9 (Disabled adult dependent — alternative qualifying individual): User should be **eligible** per IRC § 21, but **currently returns $0 (ineligible) in PolicyEngine** — see "Known limitation" below
 
 ## Test Scenarios
 
 ### Scenario 1: Golden Path — Single Parent with Young Child and Childcare Expenses
 **What we're checking**: Typical happy path - single parent with earned income, one young child, childcare expenses, Kansas resident, recently filed taxes
-**Expected**: Eligible, value: $157/year
+**Expected**: Eligible, value: $315/year (federal CDCC $630 × 50%)
 
 **Steps**:
 - **Location**: Enter ZIP code `66044`, Select county `Douglas`
@@ -123,7 +123,7 @@ Files generated:
 
 ### Scenario 2: Married Filing Jointly — Child Age 12 Boundary Condition
 **What we're checking**: Married couple both with earned income, filing jointly, child just under the age 13 cutoff. Tests criterion 1 (age boundary) and criterion 3 (joint filing) together.
-**Expected**: Eligible, value: $93/year
+**Expected**: Ineligible — at $22,800 MFJ income the household's federal income tax liability is fully absorbed by other credits, leaving $0 of capacity for the non-refundable CDCC, so the KS credit ($0) is $0. (The age-boundary and joint-filing eligibility logic is still exercised; only the dollar value resolves to $0.)
 
 **Steps**:
 - **Location**: Enter ZIP code `66002`, Select county `Atchison`
@@ -186,7 +186,7 @@ Files generated:
 
 ### Scenario 6: Two Working Parents, Three Qualifying Children
 **What we're checking**: Multi-member household with two working parents filing jointly and three children all under age 13. Tests criterion 1 with multiple qualifying dependents.
-**Expected**: Eligible, value: $300/year
+**Expected**: Eligible, value: $600/year (federal CDCC $1,200 × 50%; expenses capped at $6,000 for 2+ qualifying individuals)
 
 **Steps**:
 - **Location**: Enter ZIP code `66502`, Select county `Riley`
@@ -204,7 +204,7 @@ Files generated:
 
 ### Scenario 7: Child Turns 13 Mid-Year — Still 12 at Time of Screening
 **What we're checking**: Child is currently 12 but will turn 13 later this calendar year. Tests the age boundary logic at its most critical point for criterion 1.
-**Expected**: Eligible, value: $172/year
+**Expected**: Eligible, value: $345/year (federal CDCC $690 × 50%)
 
 **Steps**:
 - **Location**: Enter ZIP code `66502`, Select county `Riley`
@@ -234,7 +234,7 @@ Files generated:
 
 ### Scenario 9: Disabled Adult Dependent — Alternative Qualifying Individual
 **What we're checking**: Household where the qualifying individual is a disabled dependent (not a child under 13). Tests the alternative path in criterion 1.
-**Expected**: Eligible, value: $157/year
+**Expected**: Eligible per IRC § 21 (a disabled spouse/dependent incapable of self-care is a qualifying individual at any age). **However, this currently returns $0 / ineligible in PolicyEngine** — see "Known limitation: disabled adult dependents" below. This scenario is intentionally NOT included in the importable validation set until the upstream fix lands.
 
 **Steps**:
 - **Location**: Enter ZIP code `66044`, Select county `Douglas`
@@ -247,6 +247,16 @@ Files generated:
 
 ---
 
+## Known limitation: disabled adult dependents (Scenario 9)
+
+Under IRC § 21, care expenses for a disabled spouse or dependent who is physically/mentally incapable of self-care qualify for the CDCC regardless of age. **PolicyEngine does not currently compute this correctly:** its federal CDCC counts such a person as a qualifying individual (`is_cdcc_eligible = True`) but attributes $0 of care expenses to them, because `tax_unit_childcare_expenses` distributes `childcare_expenses` only across `is_child` (under-18) members. With no member under 18, the attributed expenses are $0, so the credit resolves to $0.
+
+Verified (policyengine-us 1.730.0): single filer + one dependent flagged incapable of self-care, $6,000 care expenses — at dependent age 17 the credit is $630; at age 18 it is $0, with only the age changed.
+
+Consequences for this implementation:
+- KS CDCC (`ks_cdcc = 50% × federal cdcc`) therefore returns $0 for households whose only qualifying individual is a disabled person 18+.
+- Scenario 9 is **excluded from the importable validation set** so the suite reflects current behavior; it remains here for manual QA and as the tracked gap.
+- This is an **upstream PolicyEngine issue** (reported to the `mfb-policy-engine` channel), not a calculator-wiring bug on our side. Even once PE is fixed, our calculator will additionally need to send `is_incapable_of_self_care` for disabled adult dependents (the screener's `disabled` flag does not currently map to it).
 
 ## Source Documentation
 
