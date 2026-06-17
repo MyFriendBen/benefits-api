@@ -149,7 +149,7 @@ Source: K.S.A. § 79-32,205 (Justia, verified current to Jan 1 2025); ITEP State
 
 ### Scenario 1: Single Parent with Two Qualifying Children - Clearly Eligible
 **What we're checking**: Verifies that a typical Kansas resident with earned income, two qualifying children, and income well below the EITC threshold qualifies for the Kansas EITC (17% of federal EITC)
-**Expected**: Eligible — ~$960/year (estimate: federal EITC ~$5,650 × 17%; verify with PE)
+**Expected**: Eligible — $1,050/year (federal EITC $6,173.55 × 17%)
 
 **Steps**:
 - **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
@@ -181,7 +181,7 @@ Source: K.S.A. § 79-32,205 (Justia, verified current to Jan 1 2025); ITEP State
 
 ### Scenario 3: Married Couple with Four Qualifying Children - Income Just Below MFJ AGI Limit
 **What we're checking**: Validates that a married-filing-jointly household with income just below the MFJ AGI limit for 3+ qualifying children is correctly identified as eligible
-**Expected**: Eligible — ~$4/year (boundary test; income is $100 below limit so federal EITC ≈ $21, KS EITC ≈ $4; verify with PE — this scenario tests eligibility determination, not calculator value)
+**Expected**: Eligible — $4/year (boundary test; income is $100 below limit, federal EITC $21.09, KS EITC $3.58 → $4 — this scenario tests eligibility determination, not calculator value)
 
 **Steps**:
 - **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
@@ -226,7 +226,7 @@ Source: K.S.A. § 79-32,205 (Justia, verified current to Jan 1 2025); ITEP State
 
 ### Scenario 6: Single Filer, No Qualifying Children, Age Exactly 25 - Meets Minimum Age Requirement
 **What we're checking**: Validates that a taxpayer exactly at the minimum age for childless EITC (25) is eligible
-**Expected**: Eligible — ~$47/year (estimate: federal EITC ~$275 × 17% at $15k income, 0 children; verify with PE)
+**Expected**: Eligible — $53/year (federal EITC $313.93 × 17% at $15k income, 0 children)
 
 **Steps**:
 - **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
@@ -267,7 +267,7 @@ Source: K.S.A. § 79-32,205 (Justia, verified current to Jan 1 2025); ITEP State
 
 ### Scenario 9: Mixed Household - Adult Child Does Not Count Toward Qualifying Child Tier
 **What we're checking**: Validates that a 20-year-old household member is not counted as a qualifying child, placing the household in the 1-child tier rather than 2-child tier
-**Expected**: Eligible — ~$464/year (estimate: federal EITC ~$2,730 × 17% at $32k income, 1 qualifying child tier; verify with PE)
+**Expected**: Eligible — $314/year (federal EITC $1,846.31 × 17% at $32k income, 1 qualifying child tier)
 
 **Steps**:
 - **Location**: Enter ZIP code `66502`, Select county `Riley`
@@ -282,7 +282,7 @@ Source: K.S.A. § 79-32,205 (Justia, verified current to Jan 1 2025); ITEP State
 
 ### Scenario 10: Two-Adult Household with Both Adults Having Earned Income and Two Qualifying Children
 **What we're checking**: Validates that combined household income from two earners is correctly aggregated for AGI eligibility
-**Expected**: Eligible — ~$755/year (estimate: federal EITC ~$4,440 × 17% at $39,600 combined income, 2 children, MFJ; verify with PE)
+**Expected**: Eligible — $889/year (federal EITC $5,229.22 × 17% at $39,600 combined income, 2 children, MFJ)
 
 **Steps**:
 - **Location**: Enter ZIP code `66502`, Select county `Riley`
@@ -298,7 +298,7 @@ Source: K.S.A. § 79-32,205 (Justia, verified current to Jan 1 2025); ITEP State
 
 ### Scenario 11: Single Filer, No Qualifying Children, Age Exactly 64 - At Upper Age Boundary
 **What we're checking**: Validates that a childless filer at age 64 (one year below the upper limit) is eligible
-**Expected**: Eligible — ~$1/year (estimate: federal EITC ~$8 × 17% at $100 income; this scenario tests age eligibility, not calculator value)
+**Expected**: Eligible — $1/year (federal EITC $7.65 × 17% at $100 income, KS EITC $1.30 → $1; this scenario tests age eligibility, not calculator value)
 
 **Steps**:
 - **Location**: Enter ZIP code `66502`, Select county `Riley`
