@@ -3,7 +3,6 @@ from django.conf import settings
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
 import json
-from integrations.util.cache import Cache
 
 
 class GoogleSheets:
@@ -90,16 +89,3 @@ class GoogleSheets:
                 missing_columns.append(column)
 
         raise self.ColumnDoesNotExist(f"The following column headers are missing: {missing_columns}")
-
-
-class GoogleSheetsCache(Cache):
-    expire_time = 60 * 60 * 24
-    default = []
-
-    sheet_id = ""
-    range_name = ""
-
-    def update(self):
-        sheet_values = GoogleSheets(self.sheet_id, self.range_name).data()
-
-        return sheet_values

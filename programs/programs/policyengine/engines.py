@@ -1,4 +1,4 @@
-from integrations.util.cache import Cache
+from django.core.cache import cache
 from decouple import config
 import requests
 
@@ -47,39 +47,40 @@ class ApiSim(Sim):
         return self.data[unit][sub_unit]["members"]
 
 
-class PolicyEngineBearerTokenCache(Cache):
-    expire_time = 60 * 60 * 24 * 29
-    default = ""
-    client_id: str = config("POLICY_ENGINE_CLIENT_ID", "")
-    client_secret: str = config("POLICY_ENGINE_CLIENT_SECRET", "")
-    domain = "https://policyengine.uk.auth0.com"
-    endpoint = "/oauth/token"
+_PE_TOKEN_CACHE_KEY = "pe_bearer_token"
+_PE_TOKEN_TIMEOUT = 60 * 60 * 24 * 29  # 29 days
 
-    def update(self):
-        # https://policyengine.org/us/api#fetch_token
+_pe_client_id: str = config("POLICY_ENGINE_CLIENT_ID", "")
+_pe_client_secret: str = config("POLICY_ENGINE_CLIENT_SECRET", "")
+_pe_token_url = "https://policyengine.uk.auth0.com/oauth/token"
 
-        if self.client_id == "" or self.client_secret == "":
-            raise Exception("client id or secret not configured")
 
-        payload = {
-            "client_id": self.client_id,
-            "client_secret": self.client_secret,
-            "grant_type": "client_credentials",
-            "audience": "https://household.api.policyengine.org",
-        }
+def _fetch_pe_bearer_token() -> str:
+    token = cache.get(_PE_TOKEN_CACHE_KEY)
+    if token is not None:
+        return token
 
-        res = requests.post(self.domain + self.endpoint, json=payload)
+    if not _pe_client_id or not _pe_client_secret:
+        raise Exception("Policy Engine client id or secret not configured")
 
-        return res.json()["access_token"]
+    payload = {
+        "client_id": _pe_client_id,
+        "client_secret": _pe_client_secret,
+        "grant_type": "client_credentials",
+        "audience": "https://household.api.policyengine.org",
+    }
+    res = requests.post(_pe_token_url, json=payload)
+    token = res.json()["access_token"]
+    cache.set(_PE_TOKEN_CACHE_KEY, token, timeout=_PE_TOKEN_TIMEOUT)
+    return token
 
 
 class PrivateApiSim(ApiSim):
     method_name = "Private Policy Engine API"
-    token = PolicyEngineBearerTokenCache()
     pe_url = "https://household.api.policyengine.org/us/calculate"
 
     def __init__(self, data) -> None:
-        token = self.token.fetch()
+        token = _fetch_pe_bearer_token()
 
         headers = {
             "Authorization": f"Bearer {token}",

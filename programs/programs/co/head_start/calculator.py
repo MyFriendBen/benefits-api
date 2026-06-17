@@ -1,19 +1,28 @@
-from integrations.services.sheets.sheets import GoogleSheetsCache
+from django.core.cache import cache
+from integrations.services.sheets.sheets import GoogleSheets
 from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
 import programs.programs.messages as messages
 from programs.co_county_zips import counties_from_screen
 
 
-class CoHeadStartCountyEligibleCache(GoogleSheetsCache):
-    expire_time = 60 * 60 * 24
-    default = {}
+class CoHeadStartCountyEligibleCache:
+    CACHE_KEY = "co_head_start_data"
+    CACHE_TIMEOUT = 60 * 60 * 24  # 24 hours
     sheet_id = "1suOcBpJPJGIXHljypNSCxGDWEvydG-t8erh2rzUtWcE"
     range_name = "HEAD START COUNTIES FOR MFB!A2:B"
 
-    def update(self):
-        data = super().update()
+    def _process(self):
+        data = GoogleSheets(self.sheet_id, self.range_name).data()
 
         return {row[0].strip() + " County": row[1] == "TRUE" for row in data}
+
+    def _get_data(self) -> dict:
+        data = cache.get(self.CACHE_KEY)
+        if data is not None:
+            return data
+        data = self._process()
+        cache.set(self.CACHE_KEY, data, timeout=self.CACHE_TIMEOUT)
+        return data
 
 
 class CoHeadStart(ProgramCalculator):
@@ -30,7 +39,7 @@ class CoHeadStart(ProgramCalculator):
         counties = counties_from_screen(self.screen)
 
         in_eligible_county = False
-        eligible_counties = CoHeadStart.counties.fetch()
+        eligible_counties = CoHeadStart.counties._get_data()
         for county in counties:
             if county in eligible_counties:
                 in_eligible_county = eligible_counties[county]

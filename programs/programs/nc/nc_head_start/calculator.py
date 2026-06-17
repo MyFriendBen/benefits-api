@@ -1,17 +1,26 @@
-from integrations.services.sheets.sheets import GoogleSheetsCache
+from integrations.services.sheets.sheets import GoogleSheets
+from django.core.cache import cache
 from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
 import programs.programs.messages as messages
 from programs.co_county_zips import counties_from_screen
 
 
-class NcHeadStartMarketRatesCache(GoogleSheetsCache):
-    expire_time = 60 * 60 * 24
-    default = {}
+class NcHeadStartMarketRatesCache:
+    CACHE_KEY = "nc_head_start_data"
+    CACHE_TIMEOUT = 60 * 60 * 24  # 24 hours
     sheet_id = "1y7p8qkiOrMAM42rtSwT_ZXeA5tzew4edNkrTXACxf4M"
     range_name = "'Current report'!A2:F101"
 
-    def update(self):
-        data = super().update()
+    def _get_data(self) -> dict:
+        data = cache.get(self.CACHE_KEY)
+        if data is not None:
+            return data
+        data = self._process()
+        cache.set(self.CACHE_KEY, data, timeout=self.CACHE_TIMEOUT)
+        return data
+
+    def _process(self):
+        data = GoogleSheets(self.sheet_id, self.range_name).data()
         rates = {}
         for row in data:
             if len(row) < 6:
@@ -51,7 +60,7 @@ class NCHeadStart(ProgramCalculator):
     def household_eligible(self, e: Eligibility):
         # location - check if county has market rates (means it's eligible)
         counties = counties_from_screen(self.screen)
-        market_rates_data = NCHeadStart.market_rates.fetch()
+        market_rates_data = NCHeadStart.market_rates._get_data()
 
         in_eligible_county = False
         for county in counties:
@@ -109,7 +118,7 @@ class NCHeadStart(ProgramCalculator):
         Formula: Sum of (monthly market rates * 12) for all eligible children
         """
         counties = counties_from_screen(self.screen)
-        market_rates_data = NCHeadStart.market_rates.fetch()
+        market_rates_data = NCHeadStart.market_rates._get_data()
 
         county_rates = None
         for county in counties:

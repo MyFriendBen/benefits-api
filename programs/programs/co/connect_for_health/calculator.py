@@ -1,5 +1,5 @@
 from integrations.services.sheets.sheets import GoogleSheets
-from integrations.util.cache import Cache
+from django.core.cache import cache
 from programs.co_county_zips import counties_from_screen
 from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
 from screener.models import HouseholdMember
@@ -7,18 +7,25 @@ from programs.programs.helpers import medicaid_eligible
 import programs.programs.messages as messages
 
 
-class CFHCache(Cache):
-    expire_time = 60 * 60 * 24
-    default = {}
-    sheet_id = "1SuOhwX5psXsipMS_G5DE_f9jLS2qWxf6temxY445EQg"
-    range_name = "current report"
-    average_column = "Average Monthly Premium Tax Credit"
-    county_column = "County\n(source here)"
+_CFH_CACHE_KEY = "cfh_county_values"
+_CFH_CACHE_TIMEOUT = 60 * 60 * 24  # 1 day
 
-    def update(self):
-        data = GoogleSheets(self.sheet_id, self.range_name).data_by_column(self.county_column, self.average_column)
+_CFH_SHEET_ID = "1SuOhwX5psXsipMS_G5DE_f9jLS2qWxf6temxY445EQg"
+_CFH_RANGE_NAME = "current report"
+_CFH_AVERAGE_COLUMN = "Average Monthly Premium Tax Credit"
+_CFH_COUNTY_COLUMN = "County\n(source here)"
 
-        return {row[self.county_column].strip() + " County": float(row[self.average_column]) for row in data}
+
+def _get_cfh_county_values() -> dict:
+    values = cache.get(_CFH_CACHE_KEY)
+    if values is not None:
+        return values
+
+    data = GoogleSheets(_CFH_SHEET_ID, _CFH_RANGE_NAME).data_by_column(_CFH_COUNTY_COLUMN, _CFH_AVERAGE_COLUMN)
+
+    values = {row[_CFH_COUNTY_COLUMN].strip() + " County": float(row[_CFH_AVERAGE_COLUMN]) for row in data}
+    cache.set(_CFH_CACHE_KEY, values, timeout=_CFH_CACHE_TIMEOUT)
+    return values
 
 
 class ConnectForHealth(ProgramCalculator):
@@ -26,7 +33,6 @@ class ConnectForHealth(ProgramCalculator):
     dependencies = ["insurance", "income_amount", "income_frequency", "zipcode", "household_size"]
     eligible_insurance_types = ["none", "private"]
     ineligible_insurance_types = ["va"]
-    county_values = CFHCache()
 
     def household_eligible(self, e: Eligibility):
         # Medicade eligibility
@@ -55,6 +61,6 @@ class ConnectForHealth(ProgramCalculator):
         e.condition(not member.insurance.has_insurance_types(ConnectForHealth.ineligible_insurance_types))
 
     def member_value(self, member: HouseholdMember):
-        values = self.county_values.fetch()
+        values = _get_cfh_county_values()
         county = counties_from_screen(self.screen)[0]
         return int(values[county] * 12)
