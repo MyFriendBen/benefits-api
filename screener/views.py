@@ -840,11 +840,7 @@ class RemImpactView(views.APIView):
                 "building_not_supported",
             }
             nested = detail.get("detail") if isinstance(detail, dict) else None
-            if (
-                e.response.status_code < 500
-                and isinstance(nested, dict)
-                and nested.get("type") in _ADDRESS_ERROR_TYPES
-            ):
+            if e.response.status_code < 500 and isinstance(nested, dict) and nested.get("type") in _ADDRESS_ERROR_TYPES:
                 return Response(
                     {"error": "address_not_supported", "detail": detail},
                     status=status.HTTP_422_UNPROCESSABLE_ENTITY,
