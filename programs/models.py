@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models import Q
+from django.db.models.functions import Lower
 from phonenumber_field.modelfields import PhoneNumberField
 from screener.models import WhiteLabel
 from translations.model_data import ModelDataController
@@ -70,8 +72,10 @@ def _get_fpl_data() -> dict:
     return _FPL_DEFAULTS
 
 
+
 def _invalidate_fpl_cache() -> None:
     cache.delete(_FPL_CACHE_KEY)
+
 
 
 class FederalPoveryLimit(models.Model):
@@ -760,11 +764,32 @@ class Program(models.Model):
 
         return eligibility
 
+    def save(self, *args, **kwargs):
+        # Normalize name_abbreviated to lowercase. It's used as a case-sensitive
+        # key in several places — the calculator registry lookup above (.lower()),
+        # the CurrentBenefit join table, and the frontend's current_benefits
+        # round-trip, which matches tile keys against name_abbreviated exactly (no
+        # case coercion). Enforcing lowercase here keeps that invariant true for
+        # admin-entered and imported values alike, rather than leaving it to
+        # convention.
+        if self.name_abbreviated:
+            self.name_abbreviated = self.name_abbreviated.lower()
+        super().save(*args, **kwargs)
+
     class Meta:
         constraints = [
             models.UniqueConstraint(
                 fields=["white_label", "name_abbreviated"],
                 name="program_unique_wl_name_abbreviated",
+            ),
+            # name_abbreviated is a case-sensitive key (calculator registry, the
+            # CurrentBenefit join table, and the frontend current_benefits round-trip
+            # which matches tile keys exactly). save() lowercases it, but that misses
+            # bulk_create/.update()/raw SQL — this constraint enforces the invariant
+            # at the DB so the frontend's no-case-coercion assumption can't be broken.
+            models.CheckConstraint(
+                check=Q(name_abbreviated=Lower("name_abbreviated")),
+                name="program_name_abbreviated_lowercase",
             ),
         ]
 
@@ -814,7 +839,7 @@ class UrgentNeedCategory(models.Model):
 class ExpenseType(models.Model):
     """
     Represents types of expenses that can be used to filter urgent needs.
-    Matches expense types from configuration/white_labels/base.py expense_options
+    Matches expense types from configuration/white_labels/base.py expense_options_by_category
     """
 
     name = models.CharField(max_length=120, unique=True)

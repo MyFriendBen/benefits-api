@@ -166,6 +166,7 @@ class Screen(models.Model):
     needs_college_savings = models.BooleanField(default=False, blank=True, null=True)
     needs_veteran_services = models.BooleanField(default=False, blank=True, null=True)
     needs_disability_resources = models.BooleanField(default=False, blank=True, null=True)
+    needs_aging_resources = models.BooleanField(default=False, blank=True, null=True)
     utm_id = models.CharField(max_length=64, blank=True, null=True)
     utm_source = models.CharField(max_length=64, blank=True, null=True)
     utm_medium = models.CharField(max_length=64, blank=True, null=True)
@@ -363,15 +364,8 @@ class Screen(models.Model):
 
         return unit
 
-    def has_insurance_types(self, types, strict=True):
-        for member in self.household_members.all():
-            if not hasattr(member, "insurance"):
-                continue
-
-            if member.insurance.has_insurance_types(types, strict):
-                return True
-
-        return False
+    def has_insurance_types(self, types, strict=True) -> bool:
+        return any(member.has_insurance_types(types, strict) for member in self.household_members.all())
 
     def has_benefit_from_list(self, names: list[str]):
         for program in names:
@@ -380,195 +374,45 @@ class Screen(models.Model):
 
         return False
 
-    def _build_benefit_map(self) -> dict:
-        """
-        Returns the full name_abbreviated → bool map for this screen, including
-        compound conditions (ssi via has_ssi OR sSI income; ma_mass_health via
-        has_medicaid OR has_medicaid_hi).
-
-        Only used by `_sync_current_benefits()` (and its test-helper mirror in
-        `screener/tests/helpers.py`) to write CurrentBenefit rows during the
-        dual-write phase. `HouseholdMember.has_benefit()` does NOT route through
-        here — it has its own member-level `name_map` keyed off `self.insurance`.
-
-        Removed in MFB-869 alongside `_sync_current_benefits` once the serializer
-        writes join-table rows directly from the frontend's `current_benefits: [...]`
-        payload.
-        """
-        has_ssi_or_ssi_income = self.has_ssi or self.calc_gross_income("yearly", ("sSI",)) > 0
-
-        return {
-            "tanf": self.has_tanf,
-            "nc_tanf": self.has_tanf,
-            "co_tanf": self.has_tanf,
-            "il_tanf": self.has_tanf,
-            "tx_tanf": self.has_tanf,
-            "wic": self.has_wic,
-            "co_wic": self.has_wic,
-            "il_wic": self.has_wic,
-            "nc_wic": self.has_wic,
-            "tx_wic": self.has_wic,
-            "snap": self.has_snap,
-            "sunbucks": self.has_sunbucks,
-            "co_snap": self.has_snap,
-            "nc_snap": self.has_snap,
-            "il_snap": self.has_snap,
-            "tx_snap": self.has_snap,
-            "wa_snap": self.has_snap,
-            "lifeline": self.has_lifeline,
-            "tx_lifeline": self.has_lifeline,
-            "wa_lifeline": self.has_lifeline,
-            "acp": self.has_acp,
-            "eitc": self.has_eitc,
-            "tx_eitc": self.has_eitc,
-            "coeitc": self.has_coeitc,
-            "il_eitc": self.has_il_eitc,
-            "nslp": self.has_nslp,
-            "tx_nslp": self.has_nslp,
-            "wa_nslp": self.has_nslp,
-            "ctc": self.has_ctc,
-            "tx_ctc": self.has_ctc,
-            "wa_ctc": self.has_ctc,
-            "il_ctc": self.has_il_ctc,
-            "il_transit_reduced_fare": self.has_il_transit_reduced_fare,
-            "il_bap": self.has_il_bap,
-            "il_csfp": self.has_csfp,
-            "il_hbwd": self.has_il_hbwd,
-            "il_ccap": self.has_ccap,
-            "cesn_cope": self.has_project_cope,
-            "cesn_heap": self.has_cesn_heap,
-            "rtdlive": self.has_rtdlive,
-            "cccap": self.has_ccap,
-            "mydenver": self.has_mydenver,
-            "ssi": has_ssi_or_ssi_income,
-            "tx_ssi": has_ssi_or_ssi_income,
-            "wa_ssi": has_ssi_or_ssi_income,
-            "tx_csfp": self.has_csfp,
-            "tx_harris_rides": self.has_harris_county_rides,
-            "andcs": self.has_andcs,
-            "co_head_start": self.has_head_start,
-            "cpcr": self.has_cpcr,
-            "cesn_cpcr": self.has_cpcr,
-            "cdhcs": self.has_cdhcs,
-            "dpp": self.has_dpp,
-            "ede": self.has_ede,
-            "erc": self.has_erc,
-            "leap": self.has_leap,
-            "cesn_leap": self.has_leap,
-            "ma_heap": self.has_ma_heap,
-            "il_liheap": self.has_il_liheap,
-            "nc_lieap": self.has_nc_lieap,
-            "oap": self.has_oap,
-            "nccip": self.has_nccip,
-            "nc_scca": self.has_ncscca,
-            "nc_head_start": self.has_head_start,
-            "coctc": self.has_coctc,
-            "upk": self.has_upk,
-            "ssdi": self.has_ssdi,
-            "pell_grant": self.has_pell_grant,
-            "rag": self.has_rag,
-            "co_nfp": self.has_nfp,
-            "il_nfp": self.has_nfp,
-            "fatc": self.has_fatc,
-            "ma_cha": self.has_section_8,
-            "cowap": self.has_cowap,
-            "cesn_cowap": self.has_cowap,
-            "ncwap": self.has_ncwap,
-            "wa_wap": self.has_wa_wap,
-            "ubp": self.has_ubp,
-            "cesn_ubp": self.has_ubp,
-            "nfp": self.has_nfp,
-            "section_8": self.has_section_8,
-            "co_section_8": self.has_section_8,
-            "ma_section_8": self.has_section_8,
-            "aca": self.has_aca,
-            "medicaid": self.has_medicaid,
-            "nc_aca": self.has_aca,
-            "ma_aca": self.has_aca,
-            "tx_aca": self.has_aca,
-            "ma_mbta": self.has_ma_mbta,
-            "ma_snap": self.has_snap,
-            "ma_ccdf": self.has_ccdf,
-            "ma_wic": self.has_wic,
-            "ma_eaedc": self.has_ma_eaedc,
-            "ma_maeitc": self.has_ma_maeitc,
-            "ma_cfc": self.has_ma_macfc,
-            "ma_homebridge": self.has_ma_homebridge,
-            "ma_dhsp_afterschool": self.has_ma_dhsp_afterschool,
-            "ma_door_to_door": self.has_ma_door_to_door,
-            "ma_taxi_discount": self.has_ma_taxi_discount,
-            "ma_cpp": self.has_ma_cpp,
-            "ma_middle_income_rental": self.has_ma_middle_income_rental,
-            "ma_cmsp": self.has_ma_cmsp,
-            "ma_tafdc": self.has_tanf,
-            "ma_mass_health": self.has_medicaid or self.has_medicaid_hi,
-            "ma_head_start": self.has_head_start,
-            "tx_head_start": self.has_head_start,
-            "wa_head_start": self.has_head_start,
-            "ma_csfp": self.has_csfp,
-            "ma_early_head_start": self.has_early_head_start,
-            "tx_early_head_start": self.has_early_head_start,
-            "co_andso": self.has_co_andso,
-            "cesn_andso": self.has_co_andso,
-            "co_care": self.has_co_care,
-            "cesn_care": self.has_co_care,
-            "cfhc": self.has_cfhc,
-            "shitc": self.has_shitc,
-            "nc_medicare_savings": self.has_nc_medicare_savings,
-            "tx_dart": self.has_tx_dart,
-            "ccs": self.has_ccs,
-            "tx_ccs": self.has_ccs,
-            "tx_ssdi": self.has_ssdi,
-            "wa_ssdi": self.has_ssdi,
-            "wa_csfp": self.has_csfp,
-            "wa_eitc": self.has_eitc,
-            "wa_wftc": self.has_eitc,
-            "wa_wic": self.has_wic,
-            "wa_apple_health_medicaid": self.has_medicaid,
-            "wa_apple_health_for_kids": self.has_chp,
-            "wa_hcv": self.has_section_8,
-            "ma_ssp": self.has_ma_ssp,
-            "cesn_snap": self.has_snap,
-            "cesn_tanf": self.has_tanf,
-            "cesn_wic": self.has_wic,
-            "cesn_ssi": has_ssi_or_ssi_income,
-            "cesn_ssdi": self.has_ssdi,
-            "cesn_oap": self.has_oap,
-            "cesn_section_8": self.has_section_8,
-            "cesn_rtdlive": self.has_rtdlive,
-            "cesn_andcs": self.has_andcs,
-            "nc_leap": self.has_leap,
-            "nc_cccap": self.has_ccap,
-        }
-
     @cached_property
     def _current_benefit_names(self) -> set[str]:
-        # Serves from prefetch cache when `current_benefits__program` is prefetched
-        # (zero queries); otherwise one query on first access, cached thereafter.
+        # Serves from the prefetch cache when `current_benefits__program` is
+        # prefetched (zero queries); otherwise one query on first access, cached
+        # thereafter — so repeated has_benefit() checks across a calculator run are
+        # cheap.
         #
-        # ⚠️  STALENESS WARNING — read before reusing this pattern.
-        # This is a per-instance cache. A Screen loaded *before* a write will
-        # NOT see rows written after, even on the same instance. Concretely:
-        #
-        #     screen.has_snap = True
-        #     screen.save()                  # triggers _sync_current_benefits via serializer
-        #     screen.has_benefit("snap")     # ❌ may return False — cache populated pre-write
-        #
-        # Do NOT reach for `del screen._current_benefit_names` to invalidate —
-        # that's a sharp edge that future refactors will silently break. The
-        # supported recovery is to re-fetch the Screen:
-        #
-        #     screen = Screen.objects.get(pk=screen.pk)
-        #     screen.has_benefit("snap")     # ✅
-        #
-        # The eligibility hot path is safe — the view fetches a fresh Screen
-        # on every request. Only admin actions / management commands / tests
-        # that mutate has_* and then read on the same instance are at risk.
-        #
-        # This whole cache (and has_benefit itself) disappears in MFB-720 when
-        # the has_* columns are dropped and current_benefits becomes the only
-        # write target, so we are intentionally NOT adding an invalidation hook.
+        # Per-instance cache: a Screen loaded before a write won't reflect rows
+        # written after, on the same instance. If you write current_benefits and
+        # then read them back on the same Screen object, call
+        # invalidate_current_benefits_cache() in between (the write path in
+        # serializers.py does this). The eligibility hot path never writes mid-run,
+        # so it needs no invalidation.
         return {cb.program.name_abbreviated for cb in self.current_benefits.all()}
+
+    @cached_property
+    def _current_benefit_base_programs(self) -> set[str]:
+        # The `base_program` grouping of the household's current benefits — e.g. a
+        # screen receiving wa_tanf / co_tanf / ma_tafdc all contribute "tanf". Backs
+        # has_base_benefit(), letting callers ask "any variant of program X?" without
+        # a hand-maintained name list that goes stale when a new state program is
+        # added. Same prefetch / per-instance cache behavior (and staleness caveat)
+        # as _current_benefit_names above; base_program is nullable, so drop None.
+        return {cb.program.base_program for cb in self.current_benefits.all() if cb.program.base_program is not None}
+
+    def invalidate_current_benefits_cache(self) -> None:
+        """Drop the per-instance caches of this screen's current benefits so the
+        next read reflects rows written after this instance was loaded.
+
+        Clears all layers: the `_current_benefit_names` cached_property (backs
+        has_benefit()), the `_current_benefit_base_programs` cached_property
+        (backs has_base_benefit()), and the `current_benefits` relation prefetch
+        cache (backs the serializer read). Call after writing the join table when
+        the same instance will be read again in the request. Safe to call when
+        none are populated."""
+        self.__dict__.pop("_current_benefit_names", None)
+        self.__dict__.pop("_current_benefit_base_programs", None)
+        if hasattr(self, "_prefetched_objects_cache"):
+            self._prefetched_objects_cache.pop("current_benefits", None)
 
     def has_benefit(self, name_abbreviated: str) -> bool:
         """
@@ -576,18 +420,27 @@ class Screen(models.Model):
         identified by `name_abbreviated`. Drives the "already_has" flag on
         eligibility results so the frontend can filter the program out.
 
-        Reads from the CurrentBenefit join table. The has_* columns are
-        still written by the serializer (Phase 2 dual-write) and synced to the
-        join table on every POST/PATCH via _sync_current_benefits(), so this
-        query is the authoritative read path while rollback remains a single
-        revert.
+        Reads from the CurrentBenefit join table, written on every POST/PATCH by
+        the serializer's `_write_current_benefits()`.
 
-        Compound conditions (ssi → has_ssi OR sSI income; ma_mass_health →
-        has_medicaid OR has_medicaid_hi) are resolved at write time by
-        _sync_current_benefits → _build_benefit_map, so this read path needs
-        no special-casing.
+        Compound cases like SSI are resolved at write time by
+        `_derived_current_benefit_names()`, so this read path needs no special-casing.
         """
         return name_abbreviated in self._current_benefit_names
+
+    def has_base_benefit(self, base_program: str) -> bool:
+        """
+        Returns True if the household receives any current benefit whose
+        `Program.base_program` matches — i.e. any white-label variant of that
+        program. `has_base_benefit("tanf")` covers tanf / co_tanf / il_tanf /
+        wa_tanf / ma_tafdc / … without enumerating the names.
+
+        Prefer this over `has_benefit_from_list([...])` when the intent is "any
+        variant of program X across white labels": it reads the structural
+        `base_program` grouping, so a newly added state variant is included
+        automatically as long as its `base_program` is set.
+        """
+        return base_program in self._current_benefit_base_programs
 
     def set_screen_is_test(self):
         referral_source_tests = ["testorprospect", "test"]
@@ -763,20 +616,13 @@ class HouseholdMember(models.Model):
     def is_in_tax_unit(self):
         return self.is_head() or self.is_spouse() or self.is_dependent()
 
-    def has_benefit(self, name_abbreviated: str):
+    def has_insurance(self, name_abbreviated: str) -> bool:
+        return self.has_insurance_types((name_abbreviated,), strict=False)
 
-        has_insurance = self.has_insurance_types((name_abbreviated,), strict=False)
-
-        return has_insurance
-
-    def has_insurance_types(self, types, strict=True):
+    def has_insurance_types(self, types, strict=True) -> bool:
         if not hasattr(self, "insurance"):
             return False
-
-        if self.insurance.has_insurance_types(types, strict):
-            return True
-
-        return False
+        return self.insurance.has_insurance_types(types, strict)
 
     @property
     def birth_year(self) -> Optional[int]:
@@ -968,7 +814,7 @@ class Insurance(models.Model):
     # NOTE: Massachusetts combines Medicaid and CHIP into one program called MassHealth
     mass_health = models.BooleanField(default=False)
 
-    def has_insurance_types(self, types, strict=True):
+    def has_insurance_types(self, types, strict=True) -> bool:
         if "none" in types:
             types = (*types, "dont_know")
 

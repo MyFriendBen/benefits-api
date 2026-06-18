@@ -1,6 +1,6 @@
 [
   {
-    "notes": "TX FPP - Eligible 25-year-old at 200% FPL with no insurance",
+    "notes": "TX FPP - Eligible 25-year-old at low income with no insurance",
     "household": {
       "white_label": "tx",
       "is_test": true,
@@ -36,7 +36,7 @@
     }
   },
   {
-    "notes": "TX FPP - Eligible 64-year-old (maximum age) with no insurance at low income",
+    "notes": "TX FPP - Eligible 64-year-old (maximum age boundary) with no insurance at low income",
     "household": {
       "white_label": "tx",
       "is_test": true,
@@ -72,7 +72,7 @@
     }
   },
   {
-    "notes": "TX FPP - Eligible 18-year-old with no insurance and low income",
+    "notes": "TX FPP - Medicaid-only rule: employer-insured adult AND uninsured 18-year-old both eligible (two eligible members)",
     "household": {
       "white_label": "tx",
       "is_test": true,
@@ -115,7 +115,7 @@
     "expected_results": {
       "program_name": "tx_fpp",
       "eligible": true,
-      "value": 266
+      "value": 533
     }
   },
   {
@@ -154,7 +154,7 @@
     }
   },
   {
-    "notes": "TX FPP - Ineligible 70-year-old (well above maximum age) despite low income and no insurance",
+    "notes": "TX FPP - Emergency Medicaid recipient remains eligible (classified as underinsured, §4100)",
     "household": {
       "white_label": "tx",
       "is_test": true,
@@ -167,17 +167,18 @@
       "household_members": [
         {
           "relationship": "headOfHousehold",
-          "age": 70,
+          "age": 33,
           "has_income": true,
           "income_streams": [
             {
-              "type": "sSI",
-              "amount": 1000.00,
+              "type": "wages",
+              "amount": 2000.00,
               "frequency": "monthly"
             }
           ],
           "insurance": {
-            "none": true
+            "none": false,
+            "emergency_medicaid": true
           }
         }
       ],
@@ -185,11 +186,12 @@
     },
     "expected_results": {
       "program_name": "tx_fpp",
-      "eligible": false
+      "eligible": true,
+      "value": 266
     }
   },
   {
-    "notes": "TX FPP - Ineligible 30-year-old with employer insurance despite low income",
+    "notes": "TX FPP - Eligible 30-year-old with employer insurance (other coverage does not disqualify under Medicaid-only rule)",
     "household": {
       "white_label": "tx",
       "is_test": true,
@@ -221,11 +223,12 @@
     },
     "expected_results": {
       "program_name": "tx_fpp",
-      "eligible": false
+      "eligible": true,
+      "value": 266
     }
   },
   {
-    "notes": "TX FPP - Ineligible 28-year-old with Medicaid insurance",
+    "notes": "TX FPP - Ineligible household where the only reproductive-age member has full Medicaid",
     "household": {
       "white_label": "tx",
       "is_test": true,
@@ -271,7 +274,7 @@
     }
   },
   {
-    "notes": "TX FPP - Ineligible 35-year-old above 250% FPL income threshold with no insurance",
+    "notes": "TX FPP - Ineligible 35-year-old above 250% FPL income with no insurance and no adjunctive benefit",
     "household": {
       "white_label": "tx",
       "is_test": true,
@@ -306,7 +309,44 @@
     }
   },
   {
-    "notes": "TX FPP - Eligible couple where both qualify (ages 30 and 55) with no insurance",
+    "notes": "TX FPP - §4140 adjunctive bypass: income above 250% FPL but enrolled in SNAP, so eligible",
+    "household": {
+      "white_label": "tx",
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "zipcode": "75001",
+      "county": "Collin",
+      "household_size": 1,
+      "household_assets": 5000.00,
+      "current_benefits": ["tx_snap"],
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 5500.00,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_fpp",
+      "eligible": true,
+      "value": 266
+    }
+  },
+  {
+    "notes": "TX FPP - Eligible couple where both qualify (ages 55 and 30) with no insurance (two eligible members)",
     "household": {
       "white_label": "tx",
       "is_test": true,
@@ -351,7 +391,7 @@
     }
   },
   {
-    "notes": "TX FPP - Eligible single parent age 32 with self-employment income under threshold",
+    "notes": "TX FPP - Eligible self-employed parent (age 32) under threshold; Medicaid children excluded, only parent counts",
     "household": {
       "white_label": "tx",
       "is_test": true,
@@ -385,7 +425,7 @@
           "income_streams": [],
           "insurance": {
             "none": false,
-            "chp": true
+            "medicaid": true
           }
         },
         {
@@ -395,7 +435,7 @@
           "income_streams": [],
           "insurance": {
             "none": false,
-            "chp": true
+            "medicaid": true
           }
         }
       ],

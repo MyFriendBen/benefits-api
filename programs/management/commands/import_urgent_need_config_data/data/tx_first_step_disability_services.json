@@ -1,0 +1,27 @@
+{
+  "white_label": { "code": "tx" },
+  "need": {
+    "external_name": "tx_first_step_disability_services",
+    "category_type": {
+      "external_name": "tx_disability_resources",
+      "name": "Disability resources",
+      "icon": "disability"
+    },
+    "type_short": ["disability resources"],
+    "functions": [],
+    "translations": {
+      "name": "First Step Disability Services",
+      "description": "First Step Disability Services is a team of people who help others in need. They support people who are homeless or might soon become homeless. You can email them at henrietta@first-step.us.",
+      "link": "https://www.firststepstaffing.com/disabilityservices",
+      "warning": "",
+      "website_description": "Advocates and case managers who help people experiencing or at risk of homelessness access disability benefits.",
+      "notification_message": ""
+    },
+    "phone_number": "+14043480355",
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

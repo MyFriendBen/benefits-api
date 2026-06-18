@@ -14,7 +14,6 @@ tx_member_calculators = {
     "tx_harris_rides": member.TxHarrisCountyRides,
     "tx_emergency_medicaid": member.TxEmergencyMedicaid,
     "tx_dart": member.TxDart,
-    "tx_fpp": member.TxFpp,
     "tx_head_start": member.TxHeadStart,
     "tx_early_head_start": member.TxEarlyHeadStart,
     "tx_medicare_savings_program": member.TxMsp,
@@ -32,6 +31,7 @@ tx_spm_calculators = {
     "tx_nslp": spm.TxNslp,
     "tx_tanf": spm.TxTanf,
     "tx_ccs": spm.TxCcs,
+    "tx_liheap": spm.TxCeap,
 }
 
 tx_pe_calculators: dict[str, type[PolicyEngineCalulator]] = {

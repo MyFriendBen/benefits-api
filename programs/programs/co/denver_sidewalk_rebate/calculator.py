@@ -30,7 +30,7 @@ class DenverSidewalkRebate(ProgramCalculator):
                 break
 
         for member in self.screen.household_members.all():
-            if member.has_benefit("co_medicaid"):
+            if member.has_insurance("co_medicaid"):
                 categorical_eligible = True
                 break
 

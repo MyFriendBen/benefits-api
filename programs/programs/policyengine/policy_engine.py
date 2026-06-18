@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, TypedDict
 from sentry_sdk import capture_exception, capture_message
 from .engines import Sim, pe_engines
 from .calculators.constants import MAIN_TAX_UNIT, SECONDARY_TAX_UNIT
+from . import versions as pe_versions
 from django.conf import settings
 
 
@@ -22,6 +23,7 @@ class EligibilityPEResult(TypedDict):
 def calc_pe_eligibility(
     screen: Screen,
     calculators: dict[str, PolicyEngineCalulator],
+    pe_version: Optional[str] = None,
 ) -> EligibilityPEResult:
     valid_programs: dict[str, PolicyEngineCalulator] = {}
 
@@ -38,7 +40,7 @@ def calc_pe_eligibility(
     if not valid_programs or not screen.household_members.all():
         return empty_result
 
-    input_data = pe_input(screen, valid_programs.values())
+    input_data = pe_input(screen, valid_programs.values(), pe_version=pe_version)
 
     for Method in pe_engines:
         try:
@@ -51,6 +53,18 @@ def calc_pe_eligibility(
                     "response": getattr(method_instance, "response_json", None),
                 },
             }
+        except (SystemExit, KeyboardInterrupt) as e:
+            # Worker is being torn down: gunicorn's SIGABRT handler (fired when a request
+            # exceeds the worker --timeout, e.g. while a PE HTTP call hangs on DNS) calls
+            # sys.exit(), raising SystemExit. That is a BaseException, so the `except
+            # Exception` below never sees it and the death is invisible in Sentry. Capture
+            # it here for visibility, then re-raise so the shutdown proceeds normally.
+            capture_exception(e, level="error")
+            capture_message(
+                f"Worker exited mid-request while calculating eligibility with the " f"{Method.method_name} method",
+                level="error",
+            )
+            raise
         except Exception as e:
             if settings.DEBUG:
                 print(repr(e))
@@ -77,7 +91,7 @@ def all_eligibility(method: Sim, valid_programs: dict[str, PolicyEngineCalulator
     return all_eligibility
 
 
-def pe_input(screen: Screen, programs: List[PolicyEngineCalulator]):
+def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: Optional[str] = None):
     """
     Generate Policy Engine API request from the list of programs.
     """
@@ -102,6 +116,13 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator]):
             "marital_units": {},
         }
     }
+    # Two values from one resolved version, for two consumers:
+    #   version (string)            -> version to send in PE API request body (if None/omitted,
+    #                                   PE defaults to current version)
+    #   comparable_version (tuple)  -> tuple representation to gate which inputs are sent
+    version = pe_versions.determine_pe_version(pe_version)
+    comparable_version = pe_versions.to_comparable_pe_version(version)
+
     members: list[HouseholdMember] = screen.household_members.all()
     relationship_map = screen.relationship_map()
 
@@ -135,6 +156,17 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator]):
 
     for program in programs:
         for Data in program.pe_inputs + program.pe_outputs:
+            # Skip inputs that the resolved model version doesn't define yet — sending
+            # an unknown variable 400s the whole request (e.g. meets_ssi_disability_criteria
+            # on 1.691.1). With no pin (comparable_version is None) we omit gated inputs
+            # too, since the unpinned default is the current model that lacks them.
+            if not pe_versions.version_supports(
+                comparable_version,
+                getattr(Data, "min_pe_version", ()),
+                getattr(Data, "max_pe_version", ()),
+            ):
+                continue
+
             period = program.pe_period
             if hasattr(program, "pe_output_period") and Data in program.pe_outputs:
                 period = program.pe_output_period
@@ -166,6 +198,10 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator]):
     # delete the second tax unit if it is empty because PE can't handle empty tax units
     if len(secondary_tax_members) == 0:
         del raw_input["household"]["tax_units"][SECONDARY_TAX_UNIT]
+
+    # Inject the resolved version (override > config); None means omit the field.
+    if version is not None:
+        raw_input["version"] = version
 
     return raw_input
 

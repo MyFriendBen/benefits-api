@@ -3,8 +3,11 @@ Unit tests for member-level PolicyEngine dependency classes.
 """
 
 from django.test import TestCase
+from programs.models import Program
 from screener.models import Screen, HouseholdMember, WhiteLabel
 from programs.programs.policyengine.calculators.dependencies.member import NcSnapIneligibleStudentDependency
+from screener.tests.helpers import seed_program
+from screener.serializers import _write_current_benefits
 
 
 class TestNcSnapIneligibleStudentDependency(TestCase):
@@ -115,9 +118,14 @@ class TestNcSnapIneligibleStudentDependency(TestCase):
     # ── Federal E6: TANF ──────────────────────────────────────────────────────
 
     def test_tanf_household_is_exempt(self):
-        """Student in a household receiving TANF/Work First is exempt (E6)."""
-        self.screen.has_tanf = True
-        self.screen.save()
+        """Student in a household receiving TANF/Work First is exempt (E6).
+
+        E6 keys off `Program.base_program == "tanf"`, so the seeded nc_tanf
+        program must carry that grouping.
+        """
+        seed_program(self.white_label, "nc_tanf")
+        Program.objects.filter(white_label=self.white_label, name_abbreviated="nc_tanf").update(base_program="tanf")
+        _write_current_benefits(self.screen, ["nc_tanf"])
 
         member = HouseholdMember.objects.create(
             screen=self.screen, relationship="headOfHousehold", age=25, student=True, student_full_time=True

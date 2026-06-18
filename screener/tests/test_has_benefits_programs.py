@@ -55,7 +55,7 @@ class TestHasBenefitsProgramsView(APITestCase):
         self.snap = make_program(
             label_prefix="snap",
             white_label=self.white_label,
-            name_abbreviated="SNAP",
+            name_abbreviated="snap",
             active=True,
             show_in_has_benefits_step=True,
             has_calculator=False,
@@ -68,7 +68,7 @@ class TestHasBenefitsProgramsView(APITestCase):
         self.inactive = make_program(
             label_prefix="old",
             white_label=self.white_label,
-            name_abbreviated="OLD",
+            name_abbreviated="old",
             active=False,
             show_in_has_benefits_step=True,
             has_calculator=False,
@@ -81,7 +81,7 @@ class TestHasBenefitsProgramsView(APITestCase):
         self.excluded = make_program(
             label_prefix="excl",
             white_label=self.white_label,
-            name_abbreviated="EXCL",
+            name_abbreviated="excl",
             active=True,
             show_in_has_benefits_step=False,
             has_calculator=True,
@@ -94,7 +94,7 @@ class TestHasBenefitsProgramsView(APITestCase):
         self.other_wl_program = make_program(
             label_prefix="other",
             white_label=self.other_wl,
-            name_abbreviated="OTHER",
+            name_abbreviated="other",
             active=True,
             show_in_has_benefits_step=True,
             has_calculator=False,
@@ -118,28 +118,28 @@ class TestHasBenefitsProgramsView(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         abbreviations = [p["name_abbreviated"] for p in response.data]
-        self.assertIn("SNAP", abbreviations)
+        self.assertIn("snap", abbreviations)
 
     def test_excludes_inactive_programs(self):
         """Inactive programs are excluded even if show_in_has_benefits_step=True."""
         response = self.client.get(self.url)
 
         abbreviations = [p["name_abbreviated"] for p in response.data]
-        self.assertNotIn("OLD", abbreviations)
+        self.assertNotIn("old", abbreviations)
 
     def test_excludes_programs_not_in_step(self):
         """Programs with show_in_has_benefits_step=False are excluded."""
         response = self.client.get(self.url)
 
         abbreviations = [p["name_abbreviated"] for p in response.data]
-        self.assertNotIn("EXCL", abbreviations)
+        self.assertNotIn("excl", abbreviations)
 
     def test_scoped_to_white_label(self):
         """Programs from other WLs are not returned."""
         response = self.client.get(self.url)
 
         abbreviations = [p["name_abbreviated"] for p in response.data]
-        self.assertNotIn("OTHER", abbreviations)
+        self.assertNotIn("other", abbreviations)
 
     def test_response_shape(self):
         """Each program has name_abbreviated, name, website_description, and category."""
@@ -151,7 +151,7 @@ class TestHasBenefitsProgramsView(APITestCase):
         self.assertIn("name", program)
         self.assertIn("website_description", program)
         self.assertIn("category", program)
-        self.assertEqual(program["name_abbreviated"], "SNAP")
+        self.assertEqual(program["name_abbreviated"], "snap")
         self.assertEqual(program["name"]["default_message"], "Supplemental Nutrition Assistance Program")
         self.assertEqual(program["website_description"]["default_message"], "Monthly food assistance")
         self.assertEqual(program["category"]["default_message"], "Cash Assistance")

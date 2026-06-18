@@ -141,6 +141,7 @@ class Ssi(PolicyEngineMembersCalculator):
         dependency.member.SsiReportedDependency,
         dependency.member.IsBlindDependency,
         dependency.member.IsDisabledDependency,
+        dependency.member.MeetsSsiDisabilityCriteriaDependency,
         dependency.member.SsiEarnedIncomeDependency,
         dependency.member.SsiUnearnedIncomeDependency,
         dependency.member.AgeDependency,

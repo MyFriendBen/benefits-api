@@ -97,6 +97,20 @@ class TxConfigurationData(ConfigurationData):
                 "_default_message": "Free or low-cost help with civil legal needs or identity documents",
             },
         },
+        "disabilityResources": {
+            "icon": {"_icon": "Disabled", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.disabilityResources",
+                "_default_message": "Resources for people with disabilities",
+            },
+        },
+        "agingResources": {
+            "icon": {"_icon": "Aging", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.agingResources",
+                "_default_message": "Aging Community Resources",
+            },
+        },
     }
 
     # Nested income options organized by category (for future use with categorized UI)
@@ -119,23 +133,6 @@ class TxConfigurationData(ConfigurationData):
                 "_label": "incomeOptions.pension.tx",
                 "_default_message": "Military, Government, or Private Pension",
             },
-        },
-    }
-
-    # Flattened income options (backward compatible with current FE)
-    income_options = {
-        **ConfigurationData.income_options,
-        "pension": {
-            "_label": "incomeOptions.pension.tx",
-            "_default_message": "Military, Government, or Private Pension",
-        },
-        "cashAssistance": {
-            "_label": "incomeOptions.cashAssistance.tx",
-            "_default_message": "Government Cash Assistance (including TANF)",
-        },
-        "stateDisability": {
-            "_label": "incomeOptions.stateDisability",
-            "_default_message": "State Disability Benefits",
         },
     }
 
@@ -3208,7 +3205,6 @@ class TxConfigurationData(ConfigurationData):
             ],
         },
         "uiOptions": {"default": []},
-        "featureFlags": {"default": []},  # Deprecated: use uiOptions. Remove as part of MFB-635.
         "defaultLanguage": {"default": "en-us"},
         "stateName": {"default": "Texas"},
         "noResultMessage": {

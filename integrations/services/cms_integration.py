@@ -153,6 +153,11 @@ class WaHubSpotIntegration(HubSpotIntegration):
     OWNER_ID = "80630223"  # Josh's owner ID
 
 
+class KsHubSpotIntegration(HubSpotIntegration):
+    STATE = "KS"
+    OWNER_ID = "80630223"  # Josh's owner ID
+
+
 CMS_INTEGRATIONS = {
     "co_hubspot": CoHubSpotIntegration,
     "nc_hubspot": NcHubSpotIntegration,
@@ -160,6 +165,7 @@ CMS_INTEGRATIONS = {
     "il_hubspot": IlHubSpotIntegration,
     "tx_hubspot": TxHubSpotIntegration,
     "wa_hubspot": WaHubSpotIntegration,
+    "ks_hubspot": KsHubSpotIntegration,
 }
 
 

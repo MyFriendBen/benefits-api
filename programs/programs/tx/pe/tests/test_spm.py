@@ -15,7 +15,7 @@ from programs.programs.federal.pe.spm import Lifeline, Snap, SchoolLunch, Tanf
 from programs.programs.policyengine.calculators.dependencies import household, irs_gross_income, member, spm
 from programs.programs.policyengine.calculators.dependencies.household import TxStateCodeDependency
 from programs.programs.tx.pe import tx_pe_calculators
-from programs.programs.tx.pe.spm import TxLifeline, TxSnap, TxNslp, TxTanf
+from programs.programs.tx.pe.spm import TxCeap, TxLifeline, TxSnap, TxNslp, TxTanf
 
 
 class TestTxSnap(TestCase):
@@ -300,3 +300,40 @@ class TestTxTanf(TestCase):
         # Verify TxTanf output dependency is in pe_outputs
         self.assertIn(spm.TxTanf, TxTanf.pe_outputs)
         self.assertEqual(spm.TxTanf.field, "tx_tanf")
+
+
+class TestTxCeap(TestCase):
+    """Tests for TxCeap (TX Comprehensive Energy Assistance Program / LIHEAP) calculator class."""
+
+    def test_exists_with_expected_pe_config(self):
+        """TxCeap maps to the tx_ceap PE variable and has inputs/outputs configured."""
+        self.assertEqual(TxCeap.pe_name, "tx_ceap")
+        self.assertIsNotNone(TxCeap.pe_inputs)
+        self.assertGreater(len(TxCeap.pe_inputs), 0)
+        self.assertIsNotNone(TxCeap.pe_outputs)
+        self.assertGreater(len(TxCeap.pe_outputs), 0)
+
+    def test_is_registered_in_tx_pe_calculators(self):
+        """Test that TX LIHEAP (CEAP) is registered under the tx_liheap program key."""
+        self.assertIn("tx_liheap", tx_pe_calculators)
+        self.assertEqual(tx_pe_calculators["tx_liheap"], TxCeap)
+
+    def test_pe_inputs_includes_tx_state_code_dependency(self):
+        """TxStateCodeDependency gates tx_ceap to TX (defined_for=StateCode.TX)."""
+        self.assertIn(TxStateCodeDependency, TxCeap.pe_inputs)
+        self.assertEqual(TxStateCodeDependency.state, "TX")
+
+    def test_pe_inputs_includes_income_and_energy_expense(self):
+        """
+        tx_ceap needs gross income (for the 150% FPL income test and benefit tier) and
+        energy expenses (the benefit is capped at electricity_expense + gas_expense).
+        """
+        for dep in irs_gross_income:
+            self.assertIn(dep, TxCeap.pe_inputs)
+        self.assertIn(spm.TxCeapEnergyExpenseDependency, TxCeap.pe_inputs)
+        self.assertEqual(spm.TxCeapEnergyExpenseDependency.field, "electricity_expense")
+
+    def test_pe_outputs_includes_tx_ceap(self):
+        """The calculator outputs the tx_ceap variable to PolicyEngine."""
+        self.assertIn(spm.TxCeap, TxCeap.pe_outputs)
+        self.assertEqual(spm.TxCeap.field, "tx_ceap")

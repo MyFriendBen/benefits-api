@@ -1,1 +1,1 @@
-web: gunicorn benefits.wsgi --log-file -
+web: gunicorn benefits.wsgi --log-file - --timeout 120

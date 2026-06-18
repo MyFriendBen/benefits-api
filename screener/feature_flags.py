@@ -45,6 +45,14 @@ WHITELABEL_FEATURE_FLAGS: dict[str, FeatureFlagConfig] = {
         description="Display member-level eligibility status tags on program cards in results.",
         scope="frontend",
     ),
+    "benbot": FeatureFlagConfig(
+        label="Benbot AI Assistant",
+        description=(
+            "Show the Benbot AI assistant on the results page and enable the "
+            "mfb-ai-service proxy endpoints for guided benefit applications."
+        ),
+        scope="both",  # frontend renders the widget; backend gates the proxy endpoints
+    ),
     "share_popup": FeatureFlagConfig(
         label="Share Popup",
         description="Show a popup in results that lets users share MyFriendBen with friends via email, SMS, or link.",

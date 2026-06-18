@@ -482,6 +482,24 @@ class MortgageDependency(SpmUnit):
         return int(self.screen.calc_expenses("yearly", ["mortgage"]))
 
 
+class TxCeap(SpmUnit):
+    field = "tx_ceap"
+
+
+class TxCeapEnergyExpenseDependency(SpmUnit):
+    """
+    PolicyEngine's tx_ceap caps the benefit at electricity_expense + gas_expense.
+    Our screener captures home energy as heating/cooling/otherUtilities expenses,
+    so we route their total into electricity_expense (PE's gas_expense is left at
+    its 0 default) to reflect the household's reported energy burden in the cap.
+    """
+
+    field = "electricity_expense"
+
+    def value(self):
+        return self.screen.calc_expenses("yearly", ["heating", "cooling", "otherUtilities"])
+
+
 class TxCcs(SpmUnit):
     field = "tx_ccs"
 

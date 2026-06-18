@@ -234,53 +234,6 @@ class ConfigurationData:
         },
     }
 
-    # Flattened income options (backward compatible with current FE)
-    income_options = {
-        "wages": {"_label": "incomeOptions.wages", "_default_message": "Wages, salaries, or tips"},
-        "selfEmployment": {
-            "_label": "incomeOptions.selfEmployment",
-            "_default_message": "Self-employment, freelance, or independent contractor",
-        },
-        "sSDisability": {
-            "_label": "incomeOptions.sSDisability",
-            "_default_message": "Social Security Disability Benefits",
-        },
-        "sSRetirement": {
-            "_label": "incomeOptions.sSRetirement",
-            "_default_message": "Social Security Retirement Benefits",
-        },
-        "sSI": {"_label": "incomeOptions.sSI", "_default_message": "Supplemental Security Income (SSI)"},
-        "sSSurvivor": {
-            "_label": "incomeOptions.sSSurvivor",
-            "_default_message": "Social Security Survivor's Benefits (Widowed)",
-        },
-        "sSDependent": {
-            "_label": "incomeOptions.sSDependent",
-            "_default_message": "Social Security Dependent Benefits (retirement, disability, or survivors)",
-        },
-        "unemployment": {"_label": "incomeOptions.unemployment", "_default_message": "Unemployment Benefits"},
-        "cashAssistance": {"_label": "incomeOptions.cashAssistance", "_default_message": "Cash Assistance Grant"},
-        "workersComp": {"_label": "incomeOptions.workersComp", "_default_message": "Worker's Compensation"},
-        "veteran": {"_label": "incomeOptions.veteran", "_default_message": "Veteran's Pension or Benefits"},
-        "pension": {
-            "_label": "incomeOptions.pension",
-            "_default_message": "Military, Government, or Private Pension (including PERA)",
-        },
-        "investment": {
-            "_label": "incomeOptions.investment",
-            "_default_message": "Investment Income (interest, dividends, and profit from selling stocks)",
-        },
-        "deferredComp": {
-            "_label": "incomeOptions.deferredComp",
-            "_default_message": "Withdrawals from Deferred Compensation (IRA, Keogh, etc.)",
-        },
-        "rental": {"_label": "incomeOptions.rental", "_default_message": "Rental Income"},
-        "boarder": {"_label": "incomeOptions.boarder", "_default_message": "Boarder or Lodger Income"},
-        "childSupport": {"_label": "incomeOptions.childSupport", "_default_message": "Child Support (Received)"},
-        "alimony": {"_label": "incomeOptions.alimony", "_default_message": "Alimony (Received)"},
-        "gifts": {"_label": "incomeOptions.gifts", "_default_message": "Gifts or Contributions (Received)"},
-    }
-
     # Health insurance options (customize for state-specific programs)
     health_insurance_options = {
         "you": {
@@ -405,28 +358,6 @@ class ConfigurationData:
             "childSupport": {"_label": "expenseOptions.childSupport", "_default_message": "Child Support (Paid)"},
             "dependentCare": {"_label": "expenseOptions.dependentCare", "_default_message": "Dependent Care"},
         },
-    }
-
-    # Flattened expense options (backward compatible with current FE)
-    # This is what the FE currently expects - a simple flat dictionary
-    expense_options = {
-        "rent": {"_label": "expenseOptions.rent", "_default_message": "Rent"},
-        "telephone": {"_label": "expenseOptions.telephone", "_default_message": "Telephone"},
-        "internet": {"_label": "expenseOptions.internet", "_default_message": "Internet"},
-        "otherUtilities": {"_label": "expenseOptions.otherUtilities", "_default_message": "Other Utilities"},
-        "heating": {"_label": "expenseOptions.heating", "_default_message": "Heating"},
-        "mortgage": {"_label": "expenseOptions.mortgage", "_default_message": "Mortgage"},
-        "propertyTax": {"_label": "expenseOptions.propertyTax", "_default_message": "Property Taxes"},
-        "hoa": {"_label": "expenseOptions.hoa", "_default_message": "Homeowners or Condo Association Fees and Dues"},
-        "homeownersInsurance": {
-            "_label": "expenseOptions.homeownersInsurance",
-            "_default_message": "Homeowners Insurance",
-        },
-        "medical": {"_label": "expenseOptions.medical", "_default_message": "Medical Insurance Premium &/or Bills"},
-        "cooling": {"_label": "expenseOptions.cooling", "_default_message": "Cooling"},
-        "childCare": {"_label": "expenseOptions.childCare", "_default_message": "Child Care"},
-        "childSupport": {"_label": "expenseOptions.childSupport", "_default_message": "Child Support (Paid)"},
-        "dependentCare": {"_label": "expenseOptions.dependentCare", "_default_message": "Dependent Care"},
     }
 
     # Household member condition options
@@ -594,13 +525,11 @@ class ConfigurationData:
             "[REPLACE_ME]": [],
         },
         "uiOptions": {"default": []},
-        "featureFlags": {"default": []},  # Deprecated: use uiOptions. Remove as part of MFB-635.
         "defaultLanguage": {"default": "en-us", "[REPLACE_ME]": ""},
         "stateName": {"default": "", "[REPLACE_ME]": ""},
     }
 
-    # A/B test experiments with multi-variant support
-    # Each experiment maps to a list of active variants (not just on/off like featureFlags)
+    # A/B test experiments with multi-variant support (each maps to a list of active variants)
     # Frontend uses UUID hash to deterministically assign a variant
     experiments = {}
 

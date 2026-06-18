@@ -136,13 +136,6 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     #     },
     # }
 
-    # Flat income options (backward compatible with current FE).
-    # When overriding income_options_by_category, also override this to keep both in sync.
-    # income_options = {
-    #     **ConfigurationData.income_options,
-    #     "stateDisability": {"_label": "incomeOptions.stateDisability", "_default_message": "State Disability"},
-    # }
-
     # ==========================================================================================
     # HEALTH INSURANCE OPTIONS - Usually customized
     # ==========================================================================================
@@ -198,19 +191,6 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     #         "rent": {"_label": "expenseOptions.nonSubsidizedRent", "_default_message": "Rent (Non-Subsidized)"},
     #         "subsidizedRent": {"_label": "expenseOptions.subsidizedRent", "_default_message": "Rent (Public / Subsidized Housing)"},
     #     },
-    # }
-
-    # ==========================================================================================
-    # EXPENSE OPTIONS (FLAT) - Backward compatible with current FE
-    # ==========================================================================================
-    # Flattened expense options — same data as expense_options_by_category but without
-    # category grouping. When overriding expense_options_by_category, also override this
-    # to keep both in sync (same pattern as income_options / income_options_by_category).
-    # ==========================================================================================
-    # expense_options = {
-    #     "rent": {"_label": "expenseOptions.rent", "_default_message": "Rent"},
-    #     "childCare": {"_label": "expenseOptions.childCare", "_default_message": "Child Care"},
-    #     # ... see base.py for full list
     # }
 
     # ==========================================================================================
@@ -426,7 +406,6 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
             ]
         },
         "uiOptions": {"default": []},
-        "featureFlags": {"default": []},  # Deprecated: use uiOptions. Remove as part of MFB-635.
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",

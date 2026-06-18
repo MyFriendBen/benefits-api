@@ -21,6 +21,7 @@ class MaTafdc(PolicyEngineSpmCalulator):
         dependency.member.MaTotalHoursWorkedDependency,
         dependency.member.AgeDependency,
         dependency.member.PregnancyDependency,
+        dependency.member.MaTafdcPregnancyEligibleDependency,
         dependency.household.IsInPublicHousingDependency,
         dependency.household.MaStateCodeDependency,
     ]

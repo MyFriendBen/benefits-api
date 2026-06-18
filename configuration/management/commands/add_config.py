@@ -149,13 +149,6 @@ class Command(BaseCommand):
                 defaults={"data": WhiteLabelData.income_categories, "active": True},
             )
 
-            # Save income_options to database (flattened for backward compatibility)
-            Configuration.objects.update_or_create(
-                name="income_options",
-                white_label=white_label,
-                defaults={"data": WhiteLabelData.income_options, "active": True},
-            )
-
             # Save income_options_by_category to database (nested by category)
             Configuration.objects.update_or_create(
                 name="income_options_by_category",
@@ -182,13 +175,6 @@ class Command(BaseCommand):
                 name="expense_categories",
                 white_label=white_label,
                 defaults={"data": WhiteLabelData.expense_categories, "active": True},
-            )
-
-            # Save expense_options to database
-            Configuration.objects.update_or_create(
-                name="expense_options",
-                white_label=white_label,
-                defaults={"data": WhiteLabelData.expense_options, "active": True},
             )
 
             # Save expense_options_by_category to database
