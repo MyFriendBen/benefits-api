@@ -17,6 +17,16 @@ class PregnancyDependency(Member):
         return self.member.pregnant or False
 
 
+class MaTafdcPregnancyEligibleDependency(Member):
+    field = "ma_tafdc_pregnancy_eligible"
+    dependencies = ("pregnant",)
+
+    def value(self):
+        # We don't collect pregnancy month, so treat any pregnant member as
+        # meeting PE's 5-month TAFDC eligibility threshold.
+        return self.member.pregnant or False
+
+
 class ExpectedChildrenPregnancyDependency(Member):
     field = "current_pregnancies"
 
@@ -812,7 +822,6 @@ class FosterCareDependency(Member):
     dependencies = ("relationship",)
 
     def value(self):
-
         if self.member.relationship == "fosterChild":
             return True
         return None
