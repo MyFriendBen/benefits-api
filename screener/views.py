@@ -4,6 +4,7 @@ from typing import Optional
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from integrations.clients.rewiring_america import RewiringAmericaClient
+from integrations.clients.google_places import GooglePlacesClient
 from integrations.services.communications import MessageUser
 from programs.programs.policyengine import versions as pe_versions
 from programs.models import Referrer
@@ -702,6 +703,23 @@ class NPSRateThrottle(throttling.AnonRateThrottle):
         return self.cache_format % {"scope": self.scope, "ident": hashed}
 
 
+class PlacesRateThrottle(throttling.AnonRateThrottle):
+    """
+    Rate throttle for Google Places Autocomplete proxy requests.
+    Rate is configured via DEFAULT_THROTTLE_RATES["places"] in settings.
+    Uses a hashed IP as the cache key to avoid storing raw IPs.
+    """
+
+    scope = "places"
+
+    def get_cache_key(self, request, view):
+        ident = self.get_ident(request)
+        if ident is None:
+            return None
+        hashed = hashlib.sha256(ident.encode()).hexdigest()
+        return self.cache_format % {"scope": self.scope, "ident": hashed}
+
+
 class NPSScoreView(views.APIView):
     """
     API endpoint for submitting NPS (Net Promoter Score) feedback.
@@ -862,3 +880,36 @@ class RemImpactView(views.APIView):
 
         serializer = RemImpactSerializer(raw)
         return Response(serializer.data)
+
+
+class PlacesAutocompleteView(views.APIView):
+    """
+    Proxies address autocomplete requests to the Google Places API,
+    keeping the API key server-side. Returns US street address predictions
+    restricted to street-level addresses.
+    """
+
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [PlacesRateThrottle]
+
+    def get(self, request, **_kwargs) -> Response:
+        input_text = request.query_params.get("input", "").strip()
+
+        if not input_text:
+            return Response([], status=status.HTTP_200_OK)
+
+        try:
+            client = GooglePlacesClient()
+            predictions = client.autocomplete_address(input_text)
+        except requests.HTTPError as e:
+            return Response(
+                {"error": f"Google Places API error: {e.response.status_code}"},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+        except requests.RequestException as e:
+            return Response(
+                {"error": "Google Places request failed.", "detail": str(e)},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        return Response(predictions)
