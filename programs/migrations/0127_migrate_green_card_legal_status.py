@@ -2,7 +2,7 @@
 from django.db import migrations
 
 
-def migrate_green_card_to_subtypes(apps, schema_editor):
+def migrate_green_card_to_subtypes(apps, schema_editor) -> None:
     """
     Replace 'green_card' in legal_status_required with both 'gc_5plus' and 'gc_5less'.
 
@@ -48,7 +48,7 @@ def migrate_green_card_to_subtypes(apps, schema_editor):
     print(f"✅ Migrated {programs_updated} programs: 'green_card' → ['gc_5plus', 'gc_5less']")
 
 
-def reverse_migration(apps, schema_editor):
+def reverse_migration(apps, schema_editor) -> None:
     """
     Reverse migration: Cannot reliably reverse without knowing original state.
 

@@ -39,7 +39,9 @@ class DenverPropertyTaxRelief(ProgramCalculator):
         "relationship",
     ]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            return
         # county
         counties = counties_from_screen(self.screen)
         e.condition(DenverPropertyTaxRelief.county in counties, messages.location())
@@ -66,7 +68,9 @@ class DenverPropertyTaxRelief(ProgramCalculator):
                 total_income += member.calc_gross_income("yearly", DenverPropertyTaxRelief.income_types)
         e.condition(total_income <= limit, messages.income(total_income, limit))
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
+        if e.member.age is None:
+            return
         member = e.member
 
         # head or spouse

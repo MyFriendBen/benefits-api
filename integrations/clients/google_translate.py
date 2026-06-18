@@ -22,7 +22,7 @@ class Translate:
     ]
 
     @staticmethod
-    def split_paragraphs(text):
+    def split_paragraphs(text: str):
         """
         Splits text into paragraphs using two or more consecutive newlines as delimiters.
         Preserves empty paragraphs and leading/trailing whitespace.
@@ -40,7 +40,7 @@ class Translate:
         """
         return "\n".join(paragraphs)
 
-    def __init__(self):
+    def __init__(self) -> None:
         info = json.loads(config("GOOGLE_APPLICATION_CREDENTIALS"))
         creds = service_account.Credentials.from_service_account_info(info)
         self.client = translate.Client(credentials=creds)

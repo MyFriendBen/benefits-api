@@ -7,11 +7,11 @@ class ReproductiveHealthCare(ProgramCalculator):
     amount = 268
     dependencies = ["insurance"]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         # Medicade eligibility
         e.condition(medicaid_eligible(self.data), messages.must_have_benefit("Medicaid"))
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
 
         # No health insurance

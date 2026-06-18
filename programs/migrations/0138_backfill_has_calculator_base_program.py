@@ -146,7 +146,7 @@ NO_CALCULATOR_PROGRAMS = [
 ]
 
 
-def backfill_base_program_and_has_calculator(apps, schema_editor):
+def backfill_base_program_and_has_calculator(apps, schema_editor) -> None:
     Program = apps.get_model("programs", "Program")
 
     # Backfill base_program

@@ -4,7 +4,7 @@ from ..base import UrgentNeedFunction
 class JourneyToHopeCEOC(UrgentNeedFunction):
     dependencies = []
 
-    def eligible(self):
+    def eligible(self) -> bool:
         """
         Journey to Hope (CEOC)
         Provides short-term financial help and case management during crises.

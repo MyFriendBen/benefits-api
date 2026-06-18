@@ -25,13 +25,13 @@ class TestMaTafdcPregnancyEligibleDependency(TestCase):
         member.pregnant = pregnant
         return MaTafdcPregnancyEligibleDependency(Mock(), member, Mock())
 
-    def test_value_true_when_pregnant(self):
+    def test_value_true_when_pregnant(self) -> None:
         self.assertTrue(self._dependency(True).value())
 
-    def test_value_false_when_not_pregnant(self):
+    def test_value_false_when_not_pregnant(self) -> None:
         self.assertFalse(self._dependency(False).value())
 
-    def test_value_false_when_pregnant_is_none(self):
+    def test_value_false_when_pregnant_is_none(self) -> None:
         # `pregnant` is a nullable BooleanField; an unanswered value must not crash.
         self.assertFalse(self._dependency(None).value())
 
@@ -39,10 +39,10 @@ class TestMaTafdcPregnancyEligibleDependency(TestCase):
 class TestMaTafdcPeInputs(TestCase):
     """Tests for the MaTafdc calculator wiring."""
 
-    def test_includes_ma_tafdc_pregnancy_eligible_dependency(self):
+    def test_includes_ma_tafdc_pregnancy_eligible_dependency(self) -> None:
         self.assertIn(MaTafdcPregnancyEligibleDependency, MaTafdc.pe_inputs)
 
-    def test_still_includes_pregnancy_dependency(self):
+    def test_still_includes_pregnancy_dependency(self) -> None:
         # PregnancyDependency sends `is_pregnant`, which PE's teen-parent branch
         # reads. It must remain alongside the new dependency, not be replaced.
         self.assertIn(PregnancyDependency, MaTafdc.pe_inputs)

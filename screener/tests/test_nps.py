@@ -14,7 +14,7 @@ from screener.serializers import NPSScoreSerializer, NPSScoreReasonSerializer
 class TestNPSScoreSerializer(TestCase):
     """Tests for NPSScoreSerializer."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data."""
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
         self.screen = Screen.objects.create(
@@ -22,7 +22,7 @@ class TestNPSScoreSerializer(TestCase):
         )
         self.snapshot = EligibilitySnapshot.objects.create(screen=self.screen, is_batch=False, had_error=False)
 
-    def test_valid_score_submission(self):
+    def test_valid_score_submission(self) -> None:
         """Test submitting a valid NPS score."""
         data = {"uuid": str(self.screen.uuid), "score": 8}
         serializer = NPSScoreSerializer(data=data)
@@ -33,7 +33,7 @@ class TestNPSScoreSerializer(TestCase):
         self.assertEqual(nps_score.score, 8)
         self.assertEqual(nps_score.eligibility_snapshot, self.snapshot)
 
-    def test_score_range_minimum(self):
+    def test_score_range_minimum(self) -> None:
         """Test that score of 1 is valid."""
         data = {"uuid": str(self.screen.uuid), "score": 1}
         serializer = NPSScoreSerializer(data=data)
@@ -42,7 +42,7 @@ class TestNPSScoreSerializer(TestCase):
         nps_score = serializer.save()
         self.assertEqual(nps_score.score, 1)
 
-    def test_score_range_maximum(self):
+    def test_score_range_maximum(self) -> None:
         """Test that score of 10 is valid."""
         data = {"uuid": str(self.screen.uuid), "score": 10}
         serializer = NPSScoreSerializer(data=data)
@@ -51,7 +51,7 @@ class TestNPSScoreSerializer(TestCase):
         nps_score = serializer.save()
         self.assertEqual(nps_score.score, 10)
 
-    def test_score_below_minimum_invalid(self):
+    def test_score_below_minimum_invalid(self) -> None:
         """Test that score below 1 is invalid."""
         data = {"uuid": str(self.screen.uuid), "score": 0}
         serializer = NPSScoreSerializer(data=data)
@@ -59,7 +59,7 @@ class TestNPSScoreSerializer(TestCase):
         self.assertFalse(serializer.is_valid())
         self.assertIn("score", serializer.errors)
 
-    def test_score_above_maximum_invalid(self):
+    def test_score_above_maximum_invalid(self) -> None:
         """Test that score above 10 is invalid."""
         data = {"uuid": str(self.screen.uuid), "score": 11}
         serializer = NPSScoreSerializer(data=data)
@@ -67,7 +67,7 @@ class TestNPSScoreSerializer(TestCase):
         self.assertFalse(serializer.is_valid())
         self.assertIn("score", serializer.errors)
 
-    def test_invalid_uuid_no_snapshot(self):
+    def test_invalid_uuid_no_snapshot(self) -> None:
         """Test that invalid uuid returns error."""
         data = {"uuid": "00000000-0000-0000-0000-000000000000", "score": 5}
         serializer = NPSScoreSerializer(data=data)
@@ -76,7 +76,7 @@ class TestNPSScoreSerializer(TestCase):
         with self.assertRaises(ValidationError):
             serializer.save()  # But no snapshot exists
 
-    def test_duplicate_submission_rejected(self):
+    def test_duplicate_submission_rejected(self) -> None:
         """Test that submitting NPS twice for same snapshot is rejected."""
         data = {"uuid": str(self.screen.uuid), "score": 8}
 
@@ -91,7 +91,7 @@ class TestNPSScoreSerializer(TestCase):
         with self.assertRaises(ValidationError):
             serializer2.save()  # But save should fail
 
-    def test_uses_most_recent_snapshot(self):
+    def test_uses_most_recent_snapshot(self) -> None:
         """Test that serializer uses the most recent non-error snapshot."""
         # Create a newer snapshot (self.snapshot from setUp is older)
         newer_snapshot = EligibilitySnapshot.objects.create(screen=self.screen, is_batch=False, had_error=False)
@@ -104,7 +104,7 @@ class TestNPSScoreSerializer(TestCase):
         # Should be linked to the most recent snapshot (newer_snapshot)
         self.assertEqual(nps_score.eligibility_snapshot, newer_snapshot)
 
-    def test_ignores_error_snapshots(self):
+    def test_ignores_error_snapshots(self) -> None:
         """Test that snapshots with had_error=True are ignored."""
         # Mark the good snapshot as error
         self.snapshot.had_error = True
@@ -121,7 +121,7 @@ class TestNPSScoreSerializer(TestCase):
 class TestNPSScoreView(APITestCase):
     """Tests for NPSScoreView API endpoint."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data."""
         # Disable throttle limits for testing
         patcher = patch("screener.views.NPSRateThrottle.allow_request", return_value=True)
@@ -135,7 +135,7 @@ class TestNPSScoreView(APITestCase):
         self.snapshot = EligibilitySnapshot.objects.create(screen=self.screen, is_batch=False, had_error=False)
         self.url = f"/api/screens/{self.screen.uuid}/nps/"
 
-    def test_post_valid_nps_score(self):
+    def test_post_valid_nps_score(self) -> None:
         """Test successful NPS score submission."""
         data = {"score": 9}
         response = self.client.post(self.url, data, format="json")
@@ -144,7 +144,7 @@ class TestNPSScoreView(APITestCase):
         self.assertEqual(response.data, {"status": "success"})
         self.assertTrue(NPSScore.objects.filter(eligibility_snapshot=self.snapshot).exists())
 
-    def test_post_invalid_score(self):
+    def test_post_invalid_score(self) -> None:
         """Test that invalid score returns 400."""
         data = {"score": 15}
         response = self.client.post(self.url, data, format="json")
@@ -152,14 +152,14 @@ class TestNPSScoreView(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("score", response.data)
 
-    def test_post_missing_required_fields(self):
+    def test_post_missing_required_fields(self) -> None:
         """Test that missing required fields returns 400."""
         data = {}  # Missing score
         response = self.client.post(self.url, data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_post_invalid_uuid(self):
+    def test_post_invalid_uuid(self) -> None:
         """Test that invalid uuid returns 400."""
         url = "/api/screens/00000000-0000-0000-0000-000000000000/nps/"
         data = {"score": 5}
@@ -168,7 +168,7 @@ class TestNPSScoreView(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("uuid", response.data)
 
-    def test_post_duplicate_submission(self):
+    def test_post_duplicate_submission(self) -> None:
         """Test that duplicate submission returns 400."""
         data = {"score": 8}
 
@@ -180,7 +180,7 @@ class TestNPSScoreView(APITestCase):
         response2 = self.client.post(self.url, data, format="json")
         self.assertEqual(response2.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_no_authentication_required(self):
+    def test_no_authentication_required(self) -> None:
         """Test that endpoint is accessible without authentication."""
         # Client has no authentication set up
         data = {"score": 7}
@@ -193,7 +193,7 @@ class TestNPSScoreView(APITestCase):
 class TestNPSScoreReasonSerializer(TestCase):
     """Tests for NPSScoreReasonSerializer."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data."""
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
         self.screen = Screen.objects.create(
@@ -203,7 +203,7 @@ class TestNPSScoreReasonSerializer(TestCase):
         # Create an existing NPS score to update
         self.nps_score = NPSScore.objects.create(eligibility_snapshot=self.snapshot, score=8)
 
-    def test_valid_reason_submission(self):
+    def test_valid_reason_submission(self) -> None:
         """Test submitting a valid score reason."""
         data = {"uuid": str(self.screen.uuid), "score_reason": "The tool was very helpful"}
         serializer = NPSScoreReasonSerializer(data=data)
@@ -215,7 +215,7 @@ class TestNPSScoreReasonSerializer(TestCase):
         self.assertEqual(result.score_reason, "The tool was very helpful")
         self.assertEqual(result.score, 8)  # Original score unchanged
 
-    def test_reason_updates_existing_score(self):
+    def test_reason_updates_existing_score(self) -> None:
         """Test that reason is added to an existing NPS score record."""
         data = {"uuid": str(self.screen.uuid), "score_reason": "Easy to use"}
         serializer = NPSScoreReasonSerializer(data=data)
@@ -227,7 +227,7 @@ class TestNPSScoreReasonSerializer(TestCase):
         self.nps_score.refresh_from_db()
         self.assertEqual(self.nps_score.score_reason, "Easy to use")
 
-    def test_reason_can_be_overwritten(self):
+    def test_reason_can_be_overwritten(self) -> None:
         """Test that a reason can be updated with a new value."""
         self.nps_score.score_reason = "First reason"
         self.nps_score.save()
@@ -241,7 +241,7 @@ class TestNPSScoreReasonSerializer(TestCase):
         self.nps_score.refresh_from_db()
         self.assertEqual(self.nps_score.score_reason, "Updated reason")
 
-    def test_invalid_uuid_no_snapshot(self):
+    def test_invalid_uuid_no_snapshot(self) -> None:
         """Test that invalid uuid returns error."""
         data = {"uuid": "00000000-0000-0000-0000-000000000000", "score_reason": "Some reason"}
         serializer = NPSScoreReasonSerializer(data=data)
@@ -250,7 +250,7 @@ class TestNPSScoreReasonSerializer(TestCase):
         with self.assertRaises(ValidationError):
             serializer.get_nps_score(serializer.validated_data["uuid"])
 
-    def test_no_nps_score_exists(self):
+    def test_no_nps_score_exists(self) -> None:
         """Test that error is raised when no NPS score exists for the snapshot."""
         self.nps_score.delete()
 
@@ -261,7 +261,7 @@ class TestNPSScoreReasonSerializer(TestCase):
         with self.assertRaises(ValidationError):
             serializer.get_nps_score(serializer.validated_data["uuid"])
 
-    def test_missing_score_reason(self):
+    def test_missing_score_reason(self) -> None:
         """Test that score_reason is required."""
         data = {"uuid": str(self.screen.uuid)}
         serializer = NPSScoreReasonSerializer(data=data)
@@ -269,7 +269,7 @@ class TestNPSScoreReasonSerializer(TestCase):
         self.assertFalse(serializer.is_valid())
         self.assertIn("score_reason", serializer.errors)
 
-    def test_missing_uuid(self):
+    def test_missing_uuid(self) -> None:
         """Test that uuid is required."""
         data = {"score_reason": "Some reason"}
         serializer = NPSScoreReasonSerializer(data=data)
@@ -277,7 +277,7 @@ class TestNPSScoreReasonSerializer(TestCase):
         self.assertFalse(serializer.is_valid())
         self.assertIn("uuid", serializer.errors)
 
-    def test_uses_most_recent_snapshot(self):
+    def test_uses_most_recent_snapshot(self) -> None:
         """Test that serializer uses the most recent non-error snapshot."""
         # Create a newer snapshot with its own NPS score
         newer_snapshot = EligibilitySnapshot.objects.create(screen=self.screen, is_batch=False, had_error=False)
@@ -292,7 +292,7 @@ class TestNPSScoreReasonSerializer(TestCase):
         self.assertEqual(result.id, newer_nps.id)
         self.assertEqual(result.score_reason, "Recent feedback")
 
-    def test_ignores_error_snapshots(self):
+    def test_ignores_error_snapshots(self) -> None:
         """Test that snapshots with had_error=True are ignored."""
         self.snapshot.had_error = True
         self.snapshot.save()
@@ -308,7 +308,7 @@ class TestNPSScoreReasonSerializer(TestCase):
 class TestNPSScoreReasonView(APITestCase):
     """Tests for NPSScoreView PATCH endpoint (score reason)."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data."""
         # Disable throttle limits for testing
         patcher = patch("screener.views.NPSRateThrottle.allow_request", return_value=True)
@@ -323,7 +323,7 @@ class TestNPSScoreReasonView(APITestCase):
         self.nps_score = NPSScore.objects.create(eligibility_snapshot=self.snapshot, score=8)
         self.url = f"/api/screens/{self.screen.uuid}/nps/"
 
-    def test_patch_valid_reason(self):
+    def test_patch_valid_reason(self) -> None:
         """Test successful reason submission via PATCH."""
         data = {"score_reason": "Great experience"}
         response = self.client.patch(self.url, data, format="json")
@@ -334,7 +334,7 @@ class TestNPSScoreReasonView(APITestCase):
         self.nps_score.refresh_from_db()
         self.assertEqual(self.nps_score.score_reason, "Great experience")
 
-    def test_patch_missing_reason(self):
+    def test_patch_missing_reason(self) -> None:
         """Test that missing score_reason returns 400."""
         data = {}
         response = self.client.patch(self.url, data, format="json")
@@ -342,7 +342,7 @@ class TestNPSScoreReasonView(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("score_reason", response.data)
 
-    def test_patch_invalid_uuid(self):
+    def test_patch_invalid_uuid(self) -> None:
         """Test that invalid uuid returns 400."""
         url = "/api/screens/00000000-0000-0000-0000-000000000000/nps/"
         data = {"score_reason": "Some reason"}
@@ -351,7 +351,7 @@ class TestNPSScoreReasonView(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("uuid", response.data)
 
-    def test_patch_no_nps_score(self):
+    def test_patch_no_nps_score(self) -> None:
         """Test that PATCH fails when no NPS score exists."""
         self.nps_score.delete()
 
@@ -361,14 +361,14 @@ class TestNPSScoreReasonView(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("uuid", response.data)
 
-    def test_patch_no_authentication_required(self):
+    def test_patch_no_authentication_required(self) -> None:
         """Test that PATCH endpoint is accessible without authentication."""
         data = {"score_reason": "No auth needed"}
         response = self.client.patch(self.url, data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_full_nps_flow(self):
+    def test_full_nps_flow(self) -> None:
         """Test the full flow: POST score then PATCH reason."""
         # Delete the pre-created NPS score
         self.nps_score.delete()

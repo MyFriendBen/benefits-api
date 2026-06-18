@@ -10,7 +10,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
     """Test cases for Illinois Child Care Assistance Program calculator"""
 
     @classmethod
-    def setUpTestData(cls):
+    def setUpTestData(cls) -> None:
         """Set up test data that doesn't change between tests"""
         # Create white label for Illinois
         cls.il_white_label = WhiteLabel.objects.create(name="Illinois", code="il", state_code="IL")
@@ -24,7 +24,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         cls.program.year = cls.fpl_year
         cls.program.save()
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test fixtures for each test method"""
 
         # Basic eligible household: parent with child in Cook County
@@ -70,14 +70,14 @@ class TestIlChildCareAssistanceProgram(TestCase):
         return IlChildCareAssistanceProgram(screen, self.program, data, missing_dependencies)
 
     # County Group Tests
-    def test_get_county_group_ia(self):
+    def test_get_county_group_ia(self) -> None:
         """Test county group IA (highest rate counties)"""
         calc = self.create_calculator(self.eligible_screen)
         self.assertEqual(calc.get_county_group("Cook"), "GROUP_1A")
         self.assertEqual(calc.get_county_group("DuPage"), "GROUP_1A")
         self.assertEqual(calc.get_county_group("Lake"), "GROUP_1A")
 
-    def test_get_county_group_ib(self):
+    def test_get_county_group_ib(self) -> None:
         """Test county group IB (medium rate counties)"""
         screen = Screen.objects.create(
             agree_to_tos=True,
@@ -92,7 +92,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         self.assertEqual(calc.get_county_group("Peoria"), "GROUP_1B")
         self.assertEqual(calc.get_county_group("Will"), "GROUP_1B")
 
-    def test_get_county_group_ii(self):
+    def test_get_county_group_ii(self) -> None:
         """Test county group II (all other Illinois counties)"""
         screen = Screen.objects.create(
             agree_to_tos=True,
@@ -107,13 +107,13 @@ class TestIlChildCareAssistanceProgram(TestCase):
         self.assertEqual(calc.get_county_group("Random County"), "GROUP_2")
 
     # Household Eligibility Tests
-    def test_household_eligible_with_employed_parent(self):
+    def test_household_eligible_with_employed_parent(self) -> None:
         """Test household is eligible when parent is employed"""
         calc = self.create_calculator(self.eligible_screen)
         eligibility = calc.eligible()
         self.assertTrue(eligibility.eligible)
 
-    def test_household_eligible_with_student_parent(self):
+    def test_household_eligible_with_student_parent(self) -> None:
         """Test household is eligible when parent is a student"""
         # Create new screen with student parent
         screen = Screen.objects.create(
@@ -137,7 +137,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         eligibility = calc.eligible()
         self.assertTrue(eligibility.eligible)
 
-    def test_household_ineligible_no_employment_or_school(self):
+    def test_household_ineligible_no_employment_or_school(self) -> None:
         """Test household is ineligible when parent is neither employed nor in school"""
         screen = Screen.objects.create(
             agree_to_tos=True,
@@ -160,7 +160,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         eligibility = calc.eligible()
         self.assertFalse(eligibility.eligible)
 
-    def test_household_ineligible_income_too_high(self):
+    def test_household_ineligible_income_too_high(self) -> None:
         """Test household is ineligible when income exceeds 225% FPL"""
         screen = Screen.objects.create(
             agree_to_tos=True,
@@ -192,7 +192,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         self.assertFalse(eligibility.eligible)
 
     # Member Eligibility Tests
-    def test_member_eligible_child_under_13(self):
+    def test_member_eligible_child_under_13(self) -> None:
         """Test child under 13 is eligible"""
         calc = self.create_calculator(self.eligible_screen)
         eligibility = calc.eligible()
@@ -201,7 +201,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         eligible_count = sum(1 for m in eligibility.eligible_members if m.eligible)
         self.assertEqual(eligible_count, 1)
 
-    def test_member_ineligible_child_over_13(self):
+    def test_member_ineligible_child_over_13(self) -> None:
         """Test child over 13 is not eligible (unless disabled)"""
         screen = Screen.objects.create(
             agree_to_tos=True,
@@ -234,7 +234,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         eligible_count = sum(1 for m in eligibility.eligible_members if m.eligible)
         self.assertEqual(eligible_count, 0)
 
-    def test_member_eligible_disabled_child_under_19(self):
+    def test_member_eligible_disabled_child_under_19(self) -> None:
         """Test disabled child under 19 is eligible"""
         screen = Screen.objects.create(
             agree_to_tos=True,
@@ -273,7 +273,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         eligible_count = sum(1 for m in eligibility.eligible_members if m.eligible)
         self.assertEqual(eligible_count, 1)
 
-    def test_member_ineligible_wrong_relationship(self):
+    def test_member_ineligible_wrong_relationship(self) -> None:
         """Test non-child household members are not eligible"""
         screen = Screen.objects.create(
             agree_to_tos=True,
@@ -306,7 +306,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         eligible_count = sum(1 for m in eligibility.eligible_members if m.eligible)
         self.assertEqual(eligible_count, 0)
 
-    def test_member_eligible_various_child_relationships(self):
+    def test_member_eligible_various_child_relationships(self) -> None:
         """Test various child relationships are eligible"""
         screen = Screen.objects.create(
             agree_to_tos=True,
@@ -345,7 +345,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         self.assertEqual(eligible_count, 4)
 
     # Value Calculation Tests
-    def test_member_value_cook_county_infant(self):
+    def test_member_value_cook_county_infant(self) -> None:
         """Test benefit value for infant in Cook County (Group IA)"""
         screen = Screen.objects.create(
             agree_to_tos=True,
@@ -377,14 +377,14 @@ class TestIlChildCareAssistanceProgram(TestCase):
         # $1474/month * 12 = $17,688/year
         self.assertEqual(value, 1474 * 12)
 
-    def test_member_value_cook_county_preschool(self):
+    def test_member_value_cook_county_preschool(self) -> None:
         """Test benefit value for preschooler in Cook County (Group IA)"""
         calc = self.create_calculator(self.eligible_screen)
         value = calc.member_value(self.child)
         # $1012/month * 12 = $12,144/year for 3-year-old
         self.assertEqual(value, 1012 * 12)
 
-    def test_member_value_champaign_county_school_age(self):
+    def test_member_value_champaign_county_school_age(self) -> None:
         """Test benefit value for school-age child in Champaign County (Group IB)"""
         screen = Screen.objects.create(
             agree_to_tos=True,
@@ -416,7 +416,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         # $484/month * 12 = $5,808/year
         self.assertEqual(value, 484 * 12)
 
-    def test_member_value_rural_county_twos(self):
+    def test_member_value_rural_county_twos(self) -> None:
         """Test benefit value for 2-year-old in rural county (Group II)"""
         screen = Screen.objects.create(
             agree_to_tos=True,
@@ -448,7 +448,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         # $1012/month * 12 = $12,144/year
         self.assertEqual(value, 1012 * 12)
 
-    def test_member_value_too_old_returns_zero(self):
+    def test_member_value_too_old_returns_zero(self) -> None:
         """Test benefit value is 0 for children over 13 (non-disabled)"""
         screen = Screen.objects.create(
             agree_to_tos=True,
@@ -479,7 +479,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         value = calc.member_value(child)
         self.assertEqual(value, 0)
 
-    def test_total_value_multiple_children(self):
+    def test_total_value_multiple_children(self) -> None:
         """Test total benefit value for household with multiple children"""
         screen = Screen.objects.create(
             agree_to_tos=True,
@@ -531,7 +531,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         self.assertEqual(eligibility.value, expected_net)
 
     # Copayment Calculation Tests
-    def test_copayment_at_100_percent_fpl(self):
+    def test_copayment_at_100_percent_fpl(self) -> None:
         """Test copayment is $1/month for families at or below 100% FPL"""
         screen = Screen.objects.create(
             agree_to_tos=True,
@@ -562,7 +562,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         copayment = calc.calculate_monthly_copayment()
         self.assertEqual(copayment, 1)
 
-    def test_copayment_just_above_100_percent_fpl(self):
+    def test_copayment_just_above_100_percent_fpl(self) -> None:
         """Test copayment follows table for income just above 100% FPL"""
         screen = Screen.objects.create(
             agree_to_tos=True,
@@ -594,7 +594,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         # $1800 falls in bracket ((1764, 2055), 37)
         self.assertEqual(copayment, 37)
 
-    def test_copayment_mid_income_family_of_4(self):
+    def test_copayment_mid_income_family_of_4(self) -> None:
         """Test copayment for mid-income family of 4"""
         screen = Screen.objects.create(
             agree_to_tos=True,
@@ -627,7 +627,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         # $3000 falls in bracket ((2780, 3174), 95)
         self.assertEqual(copayment, 95)
 
-    def test_copayment_at_bracket_boundary_lower(self):
+    def test_copayment_at_bracket_boundary_lower(self) -> None:
         """Test copayment at lower boundary of income bracket"""
         screen = Screen.objects.create(
             agree_to_tos=True,
@@ -658,7 +658,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         copayment = calc.calculate_monthly_copayment()
         self.assertEqual(copayment, 42)
 
-    def test_copayment_at_bracket_boundary_upper(self):
+    def test_copayment_at_bracket_boundary_upper(self) -> None:
         """Test copayment at upper boundary of income bracket"""
         screen = Screen.objects.create(
             agree_to_tos=True,
@@ -689,7 +689,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         copayment = calc.calculate_monthly_copayment()
         self.assertEqual(copayment, 42)
 
-    def test_copayment_highest_bracket(self):
+    def test_copayment_highest_bracket(self) -> None:
         """Test copayment at highest income bracket"""
         screen = Screen.objects.create(
             agree_to_tos=True,
@@ -720,7 +720,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         copayment = calc.calculate_monthly_copayment()
         self.assertEqual(copayment, 836)
 
-    def test_household_value_returns_negative_copayment(self):
+    def test_household_value_returns_negative_copayment(self) -> None:
         """Test household_value returns negative annual copayment"""
         screen = Screen.objects.create(
             agree_to_tos=True,
@@ -752,7 +752,7 @@ class TestIlChildCareAssistanceProgram(TestCase):
         # household_value should be -$37 * 12 = -$444
         self.assertEqual(household_value, -37 * 12)
 
-    def test_net_benefit_calculation(self):
+    def test_net_benefit_calculation(self) -> None:
         """Test that total value correctly calculates net benefit (subsidy - copayment)"""
         screen = Screen.objects.create(
             agree_to_tos=True,

@@ -75,14 +75,14 @@ def _programs_q():
     return q
 
 
-def forward(apps, schema_editor):
+def forward(apps, schema_editor) -> None:
     Program = apps.get_model("programs", "Program")
     Program.objects.filter(_programs_q()).update(show_in_has_benefits_step=True, active=True)
     # Reset anything not in the explicit list — PROGRAMS_TO_FLAG is the authoritative source.
     Program.objects.exclude(_programs_q()).update(show_in_has_benefits_step=False)
 
 
-def reverse(apps, schema_editor):
+def reverse(apps, schema_editor) -> None:
     Program = apps.get_model("programs", "Program")
     Program.objects.filter(_programs_q()).update(show_in_has_benefits_step=False)
 

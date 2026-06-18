@@ -103,6 +103,8 @@ class WaUdp(ProgramCalculator):
 
     def _smi_limit(self) -> int:
         size = self.screen.household_size
+        if size is None:
+            return 0
         if size in self.SMI_70_ANNUAL:
             return self.SMI_70_ANNUAL[size]
         return self.SMI_70_ANNUAL[10] + (size - 10) * self.SMI_70_PER_EXTRA_ANNUAL

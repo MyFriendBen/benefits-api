@@ -20,7 +20,7 @@ class TestIlNurseFamilyPartnership(TestCase):
     """Test cases for Illinois Nurse-Family Partnership calculator."""
 
     @classmethod
-    def setUpTestData(cls):
+    def setUpTestData(cls) -> None:
         """Set up test data that doesn't change between tests."""
         cls.il_white_label = WhiteLabel.objects.create(name="Illinois", code="il", state_code="IL")
         cls.fpl_year = FederalPoveryLimit.objects.create(year="2025", period="2025")
@@ -29,7 +29,7 @@ class TestIlNurseFamilyPartnership(TestCase):
         cls.program.year = cls.fpl_year
         cls.program.save()
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test fixtures for each test method."""
         self.screen = Screen.objects.create(
             agree_to_tos=True,
@@ -47,7 +47,7 @@ class TestIlNurseFamilyPartnership(TestCase):
         return IlNurseFamilyPartnership(screen, self.program, data, missing_dependencies)
 
     # Household Eligibility Tests
-    def test_household_eligible_income_below_300_fpl(self):
+    def test_household_eligible_income_below_300_fpl(self) -> None:
         """Test household is eligible when income is below 300% FPL."""
         parent = HouseholdMember.objects.create(
             screen=self.screen,
@@ -69,7 +69,7 @@ class TestIlNurseFamilyPartnership(TestCase):
 
         self.assertTrue(eligibility.eligible)
 
-    def test_household_eligible_with_wic_regardless_of_income(self):
+    def test_household_eligible_with_wic_regardless_of_income(self) -> None:
         """Test household is eligible with WIC (presumed eligibility) regardless of income."""
         seed_program(self.il_white_label, "wic")
         _write_current_benefits(self.screen, ["wic"])
@@ -95,7 +95,7 @@ class TestIlNurseFamilyPartnership(TestCase):
 
         self.assertTrue(eligibility.eligible)
 
-    def test_household_ineligible_income_above_300_fpl_no_wic(self):
+    def test_household_ineligible_income_above_300_fpl_no_wic(self) -> None:
         """Test household is ineligible when income exceeds 300% FPL and no WIC."""
         parent = HouseholdMember.objects.create(
             screen=self.screen,
@@ -119,7 +119,7 @@ class TestIlNurseFamilyPartnership(TestCase):
         self.assertFalse(eligibility.eligible)
 
     # Member Eligibility Tests
-    def test_member_eligible_when_pregnant(self):
+    def test_member_eligible_when_pregnant(self) -> None:
         """Test member is eligible when pregnant."""
         pregnant_member = HouseholdMember.objects.create(
             screen=self.screen,
@@ -143,7 +143,7 @@ class TestIlNurseFamilyPartnership(TestCase):
         eligible_count = sum(1 for m in eligibility.eligible_members if m.eligible)
         self.assertEqual(eligible_count, 1)
 
-    def test_member_ineligible_when_not_pregnant(self):
+    def test_member_ineligible_when_not_pregnant(self) -> None:
         """Test member is ineligible when not pregnant."""
         non_pregnant = HouseholdMember.objects.create(
             screen=self.screen,
@@ -166,7 +166,7 @@ class TestIlNurseFamilyPartnership(TestCase):
         eligible_count = sum(1 for m in eligibility.eligible_members if m.eligible)
         self.assertEqual(eligible_count, 0)
 
-    def test_only_pregnant_member_eligible_in_household(self):
+    def test_only_pregnant_member_eligible_in_household(self) -> None:
         """Test only pregnant members are eligible, not all household members."""
         self.screen.household_size = 2
         self.screen.save()
@@ -202,18 +202,18 @@ class TestIlNurseFamilyPartnership(TestCase):
         self.assertEqual(eligible_count, 1)  # Only pregnant spouse
 
     # Value Tests
-    def test_value_calculation(self):
+    def test_value_calculation(self) -> None:
         """Test that value is $6,000 / 2.5 years = $2,400/year."""
         calc = self.create_calculator(self.screen)
         expected_value = 6_000 / 2.5
         self.assertEqual(calc.amount, expected_value)
 
-    def test_fpl_percent_is_300(self):
+    def test_fpl_percent_is_300(self) -> None:
         """Test that FPL threshold is 300%."""
         calc = self.create_calculator(self.screen)
         self.assertEqual(calc.fpl_percent, 3)
 
-    def test_zero_income_eligible(self):
+    def test_zero_income_eligible(self) -> None:
         """Test that zero income household is eligible."""
         parent = HouseholdMember.objects.create(
             screen=self.screen,

@@ -21,7 +21,9 @@ class RentalAssistanceGrant(ProgramCalculator):
     dependencies = ["income_amount", "income_frequency", "household_size", "zipcode"]
     income_limits = RAGCache()
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.screen.household_size is None:
+            return
         # income
         gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
 

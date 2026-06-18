@@ -3,7 +3,7 @@ import uuid
 from django.db import migrations
 
 
-def add_document_links(apps, schema_editor):
+def add_document_links(apps, schema_editor) -> None:
     Document = apps.get_model("programs", "Document")
     Translation = apps.get_model("translations", "Translation")
 

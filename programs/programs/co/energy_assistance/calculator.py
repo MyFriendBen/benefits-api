@@ -30,7 +30,9 @@ class EnergyAssistance(ProgramCalculator):
     expenses = ["rent", "mortgage"]
     dependencies = ["income_frequency", "income_amount", "county", "household_size"]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            return
         # income
         frequency = "yearly"
         income_types = ["all"]

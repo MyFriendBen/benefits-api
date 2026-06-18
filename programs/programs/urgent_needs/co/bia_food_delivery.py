@@ -10,7 +10,7 @@ class BiaFoodDelivery(UrgentNeedFunction):
         "Jefferson County",
     ]
 
-    def eligible(self):
+    def eligible(self) -> bool:
         """
         Return True if in Adams, Arapahoe, Denver or Jefferson county
         """

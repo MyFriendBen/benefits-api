@@ -10,6 +10,8 @@ class Trua(UrgentNeedFunction):
         """
         Return True if the household is below the income limit for their household size
         """
+        if self.urgent_need.year is None:
+            return False
         household_income = self.screen.calc_gross_income("yearly", ["all"])
         income_limit = ami.get_screen_ami(self.screen, self.ami_percent, self.urgent_need.year.period, limit_type="il")
         has_rent_or_mortgage = self.screen.has_expense(["rent"])

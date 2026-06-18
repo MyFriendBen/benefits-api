@@ -3,12 +3,12 @@
 from django.db import migrations
 
 
-def add_savings_icon(apps, schema_editor):
+def add_savings_icon(apps, schema_editor) -> None:
     CategoryIconName = apps.get_model("programs", "CategoryIconName")
     CategoryIconName.objects.get_or_create(name="savings")
 
 
-def remove_savings_icon(apps, schema_editor):
+def remove_savings_icon(apps, schema_editor) -> None:
     CategoryIconName = apps.get_model("programs", "CategoryIconName")
     CategoryIconName.objects.filter(name="savings").delete()
 

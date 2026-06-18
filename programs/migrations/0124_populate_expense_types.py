@@ -3,7 +3,7 @@
 from django.db import migrations
 
 
-def populate_expense_types(apps, schema_editor):
+def populate_expense_types(apps, schema_editor) -> None:
     """
     Populate ExpenseType table with expense options from configuration.
     Matches keys from configuration/white_labels/base.py expense_options (lines 348-366)
@@ -32,7 +32,7 @@ def populate_expense_types(apps, schema_editor):
         ExpenseType.objects.get_or_create(name=exp_type)
 
 
-def reverse_populate(apps, schema_editor):
+def reverse_populate(apps, schema_editor) -> None:
     """Allow migration to be reversed safely"""
     ExpenseType = apps.get_model("programs", "ExpenseType")
     ExpenseType.objects.all().delete()

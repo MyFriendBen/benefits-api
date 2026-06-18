@@ -8,7 +8,7 @@ from programs.models import (
 class Command(BaseCommand):
     help = "Remove all programs and navigators and their translations"
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         program_translated_fields = (
             "description_short",
             "name",

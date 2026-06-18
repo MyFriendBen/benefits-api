@@ -17,7 +17,7 @@ class AcaAdults(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
     ]
     dependencies = ["age", "household_size", "relationship", "pregnant", "income_amount", "income_frequency"]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         # Must have base Medicaid eligibility
         e.condition(medicaid_eligible(self.data), messages.must_have_benefit("Medicaid"))
 
@@ -32,8 +32,11 @@ class AcaAdults(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
         moms_and_babies_eligible = "il_moms_and_babies" in self.data and self.data["il_moms_and_babies"].eligible
         e.condition(not moms_and_babies_eligible, messages.must_not_have_benefit("Moms & Babies"))
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
+
+        if member.age is None:
+            return
 
         # Must be age 19-64
         e.condition(member.age >= self.min_age and member.age <= self.max_age)

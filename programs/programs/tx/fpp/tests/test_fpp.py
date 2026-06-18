@@ -17,7 +17,7 @@ from programs.programs.tx.fpp.calculator import TxFpp
 from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
 
 
-def make_member(age=30, medicaid=False, emergency_medicaid=False, employer=False, none=True):
+def make_member(age: int=30, medicaid: bool=False, emergency_medicaid: bool=False, employer: bool=False, none: bool=True):
     """Mock a household member with an insurance object."""
     member = Mock()
     member.age = age
@@ -36,10 +36,10 @@ def make_member(age=30, medicaid=False, emergency_medicaid=False, employer=False
 
 def make_calculator(
     current_benefits=None,
-    has_chp=False,
-    household_income=0,
-    household_size=1,
-    fpl_limit=15_000,
+    has_chp: bool=False,
+    household_income: int=0,
+    household_size: int=1,
+    fpl_limit: int=15_000,
     members=None,
 ):
     """Create a TxFpp calculator with a mocked screen and program.
@@ -87,20 +87,20 @@ def add_eligible_member(e, member):
 
 
 class TestTxFppClassAttributes(TestCase):
-    def test_is_subclass_of_program_calculator(self):
+    def test_is_subclass_of_program_calculator(self) -> None:
         self.assertTrue(issubclass(TxFpp, ProgramCalculator))
 
-    def test_is_registered_in_tx_calculators(self):
+    def test_is_registered_in_tx_calculators(self) -> None:
         self.assertIn("tx_fpp", tx_calculators)
         self.assertEqual(tx_calculators["tx_fpp"], TxFpp)
 
-    def test_max_age_is_64(self):
+    def test_max_age_is_64(self) -> None:
         self.assertEqual(TxFpp.max_age, 64)
 
-    def test_fpl_percent_is_250(self):
+    def test_fpl_percent_is_250(self) -> None:
         self.assertEqual(TxFpp.fpl_percent, 2.5)
 
-    def test_member_amount_is_annual_benefit(self):
+    def test_member_amount_is_annual_benefit(self) -> None:
         self.assertAlmostEqual(TxFpp.member_amount, 266.84)
 
 
@@ -113,30 +113,30 @@ class TestTxFppMemberEligibility(TestCase):
         calc.member_eligible(e)
         return e.eligible
 
-    def test_age_64_is_eligible(self):
+    def test_age_64_is_eligible(self) -> None:
         self.assertTrue(self._run(make_member(age=64)))
 
-    def test_age_65_is_ineligible(self):
+    def test_age_65_is_ineligible(self) -> None:
         self.assertFalse(self._run(make_member(age=65)))
 
-    def test_age_none_is_ineligible(self):
+    def test_age_none_is_ineligible(self) -> None:
         self.assertFalse(self._run(make_member(age=None)))
 
-    def test_no_minimum_age_young_child_is_age_eligible(self):
+    def test_no_minimum_age_young_child_is_age_eligible(self) -> None:
         """No minimum age — HHS states only '64 or younger'."""
         self.assertTrue(self._run(make_member(age=5)))
 
-    def test_uninsured_is_eligible(self):
+    def test_uninsured_is_eligible(self) -> None:
         self.assertTrue(self._run(make_member(age=30, none=True)))
 
-    def test_full_medicaid_is_ineligible(self):
+    def test_full_medicaid_is_ineligible(self) -> None:
         self.assertFalse(self._run(make_member(age=30, none=False, medicaid=True)))
 
-    def test_emergency_medicaid_remains_eligible(self):
+    def test_emergency_medicaid_remains_eligible(self) -> None:
         """Emergency Medicaid is underinsured (§4100) — not excluded."""
         self.assertTrue(self._run(make_member(age=30, none=False, emergency_medicaid=True)))
 
-    def test_employer_insurance_does_not_disqualify(self):
+    def test_employer_insurance_does_not_disqualify(self) -> None:
         """Medicaid-only exclusion — other coverage does not disqualify (§4200)."""
         self.assertTrue(self._run(make_member(age=30, none=False, employer=True)))
 
@@ -144,7 +144,7 @@ class TestTxFppMemberEligibility(TestCase):
 class TestTxFppHouseholdIncome(TestCase):
     """Income gate — 250% FPL with no adjunctive bypass."""
 
-    def _run(self, household_income, fpl_limit=15_000):
+    def _run(self, household_income, fpl_limit: int=15_000):
         # fpl_percent=2.5, so income_limit = int(2.5 * fpl_limit)
         calc = make_calculator(household_income=household_income, fpl_limit=fpl_limit)
         e = Eligibility()
@@ -152,20 +152,20 @@ class TestTxFppHouseholdIncome(TestCase):
         calc.household_eligible(e)
         return e.eligible
 
-    def test_income_below_250_fpl_is_eligible(self):
+    def test_income_below_250_fpl_is_eligible(self) -> None:
         self.assertTrue(self._run(household_income=20_000, fpl_limit=15_000))  # limit 37,500
 
-    def test_income_exactly_at_250_fpl_is_eligible(self):
+    def test_income_exactly_at_250_fpl_is_eligible(self) -> None:
         self.assertTrue(self._run(household_income=37_500, fpl_limit=15_000))  # limit 37,500
 
-    def test_income_above_250_fpl_is_ineligible(self):
+    def test_income_above_250_fpl_is_ineligible(self) -> None:
         self.assertFalse(self._run(household_income=37_501, fpl_limit=15_000))  # limit 37,500
 
 
 class TestTxFppAdjunctiveBypass(TestCase):
     """§4140 — SNAP / WIC / CHIP enrollment bypasses the income test."""
 
-    def _run(self, current_benefits=None, has_chp=False, household_income=99_999, fpl_limit=15_000):
+    def _run(self, current_benefits=None, has_chp: bool=False, household_income: int=99_999, fpl_limit: int=15_000):
         calc = make_calculator(
             current_benefits=current_benefits,
             has_chp=has_chp,
@@ -177,41 +177,41 @@ class TestTxFppAdjunctiveBypass(TestCase):
         calc.household_eligible(e)
         return e.eligible
 
-    def test_snap_bypasses_income_test(self):
+    def test_snap_bypasses_income_test(self) -> None:
         self.assertTrue(self._run(current_benefits=["tx_snap"]))
 
-    def test_wic_bypasses_income_test(self):
+    def test_wic_bypasses_income_test(self) -> None:
         self.assertTrue(self._run(current_benefits=["tx_wic"]))
 
-    def test_chip_bypasses_income_test(self):
+    def test_chip_bypasses_income_test(self) -> None:
         self.assertTrue(self._run(has_chp=True))
 
-    def test_no_bypass_and_high_income_is_ineligible(self):
+    def test_no_bypass_and_high_income_is_ineligible(self) -> None:
         self.assertFalse(self._run())
 
 
 class TestTxFppValue(TestCase):
     """Benefit value — $266.84 per eligible member, summed across members."""
 
-    def test_member_value_is_annual_benefit(self):
+    def test_member_value_is_annual_benefit(self) -> None:
         calc = make_calculator()
         self.assertAlmostEqual(calc.member_value(make_member(age=30)), 266.84)
 
-    def test_single_eligible_member_value(self):
+    def test_single_eligible_member_value(self) -> None:
         member = make_member(age=30)
         calc = make_calculator(household_income=10_000, fpl_limit=15_000, members=[member])
         e = calc.calc()
         self.assertTrue(e.eligible)
         self.assertAlmostEqual(e.value, 266.84)
 
-    def test_two_eligible_members_value_sums(self):
+    def test_two_eligible_members_value_sums(self) -> None:
         members = [make_member(age=55), make_member(age=30)]
         calc = make_calculator(household_income=20_000, fpl_limit=15_000, members=members)
         e = calc.calc()
         self.assertTrue(e.eligible)
         self.assertAlmostEqual(e.value, 533.68)
 
-    def test_medicaid_member_excluded_from_value(self):
+    def test_medicaid_member_excluded_from_value(self) -> None:
         """A Medicaid member does not count; only the eligible member contributes value."""
         eligible = make_member(age=32, none=True)
         medicaid_member = make_member(age=8, none=False, medicaid=True)
@@ -224,13 +224,13 @@ class TestTxFppValue(TestCase):
 class TestTxFppIntegration(TestCase):
     """End-to-end calc() for the main ineligible paths."""
 
-    def test_over_age_household_is_ineligible(self):
+    def test_over_age_household_is_ineligible(self) -> None:
         member = make_member(age=70)
         calc = make_calculator(household_income=10_000, fpl_limit=15_000, members=[member])
         e = calc.calc()
         self.assertFalse(e.eligible)
 
-    def test_over_income_no_bypass_is_ineligible(self):
+    def test_over_income_no_bypass_is_ineligible(self) -> None:
         member = make_member(age=30)
         calc = make_calculator(household_income=99_999, fpl_limit=15_000, members=[member])
         e = calc.calc()

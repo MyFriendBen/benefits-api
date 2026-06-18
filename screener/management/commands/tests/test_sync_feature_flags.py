@@ -28,13 +28,13 @@ TEST_FLAGS = {
 class SyncFeatureFlagsCommandTest(TestCase):
     """Tests for the sync_feature_flags management command."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data."""
         self.out = StringIO()
         self.err = StringIO()
 
     @patch.object(WhiteLabel, "FEATURE_FLAGS", TEST_FLAGS)
-    def test_adds_new_flags_with_defaults(self):
+    def test_adds_new_flags_with_defaults(self) -> None:
         """Test that new flags are added with their default values."""
         wl = WhiteLabel.objects.create(name="Test", code="test", state_code="TS", feature_flags={})
 
@@ -56,7 +56,7 @@ class SyncFeatureFlagsCommandTest(TestCase):
             ),
         },
     )
-    def test_removes_stale_flags(self):
+    def test_removes_stale_flags(self) -> None:
         """Test that flags not in FEATURE_FLAGS definition are removed."""
         wl = WhiteLabel.objects.create(
             name="Test",
@@ -83,7 +83,7 @@ class SyncFeatureFlagsCommandTest(TestCase):
             ),
         },
     )
-    def test_preserves_existing_flag_values(self):
+    def test_preserves_existing_flag_values(self) -> None:
         """Test that existing flag values are preserved during sync."""
         wl = WhiteLabel.objects.create(
             name="Test",
@@ -110,7 +110,7 @@ class SyncFeatureFlagsCommandTest(TestCase):
             ),
         },
     )
-    def test_dry_run_does_not_modify_database(self):
+    def test_dry_run_does_not_modify_database(self) -> None:
         """Test that --dry-run shows changes without modifying database."""
         wl = WhiteLabel.objects.create(name="Test", code="test", state_code="TS", feature_flags={})
 
@@ -136,7 +136,7 @@ class SyncFeatureFlagsCommandTest(TestCase):
             ),
         },
     )
-    def test_handles_empty_feature_flags(self):
+    def test_handles_empty_feature_flags(self) -> None:
         """Test that sync handles WhiteLabels with empty feature_flags dict."""
         wl = WhiteLabel.objects.create(name="Test", code="test", state_code="TS", feature_flags={})
 
@@ -158,7 +158,7 @@ class SyncFeatureFlagsCommandTest(TestCase):
             ),
         },
     )
-    def test_syncs_multiple_white_labels(self):
+    def test_syncs_multiple_white_labels(self) -> None:
         """Test that sync updates all WhiteLabels."""
         wl1 = WhiteLabel.objects.create(name="Test 1", code="test1", state_code="T1", feature_flags={})
         wl2 = WhiteLabel.objects.create(name="Test 2", code="test2", state_code="T2", feature_flags={})
@@ -183,7 +183,7 @@ class SyncFeatureFlagsCommandTest(TestCase):
             ),
         },
     )
-    def test_reports_in_sync_when_no_changes_needed(self):
+    def test_reports_in_sync_when_no_changes_needed(self) -> None:
         """Test that sync reports 'in sync' when no changes are needed."""
         # Ensure all existing WhiteLabels are in sync first
         for wl in WhiteLabel.objects.all():
@@ -215,7 +215,7 @@ class SyncFeatureFlagsCommandTest(TestCase):
             ),
         },
     )
-    def test_output_shows_added_flags(self):
+    def test_output_shows_added_flags(self) -> None:
         """Test that output shows which flags are being added."""
         WhiteLabel.objects.create(name="Test", code="test", state_code="TS", feature_flags={})
 
@@ -237,7 +237,7 @@ class SyncFeatureFlagsCommandTest(TestCase):
             ),
         },
     )
-    def test_output_shows_removed_flags(self):
+    def test_output_shows_removed_flags(self) -> None:
         """Test that output shows which flags are being removed."""
         WhiteLabel.objects.create(
             name="Test",

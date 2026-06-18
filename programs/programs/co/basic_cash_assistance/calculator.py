@@ -8,7 +8,7 @@ class BasicCashAssistance(ProgramCalculator):
     county = "Denver County"
     dependencies = ["zipcode", "age"]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         counties = counties_from_screen(self.screen)
 
         in_denver = BasicCashAssistance.county in counties

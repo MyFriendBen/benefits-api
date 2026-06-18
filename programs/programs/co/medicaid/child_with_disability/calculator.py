@@ -13,7 +13,9 @@ class MedicaidChildWithDisability(ProgramCalculator):
     dependencies = ["insurance", "age", "household_size", "income_type", "income_amount", "income_frequency"]
     member_amount = 200 * 12
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            return
         # Does not qualify for Medicaid
         e.condition(not medicaid_eligible(self.data), messages.must_not_have_benefit("Medicaid"))
 
@@ -27,8 +29,10 @@ class MedicaidChildWithDisability(ProgramCalculator):
         income = (earned + unearned) * MedicaidChildWithDisability.income_percent
         e.condition(income <= income_limit, messages.income(income, income_limit))
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
+        if member.age is None:
+            return
 
         # age
         e.condition(member.age <= MedicaidChildWithDisability.max_age)
@@ -42,7 +46,7 @@ class MedicaidChildWithDisability(ProgramCalculator):
         # no income
         e.condition(
             not (
-                member.calc_gross_income("yearly", ["earned"]) >= 0
+                (member.calc_gross_income("yearly", ["earned"]) or 0) >= 0
                 and member.age >= MedicaidChildWithDisability.min_employment_age
             )
         )

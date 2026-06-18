@@ -33,13 +33,15 @@ class MaDhspAfterschool(ProgramCalculator):
     amount = 900 * 12
     dependencies = ["zipcode", "household_size"]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         # Location check - must be Cambridge resident
         is_cambridge = self.screen.county == self.eligible_city
         e.condition(is_cambridge, messages.location())
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
+        if member.age is None:
+            return
         # Child must be in K-8 age range (approximately 5-14 years old)
         is_child_age = self.min_child_age <= member.age <= self.max_child_age
         e.condition(is_child_age)

@@ -7,7 +7,7 @@ from django.conf import settings
 from tqdm import tqdm
 
 
-def sync_data(apps, _):
+def sync_data(apps, _) -> None:
 
     URGENT_NEED_TYPE_MAP = {
         "co": {

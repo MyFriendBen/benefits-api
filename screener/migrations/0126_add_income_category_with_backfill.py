@@ -3,7 +3,7 @@
 from django.db import migrations, models
 
 
-def backfill_income_categories(apps, schema_editor):
+def backfill_income_categories(apps, schema_editor) -> None:
     """
     Backfill the category field for existing IncomeStream records based on income type.
     Maps income types to their categories according to the income_options structure in base.py.
@@ -53,7 +53,7 @@ def backfill_income_categories(apps, schema_editor):
     print(f"Backfilled {updated_count} IncomeStream records with categories")
 
 
-def reverse_backfill(apps, schema_editor):
+def reverse_backfill(apps, schema_editor) -> None:
     """
     Reverse the backfill by setting all categories to None.
     """

@@ -16,12 +16,14 @@ class NcEmergencyMedicaid(ProgramCalculator):
         "household_size",
     ]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            return
         fpl_percent = self.fpl_percent
 
         for member in self.screen.household_members.all():
             # Pregnant and under 18 years old have a different FPL percentage
-            if member.age <= 18 and member.pregnant:
+            if (member.age or 0) <= 18 and member.pregnant:
                 fpl_percent = 2.11
 
         # Medicaid eligibility
@@ -34,8 +36,8 @@ class NcEmergencyMedicaid(ProgramCalculator):
 
         e.condition(gross_income < income_limit, messages.income(gross_income, income_limit))
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
 
         # age
-        e.condition(member.age < self.max_age)
+        e.condition((member.age or 0) < self.max_age)

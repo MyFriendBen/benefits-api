@@ -7,6 +7,8 @@ class Heartwap(UrgentNeedFunction):
     max_income_percent = 0.6
 
     def eligible(self):
+        if self.urgent_need.year is None:
+            return False
         # income
         income_limit = smi.get_screen_smi(self.screen, self.urgent_need.year.period) * self.max_income_percent
         income = self.screen.calc_gross_income("yearly", ["all"])

@@ -7,8 +7,11 @@ class ExampleCalculator(ProgramCalculator):
     max_age = 18
     dependencies = ["age"]
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
+
+        if member.age is None:
+            return
 
         # age
         e.condition(member.age <= self.max_age)

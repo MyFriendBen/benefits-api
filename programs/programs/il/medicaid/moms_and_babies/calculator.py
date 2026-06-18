@@ -14,9 +14,13 @@ class MomsAndBabies(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
     dependencies = ["age", "household_size", "relationship", "pregnant", "income_amount", "income_frequency"]
 
     def _is_eligible_newborn(self, member: HouseholdMember) -> bool:
+        if member.age is None:
+            return False
         return member.age <= self.max_newborn_age_months
 
     def _is_eligible_adult(self, member: HouseholdMember) -> bool:
+        if member.age is None:
+            return False
         is_old_enough = member.age >= self.min_adult_age
         is_parent = member.relationship in self.parent_relationships
         is_pregnant = member.pregnant
@@ -27,14 +31,14 @@ class MomsAndBabies(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
     def _has_eligible_adult(self, members: list[HouseholdMember]) -> bool:
         return any(self._is_eligible_adult(member) for member in members)
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         # Income must be at or below 213% FPL
         self.check_fpl_income(e, self.fpl_percent)
 
         # Must have eligible adult
         e.condition(self._has_eligible_adult(self.screen.household_members.all()))
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
 
         # Must be an eligible adult or newborn in household with eligible adult

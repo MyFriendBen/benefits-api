@@ -14,7 +14,9 @@ class TxWap(ProgramCalculator):
         "income_frequency",
     ]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            return
         categorically_eligible = any(self.screen.has_benefit(program) for program in self.categorically_eligible)
 
         if categorically_eligible:

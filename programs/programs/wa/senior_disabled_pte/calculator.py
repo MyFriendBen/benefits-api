@@ -88,7 +88,7 @@ class WaSeniorDisabledPte(ProgramCalculator):
             return self.default_threshold_3
         return thresholds[2]
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
 
         # Age pathway: 61+ by December 31 of claim year (RCW 84.36.381(3)(a))
@@ -104,7 +104,7 @@ class WaSeniorDisabledPte(ProgramCalculator):
 
         e.condition(age_eligible or disability_eligible or veteran_eligible)
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
         income_limit = self._income_threshold_3()
         e.condition(gross_income <= income_limit, messages.income(gross_income, income_limit))

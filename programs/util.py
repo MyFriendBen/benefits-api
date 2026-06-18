@@ -1,5 +1,5 @@
 class Dependencies(set):
-    def has(self, *iter):
+    def has(self, *iter) -> bool:
         for dependency in iter:
             if dependency in self:
                 return True
@@ -8,5 +8,5 @@ class Dependencies(set):
 
 
 class DependencyError(Exception):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("Missing at least dependency")

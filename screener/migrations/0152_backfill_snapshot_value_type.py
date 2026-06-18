@@ -22,13 +22,13 @@ TAX_CREDIT_PROGRAMS = {
 }
 
 
-def backfill_snapshot_value_type(apps, schema_editor):
+def backfill_snapshot_value_type(apps, schema_editor) -> None:
     ProgramEligibilitySnapshot = apps.get_model("screener", "ProgramEligibilitySnapshot")
     ProgramEligibilitySnapshot.objects.filter(name_abbreviated__in=TAX_CREDIT_PROGRAMS).update(value_type="tax_credit")
     ProgramEligibilitySnapshot.objects.exclude(name_abbreviated__in=TAX_CREDIT_PROGRAMS).update(value_type="benefit")
 
 
-def reverse_backfill(apps, schema_editor):
+def reverse_backfill(apps, schema_editor) -> None:
     pass
 
 

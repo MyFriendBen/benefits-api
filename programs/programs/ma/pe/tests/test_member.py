@@ -20,7 +20,7 @@ from programs.programs.ma.pe.member import MaHeadStart, MaEarlyHeadStart
 class TestMaHeadStart(TestCase):
     """Tests for MaHeadStart calculator class."""
 
-    def test_exists_and_is_subclass_of_policy_engine_members_calculator(self):
+    def test_exists_and_is_subclass_of_policy_engine_members_calculator(self) -> None:
         """
         Test that MaHeadStart calculator class exists and inherits correctly.
 
@@ -35,7 +35,7 @@ class TestMaHeadStart(TestCase):
         self.assertIsNotNone(MaHeadStart.pe_inputs)
         self.assertGreater(len(MaHeadStart.pe_inputs), 0)
 
-    def test_is_registered_in_ma_pe_calculators(self):
+    def test_is_registered_in_ma_pe_calculators(self) -> None:
         """Test that MA Head Start is registered in the calculators dictionary."""
         # Verify ma_head_start is in the calculators dictionary
         self.assertIn("ma_head_start", ma_pe_calculators)
@@ -43,7 +43,7 @@ class TestMaHeadStart(TestCase):
         # Verify it points to the correct class
         self.assertEqual(ma_pe_calculators["ma_head_start"], MaHeadStart)
 
-    def test_pe_inputs_includes_age_dependency(self):
+    def test_pe_inputs_includes_age_dependency(self) -> None:
         """
         Test that MaHeadStart includes AgeDependency in pe_inputs.
 
@@ -54,7 +54,7 @@ class TestMaHeadStart(TestCase):
         self.assertIn(AgeDependency, MaHeadStart.pe_inputs)
         self.assertEqual(AgeDependency.field, "age")
 
-    def test_pe_inputs_includes_ma_state_code_dependency(self):
+    def test_pe_inputs_includes_ma_state_code_dependency(self) -> None:
         """
         Test that MaStateCodeDependency is properly added to MA Head Start inputs.
 
@@ -68,7 +68,7 @@ class TestMaHeadStart(TestCase):
         self.assertEqual(MaStateCodeDependency.state, "MA")
         self.assertEqual(MaStateCodeDependency.field, "state_code")
 
-    def test_pe_inputs_includes_irs_gross_income_dependencies(self):
+    def test_pe_inputs_includes_irs_gross_income_dependencies(self) -> None:
         """
         Test that MaHeadStart includes all IRS gross income dependencies.
 
@@ -81,7 +81,7 @@ class TestMaHeadStart(TestCase):
         for income_dep in irs_gross_income:
             self.assertIn(income_dep, MaHeadStart.pe_inputs)
 
-    def test_pe_outputs_includes_head_start_dependency(self):
+    def test_pe_outputs_includes_head_start_dependency(self) -> None:
         """
         Test that MaHeadStart has HeadStart dependency in pe_outputs.
 
@@ -92,7 +92,7 @@ class TestMaHeadStart(TestCase):
 
         self.assertIn(HeadStart, MaHeadStart.pe_outputs)
 
-    def test_member_value_returns_policy_engine_value(self):
+    def test_member_value_returns_policy_engine_value(self) -> None:
         """
         Test that member_value returns the PolicyEngine calculated value.
 
@@ -118,7 +118,7 @@ class TestMaHeadStart(TestCase):
         self.assertEqual(result, pe_value)
         calculator.get_member_variable.assert_called_once_with(1)
 
-    def test_member_value_returns_zero_when_not_eligible(self):
+    def test_member_value_returns_zero_when_not_eligible(self) -> None:
         """
         Test that member_value returns 0 when PolicyEngine determines ineligibility.
 
@@ -142,7 +142,7 @@ class TestMaHeadStart(TestCase):
         # Should return 0
         self.assertEqual(result, 0)
 
-    def test_member_value_calls_get_member_variable_with_correct_id(self):
+    def test_member_value_calls_get_member_variable_with_correct_id(self) -> None:
         """
         Test that member_value calls get_member_variable with the correct member ID.
 
@@ -165,7 +165,7 @@ class TestMaHeadStart(TestCase):
         # Verify get_member_variable was called with the correct member ID
         calculator.get_member_variable.assert_called_once_with(42)
 
-    def test_member_value_handles_varying_pe_values(self):
+    def test_member_value_handles_varying_pe_values(self) -> None:
         """
         Test that member_value correctly returns different PolicyEngine values.
 
@@ -188,7 +188,7 @@ class TestMaHeadStart(TestCase):
             result = calculator.member_value(member)
             self.assertEqual(result, expected_value)
 
-    def test_calculator_has_no_custom_member_value_override(self):
+    def test_calculator_has_no_custom_member_value_override(self) -> None:
         """
         Test that MaHeadStart doesn't override member_value method.
 
@@ -201,7 +201,7 @@ class TestMaHeadStart(TestCase):
         # Verify it inherits from PolicyEngineMembersCalculator
         self.assertTrue(hasattr(MaHeadStart, "member_value"))
 
-    def test_pe_inputs_has_required_dependencies(self):
+    def test_pe_inputs_has_required_dependencies(self) -> None:
         """
         Test that MaHeadStart has at least the minimum required dependencies.
 
@@ -216,7 +216,7 @@ class TestMaHeadStart(TestCase):
         self.assertIn(AgeDependency, MaHeadStart.pe_inputs)
         self.assertIn(MaStateCodeDependency, MaHeadStart.pe_inputs)
 
-    def test_head_start_dependency_field_name(self):
+    def test_head_start_dependency_field_name(self) -> None:
         """
         Test that HeadStart dependency has the correct field name.
 
@@ -226,7 +226,7 @@ class TestMaHeadStart(TestCase):
 
         self.assertEqual(HeadStart.field, "head_start")
 
-    def test_calculator_uses_member_category(self):
+    def test_calculator_uses_member_category(self) -> None:
         """
         Test that MaHeadStart uses the 'people' category for PolicyEngine.
 
@@ -240,7 +240,7 @@ class TestMaHeadStart(TestCase):
 class TestMaEarlyHeadStart(TestCase):
     """Tests for MaEarlyHeadStart calculator class."""
 
-    def test_exists_and_is_subclass_of_policy_engine_members_calculator(self):
+    def test_exists_and_is_subclass_of_policy_engine_members_calculator(self) -> None:
         """
         Test that MaEarlyHeadStart calculator class exists and inherits correctly.
 
@@ -255,7 +255,7 @@ class TestMaEarlyHeadStart(TestCase):
         self.assertIsNotNone(MaEarlyHeadStart.pe_inputs)
         self.assertGreater(len(MaEarlyHeadStart.pe_inputs), 0)
 
-    def test_is_registered_in_ma_pe_calculators(self):
+    def test_is_registered_in_ma_pe_calculators(self) -> None:
         """Test that MA Early Head Start is registered in the calculators dictionary."""
         # Verify ma_early_head_start is in the calculators dictionary
         self.assertIn("ma_early_head_start", ma_pe_calculators)
@@ -263,11 +263,11 @@ class TestMaEarlyHeadStart(TestCase):
         # Verify it points to the correct class
         self.assertEqual(ma_pe_calculators["ma_early_head_start"], MaEarlyHeadStart)
 
-    def test_pe_name_is_early_head_start(self):
+    def test_pe_name_is_early_head_start(self) -> None:
         """Test that MaEarlyHeadStart has the correct pe_name for PolicyEngine API calls."""
         self.assertEqual(MaEarlyHeadStart.pe_name, "early_head_start")
 
-    def test_pe_inputs_includes_age_dependency(self):
+    def test_pe_inputs_includes_age_dependency(self) -> None:
         """
         Test that MaEarlyHeadStart includes AgeDependency in pe_inputs.
 
@@ -278,7 +278,7 @@ class TestMaEarlyHeadStart(TestCase):
         self.assertIn(AgeDependency, MaEarlyHeadStart.pe_inputs)
         self.assertEqual(AgeDependency.field, "age")
 
-    def test_pe_inputs_includes_ma_state_code_dependency(self):
+    def test_pe_inputs_includes_ma_state_code_dependency(self) -> None:
         """
         Test that MaStateCodeDependency is properly added to MA Early Head Start inputs.
 
@@ -292,7 +292,7 @@ class TestMaEarlyHeadStart(TestCase):
         self.assertEqual(MaStateCodeDependency.state, "MA")
         self.assertEqual(MaStateCodeDependency.field, "state_code")
 
-    def test_pe_inputs_includes_irs_gross_income_dependencies(self):
+    def test_pe_inputs_includes_irs_gross_income_dependencies(self) -> None:
         """
         Test that MaEarlyHeadStart includes all IRS gross income dependencies.
 
@@ -305,7 +305,7 @@ class TestMaEarlyHeadStart(TestCase):
         for income_dep in irs_gross_income:
             self.assertIn(income_dep, MaEarlyHeadStart.pe_inputs)
 
-    def test_pe_outputs_includes_early_head_start_dependency(self):
+    def test_pe_outputs_includes_early_head_start_dependency(self) -> None:
         """
         Test that MaEarlyHeadStart has EarlyHeadStart dependency in pe_outputs.
 
@@ -316,7 +316,7 @@ class TestMaEarlyHeadStart(TestCase):
 
         self.assertIn(EarlyHeadStart, MaEarlyHeadStart.pe_outputs)
 
-    def test_member_value_returns_policy_engine_value(self):
+    def test_member_value_returns_policy_engine_value(self) -> None:
         """
         Test that member_value returns the PolicyEngine calculated value.
 
@@ -342,7 +342,7 @@ class TestMaEarlyHeadStart(TestCase):
         self.assertEqual(result, pe_value)
         calculator.get_member_variable.assert_called_once_with(1)
 
-    def test_member_value_returns_zero_when_not_eligible(self):
+    def test_member_value_returns_zero_when_not_eligible(self) -> None:
         """
         Test that member_value returns 0 when PolicyEngine determines ineligibility.
 
@@ -366,7 +366,7 @@ class TestMaEarlyHeadStart(TestCase):
         # Should return 0
         self.assertEqual(result, 0)
 
-    def test_early_head_start_dependency_field_name(self):
+    def test_early_head_start_dependency_field_name(self) -> None:
         """
         Test that EarlyHeadStart dependency has the correct field name.
 
@@ -376,7 +376,7 @@ class TestMaEarlyHeadStart(TestCase):
 
         self.assertEqual(EarlyHeadStart.field, "early_head_start")
 
-    def test_calculator_uses_member_category(self):
+    def test_calculator_uses_member_category(self) -> None:
         """
         Test that MaEarlyHeadStart uses the 'people' category for PolicyEngine.
 
@@ -386,7 +386,7 @@ class TestMaEarlyHeadStart(TestCase):
         # Inherited from PolicyEngineMembersCalculator
         self.assertEqual(MaEarlyHeadStart.pe_category, "people")
 
-    def test_pe_inputs_count(self):
+    def test_pe_inputs_count(self) -> None:
         """
         Test that MaEarlyHeadStart has the expected number of pe_inputs.
 

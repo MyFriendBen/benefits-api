@@ -8,6 +8,8 @@ class GoodNeighborEnergy(UrgentNeedFunction):
     max_income_percent = 0.8
 
     def eligible(self):
+        if self.urgent_need.year is None:
+            return False
         # income
         smi_amount = smi.get_screen_smi(self.screen, self.urgent_need.year.period)
         income = self.screen.calc_gross_income("yearly", ["all"])

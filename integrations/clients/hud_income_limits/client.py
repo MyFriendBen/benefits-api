@@ -52,7 +52,7 @@ class HudIncomeClient:
     # Maps AMI percentage to HUD's nested category name
     SECTION8_CATEGORIES = {"30": "extremely_low", "50": "very_low", "80": "low"}  # 30% AMI  # 50% AMI  # 80% AMI
 
-    def __init__(self, api_token: Optional[str] = None, max_retries: int = 3):
+    def __init__(self, api_token: Optional[str] = None, max_retries: int = 3) -> None:
         """
         Initialize with HUD API token from environment or parameter.
 

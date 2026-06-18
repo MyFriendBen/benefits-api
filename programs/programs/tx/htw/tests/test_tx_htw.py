@@ -18,14 +18,14 @@ from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibi
 
 
 def make_member(
-    age=28,
-    pregnant=False,
-    has_medicaid=False,
-    has_chp=False,
-    has_medicare=False,
-    has_employer=False,
-    has_private=False,
-    has_va=False,
+    age: int=28,
+    pregnant: bool=False,
+    has_medicaid: bool=False,
+    has_chp: bool=False,
+    has_medicare: bool=False,
+    has_employer: bool=False,
+    has_private: bool=False,
+    has_va: bool=False,
 ):
     """Create a mock household member."""
     member = Mock()
@@ -41,7 +41,7 @@ def make_member(
         "va": has_va,
     }
 
-    def has_insurance_types(types, strict=True):
+    def has_insurance_types(types, strict: bool=True):
         return any(insurance_map.get(t, False) for t in types)
 
     member.insurance = Mock()
@@ -49,7 +49,7 @@ def make_member(
     return member
 
 
-def make_calculator(household_income=0, household_size=1, fpl_limit=15_000):
+def make_calculator(household_income: int=0, household_size: int=1, fpl_limit: int=15_000):
     """Create a TxHtw calculator with a mocked screen and program."""
     mock_program = Mock()
     mock_program.year.get_limit.return_value = fpl_limit
@@ -66,23 +66,23 @@ def make_calculator(household_income=0, household_size=1, fpl_limit=15_000):
 
 
 class TestTxHtwClassAttributes(TestCase):
-    def test_is_subclass_of_program_calculator(self):
+    def test_is_subclass_of_program_calculator(self) -> None:
         self.assertTrue(issubclass(TxHtw, ProgramCalculator))
 
-    def test_is_registered_in_tx_calculators(self):
+    def test_is_registered_in_tx_calculators(self) -> None:
         self.assertIn("tx_htw", tx_calculators)
         self.assertEqual(tx_calculators["tx_htw"], TxHtw)
 
-    def test_fpl_percent_is_2042(self):
+    def test_fpl_percent_is_2042(self) -> None:
         self.assertEqual(TxHtw.fpl_percent, 2.042)
 
-    def test_min_age_is_15(self):
+    def test_min_age_is_15(self) -> None:
         self.assertEqual(TxHtw.min_age, 15)
 
-    def test_max_age_is_44(self):
+    def test_max_age_is_44(self) -> None:
         self.assertEqual(TxHtw.max_age, 44)
 
-    def test_amount_defaults_to_zero(self):
+    def test_amount_defaults_to_zero(self) -> None:
         self.assertEqual(TxHtw.amount, 0)
 
 
@@ -95,22 +95,22 @@ class TestTxHtwMemberAgeEligibility(TestCase):
         calc.member_eligible(e)
         return e.eligible
 
-    def test_age_28_is_eligible(self):
+    def test_age_28_is_eligible(self) -> None:
         self.assertTrue(self._run(28))
 
-    def test_age_15_is_eligible(self):
+    def test_age_15_is_eligible(self) -> None:
         self.assertTrue(self._run(15))
 
-    def test_age_44_is_eligible(self):
+    def test_age_44_is_eligible(self) -> None:
         self.assertTrue(self._run(44))
 
-    def test_age_14_is_ineligible(self):
+    def test_age_14_is_ineligible(self) -> None:
         self.assertFalse(self._run(14))
 
-    def test_age_45_is_ineligible(self):
+    def test_age_45_is_ineligible(self) -> None:
         self.assertFalse(self._run(45))
 
-    def test_age_none_is_ineligible(self):
+    def test_age_none_is_ineligible(self) -> None:
         self.assertFalse(self._run(None))
 
 
@@ -123,10 +123,10 @@ class TestTxHtwMemberPregnancyEligibility(TestCase):
         calc.member_eligible(e)
         return e.eligible
 
-    def test_not_pregnant_is_eligible(self):
+    def test_not_pregnant_is_eligible(self) -> None:
         self.assertTrue(self._run(False))
 
-    def test_pregnant_is_ineligible(self):
+    def test_pregnant_is_ineligible(self) -> None:
         self.assertFalse(self._run(True))
 
 
@@ -139,95 +139,95 @@ class TestTxHtwMemberInsuranceEligibility(TestCase):
         calc.member_eligible(e)
         return e.eligible
 
-    def test_no_insurance_is_eligible(self):
+    def test_no_insurance_is_eligible(self) -> None:
         self.assertTrue(self._run())
 
-    def test_medicaid_is_ineligible(self):
+    def test_medicaid_is_ineligible(self) -> None:
         self.assertFalse(self._run(has_medicaid=True))
 
-    def test_chp_is_ineligible(self):
+    def test_chp_is_ineligible(self) -> None:
         self.assertFalse(self._run(has_chp=True))
 
-    def test_medicare_is_ineligible(self):
+    def test_medicare_is_ineligible(self) -> None:
         self.assertFalse(self._run(has_medicare=True))
 
-    def test_employer_insurance_is_ineligible(self):
+    def test_employer_insurance_is_ineligible(self) -> None:
         self.assertFalse(self._run(has_employer=True))
 
-    def test_private_insurance_is_ineligible(self):
+    def test_private_insurance_is_ineligible(self) -> None:
         self.assertFalse(self._run(has_private=True))
 
-    def test_va_coverage_is_ineligible(self):
+    def test_va_coverage_is_ineligible(self) -> None:
         self.assertFalse(self._run(has_va=True))
 
 
 class TestTxHtwHouseholdIncomeEligibility(TestCase):
     """Household income must be at or below 204.2% FPL."""
 
-    def _run(self, household_income, fpl_limit=15_000):
+    def _run(self, household_income, fpl_limit: int=15_000):
         # fpl_percent=2.042, so income_limit = 2.042 * fpl_limit
         calc = make_calculator(household_income=household_income, fpl_limit=fpl_limit)
         e = Eligibility()
         calc.household_eligible(e)
         return e.eligible
 
-    def test_income_below_fpl_limit_is_eligible(self):
+    def test_income_below_fpl_limit_is_eligible(self) -> None:
         # limit = 2.042 * 15_000 = 30_630; income = 20_000 < 30_630
         self.assertTrue(self._run(household_income=20_000, fpl_limit=15_000))
 
-    def test_income_exactly_at_fpl_limit_is_eligible(self):
+    def test_income_exactly_at_fpl_limit_is_eligible(self) -> None:
         fpl_limit = 15_000
         income_limit = int(TxHtw.fpl_percent * fpl_limit)
         self.assertTrue(self._run(household_income=income_limit, fpl_limit=fpl_limit))
 
-    def test_income_above_fpl_limit_is_ineligible(self):
+    def test_income_above_fpl_limit_is_ineligible(self) -> None:
         # limit = 2.042 * 15_000 = 30_630; income = 30_631 > 30_630
         self.assertFalse(self._run(household_income=30_631, fpl_limit=15_000))
 
-    def test_zero_income_is_eligible(self):
+    def test_zero_income_is_eligible(self) -> None:
         self.assertTrue(self._run(household_income=0))
 
 
 class TestTxHtwCalcIntegration(TestCase):
     """End-to-end calc() tests using the full eligible() + value() flow."""
 
-    def _make_calc_with_members(self, members, household_income=20_000, fpl_limit=15_000):
+    def _make_calc_with_members(self, members, household_income: int=20_000, fpl_limit: int=15_000):
         calc = make_calculator(household_income=household_income, fpl_limit=fpl_limit)
         calc.screen.household_members.all = Mock(return_value=members)
         return calc
 
-    def test_eligible_single_member(self):
+    def test_eligible_single_member(self) -> None:
         member = make_member(age=28)
         calc = self._make_calc_with_members([member])
         result = calc.calc()
         self.assertTrue(result.eligible)
 
-    def test_ineligible_due_to_age(self):
+    def test_ineligible_due_to_age(self) -> None:
         member = make_member(age=14)
         calc = self._make_calc_with_members([member])
         result = calc.calc()
         self.assertFalse(result.eligible)
 
-    def test_ineligible_due_to_income(self):
+    def test_ineligible_due_to_income(self) -> None:
         # income = 50_000, limit = 2.042 * 15_000 = 30_630
         member = make_member(age=28)
         calc = self._make_calc_with_members([member], household_income=50_000)
         result = calc.calc()
         self.assertFalse(result.eligible)
 
-    def test_ineligible_due_to_medicaid(self):
+    def test_ineligible_due_to_medicaid(self) -> None:
         member = make_member(age=28, has_medicaid=True)
         calc = self._make_calc_with_members([member])
         result = calc.calc()
         self.assertFalse(result.eligible)
 
-    def test_ineligible_due_to_pregnancy(self):
+    def test_ineligible_due_to_pregnancy(self) -> None:
         member = make_member(age=28, pregnant=True)
         calc = self._make_calc_with_members([member])
         result = calc.calc()
         self.assertFalse(result.eligible)
 
-    def test_mixed_household_eligible_member_present(self):
+    def test_mixed_household_eligible_member_present(self) -> None:
         """Eligible adult + child (age 6) below minimum age — household is still eligible."""
         adult = make_member(age=32)
         child = make_member(age=6)
@@ -238,7 +238,7 @@ class TestTxHtwCalcIntegration(TestCase):
         result = calc.calc()
         self.assertTrue(result.eligible)
 
-    def test_value_is_zero(self):
+    def test_value_is_zero(self) -> None:
         member = make_member(age=28)
         calc = self._make_calc_with_members([member])
         result = calc.calc()

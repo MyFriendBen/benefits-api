@@ -65,7 +65,7 @@ VIEWS = {
 class Command(BaseCommand):
     help = "Refresh all materialized views"
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser) -> None:
         parser.add_argument(
             "--views",
             nargs="+",

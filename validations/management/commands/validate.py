@@ -43,7 +43,7 @@ class ValidationResult:
         expected_eligibility: bool = False,
         eligibility: bool = False,
         notes: str = "",
-    ):
+    ) -> None:
         self.white_label = white_label
         self.uuid = uuid
         self.program_name = program_name
@@ -55,17 +55,17 @@ class ValidationResult:
         self.eligibility = eligibility
         self.notes = notes
 
-    def format_url(self):
+    def format_url(self) -> str:
         front_end_domain = config("FRONTEND_DOMAIN")
         program_id = ""
         if self.program_id is not None:
             program_id = f"/{self.program_id}/"
         return f"{front_end_domain}/{self.white_label}/{self.uuid}/results/benefits{program_id}?admin=true"
 
-    def format_value_change(self):
+    def format_value_change(self) -> str:
         return f"{self.expected_value} => {self.value}"
 
-    def sheets_cell(self, value, type="stringValue", is_link=False):
+    def sheets_cell(self, value, type: str="stringValue", is_link: bool=False):
         return color_cell(value, self.COLORS[self.result], type=type, is_link=is_link)
 
     def sheets_row(self):
@@ -92,13 +92,13 @@ class ValidationResult:
 
 
 class ValidationResults:
-    def __init__(self):
+    def __init__(self) -> None:
         self.passed = 0
         self.failed = 0
         self.skipped = 0
         self.results: list[ValidationResult] = []
 
-    def skip(self, white_label: str, uuid: str, program_name: str, notes: str = ""):
+    def skip(self, white_label: str, uuid: str, program_name: str, notes: str = "") -> None:
         self.skipped += 1
         self.results.append(ValidationResult(white_label, uuid, program_name, Result.SKIPPED, notes=notes))
 
@@ -113,7 +113,7 @@ class ValidationResults:
         expected_eligibility: bool,
         eligibility: bool,
         notes: str = "",
-    ):
+    ) -> None:
         if expected_value == value and expected_eligibility == eligibility:
             self.passed += 1
             result = Result.PASSED
@@ -142,7 +142,7 @@ class Command(BaseCommand):
     Run current eligibility results, and compare to expected value and eligibility
     """
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser) -> None:
         parser.add_argument(
             "-p",
             "--program",
@@ -156,7 +156,7 @@ class Command(BaseCommand):
         parser.add_argument("-s", "--sheet-id", help="The Google sheet id to display results in")
         parser.add_argument("-w", "--white-label", help="What white label to run validations for")
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         queryset = Validation.objects.all()
 
         if options["white_label"] is not None:
@@ -210,7 +210,7 @@ class Command(BaseCommand):
             if program["external_name"] == validation.program_name:
                 return program
 
-    def _stdout_display(self, results: ValidationResults, hide_skipped: bool):
+    def _stdout_display(self, results: ValidationResults, hide_skipped: bool) -> None:
         for result in results.results:
             url_and_name = f"{result.format_url()} {result.white_label} {result.program_name}"
             text = f"{url_and_name} {result.format_value_change()}"

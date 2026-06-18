@@ -91,9 +91,9 @@ class WaWsosBas(ProgramCalculator):
         size = self.screen.household_size
         if size in self.MFI_125_BY_SIZE:
             return self.MFI_125_BY_SIZE[size]
-        return self.MFI_125_BY_SIZE[6] + (size - 6) * self.MFI_125_PER_EXTRA_PERSON_ABOVE_TABLE
+        return (self.MFI_125_BY_SIZE[6] or 0) + (size - 6) * self.MFI_125_PER_EXTRA_PERSON_ABOVE_TABLE
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         """
         Apply the 125% MFI income gate against household annual gross income.
 
@@ -108,7 +108,7 @@ class WaWsosBas(ProgramCalculator):
         income_limit = self.income_limit_125()
         e.condition(gross_income <= income_limit, messages.income(gross_income, income_limit))
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         """
         Apply the per-member student gate.
 
@@ -124,7 +124,7 @@ class WaWsosBas(ProgramCalculator):
         """Lump-sum scholarship is awarded once at the household level."""
         return self.amount
 
-    def member_value(self, member):
+    def member_value(self, member) -> int:
         """
         Per-member value is always 0; the entire BaS award is reported via
         `household_value()`. Returning 0 here prevents multi-student households

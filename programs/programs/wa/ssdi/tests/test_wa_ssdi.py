@@ -8,14 +8,14 @@ from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibi
 
 
 def make_member(
-    age=40,
-    birth_year=1985,
-    birth_month=6,
-    long_term_disability=True,
-    visually_impaired=False,
-    earned_monthly=500,
-    ssdi_yearly=0,
-    ss_retirement_yearly=0,
+    age: int=40,
+    birth_year: int=1985,
+    birth_month: int=6,
+    long_term_disability: bool=True,
+    visually_impaired: bool=False,
+    earned_monthly: int=500,
+    ssdi_yearly: int=0,
+    ss_retirement_yearly: int=0,
 ):
     member = Mock()
     member.age = age
@@ -39,7 +39,7 @@ def make_member(
     return member
 
 
-def make_calculator(has_ssdi=False):
+def make_calculator(has_ssdi: bool=False):
     mock_screen = Mock()
     mock_screen.has_benefit = Mock(side_effect=lambda b: has_ssdi if b == "ssdi" else False)
     mock_screen.household_members.all.return_value = []
@@ -53,35 +53,35 @@ def make_calculator(has_ssdi=False):
 
 
 class TestWaSsdiClassAttributes(TestCase):
-    def test_is_registered(self):
+    def test_is_registered(self) -> None:
         self.assertIn("wa_ssdi", wa_calculators)
         self.assertEqual(wa_calculators["wa_ssdi"], WaSsdi)
 
-    def test_sga_thresholds(self):
+    def test_sga_thresholds(self) -> None:
         self.assertEqual(WaSsdi.sga_non_blind, 1_690)
         self.assertEqual(WaSsdi.sga_blind, 2_830)
 
-    def test_member_amount(self):
+    def test_member_amount(self) -> None:
         self.assertEqual(WaSsdi.member_amount, 1_634 * 12)
 
 
 class TestWaSsdiFraSchedule(TestCase):
-    def test_born_1954_fra_is_66_0(self):
+    def test_born_1954_fra_is_66_0(self) -> None:
         self.assertEqual(WaSsdi._get_fra(1954), (66, 0))
 
-    def test_born_1955_fra_is_66_2(self):
+    def test_born_1955_fra_is_66_2(self) -> None:
         self.assertEqual(WaSsdi._get_fra(1955), (66, 2))
 
-    def test_born_1957_fra_is_66_6(self):
+    def test_born_1957_fra_is_66_6(self) -> None:
         self.assertEqual(WaSsdi._get_fra(1957), (66, 6))
 
-    def test_born_1960_fra_is_67_0(self):
+    def test_born_1960_fra_is_67_0(self) -> None:
         self.assertEqual(WaSsdi._get_fra(1960), (67, 0))
 
-    def test_born_1943_fra_is_66_0(self):
+    def test_born_1943_fra_is_66_0(self) -> None:
         self.assertEqual(WaSsdi._get_fra(1943), (66, 0))
 
-    def test_born_1970_fra_is_67_0(self):
+    def test_born_1970_fra_is_67_0(self) -> None:
         self.assertEqual(WaSsdi._get_fra(1970), (67, 0))
 
 
@@ -92,41 +92,41 @@ class TestWaSsdiMemberEligibility(TestCase):
         calc.member_eligible(e)
         return e.eligible
 
-    def test_standard_eligible(self):
+    def test_standard_eligible(self) -> None:
         self.assertTrue(self._run(make_member(age=44, birth_year=1981, long_term_disability=True, earned_monthly=500)))
 
-    def test_no_disability_ineligible(self):
+    def test_no_disability_ineligible(self) -> None:
         self.assertFalse(self._run(make_member(long_term_disability=False)))
 
-    def test_income_above_sga_ineligible(self):
+    def test_income_above_sga_ineligible(self) -> None:
         self.assertFalse(self._run(make_member(earned_monthly=1700)))
 
-    def test_income_exactly_at_sga_eligible(self):
+    def test_income_exactly_at_sga_eligible(self) -> None:
         self.assertTrue(self._run(make_member(earned_monthly=1690)))
 
-    def test_blind_higher_sga_eligible(self):
+    def test_blind_higher_sga_eligible(self) -> None:
         self.assertTrue(self._run(make_member(visually_impaired=True, earned_monthly=2500)))
 
-    def test_blind_above_blind_sga_ineligible(self):
+    def test_blind_above_blind_sga_ineligible(self) -> None:
         self.assertFalse(self._run(make_member(visually_impaired=True, earned_monthly=2831)))
 
-    def test_already_receiving_ssdi_ineligible(self):
+    def test_already_receiving_ssdi_ineligible(self) -> None:
         self.assertFalse(self._run(make_member(ssdi_yearly=14400)))
 
-    def test_already_receiving_ss_retirement_ineligible(self):
+    def test_already_receiving_ss_retirement_ineligible(self) -> None:
         self.assertFalse(self._run(make_member(ss_retirement_yearly=18000)))
 
-    def test_over_fra_ineligible(self):
+    def test_over_fra_ineligible(self) -> None:
         member = make_member(age=68, birth_year=1957, birth_month=1)
         self.assertFalse(self._run(member))
 
-    def test_under_fra_born_1960_eligible(self):
+    def test_under_fra_born_1960_eligible(self) -> None:
         member = make_member(age=65, birth_year=1960, birth_month=11)
         self.assertTrue(self._run(member))
 
 
 class TestWaSsdiHouseholdEligibility(TestCase):
-    def _run(self, has_ssdi=False, eligible_members=None):
+    def _run(self, has_ssdi: bool=False, eligible_members=None):
         calc = make_calculator(has_ssdi=has_ssdi)
         e = Eligibility()
         for member in eligible_members or [make_member()]:
@@ -136,13 +136,13 @@ class TestWaSsdiHouseholdEligibility(TestCase):
         calc.household_eligible(e)
         return e.eligible
 
-    def test_eligible_household(self):
+    def test_eligible_household(self) -> None:
         self.assertTrue(self._run())
 
-    def test_already_has_ssdi_ineligible(self):
+    def test_already_has_ssdi_ineligible(self) -> None:
         self.assertFalse(self._run(has_ssdi=True))
 
-    def test_no_eligible_members_ineligible(self):
+    def test_no_eligible_members_ineligible(self) -> None:
         calc = make_calculator()
         e = Eligibility()
         me = MemberEligibility(make_member(long_term_disability=False))
@@ -153,7 +153,7 @@ class TestWaSsdiHouseholdEligibility(TestCase):
 
 
 class TestWaSsdiValue(TestCase):
-    def test_eligible_member_gets_1634(self):
+    def test_eligible_member_gets_1634(self) -> None:
         calc = make_calculator()
         member = make_member()
         calc.screen.household_members.all.return_value = [member]
@@ -161,7 +161,7 @@ class TestWaSsdiValue(TestCase):
         self.assertTrue(result.eligible)
         self.assertEqual(result.value, 1634 * 12)
 
-    def test_multi_member_one_eligible(self):
+    def test_multi_member_one_eligible(self) -> None:
         calc = make_calculator()
         eligible = make_member(age=44, birth_year=1981, long_term_disability=True, earned_monthly=500)
         ineligible = make_member(age=24, birth_year=2001, long_term_disability=False, earned_monthly=2500)

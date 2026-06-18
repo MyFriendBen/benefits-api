@@ -21,11 +21,11 @@ class PeInputTestBase(TestCase):
     """Base class with shared test fixtures for pe_input tests."""
 
     @classmethod
-    def setUpTestData(cls):
+    def setUpTestData(cls) -> None:
         """Set up test data that doesn't change between tests."""
         cls.white_label = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test screen with household members."""
         # Import here to avoid circular imports at module level
         from programs.programs.tx.pe.spm import TxSnap
@@ -72,7 +72,7 @@ class PeInputTestBase(TestCase):
 class TestPeInputHouseholdStructure(PeInputTestBase):
     """Tests for pe_input() household structure generation."""
 
-    def test_returns_valid_household_structure(self):
+    def test_returns_valid_household_structure(self) -> None:
         """Test that pe_input returns a properly structured household dict."""
         result = pe_input(self.screen, [self.calculator_class])
 
@@ -88,7 +88,7 @@ class TestPeInputHouseholdStructure(PeInputTestBase):
         self.assertIn("spm_units", household)
         self.assertIn("marital_units", household)
 
-    def test_creates_people_with_member_ids(self):
+    def test_creates_people_with_member_ids(self) -> None:
         """Test that pe_input creates people dict with household member IDs as keys."""
         result = pe_input(self.screen, [self.calculator_class])
         people = result["household"]["people"]
@@ -110,7 +110,7 @@ class TestPeInputHouseholdStructure(PeInputTestBase):
         self.assertIsInstance(people[spouse_id], dict)
         self.assertIsInstance(people[child_id], dict)
 
-    def test_assigns_members_to_family_unit(self):
+    def test_assigns_members_to_family_unit(self) -> None:
         """Test that all members are assigned to the family unit."""
         result = pe_input(self.screen, [self.calculator_class])
         family_members = result["household"]["families"]["family"]["members"]
@@ -121,7 +121,7 @@ class TestPeInputHouseholdStructure(PeInputTestBase):
         self.assertIn(str(self.spouse.id), family_members)
         self.assertIn(str(self.child.id), family_members)
 
-    def test_assigns_members_to_household_unit(self):
+    def test_assigns_members_to_household_unit(self) -> None:
         """Test that all members are assigned to the household unit."""
         result = pe_input(self.screen, [self.calculator_class])
         household_members = result["household"]["households"]["household"]["members"]
@@ -132,7 +132,7 @@ class TestPeInputHouseholdStructure(PeInputTestBase):
         self.assertIn(str(self.spouse.id), household_members)
         self.assertIn(str(self.child.id), household_members)
 
-    def test_assigns_members_to_spm_unit(self):
+    def test_assigns_members_to_spm_unit(self) -> None:
         """Test that all members are assigned to the SPM unit."""
         result = pe_input(self.screen, [self.calculator_class])
         spm_members = result["household"]["spm_units"]["spm_unit"]["members"]
@@ -143,7 +143,7 @@ class TestPeInputHouseholdStructure(PeInputTestBase):
         self.assertIn(str(self.spouse.id), spm_members)
         self.assertIn(str(self.child.id), spm_members)
 
-    def test_with_empty_screen_returns_basic_structure(self):
+    def test_with_empty_screen_returns_basic_structure(self) -> None:
         """Test that pe_input returns valid structure even with no members."""
         empty_screen = Screen.objects.create(
             white_label=self.white_label,
@@ -171,7 +171,7 @@ class TestPeInputHouseholdStructure(PeInputTestBase):
 class TestPeInputTaxUnits(PeInputTestBase):
     """Tests for pe_input() tax unit assignment."""
 
-    def test_creates_main_tax_unit_with_members(self):
+    def test_creates_main_tax_unit_with_members(self) -> None:
         """Test that adults are assigned to the main tax unit."""
         result = pe_input(self.screen, [self.calculator_class])
         tax_units = result["household"]["tax_units"]
@@ -185,7 +185,7 @@ class TestPeInputTaxUnits(PeInputTestBase):
         self.assertIn(str(self.spouse.id), main_tax_members)
         self.assertIn(str(self.child.id), main_tax_members)
 
-    def test_removes_empty_secondary_tax_unit(self):
+    def test_removes_empty_secondary_tax_unit(self) -> None:
         """Test that empty secondary tax unit is removed."""
         result = pe_input(self.screen, [self.calculator_class])
         tax_units = result["household"]["tax_units"]
@@ -193,7 +193,7 @@ class TestPeInputTaxUnits(PeInputTestBase):
         # Secondary tax unit should not exist if empty
         self.assertNotIn(SECONDARY_TAX_UNIT, tax_units)
 
-    def test_keeps_secondary_tax_unit_when_has_members(self):
+    def test_keeps_secondary_tax_unit_when_has_members(self) -> None:
         """Test that secondary tax unit is kept when it has members."""
         # Create an adult child (not in main tax unit)
         adult_child = HouseholdMember.objects.create(
@@ -216,7 +216,7 @@ class TestPeInputTaxUnits(PeInputTestBase):
 class TestPeInputMaritalUnits(PeInputTestBase):
     """Tests for pe_input() marital unit assignment."""
 
-    def test_creates_marital_unit_for_head_and_spouse(self):
+    def test_creates_marital_unit_for_head_and_spouse(self) -> None:
         """Test that married couples are assigned to marital units."""
         result = pe_input(self.screen, [self.calculator_class])
         marital_units = result["household"]["marital_units"]
@@ -236,7 +236,7 @@ class TestPeInputMaritalUnits(PeInputTestBase):
         expected_ids = {str(self.head.id), str(self.spouse.id)}
         self.assertEqual(member_ids, expected_ids)
 
-    def test_single_adult_has_no_marital_unit(self):
+    def test_single_adult_has_no_marital_unit(self) -> None:
         """Test that single adults without a spouse have no marital unit."""
         # Create screen with single adult
         single_screen = Screen.objects.create(
@@ -262,7 +262,7 @@ class TestPeInputMaritalUnits(PeInputTestBase):
 class TestPeInputMultipleCalculators(PeInputTestBase):
     """Tests for pe_input() with multiple calculators."""
 
-    def test_with_multiple_calculators(self):
+    def test_with_multiple_calculators(self) -> None:
         """Test that pe_input handles multiple calculator inputs correctly."""
         from programs.programs.federal.pe.spm import SchoolLunch
 
@@ -277,7 +277,7 @@ class TestPeInputMultipleCalculators(PeInputTestBase):
         self.assertIsInstance(household["people"], dict)
         self.assertIsInstance(household["spm_units"], dict)
 
-    def test_calculator_dependencies_are_merged(self):
+    def test_calculator_dependencies_are_merged(self) -> None:
         """Test that dependencies from multiple calculators are merged."""
         from programs.programs.tx.pe.member import TxWic
 
@@ -300,38 +300,38 @@ class TestPeInputVersionGating(PeInputTestBase):
     support them. meets_ssi_disability_criteria (min 1.715.2) is the canonical case:
     it does not exist in the current model (1.691.1) and 400s the whole request there."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         super().setUp()
         from programs.programs.federal.pe.member import Ssi
 
         self.ssi = Ssi
         self.head_id = str(self.head.id)
 
-    def _meets_ssi_field_present(self, version):
+    def _meets_ssi_field_present(self, version) -> bool:
         result = pe_input(self.screen, [self.ssi], pe_version=version)
         return "meets_ssi_disability_criteria" in result["household"]["people"][self.head_id]
 
-    def test_omitted_when_no_version_pinned(self):
+    def test_omitted_when_no_version_pinned(self) -> None:
         # No pin => current default model (1.691.1), which lacks the variable.
         self.assertFalse(self._meets_ssi_field_present(None))
 
-    def test_omitted_on_current_alias(self):
+    def test_omitted_on_current_alias(self) -> None:
         self.assertFalse(self._meets_ssi_field_present("current"))
 
-    def test_omitted_on_older_pinned_version(self):
+    def test_omitted_on_older_pinned_version(self) -> None:
         self.assertFalse(self._meets_ssi_field_present("1.691.1"))
 
-    def test_sent_on_supporting_version(self):
+    def test_sent_on_supporting_version(self) -> None:
         self.assertTrue(self._meets_ssi_field_present("1.715.2"))
 
-    def test_sent_on_newer_version(self):
+    def test_sent_on_newer_version(self) -> None:
         self.assertTrue(self._meets_ssi_field_present("1.800.0"))
 
-    def test_sent_on_frontier_alias(self):
+    def test_sent_on_frontier_alias(self) -> None:
         # frontier is the newest released model, so gated inputs are sent.
         self.assertTrue(self._meets_ssi_field_present("frontier"))
 
-    def test_ungated_input_always_present(self):
+    def test_ungated_input_always_present(self) -> None:
         # A non-gated input (is_disabled) is sent regardless of version.
         result = pe_input(self.screen, [self.ssi], pe_version=None)
         self.assertIn("is_disabled", result["household"]["people"][self.head_id])
@@ -341,25 +341,25 @@ class TestVersionSupports(TestCase):
     """Unit tests for the min/max version window logic, covering all three gating
     shapes (new / removed / windowed variable) and the asymmetric unknown-version rule."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         from programs.programs.policyengine import versions as pe_versions
 
         self.supports = pe_versions.version_supports
         self.v = pe_versions.to_comparable_pe_version
 
-    def test_ungated_always_supported(self):
+    def test_ungated_always_supported(self) -> None:
         # No bounds => always sent, including on unknown version.
         self.assertTrue(self.supports(None, (), ()))
         self.assertTrue(self.supports(self.v("1.715.2"), (), ()))
 
-    def test_min_only_new_variable(self):
+    def test_min_only_new_variable(self) -> None:
         new = (1, 715, 2)  # added at 1.715.2
         self.assertFalse(self.supports(None, new, ()))  # unknown/current: omit
         self.assertFalse(self.supports(self.v("1.691.1"), new, ()))  # older: omit
         self.assertTrue(self.supports(self.v("1.715.2"), new, ()))  # at floor: send
         self.assertTrue(self.supports(self.v("1.800.0"), new, ()))  # newer: send
 
-    def test_max_only_removed_variable(self):
+    def test_max_only_removed_variable(self) -> None:
         # Variable existed through 1.719.999, removed after.
         last = (1, 719, 999)
         self.assertTrue(self.supports(None, (), last))  # unknown/current still has it: send
@@ -367,7 +367,7 @@ class TestVersionSupports(TestCase):
         self.assertTrue(self.supports(self.v("1.719.999"), (), last))  # at ceiling: send
         self.assertFalse(self.supports(self.v("1.720.0"), (), last))  # past removal: omit
 
-    def test_windowed_variable(self):
+    def test_windowed_variable(self) -> None:
         # Existed only 1.700.0 .. 1.715.0.
         lo, hi = (1, 700, 0), (1, 715, 0)
         self.assertFalse(self.supports(None, lo, hi))  # unknown fails the floor
@@ -377,5 +377,5 @@ class TestVersionSupports(TestCase):
         self.assertTrue(self.supports(self.v("1.715.0"), lo, hi))  # at ceiling
         self.assertFalse(self.supports(self.v("1.715.2"), lo, hi))  # above window
 
-    def test_frontier_alias_satisfies_floor(self):
+    def test_frontier_alias_satisfies_floor(self) -> None:
         self.assertTrue(self.supports(self.v("frontier"), (1, 715, 2), ()))

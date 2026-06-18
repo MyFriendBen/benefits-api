@@ -34,7 +34,9 @@ class IlCommoditySupplementalFoodProgram(ProgramCalculator):
     fpl_percent = 1.50
     member_amount = 50 * 12  # $50/month - estimated value of food package
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            return
         # 1. eligible county
         e.condition(self.screen.county in self.eligible_counties)
 
@@ -43,7 +45,7 @@ class IlCommoditySupplementalFoodProgram(ProgramCalculator):
         income_limit = int(self.fpl_percent * self.program.year.get_limit(self.screen.household_size))
         e.condition(gross_income <= income_limit)
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
 
         # 3. age eligible

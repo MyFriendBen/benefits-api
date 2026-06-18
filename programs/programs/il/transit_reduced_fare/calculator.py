@@ -22,7 +22,7 @@ class IlTransitReducedFare(IlTransportationMixin, ProgramCalculator):
         "Rock Island": 60,
     }
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         # Note: SSI/SSDI presumptive eligibility is not checked here because
         # there are currently no eligibility requirements to bypass. County eligibility is the
         # only household-level requirement. Medicare eligibility is checked
@@ -30,7 +30,9 @@ class IlTransitReducedFare(IlTransportationMixin, ProgramCalculator):
 
         e.condition(self.screen.county in self.eligible_counties)
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
+        if self.minimum_age is None or self.minimum_age_with_disability is None:
+            return
         member = e.member
         county = self.screen.county
 

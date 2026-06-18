@@ -40,8 +40,10 @@ class IlTransportationMixin:
     minimum_age = 65
     minimum_age_with_disability = 16
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
+        if member.age is None:
+            return
 
         age_eligible = member.age >= self.minimum_age
 
@@ -51,6 +53,6 @@ class IlTransportationMixin:
 
         e.condition(age_eligible or disability_eligible)
 
-    def member_value(self, member):
+    def member_value(self, member) -> int:
         # Default to positive value to enable manual "Varies" override
         return 1

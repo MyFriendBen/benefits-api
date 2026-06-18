@@ -7,6 +7,8 @@ class CoEmergencyMortgageAssistance(UrgentNeedFunction):
     dependencies = ["income_amount", "income_frequency", "household_size", "county"]
 
     def eligible(self):
+        if self.urgent_need.year is None:
+            return False
         income = int(self.screen.calc_gross_income("yearly", ["all"]))
 
         income_limit = ami.get_screen_ami(self.screen, "100%", self.urgent_need.year.period) * self.ami_percent

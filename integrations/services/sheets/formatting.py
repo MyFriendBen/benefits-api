@@ -1,4 +1,4 @@
-def color_cell(value, color, type="stringValue", is_link=False):
+def color_cell(value, color, type: str="stringValue", is_link: bool=False):
     return (
         {
             "userEnteredValue": {type: value},

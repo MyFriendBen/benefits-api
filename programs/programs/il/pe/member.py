@@ -212,7 +212,7 @@ class IlBccp(PolicyEngineMembersCalculator):
         member_dependency.IlBccEligible,
     ]
 
-    def member_value(self, member):
+    def member_value(self, member) -> int:
         """
         Calculate benefit value based on PolicyEngine eligibility.
 
@@ -257,7 +257,7 @@ class IlFamilyPlanningProgram(PolicyEngineMembersCalculator):
     ]
     pe_outputs = [member_dependency.IlFppEligible]
 
-    def member_value(self, member):
+    def member_value(self, member) -> int:
         is_eligible = self.get_member_variable(member.id)
 
         if not is_eligible:
@@ -295,7 +295,7 @@ class IlMpe(PolicyEngineMembersCalculator):
         member_dependency.IlMpeEligible,
     ]
 
-    def member_value(self, member):
+    def member_value(self, member) -> int:
         is_eligible = super().member_value(member)
 
         has_medicaid = member.has_insurance_types(("medicaid",), strict=False)

@@ -26,7 +26,7 @@ class HelpkitchenZipcode(UrgentNeedFunction):
         "80249",
     ]
 
-    def eligible(self):
+    def eligible(self) -> bool:
         """
         Lives in a zipcode that is eligible for HelpKitchen
         """

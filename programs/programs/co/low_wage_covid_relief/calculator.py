@@ -22,7 +22,7 @@ class LowWageCovidRelief(ProgramCalculator):
     county = "Adams County"
     dependencies = ["zipode", "household_size", "income_amount", "income_frequency"]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         # lives in Adams County
         counties = counties_from_screen(self.screen)
 

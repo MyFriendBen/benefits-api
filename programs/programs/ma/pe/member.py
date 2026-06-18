@@ -93,6 +93,8 @@ class MaCcdf(Ccdf):
 
     def child_care_cost(self, member: HouseholdMember):
         age = member.fraction_age()
+        if age is None:
+            return 0
 
         for [cost, age_limit] in self.cost_by_age:
             if age < age_limit:

@@ -15,7 +15,9 @@ class EnergyCalculatorVehicleExchange(ProgramCalculator):
     calculated_presumptive_eligibility = ["cesn_care", "cesn_cowap"]
     dependencies = ["age", "income_frequency", "income_amount", "energy_calculator"]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            return
         # presumptive eligibility
         has_benefit = False
         for benefit in self.presumptive_eligibility:
@@ -37,8 +39,10 @@ class EnergyCalculatorVehicleExchange(ProgramCalculator):
         # has old car
         e.condition(self.screen.energy_calculator.has_old_car)
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
+        if member.age is None:
+            return
 
         # age
         e.condition(member.age >= self.min_age)

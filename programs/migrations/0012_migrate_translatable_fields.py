@@ -3,7 +3,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 
 
-def forwards_func(apps, schema_editor):
+def forwards_func(apps, schema_editor) -> None:
     Program = apps.get_model("programs", "Program")
     ProgramTranslation = apps.get_model("programs", "ProgramTranslation")
 

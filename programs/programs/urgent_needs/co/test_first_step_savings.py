@@ -8,7 +8,7 @@ from programs.util import Dependencies
 
 
 class TestFirstStepSavings(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data"""
         # Create a white label for Colorado
         self.white_label = WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
@@ -65,7 +65,7 @@ class TestFirstStepSavings(TestCase):
             veteran=False,
         )
 
-    def test_eligible_with_young_child(self):
+    def test_eligible_with_young_child(self) -> None:
         """Test eligibility when household has a young child with eligible relationship (6+ years old)"""
         # Add a 6-year-old child (eligible for FirstStepSavings, not FirstStepSavingsNotifiable)
         child = HouseholdMember.objects.create(
@@ -76,7 +76,7 @@ class TestFirstStepSavings(TestCase):
 
         self.assertTrue(calculator.eligible())
 
-    def test_eligible_with_foster_child(self):
+    def test_eligible_with_foster_child(self) -> None:
         """Test eligibility with foster child"""
         # Add a 7-year-old foster child
         foster_child = HouseholdMember.objects.create(
@@ -87,7 +87,7 @@ class TestFirstStepSavings(TestCase):
 
         self.assertTrue(calculator.eligible())
 
-    def test_eligible_with_stepchild(self):
+    def test_eligible_with_stepchild(self) -> None:
         """Test eligibility with stepchild"""
         # Add a 6-year-old stepchild
         stepchild = HouseholdMember.objects.create(
@@ -98,7 +98,7 @@ class TestFirstStepSavings(TestCase):
 
         self.assertTrue(calculator.eligible())
 
-    def test_eligible_with_grandchild(self):
+    def test_eligible_with_grandchild(self) -> None:
         """Test eligibility with grandchild (7+ years old)"""
         # Add a 7-year-old grandchild (eligible for FirstStepSavings, not FirstStepSavingsNotifiable)
         grandchild = HouseholdMember.objects.create(
@@ -109,7 +109,7 @@ class TestFirstStepSavings(TestCase):
 
         self.assertTrue(calculator.eligible())
 
-    def test_not_eligible_child_too_old(self):
+    def test_not_eligible_child_too_old(self) -> None:
         """Test ineligibility when child is 8 or older"""
         # Add an 8-year-old child (too old)
         old_child = HouseholdMember.objects.create(
@@ -120,7 +120,7 @@ class TestFirstStepSavings(TestCase):
 
         self.assertFalse(calculator.eligible())
 
-    def test_not_eligible_no_savings_interest(self):
+    def test_not_eligible_no_savings_interest(self) -> None:
         """Test ineligibility when household hasn't expressed interest in savings"""
         # Set needs_college_savings to False
         self.screen.needs_college_savings = False
@@ -133,7 +133,7 @@ class TestFirstStepSavings(TestCase):
 
         self.assertFalse(calculator.eligible())
 
-    def test_not_eligible_wrong_relationship(self):
+    def test_not_eligible_wrong_relationship(self) -> None:
         """Test ineligibility when child has non-eligible relationship"""
         # Add a child with non-eligible relationship (e.g., sibling)
         sibling = HouseholdMember.objects.create(screen=self.screen, relationship="sisterOrBrother", age=2)
@@ -142,7 +142,7 @@ class TestFirstStepSavings(TestCase):
 
         self.assertFalse(calculator.eligible())
 
-    def test_not_eligible_with_children_0_to_5(self):
+    def test_not_eligible_with_children_0_to_5(self) -> None:
         # Add a 1-year-old child (should make NotFirstStepSavings eligible, and FirstStepSavings ineligible)
         baby = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=1)
 
@@ -151,7 +151,7 @@ class TestFirstStepSavings(TestCase):
         # FirstStepSavings should be ineligible because household has child aged 0-5
         self.assertFalse(calculator.eligible())
 
-    def test_eligible_with_children_6_to_7(self):
+    def test_eligible_with_children_6_to_7(self) -> None:
         # Add a 6-year-old child (eligible for FirstStepSavings but not NotFirstStepSavings)
         child = HouseholdMember.objects.create(
             screen=self.screen, relationship="child", age=6, birth_year_month=date(2019, 6, 1)
@@ -162,7 +162,7 @@ class TestFirstStepSavings(TestCase):
         # FirstStepSavings should be eligible because child is 6-7 and no children 0-5
         self.assertTrue(calculator.eligible())
 
-    def test_not_eligible_no_eligible_children_at_all(self):
+    def test_not_eligible_no_eligible_children_at_all(self) -> None:
         """Test ineligibility when household has no children in any eligible relationship"""
 
         calculator = FirstStepSavings(self.screen, self.urgent_need, Dependencies(), {})
@@ -171,7 +171,7 @@ class TestFirstStepSavings(TestCase):
 
 
 class TestFirstStepSavingsNotifiable(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for notification tests"""
         # Create a white label for Colorado
         self.white_label = WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
@@ -223,7 +223,7 @@ class TestFirstStepSavingsNotifiable(TestCase):
         # Create head of household
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=30)
 
-    def test_notification_shows_for_age_0_to_5(self):
+    def test_notification_shows_for_age_0_to_5(self) -> None:
         # Add a 1-year-old child
         baby = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=1)
 
@@ -231,7 +231,7 @@ class TestFirstStepSavingsNotifiable(TestCase):
 
         self.assertTrue(calculator.eligible())
 
-    def test_notification_not_shown_for_age_6_plus(self):
+    def test_notification_not_shown_for_age_6_plus(self) -> None:
         # Add a 6-year-old child
         child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=6)
 
@@ -239,7 +239,7 @@ class TestFirstStepSavingsNotifiable(TestCase):
 
         self.assertFalse(calculator.eligible())
 
-    def test_notification_age_boundary(self):
+    def test_notification_age_boundary(self) -> None:
         """Test notification boundary at age 5"""
         # Test with 5-year-old (should show)
         five_year_old = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=5)
@@ -256,7 +256,7 @@ class TestFirstStepSavingsNotifiable(TestCase):
 
         self.assertFalse(calculator.eligible())
 
-    def test_notification_not_shown_no_eligible_children(self):
+    def test_notification_not_shown_no_eligible_children(self) -> None:
         """Test notification doesn't show when no children exist"""
 
         calculator = FirstStepSavingsNotifiable(self.screen, self.urgent_need, Dependencies(), {})

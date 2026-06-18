@@ -10,7 +10,7 @@ class TestCoUniversalPreschool(TestCase):
     """Test cases for Colorado Universal Preschool Program calculator"""
 
     @classmethod
-    def setUpTestData(cls):
+    def setUpTestData(cls) -> None:
         """Set up test data that doesn't change between tests"""
         # Create white label for Colorado
         cls.co_white_label = WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
@@ -30,7 +30,7 @@ class TestCoUniversalPreschool(TestCase):
         missing_dependencies = Dependencies()
         return UniversalPreschool(screen, self.program, data, missing_dependencies)
 
-    def test_member_value_3yo_foster_child_income_270_fpl_returns_10_hours(self):
+    def test_member_value_3yo_foster_child_income_270_fpl_returns_10_hours(self) -> None:
         """Test 3-year-old foster child with HH income 270% FPL or less returns 10 hours"""
 
         screen = Screen.objects.create(
@@ -72,7 +72,7 @@ class TestCoUniversalPreschool(TestCase):
         self.assertTrue(eligibility.eligible)
         self.assertEqual(value, UniversalPreschool.amount_10_hr)
 
-    def test_member_value_3yo_income_100_fpl_returns_10_hours(self):
+    def test_member_value_3yo_income_100_fpl_returns_10_hours(self) -> None:
         """Test 3-year-old child with HH income ≤100% FPL returns 10 hours"""
 
         screen = Screen.objects.create(
@@ -114,7 +114,7 @@ class TestCoUniversalPreschool(TestCase):
         self.assertTrue(eligibility.eligible)
         self.assertEqual(value, UniversalPreschool.amount_10_hr)
 
-    def test_member_value_4yo_foster_income_270_fpl_returns_30_hours(self):
+    def test_member_value_4yo_foster_income_270_fpl_returns_30_hours(self) -> None:
         """Test 4-year-old foster child with HH income 270% FPL or less returns 30 hours"""
 
         screen = Screen.objects.create(
@@ -163,7 +163,7 @@ class TestCoUniversalPreschool(TestCase):
         self.assertTrue(eligibility.eligible)
         self.assertEqual(value, UniversalPreschool.amount_30_hr)
 
-    def test_member_value_4yo_income_100_fpl_returns_30_hours(self):
+    def test_member_value_4yo_income_100_fpl_returns_30_hours(self) -> None:
         """Test 4-year-old child with HH income 100% FPL or less returns 30 hours"""
 
         screen = Screen.objects.create(
@@ -205,7 +205,7 @@ class TestCoUniversalPreschool(TestCase):
         self.assertTrue(eligibility.eligible)
         self.assertEqual(value, UniversalPreschool.amount_30_hr)
 
-    def test_member_value_4yo_non_qualifying_returns_15_hours(self):
+    def test_member_value_4yo_non_qualifying_returns_15_hours(self) -> None:
         """Test 4-year-old child with HH income above 270% FPL returns 15 hours"""
 
         screen = Screen.objects.create(
@@ -247,7 +247,7 @@ class TestCoUniversalPreschool(TestCase):
         self.assertEqual(value, UniversalPreschool.amount_15_hr)
 
     # Eligibility Tests
-    def test_eligibility_3yo_above_270_fpl_not_eligible(self):
+    def test_eligibility_3yo_above_270_fpl_not_eligible(self) -> None:
         """Test 3-year-old child with HH income above 270% FPL is not eligible"""
         screen = Screen.objects.create(
             agree_to_tos=True,
@@ -284,7 +284,7 @@ class TestCoUniversalPreschool(TestCase):
         eligibility = calc.eligible()
         self.assertFalse(eligibility.eligible)
 
-    def test_age_2_not_eligible(self):
+    def test_age_2_not_eligible(self) -> None:
         """Test 2-year-old is not eligible (below minimum age)"""
 
         screen = Screen.objects.create(
@@ -314,7 +314,7 @@ class TestCoUniversalPreschool(TestCase):
         eligibility = calc.eligible()
         self.assertFalse(eligibility.eligible)
 
-    def test_age_5_not_eligible(self):
+    def test_age_5_not_eligible(self) -> None:
         """Test 5-year-old is not eligible (above maximum age)"""
         screen = Screen.objects.create(
             agree_to_tos=True,

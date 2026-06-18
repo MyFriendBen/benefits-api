@@ -28,7 +28,7 @@ ROWS_TO_DELETE = [
 ]
 
 
-def forward(apps, schema_editor):
+def forward(apps, schema_editor) -> None:
     # Use live models throughout (mirrors the pattern established in
     # 0152_backfill_has_benefits_categories). Mixing live WhiteLabel with
     # a historical Program from apps.get_model causes
@@ -49,7 +49,7 @@ def forward(apps, schema_editor):
         ).delete()
 
 
-def reverse(apps, schema_editor):
+def reverse(apps, schema_editor) -> None:
     # Intentional no-op: these rows referenced calculators that no longer
     # exist (programs/programs/dev/ was removed in the same PR). Recreating
     # them on reverse would re-introduce the (white_label, name_abbreviated)

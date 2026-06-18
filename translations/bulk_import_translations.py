@@ -160,7 +160,7 @@ def check_cycle(graph: dict[str, list[str]], visited: list[str]):
         check_cycle(graph, [*visited, dependency])
 
 
-def add_model_to_order(order: list[str], graph: dict[str, list[str]], name: str):
+def add_model_to_order(order: list[str], graph: dict[str, list[str]], name: str) -> None:
     if name in order:
         return
 

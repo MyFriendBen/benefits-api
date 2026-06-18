@@ -27,6 +27,8 @@ class IlNslp(SchoolLunch):
     tier_2_amount = 805
 
     def household_value(self):
+        if self.program.year is None:
+            return 0
         value = 0
         num_children = self.screen.num_children(3, 18)
         if self.get_variable() > 0 and num_children > 0:

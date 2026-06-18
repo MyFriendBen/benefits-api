@@ -82,7 +82,7 @@ class TaxUnitDependentDependency(Member):
         "income_frequency",
     )
 
-    def value(self):
+    def value(self) -> bool:
         if self.member.is_dependent():
             return True
 
@@ -270,8 +270,8 @@ class SsiCountableResourcesDependency(Member):
 
     def value(self):
         ssi_assets = 0
-        if self.member.age >= 19:
-            ssi_assets = self.screen.household_assets / self.screen.num_adults()
+        if (self.member.age or 0) >= 19:
+            ssi_assets = (self.screen.household_assets or 0) / self.screen.num_adults()
 
         return int(ssi_assets)
 
@@ -329,13 +329,13 @@ class CostOfAttendingCollegeDependency(Member):
     dependencies = ("age", "student")
 
     def value(self):
-        return 22_288 * (self.member.age >= 16 and self.member.student)
+        return 22_288 * ((self.member.age or 0) >= 16 and (self.member.student or False))
 
 
 class PellGrantMonthsInSchoolDependency(Member):
     field = "pell_grant_months_in_school"
 
-    def value(self):
+    def value(self) -> int:
         return 9
 
 
@@ -352,6 +352,8 @@ class SnapChildSupportDependency(Member):
     dependencies = ("age", "household_size")
 
     def value(self):
+        if self.screen.household_size is None:
+            return 0
         return self.screen.calc_expenses("yearly", ["childSupport"]) / self.screen.household_size
 
 
@@ -365,7 +367,7 @@ class SnapIneligibleStudentDependency(Member):
 
 
 class NcSnapIneligibleStudentDependency(SnapIneligibleStudentDependency):
-    def value(self):
+    def value(self) -> bool:
         member = self.member
         screen = self.screen
 
@@ -377,7 +379,7 @@ class NcSnapIneligibleStudentDependency(SnapIneligibleStudentDependency):
             return False
 
         # Shared federal exemptions (E1–E6)
-        if member.age < 18 or member.age >= 50:
+        if (member.age or 0) < 18 or (member.age or 0) >= 50:
             return False
 
         if member.has_disability():
@@ -475,7 +477,7 @@ class Ccdf(Member):
 class CcdfReasonCareEligibleDependency(Member):
     field = "is_ccdf_reason_for_care_eligible"
 
-    def value(self):
+    def value(self) -> bool:
         return True
 
 
@@ -494,7 +496,7 @@ class ChildcareAttendingDaysPerMonthDependency(Member):
 
     field = "childcare_attending_days_per_month"
 
-    def value(self):
+    def value(self) -> int:
         return 10
 
 
@@ -652,7 +654,7 @@ class EarlyHeadStart(Member):
 class IlBccFemaleDependency(Member):
     field = "is_female"
 
-    def value(self):
+    def value(self) -> bool:
         # We don't collect sex
         # Hardcode to True so that all households are shown the IBCCP program in results
         return True
@@ -769,7 +771,7 @@ class MedicareQuartersOfCoverageDependency(Member):
 
     field = "medicare_quarters_of_coverage"
 
-    def value(self):
+    def value(self) -> int:
         return 40
 
 

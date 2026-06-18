@@ -31,6 +31,8 @@ class MaTaxiDiscount(ProgramCalculator):
         e.condition(is_cambridge, messages.location())
 
     def member_eligible(self, e: MemberEligibility) -> None:
+        if e.member.age is None:
+            return
         member = e.member
 
         # Age 60+ OR has a disability

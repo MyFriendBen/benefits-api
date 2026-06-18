@@ -4,7 +4,7 @@ from django.db import migrations, models
 import django.db.models.deletion
 
 
-def populate_navigator_ordering(apps, schema_editor):
+def populate_navigator_ordering(apps, schema_editor) -> None:
     """
     Copy existing Program-Navigator relationships to new through table.
     Assigns default order=999 to preserve current behavior (items at end).
@@ -29,7 +29,7 @@ def populate_navigator_ordering(apps, schema_editor):
             print(f"✓ Copied {rows_copied} navigator relationships with default ordering")
 
 
-def reverse_populate(apps, schema_editor):
+def reverse_populate(apps, schema_editor) -> None:
     """Reverse migration - clear the through table"""
     ProgramNavigator = apps.get_model("programs", "ProgramNavigator")
     ProgramNavigator.objects.all().delete()

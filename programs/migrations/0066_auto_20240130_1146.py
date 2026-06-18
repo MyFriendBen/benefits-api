@@ -3,7 +3,7 @@
 from django.db import migrations
 
 
-def add_warning(apps, schema_editor):
+def add_warning(apps, schema_editor) -> None:
     Program = apps.get_model("programs", "Program")
     UrgentNeed = apps.get_model("programs", "UrgentNeed")
     Translation = apps.get_model("translations", "Translation")

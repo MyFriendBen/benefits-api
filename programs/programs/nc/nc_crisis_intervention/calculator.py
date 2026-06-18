@@ -13,7 +13,9 @@ class NCCrisisIntervention(ProgramCalculator):
         "income_frequency",
     ]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            return
         household_size = self.screen.household_size
 
         # has rent or mortgage expense

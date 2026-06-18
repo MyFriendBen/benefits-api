@@ -3,7 +3,7 @@ import uuid
 from django.db import migrations
 
 
-def add_estimated_value(apps, schema_editor):
+def add_estimated_value(apps, schema_editor) -> None:
     UrgentNeed = apps.get_model("programs", "UrgentNeed")
     Translation = apps.get_model("translations", "Translation")
 

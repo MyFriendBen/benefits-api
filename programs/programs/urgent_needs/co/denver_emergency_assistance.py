@@ -10,6 +10,8 @@ class DenverEmergencyAssistance(UrgentNeedFunction):
         """
         Return True if the household is bellow 400% fpl and lives in Denver
         """
+        if self.urgent_need.year is None:
+            return False
         county_eligible = self.screen.county == self.county
         fpl = self.urgent_need.year.as_dict()
         income_eligible = (

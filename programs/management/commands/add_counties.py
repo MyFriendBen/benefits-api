@@ -9,10 +9,10 @@ from django.core.exceptions import ObjectDoesNotExist
 class Command(BaseCommand):
     help = "Adds counties"
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser) -> None:
         parser.add_argument("white_label", type=str, help="The state code for the white label")
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         try:
             white_label = WhiteLabel.objects.get(code=options["white_label"])
         except ObjectDoesNotExist:

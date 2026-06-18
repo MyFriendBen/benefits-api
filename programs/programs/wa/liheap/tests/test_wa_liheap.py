@@ -6,7 +6,7 @@ from programs.programs.wa.liheap.calculator import WaLiheap
 from programs.programs.calc import ProgramCalculator, Eligibility
 
 
-def make_calculator(household_income=0, household_size=1, fpl_limit=15650, heating_expense=0):
+def make_calculator(household_income: int=0, household_size: int=1, fpl_limit: int=15650, heating_expense: int=0):
     mock_program = Mock()
     mock_program.year.get_limit.return_value = fpl_limit
 
@@ -23,51 +23,51 @@ def make_calculator(household_income=0, household_size=1, fpl_limit=15650, heati
 
 
 class TestWaLiheapClassAttributes(TestCase):
-    def test_is_subclass_of_program_calculator(self):
+    def test_is_subclass_of_program_calculator(self) -> None:
         self.assertTrue(issubclass(WaLiheap, ProgramCalculator))
 
-    def test_is_registered_in_wa_calculators(self):
+    def test_is_registered_in_wa_calculators(self) -> None:
         self.assertIn("wa_liheap", wa_calculators)
         self.assertEqual(wa_calculators["wa_liheap"], WaLiheap)
 
-    def test_fpl_percent_is_150(self):
+    def test_fpl_percent_is_150(self) -> None:
         self.assertEqual(WaLiheap.fpl_percent, 1.5)
 
-    def test_min_benefit_is_250(self):
+    def test_min_benefit_is_250(self) -> None:
         self.assertEqual(WaLiheap.min_benefit, 250)
 
-    def test_max_benefit_is_1250(self):
+    def test_max_benefit_is_1250(self) -> None:
         self.assertEqual(WaLiheap.max_benefit, 1_250)
 
 
 class TestWaLiheapHouseholdEligibility(TestCase):
-    def _run(self, household_income, fpl_limit=15650, household_size=1):
+    def _run(self, household_income, fpl_limit: int=15650, household_size: int=1):
         calc = make_calculator(household_income=household_income, fpl_limit=fpl_limit, household_size=household_size)
         e = Eligibility()
         calc.household_eligible(e)
         return e.eligible
 
-    def test_income_below_150_fpl_is_eligible(self):
+    def test_income_below_150_fpl_is_eligible(self) -> None:
         # 150% of 15650 = 23475; income 20000 < 23475
         self.assertTrue(self._run(household_income=20000, fpl_limit=15650))
 
-    def test_income_exactly_at_150_fpl_is_eligible(self):
+    def test_income_exactly_at_150_fpl_is_eligible(self) -> None:
         # 150% of 15650 = 23475
         self.assertTrue(self._run(household_income=23475, fpl_limit=15650))
 
-    def test_income_above_150_fpl_is_ineligible(self):
+    def test_income_above_150_fpl_is_ineligible(self) -> None:
         self.assertFalse(self._run(household_income=23476, fpl_limit=15650))
 
-    def test_zero_income_is_eligible(self):
+    def test_zero_income_is_eligible(self) -> None:
         self.assertTrue(self._run(household_income=0))
 
-    def test_income_message_included(self):
+    def test_income_message_included(self) -> None:
         calc = make_calculator(household_income=20000, fpl_limit=15650)
         e = Eligibility()
         calc.household_eligible(e)
         self.assertTrue(len(e.pass_messages) > 0)
 
-    def test_income_fail_message_included(self):
+    def test_income_fail_message_included(self) -> None:
         calc = make_calculator(household_income=30000, fpl_limit=15650)
         e = Eligibility()
         calc.household_eligible(e)
@@ -77,7 +77,7 @@ class TestWaLiheapHouseholdEligibility(TestCase):
 class TestWaLiheapNoCategoricalEligibility(TestCase):
     """WA LIHEAP does not implement categorical eligibility — income test always applies."""
 
-    def test_high_income_is_ineligible_regardless(self):
+    def test_high_income_is_ineligible_regardless(self) -> None:
         calc = make_calculator(household_income=99999, fpl_limit=15650)
         e = Eligibility()
         calc.household_eligible(e)
@@ -85,7 +85,7 @@ class TestWaLiheapNoCategoricalEligibility(TestCase):
 
 
 class TestWaLiheapBenefitValue(TestCase):
-    def test_scenario_1_elderly_couple(self):
+    def test_scenario_1_elderly_couple(self) -> None:
         # Income $19,200/yr, FPL for HH2 = $21,150, heating $1,800/yr
         # income_pct_fpl = (19200/21150)*100 = 90.78
         # benefit_pct = 0.90 - (90.78/125)*0.40 = 0.6095
@@ -98,7 +98,7 @@ class TestWaLiheapBenefitValue(TestCase):
         )
         self.assertEqual(calc.household_value(), 1097)
 
-    def test_scenario_3_large_household_capped_at_max(self):
+    def test_scenario_3_large_household_capped_at_max(self) -> None:
         # Income $44,316/yr, FPL for HH6 = $43,150, heating $2,400/yr
         # income_pct_fpl = (44316/43150)*100 = 102.70
         # benefit_pct = 0.90 - (102.70/125)*0.40 = 0.5714
@@ -111,7 +111,7 @@ class TestWaLiheapBenefitValue(TestCase):
         )
         self.assertEqual(calc.household_value(), 1250)
 
-    def test_zero_income_gets_90_percent_of_heat_cost(self):
+    def test_zero_income_gets_90_percent_of_heat_cost(self) -> None:
         # At 0% FPL: benefit_pct = 0.90, benefit = 0.90 * 1000 = 900
         calc = make_calculator(
             household_income=0,
@@ -120,7 +120,7 @@ class TestWaLiheapBenefitValue(TestCase):
         )
         self.assertEqual(calc.household_value(), 900)
 
-    def test_benefit_clamped_to_minimum_250(self):
+    def test_benefit_clamped_to_minimum_250(self) -> None:
         # Very low heat cost: benefit would be below $250 → clamped to $250
         calc = make_calculator(
             household_income=10000,
@@ -129,7 +129,7 @@ class TestWaLiheapBenefitValue(TestCase):
         )
         self.assertEqual(calc.household_value(), 250)
 
-    def test_benefit_clamped_to_maximum_1250(self):
+    def test_benefit_clamped_to_maximum_1250(self) -> None:
         # Very high heat cost: benefit would exceed $1,250 → clamped to $1,250
         calc = make_calculator(
             household_income=0,
@@ -139,7 +139,7 @@ class TestWaLiheapBenefitValue(TestCase):
         # 0.90 * 5000 = 4500, clamped to 1250
         self.assertEqual(calc.household_value(), 1250)
 
-    def test_no_heating_expense_gets_minimum(self):
+    def test_no_heating_expense_gets_minimum(self) -> None:
         calc = make_calculator(
             household_income=10000,
             fpl_limit=15650,
@@ -147,7 +147,7 @@ class TestWaLiheapBenefitValue(TestCase):
         )
         self.assertEqual(calc.household_value(), 250)
 
-    def test_income_at_125_pct_fpl_gets_50_percent(self):
+    def test_income_at_125_pct_fpl_gets_50_percent(self) -> None:
         # At exactly 125% FPL: benefit_pct = 0.90 - (125/125)*0.40 = 0.50
         fpl = 15650
         income = int(fpl * 1.25)  # 19562
@@ -161,7 +161,7 @@ class TestWaLiheapBenefitValue(TestCase):
 
 
 class TestWaLiheapEndToEnd(TestCase):
-    def test_eligible_household_gets_value(self):
+    def test_eligible_household_gets_value(self) -> None:
         calc = make_calculator(
             household_income=19200,
             household_size=2,
@@ -172,7 +172,7 @@ class TestWaLiheapEndToEnd(TestCase):
         self.assertTrue(result.eligible)
         self.assertEqual(result.value, 1097)
 
-    def test_ineligible_household_gets_zero(self):
+    def test_ineligible_household_gets_zero(self) -> None:
         calc = make_calculator(
             household_income=30000,
             fpl_limit=15650,

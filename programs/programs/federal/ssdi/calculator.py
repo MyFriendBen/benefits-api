@@ -17,11 +17,11 @@ class Ssdi(ProgramCalculator):
     parent_relationships = ["spouse", "domesticPartner", "headOfHousehold"]
     dependencies = ["income_amount", "income_frequency", "household_size"]
 
-    def __init__(self, screen: Screen, program: "Program", data, missing_dependencies: Dependencies):
+    def __init__(self, screen: Screen, program: "Program", data, missing_dependencies: Dependencies) -> None:
         self.eligible_members = []
         super().__init__(screen, program, data, missing_dependencies)
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
 
         # disability
@@ -36,6 +36,8 @@ class Ssdi(ProgramCalculator):
         e.condition(member_income < income_limit)
 
         # age
+        if member.age is None:
+            return
         e.condition(member.age >= Ssdi.min_age or self._child_eligible(member))
         e.condition(member.age <= Ssdi.max_age)
 
@@ -51,8 +53,10 @@ class Ssdi(ProgramCalculator):
 
         return total
 
-    def _is_parent_with_disability(self, member: HouseholdMember):
+    def _is_parent_with_disability(self, member: HouseholdMember) -> bool:
         # min parent age
+        if member.age is None:
+            return False
         if member.age < Ssdi.min_age:
             return False
 
@@ -66,7 +70,7 @@ class Ssdi(ProgramCalculator):
 
         return True
 
-    def _child_eligible(self, member: HouseholdMember):
+    def _child_eligible(self, member: HouseholdMember) -> bool:
         # child relationship
         if member.relationship in Ssdi.ineligible_relationships:
             return False

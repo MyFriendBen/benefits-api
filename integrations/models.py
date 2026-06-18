@@ -25,7 +25,7 @@ class Link(models.Model):
 
     objects = LinkManager()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.link
 
     @staticmethod
@@ -61,7 +61,7 @@ class Link(models.Model):
 
         return req.status_code, req.text
 
-    def validate(self):
+    def validate(self) -> None:
         status_code, body = self._get_request_parts()
 
         self.status_code = status_code
@@ -79,7 +79,7 @@ class Link(models.Model):
             self.validated = False
             self.save()
 
-    def fill_hash(self):
+    def fill_hash(self) -> None:
         if self.hash is None:
             status_code, body = self._get_request_parts()
             self.status_code = status_code
@@ -87,7 +87,7 @@ class Link(models.Model):
             self.hash = self.hash_data(body)
             self.validated = False
 
-    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+    def save(self, force_insert: bool=False, force_update: bool=False, using=None, update_fields=None):
         self.fill_hash()
 
         return super().save(force_insert, force_update, using, update_fields)

@@ -62,7 +62,7 @@ NO_AUTO_FIELDS = ("apply_button_link", "learn_more_link")
 BLANK_TRANSLATION_PLACEHOLDER = "[PLACEHOLDER]"
 
 
-def create_gap_tracking_programs(apps, schema_editor):
+def create_gap_tracking_programs(apps, schema_editor) -> None:
     from translations.models import Translation
 
     Program = apps.get_model("programs", "Program")
@@ -170,7 +170,7 @@ def create_gap_tracking_programs(apps, schema_editor):
         )
 
 
-def delete_gap_tracking_programs(apps, schema_editor):
+def delete_gap_tracking_programs(apps, schema_editor) -> None:
     Program = apps.get_model("programs", "Program")
     for p in GAP_TRACKING_PROGRAMS:
         Program.objects.filter(

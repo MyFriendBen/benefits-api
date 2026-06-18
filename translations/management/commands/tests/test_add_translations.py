@@ -18,14 +18,15 @@ from unittest.mock import MagicMock, patch
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase
+from typing import Optional
 
 
 class AddTranslationsCommandTest(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.out = StringIO()
         self._tmp_paths = []
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         for path in self._tmp_paths:
             try:
                 os.unlink(path)
@@ -58,7 +59,7 @@ class AddTranslationsCommandTest(TestCase):
             obj.text = current_text
             return obj
 
-        def filter_side_effect(label=None, **_):
+        def filter_side_effect(label: Optional[str]=None, **_):
             qs = MagicMock()
             qs.first.return_value = make_obj(label_to_english[label]) if label in label_to_english else None
             return qs
@@ -71,7 +72,7 @@ class AddTranslationsCommandTest(TestCase):
 
     @patch("translations.management.commands.add_translations.Translate")
     @patch("translations.management.commands.add_translations.Translation")
-    def test_classifies_new_update_unchanged(self, mock_translation, mock_translate):
+    def test_classifies_new_update_unchanged(self, mock_translation, mock_translate) -> None:
         # "keep" already exists with identical text (unchanged),
         # "change" exists with different text (update),
         # "brand_new" does not exist (new).
@@ -92,7 +93,7 @@ class AddTranslationsCommandTest(TestCase):
 
     @patch("translations.management.commands.add_translations.Translate")
     @patch("translations.management.commands.add_translations.Translation")
-    def test_dry_run_writes_nothing_and_skips_api(self, mock_translation, mock_translate):
+    def test_dry_run_writes_nothing_and_skips_api(self, mock_translation, mock_translate) -> None:
         mock_translation.objects = self._mock_existing({})
         translate_instance = mock_translate.return_value
 
@@ -105,7 +106,7 @@ class AddTranslationsCommandTest(TestCase):
 
     @patch("translations.management.commands.add_translations.Translate")
     @patch("translations.management.commands.add_translations.Translation")
-    def test_no_translate_adds_english_only(self, mock_translation, mock_translate):
+    def test_no_translate_adds_english_only(self, mock_translation, mock_translate) -> None:
         mock_translation.objects = self._mock_existing({})
         translate_instance = mock_translate.return_value
 
@@ -117,7 +118,7 @@ class AddTranslationsCommandTest(TestCase):
 
     @patch("translations.management.commands.add_translations.Translate")
     @patch("translations.management.commands.add_translations.Translation")
-    def test_dedup_batches_identical_english(self, mock_translation, mock_translate):
+    def test_dedup_batches_identical_english(self, mock_translation, mock_translate) -> None:
         mock_translation.objects = self._mock_existing({})
         translate_instance = mock_translate.return_value
         # Echo back a translation per requested lang so fan-out has something to write.
@@ -137,7 +138,7 @@ class AddTranslationsCommandTest(TestCase):
 
     @patch("translations.management.commands.add_translations.Translate")
     @patch("translations.management.commands.add_translations.Translation")
-    def test_bulk_translate_failure_raises_after_english_saved(self, mock_translation, mock_translate):
+    def test_bulk_translate_failure_raises_after_english_saved(self, mock_translation, mock_translate) -> None:
         # The English rows are written before bulk_translate is attempted; if the
         # translation API raises, the command must surface a CommandError while the
         # already-saved English rows remain (the documented "re-run to recover" contract).
@@ -154,19 +155,19 @@ class AddTranslationsCommandTest(TestCase):
         self.assertIn("English rows were saved", str(ctx.exception))
 
     @patch("translations.management.commands.add_translations.Translation")
-    def test_invalid_json_raises(self, mock_translation):
+    def test_invalid_json_raises(self, mock_translation) -> None:
         path = self._write_json("not json")
         with self.assertRaises(CommandError):
             call_command("add_translations", path, stdout=self.out)
 
     @patch("translations.management.commands.add_translations.Translation")
-    def test_non_object_json_raises(self, mock_translation):
+    def test_non_object_json_raises(self, mock_translation) -> None:
         path = self._write_json('["a", "b"]')
         with self.assertRaises(CommandError):
             call_command("add_translations", path, stdout=self.out)
 
     @patch("translations.management.commands.add_translations.Translation")
-    def test_non_string_value_raises(self, mock_translation):
+    def test_non_string_value_raises(self, mock_translation) -> None:
         path = self._write_json('{"a": 123}')
         with self.assertRaises(CommandError):
             call_command("add_translations", path, stdout=self.out)

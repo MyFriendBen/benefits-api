@@ -48,7 +48,9 @@ class NCHeadStart(ProgramCalculator):
     presumptive_eligibility = ["snap", "tanf", "ssi"]
     dependencies = ["age", "household_size", "income_frequency", "income_type", "income_amount", "zipcode"]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            return
         # location - check if county has market rates (means it's eligible)
         counties = counties_from_screen(self.screen)
         market_rates_data = NCHeadStart.market_rates.fetch()
@@ -92,8 +94,10 @@ class NCHeadStart(ProgramCalculator):
             # Check if adjusted income is below limit
             e.condition(countable_income <= income_limit, messages.income(countable_income, income_limit))
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
+        if member.age is None:
+            return
 
         # age - 0-5 years, or 6-17 with disability, or pregnant
         is_eligible_age = (member.age >= NCHeadStart.min_age and member.age <= NCHeadStart.max_age) or (
@@ -124,6 +128,8 @@ class NCHeadStart(ProgramCalculator):
 
         # Calculate total market rate for all eligible children
         for member in self.screen.household_members.all():
+            if member.age is None:
+                continue
             # Check if member meets eligibility criteria
             is_eligible_age = (member.age >= NCHeadStart.min_age and member.age <= NCHeadStart.max_age) or (
                 member.age > NCHeadStart.max_age
@@ -158,7 +164,7 @@ class NCHeadStart(ProgramCalculator):
 
         return total_annual_rate
 
-    def member_value(self, member):
+    def member_value(self, member) -> int:
         """
         Member value is calculated at the household level in household_value().
         Return 0 here to avoid double-counting.

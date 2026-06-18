@@ -6,7 +6,7 @@ from screener.models import Screen, HouseholdMember
 
 @skip("Calculator constructor signature changed - needs API update")
 class TestReproductiveHealthCarePension(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.screen1 = Screen.objects.create(
             agree_to_tos=True,
             zipcode="80205",
@@ -30,13 +30,13 @@ class TestReproductiveHealthCarePension(TestCase):
             has_expenses=False,
         )
 
-    def test_reproductive_health_care_pass_all_conditions(self):
+    def test_reproductive_health_care_pass_all_conditions(self) -> None:
         rhc = ReproductiveHealthCare(self.screen1, [{"name_abbreviated": "medicaid", "eligible": True}])
         eligibility = rhc.eligibility
 
         self.assertTrue(eligibility["eligible"])
 
-    def test_reproductive_health_care_failed_all_conditions(self):
+    def test_reproductive_health_care_failed_all_conditions(self) -> None:
         self.person1.has_no_hi = False
         self.person1.save()
 

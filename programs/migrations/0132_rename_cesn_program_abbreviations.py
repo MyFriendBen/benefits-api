@@ -3,7 +3,7 @@
 from django.db import migrations
 
 
-def rename_co_energy_calculator_to_cesn(apps, _schema_editor):
+def rename_co_energy_calculator_to_cesn(apps, _schema_editor) -> None:
     Program = apps.get_model("programs", "Program")
     ProgramCategory = apps.get_model("programs", "ProgramCategory")
     WarningMessage = apps.get_model("programs", "WarningMessage")
@@ -34,7 +34,7 @@ def rename_co_energy_calculator_to_cesn(apps, _schema_editor):
     )
 
 
-def reverse_rename_cesn_to_co_energy_calculator(apps, _schema_editor):
+def reverse_rename_cesn_to_co_energy_calculator(apps, _schema_editor) -> None:
     Program = apps.get_model("programs", "Program")
     ProgramCategory = apps.get_model("programs", "ProgramCategory")
     WarningMessage = apps.get_model("programs", "WarningMessage")

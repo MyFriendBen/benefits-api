@@ -12,8 +12,11 @@ class UniversalPreschool(ProgramCalculator):
     amount_30_hr = 11_088
     dependencies = ["age", "income_amount", "income_frequency", "relationship", "household_size"]
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
+
+        if member.age is None:
+            return
 
         # qualifying condition
         qualifying_condition = self._has_qualifying_condition(member)
@@ -34,6 +37,8 @@ class UniversalPreschool(ProgramCalculator):
         return UniversalPreschool.amount_10_hr
 
     def _has_qualifying_condition(self, member: HouseholdMember):
+        if self.program.year is None:
+            return False
         fpl = self.program.year.as_dict()[self.screen.household_size]
         income = self.screen.calc_gross_income("yearly", ["all"])
 

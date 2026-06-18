@@ -13,7 +13,7 @@ from programs.programs.policyengine.calculators.dependencies import member
 class TestAgeDependency(TestCase):
     """Tests for AgeDependency and IsDisabledDependency classes used by TxSnap calculator."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for basic member tests."""
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
@@ -29,13 +29,13 @@ class TestAgeDependency(TestCase):
             screen=self.screen, relationship="headOfHousehold", age=35, disabled=True
         )
 
-    def test_value_returns_member_age(self):
+    def test_value_returns_member_age(self) -> None:
         """Test AgeDependency.value() returns the household member's age."""
         dep = member.AgeDependency(self.screen, self.head, {})
         self.assertEqual(dep.value(), 35)
         self.assertEqual(dep.field, "age")
 
-    def test_value_returns_true_when_member_disabled(self):
+    def test_value_returns_true_when_member_disabled(self) -> None:
         """Test IsDisabledDependency.value() returns True when household member is disabled."""
         dep = member.IsDisabledDependency(self.screen, self.head, {})
         self.assertTrue(dep.value())
@@ -46,7 +46,7 @@ class TestMeetsSsiDisabilityCriteriaDependency(TestCase):
     """Tests for MeetsSsiDisabilityCriteriaDependency, required by PolicyEngine frontier
     to classify a person as SSI-disabled (MFB-1102)."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
         self.screen = Screen.objects.create(
             white_label=self.white_label,
@@ -59,23 +59,23 @@ class TestMeetsSsiDisabilityCriteriaDependency(TestCase):
     def _member(self, **kwargs):
         return HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=40, **kwargs)
 
-    def test_field_name(self):
+    def test_field_name(self) -> None:
         dep = member.MeetsSsiDisabilityCriteriaDependency(self.screen, self._member(), {})
         self.assertEqual(dep.field, "meets_ssi_disability_criteria")
 
-    def test_true_when_disabled(self):
+    def test_true_when_disabled(self) -> None:
         dep = member.MeetsSsiDisabilityCriteriaDependency(self.screen, self._member(disabled=True), {})
         self.assertTrue(dep.value())
 
-    def test_true_when_long_term_disability(self):
+    def test_true_when_long_term_disability(self) -> None:
         dep = member.MeetsSsiDisabilityCriteriaDependency(self.screen, self._member(long_term_disability=True), {})
         self.assertTrue(dep.value())
 
-    def test_true_when_visually_impaired(self):
+    def test_true_when_visually_impaired(self) -> None:
         dep = member.MeetsSsiDisabilityCriteriaDependency(self.screen, self._member(visually_impaired=True), {})
         self.assertTrue(dep.value())
 
-    def test_falsy_when_none_apply(self):
+    def test_falsy_when_none_apply(self) -> None:
         dep = member.MeetsSsiDisabilityCriteriaDependency(self.screen, self._member(), {})
         self.assertFalse(dep.value())
 
@@ -83,7 +83,7 @@ class TestMeetsSsiDisabilityCriteriaDependency(TestCase):
 class TestMemberExpenseDependency(TestCase):
     """Tests for member-level expense dependency classes: SnapChildSupportDependency, PropertyTaxExpenseDependency, and MedicalExpenseDependency."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for expense tests."""
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
@@ -97,7 +97,7 @@ class TestMemberExpenseDependency(TestCase):
 
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
 
-    def test_value_calculates_annual_per_person(self):
+    def test_value_calculates_annual_per_person(self) -> None:
         """Test SnapChildSupportDependency.value() calculates annual child support divided by household size."""
         Expense.objects.create(screen=self.screen, type="childSupport", amount=500, frequency="monthly")
 
@@ -106,18 +106,18 @@ class TestMemberExpenseDependency(TestCase):
         self.assertEqual(dep.value(), 3000)
         self.assertEqual(dep.field, "child_support_expense")
 
-    def test_value_returns_zero_when_no_expense(self):
+    def test_value_returns_zero_when_no_expense(self) -> None:
         """Test SnapChildSupportDependency.value() returns 0 when no child support expense exists."""
         dep = member.SnapChildSupportDependency(self.screen, self.head, {})
         self.assertEqual(dep.value(), 0)
 
-    def test_value_returns_zero_when_no_property_tax_expense(self):
+    def test_value_returns_zero_when_no_property_tax_expense(self) -> None:
         """Test PropertyTaxExpenseDependency.value() returns 0 when member has no property tax expense."""
         dep = member.PropertyTaxExpenseDependency(self.screen, self.head, {})
         self.assertEqual(dep.value(), 0)
         self.assertEqual(dep.field, "real_estate_taxes")
 
-    def test_value_head_gets_full_annual_medical_amount(self):
+    def test_value_head_gets_full_annual_medical_amount(self) -> None:
         """Test MedicalExpenseDependency.value() assigns full medical expenses to head."""
         Expense.objects.create(screen=self.screen, type="medical", amount=200, frequency="monthly")
 
@@ -126,7 +126,7 @@ class TestMemberExpenseDependency(TestCase):
         self.assertEqual(dep.value(), 2400)
         self.assertEqual(dep.field, "other_medical_expenses")
 
-    def test_value_non_head_returns_zero(self):
+    def test_value_non_head_returns_zero(self) -> None:
         """Test MedicalExpenseDependency.value() returns 0 for non-head members."""
         elderly_member = HouseholdMember.objects.create(screen=self.screen, relationship="parent", age=65)
         Expense.objects.create(screen=self.screen, type="medical", amount=200, frequency="monthly")
@@ -138,7 +138,7 @@ class TestMemberExpenseDependency(TestCase):
 class TestHeatingExpensePersonDependency(TestCase):
     """Tests for HeatingExpensePersonDependency (used by MaHeap and other LIHEAP calculators)."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
         self.screen = Screen.objects.create(
             white_label=self.white_label,
@@ -150,11 +150,11 @@ class TestHeatingExpensePersonDependency(TestCase):
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
         self.spouse = HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=33)
 
-    def test_field_name(self):
+    def test_field_name(self) -> None:
         dep = member.HeatingExpensePersonDependency(self.screen, self.head, {})
         self.assertEqual(dep.field, "heating_expense_person")
 
-    def test_head_gets_full_annual_heating_and_cooling_amount(self):
+    def test_head_gets_full_annual_heating_and_cooling_amount(self) -> None:
         Expense.objects.create(screen=self.screen, type="heating", amount=100, frequency="monthly")
         Expense.objects.create(screen=self.screen, type="cooling", amount=50, frequency="monthly")
 
@@ -162,13 +162,13 @@ class TestHeatingExpensePersonDependency(TestCase):
         # ($100 + $50) * 12
         self.assertEqual(dep.value(), 1800)
 
-    def test_non_head_returns_zero(self):
+    def test_non_head_returns_zero(self) -> None:
         Expense.objects.create(screen=self.screen, type="heating", amount=100, frequency="monthly")
 
         dep = member.HeatingExpensePersonDependency(self.screen, self.spouse, {})
         self.assertEqual(dep.value(), 0)
 
-    def test_head_returns_zero_when_no_expense(self):
+    def test_head_returns_zero_when_no_expense(self) -> None:
         dep = member.HeatingExpensePersonDependency(self.screen, self.head, {})
         self.assertEqual(dep.value(), 0)
 
@@ -176,7 +176,7 @@ class TestHeatingExpensePersonDependency(TestCase):
 class TestSnapIneligibleStudentDependency(TestCase):
     """Tests for SnapIneligibleStudentDependency class used by TxSnap calculator."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for student eligibility tests."""
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
@@ -191,7 +191,7 @@ class TestSnapIneligibleStudentDependency(TestCase):
         # Need head of household for relationship_map
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=45)
 
-    def test_value_evaluates_adult_student(self):
+    def test_value_evaluates_adult_student(self) -> None:
         """Test value() evaluates adult student eligibility based on helper logic."""
         student = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=20, student=True)
 
@@ -200,7 +200,7 @@ class TestSnapIneligibleStudentDependency(TestCase):
         self.assertIsNotNone(dep.value())
         self.assertEqual(dep.field, "is_snap_ineligible_student")
 
-    def test_value_returns_false_for_young_student(self):
+    def test_value_returns_false_for_young_student(self) -> None:
         """Test value() returns False for student under 18."""
         young_student = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=16, student=True)
 
@@ -208,7 +208,7 @@ class TestSnapIneligibleStudentDependency(TestCase):
         # Students under 18 are eligible
         self.assertFalse(dep.value())
 
-    def test_value_returns_false_for_disabled_student(self):
+    def test_value_returns_false_for_disabled_student(self) -> None:
         """Test value() returns False for disabled student."""
         disabled_student = HouseholdMember.objects.create(
             screen=self.screen,
@@ -226,7 +226,7 @@ class TestSnapIneligibleStudentDependency(TestCase):
 class TestEmploymentIncomeDependency(TestCase):
     """Tests for EmploymentIncomeDependency class used by TxLifeline calculator."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for employment income tests."""
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
@@ -240,7 +240,7 @@ class TestEmploymentIncomeDependency(TestCase):
 
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
 
-    def test_value_calculates_annual_wages_income(self):
+    def test_value_calculates_annual_wages_income(self) -> None:
         """Test value() calculates annual employment income from wages."""
         IncomeStream.objects.create(
             screen=self.screen,
@@ -254,12 +254,12 @@ class TestEmploymentIncomeDependency(TestCase):
         self.assertEqual(dep.value(), 36000)  # $3000/month * 12
         self.assertEqual(dep.field, "employment_income")
 
-    def test_value_returns_zero_when_no_employment_income(self):
+    def test_value_returns_zero_when_no_employment_income(self) -> None:
         """Test value() returns 0 when member has no employment income."""
         dep = member.EmploymentIncomeDependency(self.screen, self.head, {})
         self.assertEqual(dep.value(), 0)
 
-    def test_value_only_includes_wages_income_type(self):
+    def test_value_only_includes_wages_income_type(self) -> None:
         """Test value() only includes wages income type, not other types."""
         IncomeStream.objects.create(
             screen=self.screen,
@@ -284,7 +284,7 @@ class TestEmploymentIncomeDependency(TestCase):
 class TestSelfEmploymentIncomeDependency(TestCase):
     """Tests for SelfEmploymentIncomeDependency class used by TxLifeline calculator."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for self-employment income tests."""
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
@@ -298,7 +298,7 @@ class TestSelfEmploymentIncomeDependency(TestCase):
 
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
 
-    def test_value_calculates_annual_self_employment_income(self):
+    def test_value_calculates_annual_self_employment_income(self) -> None:
         """Test value() calculates annual self-employment income."""
         IncomeStream.objects.create(
             screen=self.screen,
@@ -312,7 +312,7 @@ class TestSelfEmploymentIncomeDependency(TestCase):
         self.assertEqual(dep.value(), 48000)  # $4000/month * 12
         self.assertEqual(dep.field, "self_employment_income")
 
-    def test_value_returns_zero_when_no_self_employment_income(self):
+    def test_value_returns_zero_when_no_self_employment_income(self) -> None:
         """Test value() returns 0 when member has no self-employment income."""
         dep = member.SelfEmploymentIncomeDependency(self.screen, self.head, {})
         self.assertEqual(dep.value(), 0)
@@ -321,7 +321,7 @@ class TestSelfEmploymentIncomeDependency(TestCase):
 class TestRentalIncomeDependency(TestCase):
     """Tests for RentalIncomeDependency class used by TxLifeline calculator."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for rental income tests."""
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
@@ -335,7 +335,7 @@ class TestRentalIncomeDependency(TestCase):
 
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
 
-    def test_value_calculates_annual_rental_income(self):
+    def test_value_calculates_annual_rental_income(self) -> None:
         """Test value() calculates annual rental income."""
         IncomeStream.objects.create(
             screen=self.screen,
@@ -349,7 +349,7 @@ class TestRentalIncomeDependency(TestCase):
         self.assertEqual(dep.value(), 18000)  # $1500/month * 12
         self.assertEqual(dep.field, "rental_income")
 
-    def test_value_returns_zero_when_no_rental_income(self):
+    def test_value_returns_zero_when_no_rental_income(self) -> None:
         """Test value() returns 0 when member has no rental income."""
         dep = member.RentalIncomeDependency(self.screen, self.head, {})
         self.assertEqual(dep.value(), 0)
@@ -358,7 +358,7 @@ class TestRentalIncomeDependency(TestCase):
 class TestPensionIncomeDependency(TestCase):
     """Tests for PensionIncomeDependency class used by TxLifeline calculator."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for pension income tests."""
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
@@ -372,7 +372,7 @@ class TestPensionIncomeDependency(TestCase):
 
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=65)
 
-    def test_value_calculates_annual_pension_income(self):
+    def test_value_calculates_annual_pension_income(self) -> None:
         """Test value() calculates annual pension income."""
         IncomeStream.objects.create(
             screen=self.screen,
@@ -386,7 +386,7 @@ class TestPensionIncomeDependency(TestCase):
         self.assertEqual(dep.value(), 30000)  # $2500/month * 12
         self.assertEqual(dep.field, "taxable_pension_income")
 
-    def test_value_includes_veteran_income(self):
+    def test_value_includes_veteran_income(self) -> None:
         """Test value() includes veteran income as part of pension income."""
         IncomeStream.objects.create(
             screen=self.screen,
@@ -399,7 +399,7 @@ class TestPensionIncomeDependency(TestCase):
         dep = member.PensionIncomeDependency(self.screen, self.head, {})
         self.assertEqual(dep.value(), 12000)  # $1000/month * 12
 
-    def test_value_combines_pension_and_veteran_income(self):
+    def test_value_combines_pension_and_veteran_income(self) -> None:
         """Test value() combines both pension and veteran income."""
         IncomeStream.objects.create(
             screen=self.screen,
@@ -419,7 +419,7 @@ class TestPensionIncomeDependency(TestCase):
         dep = member.PensionIncomeDependency(self.screen, self.head, {})
         self.assertEqual(dep.value(), 30000)  # ($2000 + $500) * 12
 
-    def test_value_returns_zero_when_no_pension_income(self):
+    def test_value_returns_zero_when_no_pension_income(self) -> None:
         """Test value() returns 0 when member has no pension or veteran income."""
         dep = member.PensionIncomeDependency(self.screen, self.head, {})
         self.assertEqual(dep.value(), 0)
@@ -428,7 +428,7 @@ class TestPensionIncomeDependency(TestCase):
 class TestSocialSecurityIncomeDependency(TestCase):
     """Tests for SocialSecurityIncomeDependency class used by TxLifeline calculator."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for social security income tests."""
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
@@ -442,7 +442,7 @@ class TestSocialSecurityIncomeDependency(TestCase):
 
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=67)
 
-    def test_value_calculates_annual_ss_retirement_income(self):
+    def test_value_calculates_annual_ss_retirement_income(self) -> None:
         """Test value() calculates annual social security retirement income."""
         IncomeStream.objects.create(
             screen=self.screen,
@@ -456,7 +456,7 @@ class TestSocialSecurityIncomeDependency(TestCase):
         self.assertEqual(dep.value(), 21600)  # $1800/month * 12
         self.assertEqual(dep.field, "social_security")
 
-    def test_value_calculates_annual_ss_disability_income(self):
+    def test_value_calculates_annual_ss_disability_income(self) -> None:
         """Test value() calculates annual social security disability income."""
         IncomeStream.objects.create(
             screen=self.screen,
@@ -469,7 +469,7 @@ class TestSocialSecurityIncomeDependency(TestCase):
         dep = member.SocialSecurityIncomeDependency(self.screen, self.head, {})
         self.assertEqual(dep.value(), 18000)  # $1500/month * 12
 
-    def test_value_calculates_annual_ss_survivor_income(self):
+    def test_value_calculates_annual_ss_survivor_income(self) -> None:
         """Test value() calculates annual social security survivor income."""
         IncomeStream.objects.create(
             screen=self.screen,
@@ -482,7 +482,7 @@ class TestSocialSecurityIncomeDependency(TestCase):
         dep = member.SocialSecurityIncomeDependency(self.screen, self.head, {})
         self.assertEqual(dep.value(), 14400)  # $1200/month * 12
 
-    def test_value_calculates_annual_ss_dependent_income(self):
+    def test_value_calculates_annual_ss_dependent_income(self) -> None:
         """Test value() calculates annual social security dependent income."""
         IncomeStream.objects.create(
             screen=self.screen,
@@ -495,7 +495,7 @@ class TestSocialSecurityIncomeDependency(TestCase):
         dep = member.SocialSecurityIncomeDependency(self.screen, self.head, {})
         self.assertEqual(dep.value(), 9600)  # $800/month * 12
 
-    def test_value_combines_all_social_security_types(self):
+    def test_value_combines_all_social_security_types(self) -> None:
         """Test value() combines all types of social security income."""
         IncomeStream.objects.create(
             screen=self.screen,
@@ -515,7 +515,7 @@ class TestSocialSecurityIncomeDependency(TestCase):
         dep = member.SocialSecurityIncomeDependency(self.screen, self.head, {})
         self.assertEqual(dep.value(), 15600)  # ($1000 + $300) * 12
 
-    def test_value_returns_zero_when_no_social_security_income(self):
+    def test_value_returns_zero_when_no_social_security_income(self) -> None:
         """Test value() returns 0 when member has no social security income."""
         dep = member.SocialSecurityIncomeDependency(self.screen, self.head, {})
         self.assertEqual(dep.value(), 0)
@@ -524,7 +524,7 @@ class TestSocialSecurityIncomeDependency(TestCase):
 class TestPregnancyDependency(TestCase):
     """Tests for PregnancyDependency class used by WIC calculators."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for pregnancy tests."""
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
@@ -544,18 +544,18 @@ class TestPregnancyDependency(TestCase):
             screen=self.screen, relationship="spouse", age=28, pregnant=False
         )
 
-    def test_value_returns_true_when_pregnant(self):
+    def test_value_returns_true_when_pregnant(self) -> None:
         """Test PregnancyDependency.value() returns True when member is pregnant."""
         dep = member.PregnancyDependency(self.screen, self.pregnant_member, {})
         self.assertTrue(dep.value())
         self.assertEqual(dep.field, "is_pregnant")
 
-    def test_value_returns_false_when_not_pregnant(self):
+    def test_value_returns_false_when_not_pregnant(self) -> None:
         """Test PregnancyDependency.value() returns False when member is not pregnant."""
         dep = member.PregnancyDependency(self.screen, self.non_pregnant_member, {})
         self.assertFalse(dep.value())
 
-    def test_value_returns_false_when_pregnant_is_none(self):
+    def test_value_returns_false_when_pregnant_is_none(self) -> None:
         """Test PregnancyDependency.value() returns False when pregnant field is None."""
         member_none = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=10, pregnant=None)
 
@@ -566,7 +566,7 @@ class TestPregnancyDependency(TestCase):
 class TestExpectedChildrenPregnancyDependency(TestCase):
     """Tests for ExpectedChildrenPregnancyDependency class used by WIC calculators."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for expected children pregnancy tests."""
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
@@ -586,13 +586,13 @@ class TestExpectedChildrenPregnancyDependency(TestCase):
             screen=self.screen, relationship="spouse", age=28, pregnant=False
         )
 
-    def test_value_returns_one_when_pregnant(self):
+    def test_value_returns_one_when_pregnant(self) -> None:
         """Test ExpectedChildrenPregnancyDependency.value() returns 1 when member is pregnant."""
         dep = member.ExpectedChildrenPregnancyDependency(self.screen, self.pregnant_member, {})
         self.assertEqual(dep.value(), 1)
         self.assertEqual(dep.field, "current_pregnancies")
 
-    def test_value_returns_zero_when_not_pregnant(self):
+    def test_value_returns_zero_when_not_pregnant(self) -> None:
         """Test ExpectedChildrenPregnancyDependency.value() returns 0 when member is not pregnant."""
         dep = member.ExpectedChildrenPregnancyDependency(self.screen, self.non_pregnant_member, {})
         self.assertEqual(dep.value(), 0)
@@ -601,7 +601,7 @@ class TestExpectedChildrenPregnancyDependency(TestCase):
 class TestTaxUnitHeadDependency(TestCase):
     """Tests for TaxUnitHeadDependency class used by tax credit calculators."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for tax unit head tests."""
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
@@ -616,13 +616,13 @@ class TestTaxUnitHeadDependency(TestCase):
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
         self.spouse = HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=33)
 
-    def test_value_returns_true_for_head_of_household(self):
+    def test_value_returns_true_for_head_of_household(self) -> None:
         """Test TaxUnitHeadDependency.value() returns True for head of household."""
         dep = member.TaxUnitHeadDependency(self.screen, self.head, {})
         self.assertTrue(dep.value())
         self.assertEqual(dep.field, "is_tax_unit_head")
 
-    def test_value_returns_false_for_spouse(self):
+    def test_value_returns_false_for_spouse(self) -> None:
         """Test TaxUnitHeadDependency.value() returns False for spouse."""
         dep = member.TaxUnitHeadDependency(self.screen, self.spouse, {})
         self.assertFalse(dep.value())
@@ -631,7 +631,7 @@ class TestTaxUnitHeadDependency(TestCase):
 class TestTaxUnitSpouseDependency(TestCase):
     """Tests for TaxUnitSpouseDependency class used by tax credit calculators."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for tax unit spouse tests."""
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
@@ -646,13 +646,13 @@ class TestTaxUnitSpouseDependency(TestCase):
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
         self.spouse = HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=33)
 
-    def test_value_returns_true_for_spouse(self):
+    def test_value_returns_true_for_spouse(self) -> None:
         """Test TaxUnitSpouseDependency.value() returns True for spouse."""
         dep = member.TaxUnitSpouseDependency(self.screen, self.spouse, {})
         self.assertTrue(dep.value())
         self.assertEqual(dep.field, "is_tax_unit_spouse")
 
-    def test_value_returns_false_for_head_of_household(self):
+    def test_value_returns_false_for_head_of_household(self) -> None:
         """Test TaxUnitSpouseDependency.value() returns False for head of household."""
         dep = member.TaxUnitSpouseDependency(self.screen, self.head, {})
         self.assertFalse(dep.value())
@@ -661,7 +661,7 @@ class TestTaxUnitSpouseDependency(TestCase):
 class TestTaxUnitDependentDependency(TestCase):
     """Tests for TaxUnitDependentDependency class used by tax credit calculators."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for tax unit dependent tests."""
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
@@ -676,13 +676,13 @@ class TestTaxUnitDependentDependency(TestCase):
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
         self.child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=10)
 
-    def test_value_returns_true_for_child(self):
+    def test_value_returns_true_for_child(self) -> None:
         """Test TaxUnitDependentDependency.value() returns True for child."""
         dep = member.TaxUnitDependentDependency(self.screen, self.child, {})
         self.assertTrue(dep.value())
         self.assertEqual(dep.field, "is_tax_unit_dependent")
 
-    def test_value_returns_false_for_head_of_household(self):
+    def test_value_returns_false_for_head_of_household(self) -> None:
         """Test TaxUnitDependentDependency.value() returns False for head of household."""
         dep = member.TaxUnitDependentDependency(self.screen, self.head, {})
         self.assertFalse(dep.value())
@@ -691,7 +691,7 @@ class TestTaxUnitDependentDependency(TestCase):
 class TestHeadStartDependency(TestCase):
     """Tests for HeadStart dependency class."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for Head Start dependency tests."""
         self.white_label = WhiteLabel.objects.create(name="Massachusetts", code="ma", state_code="MA")
 
@@ -709,37 +709,37 @@ class TestHeadStartDependency(TestCase):
 
         self.child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=4, has_income=False)
 
-    def test_head_start_dependency_exists(self):
+    def test_head_start_dependency_exists(self) -> None:
         """Test that HeadStart dependency class exists and has correct field."""
         self.assertTrue(hasattr(member, "HeadStart"))
         self.assertEqual(member.HeadStart.field, "head_start")
 
-    def test_head_start_is_member_dependency(self):
+    def test_head_start_is_member_dependency(self) -> None:
         """Test that HeadStart inherits from Member dependency base class."""
         from programs.programs.policyengine.calculators.dependencies.base import Member
 
         self.assertTrue(issubclass(member.HeadStart, Member))
 
-    def test_head_start_can_be_instantiated(self):
+    def test_head_start_can_be_instantiated(self) -> None:
         """Test that HeadStart can be instantiated with screen and member."""
         dep = member.HeadStart(self.screen, self.child, {})
         self.assertIsNotNone(dep)
         self.assertEqual(dep.screen, self.screen)
         self.assertEqual(dep.member, self.child)
 
-    def test_head_start_has_correct_field_name(self):
+    def test_head_start_has_correct_field_name(self) -> None:
         """Test that HeadStart has the correct PolicyEngine field name for benefit value."""
         dep = member.HeadStart(self.screen, self.child, {})
         self.assertEqual(dep.field, "head_start")
 
-    def test_head_start_has_correct_unit(self):
+    def test_head_start_has_correct_unit(self) -> None:
         """Test that HeadStart dependency has the correct unit field for PolicyEngine."""
         dep = member.HeadStart(self.screen, self.child, {})
 
         # Should be member-level (people) dependency
         self.assertEqual(dep.unit, "people")
 
-    def test_head_start_works_with_different_ages(self):
+    def test_head_start_works_with_different_ages(self) -> None:
         """Test that HeadStart can be instantiated with children of different ages."""
         # Test with age 3 (minimum eligible age for Head Start)
         child_3 = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=3)
@@ -757,7 +757,7 @@ class TestHeadStartDependency(TestCase):
         dep_6 = member.HeadStart(self.screen, child_6, {})
         self.assertEqual(dep_6.member.age, 6)
 
-    def test_head_start_works_with_different_members(self):
+    def test_head_start_works_with_different_members(self) -> None:
         """Test that HeadStart value dependency can be created for different household members."""
         # Test with child (typical case)
         child_dep = member.HeadStart(self.screen, self.child, {})
@@ -769,7 +769,7 @@ class TestHeadStartDependency(TestCase):
         self.assertEqual(parent_dep.member, self.parent)
         self.assertEqual(parent_dep.field, "head_start")
 
-    def test_head_start_works_with_relationship_map(self):
+    def test_head_start_works_with_relationship_map(self) -> None:
         """Test that HeadStart dependency works with relationship_map parameter."""
         relationship_map = {self.parent.id: self.child.id}
 
@@ -783,7 +783,7 @@ class TestHeadStartDependency(TestCase):
 class TestPropertyTaxExpenseDependencyTaxFiling(TestCase):
     """Tests for PropertyTaxExpenseDependency head/spouse splitting logic for tax filing."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for property tax dependency tests."""
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test_pt", state_code="TS")
 
@@ -797,14 +797,14 @@ class TestPropertyTaxExpenseDependencyTaxFiling(TestCase):
 
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=45)
 
-    def test_value_returns_full_amount_for_single_head(self):
+    def test_value_returns_full_amount_for_single_head(self) -> None:
         """Test PropertyTaxExpenseDependency.value() returns full amount for single head of household."""
         Expense.objects.create(screen=self.screen, type="propertyTax", amount=300, frequency="monthly")
 
         dep = member.PropertyTaxExpenseDependency(self.screen, self.head, {})
         self.assertEqual(dep.value(), 3600)  # $300/month * 12
 
-    def test_value_splits_between_head_and_spouse(self):
+    def test_value_splits_between_head_and_spouse(self) -> None:
         """Test PropertyTaxExpenseDependency.value() splits evenly between head and spouse when married."""
         spouse = HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=42)
         Expense.objects.create(screen=self.screen, type="propertyTax", amount=400, frequency="monthly")
@@ -816,7 +816,7 @@ class TestPropertyTaxExpenseDependencyTaxFiling(TestCase):
         self.assertEqual(head_dep.value(), 2400)
         self.assertEqual(spouse_dep.value(), 2400)
 
-    def test_value_returns_zero_for_non_head_non_spouse(self):
+    def test_value_returns_zero_for_non_head_non_spouse(self) -> None:
         """Test PropertyTaxExpenseDependency.value() returns 0 for children and other members."""
         child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=16)
         parent = HouseholdMember.objects.create(screen=self.screen, relationship="parent", age=75)
@@ -828,7 +828,7 @@ class TestPropertyTaxExpenseDependencyTaxFiling(TestCase):
         self.assertEqual(child_dep.value(), 0)
         self.assertEqual(parent_dep.value(), 0)
 
-    def test_value_full_amount_to_head_when_no_spouse(self):
+    def test_value_full_amount_to_head_when_no_spouse(self) -> None:
         """Test PropertyTaxExpenseDependency.value() assigns full amount to head when no spouse."""
         # Add adult child but no spouse
         adult_child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=25)
@@ -841,7 +841,7 @@ class TestPropertyTaxExpenseDependencyTaxFiling(TestCase):
         self.assertEqual(head_dep.value(), 7200)  # $600 * 12
         self.assertEqual(child_dep.value(), 0)
 
-    def test_value_returns_zero_when_no_property_tax(self):
+    def test_value_returns_zero_when_no_property_tax(self) -> None:
         """Test PropertyTaxExpenseDependency.value() returns 0 when no property tax expense exists."""
         dep = member.PropertyTaxExpenseDependency(self.screen, self.head, {})
         self.assertEqual(dep.value(), 0)
@@ -850,7 +850,7 @@ class TestPropertyTaxExpenseDependencyTaxFiling(TestCase):
 class TestRentDependency(TestCase):
     """Tests for RentDependency class used for tax calculations."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for rent dependency tests."""
         self.white_label = WhiteLabel.objects.create(name="Illinois", code="il", state_code="IL")
 
@@ -864,7 +864,7 @@ class TestRentDependency(TestCase):
 
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=70)
 
-    def test_value_calculates_annual_rent_for_single_head(self):
+    def test_value_calculates_annual_rent_for_single_head(self) -> None:
         """Test RentDependency.value() returns full annual rent for single head of household."""
         Expense.objects.create(screen=self.screen, type="rent", amount=500, frequency="monthly")
 
@@ -872,12 +872,12 @@ class TestRentDependency(TestCase):
         self.assertEqual(dep.value(), 6000)  # $500/month * 12
         self.assertEqual(dep.field, "rent")
 
-    def test_value_returns_zero_when_no_rent(self):
+    def test_value_returns_zero_when_no_rent(self) -> None:
         """Test RentDependency.value() returns 0 when no rent expense exists."""
         dep = member.RentDependency(self.screen, self.head, {})
         self.assertEqual(dep.value(), 0)
 
-    def test_value_splits_rent_between_head_and_spouse(self):
+    def test_value_splits_rent_between_head_and_spouse(self) -> None:
         """Test RentDependency.value() splits rent evenly between head and spouse when married."""
         spouse = HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=68)
         Expense.objects.create(screen=self.screen, type="rent", amount=1000, frequency="monthly")
@@ -889,7 +889,7 @@ class TestRentDependency(TestCase):
         self.assertEqual(head_dep.value(), 6000)
         self.assertEqual(spouse_dep.value(), 6000)
 
-    def test_value_returns_zero_for_non_head_non_spouse(self):
+    def test_value_returns_zero_for_non_head_non_spouse(self) -> None:
         """Test RentDependency.value() returns 0 for children and other household members."""
         child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=16)
         parent = HouseholdMember.objects.create(screen=self.screen, relationship="parent", age=75)
@@ -901,7 +901,7 @@ class TestRentDependency(TestCase):
         self.assertEqual(child_dep.value(), 0)
         self.assertEqual(parent_dep.value(), 0)
 
-    def test_value_full_amount_to_head_when_no_spouse(self):
+    def test_value_full_amount_to_head_when_no_spouse(self) -> None:
         """Test RentDependency.value() assigns full rent to head when there's no spouse."""
         # Add a child but no spouse
         child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=10)
@@ -918,7 +918,7 @@ class TestRentDependency(TestCase):
 class TestEarlyHeadStartDependency(TestCase):
     """Tests for EarlyHeadStart dependency class."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for Early Head Start dependency tests."""
         self.white_label = WhiteLabel.objects.create(name="Massachusetts", code="ma_ehs", state_code="MA")
 
@@ -936,30 +936,30 @@ class TestEarlyHeadStartDependency(TestCase):
 
         self.child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=1, has_income=False)
 
-    def test_early_head_start_dependency_exists(self):
+    def test_early_head_start_dependency_exists(self) -> None:
         """Test that EarlyHeadStart dependency class exists and has correct field."""
         self.assertTrue(hasattr(member, "EarlyHeadStart"))
         self.assertEqual(member.EarlyHeadStart.field, "early_head_start")
 
-    def test_early_head_start_is_member_dependency(self):
+    def test_early_head_start_is_member_dependency(self) -> None:
         """Test that EarlyHeadStart inherits from Member dependency base class."""
         from programs.programs.policyengine.calculators.dependencies.base import Member
 
         self.assertTrue(issubclass(member.EarlyHeadStart, Member))
 
-    def test_early_head_start_can_be_instantiated(self):
+    def test_early_head_start_can_be_instantiated(self) -> None:
         """Test that EarlyHeadStart can be instantiated with screen and member."""
         dep = member.EarlyHeadStart(self.screen, self.child, {})
 
         self.assertIsNotNone(dep)
         self.assertEqual(dep.member, self.child)
 
-    def test_early_head_start_has_correct_field_name(self):
+    def test_early_head_start_has_correct_field_name(self) -> None:
         """Test that EarlyHeadStart has the correct PolicyEngine field name for benefit value."""
         dep = member.EarlyHeadStart(self.screen, self.child, {})
         self.assertEqual(dep.field, "early_head_start")
 
-    def test_early_head_start_works_with_different_ages(self):
+    def test_early_head_start_works_with_different_ages(self) -> None:
         """Test that EarlyHeadStart can be instantiated with children of different ages."""
         # Test with infant (0 years)
         infant = HouseholdMember.objects.create(screen=self.screen, age=0, relationship="child")
@@ -971,7 +971,7 @@ class TestEarlyHeadStartDependency(TestCase):
         dep_2 = member.EarlyHeadStart(self.screen, child_2, {})
         self.assertEqual(dep_2.field, "early_head_start")
 
-    def test_early_head_start_works_with_relationship_map(self):
+    def test_early_head_start_works_with_relationship_map(self) -> None:
         """Test that EarlyHeadStart dependency works with relationship_map parameter."""
         relationship_map = {self.parent.id: self.child.id}
 
@@ -985,7 +985,7 @@ class TestEarlyHeadStartDependency(TestCase):
 class TestCareWorkerEligibleDependency(TestCase):
     """Tests for CareWorkerEligibleDependency class used by Colorado Care Worker Tax Credit calculator."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for care worker eligibility tests."""
         self.white_label = WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
 
@@ -1003,18 +1003,18 @@ class TestCareWorkerEligibleDependency(TestCase):
             screen=self.screen, relationship="spouse", age=33, is_care_worker=False
         )
 
-    def test_value_returns_true_when_is_care_worker(self):
+    def test_value_returns_true_when_is_care_worker(self) -> None:
         """Test CareWorkerEligibleDependency.value() returns True when member is a care worker."""
         dep = member.CareWorkerEligibleDependency(self.screen, self.head, {})
         self.assertTrue(dep.value())
         self.assertEqual(dep.field, "co_care_worker_credit_eligible_care_worker")
 
-    def test_value_returns_false_when_not_care_worker(self):
+    def test_value_returns_false_when_not_care_worker(self) -> None:
         """Test CareWorkerEligibleDependency.value() returns False when member is not a care worker."""
         dep = member.CareWorkerEligibleDependency(self.screen, self.spouse, {})
         self.assertFalse(dep.value())
 
-    def test_value_returns_false_when_is_care_worker_is_none(self):
+    def test_value_returns_false_when_is_care_worker_is_none(self) -> None:
         """Test CareWorkerEligibleDependency.value() returns False when is_care_worker field is None."""
         member_none = HouseholdMember.objects.create(
             screen=self.screen, relationship="child", age=10, is_care_worker=None
@@ -1023,7 +1023,7 @@ class TestCareWorkerEligibleDependency(TestCase):
         dep = member.CareWorkerEligibleDependency(self.screen, member_none, {})
         self.assertFalse(dep.value())
 
-    def test_dependencies_includes_is_care_worker(self):
+    def test_dependencies_includes_is_care_worker(self) -> None:
         """Test CareWorkerEligibleDependency.dependencies includes is_care_worker field."""
         dep = member.CareWorkerEligibleDependency(self.screen, self.head, {})
         self.assertIn("is_care_worker", dep.dependencies)
@@ -1032,7 +1032,7 @@ class TestCareWorkerEligibleDependency(TestCase):
 class TestChildcareAttendingDaysPerMonthDependency(TestCase):
     """Tests for ChildcareAttendingDaysPerMonthDependency class used by childcare subsidy calculators."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for childcare attending days tests."""
         self.white_label = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")
 
@@ -1047,23 +1047,23 @@ class TestChildcareAttendingDaysPerMonthDependency(TestCase):
         self.parent = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=30)
         self.child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=3)
 
-    def test_value_returns_10_days(self):
+    def test_value_returns_10_days(self) -> None:
         """Test ChildcareAttendingDaysPerMonthDependency.value() returns 10 days per month."""
         dep = member.ChildcareAttendingDaysPerMonthDependency(self.screen, self.child, {})
         self.assertEqual(dep.value(), 10)
 
-    def test_field_name_is_correct(self):
+    def test_field_name_is_correct(self) -> None:
         """Test that field name matches PolicyEngine's childcare_attending_days_per_month variable."""
         dep = member.ChildcareAttendingDaysPerMonthDependency(self.screen, self.child, {})
         self.assertEqual(dep.field, "childcare_attending_days_per_month")
 
-    def test_is_member_level_dependency(self):
+    def test_is_member_level_dependency(self) -> None:
         """Test that ChildcareAttendingDaysPerMonthDependency is a member-level (per-child) dependency."""
         from programs.programs.policyengine.calculators.dependencies.base import Member
 
         self.assertTrue(issubclass(member.ChildcareAttendingDaysPerMonthDependency, Member))
 
-    def test_value_same_for_all_children(self):
+    def test_value_same_for_all_children(self) -> None:
         """Test that all children get the same value of 10 days."""
         child2 = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=5)
 
@@ -1073,7 +1073,7 @@ class TestChildcareAttendingDaysPerMonthDependency(TestCase):
         self.assertEqual(dep1.value(), 10)
         self.assertEqual(dep2.value(), 10)
 
-    def test_works_with_relationship_map(self):
+    def test_works_with_relationship_map(self) -> None:
         """Test that dependency works correctly with relationship_map parameter."""
         relationship_map = {self.parent.id: self.child.id}
 
@@ -1082,7 +1082,7 @@ class TestChildcareAttendingDaysPerMonthDependency(TestCase):
         self.assertIsNotNone(dep)
         self.assertEqual(dep.value(), 10)
 
-    def test_has_correct_unit(self):
+    def test_has_correct_unit(self) -> None:
         """Test that dependency has correct unit (people) for PolicyEngine."""
         dep = member.ChildcareAttendingDaysPerMonthDependency(self.screen, self.child, {})
         self.assertEqual(dep.unit, "people")
@@ -1096,7 +1096,7 @@ class TestIsMedicareEligibleDependency(TestCase):
     pathway issue (Test 13 in IL MSP QA).
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for Medicare eligibility tests."""
         from screener.models import Insurance
 
@@ -1121,17 +1121,17 @@ class TestIsMedicareEligibleDependency(TestCase):
             screen=self.screen, relationship="spouse", age=68
         )
 
-    def test_value_returns_true_when_member_has_medicare(self):
+    def test_value_returns_true_when_member_has_medicare(self) -> None:
         """Test IsMedicareEligibleDependency.value() returns True when member has Medicare selected."""
         dep = member.IsMedicareEligibleDependency(self.screen, self.member_with_medicare, {})
         self.assertTrue(dep.value())
 
-    def test_value_returns_none_when_member_has_no_insurance_record(self):
+    def test_value_returns_none_when_member_has_no_insurance_record(self) -> None:
         """Test IsMedicareEligibleDependency.value() returns None when member has no insurance record."""
         dep = member.IsMedicareEligibleDependency(self.screen, self.member_without_insurance, {})
         self.assertIsNone(dep.value())
 
-    def test_value_returns_none_when_member_has_other_insurance_only(self):
+    def test_value_returns_none_when_member_has_other_insurance_only(self) -> None:
         """Test IsMedicareEligibleDependency.value() returns None when member has non-Medicare insurance."""
         from screener.models import Insurance
 
@@ -1141,18 +1141,18 @@ class TestIsMedicareEligibleDependency(TestCase):
         dep = member.IsMedicareEligibleDependency(self.screen, member_with_medicaid, {})
         self.assertIsNone(dep.value())
 
-    def test_field_name_is_correct(self):
+    def test_field_name_is_correct(self) -> None:
         """Test that field name matches PolicyEngine's is_medicare_eligible variable."""
         dep = member.IsMedicareEligibleDependency(self.screen, self.member_with_medicare, {})
         self.assertEqual(dep.field, "is_medicare_eligible")
 
-    def test_is_member_level_dependency(self):
+    def test_is_member_level_dependency(self) -> None:
         """Test that IsMedicareEligibleDependency is a member-level dependency."""
         from programs.programs.policyengine.calculators.dependencies.base import Member
 
         self.assertTrue(issubclass(member.IsMedicareEligibleDependency, Member))
 
-    def test_disabled_under_65_with_medicare_returns_true(self):
+    def test_disabled_under_65_with_medicare_returns_true(self) -> None:
         """Test that disabled individual under 65 with Medicare returns True.
 
         This is the key fix for Test 13: disabled 55yo with Medicare should
@@ -1175,7 +1175,7 @@ class TestIsMedicaidEligibleDependency(TestCase):
     QI is only available to Medicare beneficiaries who are NOT eligible for Medicaid.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for Medicaid eligibility tests."""
         from screener.models import Insurance
 
@@ -1200,17 +1200,17 @@ class TestIsMedicaidEligibleDependency(TestCase):
             screen=self.screen, relationship="spouse", age=70
         )
 
-    def test_value_returns_true_when_member_has_medicaid(self):
+    def test_value_returns_true_when_member_has_medicaid(self) -> None:
         """Test IsMedicaidEligibleDependency.value() returns True when member has Medicaid selected."""
         dep = member.IsMedicaidEligibleDependency(self.screen, self.member_with_medicaid, {})
         self.assertTrue(dep.value())
 
-    def test_value_returns_none_when_member_has_no_insurance_record(self):
+    def test_value_returns_none_when_member_has_no_insurance_record(self) -> None:
         """Test IsMedicaidEligibleDependency.value() returns None when member has no insurance record."""
         dep = member.IsMedicaidEligibleDependency(self.screen, self.member_without_insurance, {})
         self.assertIsNone(dep.value())
 
-    def test_value_returns_none_when_member_has_other_insurance_only(self):
+    def test_value_returns_none_when_member_has_other_insurance_only(self) -> None:
         """Test IsMedicaidEligibleDependency.value() returns None when member has Medicare but not Medicaid."""
         from screener.models import Insurance
 
@@ -1220,18 +1220,18 @@ class TestIsMedicaidEligibleDependency(TestCase):
         dep = member.IsMedicaidEligibleDependency(self.screen, member_with_medicare_only, {})
         self.assertIsNone(dep.value())
 
-    def test_field_name_is_correct(self):
+    def test_field_name_is_correct(self) -> None:
         """Test that field name matches PolicyEngine's is_medicaid_eligible variable."""
         dep = member.IsMedicaidEligibleDependency(self.screen, self.member_with_medicaid, {})
         self.assertEqual(dep.field, "is_medicaid_eligible")
 
-    def test_is_member_level_dependency(self):
+    def test_is_member_level_dependency(self) -> None:
         """Test that IsMedicaidEligibleDependency is a member-level dependency."""
         from programs.programs.policyengine.calculators.dependencies.base import Member
 
         self.assertTrue(issubclass(member.IsMedicaidEligibleDependency, Member))
 
-    def test_member_with_medicaid_is_excluded_from_qi(self):
+    def test_member_with_medicaid_is_excluded_from_qi(self) -> None:
         """Test that a member with Medicaid returns True, enforcing the QI exclusion.
 
         QI (Qualified Individual) is only available to Medicare beneficiaries who are
@@ -1247,7 +1247,7 @@ class TestIsMedicaidEligibleDependency(TestCase):
 class TestFosterCareDependency(TestCase):
     """Tests for FosterCareDependency which maps fosterChild relationship to was_in_foster_care."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
         self.screen = Screen.objects.create(
             white_label=self.white_label,
@@ -1260,22 +1260,22 @@ class TestFosterCareDependency(TestCase):
         self.foster_child = HouseholdMember.objects.create(screen=self.screen, relationship="fosterChild", age=4)
         self.biological_child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=4)
 
-    def test_field_name(self):
+    def test_field_name(self) -> None:
         """FosterCareDependency maps to the was_in_foster_care PE variable."""
         dep = member.FosterCareDependency(self.screen, self.foster_child, {})
         self.assertEqual(dep.field, "was_in_foster_care")
 
-    def test_value_returns_true_for_foster_child(self):
+    def test_value_returns_true_for_foster_child(self) -> None:
         """Returns True when the member's relationship is fosterChild."""
         dep = member.FosterCareDependency(self.screen, self.foster_child, {})
         self.assertTrue(dep.value())
 
-    def test_value_returns_none_for_biological_child(self):
+    def test_value_returns_none_for_biological_child(self) -> None:
         """Returns None for a child with a non-foster relationship (let PE calculate)."""
         dep = member.FosterCareDependency(self.screen, self.biological_child, {})
         self.assertIsNone(dep.value())
 
-    def test_value_returns_none_for_head_of_household(self):
+    def test_value_returns_none_for_head_of_household(self) -> None:
         """Returns None for the head of household (not a foster child)."""
         dep = member.FosterCareDependency(self.screen, self.head, {})
         self.assertIsNone(dep.value())
@@ -1284,7 +1284,7 @@ class TestFosterCareDependency(TestCase):
 class TestEmploymentIncomeBeforeLsrDependency(TestCase):
     """Tests for EmploymentIncomeBeforeLsrDependency used by WaTanf calculator."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
         self.screen = Screen.objects.create(
             white_label=self.white_label,
@@ -1295,22 +1295,22 @@ class TestEmploymentIncomeBeforeLsrDependency(TestCase):
         )
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
 
-    def test_field_name(self):
+    def test_field_name(self) -> None:
         dep = member.EmploymentIncomeBeforeLsrDependency(self.screen, self.head, {})
         self.assertEqual(dep.field, "employment_income_before_lsr")
 
-    def test_value_calculates_annual_wages(self):
+    def test_value_calculates_annual_wages(self) -> None:
         IncomeStream.objects.create(
             screen=self.screen, household_member=self.head, type="wages", amount=800, frequency="monthly"
         )
         dep = member.EmploymentIncomeBeforeLsrDependency(self.screen, self.head, {})
         self.assertEqual(dep.value(), 9600)  # $800/month * 12
 
-    def test_value_returns_zero_when_no_wages(self):
+    def test_value_returns_zero_when_no_wages(self) -> None:
         dep = member.EmploymentIncomeBeforeLsrDependency(self.screen, self.head, {})
         self.assertEqual(dep.value(), 0)
 
-    def test_value_excludes_self_employment(self):
+    def test_value_excludes_self_employment(self) -> None:
         IncomeStream.objects.create(
             screen=self.screen, household_member=self.head, type="selfEmployment", amount=500, frequency="monthly"
         )
@@ -1321,7 +1321,7 @@ class TestEmploymentIncomeBeforeLsrDependency(TestCase):
 class TestSelfEmploymentIncomeBeforeLsrDependency(TestCase):
     """Tests for SelfEmploymentIncomeBeforeLsrDependency used by WaTanf calculator."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
         self.screen = Screen.objects.create(
             white_label=self.white_label,
@@ -1332,22 +1332,22 @@ class TestSelfEmploymentIncomeBeforeLsrDependency(TestCase):
         )
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
 
-    def test_field_name(self):
+    def test_field_name(self) -> None:
         dep = member.SelfEmploymentIncomeBeforeLsrDependency(self.screen, self.head, {})
         self.assertEqual(dep.field, "self_employment_income_before_lsr")
 
-    def test_value_calculates_annual_self_employment(self):
+    def test_value_calculates_annual_self_employment(self) -> None:
         IncomeStream.objects.create(
             screen=self.screen, household_member=self.head, type="selfEmployment", amount=600, frequency="monthly"
         )
         dep = member.SelfEmploymentIncomeBeforeLsrDependency(self.screen, self.head, {})
         self.assertEqual(dep.value(), 7200)  # $600/month * 12
 
-    def test_value_returns_zero_when_no_self_employment(self):
+    def test_value_returns_zero_when_no_self_employment(self) -> None:
         dep = member.SelfEmploymentIncomeBeforeLsrDependency(self.screen, self.head, {})
         self.assertEqual(dep.value(), 0)
 
-    def test_value_excludes_wages(self):
+    def test_value_excludes_wages(self) -> None:
         IncomeStream.objects.create(
             screen=self.screen, household_member=self.head, type="wages", amount=1000, frequency="monthly"
         )

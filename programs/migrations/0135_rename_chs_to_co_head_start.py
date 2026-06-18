@@ -3,14 +3,14 @@
 from django.db import migrations
 
 
-def rename_chs_to_co_head_start(apps, schema_editor):
+def rename_chs_to_co_head_start(apps, schema_editor) -> None:
     Program = apps.get_model("programs", "Program")
     Program.objects.filter(name_abbreviated="chs").update(
         name_abbreviated="co_head_start", external_name="co_head_start"
     )
 
 
-def rename_co_head_start_to_chs(apps, schema_editor):
+def rename_co_head_start_to_chs(apps, schema_editor) -> None:
     Program = apps.get_model("programs", "Program")
     Program.objects.filter(name_abbreviated="co_head_start").update(name_abbreviated="chs", external_name="chs")
 

@@ -14,10 +14,10 @@ class WeatherizationAssistance(ProgramCalculator):
         "county",
     ]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         # Check presumptive eligibility first
         presumed_eligibility = any(
             self.screen.has_benefit(program) for program in WeatherizationAssistance.presumptive_eligibility
@@ -46,5 +46,5 @@ class WeatherizationAssistance(ProgramCalculator):
     def _has_expense(self):
         return self.screen.has_expense(["rent", "mortgage"])
 
-    def _has_utility_provider(self):
+    def _has_utility_provider(self) -> bool:
         return True

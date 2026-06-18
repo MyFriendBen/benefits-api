@@ -53,6 +53,8 @@ class MaMiddleIncomeRental(ProgramCalculator):
         all_senior = all(m.age is not None and m.age >= 62 for m in members)
         all_disabled = all(m.has_disability() for m in members)
         limit = self.senior_asset_limit if (all_senior or all_disabled) else self.asset_limit
+        if self.screen.household_assets is None:
+            return
         e.condition(self.screen.household_assets <= limit, messages.assets(limit))
 
         # Income eligibility - 80% to 120% AMI (Standard Section 8 IL)

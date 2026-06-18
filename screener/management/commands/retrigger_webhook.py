@@ -10,7 +10,7 @@ from screener.views import all_results
 class Command(BaseCommand):
     help = "Retrigger webhook for a list of screen uuids"
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser) -> None:
         parser.add_argument(
             "uuids",
             nargs="?",
@@ -18,7 +18,7 @@ class Command(BaseCommand):
             default=stdin,
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         uuids = []
         while line := options["uuids"].readline():
             line = line.strip()

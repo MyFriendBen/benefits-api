@@ -6,7 +6,7 @@ from screener.models import Screen, HouseholdMember, IncomeStream
 
 @skip("Calculator constructor signature changed - needs API update")
 class TestPropertyCreditRebatePension(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.screen1 = Screen.objects.create(
             agree_to_tos=True,
             zipcode="80205",
@@ -31,17 +31,17 @@ class TestPropertyCreditRebatePension(TestCase):
             has_expenses=False,
         )
 
-    def test_screen_exits(self):
+    def test_screen_exits(self) -> None:
         self.assertEqual(self.screen1.agree_to_tos, True)
         self.assertEqual(self.person1.screen, self.screen1)
 
-    def test_property_credit_rebate_visually_impaired_is_eligible(self):
+    def test_property_credit_rebate_visually_impaired_is_eligible(self) -> None:
         cpcr = PropertyCreditRebate(self.screen1)
         eligibility = cpcr.eligibility
 
         self.assertTrue(eligibility["eligible"])
 
-    def test_property_credit_rebate_failed_all_conditions(self):
+    def test_property_credit_rebate_failed_all_conditions(self) -> None:
         self.person1.age = 30
         self.person1.disabled = False
         self.person1.save()

@@ -152,7 +152,7 @@ class FederalPoveryLimit(models.Model):
             self.fpl_cache.invalid = True
             return self.fpl_cache.fetch()[self.period]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.year
 
 
@@ -167,7 +167,7 @@ class LegalStatus(models.Model):
     )
 
     @property
-    def is_user_selected(self):
+    def is_user_selected(self) -> bool:
         """
         Check if this is a basic user-selected status (not auto-calculated).
 
@@ -184,7 +184,7 @@ class LegalStatus(models.Model):
         ]
         return self.status in user_selected_statuses
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.is_user_selected:
             return f"{self.status}"
         return f"[auto-calculated] {self.status}"
@@ -193,7 +193,7 @@ class LegalStatus(models.Model):
 class CategoryIconName(models.Model):
     name = models.CharField(max_length=120, unique=True)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
@@ -252,7 +252,7 @@ class ProgramCategoryDataController(ModelDataController["ProgramCategory"]):
             "priority": program_category.priority,
         }
 
-    def from_model_data(self, data: DataType):
+    def from_model_data(self, data: DataType) -> None:
         program_category = self.instance
 
         program_category.calculator = data["calculator"]
@@ -328,7 +328,7 @@ class ProgramCategory(models.Model):
             return self.icon.name
         return "default"
 
-    def __str__(self):
+    def __str__(self) -> str:
         white_label_name = f"[{self.white_label.name}] " if self.white_label and self.white_label.name else ""
         return f"{white_label_name}{self.name.text}"
 
@@ -373,7 +373,7 @@ class DocumentDataController(ModelDataController["Document"]):
             "white_label": document.white_label.code,
         }
 
-    def from_model_data(self, data: DataType):
+    def from_model_data(self, data: DataType) -> None:
         document = self.instance
 
         try:
@@ -815,7 +815,7 @@ class Program(models.Model):
 
         return eligibility
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs) -> None:
         # Normalize name_abbreviated to lowercase. It's used as a case-sensitive
         # key in several places — the calculator registry lookup above (.lower()),
         # the CurrentBenefit join table, and the frontend's current_benefits
@@ -844,7 +844,7 @@ class Program(models.Model):
             ),
         ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         white_label_name = f"[{self.white_label.name}] " if self.white_label and self.white_label.name else ""
         return f"{white_label_name}{self.name.text}"
 
@@ -873,7 +873,7 @@ class Program(models.Model):
 class UrgentNeedFunction(models.Model):
     name = models.CharField(max_length=32)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
@@ -883,7 +883,7 @@ class UrgentNeedCategory(models.Model):
     class Meta:
         verbose_name_plural = "Urgent Need Categories"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.name}"
 
 
@@ -898,7 +898,7 @@ class ExpenseType(models.Model):
     class Meta:
         verbose_name_plural = "Expense Types"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.name}"
 
 
@@ -923,7 +923,7 @@ class UrgentNeedTypeDataController(ModelDataController["UrgentNeedType"]):
             "icon": self.instance.icon.name if self.instance.icon else None,
         }
 
-    def from_model_data(self, data: DataType):
+    def from_model_data(self, data: DataType) -> None:
         from screener.models import WhiteLabel
         from programs.models import CategoryIconName
 
@@ -1013,7 +1013,7 @@ class UrgentNeedType(models.Model):
             return self.icon.name
         return "default"
 
-    def __str__(self):
+    def __str__(self) -> str:
         white_label_name = f"[{self.white_label.name}] " if self.white_label and self.white_label.name else ""
         return f"{white_label_name}{self.name.text}"
 
@@ -1120,7 +1120,7 @@ class UrgentNeedDataController(ModelDataController["UrgentNeed"]):
             "required_expense_types": self._expense_types(),
         }
 
-    def from_model_data(self, data: DataType):
+    def from_model_data(self, data: DataType) -> None:
         need = self.instance
         need.phone_number = data["phone_number"]
         need.active = data["active"]
@@ -1324,7 +1324,7 @@ class UrgentNeed(models.Model):
         """List of required expense type names"""
         return [e.name for e in self.required_expense_types.all()]
 
-    def __str__(self):
+    def __str__(self) -> str:
         white_label_name = f"[{self.white_label.name}] " if self.white_label and self.white_label.name else ""
         return f"{white_label_name}{self.name.text}"
 
@@ -1561,7 +1561,7 @@ class Navigator(models.Model):
 
     TranslationExportBuilder = NavigatorDataController
 
-    def __str__(self):
+    def __str__(self) -> str:
         white_label_name = f"[{self.white_label.name}] " if self.white_label and self.white_label.name else ""
         return f"{white_label_name}{self.name.text}"
 
@@ -1595,7 +1595,7 @@ class ProgramNavigator(models.Model):
         verbose_name_plural = "Program Navigators"
         db_table = "programs_program_navigators_ordered"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.program.name_abbreviated} - {self.navigator.name.text} (order: {self.order})"
 
 
@@ -1666,7 +1666,7 @@ class WarningMessageDataController(ModelDataController["WarningMessage"]):
             "white_label": warning.white_label.code,
         }
 
-    def from_model_data(self, data: DataType):
+    def from_model_data(self, data: DataType) -> None:
         warning = self.instance
 
         warning.calculator = data["calculator"]
@@ -1757,7 +1757,7 @@ class WarningMessage(models.Model):
         """List of county names"""
         return [c.name for c in self.counties.all()]
 
-    def __str__(self):
+    def __str__(self) -> str:
         white_label_name = f"[{self.white_label.name}] " if self.white_label and self.white_label.name else ""
         name = self.external_name if self.external_name is not None else self.calculator
         return f"{white_label_name}{name}"
@@ -1766,7 +1766,7 @@ class WarningMessage(models.Model):
 class WebHookFunction(models.Model):
     name = models.CharField(max_length=64)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
@@ -1793,7 +1793,7 @@ class Referrer(models.Model):
             models.CheckConstraint(check=~models.Q(name=""), name="referrer_name_not_blank"),
         ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         white_label_name = f"[{self.white_label.name}] " if self.white_label and self.white_label.name else ""
         return f"{white_label_name}{self.name}"
 
@@ -1871,7 +1871,7 @@ class TranslationOverrideDataController(ModelDataController["TranslationOverride
             "white_label": translation_override.white_label.code,
         }
 
-    def from_model_data(self, data: DataType):
+    def from_model_data(self, data: DataType) -> None:
         translation_override = self.instance
 
         translation_override.calculator = data["calculator"]
@@ -1941,7 +1941,7 @@ class TranslationOverride(models.Model):
         """List of county names"""
         return [c.name for c in self.counties.all()]
 
-    def __str__(self):
+    def __str__(self) -> str:
         white_label_name = f"[{self.white_label.name}] " if self.white_label and self.white_label.name else ""
         name = self.external_name if self.external_name is not None else self.calculator
         return f"{white_label_name}{name}"
@@ -1979,5 +1979,5 @@ class ProgramConfigImport(models.Model):
         verbose_name = "Program Config Import"
         verbose_name_plural = "Program Config Imports"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.filename} ({self.program_name}) - {self.imported_at.strftime('%Y-%m-%d %H:%M')}"

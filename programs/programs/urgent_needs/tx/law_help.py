@@ -12,6 +12,8 @@ class LawHelp(UrgentNeedFunction):
     fpl_percent = 1.25
 
     def eligible(self) -> bool:
+        if self.urgent_need.year is None:
+            return False
 
         # All TX counties; 125% of the federal poverty line.
 

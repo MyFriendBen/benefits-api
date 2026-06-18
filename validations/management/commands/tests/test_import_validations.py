@@ -17,7 +17,7 @@ class ImportValidationsCommandTest(TestCase):
     """Tests for the import_validations management command"""
 
     @classmethod
-    def setUpTestData(cls):
+    def setUpTestData(cls) -> None:
         """Set up test data that doesn't change between tests"""
         # Create white labels
         cls.co_white_label = WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
@@ -28,7 +28,7 @@ class ImportValidationsCommandTest(TestCase):
         cls.lifeline_program = Program.objects.new_program(white_label="co", name_abbreviated="lifeline")
         cls.tx_aca_program = Program.objects.new_program(white_label="tx", name_abbreviated="tx_aca")
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up for each test"""
         self.out = StringIO()
         self.err = StringIO()
@@ -40,7 +40,7 @@ class ImportValidationsCommandTest(TestCase):
         temp_file.close()
         return temp_file.name
 
-    def test_import_single_test_case_success(self):
+    def test_import_single_test_case_success(self) -> None:
         """Test importing a single valid test case"""
         test_case = {
             "notes": "CO SNAP - Test household",
@@ -98,7 +98,7 @@ class ImportValidationsCommandTest(TestCase):
         finally:
             Path(file_path).unlink()
 
-    def test_import_multiple_test_cases(self):
+    def test_import_multiple_test_cases(self) -> None:
         """Test importing multiple test cases"""
         test_cases = [
             {
@@ -161,7 +161,7 @@ class ImportValidationsCommandTest(TestCase):
         finally:
             Path(file_path).unlink()
 
-    def test_import_multiple_validations_per_screen(self):
+    def test_import_multiple_validations_per_screen(self) -> None:
         """Test importing a test case with multiple expected results"""
         test_case = {
             "notes": "Multiple programs test",
@@ -206,7 +206,7 @@ class ImportValidationsCommandTest(TestCase):
         finally:
             Path(file_path).unlink()
 
-    def test_nonexistent_program_fails(self):
+    def test_nonexistent_program_fails(self) -> None:
         """Test that referencing a non-existent program fails validation"""
         test_case = {
             "notes": "Invalid program test",
@@ -247,7 +247,7 @@ class ImportValidationsCommandTest(TestCase):
         finally:
             Path(file_path).unlink()
 
-    def test_invalid_json_file(self):
+    def test_invalid_json_file(self) -> None:
         """Test that invalid JSON file raises error"""
         temp_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json")
         temp_file.write("{ invalid json }")
@@ -262,14 +262,14 @@ class ImportValidationsCommandTest(TestCase):
         finally:
             Path(temp_file.name).unlink()
 
-    def test_file_not_found(self):
+    def test_file_not_found(self) -> None:
         """Test that missing file raises error"""
         with self.assertRaises(CommandError) as cm:
             call_command("import_validations", "/nonexistent/file.json")
 
         self.assertIn("File not found", str(cm.exception))
 
-    def test_output_summary(self):
+    def test_output_summary(self) -> None:
         """Test that command outputs a comprehensive summary"""
         test_cases = [
             {
@@ -316,7 +316,7 @@ class ImportValidationsCommandTest(TestCase):
         finally:
             Path(file_path).unlink()
 
-    def test_is_test_data_set_without_is_test_in_input(self):
+    def test_is_test_data_set_without_is_test_in_input(self) -> None:
         """Test that is_test_data is set to True even when is_test is not in input JSON"""
         test_case = {
             "notes": "Test without is_test flag",

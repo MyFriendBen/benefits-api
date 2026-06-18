@@ -1,7 +1,7 @@
 from django.db import migrations
 
 
-def delete_cesn_insurance_programs(apps, schema_editor):
+def delete_cesn_insurance_programs(apps, schema_editor) -> None:
     Program = apps.get_model("programs", "Program")
     Program.objects.filter(
         white_label__code="cesn",
@@ -9,7 +9,7 @@ def delete_cesn_insurance_programs(apps, schema_editor):
     ).delete()
 
 
-def reverse(apps, schema_editor):
+def reverse(apps, schema_editor) -> None:
     pass
 
 

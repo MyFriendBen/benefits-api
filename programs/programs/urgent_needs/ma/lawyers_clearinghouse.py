@@ -6,6 +6,8 @@ class LawyersClearinghouse(UrgentNeedFunction):
     fpl_percent = 2
 
     def eligible(self):
+        if self.urgent_need.year is None:
+            return False
         # income
         income_limit = self.urgent_need.year.as_dict()[self.screen.household_size] * self.fpl_percent
         income = self.screen.calc_gross_income("yearly", ["all"])

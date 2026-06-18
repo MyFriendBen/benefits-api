@@ -4,7 +4,7 @@ from django.db import migrations
 from django.conf import settings
 
 
-def urgent_need_migrations(apps, _):
+def urgent_need_migrations(apps, _) -> None:
     UrgentNeed = apps.get_model("programs", "UrgentNeed")
     Translation = apps.get_model("translations", "Translation")
 
@@ -29,7 +29,7 @@ def urgent_need_migrations(apps, _):
         urgent_need.save()
 
 
-def navigator_migrations(apps, _):
+def navigator_migrations(apps, _) -> None:
     Navigator = apps.get_model("programs", "Navigator")
     Translation = apps.get_model("translations", "Translation")
 

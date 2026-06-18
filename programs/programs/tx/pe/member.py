@@ -77,7 +77,7 @@ class TxMedicaidForChildren(Medicaid):
         Returns the Medicaid benefit value for children under 19 without other insurance.
         """
         # Must be under 19
-        if member.age >= 19:
+        if member.age is None or member.age >= 19:
             return 0
 
         # Must not have other health insurance
@@ -166,7 +166,7 @@ class TxMedicaidForParentsAndCaretakers(Medicaid):
         Returns the Medicaid benefit value for adults who are caretakers of children with Medicaid.
         """
         # Must be 19 or older (adult caretaker)
-        if member.age < 19:
+        if member.age is None or member.age < 19:
             return 0
 
         # Must not have other health insurance
@@ -191,7 +191,7 @@ class TxMedicaidForParentsAndCaretakers(Medicaid):
         """
         for member in self.screen.household_members.all():
             # Child must be under 19
-            if member.age >= 19:
+            if member.age is None or member.age >= 19:
                 continue
 
             # Check if child has Medicaid already

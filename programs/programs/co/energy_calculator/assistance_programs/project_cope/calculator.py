@@ -6,7 +6,7 @@ class EnergyCalculatorProjectCOPE(ProgramCalculator):
     dependencies = ["energy_calculator"]
     utility_providers = ["co-colorado-springs-utilities", "co-colorado-springs-utilities-gas"]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
 
         # utility provider checks (electric or gas)
         e.condition(self.screen.energy_calculator.has_utility_provider(self.utility_providers))

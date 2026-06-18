@@ -8,7 +8,9 @@ class EnergyCalculatorEnergyOutreach(ProgramCalculator):
     amount = 1_000_000  # move to the top of the list
     dependencies = ["energy_calculator", "income_frequency", "income_amount", "household_size", "county"]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            return
         # income
         income = self.screen.calc_gross_income("yearly", ["all"])
         income_limit = ami.get_screen_ami(self.screen, self.ami_percent, self.program.year.period)

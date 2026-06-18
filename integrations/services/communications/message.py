@@ -33,7 +33,7 @@ class MessageUser:
 
         return True
 
-    def email(self, email: str, send_tests=False):
+    def email(self, email: str, send_tests: bool=False) -> None:
         if not self.should_send() and not send_tests:
             return
 
@@ -64,7 +64,7 @@ class MessageUser:
 
         return words + f' <a href="{url}">{url}</a>'
 
-    def text(self, cell: str, send_tests=False):
+    def text(self, cell: str, send_tests: bool=False) -> None:
         if not self.should_send() and not send_tests:
             return
 
@@ -76,7 +76,7 @@ class MessageUser:
 
         self.log("textScreen")
 
-    def _text_body(self):
+    def _text_body(self) -> str:
         words = self._get_text("body") or ""
         url = self._generate_link()
 
@@ -106,10 +106,10 @@ class MessageUser:
     def _cell_client(self):
         return Client(self.cell_account_sid, self.cell_auth_token)
 
-    def _generate_link(self):
+    def _generate_link(self) -> str:
         return f"{self.front_end_domain}/{self.screen.white_label.code}/{self.screen.uuid}/results/benefits"
 
-    def log(self, type: Literal["emailScreen", "textScreen"]):
+    def log(self, type: Literal["emailScreen", "textScreen"]) -> None:
         self.screen.last_email_request_date = timezone.now()
         self.screen.save()
 

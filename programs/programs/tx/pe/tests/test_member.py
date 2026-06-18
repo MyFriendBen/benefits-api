@@ -33,7 +33,7 @@ from programs.programs.tx.pe.member import (
 class TestTxWic(TestCase):
     """Tests for TxWic calculator class."""
 
-    def test_exists_and_is_subclass_of_wic(self):
+    def test_exists_and_is_subclass_of_wic(self) -> None:
         """
         Test that TxWic calculator class exists and is registered.
 
@@ -47,7 +47,7 @@ class TestTxWic(TestCase):
         self.assertIsNotNone(TxWic.pe_inputs)
         self.assertGreater(len(TxWic.pe_inputs), 0)
 
-    def test_is_registered_in_tx_pe_calculators(self):
+    def test_is_registered_in_tx_pe_calculators(self) -> None:
         """Test that TX WIC is registered in the calculators dictionary."""
         # Verify tx_wic is in the calculators dictionary
         self.assertIn("tx_wic", tx_pe_calculators)
@@ -55,7 +55,7 @@ class TestTxWic(TestCase):
         # Verify it points to the correct class
         self.assertEqual(tx_pe_calculators["tx_wic"], TxWic)
 
-    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self):
+    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self) -> None:
         """
         Test that TxWic has all expected pe_inputs from parent and TX-specific.
 
@@ -72,7 +72,7 @@ class TestTxWic(TestCase):
         for parent_input in Wic.pe_inputs:
             self.assertIn(parent_input, TxWic.pe_inputs)
 
-    def test_pe_inputs_includes_tx_state_code_dependency(self):
+    def test_pe_inputs_includes_tx_state_code_dependency(self) -> None:
         """
         Test that TxStateCodeDependency is properly added to TX WIC inputs.
 
@@ -86,14 +86,14 @@ class TestTxWic(TestCase):
         self.assertEqual(TxStateCodeDependency.state, "TX")
         self.assertEqual(TxStateCodeDependency.field, "state_code")
 
-    def test_pe_inputs_includes_pregnancy_dependency(self):
+    def test_pe_inputs_includes_pregnancy_dependency(self) -> None:
         """Test that TxWic inherits PregnancyDependency from parent Wic class."""
         from programs.programs.policyengine.calculators.dependencies.member import PregnancyDependency
 
         self.assertIn(PregnancyDependency, TxWic.pe_inputs)
         self.assertEqual(PregnancyDependency.field, "is_pregnant")
 
-    def test_pe_inputs_includes_expected_children_pregnancy_dependency(self):
+    def test_pe_inputs_includes_expected_children_pregnancy_dependency(self) -> None:
         """Test that TxWic inherits ExpectedChildrenPregnancyDependency from parent Wic class."""
         from programs.programs.policyengine.calculators.dependencies.member import (
             ExpectedChildrenPregnancyDependency,
@@ -102,21 +102,21 @@ class TestTxWic(TestCase):
         self.assertIn(ExpectedChildrenPregnancyDependency, TxWic.pe_inputs)
         self.assertEqual(ExpectedChildrenPregnancyDependency.field, "current_pregnancies")
 
-    def test_pe_inputs_includes_age_dependency(self):
+    def test_pe_inputs_includes_age_dependency(self) -> None:
         """Test that TxWic inherits AgeDependency from parent Wic class."""
         from programs.programs.policyengine.calculators.dependencies.member import AgeDependency
 
         self.assertIn(AgeDependency, TxWic.pe_inputs)
         self.assertEqual(AgeDependency.field, "age")
 
-    def test_pe_inputs_includes_school_meal_countable_income_dependency(self):
+    def test_pe_inputs_includes_school_meal_countable_income_dependency(self) -> None:
         """Test that TxWic inherits SchoolMealCountableIncomeDependency from parent Wic class."""
         from programs.programs.policyengine.calculators.dependencies.spm import SchoolMealCountableIncomeDependency
 
         self.assertIn(SchoolMealCountableIncomeDependency, TxWic.pe_inputs)
         self.assertEqual(SchoolMealCountableIncomeDependency.field, "school_meal_countable_income")
 
-    def test_has_same_pe_outputs_as_parent(self):
+    def test_has_same_pe_outputs_as_parent(self) -> None:
         """Test that TxWic has the same pe_outputs as parent Wic class."""
         # TxWic should use the same outputs as parent
         self.assertEqual(TxWic.pe_outputs, Wic.pe_outputs)
@@ -125,7 +125,7 @@ class TestTxWic(TestCase):
 class TestTxSsi(TestCase):
     """Tests for TxSsi calculator class."""
 
-    def test_exists_and_is_subclass_of_ssi(self):
+    def test_exists_and_is_subclass_of_ssi(self) -> None:
         """
         Test that TxSsi calculator class exists and is registered.
 
@@ -139,7 +139,7 @@ class TestTxSsi(TestCase):
         self.assertIsNotNone(TxSsi.pe_inputs)
         self.assertGreater(len(TxSsi.pe_inputs), 0)
 
-    def test_is_registered_in_tx_pe_calculators(self):
+    def test_is_registered_in_tx_pe_calculators(self) -> None:
         """Test that TX SSI is registered in the calculators dictionary."""
         # Verify tx_ssi is in the calculators dictionary
         self.assertIn("tx_ssi", tx_pe_calculators)
@@ -147,7 +147,7 @@ class TestTxSsi(TestCase):
         # Verify it points to the correct class
         self.assertEqual(tx_pe_calculators["tx_ssi"], TxSsi)
 
-    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self):
+    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self) -> None:
         """
         Test that TxSsi has all expected pe_inputs from parent and TX-specific.
 
@@ -164,7 +164,7 @@ class TestTxSsi(TestCase):
         for parent_input in Ssi.pe_inputs:
             self.assertIn(parent_input, TxSsi.pe_inputs)
 
-    def test_pe_inputs_includes_tx_state_code_dependency(self):
+    def test_pe_inputs_includes_tx_state_code_dependency(self) -> None:
         """
         Test that TxStateCodeDependency is properly added to TX SSI inputs.
 
@@ -178,7 +178,7 @@ class TestTxSsi(TestCase):
         self.assertEqual(TxStateCodeDependency.state, "TX")
         self.assertEqual(TxStateCodeDependency.field, "state_code")
 
-    def test_pe_inputs_includes_ssi_countable_resources_dependency(self):
+    def test_pe_inputs_includes_ssi_countable_resources_dependency(self) -> None:
         """Test that TxSsi inherits SsiCountableResourcesDependency from parent Ssi class."""
         from programs.programs.policyengine.calculators.dependencies.member import (
             SsiCountableResourcesDependency,
@@ -186,44 +186,44 @@ class TestTxSsi(TestCase):
 
         self.assertIn(SsiCountableResourcesDependency, TxSsi.pe_inputs)
 
-    def test_pe_inputs_includes_ssi_reported_dependency(self):
+    def test_pe_inputs_includes_ssi_reported_dependency(self) -> None:
         """Test that TxSsi inherits SsiReportedDependency from parent Ssi class."""
         from programs.programs.policyengine.calculators.dependencies.member import SsiReportedDependency
 
         self.assertIn(SsiReportedDependency, TxSsi.pe_inputs)
 
-    def test_pe_inputs_includes_is_blind_dependency(self):
+    def test_pe_inputs_includes_is_blind_dependency(self) -> None:
         """Test that TxSsi inherits IsBlindDependency from parent Ssi class."""
         from programs.programs.policyengine.calculators.dependencies.member import IsBlindDependency
 
         self.assertIn(IsBlindDependency, TxSsi.pe_inputs)
 
-    def test_pe_inputs_includes_is_disabled_dependency(self):
+    def test_pe_inputs_includes_is_disabled_dependency(self) -> None:
         """Test that TxSsi inherits IsDisabledDependency from parent Ssi class."""
         from programs.programs.policyengine.calculators.dependencies.member import IsDisabledDependency
 
         self.assertIn(IsDisabledDependency, TxSsi.pe_inputs)
 
-    def test_pe_inputs_includes_ssi_earned_income_dependency(self):
+    def test_pe_inputs_includes_ssi_earned_income_dependency(self) -> None:
         """Test that TxSsi inherits SsiEarnedIncomeDependency from parent Ssi class."""
         from programs.programs.policyengine.calculators.dependencies.member import SsiEarnedIncomeDependency
 
         self.assertIn(SsiEarnedIncomeDependency, TxSsi.pe_inputs)
 
-    def test_pe_inputs_includes_ssi_unearned_income_dependency(self):
+    def test_pe_inputs_includes_ssi_unearned_income_dependency(self) -> None:
         """Test that TxSsi inherits SsiUnearnedIncomeDependency from parent Ssi class."""
         from programs.programs.policyengine.calculators.dependencies.member import SsiUnearnedIncomeDependency
 
         self.assertIn(SsiUnearnedIncomeDependency, TxSsi.pe_inputs)
 
-    def test_pe_inputs_includes_age_dependency(self):
+    def test_pe_inputs_includes_age_dependency(self) -> None:
         """Test that TxSsi inherits AgeDependency from parent Ssi class."""
         from programs.programs.policyengine.calculators.dependencies.member import AgeDependency
 
         self.assertIn(AgeDependency, TxSsi.pe_inputs)
         self.assertEqual(AgeDependency.field, "age")
 
-    def test_has_same_pe_outputs_as_parent(self):
+    def test_has_same_pe_outputs_as_parent(self) -> None:
         """Test that TxSsi has the same pe_outputs as parent Ssi class."""
         # TxSsi should use the same outputs as parent
         self.assertEqual(TxSsi.pe_outputs, Ssi.pe_outputs)
@@ -232,7 +232,7 @@ class TestTxSsi(TestCase):
 class TestTxCsfp(TestCase):
     """Tests for TxCsfp calculator class."""
 
-    def test_exists_and_is_subclass_of_csfp(self):
+    def test_exists_and_is_subclass_of_csfp(self) -> None:
         """
         Test that TxCsfp calculator class exists and is registered.
 
@@ -246,7 +246,7 @@ class TestTxCsfp(TestCase):
         self.assertIsNotNone(TxCsfp.pe_inputs)
         self.assertGreater(len(TxCsfp.pe_inputs), 0)
 
-    def test_is_registered_in_tx_pe_calculators(self):
+    def test_is_registered_in_tx_pe_calculators(self) -> None:
         """Test that TX CSFP is registered in the calculators dictionary."""
         # Verify tx_csfp is in the calculators dictionary
         self.assertIn("tx_csfp", tx_pe_calculators)
@@ -254,7 +254,7 @@ class TestTxCsfp(TestCase):
         # Verify it points to the correct class
         self.assertEqual(tx_pe_calculators["tx_csfp"], TxCsfp)
 
-    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self):
+    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self) -> None:
         """
         Test that TxCsfp has all expected pe_inputs from parent and TX-specific.
 
@@ -271,7 +271,7 @@ class TestTxCsfp(TestCase):
         for parent_input in CommoditySupplementalFoodProgram.pe_inputs:
             self.assertIn(parent_input, TxCsfp.pe_inputs)
 
-    def test_pe_inputs_includes_tx_state_code_dependency(self):
+    def test_pe_inputs_includes_tx_state_code_dependency(self) -> None:
         """
         Test that TxStateCodeDependency is properly added to TX CSFP inputs.
 
@@ -285,21 +285,21 @@ class TestTxCsfp(TestCase):
         self.assertEqual(TxStateCodeDependency.state, "TX")
         self.assertEqual(TxStateCodeDependency.field, "state_code")
 
-    def test_pe_inputs_includes_age_dependency(self):
+    def test_pe_inputs_includes_age_dependency(self) -> None:
         """Test that TxCsfp inherits AgeDependency from parent CommoditySupplementalFoodProgram class."""
         from programs.programs.policyengine.calculators.dependencies.member import AgeDependency
 
         self.assertIn(AgeDependency, TxCsfp.pe_inputs)
         self.assertEqual(AgeDependency.field, "age")
 
-    def test_pe_inputs_includes_school_meal_countable_income_dependency(self):
+    def test_pe_inputs_includes_school_meal_countable_income_dependency(self) -> None:
         """Test that TxCsfp inherits SchoolMealCountableIncomeDependency from parent CommoditySupplementalFoodProgram class."""
         from programs.programs.policyengine.calculators.dependencies.spm import SchoolMealCountableIncomeDependency
 
         self.assertIn(SchoolMealCountableIncomeDependency, TxCsfp.pe_inputs)
         self.assertEqual(SchoolMealCountableIncomeDependency.field, "school_meal_countable_income")
 
-    def test_has_same_pe_outputs_as_parent(self):
+    def test_has_same_pe_outputs_as_parent(self) -> None:
         """Test that TxCsfp has the same pe_outputs as parent CommoditySupplementalFoodProgram class."""
         # TxCsfp should use the same outputs as parent
         self.assertEqual(TxCsfp.pe_outputs, CommoditySupplementalFoodProgram.pe_outputs)
@@ -308,7 +308,7 @@ class TestTxCsfp(TestCase):
 class TestTxChip(TestCase):
     """Tests for TxChip calculator class."""
 
-    def test_exists_and_is_subclass_of_policy_engine_members_calculator(self):
+    def test_exists_and_is_subclass_of_policy_engine_members_calculator(self) -> None:
         """
         Test that TxChip calculator class exists and inherits from PolicyEngineMembersCalculator.
 
@@ -323,7 +323,7 @@ class TestTxChip(TestCase):
         self.assertIsNotNone(TxChip.pe_inputs)
         self.assertGreater(len(TxChip.pe_inputs), 0)
 
-    def test_is_registered_in_tx_pe_calculators(self):
+    def test_is_registered_in_tx_pe_calculators(self) -> None:
         """Test that TX CHIP is registered in the calculators dictionary."""
         # Verify tx_chip is in the calculators dictionary
         self.assertIn("tx_chip", tx_pe_calculators)
@@ -331,25 +331,25 @@ class TestTxChip(TestCase):
         # Verify it points to the correct class
         self.assertEqual(tx_pe_calculators["tx_chip"], TxChip)
 
-    def test_pe_name_is_chip(self):
+    def test_pe_name_is_chip(self) -> None:
         """Test that TxChip has the correct pe_name for PolicyEngine API calls."""
         self.assertEqual(TxChip.pe_name, "chip")
 
-    def test_pe_inputs_includes_age_dependency(self):
+    def test_pe_inputs_includes_age_dependency(self) -> None:
         """Test that TxChip includes AgeDependency in pe_inputs."""
         from programs.programs.policyengine.calculators.dependencies.member import AgeDependency
 
         self.assertIn(AgeDependency, TxChip.pe_inputs)
         self.assertEqual(AgeDependency.field, "age")
 
-    def test_pe_inputs_includes_pregnancy_dependency(self):
+    def test_pe_inputs_includes_pregnancy_dependency(self) -> None:
         """Test that TxChip includes PregnancyDependency in pe_inputs."""
         from programs.programs.policyengine.calculators.dependencies.member import PregnancyDependency
 
         self.assertIn(PregnancyDependency, TxChip.pe_inputs)
         self.assertEqual(PregnancyDependency.field, "is_pregnant")
 
-    def test_pe_inputs_includes_medicaid_inputs(self):
+    def test_pe_inputs_includes_medicaid_inputs(self) -> None:
         """
         Test that TxChip includes all Medicaid pe_inputs.
 
@@ -360,7 +360,7 @@ class TestTxChip(TestCase):
         for medicaid_input in Medicaid.pe_inputs:
             self.assertIn(medicaid_input, TxChip.pe_inputs)
 
-    def test_pe_inputs_includes_tx_state_code_dependency(self):
+    def test_pe_inputs_includes_tx_state_code_dependency(self) -> None:
         """
         Test that TxStateCodeDependency is properly added to TX CHIP inputs.
 
@@ -374,13 +374,13 @@ class TestTxChip(TestCase):
         self.assertEqual(TxStateCodeDependency.state, "TX")
         self.assertEqual(TxStateCodeDependency.field, "state_code")
 
-    def test_pe_outputs_includes_chip_dependency(self):
+    def test_pe_outputs_includes_chip_dependency(self) -> None:
         """Test that TxChip has Chip dependency in pe_outputs."""
         from programs.programs.policyengine.calculators.dependencies.member import Chip
 
         self.assertIn(Chip, TxChip.pe_outputs)
 
-    def test_member_value_returns_pe_value_when_member_has_no_insurance(self):
+    def test_member_value_returns_pe_value_when_member_has_no_insurance(self) -> None:
         """
         Test that member_value returns PolicyEngine value when member has no insurance.
 
@@ -407,7 +407,7 @@ class TestTxChip(TestCase):
         self.assertEqual(result, pe_value)
         member.has_insurance_types.assert_called_once_with(("none",))
 
-    def test_member_value_returns_zero_when_member_has_insurance(self):
+    def test_member_value_returns_zero_when_member_has_insurance(self) -> None:
         """
         Test that member_value returns 0 when member has insurance.
 
@@ -434,7 +434,7 @@ class TestTxChip(TestCase):
         self.assertEqual(result, 0)
         member.has_insurance_types.assert_called_once_with(("none",))
 
-    def test_member_value_calls_get_member_variable_with_member_id(self):
+    def test_member_value_calls_get_member_variable_with_member_id(self) -> None:
         """
         Test that member_value calls get_member_variable with the correct member ID.
 
@@ -458,7 +458,7 @@ class TestTxChip(TestCase):
         # Verify get_member_variable was called with the correct member ID
         calculator.get_member_variable.assert_called_once_with(42)
 
-    def test_member_value_insurance_check_happens_before_return(self):
+    def test_member_value_insurance_check_happens_before_return(self) -> None:
         """
         Test that insurance eligibility check occurs regardless of PolicyEngine value.
 
@@ -486,7 +486,7 @@ class TestTxChip(TestCase):
         # Verify insurance check was performed
         member.has_insurance_types.assert_called_once_with(("none",))
 
-    def test_member_value_with_zero_pe_value_and_no_insurance(self):
+    def test_member_value_with_zero_pe_value_and_no_insurance(self) -> None:
         """
         Test that member_value returns 0 when PolicyEngine returns 0, even without insurance.
 
@@ -515,7 +515,7 @@ class TestTxChip(TestCase):
 class TestTxMedicaidForChildren(TestCase):
     """Tests for TxMedicaidForChildren calculator class."""
 
-    def test_exists_and_is_subclass_of_medicaid(self):
+    def test_exists_and_is_subclass_of_medicaid(self) -> None:
         """
         Test that TxMedicaidForChildren calculator class exists and is a subclass of Medicaid.
 
@@ -529,7 +529,7 @@ class TestTxMedicaidForChildren(TestCase):
         self.assertIsNotNone(TxMedicaidForChildren.pe_inputs)
         self.assertGreater(len(TxMedicaidForChildren.pe_inputs), 0)
 
-    def test_is_registered_in_tx_pe_calculators(self):
+    def test_is_registered_in_tx_pe_calculators(self) -> None:
         """Test that TX Medicaid for Children is registered in the calculators dictionary."""
         # Verify tx_medicaid_for_children is in the calculators dictionary
         self.assertIn("tx_medicaid_for_children", tx_pe_calculators)
@@ -537,7 +537,7 @@ class TestTxMedicaidForChildren(TestCase):
         # Verify it points to the correct class
         self.assertEqual(tx_pe_calculators["tx_medicaid_for_children"], TxMedicaidForChildren)
 
-    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self):
+    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self) -> None:
         """
         Test that TxMedicaidForChildren has all expected pe_inputs from parent and TX-specific.
 
@@ -554,7 +554,7 @@ class TestTxMedicaidForChildren(TestCase):
         for parent_input in Medicaid.pe_inputs:
             self.assertIn(parent_input, TxMedicaidForChildren.pe_inputs)
 
-    def test_pe_inputs_includes_tx_state_code_dependency(self):
+    def test_pe_inputs_includes_tx_state_code_dependency(self) -> None:
         """
         Test that TxStateCodeDependency is properly added to TX Medicaid inputs.
 
@@ -568,12 +568,12 @@ class TestTxMedicaidForChildren(TestCase):
         self.assertEqual(TxStateCodeDependency.state, "TX")
         self.assertEqual(TxStateCodeDependency.field, "state_code")
 
-    def test_has_same_pe_outputs_as_parent(self):
+    def test_has_same_pe_outputs_as_parent(self) -> None:
         """Test that TxMedicaidForChildren has the same pe_outputs as parent Medicaid class."""
         # TxMedicaidForChildren should use the same outputs as parent
         self.assertEqual(TxMedicaidForChildren.pe_outputs, Medicaid.pe_outputs)
 
-    def test_member_value_returns_zero_for_adults_age_19_or_older(self):
+    def test_member_value_returns_zero_for_adults_age_19_or_older(self) -> None:
         """
         Test that member_value returns 0 for members aged 19 or older.
 
@@ -600,7 +600,7 @@ class TestTxMedicaidForChildren(TestCase):
         # Should return 0 (too old)
         self.assertEqual(result, 0)
 
-    def test_member_value_returns_zero_for_children_with_insurance(self):
+    def test_member_value_returns_zero_for_children_with_insurance(self) -> None:
         """
         Test that member_value returns 0 for children who have other insurance.
 
@@ -628,7 +628,7 @@ class TestTxMedicaidForChildren(TestCase):
         self.assertEqual(result, 0)
         member.has_insurance_types.assert_called_once_with(("none",))
 
-    def test_member_value_returns_pe_value_for_eligible_children(self):
+    def test_member_value_returns_pe_value_for_eligible_children(self) -> None:
         """
         Test that member_value returns PolicyEngine value for eligible children.
 
@@ -656,7 +656,7 @@ class TestTxMedicaidForChildren(TestCase):
         self.assertEqual(result, pe_value)
         calculator.get_member_variable.assert_called_once_with(1)
 
-    def test_member_value_age_boundary_18_is_eligible(self):
+    def test_member_value_age_boundary_18_is_eligible(self) -> None:
         """
         Test that 18-year-olds are eligible for TX Medicaid for Children.
 
@@ -682,7 +682,7 @@ class TestTxMedicaidForChildren(TestCase):
         # Should return the PolicyEngine value (18 is eligible)
         self.assertEqual(result, pe_value)
 
-    def test_member_value_checks_age_before_insurance(self):
+    def test_member_value_checks_age_before_insurance(self) -> None:
         """
         Test that age check happens before insurance check for efficiency.
 
@@ -707,7 +707,7 @@ class TestTxMedicaidForChildren(TestCase):
         # Insurance check should not be called since age check fails first
         member.has_insurance_types.assert_not_called()
 
-    def test_member_value_with_infant(self):
+    def test_member_value_with_infant(self) -> None:
         """
         Test that member_value works correctly for infants (age 0).
 
@@ -737,7 +737,7 @@ class TestTxMedicaidForChildren(TestCase):
 class TestTxMedicaidForPregnantWomen(TestCase):
     """Tests for TxMedicaidForPregnantWomen calculator class."""
 
-    def test_exists_and_is_subclass_of_medicaid(self):
+    def test_exists_and_is_subclass_of_medicaid(self) -> None:
         """
         Test that TxMedicaidForPregnantWomen calculator class exists and is a subclass of Medicaid.
 
@@ -751,7 +751,7 @@ class TestTxMedicaidForPregnantWomen(TestCase):
         self.assertIsNotNone(TxMedicaidForPregnantWomen.pe_inputs)
         self.assertGreater(len(TxMedicaidForPregnantWomen.pe_inputs), 0)
 
-    def test_is_registered_in_tx_pe_calculators(self):
+    def test_is_registered_in_tx_pe_calculators(self) -> None:
         """Test that TX Medicaid for Pregnant Women is registered in the calculators dictionary."""
         # Verify tx_medicaid_for_pregnant_women is in the calculators dictionary
         self.assertIn("tx_medicaid_for_pregnant_women", tx_pe_calculators)
@@ -759,7 +759,7 @@ class TestTxMedicaidForPregnantWomen(TestCase):
         # Verify it points to the correct class
         self.assertEqual(tx_pe_calculators["tx_medicaid_for_pregnant_women"], TxMedicaidForPregnantWomen)
 
-    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self):
+    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self) -> None:
         """
         Test that TxMedicaidForPregnantWomen has all expected pe_inputs from parent and TX-specific.
 
@@ -776,7 +776,7 @@ class TestTxMedicaidForPregnantWomen(TestCase):
         for parent_input in Medicaid.pe_inputs:
             self.assertIn(parent_input, TxMedicaidForPregnantWomen.pe_inputs)
 
-    def test_pe_inputs_includes_tx_state_code_dependency(self):
+    def test_pe_inputs_includes_tx_state_code_dependency(self) -> None:
         """
         Test that TxStateCodeDependency is properly added to TX Medicaid inputs.
 
@@ -790,12 +790,12 @@ class TestTxMedicaidForPregnantWomen(TestCase):
         self.assertEqual(TxStateCodeDependency.state, "TX")
         self.assertEqual(TxStateCodeDependency.field, "state_code")
 
-    def test_has_same_pe_outputs_as_parent(self):
+    def test_has_same_pe_outputs_as_parent(self) -> None:
         """Test that TxMedicaidForPregnantWomen has the same pe_outputs as parent Medicaid class."""
         # TxMedicaidForPregnantWomen should use the same outputs as parent
         self.assertEqual(TxMedicaidForPregnantWomen.pe_outputs, Medicaid.pe_outputs)
 
-    def test_member_value_returns_zero_for_non_pregnant_members(self):
+    def test_member_value_returns_zero_for_non_pregnant_members(self) -> None:
         """
         Test that member_value returns 0 for members who are not pregnant.
 
@@ -821,7 +821,7 @@ class TestTxMedicaidForPregnantWomen(TestCase):
         # Should return 0 (not pregnant)
         self.assertEqual(result, 0)
 
-    def test_member_value_returns_zero_for_pregnant_members_with_insurance(self):
+    def test_member_value_returns_zero_for_pregnant_members_with_insurance(self) -> None:
         """
         Test that member_value returns 0 for pregnant members who have other insurance.
 
@@ -848,7 +848,7 @@ class TestTxMedicaidForPregnantWomen(TestCase):
         self.assertEqual(result, 0)
         member.has_insurance_types.assert_called_once_with(("none",))
 
-    def test_member_value_returns_pe_value_for_eligible_pregnant_women(self):
+    def test_member_value_returns_pe_value_for_eligible_pregnant_women(self) -> None:
         """
         Test that member_value returns PolicyEngine value for eligible pregnant women.
 
@@ -876,7 +876,7 @@ class TestTxMedicaidForPregnantWomen(TestCase):
         self.assertEqual(result, pe_value)
         calculator.get_member_variable.assert_called_once_with(1)
 
-    def test_member_value_checks_pregnancy_before_insurance(self):
+    def test_member_value_checks_pregnancy_before_insurance(self) -> None:
         """
         Test that pregnancy check happens before insurance check for efficiency.
 
@@ -901,7 +901,7 @@ class TestTxMedicaidForPregnantWomen(TestCase):
         # Insurance check should not be called since pregnancy check fails first
         member.has_insurance_types.assert_not_called()
 
-    def test_member_value_with_zero_pe_value_and_eligible_pregnant_woman(self):
+    def test_member_value_with_zero_pe_value_and_eligible_pregnant_woman(self) -> None:
         """
         Test that member_value returns 0 when PolicyEngine returns 0, even for eligible pregnant women.
 
@@ -927,7 +927,7 @@ class TestTxMedicaidForPregnantWomen(TestCase):
         # Should return 0 (PE says not eligible based on income)
         self.assertEqual(result, 0)
 
-    def test_member_value_with_high_pe_value_but_has_insurance(self):
+    def test_member_value_with_high_pe_value_but_has_insurance(self) -> None:
         """
         Test that insurance eligibility check occurs regardless of PolicyEngine value.
 
@@ -956,7 +956,7 @@ class TestTxMedicaidForPregnantWomen(TestCase):
         # Verify insurance check was performed
         member.has_insurance_types.assert_called_once_with(("none",))
 
-    def test_member_value_calls_get_member_variable_with_member_id(self):
+    def test_member_value_calls_get_member_variable_with_member_id(self) -> None:
         """
         Test that member_value calls get_member_variable with the correct member ID.
 
@@ -985,7 +985,7 @@ class TestTxMedicaidForPregnantWomen(TestCase):
 class TestTxMedicaidForParentsAndCaretakers(TestCase):
     """Tests for TxMedicaidForParentsAndCaretakers calculator class."""
 
-    def test_exists_and_is_subclass_of_medicaid(self):
+    def test_exists_and_is_subclass_of_medicaid(self) -> None:
         """
         Test that TxMedicaidForParentsAndCaretakers calculator class exists and is a subclass of Medicaid.
 
@@ -999,7 +999,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         self.assertIsNotNone(TxMedicaidForParentsAndCaretakers.pe_inputs)
         self.assertGreater(len(TxMedicaidForParentsAndCaretakers.pe_inputs), 0)
 
-    def test_is_registered_in_tx_pe_calculators(self):
+    def test_is_registered_in_tx_pe_calculators(self) -> None:
         """Test that TX Medicaid for Parents and Caretakers is registered in the calculators dictionary."""
         # Verify tx_medicaid_for_parents_and_caretakers is in the calculators dictionary
         self.assertIn("tx_medicaid_for_parents_and_caretakers", tx_pe_calculators)
@@ -1007,7 +1007,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Verify it points to the correct class
         self.assertEqual(tx_pe_calculators["tx_medicaid_for_parents_and_caretakers"], TxMedicaidForParentsAndCaretakers)
 
-    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self):
+    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self) -> None:
         """
         Test that TxMedicaidForParentsAndCaretakers has all expected pe_inputs from parent and TX-specific.
 
@@ -1024,7 +1024,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         for parent_input in Medicaid.pe_inputs:
             self.assertIn(parent_input, TxMedicaidForParentsAndCaretakers.pe_inputs)
 
-    def test_pe_inputs_includes_tx_state_code_dependency(self):
+    def test_pe_inputs_includes_tx_state_code_dependency(self) -> None:
         """
         Test that TxStateCodeDependency is properly added to TX Medicaid for Parents inputs.
 
@@ -1038,12 +1038,12 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         self.assertEqual(TxStateCodeDependency.state, "TX")
         self.assertEqual(TxStateCodeDependency.field, "state_code")
 
-    def test_has_same_pe_outputs_as_parent(self):
+    def test_has_same_pe_outputs_as_parent(self) -> None:
         """Test that TxMedicaidForParentsAndCaretakers has the same pe_outputs as parent Medicaid class."""
         # TxMedicaidForParentsAndCaretakers should use the same outputs as parent
         self.assertEqual(TxMedicaidForParentsAndCaretakers.pe_outputs, Medicaid.pe_outputs)
 
-    def test_caretaker_relationships_defined(self):
+    def test_caretaker_relationships_defined(self) -> None:
         """Test that caretaker relationships are properly defined."""
         expected_relationships = [
             "headOfHousehold",
@@ -1059,7 +1059,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
 
         self.assertEqual(TxMedicaidForParentsAndCaretakers.caretaker_relationships, expected_relationships)
 
-    def test_member_value_returns_zero_for_children_under_19(self):
+    def test_member_value_returns_zero_for_children_under_19(self) -> None:
         """
         Test that member_value returns 0 for members under 19.
 
@@ -1085,7 +1085,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Should return 0 (too young)
         self.assertEqual(result, 0)
 
-    def test_member_value_returns_zero_for_adults_with_insurance(self):
+    def test_member_value_returns_zero_for_adults_with_insurance(self) -> None:
         """
         Test that member_value returns 0 for adults who have other health insurance.
 
@@ -1112,7 +1112,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         self.assertEqual(result, 0)
         member_obj.has_insurance_types.assert_called_once_with(("none",))
 
-    def test_member_value_returns_zero_for_non_caretaker_relationship(self):
+    def test_member_value_returns_zero_for_non_caretaker_relationship(self) -> None:
         """
         Test that member_value returns 0 for adults with non-caretaker relationships.
 
@@ -1141,7 +1141,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Should return 0 (not a qualifying caretaker relationship)
         self.assertEqual(result, 0)
 
-    def test_member_value_returns_zero_when_no_child_with_medicaid(self):
+    def test_member_value_returns_zero_when_no_child_with_medicaid(self) -> None:
         """
         Test that member_value returns 0 when household has no child under 19 with Medicaid.
 
@@ -1173,7 +1173,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Should return 0 (no child with Medicaid in household)
         self.assertEqual(result, 0)
 
-    def test_member_value_returns_pe_value_for_eligible_caretaker(self):
+    def test_member_value_returns_pe_value_for_eligible_caretaker(self) -> None:
         """
         Test that member_value returns PolicyEngine value for eligible caretakers.
 
@@ -1214,7 +1214,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         self.assertEqual(result, pe_value)
         calculator.get_member_variable.assert_called_with(1)
 
-    def test_member_value_eligible_with_child_qualifying_for_medicaid(self):
+    def test_member_value_eligible_with_child_qualifying_for_medicaid(self) -> None:
         """
         Test that caretaker is eligible when child qualifies for Medicaid (PE value > 0).
 
@@ -1254,7 +1254,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Should return the adult's PolicyEngine value
         self.assertEqual(result, 300)
 
-    def test_member_value_age_boundary_19_is_eligible(self):
+    def test_member_value_age_boundary_19_is_eligible(self) -> None:
         """
         Test that 19-year-olds are eligible (minimum age for the program).
 
@@ -1293,7 +1293,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Should return the PolicyEngine value (19 is eligible)
         self.assertEqual(result, pe_value)
 
-    def test_member_value_checks_age_before_other_conditions(self):
+    def test_member_value_checks_age_before_other_conditions(self) -> None:
         """
         Test that age check happens first for efficiency.
 
@@ -1319,7 +1319,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Insurance check should not be called since age check fails first
         member_obj.has_insurance_types.assert_not_called()
 
-    def test_member_value_with_sibling_relationship(self):
+    def test_member_value_with_sibling_relationship(self) -> None:
         """
         Test that sibling relationship qualifies as a caretaker.
 
@@ -1358,7 +1358,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Should return the PolicyEngine value (sibling is eligible caretaker)
         self.assertEqual(result, pe_value)
 
-    def test_member_value_with_grandparent_relationship(self):
+    def test_member_value_with_grandparent_relationship(self) -> None:
         """
         Test that grandparent relationship qualifies as a caretaker.
 
@@ -1397,7 +1397,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Should return the PolicyEngine value (grandparent is eligible caretaker)
         self.assertEqual(result, pe_value)
 
-    def test_has_child_with_medicaid_returns_false_for_adult_only_household(self):
+    def test_has_child_with_medicaid_returns_false_for_adult_only_household(self) -> None:
         """
         Test _has_child_with_medicaid returns False when household has no children under 19.
         """
@@ -1422,7 +1422,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         # Should return False (no children under 19)
         self.assertFalse(result)
 
-    def test_has_child_with_medicaid_returns_true_for_child_with_benefit(self):
+    def test_has_child_with_medicaid_returns_true_for_child_with_benefit(self) -> None:
         """
         Test _has_child_with_medicaid returns True when child has Medicaid benefit.
         """
@@ -1449,7 +1449,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
         self.assertTrue(result)
         mock_child.has_insurance.assert_called_once_with("medicaid")
 
-    def test_has_child_with_medicaid_returns_true_for_child_qualifying_via_pe(self):
+    def test_has_child_with_medicaid_returns_true_for_child_qualifying_via_pe(self) -> None:
         """
         Test _has_child_with_medicaid returns True when child qualifies via PolicyEngine value.
         """
@@ -1483,7 +1483,7 @@ class TestTxMedicaidForParentsAndCaretakers(TestCase):
 class TestTxHarrisCountyRides(TestCase):
     """Tests for TxHarrisCountyRides calculator class."""
 
-    def test_exists_and_is_subclass_of_policy_engine_members_calculator(self):
+    def test_exists_and_is_subclass_of_policy_engine_members_calculator(self) -> None:
         """
         Test that TxHarrisCountyRides calculator class exists and inherits from PolicyEngineMembersCalculator.
 
@@ -1498,7 +1498,7 @@ class TestTxHarrisCountyRides(TestCase):
         self.assertIsNotNone(TxHarrisCountyRides.pe_inputs)
         self.assertGreater(len(TxHarrisCountyRides.pe_inputs), 0)
 
-    def test_is_registered_in_tx_pe_calculators(self):
+    def test_is_registered_in_tx_pe_calculators(self) -> None:
         """Test that TX Harris County RIDES is registered in the calculators dictionary."""
         # Verify tx_harris_rides is in the calculators dictionary
         self.assertIn("tx_harris_rides", tx_pe_calculators)
@@ -1506,32 +1506,32 @@ class TestTxHarrisCountyRides(TestCase):
         # Verify it points to the correct class
         self.assertEqual(tx_pe_calculators["tx_harris_rides"], TxHarrisCountyRides)
 
-    def test_pe_name_is_tx_harris_rides_eligible(self):
+    def test_pe_name_is_tx_harris_rides_eligible(self) -> None:
         """Test that TxHarrisCountyRides has the correct pe_name for PolicyEngine API calls."""
         self.assertEqual(TxHarrisCountyRides.pe_name, "tx_harris_rides_eligible")
 
-    def test_pe_inputs_includes_age_dependency(self):
+    def test_pe_inputs_includes_age_dependency(self) -> None:
         """Test that TxHarrisCountyRides includes AgeDependency in pe_inputs."""
         from programs.programs.policyengine.calculators.dependencies.member import AgeDependency
 
         self.assertIn(AgeDependency, TxHarrisCountyRides.pe_inputs)
         self.assertEqual(AgeDependency.field, "age")
 
-    def test_pe_inputs_includes_is_disabled_dependency(self):
+    def test_pe_inputs_includes_is_disabled_dependency(self) -> None:
         """Test that TxHarrisCountyRides includes IsDisabledDependency in pe_inputs."""
         from programs.programs.policyengine.calculators.dependencies.member import IsDisabledDependency
 
         self.assertIn(IsDisabledDependency, TxHarrisCountyRides.pe_inputs)
         self.assertEqual(IsDisabledDependency.field, "is_disabled")
 
-    def test_pe_inputs_includes_is_blind_dependency(self):
+    def test_pe_inputs_includes_is_blind_dependency(self) -> None:
         """Test that TxHarrisCountyRides includes IsBlindDependency in pe_inputs."""
         from programs.programs.policyengine.calculators.dependencies.member import IsBlindDependency
 
         self.assertIn(IsBlindDependency, TxHarrisCountyRides.pe_inputs)
         self.assertEqual(IsBlindDependency.field, "is_blind")
 
-    def test_pe_inputs_includes_tx_state_code_dependency(self):
+    def test_pe_inputs_includes_tx_state_code_dependency(self) -> None:
         """
         Test that TxStateCodeDependency is properly added to TX Harris County RIDES inputs.
 
@@ -1545,11 +1545,11 @@ class TestTxHarrisCountyRides(TestCase):
         self.assertEqual(TxStateCodeDependency.state, "TX")
         self.assertEqual(TxStateCodeDependency.field, "state_code")
 
-    def test_has_county_dependency(self):
+    def test_has_county_dependency(self) -> None:
         """Test that TxHarrisCountyRides has county dependency configured."""
         self.assertIn("county", TxHarrisCountyRides.dependencies)
 
-    def test_member_value_returns_one_when_eligible(self):
+    def test_member_value_returns_one_when_eligible(self) -> None:
         """
         Test that member_value returns 1 when PolicyEngine indicates eligibility.
 
@@ -1578,7 +1578,7 @@ class TestTxHarrisCountyRides(TestCase):
         self.assertEqual(result, 1)
         calculator.get_member_variable.assert_called_once_with(1)
 
-    def test_member_value_returns_zero_when_not_eligible(self):
+    def test_member_value_returns_zero_when_not_eligible(self) -> None:
         """
         Test that member_value returns 0 when PolicyEngine indicates ineligibility.
 
@@ -1607,7 +1607,7 @@ class TestTxHarrisCountyRides(TestCase):
         self.assertEqual(result, 0)
         calculator.get_member_variable.assert_called_once_with(2)
 
-    def test_member_value_calls_get_member_variable_with_member_id(self):
+    def test_member_value_calls_get_member_variable_with_member_id(self) -> None:
         """
         Test that member_value calls get_member_variable with the correct member ID.
 
@@ -1634,7 +1634,7 @@ class TestTxHarrisCountyRides(TestCase):
         # Verify get_member_variable was called with the correct member ID
         calculator.get_member_variable.assert_called_once_with(42)
 
-    def test_member_value_returns_zero_for_falsy_pe_value(self):
+    def test_member_value_returns_zero_for_falsy_pe_value(self) -> None:
         """
         Test that member_value returns 0 for any falsy PolicyEngine value.
 
@@ -1663,7 +1663,7 @@ class TestTxHarrisCountyRides(TestCase):
         calculator.get_member_variable = Mock(return_value="")
         self.assertEqual(calculator.member_value(member_obj), 0)
 
-    def test_member_value_returns_one_for_truthy_pe_value(self):
+    def test_member_value_returns_one_for_truthy_pe_value(self) -> None:
         """
         Test that member_value returns 1 for any truthy PolicyEngine value.
 
@@ -1692,7 +1692,7 @@ class TestTxHarrisCountyRides(TestCase):
 class TestTxEmergencyMedicaid(TestCase):
     """Tests for TxEmergencyMedicaid calculator class."""
 
-    def test_exists_and_is_subclass_of_medicaid(self):
+    def test_exists_and_is_subclass_of_medicaid(self) -> None:
         """
         Test that TxEmergencyMedicaid calculator class exists and is a subclass of Medicaid.
 
@@ -1706,7 +1706,7 @@ class TestTxEmergencyMedicaid(TestCase):
         self.assertIsNotNone(TxEmergencyMedicaid.pe_inputs)
         self.assertGreater(len(TxEmergencyMedicaid.pe_inputs), 0)
 
-    def test_is_registered_in_tx_pe_calculators(self):
+    def test_is_registered_in_tx_pe_calculators(self) -> None:
         """Test that TX Emergency Medicaid is registered in the calculators dictionary."""
         # Verify tx_emergency_medicaid is in the calculators dictionary
         self.assertIn("tx_emergency_medicaid", tx_pe_calculators)
@@ -1714,7 +1714,7 @@ class TestTxEmergencyMedicaid(TestCase):
         # Verify it points to the correct class
         self.assertEqual(tx_pe_calculators["tx_emergency_medicaid"], TxEmergencyMedicaid)
 
-    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self):
+    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self) -> None:
         """
         Test that TxEmergencyMedicaid has all expected pe_inputs from parent and TX-specific.
 
@@ -1731,7 +1731,7 @@ class TestTxEmergencyMedicaid(TestCase):
         for parent_input in Medicaid.pe_inputs:
             self.assertIn(parent_input, TxEmergencyMedicaid.pe_inputs)
 
-    def test_pe_inputs_includes_tx_state_code_dependency(self):
+    def test_pe_inputs_includes_tx_state_code_dependency(self) -> None:
         """
         Test that TxStateCodeDependency is properly added to TX Emergency Medicaid inputs.
 
@@ -1745,7 +1745,7 @@ class TestTxEmergencyMedicaid(TestCase):
         self.assertEqual(TxStateCodeDependency.state, "TX")
         self.assertEqual(TxStateCodeDependency.field, "state_code")
 
-    def test_has_same_pe_outputs_as_parent(self):
+    def test_has_same_pe_outputs_as_parent(self) -> None:
         """Test that TxEmergencyMedicaid has the same pe_outputs as parent Medicaid class."""
         # TxEmergencyMedicaid should use the same outputs as parent
         self.assertEqual(TxEmergencyMedicaid.pe_outputs, Medicaid.pe_outputs)
@@ -1754,7 +1754,7 @@ class TestTxEmergencyMedicaid(TestCase):
 class TestTxDart(TestCase):
     """Tests for TxDart calculator class."""
 
-    def test_exists_and_is_subclass_of_policy_engine_members_calculator(self):
+    def test_exists_and_is_subclass_of_policy_engine_members_calculator(self) -> None:
         """
         Test that TxDart calculator class exists and inherits from PolicyEngineMembersCalculator.
 
@@ -1769,7 +1769,7 @@ class TestTxDart(TestCase):
         self.assertIsNotNone(TxDart.pe_inputs)
         self.assertGreater(len(TxDart.pe_inputs), 0)
 
-    def test_is_registered_in_tx_pe_calculators(self):
+    def test_is_registered_in_tx_pe_calculators(self) -> None:
         """Test that TX DART is registered in the calculators dictionary."""
         # Verify tx_dart is in the calculators dictionary
         self.assertIn("tx_dart", tx_pe_calculators)
@@ -1777,31 +1777,31 @@ class TestTxDart(TestCase):
         # Verify it points to the correct class
         self.assertEqual(tx_pe_calculators["tx_dart"], TxDart)
 
-    def test_pe_name_is_tx_dart_benefit_person(self):
+    def test_pe_name_is_tx_dart_benefit_person(self) -> None:
         """Test that TxDart has the correct pe_name for PolicyEngine API calls."""
         self.assertEqual(TxDart.pe_name, "tx_dart_benefit_person")
 
-    def test_pe_inputs_includes_age_dependency(self):
+    def test_pe_inputs_includes_age_dependency(self) -> None:
         """Test that TxDart includes AgeDependency in pe_inputs."""
         self.assertIn(member.AgeDependency, TxDart.pe_inputs)
         self.assertEqual(member.AgeDependency.field, "age")
 
-    def test_pe_inputs_includes_is_disabled_dependency(self):
+    def test_pe_inputs_includes_is_disabled_dependency(self) -> None:
         """Test that TxDart includes IsDisabledDependency in pe_inputs."""
         self.assertIn(member.IsDisabledDependency, TxDart.pe_inputs)
         self.assertEqual(member.IsDisabledDependency.field, "is_disabled")
 
-    def test_pe_inputs_includes_is_veteran_dependency(self):
+    def test_pe_inputs_includes_is_veteran_dependency(self) -> None:
         """Test that TxDart includes IsVeteranDependency in pe_inputs."""
         self.assertIn(member.IsVeteranDependency, TxDart.pe_inputs)
         self.assertEqual(member.IsVeteranDependency.field, "is_veteran")
 
-    def test_pe_inputs_includes_full_time_college_student_dependency(self):
+    def test_pe_inputs_includes_full_time_college_student_dependency(self) -> None:
         """Test that TxDart includes FullTimeCollegeStudentDependency in pe_inputs."""
         self.assertIn(member.FullTimeCollegeStudentDependency, TxDart.pe_inputs)
         self.assertEqual(member.FullTimeCollegeStudentDependency.field, "is_full_time_college_student")
 
-    def test_pe_inputs_includes_tx_state_code_dependency(self):
+    def test_pe_inputs_includes_tx_state_code_dependency(self) -> None:
         """
         Test that TxStateCodeDependency is properly added to TX DART inputs.
 
@@ -1815,7 +1815,7 @@ class TestTxDart(TestCase):
         self.assertEqual(TxStateCodeDependency.state, "TX")
         self.assertEqual(TxStateCodeDependency.field, "state_code")
 
-    def test_pe_inputs_includes_medicaid_inputs(self):
+    def test_pe_inputs_includes_medicaid_inputs(self) -> None:
         """
         Test that TxDart includes all Medicaid pe_inputs.
 
@@ -1826,11 +1826,11 @@ class TestTxDart(TestCase):
         for medicaid_input in Medicaid.pe_inputs:
             self.assertIn(medicaid_input, TxDart.pe_inputs)
 
-    def test_pe_outputs_includes_tx_dart_benefit_person_dependency(self):
+    def test_pe_outputs_includes_tx_dart_benefit_person_dependency(self) -> None:
         """Test that TxDart has TxDartBenefitPerson dependency in pe_outputs."""
         self.assertIn(member.TxDartBenefitPerson, TxDart.pe_outputs)
 
-    def test_member_value_returns_pe_value_directly(self):
+    def test_member_value_returns_pe_value_directly(self) -> None:
         """
         Test that member_value returns PolicyEngine value directly.
 
@@ -1856,7 +1856,7 @@ class TestTxDart(TestCase):
         self.assertEqual(result, pe_value)
         calculator.get_member_variable.assert_called_once_with(1)
 
-    def test_member_value_returns_free_ride_value(self):
+    def test_member_value_returns_free_ride_value(self) -> None:
         """
         Test that member_value can return the free ride benefit value.
 
@@ -1881,7 +1881,7 @@ class TestTxDart(TestCase):
         self.assertEqual(result, pe_value)
         calculator.get_member_variable.assert_called_once_with(2)
 
-    def test_member_value_returns_zero_for_ineligible_member(self):
+    def test_member_value_returns_zero_for_ineligible_member(self) -> None:
         """
         Test that member_value returns 0 for ineligible members.
 
@@ -1905,7 +1905,7 @@ class TestTxDart(TestCase):
         self.assertEqual(result, 0)
         calculator.get_member_variable.assert_called_once_with(3)
 
-    def test_member_value_calls_get_member_variable_with_correct_member_id(self):
+    def test_member_value_calls_get_member_variable_with_correct_member_id(self) -> None:
         """
         Test that member_value calls get_member_variable with the correct member ID.
 

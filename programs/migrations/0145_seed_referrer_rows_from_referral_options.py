@@ -23,7 +23,7 @@ def extract_display_name(value):
 GENERIC_REFERRER_CODES = {"searchEngine", "socialMedia", "friend", "flyers", "other", "testOrProspect"}
 
 
-def seed_referrer_rows(apps, schema_editor):
+def seed_referrer_rows(apps, schema_editor) -> None:
     """Create Referrer rows from existing referral_options Configuration data.
 
     For each WL's referral_options config, create a Referrer row per option.
@@ -104,7 +104,7 @@ def seed_referrer_rows(apps, schema_editor):
         cursor.execute("UPDATE programs_referrer SET name = referrer_code WHERE name = ''")
 
 
-def reverse_seed(apps, schema_editor):
+def reverse_seed(apps, schema_editor) -> None:
     """No-op reverse — we don't want to delete Referrer rows that may have
     webhook/navigator config attached."""
     pass

@@ -63,7 +63,7 @@ class HudClientTestBase(TestCase):
 class TestHudIncomeClientMTSP(HudClientTestBase):
     """Test MTSP endpoint-specific functionality."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up MTSP-specific mock data."""
         super().setUp()
 
@@ -229,7 +229,7 @@ class TestHudIncomeClientMTSP(HudClientTestBase):
 class TestHudIncomeClientStandardIL(HudClientTestBase):
     """Test Standard Section 8 Income Limits endpoint-specific functionality."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up Standard IL-specific mock data."""
         super().setUp()
 
@@ -356,7 +356,7 @@ class TestHudIncomeClientStandardIL(HudClientTestBase):
 class TestHudIncomeClientApproximate(HudClientTestBase):
     """Test approximate_screen_mtsp_ami linear interpolation method."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         super().setUp()
 
         # Mock MTSP response with 60% and 70% tiers for Cook County, HH size 4

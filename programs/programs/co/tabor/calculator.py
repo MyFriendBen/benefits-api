@@ -16,10 +16,12 @@ class Tabor(ProgramCalculator):
     }
     dependencies = ["age"]
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
 
         # age
+        if member.age is None:
+            return
         e.condition(member.age >= Tabor.min_age)
 
     def member_value(self, member: HouseholdMember) -> int:
@@ -29,7 +31,8 @@ class Tabor(ProgramCalculator):
         is_married = member.is_married()
         if is_married["is_married"]:
             spouse = is_married["married_to"]
-            income += spouse.calc_gross_income("yearly", ["all"])
+            if isinstance(spouse, HouseholdMember):
+                income += spouse.calc_gross_income("yearly", ["all"])
 
         for threshold, value in Tabor.income_limits.items():
             if income <= threshold:

@@ -3,7 +3,7 @@ import uuid
 from django.db import migrations
 
 
-def make_frontend_ids(apps, _):
+def make_frontend_ids(apps, _) -> None:
     HouseholdMember = apps.get_model("screener", "HouseholdMember")
 
     for member in HouseholdMember.objects.all():

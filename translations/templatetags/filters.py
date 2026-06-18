@@ -5,7 +5,7 @@ register = template.Library()
 
 
 @register.filter
-def get_datetime_label(history_date, lang_code=None, default="Never"):
+def get_datetime_label(history_date, lang_code=None, default: str="Never"):
     if not history_date:
         return default
 
@@ -14,7 +14,7 @@ def get_datetime_label(history_date, lang_code=None, default="Never"):
 
 
 @register.filter
-def get_updated_label(updated_dates, lang_code, default="Never"):
+def get_updated_label(updated_dates, lang_code, default: str="Never"):
     if not updated_dates:
         return default
     date = updated_dates.get(lang_code, default)

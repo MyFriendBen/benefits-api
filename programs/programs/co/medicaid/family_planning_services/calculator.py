@@ -9,7 +9,9 @@ class FamilyPlanningServices(ProgramCalculator):
     fpl_percent = 2.65
     dependencies = ["age", "insurance", "income_frequency", "income_amount", "household_size"]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            return
         # Does not have insurance
         has_no_insurance = False
         for member in self.screen.household_members.all():
@@ -28,7 +30,7 @@ class FamilyPlanningServices(ProgramCalculator):
 
         e.condition(gross_income < income_limit, messages.income(gross_income, income_limit))
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
 
         # not pregnant

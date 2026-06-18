@@ -12,7 +12,7 @@ class MemberEligibility:
         self.eligible = True
         self.value: int = 0
 
-    def condition(self, passed: bool):
+    def condition(self, passed: bool) -> None:
         """
         Set eligibility to False if the condition does not pass
         """
@@ -21,14 +21,14 @@ class MemberEligibility:
 
 
 class Eligibility:
-    def __init__(self):
+    def __init__(self) -> None:
         self.eligible: bool = True
         self.pass_messages = []
         self.fail_messages = []
         self.eligible_members: list[MemberEligibility] = []
         self.household_value: int = 0
 
-    def condition(self, passed: bool, message=None):
+    def condition(self, passed: bool, message=None) -> None:
         """
         Uses a condition to update the pass fail messages and eligibility.
         """
@@ -43,20 +43,20 @@ class Eligibility:
         else:
             self.failed(message)
 
-    def failed(self, msg):
+    def failed(self, msg) -> None:
         """
         Mark eligibility as failed and add a message to `fail_messages`
         """
         self.eligible = False
         self.fail_messages.append(msg)
 
-    def passed(self, msg):
+    def passed(self, msg) -> None:
         """
         Add a message to `pass_messages`
         """
         self.pass_messages.append(msg)
 
-    def add_member_eligibility(self, member_eligibility: MemberEligibility):
+    def add_member_eligibility(self, member_eligibility: MemberEligibility) -> None:
         """
         Store a members eligibility
         """
@@ -86,7 +86,7 @@ class ProgramCalculator:
 
     def __init__(
         self, screen: Screen, program: "Program", data: dict[str, Eligibility], missing_dependencies: Dependencies
-    ):
+    ) -> None:
         self.screen = screen
         self.program = program
         self.data = data
@@ -116,19 +116,19 @@ class ProgramCalculator:
 
         return e
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         """
         Updates the eligibility object with the household eligibility
         """
         pass
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         """
         Updates the eligibility object with the member eligibility
         """
         pass
 
-    def value(self, e: Eligibility):
+    def value(self, e: Eligibility) -> None:
         """
         Update the eligibility with household and member values
         """
@@ -167,7 +167,7 @@ class ProgramCalculator:
 
         return eligibility
 
-    def can_calc(self):
+    def can_calc(self) -> bool:
         """
         Returns whether or not the program can be calculated with the missing dependencies
         """

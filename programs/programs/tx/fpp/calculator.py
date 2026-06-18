@@ -46,7 +46,7 @@ class TxFpp(ProgramCalculator):
         "household_size",
     ]
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
 
         # Age 64 or younger (no minimum age — HHS FPP states only "64 or younger").
@@ -57,7 +57,9 @@ class TxFpp(ProgramCalculator):
         # (classified as underinsured) remain eligible.
         e.condition(not member.insurance.has_insurance_types(("medicaid",)))
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            return
         # §4140 adjunctive income eligibility: enrollment in SNAP, WIC, or CHIP
         # (applicant or their child) bypasses the 250% FPL income test.
         #

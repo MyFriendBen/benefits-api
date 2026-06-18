@@ -87,7 +87,7 @@ class GoogleSheets:
 
         return organized_data
 
-    def print_raw_column_names(self):
+    def print_raw_column_names(self) -> None:
         """
         print the column names of the spreadsheet
 

@@ -7,15 +7,16 @@ from django.core.management.base import CommandError
 from integrations.clients.google_translate import Translate
 from programs.models import UrgentNeed, UrgentNeedType
 from screener.models import WhiteLabel
+from typing import Sequence
 
 
 @pytest.fixture(autouse=True)
-def stub_translate(monkeypatch):
+def stub_translate(monkeypatch) -> None:
     """Avoid real Google Translate calls during tests."""
 
     monkeypatch.setattr(Translate, "__init__", lambda self: None)
 
-    def fake_bulk_translate(self, langs, texts):
+    def fake_bulk_translate(self, langs, texts: Sequence[str]):
         targets = Translate.languages if "__all__" in langs else langs
         return {text: {lang: text for lang in targets} for text in texts}
 
@@ -23,7 +24,7 @@ def stub_translate(monkeypatch):
 
 
 @pytest.mark.django_db
-def test_import_urgent_need_creates_entities(tmp_path):
+def test_import_urgent_need_creates_entities(tmp_path) -> None:
     white_label = WhiteLabel.objects.create(name="Test", code="test", state_code="TS")
 
     config = {
@@ -115,7 +116,7 @@ def test_import_urgent_need_creates_entities(tmp_path):
 
 
 @pytest.mark.django_db
-def test_import_urgent_need_dry_run(tmp_path):
+def test_import_urgent_need_dry_run(tmp_path) -> None:
     WhiteLabel.objects.create(name="Test", code="test", state_code="TS")
 
     config = {
@@ -143,7 +144,7 @@ def test_import_urgent_need_dry_run(tmp_path):
 
 
 @pytest.mark.django_db
-def test_import_urgent_need_override_recreates(tmp_path):
+def test_import_urgent_need_override_recreates(tmp_path) -> None:
     white_label = WhiteLabel.objects.create(name="Test", code="test", state_code="TS")
 
     base_config = {
@@ -197,7 +198,7 @@ def test_import_urgent_need_override_recreates(tmp_path):
 
 
 @pytest.mark.django_db
-def test_import_fails_on_missing_white_label(tmp_path):
+def test_import_fails_on_missing_white_label(tmp_path) -> None:
     config = {
         "white_label": {"code": "missing"},
         "need": {
@@ -221,7 +222,7 @@ def test_import_fails_on_missing_white_label(tmp_path):
 
 
 @pytest.mark.django_db
-def test_import_fails_on_invalid_function(tmp_path):
+def test_import_fails_on_invalid_function(tmp_path) -> None:
     WhiteLabel.objects.create(name="Test", code="test", state_code="TS")
 
     config = {
@@ -248,7 +249,7 @@ def test_import_fails_on_invalid_function(tmp_path):
         call_command("import_urgent_need_config", str(path))
 
 
-def test_import_fails_on_invalid_json(tmp_path):
+def test_import_fails_on_invalid_json(tmp_path) -> None:
     path = tmp_path / "invalid.json"
     path.write_text("{ invalid json")
 
@@ -257,7 +258,7 @@ def test_import_fails_on_invalid_json(tmp_path):
 
 
 @pytest.mark.django_db
-def test_import_fails_on_empty_type_short(tmp_path):
+def test_import_fails_on_empty_type_short(tmp_path) -> None:
     WhiteLabel.objects.create(name="Test", code="test", state_code="TS")
 
     config = {

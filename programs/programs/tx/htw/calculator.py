@@ -27,7 +27,7 @@ class TxHtw(ProgramCalculator):
         "health_insurance",
     ]
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
 
         # Age 15-44
@@ -41,7 +41,9 @@ class TxHtw(ProgramCalculator):
             not member.insurance.has_insurance_types(["medicaid", "chp", "medicare", "employer", "private", "va"])
         )
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            return
         gross_income = self.screen.calc_gross_income("yearly", ["all"])
         income_limit = int(self.fpl_percent * self.program.year.get_limit(self.screen.household_size))
         e.condition(gross_income <= income_limit, messages.income(gross_income, income_limit))

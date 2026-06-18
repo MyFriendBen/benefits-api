@@ -24,20 +24,20 @@ from programs.programs.calc import ProgramCalculator
 class TestMaCmspCalculator(TestCase):
     """Tests for MaCmsp calculator class attributes and registration."""
 
-    def test_exists_and_is_subclass_of_program_calculator(self):
+    def test_exists_and_is_subclass_of_program_calculator(self) -> None:
         """Test that MaCmsp calculator class exists and inherits correctly."""
         self.assertTrue(issubclass(MaCmsp, ProgramCalculator))
 
-    def test_is_registered_in_ma_calculators(self):
+    def test_is_registered_in_ma_calculators(self) -> None:
         """Test that CMSP is registered in the MA calculators dictionary."""
         self.assertIn("ma_cmsp", ma_calculators)
         self.assertEqual(ma_calculators["ma_cmsp"], MaCmsp)
 
-    def test_member_amount_is_2868(self):
+    def test_member_amount_is_2868(self) -> None:
         """Test that member_amount is $2,868/year ($239/month) per eligible uninsured child."""
         self.assertEqual(MaCmsp.member_amount, 2868)
 
-    def test_dependencies_are_defined(self):
+    def test_dependencies_are_defined(self) -> None:
         """Test that required dependencies are properly defined."""
         self.assertIn("age", MaCmsp.dependencies)
         self.assertIn("health_insurance", MaCmsp.dependencies)
@@ -46,7 +46,7 @@ class TestMaCmspCalculator(TestCase):
 class TestMaCmspEligibility(TestCase):
     """Tests for CMSP eligibility scenarios from MFB-673."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.mock_program = Mock()
         self.mock_data = {}
         self.mock_missing_deps = Mock()
@@ -67,7 +67,7 @@ class TestMaCmspEligibility(TestCase):
         mock_screen.household_members.all.return_value = members
         return MaCmsp(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
-    def test_scenario1_uninsured_child_low_income_eligible(self):
+    def test_scenario1_uninsured_child_low_income_eligible(self) -> None:
         """Scenario 1: Uninsured child, low income household → Eligible.
 
         Confirms basic eligibility for an uninsured child regardless of income.
@@ -80,7 +80,7 @@ class TestMaCmspEligibility(TestCase):
         eligibility = calculator.eligible()
         self.assertTrue(eligibility.eligible)
 
-    def test_scenario2_uninsured_child_very_high_income_eligible(self):
+    def test_scenario2_uninsured_child_very_high_income_eligible(self) -> None:
         """Scenario 2: Uninsured child, very high income → Eligible (no income limit).
 
         CMSP has no income limit — high-income families with uninsured children qualify.
@@ -93,7 +93,7 @@ class TestMaCmspEligibility(TestCase):
         eligibility = calculator.eligible()
         self.assertTrue(eligibility.eligible)
 
-    def test_scenario3_infant_age_0_uninsured_eligible(self):
+    def test_scenario3_infant_age_0_uninsured_eligible(self) -> None:
         """Scenario 3: Infant (age 0), uninsured → Eligible.
 
         Confirms youngest children (age 0) are included.
@@ -106,7 +106,7 @@ class TestMaCmspEligibility(TestCase):
         eligibility = calculator.eligible()
         self.assertTrue(eligibility.eligible)
 
-    def test_scenario4_undocumented_child_uninsured_eligible(self):
+    def test_scenario4_undocumented_child_uninsured_eligible(self) -> None:
         """Scenario 4: Undocumented child (no citizenship requirement) → Eligible.
 
         CMSP is one of few programs with no citizenship requirement.
@@ -122,7 +122,7 @@ class TestMaCmspEligibility(TestCase):
         eligibility = calculator.eligible()
         self.assertTrue(eligibility.eligible)
 
-    def test_scenario5_multiple_children_only_one_uninsured_eligible(self):
+    def test_scenario5_multiple_children_only_one_uninsured_eligible(self) -> None:
         """Scenario 5: Multiple children, only one uninsured → Eligible.
 
         Confirms per-child eligibility logic: at least one uninsured child qualifies.
@@ -136,7 +136,7 @@ class TestMaCmspEligibility(TestCase):
         eligibility = calculator.eligible()
         self.assertTrue(eligibility.eligible)
 
-    def test_scenario6_child_has_mass_health_ineligible(self):
+    def test_scenario6_child_has_mass_health_ineligible(self) -> None:
         """Scenario 6: Child with MassHealth → Not eligible.
 
         Children enrolled in MassHealth are already insured and do not qualify.
@@ -150,7 +150,7 @@ class TestMaCmspEligibility(TestCase):
         eligibility = calculator.eligible()
         self.assertFalse(eligibility.eligible)
 
-    def test_scenario7_child_has_private_insurance_ineligible(self):
+    def test_scenario7_child_has_private_insurance_ineligible(self) -> None:
         """Scenario 7: Child has private insurance → Not eligible.
 
         Any insured child is excluded from CMSP.
@@ -163,7 +163,7 @@ class TestMaCmspEligibility(TestCase):
         eligibility = calculator.eligible()
         self.assertFalse(eligibility.eligible)
 
-    def test_scenario8_child_age_19_ineligible(self):
+    def test_scenario8_child_age_19_ineligible(self) -> None:
         """Scenario 8: Child age 19 → Not eligible (under-19 cutoff enforced).
 
         Confirms the strict under-19 age requirement.
@@ -176,7 +176,7 @@ class TestMaCmspEligibility(TestCase):
         eligibility = calculator.eligible()
         self.assertFalse(eligibility.eligible)
 
-    def test_scenario9_no_children_adult_only_ineligible(self):
+    def test_scenario9_no_children_adult_only_ineligible(self) -> None:
         """Scenario 9: Adult-only household → Not eligible.
 
         CMSP is child-specific; adults without children in the household are excluded.
@@ -188,7 +188,7 @@ class TestMaCmspEligibility(TestCase):
         eligibility = calculator.eligible()
         self.assertFalse(eligibility.eligible)
 
-    def test_scenario10_child_has_employer_insurance_ineligible(self):
+    def test_scenario10_child_has_employer_insurance_ineligible(self) -> None:
         """Scenario 10: Child covered under employer plan → Not eligible.
 
         Children covered through an employer plan are excluded.
@@ -201,7 +201,7 @@ class TestMaCmspEligibility(TestCase):
         eligibility = calculator.eligible()
         self.assertFalse(eligibility.eligible)
 
-    def test_child_age_18_is_eligible(self):
+    def test_child_age_18_is_eligible(self) -> None:
         """Child age 18 is under 19 and should qualify."""
         members = [
             self._make_member(40, insured=True),  # Parent
@@ -215,7 +215,7 @@ class TestMaCmspEligibility(TestCase):
 class TestMaCmspValue(TestCase):
     """Tests for per-child benefit value calculation."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.mock_program = Mock()
         self.mock_data = {}
         self.mock_missing_deps = Mock()
@@ -234,7 +234,7 @@ class TestMaCmspValue(TestCase):
         mock_screen.household_members.all.return_value = members
         return MaCmsp(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
-    def test_value_is_2868_for_one_eligible_child(self):
+    def test_value_is_2868_for_one_eligible_child(self) -> None:
         """One eligible uninsured child → value = $2,868/year ($239/month)."""
         members = [
             self._make_member(35, insured=True),  # Parent
@@ -245,7 +245,7 @@ class TestMaCmspValue(TestCase):
         calculator.value(eligibility)
         self.assertEqual(eligibility.value, 2868)
 
-    def test_value_is_5736_for_two_eligible_children(self):
+    def test_value_is_5736_for_two_eligible_children(self) -> None:
         """Two eligible uninsured children → value = $5,736/year ($478/month)."""
         members = [
             self._make_member(35, insured=True),  # Parent
@@ -257,7 +257,7 @@ class TestMaCmspValue(TestCase):
         calculator.value(eligibility)
         self.assertEqual(eligibility.value, 5736)
 
-    def test_value_counts_only_uninsured_children(self):
+    def test_value_counts_only_uninsured_children(self) -> None:
         """Mixed household: only the uninsured child counts toward value."""
         members = [
             self._make_member(35, insured=True),  # Parent

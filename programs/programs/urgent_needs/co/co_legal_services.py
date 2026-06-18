@@ -9,6 +9,8 @@ class CoLegalServices(UrgentNeedFunction):
         """
         Return True if the household is has an income bellow 200% FPL or someone in the household is over 60 years old
         """
+        if self.urgent_need.year is None:
+            return False
         fpl = self.urgent_need.year.as_dict()
         is_income_eligible = self.screen.calc_gross_income("yearly", ["all"]) < fpl[self.screen.household_size]
         is_age_eligible = self.screen.num_adults(age_max=self.max_age) > 0

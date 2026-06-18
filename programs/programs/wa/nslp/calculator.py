@@ -115,7 +115,7 @@ class WaNslp(ProgramCalculator):
             return gross <= red_ann
 
         f = next(iter(freqs))
-        total = sum((s.amount for s in streams), Decimal(0))
+        total = sum((s.amount or Decimal(0) for s in streams), Decimal(0))
         if f == "monthly":
             return total <= red_mo
         if f == "yearly":
@@ -130,10 +130,10 @@ class WaNslp(ProgramCalculator):
         gross = Decimal(str(self.screen.calc_gross_income("yearly", ["all"])))
         return gross <= red_ann
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         e.condition(self._is_school_meal_proxy_student(e.member))
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         gross_for_message = int(self.screen.calc_gross_income("yearly", ["all"]))
         income_limit_message = self._reduced_annual_limit()
 

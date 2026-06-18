@@ -62,8 +62,10 @@ class IlChildCareAssistanceProgram(ProgramCalculator):
         else:
             return "GROUP_2"  # All other Illinois counties
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         """Check household-level eligibility conditions"""
+        if self.program.year is None:
+            return
 
         # Check: Asset limit ($1,000,000)
         if self.screen.household_assets is not None:
@@ -82,7 +84,7 @@ class IlChildCareAssistanceProgram(ProgramCalculator):
         is_student = head.student if head.student is not None else False
         e.condition(is_employed or is_student)
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         """Check member-level eligibility conditions"""
         member = e.member
 

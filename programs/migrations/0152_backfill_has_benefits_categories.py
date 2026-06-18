@@ -70,7 +70,7 @@ PROGRAM_CATEGORY_LINKS = [
 ]
 
 
-def forward(apps, schema_editor):
+def forward(apps, schema_editor) -> None:
     # Use the live model managers (not apps.get_model) because the
     # ProgramCategoryManager.new_program_category and
     # TranslationManager.add_translation helpers rely on parler internals
@@ -133,7 +133,7 @@ def forward(apps, schema_editor):
         ).update(category=category)
 
 
-def reverse(apps, schema_editor):
+def reverse(apps, schema_editor) -> None:
     # Only reverse what *this* migration set:
     #   1. Clear category for the linked programs (matching on WL +
     #      name_abbreviated + the exact category we set, so we never touch

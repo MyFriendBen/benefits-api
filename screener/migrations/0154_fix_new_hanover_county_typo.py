@@ -1,7 +1,7 @@
 from django.db import migrations
 
 
-def fix_new_hanover_county_typo(apps, schema_editor):
+def fix_new_hanover_county_typo(apps, schema_editor) -> None:
     Screen = apps.get_model("screener", "Screen")
     Screen.objects.filter(county="NewHanover County").update(county="New Hanover County")
 

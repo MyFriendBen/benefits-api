@@ -9,6 +9,6 @@ class EnergyCalculatorLarimerConservationCorps(ProgramCalculator):
         "co-loveland-water-and-power",
     ]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         # must be a Fort Collins Utilities or Loveland Utilities customer
         e.condition(self.screen.energy_calculator.has_utility_provider(self.utility_providers))

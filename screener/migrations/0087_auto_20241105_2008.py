@@ -3,7 +3,7 @@
 from django.db import migrations
 
 
-def forwards_func(apps, schema_editor):
+def forwards_func(apps, schema_editor) -> None:
     WhiteLabel = apps.get_model("screener", "WhiteLabel")
     Screen = apps.get_model("screener", "Screen")
     ProgramCategory = apps.get_model("programs", "ProgramCategory")

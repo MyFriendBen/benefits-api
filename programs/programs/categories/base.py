@@ -28,7 +28,7 @@ class ProgramCategoryCapCalculator:
     # caps where the cap is the average value of the program
     average_caps: list[CategoryCap] = []
 
-    def __init__(self, eligibility: dict[str, Eligibility]):
+    def __init__(self, eligibility: dict[str, Eligibility]) -> None:
         self.eligibility = eligibility
 
     def caps(self) -> list[ReturnCategoryCap]:

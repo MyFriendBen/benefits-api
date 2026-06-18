@@ -19,7 +19,7 @@ class ImportProgramConfigTestCase(TransactionTestCase):
     Uses TransactionTestCase to properly test transaction rollback behavior.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test fixtures."""
         # Create white label for testing
         self.white_label = WhiteLabel.objects.create(
@@ -56,7 +56,7 @@ class ImportProgramConfigTestCase(TransactionTestCase):
             text: {lang: f"{text} (translated to {lang})" for lang in langs} for text in texts
         }
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         """Clean up mocks."""
         self.translate_patcher.stop()
 
@@ -66,7 +66,7 @@ class ImportProgramConfigTestCase(TransactionTestCase):
             json.dump(config, f)
             return f.name
 
-    def test_create_new_program_shows_created_message(self):
+    def test_create_new_program_shows_created_message(self) -> None:
         """Test that creating a new program shows 'created' in success message."""
         config_file = self._create_temp_config(self.base_config)
         out = StringIO()
@@ -84,7 +84,7 @@ class ImportProgramConfigTestCase(TransactionTestCase):
         finally:
             Path(config_file).unlink()
 
-    def test_override_existing_program_shows_recreated_message(self):
+    def test_override_existing_program_shows_recreated_message(self) -> None:
         """Test that overriding an existing program shows 'recreated' in success message."""
         # First, create a program
         config_file = self._create_temp_config(self.base_config)
@@ -109,7 +109,7 @@ class ImportProgramConfigTestCase(TransactionTestCase):
 
         Path(config_file).unlink()
 
-    def test_failed_override_rolls_back_deletion(self):
+    def test_failed_override_rolls_back_deletion(self) -> None:
         """
         Test that if import fails after deletion in override mode,
         the deletion is rolled back and the original program is preserved.
@@ -141,7 +141,7 @@ class ImportProgramConfigTestCase(TransactionTestCase):
         # Clean up
         Path(config_file).unlink()
 
-    def test_override_flag_without_existing_program(self):
+    def test_override_flag_without_existing_program(self) -> None:
         """Test that --override flag works correctly when program doesn't exist yet."""
         config_file = self._create_temp_config(self.base_config)
         out = StringIO()
@@ -160,7 +160,7 @@ class ImportProgramConfigTestCase(TransactionTestCase):
 
         Path(config_file).unlink()
 
-    def test_existing_program_without_override_flag_skips_import(self):
+    def test_existing_program_without_override_flag_skips_import(self) -> None:
         """Test that existing program without --override flag skips import."""
         # First, create a program
         config_file = self._create_temp_config(self.base_config)
@@ -185,7 +185,7 @@ class ImportProgramConfigTestCase(TransactionTestCase):
 
         Path(config_file).unlink()
 
-    def test_transaction_rollback_on_category_creation_error(self):
+    def test_transaction_rollback_on_category_creation_error(self) -> None:
         """
         Test that transaction rollback works when category creation fails
         during override operation.

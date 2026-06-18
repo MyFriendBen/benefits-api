@@ -3,12 +3,12 @@
 from django.db import migrations
 
 
-def backfill_has_head_start(apps, schema_editor):
+def backfill_has_head_start(apps, schema_editor) -> None:
     Screen = apps.get_model("screener", "Screen")
     Screen.objects.filter(has_chs=True).update(has_head_start=True)
 
 
-def reverse_backfill_has_head_start(apps, schema_editor):
+def reverse_backfill_has_head_start(apps, schema_editor) -> None:
     pass  # irreversible — cannot distinguish original has_head_start=True from backfilled values
 
 

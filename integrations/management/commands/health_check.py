@@ -19,7 +19,7 @@ class Command(BaseCommand):
     HUB_SPOT_TEXT = "Can't read Hub Spot"
     PII_IN_DB_TEXT = "PII not in the database"
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser) -> None:
         parser.add_argument(
             "white_label",
             nargs=None,
@@ -37,7 +37,7 @@ class Command(BaseCommand):
             help="Skip the link check",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         self.stdout.write("")
 
         if not options["skip_links"]:
@@ -165,7 +165,7 @@ class Command(BaseCommand):
 
         return list(links)
 
-    def _output_condition(self, validated: bool, message: str):
+    def _output_condition(self, validated: bool, message: str) -> None:
         text = f"{message}: {'VALIDATED' if validated else 'FAILED'}"
 
         if validated:

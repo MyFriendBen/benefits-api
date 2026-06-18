@@ -6,7 +6,7 @@ from screener.models import Screen, HouseholdMember, IncomeStream
 
 @skip("Calculator constructor signature changed - needs API update")
 class TestFamilyPlanningServicesPension(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.screen1 = Screen.objects.create(
             agree_to_tos=True,
             zipcode="80205",
@@ -44,13 +44,13 @@ class TestFamilyPlanningServicesPension(TestCase):
             has_expenses=False,
         )
 
-    def test_family_planning_services_pass_all_conditions(self):
+    def test_family_planning_services_pass_all_conditions(self) -> None:
         fps = FamilyPlanningServices(self.screen1, [{"name_abbreviated": "medicaid", "eligible": False}])
         eligibility = fps.eligibility
 
         self.assertTrue(eligibility["eligible"])
 
-    def test_family_planning_services_failed_all_conditions(self):
+    def test_family_planning_services_failed_all_conditions(self) -> None:
         self.person2.age = 20
         self.person2.save()
         IncomeStream.objects.create(

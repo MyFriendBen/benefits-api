@@ -22,12 +22,12 @@ class TestWaWsosBas(TestCase):
     and 3 against the live screener layer.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Create a WA white label and a mock Program for each test."""
         self.white_label = WhiteLabel.objects.create(name="Washington", code="wa", state_code="WA")
         self.mock_program = Mock()
 
-    def _make_screen(self, household_size=1, zipcode="98101", county="King"):
+    def _make_screen(self, household_size: int=1, zipcode: str="98101", county: str="King"):
         """Build an in-memory `Screen` for the WA white label with the given size."""
         return Screen.objects.create(
             white_label=self.white_label,
@@ -38,7 +38,7 @@ class TestWaWsosBas(TestCase):
             completed=False,
         )
 
-    def _add_member(self, screen, *, age=20, relationship="headOfHousehold", student=False, monthly_wages=0):
+    def _add_member(self, screen, *, age: int=20, relationship: str="headOfHousehold", student: bool=False, monthly_wages: int=0):
         """Add a `HouseholdMember` (and optional monthly wages) to the screen."""
         member = HouseholdMember.objects.create(
             screen=screen,
@@ -62,18 +62,18 @@ class TestWaWsosBas(TestCase):
 
     # --- Class wiring --------------------------------------------------------
 
-    def test_registered_in_wa_calculators(self):
+    def test_registered_in_wa_calculators(self) -> None:
         """Calculator is registered in the WA program registry under wa_wsos_bas."""
         from programs.programs.wa import wa_calculators
 
         self.assertIn("wa_wsos_bas", wa_calculators)
         self.assertIs(wa_calculators["wa_wsos_bas"], WaWsosBas)
 
-    def test_amount_is_22500_lump_sum(self):
+    def test_amount_is_22500_lump_sum(self) -> None:
         """The published BaS lump-sum award is $22,500."""
         self.assertEqual(WaWsosBas.amount, 22_500)
 
-    def test_dependencies_cover_income_and_household_size(self):
+    def test_dependencies_cover_income_and_household_size(self) -> None:
         """The calculator declares the screener fields it actually reads."""
         self.assertIn("income_amount", WaWsosBas.dependencies)
         self.assertIn("income_frequency", WaWsosBas.dependencies)
@@ -81,7 +81,7 @@ class TestWaWsosBas(TestCase):
 
     # --- Eligibility (spec scenarios) ----------------------------------------
 
-    def test_eligible_single_student_well_below_125_pct_mfi(self):
+    def test_eligible_single_student_well_below_125_pct_mfi(self) -> None:
         """
         spec.md Scenario 1: WA student, 1-person household, $2k/mo wages
         ($24k/yr) — well below the 1-person 125% MFI cap of $90,500/yr.
@@ -93,7 +93,7 @@ class TestWaWsosBas(TestCase):
 
         self.assertTrue(eligibility.eligible)
 
-    def test_ineligible_single_student_above_125_pct_mfi(self):
+    def test_ineligible_single_student_above_125_pct_mfi(self) -> None:
         """
         spec.md Scenario 2: WA student, 1-person household, $8k/mo
         ($96k/yr) — above the 1-person 125% MFI cap of $90,500/yr.
@@ -106,7 +106,7 @@ class TestWaWsosBas(TestCase):
 
         self.assertFalse(eligibility.eligible)
 
-    def test_eligible_four_person_household_just_below_125_pct_mfi(self):
+    def test_eligible_four_person_household_just_below_125_pct_mfi(self) -> None:
         """
         spec.md Scenario 3: 4-person family, HS-senior student applicant,
         $14,541/mo wages ($174,492/yr) -- just under the 4-person 125%
@@ -122,7 +122,7 @@ class TestWaWsosBas(TestCase):
 
         self.assertTrue(eligibility.eligible)
 
-    def test_ineligible_four_person_household_above_125_pct_mfi(self):
+    def test_ineligible_four_person_household_above_125_pct_mfi(self) -> None:
         """
         spec.md Scenario 4: same 4-person family, but $16k/mo
         ($192k/yr) -- well above the 4-person 125% MFI cap of $174,500/yr.
@@ -137,7 +137,7 @@ class TestWaWsosBas(TestCase):
 
         self.assertFalse(eligibility.eligible)
 
-    def test_eligible_returning_adult_student_as_head_with_dependents(self):
+    def test_eligible_returning_adult_student_as_head_with_dependents(self) -> None:
         """
         spec.md Scenario 5: Returning adult student (age 28) is HoH and BaS
         applicant; non-student spouse + young child still count toward
@@ -155,7 +155,7 @@ class TestWaWsosBas(TestCase):
 
     # --- Eligibility (extra coverage beyond the spec scenarios) --------------
 
-    def test_ineligible_no_student_in_household(self):
+    def test_ineligible_no_student_in_household(self) -> None:
         """
         Household with no student fails the per-member gate; the base
         ProgramCalculator auto-marks the household ineligible when no
@@ -168,7 +168,7 @@ class TestWaWsosBas(TestCase):
 
         self.assertFalse(eligibility.eligible)
 
-    def test_ineligible_when_student_field_is_unanswered(self):
+    def test_ineligible_when_student_field_is_unanswered(self) -> None:
         """
         `Screen.student` is BooleanField(null=True), so an unanswered field
         comes through as None. `bool(None) -> False -> ineligible`. Pinning
@@ -194,7 +194,7 @@ class TestWaWsosBas(TestCase):
 
         self.assertFalse(eligibility.eligible)
 
-    def test_eligible_zero_income_student(self):
+    def test_eligible_zero_income_student(self) -> None:
         """
         Common BaS persona: unemployed student (e.g. HS senior pre-application)
         with zero household income. Lower-side income boundary, complementing
@@ -207,7 +207,7 @@ class TestWaWsosBas(TestCase):
 
         self.assertTrue(eligibility.eligible)
 
-    def test_eligible_at_exact_125_pct_mfi_boundary(self):
+    def test_eligible_at_exact_125_pct_mfi_boundary(self) -> None:
         """`<=` boundary: income exactly equal to the 125% MFI cap is eligible."""
         # 1-person cap is $90,500/yr -> use a yearly stream to hit it exactly.
         screen = self._make_screen()
@@ -224,7 +224,7 @@ class TestWaWsosBas(TestCase):
 
         self.assertTrue(eligibility.eligible)
 
-    def test_ineligible_one_dollar_above_125_pct_mfi_boundary(self):
+    def test_ineligible_one_dollar_above_125_pct_mfi_boundary(self) -> None:
         """`<=` boundary: $1 above the 125% MFI cap is ineligible."""
         screen = self._make_screen()
         member = self._add_member(screen, student=True)
@@ -242,7 +242,7 @@ class TestWaWsosBas(TestCase):
 
     # --- Value ---------------------------------------------------------------
 
-    def test_value_is_22500_lump_sum_when_eligible(self):
+    def test_value_is_22500_lump_sum_when_eligible(self) -> None:
         """Eligible household returns the published $22,500 lump-sum scholarship."""
         screen = self._make_screen()
         self._add_member(screen, student=True, monthly_wages=2000)
@@ -253,7 +253,7 @@ class TestWaWsosBas(TestCase):
 
         self.assertEqual(eligibility.value, 22_500)
 
-    def test_value_is_0_when_ineligible(self):
+    def test_value_is_0_when_ineligible(self) -> None:
         """Ineligible household reports value 0 (the base class skips value() when not eligible)."""
         screen = self._make_screen()
         self._add_member(screen, student=True, monthly_wages=8000)
@@ -264,7 +264,7 @@ class TestWaWsosBas(TestCase):
 
         self.assertEqual(eligibility.value, 0)
 
-    def test_value_is_household_level_not_per_member(self):
+    def test_value_is_household_level_not_per_member(self) -> None:
         """
         Every member returns 0 from member_value; all of the lump-sum
         award is reported at the household level. Confirms the scholarship
@@ -284,13 +284,13 @@ class TestWaWsosBas(TestCase):
 
     # --- MFI table boundaries ------------------------------------------------
 
-    def test_income_limit_table_lookup(self):
+    def test_income_limit_table_lookup(self) -> None:
         """All 6 published table sizes return the documented 125% MFI value verbatim."""
         for size, expected in WaWsosBas.MFI_125_BY_SIZE.items():
             screen = self._make_screen(household_size=size)
             self.assertEqual(self._calc(screen).income_limit_125(), expected)
 
-    def test_income_limit_extension_above_table(self):
+    def test_income_limit_extension_above_table(self) -> None:
         """
         Sizes above the published table (1-6) extend by the documented
         per-person increment so a 7+ person household is not silently
@@ -300,7 +300,7 @@ class TestWaWsosBas(TestCase):
         expected = WaWsosBas.MFI_125_BY_SIZE[6] + 2 * WaWsosBas.MFI_125_PER_EXTRA_PERSON_ABOVE_TABLE
         self.assertEqual(self._calc(screen).income_limit_125(), expected)
 
-    def test_mfi_table_values_match_spec(self):
+    def test_mfi_table_values_match_spec(self) -> None:
         """
         Pin the 2026 published 125% MFI values to the spec table so any
         accidental edit to the lookup is caught here. Verified against

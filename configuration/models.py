@@ -13,7 +13,7 @@ class Configuration(models.Model):
     data = OrderedJSONField(default=dict)
     active = models.BooleanField()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
@@ -50,7 +50,7 @@ class PolicyEngineConfig(models.Model):
         verbose_name = "PolicyEngine Version"
         verbose_name_plural = "PolicyEngine Version"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"PolicyEngine version: {self.policyengine_version or '(default)'}"
 
     def clean(self):
@@ -68,7 +68,7 @@ class PolicyEngineConfig(models.Model):
                 {"policyengine_version": 'Must be an exact version number like "1.715.2", or left blank.'}
             )
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs) -> None:
         # Enforce a single row: always write to pk=1. Validate the version field but
         # exclude the forced primary key from uniqueness checks (a second save() is an
         # intentional upsert of the singleton, not a duplicate-id error). Drop any

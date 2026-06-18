@@ -21,7 +21,7 @@ from programs.programs.tx.pe.spm import TxCeap, TxLifeline, TxSnap, TxNslp, TxTa
 class TestTxSnap(TestCase):
     """Tests for TxSnap calculator class."""
 
-    def test_exists_and_is_subclass_of_snap(self):
+    def test_exists_and_is_subclass_of_snap(self) -> None:
         """
         Test that TxSnap calculator class exists and is registered.
 
@@ -35,7 +35,7 @@ class TestTxSnap(TestCase):
         self.assertIsNotNone(TxSnap.pe_inputs)
         self.assertGreater(len(TxSnap.pe_inputs), 0)
 
-    def test_is_registered_in_tx_pe_calculators(self):
+    def test_is_registered_in_tx_pe_calculators(self) -> None:
         """Test that TX SNAP is registered in the calculators dictionary."""
         # Verify tx_snap is in the calculators dictionary
         self.assertIn("tx_snap", tx_pe_calculators)
@@ -43,7 +43,7 @@ class TestTxSnap(TestCase):
         # Verify it points to the correct class
         self.assertEqual(tx_pe_calculators["tx_snap"], TxSnap)
 
-    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self):
+    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self) -> None:
         """
         Test that TxSnap has all expected pe_inputs from parent and TX-specific.
 
@@ -60,7 +60,7 @@ class TestTxSnap(TestCase):
         for parent_input in Snap.pe_inputs:
             self.assertIn(parent_input, TxSnap.pe_inputs)
 
-    def test_pe_inputs_includes_tx_state_code_dependency(self):
+    def test_pe_inputs_includes_tx_state_code_dependency(self) -> None:
         """
         Test that TxStateCodeDependency is properly added to TX SNAP inputs.
 
@@ -78,7 +78,7 @@ class TestTxSnap(TestCase):
 class TestTxLifeline(TestCase):
     """Tests for TxLifeline calculator class."""
 
-    def test_exists_and_is_subclass_of_lifeline(self):
+    def test_exists_and_is_subclass_of_lifeline(self) -> None:
         """
         Test that TxLifeline calculator class exists and is registered.
 
@@ -92,7 +92,7 @@ class TestTxLifeline(TestCase):
         self.assertIsNotNone(TxLifeline.pe_inputs)
         self.assertGreater(len(TxLifeline.pe_inputs), 0)
 
-    def test_is_registered_in_tx_pe_calculators(self):
+    def test_is_registered_in_tx_pe_calculators(self) -> None:
         """Test that TX Lifeline is registered in the calculators dictionary."""
         # Verify tx_lifeline is in the calculators dictionary
         self.assertIn("tx_lifeline", tx_pe_calculators)
@@ -100,7 +100,7 @@ class TestTxLifeline(TestCase):
         # Verify it points to the correct class
         self.assertEqual(tx_pe_calculators["tx_lifeline"], TxLifeline)
 
-    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self):
+    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self) -> None:
         """
         Test that TxLifeline has all expected pe_inputs from parent and TX-specific.
 
@@ -117,7 +117,7 @@ class TestTxLifeline(TestCase):
         for parent_input in Lifeline.pe_inputs:
             self.assertIn(parent_input, TxLifeline.pe_inputs)
 
-    def test_pe_inputs_includes_tx_state_code_dependency(self):
+    def test_pe_inputs_includes_tx_state_code_dependency(self) -> None:
         """
         Test that TxStateCodeDependency is properly added to TX Lifeline inputs.
 
@@ -135,7 +135,7 @@ class TestTxLifeline(TestCase):
 class TestTxNslp(TestCase):
     """Tests for TxNslp (National School Lunch Program) calculator class."""
 
-    def test_exists_and_is_subclass_of_school_lunch(self):
+    def test_exists_and_is_subclass_of_school_lunch(self) -> None:
         """
         Test that TxNslp calculator class exists and is registered.
 
@@ -149,7 +149,7 @@ class TestTxNslp(TestCase):
         self.assertIsNotNone(TxNslp.pe_inputs)
         self.assertGreater(len(TxNslp.pe_inputs), 0)
 
-    def test_is_registered_in_tx_pe_calculators(self):
+    def test_is_registered_in_tx_pe_calculators(self) -> None:
         """Test that TX NSLP is registered in the calculators dictionary."""
         # Verify tx_nslp is in the calculators dictionary
         self.assertIn("tx_nslp", tx_pe_calculators)
@@ -157,7 +157,7 @@ class TestTxNslp(TestCase):
         # Verify it points to the correct class
         self.assertEqual(tx_pe_calculators["tx_nslp"], TxNslp)
 
-    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self):
+    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self) -> None:
         """
         Test that TxNslp has all expected pe_inputs from parent and TX-specific.
 
@@ -174,7 +174,7 @@ class TestTxNslp(TestCase):
         for parent_input in SchoolLunch.pe_inputs:
             self.assertIn(parent_input, TxNslp.pe_inputs)
 
-    def test_pe_inputs_includes_tx_state_code_dependency(self):
+    def test_pe_inputs_includes_tx_state_code_dependency(self) -> None:
         """
         Test that TxStateCodeDependency is properly added to TX NSLP inputs.
 
@@ -192,7 +192,7 @@ class TestTxNslp(TestCase):
 class TestTxTanf(TestCase):
     """Tests for TxTanf (Temporary Assistance for Needy Families) calculator class."""
 
-    def test_exists_and_is_subclass_of_tanf(self):
+    def test_exists_and_is_subclass_of_tanf(self) -> None:
         """
         Test that TxTanf calculator class exists and is registered.
 
@@ -208,7 +208,7 @@ class TestTxTanf(TestCase):
         self.assertIsNotNone(TxTanf.pe_outputs)
         self.assertGreater(len(TxTanf.pe_outputs), 0)
 
-    def test_is_registered_in_tx_pe_calculators(self):
+    def test_is_registered_in_tx_pe_calculators(self) -> None:
         """Test that TX TANF is registered in the calculators dictionary."""
         # Verify tx_tanf is in the calculators dictionary
         self.assertIn("tx_tanf", tx_pe_calculators)
@@ -216,7 +216,7 @@ class TestTxTanf(TestCase):
         # Verify it points to the correct class
         self.assertEqual(tx_pe_calculators["tx_tanf"], TxTanf)
 
-    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self):
+    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self) -> None:
         """
         Test that TxTanf has all expected pe_inputs from parent and TX-specific.
 
@@ -243,7 +243,7 @@ class TestTxTanf(TestCase):
         for parent_input in Tanf.pe_inputs:
             self.assertIn(parent_input, TxTanf.pe_inputs)
 
-    def test_pe_inputs_includes_tx_state_code_dependency(self):
+    def test_pe_inputs_includes_tx_state_code_dependency(self) -> None:
         """
         Test that TxStateCodeDependency is properly added to TX TANF inputs.
 
@@ -257,7 +257,7 @@ class TestTxTanf(TestCase):
         self.assertEqual(TxStateCodeDependency.state, "TX")
         self.assertEqual(TxStateCodeDependency.field, "state_code")
 
-    def test_pe_inputs_includes_tax_unit_dependent_dependency(self):
+    def test_pe_inputs_includes_tax_unit_dependent_dependency(self) -> None:
         """
         Test that TaxUnitDependentDependency is in TxTanf pe_inputs.
 
@@ -274,7 +274,7 @@ class TestTxTanf(TestCase):
         self.assertIn(member.TaxUnitDependentDependency, TxTanf.pe_inputs)
         self.assertEqual(member.TaxUnitDependentDependency.field, "is_tax_unit_dependent")
 
-    def test_pe_inputs_includes_person_level_income_dependencies(self):
+    def test_pe_inputs_includes_person_level_income_dependencies(self) -> None:
         """
         Test that person-level income dependencies are in TxTanf pe_inputs.
 
@@ -291,7 +291,7 @@ class TestTxTanf(TestCase):
         for dep in irs_gross_income:
             self.assertIn(dep, TxTanf.pe_inputs)
 
-    def test_pe_outputs_includes_tx_tanf(self):
+    def test_pe_outputs_includes_tx_tanf(self) -> None:
         """
         Test that TxTanf output dependency is properly configured.
 
@@ -305,7 +305,7 @@ class TestTxTanf(TestCase):
 class TestTxCeap(TestCase):
     """Tests for TxCeap (TX Comprehensive Energy Assistance Program / LIHEAP) calculator class."""
 
-    def test_exists_with_expected_pe_config(self):
+    def test_exists_with_expected_pe_config(self) -> None:
         """TxCeap maps to the tx_ceap PE variable and has inputs/outputs configured."""
         self.assertEqual(TxCeap.pe_name, "tx_ceap")
         self.assertIsNotNone(TxCeap.pe_inputs)
@@ -313,17 +313,17 @@ class TestTxCeap(TestCase):
         self.assertIsNotNone(TxCeap.pe_outputs)
         self.assertGreater(len(TxCeap.pe_outputs), 0)
 
-    def test_is_registered_in_tx_pe_calculators(self):
+    def test_is_registered_in_tx_pe_calculators(self) -> None:
         """Test that TX LIHEAP (CEAP) is registered under the tx_liheap program key."""
         self.assertIn("tx_liheap", tx_pe_calculators)
         self.assertEqual(tx_pe_calculators["tx_liheap"], TxCeap)
 
-    def test_pe_inputs_includes_tx_state_code_dependency(self):
+    def test_pe_inputs_includes_tx_state_code_dependency(self) -> None:
         """TxStateCodeDependency gates tx_ceap to TX (defined_for=StateCode.TX)."""
         self.assertIn(TxStateCodeDependency, TxCeap.pe_inputs)
         self.assertEqual(TxStateCodeDependency.state, "TX")
 
-    def test_pe_inputs_includes_income_and_energy_expense(self):
+    def test_pe_inputs_includes_income_and_energy_expense(self) -> None:
         """
         tx_ceap needs gross income (for the 150% FPL income test and benefit tier) and
         energy expenses (the benefit is capped at electricity_expense + gas_expense).
@@ -333,7 +333,7 @@ class TestTxCeap(TestCase):
         self.assertIn(spm.TxCeapEnergyExpenseDependency, TxCeap.pe_inputs)
         self.assertEqual(spm.TxCeapEnergyExpenseDependency.field, "electricity_expense")
 
-    def test_pe_outputs_includes_tx_ceap(self):
+    def test_pe_outputs_includes_tx_ceap(self) -> None:
         """The calculator outputs the tx_ceap variable to PolicyEngine."""
         self.assertIn(spm.TxCeap, TxCeap.pe_outputs)
         self.assertEqual(spm.TxCeap.field, "tx_ceap")

@@ -10,13 +10,16 @@ class JeffcoStudentBenefits(ProgramCalculator):
     amount = 500
     dependencies = ["age", "county"]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         # Location: must be in Jefferson County
         counties = counties_from_screen(self.screen)
         e.condition(JeffcoStudentBenefits.county in counties, messages.location())
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
+
+        if member.age is None:
+            return
 
         # Age: must be between 3 and 19
         e.condition(JeffcoStudentBenefits.child_age_min <= member.age <= JeffcoStudentBenefits.child_age_max)

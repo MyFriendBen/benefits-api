@@ -61,7 +61,7 @@ class TxHse(ProgramCalculator):
             return True
         return False
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         e.condition(self.screen.has_expense(["mortgage"]))
 
     def household_value(self) -> int:

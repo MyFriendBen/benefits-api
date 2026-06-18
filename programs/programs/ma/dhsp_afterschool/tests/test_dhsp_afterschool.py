@@ -20,30 +20,30 @@ from programs.programs.calc import ProgramCalculator, Eligibility
 class TestMaDhspAfterschoolCalculator(TestCase):
     """Tests for MaDhspAfterschool calculator class."""
 
-    def test_exists_and_is_subclass_of_program_calculator(self):
+    def test_exists_and_is_subclass_of_program_calculator(self) -> None:
         """Test that MaDhspAfterschool calculator class exists and inherits correctly."""
         self.assertTrue(issubclass(MaDhspAfterschool, ProgramCalculator))
 
-    def test_is_registered_in_ma_calculators(self):
+    def test_is_registered_in_ma_calculators(self) -> None:
         """Test that DHSP Afterschool is registered in the MA calculators dictionary."""
         self.assertIn("ma_dhsp_afterschool", ma_calculators)
         self.assertEqual(ma_calculators["ma_dhsp_afterschool"], MaDhspAfterschool)
 
-    def test_eligible_city_is_cambridge(self):
+    def test_eligible_city_is_cambridge(self) -> None:
         """Test that the eligible city is set to Cambridge."""
         self.assertEqual(MaDhspAfterschool.eligible_city, "Cambridge")
 
-    def test_child_age_range_is_k8(self):
+    def test_child_age_range_is_k8(self) -> None:
         """Test that the child age range is set correctly for K-8 (ages 5-14)."""
         self.assertEqual(MaDhspAfterschool.min_child_age, 5)
         self.assertEqual(MaDhspAfterschool.max_child_age, 14)
 
-    def test_dependencies_are_defined(self):
+    def test_dependencies_are_defined(self) -> None:
         """Test that required dependencies are properly defined."""
         expected_deps = ["zipcode", "household_size"]
         self.assertEqual(list(MaDhspAfterschool.dependencies), expected_deps)
 
-    def test_amount_is_annual_value(self):
+    def test_amount_is_annual_value(self) -> None:
         """Test that amount is set to annual value (~$900/month * 12)."""
         self.assertEqual(MaDhspAfterschool.amount, 900 * 12)
 
@@ -51,7 +51,7 @@ class TestMaDhspAfterschoolCalculator(TestCase):
 class TestMaDhspAfterschoolLocationEligibility(TestCase):
     """Tests for Cambridge location eligibility check."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test fixtures."""
         self.mock_program = Mock()
         self.mock_data = {}
@@ -64,7 +64,7 @@ class TestMaDhspAfterschoolLocationEligibility(TestCase):
         mock_member.age = age
         return mock_member
 
-    def _create_calculator(self, county, children_ages, has_benefit=False):
+    def _create_calculator(self, county, children_ages, has_benefit: bool=False):
         """Helper to create a calculator with mocked screen."""
         mock_screen = Mock()
         mock_screen.county = county
@@ -79,21 +79,21 @@ class TestMaDhspAfterschoolLocationEligibility(TestCase):
 
         return MaDhspAfterschool(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
-    def test_cambridge_resident_with_k8_child_passes(self):
+    def test_cambridge_resident_with_k8_child_passes(self) -> None:
         """Test that Cambridge residents with K-8 children pass eligibility."""
         calculator = self._create_calculator("Cambridge", [8])
         eligibility = calculator.eligible()
 
         self.assertTrue(eligibility.eligible)
 
-    def test_non_cambridge_resident_fails_location_check(self):
+    def test_non_cambridge_resident_fails_location_check(self) -> None:
         """Test that non-Cambridge residents fail the location eligibility check."""
         calculator = self._create_calculator("Boston", [8])
         eligibility = calculator.eligible()
 
         self.assertFalse(eligibility.eligible)
 
-    def test_somerville_resident_fails_location_check(self):
+    def test_somerville_resident_fails_location_check(self) -> None:
         """Test that Somerville (adjacent to Cambridge) residents are not eligible."""
         calculator = self._create_calculator("Somerville", [8])
         eligibility = calculator.eligible()
@@ -104,7 +104,7 @@ class TestMaDhspAfterschoolLocationEligibility(TestCase):
 class TestMaDhspAfterschoolChildAgeEligibility(TestCase):
     """Tests for child age eligibility check (K-8, ages 5-14)."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test fixtures."""
         self.mock_program = Mock()
         self.mock_data = {}
@@ -117,7 +117,7 @@ class TestMaDhspAfterschoolChildAgeEligibility(TestCase):
         mock_member.age = age
         return mock_member
 
-    def _create_calculator(self, children_ages, has_benefit=False):
+    def _create_calculator(self, children_ages, has_benefit: bool=False):
         """Helper to create a calculator with specified children ages."""
         mock_screen = Mock()
         mock_screen.county = "Cambridge"
@@ -132,63 +132,63 @@ class TestMaDhspAfterschoolChildAgeEligibility(TestCase):
 
         return MaDhspAfterschool(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
-    def test_kindergarten_age_child_is_eligible(self):
+    def test_kindergarten_age_child_is_eligible(self) -> None:
         """Test that a kindergarten-age child (age 5) is eligible."""
         calculator = self._create_calculator([5])
         eligibility = calculator.eligible()
 
         self.assertTrue(eligibility.eligible)
 
-    def test_eighth_grade_age_child_is_eligible(self):
+    def test_eighth_grade_age_child_is_eligible(self) -> None:
         """Test that an 8th grade child (age 14) is eligible."""
         calculator = self._create_calculator([14])
         eligibility = calculator.eligible()
 
         self.assertTrue(eligibility.eligible)
 
-    def test_middle_school_age_child_is_eligible(self):
+    def test_middle_school_age_child_is_eligible(self) -> None:
         """Test that a middle school age child (age 10) is eligible."""
         calculator = self._create_calculator([10])
         eligibility = calculator.eligible()
 
         self.assertTrue(eligibility.eligible)
 
-    def test_pre_k_child_is_ineligible(self):
+    def test_pre_k_child_is_ineligible(self) -> None:
         """Test that a pre-K child (age 4) is not eligible."""
         calculator = self._create_calculator([4])
         eligibility = calculator.eligible()
 
         self.assertFalse(eligibility.eligible)
 
-    def test_high_school_child_is_ineligible(self):
+    def test_high_school_child_is_ineligible(self) -> None:
         """Test that a high school child (age 15) is not eligible."""
         calculator = self._create_calculator([15])
         eligibility = calculator.eligible()
 
         self.assertFalse(eligibility.eligible)
 
-    def test_household_with_no_children_is_ineligible(self):
+    def test_household_with_no_children_is_ineligible(self) -> None:
         """Test that a household with no children is not eligible."""
         calculator = self._create_calculator([])
         eligibility = calculator.eligible()
 
         self.assertFalse(eligibility.eligible)
 
-    def test_household_with_multiple_k8_children_is_eligible(self):
+    def test_household_with_multiple_k8_children_is_eligible(self) -> None:
         """Test that a household with multiple K-8 children is eligible."""
         calculator = self._create_calculator([6, 9, 12])
         eligibility = calculator.eligible()
 
         self.assertTrue(eligibility.eligible)
 
-    def test_household_with_mixed_ages_is_eligible_if_one_k8(self):
+    def test_household_with_mixed_ages_is_eligible_if_one_k8(self) -> None:
         """Test that a household is eligible if at least one child is K-8."""
         calculator = self._create_calculator([3, 8, 17])  # Pre-K, 3rd grade, high school
         eligibility = calculator.eligible()
 
         self.assertTrue(eligibility.eligible)
 
-    def test_household_with_only_ineligible_ages_is_ineligible(self):
+    def test_household_with_only_ineligible_ages_is_ineligible(self) -> None:
         """Test that a household with only ineligible age children is not eligible."""
         calculator = self._create_calculator([2, 16])  # Toddler, high school
         eligibility = calculator.eligible()
@@ -199,7 +199,7 @@ class TestMaDhspAfterschoolChildAgeEligibility(TestCase):
 class TestMaDhspAfterschoolHasBenefit(TestCase):
     """Tests for has_benefit behavior - users who already have the benefit should be ineligible."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test fixtures."""
         self.mock_program = Mock()
         self.mock_data = {}
@@ -212,7 +212,7 @@ class TestMaDhspAfterschoolHasBenefit(TestCase):
         mock_member.age = age
         return mock_member
 
-    def _create_calculator(self, has_benefit=False):
+    def _create_calculator(self, has_benefit: bool=False):
         """Helper to create a calculator."""
         mock_screen = Mock()
         mock_screen.county = "Cambridge"
@@ -225,7 +225,7 @@ class TestMaDhspAfterschoolHasBenefit(TestCase):
 
         return MaDhspAfterschool(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
-    def test_user_without_benefit_is_eligible(self):
+    def test_user_without_benefit_is_eligible(self) -> None:
         """Test that users who don't have the benefit can be eligible."""
         calculator = self._create_calculator(has_benefit=False)
         eligibility = calculator.eligible()
@@ -236,7 +236,7 @@ class TestMaDhspAfterschoolHasBenefit(TestCase):
 class TestMaDhspAfterschoolValue(TestCase):
     """Tests for benefit value calculation via the value() method."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test fixtures."""
         self.mock_program = Mock()
         self.mock_data = {}
@@ -250,7 +250,7 @@ class TestMaDhspAfterschoolValue(TestCase):
         mock_member.id = member_id if member_id is not None else age  # Use age as id if not specified
         return mock_member
 
-    def _create_calculator(self, children_ages, county="Cambridge", has_benefit=False):
+    def _create_calculator(self, children_ages, county: str="Cambridge", has_benefit: bool=False):
         """Helper to create a calculator with mocked screen."""
         mock_screen = Mock()
         mock_screen.county = county
@@ -265,7 +265,7 @@ class TestMaDhspAfterschoolValue(TestCase):
 
         return MaDhspAfterschool(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
-    def test_value_sets_household_value_for_one_eligible_child(self):
+    def test_value_sets_household_value_for_one_eligible_child(self) -> None:
         """Test that value() sets household_value to expected annual amount for one eligible child."""
         calculator = self._create_calculator([8])  # One 8-year-old child
         eligibility = calculator.eligible()
@@ -276,7 +276,7 @@ class TestMaDhspAfterschoolValue(TestCase):
         expected_annual = 900 * 12  # $10,800
         self.assertEqual(eligibility.household_value, expected_annual)
 
-    def test_value_returns_eligibility_with_eligible_status(self):
+    def test_value_returns_eligibility_with_eligible_status(self) -> None:
         """Test that value() calculation returns eligibility indicating the household is eligible."""
         calculator = self._create_calculator([10])  # One eligible child
         eligibility = calculator.eligible()
@@ -289,7 +289,7 @@ class TestMaDhspAfterschoolValue(TestCase):
 
         self.assertTrue(eligibility.eligible)
 
-    def test_value_assigns_zero_per_member_value_by_default(self):
+    def test_value_assigns_zero_per_member_value_by_default(self) -> None:
         """Test that per-member value is 0 by default (uses base class member_amount)."""
         calculator = self._create_calculator([6, 10])  # Two eligible children
         eligibility = calculator.eligible()
@@ -303,7 +303,7 @@ class TestMaDhspAfterschoolValue(TestCase):
         for member_eligibility in eligible_children:
             self.assertEqual(member_eligibility.value, 0)
 
-    def test_value_does_not_set_values_when_ineligible(self):
+    def test_value_does_not_set_values_when_ineligible(self) -> None:
         """Test that value() does not set values when household is ineligible."""
         calculator = self._create_calculator([8], county="Boston")  # Non-Cambridge resident
         eligibility = calculator.eligible()
@@ -320,7 +320,7 @@ class TestMaDhspAfterschoolValue(TestCase):
 class TestMaDhspAfterschoolValueMultipleChildren(TestCase):
     """Tests for household value scaling with multiple eligible children."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test fixtures."""
         self.mock_program = Mock()
         self.mock_data = {}
@@ -334,7 +334,7 @@ class TestMaDhspAfterschoolValueMultipleChildren(TestCase):
         mock_member.id = member_id if member_id is not None else age
         return mock_member
 
-    def _create_calculator(self, children_ages, county="Cambridge", has_benefit=False):
+    def _create_calculator(self, children_ages, county: str="Cambridge", has_benefit: bool=False):
         """Helper to create a calculator with mocked screen."""
         mock_screen = Mock()
         mock_screen.county = county
@@ -349,7 +349,7 @@ class TestMaDhspAfterschoolValueMultipleChildren(TestCase):
 
         return MaDhspAfterschool(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
-    def test_household_value_same_for_multiple_eligible_children(self):
+    def test_household_value_same_for_multiple_eligible_children(self) -> None:
         """Test that household_value is the same regardless of number of eligible children.
 
         The base class household_value() returns self.amount, which is a fixed annual value.
@@ -371,7 +371,7 @@ class TestMaDhspAfterschoolValueMultipleChildren(TestCase):
         self.assertEqual(elig_1_child.household_value, expected_annual)
         self.assertEqual(elig_3_children.household_value, expected_annual)
 
-    def test_total_value_equals_household_value_with_default_member_amount(self):
+    def test_total_value_equals_household_value_with_default_member_amount(self) -> None:
         """Test that total value equals household_value when member_amount is 0."""
         calculator = self._create_calculator([6, 9, 12])  # Three eligible children
         eligibility = calculator.eligible()
@@ -383,7 +383,7 @@ class TestMaDhspAfterschoolValueMultipleChildren(TestCase):
         self.assertEqual(eligibility.value, expected_annual)
         self.assertEqual(eligibility.household_value, expected_annual)
 
-    def test_eligible_members_tracked_correctly_for_multiple_children(self):
+    def test_eligible_members_tracked_correctly_for_multiple_children(self) -> None:
         """Test that all eligible children are tracked in eligible_members."""
         calculator = self._create_calculator([5, 10, 14])  # 3 eligible children (ages 5, 10, 14)
         eligibility = calculator.eligible()
@@ -396,7 +396,7 @@ class TestMaDhspAfterschoolValueMultipleChildren(TestCase):
         eligible_count = sum(1 for m in eligibility.eligible_members if m.eligible)
         self.assertEqual(eligible_count, 3)  # All 3 children are eligible
 
-    def test_mixed_ages_only_k8_children_eligible(self):
+    def test_mixed_ages_only_k8_children_eligible(self) -> None:
         """Test that only K-8 age children (5-14) are marked as eligible members."""
         # Mix of ages: 3 (too young), 8 (eligible), 16 (too old)
         calculator = self._create_calculator([3, 8, 16])

@@ -28,7 +28,9 @@ class ChildCareAssistance(ProgramCalculator):
     dependencies = ["age", "income_amount", "income_frequency", "zipcode", "household_size"]
     fpl_limits = CccapFplCache()
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            return
         cccap_county_limits = self.fpl_limits.fetch()
 
         # location
@@ -59,8 +61,11 @@ class ChildCareAssistance(ProgramCalculator):
             messages.assets(ChildCareAssistance.asset_limit),
         )
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
+
+        if member.age is None:
+            return
 
         # age
         child_eligible = False
@@ -76,6 +81,8 @@ class ChildCareAssistance(ProgramCalculator):
         e.condition(child_eligible)
 
     def member_value(self, member: HouseholdMember):
+        if member.age is None:
+            return 0
         if member.age <= ChildCareAssistance.max_age_preschool:
             return ChildCareAssistance.preschool_value
         elif member.age < ChildCareAssistance.max_age_afterschool:

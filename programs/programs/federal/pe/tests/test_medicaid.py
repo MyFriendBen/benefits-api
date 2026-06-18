@@ -30,7 +30,7 @@ class TestMedicaidSeniorEligibility(TestCase):
         calculator.get_member_dependency_value = Mock()
         return calculator
 
-    def _create_member(self, age, is_disabled=False):
+    def _create_member(self, age, is_disabled: bool=False):
         """Helper to create a mock member."""
         member = Mock()
         member.id = 1
@@ -39,7 +39,7 @@ class TestMedicaidSeniorEligibility(TestCase):
         member.has_disability = Mock(return_value=is_disabled)
         return member
 
-    def test_senior_who_qualifies_via_aged_pathway_returns_aged_category(self):
+    def test_senior_who_qualifies_via_aged_pathway_returns_aged_category(self) -> None:
         """
         Test that a senior (65+) who qualifies via the aged/disabled pathway
         returns the AGED category value.
@@ -60,7 +60,7 @@ class TestMedicaidSeniorEligibility(TestCase):
         # Should have checked the aged/disabled pathway
         calculator.get_member_dependency_value.assert_called_once_with(member_dependency.MedicaidSeniorOrDisabled, 1)
 
-    def test_senior_who_fails_aged_pathway_returns_zero(self):
+    def test_senior_who_fails_aged_pathway_returns_zero(self) -> None:
         """
         Test that a senior (65+) who fails the aged/disabled pathway
         returns 0 and does NOT fall through to ACA expansion.
@@ -87,7 +87,7 @@ class TestMedicaidSeniorEligibility(TestCase):
         # Should NOT have called get_member_variable (no ACA fallback)
         calculator.get_member_variable.assert_not_called()
 
-    def test_senior_at_age_65_boundary_uses_aged_pathway(self):
+    def test_senior_at_age_65_boundary_uses_aged_pathway(self) -> None:
         """
         Test that exactly 65 years old uses the aged/disabled pathway.
         """
@@ -104,7 +104,7 @@ class TestMedicaidSeniorEligibility(TestCase):
         self.assertEqual(result, 474 * 12)
         calculator.get_member_dependency_value.assert_called_once()
 
-    def test_adult_age_64_uses_aca_pathway_not_aged(self):
+    def test_adult_age_64_uses_aca_pathway_not_aged(self) -> None:
         """
         Test that 64-year-old uses ACA expansion pathway, not aged pathway.
         """
@@ -124,7 +124,7 @@ class TestMedicaidSeniorEligibility(TestCase):
         # Should have called get_member_variable for ACA check
         calculator.get_member_variable.assert_called_once_with(1)
 
-    def test_member_with_none_age_uses_aca_pathway(self):
+    def test_member_with_none_age_uses_aca_pathway(self) -> None:
         """
         Test that members with None age are treated as non-seniors
         and use the ACA expansion pathway.
@@ -154,7 +154,7 @@ class TestMedicaidDisabledEligibility(TestCase):
         calculator.get_member_dependency_value = Mock()
         return calculator
 
-    def _create_member(self, age, is_disabled=False):
+    def _create_member(self, age, is_disabled: bool=False):
         member = Mock()
         member.id = 1
         member.age = age
@@ -162,7 +162,7 @@ class TestMedicaidDisabledEligibility(TestCase):
         member.has_disability = Mock(return_value=is_disabled)
         return member
 
-    def test_disabled_adult_uses_disabled_pathway(self):
+    def test_disabled_adult_uses_disabled_pathway(self) -> None:
         """
         Test that disabled adults (any age under 65) use the aged/disabled pathway.
         """
@@ -178,7 +178,7 @@ class TestMedicaidDisabledEligibility(TestCase):
         # Should return DISABLED category * 12
         self.assertEqual(result, 474 * 12)
 
-    def test_disabled_adult_who_fails_disabled_pathway_returns_zero(self):
+    def test_disabled_adult_who_fails_disabled_pathway_returns_zero(self) -> None:
         """
         Test that disabled adults who fail the aged/disabled pathway
         return 0 and do NOT fall through to ACA expansion.
@@ -200,7 +200,7 @@ class TestMedicaidDisabledEligibility(TestCase):
         self.assertEqual(result, 0)
         calculator.get_member_variable.assert_not_called()
 
-    def test_disabled_senior_returns_disabled_not_aged(self):
+    def test_disabled_senior_returns_disabled_not_aged(self) -> None:
         """
         Test that a disabled senior (65+) returns DISABLED category,
         not AGED category. Disability takes priority.
@@ -221,7 +221,7 @@ class TestMedicaidDisabledEligibility(TestCase):
         # Should return DISABLED (500 * 12), not AGED (474 * 12)
         self.assertEqual(result, 500 * 12)
 
-    def test_disabled_child_uses_disabled_pathway(self):
+    def test_disabled_child_uses_disabled_pathway(self) -> None:
         """
         Test that a disabled child uses the aged/disabled pathway.
         """
@@ -248,7 +248,7 @@ class TestMedicaidAdultEligibility(TestCase):
         calculator.get_member_dependency_value = Mock()
         return calculator
 
-    def _create_member(self, age, is_disabled=False):
+    def _create_member(self, age, is_disabled: bool=False):
         member = Mock()
         member.id = 1
         member.age = age
@@ -256,7 +256,7 @@ class TestMedicaidAdultEligibility(TestCase):
         member.has_disability = Mock(return_value=is_disabled)
         return member
 
-    def test_adult_who_qualifies_returns_adult_category(self):
+    def test_adult_who_qualifies_returns_adult_category(self) -> None:
         """
         Test that an adult who qualifies via ACA expansion returns ADULT category.
         """
@@ -272,7 +272,7 @@ class TestMedicaidAdultEligibility(TestCase):
 
         self.assertEqual(result, 474 * 12)
 
-    def test_adult_who_fails_aca_returns_zero(self):
+    def test_adult_who_fails_aca_returns_zero(self) -> None:
         """
         Test that adults who fail ACA expansion (income > 138% FPL) return 0.
         """
@@ -299,7 +299,7 @@ class TestMedicaidParentEligibility(TestCase):
         calculator.get_member_dependency_value = Mock()
         return calculator
 
-    def _create_member(self, age, is_disabled=False):
+    def _create_member(self, age, is_disabled: bool=False):
         member = Mock()
         member.id = 1
         member.age = age
@@ -307,7 +307,7 @@ class TestMedicaidParentEligibility(TestCase):
         member.has_disability = Mock(return_value=is_disabled)
         return member
 
-    def test_parent_who_qualifies_returns_parent_category(self):
+    def test_parent_who_qualifies_returns_parent_category(self) -> None:
         """
         Test that a parent/caretaker who qualifies returns PARENT category value.
         PolicyEngine determines PARENT category based on having qualifying children.
@@ -325,7 +325,7 @@ class TestMedicaidParentEligibility(TestCase):
         # Should return PARENT category * 12
         self.assertEqual(result, 474 * 12)
 
-    def test_parent_category_has_different_value_than_adult(self):
+    def test_parent_category_has_different_value_than_adult(self) -> None:
         """
         Test that PARENT and ADULT categories can have different values.
         """
@@ -352,7 +352,7 @@ class TestMedicaidPregnantEligibility(TestCase):
         calculator.get_member_dependency_value = Mock()
         return calculator
 
-    def _create_member(self, age, is_disabled=False):
+    def _create_member(self, age, is_disabled: bool=False):
         member = Mock()
         member.id = 1
         member.age = age
@@ -360,7 +360,7 @@ class TestMedicaidPregnantEligibility(TestCase):
         member.has_disability = Mock(return_value=is_disabled)
         return member
 
-    def test_pregnant_member_who_qualifies_returns_pregnant_category(self):
+    def test_pregnant_member_who_qualifies_returns_pregnant_category(self) -> None:
         """
         Test that a pregnant member who qualifies returns PREGNANT category value.
         PolicyEngine uses higher FPL thresholds for pregnant members (e.g., 213% for IL).
@@ -377,7 +377,7 @@ class TestMedicaidPregnantEligibility(TestCase):
 
         self.assertEqual(result, 474 * 12)
 
-    def test_pregnant_senior_uses_aged_pathway_not_pregnant(self):
+    def test_pregnant_senior_uses_aged_pathway_not_pregnant(self) -> None:
         """
         Test that a pregnant senior (65+) still uses aged/disabled pathway.
         Age routing takes precedence over pregnancy status.
@@ -405,7 +405,7 @@ class TestMedicaidChildEligibility(TestCase):
         calculator.get_member_dependency_value = Mock()
         return calculator
 
-    def _create_member(self, age, is_disabled=False):
+    def _create_member(self, age, is_disabled: bool=False):
         member = Mock()
         member.id = 1
         member.age = age
@@ -413,7 +413,7 @@ class TestMedicaidChildEligibility(TestCase):
         member.has_disability = Mock(return_value=is_disabled)
         return member
 
-    def test_infant_who_qualifies_returns_infant_category(self):
+    def test_infant_who_qualifies_returns_infant_category(self) -> None:
         """
         Test that an infant who qualifies returns INFANT category value.
         """
@@ -429,7 +429,7 @@ class TestMedicaidChildEligibility(TestCase):
 
         self.assertEqual(result, 0 * 12)
 
-    def test_young_child_who_qualifies_returns_young_child_category(self):
+    def test_young_child_who_qualifies_returns_young_child_category(self) -> None:
         """
         Test that a young child who qualifies returns YOUNG_CHILD category value.
         """
@@ -445,7 +445,7 @@ class TestMedicaidChildEligibility(TestCase):
 
         self.assertEqual(result, 200 * 12)
 
-    def test_older_child_who_qualifies_returns_older_child_category(self):
+    def test_older_child_who_qualifies_returns_older_child_category(self) -> None:
         """
         Test that an older child who qualifies returns OLDER_CHILD category value.
         PolicyEngine uses higher FPL thresholds for children (e.g., 318% for IL).
@@ -462,7 +462,7 @@ class TestMedicaidChildEligibility(TestCase):
 
         self.assertEqual(result, 284 * 12)
 
-    def test_child_who_fails_income_returns_zero(self):
+    def test_child_who_fails_income_returns_zero(self) -> None:
         """
         Test that a child who fails the income test returns 0.
         """
@@ -488,7 +488,7 @@ class TestMedicaidYoungAdultEligibility(TestCase):
         calculator.get_member_dependency_value = Mock()
         return calculator
 
-    def _create_member(self, age, is_disabled=False):
+    def _create_member(self, age, is_disabled: bool=False):
         member = Mock()
         member.id = 1
         member.age = age
@@ -496,7 +496,7 @@ class TestMedicaidYoungAdultEligibility(TestCase):
         member.has_disability = Mock(return_value=is_disabled)
         return member
 
-    def test_young_adult_who_qualifies_returns_young_adult_category(self):
+    def test_young_adult_who_qualifies_returns_young_adult_category(self) -> None:
         """
         Test that a young adult (typically 19-20) who qualifies returns YOUNG_ADULT category.
         """
@@ -523,7 +523,7 @@ class TestMedicaidSSIRecipientEligibility(TestCase):
         calculator.get_member_dependency_value = Mock()
         return calculator
 
-    def _create_member(self, age, is_disabled=False):
+    def _create_member(self, age, is_disabled: bool=False):
         member = Mock()
         member.id = 1
         member.age = age
@@ -531,7 +531,7 @@ class TestMedicaidSSIRecipientEligibility(TestCase):
         member.has_disability = Mock(return_value=is_disabled)
         return member
 
-    def test_ssi_recipient_returns_ssi_recipient_category(self):
+    def test_ssi_recipient_returns_ssi_recipient_category(self) -> None:
         """
         Test that an SSI recipient returns SSI_RECIPIENT category value.
         SSI recipients are categorically eligible for Medicaid.
@@ -559,7 +559,7 @@ class TestMedicaidNoneCategory(TestCase):
         calculator.get_member_dependency_value = Mock()
         return calculator
 
-    def _create_member(self, age, is_disabled=False):
+    def _create_member(self, age, is_disabled: bool=False):
         member = Mock()
         member.id = 1
         member.age = age
@@ -567,7 +567,7 @@ class TestMedicaidNoneCategory(TestCase):
         member.has_disability = Mock(return_value=is_disabled)
         return member
 
-    def test_none_category_returns_zero(self):
+    def test_none_category_returns_zero(self) -> None:
         """
         Test that NONE category returns 0 (no Medicaid eligibility).
         """

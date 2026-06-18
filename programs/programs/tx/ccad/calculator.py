@@ -13,7 +13,7 @@ class TxCcad(ProgramCalculator):
         "income_frequency",
     ]
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
         age = member.age
         age_eligible = age is not None and (
@@ -21,7 +21,9 @@ class TxCcad(ProgramCalculator):
         )
         e.condition(bool(age_eligible))
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            return
         # SNAP and TANF are household-level benefits that bypass the income test
         presumed_eligible = self.screen.has_benefit("snap") or self.screen.has_benefit("tanf")
 

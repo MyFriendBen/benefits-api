@@ -8,6 +8,8 @@ class Chapter115Veteran(UrgentNeedFunction):
     asset_limit_joint = 16_600
 
     def eligible(self):
+        if self.urgent_need.year is None:
+            return False
         # income
         income_limit = self.urgent_need.year.as_dict()[self.screen.household_size] * self.fpl_percent
         income = self.screen.calc_gross_income("yearly", ["all"])

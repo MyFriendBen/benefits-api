@@ -42,13 +42,15 @@ class WaHeadStart(ProgramCalculator):
         "income_frequency",
     ]
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
         ehs_eligible = (member.age is not None and member.age < self.ehs_max_age) or member.pregnant
         hs_eligible = member.age is not None and self.hs_min_age <= member.age <= self.hs_max_age
         e.condition(ehs_eligible or hs_eligible)
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            return
         e.condition(
             not self.screen.has_benefit("wa_head_start"),
             messages.must_not_have_benefit("Head Start"),

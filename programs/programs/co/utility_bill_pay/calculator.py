@@ -8,10 +8,10 @@ class UtilityBillPay(ProgramCalculator):
     member_presumptive_eligibility = ("co_medicaid", "emergency_medicaid", "chp")
     amount = 400
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         presumed_eligibility = False
         for benefit in self.presumptive_eligibility:
             if self.screen.has_benefit(benefit) or (benefit in self.data and self.data[benefit].eligible):
