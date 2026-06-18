@@ -49,14 +49,8 @@
             "link_text": ""
         },
         {
-            "external_name": "trump_account_parent_ssn",
-            "text": "Parent or guardian's Social Security Number (SSN) or ITIN",
-            "link_url": "",
-            "link_text": ""
-        },
-        {
             "external_name": "trump_account_irs_form",
-            "text": "IRS Form 4547 (filed with your federal tax return)",
+            "text": "IRS Form 4547 (to elect to open a Trump Account)",
             "link_url": "https://www.irs.gov/form4547",
             "link_text": "IRS Form 4547 page"
         }
