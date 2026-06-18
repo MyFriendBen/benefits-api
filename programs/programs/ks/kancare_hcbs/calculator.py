@@ -3,45 +3,17 @@ from programs.programs import messages
 
 
 class KsKancareHcbs(ProgramCalculator):
-    """KanCare HCBS (Home and Community-Based Services) Waivers.
+    """KanCare HCBS Waivers — flat $35,000/yr; single financial gate.
 
-    Kansas operates seven HCBS waivers through KanCare (Kansas Medicaid) that
-    provide in-home/community services to people who would otherwise require
-    institutional care (Frail Elderly, Physical Disability, I/DD, Autism,
-    Brain Injury, Serious Emotional Disturbance, Technology Assisted).
+    Modeled as one program across Kansas's seven HCBS waivers. Eligibility:
+      - Asset test: countable assets <= $2,000 for single applicants. Married
+        applicants are NOT asset-gated (spousal-impoverishment protections the
+        screener can't compute from a combined total; a warning message covers it).
+      - SSI receipt bypasses the asset test.
+      - Income, age, and disability flags do not gate (informational only).
 
-    Per the spec, this is modeled as a single program rather than split per
-    waiver. The only hard screener-testable gate is the financial asset test;
-    the formal KDADS assessment process gates functional eligibility downstream.
-
-    Eligibility (per spec):
-      - Asset limit: countable assets <= $2,000 for a single applicant. Married
-        applicants are NOT asset-gated: spousal-impoverishment rules protect a
-        large, applicant-dependent share (the Community Spouse Resource
-        Allowance, up to ~$162,660 in 2026) that the screener cannot compute
-        because it captures only a combined household-asset total with no
-        per-spouse split. Applying the single $2,000 limit to a couple would
-        wrongly exclude eligible married households, so the asset test is not
-        applied when a spouse/partner is present (inclusivity assumption — the
-        config warning message tells married users their assets were not
-        considered and KanCare verifies at application).
-      - SSI auto-eligibility: SSI recipients (the `has_ssi` checkbox or any SSI
-        income stream) are automatically KanCare-financially-eligible and bypass
-        the asset test.
-      - Income does NOT disqualify: income above the $2,982/month (300% SSI FBR,
-        2026) cost-share threshold triggers a patient-liability/Miller-Trust
-        obligation but does not gate screener eligibility.
-      - Age does NOT filter: Brain Injury (0-64) plus Frail Elderly (65+) cover
-        every age, so at least one waiver applies regardless of age.
-      - Disability flags do NOT gate: informational only; functional/diagnostic
-        eligibility is a downstream assessment.
-
-    Data gaps (handled with inclusivity assumptions per spec): nursing-facility
-    level of care, specific disability type / SSA determination, community-living
-    intent, citizenship/immigration status, AU 3-year limit, 5-year asset
-    transfer look-back, and the spousal asset split (married applicants are not
-    asset-gated; see above). The waitlist caveat is surfaced via the config
-    warning message and program description.
+    See spec.md for full eligibility rules, the data-gap inclusivity assumptions,
+    and test scenarios.
     """
 
     asset_limit = 2_000
