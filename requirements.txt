@@ -2,6 +2,7 @@ asgiref==3.7.2
 ast_serialize==0.5.0
 async-timeout==5.0.1
 attrs==22.2.0
+autotyping==24.9.0
 Babel==2.15.0
 beautifulsoup4==4.12.2
 black==26.5.1
@@ -28,6 +29,8 @@ django-phonenumber-field==6.3.0
 django-redis==6.0.0
 django-sesame==3.1
 django-simple-history==3.10.1
+django-stubs==6.0.5
+django-stubs-ext==6.0.5
 django-unfold==0.62.0
 djangorestframework==3.15.2
 drf-yasg==1.21.7
@@ -56,6 +59,7 @@ joblib==1.5.3
 jsonschema==4.25.1
 jsonschema-specifications==2025.9.1
 kiwisolver==1.4.4
+libcst==1.8.6
 librt==0.11.0
 MarkupPy==1.14
 multidict==6.7.1
@@ -67,7 +71,7 @@ oauthlib==3.2.2
 odfpy==1.4.1
 openpyxl==3.1.4
 packaging==23.2
-pathspec==0.11.1
+pathspec==1.1.1
 phonenumbers==8.12.53
 pillow==10.3.0
 platformdirs==3.5.1
@@ -115,6 +119,7 @@ textstat==0.7.13
 tomli==2.2.1
 tqdm==4.66.3
 twilio==7.16.3
+types-PyYAML==6.0.12.20260518
 typing_extensions==4.12.2
 tzdata==2023.3
 uritemplate==4.1.1
