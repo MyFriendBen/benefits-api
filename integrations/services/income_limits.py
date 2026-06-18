@@ -166,7 +166,6 @@ smi = Smi()
 class IncomeLimitsCache(GoogleSheetsCache):
     """
     Income Limits data used for
-    - UtilityBillPay
     - WeatherizationAssistance
     """
 
