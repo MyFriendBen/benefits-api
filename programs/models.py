@@ -72,10 +72,8 @@ def _get_fpl_data() -> dict:
     return _FPL_DEFAULTS
 
 
-
 def _invalidate_fpl_cache() -> None:
     cache.delete(_FPL_CACHE_KEY)
-
 
 
 class FederalPoveryLimit(models.Model):
