@@ -36,6 +36,7 @@ def make_member(age=70, disabled=False, long_term_disability=False, ssi_income=0
 def make_calculator(household_assets=0, has_ssi=False, members=None, married=False):
     """Create a KsKancareHcbs calculator with a mocked screen and program.
 
+    `has_ssi=True` makes screen.has_benefit("ks_ssi") return True (SSI bypass).
     `married=True` makes the head's is_married() report a spouse, which exercises
     the married-applicant path (asset test not applied).
     """
@@ -43,7 +44,10 @@ def make_calculator(household_assets=0, has_ssi=False, members=None, married=Fal
 
     mock_screen = Mock()
     mock_screen.household_assets = household_assets
-    mock_screen.has_ssi = has_ssi
+    # has_benefit("ks_ssi") drives the SSI auto-eligibility bypass. KS-only
+    # calculator, so the household's SSI program is ks_ssi; an sSI income stream
+    # is folded into this by the serializer (CurrentBenefit / _SSI_BENEFIT_NAMES).
+    mock_screen.has_benefit = Mock(side_effect=lambda name: name == "ks_ssi" and has_ssi)
     if members is None:
         members = [make_member()]
     mock_screen.household_members.all = Mock(return_value=members)
@@ -124,32 +128,35 @@ class TestKsKancareHcbsAssetGate(TestCase):
 
 
 class TestKsKancareHcbsSsiBypass(TestCase):
-    """SSI confers automatic KanCare financial eligibility, bypassing the asset test."""
+    """SSI confers automatic KanCare financial eligibility, bypassing the asset test.
 
-    def test_ssi_checkbox_bypasses_over_limit_assets(self):
-        """Scenario 4: SSI recipient with assets above $2,000 is still eligible."""
+    The calculator checks has_benefit("ks_ssi"). Folding an sSI income stream into
+    that benefit is the serializer's job (CurrentBenefit / _SSI_BENEFIT_NAMES), not
+    this calculator's — so these tests exercise the has_benefit("ks_ssi") contract.
+    """
+
+    def test_ssi_bypasses_over_limit_assets(self):
+        """Scenario 4: ks_ssi recipient with assets above $2,000 is still eligible."""
         e = run_household(make_calculator(household_assets=3_500, has_ssi=True))
         self.assertTrue(e.eligible)
 
-    def test_ssi_income_stream_bypasses_over_limit_assets(self):
-        member = make_member(age=55, ssi_income=943 * 12)
-        e = run_household(make_calculator(household_assets=3_500, members=[member]))
+    def test_ssi_bypasses_well_over_limit_assets(self):
+        """ks_ssi bypass holds regardless of how high assets are."""
+        e = run_household(make_calculator(household_assets=9_999, has_ssi=True))
         self.assertTrue(e.eligible)
 
     def test_no_ssi_and_over_limit_assets_ineligible(self):
-        member = make_member(age=55, ssi_income=0)
-        e = run_household(make_calculator(household_assets=3_500, has_ssi=False, members=[member]))
+        e = run_household(make_calculator(household_assets=3_500, has_ssi=False))
         self.assertFalse(e.eligible)
 
-    def test_ssi_uses_ssi_token_not_all(self):
-        """Regression: SSI detection must query the ["sSI"] income token.
+    def test_ssi_bypass_keys_off_ks_ssi_only(self):
+        """The bypass must check the ks_ssi benefit specifically.
 
-        The member mock returns income only for ("yearly", ["sSI"]). If the
-        calculator queried a different token, has_ssi would be False and the
-        over-limit assets would make the household ineligible.
+        make_calculator wires has_benefit to return True only for "ks_ssi"; if the
+        calculator checked a different benefit name, the over-limit assets would
+        make the household ineligible.
         """
-        member = make_member(age=40, ssi_income=500)
-        e = run_household(make_calculator(household_assets=9_999, members=[member]))
+        e = run_household(make_calculator(household_assets=9_999, has_ssi=True))
         self.assertTrue(e.eligible)
 
 

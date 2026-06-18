@@ -22,23 +22,13 @@ class KsKancareHcbs(ProgramCalculator):
         "household_assets",
     ]
 
-    def _has_ssi(self) -> bool:
-        """SSI confers automatic KanCare financial eligibility.
-
-        Catches both the Screen `has_ssi` checkbox and any member SSI income
-        stream, consistent with how other programs treat SSI categorical
-        eligibility.
-        """
-        if self.screen.has_ssi:
-            return True
-        return any(
-            member.calc_gross_income("yearly", ["sSI"]) > 0 for member in self.screen.household_members.all()
-        )
-
     def household_eligible(self, e: Eligibility):
         # SSI recipients are automatically KanCare-financially-eligible and
-        # bypass the asset test entirely.
-        if self._has_ssi():
+        # bypass the asset test entirely. This is a KS-only calculator, so the
+        # household's SSI program is ks_ssi. has_benefit reads the CurrentBenefit
+        # table, which also reflects SSI derived from an sSI income stream (the
+        # serializer's _SSI_BENEFIT_NAMES rule — ks_ssi must be in that set).
+        if self.screen.has_benefit("ks_ssi"):
             e.condition(True, messages.presumed_eligibility())
             return
 
