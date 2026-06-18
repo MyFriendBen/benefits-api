@@ -22,8 +22,15 @@ def _get_cfh_county_values() -> dict:
         return values
 
     data = GoogleSheets(_CFH_SHEET_ID, _CFH_RANGE_NAME).data_by_column(_CFH_COUNTY_COLUMN, _CFH_AVERAGE_COLUMN)
+    values = {}
+    for row in data:
+        try:
+            county_key = row[_CFH_COUNTY_COLUMN].strip() + " County"
+            premium_value = float(row[_CFH_AVERAGE_COLUMN])
+            values[county_key] = premium_value
+        except (KeyError, ValueError, AttributeError):
+            continue  # Skip malformed rows
 
-    values = {row[_CFH_COUNTY_COLUMN].strip() + " County": float(row[_CFH_AVERAGE_COLUMN]) for row in data}
     cache.set(_CFH_CACHE_KEY, values, timeout=_CFH_CACHE_TIMEOUT)
     return values
 

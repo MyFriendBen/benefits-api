@@ -24,7 +24,22 @@ class RAGCache:
     def _process(self):
         data = GoogleSheets(self.sheet_id, self.range_name).data()
 
-        return {d[0].strip() + " County": [int(v.replace(",", "")) for v in d[1:]] for d in data}
+        result = {}
+        for d in data:
+            if len(d) < 2:
+                continue
+            try:
+                county_key = d[0].strip() + " County"
+                income_values = []
+                for v in d[1:]:
+                    try:
+                        income_values.append(int(v.replace(",", "")))
+                    except (ValueError, AttributeError):
+                        income_values.append(0)  # Default for malformed values
+                result[county_key] = income_values
+            except (IndexError, AttributeError):
+                continue  # Skip malformed rows
+        return result
 
 
 class RentalAssistanceGrant(ProgramCalculator):

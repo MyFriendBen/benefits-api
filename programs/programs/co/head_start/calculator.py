@@ -14,7 +14,18 @@ class CoHeadStartCountyEligibleCache:
     def _process(self):
         data = GoogleSheets(self.sheet_id, self.range_name).data()
 
-        return {row[0].strip() + " County": row[1] == "TRUE" for row in data}
+        result = {}
+        for row in data:
+            if len(row) < 2:
+                continue
+            try:
+                county_key = row[0].strip() + " County"
+                is_eligible = row[1] == "TRUE"
+                result[county_key] = is_eligible
+            except (IndexError, AttributeError):
+                continue  # Skip malformed rows
+
+        return result
 
     def _get_data(self) -> dict:
         data = cache.get(self.CACHE_KEY)

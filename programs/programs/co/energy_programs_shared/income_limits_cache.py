@@ -5,7 +5,7 @@ from integrations.services.sheets.sheets import GoogleSheets
 class IncomeLimitsCache:
     sheet_id = "1ZzQYhULtiP61crj0pbPjhX62L1TnyAisLcr_dQXbbFg"
     range_name = "A2:K"
-    CACHE_KEY = "income_limits_data"
+    CACHE_KEY = "energy_income_limits_data"
     CACHE_TIMEOUT = 60 * 60 * 24  # 24 hours
 
     def _get_data(self) -> dict:

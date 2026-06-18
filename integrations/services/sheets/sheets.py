@@ -7,8 +7,6 @@ import time
 import socket
 import ssl
 from googleapiclient.errors import HttpError
-from integrations.util.cache import Cache
-
 
 
 class GoogleSheets:

@@ -23,7 +23,18 @@ class ACACache:
     def _process(self):
         data = GoogleSheets(self.sheet_id, self.range_name).data()
 
-        return {d[0].strip() + " County": float(d[1].replace(",", "")) for d in data}
+        # return {d[0].strip() + " County": float(d[1].replace(",", "")) for d in data}
+        result = {}
+        for d in data:
+            if len(d) < 2:
+                continue
+            try:
+                county_key = d[0].strip() + " County"
+                premium_value = float(d[1].replace(",", ""))
+                result[county_key] = premium_value
+            except (IndexError, ValueError, AttributeError):
+                continue  # Skip malformed rows
+        return result
 
 
 class ACASubsidiesNC(ProgramCalculator):

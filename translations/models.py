@@ -97,8 +97,9 @@ class TranslationManager(TranslatableManager):
 
     def all_translations(self, langs=all_langs):
         translations_dict = {}
+        cached_translations = _get_translation_data()
         for lang in langs:
-            translations_dict[lang] = _get_translation_data()[lang]
+            translations_dict[lang] = cached_translations[lang]
 
         return translations_dict
 
@@ -183,6 +184,11 @@ class Translation(TranslatableModel):
     label = models.CharField(max_length=128, null=False, blank=False, unique=True)
 
     objects = TranslationManager()
+
+    def delete(self, *args, **kwargs):
+        result = super().delete(*args, **kwargs)
+        _invalidate_translation_cache()
+        return result
 
     def save(self, *args, **kwargs):
         """

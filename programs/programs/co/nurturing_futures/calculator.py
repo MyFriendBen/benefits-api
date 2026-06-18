@@ -22,7 +22,17 @@ class BoulderAmiCache:
     def _process(self):
         data = GoogleSheets(self.sheet_id, self.range_name).data()
 
-        return [int(a.replace(",", "").replace("$", "")) for a in data[0]]
+        if not data or len(data) == 0:
+            return []
+
+        result = []
+        for a in data[0]:
+            try:
+                cleaned_value = a.replace(",", "".replace("$", ""))
+                result.append(int(cleaned_value))
+            except (ValueError, AttributeError):
+                result.append(0)  # Use 0 as default for malformed values
+        return result
 
 
 class NurturingFutures(ProgramCalculator):
