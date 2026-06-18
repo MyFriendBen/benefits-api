@@ -61,27 +61,6 @@
             "link_text": "IRS Form 4547 page"
         }
     ],
-    "navigators": [
-        {
-            "external_name": "united_way_of_the_plains_vita",
-            "name": "United Way of the Plains — Free Tax Filing (VITA)",
-            "email": "email@unitedwayplains.org",
-            "description": "Free help preparing and filing your federal tax return from IRS-certified volunteers (VITA), for income-limited households in south-central Kansas. The Trump Account election (Form 4547) is filed with your return.",
-            "assistance_link": "https://unitedwayplains.org/financial-security/free-tax-filing-services/",
-            "phone_number": "+13162671321",
-            "counties": ["Sedgwick County", "Butler County", "Cowley County", "Geary County", "Marion County", "Pratt County"],
-            "languages": ["en", "es"]
-        },
-        {
-            "external_name": "aarp_foundation_tax_aide_ks",
-            "name": "AARP Foundation Tax-Aide (Kansas)",
-            "email": "ksaarp@aarp.org",
-            "description": "Free in-person and virtual help preparing and filing your federal tax return from IRS-certified volunteers, at sites across Kansas. Open to all ages and incomes; AARP membership not required. The Trump Account election (Form 4547) is filed with your return. Book an appointment at kstaxaide.com.",
-            "assistance_link": "https://www.kstaxaide.com/appointments",
-            "phone_number": "+18664483619",
-            "languages": ["en"]
-        }
-    ],
     "warning_message": {
         "external_name": "trump_account_notices",
         "calculator": "_show",
