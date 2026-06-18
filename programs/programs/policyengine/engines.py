@@ -69,8 +69,13 @@ def _fetch_pe_bearer_token() -> str:
         "grant_type": "client_credentials",
         "audience": "https://household.api.policyengine.org",
     }
-    res = requests.post(_pe_token_url, json=payload)
-    token = res.json()["access_token"]
+    try:
+        res = requests.post(_pe_token_url, json=payload, timeout=(5, 30))
+        res.raise_for_status()
+        token = res.json()["access_token"]
+    except requests.RequestException as e:
+        raise RuntimeError(f"Failed to fetch PolicyEngine bearer token: {e}") from e
+
     cache.set(_PE_TOKEN_CACHE_KEY, token, timeout=_PE_TOKEN_TIMEOUT)
     return token
 
