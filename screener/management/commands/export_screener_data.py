@@ -408,7 +408,6 @@ class Command(BaseCommand):
             "screen.has_ssdi": "Has Social Security Disability Insurance",
             "screen.has_cowap": "Has Colorado Weatherization Assistance Program",
             "screen.has_ncwap": "Has North Carolina Weatherization Assistance Program",
-            "screen.has_ubp": "Has Utility Bill Payment assistance",
             "screen.has_pell_grant": "Has Pell Grant",
             "screen.has_rag": "Has Refugee Assistance Grant",
             "screen.has_nfp": "Has Nurse-Family Partnership",

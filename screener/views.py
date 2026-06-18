@@ -373,7 +373,6 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
             "cesn_leap",
             "cesn_eoc",
             "cesn_cowap",
-            "cesn_ubp",
             "cesn_care",
         )
 

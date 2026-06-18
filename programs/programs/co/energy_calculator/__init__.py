@@ -30,7 +30,6 @@ from .percentage_of_income_payment_plan.calculator import (
     EnergyCalculatorPercentageOfIncomePaymentPlan,
 )
 from .property_credit_rebate.calculator import EnergyCalculatorPropertyCreditRebate
-from .utility_bill_pay.calculator import EnergyCalculatorUtilityBillPay
 from .vehicle_exchange.calculator import EnergyCalculatorVehicleExchange
 from .weatherization_assistance.calculator import (
     EnergyCalculatorWeatherizationAssistance,
@@ -45,7 +44,6 @@ cesn_calculators: dict[str, type[ProgramCalculator]] = {
     "cesn_care": EnergyCalculatorAffordableResidentialEnergy,
     "cesn_eocs": EnergyCalculatorEnergyOutreachSolar,
     "cesn_leap": EnergyCalculatorEnergyAssistance,
-    "cesn_ubp": EnergyCalculatorUtilityBillPay,
     "cesn_cpcr": EnergyCalculatorPropertyCreditRebate,
     "cesn_eoc": EnergyCalculatorEnergyOutreach,
     "cesn_ea": EnergyCalculatorEmergencyAssistance,
