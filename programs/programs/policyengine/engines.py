@@ -88,7 +88,7 @@ def _fetch_pe_bearer_token() -> str:
     except requests.RequestException as e:
         raise RuntimeError(f"Failed to fetch PolicyEngine bearer token: {e}") from e
     except (ValueError, KeyError) as e:
-        raise RuntimeError(f"Invalid response from PolicyEngine token")
+        raise RuntimeError(f"Invalid response from PolicyEngine token endpoint") from e
 
     # Subtract 60s to avoid serving a token in its final seconds before expiry
     cache.set(_PE_TOKEN_CACHE_KEY, token, timeout=max(expires_in - 60, 60))
