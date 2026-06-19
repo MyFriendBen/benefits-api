@@ -6,7 +6,6 @@ from screener.models import HouseholdMember
 from programs.programs.helpers import medicaid_eligible
 import programs.programs.messages as messages
 
-
 _CFH_CACHE_KEY = "cfh_county_values"
 _CFH_CACHE_TIMEOUT = 60 * 60 * 24  # 1 day
 

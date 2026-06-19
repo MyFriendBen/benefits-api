@@ -12,7 +12,6 @@ from django.core.cache import cache
 from typing import Optional, TypedDict, Union
 from programs.programs.translation_overrides import warning_calculators
 
-
 _FPL_CACHE_KEY = "fpl_cache"
 _FPL_CACHE_TIMEOUT = 60 * 60 * 24  # 24 hours
 
