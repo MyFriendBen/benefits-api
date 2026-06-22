@@ -398,23 +398,15 @@ The benefit key in `category_benefits` creates a critical chain that must be con
    }
    ```
 
-2. **Database Field**: In `screener/models.py`, Screen model must have:
-   ```python
-   has_snap = models.BooleanField(default=False)
-   ```
+2. **Frontend Field**: In `benefits-calculator/src/Assets/updateScreen.ts`, the benefit key is sent as part of `current_benefits` (not a `has_*` field).
 
-3. **Frontend Field**: In `benefits-calculator/src/Assets/updateScreen.ts`:
-   ```typescript
-   has_snap: formData.benefits.snap
-   ```
-
-4. **Backend Mapping**: In `screener/models.py`, `has_benefit()` method:
+3. **Backend Mapping**: In `screener/models.py`, `has_benefit()` queries the `screener_current_benefits` join table:
    ```python
    name_map = {
-       "snap": self.has_snap,
-       "co_snap": self.has_snap,      # Multiple programs, same benefit!
-       "tx_snap": self.has_snap,       # All map to same has_* field
-       "federal_snap": self.has_snap,
+       "snap": "snap",
+       "co_snap": "snap",        # Multiple programs, same real-world benefit
+       "tx_snap": "snap",
+       "federal_snap": "snap",
    }
    ```
 
@@ -425,7 +417,7 @@ Multiple programs can check the same benefit field. For example:
 - State variant: `name_abbreviated = "co_snap"`
 - Calculator variant: `name_abbreviated = "cesn_snap"`
 
-**All must map to the SAME `has_*` field** in the `has_benefit()` name_map!
+**All must map to the SAME canonical benefit name** in the `has_benefit()` name_map, which is looked up in the `screener_current_benefits` join table.
 
 ### Adding a New Program with Benefit Checkbox
 
@@ -445,9 +437,7 @@ If your program needs an "I already have this" checkbox:
    }
    ```
 
-2. **Add database field** to Screen model (requires migration)
-3. **Add frontend mapping** in `updateScreen.ts`
-4. **Add backend mapping** for ALL variant names of your program
+2. **Add backend mapping** in `has_benefit()` name_map for ALL variant names of your program
 
 For complete details, see: `configuration/white_labels/_template.py` (lines 243-303)
 
