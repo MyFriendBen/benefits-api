@@ -9,6 +9,8 @@ jobs:
     name: Convert to draft
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
       - name: Mark as draft
         uses: voiceflow/draft-pr@latest
