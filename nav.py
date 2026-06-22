@@ -34,10 +34,7 @@ def write_navs(counties: list[str], phone: str, url: str, name: str) -> None:
     with transaction.atomic():
         # Resolve every county up front so a bad/unmatched name fails before we
         # create the navigator or any translation rows.
-        county_objs = [
-            County.objects.get(name__iexact=c.strip(), white_label__code=WL)
-            for c in counties
-        ]
+        county_objs = [County.objects.get(name__iexact=c.strip(), white_label__code=WL) for c in counties]
 
         nav = Navigator.objects.new_navigator(WL, EXTERNAL_NAME, phone)
         en = settings.LANGUAGE_CODE
@@ -50,9 +47,7 @@ def write_navs(counties: list[str], phone: str, url: str, name: str) -> None:
         nav.counties.set(county_objs)
 
         liheap = Program.objects.get(external_name="il_liheap", white_label__code=WL)
-        ProgramNavigator.objects.update_or_create(
-            program=liheap, navigator=nav, defaults={"order": 0}
-        )
+        ProgramNavigator.objects.update_or_create(program=liheap, navigator=nav, defaults={"order": 0})
 
         nav.save()
         print("created", nav.id, nav.external_name, "->", [c.name for c in county_objs])
