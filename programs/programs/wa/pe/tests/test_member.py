@@ -80,7 +80,7 @@ class TestWaAppleHealthForKids(TestCase):
         calc.screen = mock_screen
         return calc
 
-    def _make_member(self, member_id: int=1):
+    def _make_member(self, member_id: int = 1):
         m = Mock()
         m.id = member_id
         return m
@@ -187,7 +187,7 @@ class TestWaAppleHealthMedicaid(TestCase):
     # Helper: build a mock calculator
     # ------------------------------------------------------------------
 
-    def _make_calculator(self, household_size: int=1, gross_income: int=0):
+    def _make_calculator(self, household_size: int = 1, gross_income: int = 0):
         """Return a WaAppleHealthMedicaid instance with mocked screen/program/sim."""
         mock_screen = Mock()
         mock_screen.household_size = household_size
@@ -199,11 +199,11 @@ class TestWaAppleHealthMedicaid(TestCase):
 
     def _make_member(
         self,
-        age: int=35,
-        relationship: str="headOfHousehold",
-        has_medicare: bool=False,
-        has_none_insurance: bool=False,
-        is_disabled: bool=False,
+        age: int = 35,
+        relationship: str = "headOfHousehold",
+        has_medicare: bool = False,
+        has_none_insurance: bool = False,
+        is_disabled: bool = False,
     ):
         """Return a mock HouseholdMember."""
         m = Mock()
@@ -212,7 +212,7 @@ class TestWaAppleHealthMedicaid(TestCase):
         m.calc_age = Mock(return_value=age)
         m.has_disability = Mock(return_value=is_disabled)
 
-        def _has_insurance_types(types, strict: bool=True):
+        def _has_insurance_types(types, strict: bool = True):
             if types == ("medicare",):
                 return has_medicare
             if types == ("none",):

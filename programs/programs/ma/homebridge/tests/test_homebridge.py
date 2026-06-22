@@ -59,7 +59,7 @@ class TestMaHomeBridgeLocationEligibility(TestCase):
         self.mock_missing_deps = Mock()
         self.mock_missing_deps.has.return_value = False
 
-    def _create_calculator(self, county, household_size: int=4, income: int=60000, has_benefit: bool=False):
+    def _create_calculator(self, county, household_size: int = 4, income: int = 60000, has_benefit: bool = False):
         """Helper to create a calculator with mocked screen."""
         mock_screen = Mock()
         mock_screen.county = county
@@ -71,7 +71,7 @@ class TestMaHomeBridgeLocationEligibility(TestCase):
 
         return MaHomeBridge(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
-    def _mock_ami_values(self, mock_hud_client, ami_60: int=60000, ami_80: int=80000) -> None:
+    def _mock_ami_values(self, mock_hud_client, ami_60: int = 60000, ami_80: int = 80000) -> None:
         """Helper to mock HUD client returning values for 60% and 80% AMI.
 
         With ami_80=80000, the 120% ceiling is 80000 x 1.5 = 120000.
@@ -135,7 +135,7 @@ class TestMaHomeBridgeIncomeEligibility(TestCase):
         self.mock_missing_deps = Mock()
         self.mock_missing_deps.has.return_value = False
 
-    def _create_calculator(self, income, household_size: int=4, has_benefit: bool=False):
+    def _create_calculator(self, income, household_size: int = 4, has_benefit: bool = False):
         """Helper to create a calculator with specified income."""
         mock_screen = Mock()
         mock_screen.county = "Cambridge"
@@ -147,7 +147,7 @@ class TestMaHomeBridgeIncomeEligibility(TestCase):
 
         return MaHomeBridge(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
-    def _mock_ami_values(self, mock_hud_client, ami_60: int=60000, ami_80: int=80000) -> None:
+    def _mock_ami_values(self, mock_hud_client, ami_60: int = 60000, ami_80: int = 80000) -> None:
         """Helper to mock HUD client returning values for 60% and 80% AMI.
 
         With ami_80=80000, the 120% ceiling is 80000 x 1.5 = 120000.
@@ -238,7 +238,7 @@ class TestMaHomeBridgeHudApiError(TestCase):
         self.mock_missing_deps = Mock()
         self.mock_missing_deps.has.return_value = False
 
-    def _create_calculator(self, income: int=70000, has_benefit: bool=False):
+    def _create_calculator(self, income: int = 70000, has_benefit: bool = False):
         """Helper to create a calculator."""
         mock_screen = Mock()
         mock_screen.county = "Cambridge"
@@ -276,7 +276,7 @@ class TestMaHomeBridgeHasBenefit(TestCase):
         self.mock_missing_deps = Mock()
         self.mock_missing_deps.has.return_value = False
 
-    def _create_calculator(self, has_benefit: bool=False, income: int=70000):
+    def _create_calculator(self, has_benefit: bool = False, income: int = 70000):
         """Helper to create a calculator."""
         mock_screen = Mock()
         mock_screen.county = "Cambridge"
@@ -288,7 +288,7 @@ class TestMaHomeBridgeHasBenefit(TestCase):
 
         return MaHomeBridge(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
-    def _mock_ami_values(self, mock_hud_client, ami_60: int=60000, ami_80: int=80000) -> None:
+    def _mock_ami_values(self, mock_hud_client, ami_60: int = 60000, ami_80: int = 80000) -> None:
         """Helper to mock HUD client returning values for 60% and 80% AMI.
 
         With ami_80=80000, the 120% ceiling is 80000 x 1.5 = 120000.

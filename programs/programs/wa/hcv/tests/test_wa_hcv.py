@@ -8,14 +8,14 @@ from typing import Optional
 
 
 def make_member(
-    age: int=40,
-    relationship: str="headOfHousehold",
-    pregnant: bool=False,
-    student: bool=False,
-    disabled: bool=False,
-    visually_impaired: bool=False,
-    long_term_disability: bool=False,
-    income: int=0,
+    age: int = 40,
+    relationship: str = "headOfHousehold",
+    pregnant: bool = False,
+    student: bool = False,
+    disabled: bool = False,
+    visually_impaired: bool = False,
+    long_term_disability: bool = False,
+    income: int = 0,
     insurance_types=None,
 ):
     member = Mock()
@@ -39,14 +39,14 @@ def make_member(
 
 def make_calculator(
     members=None,
-    household_size: Optional[int]=None,
-    county: str="King County",
-    zipcode: str="98108",
-    household_assets: int=0,
-    has_section_8: bool=False,
-    gross_income: int=21600,
-    il_ami_value: int=50000,
-    fmr_value: int=2000,
+    household_size: Optional[int] = None,
+    county: str = "King County",
+    zipcode: str = "98108",
+    household_assets: int = 0,
+    has_section_8: bool = False,
+    gross_income: int = 21600,
+    il_ami_value: int = 50000,
+    fmr_value: int = 2000,
 ):
     if members is None:
         members = [make_member()]
@@ -76,7 +76,7 @@ def make_calculator(
     return calc
 
 
-def patch_hud_client(il_ami_value: int=50000, fmr_value: int=2000, il_error: bool=False, fmr_error: bool=False):
+def patch_hud_client(il_ami_value: int = 50000, fmr_value: int = 2000, il_error: bool = False, fmr_error: bool = False):
     """Return a context manager that patches both HUD client methods."""
     from integrations.clients.hud_income_limits import HudIncomeClientError
 

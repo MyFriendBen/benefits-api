@@ -59,7 +59,7 @@ class AddTranslationsCommandTest(TestCase):
             obj.text = current_text
             return obj
 
-        def filter_side_effect(label: Optional[str]=None, **_):
+        def filter_side_effect(label: Optional[str] = None, **_):
             qs = MagicMock()
             qs.first.return_value = make_obj(label_to_english[label]) if label in label_to_english else None
             return qs

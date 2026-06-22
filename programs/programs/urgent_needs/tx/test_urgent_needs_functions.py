@@ -298,7 +298,7 @@ class TestTrustHer(TestCase):
         self.screen = make_tx_screen(self.white_label)
         HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=30)
 
-    def _calc(self, gross_income: int=0, uninsured: bool=True):
+    def _calc(self, gross_income: int = 0, uninsured: bool = True):
         with (
             patch.object(self.screen.__class__, "calc_gross_income", return_value=gross_income),
             patch.object(self.screen.__class__, "has_insurance_types", return_value=uninsured),

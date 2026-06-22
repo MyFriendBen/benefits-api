@@ -15,12 +15,12 @@ from programs.programs.calc import ProgramCalculator, Eligibility
 
 
 def make_calculator(
-    has_ssi: bool=False,
-    has_tanf: bool=False,
-    has_snap: bool=False,
-    household_income: int=0,
-    household_size: int=1,
-    fpl_limit: int=15_650,
+    has_ssi: bool = False,
+    has_tanf: bool = False,
+    has_snap: bool = False,
+    household_income: int = 0,
+    household_size: int = 1,
+    fpl_limit: int = 15_650,
 ):
     """Create a TxWap calculator with a mocked screen and program."""
     mock_program = Mock()

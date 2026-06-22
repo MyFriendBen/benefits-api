@@ -18,14 +18,14 @@ from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibi
 
 
 def make_member(
-    age: int=28,
-    pregnant: bool=False,
-    has_medicaid: bool=False,
-    has_chp: bool=False,
-    has_medicare: bool=False,
-    has_employer: bool=False,
-    has_private: bool=False,
-    has_va: bool=False,
+    age: int = 28,
+    pregnant: bool = False,
+    has_medicaid: bool = False,
+    has_chp: bool = False,
+    has_medicare: bool = False,
+    has_employer: bool = False,
+    has_private: bool = False,
+    has_va: bool = False,
 ):
     """Create a mock household member."""
     member = Mock()
@@ -41,7 +41,7 @@ def make_member(
         "va": has_va,
     }
 
-    def has_insurance_types(types, strict: bool=True):
+    def has_insurance_types(types, strict: bool = True):
         return any(insurance_map.get(t, False) for t in types)
 
     member.insurance = Mock()
@@ -49,7 +49,7 @@ def make_member(
     return member
 
 
-def make_calculator(household_income: int=0, household_size: int=1, fpl_limit: int=15_000):
+def make_calculator(household_income: int = 0, household_size: int = 1, fpl_limit: int = 15_000):
     """Create a TxHtw calculator with a mocked screen and program."""
     mock_program = Mock()
     mock_program.year.get_limit.return_value = fpl_limit
@@ -164,7 +164,7 @@ class TestTxHtwMemberInsuranceEligibility(TestCase):
 class TestTxHtwHouseholdIncomeEligibility(TestCase):
     """Household income must be at or below 204.2% FPL."""
 
-    def _run(self, household_income, fpl_limit: int=15_000):
+    def _run(self, household_income, fpl_limit: int = 15_000):
         # fpl_percent=2.042, so income_limit = 2.042 * fpl_limit
         calc = make_calculator(household_income=household_income, fpl_limit=fpl_limit)
         e = Eligibility()
@@ -191,7 +191,7 @@ class TestTxHtwHouseholdIncomeEligibility(TestCase):
 class TestTxHtwCalcIntegration(TestCase):
     """End-to-end calc() tests using the full eligible() + value() flow."""
 
-    def _make_calc_with_members(self, members, household_income: int=20_000, fpl_limit: int=15_000):
+    def _make_calc_with_members(self, members, household_income: int = 20_000, fpl_limit: int = 15_000):
         calc = make_calculator(household_income=household_income, fpl_limit=fpl_limit)
         calc.screen.household_members.all = Mock(return_value=members)
         return calc

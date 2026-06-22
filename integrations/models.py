@@ -87,7 +87,7 @@ class Link(models.Model):
             self.hash = self.hash_data(body)
             self.validated = False
 
-    def save(self, force_insert: bool=False, force_update: bool=False, using=None, update_fields=None):
+    def save(self, force_insert: bool = False, force_update: bool = False, using=None, update_fields=None):
         self.fill_hash()
 
         return super().save(force_insert, force_update, using, update_fields)

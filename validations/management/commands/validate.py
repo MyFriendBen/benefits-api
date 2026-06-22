@@ -65,7 +65,7 @@ class ValidationResult:
     def format_value_change(self) -> str:
         return f"{self.expected_value} => {self.value}"
 
-    def sheets_cell(self, value, type: str="stringValue", is_link: bool=False):
+    def sheets_cell(self, value, type: str = "stringValue", is_link: bool = False):
         return color_cell(value, self.COLORS[self.result], type=type, is_link=is_link)
 
     def sheets_row(self):

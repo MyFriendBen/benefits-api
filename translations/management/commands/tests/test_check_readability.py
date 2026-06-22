@@ -201,7 +201,9 @@ class CheckReadabilityCommandTest(TestCase):
     @patch("translations.management.commands.check_readability.WhiteLabel")
     @patch("translations.management.commands.check_readability.Program")
     @patch("translations.management.commands.check_readability.Translation")
-    def test_command_with_whitelabel_option(self, mock_translation_class, mock_program_class, mock_whitelabel_class) -> None:
+    def test_command_with_whitelabel_option(
+        self, mock_translation_class, mock_program_class, mock_whitelabel_class
+    ) -> None:
         """Test that the command respects the whitelabel option."""
         # Set up white label mock
         mock_wl = MagicMock()

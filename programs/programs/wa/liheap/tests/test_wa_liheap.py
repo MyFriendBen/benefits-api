@@ -6,7 +6,9 @@ from programs.programs.wa.liheap.calculator import WaLiheap
 from programs.programs.calc import ProgramCalculator, Eligibility
 
 
-def make_calculator(household_income: int=0, household_size: int=1, fpl_limit: int=15650, heating_expense: int=0):
+def make_calculator(
+    household_income: int = 0, household_size: int = 1, fpl_limit: int = 15650, heating_expense: int = 0
+):
     mock_program = Mock()
     mock_program.year.get_limit.return_value = fpl_limit
 
@@ -41,7 +43,7 @@ class TestWaLiheapClassAttributes(TestCase):
 
 
 class TestWaLiheapHouseholdEligibility(TestCase):
-    def _run(self, household_income, fpl_limit: int=15650, household_size: int=1):
+    def _run(self, household_income, fpl_limit: int = 15650, household_size: int = 1):
         calc = make_calculator(household_income=household_income, fpl_limit=fpl_limit, household_size=household_size)
         e = Eligibility()
         calc.household_eligible(e)

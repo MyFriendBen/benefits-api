@@ -6,7 +6,7 @@ from programs.programs.wa.wap.calculator import WaWap
 from programs.programs.calc import Eligibility, MemberEligibility
 
 
-def make_member(insurance_medicaid: bool=False, insurance_chp: bool=False):
+def make_member(insurance_medicaid: bool = False, insurance_chp: bool = False):
     member = Mock()
     member.age = 40
 
@@ -22,12 +22,12 @@ def make_member(insurance_medicaid: bool=False, insurance_chp: bool=False):
 
 
 def make_calculator(
-    yearly_income: int=10_000,
-    fpl_limit: int=15_960,
-    has_wa_snap: bool=False,
-    has_wa_tanf: bool=False,
-    has_wa_ssi: bool=False,
-    has_wa_hcv: bool=False,
+    yearly_income: int = 10_000,
+    fpl_limit: int = 15_960,
+    has_wa_snap: bool = False,
+    has_wa_tanf: bool = False,
+    has_wa_ssi: bool = False,
+    has_wa_hcv: bool = False,
     members=None,
 ):
     mock_screen = Mock()

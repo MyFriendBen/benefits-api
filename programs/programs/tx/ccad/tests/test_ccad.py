@@ -17,11 +17,11 @@ from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibi
 
 
 def make_calculator(
-    has_snap: bool=False,
-    has_tanf: bool=False,
-    household_income: int=0,
-    household_size: int=1,
-    fpl_limit: int=15000,
+    has_snap: bool = False,
+    has_tanf: bool = False,
+    household_income: int = 0,
+    household_size: int = 1,
+    fpl_limit: int = 15000,
 ):
     """Create a TxCcad calculator with a mocked screen and program."""
     mock_program = Mock()
@@ -38,7 +38,14 @@ def make_calculator(
     return TxCcad(mock_screen, mock_program, {}, mock_missing_deps)
 
 
-def make_member(age, disabled: bool=False, long_term_disability: bool=False, visually_impaired: bool=False, ssi_income: int=0, medicaid: bool=False):
+def make_member(
+    age,
+    disabled: bool = False,
+    long_term_disability: bool = False,
+    visually_impaired: bool = False,
+    ssi_income: int = 0,
+    medicaid: bool = False,
+):
     """Create a mock household member."""
     member = Mock()
     member.age = age
@@ -120,7 +127,7 @@ class TestTxCcadMemberEligibility(TestCase):
 class TestTxCcadHouseholdIncomeEligibility(TestCase):
     """Tests for the income gate — 300% FPL with no categorical bypass."""
 
-    def _run(self, household_income, fpl_limit: int=15000):
+    def _run(self, household_income, fpl_limit: int = 15000):
         # fpl_percent=3, so income_limit = 3 * fpl_limit
         calc = make_calculator(household_income=household_income, fpl_limit=fpl_limit)
         member = make_member(age=68)
@@ -142,7 +149,9 @@ class TestTxCcadHouseholdIncomeEligibility(TestCase):
 class TestTxCcadSnapTanfCategoricalEligibility(TestCase):
     """SNAP and TANF are household-level and bypass the income test."""
 
-    def _run(self, has_snap: bool=False, has_tanf: bool=False, household_income: int=99999, fpl_limit: int=5000):
+    def _run(
+        self, has_snap: bool = False, has_tanf: bool = False, household_income: int = 99999, fpl_limit: int = 5000
+    ):
         calc = make_calculator(
             has_snap=has_snap, has_tanf=has_tanf, household_income=household_income, fpl_limit=fpl_limit
         )
@@ -165,7 +174,7 @@ class TestTxCcadSnapTanfCategoricalEligibility(TestCase):
 class TestTxCcadMedicaidSsiCategoricalEligibility(TestCase):
     """SSI and Medicaid only count for the age-eligible member — not other household members."""
 
-    def _make_calc_with_members(self, eligible_members, household_income: int=99999, fpl_limit: int=5000):
+    def _make_calc_with_members(self, eligible_members, household_income: int = 99999, fpl_limit: int = 5000):
         calc = make_calculator(household_income=household_income, fpl_limit=fpl_limit)
         e = Eligibility()
         for member in eligible_members:

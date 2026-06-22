@@ -252,7 +252,12 @@ class Screen(models.Model):
         household_members = self.household_members.all()
         for household_member in household_members:
             has_child_relationship = household_member.relationship in child_relationship or "all" in child_relationship
-            if household_member.age and household_member.age >= age_min and household_member.age <= age_max and has_child_relationship:
+            if (
+                household_member.age
+                and household_member.age >= age_min
+                and household_member.age <= age_max
+                and has_child_relationship
+            ):
                 children += 1
             if household_member.pregnant and include_pregnant:
                 children += 1
@@ -799,7 +804,7 @@ class Expense(models.Model):
     def yearly(self) -> float:
         if self.amount is None:
             return 0.0
-        yearly_amount = self.amount * 12    # "monthly" or default
+        yearly_amount = self.amount * 12  # "monthly" or default
         if self.frequency == "weekly":
             yearly_amount = self.amount * Decimal("52.1429")
         elif self.frequency == "biweekly":

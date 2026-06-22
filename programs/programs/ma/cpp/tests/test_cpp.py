@@ -75,7 +75,7 @@ class TestMaCppLocationEligibility(TestCase):
         self.mock_missing_deps = Mock()
         self.mock_missing_deps.has.return_value = False
 
-    def _create_calculator(self, county, children_ages, has_benefit: bool=False):
+    def _create_calculator(self, county, children_ages, has_benefit: bool = False):
         """Helper to create a calculator with mocked screen."""
         mock_screen = Mock()
         mock_screen.county = county
@@ -123,9 +123,9 @@ class TestMaCppMemberEligibility(TestCase):
     def _create_calculator(
         self,
         children_ages,
-        gross_income_yearly: int=10000,
-        county: str="Cambridge",
-        has_benefit: bool=False,
+        gross_income_yearly: int = 10000,
+        county: str = "Cambridge",
+        has_benefit: bool = False,
     ):
         """Helper to create a calculator with mocked screen."""
         mock_screen = Mock()
@@ -271,7 +271,7 @@ class TestMaCppHasBenefit(TestCase):
         self.mock_missing_deps = Mock()
         self.mock_missing_deps.has.return_value = False
 
-    def _create_calculator(self, has_benefit: bool=False):
+    def _create_calculator(self, has_benefit: bool = False):
         mock_screen = Mock()
         mock_screen.county = "Cambridge"
         mock_screen.household_size = 2

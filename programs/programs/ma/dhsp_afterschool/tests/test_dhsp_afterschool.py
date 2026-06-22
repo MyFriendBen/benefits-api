@@ -64,7 +64,7 @@ class TestMaDhspAfterschoolLocationEligibility(TestCase):
         mock_member.age = age
         return mock_member
 
-    def _create_calculator(self, county, children_ages, has_benefit: bool=False):
+    def _create_calculator(self, county, children_ages, has_benefit: bool = False):
         """Helper to create a calculator with mocked screen."""
         mock_screen = Mock()
         mock_screen.county = county
@@ -117,7 +117,7 @@ class TestMaDhspAfterschoolChildAgeEligibility(TestCase):
         mock_member.age = age
         return mock_member
 
-    def _create_calculator(self, children_ages, has_benefit: bool=False):
+    def _create_calculator(self, children_ages, has_benefit: bool = False):
         """Helper to create a calculator with specified children ages."""
         mock_screen = Mock()
         mock_screen.county = "Cambridge"
@@ -212,7 +212,7 @@ class TestMaDhspAfterschoolHasBenefit(TestCase):
         mock_member.age = age
         return mock_member
 
-    def _create_calculator(self, has_benefit: bool=False):
+    def _create_calculator(self, has_benefit: bool = False):
         """Helper to create a calculator."""
         mock_screen = Mock()
         mock_screen.county = "Cambridge"
@@ -250,7 +250,7 @@ class TestMaDhspAfterschoolValue(TestCase):
         mock_member.id = member_id if member_id is not None else age  # Use age as id if not specified
         return mock_member
 
-    def _create_calculator(self, children_ages, county: str="Cambridge", has_benefit: bool=False):
+    def _create_calculator(self, children_ages, county: str = "Cambridge", has_benefit: bool = False):
         """Helper to create a calculator with mocked screen."""
         mock_screen = Mock()
         mock_screen.county = county
@@ -334,7 +334,7 @@ class TestMaDhspAfterschoolValueMultipleChildren(TestCase):
         mock_member.id = member_id if member_id is not None else age
         return mock_member
 
-    def _create_calculator(self, children_ages, county: str="Cambridge", has_benefit: bool=False):
+    def _create_calculator(self, children_ages, county: str = "Cambridge", has_benefit: bool = False):
         """Helper to create a calculator with mocked screen."""
         mock_screen = Mock()
         mock_screen.county = county

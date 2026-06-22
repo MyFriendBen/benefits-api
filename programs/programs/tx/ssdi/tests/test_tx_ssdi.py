@@ -29,13 +29,13 @@ def make_calculator():
 
 
 def make_member(
-    age: int=50,
-    birth_year: int=1976,
-    long_term_disability: bool=True,
-    visually_impaired: bool=False,
-    earned_income: int=0,
-    ss_retirement_income: int=0,
-    ss_disability_income: int=0,
+    age: int = 50,
+    birth_year: int = 1976,
+    long_term_disability: bool = True,
+    visually_impaired: bool = False,
+    earned_income: int = 0,
+    ss_retirement_income: int = 0,
+    ss_disability_income: int = 0,
 ):
     """Create a mock HouseholdMember with configurable SSDI-relevant fields.
 

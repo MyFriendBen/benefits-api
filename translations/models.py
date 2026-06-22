@@ -34,7 +34,9 @@ class TranslationManager(TranslatableManager):
     translation_cache = TranslationCache()
     all_langs = [lang["code"] for lang in settings.PARLER_LANGUAGES[None]]
 
-    def add_translation(self, label: str, default_message=BLANK_TRANSLATION_PLACEHOLDER, active: bool=True, no_auto: bool=False):
+    def add_translation(
+        self, label: str, default_message=BLANK_TRANSLATION_PLACEHOLDER, active: bool = True, no_auto: bool = False
+    ):
         default_lang = settings.LANGUAGE_CODE
         parent = self.get_or_create(label=label, defaults={"active": active, "no_auto": no_auto})[0]
         if parent.active != active or parent.no_auto != no_auto:
@@ -62,7 +64,7 @@ class TranslationManager(TranslatableManager):
         self.translation_cache.invalid = True
         return parent
 
-    def edit_translation(self, label: str, lang, translation, manual: bool=True):
+    def edit_translation(self, label: str, lang, translation, manual: bool = True):
         parent = self.language(lang).get(label=label)
 
         if manual is False and parent.no_auto and parent.edited:
@@ -74,7 +76,7 @@ class TranslationManager(TranslatableManager):
         self.translation_cache.invalid = True
         return parent
 
-    def edit_translation_by_id(self, id, lang, translation, manual: bool=True):
+    def edit_translation_by_id(self, id, lang, translation, manual: bool = True):
         parent = self.prefetch_related("translations").language(lang).get(pk=id)
 
         if manual is False and parent.no_auto and parent.edited:

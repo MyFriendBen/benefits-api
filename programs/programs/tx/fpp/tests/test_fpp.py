@@ -17,7 +17,9 @@ from programs.programs.tx.fpp.calculator import TxFpp
 from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
 
 
-def make_member(age: int=30, medicaid: bool=False, emergency_medicaid: bool=False, employer: bool=False, none: bool=True):
+def make_member(
+    age: int = 30, medicaid: bool = False, emergency_medicaid: bool = False, employer: bool = False, none: bool = True
+):
     """Mock a household member with an insurance object."""
     member = Mock()
     member.age = age
@@ -36,10 +38,10 @@ def make_member(age: int=30, medicaid: bool=False, emergency_medicaid: bool=Fals
 
 def make_calculator(
     current_benefits=None,
-    has_chp: bool=False,
-    household_income: int=0,
-    household_size: int=1,
-    fpl_limit: int=15_000,
+    has_chp: bool = False,
+    household_income: int = 0,
+    household_size: int = 1,
+    fpl_limit: int = 15_000,
     members=None,
 ):
     """Create a TxFpp calculator with a mocked screen and program.
@@ -144,7 +146,7 @@ class TestTxFppMemberEligibility(TestCase):
 class TestTxFppHouseholdIncome(TestCase):
     """Income gate — 250% FPL with no adjunctive bypass."""
 
-    def _run(self, household_income, fpl_limit: int=15_000):
+    def _run(self, household_income, fpl_limit: int = 15_000):
         # fpl_percent=2.5, so income_limit = int(2.5 * fpl_limit)
         calc = make_calculator(household_income=household_income, fpl_limit=fpl_limit)
         e = Eligibility()
@@ -165,7 +167,9 @@ class TestTxFppHouseholdIncome(TestCase):
 class TestTxFppAdjunctiveBypass(TestCase):
     """§4140 — SNAP / WIC / CHIP enrollment bypasses the income test."""
 
-    def _run(self, current_benefits=None, has_chp: bool=False, household_income: int=99_999, fpl_limit: int=15_000):
+    def _run(
+        self, current_benefits=None, has_chp: bool = False, household_income: int = 99_999, fpl_limit: int = 15_000
+    ):
         calc = make_calculator(
             current_benefits=current_benefits,
             has_chp=has_chp,

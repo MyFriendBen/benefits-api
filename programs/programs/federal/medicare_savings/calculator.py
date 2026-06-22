@@ -26,7 +26,7 @@ class MedicareSavings(ProgramCalculator):
         is_married = member.is_married()
         return ("married" if is_married["is_married"] else "single"), is_married.get("married_to")
 
-    def get_combined_income(self, member, spouse=None, include_ssi: bool=True):
+    def get_combined_income(self, member, spouse=None, include_ssi: bool = True):
         earned = member.calc_gross_income("yearly", ["earned"])
         unearned = member.calc_gross_income("yearly", ["unearned"], ["sSI"] if include_ssi else [])
         ssi = member.calc_gross_income("yearly", ["sSI"]) if include_ssi else 0

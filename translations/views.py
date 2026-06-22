@@ -195,7 +195,7 @@ def has_translation_access(translation: Translation, user: User) -> bool:
 
 @login_required(login_url="/admin/login")
 @staff_member_required
-def translation_view(request, id: int=0):
+def translation_view(request, id: int = 0):
     translation = Translation.objects.prefetch_related("translations").get(pk=id)
 
     if not has_translation_access(translation, request.user):
@@ -265,7 +265,7 @@ def translation_view(request, id: int=0):
 
 @login_required(login_url="/admin/login")
 @staff_member_required
-def edit_translation(request, id: int=0, lang: str="en-us"):
+def edit_translation(request, id: int = 0, lang: str = "en-us"):
     translation = Translation.objects.get(pk=id)
 
     if not has_translation_access(translation, request.user):
@@ -383,7 +383,7 @@ class TranslationAdminViews:
 
         return render(request, "util/create_form.html", context)
 
-    def _object_page_view(self, request, id: int=0):
+    def _object_page_view(self, request, id: int = 0):
         page_object = self._model_white_label_query_set(request.user).get(pk=id)
         context = {"object": page_object}
 

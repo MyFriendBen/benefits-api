@@ -60,7 +60,7 @@ class FeatureFlagsAdmin(SecureAdmin):
             return qs
         return qs.filter(pk__in=request.user.white_labels.all())
 
-    def change_view(self, request, object_id, form_url: str="", extra_context=None):
+    def change_view(self, request, object_id, form_url: str = "", extra_context=None):
         obj = self.get_object(request, object_id)
 
         # Handle None return when object ID is invalid

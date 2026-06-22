@@ -58,7 +58,13 @@ class TestMaTaxiDiscountLocationEligibility(TestCase):
         self.mock_missing_deps.has.return_value = False
 
     def _create_calculator(
-        self, county, age: int=65, disabled: bool=False, visually_impaired: bool=False, long_term_disability: bool=False, has_benefit: bool=False
+        self,
+        county,
+        age: int = 65,
+        disabled: bool = False,
+        visually_impaired: bool = False,
+        long_term_disability: bool = False,
+        has_benefit: bool = False,
     ):
         """Helper to create a calculator with mocked screen. Returns (calculator, member_eligibility)."""
         mock_member = Mock()
@@ -118,7 +124,12 @@ class TestMaTaxiDiscountAgeEligibility(TestCase):
         self.mock_missing_deps.has.return_value = False
 
     def _create_calculator(
-        self, age, disabled: bool=False, visually_impaired: bool=False, long_term_disability: bool=False, has_benefit: bool=False
+        self,
+        age,
+        disabled: bool = False,
+        visually_impaired: bool = False,
+        long_term_disability: bool = False,
+        has_benefit: bool = False,
     ):
         """Helper to create a calculator with specified age. Returns (calculator, member_eligibility)."""
         mock_member = Mock()
@@ -189,7 +200,12 @@ class TestMaTaxiDiscountDisabilityEligibility(TestCase):
         self.mock_missing_deps.has.return_value = False
 
     def _create_calculator(
-        self, age, disabled: bool=False, visually_impaired: bool=False, long_term_disability: bool=False, has_benefit: bool=False
+        self,
+        age,
+        disabled: bool = False,
+        visually_impaired: bool = False,
+        long_term_disability: bool = False,
+        has_benefit: bool = False,
     ):
         """Helper to create a calculator with disability status. Returns (calculator, member_eligibility)."""
         mock_member = Mock()
@@ -251,7 +267,7 @@ class TestMaTaxiDiscountHasBenefit(TestCase):
         self.mock_missing_deps = Mock()
         self.mock_missing_deps.has.return_value = False
 
-    def _create_calculator(self, has_benefit: bool=False, age: int=65):
+    def _create_calculator(self, has_benefit: bool = False, age: int = 65):
         """Helper to create a calculator."""
         mock_member = Mock()
         mock_member.age = age

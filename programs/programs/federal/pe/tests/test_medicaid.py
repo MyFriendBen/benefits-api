@@ -30,7 +30,7 @@ class TestMedicaidSeniorEligibility(TestCase):
         calculator.get_member_dependency_value = Mock()
         return calculator
 
-    def _create_member(self, age, is_disabled: bool=False):
+    def _create_member(self, age, is_disabled: bool = False):
         """Helper to create a mock member."""
         member = Mock()
         member.id = 1
@@ -154,7 +154,7 @@ class TestMedicaidDisabledEligibility(TestCase):
         calculator.get_member_dependency_value = Mock()
         return calculator
 
-    def _create_member(self, age, is_disabled: bool=False):
+    def _create_member(self, age, is_disabled: bool = False):
         member = Mock()
         member.id = 1
         member.age = age
@@ -248,7 +248,7 @@ class TestMedicaidAdultEligibility(TestCase):
         calculator.get_member_dependency_value = Mock()
         return calculator
 
-    def _create_member(self, age, is_disabled: bool=False):
+    def _create_member(self, age, is_disabled: bool = False):
         member = Mock()
         member.id = 1
         member.age = age
@@ -299,7 +299,7 @@ class TestMedicaidParentEligibility(TestCase):
         calculator.get_member_dependency_value = Mock()
         return calculator
 
-    def _create_member(self, age, is_disabled: bool=False):
+    def _create_member(self, age, is_disabled: bool = False):
         member = Mock()
         member.id = 1
         member.age = age
@@ -352,7 +352,7 @@ class TestMedicaidPregnantEligibility(TestCase):
         calculator.get_member_dependency_value = Mock()
         return calculator
 
-    def _create_member(self, age, is_disabled: bool=False):
+    def _create_member(self, age, is_disabled: bool = False):
         member = Mock()
         member.id = 1
         member.age = age
@@ -405,7 +405,7 @@ class TestMedicaidChildEligibility(TestCase):
         calculator.get_member_dependency_value = Mock()
         return calculator
 
-    def _create_member(self, age, is_disabled: bool=False):
+    def _create_member(self, age, is_disabled: bool = False):
         member = Mock()
         member.id = 1
         member.age = age
@@ -488,7 +488,7 @@ class TestMedicaidYoungAdultEligibility(TestCase):
         calculator.get_member_dependency_value = Mock()
         return calculator
 
-    def _create_member(self, age, is_disabled: bool=False):
+    def _create_member(self, age, is_disabled: bool = False):
         member = Mock()
         member.id = 1
         member.age = age
@@ -523,7 +523,7 @@ class TestMedicaidSSIRecipientEligibility(TestCase):
         calculator.get_member_dependency_value = Mock()
         return calculator
 
-    def _create_member(self, age, is_disabled: bool=False):
+    def _create_member(self, age, is_disabled: bool = False):
         member = Mock()
         member.id = 1
         member.age = age
@@ -559,7 +559,7 @@ class TestMedicaidNoneCategory(TestCase):
         calculator.get_member_dependency_value = Mock()
         return calculator
 
-    def _create_member(self, age, is_disabled: bool=False):
+    def _create_member(self, age, is_disabled: bool = False):
         member = Mock()
         member.id = 1
         member.age = age

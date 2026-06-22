@@ -28,7 +28,7 @@ def make_calculator(reference_date=None):
     return TrumpAccount(mock_screen, mock_program, {}, mock_missing_deps)
 
 
-def make_member(age: int=1, birth_year_month=None, pregnant: bool=False):
+def make_member(age: int = 1, birth_year_month=None, pregnant: bool = False):
     """Create a mock HouseholdMember."""
     mock_member = Mock()
     mock_member.age = age
@@ -49,7 +49,7 @@ class TestTrumpAccountRegistration(TestCase):
 class TestTrumpAccountPilotWindow(TestCase):
     """Tests for pilot window boundary conditions using birth_year_month."""
 
-    def _run_member_eligible(self, birth_year_month, age: int=1):
+    def _run_member_eligible(self, birth_year_month, age: int = 1):
         calculator = make_calculator()
         member = make_member(age=age, birth_year_month=birth_year_month)
         e = MemberEligibility(member)
@@ -148,7 +148,7 @@ class TestTrumpAccountPregnancy(TestCase):
 class TestTrumpAccountValue(TestCase):
     """Tests for the $1,000 value assignment."""
 
-    def _run_full_eligible(self, birth_year_month=date(2025, 6, 1), age: int=1):
+    def _run_full_eligible(self, birth_year_month=date(2025, 6, 1), age: int = 1):
         calculator = make_calculator()
         member = make_member(age=age, birth_year_month=birth_year_month)
         member_e = MemberEligibility(member)

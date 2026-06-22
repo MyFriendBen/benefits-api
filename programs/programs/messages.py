@@ -58,7 +58,7 @@ def assets(asset_limit):
     )
 
 
-def child(min_age: int=0, max_age: int=18):
+def child(min_age: int = 0, max_age: int = 18):
     """
     Must have a child between the ages of {min_age} and {max_age}
     """

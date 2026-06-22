@@ -23,7 +23,7 @@ class TestWaWsosGrd(TestCase):
         self.white_label = WhiteLabel.objects.create(name="Washington", code="wa", state_code="WA")
         self.mock_program = Mock()
 
-    def _make_screen(self, household_size: int=1, zipcode: str="98101", county: str="King"):
+    def _make_screen(self, household_size: int = 1, zipcode: str = "98101", county: str = "King"):
         return Screen.objects.create(
             white_label=self.white_label,
             agree_to_tos=True,
@@ -33,7 +33,15 @@ class TestWaWsosGrd(TestCase):
             completed=False,
         )
 
-    def _add_member(self, screen, *, age: int=36, relationship: str="headOfHousehold", student: bool=False, monthly_wages: int=0):
+    def _add_member(
+        self,
+        screen,
+        *,
+        age: int = 36,
+        relationship: str = "headOfHousehold",
+        student: bool = False,
+        monthly_wages: int = 0,
+    ):
         member = HouseholdMember.objects.create(
             screen=screen,
             relationship=relationship,

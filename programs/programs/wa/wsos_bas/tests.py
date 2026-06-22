@@ -27,7 +27,7 @@ class TestWaWsosBas(TestCase):
         self.white_label = WhiteLabel.objects.create(name="Washington", code="wa", state_code="WA")
         self.mock_program = Mock()
 
-    def _make_screen(self, household_size: int=1, zipcode: str="98101", county: str="King"):
+    def _make_screen(self, household_size: int = 1, zipcode: str = "98101", county: str = "King"):
         """Build an in-memory `Screen` for the WA white label with the given size."""
         return Screen.objects.create(
             white_label=self.white_label,
@@ -38,7 +38,15 @@ class TestWaWsosBas(TestCase):
             completed=False,
         )
 
-    def _add_member(self, screen, *, age: int=20, relationship: str="headOfHousehold", student: bool=False, monthly_wages: int=0):
+    def _add_member(
+        self,
+        screen,
+        *,
+        age: int = 20,
+        relationship: str = "headOfHousehold",
+        student: bool = False,
+        monthly_wages: int = 0,
+    ):
         """Add a `HouseholdMember` (and optional monthly wages) to the screen."""
         member = HouseholdMember.objects.create(
             screen=screen,

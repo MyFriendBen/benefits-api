@@ -218,7 +218,7 @@ class MessageViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         return Response({}, status=status.HTTP_201_CREATED)
 
 
-def all_results(screen: Screen, batch: bool=False, is_admin: bool = False, pe_version: Optional[str] = None):
+def all_results(screen: Screen, batch: bool = False, is_admin: bool = False, pe_version: Optional[str] = None):
     eligibility, missing_programs, categories, _pe_data = eligibility_results(screen, batch, pe_version=pe_version)
     urgent_needs = urgent_need_results(screen, eligibility)
     validations = ValidationSerializer(screen.validations.all(), many=True).data
@@ -287,7 +287,7 @@ def update_navigators(
         data[idx]["navigators"] = [serialized_navigator(navigator) for navigator in navigators]
 
 
-def eligibility_results(screen: Screen, batch: bool=False, pe_version: Optional[str] = None):
+def eligibility_results(screen: Screen, batch: bool = False, pe_version: Optional[str] = None):
     try:
         referrer = Referrer.objects.prefetch_related("remove_programs", "primary_navigators").get(
             white_label=screen.white_label,

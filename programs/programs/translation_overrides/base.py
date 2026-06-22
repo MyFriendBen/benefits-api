@@ -9,7 +9,9 @@ if TYPE_CHECKING:
 class TranslationOverrideCalculator:
     dependencies = tuple()
 
-    def __init__(self, screen: Screen, translation_override: "TranslationOverride", missing_dependencies: Dependencies) -> None:
+    def __init__(
+        self, screen: Screen, translation_override: "TranslationOverride", missing_dependencies: Dependencies
+    ) -> None:
         self.screen = screen
         self.translation_override = translation_override
         self.missing_dependencies = missing_dependencies

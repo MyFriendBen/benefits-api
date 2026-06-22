@@ -6,7 +6,7 @@ from programs.programs.wa.senior_disabled_pte.calculator import WaSeniorDisabled
 from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
 
 
-def make_member(age: int=70, long_term_disability: bool=False, disabled: bool=False, veteran: bool=False):
+def make_member(age: int = 70, long_term_disability: bool = False, disabled: bool = False, veteran: bool = False):
     member = Mock()
     member.age = age
     member.long_term_disability = long_term_disability
@@ -15,7 +15,7 @@ def make_member(age: int=70, long_term_disability: bool=False, disabled: bool=Fa
     return member
 
 
-def make_calculator(county: str="King County", household_income: int=14_400, property_tax_expense: int=1_200):
+def make_calculator(county: str = "King County", household_income: int = 14_400, property_tax_expense: int = 1_200):
     mock_screen = Mock()
     mock_screen.county = county
     mock_screen.calc_gross_income = Mock(return_value=household_income)
@@ -141,7 +141,9 @@ class TestBenefitValue(TestCase):
 
 
 class TestEndToEnd(TestCase):
-    def _make_full_calc(self, members, county: str="King County", household_income: int=14_400, property_tax: int=1_200):
+    def _make_full_calc(
+        self, members, county: str = "King County", household_income: int = 14_400, property_tax: int = 1_200
+    ):
         mock_screen = Mock()
         mock_screen.county = county
         mock_screen.calc_gross_income = Mock(return_value=household_income)

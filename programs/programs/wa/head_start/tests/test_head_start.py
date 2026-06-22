@@ -19,13 +19,13 @@ from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibi
 
 
 def make_calculator(
-    has_head_start: bool=False,
-    has_snap: bool=False,
-    has_tanf: bool=False,
-    has_ssi: bool=False,
-    household_income: int=0,
-    household_size: int=3,
-    fpl_limit: int=27320,
+    has_head_start: bool = False,
+    has_snap: bool = False,
+    has_tanf: bool = False,
+    has_ssi: bool = False,
+    household_income: int = 0,
+    household_size: int = 3,
+    fpl_limit: int = 27320,
 ):
     mock_program = Mock()
     mock_program.year.get_limit.return_value = fpl_limit
@@ -48,7 +48,7 @@ def make_calculator(
     return WaHeadStart(mock_screen, mock_program, {}, mock_missing_deps)
 
 
-def make_member(age: int=30, pregnant: bool=False, relationship: str="child"):
+def make_member(age: int = 30, pregnant: bool = False, relationship: str = "child"):
     member = Mock()
     member.age = age
     member.pregnant = pregnant
@@ -153,7 +153,7 @@ class TestWaHeadStartHouseholdExclusion(TestCase):
 class TestWaHeadStartIncomeEligibility(TestCase):
     """Income test: 100% FPL threshold."""
 
-    def _run(self, household_income, fpl_limit: int=27320):
+    def _run(self, household_income, fpl_limit: int = 27320):
         calc = make_calculator(household_income=household_income, fpl_limit=fpl_limit)
         child = make_member(age=4)
         e = Eligibility()
@@ -175,7 +175,9 @@ class TestWaHeadStartIncomeEligibility(TestCase):
 class TestWaHeadStartCategoricalEligibility(TestCase):
     """TANF, SSI, SNAP, and foster care bypass the income test."""
 
-    def _run_with_benefit(self, has_tanf: bool=False, has_ssi: bool=False, has_snap: bool=False, household_income: int=99999):
+    def _run_with_benefit(
+        self, has_tanf: bool = False, has_ssi: bool = False, has_snap: bool = False, household_income: int = 99999
+    ):
         calc = make_calculator(
             has_tanf=has_tanf,
             has_ssi=has_ssi,

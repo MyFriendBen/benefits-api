@@ -73,7 +73,9 @@ class TestMaMiddleIncomeRentalLocationEligibility(TestCase):
         self.mock_missing_deps = Mock()
         self.mock_missing_deps.has.return_value = False
 
-    def _create_calculator(self, county, household_size: int=4, income: int=100000, assets: int=50000, has_benefit: bool=False):
+    def _create_calculator(
+        self, county, household_size: int = 4, income: int = 100000, assets: int = 50000, has_benefit: bool = False
+    ):
         """Helper to create a calculator with mocked screen."""
         mock_screen = Mock()
         mock_screen.county = county
@@ -95,7 +97,7 @@ class TestMaMiddleIncomeRentalLocationEligibility(TestCase):
 
         return MaMiddleIncomeRental(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
-    def _mock_ami_values(self, mock_hud_client, ami_80: int=80000) -> None:
+    def _mock_ami_values(self, mock_hud_client, ami_80: int = 80000) -> None:
         """Helper to mock HUD client returning 80% AMI."""
         mock_hud_client.get_screen_il_ami.return_value = ami_80
 
@@ -145,7 +147,7 @@ class TestMaMiddleIncomeRentalHoHAge(TestCase):
         self.mock_missing_deps = Mock()
         self.mock_missing_deps.has.return_value = False
 
-    def _create_calculator(self, head_age, income: int=90000, assets: int=50000):
+    def _create_calculator(self, head_age, income: int = 90000, assets: int = 50000):
         mock_screen = Mock()
         mock_screen.county = "Cambridge"
         mock_screen.household_size = 1
@@ -213,7 +215,14 @@ class TestMaMiddleIncomeRentalIncomeEligibility(TestCase):
         self.mock_missing_deps = Mock()
         self.mock_missing_deps.has.return_value = False
 
-    def _create_calculator(self, income, household_size: int=4, assets: int=50000, has_benefit: bool=False, has_section_8: bool=False):
+    def _create_calculator(
+        self,
+        income,
+        household_size: int = 4,
+        assets: int = 50000,
+        has_benefit: bool = False,
+        has_section_8: bool = False,
+    ):
         """Helper to create a calculator with specified income."""
         mock_screen = Mock()
         mock_screen.county = "Cambridge"
@@ -236,7 +245,7 @@ class TestMaMiddleIncomeRentalIncomeEligibility(TestCase):
 
         return MaMiddleIncomeRental(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
-    def _mock_ami_80_only(self, mock_hud_client, ami_80: int=80_000) -> None:
+    def _mock_ami_80_only(self, mock_hud_client, ami_80: int = 80_000) -> None:
         """Mock HUD client and assert the calculator always requests the 80% AMI tier."""
 
         def _side_effect(_screen, percent, _year, county_override=None):
@@ -322,7 +331,7 @@ class TestMaMiddleIncomeRentalSection8Voucher(TestCase):
         self.mock_missing_deps = Mock()
         self.mock_missing_deps.has.return_value = False
 
-    def _create_calculator(self, income, has_section_8, assets: int=50000):
+    def _create_calculator(self, income, has_section_8, assets: int = 50000):
         mock_screen = Mock()
         mock_screen.county = "Cambridge"
         mock_screen.household_size = 1
@@ -342,7 +351,7 @@ class TestMaMiddleIncomeRentalSection8Voucher(TestCase):
 
         return MaMiddleIncomeRental(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
-    def _mock_ami_80_only(self, mock_hud_client, ami_80: int=80_000) -> None:
+    def _mock_ami_80_only(self, mock_hud_client, ami_80: int = 80_000) -> None:
         """Mock HUD client and assert the calculator always requests the 80% AMI tier."""
 
         def _side_effect(_screen, percent, _year, county_override=None):
@@ -400,7 +409,9 @@ class TestMaMiddleIncomeRentalAssetEligibility(TestCase):
         self.mock_missing_deps = Mock()
         self.mock_missing_deps.has.return_value = False
 
-    def _create_calculator(self, assets, income: int=90000, has_benefit: bool=False, member_ages=None, all_disabled: bool=False):
+    def _create_calculator(
+        self, assets, income: int = 90000, has_benefit: bool = False, member_ages=None, all_disabled: bool = False
+    ):
         """Helper to create a calculator with specified household assets."""
         mock_screen = Mock()
         mock_screen.county = "Cambridge"
@@ -472,7 +483,7 @@ class TestMaMiddleIncomeRentalSeniorAssetException(TestCase):
         self.mock_missing_deps = Mock()
         self.mock_missing_deps.has.return_value = False
 
-    def _create_calculator(self, assets, member_ages, all_disabled: bool=False, income: int=90000):
+    def _create_calculator(self, assets, member_ages, all_disabled: bool = False, income: int = 90000):
         mock_screen = Mock()
         mock_screen.county = "Cambridge"
         mock_screen.household_size = len(member_ages)
@@ -588,7 +599,7 @@ class TestMaMiddleIncomeRentalHudApiError(TestCase):
         self.mock_missing_deps = Mock()
         self.mock_missing_deps.has.return_value = False
 
-    def _create_calculator(self, income: int=90000, assets: int=50000, has_benefit: bool=False):
+    def _create_calculator(self, income: int = 90000, assets: int = 50000, has_benefit: bool = False):
         """Helper to create a calculator."""
         mock_screen = Mock()
         mock_screen.county = "Cambridge"
@@ -635,7 +646,7 @@ class TestMaMiddleIncomeRentalHasBenefit(TestCase):
         self.mock_missing_deps = Mock()
         self.mock_missing_deps.has.return_value = False
 
-    def _create_calculator(self, has_benefit: bool=False, income: int=90000, assets: int=50000):
+    def _create_calculator(self, has_benefit: bool = False, income: int = 90000, assets: int = 50000):
         """Helper to create a calculator."""
         mock_screen = Mock()
         mock_screen.county = "Cambridge"

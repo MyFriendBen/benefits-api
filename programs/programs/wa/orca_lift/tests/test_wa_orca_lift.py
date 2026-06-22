@@ -6,7 +6,13 @@ from programs.programs.wa.orca_lift.calculator import WaOrcaLift
 from programs.programs.calc import Eligibility, MemberEligibility
 
 
-def make_member(age: int=35, birth_year_month=None, yearly_income: int=24_000, insurance_medicaid: bool=False, insurance_chp: bool=False):
+def make_member(
+    age: int = 35,
+    birth_year_month=None,
+    yearly_income: int = 24_000,
+    insurance_medicaid: bool = False,
+    insurance_chp: bool = False,
+):
     member = Mock()
     member.age = age
     member.birth_year_month = birth_year_month
@@ -35,12 +41,12 @@ def make_member(age: int=35, birth_year_month=None, yearly_income: int=24_000, i
 
 
 def make_calculator(
-    has_wa_snap: bool=False,
-    has_wa_wic: bool=False,
+    has_wa_snap: bool = False,
+    has_wa_wic: bool = False,
     members=None,
-    yearly_income: int=24_000,
-    household_size: int=1,
-    fpl_annual: int=15_960,
+    yearly_income: int = 24_000,
+    household_size: int = 1,
+    fpl_annual: int = 15_960,
 ):
     mock_screen = Mock()
 

@@ -19,7 +19,9 @@ from programs.programs.tx.hse.calculator import TxHse
 from programs.programs.calc import ProgramCalculator, Eligibility
 
 
-def make_member(age: int | None = 40, disabled: bool=False, visually_impaired: bool=False, long_term_disability: bool=False):
+def make_member(
+    age: int | None = 40, disabled: bool = False, visually_impaired: bool = False, long_term_disability: bool = False
+):
     member = Mock()
     member.age = age
     member.disabled = disabled
@@ -29,7 +31,7 @@ def make_member(age: int | None = 40, disabled: bool=False, visually_impaired: b
     return member
 
 
-def make_calculator(has_mortgage: bool=True, members=None):
+def make_calculator(has_mortgage: bool = True, members=None):
     if members is None:
         members = [make_member()]
 

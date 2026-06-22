@@ -6,7 +6,7 @@ from programs.programs.wa.udp.calculator import WaUdp
 from programs.programs.calc import ProgramCalculator, Eligibility
 
 
-def make_member(age, yearly_income: int=0, ssi_income: int=0):
+def make_member(age, yearly_income: int = 0, ssi_income: int = 0):
     """Create a mock household member."""
     member = Mock()
     member.age = age
@@ -22,11 +22,11 @@ def make_member(age, yearly_income: int=0, ssi_income: int=0):
 
 
 def make_calculator(
-    zipcode: str="98103",
-    county: str="King County",
-    household_size: int=1,
+    zipcode: str = "98103",
+    county: str = "King County",
+    household_size: int = 1,
     members=None,
-    has_snap: bool=False,
+    has_snap: bool = False,
 ):
     """Create a WaUdp calculator with a mocked screen."""
     mock_program = Mock()

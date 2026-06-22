@@ -33,7 +33,7 @@ class MessageUser:
 
         return True
 
-    def email(self, email: str, send_tests: bool=False) -> None:
+    def email(self, email: str, send_tests: bool = False) -> None:
         if not self.should_send() and not send_tests:
             return
 
@@ -64,7 +64,7 @@ class MessageUser:
 
         return words + f' <a href="{url}">{url}</a>'
 
-    def text(self, cell: str, send_tests: bool=False) -> None:
+    def text(self, cell: str, send_tests: bool = False) -> None:
         if not self.should_send() and not send_tests:
             return
 

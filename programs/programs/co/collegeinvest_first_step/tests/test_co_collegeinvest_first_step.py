@@ -14,7 +14,7 @@ class TestCoCollegeInvestFirstStep(TestCase):
         cls.white_label = WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
         cls.mock_program = Mock()
 
-    def _make_screen(self, zipcode: str="80202", county: str="Denver County", household_size: int=2):
+    def _make_screen(self, zipcode: str = "80202", county: str = "Denver County", household_size: int = 2):
         return Screen.objects.create(
             white_label=self.white_label,
             agree_to_tos=True,

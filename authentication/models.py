@@ -7,7 +7,7 @@ from typing import Optional
 
 
 class UserManager(BaseUserManager):
-    def create_user(self, email_or_cell, password: Optional[str]=None):
+    def create_user(self, email_or_cell, password: Optional[str] = None):
         """
         Creates and saves a User with the given email or cell and password.
         """
@@ -20,7 +20,7 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email_or_cell, password: Optional[str]=None):
+    def create_superuser(self, email_or_cell, password: Optional[str] = None):
         """
         Creates and saves a superuser with the given email, date of
         birth and password.

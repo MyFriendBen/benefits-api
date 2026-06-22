@@ -8,14 +8,14 @@ from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibi
 
 
 def make_member(
-    age: int=40,
-    birth_year: int=1985,
-    birth_month: int=6,
-    long_term_disability: bool=True,
-    visually_impaired: bool=False,
-    earned_monthly: int=500,
-    ssdi_yearly: int=0,
-    ss_retirement_yearly: int=0,
+    age: int = 40,
+    birth_year: int = 1985,
+    birth_month: int = 6,
+    long_term_disability: bool = True,
+    visually_impaired: bool = False,
+    earned_monthly: int = 500,
+    ssdi_yearly: int = 0,
+    ss_retirement_yearly: int = 0,
 ):
     member = Mock()
     member.age = age
@@ -39,7 +39,7 @@ def make_member(
     return member
 
 
-def make_calculator(has_ssdi: bool=False):
+def make_calculator(has_ssdi: bool = False):
     mock_screen = Mock()
     mock_screen.has_benefit = Mock(side_effect=lambda b: has_ssdi if b == "ssdi" else False)
     mock_screen.household_members.all.return_value = []
@@ -126,7 +126,7 @@ class TestWaSsdiMemberEligibility(TestCase):
 
 
 class TestWaSsdiHouseholdEligibility(TestCase):
-    def _run(self, has_ssdi: bool=False, eligible_members=None):
+    def _run(self, has_ssdi: bool = False, eligible_members=None):
         calc = make_calculator(has_ssdi=has_ssdi)
         e = Eligibility()
         for member in eligible_members or [make_member()]:

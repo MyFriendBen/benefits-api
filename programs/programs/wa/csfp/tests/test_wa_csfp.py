@@ -6,13 +6,13 @@ from programs.programs.wa.csfp.calculator import WaCsfp
 from programs.programs.calc import Eligibility, MemberEligibility
 
 
-def make_member(age: int=65):
+def make_member(age: int = 65):
     member = Mock()
     member.age = age
     return member
 
 
-def make_calculator(yearly_income: int=10_000, fpl_limit: int=15_000, members=None):
+def make_calculator(yearly_income: int = 10_000, fpl_limit: int = 15_000, members=None):
     mock_screen = Mock()
     mock_screen.calc_gross_income = Mock(return_value=yearly_income)
     mock_screen.household_members.all = Mock(return_value=members or [make_member()])
@@ -65,7 +65,7 @@ class TestWaCsfpMemberEligibility(TestCase):
 class TestWaCsfpHouseholdEligibility(TestCase):
     # FPL limit = 15_000; income threshold = 1.5 * 15_000 = 22_500
 
-    def _run(self, yearly_income, fpl_limit: int=15_000, already_has_csfp: bool=False):
+    def _run(self, yearly_income, fpl_limit: int = 15_000, already_has_csfp: bool = False):
         calc = make_calculator(yearly_income=yearly_income, fpl_limit=fpl_limit)
         calc.screen.has_benefit = Mock(return_value=already_has_csfp)
         e = Eligibility()

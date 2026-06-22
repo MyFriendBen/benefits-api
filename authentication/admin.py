@@ -94,7 +94,9 @@ class SecureAdmin(ModelAdmin):
         return super().history_view(request, object_id, extra_context)
 
     # remove the history button for non super users
-    def render_change_form(self, request, context, add: bool=False, change: bool=False, form_url: str="", obj=None):
+    def render_change_form(
+        self, request, context, add: bool = False, change: bool = False, form_url: str = "", obj=None
+    ):
         if not self._is_superuser(request):
             context["show_history"] = False
         return super().render_change_form(request, context, add=add, change=change, form_url=form_url, obj=obj)

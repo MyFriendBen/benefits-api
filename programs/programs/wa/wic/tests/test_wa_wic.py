@@ -6,7 +6,7 @@ from programs.programs.wa.wic.calculator import WaWic
 from programs.programs.calc import Eligibility, MemberEligibility
 
 
-def make_member(age: int=30, pregnant: bool=False, relationship: str="headOfHousehold"):
+def make_member(age: int = 30, pregnant: bool = False, relationship: str = "headOfHousehold"):
     member = Mock()
     member.age = age
     member.pregnant = pregnant
@@ -14,7 +14,7 @@ def make_member(age: int=30, pregnant: bool=False, relationship: str="headOfHous
     return member
 
 
-def make_calculator(yearly_income: int=10_000, fpl_limit: int=15_000, members=None, has_benefit=None):
+def make_calculator(yearly_income: int = 10_000, fpl_limit: int = 15_000, members=None, has_benefit=None):
     if has_benefit is None:
         has_benefit = {}
     mock_screen = Mock()
@@ -48,7 +48,7 @@ class TestWaWicClassAttributes(TestCase):
 
 
 class TestWaWicMemberEligibility(TestCase):
-    def _run(self, age: int=30, pregnant: bool=False):
+    def _run(self, age: int = 30, pregnant: bool = False):
         calc = make_calculator()
         e = MemberEligibility(make_member(age=age, pregnant=pregnant))
         calc.member_eligible(e)
@@ -86,7 +86,7 @@ class TestWaWicMemberEligibility(TestCase):
 
 
 class TestWaWicHouseholdEligibility(TestCase):
-    def _run(self, yearly_income: int=10_000, fpl_limit: int=15_000, has_benefit=None, members=None):
+    def _run(self, yearly_income: int = 10_000, fpl_limit: int = 15_000, has_benefit=None, members=None):
         if members is None:
             members = [make_member(age=29, pregnant=True)]
         calc = make_calculator(
