@@ -37,7 +37,7 @@ class ImportProgramConfigTestCase(TransactionTestCase):
                 "description": "Test category description",
             },
             "program": {
-                "name_abbreviated": "TEST_PROGRAM",
+                "name_abbreviated": "test_program",
                 "external_name": "test_program",
                 "name": "Test Program Name",
                 "description": "Test program description",
@@ -76,10 +76,10 @@ class ImportProgramConfigTestCase(TransactionTestCase):
             output = out.getvalue()
 
             # Verify program was created
-            self.assertTrue(Program.objects.filter(name_abbreviated="TEST_PROGRAM").exists())
+            self.assertTrue(Program.objects.filter(name_abbreviated="test_program").exists())
 
             # Verify success message says "created" (not "recreated")
-            self.assertIn("Successfully created program: TEST_PROGRAM", output)
+            self.assertIn("Successfully created program: test_program", output)
             self.assertNotIn("Successfully recreated program", output)
         finally:
             Path(config_file).unlink()
@@ -91,7 +91,7 @@ class ImportProgramConfigTestCase(TransactionTestCase):
         call_command("import_program_config", config_file, stdout=StringIO())
 
         # Verify program exists
-        original_program = Program.objects.get(name_abbreviated="TEST_PROGRAM")
+        original_program = Program.objects.get(name_abbreviated="test_program")
         original_id = original_program.id
 
         # Now override it
@@ -100,12 +100,12 @@ class ImportProgramConfigTestCase(TransactionTestCase):
         output = out.getvalue()
 
         # Verify program was recreated (new ID)
-        new_program = Program.objects.get(name_abbreviated="TEST_PROGRAM")
+        new_program = Program.objects.get(name_abbreviated="test_program")
         self.assertNotEqual(original_id, new_program.id)
 
         # Verify success message says "recreated" (not "created")
-        self.assertIn("Successfully recreated program: TEST_PROGRAM", output)
-        self.assertNotIn("Successfully created program: TEST_PROGRAM", output)
+        self.assertIn("Successfully recreated program: test_program", output)
+        self.assertNotIn("Successfully created program: test_program", output)
 
         Path(config_file).unlink()
 
@@ -121,7 +121,7 @@ class ImportProgramConfigTestCase(TransactionTestCase):
         call_command("import_program_config", config_file, stdout=StringIO())
 
         # Get the original program
-        original_program = Program.objects.get(name_abbreviated="TEST_PROGRAM")
+        original_program = Program.objects.get(name_abbreviated="test_program")
         original_id = original_program.id
 
         # Now use mock to force failure during override
@@ -136,7 +136,7 @@ class ImportProgramConfigTestCase(TransactionTestCase):
         # Verify original program still exists (deletion was rolled back)
         self.assertTrue(Program.objects.filter(id=original_id).exists())
         program = Program.objects.get(id=original_id)
-        self.assertEqual(program.name_abbreviated, "TEST_PROGRAM")
+        self.assertEqual(program.name_abbreviated, "test_program")
 
         # Clean up
         Path(config_file).unlink()
@@ -151,11 +151,11 @@ class ImportProgramConfigTestCase(TransactionTestCase):
         output = out.getvalue()
 
         # Verify program was created
-        self.assertTrue(Program.objects.filter(name_abbreviated="TEST_PROGRAM").exists())
+        self.assertTrue(Program.objects.filter(name_abbreviated="test_program").exists())
 
         # Verify success message says "created" (not "recreated")
         # because there was nothing to override
-        self.assertIn("Successfully created program: TEST_PROGRAM", output)
+        self.assertIn("Successfully created program: test_program", output)
         self.assertNotIn("Successfully recreated program", output)
 
         Path(config_file).unlink()
@@ -167,7 +167,7 @@ class ImportProgramConfigTestCase(TransactionTestCase):
         call_command("import_program_config", config_file, stdout=StringIO())
 
         # Get the original program
-        original_program = Program.objects.get(name_abbreviated="TEST_PROGRAM")
+        original_program = Program.objects.get(name_abbreviated="test_program")
         original_id = original_program.id
 
         # Try to import again without --override
@@ -180,7 +180,7 @@ class ImportProgramConfigTestCase(TransactionTestCase):
         self.assertIn("Use --override", output)
 
         # Verify original program unchanged
-        program = Program.objects.get(name_abbreviated="TEST_PROGRAM")
+        program = Program.objects.get(name_abbreviated="test_program")
         self.assertEqual(program.id, original_id)
 
         Path(config_file).unlink()
@@ -194,7 +194,7 @@ class ImportProgramConfigTestCase(TransactionTestCase):
         config_file = self._create_temp_config(self.base_config)
         call_command("import_program_config", config_file, stdout=StringIO())
 
-        original_program = Program.objects.get(name_abbreviated="TEST_PROGRAM")
+        original_program = Program.objects.get(name_abbreviated="test_program")
         original_id = original_program.id
 
         # Create config with new category missing required fields

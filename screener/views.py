@@ -76,7 +76,9 @@ class ScreenViewSet(
     API endpoint that allows screens to be viewed or edited.
     """
 
-    queryset = Screen.objects.all().order_by("-submission_date")
+    # Prefetch current_benefits__program so ScreenSerializer.to_representation can
+    # build the current_benefits list without a per-screen query.
+    queryset = Screen.objects.all().prefetch_related("current_benefits__program").order_by("-submission_date")
     serializer_class = ScreenSerializer
     permission_classes = [permissions.DjangoModelPermissions]
     filterset_fields = ["agree_to_tos", "is_test"]
@@ -613,6 +615,7 @@ def urgent_need_results(screen: Screen, data):
         "veteran services": screen.needs_veteran_services,
         "savings": screen.needs_college_savings,
         "disability resources": screen.needs_disability_resources,
+        "aging resources": screen.needs_aging_resources,
     }
 
     missing_dependencies = screen.missing_fields()
@@ -824,6 +827,24 @@ class RemImpactView(views.APIView):
                 detail = e.response.json()
             except Exception:
                 detail = e.response.text
+            # REM returns 400 with a typed detail dict for address-level errors the frontend
+            # can surface meaningfully. Known types (per docs.rewiringamerica.org/api/
+            # residential-electrification-model#get-by-address):
+            #   multifamily_not_supported, building_type_not_supported,
+            #   address_not_parsable, building_not_supported
+            # Return 422 so the frontend can distinguish these from backend/network failures.
+            _ADDRESS_ERROR_TYPES = {
+                "multifamily_not_supported",
+                "building_type_not_supported",
+                "address_not_parsable",
+                "building_not_supported",
+            }
+            nested = detail.get("detail") if isinstance(detail, dict) else None
+            if e.response.status_code < 500 and isinstance(nested, dict) and nested.get("type") in _ADDRESS_ERROR_TYPES:
+                return Response(
+                    {"error": "address_not_supported", "detail": detail},
+                    status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                )
             return Response(
                 {"error": f"Rewiring America API error: {e.response.status_code}", "detail": detail},
                 status=status.HTTP_502_BAD_GATEWAY,

@@ -7,7 +7,8 @@ by PolicyEngine to determine TX SNAP eligibility and benefit amounts.
 
 from django.test import TestCase
 from screener.models import Screen, HouseholdMember, WhiteLabel, IncomeStream, Expense
-from screener.tests.helpers import seed_program, sync_current_benefits
+from screener.tests.helpers import seed_program
+from screener.serializers import _write_current_benefits
 from programs.programs.policyengine.calculators.dependencies import spm
 
 
@@ -165,6 +166,38 @@ class TestUtilityExpenseDependency(TestCase):
         dep = spm.WaterExpenseDependency(self.screen, None, {})
         self.assertEqual(dep.value(), 720)  # $60 * 12
         self.assertEqual(dep.field, "water_expense")
+
+
+class TestTxCeapEnergyExpenseDependency(TestCase):
+    """Tests for TxCeapEnergyExpenseDependency, which feeds the tx_ceap (TX LIHEAP) benefit cap."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="78701", county="Travis", household_size=1, completed=False
+        )
+
+    def test_value_sums_heating_cooling_and_other_utilities(self):
+        """value() totals heating, cooling, and otherUtilities into the annual electricity_expense field."""
+        Expense.objects.create(screen=self.screen, type="heating", amount=100, frequency="monthly")
+        Expense.objects.create(screen=self.screen, type="cooling", amount=50, frequency="monthly")
+        Expense.objects.create(screen=self.screen, type="otherUtilities", amount=25, frequency="monthly")
+
+        dep = spm.TxCeapEnergyExpenseDependency(self.screen, None, {})
+        self.assertEqual(dep.value(), 2100.0)  # ($100 + $50 + $25) * 12
+        self.assertEqual(dep.field, "electricity_expense")
+
+    def test_value_counts_heating_only(self):
+        """A heating-only expense (the validation scenario shape) flows through to the cap."""
+        Expense.objects.create(screen=self.screen, type="heating", amount=200, frequency="monthly")
+
+        dep = spm.TxCeapEnergyExpenseDependency(self.screen, None, {})
+        self.assertEqual(dep.value(), 2400.0)  # $200 * 12
+
+    def test_value_returns_zero_when_no_energy_expense(self):
+        """No energy expense yields 0, which caps the tx_ceap benefit at $0."""
+        dep = spm.TxCeapEnergyExpenseDependency(self.screen, None, {})
+        self.assertEqual(dep.value(), 0.0)
 
 
 class TestMortgageDependency(TestCase):
@@ -453,9 +486,7 @@ class TestSnapDependency(TestCase):
     def test_value_returns_1_when_screen_has_snap(self):
         """When user reports having SNAP, send 1 to PE to enable categorical eligibility."""
         seed_program(self.white_label, "snap")
-        self.screen.has_snap = True
-        self.screen.save()
-        sync_current_benefits(self.screen)
+        _write_current_benefits(self.screen, ["snap"])
 
         dep = spm.Snap(self.screen, None, {})
         self.assertEqual(dep.value(), 1)
@@ -490,9 +521,7 @@ class TestTanfDependency(TestCase):
     def test_value_returns_1_when_screen_has_tanf(self):
         """When user reports having TANF, send 1 to PE to enable categorical eligibility."""
         seed_program(self.white_label, "tanf")
-        self.screen.has_tanf = True
-        self.screen.save()
-        sync_current_benefits(self.screen)
+        _write_current_benefits(self.screen, ["tanf"])
 
         dep = spm.Tanf(self.screen, None, {})
         self.assertEqual(dep.value(), 1)

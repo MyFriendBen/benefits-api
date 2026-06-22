@@ -2,6 +2,7 @@ import logging
 from datetime import date
 from django.db import IntegrityError, transaction
 from django.utils import timezone
+from sentry_sdk import capture_message
 
 logger = logging.getLogger(__name__)
 from programs.models import Program, WarningMessage
@@ -137,24 +138,82 @@ class HouseholdMemberSerializer(serializers.ModelSerializer):
         read_only_fields = ("screen", "id")
 
 
-def _sync_current_benefits(screen):
-    """
-    Syncs CurrentBenefit rows for a screen based on has_* column values.
-    Called on every POST/PATCH so the join table stays in sync with the authoritative has_* columns.
-    Reads still come from has_* columns — this is Phase 2 dual-write only.
+# SSI program variants across white labels. An sSI income stream implies SSI
+# receipt regardless of whether the user ticked the tile, so all variants are
+# listed here; the WL-scoped resolve in `_write_current_benefits()` drops the
+# ones a given white label doesn't offer (e.g. `wa_ssi` on a CO screen).
+_SSI_BENEFIT_NAMES = frozenset({"ssi", "tx_ssi", "wa_ssi", "cesn_ssi"})
 
-    Uses select_for_update() inside a transaction to serialize concurrent PATCH requests
-    on the same screen and prevent races on the delete+bulk_create. The screen is re-fetched
-    inside the atomic block so program_ids_to_write reflects the post-lock committed state.
+
+def _derived_current_benefit_names(screen: Screen) -> set[str]:
+    """`name_abbreviated` values implied by screen state, independent of the
+    frontend's current-benefits toggles.
+
+    OR'd into the frontend's `current_benefits` list inside `_write_current_benefits()`
+    so the join table reflects benefits the household demonstrably receives even when
+    the tile wasn't ticked (or was explicitly unticked) — preserving the long-standing
+    compound semantics of `Screen.has_benefit()`.
+
+    Today there is one rule: an sSI income stream implies SSI. The `chp` and
+    `ma_mass_health` compounds are deliberately NOT here — those are member-level
+    insurance checks (`HouseholdMember.has_benefit()` / `member.insurance.*`) and never
+    flow through `current_benefits`. Add new derivable compounds here as they appear.
+    """
+    derived: set[str] = set()
+    if screen.calc_gross_income("yearly", ("sSI",)) > 0:
+        derived |= _SSI_BENEFIT_NAMES
+    return derived
+
+
+def _write_current_benefits(screen: Screen, current_benefits: list[str]) -> None:
+    """
+    Write the CurrentBenefit join table for `screen`, replacing any existing rows.
+
+    `current_benefits` is a list of `name_abbreviated` strings (e.g. ["tx_snap",
+    "tanf"]). Each is resolved to a Program via the (white_label, name_abbreviated)
+    lookup and written directly; a name the current WL doesn't offer is silently
+    skipped. Names derivable from screen state (currently SSI, via an sSI income
+    stream) are OR'd in via `_derived_current_benefit_names()` so the join table
+    reflects benefits the household demonstrably receives even when the tile wasn't
+    ticked.
+
+    Uses select_for_update() inside a transaction to serialize concurrent PATCH
+    requests on the same screen and prevent races on the delete+bulk_create. The
+    screen is re-fetched inside the atomic block so the write reflects the
+    post-lock committed state.
     """
     with transaction.atomic():
         screen = Screen.objects.select_for_update().get(pk=screen.pk)
-        benefit_map = screen._build_benefit_map()
-        program_ids_to_write = [
-            program.id
-            for program in Program.objects.filter(white_label=screen.white_label)
-            if benefit_map.get(program.name_abbreviated, False)
-        ]
+
+        # Frontend sent explicit program names, plus any names derivable from
+        # screen state (e.g. SSI from an sSI income stream). Resolve each in this
+        # screen's white label; silently drop any this WL doesn't offer.
+        requested = set(current_benefits)
+        derived = _derived_current_benefit_names(screen)
+        resolved = Program.objects.filter(
+            white_label=screen.white_label,
+            name_abbreviated__in=requested | derived,
+        ).values_list("id", "name_abbreviated")
+        program_ids_to_write = [program_id for program_id, _ in resolved]
+
+        # A *frontend-requested* name with no Program in this WL is dropped
+        # rather than erroring (a WL only writes the programs it offers). That's
+        # also how a typo'd / stale name_abbreviated vanishes — a config problem
+        # worth surfacing, so report it to Sentry. capture_message groups identical
+        # messages, so a recurring bad name collapses into one counted issue rather
+        # than paging per request; level is "warning" (not "error") because a dropped
+        # name is benign per request. Derived names (e.g. wa_ssi injected on a CO
+        # screen) are excluded — those are expected cross-WL non-matches, not client
+        # errors.
+        dropped = requested - {name for _, name in resolved}
+        if dropped:
+            capture_message(
+                f"current_benefits: dropped {len(dropped)} name(s) not offered by white_label "
+                f"{screen.white_label_id}: {sorted(dropped)}",
+                level="warning",
+                extras={"white_label_id": screen.white_label_id, "dropped": sorted(dropped)},
+            )
+
         CurrentBenefit.objects.filter(screen=screen).delete()
         if program_ids_to_write:
             CurrentBenefit.objects.bulk_create(
@@ -168,6 +227,28 @@ class ScreenSerializer(serializers.ModelSerializer):
     user = UserOffersSerializer(read_only=True)
     white_label = serializers.CharField(source="white_label.code")
     energy_calculator = EnergyCalculatorScreenSerializer(required=False, allow_null=True)
+    # The current benefits the household receives, as a list of `name_abbreviated`
+    # strings. Read and write use the same JSON key but different mechanisms:
+    #
+    #   * Write: this ListField (write_only). The value is popped in create()/update()
+    #     and written to the CurrentBenefit join table by _write_current_benefits().
+    #     An empty list clears the join table; an absent key is treated as empty
+    #     (so non-frontend clients that build screens without it — validation
+    #     imports, screen-pull commands — don't 400).
+    #   * Read: to_representation() injects the value under the same key. The model
+    #     attribute `current_benefits` is the reverse relation (a manager), not a
+    #     list of names, so it can't be serialized directly.
+    #
+    # max_length bounds an otherwise-unbounded payload: there are ~130 distinct
+    # name_abbreviated values across all white labels, so 256 is a comfortable
+    # ceiling. Unknown names are dropped in _write_current_benefits(), so element
+    # content needn't be validated here.
+    current_benefits = serializers.ListField(
+        child=serializers.CharField(max_length=64),
+        required=False,
+        write_only=True,
+        max_length=256,
+    )
 
     class Meta:
         model = Screen
@@ -198,76 +279,8 @@ class ScreenSerializer(serializers.ModelSerializer):
             "user",
             "external_id",
             "request_language_code",
+            "current_benefits",
             "has_benefits",
-            "has_tanf",
-            "has_wic",
-            "has_snap",
-            "has_sunbucks",
-            "has_lifeline",
-            "has_acp",
-            "has_eitc",
-            "has_coeitc",
-            "has_nslp",
-            "has_ctc",
-            "has_il_eitc",
-            "has_il_ctc",
-            "has_il_transit_reduced_fare",
-            "has_il_bap",
-            "has_il_hbwd",
-            "has_harris_county_rides",
-            "has_medicaid",
-            "has_rtdlive",
-            "has_ccap",
-            "has_mydenver",
-            "has_chp",
-            "has_ssi",
-            "has_andcs",
-            "has_cpcr",
-            "has_cdhcs",
-            "has_dpp",
-            "has_ede",
-            "has_erc",
-            "has_leap",
-            "has_il_liheap",
-            "has_ma_heap",
-            "has_nc_lieap",
-            "has_project_cope",
-            "has_cesn_heap",
-            "has_oap",
-            "has_nccip",
-            "has_coctc",
-            "has_ncscca",
-            "has_upk",
-            "has_ssdi",
-            "has_cowap",
-            "has_ncwap",
-            "has_wa_wap",
-            "has_ubp",
-            "has_rag",
-            "has_nfp",
-            "has_fatc",
-            "has_cfhc",
-            "has_shitc",
-            "has_section_8",
-            "has_csfp",
-            "has_ccdf",
-            "has_aca",
-            "has_ma_eaedc",
-            "has_ma_ssp",
-            "has_ma_mbta",
-            "has_ma_maeitc",
-            "has_ma_macfc",
-            "has_ma_homebridge",
-            "has_ma_dhsp_afterschool",
-            "has_ma_door_to_door",
-            "has_ma_taxi_discount",
-            "has_ma_cpp",
-            "has_ma_middle_income_rental",
-            "has_ma_cmsp",
-            "has_head_start",
-            "has_early_head_start",
-            "has_co_andso",
-            "has_co_care",
             "has_employer_hi",
             "has_private_hi",
             "has_medicaid_hi",
@@ -275,8 +288,6 @@ class ScreenSerializer(serializers.ModelSerializer):
             "has_chp_hi",
             "has_no_hi",
             "has_va",
-            "has_nc_medicare_savings",
-            "has_tx_dart",
             "needs_food",
             "needs_baby_supplies",
             "needs_housing_help",
@@ -290,6 +301,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             "needs_college_savings",
             "needs_veteran_services",
             "needs_disability_resources",
+            "needs_aging_resources",
             "utm_id",
             "utm_source",
             "utm_medium",
@@ -331,10 +343,23 @@ class ScreenSerializer(serializers.ModelSerializer):
 
         return attrs
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # current_benefits is write_only as a field; supply the read value here.
+        # Iterate the relation (serves from the current_benefits__program prefetch
+        # the viewset sets up; otherwise one query). create()/update() invalidate the
+        # instance's current-benefits caches after writing, so this reflects the
+        # committed rows even on a write request.
+        data["current_benefits"] = sorted(cb.program.name_abbreviated for cb in instance.current_benefits.all())
+        return data
+
     def create(self, validated_data):
         household_members = validated_data.pop("household_members")
         expenses = validated_data.pop("expenses")
         energy_calculator_screen = validated_data.pop("energy_calculator", None)
+        # Not a Screen column — pop before the create() and write separately.
+        # Absent (non-frontend clients) is treated as no current benefits.
+        current_benefits = validated_data.pop("current_benefits", [])
         screen = Screen.objects.create(**validated_data, completed=False)
         screen.set_screen_is_test()
         for member in household_members:
@@ -352,7 +377,8 @@ class ScreenSerializer(serializers.ModelSerializer):
             Expense.objects.create(**expense, screen=screen)
         if energy_calculator_screen is not None:
             EnergyCalculatorScreen.objects.create(**energy_calculator_screen, screen=screen)
-        _sync_current_benefits(screen)
+        _write_current_benefits(screen, current_benefits)
+        screen.invalidate_current_benefits_cache()
         return screen
 
     def update(self, instance, validated_data):
@@ -362,6 +388,9 @@ class ScreenSerializer(serializers.ModelSerializer):
         household_members = validated_data.pop("household_members")
         expenses = validated_data.pop("expenses")
         energy_calculator_screen = validated_data.pop("energy_calculator", None)
+        # Not a Screen column — pop before the bulk .update() and write separately.
+        # Absent (non-frontend clients) is treated as no current benefits.
+        current_benefits = validated_data.pop("current_benefits", [])
 
         # don't update create only fields
         for field in self.Meta.create_only_fields:
@@ -389,7 +418,12 @@ class ScreenSerializer(serializers.ModelSerializer):
             EnergyCalculatorScreen.objects.create(**energy_calculator_screen, screen=instance)
         instance.refresh_from_db()
         instance.set_screen_is_test()
-        _sync_current_benefits(instance)
+        _write_current_benefits(instance, current_benefits)
+        # The instance was loaded with current_benefits__program prefetched (the
+        # viewset) and _write_current_benefits replaced those rows on a separately
+        # locked Screen — so this instance's cached view is now stale. Invalidate so
+        # to_representation re-reads the committed rows.
+        instance.invalidate_current_benefits_cache()
         return instance
 
 

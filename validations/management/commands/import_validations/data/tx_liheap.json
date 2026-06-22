@@ -1,0 +1,184 @@
+[
+  {
+    "notes": "TX LIHEAP - Minimally Eligible Single Adult at Income Ceiling. Tests the income threshold is inclusive at exactly 150% FPL for HH1 using 2026 FPL. No priority categories. 2026 FPL HH1 = $15,960; 150% = $23,940/year = $1,995/month. At exactly 150% FPL -> 76-150% tier -> $1,200/year.",
+    "household": {
+      "white_label": "tx",
+      "household_size": 1,
+      "zipcode": "79901",
+      "county": "El Paso",
+      "household_assets": 0.0,
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 9,
+          "birth_year": 1991,
+          "age": 34,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1995.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": [
+        {
+          "type": "heating",
+          "amount": 200.0,
+          "frequency": "monthly"
+        }
+      ]
+    },
+    "expected_results": {
+      "program_name": "tx_liheap",
+      "eligible": true,
+      "value": 1200
+    }
+  },
+  {
+    "notes": "TX LIHEAP - Family of 3 with Income Just Above 150% FPL Threshold - Ineligible. Combined income $3,500/month = $42,000/year; 2026 FPL HH3 = $27,320; 150% = $40,980. At 153.7% FPL with no categorical eligibility pathway -> correctly ineligible.",
+    "household": {
+      "white_label": "tx",
+      "household_size": 3,
+      "zipcode": "75201",
+      "county": "Dallas",
+      "household_assets": 0.0,
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 3,
+          "birth_year": 1988,
+          "age": 38,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2900.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "birth_month": 7,
+          "birth_year": 1990,
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 600.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 9,
+          "birth_year": 2016,
+          "age": 9,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_liheap",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "TX LIHEAP - SNAP Categorical Eligibility. Tests that a household receiving SNAP is categorically eligible per 42 U.S.C. 8624(b)(2)(A), bypassing the income test. Combined income $3,000/month = $36,000/year; 131.8% of 2026 FPL for HH3 ($27,320) -> 76-150% tier -> $1,200/year. Key branch tested is categorical eligibility via has_snap.",
+    "household": {
+      "white_label": "tx",
+      "household_size": 3,
+      "zipcode": "78701",
+      "county": "Travis",
+      "household_assets": 0.0,
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "has_snap": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 3,
+          "birth_year": 1990,
+          "age": 36,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1800.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "birth_month": 7,
+          "birth_year": 1992,
+          "age": 33,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1200.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 1,
+          "birth_year": 2022,
+          "age": 4,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": [
+        {
+          "type": "heating",
+          "amount": 200.0,
+          "frequency": "monthly"
+        }
+      ]
+    },
+    "expected_results": {
+      "program_name": "tx_liheap",
+      "eligible": true,
+      "value": 1200
+    }
+  }
+]

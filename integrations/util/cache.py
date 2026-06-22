@@ -22,10 +22,18 @@ class Cache:
             self.save(self.update())
             self.last_update = timezone.now()
             self.invalid = False
+        except (SystemExit, KeyboardInterrupt) as e:
+            # `update()` may issue a network call that hangs (see PolicyEngineBearerTokenCache),
+            # in which case the worker can be torn down mid-fetch and SystemExit is raised here.
+            # That is a BaseException, so `except Exception` below would miss it. Surface it,
+            # then re-raise so the shutdown proceeds.
+            capture_exception(e, level="error")
+            raise
         except Exception as e:
             if settings.DEBUG:
                 print(e)
-            capture_exception(e, level="warning")
+            level = "error" if self.invalid else "warning"
+            capture_exception(e, level=level)
 
     def save(self, data):
         self.data = data

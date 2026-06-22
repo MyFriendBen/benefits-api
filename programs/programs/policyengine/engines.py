@@ -79,7 +79,7 @@ class PolicyEngineBearerTokenCache(Cache):
             "audience": "https://household.api.policyengine.org",
         }
 
-        res = requests.post(self.domain + self.endpoint, json=payload)
+        res = requests.post(self.domain + self.endpoint, json=payload, timeout=(5, 30))
 
         return res.json()["access_token"]
 

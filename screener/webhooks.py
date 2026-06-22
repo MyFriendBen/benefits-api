@@ -26,7 +26,7 @@ class Hook:
             request_data[key] = value
 
         try:
-            res = requests.post(self.hook.webhook_url, json=request_data)
+            res = requests.post(self.hook.webhook_url, json=request_data, timeout=(5, 30))
             if res.status_code != 200:
                 capture_message(f"{res.text}", level="error")
                 return Exception(f"{res.status_code}: {res.text}")
@@ -35,6 +35,11 @@ class Hook:
             return e
 
     def screen_data(self, screen: Screen):
+        # ScreenSerializer.to_representation reads the current_benefits join table;
+        # prefetch current_benefits__program so it doesn't issue a per-send query.
+        # (The viewset/eligibility paths prefetch this on their own querysets; the
+        # webhook loads the screen separately, so do it here.)
+        screen = Screen.objects.prefetch_related("current_benefits__program").get(pk=screen.pk)
         screen_dict = ScreenSerializer(screen).data
         return "screen", screen_dict
 

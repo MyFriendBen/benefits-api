@@ -1,5 +1,6 @@
 from .ccad.calculator import TxCcad
 from ..calc import ProgramCalculator
+from .fpp.calculator import TxFpp
 from .hse.calculator import TxHse
 from .htw.calculator import TxHtw
 from .ssdi.calculator import TxSsdi
@@ -11,4 +12,5 @@ tx_calculators: dict[str, type[ProgramCalculator]] = {
     "tx_wap": TxWap,
     "tx_hse": TxHse,
     "tx_htw": TxHtw,
+    "tx_fpp": TxFpp,
 }

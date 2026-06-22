@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models import Q
+from django.db.models.functions import Lower
 from phonenumber_field.modelfields import PhoneNumberField
 from screener.models import WhiteLabel
 from translations.model_data import ModelDataController
@@ -104,12 +106,12 @@ class FplCache(Cache):
         """
         Request the FPL from the API for the indicated year and household size
         """
-        response = requests.get(self._fpl_url(year, household_size), allow_redirects=False)
+        response = requests.get(self._fpl_url(year, household_size), allow_redirects=False, timeout=(5, 30))
         if "Location" in response.headers:
             new_url = response.headers["Location"].replace("http", "https")
             if "https://" not in new_url:
                 new_url = response.headers["Location"].replace("http", "https")
-            response = requests.get(new_url)
+            response = requests.get(new_url, timeout=(5, 30))
 
         response.raise_for_status()
         data = response.json()["data"]
@@ -813,11 +815,32 @@ class Program(models.Model):
 
         return eligibility
 
+    def save(self, *args, **kwargs):
+        # Normalize name_abbreviated to lowercase. It's used as a case-sensitive
+        # key in several places — the calculator registry lookup above (.lower()),
+        # the CurrentBenefit join table, and the frontend's current_benefits
+        # round-trip, which matches tile keys against name_abbreviated exactly (no
+        # case coercion). Enforcing lowercase here keeps that invariant true for
+        # admin-entered and imported values alike, rather than leaving it to
+        # convention.
+        if self.name_abbreviated:
+            self.name_abbreviated = self.name_abbreviated.lower()
+        super().save(*args, **kwargs)
+
     class Meta:
         constraints = [
             models.UniqueConstraint(
                 fields=["white_label", "name_abbreviated"],
                 name="program_unique_wl_name_abbreviated",
+            ),
+            # name_abbreviated is a case-sensitive key (calculator registry, the
+            # CurrentBenefit join table, and the frontend current_benefits round-trip
+            # which matches tile keys exactly). save() lowercases it, but that misses
+            # bulk_create/.update()/raw SQL — this constraint enforces the invariant
+            # at the DB so the frontend's no-case-coercion assumption can't be broken.
+            models.CheckConstraint(
+                check=Q(name_abbreviated=Lower("name_abbreviated")),
+                name="program_name_abbreviated_lowercase",
             ),
         ]
 
