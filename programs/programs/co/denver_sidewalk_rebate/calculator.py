@@ -13,6 +13,7 @@ class DenverSidewalkRebate(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility) -> None:
         if self.program.year is None:
+            e.condition(False)
             return
         # denver county condition
         counties = counties_from_screen(self.screen)

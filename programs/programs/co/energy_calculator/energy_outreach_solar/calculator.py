@@ -11,6 +11,7 @@ class EnergyCalculatorEnergyOutreachSolar(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility) -> None:
         if self.program.year is None:
+            e.condition(False)
             return
         # income
         income = self.screen.calc_gross_income("yearly", ["all"])

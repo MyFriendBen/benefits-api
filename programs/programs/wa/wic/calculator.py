@@ -37,6 +37,7 @@ class WaWic(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility) -> None:
         if self.program.year is None:
+            e.condition(False)
             return
         adjunctive_eligible = (
             self.screen.has_benefit("snap") or self.screen.has_benefit("medicaid") or self.screen.has_benefit("tanf")

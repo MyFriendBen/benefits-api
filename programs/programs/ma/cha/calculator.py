@@ -34,6 +34,7 @@ class Cha(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility) -> None:
         if self.program.year is None:
+            e.condition(False)
             return
         # Location: Must be in Cambridge
         # (Note: currently, our MA implementation stores city name in 'county' field, see MFB-548 for details)

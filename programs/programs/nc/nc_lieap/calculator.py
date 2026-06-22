@@ -34,6 +34,7 @@ class NCLieap(ProgramCalculator):
 
     def household_value(self):
         if self.program.year is None:
+            e.condition(False)
             return 0
         household_size = self.screen.household_size
 
@@ -80,6 +81,7 @@ class NCLieap(ProgramCalculator):
 
     def _calculate_income_limit(self):
         if self.program.year is None:
+            e.condition(False)
             return 0
 
         # Determine FPL% based on senior/disabled status

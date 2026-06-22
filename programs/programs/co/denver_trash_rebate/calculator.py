@@ -14,6 +14,7 @@ class DenverTrashRebate(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility) -> None:
         if self.program.year is None:
+            e.condition(False)
             return
         # county
         counties = counties_from_screen(self.screen)

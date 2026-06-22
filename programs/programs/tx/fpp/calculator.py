@@ -59,6 +59,7 @@ class TxFpp(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility) -> None:
         if self.program.year is None:
+            e.condition(False)
             return
         # §4140 adjunctive income eligibility: enrollment in SNAP, WIC, or CHIP
         # (applicant or their child) bypasses the 250% FPL income test.

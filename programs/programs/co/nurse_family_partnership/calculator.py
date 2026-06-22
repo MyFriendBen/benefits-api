@@ -50,6 +50,7 @@ class CoNurseFamilyPartnership(ProgramCalculator):
 
     def member_eligible(self, e: MemberEligibility) -> None:
         if self.program.year is None:
+            e.condition(False)
             return
 
         member = e.member

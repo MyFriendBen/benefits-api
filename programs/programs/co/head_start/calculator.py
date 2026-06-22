@@ -27,6 +27,7 @@ class CoHeadStart(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility) -> None:
         if self.program.year is None:
+            e.condition(False)
             return
         # location
         counties = counties_from_screen(self.screen)

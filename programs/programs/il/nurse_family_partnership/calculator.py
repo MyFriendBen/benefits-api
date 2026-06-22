@@ -47,6 +47,7 @@ class IlNurseFamilyPartnership(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility) -> None:
         if self.program.year is None:
+            e.condition(False)
             return
         # income eligibility: 300% FPL or has WIC (presumed eligibility)
         income_limit = int(self.fpl_percent * self.program.year.get_limit(self.screen.household_size))

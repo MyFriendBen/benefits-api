@@ -11,6 +11,7 @@ class SunBucks(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility) -> None:
         if self.program.year is None:
+            e.condition(False)
             return
         # Income
         fpl = self.program.year

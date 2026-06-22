@@ -25,6 +25,7 @@ class ACASubsidiesNC(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility) -> None:
         if self.program.year is None:
+            e.condition(False)
             return
         # Medicade eligibility
         e.condition(not medicaid_eligible(self.data), messages.must_not_have_benefit("Medicaid"))

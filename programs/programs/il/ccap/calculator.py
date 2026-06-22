@@ -65,6 +65,7 @@ class IlChildCareAssistanceProgram(ProgramCalculator):
     def household_eligible(self, e: Eligibility) -> None:
         """Check household-level eligibility conditions"""
         if self.program.year is None:
+            e.condition(False)
             return
 
         # Check: Asset limit ($1,000,000)

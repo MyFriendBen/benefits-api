@@ -24,6 +24,7 @@ class WaLiheap(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility) -> None:
         if self.program.year is None:
+            e.condition(False)
             return
         gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
         income_limit = int(self.fpl_percent * self.program.year.get_limit(self.screen.household_size))
@@ -31,6 +32,7 @@ class WaLiheap(ProgramCalculator):
 
     def household_value(self) -> int:
         if self.program.year is None:
+            e.condition(False)
             return 0
         gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
         fpl_100 = self.program.year.get_limit(self.screen.household_size)

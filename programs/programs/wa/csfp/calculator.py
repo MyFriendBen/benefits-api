@@ -37,6 +37,7 @@ class WaCsfp(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility) -> None:
         if self.program.year is None:
+            e.condition(False)
             return
         e.condition(
             not self.screen.has_benefit("wa_csfp"),

@@ -28,6 +28,7 @@ class IlNslp(SchoolLunch):
 
     def household_value(self):
         if self.program.year is None:
+            e.condition(False)
             return 0
         value = 0
         num_children = self.screen.num_children(3, 18)

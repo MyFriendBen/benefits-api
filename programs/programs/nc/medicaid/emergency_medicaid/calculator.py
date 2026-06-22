@@ -18,6 +18,7 @@ class NcEmergencyMedicaid(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility) -> None:
         if self.program.year is None:
+            e.condition(False)
             return
         fpl_percent = self.fpl_percent
 

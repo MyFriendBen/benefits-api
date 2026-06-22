@@ -42,6 +42,7 @@ class WaOrcaLift(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility) -> None:
         if self.program.year is None:
+            e.condition(False)
             return
         categorical = (
             self.screen.has_benefit("wa_snap")

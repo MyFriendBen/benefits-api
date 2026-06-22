@@ -11,6 +11,7 @@ class DentalHealthCareSeniors(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility) -> None:
         if self.program.year is None:
+            e.condition(False)
             return
         # Income test
         fpl = self.program.year.as_dict()

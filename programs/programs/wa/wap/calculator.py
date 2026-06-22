@@ -32,6 +32,7 @@ class WaWap(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility) -> None:
         if self.program.year is None:
+            e.condition(False)
             return
         # If currently receiving weatherization, uesr is ineligible
         if self.screen.has_benefit("wa_wap"):

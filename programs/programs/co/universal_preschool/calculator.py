@@ -38,6 +38,7 @@ class UniversalPreschool(ProgramCalculator):
 
     def _has_qualifying_condition(self, member: HouseholdMember):
         if self.program.year is None:
+            e.condition(False)
             return False
         fpl = self.program.year.as_dict()[self.screen.household_size]
         income = self.screen.calc_gross_income("yearly", ["all"])
