@@ -7,6 +7,8 @@ class Raft(UrgentNeedFunction):
     ami_percent = "50%"
 
     def eligible(self):
+        if self.urgent_need.year is None:
+            return False
         # income
         income_limit = ami.get_screen_ami(self.screen, self.ami_percent, self.urgent_need.year.period, limit_type="il")
         income = self.screen.calc_gross_income("yearly", ["all"])

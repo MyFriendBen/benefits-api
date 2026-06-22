@@ -103,7 +103,7 @@ TRACKING_PROGRAMS = [
 ]
 
 
-def create_tracking_programs(apps, schema_editor):
+def create_tracking_programs(apps, schema_editor) -> None:
     """
     Creates Program records for tracking-only programs (no calculator).
     Uses real model imports because Program.objects.new_program() handles the
@@ -156,7 +156,7 @@ def create_tracking_programs(apps, schema_editor):
         )
 
 
-def delete_tracking_programs(apps, schema_editor):
+def delete_tracking_programs(apps, schema_editor) -> None:
     Program = apps.get_model("programs", "Program")
     names = [p["name_abbreviated"] for p in TRACKING_PROGRAMS]
     Program.objects.filter(name_abbreviated__in=names).delete()

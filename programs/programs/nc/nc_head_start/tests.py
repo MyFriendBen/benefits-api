@@ -55,7 +55,7 @@ class TestNCHeadStart(TestCase):
     }
 
     @classmethod
-    def setUpTestData(cls):
+    def setUpTestData(cls) -> None:
         """Set up data for the entire TestCase - runs once for all tests"""
         # Create white label for North Carolina
         cls.nc_white_label = WhiteLabel.objects.create(name="North Carolina", code="nc", state_code="NC")
@@ -68,7 +68,7 @@ class TestNCHeadStart(TestCase):
         cls.program.year = cls.fpl_year
         cls.program.save()
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up data for each individual test - runs before each test method"""
         # This will be overridden in each test
         pass
@@ -76,11 +76,11 @@ class TestNCHeadStart(TestCase):
     def create_household_member(
         self,
         screen,
-        relationship="child",
-        age=4,
-        pregnant=False,
-        disabled=False,
-        has_income=False,
+        relationship: str = "child",
+        age: int = 4,
+        pregnant: bool = False,
+        disabled: bool = False,
+        has_income: bool = False,
         # insurance_type=None,
         birth_year=None,
         birth_month=None,
@@ -105,13 +105,13 @@ class TestNCHeadStart(TestCase):
 
         return member
 
-    def add_income(self, screen, member, income_type, amount, frequency="monthly"):
+    def add_income(self, screen, member, income_type, amount, frequency: str = "monthly"):
         """Helper method to add income to a household member"""
         return IncomeStream.objects.create(
             screen=screen, household_member=member, type=income_type, amount=amount, frequency=frequency
         )
 
-    def add_expense(self, screen, member, expense_type, amount, frequency="monthly"):
+    def add_expense(self, screen, member, expense_type, amount, frequency: str = "monthly"):
         """Helper method to add expenses to a household member"""
         return Expense.objects.create(
             screen=screen, household_member=member, type=expense_type, amount=amount, frequency=frequency
@@ -121,7 +121,7 @@ class TestNCHeadStart(TestCase):
     # TEST CASE 1: Pregnant with SSI (Presumptive Eligibility)
     # ============================================================================
     @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache.fetch")
-    def test_case_1_pregnant_with_ssi_eligible(self, mock_fetch):
+    def test_case_1_pregnant_with_ssi_eligible(self, mock_fetch) -> None:
         """
         Test Case 1: Bertie County, HH=2
         Person 1: Jan 2000, pregnant, no insurance, Wages $2,220/month (125% FPL)
@@ -175,7 +175,7 @@ class TestNCHeadStart(TestCase):
     # TEST CASE 2: Over Income Without Presumptive Eligibility
     # ============================================================================
     @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache.fetch")
-    def test_case_2_over_income_not_eligible(self, mock_fetch):
+    def test_case_2_over_income_not_eligible(self, mock_fetch) -> None:
         """
         Test Case 2: Bertie County, HH=2
         Person 1: Jan 2000, pregnant, no insurance, Wages $2,330/month (132% FPL)
@@ -230,7 +230,7 @@ class TestNCHeadStart(TestCase):
     # TEST CASE 3: Over Income with Low Rent (Not Enough Adjustment)
     # ============================================================================
     @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache.fetch")
-    def test_case_3_over_income_low_rent_not_eligible(self, mock_fetch):
+    def test_case_3_over_income_low_rent_not_eligible(self, mock_fetch) -> None:
         """
         Test Case 3: Durham County, HH=3
         Person 1: Jan 2000, no insurance, Wages $3,500/month + Child Support $1,000/month
@@ -292,7 +292,7 @@ class TestNCHeadStart(TestCase):
     # TEST CASE 4: Over Income with High Rent (Housing Cost Adjustment)
     # ============================================================================
     @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache.fetch")
-    def test_case_4_over_income_high_rent_eligible(self, mock_fetch):
+    def test_case_4_over_income_high_rent_eligible(self, mock_fetch) -> None:
         """
         Test Case 4: Durham County, HH=3
         Person 1: Jan 2000, no insurance, Wages $3,500/month + Child Support $1,000/month
@@ -367,7 +367,7 @@ class TestNCHeadStart(TestCase):
     # ADDITIONAL TESTS: Age Eligibility
     # ============================================================================
     @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache.fetch")
-    def test_child_age_0_to_5_eligible(self, mock_fetch):
+    def test_child_age_0_to_5_eligible(self, mock_fetch) -> None:
         """Test that children aged 0-5 are eligible"""
         mock_fetch.return_value = self.MARKET_RATES_DATA
 
@@ -404,7 +404,7 @@ class TestNCHeadStart(TestCase):
                 self.assertTrue(len(eligibility.eligible_members) > 0, f"Child age {age} should be eligible")
 
     @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache.fetch")
-    def test_pregnant_member_eligible(self, mock_fetch):
+    def test_pregnant_member_eligible(self, mock_fetch) -> None:
         """Test that pregnant household member is eligible regardless of age"""
         mock_fetch.return_value = self.MARKET_RATES_DATA
 
@@ -433,7 +433,7 @@ class TestNCHeadStart(TestCase):
     # ADDITIONAL TESTS: County Market Rate Data
     # ============================================================================
     @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache.fetch")
-    def test_multiple_children_different_ages(self, mock_fetch):
+    def test_multiple_children_different_ages(self, mock_fetch) -> None:
         """Test value calculation with multiple children at different ages"""
         mock_fetch.return_value = self.MARKET_RATES_DATA
 
@@ -477,7 +477,7 @@ class TestNCHeadStart(TestCase):
         self.assertEqual(eligibility.value, expected_value, f"Estimated value should be ${expected_value}")
 
     @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache.fetch")
-    def test_ineligible_county(self, mock_fetch):
+    def test_ineligible_county(self, mock_fetch) -> None:
         """Test household in county without Head Start market rates"""
         # Mock with limited counties (exclude the test county)
         mock_fetch.return_value = {
@@ -508,7 +508,7 @@ class TestNCHeadStart(TestCase):
         self.assertFalse(eligibility.eligible, "Should NOT be eligible - county not in market rates")
 
     @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache.fetch")
-    def test_countable_income_types_only(self, mock_fetch):
+    def test_countable_income_types_only(self, mock_fetch) -> None:
         """Test that only specific income types are counted"""
         mock_fetch.return_value = self.MARKET_RATES_DATA
 
@@ -546,7 +546,7 @@ class TestNCHeadStart(TestCase):
         )
 
     @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache.fetch")
-    def test_member_value_returns_zero(self, mock_fetch):
+    def test_member_value_returns_zero(self, mock_fetch) -> None:
         """Test that member_value returns 0 (all value at household level)"""
         mock_fetch.return_value = self.MARKET_RATES_DATA
 

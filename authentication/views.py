@@ -30,6 +30,9 @@ class UserViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
             screen.save()
             user: User = screen.user
 
+            if user is None:
+                return Response("User could not be saved", status=400)
+
             try:
                 Integration = get_cms_integration(screen.white_label)
                 integration = Integration(user, screen)

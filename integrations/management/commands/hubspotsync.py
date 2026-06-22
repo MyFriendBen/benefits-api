@@ -9,10 +9,10 @@ import time
 class Command(BaseCommand):
     help = "Syncs new users to Hubspot and clears PII from local records"
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser) -> None:
         parser.add_argument("limit", nargs="?", default="1", type=int)
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         limit = options["limit"]
         status = self.sync_mfb_hubspot_users(limit)
         if len(status["completed"]) > 0:
@@ -33,7 +33,7 @@ class Command(BaseCommand):
     # queries the database every 10 minutes for new signups, syncs that data to
     # hubspot, and then clears the PII on the user record in favor of storing the
     # external id. This separates PII from household demographic.
-    def sync_mfb_hubspot_users(self, limit):
+    def sync_mfb_hubspot_users(self, limit: int):
         status = {"processed": 0, "completed": [], "failed": []}
         screen = None
         processed = 0

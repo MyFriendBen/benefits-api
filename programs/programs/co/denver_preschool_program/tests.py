@@ -6,7 +6,7 @@ from screener.models import Screen, HouseholdMember
 
 @skip("Calculator constructor signature changed - needs API update")
 class TestDenverPreschoolProgram(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.screen1 = Screen.objects.create(
             agree_to_tos=True, zipcode="80205", county="Denver County", household_size=2
         )
@@ -39,13 +39,13 @@ class TestDenverPreschoolProgram(TestCase):
             has_expenses=False,
         )
 
-    def test_denver_preschool_program_has_preschooler(self):
+    def test_denver_preschool_program_has_preschooler(self) -> None:
         dpp = DenverPreschoolProgram(self.screen1)
         eligibility = dpp.eligibility
 
         self.assertTrue(eligibility["eligible"])
 
-    def test_denver_preschool_program_doesnt_have_preschooler(self):
+    def test_denver_preschool_program_doesnt_have_preschooler(self) -> None:
         self.person2.age = 5
         self.person2.save()
         dpp = DenverPreschoolProgram(self.screen1)

@@ -15,7 +15,7 @@ from programs.programs.policyengine.calculators.dependencies import spm
 class TestSnapIncomeDependency(TestCase):
     """Tests for SnapEarnedIncomeDependency and SnapUnearnedIncomeDependency classes used by TxSnap calculator."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for income tests."""
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
@@ -35,13 +35,13 @@ class TestSnapIncomeDependency(TestCase):
             screen=self.screen, household_member=self.head, type="alimony", amount=500, frequency="monthly"
         )
 
-    def test_value_calculates_annual_earned_income(self):
+    def test_value_calculates_annual_earned_income(self) -> None:
         """Test SnapEarnedIncomeDependency.value() calculates total annual earned income for household."""
         dep = spm.SnapEarnedIncomeDependency(self.screen, None, {})
         self.assertEqual(dep.value(), 24000)  # $2000/month * 12
         self.assertEqual(dep.field, "snap_earned_income")
 
-    def test_value_calculates_annual_unearned_income(self):
+    def test_value_calculates_annual_unearned_income(self) -> None:
         """Test SnapUnearnedIncomeDependency.value() calculates total annual unearned income for household."""
         dep = spm.SnapUnearnedIncomeDependency(self.screen, None, {})
         self.assertEqual(dep.value(), 6000)  # $500/month * 12
@@ -51,7 +51,7 @@ class TestSnapIncomeDependency(TestCase):
 class TestSnapAssetsDependency(TestCase):
     """Tests for SnapAssetsDependency class used by TxSnap calculator."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for asset tests."""
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
@@ -64,13 +64,13 @@ class TestSnapAssetsDependency(TestCase):
             completed=False,
         )
 
-    def test_value_returns_household_assets(self):
+    def test_value_returns_household_assets(self) -> None:
         """Test value() returns household assets value from screen."""
         dep = spm.SnapAssetsDependency(self.screen, None, {})
         self.assertEqual(dep.value(), 1500)
         self.assertEqual(dep.field, "snap_assets")
 
-    def test_value_returns_zero_when_assets_null(self):
+    def test_value_returns_zero_when_assets_null(self) -> None:
         """Test value() returns 0 when household assets are null."""
         self.screen.household_assets = None
         self.screen.save()
@@ -82,7 +82,7 @@ class TestSnapAssetsDependency(TestCase):
 class TestHousingCostDependency(TestCase):
     """Tests for HousingCostDependency class used by TxSnap calculator."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for housing expense tests."""
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
@@ -95,13 +95,13 @@ class TestHousingCostDependency(TestCase):
 
         Expense.objects.create(screen=self.screen, type="mortgage", amount=500, frequency="monthly")
 
-    def test_value_calculates_total_annual_housing_cost(self):
+    def test_value_calculates_total_annual_housing_cost(self) -> None:
         """Test value() calculates combined annual rent and mortgage costs."""
         dep = spm.HousingCostDependency(self.screen, None, {})
         self.assertEqual(dep.value(), 18000)  # ($1000 + $500) * 12
         self.assertEqual(dep.field, "housing_cost")
 
-    def test_value_calculates_rent_only(self):
+    def test_value_calculates_rent_only(self) -> None:
         """Test value() calculates annual rent when no mortgage exists."""
         # Remove mortgage expense
         Expense.objects.filter(screen=self.screen, type="mortgage").delete()
@@ -113,7 +113,7 @@ class TestHousingCostDependency(TestCase):
 class TestUtilityExpenseDependency(TestCase):
     """Tests for utility expense dependency classes: HasHeatingCoolingExpenseDependency, HeatingCoolingExpenseDependency, HasPhoneExpenseDependency, PhoneExpenseDependency, and WaterExpenseDependency."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for utility expense tests."""
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
@@ -121,7 +121,7 @@ class TestUtilityExpenseDependency(TestCase):
             white_label=self.white_label, zipcode="78701", county="Test County", household_size=2, completed=False
         )
 
-    def test_value_returns_true_when_heating_expense_exists(self):
+    def test_value_returns_true_when_heating_expense_exists(self) -> None:
         """Test HasHeatingCoolingExpenseDependency.value() returns True when heating expense exists."""
         Expense.objects.create(screen=self.screen, type="heating", amount=100, frequency="monthly")
 
@@ -129,12 +129,12 @@ class TestUtilityExpenseDependency(TestCase):
         self.assertTrue(dep.value())
         self.assertEqual(dep.field, "has_heating_cooling_expense")
 
-    def test_value_returns_false_when_no_heating_cooling_expense(self):
+    def test_value_returns_false_when_no_heating_cooling_expense(self) -> None:
         """Test HasHeatingCoolingExpenseDependency.value() returns False when no heating/cooling expense exists."""
         dep = spm.HasHeatingCoolingExpenseDependency(self.screen, None, {})
         self.assertFalse(dep.value())
 
-    def test_value_calculates_annual_heating_cooling_total(self):
+    def test_value_calculates_annual_heating_cooling_total(self) -> None:
         """Test HeatingCoolingExpenseDependency.value() calculates combined annual heating and cooling costs."""
         Expense.objects.create(screen=self.screen, type="heating", amount=100, frequency="monthly")
         Expense.objects.create(screen=self.screen, type="cooling", amount=75, frequency="monthly")
@@ -143,7 +143,7 @@ class TestUtilityExpenseDependency(TestCase):
         self.assertEqual(dep.value(), 2100)  # ($100 + $75) * 12
         self.assertEqual(dep.field, "heating_cooling_expense")
 
-    def test_value_returns_true_when_phone_expense_exists(self):
+    def test_value_returns_true_when_phone_expense_exists(self) -> None:
         """Test HasPhoneExpenseDependency.value() returns True when telephone expense exists."""
         Expense.objects.create(screen=self.screen, type="telephone", amount=50, frequency="monthly")
 
@@ -151,7 +151,7 @@ class TestUtilityExpenseDependency(TestCase):
         self.assertTrue(dep.value())
         self.assertEqual(dep.field, "has_phone_expense")
 
-    def test_value_calculates_annual_phone_cost(self):
+    def test_value_calculates_annual_phone_cost(self) -> None:
         """Test PhoneExpenseDependency.value() calculates annual telephone costs."""
         Expense.objects.create(screen=self.screen, type="telephone", amount=50, frequency="monthly")
 
@@ -159,7 +159,7 @@ class TestUtilityExpenseDependency(TestCase):
         self.assertEqual(dep.value(), 600)  # $50 * 12
         self.assertEqual(dep.field, "phone_expense")
 
-    def test_value_calculates_annual_water_from_other_utilities(self):
+    def test_value_calculates_annual_water_from_other_utilities(self) -> None:
         """Test WaterExpenseDependency.value() calculates annual water costs from otherUtilities expense."""
         Expense.objects.create(screen=self.screen, type="otherUtilities", amount=60, frequency="monthly")
 
@@ -171,13 +171,13 @@ class TestUtilityExpenseDependency(TestCase):
 class TestTxCeapEnergyExpenseDependency(TestCase):
     """Tests for TxCeapEnergyExpenseDependency, which feeds the tx_ceap (TX LIHEAP) benefit cap."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.white_label = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")
         self.screen = Screen.objects.create(
             white_label=self.white_label, zipcode="78701", county="Travis", household_size=1, completed=False
         )
 
-    def test_value_sums_heating_cooling_and_other_utilities(self):
+    def test_value_sums_heating_cooling_and_other_utilities(self) -> None:
         """value() totals heating, cooling, and otherUtilities into the annual electricity_expense field."""
         Expense.objects.create(screen=self.screen, type="heating", amount=100, frequency="monthly")
         Expense.objects.create(screen=self.screen, type="cooling", amount=50, frequency="monthly")
@@ -187,14 +187,14 @@ class TestTxCeapEnergyExpenseDependency(TestCase):
         self.assertEqual(dep.value(), 2100.0)  # ($100 + $50 + $25) * 12
         self.assertEqual(dep.field, "electricity_expense")
 
-    def test_value_counts_heating_only(self):
+    def test_value_counts_heating_only(self) -> None:
         """A heating-only expense (the validation scenario shape) flows through to the cap."""
         Expense.objects.create(screen=self.screen, type="heating", amount=200, frequency="monthly")
 
         dep = spm.TxCeapEnergyExpenseDependency(self.screen, None, {})
         self.assertEqual(dep.value(), 2400.0)  # $200 * 12
 
-    def test_value_returns_zero_when_no_energy_expense(self):
+    def test_value_returns_zero_when_no_energy_expense(self) -> None:
         """No energy expense yields 0, which caps the tx_ceap benefit at $0."""
         dep = spm.TxCeapEnergyExpenseDependency(self.screen, None, {})
         self.assertEqual(dep.value(), 0.0)
@@ -203,7 +203,7 @@ class TestTxCeapEnergyExpenseDependency(TestCase):
 class TestMortgageDependency(TestCase):
     """Tests for MortgageDependency class used by IL AABD calculator."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for mortgage dependency tests."""
         self.white_label = WhiteLabel.objects.create(name="Illinois", code="il", state_code="IL")
 
@@ -211,7 +211,7 @@ class TestMortgageDependency(TestCase):
             white_label=self.white_label, zipcode="60601", county="Cook", household_size=1, completed=False
         )
 
-    def test_value_calculates_annual_mortgage(self):
+    def test_value_calculates_annual_mortgage(self) -> None:
         """Test MortgageDependency.value() calculates annual mortgage expense."""
         Expense.objects.create(screen=self.screen, type="mortgage", amount=1200, frequency="monthly")
 
@@ -219,7 +219,7 @@ class TestMortgageDependency(TestCase):
         self.assertEqual(dep.value(), 14400)  # $1200/month * 12
         self.assertEqual(dep.field, "mortgage_payments")
 
-    def test_value_returns_zero_when_no_mortgage(self):
+    def test_value_returns_zero_when_no_mortgage(self) -> None:
         """Test MortgageDependency.value() returns 0 when no mortgage expense exists."""
         dep = spm.MortgageDependency(self.screen, None, {})
         self.assertEqual(dep.value(), 0)
@@ -228,7 +228,7 @@ class TestMortgageDependency(TestCase):
 class TestOtherExpenseDependency(TestCase):
     """Tests for other expense dependency classes: ChildCareDependency, HoaFeesExpenseDependency, and HomeownersInsuranceExpenseDependency."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for other expense tests."""
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
@@ -236,7 +236,7 @@ class TestOtherExpenseDependency(TestCase):
             white_label=self.white_label, zipcode="78701", county="Test County", household_size=2, completed=False
         )
 
-    def test_value_calculates_annual_childcare(self):
+    def test_value_calculates_annual_childcare(self) -> None:
         """Test ChildCareDependency.value() calculates annual childcare costs."""
         Expense.objects.create(screen=self.screen, type="childCare", amount=400, frequency="monthly")
 
@@ -244,26 +244,26 @@ class TestOtherExpenseDependency(TestCase):
         self.assertEqual(dep.value(), 4800)  # $400 * 12
         self.assertEqual(dep.field, "childcare_expenses")
 
-    def test_value_returns_zero_when_no_hoa_fees(self):
+    def test_value_returns_zero_when_no_hoa_fees(self) -> None:
         """Test HoaFeesExpenseDependency.value() returns 0 when no HOA fees exist."""
         dep = spm.HoaFeesExpenseDependency(self.screen, None, {})
         self.assertEqual(dep.value(), 0)
         self.assertEqual(dep.field, "homeowners_association_fees")
 
-    def test_value_calculates_annual_hoa_fees(self):
+    def test_value_calculates_annual_hoa_fees(self) -> None:
         """Test HoaFeesExpenseDependency.value() calculates annual HOA fees."""
         Expense.objects.create(screen=self.screen, type="hoa", amount=200, frequency="monthly")
 
         dep = spm.HoaFeesExpenseDependency(self.screen, None, {})
         self.assertEqual(dep.value(), 2400)  # $200 * 12
 
-    def test_value_returns_zero_when_no_homeowners_insurance(self):
+    def test_value_returns_zero_when_no_homeowners_insurance(self) -> None:
         """Test HomeownersInsuranceExpenseDependency.value() returns 0 when no homeowners insurance exists."""
         dep = spm.HomeownersInsuranceExpenseDependency(self.screen, None, {})
         self.assertEqual(dep.value(), 0)
         self.assertEqual(dep.field, "homeowners_insurance")
 
-    def test_value_calculates_annual_homeowners_insurance_cost(self):
+    def test_value_calculates_annual_homeowners_insurance_cost(self) -> None:
         """Test HomeownersInsuranceExpenseDependency.value() calculates annual homeowners insurance cost."""
         Expense.objects.create(screen=self.screen, type="homeownersInsurance", amount=150, frequency="monthly")
 
@@ -274,7 +274,7 @@ class TestOtherExpenseDependency(TestCase):
 class TestSnapEmergencyAllotmentDependency(TestCase):
     """Tests for SnapEmergencyAllotmentDependency class used by TxSnap calculator."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for program-specific tests."""
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
@@ -282,7 +282,7 @@ class TestSnapEmergencyAllotmentDependency(TestCase):
             white_label=self.white_label, zipcode="78701", county="Test County", household_size=2, completed=False
         )
 
-    def test_value_returns_zero(self):
+    def test_value_returns_zero(self) -> None:
         """Test value() returns 0 for emergency allotment."""
         dep = spm.SnapEmergencyAllotmentDependency(self.screen, None, {})
         self.assertEqual(dep.value(), 0)
@@ -292,7 +292,7 @@ class TestSnapEmergencyAllotmentDependency(TestCase):
 class TestBroadbandCostDependency(TestCase):
     """Tests for BroadbandCostDependency class used by TxLifeline calculator."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for broadband cost tests."""
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
@@ -300,13 +300,13 @@ class TestBroadbandCostDependency(TestCase):
             white_label=self.white_label, zipcode="78701", county="Test County", household_size=2, completed=False
         )
 
-    def test_value_returns_fixed_broadband_cost(self):
+    def test_value_returns_fixed_broadband_cost(self) -> None:
         """Test value() returns hardcoded broadband cost of 500."""
         dep = spm.BroadbandCostDependency(self.screen, None, {})
         self.assertEqual(dep.value(), 500)
         self.assertEqual(dep.field, "broadband_cost")
 
-    def test_value_returns_constant_regardless_of_household_data(self):
+    def test_value_returns_constant_regardless_of_household_data(self) -> None:
         """Test value() returns 500 regardless of household characteristics."""
         # Test with different household size
         self.screen.household_size = 5
@@ -319,7 +319,7 @@ class TestBroadbandCostDependency(TestCase):
 class TestSchoolMealCountableIncomeDependency(TestCase):
     """Tests for SchoolMealCountableIncomeDependency class used by WIC calculators."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for school meal countable income tests."""
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
@@ -329,7 +329,7 @@ class TestSchoolMealCountableIncomeDependency(TestCase):
 
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
 
-    def test_value_calculates_annual_income_from_specified_types(self):
+    def test_value_calculates_annual_income_from_specified_types(self) -> None:
         """Test value() calculates annual income from specific income types used for school meal eligibility."""
         # Add wages income (included in school meal countable income)
         IncomeStream.objects.create(
@@ -345,7 +345,7 @@ class TestSchoolMealCountableIncomeDependency(TestCase):
         self.assertEqual(dep.value(), 30000)  # ($2000 + $500) * 12
         self.assertEqual(dep.field, "school_meal_countable_income")
 
-    def test_value_includes_social_security_income_types(self):
+    def test_value_includes_social_security_income_types(self) -> None:
         """Test value() includes various social security income types in calculation."""
         # Add SS Retirement income (included)
         IncomeStream.objects.create(
@@ -370,7 +370,7 @@ class TestSchoolMealCountableIncomeDependency(TestCase):
         dep = spm.SchoolMealCountableIncomeDependency(self.screen, None, {})
         self.assertEqual(dep.value(), 44400)  # ($1500 + $1000 + $800 + $400) * 12
 
-    def test_value_includes_rental_and_pension_income(self):
+    def test_value_includes_rental_and_pension_income(self) -> None:
         """Test value() includes rental, pension, and veteran income types."""
         # Add rental income (included)
         IncomeStream.objects.create(
@@ -390,7 +390,7 @@ class TestSchoolMealCountableIncomeDependency(TestCase):
         dep = spm.SchoolMealCountableIncomeDependency(self.screen, None, {})
         self.assertEqual(dep.value(), 48000)  # ($1200 + $2000 + $800) * 12
 
-    def test_value_excludes_non_specified_income_types(self):
+    def test_value_excludes_non_specified_income_types(self) -> None:
         """Test value() excludes income types not in the specified list."""
         # Add wages income (included)
         IncomeStream.objects.create(
@@ -411,12 +411,12 @@ class TestSchoolMealCountableIncomeDependency(TestCase):
         # Should only include wages, not alimony or unemployment
         self.assertEqual(dep.value(), 24000)  # $2000 * 12
 
-    def test_value_returns_zero_when_no_countable_income(self):
+    def test_value_returns_zero_when_no_countable_income(self) -> None:
         """Test value() returns 0 when household has no school meal countable income."""
         dep = spm.SchoolMealCountableIncomeDependency(self.screen, None, {})
         self.assertEqual(dep.value(), 0)
 
-    def test_value_aggregates_income_across_multiple_household_members(self):
+    def test_value_aggregates_income_across_multiple_household_members(self) -> None:
         """Test value() aggregates countable income across all household members."""
         # Head has wages
         IncomeStream.objects.create(
@@ -433,7 +433,7 @@ class TestSchoolMealCountableIncomeDependency(TestCase):
         # Should include income from both members
         self.assertEqual(dep.value(), 42000)  # ($2000 + $1500) * 12
 
-    def test_value_uses_screen_calc_gross_income_method(self):
+    def test_value_uses_screen_calc_gross_income_method(self) -> None:
         """Test value() uses Screen.calc_gross_income() method with correct parameters."""
         # Add multiple income types
         IncomeStream.objects.create(
@@ -468,7 +468,7 @@ class TestSchoolMealCountableIncomeDependency(TestCase):
 class TestSnapDependency(TestCase):
     """Tests for Snap dependency — dual-role as PE input (categorical eligibility) and output (benefit amount)."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
         self.screen = Screen.objects.create(
             white_label=self.white_label,
@@ -479,11 +479,11 @@ class TestSnapDependency(TestCase):
             completed=False,
         )
 
-    def test_field_name(self):
+    def test_field_name(self) -> None:
         dep = spm.Snap(self.screen, None, {})
         self.assertEqual(dep.field, "snap")
 
-    def test_value_returns_1_when_screen_has_snap(self):
+    def test_value_returns_1_when_screen_has_snap(self) -> None:
         """When user reports having SNAP, send 1 to PE to enable categorical eligibility."""
         seed_program(self.white_label, "snap")
         _write_current_benefits(self.screen, ["snap"])
@@ -491,7 +491,7 @@ class TestSnapDependency(TestCase):
         dep = spm.Snap(self.screen, None, {})
         self.assertEqual(dep.value(), 1)
 
-    def test_value_returns_none_when_screen_does_not_have_snap(self):
+    def test_value_returns_none_when_screen_does_not_have_snap(self) -> None:
         """When user does not report SNAP, return None so PE calculates the benefit amount."""
         self.screen.has_snap = False
         self.screen.save()
@@ -503,7 +503,7 @@ class TestSnapDependency(TestCase):
 class TestTanfDependency(TestCase):
     """Tests for Tanf dependency — dual-role as PE input (categorical eligibility) and output (benefit amount)."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
         self.screen = Screen.objects.create(
             white_label=self.white_label,
@@ -514,11 +514,11 @@ class TestTanfDependency(TestCase):
             completed=False,
         )
 
-    def test_field_name(self):
+    def test_field_name(self) -> None:
         dep = spm.Tanf(self.screen, None, {})
         self.assertEqual(dep.field, "tanf")
 
-    def test_value_returns_1_when_screen_has_tanf(self):
+    def test_value_returns_1_when_screen_has_tanf(self) -> None:
         """When user reports having TANF, send 1 to PE to enable categorical eligibility."""
         seed_program(self.white_label, "tanf")
         _write_current_benefits(self.screen, ["tanf"])
@@ -526,7 +526,7 @@ class TestTanfDependency(TestCase):
         dep = spm.Tanf(self.screen, None, {})
         self.assertEqual(dep.value(), 1)
 
-    def test_value_returns_none_when_screen_does_not_have_tanf(self):
+    def test_value_returns_none_when_screen_does_not_have_tanf(self) -> None:
         """When user does not report TANF, return None so PE calculates the benefit amount."""
         self.screen.has_tanf = False
         self.screen.save()
@@ -538,7 +538,7 @@ class TestTanfDependency(TestCase):
 class TestWaTanfDependency(TestCase):
     """Tests for WaTanf output dependency and WaShowAllCashAssistanceProgramsDependency."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.white_label = WhiteLabel.objects.create(name="Washington", code="wa", state_code="WA")
         self.screen = Screen.objects.create(
             white_label=self.white_label,
@@ -548,15 +548,15 @@ class TestWaTanfDependency(TestCase):
             completed=False,
         )
 
-    def test_wa_tanf_field_name(self):
+    def test_wa_tanf_field_name(self) -> None:
         dep = spm.WaTanf(self.screen, None, {})
         self.assertEqual(dep.field, "wa_tanf")
 
-    def test_wa_show_all_field_name(self):
+    def test_wa_show_all_field_name(self) -> None:
         dep = spm.WaShowAllCashAssistanceProgramsDependency(self.screen, None, {})
         self.assertEqual(dep.field, "wa_show_all_cash_assistance_programs")
 
-    def test_wa_show_all_returns_true(self):
+    def test_wa_show_all_returns_true(self) -> None:
         """WaShowAllCashAssistanceProgramsDependency always returns True to bypass PE immigration checks."""
         dep = spm.WaShowAllCashAssistanceProgramsDependency(self.screen, None, {})
         self.assertTrue(dep.value())

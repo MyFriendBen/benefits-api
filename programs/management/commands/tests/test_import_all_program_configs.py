@@ -16,21 +16,21 @@ class ImportAllProgramConfigsCommandTest(TestCase):
     """Tests for the import_all_program_configs management command"""
 
     @classmethod
-    def setUpTestData(cls):
+    def setUpTestData(cls) -> None:
         """Set up test data that doesn't change between tests"""
         # Create white labels
         cls.co_white_label = WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
         cls.tx_white_label = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")
         cls.il_white_label = WhiteLabel.objects.create(name="Illinois", code="il", state_code="IL")
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up for each test"""
         self.out = StringIO()
         self.err = StringIO()
         # Clear any existing import records
         ProgramConfigImport.objects.all().delete()
 
-    def test_model_creation(self):
+    def test_model_creation(self) -> None:
         """Test that ProgramConfigImport model works correctly"""
         record = ProgramConfigImport.objects.create(
             filename="test_program.json",
@@ -43,7 +43,7 @@ class ImportAllProgramConfigsCommandTest(TestCase):
         self.assertEqual(record.white_label_code, "co")
         self.assertIsNotNone(record.imported_at)
 
-    def test_model_unique_filename(self):
+    def test_model_unique_filename(self) -> None:
         """Test that filename must be unique"""
         ProgramConfigImport.objects.create(
             filename="test_program.json",
@@ -58,7 +58,7 @@ class ImportAllProgramConfigsCommandTest(TestCase):
                 white_label_code="tx",
             )
 
-    def test_list_status_flag(self):
+    def test_list_status_flag(self) -> None:
         """Test the --list flag shows import status"""
         # Create a record for one file
         ProgramConfigImport.objects.create(
@@ -78,7 +78,7 @@ class ImportAllProgramConfigsCommandTest(TestCase):
         self.assertIn("Program Config Import Status", output)
         self.assertIn("co_jeffco_student_benefits_initial_config.json", output)
 
-    def test_dry_run_flag(self):
+    def test_dry_run_flag(self) -> None:
         """Test the --dry-run flag doesn't make changes"""
         initial_count = ProgramConfigImport.objects.count()
 
@@ -95,7 +95,7 @@ class ImportAllProgramConfigsCommandTest(TestCase):
         # No new records should be created
         self.assertEqual(ProgramConfigImport.objects.count(), initial_count)
 
-    def test_already_imported_files_are_skipped(self):
+    def test_already_imported_files_are_skipped(self) -> None:
         """Test that files already in ProgramConfigImport are skipped"""
         # Create import records for all files
         data_dir = Path(__file__).parent.parent / "import_program_config_data" / "data"
@@ -123,7 +123,7 @@ class ImportAllProgramConfigsCommandTest(TestCase):
         output = self.out.getvalue()
         self.assertIn("All program configurations have already been imported", output)
 
-    def test_command_tracks_successful_imports(self):
+    def test_command_tracks_successful_imports(self) -> None:
         """Test that successful imports are recorded in ProgramConfigImport"""
         # This test uses mocking to avoid actually running the import
         with patch("programs.management.commands.import_all_program_configs.Command._import_config") as mock_import:
@@ -173,7 +173,7 @@ class ImportAllProgramConfigsCommandTest(TestCase):
 
         return Command
 
-    def test_file_flag_imports_specific_file(self):
+    def test_file_flag_imports_specific_file(self) -> None:
         """Test that --file flag targets a specific file"""
         call_command(
             "import_all_program_configs",
@@ -190,7 +190,7 @@ class ImportAllProgramConfigsCommandTest(TestCase):
 class ProgramConfigImportModelTest(TestCase):
     """Tests for the ProgramConfigImport model"""
 
-    def test_str_representation(self):
+    def test_str_representation(self) -> None:
         """Test the string representation of the model"""
         record = ProgramConfigImport.objects.create(
             filename="co_snap_config.json",
@@ -202,7 +202,7 @@ class ProgramConfigImportModelTest(TestCase):
         self.assertIn("co_snap_config.json", str_repr)
         self.assertIn("co_snap", str_repr)
 
-    def test_ordering(self):
+    def test_ordering(self) -> None:
         """Test that records are ordered by imported_at descending"""
         record1 = ProgramConfigImport.objects.create(
             filename="first.json",

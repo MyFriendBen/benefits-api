@@ -14,7 +14,7 @@ from screener.serializers import _write_current_benefits
 
 class TestWaNslp(TestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpTestData(cls) -> None:
         cls.white_label = WhiteLabel.objects.create(name="Washington", code="wa", state_code="WA")
         cls.fpl_year = FederalPoveryLimit.objects.create(year="2025", period="2025")
         cls.program = Program.objects.new_program(white_label="wa", name_abbreviated="wa_nslp")
@@ -34,11 +34,11 @@ class TestWaNslp(TestCase):
         defaults.update(kwargs)
         return Screen.objects.create(**defaults)
 
-    def test_registered(self):
+    def test_registered(self) -> None:
         self.assertIn("wa_nslp", wa_calculators)
         self.assertIs(wa_calculators["wa_nslp"], WaNslp)
 
-    def test_eligible_by_income_below_free_tier(self):
+    def test_eligible_by_income_below_free_tier(self) -> None:
         """Spec / validation: HH 3, one school-age child, income below reduced cap."""
         screen = self._screen_base(zipcode="98101", county="King County")
         HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=36, has_income=True)
@@ -56,7 +56,7 @@ class TestWaNslp(TestCase):
         self.assertTrue(result.eligible)
         self.assertEqual(result.value, 828)
 
-    def test_ineligible_monthly_income_cents_over_reduced_cap(self):
+    def test_ineligible_monthly_income_cents_over_reduced_cap(self) -> None:
         """HH3 monthly cap $4,109 — cents must not be truncated (CodeRabbit / Decimal)."""
         screen = self._screen_base(zipcode="98103", county="King County", household_size=3)
         head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=39, has_income=True)
@@ -69,7 +69,7 @@ class TestWaNslp(TestCase):
         result = self._calc(screen).calc()
         self.assertFalse(result.eligible)
 
-    def test_medicaid_does_not_confer_categorical_eligibility(self):
+    def test_medicaid_does_not_confer_categorical_eligibility(self) -> None:
         """Medicaid must NOT be a categorical pathway (spec: Medicaid alone must not
         create categorical eligibility). A school-age child is present, so the only
         thing that could make this over-income HH3 eligible is wrongly treating
@@ -93,7 +93,7 @@ class TestWaNslp(TestCase):
         result = self._calc(screen).calc()
         self.assertFalse(result.eligible)
 
-    def test_eligible_at_reduced_monthly_cap_exact(self):
+    def test_eligible_at_reduced_monthly_cap_exact(self) -> None:
         """Regression: frequency-matched monthly must not always annualize (+$5 error)."""
         screen = self._screen_base(zipcode="98103", county="King County")
         head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=39, has_income=True)
@@ -107,7 +107,7 @@ class TestWaNslp(TestCase):
         self.assertTrue(result.eligible)
         self.assertEqual(result.value, 828)
 
-    def test_eligible_snap_categorical_high_income(self):
+    def test_eligible_snap_categorical_high_income(self) -> None:
         seed_program(self.white_label, "wa_snap")
         screen = self._screen_base(
             zipcode="99201",
@@ -126,7 +126,7 @@ class TestWaNslp(TestCase):
         self.assertTrue(result.eligible)
         self.assertEqual(result.value, 828)
 
-    def test_eligible_tanf_categorical(self):
+    def test_eligible_tanf_categorical(self) -> None:
         seed_program(self.white_label, "wa_tanf")
         screen = self._screen_base(zipcode="98901", county="Yakima County", has_benefits="true")
         _write_current_benefits(screen, ["wa_tanf"])
@@ -141,7 +141,7 @@ class TestWaNslp(TestCase):
         self.assertTrue(result.eligible)
         self.assertEqual(result.value, 828)
 
-    def test_ineligible_snap_but_no_school_age_child(self):
+    def test_ineligible_snap_but_no_school_age_child(self) -> None:
         seed_program(self.white_label, "wa_snap")
         screen = self._screen_base(zipcode="98103", county="King County", household_size=2)
         _write_current_benefits(screen, ["wa_snap"])
@@ -154,7 +154,7 @@ class TestWaNslp(TestCase):
         result = self._calc(screen).calc()
         self.assertFalse(result.eligible)
 
-    def test_eligible_head_start_categorical_high_income(self):
+    def test_eligible_head_start_categorical_high_income(self) -> None:
         seed_program(self.white_label, "wa_head_start")
         screen = self._screen_base(
             zipcode="98402",
@@ -173,7 +173,7 @@ class TestWaNslp(TestCase):
         self.assertTrue(result.eligible)
         self.assertEqual(result.value, 828)
 
-    def test_snap_categorical_uses_presumed_eligibility_pass_message_not_income(self):
+    def test_snap_categorical_uses_presumed_eligibility_pass_message_not_income(self) -> None:
         seed_program(self.white_label, "wa_snap")
         screen = self._screen_base(
             zipcode="99201",
@@ -193,7 +193,7 @@ class TestWaNslp(TestCase):
         self.assertTrue(any("Presumed eligibility" in str(m) for m in result.pass_messages))
         self.assertFalse(any("Household makes" in str(m) for m in result.pass_messages))
 
-    def test_eligible_foster_child_categorical(self):
+    def test_eligible_foster_child_categorical(self) -> None:
         screen = self._screen_base(household_size=3)
         head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=35, has_income=True)
         IncomeStream.objects.create(
@@ -206,7 +206,7 @@ class TestWaNslp(TestCase):
         self.assertTrue(result.eligible)
         self.assertEqual(result.value, 828)
 
-    def test_two_school_age_children_value_scales(self):
+    def test_two_school_age_children_value_scales(self) -> None:
         screen = self._screen_base(zipcode="99201", county="Spokane County", household_size=6)
         head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=40, has_income=True)
         IncomeStream.objects.create(
@@ -225,7 +225,7 @@ class TestWaNslp(TestCase):
         self.assertTrue(result.eligible)
         self.assertEqual(result.value, 828 * 3)
 
-    def test_mixed_frequency_uses_annual_limit(self):
+    def test_mixed_frequency_uses_annual_limit(self) -> None:
         screen = self._screen_base(household_size=3)
         head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=39, has_income=True)
         IncomeStream.objects.create(
@@ -238,13 +238,13 @@ class TestWaNslp(TestCase):
         calc = self._calc(screen)
         self.assertTrue(calc._income_at_or_below_reduced_cap())
 
-    def test_member_eligible_false_for_head(self):
+    def test_member_eligible_false_for_head(self) -> None:
         calc = self._calc(self._screen_base())
         e = MemberEligibility(HouseholdMember(relationship="headOfHousehold", age=30))
         calc.member_eligible(e)
         self.assertFalse(e.eligible)
 
-    def test_grandchild_counts(self):
+    def test_grandchild_counts(self) -> None:
         screen = self._screen_base(household_size=3)
         HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=55, has_income=True)
         IncomeStream.objects.create(

@@ -25,7 +25,7 @@ class EnergyCalculatorPercentageOfIncomePaymentPlan(ProgramCalculator):
     ]
     gas_providers = ["co-atmos-energy"]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         # eligible for another program
         has_another_program = False
         for program in self.presumptive_eligibility:

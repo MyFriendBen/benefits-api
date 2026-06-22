@@ -22,22 +22,22 @@ from translations.management.commands.check_readability import (
 class ReadabilityCheckerTest(TestCase):
     """Tests for the ReadabilityChecker class."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test fixtures."""
         self.checker = ReadabilityChecker()
 
-    def test_default_thresholds(self):
+    def test_default_thresholds(self) -> None:
         """Test that default thresholds are set correctly."""
         self.assertEqual(self.checker.en_threshold, 8.0)
         self.assertEqual(self.checker.es_threshold, 60.0)
 
-    def test_custom_thresholds(self):
+    def test_custom_thresholds(self) -> None:
         """Test that custom thresholds can be set."""
         checker = ReadabilityChecker(en_threshold=6.0, es_threshold=70.0)
         self.assertEqual(checker.en_threshold, 6.0)
         self.assertEqual(checker.es_threshold, 70.0)
 
-    def test_analyze_english_simple_text(self):
+    def test_analyze_english_simple_text(self) -> None:
         """Test analyzing simple English text."""
         text = "This is a simple sentence. It is easy to read. Anyone can understand it."
         scores = self.checker.analyze_english(text)
@@ -50,7 +50,7 @@ class ReadabilityCheckerTest(TestCase):
         # Simple text should have low grade level
         self.assertLess(scores["flesch_kincaid_grade"], 10)
 
-    def test_analyze_english_complex_text(self):
+    def test_analyze_english_complex_text(self) -> None:
         """Test analyzing complex English text."""
         text = """
         The implementation of sophisticated algorithmic methodologies necessitates 
@@ -63,7 +63,7 @@ class ReadabilityCheckerTest(TestCase):
         # Complex text should have higher grade level
         self.assertGreater(scores["flesch_kincaid_grade"], 10)
 
-    def test_analyze_spanish_text(self):
+    def test_analyze_spanish_text(self) -> None:
         """Test analyzing Spanish text."""
         text = "Esta es una oración simple. Es fácil de leer. Cualquiera puede entenderla."
         scores = self.checker.analyze_spanish(text)
@@ -72,7 +72,7 @@ class ReadabilityCheckerTest(TestCase):
         self.assertIn("szigriszt_pazos", scores)
         self.assertIn("crawford", scores)
 
-    def test_check_english_passing(self):
+    def test_check_english_passing(self) -> None:
         """Test that simple English text passes readability check."""
         text = "This is a simple sentence. It is easy to read. Anyone can understand it."
         result = self.checker.check("test.label", text, "en-us")
@@ -83,7 +83,7 @@ class ReadabilityCheckerTest(TestCase):
         # Simple text should pass with default threshold
         self.assertTrue(result.passes)
 
-    def test_check_english_failing(self):
+    def test_check_english_failing(self) -> None:
         """Test that complex English text fails readability check."""
         text = """
         The implementation of sophisticated algorithmic methodologies necessitates 
@@ -99,7 +99,7 @@ class ReadabilityCheckerTest(TestCase):
         self.assertFalse(result.passes)
         self.assertGreater(result.primary_score, 8.0)
 
-    def test_check_short_text_passes(self):
+    def test_check_short_text_passes(self) -> None:
         """Test that checker.check always analyzes text; skipping by word count is handled by _analyze."""
         text = "Hello world"  # Only 2 words
         result = self.checker.check("test.label", text, "en-us")
@@ -107,21 +107,21 @@ class ReadabilityCheckerTest(TestCase):
         self.assertEqual(result.word_count, 2)
         self.assertNotEqual(result.scores, {})
 
-    def test_check_empty_text_passes(self):
+    def test_check_empty_text_passes(self) -> None:
         """Test that empty text passes by default."""
         result = self.checker.check("test.label", "", "en-us")
 
         self.assertTrue(result.passes)
         self.assertEqual(result.word_count, 0)
 
-    def test_check_none_text_passes(self):
+    def test_check_none_text_passes(self) -> None:
         """Test that None text passes by default."""
         result = self.checker.check("test.label", None, "en-us")
 
         self.assertTrue(result.passes)
         self.assertEqual(result.word_count, 0)
 
-    def test_check_spanish_text(self):
+    def test_check_spanish_text(self) -> None:
         """Test checking Spanish text uses correct metrics."""
         text = """
         Esta es una oración de prueba para verificar la legibilidad del texto. 
@@ -135,7 +135,7 @@ class ReadabilityCheckerTest(TestCase):
         # Threshold comparison is opposite for Spanish (higher is better)
         self.assertEqual(result.threshold, 60.0)
 
-    def test_word_count(self):
+    def test_word_count(self) -> None:
         """Test word counting."""
         self.assertEqual(self.checker.get_word_count(""), 0)
         self.assertEqual(self.checker.get_word_count("one"), 1)
@@ -146,13 +146,13 @@ class ReadabilityCheckerTest(TestCase):
 class CheckReadabilityCommandTest(TestCase):
     """Tests for the check_readability management command."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test fixtures."""
         self.out = StringIO()
         self.err = StringIO()
 
     @patch("translations.management.commands.check_readability.Translation")
-    def test_command_runs_without_error(self, mock_translation_class):
+    def test_command_runs_without_error(self, mock_translation_class) -> None:
         """Test that the command runs without errors."""
         # Set up mock
         mock_queryset = MagicMock()
@@ -168,7 +168,7 @@ class CheckReadabilityCommandTest(TestCase):
         self.assertIn("READABILITY ANALYSIS REPORT", output)
 
     @patch("translations.management.commands.check_readability.Translation")
-    def test_command_with_language_option(self, mock_translation_class):
+    def test_command_with_language_option(self, mock_translation_class) -> None:
         """Test that the command respects the language option."""
         mock_queryset = MagicMock()
         mock_queryset.filter.return_value = mock_queryset
@@ -184,7 +184,7 @@ class CheckReadabilityCommandTest(TestCase):
         self.assertIn("Fernández-Huerta", output)
 
     @patch("translations.management.commands.check_readability.Translation")
-    def test_command_with_threshold_option(self, mock_translation_class):
+    def test_command_with_threshold_option(self, mock_translation_class) -> None:
         """Test that the command respects custom threshold."""
         mock_queryset = MagicMock()
         mock_queryset.filter.return_value = mock_queryset
@@ -201,7 +201,9 @@ class CheckReadabilityCommandTest(TestCase):
     @patch("translations.management.commands.check_readability.WhiteLabel")
     @patch("translations.management.commands.check_readability.Program")
     @patch("translations.management.commands.check_readability.Translation")
-    def test_command_with_whitelabel_option(self, mock_translation_class, mock_program_class, mock_whitelabel_class):
+    def test_command_with_whitelabel_option(
+        self, mock_translation_class, mock_program_class, mock_whitelabel_class
+    ) -> None:
         """Test that the command respects the whitelabel option."""
         # Set up white label mock
         mock_wl = MagicMock()
@@ -231,7 +233,7 @@ class CheckReadabilityCommandTest(TestCase):
         self.assertIn("White Label: co", output)
 
     @patch("translations.management.commands.check_readability.Translation")
-    def test_command_fail_on_error_with_failures(self, mock_translation_class):
+    def test_command_fail_on_error_with_failures(self, mock_translation_class) -> None:
         """Test that --fail-on-error raises CommandError when there are failures."""
         # Create a mock translation with complex text that will fail
         mock_translation = MagicMock()
@@ -261,7 +263,7 @@ class CheckReadabilityCommandTest(TestCase):
 class ReadabilityResultTest(TestCase):
     """Tests for the ReadabilityResult dataclass."""
 
-    def test_result_creation(self):
+    def test_result_creation(self) -> None:
         """Test creating a ReadabilityResult."""
         result = ReadabilityResult(
             label="test.label",

@@ -3,7 +3,7 @@ import uuid
 from django.db import migrations
 
 
-def add_notification_message_translations(apps, schema_editor):
+def add_notification_message_translations(apps, schema_editor) -> None:
     """
     Creates Translation objects for notification_message field for all existing UrgentNeed records.
     """

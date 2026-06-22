@@ -18,12 +18,12 @@ class UpdateValidationsCommandTest(TestCase):
     """Tests for the update_validations management command"""
 
     @classmethod
-    def setUpTestData(cls):
+    def setUpTestData(cls) -> None:
         """Set up test data that doesn't change between tests"""
         cls.white_label = WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
         cls.program = Program.objects.new_program(white_label="co", name_abbreviated="snap")
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up for each test"""
         self.out = StringIO()
         self.err = StringIO()
@@ -66,7 +66,7 @@ class UpdateValidationsCommandTest(TestCase):
         temp_file.close()
         return temp_file.name
 
-    def test_update_eligible_field(self):
+    def test_update_eligible_field(self) -> None:
         """Test updating the eligible field of a validation"""
         update_data = {
             "description": "Update SNAP eligibility",
@@ -94,7 +94,7 @@ class UpdateValidationsCommandTest(TestCase):
         finally:
             Path(file_path).unlink()
 
-    def test_update_value_field(self):
+    def test_update_value_field(self) -> None:
         """Test updating the value field of a validation"""
         update_data = {
             "description": "Update SNAP value",
@@ -122,7 +122,7 @@ class UpdateValidationsCommandTest(TestCase):
         finally:
             Path(file_path).unlink()
 
-    def test_update_notes_field(self):
+    def test_update_notes_field(self) -> None:
         """Test updating the notes field of a validation"""
         update_data = {
             "description": "Update SNAP notes",
@@ -150,7 +150,7 @@ class UpdateValidationsCommandTest(TestCase):
         finally:
             Path(file_path).unlink()
 
-    def test_update_multiple_fields(self):
+    def test_update_multiple_fields(self) -> None:
         """Test updating multiple fields at once"""
         update_data = {
             "description": "Update multiple fields",
@@ -179,7 +179,7 @@ class UpdateValidationsCommandTest(TestCase):
         finally:
             Path(file_path).unlink()
 
-    def test_dry_run_does_not_modify_database(self):
+    def test_dry_run_does_not_modify_database(self) -> None:
         """Test that --dry-run shows changes but doesn't modify the database"""
         original_eligible = self.validation.eligible
         original_value = self.validation.value
@@ -213,7 +213,7 @@ class UpdateValidationsCommandTest(TestCase):
         finally:
             Path(file_path).unlink()
 
-    def test_nonexistent_screen_fails(self):
+    def test_nonexistent_screen_fails(self) -> None:
         """Test that referencing a non-existent screen fails"""
         update_data = {
             "description": "Invalid screen test",
@@ -237,7 +237,7 @@ class UpdateValidationsCommandTest(TestCase):
         finally:
             Path(file_path).unlink()
 
-    def test_nonexistent_validation_fails(self):
+    def test_nonexistent_validation_fails(self) -> None:
         """Test that referencing a non-existent validation fails"""
         update_data = {
             "description": "Invalid validation test",
@@ -261,7 +261,7 @@ class UpdateValidationsCommandTest(TestCase):
         finally:
             Path(file_path).unlink()
 
-    def test_missing_description_fails_validation(self):
+    def test_missing_description_fails_validation(self) -> None:
         """Test that missing description fails schema validation"""
         update_data = {
             "updates": [
@@ -284,7 +284,7 @@ class UpdateValidationsCommandTest(TestCase):
         finally:
             Path(file_path).unlink()
 
-    def test_empty_updates_fails_validation(self):
+    def test_empty_updates_fails_validation(self) -> None:
         """Test that empty updates array fails schema validation"""
         update_data = {"description": "Empty updates", "updates": []}
 
@@ -299,7 +299,7 @@ class UpdateValidationsCommandTest(TestCase):
         finally:
             Path(file_path).unlink()
 
-    def test_update_without_any_fields_fails(self):
+    def test_update_without_any_fields_fails(self) -> None:
         """Test that an update without eligible, value, or notes fails"""
         update_data = {
             "description": "No fields to update",
@@ -323,7 +323,7 @@ class UpdateValidationsCommandTest(TestCase):
         finally:
             Path(file_path).unlink()
 
-    def test_invalid_json_file(self):
+    def test_invalid_json_file(self) -> None:
         """Test that invalid JSON file raises error"""
         temp_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json")
         temp_file.write("{ invalid json }")
@@ -338,14 +338,14 @@ class UpdateValidationsCommandTest(TestCase):
         finally:
             Path(temp_file.name).unlink()
 
-    def test_file_not_found(self):
+    def test_file_not_found(self) -> None:
         """Test that missing file raises error"""
         with self.assertRaises(CommandError) as cm:
             call_command("update_validations", "/nonexistent/file.json")
 
         self.assertIn("File not found", str(cm.exception))
 
-    def test_output_summary(self):
+    def test_output_summary(self) -> None:
         """Test that command outputs a comprehensive summary"""
         update_data = {
             "description": "Test update summary",
@@ -377,7 +377,7 @@ class UpdateValidationsCommandTest(TestCase):
         finally:
             Path(file_path).unlink()
 
-    def test_no_change_when_values_same(self):
+    def test_no_change_when_values_same(self) -> None:
         """Test that no changes are recorded when values are the same"""
         update_data = {
             "description": "No actual changes",

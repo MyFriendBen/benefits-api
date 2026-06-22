@@ -51,7 +51,7 @@ class FeatureFlagsAdmin(SecureAdmin):
         self.actions = None
         return super().changelist_view(request, extra_context)
 
-    def has_delete_permission(self, request, obj=None):
+    def has_delete_permission(self, request, obj=None) -> bool:
         return False
 
     def get_queryset(self, request):
@@ -60,7 +60,7 @@ class FeatureFlagsAdmin(SecureAdmin):
             return qs
         return qs.filter(pk__in=request.user.white_labels.all())
 
-    def change_view(self, request, object_id, form_url="", extra_context=None):
+    def change_view(self, request, object_id, form_url: str = "", extra_context=None):
         obj = self.get_object(request, object_id)
 
         # Handle None return when object ID is invalid
@@ -84,7 +84,7 @@ class FeatureFlagsAdmin(SecureAdmin):
         extra_context["whitelabel_admin_url"] = reverse("admin:screener_whitelabel_change", args=[object_id])
         return super().change_view(request, object_id, form_url, extra_context)
 
-    def save_model(self, request, obj, form, change):
+    def save_model(self, request, obj, form, change) -> None:
         # Build feature_flags dict from checkboxes in POST data
         # Preserve existing flags to handle race condition if new flags are added during deploy
         feature_flags = obj.feature_flags.copy() if obj.feature_flags else {}
@@ -93,7 +93,7 @@ class FeatureFlagsAdmin(SecureAdmin):
         obj.feature_flags = feature_flags
         super().save_model(request, obj, form, change)
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request) -> bool:
         return False
 
     def get_feature_flags_summary(self, obj):

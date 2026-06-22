@@ -61,7 +61,7 @@ class UrgentNeedFunction:
         user_expense_types_lower = [t.lower() for t in self.screen.expense_type_names()]
         return any(exp_type in required_types_lower for exp_type in user_expense_types_lower)
 
-    def can_calc(self):
+    def can_calc(self) -> bool:
         """
         Returns if the condition can be calculated
         """

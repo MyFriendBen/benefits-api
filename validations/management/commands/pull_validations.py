@@ -12,7 +12,7 @@ import requests
 class Command(BaseCommand):
     help = "Pull the validations from target environment"
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser) -> None:
         parser.add_argument(
             "domain",
             nargs=None,
@@ -25,7 +25,7 @@ class Command(BaseCommand):
         )
 
     @transaction.atomic
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         domain = options["domain"]
         if options["no_bypass"]:
             api_key = getpass("API key: ")

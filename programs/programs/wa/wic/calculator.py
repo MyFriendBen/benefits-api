@@ -29,13 +29,16 @@ class WaWic(ProgramCalculator):
         "income_frequency",
     ]
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
         is_pregnant = member.pregnant is True
         is_under_5 = member.age is not None and member.age < self.max_child_age
         e.condition(is_pregnant or is_under_5)
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            e.condition(False)
+            return
         adjunctive_eligible = (
             self.screen.has_benefit("snap") or self.screen.has_benefit("medicaid") or self.screen.has_benefit("tanf")
         )
@@ -55,7 +58,7 @@ class WaWic(ProgramCalculator):
 
     def _wic_household_size(self) -> int:
         """Add 1 per pregnant member to household size (unborn children count)."""
-        size = self.screen.household_size
+        size = self.screen.household_size or 0
         for member in self.screen.household_members.all():
             if member.pregnant is True:
                 size += 1

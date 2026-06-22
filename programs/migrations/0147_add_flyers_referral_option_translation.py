@@ -3,7 +3,7 @@
 from django.db import migrations
 
 
-def add_flyers_translation(apps, schema_editor):
+def add_flyers_translation(apps, schema_editor) -> None:
     from translations.models import Translation
 
     Translation.objects.add_translation(

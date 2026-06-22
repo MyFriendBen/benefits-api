@@ -12,7 +12,7 @@ import argparse
 class Command(BaseCommand):
     help = "Create and add config data to database"
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser) -> None:
         parser.add_argument("white_labels", nargs="*", type=str, help="The list of states to update the config for")
         parser.add_argument(
             "-a",
@@ -22,7 +22,7 @@ class Command(BaseCommand):
         )
 
     @transaction.atomic
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         white_labels_to_update = white_label_config.keys() if options["all"] else options["white_labels"]
 
         if len(white_labels_to_update) == 0:

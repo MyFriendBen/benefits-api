@@ -62,7 +62,7 @@ class SnapGrossIncomeDependency(SpmUnit):
 class TakesUpSnapIfEligibleDependency(SpmUnit):
     field = "takes_up_snap_if_eligible"
 
-    def value(self):
+    def value(self) -> bool:
         return True
 
 
@@ -132,7 +132,7 @@ class HomeownersInsuranceExpenseDependency(SpmUnit):
 class SnapEmergencyAllotmentDependency(SpmUnit):
     field = "snap_emergency_allotment"
 
-    def value(self):
+    def value(self) -> int:
         return 0
 
 
@@ -321,7 +321,7 @@ class NcSccaCountableIncomeDependency(SpmUnit):
 class BroadbandCostDependency(SpmUnit):
     field = "broadband_cost"
 
-    def value(self):
+    def value(self) -> int:
         return 500
 
 
@@ -359,7 +359,7 @@ class MaEaedc(SpmUnit):
 class MaEaedcLivingArangementDependency(SpmUnit):
     field = "ma_eaedc_living_arrangement"
 
-    def value(self):
+    def value(self) -> str:
         return "A"
 
 
@@ -373,7 +373,7 @@ class MaEaedcNonFinancialCriteria(SpmUnit):
 
     # NOTE: copying logic from PE minus the not SSI eligible requirement
     # https://github.com/PolicyEngine/policyengine-us/blob/master/policyengine_us/variables/gov/states/ma/dta/tcap/eaedc/eligibility/non_financial/ma_eaedc_non_financial_eligible.py
-    def value(self):
+    def value(self) -> bool:
         for member in self.members.all():
             if any(
                 [
@@ -389,6 +389,9 @@ class MaEaedcNonFinancialCriteria(SpmUnit):
 
     def _elderly(self, member: HouseholdMember) -> bool:
         if not (member.is_head() or member.is_spouse()):
+            return False
+
+        if member.age is None:
             return False
 
         if not member.age >= self.elderly_min_age:
@@ -421,6 +424,9 @@ class MaEaedcNonFinancialCriteria(SpmUnit):
 
     def _caretaker_family(self, member: HouseholdMember) -> bool:
         if not (member.is_head() or member.is_spouse()):
+            return False
+
+        if member.age is None:
             return False
 
         if not member.age >= self.caretaker_min_age:
@@ -463,7 +469,7 @@ class MaLiheapReceivesHousingAssistance(SpmUnit):
     # Fixed to True: produces a conservative benefit estimate (subsidized payment
     # table has lower amounts than non-subsidized) and keeps the household eligible
     # via the (is_subsidized & ~heat_in_rent) branch of ma_liheap_eligible_subsidized_housing.
-    def value(self):
+    def value(self) -> bool:
         return True
 
 
@@ -471,7 +477,7 @@ class MaLiheapHeatExpenseIncludedInRent(SpmUnit):
     field = "heat_expense_included_in_rent"
 
     # Fixed to False: required for MA LIHEAP calculation; False produces conservative benefit estimate
-    def value(self):
+    def value(self) -> bool:
         return False
 
 
@@ -511,5 +517,5 @@ class WaTanf(SpmUnit):
 class WaShowAllCashAssistanceProgramsDependency(SpmUnit):
     field = "wa_show_all_cash_assistance_programs"
 
-    def value(self):
+    def value(self) -> bool:
         return True

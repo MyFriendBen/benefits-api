@@ -17,12 +17,15 @@ class SeniorHousingIncomeTaxCredit(ProgramCalculator):
         "age",
     ]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         has_rent_or_mortgage_or_property_tax = self.screen.has_expense(["rent", "mortgage", "propertyTax"])
         e.condition(has_rent_or_mortgage_or_property_tax)
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
+
+        if member.age is None:
+            return
 
         # head or spouse
         e.condition(member.is_head() or member.is_spouse())

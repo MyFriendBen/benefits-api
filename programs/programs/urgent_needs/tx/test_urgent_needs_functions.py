@@ -19,7 +19,7 @@ from screener.serializers import _write_current_benefits
 from translations.models import Translation
 
 
-def make_urgent_need(white_label, external_name):
+def make_urgent_need(white_label: str, external_name: str):
     prefix = f"test_urgent_need.{external_name}"
     return UrgentNeed.objects.create(
         white_label=white_label,
@@ -33,7 +33,7 @@ def make_urgent_need(white_label, external_name):
     )
 
 
-def make_tx_screen(white_label, **kwargs):
+def make_tx_screen(white_label: str, **kwargs):
     return Screen.objects.create(
         white_label=white_label,
         agree_to_tos=True,
@@ -52,7 +52,7 @@ def make_tx_screen(white_label, **kwargs):
 
 
 class TestSnapEmploymentTraining(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.white_label = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")
         self.urgent_need = make_urgent_need(self.white_label, "tx_snap_employment")
         self.screen = make_tx_screen(self.white_label)
@@ -61,18 +61,18 @@ class TestSnapEmploymentTraining(TestCase):
     def _calc(self, data):
         return SnapEmploymentTraining(self.screen, self.urgent_need, Dependencies(), data).eligible()
 
-    def test_eligible_when_snap_in_data(self):
+    def test_eligible_when_snap_in_data(self) -> None:
         self.assertTrue(self._calc([{"name_abbreviated": "tx_snap", "eligible": True}]))
 
-    def test_eligible_when_screen_has_snap(self):
+    def test_eligible_when_screen_has_snap(self) -> None:
         seed_program(self.white_label, "tx_snap")
         _write_current_benefits(self.screen, ["tx_snap"])
         self.assertTrue(self._calc([]))
 
-    def test_not_eligible_without_snap(self):
+    def test_not_eligible_without_snap(self) -> None:
         self.assertFalse(self._calc([]))
 
-    def test_not_eligible_when_snap_ineligible_in_data(self):
+    def test_not_eligible_when_snap_ineligible_in_data(self) -> None:
         self.assertFalse(self._calc([{"name_abbreviated": "tx_snap", "eligible": False}]))
 
 
@@ -82,7 +82,7 @@ class TestSnapEmploymentTraining(TestCase):
 
 
 class TestDoubleUpFoodBucks(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.white_label = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")
         self.urgent_need = make_urgent_need(self.white_label, "tx_double_up_food_bucks")
         self.screen = make_tx_screen(self.white_label)
@@ -91,18 +91,18 @@ class TestDoubleUpFoodBucks(TestCase):
     def _calc(self, data):
         return DoubleUpFoodBucks(self.screen, self.urgent_need, Dependencies(), data).eligible()
 
-    def test_eligible_when_snap_in_data(self):
+    def test_eligible_when_snap_in_data(self) -> None:
         self.assertTrue(self._calc([{"name_abbreviated": "tx_snap", "eligible": True}]))
 
-    def test_eligible_when_screen_has_snap(self):
+    def test_eligible_when_screen_has_snap(self) -> None:
         seed_program(self.white_label, "tx_snap")
         _write_current_benefits(self.screen, ["tx_snap"])
         self.assertTrue(self._calc([]))
 
-    def test_not_eligible_without_snap(self):
+    def test_not_eligible_without_snap(self) -> None:
         self.assertFalse(self._calc([]))
 
-    def test_not_eligible_when_snap_ineligible_in_data(self):
+    def test_not_eligible_when_snap_ineligible_in_data(self) -> None:
         self.assertFalse(self._calc([{"name_abbreviated": "tx_snap", "eligible": False}]))
 
 
@@ -112,7 +112,7 @@ class TestDoubleUpFoodBucks(TestCase):
 
 
 class TestServeSouthernDallas(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.white_label = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")
         self.urgent_need = make_urgent_need(self.white_label, "tx_serve_southern_dallas")
         self.screen = make_tx_screen(self.white_label, needs_baby_supplies=True)
@@ -121,24 +121,24 @@ class TestServeSouthernDallas(TestCase):
     def _calc(self):
         return ServeSouthernDallas(self.screen, self.urgent_need, Dependencies(), {}).eligible()
 
-    def test_eligible_with_young_child_and_baby_supplies(self):
+    def test_eligible_with_young_child_and_baby_supplies(self) -> None:
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=2)
         self.assertTrue(self._calc())
 
-    def test_not_eligible_child_too_old(self):
+    def test_not_eligible_child_too_old(self) -> None:
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=5)
         self.assertFalse(self._calc())
 
-    def test_not_eligible_no_children(self):
+    def test_not_eligible_no_children(self) -> None:
         self.assertFalse(self._calc())
 
-    def test_not_eligible_without_baby_supplies(self):
+    def test_not_eligible_without_baby_supplies(self) -> None:
         self.screen.needs_baby_supplies = False
         self.screen.save()
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=2)
         self.assertFalse(self._calc())
 
-    def test_eligible_at_age_boundary(self):
+    def test_eligible_at_age_boundary(self) -> None:
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=4)
         self.assertTrue(self._calc())
 
@@ -149,7 +149,7 @@ class TestServeSouthernDallas(TestCase):
 
 
 class TestWic(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.white_label = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")
         self.urgent_need = make_urgent_need(self.white_label, "tx_wic")
         self.screen = make_tx_screen(self.white_label)
@@ -158,22 +158,22 @@ class TestWic(TestCase):
     def _calc(self):
         return Wic(self.screen, self.urgent_need, Dependencies(), {}).eligible()
 
-    def test_eligible_with_young_child(self):
+    def test_eligible_with_young_child(self) -> None:
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=3)
         self.assertTrue(self._calc())
 
-    def test_eligible_with_pregnant_member(self):
+    def test_eligible_with_pregnant_member(self) -> None:
         HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=28, pregnant=True)
         self.assertTrue(self._calc())
 
-    def test_not_eligible_child_too_old(self):
+    def test_not_eligible_child_too_old(self) -> None:
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=5)
         self.assertFalse(self._calc())
 
-    def test_not_eligible_no_young_children_or_pregnant(self):
+    def test_not_eligible_no_young_children_or_pregnant(self) -> None:
         self.assertFalse(self._calc())
 
-    def test_eligible_at_age_boundary(self):
+    def test_eligible_at_age_boundary(self) -> None:
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=4)
         self.assertTrue(self._calc())
 
@@ -184,7 +184,7 @@ class TestWic(TestCase):
 
 
 class TestOakCliffLena(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.white_label = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")
         self.urgent_need = make_urgent_need(self.white_label, "tx_oak_cliff_lena")
         self.screen = make_tx_screen(self.white_label)
@@ -193,19 +193,19 @@ class TestOakCliffLena(TestCase):
     def _calc(self):
         return OakCliffLena(self.screen, self.urgent_need, Dependencies(), {}).eligible()
 
-    def test_eligible_with_young_child(self):
+    def test_eligible_with_young_child(self) -> None:
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=3)
         self.assertTrue(self._calc())
 
-    def test_eligible_at_age_boundary(self):
+    def test_eligible_at_age_boundary(self) -> None:
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=4)
         self.assertTrue(self._calc())
 
-    def test_not_eligible_child_too_old(self):
+    def test_not_eligible_child_too_old(self) -> None:
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=5)
         self.assertFalse(self._calc())
 
-    def test_not_eligible_no_children(self):
+    def test_not_eligible_no_children(self) -> None:
         self.assertFalse(self._calc())
 
 
@@ -215,7 +215,7 @@ class TestOakCliffLena(TestCase):
 
 
 class TestBooksBeginningAtBirth(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.white_label = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")
         self.urgent_need = make_urgent_need(self.white_label, "tx_books_beginning_at_birth")
         self.screen = make_tx_screen(self.white_label)
@@ -224,19 +224,19 @@ class TestBooksBeginningAtBirth(TestCase):
     def _calc(self):
         return BooksBeginningAtBirth(self.screen, self.urgent_need, Dependencies(), {}).eligible()
 
-    def test_eligible_with_young_child(self):
+    def test_eligible_with_young_child(self) -> None:
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=2)
         self.assertTrue(self._calc())
 
-    def test_eligible_at_age_boundary(self):
+    def test_eligible_at_age_boundary(self) -> None:
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=4)
         self.assertTrue(self._calc())
 
-    def test_not_eligible_child_too_old(self):
+    def test_not_eligible_child_too_old(self) -> None:
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=5)
         self.assertFalse(self._calc())
 
-    def test_not_eligible_no_children(self):
+    def test_not_eligible_no_children(self) -> None:
         self.assertFalse(self._calc())
 
 
@@ -246,7 +246,7 @@ class TestBooksBeginningAtBirth(TestCase):
 
 
 class TestHippy(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.white_label = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")
         self.urgent_need = make_urgent_need(self.white_label, "tx_hippy")
         self.screen = make_tx_screen(self.white_label)
@@ -255,27 +255,27 @@ class TestHippy(TestCase):
     def _calc(self):
         return Hippy(self.screen, self.urgent_need, Dependencies(), {}).eligible()
 
-    def test_eligible_with_child_in_range(self):
+    def test_eligible_with_child_in_range(self) -> None:
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=4)
         self.assertTrue(self._calc())
 
-    def test_eligible_at_lower_boundary(self):
+    def test_eligible_at_lower_boundary(self) -> None:
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=3)
         self.assertTrue(self._calc())
 
-    def test_eligible_at_upper_boundary(self):
+    def test_eligible_at_upper_boundary(self) -> None:
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=5)
         self.assertTrue(self._calc())
 
-    def test_not_eligible_child_too_young(self):
+    def test_not_eligible_child_too_young(self) -> None:
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=2)
         self.assertFalse(self._calc())
 
-    def test_not_eligible_child_too_old(self):
+    def test_not_eligible_child_too_old(self) -> None:
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=6)
         self.assertFalse(self._calc())
 
-    def test_not_eligible_no_children(self):
+    def test_not_eligible_no_children(self) -> None:
         self.assertFalse(self._calc())
 
 
@@ -289,7 +289,7 @@ class TestTrustHer(TestCase):
     FPL_SIZE_2 = 21_640
     INCOME_LIMIT = int(2.5 * FPL_SIZE_2)  # 54_100
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.white_label = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")
         self.urgent_need = make_urgent_need(self.white_label, "tx_trust_her")
         fpl, _ = FederalPoveryLimit.objects.get_or_create(year="2026", defaults={"period": "2026"})
@@ -298,35 +298,35 @@ class TestTrustHer(TestCase):
         self.screen = make_tx_screen(self.white_label)
         HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=30)
 
-    def _calc(self, gross_income=0, uninsured=True):
+    def _calc(self, gross_income: int = 0, uninsured: bool = True):
         with (
             patch.object(self.screen.__class__, "calc_gross_income", return_value=gross_income),
             patch.object(self.screen.__class__, "has_insurance_types", return_value=uninsured),
         ):
             return TrustHer(self.screen, self.urgent_need, Dependencies(), {}).eligible()
 
-    def test_eligible_with_low_income_and_no_insurance(self):
+    def test_eligible_with_low_income_and_no_insurance(self) -> None:
         self.assertTrue(self._calc(gross_income=20_000, uninsured=True))
 
-    def test_not_eligible_income_well_over_limit(self):
+    def test_not_eligible_income_well_over_limit(self) -> None:
         self.assertFalse(self._calc(gross_income=self.INCOME_LIMIT * 2, uninsured=True))
 
-    def test_not_eligible_has_insurance(self):
+    def test_not_eligible_has_insurance(self) -> None:
         self.assertFalse(self._calc(gross_income=20_000, uninsured=False))
 
-    def test_eligible_at_income_boundary(self):
+    def test_eligible_at_income_boundary(self) -> None:
         self.assertTrue(self._calc(gross_income=self.INCOME_LIMIT, uninsured=True))
 
-    def test_not_eligible_one_dollar_over_limit(self):
+    def test_not_eligible_one_dollar_over_limit(self) -> None:
         self.assertFalse(self._calc(gross_income=self.INCOME_LIMIT + 1, uninsured=True))
 
-    def test_not_eligible_high_income_and_insured(self):
+    def test_not_eligible_high_income_and_insured(self) -> None:
         self.assertFalse(self._calc(gross_income=self.INCOME_LIMIT + 1, uninsured=False))
 
-    def test_fpl_percent(self):
+    def test_fpl_percent(self) -> None:
         self.assertEqual(TrustHer.fpl_percent, 2.5)
 
-    def test_dependencies(self):
+    def test_dependencies(self) -> None:
         self.assertIn("income_amount", TrustHer.dependencies)
         self.assertIn("income_frequency", TrustHer.dependencies)
         self.assertIn("household_size", TrustHer.dependencies)

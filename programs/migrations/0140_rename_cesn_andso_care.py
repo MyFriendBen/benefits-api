@@ -1,7 +1,7 @@
 from django.db import migrations
 
 
-def rename_cesn_andso_care(apps, schema_editor):
+def rename_cesn_andso_care(apps, schema_editor) -> None:
     """
     The cesn WL had Program records named co_andso and co_care — keys that belong to the
     CO WL. Rename them to cesn_andso and cesn_care to follow the cesn_* convention and
@@ -23,7 +23,7 @@ def rename_cesn_andso_care(apps, schema_editor):
     ).update(name_abbreviated="cesn_care")
 
 
-def reverse_rename_cesn_andso_care(apps, schema_editor):
+def reverse_rename_cesn_andso_care(apps, schema_editor) -> None:
     Program = apps.get_model("programs", "Program")
 
     Program.objects.filter(

@@ -31,11 +31,14 @@ class WaCsfp(ProgramCalculator):
         "income_frequency",
     ]
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
         e.condition(member.age is not None and member.age >= self.min_age)
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            e.condition(False)
+            return
         e.condition(
             not self.screen.has_benefit("wa_csfp"),
             messages.must_not_have_benefit("CSFP"),

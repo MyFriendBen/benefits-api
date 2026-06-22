@@ -18,21 +18,21 @@ from screener.serializers import KG_TO_LBS, RemImpactSerializer, _convert_emissi
 class TestConvertEmissionsToLbs(TestCase):
     """Tests for _convert_emissions_to_lbs."""
 
-    def test_converts_values_from_kg_to_lbs(self):
+    def test_converts_values_from_kg_to_lbs(self) -> None:
         emissions = {
             "median": {"value": -731.2272, "unit": "kgCO2e"},
         }
         result = _convert_emissions_to_lbs(emissions)
         self.assertAlmostEqual(result["median"]["value"], -731.2272 * KG_TO_LBS, places=4)
 
-    def test_updates_unit_to_lbco2e(self):
+    def test_updates_unit_to_lbco2e(self) -> None:
         emissions = {
             "median": {"value": -731.2272, "unit": "kgCO2e"},
         }
         result = _convert_emissions_to_lbs(emissions)
         self.assertEqual(result["median"]["unit"], "lbCO2e")
 
-    def test_converts_all_stat_keys(self):
+    def test_converts_all_stat_keys(self) -> None:
         emissions = {
             "mean": {"value": -797.9434, "unit": "kgCO2e"},
             "median": {"value": -731.2272, "unit": "kgCO2e"},
@@ -47,25 +47,25 @@ class TestConvertEmissionsToLbs(TestCase):
         for key in result:
             self.assertEqual(result[key]["unit"], "lbCO2e")
 
-    def test_zero_value(self):
+    def test_zero_value(self) -> None:
         emissions = {"median": {"value": 0.0, "unit": "kgCO2e"}}
         result = _convert_emissions_to_lbs(emissions)
         self.assertAlmostEqual(result["median"]["value"], 0.0)
         self.assertEqual(result["median"]["unit"], "lbCO2e")
 
-    def test_missing_value_key_defaults_to_zero(self):
+    def test_missing_value_key_defaults_to_zero(self) -> None:
         result = _convert_emissions_to_lbs({"median": {"unit": "kgCO2e"}})
         self.assertAlmostEqual(result["median"]["value"], 0.0)
         self.assertEqual(result["median"]["unit"], "lbCO2e")
 
-    def test_null_value_defaults_to_zero(self):
+    def test_null_value_defaults_to_zero(self) -> None:
         result = _convert_emissions_to_lbs({"median": {"value": None, "unit": "kgCO2e"}})
         self.assertAlmostEqual(result["median"]["value"], 0.0)
 
-    def test_empty_dict_returns_empty_dict(self):
+    def test_empty_dict_returns_empty_dict(self) -> None:
         self.assertEqual(_convert_emissions_to_lbs({}), {})
 
-    def test_does_not_mutate_input(self):
+    def test_does_not_mutate_input(self) -> None:
         emissions = {"median": {"value": -731.2272, "unit": "kgCO2e"}}
         _convert_emissions_to_lbs(emissions)
         self.assertEqual(emissions["median"]["unit"], "kgCO2e")
@@ -92,7 +92,7 @@ class TestRemImpactSerializer(TestCase):
             "estimate_type": {},
         }
 
-    def test_bill_delta_passed_through_unchanged(self):
+    def test_bill_delta_passed_through_unchanged(self) -> None:
         cost = {
             "median": {"value": -21.9063, "unit": "$"},
             "percentile_20": {"value": -60.5161, "unit": "$"},
@@ -102,21 +102,21 @@ class TestRemImpactSerializer(TestCase):
         self.assertEqual(data["bill_delta"]["median"]["value"], -21.9063)
         self.assertEqual(data["bill_delta"]["median"]["unit"], "$")
 
-    def test_emissions_delta_converted_to_lbs(self):
+    def test_emissions_delta_converted_to_lbs(self) -> None:
         emissions = {"median": {"value": -731.2272, "unit": "kgCO2e"}}
         raw = self._make_raw_response(cost={}, emissions=emissions)
         data = RemImpactSerializer(raw).data
         self.assertAlmostEqual(data["emissions_delta"]["median"]["value"], -731.2272 * KG_TO_LBS, places=4)
         self.assertEqual(data["emissions_delta"]["median"]["unit"], "lbCO2e")
 
-    def test_other_fuel_results_stripped_from_output(self):
+    def test_other_fuel_results_stripped_from_output(self) -> None:
         raw = self._make_raw_response(cost={}, emissions={})
         raw["fuel_results"]["electricity"] = {"delta": {"cost": {"median": {"value": -999}}}}
         data = RemImpactSerializer(raw).data
         self.assertNotIn("electricity", data)
         self.assertNotIn("fuel_results", data)
 
-    def test_missing_fuel_results_returns_empty_dicts(self):
+    def test_missing_fuel_results_returns_empty_dicts(self) -> None:
         data = RemImpactSerializer({}).data
         self.assertEqual(data["bill_delta"], {})
         self.assertEqual(data["emissions_delta"], {})
@@ -151,7 +151,7 @@ class TestRemImpactView(APITestCase):
         "estimate_type": {},
     }
 
-    def setUp(self):
+    def setUp(self) -> None:
         # Disable the REM rate throttle so individual tests are not throttled.
         patcher = patch("screener.views.RemRateThrottle.allow_request", return_value=True)
         patcher.start()
@@ -159,18 +159,18 @@ class TestRemImpactView(APITestCase):
 
     # ── 400: missing required params ──────────────────────────────────────────
 
-    def test_returns_400_when_upgrade_missing(self):
+    def test_returns_400_when_upgrade_missing(self) -> None:
         params = {k: v for k, v in self.VALID_PARAMS.items() if k != "upgrade"}
         response = self.client.get(self.URL, params)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("error", response.data)
 
-    def test_returns_400_when_address_missing(self):
+    def test_returns_400_when_address_missing(self) -> None:
         params = {k: v for k, v in self.VALID_PARAMS.items() if k != "address"}
         response = self.client.get(self.URL, params)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_returns_400_when_heating_fuel_missing(self):
+    def test_returns_400_when_heating_fuel_missing(self) -> None:
         params = {k: v for k, v in self.VALID_PARAMS.items() if k != "heating_fuel"}
         response = self.client.get(self.URL, params)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -178,7 +178,7 @@ class TestRemImpactView(APITestCase):
     # ── 502: upstream errors ──────────────────────────────────────────────────
 
     @patch("screener.views.RewiringAmericaClient.fetch_rem_impact")
-    def test_upstream_http_error_returns_502(self, mock_fetch):
+    def test_upstream_http_error_returns_502(self, mock_fetch) -> None:
         err = requests.HTTPError()
         err.response = Mock(status_code=400, json=lambda: {"msg": "bad"})
         mock_fetch.side_effect = err
@@ -188,7 +188,7 @@ class TestRemImpactView(APITestCase):
         self.assertIn("detail", response.data)
 
     @patch("screener.views.RewiringAmericaClient.fetch_rem_impact")
-    def test_upstream_http_error_with_non_json_body_falls_back_to_text(self, mock_fetch):
+    def test_upstream_http_error_with_non_json_body_falls_back_to_text(self, mock_fetch) -> None:
         err = requests.HTTPError()
         err.response = Mock(
             status_code=500,
@@ -201,7 +201,7 @@ class TestRemImpactView(APITestCase):
         self.assertEqual(response.data["detail"], "Internal Server Error")
 
     @patch("screener.views.RewiringAmericaClient.fetch_rem_impact")
-    def test_network_failure_returns_502(self, mock_fetch):
+    def test_network_failure_returns_502(self, mock_fetch) -> None:
         mock_fetch.side_effect = requests.RequestException("connection refused")
         response = self.client.get(self.URL, self.VALID_PARAMS)
         self.assertEqual(response.status_code, status.HTTP_502_BAD_GATEWAY)
@@ -241,7 +241,7 @@ class TestRemImpactView(APITestCase):
     # ── 200: happy path ───────────────────────────────────────────────────────
 
     @patch("screener.views.RewiringAmericaClient.fetch_rem_impact")
-    def test_happy_path_returns_bill_and_emissions_delta(self, mock_fetch):
+    def test_happy_path_returns_bill_and_emissions_delta(self, mock_fetch) -> None:
         mock_fetch.return_value = self.MOCK_RAW_RESPONSE
         response = self.client.get(self.URL, self.VALID_PARAMS)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -249,7 +249,7 @@ class TestRemImpactView(APITestCase):
         self.assertIn("emissions_delta", response.data)
 
     @patch("screener.views.RewiringAmericaClient.fetch_rem_impact")
-    def test_water_heater_fuel_is_optional(self, mock_fetch):
+    def test_water_heater_fuel_is_optional(self, mock_fetch) -> None:
         mock_fetch.return_value = self.MOCK_RAW_RESPONSE
         params = {k: v for k, v in self.VALID_PARAMS.items() if k != "water_heater_fuel"}
         response = self.client.get(self.URL, params)
@@ -264,7 +264,7 @@ class TestRemImpactView(APITestCase):
         self.assertIsNone(passed_water_heater_fuel)
 
     @patch("screener.views.RewiringAmericaClient.fetch_rem_impact")
-    def test_emissions_converted_to_lbs_in_response(self, mock_fetch):
+    def test_emissions_converted_to_lbs_in_response(self, mock_fetch) -> None:
         mock_fetch.return_value = self.MOCK_RAW_RESPONSE
         response = self.client.get(self.URL, self.VALID_PARAMS)
         self.assertEqual(response.status_code, status.HTTP_200_OK)

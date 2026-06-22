@@ -3,10 +3,11 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.translation import gettext_lazy as _
 from phonenumber_field.modelfields import PhoneNumberField
+from typing import Optional
 
 
 class UserManager(BaseUserManager):
-    def create_user(self, email_or_cell, password=None):
+    def create_user(self, email_or_cell, password: Optional[str] = None):
         """
         Creates and saves a User with the given email or cell and password.
         """
@@ -19,7 +20,7 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email_or_cell, password=None):
+    def create_superuser(self, email_or_cell, password: Optional[str] = None):
         """
         Creates and saves a superuser with the given email, date of
         birth and password.
@@ -55,7 +56,7 @@ class User(AbstractUser):
     USERNAME_FIELD = "email_or_cell"
     REQUIRED_FIELDS = []
 
-    def anonomize(self, external_id: str):
+    def anonomize(self, external_id: str) -> None:
         random_id = str(uuid.uuid4()).replace("-", "")
         self.external_id = external_id
         self.email_or_cell = f"{external_id}+{random_id}@myfriendben.org"
@@ -65,9 +66,9 @@ class User(AbstractUser):
         self.email = None
         self.save()
 
-    def save(self, **kwargs):
+    def save(self, **kwargs) -> None:
         self.cell = self.cell or None
         super().save(**kwargs)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.email_or_cell

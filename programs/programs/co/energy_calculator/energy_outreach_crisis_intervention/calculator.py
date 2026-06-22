@@ -7,7 +7,7 @@ class EnergyCalculatorEnergyOutreachCrisisIntervention(ProgramCalculator):
     amount = 1
     dependencies = [*EnergyCalculatorEnergyAssistance.dependencies, "energy_calculator"]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         # eligible for LEAP
         cesn_leap = self.data.get("cesn_leap")
         leap_eligible = cesn_leap is not None and cesn_leap.eligible

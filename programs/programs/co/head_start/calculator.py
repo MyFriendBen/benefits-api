@@ -25,7 +25,10 @@ class CoHeadStart(ProgramCalculator):
     adams_county = "Adams County"
     dependencies = ["age", "household_size", "income_frequency", "income_amount", "zipcode"]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            e.condition(False)
+            return
         # location
         counties = counties_from_screen(self.screen)
 
@@ -52,8 +55,10 @@ class CoHeadStart(ProgramCalculator):
         else:
             e.condition(gross_income < income_limit, messages.income(gross_income, income_limit))
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
 
+        if member.age is None:
+            return
         # age
         e.condition(CoHeadStart.min_age <= member.age <= CoHeadStart.max_age)

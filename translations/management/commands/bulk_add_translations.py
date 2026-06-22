@@ -9,7 +9,7 @@ import json
 class Command(BaseCommand):
     help = "Add translation label records from a JSON file."
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser) -> None:
         parser.add_argument(
             "data",
             nargs="?",
@@ -17,7 +17,7 @@ class Command(BaseCommand):
             default=stdin,
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         data = json.load(options["data"])
 
         for label, details in data.items():

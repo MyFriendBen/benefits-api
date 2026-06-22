@@ -21,7 +21,7 @@ class NCLieap(ProgramCalculator):
     large_household_low_income_value = 500
     large_household_large_income_value = 400
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         # has rent, mortgage or heating expense
         has_program_expense = self.screen.has_expense(NCLieap.expenses)
         e.condition(has_program_expense)
@@ -33,6 +33,9 @@ class NCLieap(ProgramCalculator):
         e.condition(gross_income <= income_limit, messages.income(gross_income, income_limit))
 
     def household_value(self):
+        if self.program.year is None:
+            e.condition(False)
+            return 0
         household_size = self.screen.household_size
 
         # Calculate income and limits
@@ -77,6 +80,9 @@ class NCLieap(ProgramCalculator):
         return gross_income
 
     def _calculate_income_limit(self):
+        if self.program.year is None:
+            e.condition(False)
+            return 0
 
         # Determine FPL% based on senior/disabled status
         has_senior_disabled = self._has_senior_or_disabled()
@@ -88,7 +94,7 @@ class NCLieap(ProgramCalculator):
 
         return income_limit
 
-    def _has_senior_or_disabled(self):
+    def _has_senior_or_disabled(self) -> bool:
         """
         Check if any household member is senior (60+) or disabled.
         """

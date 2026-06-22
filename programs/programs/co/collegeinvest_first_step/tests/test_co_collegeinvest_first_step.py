@@ -10,11 +10,11 @@ from screener.models import HouseholdMember, Screen, WhiteLabel
 
 class TestCoCollegeInvestFirstStep(TestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpTestData(cls) -> None:
         cls.white_label = WhiteLabel.objects.create(name="Colorado", code="co", state_code="CO")
         cls.mock_program = Mock()
 
-    def _make_screen(self, zipcode="80202", county="Denver County", household_size=2):
+    def _make_screen(self, zipcode: str = "80202", county: str = "Denver County", household_size: int = 2):
         return Screen.objects.create(
             white_label=self.white_label,
             agree_to_tos=True,
@@ -29,10 +29,10 @@ class TestCoCollegeInvestFirstStep(TestCase):
 
     # --- class attributes ---
 
-    def test_member_amount_is_121(self):
+    def test_member_amount_is_121(self) -> None:
         self.assertEqual(CoCollegeInvestFirstStep.member_amount, 121)
 
-    def test_registered_in_co_calculators(self):
+    def test_registered_in_co_calculators(self) -> None:
         from programs.programs.co import co_calculators
 
         self.assertIn("co_collegeinvest_first_step", co_calculators)
@@ -40,7 +40,7 @@ class TestCoCollegeInvestFirstStep(TestCase):
 
     # --- eligible ---
 
-    def test_eligible_newborn(self):
+    def test_eligible_newborn(self) -> None:
         """Denver family with newborn child (born 2026, age 0) is eligible."""
         screen = self._make_screen(household_size=2)
         HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=34)
@@ -51,7 +51,7 @@ class TestCoCollegeInvestFirstStep(TestCase):
 
         self.assertTrue(eligibility.eligible)
 
-    def test_eligible_child_age_7_boundary(self):
+    def test_eligible_child_age_7_boundary(self) -> None:
         """Child exactly age 7 is still eligible."""
         screen = self._make_screen(household_size=2)
         HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=35)
@@ -62,7 +62,7 @@ class TestCoCollegeInvestFirstStep(TestCase):
 
         self.assertTrue(eligibility.eligible)
 
-    def test_eligible_min_birth_year_boundary(self):
+    def test_eligible_min_birth_year_boundary(self) -> None:
         """Child born January 2020 (minimum birth year) is eligible."""
         screen = self._make_screen(zipcode="80903", county="El Paso County", household_size=2)
         HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=35)
@@ -73,7 +73,7 @@ class TestCoCollegeInvestFirstStep(TestCase):
 
         self.assertTrue(eligibility.eligible)
 
-    def test_eligible_step_child(self):
+    def test_eligible_step_child(self) -> None:
         """stepChild relationship qualifies."""
         screen = self._make_screen(household_size=2)
         HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=35)
@@ -86,7 +86,7 @@ class TestCoCollegeInvestFirstStep(TestCase):
 
         self.assertTrue(eligibility.eligible)
 
-    def test_eligible_foster_child(self):
+    def test_eligible_foster_child(self) -> None:
         """fosterChild relationship qualifies."""
         screen = self._make_screen(household_size=2)
         HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=35)
@@ -99,7 +99,7 @@ class TestCoCollegeInvestFirstStep(TestCase):
 
         self.assertTrue(eligibility.eligible)
 
-    def test_eligible_grandchild(self):
+    def test_eligible_grandchild(self) -> None:
         """grandChild relationship qualifies."""
         screen = self._make_screen(household_size=2)
         HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=50)
@@ -114,7 +114,7 @@ class TestCoCollegeInvestFirstStep(TestCase):
 
     # --- ineligible ---
 
-    def test_ineligible_child_too_old(self):
+    def test_ineligible_child_too_old(self) -> None:
         """Child aged 8 or older is not eligible — primary exclusion."""
         screen = self._make_screen(household_size=2)
         HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=36)
@@ -125,7 +125,7 @@ class TestCoCollegeInvestFirstStep(TestCase):
 
         self.assertFalse(eligibility.eligible)
 
-    def test_ineligible_child_age_8_boundary(self):
+    def test_ineligible_child_age_8_boundary(self) -> None:
         """Child exactly age 8 is not eligible."""
         screen = self._make_screen(household_size=2)
         HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=35)
@@ -136,7 +136,7 @@ class TestCoCollegeInvestFirstStep(TestCase):
 
         self.assertFalse(eligibility.eligible)
 
-    def test_ineligible_birth_year_2019(self):
+    def test_ineligible_birth_year_2019(self) -> None:
         """Child born in 2019 (age ≤ 7) is excluded by the birth year cutoff."""
         screen = self._make_screen(household_size=2)
         HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=35)
@@ -147,7 +147,7 @@ class TestCoCollegeInvestFirstStep(TestCase):
 
         self.assertFalse(eligibility.eligible)
 
-    def test_ineligible_no_children(self):
+    def test_ineligible_no_children(self) -> None:
         """Household with no children is not eligible."""
         screen = self._make_screen(household_size=2)
         HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=38)
@@ -158,7 +158,7 @@ class TestCoCollegeInvestFirstStep(TestCase):
 
         self.assertFalse(eligibility.eligible)
 
-    def test_ineligible_non_child_relationship(self):
+    def test_ineligible_non_child_relationship(self) -> None:
         """Members with non-child relationships do not qualify."""
         screen = self._make_screen(household_size=2)
         HouseholdMember.objects.create(
@@ -173,7 +173,7 @@ class TestCoCollegeInvestFirstStep(TestCase):
 
     # --- benefit value ---
 
-    def test_value_single_eligible_child(self):
+    def test_value_single_eligible_child(self) -> None:
         """Single eligible child yields $121."""
         screen = self._make_screen(household_size=2)
         HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=34)
@@ -185,7 +185,7 @@ class TestCoCollegeInvestFirstStep(TestCase):
 
         self.assertEqual(eligibility.value, 121)
 
-    def test_value_two_eligible_children(self):
+    def test_value_two_eligible_children(self) -> None:
         """Two eligible children yield $242 (2 × $121)."""
         screen = self._make_screen(household_size=4)
         HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=35)
@@ -199,7 +199,7 @@ class TestCoCollegeInvestFirstStep(TestCase):
 
         self.assertEqual(eligibility.value, 242)
 
-    def test_value_mixed_eligible_and_ineligible_children(self):
+    def test_value_mixed_eligible_and_ineligible_children(self) -> None:
         """Only qualifying children count toward the value; over-age child excluded."""
         screen = self._make_screen(household_size=3)
         HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=35)

@@ -41,7 +41,7 @@ def make_program(*, label_prefix: str, **overrides) -> Program:
 class TestHasBenefitsProgramsView(APITestCase):
     """Tests for GET /api/screener-options/{wl}/has-benefits-programs/"""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
         self.other_wl = WhiteLabel.objects.create(name="Other State", code="other", state_code="OS")
 
@@ -112,7 +112,7 @@ class TestHasBenefitsProgramsView(APITestCase):
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
 
-    def test_returns_active_show_in_has_benefits_step_programs(self):
+    def test_returns_active_show_in_has_benefits_step_programs(self) -> None:
         """Returns only active programs with show_in_has_benefits_step=True for the WL."""
         response = self.client.get(self.url)
 
@@ -120,28 +120,28 @@ class TestHasBenefitsProgramsView(APITestCase):
         abbreviations = [p["name_abbreviated"] for p in response.data]
         self.assertIn("snap", abbreviations)
 
-    def test_excludes_inactive_programs(self):
+    def test_excludes_inactive_programs(self) -> None:
         """Inactive programs are excluded even if show_in_has_benefits_step=True."""
         response = self.client.get(self.url)
 
         abbreviations = [p["name_abbreviated"] for p in response.data]
         self.assertNotIn("old", abbreviations)
 
-    def test_excludes_programs_not_in_step(self):
+    def test_excludes_programs_not_in_step(self) -> None:
         """Programs with show_in_has_benefits_step=False are excluded."""
         response = self.client.get(self.url)
 
         abbreviations = [p["name_abbreviated"] for p in response.data]
         self.assertNotIn("excl", abbreviations)
 
-    def test_scoped_to_white_label(self):
+    def test_scoped_to_white_label(self) -> None:
         """Programs from other WLs are not returned."""
         response = self.client.get(self.url)
 
         abbreviations = [p["name_abbreviated"] for p in response.data]
         self.assertNotIn("other", abbreviations)
 
-    def test_response_shape(self):
+    def test_response_shape(self) -> None:
         """Each program has name_abbreviated, name, website_description, and category."""
         response = self.client.get(self.url)
 
@@ -156,7 +156,7 @@ class TestHasBenefitsProgramsView(APITestCase):
         self.assertEqual(program["website_description"]["default_message"], "Monthly food assistance")
         self.assertEqual(program["category"]["default_message"], "Cash Assistance")
 
-    def test_response_includes_translation_labels(self):
+    def test_response_includes_translation_labels(self) -> None:
         """name/website_description/category each surface their translation label so the FE can use react-intl."""
         response = self.client.get(self.url)
 
@@ -165,14 +165,14 @@ class TestHasBenefitsProgramsView(APITestCase):
         self.assertEqual(program["website_description"]["label"], "program.snap-website_description")
         self.assertEqual(program["category"]["label"], "category.test_cash-name")
 
-    def test_unknown_white_label_returns_empty(self):
+    def test_unknown_white_label_returns_empty(self) -> None:
         """Unknown WL code returns an empty list, not 404."""
         response = self.client.get("/api/screener-options/doesnotexist/has-benefits-programs/")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, [])
 
-    def test_unauthenticated_is_rejected(self):
+    def test_unauthenticated_is_rejected(self) -> None:
         """Unauthenticated requests are rejected. DRF returns 401 when no credentials are supplied
         and no auth class provides a WWW-Authenticate header, otherwise 403 — either is a valid reject."""
         unauthenticated_client = APIClient()
@@ -180,7 +180,7 @@ class TestHasBenefitsProgramsView(APITestCase):
 
         self.assertIn(response.status_code, (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN))
 
-    def test_authenticated_user_without_extra_perms_can_read(self):
+    def test_authenticated_user_without_extra_perms_can_read(self) -> None:
         """DjangoModelPermissions doesn't require any model perm for GET, so any authenticated user can read."""
         no_perms_user = User.objects.create_user(email_or_cell="noperms@example.com", password="password")
         no_perms_client = APIClient()

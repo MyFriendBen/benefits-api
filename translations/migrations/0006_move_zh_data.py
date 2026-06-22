@@ -3,7 +3,7 @@
 from django.db import migrations
 
 
-def move_zh_to_zh_hans(apps, _):
+def move_zh_to_zh_hans(apps, _) -> None:
     Translation = apps.get_model("translations", "Translation")
     translations = Translation.objects.prefetch_related("translations").all()
     try:

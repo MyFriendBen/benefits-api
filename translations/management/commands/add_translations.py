@@ -48,7 +48,7 @@ class Command(BaseCommand):
     command takes the export shape and does not auto-translate.
     """
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser) -> None:
         parser.add_argument(
             "data",
             nargs="?",
@@ -102,7 +102,7 @@ class Command(BaseCommand):
             cleaned[label] = text
         return cleaned
 
-    def _classify(self, label, english_text):
+    def _classify(self, label: str, english_text):
         """Return ('new'|'update'|'unchanged', existing_english_or_None) for reporting."""
         existing = Translation.objects.filter(label=label).first()
         if existing is None:

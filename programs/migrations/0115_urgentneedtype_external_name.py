@@ -3,7 +3,7 @@
 from django.db import migrations, models
 
 
-def updated_urgent_need_type_external_name(apps, schema_editor):
+def updated_urgent_need_type_external_name(apps, schema_editor) -> None:
     UrgentNeedType = apps.get_model("programs", "UrgentNeedType")
     Translation = apps.get_model("translations", "Translation")
 

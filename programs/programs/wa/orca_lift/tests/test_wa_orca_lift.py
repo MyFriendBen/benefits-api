@@ -6,7 +6,13 @@ from programs.programs.wa.orca_lift.calculator import WaOrcaLift
 from programs.programs.calc import Eligibility, MemberEligibility
 
 
-def make_member(age=35, birth_year_month=None, yearly_income=24_000, insurance_medicaid=False, insurance_chp=False):
+def make_member(
+    age: int = 35,
+    birth_year_month=None,
+    yearly_income: int = 24_000,
+    insurance_medicaid: bool = False,
+    insurance_chp: bool = False,
+):
     member = Mock()
     member.age = age
     member.birth_year_month = birth_year_month
@@ -23,7 +29,7 @@ def make_member(age=35, birth_year_month=None, yearly_income=24_000, insurance_m
 
     member.calc_gross_income = Mock(side_effect=calc_gross_income)
 
-    def has_insurance(name):
+    def has_insurance(name: str):
         if name == "wa_apple_health_medicaid":
             return insurance_medicaid
         if name == "wa_apple_health_for_kids":
@@ -35,16 +41,16 @@ def make_member(age=35, birth_year_month=None, yearly_income=24_000, insurance_m
 
 
 def make_calculator(
-    has_wa_snap=False,
-    has_wa_wic=False,
+    has_wa_snap: bool = False,
+    has_wa_wic: bool = False,
     members=None,
-    yearly_income=24_000,
-    household_size=1,
-    fpl_annual=15_960,
+    yearly_income: int = 24_000,
+    household_size: int = 1,
+    fpl_annual: int = 15_960,
 ):
     mock_screen = Mock()
 
-    def has_benefit(name):
+    def has_benefit(name: str):
         return {
             "wa_snap": has_wa_snap,
             "wa_wic": has_wa_wic,
@@ -74,18 +80,18 @@ def make_calculator(
 
 
 class TestWaOrcaLiftClassAttributes(TestCase):
-    def test_is_registered(self):
+    def test_is_registered(self) -> None:
         self.assertIn("wa_orca_lift", wa_calculators)
         self.assertEqual(wa_calculators["wa_orca_lift"], WaOrcaLift)
 
-    def test_min_max_age(self):
+    def test_min_max_age(self) -> None:
         self.assertEqual(WaOrcaLift.min_age, 19)
         self.assertEqual(WaOrcaLift.max_age, 64)
 
-    def test_fpl_percent(self):
+    def test_fpl_percent(self) -> None:
         self.assertEqual(WaOrcaLift.fpl_percent, 2.0)
 
-    def test_member_amount(self):
+    def test_member_amount(self) -> None:
         self.assertEqual(WaOrcaLift.member_amount, 864)
 
 
@@ -96,34 +102,34 @@ class TestWaOrcaLiftMemberEligibility(TestCase):
         calc.member_eligible(e)
         return e.eligible
 
-    def test_age_35_eligible(self):
+    def test_age_35_eligible(self) -> None:
         self.assertTrue(self._run(make_member(age=35)))
 
-    def test_min_age_19_eligible(self):
+    def test_min_age_19_eligible(self) -> None:
         self.assertTrue(self._run(make_member(age=19)))
 
-    def test_max_age_64_eligible(self):
+    def test_max_age_64_eligible(self) -> None:
         self.assertTrue(self._run(make_member(age=64)))
 
-    def test_age_18_ineligible(self):
+    def test_age_18_ineligible(self) -> None:
         self.assertFalse(self._run(make_member(age=18)))
 
-    def test_age_65_ineligible(self):
+    def test_age_65_ineligible(self) -> None:
         self.assertFalse(self._run(make_member(age=65)))
 
-    def test_age_none_ineligible(self):
+    def test_age_none_ineligible(self) -> None:
         member = make_member(age=None)
         member.calc_age = Mock(return_value=None)
         self.assertFalse(self._run(member))
 
-    def test_uses_calc_age_over_age_field(self):
+    def test_uses_calc_age_over_age_field(self) -> None:
         # birth_year_month present — calc_age() should be called
         member = make_member(age=70)
         member.birth_year_month = object()  # not None
         member.calc_age = Mock(return_value=40)
         self.assertTrue(self._run(member))
 
-    def test_age_zero_ineligible(self):
+    def test_age_zero_ineligible(self) -> None:
         self.assertFalse(self._run(make_member(age=0)))
 
 
@@ -138,25 +144,25 @@ class TestWaOrcaLiftHouseholdEligibility(TestCase):
 
     # --- Income pathway ---
 
-    def test_income_below_fpl_eligible(self):
+    def test_income_below_fpl_eligible(self) -> None:
         # $24,000/yr < 200% FPL ($31,920 for size 1)
         calc = make_calculator(yearly_income=24_000, fpl_annual=15_960)
         e = self._run_household(calc)
         self.assertTrue(e.eligible)
 
-    def test_income_above_fpl_ineligible(self):
+    def test_income_above_fpl_ineligible(self) -> None:
         # $54,000/yr > 200% FPL ($31,920 for size 1)
         calc = make_calculator(yearly_income=54_000, fpl_annual=15_960)
         e = self._run_household(calc)
         self.assertFalse(e.eligible)
 
-    def test_income_exactly_at_fpl_eligible(self):
+    def test_income_exactly_at_fpl_eligible(self) -> None:
         # $31,920/yr == 200% FPL ($31,920) — boundary inclusive
         calc = make_calculator(yearly_income=31_920, fpl_annual=15_960)
         e = self._run_household(calc)
         self.assertTrue(e.eligible)
 
-    def test_income_one_dollar_over_fpl_ineligible(self):
+    def test_income_one_dollar_over_fpl_ineligible(self) -> None:
         # $31,933/yr > 200% FPL by $13 (simulating $2,661/month * 12)
         calc = make_calculator(yearly_income=31_932, fpl_annual=15_960)
         e = self._run_household(calc)
@@ -164,40 +170,40 @@ class TestWaOrcaLiftHouseholdEligibility(TestCase):
 
     # --- Categorical pathway: screen-level (Step 8 current benefits) ---
 
-    def test_snap_bypasses_income(self):
+    def test_snap_bypasses_income(self) -> None:
         calc = make_calculator(has_wa_snap=True, yearly_income=60_000, fpl_annual=15_960)
         e = self._run_household(calc)
         self.assertTrue(e.eligible)
 
-    def test_wic_bypasses_income(self):
+    def test_wic_bypasses_income(self) -> None:
         calc = make_calculator(has_wa_wic=True, yearly_income=60_000, fpl_annual=15_960)
         e = self._run_household(calc)
         self.assertTrue(e.eligible)
 
     # --- Categorical pathway: member-level insurance (Step 5) ---
 
-    def test_member_apple_health_medicaid_bypasses_income(self):
+    def test_member_apple_health_medicaid_bypasses_income(self) -> None:
         # Apple Health (adult Medicaid) selected on Step 5 triggers categorical eligibility
         members = [make_member(age=35, insurance_medicaid=True)]
         calc = make_calculator(yearly_income=60_000, fpl_annual=15_960, members=members)
         e = calc.eligible()
         self.assertTrue(e.eligible)
 
-    def test_member_apple_health_for_kids_bypasses_income(self):
+    def test_member_apple_health_for_kids_bypasses_income(self) -> None:
         # Apple Health for Kids (CHIP) selected on Step 5 triggers categorical eligibility
         members = [make_member(age=35, insurance_chp=True)]
         calc = make_calculator(yearly_income=60_000, fpl_annual=15_960, members=members)
         e = calc.eligible()
         self.assertTrue(e.eligible)
 
-    def test_member_no_apple_health_high_income_ineligible(self):
+    def test_member_no_apple_health_high_income_ineligible(self) -> None:
         # No categorical benefit, income too high
         members = [make_member(age=35, insurance_medicaid=False, insurance_chp=False)]
         calc = make_calculator(yearly_income=60_000, fpl_annual=15_960, members=members)
         e = calc.eligible()
         self.assertFalse(e.eligible)
 
-    def test_child_apple_health_for_kids_triggers_household_eligibility(self):
+    def test_child_apple_health_for_kids_triggers_household_eligibility(self) -> None:
         # Child's Apple Health for Kids insurance makes the household categorically eligible;
         # the 35yo parent passes the age gate and receives the benefit
         members = [make_member(age=35), make_member(age=8, insurance_chp=True)]
@@ -207,14 +213,14 @@ class TestWaOrcaLiftHouseholdEligibility(TestCase):
 
     # --- Age gate ---
 
-    def test_no_member_19_64_ineligible_even_with_snap(self):
+    def test_no_member_19_64_ineligible_even_with_snap(self) -> None:
         # Household has SNAP and low income but no one aged 19–64 → ineligible
         members = [make_member(age=70), make_member(age=12), make_member(age=8)]
         calc = make_calculator(has_wa_snap=True, members=members, yearly_income=10_000, fpl_annual=15_960)
         e = calc.eligible()
         self.assertFalse(e.eligible)
 
-    def test_no_member_19_64_ineligible_even_with_low_income(self):
+    def test_no_member_19_64_ineligible_even_with_low_income(self) -> None:
         members = [make_member(age=70), make_member(age=15)]
         calc = make_calculator(members=members, yearly_income=10_000, fpl_annual=15_960)
         e = calc.eligible()
@@ -222,7 +228,7 @@ class TestWaOrcaLiftHouseholdEligibility(TestCase):
 
 
 class TestWaOrcaLiftValue(TestCase):
-    def test_single_eligible_adult_value(self):
+    def test_single_eligible_adult_value(self) -> None:
         # Scenario 1: single adult aged 35, income eligible
         calc = make_calculator(yearly_income=24_000, fpl_annual=15_960)
         calc.screen.household_members.all.return_value = [make_member(age=35)]
@@ -230,7 +236,7 @@ class TestWaOrcaLiftValue(TestCase):
         self.assertTrue(result.eligible)
         self.assertEqual(result.value, 864)
 
-    def test_two_eligible_adults_value_doubles(self):
+    def test_two_eligible_adults_value_doubles(self) -> None:
         # Scenario 4: two adults aged 19–64 → value = 2 × $864
         members = [make_member(age=30), make_member(age=28)]
         calc = make_calculator(has_wa_snap=True, members=members, yearly_income=54_000, fpl_annual=15_960)
@@ -238,7 +244,7 @@ class TestWaOrcaLiftValue(TestCase):
         self.assertTrue(result.eligible)
         self.assertEqual(result.value, 1_728)
 
-    def test_mixed_household_value_counts_only_19_64(self):
+    def test_mixed_household_value_counts_only_19_64(self) -> None:
         # Scenario 3: household has 30yo, 65yo, 17yo, 8yo — only 30yo counted
         members = [
             make_member(age=30),
@@ -251,7 +257,7 @@ class TestWaOrcaLiftValue(TestCase):
         self.assertTrue(result.eligible)
         self.assertEqual(result.value, 864)
 
-    def test_ineligible_household_has_zero_value(self):
+    def test_ineligible_household_has_zero_value(self) -> None:
         calc = make_calculator(yearly_income=60_000, fpl_annual=15_960)
         calc.screen.household_members.all.return_value = [make_member(age=35)]
         result = calc.calc()

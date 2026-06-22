@@ -2,7 +2,7 @@
 from django.db import migrations
 
 
-def remove_other_status(apps, schema_editor):
+def remove_other_status(apps, schema_editor) -> None:
     """
     Remove 'other' from legal_status_required.
 
@@ -32,7 +32,7 @@ def remove_other_status(apps, schema_editor):
     print(f"✅ Removed 'other' status from {programs_updated} programs (represented people without work permission)")
 
 
-def reverse_migration(_apps, _schema_editor):
+def reverse_migration(_apps, _schema_editor) -> None:
     """
     Reverse migration: Add back 'other' status to programs.
     """

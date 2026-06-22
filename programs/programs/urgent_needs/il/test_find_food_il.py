@@ -9,7 +9,7 @@ from screener.models import HouseholdMember, Screen, WhiteLabel
 from translations.models import Translation
 
 
-def make_urgent_need(white_label):
+def make_urgent_need(white_label: str):
     prefix = "test_urgent_need.il_find_food"
     return UrgentNeed.objects.create(
         white_label=white_label,
@@ -24,7 +24,7 @@ def make_urgent_need(white_label):
 
 
 class TestFindFoodIl(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.white_label = WhiteLabel.objects.create(name="Illinois", code="il", state_code="IL")
         self.urgent_need = make_urgent_need(self.white_label)
         self.screen = Screen.objects.create(
@@ -38,29 +38,29 @@ class TestFindFoodIl(TestCase):
         )
         HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=30)
 
-    def _calc(self, gross_income=0):
+    def _calc(self, gross_income: int = 0):
         with patch.object(self.screen.__class__, "calc_gross_income", return_value=gross_income):
             return FindFoodIl(self.screen, self.urgent_need, Dependencies(), {}).eligible()
 
-    def test_eligible_with_young_member_and_low_income(self):
+    def test_eligible_with_young_member_and_low_income(self) -> None:
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=10)
         self.assertTrue(self._calc(gross_income=15_000))
 
-    def test_not_eligible_no_members_under_22(self):
+    def test_not_eligible_no_members_under_22(self) -> None:
         self.assertFalse(self._calc(gross_income=15_000))
 
-    def test_not_eligible_income_too_high(self):
+    def test_not_eligible_income_too_high(self) -> None:
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=10)
         self.assertFalse(self._calc(gross_income=25_000))
 
-    def test_eligible_at_income_boundary(self):
+    def test_eligible_at_income_boundary(self) -> None:
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=10)
         self.assertTrue(self._calc(gross_income=22_000))
 
-    def test_eligible_with_member_age_21(self):
+    def test_eligible_with_member_age_21(self) -> None:
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=21)
         self.assertTrue(self._calc(gross_income=15_000))
 
-    def test_not_eligible_with_member_age_22(self):
+    def test_not_eligible_with_member_age_22(self) -> None:
         HouseholdMember.objects.create(screen=self.screen, relationship="child", age=22)
         self.assertFalse(self._calc(gross_income=15_000))

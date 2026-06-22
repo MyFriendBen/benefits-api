@@ -8,7 +8,7 @@ class MedicareSavingsNC(MedicareSavings):
     asset_limit: ClassVar[dict[str, int]] = {"single": 9_660, "married": 14_470}
     min_income_percent: ClassVar[float] = 1.0
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
         super().member_eligible(e)
 
@@ -19,7 +19,7 @@ class MedicareSavingsNC(MedicareSavings):
         # insurance
         e.condition(not member.insurance.has_insurance_types(self.ineligible_insurance_types))
 
-    def check_income_limits(self, e: MemberEligibility, member, spouse):
+    def check_income_limits(self, e: MemberEligibility, member, spouse) -> None:
         """
         NC-specific logic:
         - SSI is excluded from income

@@ -10,7 +10,7 @@ class MyDenver(ProgramCalculator):
     member_amount = 150
     dependencies = ["age", "zipcode"]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         # location
         county_eligible = False
 
@@ -20,7 +20,9 @@ class MyDenver(ProgramCalculator):
                 county_eligible = True
         e.condition(county_eligible, messages.location())
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
+        if e.member.age is None:
+            return
         member = e.member
 
         # age

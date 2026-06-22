@@ -34,4 +34,7 @@ class TxSsdi(ProgramCalculator):
         e.condition(member.calc_gross_income("monthly", ["earned"]) <= income_limit)
 
         # under Full Retirement Age (varies by birth year per SSA schedule)
-        e.condition(member.fraction_age() < TxSsdi._full_retirement_age(member.birth_year))
+        fraction_age = member.fraction_age()
+        if fraction_age is None:
+            return
+        e.condition(fraction_age < TxSsdi._full_retirement_age(member.birth_year))

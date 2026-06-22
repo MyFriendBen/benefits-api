@@ -10,7 +10,7 @@ class Command(BaseCommand):
     Use Google Translate to translate into a new language
     """
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser) -> None:
         parser.add_argument("--limit", default=1, type=int)
         parser.add_argument("--all", default=False, type=bool)
         parser.add_argument("--lang", default=settings.LANGUAGE_CODE, type=str)

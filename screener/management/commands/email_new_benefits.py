@@ -9,11 +9,11 @@ class Command(BaseCommand):
     Update number of new benefits and amount of new benefits in HubSpot
     """
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser) -> None:
         parser.add_argument("--limit", default=1, type=int)
         parser.add_argument("--white-label", default="co", type=str)
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         screens = Screen.objects.all().exclude(user__isnull=True, white_label__code=options["white_label"])
         latest_snapshots = []
         limit = options["limit"]
@@ -31,7 +31,7 @@ class Command(BaseCommand):
         for snapshot in latest_snapshots:
             if limit == 0:
                 break
-            if snapshot.screen.user.external_id is None:
+            if snapshot.screen.user is None or snapshot.screen.user.external_id is None:
                 continue
 
             num_eligible = 0

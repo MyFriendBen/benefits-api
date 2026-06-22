@@ -2,7 +2,7 @@
 from django.db import migrations
 
 
-def add_estimated_value(apps, schema_editor):
+def add_estimated_value(apps, schema_editor) -> None:
     Program = apps.get_model("programs", "Program")
     Translation = apps.get_model("translations", "Translation")
 

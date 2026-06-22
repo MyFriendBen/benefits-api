@@ -7,11 +7,11 @@ import requests
 
 
 class Hook:
-    def __init__(self, hook: Referrer):
+    def __init__(self, hook: Referrer) -> None:
         self.hook = hook
         self.functions = [func.name for func in hook.webhook_functions.all()]
 
-    def send(self, screen: Screen, results: dict, force=True) -> Optional[Exception]:
+    def send(self, screen: Screen, results: dict, force: bool = True) -> Optional[Exception]:
         if screen.completed and not force:
             return
         if self.hook.webhook_url is None:

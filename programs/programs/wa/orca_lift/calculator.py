@@ -36,11 +36,14 @@ class WaOrcaLift(ProgramCalculator):
             return member.calc_age()
         return member.age
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         age = self._member_age(e.member)
         e.condition(age is not None and self.min_age <= age <= self.max_age)
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            e.condition(False)
+            return
         categorical = (
             self.screen.has_benefit("wa_snap")
             or self.screen.has_benefit("wa_wic")

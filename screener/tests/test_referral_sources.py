@@ -13,7 +13,7 @@ from programs.models import Referrer
 class TestReferralSourcesView(APITestCase):
     """Tests for GET /api/screener-options/{wl}/referral-options/"""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
         self.other_wl = WhiteLabel.objects.create(name="Other State", code="other", state_code="OS")
 
@@ -66,7 +66,7 @@ class TestReferralSourcesView(APITestCase):
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
 
-    def test_response_has_generic_and_partners_keys(self):
+    def test_response_has_generic_and_partners_keys(self) -> None:
         """Response always has 'generic' and 'partners' top-level keys."""
         response = self.client.get(self.url)
 
@@ -74,7 +74,7 @@ class TestReferralSourcesView(APITestCase):
         self.assertIn("generic", response.data)
         self.assertIn("partners", response.data)
 
-    def test_returns_show_in_dropdown_referrers(self):
+    def test_returns_show_in_dropdown_referrers(self) -> None:
         """Returns only referrers with show_in_dropdown=True for the WL."""
         response = self.client.get(self.url)
 
@@ -83,21 +83,21 @@ class TestReferralSourcesView(APITestCase):
         self.assertIn("other", response.data["generic"])
         self.assertIn("bia", response.data["partners"])
 
-    def test_excludes_hidden_referrers(self):
+    def test_excludes_hidden_referrers(self) -> None:
         """Referrers with show_in_dropdown=False are excluded."""
         response = self.client.get(self.url)
 
         self.assertNotIn("hidden", response.data["generic"])
         self.assertNotIn("hidden", response.data["partners"])
 
-    def test_generic_and_partner_are_separated(self):
+    def test_generic_and_partner_are_separated(self) -> None:
         """is_partner=True rows appear in partners, is_partner=False in generic."""
         response = self.client.get(self.url)
 
         self.assertNotIn("bia", response.data["generic"])
         self.assertNotIn("friend", response.data["partners"])
 
-    def test_scoped_to_white_label(self):
+    def test_scoped_to_white_label(self) -> None:
         """Referrers from other WLs are not returned."""
         response = self.client.get(self.url)
 
@@ -105,21 +105,21 @@ class TestReferralSourcesView(APITestCase):
         self.assertEqual(len(response.data["generic"]), 3)
         self.assertEqual(len(response.data["partners"]), 1)
 
-    def test_returns_correct_display_names(self):
+    def test_returns_correct_display_names(self) -> None:
         """Response maps referrer_code to display name."""
         response = self.client.get(self.url)
 
         self.assertEqual(response.data["generic"]["searchEngine"], "Google or other search engine")
         self.assertEqual(response.data["partners"]["bia"], "Benefits in Action")
 
-    def test_generic_sorted_alphabetically(self):
+    def test_generic_sorted_alphabetically(self) -> None:
         """Generic options are returned in alphabetical order by name."""
         response = self.client.get(self.url)
 
         names = list(response.data["generic"].values())
         self.assertEqual(names, sorted(names))
 
-    def test_partners_sorted_alphabetically(self):
+    def test_partners_sorted_alphabetically(self) -> None:
         """Partner options are returned in alphabetical order by name."""
         Referrer.objects.create(
             white_label=self.white_label,
@@ -141,7 +141,7 @@ class TestReferralSourcesView(APITestCase):
         names = list(response.data["partners"].values())
         self.assertEqual(names, sorted(names))
 
-    def test_blank_name_is_rejected(self):
+    def test_blank_name_is_rejected(self) -> None:
         """Referrer name must be non-blank — the DB constraint rejects empty strings."""
         from django.db import IntegrityError
 
@@ -150,14 +150,14 @@ class TestReferralSourcesView(APITestCase):
                 white_label=self.white_label, referrer_code="noname", name="", show_in_dropdown=True
             )
 
-    def test_unknown_white_label_returns_empty(self):
+    def test_unknown_white_label_returns_empty(self) -> None:
         """Unknown WL code returns empty groups, not 404."""
         response = self.client.get("/api/screener-options/doesnotexist/referral-options/")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, {"generic": {}, "partners": {}})
 
-    def test_unauthenticated_returns_403(self):
+    def test_unauthenticated_returns_403(self) -> None:
         """Unauthenticated requests are rejected."""
         unauthenticated_client = APIClient()
         response = unauthenticated_client.get(self.url)

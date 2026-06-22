@@ -24,13 +24,15 @@ class MaDoorToDoor(ProgramCalculator):
     min_age = 60
     dependencies = ["zipcode", "age"]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         # Location check - must be Cambridge resident
         is_cambridge = self.screen.county == self.eligible_city
         e.condition(is_cambridge, messages.location())
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
+        if member.age is None:
+            return
 
         # Age 60+ OR has a mobility impairment (disability)
         is_senior = member.age >= self.min_age

@@ -4,17 +4,18 @@ from unittest.mock import Mock, patch, PropertyMock
 from programs.programs.wa import wa_calculators
 from programs.programs.wa.hcv.calculator import WaHcv
 from programs.programs.calc import ProgramCalculator, Eligibility
+from typing import Optional
 
 
 def make_member(
-    age=40,
-    relationship="headOfHousehold",
-    pregnant=False,
-    student=False,
-    disabled=False,
-    visually_impaired=False,
-    long_term_disability=False,
-    income=0,
+    age: int = 40,
+    relationship: str = "headOfHousehold",
+    pregnant: bool = False,
+    student: bool = False,
+    disabled: bool = False,
+    visually_impaired: bool = False,
+    long_term_disability: bool = False,
+    income: int = 0,
     insurance_types=None,
 ):
     member = Mock()
@@ -38,14 +39,14 @@ def make_member(
 
 def make_calculator(
     members=None,
-    household_size=None,
-    county="King County",
-    zipcode="98108",
-    household_assets=0,
-    has_section_8=False,
-    gross_income=21600,
-    il_ami_value=50000,
-    fmr_value=2000,
+    household_size: Optional[int] = None,
+    county: str = "King County",
+    zipcode: str = "98108",
+    household_assets: int = 0,
+    has_section_8: bool = False,
+    gross_income: int = 21600,
+    il_ami_value: int = 50000,
+    fmr_value: int = 2000,
 ):
     if members is None:
         members = [make_member()]
@@ -75,7 +76,7 @@ def make_calculator(
     return calc
 
 
-def patch_hud_client(il_ami_value=50000, fmr_value=2000, il_error=False, fmr_error=False):
+def patch_hud_client(il_ami_value: int = 50000, fmr_value: int = 2000, il_error: bool = False, fmr_error: bool = False):
     """Return a context manager that patches both HUD client methods."""
     from integrations.clients.hud_income_limits import HudIncomeClientError
 
@@ -97,32 +98,32 @@ def patch_hud_client(il_ami_value=50000, fmr_value=2000, il_error=False, fmr_err
 
 
 class TestWaHcvClassAttributes(TestCase):
-    def test_is_subclass_of_program_calculator(self):
+    def test_is_subclass_of_program_calculator(self) -> None:
         self.assertTrue(issubclass(WaHcv, ProgramCalculator))
 
-    def test_is_registered_in_wa_calculators(self):
+    def test_is_registered_in_wa_calculators(self) -> None:
         self.assertIn("wa_hcv", wa_calculators)
         self.assertEqual(wa_calculators["wa_hcv"], WaHcv)
 
-    def test_asset_limit_is_100k(self):
+    def test_asset_limit_is_100k(self) -> None:
         self.assertEqual(WaHcv.asset_limit, 100_000)
 
-    def test_dependent_deduction_is_480(self):
+    def test_dependent_deduction_is_480(self) -> None:
         self.assertEqual(WaHcv.dependent_deduction_annual, 480)
 
-    def test_elderly_disabled_deduction_is_525(self):
+    def test_elderly_disabled_deduction_is_525(self) -> None:
         self.assertEqual(WaHcv.elderly_disabled_deduction_annual, 525)
 
-    def test_min_rent_is_50(self):
+    def test_min_rent_is_50(self) -> None:
         self.assertEqual(WaHcv.min_rent_monthly, 50)
 
-    def test_dependencies_include_required_fields(self):
+    def test_dependencies_include_required_fields(self) -> None:
         for field in ("income_amount", "income_frequency", "household_size", "county", "household_assets", "age"):
             self.assertIn(field, WaHcv.dependencies)
 
 
 class TestWaHcvEligibility(TestCase):
-    def test_income_below_vli_is_eligible(self):
+    def test_income_below_vli_is_eligible(self) -> None:
         head = make_member(age=35)
         calc = make_calculator(members=[head], gross_income=21600)
         with patch_hud_client(il_ami_value=50000):
@@ -130,7 +131,7 @@ class TestWaHcvEligibility(TestCase):
             calc.household_eligible(e)
             self.assertTrue(e.eligible)
 
-    def test_income_above_vli_is_ineligible(self):
+    def test_income_above_vli_is_ineligible(self) -> None:
         head = make_member(age=35)
         calc = make_calculator(members=[head], gross_income=55000)
         with patch_hud_client(il_ami_value=50000):
@@ -138,7 +139,7 @@ class TestWaHcvEligibility(TestCase):
             calc.household_eligible(e)
             self.assertFalse(e.eligible)
 
-    def test_income_at_vli_is_eligible(self):
+    def test_income_at_vli_is_eligible(self) -> None:
         head = make_member(age=35)
         calc = make_calculator(members=[head], gross_income=50000)
         with patch_hud_client(il_ami_value=50000):
@@ -146,7 +147,7 @@ class TestWaHcvEligibility(TestCase):
             calc.household_eligible(e)
             self.assertTrue(e.eligible)
 
-    def test_has_section_8_is_ineligible(self):
+    def test_has_section_8_is_ineligible(self) -> None:
         head = make_member(age=35)
         calc = make_calculator(members=[head], has_section_8=True, gross_income=21600)
         with patch_hud_client(il_ami_value=50000):
@@ -154,7 +155,7 @@ class TestWaHcvEligibility(TestCase):
             calc.household_eligible(e)
             self.assertFalse(e.eligible)
 
-    def test_assets_above_100k_is_ineligible(self):
+    def test_assets_above_100k_is_ineligible(self) -> None:
         head = make_member(age=35)
         calc = make_calculator(members=[head], household_assets=150000, gross_income=21600)
         with patch_hud_client(il_ami_value=50000):
@@ -162,7 +163,7 @@ class TestWaHcvEligibility(TestCase):
             calc.household_eligible(e)
             self.assertFalse(e.eligible)
 
-    def test_assets_at_100k_is_eligible(self):
+    def test_assets_at_100k_is_eligible(self) -> None:
         head = make_member(age=35)
         calc = make_calculator(members=[head], household_assets=100000, gross_income=21600)
         with patch_hud_client(il_ami_value=50000):
@@ -170,7 +171,7 @@ class TestWaHcvEligibility(TestCase):
             calc.household_eligible(e)
             self.assertTrue(e.eligible)
 
-    def test_none_assets_treated_as_zero(self):
+    def test_none_assets_treated_as_zero(self) -> None:
         head = make_member(age=35)
         calc = make_calculator(members=[head], household_assets=None, gross_income=21600)
         with patch_hud_client(il_ami_value=50000):
@@ -178,7 +179,7 @@ class TestWaHcvEligibility(TestCase):
             calc.household_eligible(e)
             self.assertTrue(e.eligible)
 
-    def test_hud_api_error_makes_ineligible(self):
+    def test_hud_api_error_makes_ineligible(self) -> None:
         head = make_member(age=35)
         calc = make_calculator(members=[head], gross_income=21600)
         with patch_hud_client(il_error=True):
@@ -188,7 +189,7 @@ class TestWaHcvEligibility(TestCase):
 
 
 class TestWaHcvPregnancyRule(TestCase):
-    def test_pregnant_single_uses_2_person_income_limit(self):
+    def test_pregnant_single_uses_2_person_income_limit(self) -> None:
         head = make_member(age=31, pregnant=True)
         calc = make_calculator(members=[head], household_size=1, gross_income=28800)
 
@@ -198,12 +199,12 @@ class TestWaHcvPregnancyRule(TestCase):
             self.assertTrue(e.eligible)
             self.assertEqual(calc.screen.household_size, 1)
 
-    def test_non_pregnant_single_uses_1_person_limit(self):
+    def test_non_pregnant_single_uses_1_person_limit(self) -> None:
         head = make_member(age=31, pregnant=False)
         calc = make_calculator(members=[head], household_size=1)
         self.assertEqual(calc._effective_household_size(), 1)
 
-    def test_pregnant_in_multi_person_household_no_adjustment(self):
+    def test_pregnant_in_multi_person_household_no_adjustment(self) -> None:
         head = make_member(age=31, pregnant=True)
         child = make_member(age=5, relationship="child")
         calc = make_calculator(members=[head, child], household_size=2)
@@ -211,73 +212,73 @@ class TestWaHcvPregnancyRule(TestCase):
 
 
 class TestWaHcvHelpers(TestCase):
-    def test_bedroom_map_1_person(self):
+    def test_bedroom_map_1_person(self) -> None:
         head = make_member(age=35)
         calc = make_calculator(members=[head], household_size=1)
         self.assertEqual(calc._estimate_bedrooms(), 1)
 
-    def test_bedroom_map_3_persons(self):
+    def test_bedroom_map_3_persons(self) -> None:
         members = [make_member(), make_member(relationship="spouse"), make_member(age=5, relationship="child")]
         calc = make_calculator(members=members, household_size=3)
         self.assertEqual(calc._estimate_bedrooms(), 2)
 
-    def test_bedroom_map_5_persons(self):
+    def test_bedroom_map_5_persons(self) -> None:
         members = [make_member()] * 5
         calc = make_calculator(members=members, household_size=5)
         self.assertEqual(calc._estimate_bedrooms(), 3)
 
-    def test_bedroom_map_8_persons(self):
+    def test_bedroom_map_8_persons(self) -> None:
         members = [make_member()] * 8
         calc = make_calculator(members=members, household_size=8)
         self.assertEqual(calc._estimate_bedrooms(), 4)
 
-    def test_count_dependents_children_under_18(self):
+    def test_count_dependents_children_under_18(self) -> None:
         head = make_member(age=35)
         child1 = make_member(age=9, relationship="child")
         child2 = make_member(age=5, relationship="child")
         calc = make_calculator(members=[head, child1, child2])
         self.assertEqual(calc._count_dependents(), 2)
 
-    def test_count_dependents_excludes_head_and_spouse(self):
+    def test_count_dependents_excludes_head_and_spouse(self) -> None:
         head = make_member(age=35)
         spouse = make_member(age=33, relationship="spouse")
         calc = make_calculator(members=[head, spouse])
         self.assertEqual(calc._count_dependents(), 0)
 
-    def test_count_dependents_includes_disabled_non_head(self):
+    def test_count_dependents_includes_disabled_non_head(self) -> None:
         head = make_member(age=35)
         disabled_parent = make_member(age=60, relationship="parent", disabled=True)
         calc = make_calculator(members=[head, disabled_parent])
         self.assertEqual(calc._count_dependents(), 1)
 
-    def test_count_dependents_includes_student(self):
+    def test_count_dependents_includes_student(self) -> None:
         head = make_member(age=35)
         student_child = make_member(age=19, relationship="child", student=True)
         calc = make_calculator(members=[head, student_child])
         self.assertEqual(calc._count_dependents(), 1)
 
-    def test_elderly_family_head_62_plus(self):
+    def test_elderly_family_head_62_plus(self) -> None:
         head = make_member(age=68)
         calc = make_calculator(members=[head])
         self.assertTrue(calc._is_elderly_or_disabled_family())
 
-    def test_elderly_family_spouse_62_plus(self):
+    def test_elderly_family_spouse_62_plus(self) -> None:
         head = make_member(age=50)
         spouse = make_member(age=63, relationship="spouse")
         calc = make_calculator(members=[head, spouse])
         self.assertTrue(calc._is_elderly_or_disabled_family())
 
-    def test_disabled_head_family(self):
+    def test_disabled_head_family(self) -> None:
         head = make_member(age=40, disabled=True)
         calc = make_calculator(members=[head])
         self.assertTrue(calc._is_elderly_or_disabled_family())
 
-    def test_not_elderly_not_disabled_family(self):
+    def test_not_elderly_not_disabled_family(self) -> None:
         head = make_member(age=35)
         calc = make_calculator(members=[head])
         self.assertFalse(calc._is_elderly_or_disabled_family())
 
-    def test_disabled_child_does_not_make_elderly_family(self):
+    def test_disabled_child_does_not_make_elderly_family(self) -> None:
         head = make_member(age=35)
         child = make_member(age=10, relationship="child", disabled=True)
         calc = make_calculator(members=[head, child])
@@ -285,7 +286,7 @@ class TestWaHcvHelpers(TestCase):
 
 
 class TestWaHcvBenefitValue(TestCase):
-    def test_basic_hap_calculation(self):
+    def test_basic_hap_calculation(self) -> None:
         """Single adult, $1,800/mo income, no dependents, FMR $1,605."""
         head = make_member(age=35)
         calc = make_calculator(members=[head], household_size=1, gross_income=21600)
@@ -297,7 +298,7 @@ class TestWaHcvBenefitValue(TestCase):
             value = calc.household_value()
             self.assertEqual(value, 12780)
 
-    def test_hap_with_dependents(self):
+    def test_hap_with_dependents(self) -> None:
         """Single mother + 2 children, $1,800/mo, 2 dependents."""
         head = make_member(age=35)
         child1 = make_member(age=9, relationship="child")
@@ -312,7 +313,7 @@ class TestWaHcvBenefitValue(TestCase):
             value = calc.household_value()
             self.assertEqual(value, 23832)
 
-    def test_hap_with_elderly_deduction(self):
+    def test_hap_with_elderly_deduction(self) -> None:
         """Elderly single adult with SS retirement income."""
         head = make_member(age=75)
         calc = make_calculator(members=[head], household_size=1, gross_income=14400)
@@ -325,7 +326,7 @@ class TestWaHcvBenefitValue(TestCase):
             value = calc.household_value()
             self.assertEqual(value, 12637)
 
-    def test_hap_zero_when_ttp_exceeds_fmr(self):
+    def test_hap_zero_when_ttp_exceeds_fmr(self) -> None:
         """High income relative to FMR yields zero benefit."""
         head = make_member(age=35)
         calc = make_calculator(members=[head], household_size=1, gross_income=60000)
@@ -335,7 +336,7 @@ class TestWaHcvBenefitValue(TestCase):
             value = calc.household_value()
             self.assertEqual(value, 0)
 
-    def test_fmr_api_error_returns_zero(self):
+    def test_fmr_api_error_returns_zero(self) -> None:
         head = make_member(age=35)
         calc = make_calculator(members=[head], household_size=1, gross_income=21600)
         with patch_hud_client(fmr_error=True):
@@ -344,7 +345,7 @@ class TestWaHcvBenefitValue(TestCase):
 
 
 class TestWaHcvCalc(TestCase):
-    def test_calc_eligible_returns_positive_value(self):
+    def test_calc_eligible_returns_positive_value(self) -> None:
         head = make_member(age=35)
         child1 = make_member(age=9, relationship="child")
         child2 = make_member(age=5, relationship="child")
@@ -354,14 +355,14 @@ class TestWaHcvCalc(TestCase):
             self.assertTrue(e.eligible)
             self.assertEqual(e.value, 23832)
 
-    def test_calc_ineligible_returns_zero_value(self):
+    def test_calc_ineligible_returns_zero_value(self) -> None:
         head = make_member(age=35)
         calc = make_calculator(members=[head], has_section_8=True, gross_income=21600)
         with patch_hud_client(il_ami_value=50000, fmr_value=2000):
             e = calc.calc()
             self.assertFalse(e.eligible)
 
-    def test_calc_pregnant_single_eligible(self):
+    def test_calc_pregnant_single_eligible(self) -> None:
         head = make_member(age=31, pregnant=True)
         calc = make_calculator(members=[head], household_size=1, gross_income=28800)
         # Pregnant single → 2-person VLI for income, 1BR for FMR
@@ -374,7 +375,7 @@ class TestWaHcvCalc(TestCase):
             self.assertTrue(e.eligible)
             self.assertEqual(e.value, 10620)
 
-    def test_calc_null_year_does_not_crash(self):
+    def test_calc_null_year_does_not_crash(self) -> None:
         """Program.year = None must not raise AttributeError (crashes all WA programs)."""
         head = make_member(age=35)
         calc = make_calculator(members=[head], gross_income=21600)
@@ -383,14 +384,14 @@ class TestWaHcvCalc(TestCase):
             e = calc.calc()
             self.assertFalse(e.eligible)
 
-    def test_household_value_null_year_returns_zero(self):
+    def test_household_value_null_year_returns_zero(self) -> None:
         head = make_member(age=35)
         calc = make_calculator(members=[head], gross_income=21600)
         calc.program.year = None
         with patch_hud_client(fmr_value=2000):
             self.assertEqual(calc.household_value(), 0)
 
-    def test_household_value_unexpected_fmr_error_returns_zero(self):
+    def test_household_value_unexpected_fmr_error_returns_zero(self) -> None:
         """Non-HudIncomeClientError from get_screen_fmr must not propagate as a 500."""
         head = make_member(age=35)
         calc = make_calculator(members=[head], household_size=1, gross_income=21600)

@@ -10,7 +10,7 @@ class MySpark(ProgramCalculator):
     county = "Denver County"
     dependencies = ["age", "zipcode"]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         # Qualify for FRL
         nslp = self.data.get("nslp")
         is_frl_eligible = nslp is not None and nslp.eligible
@@ -21,8 +21,10 @@ class MySpark(ProgramCalculator):
         # Denever County
         e.condition(MySpark.county in counties, messages.location())
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
+        if member.age is None:
+            return
 
         # age
         e.condition(MySpark.min_age <= member.age <= MySpark.max_age)

@@ -65,7 +65,7 @@ class Command(BaseCommand):
         "cowicc",
     ]
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         fpl = FederalPoveryLimit.objects.get(year="THIS YEAR")
 
         # create legal statuses

@@ -6,7 +6,10 @@ class EnergyCalculatorEnergyEbt(ProgramCalculator):
     max_fpl = 2
     dependencies = ["income_frequency", "income_amount", "household_size"]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            e.condition(False)
+            return
         # income
         income = self.screen.calc_gross_income("yearly", ["all"])
         income_limit = self.program.year.as_dict()[self.screen.household_size] * self.max_fpl

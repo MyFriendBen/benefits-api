@@ -22,6 +22,8 @@ class MaCmsp(ProgramCalculator):
         member = e.member
 
         # Child must be under age 19
+        if member.age is None:
+            return
         e.condition(member.age < 19)
 
         # Child must be currently uninsured

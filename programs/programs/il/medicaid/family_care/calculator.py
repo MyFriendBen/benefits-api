@@ -12,14 +12,14 @@ class FamilyCare(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
     caretaker_relationships = ["headOfHousehold", "spouse", "domesticPartner", "parent", "fosterParent"]
     dependencies = ["age", "household_size", "relationship", "pregnant", "income_amount", "income_frequency"]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         # Must have base Medicaid eligibility
         e.condition(medicaid_eligible(self.data), messages.must_have_benefit("Medicaid"))
 
         # Check income against 138% FPL (includes 5% disregard)
         self.check_fpl_income(e, self.fpl_percent)
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
 
         # Pregnant members are eligible

@@ -18,7 +18,7 @@
 from django.db import migrations
 
 
-def deduplicate_nc_categories(apps, schema_editor):
+def deduplicate_nc_categories(apps, schema_editor) -> None:
     ProgramCategory = apps.get_model("programs", "ProgramCategory")
     Program = apps.get_model("programs", "Program")
     WhiteLabel = apps.get_model("screener", "WhiteLabel")

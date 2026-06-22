@@ -23,13 +23,19 @@ class NurturingFutures(ProgramCalculator):
     ami_percent = 0.3
     amount = 3_600
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        head_age = self.screen.get_head().age
+        if head_age is None:
+            return
+        if self.screen.household_size is None:
+            return
+
         # location
         counties = counties_from_screen(self.screen)
         e.condition(NurturingFutures.county in counties, messages.location())
 
         # head is 18+
-        e.condition(self.screen.get_head().age >= NurturingFutures.head_min_age)
+        e.condition(head_age >= NurturingFutures.head_min_age)
 
         # has child 3 or younger
         e.condition(self.screen.num_children(age_max=NurturingFutures.child_max_age))

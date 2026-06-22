@@ -19,5 +19,5 @@ class Validation(models.Model):
         return self.screen.uuid
 
     @screen_uuid.setter
-    def screen_uuid(self, value):
+    def screen_uuid(self, value) -> None:
         self.screen = Screen.objects.get(uuid=value)

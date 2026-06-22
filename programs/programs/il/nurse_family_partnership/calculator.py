@@ -45,7 +45,10 @@ class IlNurseFamilyPartnership(ProgramCalculator):
         "pregnant",
     ]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            e.condition(False)
+            return
         # income eligibility: 300% FPL or has WIC (presumed eligibility)
         income_limit = int(self.fpl_percent * self.program.year.get_limit(self.screen.household_size))
         gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
@@ -55,7 +58,7 @@ class IlNurseFamilyPartnership(ProgramCalculator):
 
         e.condition(is_income_eligible or has_wic)
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
 
         # pregnant

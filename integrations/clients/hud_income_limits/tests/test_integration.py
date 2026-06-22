@@ -26,7 +26,7 @@ from screener.models import Screen, WhiteLabel
 class TestHudIntegrationMTSP(TestCase):
     """Integration tests for MTSP (Multifamily Tax Subsidy Project) endpoint."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data."""
         cache.clear()
 
@@ -38,7 +38,7 @@ class TestHudIntegrationMTSP(TestCase):
             name="Colorado Integration Test", code="co_integration", state_code="CO"
         )
 
-    def test_real_api_call_cook_county_il(self):
+    def test_real_api_call_cook_county_il(self) -> None:
         """Test actual API call for Cook County, IL (or use VCR cassette)."""
         screen = Screen.objects.create(
             white_label=self.white_label_il, zipcode="60601", county="Cook", household_size=4, completed=False
@@ -52,7 +52,7 @@ class TestHudIntegrationMTSP(TestCase):
         self.assertGreater(result, 50000, "Cook County 80% AMI should be > $50k")
         self.assertLess(result, 200000, "Cook County 80% AMI should be < $200k")
 
-    def test_real_api_call_denver_county_co(self):
+    def test_real_api_call_denver_county_co(self) -> None:
         """Test actual API call for Denver County, CO."""
         screen = Screen.objects.create(
             white_label=self.white_label_co, zipcode="80202", county="Denver", household_size=4, completed=False
@@ -64,7 +64,7 @@ class TestHudIntegrationMTSP(TestCase):
         self.assertGreater(result, 40000, "Denver County 80% AMI should be > $40k")
         self.assertLess(result, 200000, "Denver County 80% AMI should be < $200k")
 
-    def test_real_api_call_all_percentages(self):
+    def test_real_api_call_all_percentages(self) -> None:
         """Test all MTSP percentage levels with real API."""
         screen = Screen.objects.create(
             white_label=self.white_label_il, zipcode="60601", county="Cook", household_size=4, completed=False
@@ -85,7 +85,7 @@ class TestHudIntegrationMTSP(TestCase):
             next_pct = percentages[i + 1]
             self.assertLess(results[current], results[next_pct], f"{current} should be less than {next_pct}")
 
-    def test_real_api_call_different_household_sizes(self):
+    def test_real_api_call_different_household_sizes(self) -> None:
         """Test different household sizes with real API."""
         household_sizes = [1, 2, 4, 8]
         results = {}
@@ -105,7 +105,7 @@ class TestHudIntegrationMTSP(TestCase):
         self.assertLess(results[2], results[4])
         self.assertLess(results[4], results[8])
 
-    def test_real_api_call_caching(self):
+    def test_real_api_call_caching(self) -> None:
         """Test that caching works with real MTSP API calls."""
         screen = Screen.objects.create(
             white_label=self.white_label_il, zipcode="60601", county="Cook", household_size=4, completed=False
@@ -127,7 +127,7 @@ class TestHudIntegrationMTSP(TestCase):
         # Cached call should be significantly faster
         print(f"MTSP - First call: {first_call_time:.3f}s, Second call: {second_call_time:.3f}s")
 
-    def test_real_api_call_historical_year(self):
+    def test_real_api_call_historical_year(self) -> None:
         """Test MTSP API call with historical year data."""
         screen = Screen.objects.create(
             white_label=self.white_label_il, zipcode="60601", county="Cook", household_size=4, completed=False
@@ -150,7 +150,7 @@ class TestHudIntegrationMTSP(TestCase):
 class TestHudIntegrationStandardIL(TestCase):
     """Integration tests for Standard Section 8 Income Limits endpoint."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data."""
         cache.clear()
 
@@ -162,7 +162,7 @@ class TestHudIntegrationStandardIL(TestCase):
             name="Colorado Integration Test IL", code="co_integration_il", state_code="CO"
         )
 
-    def test_real_api_call_standard_il_cook_county(self):
+    def test_real_api_call_standard_il_cook_county(self) -> None:
         """Test actual Standard IL API call for Cook County, IL."""
         screen = Screen.objects.create(
             white_label=self.white_label_il, zipcode="60601", county="Cook", household_size=4, completed=False
@@ -176,7 +176,7 @@ class TestHudIntegrationStandardIL(TestCase):
         self.assertGreater(result, 50000, "Cook County 80% AMI should be > $50k")
         self.assertLess(result, 200000, "Cook County 80% AMI should be < $200k")
 
-    def test_real_api_call_standard_il_denver_county(self):
+    def test_real_api_call_standard_il_denver_county(self) -> None:
         """Test actual Standard IL API call for Denver County, CO."""
         screen = Screen.objects.create(
             white_label=self.white_label_co, zipcode="80202", county="Denver", household_size=4, completed=False
@@ -188,7 +188,7 @@ class TestHudIntegrationStandardIL(TestCase):
         self.assertGreater(result, 40000, "Denver County 80% AMI should be > $40k")
         self.assertLess(result, 200000, "Denver County 80% AMI should be < $200k")
 
-    def test_real_api_call_standard_il_all_percentages(self):
+    def test_real_api_call_standard_il_all_percentages(self) -> None:
         """Test all Standard IL percentage levels (30%, 50%, 80%) with real API."""
         screen = Screen.objects.create(
             white_label=self.white_label_il, zipcode="60601", county="Cook", household_size=4, completed=False
@@ -207,7 +207,7 @@ class TestHudIntegrationStandardIL(TestCase):
         self.assertLess(results["30%"], results["50%"], "30% should be less than 50%")
         self.assertLess(results["50%"], results["80%"], "50% should be less than 80%")
 
-    def test_real_api_call_standard_il_different_household_sizes(self):
+    def test_real_api_call_standard_il_different_household_sizes(self) -> None:
         """Test different household sizes with Standard IL API."""
         household_sizes = [1, 2, 4, 8]
         results = {}
@@ -227,7 +227,7 @@ class TestHudIntegrationStandardIL(TestCase):
         self.assertLess(results[2], results[4])
         self.assertLess(results[4], results[8])
 
-    def test_real_api_call_standard_il_caching(self):
+    def test_real_api_call_standard_il_caching(self) -> None:
         """Test that caching works with real Standard IL API calls."""
         screen = Screen.objects.create(
             white_label=self.white_label_il, zipcode="60601", county="Cook", household_size=4, completed=False
@@ -249,7 +249,7 @@ class TestHudIntegrationStandardIL(TestCase):
         # Cached call should be significantly faster
         print(f"Standard IL - First call: {first_call_time:.3f}s, Second call: {second_call_time:.3f}s")
 
-    def test_real_api_call_standard_il_historical_year(self):
+    def test_real_api_call_standard_il_historical_year(self) -> None:
         """Test Standard IL API call with historical year data."""
         screen = Screen.objects.create(
             white_label=self.white_label_il, zipcode="60601", county="Cook", household_size=4, completed=False
@@ -269,7 +269,7 @@ class TestHudIntegrationStandardIL(TestCase):
         self.assertGreater(result_2024, 30000)  # Sanity check
         self.assertGreater(result_2025, 30000)  # Sanity check
 
-    def test_mtsp_vs_standard_il_comparison(self):
+    def test_mtsp_vs_standard_il_comparison(self) -> None:
         """Compare MTSP and Standard IL results to verify they may differ."""
         screen = Screen.objects.create(
             white_label=self.white_label_il, zipcode="60601", county="Cook", household_size=4, completed=False
@@ -295,7 +295,7 @@ class TestHudIntegrationStandardIL(TestCase):
 class TestHudIntegrationErrors(TestCase):
     """Integration tests for error conditions across both endpoints."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data."""
         cache.clear()
 
@@ -304,7 +304,7 @@ class TestHudIntegrationErrors(TestCase):
             name="Illinois Integration Test Errors", code="il_integration_errors", state_code="IL"
         )
 
-    def test_mtsp_invalid_state(self):
+    def test_mtsp_invalid_state(self) -> None:
         """Test that invalid state code raises error with real MTSP API."""
         screen = Screen.objects.create(
             white_label=self.white_label_invalid,
@@ -317,7 +317,7 @@ class TestHudIntegrationErrors(TestCase):
         with self.assertRaises(HudIncomeClientError):
             hud_client.get_screen_mtsp_ami(screen, "80%", 2025)
 
-    def test_mtsp_invalid_county(self):
+    def test_mtsp_invalid_county(self) -> None:
         """Test that invalid county raises error with real MTSP API."""
         screen = Screen.objects.create(
             white_label=self.white_label_il,
@@ -332,7 +332,7 @@ class TestHudIntegrationErrors(TestCase):
 
         self.assertIn("County not found", str(context.exception))
 
-    def test_standard_il_invalid_state(self):
+    def test_standard_il_invalid_state(self) -> None:
         """Test that invalid state code raises error with real Standard IL API."""
         screen = Screen.objects.create(
             white_label=self.white_label_invalid,
@@ -345,7 +345,7 @@ class TestHudIntegrationErrors(TestCase):
         with self.assertRaises(HudIncomeClientError):
             hud_client.get_screen_il_ami(screen, "80%", 2025)
 
-    def test_standard_il_invalid_county(self):
+    def test_standard_il_invalid_county(self) -> None:
         """Test that invalid county raises error with real Standard IL API."""
         screen = Screen.objects.create(
             white_label=self.white_label_il,

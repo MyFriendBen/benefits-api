@@ -80,7 +80,7 @@ class Command(BaseCommand):
                 fields.append(field.name)
         return fields
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser) -> None:
         parser.add_argument(
             "--start-date",
             type=str,
@@ -192,7 +192,7 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f"Export completed to {output_dir}"))
 
-    def _export(self, screens, output_dir):
+    def _export(self, screens, output_dir) -> None:
         """Export data as separate CSV files, one per table."""
         # Use subqueries instead of loading all IDs into memory
         screen_ids_subquery = screens.values("id")
@@ -258,7 +258,7 @@ class Command(BaseCommand):
         # Export data dictionary
         self._export_data_dictionary(output_dir)
 
-    def _export_program_eligibility(self, screen_ids_subquery, output_dir):
+    def _export_program_eligibility(self, screen_ids_subquery, output_dir) -> None:
         """Export merged eligibility data with screen_id, only the most recent snapshot per screen."""
         # Get the most recent snapshot ID for each screen using subquery
         latest_snapshots = (
@@ -302,7 +302,7 @@ class Command(BaseCommand):
 
         self.stdout.write(f"  Exported {count} program eligibility records")
 
-    def _export_white_labels(self, screens, output_dir):
+    def _export_white_labels(self, screens, output_dir) -> None:
         """Export white label lookup table for the exported screens."""
         white_label_ids = screens.values_list("white_label_id", flat=True).distinct()
         white_labels = WhiteLabel.objects.filter(id__in=white_label_ids)
@@ -315,7 +315,7 @@ class Command(BaseCommand):
         )
         self.stdout.write(f"  Exported {white_labels.count()} white labels")
 
-    def _export_data_dictionary(self, output_dir):
+    def _export_data_dictionary(self, output_dir) -> None:
         """Export a data dictionary describing all exported fields."""
         dictionary, missing_descriptions = self._build_data_dictionary()
 
@@ -569,7 +569,7 @@ class Command(BaseCommand):
 
         return dictionary, missing_descriptions
 
-    def _get_field_type(self, model, field_name):
+    def _get_field_type(self, model, field_name: str):
         """Get a human-readable type for a model field."""
         # Handle _id suffix for foreign keys
         lookup_name = field_name[:-3] if field_name.endswith("_id") else field_name
@@ -600,7 +600,7 @@ class Command(BaseCommand):
         except Exception:
             return "unknown"
 
-    def _dry_run(self, screens):
+    def _dry_run(self, screens) -> None:
         """Show counts without exporting any data."""
         # Use subqueries instead of loading all IDs into memory
         screen_ids_subquery = screens.values("id")
@@ -632,7 +632,7 @@ class Command(BaseCommand):
         white_label_count = screens.values_list("white_label_id", flat=True).distinct().count()
         self.stdout.write(f"  White labels: {white_label_count}")
 
-    def _compress_output(self, output_dir):
+    def _compress_output(self, output_dir) -> None:
         """Create a zip archive of all CSV files in the output directory."""
         zip_path = f"{output_dir}.zip"
         with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
@@ -643,7 +643,7 @@ class Command(BaseCommand):
 
         self.stdout.write(f"  Created compressed archive: {zip_path}")
 
-    def _write_csv(self, filepath, headers, queryset):
+    def _write_csv(self, filepath, headers, queryset) -> None:
         """Write a queryset to a CSV file using iterator for memory efficiency."""
         with open(filepath, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=headers)

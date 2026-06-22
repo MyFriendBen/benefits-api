@@ -136,7 +136,7 @@ class ProgramAdmin(SecureAdmin):
     ]
     inlines = [ProgramNavigatorInline]
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request) -> bool:
         return False
 
     @admin.display(ordering="name", description="Program")
@@ -201,7 +201,7 @@ class NavigatorAdmin(SecureAdmin):
     ]
     readonly_fields = ["get_associated_programs"]
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request) -> bool:
         return False
 
     def get_str(self, obj):
@@ -261,7 +261,7 @@ class WarningMessageAdmin(SecureAdmin):
     )
     exclude = ["message", "link_url", "link_text"]
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request) -> bool:
         return False
 
     def get_str(self, obj):
@@ -353,7 +353,7 @@ class UrgentNeedAdmin(SecureAdmin):
         ),
     )
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request) -> bool:
         return False
 
     def get_str(self, obj):
@@ -424,7 +424,7 @@ class DocumentAdmin(SecureAdmin):
     list_display = ["get_str", "action_buttons"]
     exclude = ["text", "link_url", "link_text"]
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request) -> bool:
         return False
 
     def get_str(self, obj):
@@ -503,7 +503,7 @@ class TranslationOverrideAdmin(SecureAdmin):
     exclude = ["translation"]
     list_editable = ["active"]
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request) -> bool:
         return False
 
     def get_str(self, obj):
@@ -536,7 +536,7 @@ class ProgramCategoryAdmin(SecureAdmin):
     list_display = ["get_str", "external_name", "action_buttons"]
     exclude = ["name", "description"]
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request) -> bool:
         return False
 
     def get_str(self, obj):
@@ -568,7 +568,7 @@ class UrgentNeedTypeAdmin(SecureAdmin):
     search_fields = ("name",)
     list_display = ["get_str", "icon", "action_buttons"]
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request) -> bool:
         return False
 
     def get_str(self, obj):

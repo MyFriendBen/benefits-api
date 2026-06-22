@@ -32,16 +32,21 @@ class MaCpp(ProgramCalculator):
     max_child_age = 4
     dependencies = ["income_amount", "income_frequency", "household_size", "county"]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         # Cambridge residency required
         # Note: MA stores city name in county field (see MFB-548)
         is_cambridge = self.screen.county == self.eligible_city
         e.condition(is_cambridge, messages.location())
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
+        if self.program.year is None:
+            e.condition(False)
+            return
         member = e.member
 
         # Child must be age 3 or 4
+        if member.age is None:
+            return
         is_preschool_age = self.min_child_age <= member.age <= self.max_child_age
         e.condition(is_preschool_age)
 

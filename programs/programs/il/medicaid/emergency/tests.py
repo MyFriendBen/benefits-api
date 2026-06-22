@@ -23,7 +23,7 @@ class TestIlEmergencyMedicaid(TestCase):
     """Test cases for Illinois Emergency Medicaid calculator."""
 
     @classmethod
-    def setUpTestData(cls):
+    def setUpTestData(cls) -> None:
         """Set up test data that doesn't change between tests."""
         cls.il_white_label = WhiteLabel.objects.create(name="Illinois", code="il", state_code="IL")
         cls.fpl_year = FederalPoveryLimit.objects.create(year="2025", period="2025")
@@ -32,7 +32,7 @@ class TestIlEmergencyMedicaid(TestCase):
         cls.program.year = cls.fpl_year
         cls.program.save()
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up a fresh screen for each test."""
         self.screen = Screen.objects.create(
             agree_to_tos=True,
@@ -51,23 +51,23 @@ class TestIlEmergencyMedicaid(TestCase):
         return IlEmergencyMedicaid(screen, self.program, data, missing_dependencies)
 
     # Calculator Configuration Tests
-    def test_member_amount_is_2000(self):
+    def test_member_amount_is_2000(self) -> None:
         """Test that member amount is $2,000 (average ER visit cost)."""
         calc = self.create_calculator()
         self.assertEqual(calc.member_amount, EMERGENCY_MEDICAID_VALUE)
 
-    def test_insurance_types_is_none(self):
+    def test_insurance_types_is_none(self) -> None:
         """Test that eligible insurance type is 'none' only."""
         calc = self.create_calculator()
         self.assertEqual(calc.insurance_types, ["none"])
 
-    def test_dependencies_includes_insurance(self):
+    def test_dependencies_includes_insurance(self) -> None:
         """Test that dependencies include insurance."""
         calc = self.create_calculator()
         self.assertIn("insurance", calc.dependencies)
 
     # Member Eligibility Tests
-    def test_member_eligible_with_no_insurance(self):
+    def test_member_eligible_with_no_insurance(self) -> None:
         """Test member is eligible when they have no insurance."""
         member = HouseholdMember.objects.create(
             screen=self.screen,
@@ -83,7 +83,7 @@ class TestIlEmergencyMedicaid(TestCase):
         # Test member insurance check
         self.assertTrue(member.insurance.has_insurance_types(["none"]))
 
-    def test_member_ineligible_with_employer_insurance(self):
+    def test_member_ineligible_with_employer_insurance(self) -> None:
         """Test member is ineligible when they have employer insurance."""
         member = HouseholdMember.objects.create(
             screen=self.screen,
@@ -94,7 +94,7 @@ class TestIlEmergencyMedicaid(TestCase):
 
         self.assertFalse(member.insurance.has_insurance_types(["none"]))
 
-    def test_member_ineligible_with_medicaid(self):
+    def test_member_ineligible_with_medicaid(self) -> None:
         """Test member is ineligible when they already have Medicaid."""
         member = HouseholdMember.objects.create(
             screen=self.screen,
@@ -105,7 +105,7 @@ class TestIlEmergencyMedicaid(TestCase):
 
         self.assertFalse(member.insurance.has_insurance_types(["none"]))
 
-    def test_member_ineligible_with_medicare(self):
+    def test_member_ineligible_with_medicare(self) -> None:
         """Test member is ineligible when they have Medicare."""
         member = HouseholdMember.objects.create(
             screen=self.screen,
@@ -117,7 +117,7 @@ class TestIlEmergencyMedicaid(TestCase):
         self.assertFalse(member.insurance.has_insurance_types(["none"]))
 
     # Household with Multiple Members Tests
-    def test_only_uninsured_members_eligible(self):
+    def test_only_uninsured_members_eligible(self) -> None:
         """Test that only uninsured members are eligible in a mixed household."""
         self.screen.household_size = 2
         self.screen.save()
@@ -143,7 +143,7 @@ class TestIlEmergencyMedicaid(TestCase):
         self.assertTrue(uninsured_member.insurance.has_insurance_types(["none"]))
 
     # Edge Case / Error Handling Tests
-    def test_handles_zero_age_member(self):
+    def test_handles_zero_age_member(self) -> None:
         """Test that calculator handles newborn (age 0) without error."""
         member = HouseholdMember.objects.create(
             screen=self.screen,
@@ -157,7 +157,7 @@ class TestIlEmergencyMedicaid(TestCase):
         self.assertIsNotNone(calc)
         self.assertTrue(member.insurance.has_insurance_types(["none"]))
 
-    def test_handles_member_without_insurance_record(self):
+    def test_handles_member_without_insurance_record(self) -> None:
         """Test behavior when Insurance object doesn't exist for member."""
         member = HouseholdMember.objects.create(
             screen=self.screen,
@@ -174,7 +174,7 @@ class TestIlEmergencyMedicaid(TestCase):
         with self.assertRaises(HouseholdMember.insurance.RelatedObjectDoesNotExist):
             _ = member.insurance
 
-    def test_handles_empty_household(self):
+    def test_handles_empty_household(self) -> None:
         """Test that calculator handles screen with no members."""
         self.screen.household_size = 0
         self.screen.save()
@@ -184,7 +184,7 @@ class TestIlEmergencyMedicaid(TestCase):
         self.assertIsNotNone(calc)
         self.assertEqual(calc.member_amount, EMERGENCY_MEDICAID_VALUE)
 
-    def test_handles_very_old_member(self):
+    def test_handles_very_old_member(self) -> None:
         """Test that calculator handles elderly members (age 100+)."""
         member = HouseholdMember.objects.create(
             screen=self.screen,

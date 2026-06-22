@@ -19,13 +19,13 @@ from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibi
 
 
 def make_calculator(
-    has_head_start=False,
-    has_snap=False,
-    has_tanf=False,
-    has_ssi=False,
-    household_income=0,
-    household_size=3,
-    fpl_limit=27320,
+    has_head_start: bool = False,
+    has_snap: bool = False,
+    has_tanf: bool = False,
+    has_ssi: bool = False,
+    household_income: int = 0,
+    household_size: int = 3,
+    fpl_limit: int = 27320,
 ):
     mock_program = Mock()
     mock_program.year.get_limit.return_value = fpl_limit
@@ -48,7 +48,7 @@ def make_calculator(
     return WaHeadStart(mock_screen, mock_program, {}, mock_missing_deps)
 
 
-def make_member(age=30, pregnant=False, relationship="child"):
+def make_member(age: int = 30, pregnant: bool = False, relationship: str = "child"):
     member = Mock()
     member.age = age
     member.pregnant = pregnant
@@ -63,26 +63,26 @@ def make_eligible_member_e(member):
 
 
 class TestWaHeadStartClassAttributes(TestCase):
-    def test_is_subclass_of_program_calculator(self):
+    def test_is_subclass_of_program_calculator(self) -> None:
         self.assertTrue(issubclass(WaHeadStart, ProgramCalculator))
 
-    def test_is_registered_in_wa_calculators(self):
+    def test_is_registered_in_wa_calculators(self) -> None:
         self.assertIn("wa_head_start", wa_calculators)
         self.assertEqual(wa_calculators["wa_head_start"], WaHeadStart)
 
-    def test_hs_min_age(self):
+    def test_hs_min_age(self) -> None:
         self.assertEqual(WaHeadStart.hs_min_age, 3)
 
-    def test_hs_max_age(self):
+    def test_hs_max_age(self) -> None:
         self.assertEqual(WaHeadStart.hs_max_age, 5)
 
-    def test_ehs_max_age(self):
+    def test_ehs_max_age(self) -> None:
         self.assertEqual(WaHeadStart.ehs_max_age, 3)
 
-    def test_fpl_percent_is_1(self):
+    def test_fpl_percent_is_1(self) -> None:
         self.assertEqual(WaHeadStart.fpl_percent, 1.0)
 
-    def test_member_amount_is_10381(self):
+    def test_member_amount_is_10381(self) -> None:
         self.assertEqual(WaHeadStart.member_amount, 10_381)
 
 
@@ -96,39 +96,39 @@ class TestWaHeadStartMemberEligibility(TestCase):
         return e.eligible
 
     # EHS path
-    def test_age_0_is_eligible_ehs(self):
+    def test_age_0_is_eligible_ehs(self) -> None:
         self.assertTrue(self._run(make_member(age=0)))
 
-    def test_age_1_is_eligible_ehs(self):
+    def test_age_1_is_eligible_ehs(self) -> None:
         self.assertTrue(self._run(make_member(age=1)))
 
-    def test_age_2_is_eligible_ehs(self):
+    def test_age_2_is_eligible_ehs(self) -> None:
         self.assertTrue(self._run(make_member(age=2)))
 
-    def test_pregnant_adult_is_eligible_ehs(self):
+    def test_pregnant_adult_is_eligible_ehs(self) -> None:
         self.assertTrue(self._run(make_member(age=30, pregnant=True, relationship="headOfHousehold")))
 
     # HS Preschool path
-    def test_age_3_is_eligible_hs(self):
+    def test_age_3_is_eligible_hs(self) -> None:
         self.assertTrue(self._run(make_member(age=3)))
 
-    def test_age_4_is_eligible_hs(self):
+    def test_age_4_is_eligible_hs(self) -> None:
         self.assertTrue(self._run(make_member(age=4)))
 
-    def test_age_5_is_eligible_hs(self):
+    def test_age_5_is_eligible_hs(self) -> None:
         self.assertTrue(self._run(make_member(age=5)))
 
     # Ineligible
-    def test_age_6_is_ineligible(self):
+    def test_age_6_is_ineligible(self) -> None:
         self.assertFalse(self._run(make_member(age=6)))
 
-    def test_age_7_is_ineligible(self):
+    def test_age_7_is_ineligible(self) -> None:
         self.assertFalse(self._run(make_member(age=7)))
 
-    def test_age_30_not_pregnant_is_ineligible(self):
+    def test_age_30_not_pregnant_is_ineligible(self) -> None:
         self.assertFalse(self._run(make_member(age=30, pregnant=False)))
 
-    def test_age_none_is_ineligible(self):
+    def test_age_none_is_ineligible(self) -> None:
         self.assertFalse(self._run(make_member(age=None)))
 
 
@@ -143,17 +143,17 @@ class TestWaHeadStartHouseholdExclusion(TestCase):
         calc.household_eligible(e)
         return e.eligible
 
-    def test_already_has_head_start_is_ineligible(self):
+    def test_already_has_head_start_is_ineligible(self) -> None:
         self.assertFalse(self._run(has_head_start=True, household_income=10000, fpl_limit=27320))
 
-    def test_not_enrolled_is_eligible_when_income_qualifies(self):
+    def test_not_enrolled_is_eligible_when_income_qualifies(self) -> None:
         self.assertTrue(self._run(has_head_start=False, household_income=10000, fpl_limit=27320))
 
 
 class TestWaHeadStartIncomeEligibility(TestCase):
     """Income test: 100% FPL threshold."""
 
-    def _run(self, household_income, fpl_limit=27320):
+    def _run(self, household_income, fpl_limit: int = 27320):
         calc = make_calculator(household_income=household_income, fpl_limit=fpl_limit)
         child = make_member(age=4)
         e = Eligibility()
@@ -161,13 +161,13 @@ class TestWaHeadStartIncomeEligibility(TestCase):
         calc.household_eligible(e)
         return e.eligible
 
-    def test_income_below_fpl_is_eligible(self):
+    def test_income_below_fpl_is_eligible(self) -> None:
         self.assertTrue(self._run(household_income=14400))
 
-    def test_income_exactly_at_fpl_is_eligible(self):
+    def test_income_exactly_at_fpl_is_eligible(self) -> None:
         self.assertTrue(self._run(household_income=27320))
 
-    def test_income_one_dollar_above_fpl_is_ineligible(self):
+    def test_income_one_dollar_above_fpl_is_ineligible(self) -> None:
         # No categorical pathway configured — only income gate
         self.assertFalse(self._run(household_income=27321))
 
@@ -175,7 +175,9 @@ class TestWaHeadStartIncomeEligibility(TestCase):
 class TestWaHeadStartCategoricalEligibility(TestCase):
     """TANF, SSI, SNAP, and foster care bypass the income test."""
 
-    def _run_with_benefit(self, has_tanf=False, has_ssi=False, has_snap=False, household_income=99999):
+    def _run_with_benefit(
+        self, has_tanf: bool = False, has_ssi: bool = False, has_snap: bool = False, household_income: int = 99999
+    ):
         calc = make_calculator(
             has_tanf=has_tanf,
             has_ssi=has_ssi,
@@ -189,19 +191,19 @@ class TestWaHeadStartCategoricalEligibility(TestCase):
         calc.household_eligible(e)
         return e.eligible
 
-    def test_tanf_bypasses_income_test(self):
+    def test_tanf_bypasses_income_test(self) -> None:
         self.assertTrue(self._run_with_benefit(has_tanf=True))
 
-    def test_ssi_bypasses_income_test(self):
+    def test_ssi_bypasses_income_test(self) -> None:
         self.assertTrue(self._run_with_benefit(has_ssi=True))
 
-    def test_snap_bypasses_income_test(self):
+    def test_snap_bypasses_income_test(self) -> None:
         self.assertTrue(self._run_with_benefit(has_snap=True))
 
-    def test_no_categorical_and_high_income_is_ineligible(self):
+    def test_no_categorical_and_high_income_is_ineligible(self) -> None:
         self.assertFalse(self._run_with_benefit())
 
-    def test_foster_child_bypasses_income_test(self):
+    def test_foster_child_bypasses_income_test(self) -> None:
         calc = make_calculator(household_income=99999, fpl_limit=27320)
         foster = make_member(age=4, relationship="fosterChild")
         e = Eligibility()
@@ -209,7 +211,7 @@ class TestWaHeadStartCategoricalEligibility(TestCase):
         calc.household_eligible(e)
         self.assertTrue(e.eligible)
 
-    def test_non_foster_child_does_not_trigger_foster_bypass(self):
+    def test_non_foster_child_does_not_trigger_foster_bypass(self) -> None:
         calc = make_calculator(household_income=99999, fpl_limit=27320)
         child = make_member(age=4, relationship="child")
         e = Eligibility()
@@ -221,14 +223,14 @@ class TestWaHeadStartCategoricalEligibility(TestCase):
 class TestWaHeadStartBenefitValue(TestCase):
     """member_amount = $10,381 per eligible participant."""
 
-    def test_single_eligible_member_value(self):
+    def test_single_eligible_member_value(self) -> None:
         calc = make_calculator(household_income=10000, fpl_limit=27320)
         member = make_member(age=4)
         e = MemberEligibility(member)
         e.eligible = True
         self.assertEqual(calc.member_value(member), 10_381)
 
-    def test_two_eligible_members_double_value(self):
+    def test_two_eligible_members_double_value(self) -> None:
         """Full calc() path: ages 4 + 2 → 2 × $10,381 = $20,762."""
         mock_program = Mock()
         mock_program.year.get_limit.return_value = 27320
@@ -254,7 +256,7 @@ class TestWaHeadStartBenefitValue(TestCase):
         self.assertTrue(result.eligible)
         self.assertEqual(result.value, 20_762)
 
-    def test_pregnant_woman_alone_value(self):
+    def test_pregnant_woman_alone_value(self) -> None:
         """Pregnant woman (no children) → 1 × $10,381."""
         mock_program = Mock()
         mock_program.year.get_limit.return_value = 15960

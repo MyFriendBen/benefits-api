@@ -8,11 +8,11 @@ class CoEmergencyMedicaid(ProgramCalculator):
     insurance_types = ["none"]
     dependencies = ["insurance"]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         # Does qualify for Medicaid
         e.condition(medicaid_eligible(self.data), messages.must_have_benefit("Medicaid"))
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
 
         # insurance

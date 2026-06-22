@@ -17,7 +17,7 @@ DIAPER_BANK_COUNTIES = [
 class FamilyResourceCenterAssociation(UrgentNeedFunction):
     ineligible_counties = DIAPER_BANK_COUNTIES
 
-    def eligible(self):
+    def eligible(self) -> bool:
         """
         Return True for users who live in an eligible county
         """
@@ -28,7 +28,7 @@ class FamilyResourceCenterAssociation(UrgentNeedFunction):
 class NationalDiaperBank(UrgentNeedFunction):
     eligible_counties = DIAPER_BANK_COUNTIES
 
-    def eligible(self):
+    def eligible(self) -> bool:
         """
         Return True for users who live in an eligible county
         """

@@ -3,7 +3,7 @@
 from django.db import migrations
 
 
-def connect_translations(apps, schema_editor):
+def connect_translations(apps, schema_editor) -> None:
     Program = apps.get_model("programs", "Program")
     Translation = apps.get_model("translations", "Translation")
 

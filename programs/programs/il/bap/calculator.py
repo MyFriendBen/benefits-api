@@ -18,7 +18,9 @@ class IlBenefitAccess(IlTransportationMixin, ProgramCalculator):
         3: 55_500,
     }
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.screen.household_size is None:
+            return
         household_size = self.screen.household_size
         gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
 

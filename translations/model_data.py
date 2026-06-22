@@ -12,7 +12,7 @@ class ModelDataController(Generic[T]):
     class DeferCreation(Exception):
         pass
 
-    def __init__(self, instance: T):
+    def __init__(self, instance: T) -> None:
         self.instance = instance
 
     @property
@@ -26,7 +26,7 @@ class ModelDataController(Generic[T]):
     def to_model_data(self) -> DataType:
         return {}
 
-    def from_model_data(self, data: DataType):
+    def from_model_data(self, data: DataType) -> None:
         pass
 
     @classmethod

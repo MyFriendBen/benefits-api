@@ -17,7 +17,7 @@ def snap_ineligible_student(screen: Screen, member: HouseholdMember) -> bool:
         return False
 
     # Exemption 1 and 2: Age exemptions (under 18 or 50+)
-    if member.age < 18 or member.age >= 50:
+    if (member.age or 0) < 18 or (member.age or 0) >= 50:
         return False
 
     # Exemption 3: Any disability type

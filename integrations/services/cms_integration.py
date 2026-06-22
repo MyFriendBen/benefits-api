@@ -11,7 +11,7 @@ from screener.models import Screen, WhiteLabel
 
 
 class CmsIntegration:
-    def __init__(self, user: User, screen: Screen):
+    def __init__(self, user: User, screen: Screen) -> None:
         self.user = user
         self.screen = screen
 
@@ -21,7 +21,7 @@ class CmsIntegration:
     def update(self):
         raise NotImplementedError("")
 
-    def should_add(self):
+    def should_add(self) -> bool:
         # additional conditions to determine if we should add the user to the CMS
         # for example, one of us might want to add tests, while the other does not
         return True
@@ -58,7 +58,7 @@ class HubSpotIntegration(CmsIntegration):
             "send_updates": self.user.send_updates,
         }
 
-    def __init__(self, user: User, screen: Screen):
+    def __init__(self, user: User, screen: Screen) -> None:
         self.api_client = HubSpot(access_token=self.access_token)
 
         super().__init__(user, screen)
@@ -79,12 +79,12 @@ class HubSpotIntegration(CmsIntegration):
 
         return contact_id
 
-    def update(self):
+    def update(self) -> None:
         data = self._hubspot_send_offers_data()
 
         self._update_contact(self.user.external_id, data)
 
-    def should_add(self):
+    def should_add(self) -> bool:
         if settings.DEBUG:
             return False
         if self.user is None or self.screen.is_test_data is None:
@@ -116,7 +116,7 @@ class HubSpotIntegration(CmsIntegration):
         return api_response
 
     @classmethod
-    def bulk_update(cls, data):
+    def bulk_update(cls, data) -> None:
         batch_input_simple_public_object_batch_input = BatchInputSimplePublicObjectBatchInput(data)
         cls.api_client.crm.contacts.batch_api.update(
             batch_input_simple_public_object_batch_input=batch_input_simple_public_object_batch_input

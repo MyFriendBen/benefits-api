@@ -19,7 +19,7 @@ class EnergyCalculatorInductionLendingProgram(ProgramCalculator):
     county = "Boulder County"
     dependencies = ["energy_calculator", "zipcode"]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         # must be a Boulder County resident
         counties = counties_from_screen(self.screen)
         e.condition(self.county in counties)

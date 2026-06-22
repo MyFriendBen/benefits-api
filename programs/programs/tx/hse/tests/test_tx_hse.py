@@ -19,7 +19,9 @@ from programs.programs.tx.hse.calculator import TxHse
 from programs.programs.calc import ProgramCalculator, Eligibility
 
 
-def make_member(age: int | None = 40, disabled=False, visually_impaired=False, long_term_disability=False):
+def make_member(
+    age: int | None = 40, disabled: bool = False, visually_impaired: bool = False, long_term_disability: bool = False
+):
     member = Mock()
     member.age = age
     member.disabled = disabled
@@ -29,7 +31,7 @@ def make_member(age: int | None = 40, disabled=False, visually_impaired=False, l
     return member
 
 
-def make_calculator(has_mortgage=True, members=None):
+def make_calculator(has_mortgage: bool = True, members=None):
     if members is None:
         members = [make_member()]
 
@@ -51,128 +53,128 @@ def run_household_eligible(calc):
 
 
 class TestTxHseClassAttributes(TestCase):
-    def test_is_subclass_of_program_calculator(self):
+    def test_is_subclass_of_program_calculator(self) -> None:
         self.assertTrue(issubclass(TxHse, ProgramCalculator))
 
-    def test_is_registered_in_tx_calculators(self):
+    def test_is_registered_in_tx_calculators(self) -> None:
         self.assertIn("tx_hse", tx_calculators)
         self.assertEqual(tx_calculators["tx_hse"], TxHse)
 
-    def test_base_amount_is_800(self):
+    def test_base_amount_is_800(self) -> None:
         self.assertEqual(TxHse.amount, 800)
 
-    def test_senior_disabled_amount_is_1200(self):
+    def test_senior_disabled_amount_is_1200(self) -> None:
         self.assertEqual(TxHse.senior_disabled_amount, 1200)
 
-    def test_senior_age_is_65(self):
+    def test_senior_age_is_65(self) -> None:
         self.assertEqual(TxHse.senior_age, 65)
 
-    def test_blind_senior_age_is_55(self):
+    def test_blind_senior_age_is_55(self) -> None:
         self.assertEqual(TxHse.blind_senior_age, 55)
 
-    def test_age_in_dependencies(self):
+    def test_age_in_dependencies(self) -> None:
         self.assertIn("age", TxHse.dependencies)
 
 
 class TestTxHseEligibility(TestCase):
-    def test_homeowner_with_mortgage_is_eligible(self):
+    def test_homeowner_with_mortgage_is_eligible(self) -> None:
         calc = make_calculator(has_mortgage=True)
         self.assertTrue(run_household_eligible(calc))
 
-    def test_no_mortgage_is_ineligible(self):
+    def test_no_mortgage_is_ineligible(self) -> None:
         calc = make_calculator(has_mortgage=False)
         self.assertFalse(run_household_eligible(calc))
 
 
 class TestTxHseValue(TestCase):
-    def test_non_senior_non_disabled_gets_800(self):
+    def test_non_senior_non_disabled_gets_800(self) -> None:
         members = [make_member(age=40)]
         calc = make_calculator(members=members)
         self.assertEqual(calc.household_value(), 800)
 
-    def test_member_age_65_gets_1200(self):
+    def test_member_age_65_gets_1200(self) -> None:
         members = [make_member(age=65)]
         calc = make_calculator(members=members)
         self.assertEqual(calc.household_value(), 1200)
 
-    def test_member_age_80_gets_1200(self):
+    def test_member_age_80_gets_1200(self) -> None:
         members = [make_member(age=80)]
         calc = make_calculator(members=members)
         self.assertEqual(calc.household_value(), 1200)
 
-    def test_member_age_64_gets_800(self):
+    def test_member_age_64_gets_800(self) -> None:
         members = [make_member(age=64)]
         calc = make_calculator(members=members)
         self.assertEqual(calc.household_value(), 800)
 
-    def test_disabled_member_gets_1200(self):
+    def test_disabled_member_gets_1200(self) -> None:
         members = [make_member(age=40, disabled=True)]
         calc = make_calculator(members=members)
         self.assertEqual(calc.household_value(), 1200)
 
-    def test_visually_impaired_age_55_gets_1200(self):
+    def test_visually_impaired_age_55_gets_1200(self) -> None:
         members = [make_member(age=55, visually_impaired=True)]
         calc = make_calculator(members=members)
         self.assertEqual(calc.household_value(), 1200)
 
-    def test_visually_impaired_age_60_gets_1200(self):
+    def test_visually_impaired_age_60_gets_1200(self) -> None:
         members = [make_member(age=60, visually_impaired=True)]
         calc = make_calculator(members=members)
         self.assertEqual(calc.household_value(), 1200)
 
-    def test_visually_impaired_under_55_gets_800(self):
+    def test_visually_impaired_under_55_gets_800(self) -> None:
         members = [make_member(age=40, visually_impaired=True)]
         calc = make_calculator(members=members)
         self.assertEqual(calc.household_value(), 800)
 
-    def test_visually_impaired_age_54_gets_800(self):
+    def test_visually_impaired_age_54_gets_800(self) -> None:
         members = [make_member(age=54, visually_impaired=True)]
         calc = make_calculator(members=members)
         self.assertEqual(calc.household_value(), 800)
 
-    def test_long_term_disability_gets_1200(self):
+    def test_long_term_disability_gets_1200(self) -> None:
         members = [make_member(age=40, long_term_disability=True)]
         calc = make_calculator(members=members)
         self.assertEqual(calc.household_value(), 1200)
 
-    def test_mixed_household_with_senior_gets_1200(self):
+    def test_mixed_household_with_senior_gets_1200(self) -> None:
         members = [make_member(age=40), make_member(age=70)]
         calc = make_calculator(members=members)
         self.assertEqual(calc.household_value(), 1200)
 
-    def test_mixed_household_no_senior_no_disability_gets_800(self):
+    def test_mixed_household_no_senior_no_disability_gets_800(self) -> None:
         members = [make_member(age=30), make_member(age=50)]
         calc = make_calculator(members=members)
         self.assertEqual(calc.household_value(), 800)
 
-    def test_zero_member_household_gets_800(self):
+    def test_zero_member_household_gets_800(self) -> None:
         calc = make_calculator(members=[])
         self.assertEqual(calc.household_value(), 800)
 
-    def test_member_with_none_age_does_not_raise(self):
+    def test_member_with_none_age_does_not_raise(self) -> None:
         members = [make_member(age=None)]
         calc = make_calculator(members=members)
         self.assertEqual(calc.household_value(), 800)
 
-    def test_senior_and_disabled_member_gets_1200(self):
+    def test_senior_and_disabled_member_gets_1200(self) -> None:
         members = [make_member(age=70, disabled=True)]
         calc = make_calculator(members=members)
         self.assertEqual(calc.household_value(), 1200)
 
 
 class TestTxHseCalc(TestCase):
-    def test_calc_eligible_with_mortgage(self):
+    def test_calc_eligible_with_mortgage(self) -> None:
         calc = make_calculator(has_mortgage=True, members=[make_member(age=40)])
         e = calc.calc()
         self.assertTrue(e.eligible)
         self.assertEqual(e.value, 800)
 
-    def test_calc_ineligible_without_mortgage(self):
+    def test_calc_ineligible_without_mortgage(self) -> None:
         calc = make_calculator(has_mortgage=False, members=[make_member(age=40)])
         e = calc.calc()
         self.assertFalse(e.eligible)
 
-    def test_calc_eligible_senior_gets_1200(self):
+    def test_calc_eligible_senior_gets_1200(self) -> None:
         calc = make_calculator(has_mortgage=True, members=[make_member(age=65)])
         e = calc.calc()
         self.assertTrue(e.eligible)

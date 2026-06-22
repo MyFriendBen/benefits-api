@@ -11,7 +11,7 @@ class PropertyCreditRebate(ProgramCalculator):
     income_limit = {"single": 18_704, "married": 25_261}
     dependencies = ["age", "income_frequency", "income_amount", "relationship"]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         # Income test
         relationship_status = "single"
         for _, married_to in self.screen.relationship_map().items():
@@ -30,8 +30,10 @@ class PropertyCreditRebate(ProgramCalculator):
     def _has_expense(self):
         return self.screen.has_expense(self.expenses)
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
+        if member.age is None:
+            return
 
         # disabled
         is_disabled = self._member_is_disabled(member)
@@ -47,6 +49,6 @@ class PropertyCreditRebate(ProgramCalculator):
     def _member_is_disabled(self, member: HouseholdMember):
         return member.has_disability() and member.age > self.disabled_min_age
 
-    def _is_surviving_spouse(self, member: HouseholdMember):
+    def _is_surviving_spouse(self, member: HouseholdMember) -> bool:
         # we don't ask this question in the normal MFB route
         return False

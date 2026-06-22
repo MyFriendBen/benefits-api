@@ -32,7 +32,10 @@ class Cha(ProgramCalculator):
     min_head_of_household_age = 18
     dependencies = ["income_amount", "income_frequency", "household_size", "county"]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            e.condition(False)
+            return
         # Location: Must be in Cambridge
         # (Note: currently, our MA implementation stores city name in 'county' field, see MFB-548 for details)
         is_cambridge = self.screen.county == self.eligible_city
@@ -40,6 +43,8 @@ class Cha(ProgramCalculator):
 
         # Age: Head of household must be at least 18 years old
         head_of_household = self.screen.get_head()
+        if head_of_household is None:
+            return
         e.condition(head_of_household.age >= self.min_head_of_household_age, messages.older_than(18))
 
         # Income test: ≤80% AMI for Family Housing and Senior/Disabled Housing

@@ -9,7 +9,7 @@ class Cache:
     expire_time = 0
     default = 0
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.data = self.default
         self.last_update = timezone.now() - datetime.timedelta(seconds=self.expire_time)
         self.invalid = True
@@ -35,7 +35,7 @@ class Cache:
             level = "error" if self.invalid else "warning"
             capture_exception(e, level=level)
 
-    def save(self, data):
+    def save(self, data) -> None:
         self.data = data
 
     def should_update(self):

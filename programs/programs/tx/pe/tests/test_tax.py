@@ -21,7 +21,7 @@ from programs.programs.tx.pe.tax import TxEitc, TxCtc, TxAca
 class TestTxEitc(TestCase):
     """Tests for TxEitc calculator class."""
 
-    def test_exists_and_is_subclass_of_policy_engine_tax_unit_calculator(self):
+    def test_exists_and_is_subclass_of_policy_engine_tax_unit_calculator(self) -> None:
         """
         Test that TxEitc calculator class exists and is registered.
 
@@ -34,7 +34,7 @@ class TestTxEitc(TestCase):
         self.assertIsNotNone(TxEitc.pe_outputs)
         self.assertGreater(len(TxEitc.pe_outputs), 0)
 
-    def test_is_registered_in_tx_pe_calculators(self):
+    def test_is_registered_in_tx_pe_calculators(self) -> None:
         """Test that TX EITC is registered in the calculators dictionary."""
         # Verify tx_eitc is in the calculators dictionary
         self.assertIn("tx_eitc", tx_pe_calculators)
@@ -42,7 +42,7 @@ class TestTxEitc(TestCase):
         # Verify it points to the correct class
         self.assertEqual(tx_pe_calculators["tx_eitc"], TxEitc)
 
-    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self):
+    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self) -> None:
         """
         Test that TxEitc has all expected pe_inputs from parent and TX-specific.
 
@@ -59,7 +59,7 @@ class TestTxEitc(TestCase):
         for parent_input in Eitc.pe_inputs:
             self.assertIn(parent_input, TxEitc.pe_inputs)
 
-    def test_pe_inputs_includes_tx_state_code_dependency(self):
+    def test_pe_inputs_includes_tx_state_code_dependency(self) -> None:
         """
         Test that TxStateCodeDependency is properly added to TX EITC inputs.
 
@@ -73,7 +73,7 @@ class TestTxEitc(TestCase):
         self.assertEqual(TxStateCodeDependency.state, "TX")
         self.assertEqual(TxStateCodeDependency.field, "state_code")
 
-    def test_pe_name_matches_federal_eitc(self):
+    def test_pe_name_matches_federal_eitc(self) -> None:
         """
         Test that TxEitc uses the same pe_name as federal EITC.
 
@@ -83,7 +83,7 @@ class TestTxEitc(TestCase):
         self.assertEqual(TxEitc.pe_name, "eitc")
         self.assertEqual(TxEitc.pe_name, Eitc.pe_name)
 
-    def test_pe_outputs_matches_federal_eitc(self):
+    def test_pe_outputs_matches_federal_eitc(self) -> None:
         """
         Test that TxEitc uses the same pe_outputs as federal EITC.
 
@@ -96,7 +96,7 @@ class TestTxEitc(TestCase):
 class TestTxCtc(TestCase):
     """Tests for TxCtc calculator class."""
 
-    def test_exists_and_is_subclass_of_ctc(self):
+    def test_exists_and_is_subclass_of_ctc(self) -> None:
         """
         Test that TxCtc calculator class exists and is registered.
 
@@ -114,7 +114,7 @@ class TestTxCtc(TestCase):
         self.assertIsNotNone(TxCtc.pe_inputs)
         self.assertGreater(len(TxCtc.pe_inputs), 0)
 
-    def test_is_registered_in_tx_pe_calculators(self):
+    def test_is_registered_in_tx_pe_calculators(self) -> None:
         """Test that TX CTC is registered in the calculators dictionary."""
         # Verify tx_ctc is in the calculators dictionary
         self.assertIn("tx_ctc", tx_pe_calculators)
@@ -122,7 +122,7 @@ class TestTxCtc(TestCase):
         # Verify it points to the correct class
         self.assertEqual(tx_pe_calculators["tx_ctc"], TxCtc)
 
-    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self):
+    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self) -> None:
         """
         Test that TxCtc has all expected pe_inputs from parent and TX-specific.
 
@@ -139,7 +139,7 @@ class TestTxCtc(TestCase):
         for parent_input in Ctc.pe_inputs:
             self.assertIn(parent_input, TxCtc.pe_inputs)
 
-    def test_pe_inputs_includes_tx_state_code_dependency(self):
+    def test_pe_inputs_includes_tx_state_code_dependency(self) -> None:
         """
         Test that TxStateCodeDependency is properly added to TX CTC inputs.
 
@@ -157,7 +157,7 @@ class TestTxCtc(TestCase):
 class TestTxAca(TestCase):
     """Tests for TxAca calculator class."""
 
-    def test_exists_and_is_subclass_of_aca(self):
+    def test_exists_and_is_subclass_of_aca(self) -> None:
         """
         Test that TxAca calculator class exists and inherits from Aca.
 
@@ -171,7 +171,7 @@ class TestTxAca(TestCase):
         # Verify it inherits from Aca
         self.assertTrue(issubclass(TxAca, Aca))
 
-    def test_is_registered_in_tx_pe_calculators(self):
+    def test_is_registered_in_tx_pe_calculators(self) -> None:
         """Test that TX ACA is registered in the calculators dictionary."""
         # Verify tx_aca is in the calculators dictionary
         self.assertIn("tx_aca", tx_pe_calculators)
@@ -179,7 +179,7 @@ class TestTxAca(TestCase):
         # Verify it points to the correct class
         self.assertEqual(tx_pe_calculators["tx_aca"], TxAca)
 
-    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self):
+    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self) -> None:
         """
         Test that TxAca has all expected pe_inputs from parent and TX-specific.
 
@@ -196,7 +196,7 @@ class TestTxAca(TestCase):
         for parent_input in Aca.pe_inputs:
             self.assertIn(parent_input, TxAca.pe_inputs)
 
-    def test_pe_inputs_includes_tx_state_code_dependency(self):
+    def test_pe_inputs_includes_tx_state_code_dependency(self) -> None:
         """
         Test that TxStateCodeDependency is properly added to TX ACA inputs.
 
@@ -210,7 +210,7 @@ class TestTxAca(TestCase):
         self.assertEqual(TxStateCodeDependency.state, "TX")
         self.assertEqual(TxStateCodeDependency.field, "state_code")
 
-    def test_pe_name_matches_federal_aca(self):
+    def test_pe_name_matches_federal_aca(self) -> None:
         """
         Test that TxAca uses the same pe_name as federal ACA.
 
@@ -220,7 +220,7 @@ class TestTxAca(TestCase):
         self.assertEqual(TxAca.pe_name, "aca_ptc")
         self.assertEqual(TxAca.pe_name, Aca.pe_name)
 
-    def test_pe_outputs_inherits_from_federal_aca(self):
+    def test_pe_outputs_inherits_from_federal_aca(self) -> None:
         """
         Test that TxAca uses the same pe_outputs as federal ACA.
 

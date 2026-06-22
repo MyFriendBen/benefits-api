@@ -4,7 +4,7 @@ from django.db import migrations
 from django.conf import settings
 
 
-def migrate_translations(apps, schema_editor):
+def migrate_translations(apps, schema_editor) -> None:
     Program = apps.get_model("programs", "Program")
     Translation = apps.get_model("translations", "Translation")
 

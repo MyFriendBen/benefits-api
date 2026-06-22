@@ -20,7 +20,7 @@ class CoCollegeInvestFirstStep(ProgramCalculator):
     child_relationships = ["child", "stepChild", "fosterChild", "grandChild"]
     dependencies = ["age", "relationship", "birth_year"]
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
 
         e.condition(member.relationship in self.child_relationships)

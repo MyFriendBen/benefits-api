@@ -3,7 +3,7 @@
 from django.db import migrations
 
 
-def update_category_icon_names(apps, _):
+def update_category_icon_names(apps, _) -> None:
     CategoryIconName = apps.get_model("programs", "CategoryIconName")
 
     name_mapping = {

@@ -82,7 +82,7 @@ class ReadabilityChecker:
         en_threshold: Optional[float] = None,
         es_threshold: Optional[float] = None,
         min_words: Optional[int] = None,
-    ):
+    ) -> None:
         self.en_threshold = en_threshold if en_threshold is not None else self.ENGLISH_THRESHOLD
         self.es_threshold = es_threshold if es_threshold is not None else self.SPANISH_THRESHOLD
         self.min_word_count = min_words if min_words is not None else self.DEFAULT_MIN_WORD_COUNT
@@ -165,7 +165,7 @@ class ReadabilityChecker:
 class Command(BaseCommand):
     help = "Check readability of translations to ensure content accessibility"
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser) -> None:
         parser.add_argument(
             "--language",
             "-l",
@@ -366,7 +366,7 @@ class Command(BaseCommand):
 
         return labels
 
-    def _export_report(self, output_file: str, output_format: str, report: ReportData, detailed: bool = False):
+    def _export_report(self, output_file: str, output_format: str, report: ReportData, detailed: bool = False) -> None:
         """Export the readability report to a file."""
         if output_format == "json":
             self._export_json(output_file, report)
@@ -377,7 +377,7 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f"\n📄 Report saved to: {output_file}"))
 
-    def _export_json(self, output_file: str, report: ReportData):
+    def _export_json(self, output_file: str, report: ReportData) -> None:
         """Export report as JSON."""
         data = {
             "summary": {
@@ -415,7 +415,7 @@ class Command(BaseCommand):
         with open(output_file, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
 
-    def _export_csv(self, output_file: str, report: ReportData):
+    def _export_csv(self, output_file: str, report: ReportData) -> None:
         """Export report as CSV."""
         all_results = [(r, "FAIL") for r in report.failing] + [(r, "PASS") for r in report.passing]
 
@@ -486,13 +486,13 @@ class Command(BaseCommand):
         lines.append("\n" + "=" * 60)
         return lines
 
-    def _export_text(self, output_file: str, report: ReportData, detailed: bool = False):
+    def _export_text(self, output_file: str, report: ReportData, detailed: bool = False) -> None:
         """Export report as plain text."""
         lines = self._build_report_lines(report, show_passing=True, detailed=detailed)
         with open(output_file, "w", encoding="utf-8") as f:
             f.write("\n".join(lines))
 
-    def _print_summary(self, report: ReportData, detailed: bool, show_passing: bool):
+    def _print_summary(self, report: ReportData, detailed: bool, show_passing: bool) -> None:
         """Print a formatted summary of the readability analysis to stdout."""
         direction = ">=" if report.is_higher_better else "<="
         passing_pct = f"{100 * len(report.passing) / report.total:.1f}%" if report.total > 0 else "0%"

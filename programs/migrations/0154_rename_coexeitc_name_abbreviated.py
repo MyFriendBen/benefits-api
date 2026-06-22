@@ -22,7 +22,7 @@
 from django.db import migrations
 
 
-def forward(apps, schema_editor):
+def forward(apps, schema_editor) -> None:
     # Use live models throughout (mirrors the pattern established in
     # 0152_backfill_has_benefits_categories). Mixing live WhiteLabel with
     # a historical Program from apps.get_model causes
@@ -42,7 +42,7 @@ def forward(apps, schema_editor):
     ).update(name_abbreviated="co_expanded_eitc")
 
 
-def reverse(apps, schema_editor):
+def reverse(apps, schema_editor) -> None:
     from programs.models import Program, WhiteLabel
 
     try:

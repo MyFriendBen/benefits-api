@@ -1,7 +1,7 @@
 from django.db import migrations
 
 
-def backfill_income_category_gap(apps, schema_editor):
+def backfill_income_category_gap(apps, schema_editor) -> None:
     """
     Two-part fix for income stream category data:
 
@@ -65,7 +65,7 @@ def backfill_income_category_gap(apps, schema_editor):
     print(f"Backfilled {gap_count} gap rows; corrected {correction_count} rental/boarder rows to 'property'")
 
 
-def reverse_backfill(apps, schema_editor):
+def reverse_backfill(apps, schema_editor) -> None:
     # Not reversible — we can't know which rows had category=None intentionally vs gap.
     pass
 

@@ -46,11 +46,13 @@ class WaWsosCts(ProgramCalculator):
 
     def income_limit_125(self) -> int:
         size = self.screen.household_size
+        if size is None:
+            return 0
         if size in self.MFI_125_BY_SIZE:
             return self.MFI_125_BY_SIZE[size]
         return self.MFI_125_BY_SIZE[6] + (size - 6) * self.MFI_125_PER_EXTRA_PERSON_ABOVE_TABLE
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         """
         Apply the 125% MFI income gate against household annual gross income.
 
@@ -63,7 +65,7 @@ class WaWsosCts(ProgramCalculator):
         income_limit = self.income_limit_125()
         e.condition(gross_income <= income_limit, messages.income(gross_income, income_limit))
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         """
         At least one member with `student is True` qualifies the household CTS path.
 
@@ -75,5 +77,5 @@ class WaWsosCts(ProgramCalculator):
     def household_value(self) -> int:
         return 0
 
-    def member_value(self, member):
+    def member_value(self, member) -> int:
         return 0

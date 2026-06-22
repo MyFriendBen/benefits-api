@@ -41,7 +41,7 @@ class CountyDependency(Household):
     dependencies: ClassVar[list[str]] = ["county"]
     state_dependency_class: ClassVar[Optional[Type]] = None  # Override in subclasses
 
-    def value(self):
+    def value(self) -> str:
         if self.state_dependency_class is None:
             raise ValueError(f"{self.__class__.__name__} must define state_dependency_class")
 

@@ -332,7 +332,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             "utm_term",
         )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         self.force = kwargs.pop("force", False)
         super().__init__(*args, **kwargs)
 

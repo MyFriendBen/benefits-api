@@ -42,31 +42,31 @@ class TestWaAppleHealthForKids(TestCase):
     # Wiring tests
     # ------------------------------------------------------------------
 
-    def test_is_subclass_of_policy_engine_members_calculator(self):
+    def test_is_subclass_of_policy_engine_members_calculator(self) -> None:
         self.assertTrue(issubclass(WaAppleHealthForKids, PolicyEngineMembersCalculator))
 
-    def test_is_registered_in_wa_member_calculators(self):
+    def test_is_registered_in_wa_member_calculators(self) -> None:
         self.assertIn("wa_apple_health_for_kids", wa_member_calculators)
         self.assertEqual(wa_member_calculators["wa_apple_health_for_kids"], WaAppleHealthForKids)
 
-    def test_is_registered_in_wa_pe_calculators(self):
+    def test_is_registered_in_wa_pe_calculators(self) -> None:
         self.assertIn("wa_apple_health_for_kids", wa_pe_calculators)
         self.assertEqual(wa_pe_calculators["wa_apple_health_for_kids"], WaAppleHealthForKids)
 
-    def test_pe_name(self):
+    def test_pe_name(self) -> None:
         self.assertEqual(WaAppleHealthForKids.pe_name, "wa_apple_health_kids_eligible")
 
-    def test_pe_inputs_includes_wa_state_code(self):
+    def test_pe_inputs_includes_wa_state_code(self) -> None:
         self.assertIn(WaStateCodeDependency, WaAppleHealthForKids.pe_inputs)
 
-    def test_pe_inputs_includes_all_medicaid_inputs(self):
+    def test_pe_inputs_includes_all_medicaid_inputs(self) -> None:
         for parent_input in Medicaid.pe_inputs:
             self.assertIn(parent_input, WaAppleHealthForKids.pe_inputs)
 
-    def test_pe_outputs_includes_kids_eligible(self):
+    def test_pe_outputs_includes_kids_eligible(self) -> None:
         self.assertIn(member_deps.WaAppleHealthKidsEligible, WaAppleHealthForKids.pe_outputs)
 
-    def test_annual_value_per_child(self):
+    def test_annual_value_per_child(self) -> None:
         self.assertEqual(WaAppleHealthForKids.ANNUAL_VALUE_PER_CHILD, 2_801)
 
     # ------------------------------------------------------------------
@@ -80,33 +80,33 @@ class TestWaAppleHealthForKids(TestCase):
         calc.screen = mock_screen
         return calc
 
-    def _make_member(self, member_id=1):
+    def _make_member(self, member_id: int = 1):
         m = Mock()
         m.id = member_id
         return m
 
-    def test_eligible_child_returns_annual_value(self):
+    def test_eligible_child_returns_annual_value(self) -> None:
         calc = self._make_calculator()
         member = self._make_member()
         calc.get_member_variable = Mock(return_value=True)
 
         self.assertEqual(calc.member_value(member), 2_801)
 
-    def test_ineligible_member_returns_zero(self):
+    def test_ineligible_member_returns_zero(self) -> None:
         calc = self._make_calculator()
         member = self._make_member()
         calc.get_member_variable = Mock(return_value=False)
 
         self.assertEqual(calc.member_value(member), 0)
 
-    def test_pe_returns_zero_treated_as_ineligible(self):
+    def test_pe_returns_zero_treated_as_ineligible(self) -> None:
         calc = self._make_calculator()
         member = self._make_member()
         calc.get_member_variable = Mock(return_value=0)
 
         self.assertEqual(calc.member_value(member), 0)
 
-    def test_no_insurance_check_performed(self):
+    def test_no_insurance_check_performed(self) -> None:
         """Kids calculator does NOT gate on insurance (criterion 6 inclusivity assumption)."""
         calc = self._make_calculator()
         member = self._make_member()
@@ -125,38 +125,38 @@ class TestWaAppleHealthMedicaid(TestCase):
     # Wiring tests
     # ------------------------------------------------------------------
 
-    def test_is_subclass_of_medicaid(self):
+    def test_is_subclass_of_medicaid(self) -> None:
         """WaAppleHealthMedicaid extends the federal Medicaid calculator."""
         self.assertTrue(issubclass(WaAppleHealthMedicaid, Medicaid))
 
-    def test_is_registered_in_wa_member_calculators(self):
+    def test_is_registered_in_wa_member_calculators(self) -> None:
         """Registered as `wa_apple_health_medicaid` in the WA member-level subset."""
         self.assertIn("wa_apple_health_medicaid", wa_member_calculators)
         self.assertEqual(wa_member_calculators["wa_apple_health_medicaid"], WaAppleHealthMedicaid)
 
-    def test_is_registered_in_wa_pe_calculators(self):
+    def test_is_registered_in_wa_pe_calculators(self) -> None:
         """Registered in the combined WA PE calculators dict."""
         self.assertIn("wa_apple_health_medicaid", wa_pe_calculators)
         self.assertEqual(wa_pe_calculators["wa_apple_health_medicaid"], WaAppleHealthMedicaid)
 
-    def test_pe_inputs_includes_wa_state_code(self):
+    def test_pe_inputs_includes_wa_state_code(self) -> None:
         """WA state code is added on top of the federal Medicaid inputs."""
         self.assertIn(WaStateCodeDependency, WaAppleHealthMedicaid.pe_inputs)
 
-    def test_pe_inputs_includes_all_parent_inputs(self):
+    def test_pe_inputs_includes_all_parent_inputs(self) -> None:
         """All federal Medicaid inputs flow through unchanged."""
         for parent_input in Medicaid.pe_inputs:
             self.assertIn(parent_input, WaAppleHealthMedicaid.pe_inputs)
 
-    def test_pe_inputs_adds_exactly_one_input(self):
+    def test_pe_inputs_adds_exactly_one_input(self) -> None:
         """Only WaStateCodeDependency is added beyond the parent inputs."""
         self.assertEqual(len(WaAppleHealthMedicaid.pe_inputs), len(Medicaid.pe_inputs) + 1)
 
-    def test_pe_outputs_inherited_from_medicaid(self):
+    def test_pe_outputs_inherited_from_medicaid(self) -> None:
         """pe_outputs are unchanged from the federal parent."""
         self.assertEqual(WaAppleHealthMedicaid.pe_outputs, Medicaid.pe_outputs)
 
-    def test_medicaid_categories_has_all_keys(self):
+    def test_medicaid_categories_has_all_keys(self) -> None:
         """All standard Medicaid category keys are present."""
         expected_keys = {
             "NONE",
@@ -173,7 +173,7 @@ class TestWaAppleHealthMedicaid(TestCase):
         }
         self.assertEqual(set(WaAppleHealthMedicaid.medicaid_categories.keys()), expected_keys)
 
-    def test_medicaid_categories_values_are_monthly(self):
+    def test_medicaid_categories_values_are_monthly(self) -> None:
         """Spot-check that category values are the KFF 2023 monthly figures."""
         cats = WaAppleHealthMedicaid.medicaid_categories
         self.assertEqual(cats["ADULT"], 471)
@@ -187,7 +187,7 @@ class TestWaAppleHealthMedicaid(TestCase):
     # Helper: build a mock calculator
     # ------------------------------------------------------------------
 
-    def _make_calculator(self, household_size=1, gross_income=0):
+    def _make_calculator(self, household_size: int = 1, gross_income: int = 0):
         """Return a WaAppleHealthMedicaid instance with mocked screen/program/sim."""
         mock_screen = Mock()
         mock_screen.household_size = household_size
@@ -199,11 +199,11 @@ class TestWaAppleHealthMedicaid(TestCase):
 
     def _make_member(
         self,
-        age=35,
-        relationship="headOfHousehold",
-        has_medicare=False,
-        has_none_insurance=False,
-        is_disabled=False,
+        age: int = 35,
+        relationship: str = "headOfHousehold",
+        has_medicare: bool = False,
+        has_none_insurance: bool = False,
+        is_disabled: bool = False,
     ):
         """Return a mock HouseholdMember."""
         m = Mock()
@@ -212,7 +212,7 @@ class TestWaAppleHealthMedicaid(TestCase):
         m.calc_age = Mock(return_value=age)
         m.has_disability = Mock(return_value=is_disabled)
 
-        def _has_insurance_types(types, strict=True):
+        def _has_insurance_types(types, strict: bool = True):
             if types == ("medicare",):
                 return has_medicare
             if types == ("none",):
@@ -226,7 +226,7 @@ class TestWaAppleHealthMedicaid(TestCase):
     # Foster care categorical tests
     # ------------------------------------------------------------------
 
-    def test_foster_child_age_9_is_eligible_regardless_of_income(self):
+    def test_foster_child_age_9_is_eligible_regardless_of_income(self) -> None:
         """Foster child ≤20 gets OLDER_CHILD bucket annual value, bypassing income test."""
         calc = self._make_calculator(household_size=2, gross_income=120_000)
         member = self._make_member(age=9, relationship="fosterChild")
@@ -236,14 +236,14 @@ class TestWaAppleHealthMedicaid(TestCase):
         expected = WaAppleHealthMedicaid.medicaid_categories["OLDER_CHILD"] * 12  # $2,796
         self.assertEqual(result, expected)
 
-    def test_foster_child_age_20_is_eligible(self):
+    def test_foster_child_age_20_is_eligible(self) -> None:
         """Age 20 is still within the ≤20 foster care categorical window."""
         calc = self._make_calculator()
         member = self._make_member(age=20, relationship="fosterChild")
 
         self.assertEqual(calc.member_value(member), 233 * 12)
 
-    def test_foster_child_age_21_is_not_eligible(self):
+    def test_foster_child_age_21_is_not_eligible(self) -> None:
         """Age 21 exceeds the categorical window — falls through to standard logic."""
         calc = self._make_calculator()
         member = self._make_member(age=21, relationship="fosterChild")
@@ -252,7 +252,7 @@ class TestWaAppleHealthMedicaid(TestCase):
 
         self.assertEqual(calc.member_value(member), 0)
 
-    def test_non_foster_child_does_not_trigger_categorical(self):
+    def test_non_foster_child_does_not_trigger_categorical(self) -> None:
         """A regular child relationship does not get categorical eligibility."""
         calc = self._make_calculator()
         member = self._make_member(age=9, relationship="child")
@@ -266,7 +266,7 @@ class TestWaAppleHealthMedicaid(TestCase):
     # Medicare exclusion tests
     # ------------------------------------------------------------------
 
-    def test_medicare_adult_under_65_not_disabled_returns_zero(self):
+    def test_medicare_adult_under_65_not_disabled_returns_zero(self) -> None:
         """Medicare-entitled adult under 65 without disability is ineligible for expansion."""
         calc = self._make_calculator()
         member = self._make_member(age=55, has_medicare=True, is_disabled=False)
@@ -275,7 +275,7 @@ class TestWaAppleHealthMedicaid(TestCase):
 
         self.assertEqual(result, 0)
 
-    def test_medicare_adult_65_plus_routes_to_abd_pathway(self):
+    def test_medicare_adult_65_plus_routes_to_abd_pathway(self) -> None:
         """Medicare-entitled adult 65+ should route to ABD and get AGED bucket if qualifying."""
         calc = self._make_calculator()
         member = self._make_member(age=70, has_medicare=True)
@@ -287,7 +287,7 @@ class TestWaAppleHealthMedicaid(TestCase):
         self.assertEqual(result, expected)
         calc.get_member_dependency_value.assert_called_once_with(member_deps.MedicaidSeniorOrDisabled, member.id)
 
-    def test_medicare_adult_65_plus_abd_not_qualifying_returns_zero(self):
+    def test_medicare_adult_65_plus_abd_not_qualifying_returns_zero(self) -> None:
         """Medicare-entitled senior who fails ABD income test returns 0."""
         calc = self._make_calculator()
         member = self._make_member(age=70, has_medicare=True)
@@ -295,7 +295,7 @@ class TestWaAppleHealthMedicaid(TestCase):
 
         self.assertEqual(calc.member_value(member), 0)
 
-    def test_medicare_adult_with_disability_routes_to_disabled_bucket(self):
+    def test_medicare_adult_with_disability_routes_to_disabled_bucket(self) -> None:
         """Medicare-entitled disabled adult gets DISABLED bucket via ABD pathway."""
         calc = self._make_calculator()
         member = self._make_member(age=50, has_medicare=True, is_disabled=True)
@@ -306,7 +306,7 @@ class TestWaAppleHealthMedicaid(TestCase):
         expected = WaAppleHealthMedicaid.medicaid_categories["DISABLED"] * 12  # $31,524
         self.assertEqual(result, expected)
 
-    def test_medicare_disabled_not_qualifying_abd_returns_zero(self):
+    def test_medicare_disabled_not_qualifying_abd_returns_zero(self) -> None:
         """Medicare-entitled disabled adult who fails ABD returns 0."""
         calc = self._make_calculator()
         member = self._make_member(age=50, has_medicare=True, is_disabled=True)
@@ -314,7 +314,7 @@ class TestWaAppleHealthMedicaid(TestCase):
 
         self.assertEqual(calc.member_value(member), 0)
 
-    def test_medicare_child_bypasses_exclusion_and_uses_standard_pe(self):
+    def test_medicare_child_bypasses_exclusion_and_uses_standard_pe(self) -> None:
         """Medicare-covered child is NOT blocked by the adult Medicare exclusion.
 
         Children with Medicare (e.g. ESRD) should fall through to the standard
@@ -335,7 +335,7 @@ class TestWaAppleHealthMedicaid(TestCase):
     # Standard PE pathway tests
     # ------------------------------------------------------------------
 
-    def test_standard_adult_delegates_to_parent(self):
+    def test_standard_adult_delegates_to_parent(self) -> None:
         """Non-Medicare adult with qualifying income delegates to the parent Medicaid class."""
         calc = self._make_calculator()
         member = self._make_member(age=35)
@@ -348,7 +348,7 @@ class TestWaAppleHealthMedicaid(TestCase):
         expected = WaAppleHealthMedicaid.medicaid_categories["ADULT"] * 12  # $5,652
         self.assertEqual(result, expected)
 
-    def test_standard_adult_ineligible_via_pe_returns_zero(self):
+    def test_standard_adult_ineligible_via_pe_returns_zero(self) -> None:
         """Non-Medicare adult above 138% FPL with PE returning 0 gets 0."""
         calc = self._make_calculator()
         member = self._make_member(age=35)
@@ -361,7 +361,7 @@ class TestWaAppleHealthMedicaid(TestCase):
     # Premium CHIP tier tests
     # ------------------------------------------------------------------
 
-    def test_premium_chip_uninsured_child_in_range_is_eligible(self):
+    def test_premium_chip_uninsured_child_in_range_is_eligible(self) -> None:
         """Uninsured child <19 with income between free and premium ceiling qualifies."""
         # HH3 at $72,000/yr — above free tier (~$58,738 at 215%) but below premium ceiling ($86,604 at 317%)
         calc = self._make_calculator(household_size=3, gross_income=72_000)
@@ -375,7 +375,7 @@ class TestWaAppleHealthMedicaid(TestCase):
         expected = WaAppleHealthMedicaid.medicaid_categories["OLDER_CHILD"] * 12  # $2,796
         self.assertEqual(result, expected)
 
-    def test_premium_chip_child_with_employer_insurance_returns_zero(self):
+    def test_premium_chip_child_with_employer_insurance_returns_zero(self) -> None:
         """Child with employer insurance in premium income range is not eligible."""
         calc = self._make_calculator(household_size=3, gross_income=72_000)
         member = self._make_member(age=7, relationship="child", has_none_insurance=False)
@@ -384,7 +384,7 @@ class TestWaAppleHealthMedicaid(TestCase):
 
         self.assertEqual(calc.member_value(member), 0)
 
-    def test_premium_chip_child_above_ceiling_returns_zero(self):
+    def test_premium_chip_child_above_ceiling_returns_zero(self) -> None:
         """Uninsured child with income above the premium ceiling is not eligible."""
         # HH3 ceiling is $86,604 — income is $90,000
         calc = self._make_calculator(household_size=3, gross_income=90_000)
@@ -394,7 +394,7 @@ class TestWaAppleHealthMedicaid(TestCase):
 
         self.assertEqual(calc.member_value(member), 0)
 
-    def test_premium_chip_adult_does_not_qualify(self):
+    def test_premium_chip_adult_does_not_qualify(self) -> None:
         """Adults ≥19 do not enter the premium CHIP fallback."""
         calc = self._make_calculator(household_size=3, gross_income=72_000)
         member = self._make_member(age=19, relationship="headOfHousehold")
@@ -403,7 +403,7 @@ class TestWaAppleHealthMedicaid(TestCase):
 
         self.assertEqual(calc.member_value(member), 0)
 
-    def test_premium_chip_child_at_ceiling_boundary_is_eligible(self):
+    def test_premium_chip_child_at_ceiling_boundary_is_eligible(self) -> None:
         """Income exactly at the ceiling boundary qualifies (≤ ceiling)."""
         calc = self._make_calculator(household_size=3, gross_income=86_604)
         member = self._make_member(age=7, relationship="child", has_none_insurance=True)
@@ -417,29 +417,29 @@ class TestWaAppleHealthMedicaid(TestCase):
     # _premium_chip_ceiling() tests
     # ------------------------------------------------------------------
 
-    def test_premium_chip_ceiling_hh3(self):
+    def test_premium_chip_ceiling_hh3(self) -> None:
         """HH3 ceiling matches the hardcoded HCA 2026 value."""
         self.assertEqual(WaAppleHealthMedicaid._premium_chip_ceiling(3), 86_604)
 
-    def test_premium_chip_ceiling_hh1(self):
+    def test_premium_chip_ceiling_hh1(self) -> None:
         """HH1 ceiling matches the hardcoded HCA 2026 value."""
         self.assertEqual(WaAppleHealthMedicaid._premium_chip_ceiling(1), 50_591)
 
-    def test_premium_chip_ceiling_hh8_extrapolated(self):
+    def test_premium_chip_ceiling_hh8_extrapolated(self) -> None:
         """HH8 is extrapolated: HH7 base + 1 × additional-member increment."""
         expected = 158_627 + 18_006
         self.assertEqual(WaAppleHealthMedicaid._premium_chip_ceiling(8), expected)
 
-    def test_premium_chip_ceiling_hh10_extrapolated(self):
+    def test_premium_chip_ceiling_hh10_extrapolated(self) -> None:
         """HH10 is extrapolated: HH7 base + 3 × additional-member increment."""
         expected = 158_627 + (3 * 18_006)
         self.assertEqual(WaAppleHealthMedicaid._premium_chip_ceiling(10), expected)
 
-    def test_premium_chip_ceiling_zero_returns_none(self):
+    def test_premium_chip_ceiling_zero_returns_none(self) -> None:
         """Household size 0 returns None (invalid)."""
         self.assertIsNone(WaAppleHealthMedicaid._premium_chip_ceiling(0))
 
-    def test_premium_chip_ceiling_negative_returns_none(self):
+    def test_premium_chip_ceiling_negative_returns_none(self) -> None:
         """Negative household size returns None."""
         self.assertIsNone(WaAppleHealthMedicaid._premium_chip_ceiling(-1))
 
@@ -447,42 +447,42 @@ class TestWaAppleHealthMedicaid(TestCase):
 class TestWaSsi(TestCase):
     """Tests for WaSsi calculator class wiring."""
 
-    def test_exists_and_is_subclass_of_ssi(self):
+    def test_exists_and_is_subclass_of_ssi(self) -> None:
         """WaSsi extends the federal Ssi PolicyEngine calculator."""
         self.assertTrue(issubclass(WaSsi, Ssi))
 
-    def test_pe_name_is_ssi(self):
+    def test_pe_name_is_ssi(self) -> None:
         """pe_name is inherited from Ssi and resolves to PolicyEngine's `ssi` variable."""
         self.assertEqual(WaSsi.pe_name, "ssi")
 
-    def test_is_registered_in_wa_pe_calculators(self):
+    def test_is_registered_in_wa_pe_calculators(self) -> None:
         """WaSsi is registered in the WA PE calculators dictionary as `wa_ssi`."""
         self.assertIn("wa_ssi", wa_pe_calculators)
         self.assertEqual(wa_pe_calculators["wa_ssi"], WaSsi)
 
-    def test_is_registered_in_wa_member_calculators(self):
+    def test_is_registered_in_wa_member_calculators(self) -> None:
         """WaSsi is registered in the WA member-level subset (not SPM/tax)."""
         self.assertIn("wa_ssi", wa_member_calculators)
         self.assertEqual(wa_member_calculators["wa_ssi"], WaSsi)
 
-    def test_pe_inputs_includes_wa_state_code_dependency(self):
+    def test_pe_inputs_includes_wa_state_code_dependency(self) -> None:
         """The WA state code is added on top of the federal Ssi inputs."""
         self.assertIn(WaStateCodeDependency, WaSsi.pe_inputs)
 
-    def test_wa_state_code_dependency_is_configured_correctly(self):
+    def test_wa_state_code_dependency_is_configured_correctly(self) -> None:
         """Sanity-check the dependency itself."""
         self.assertEqual(WaStateCodeDependency.state, "WA")
         self.assertEqual(WaStateCodeDependency.field, "state_code")
 
-    def test_pe_inputs_includes_all_parent_inputs(self):
+    def test_pe_inputs_includes_all_parent_inputs(self) -> None:
         """All federal Ssi inputs flow through to WaSsi unchanged."""
         for parent_input in Ssi.pe_inputs:
             self.assertIn(parent_input, WaSsi.pe_inputs)
 
-    def test_pe_inputs_has_more_than_parent(self):
+    def test_pe_inputs_has_more_than_parent(self) -> None:
         """WaSsi adds exactly one input on top of the parent (the WA state code)."""
         self.assertEqual(len(WaSsi.pe_inputs), len(Ssi.pe_inputs) + 1)
 
-    def test_pe_outputs_inherited_from_ssi(self):
+    def test_pe_outputs_inherited_from_ssi(self) -> None:
         """Output is the federal SSI dollar value (no override needed)."""
         self.assertEqual(WaSsi.pe_outputs, Ssi.pe_outputs)

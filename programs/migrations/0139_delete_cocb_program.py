@@ -6,7 +6,7 @@
 from django.db import migrations
 
 
-def delete_cocb(apps, schema_editor):
+def delete_cocb(apps, schema_editor) -> None:
     Program = apps.get_model("programs", "Program")
     Program.objects.filter(name_abbreviated="cocb").delete()
 

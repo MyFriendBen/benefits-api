@@ -131,7 +131,7 @@ NAME_TO_FIELD = {
 }
 
 
-def backfill_current_benefits(apps, schema_editor):
+def backfill_current_benefits(apps, schema_editor) -> None:
     """
     Populates the screener_current_benefits join table from existing has_* column values
     for all historical Screen records. Uses the has_benefit() name_map as source of truth
@@ -158,12 +158,12 @@ def backfill_current_benefits(apps, schema_editor):
     batch_size = 1000
     pending = []
 
-    def flush():
+    def flush() -> None:
         if pending:
             CurrentBenefit.objects.bulk_create(pending, ignore_conflicts=True)
             pending.clear()
 
-    def enqueue(screen_id, program_ids):
+    def enqueue(screen_id, program_ids) -> None:
         for program_id in program_ids:
             pending.append(CurrentBenefit(screen_id=screen_id, program_id=program_id))
         if len(pending) >= batch_size:

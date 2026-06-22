@@ -31,17 +31,19 @@ class TrumpAccount(ProgramCalculator):
     gestation_days = 280  # 40 weeks
     dependencies = ["age", "pregnant"]
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
         if member.pregnant:
             estimated_due_date = self.screen.get_reference_date() + timedelta(days=self.gestation_days)
             e.condition(self.pilot_start <= estimated_due_date <= self.pilot_end)
         else:
+            if member.age is None:
+                return
             birth_year_month = member.birth_year_month
             in_pilot_window = birth_year_month is not None and self.pilot_start <= birth_year_month <= self.pilot_end
             e.condition(member.age <= self.max_age and in_pilot_window)
 
-    def value(self, e: Eligibility):
+    def value(self, e: Eligibility) -> None:
         # Eligibility is already gated on the pilot window in member_eligible,
         # so every eligible member receives the $1,000 contribution.
         if not e.eligible:

@@ -17,7 +17,10 @@ class NCWeatherization(ProgramCalculator):
     dependencies = ["household_size", "income_amount", "income_frequency"]
     amount = 300
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            e.condition(False)
+            return
         household_size = self.screen.household_size
 
         # has expenses

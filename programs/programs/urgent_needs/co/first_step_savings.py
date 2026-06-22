@@ -17,7 +17,7 @@ class FirstStepSavings(UrgentNeedFunction):
     # Eligible child relationships
     eligible_relationships = ["child", "fosterChild", "stepChild", "grandChild"]
 
-    def eligible(self):
+    def eligible(self) -> bool:
         """
         Return True if household has indicated interest in savings and
         has eligible children aged 6-7, but NOT if they're eligible for
@@ -33,7 +33,7 @@ class FirstStepSavings(UrgentNeedFunction):
 
         return True
 
-    def _has_eligible_children(self):
+    def _has_eligible_children(self) -> bool:
         """
         Check if household has children aged 6-7 with eligible relationships.
         """
@@ -48,7 +48,7 @@ class FirstStepSavings(UrgentNeedFunction):
 
         return False
 
-    def _has_notification_eligible_children(self):
+    def _has_notification_eligible_children(self) -> bool:
         """
         Check if household has children aged 0-5 with eligible relationships.
         This is used to determine exclusion from regular FirstStepSavings.
@@ -79,7 +79,7 @@ class FirstStepSavingsNotifiable(FirstStepSavings):
         # Check for eligible children aged 0-5
         return self._has_eligible_children()
 
-    def _has_eligible_children(self):
+    def _has_eligible_children(self) -> bool:
         """
         Check if household has children aged 0-5 with eligible relationships.
         This is a subset of the full First Step eligibility for the notification banner.

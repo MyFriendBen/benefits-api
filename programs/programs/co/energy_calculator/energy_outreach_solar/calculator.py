@@ -9,7 +9,10 @@ class EnergyCalculatorEnergyOutreachSolar(ProgramCalculator):
     electricity_providers = ["co-black-hills-energy", "co-xcel-energy"]
     ami_percent = "80%"
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            e.condition(False)
+            return
         # income
         income = self.screen.calc_gross_income("yearly", ["all"])
         income_limit = ami.get_screen_ami(self.screen, self.ami_percent, self.program.year.period)

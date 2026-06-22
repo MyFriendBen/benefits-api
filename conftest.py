@@ -201,7 +201,7 @@ def auto_vcr(request, vcr_config):
 
 
 @pytest.fixture
-def integration_requires_token():
+def integration_requires_token() -> None:
     """
     Skip integration test if HUD_API_TOKEN is not available.
 
@@ -217,7 +217,7 @@ def integration_requires_token():
         pytest.skip("HUD_API_TOKEN not set - skipping integration test")
 
 
-def pytest_collection_modifyitems(config, items):
+def pytest_collection_modifyitems(config, items) -> None:
     """
     Skip HUD integration tests when no API token is configured.
 

@@ -20,7 +20,7 @@ from programs.programs.ma.pe.member import MaCsfp
 class TestMaCsfp(TestCase):
     """Tests for MaCsfp calculator class."""
 
-    def test_exists_and_is_subclass_of_csfp(self):
+    def test_exists_and_is_subclass_of_csfp(self) -> None:
         """
         Test that MaCsfp calculator class exists and is registered.
 
@@ -34,7 +34,7 @@ class TestMaCsfp(TestCase):
         self.assertIsNotNone(MaCsfp.pe_inputs)
         self.assertGreater(len(MaCsfp.pe_inputs), 0)
 
-    def test_is_registered_in_ma_pe_calculators(self):
+    def test_is_registered_in_ma_pe_calculators(self) -> None:
         """Test that MA CSFP is registered in the calculators dictionary."""
         # Verify ma_csfp is in the calculators dictionary
         self.assertIn("ma_csfp", ma_pe_calculators)
@@ -42,7 +42,7 @@ class TestMaCsfp(TestCase):
         # Verify it points to the correct class
         self.assertEqual(ma_pe_calculators["ma_csfp"], MaCsfp)
 
-    def test_pe_inputs_includes_all_parent_inputs_plus_ma_specific(self):
+    def test_pe_inputs_includes_all_parent_inputs_plus_ma_specific(self) -> None:
         """
         Test that MaCsfp has all expected pe_inputs from parent and MA-specific.
 
@@ -59,7 +59,7 @@ class TestMaCsfp(TestCase):
         for parent_input in CommoditySupplementalFoodProgram.pe_inputs:
             self.assertIn(parent_input, MaCsfp.pe_inputs)
 
-    def test_pe_inputs_includes_ma_state_code_dependency(self):
+    def test_pe_inputs_includes_ma_state_code_dependency(self) -> None:
         """
         Test that MaStateCodeDependency is properly added to MA CSFP inputs.
 
@@ -73,26 +73,26 @@ class TestMaCsfp(TestCase):
         self.assertEqual(MaStateCodeDependency.state, "MA")
         self.assertEqual(MaStateCodeDependency.field, "state_code")
 
-    def test_pe_inputs_includes_age_dependency(self):
+    def test_pe_inputs_includes_age_dependency(self) -> None:
         """Test that MaCsfp inherits AgeDependency from parent CommoditySupplementalFoodProgram class."""
         from programs.programs.policyengine.calculators.dependencies.member import AgeDependency
 
         self.assertIn(AgeDependency, MaCsfp.pe_inputs)
         self.assertEqual(AgeDependency.field, "age")
 
-    def test_pe_inputs_includes_school_meal_countable_income_dependency(self):
+    def test_pe_inputs_includes_school_meal_countable_income_dependency(self) -> None:
         """Test that MaCsfp inherits SchoolMealCountableIncomeDependency from parent CommoditySupplementalFoodProgram class."""
         from programs.programs.policyengine.calculators.dependencies.spm import SchoolMealCountableIncomeDependency
 
         self.assertIn(SchoolMealCountableIncomeDependency, MaCsfp.pe_inputs)
         self.assertEqual(SchoolMealCountableIncomeDependency.field, "school_meal_countable_income")
 
-    def test_has_same_pe_outputs_as_parent(self):
+    def test_has_same_pe_outputs_as_parent(self) -> None:
         """Test that MaCsfp has the same pe_outputs as parent CommoditySupplementalFoodProgram class."""
         # MaCsfp should use the same outputs as parent
         self.assertEqual(MaCsfp.pe_outputs, CommoditySupplementalFoodProgram.pe_outputs)
 
-    def test_eligible_counties_are_defined(self):
+    def test_eligible_counties_are_defined(self) -> None:
         """Test that MaCsfp has eligible counties defined."""
         expected_counties = [
             "Bristol",
@@ -105,7 +105,7 @@ class TestMaCsfp(TestCase):
         ]
         self.assertEqual(MaCsfp.eligible_counties, expected_counties)
 
-    def test_member_value_returns_pe_value_when_in_eligible_county(self):
+    def test_member_value_returns_pe_value_when_in_eligible_county(self) -> None:
         """
         Test that member_value returns PolicyEngine value when member is in eligible county.
 
@@ -134,7 +134,7 @@ class TestMaCsfp(TestCase):
         self.assertEqual(result, pe_value)
         calculator.get_member_variable.assert_called_once_with(1)
 
-    def test_member_value_returns_zero_when_not_in_eligible_county(self):
+    def test_member_value_returns_zero_when_not_in_eligible_county(self) -> None:
         """
         Test that member_value returns 0 when member is not in eligible county.
 
@@ -164,7 +164,7 @@ class TestMaCsfp(TestCase):
         # get_member_variable should NOT be called because county check fails first
         calculator.get_member_variable.assert_not_called()
 
-    def test_member_value_county_check_happens_before_pe_call(self):
+    def test_member_value_county_check_happens_before_pe_call(self) -> None:
         """
         Test that county eligibility check occurs before calling PolicyEngine.
 
@@ -192,7 +192,7 @@ class TestMaCsfp(TestCase):
         self.assertEqual(result, 0)
         calculator.get_member_variable.assert_not_called()
 
-    def test_member_value_with_each_eligible_county(self):
+    def test_member_value_with_each_eligible_county(self) -> None:
         """
         Test that member_value returns PE value for each eligible county.
 
@@ -215,7 +215,7 @@ class TestMaCsfp(TestCase):
                 result = calculator.member_value(member)
                 self.assertEqual(result, pe_value)
 
-    def test_member_value_with_zero_pe_value_and_eligible_county(self):
+    def test_member_value_with_zero_pe_value_and_eligible_county(self) -> None:
         """
         Test that member_value returns 0 when PolicyEngine returns 0, even in eligible county.
 

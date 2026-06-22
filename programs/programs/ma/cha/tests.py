@@ -10,7 +10,7 @@ class TestCha(TestCase):
     """Test cases for Cambridge Housing Authority calculator"""
 
     @classmethod
-    def setUpTestData(cls):
+    def setUpTestData(cls) -> None:
         """Set up test data that doesn't change between tests"""
         cls.ma_white_label = WhiteLabel.objects.create(name="Massachusetts", code="ma", state_code="MA")
         cls.fpl_year = FederalPoveryLimit.objects.create(year="2025", period="2025")
@@ -18,7 +18,7 @@ class TestCha(TestCase):
         cls.program.year = cls.fpl_year
         cls.program.save()
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test fixtures for each test method"""
         self.eligible_screen = Screen.objects.create(
             agree_to_tos=True,
@@ -53,7 +53,7 @@ class TestCha(TestCase):
         return Cha(screen, self.program, data, missing_dependencies)
 
     @patch("programs.programs.ma.cha.calculator.hud_client")
-    def test_household_eligible_in_cambridge_below_income_limit(self, mock_hud_client):
+    def test_household_eligible_in_cambridge_below_income_limit(self, mock_hud_client) -> None:
         """Test household is eligible when in Cambridge and below 80% AMI"""
         mock_hud_client.get_screen_il_ami.return_value = 50000  # 80% AMI limit
 
@@ -66,7 +66,7 @@ class TestCha(TestCase):
         )
 
     @patch("programs.programs.ma.cha.calculator.hud_client")
-    def test_household_ineligible_outside_cambridge(self, mock_hud_client):
+    def test_household_ineligible_outside_cambridge(self, mock_hud_client) -> None:
         """Test household is ineligible when not in Cambridge"""
         mock_hud_client.get_screen_il_ami.return_value = 50000
 
@@ -98,7 +98,7 @@ class TestCha(TestCase):
         self.assertFalse(eligibility.eligible)
 
     @patch("programs.programs.ma.cha.calculator.hud_client")
-    def test_household_ineligible_income_too_high(self, mock_hud_client):
+    def test_household_ineligible_income_too_high(self, mock_hud_client) -> None:
         """Test household is ineligible when income exceeds 80% AMI"""
         mock_hud_client.get_screen_il_ami.return_value = 80000  # 80% AMI limit
 
@@ -131,7 +131,7 @@ class TestCha(TestCase):
         self.assertFalse(eligibility.eligible)
 
     @patch("programs.programs.ma.cha.calculator.hud_client")
-    def test_household_eligible_income_at_limit(self, mock_hud_client):
+    def test_household_eligible_income_at_limit(self, mock_hud_client) -> None:
         """Test household is eligible when income equals 80% AMI exactly"""
         mock_hud_client.get_screen_il_ami.return_value = 36000  # Set limit to match income ($36,000/year)
 
@@ -141,7 +141,7 @@ class TestCha(TestCase):
         self.assertTrue(eligibility.eligible)
 
     @patch("programs.programs.ma.cha.calculator.hud_client")
-    def test_value_returns_one(self, mock_hud_client):
+    def test_value_returns_one(self, mock_hud_client) -> None:
         """Test that value returns 1 for eligible households (displays as 'Varies')"""
         mock_hud_client.get_screen_il_ami.return_value = 50000
 
@@ -152,7 +152,7 @@ class TestCha(TestCase):
         self.assertEqual(eligibility.value, 1)
 
     @patch("programs.programs.ma.cha.calculator.hud_client")
-    def test_eligibility_messages_on_failure(self, mock_hud_client):
+    def test_eligibility_messages_on_failure(self, mock_hud_client) -> None:
         """Test that appropriate failure messages are added"""
         mock_hud_client.get_screen_il_ami.return_value = 30000  # Low limit
 
@@ -186,7 +186,7 @@ class TestCha(TestCase):
         self.assertTrue(len(eligibility.fail_messages) >= 1)
 
     @patch("programs.programs.ma.cha.calculator.hud_client")
-    def test_larger_household_size(self, mock_hud_client):
+    def test_larger_household_size(self, mock_hud_client) -> None:
         """Test eligibility with larger household size"""
         mock_hud_client.get_screen_il_ami.return_value = 70000  # Higher limit for larger household
 

@@ -20,13 +20,13 @@ class PolicyEngineCalulator(ProgramCalculator):
     pe_category = ""
     pe_sub_category = ""
 
-    def __init__(self, screen: Screen, program: "Program", missing_dependencies: Dependencies):
+    def __init__(self, screen: Screen, program: "Program", missing_dependencies: Dependencies) -> None:
         self.screen = screen
         self.program = program
         self.missing_dependencies = missing_dependencies
         self._sim = None
 
-    def set_engine(self, sim: Sim):
+    def set_engine(self, sim: Sim) -> None:
         self._sim = sim
 
     def eligible(self) -> Eligibility:
@@ -36,12 +36,12 @@ class PolicyEngineCalulator(ProgramCalculator):
 
         return e
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         household_value = self.household_value()
 
         e.household_value = household_value
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
 
         member_value = self.member_value(member)
@@ -118,7 +118,7 @@ class PolicyEngineTaxUnitCalulator(PolicyEngineCalulator):
 class PolicyEngineMembersCalculator(PolicyEngineCalulator):
     pe_category = "people"
 
-    def household_value(self):
+    def household_value(self) -> int:
         return 0
 
     def member_value(self, member: HouseholdMember):

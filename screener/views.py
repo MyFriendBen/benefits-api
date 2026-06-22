@@ -218,7 +218,7 @@ class MessageViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         return Response({}, status=status.HTTP_201_CREATED)
 
 
-def all_results(screen: Screen, batch=False, is_admin: bool = False, pe_version: Optional[str] = None):
+def all_results(screen: Screen, batch: bool = False, is_admin: bool = False, pe_version: Optional[str] = None):
     eligibility, missing_programs, categories, _pe_data = eligibility_results(screen, batch, pe_version=pe_version)
     urgent_needs = urgent_need_results(screen, eligibility)
     validations = ValidationSerializer(screen.validations.all(), many=True).data
@@ -287,7 +287,7 @@ def update_navigators(
         data[idx]["navigators"] = [serialized_navigator(navigator) for navigator in navigators]
 
 
-def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] = None):
+def eligibility_results(screen: Screen, batch: bool = False, pe_version: Optional[str] = None):
     try:
         referrer = Referrer.objects.prefetch_related("remove_programs", "primary_navigators").get(
             white_label=screen.white_label,
@@ -518,6 +518,8 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
             continue
 
         category = program.category
+        if category is None:
+            continue
         if category.id in category_map:
             category_map[category.id]["programs"].append(program.id)
             continue
@@ -558,7 +560,7 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
 
 
 class GetProgramTranslation:
-    def __init__(self, screen: Screen, program: Program, missing_dependencies: Dependencies):
+    def __init__(self, screen: Screen, program: Program, missing_dependencies: Dependencies) -> None:
         self.screen = screen
         self.program = program
         self.missing_dependencies = missing_dependencies
@@ -754,7 +756,7 @@ class HasBenefitsProgramsView(views.APIView):
     permission_classes = [permissions.DjangoModelPermissions]
     queryset = Program.objects.none()  # Required for DjangoModelPermissions
 
-    def get(self, request, white_label):
+    def get(self, request, white_label: str):
         programs = Program.objects.filter(
             active=True,
             show_in_has_benefits_step=True,
@@ -780,7 +782,7 @@ class ReferralSourcesView(views.APIView):
     permission_classes = [permissions.DjangoModelPermissions]
     queryset = Referrer.objects.none()  # Required for DjangoModelPermissions
 
-    def get(self, request, white_label):
+    def get(self, request, white_label: str):
         referrers = Referrer.objects.filter(
             white_label__code=white_label,
             show_in_dropdown=True,

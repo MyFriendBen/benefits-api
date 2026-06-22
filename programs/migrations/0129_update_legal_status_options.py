@@ -2,7 +2,7 @@
 from django.db import migrations
 
 
-def update_legal_status_options(apps, schema_editor):
+def update_legal_status_options(apps, schema_editor) -> None:
     """
     Remove legacy 'green_card' and 'other' legal status options.
     Ensure current legal status options exist: 'gc_5plus', 'gc_5less', etc.
@@ -31,7 +31,7 @@ def update_legal_status_options(apps, schema_editor):
     print(f"✅ Ensured {len(current_statuses)} legal status options exist ({created_count} newly created)")
 
 
-def reverse_migration(apps, schema_editor):
+def reverse_migration(apps, schema_editor) -> None:
     """
     Reverse migration: Add back 'green_card', keep 'other' removed (consistent with 0128).
     """

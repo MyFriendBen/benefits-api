@@ -15,7 +15,7 @@ class TestConfigurationSerializerFeatureFlags(TestCase):
     Tests for ConfigurationSerializer.get_feature_flags() method.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for feature flag serialization tests."""
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
         self.configuration = Configuration.objects.create(
@@ -47,7 +47,7 @@ class TestConfigurationSerializerFeatureFlags(TestCase):
             ),
         },
     )
-    def test_get_feature_flags_filters_to_frontend_and_both_scopes(self):
+    def test_get_feature_flags_filters_to_frontend_and_both_scopes(self) -> None:
         """Test that get_feature_flags only returns frontend and both scoped flags."""
         self.white_label.feature_flags = {
             "frontend_flag": True,
@@ -77,7 +77,7 @@ class TestConfigurationSerializerFeatureFlags(TestCase):
             ),
         },
     )
-    def test_get_feature_flags_returns_stored_values(self):
+    def test_get_feature_flags_returns_stored_values(self) -> None:
         """Test that get_feature_flags returns the stored flag values."""
         self.white_label.feature_flags = {"frontend_flag": True}
         self.white_label.save()
@@ -98,7 +98,7 @@ class TestConfigurationSerializerFeatureFlags(TestCase):
             ),
         },
     )
-    def test_get_feature_flags_returns_defaults_when_not_stored(self):
+    def test_get_feature_flags_returns_defaults_when_not_stored(self) -> None:
         """Test that get_feature_flags returns default values when flag is not stored."""
         self.white_label.feature_flags = {}
         self.white_label.save()
@@ -120,7 +120,7 @@ class TestConfigurationSerializerFeatureFlags(TestCase):
             ),
         },
     )
-    def test_get_feature_flags_returns_empty_dict_when_no_white_label(self):
+    def test_get_feature_flags_returns_empty_dict_when_no_white_label(self) -> None:
         """Test that get_feature_flags returns empty dict when configuration has no white_label."""
         config_no_wl = MagicMock()
         config_no_wl.white_label = None
@@ -141,7 +141,7 @@ class TestConfigurationSerializerFeatureFlags(TestCase):
             ),
         },
     )
-    def test_get_feature_flags_handles_empty_feature_flags(self):
+    def test_get_feature_flags_handles_empty_feature_flags(self) -> None:
         """Test that get_feature_flags handles empty feature_flags dict."""
         self.white_label.feature_flags = {}
         self.white_label.save()

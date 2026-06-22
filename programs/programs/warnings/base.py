@@ -9,7 +9,7 @@ class WarningCalculator:
 
     def __init__(
         self, screen: Screen, warning: WarningMessage, eligibility: Eligibility, missing_dependencies: Dependencies
-    ):
+    ) -> None:
         self.screen = screen
         self.warning = warning
         self.eligibility = eligibility

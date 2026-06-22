@@ -66,7 +66,10 @@ class WaSeattleFreshBucks(ProgramCalculator):
 
     dependencies = ("income_amount", "income_frequency", "household_size", "zipcode", "age")
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            e.condition(False)
+            return
         # Location: must be within Seattle city limits (ZIP code proxy)
         in_seattle = self.screen.zipcode in self.seattle_zip_codes
         e.condition(in_seattle, messages.location())

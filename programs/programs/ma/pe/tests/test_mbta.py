@@ -18,7 +18,7 @@ class TestMaMbta(TestCase):
         calculator._sim = MagicMock()
         return calculator
 
-    def test_member_value_returns_amount_for_eligible_city(self):
+    def test_member_value_returns_amount_for_eligible_city(self) -> None:
         calculator = self._create_calculator("Boston")
         calculator.get_member_dependency_value = Mock(return_value=True)
 
@@ -27,7 +27,7 @@ class TestMaMbta(TestCase):
 
         self.assertEqual(calculator.member_value(member), MaMbta.amount)
 
-    def test_member_value_returns_zero_for_ineligible_city(self):
+    def test_member_value_returns_zero_for_ineligible_city(self) -> None:
         calculator = self._create_calculator("Springfield")
         calculator.get_member_dependency_value = Mock(return_value=True)
 
@@ -36,7 +36,7 @@ class TestMaMbta(TestCase):
 
         self.assertEqual(calculator.member_value(member), 0)
 
-    def test_ineligible_city_short_circuits_before_pe_call(self):
+    def test_ineligible_city_short_circuits_before_pe_call(self) -> None:
         calculator = self._create_calculator("Pittsfield")
         calculator.get_member_dependency_value = Mock(return_value=True)
 
@@ -46,7 +46,7 @@ class TestMaMbta(TestCase):
         calculator.member_value(member)
         calculator.get_member_dependency_value.assert_not_called()
 
-    def test_member_value_returns_zero_when_pe_ineligible(self):
+    def test_member_value_returns_zero_when_pe_ineligible(self) -> None:
         calculator = self._create_calculator("Cambridge")
         calculator.get_member_dependency_value = Mock(return_value=False)
 

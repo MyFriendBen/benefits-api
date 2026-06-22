@@ -53,7 +53,10 @@ class EnergyCalculatorAffordableResidentialEnergy(ProgramCalculator):
     ]
     ami_percent = "80%"
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            e.condition(False)
+            return
         # utility providers
         e.condition(self.screen.energy_calculator.has_utility_provider(self.electricity_providers + self.gas_providers))
 

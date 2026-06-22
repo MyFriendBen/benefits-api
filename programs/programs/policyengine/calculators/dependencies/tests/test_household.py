@@ -13,7 +13,7 @@ from programs.programs.policyengine.calculators.dependencies import household
 class TestTxStateCodeDependency(TestCase):
     """Tests for TxStateCodeDependency class used by TxSnap calculator."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for state dependency tests."""
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
@@ -21,7 +21,7 @@ class TestTxStateCodeDependency(TestCase):
             white_label=self.white_label, zipcode="78701", county="Test County", household_size=1, completed=False
         )
 
-    def test_value_returns_tx_state_code(self):
+    def test_value_returns_tx_state_code(self) -> None:
         """Test value() returns TX state code."""
         dep = household.TxStateCodeDependency(self.screen, None, {})
         self.assertEqual(dep.value(), "TX")
@@ -31,14 +31,14 @@ class TestTxStateCodeDependency(TestCase):
 class TestWaStateCodeDependency(TestCase):
     """Tests for WaStateCodeDependency class used by WaLifeline calculator."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
         self.screen = Screen.objects.create(
             white_label=self.white_label, zipcode="98101", county="King County", household_size=1, completed=False
         )
 
-    def test_value_returns_wa_state_code(self):
+    def test_value_returns_wa_state_code(self) -> None:
         dep = household.WaStateCodeDependency(self.screen, None, {})
         self.assertEqual(dep.value(), "WA")
         self.assertEqual(dep.field, "state_code")
@@ -47,10 +47,10 @@ class TestWaStateCodeDependency(TestCase):
 class TestCountyDependency(TestCase):
     """Tests for CountyDependency class and its subclasses."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
-    def test_county_without_county_suffix_appends_county(self):
+    def test_county_without_county_suffix_appends_county(self) -> None:
         """County names without 'County' should have '_COUNTY_' appended."""
         screen = Screen.objects.create(
             white_label=self.white_label, zipcode="78701", county="Suffolk", household_size=1, completed=False
@@ -58,7 +58,7 @@ class TestCountyDependency(TestCase):
         dep = household.NcCountyDependency(screen, None, {})
         self.assertEqual(dep.value(), "SUFFOLK_COUNTY_NC")
 
-    def test_county_with_county_suffix_does_not_duplicate(self):
+    def test_county_with_county_suffix_does_not_duplicate(self) -> None:
         """County names already containing 'County' should not get it duplicated."""
         screen = Screen.objects.create(
             white_label=self.white_label, zipcode="78701", county="Denver County", household_size=1, completed=False
@@ -66,7 +66,7 @@ class TestCountyDependency(TestCase):
         dep = household.NcCountyDependency(screen, None, {})
         self.assertEqual(dep.value(), "DENVER_COUNTY_NC")
 
-    def test_county_normalization_removes_special_characters(self):
+    def test_county_normalization_removes_special_characters(self) -> None:
         """Special characters should be removed from county names."""
         screen = Screen.objects.create(
             white_label=self.white_label, zipcode="78701", county="St. Mary's County", household_size=1, completed=False
@@ -74,7 +74,7 @@ class TestCountyDependency(TestCase):
         dep = household.TxCountyDependency(screen, None, {})
         self.assertEqual(dep.value(), "ST_MARYS_COUNTY_TX")
 
-    def test_county_normalization_handles_multiple_spaces(self):
+    def test_county_normalization_handles_multiple_spaces(self) -> None:
         """Multiple spaces should be normalized to single underscores."""
         screen = Screen.objects.create(
             white_label=self.white_label, zipcode="78701", county="New   York", household_size=1, completed=False
@@ -82,7 +82,7 @@ class TestCountyDependency(TestCase):
         dep = household.IlCountyDependency(screen, None, {})
         self.assertEqual(dep.value(), "NEW_YORK_COUNTY_IL")
 
-    def test_county_strips_whitespace(self):
+    def test_county_strips_whitespace(self) -> None:
         """Leading and trailing whitespace should be stripped."""
         screen = Screen.objects.create(
             white_label=self.white_label, zipcode="78701", county="  Travis County  ", household_size=1, completed=False
@@ -90,7 +90,7 @@ class TestCountyDependency(TestCase):
         dep = household.TxCountyDependency(screen, None, {})
         self.assertEqual(dep.value(), "TRAVIS_COUNTY_TX")
 
-    def test_county_missing_raises_error(self):
+    def test_county_missing_raises_error(self) -> None:
         """Missing county should raise ValueError."""
         screen = Screen.objects.create(
             white_label=self.white_label, zipcode="78701", county=None, household_size=1, completed=False
@@ -100,7 +100,7 @@ class TestCountyDependency(TestCase):
             dep.value()
         self.assertEqual(str(context.exception), "county missing")
 
-    def test_base_class_without_state_dependency_raises_error(self):
+    def test_base_class_without_state_dependency_raises_error(self) -> None:
         """Base CountyDependency without state_dependency_class should raise ValueError."""
         screen = Screen.objects.create(
             white_label=self.white_label, zipcode="78701", county="Test County", household_size=1, completed=False

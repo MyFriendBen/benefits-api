@@ -67,7 +67,7 @@ class WaHcv(ProgramCalculator):
             raise HudIncomeClientError("Program year not configured")
         return self.program.year.period
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         has_section_8 = self.screen.has_benefit("section_8")
         e.condition(not has_section_8, messages.must_not_have_benefit("Section 8"))
 

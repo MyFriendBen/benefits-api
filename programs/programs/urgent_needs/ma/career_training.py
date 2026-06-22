@@ -11,6 +11,8 @@ class CareerTrainingAndWorkforce(UrgentNeedFunction):
         Career Training and Workforce Development
         Programs and services to help individuals gain skills and find employment.
         """
+        if self.urgent_need.year is None:
+            return False
 
         # Condition 1: Individual is 18+
         is_adult = self.screen.num_adults(age_max=self.min_age) > 0

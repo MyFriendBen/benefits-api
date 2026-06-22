@@ -56,7 +56,7 @@ class WaSsdi(ProgramCalculator):
 
         return reference_date < fra_date
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
 
         e.condition(member.long_term_disability is True)
@@ -74,7 +74,7 @@ class WaSsdi(ProgramCalculator):
         already_receiving_ss_retirement = member.calc_gross_income("yearly", ["sSRetirement"]) > 0
         e.condition(not already_receiving_ss_retirement)
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         e.condition(
             not self.screen.has_benefit("ssdi"),
             messages.must_not_have_benefit("SSDI"),

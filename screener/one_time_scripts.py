@@ -13,7 +13,7 @@ import uuid
 import time
 
 
-def generate_bwf_snapshots():
+def generate_bwf_snapshots() -> None:
     bwf_ids = [
         "123",
         "121001",
@@ -156,7 +156,7 @@ def generate_bwf_snapshots():
         )
 
 
-def generate_nav_snapshots():
+def generate_nav_snapshots() -> None:
     nav_ids = [
         "3171",
         "3183",
@@ -210,7 +210,7 @@ def generate_nav_snapshots():
         print("Snapshot " + str(count) + "/" + str(total_screens) + " generated for " + str(screen.id))
 
 
-def generate_bia_sample_snapshot():
+def generate_bia_sample_snapshot() -> None:
     nav_ids = ["4097", "4147", "4148", "4149"]
     screens = Screen.objects.filter(id__in=nav_ids)
     total_screens = screens.count()
@@ -224,7 +224,7 @@ def generate_bia_sample_snapshot():
         print("Snapshot " + str(count) + "/" + str(total_screens) + " generated for " + str(screen.id))
 
 
-def add_from_json(new_json_str):
+def add_from_json(new_json_str) -> None:
     """
     Add json string from screen endpoint as parameter. Use triple quotes if in shell
     """
@@ -257,7 +257,7 @@ def add_from_json(new_json_str):
     print("uuid:", screen.uuid)
 
 
-def uniqueUUIDs():
+def uniqueUUIDs() -> None:
     screens = Screen.objects.all()
 
     currentUUIDs = []
@@ -271,7 +271,7 @@ def uniqueUUIDs():
     print("done")
 
 
-def update_is_test_data():
+def update_is_test_data() -> None:
     screens = Screen.objects.all()
 
     for screen in screens:
@@ -280,7 +280,7 @@ def update_is_test_data():
     print("done")
 
 
-def fix_insurance():
+def fix_insurance() -> None:
     screens = Screen.objects.all()
 
     for screen in screens:
@@ -319,7 +319,7 @@ def update_hubspot_extra_fields():
     print("done")
 
 
-def backfill_hubspot_annual_income_field():
+def backfill_hubspot_annual_income_field() -> None:
     screens = list(Screen.objects.filter(user__isnull=False))
     hubspot = Hubspot()
 

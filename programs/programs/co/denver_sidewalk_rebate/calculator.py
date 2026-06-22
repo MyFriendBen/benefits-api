@@ -11,7 +11,10 @@ class DenverSidewalkRebate(ProgramCalculator):
     amount = 150
     dependencies = ["household_size", "income_amount", "income_frequency", "zipcode"]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            e.condition(False)
+            return
         # denver county condition
         counties = counties_from_screen(self.screen)
         e.condition(DenverSidewalkRebate.county in counties, messages.location())

@@ -10,10 +10,10 @@ class Command(BaseCommand):
     Find empty translations
     """
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser) -> None:
         parser.add_argument("languages", nargs="*", type=str, help="The list of states to update the config for")
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         default_lang = settings.LANGUAGE_CODE
         all_languages = [lang["code"] for lang in settings.PARLER_LANGUAGES[None] if lang["code"] != default_lang]
 
@@ -52,6 +52,6 @@ class Command(BaseCommand):
 
         self.stdout.write("\nDONE", self.style.SUCCESS)
 
-    def _missing_translation_message(self, id, lang: str):
+    def _missing_translation_message(self, id, lang: str) -> None:
         url = reverse("translation_admin_url", args=[id])
         self.stdout.write(f"{lang}: {settings.BACKEND_DOMAIN}{url}")

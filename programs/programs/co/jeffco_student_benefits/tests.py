@@ -6,7 +6,7 @@ from screener.models import Screen, HouseholdMember, WhiteLabel
 
 
 class TestJeffcoStudentBenefits(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.white_label = WhiteLabel.objects.create(
             name="Colorado",
             code="co",
@@ -14,7 +14,7 @@ class TestJeffcoStudentBenefits(TestCase):
         )
         self.mock_program = Mock()
 
-    def test_eligible_jefferson_county_with_eligible_child(self):
+    def test_eligible_jefferson_county_with_eligible_child(self) -> None:
         """Household in Jefferson County with child aged 3-19 is eligible"""
         screen = Screen.objects.create(
             white_label=self.white_label,
@@ -40,7 +40,7 @@ class TestJeffcoStudentBenefits(TestCase):
 
         self.assertTrue(eligibility.eligible)
 
-    def test_eligible_child_age_3_boundary(self):
+    def test_eligible_child_age_3_boundary(self) -> None:
         """Child exactly age 3 is eligible"""
         screen = Screen.objects.create(
             white_label=self.white_label,
@@ -66,7 +66,7 @@ class TestJeffcoStudentBenefits(TestCase):
 
         self.assertTrue(eligibility.eligible)
 
-    def test_eligible_child_age_19_boundary(self):
+    def test_eligible_child_age_19_boundary(self) -> None:
         """Child exactly age 19 is eligible"""
         screen = Screen.objects.create(
             white_label=self.white_label,
@@ -92,7 +92,7 @@ class TestJeffcoStudentBenefits(TestCase):
 
         self.assertTrue(eligibility.eligible)
 
-    def test_not_eligible_wrong_county(self):
+    def test_not_eligible_wrong_county(self) -> None:
         """Household not in Jefferson County is not eligible"""
         screen = Screen.objects.create(
             white_label=self.white_label,
@@ -118,7 +118,7 @@ class TestJeffcoStudentBenefits(TestCase):
 
         self.assertFalse(eligibility.eligible)
 
-    def test_not_eligible_child_too_young(self):
+    def test_not_eligible_child_too_young(self) -> None:
         """Child under age 3 is not eligible"""
         screen = Screen.objects.create(
             white_label=self.white_label,
@@ -144,7 +144,7 @@ class TestJeffcoStudentBenefits(TestCase):
 
         self.assertFalse(eligibility.eligible)
 
-    def test_not_eligible_child_too_old(self):
+    def test_not_eligible_child_too_old(self) -> None:
         """Child over age 19 is not eligible"""
         screen = Screen.objects.create(
             white_label=self.white_label,
@@ -170,7 +170,7 @@ class TestJeffcoStudentBenefits(TestCase):
 
         self.assertFalse(eligibility.eligible)
 
-    def test_not_eligible_no_children(self):
+    def test_not_eligible_no_children(self) -> None:
         """Household with no children is not eligible"""
         screen = Screen.objects.create(
             white_label=self.white_label,
@@ -191,7 +191,7 @@ class TestJeffcoStudentBenefits(TestCase):
 
         self.assertFalse(eligibility.eligible)
 
-    def test_value_is_500(self):
+    def test_value_is_500(self) -> None:
         """Program value should be $500"""
         screen = Screen.objects.create(
             white_label=self.white_label,

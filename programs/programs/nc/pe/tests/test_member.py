@@ -18,7 +18,7 @@ class TestNcSnapIneligibleStudentDependency(TestCase):
     student exemptions on top of the standard federal E1–E6 exemptions.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.white_label = WhiteLabel.objects.create(name="Test NC", code="nc", state_code="NC")
         self.screen = Screen.objects.create(
             white_label=self.white_label,
@@ -33,7 +33,7 @@ class TestNcSnapIneligibleStudentDependency(TestCase):
 
     # ── Student gate ──────────────────────────────────────────────────────────
 
-    def test_non_student_is_eligible(self):
+    def test_non_student_is_eligible(self) -> None:
         """Non-students are never subject to the restriction."""
         member = HouseholdMember.objects.create(
             screen=self.screen, relationship="headOfHousehold", age=25, student=False
@@ -42,7 +42,7 @@ class TestNcSnapIneligibleStudentDependency(TestCase):
 
     # ── NC part-time exemption ────────────────────────────────────────────────
 
-    def test_part_time_student_is_exempt(self):
+    def test_part_time_student_is_exempt(self) -> None:
         """NC part-time student (student_full_time=False) is fully exempt."""
         member = HouseholdMember.objects.create(
             screen=self.screen,
@@ -58,14 +58,14 @@ class TestNcSnapIneligibleStudentDependency(TestCase):
 
     # ── Federal E1/E2: age exemptions ─────────────────────────────────────────
 
-    def test_full_time_student_under_18_is_exempt(self):
+    def test_full_time_student_under_18_is_exempt(self) -> None:
         """Full-time student under 18 is exempt (E1)."""
         member = HouseholdMember.objects.create(
             screen=self.screen, relationship="child", age=17, student=True, student_full_time=True
         )
         self.assertFalse(self._dep(member).value())
 
-    def test_full_time_student_age_50_is_exempt(self):
+    def test_full_time_student_age_50_is_exempt(self) -> None:
         """Full-time student aged 50+ is exempt (E2)."""
         member = HouseholdMember.objects.create(
             screen=self.screen, relationship="headOfHousehold", age=50, student=True, student_full_time=True
@@ -74,7 +74,7 @@ class TestNcSnapIneligibleStudentDependency(TestCase):
 
     # ── Federal E3: disability ────────────────────────────────────────────────
 
-    def test_disabled_student_is_exempt(self):
+    def test_disabled_student_is_exempt(self) -> None:
         """Disabled full-time student is exempt (E3)."""
         member = HouseholdMember.objects.create(
             screen=self.screen,
@@ -88,7 +88,7 @@ class TestNcSnapIneligibleStudentDependency(TestCase):
 
     # ── Federal E4: parent with child under 6 ─────────────────────────────────
 
-    def test_head_with_child_under_6_is_exempt(self):
+    def test_head_with_child_under_6_is_exempt(self) -> None:
         """Head of household with child under 6 is exempt (E4)."""
         self.screen.household_size = 3
         self.screen.save()
@@ -103,7 +103,7 @@ class TestNcSnapIneligibleStudentDependency(TestCase):
 
     # ── Federal E5: single parent with child under 12 ─────────────────────────
 
-    def test_single_parent_with_child_under_12_is_exempt(self):
+    def test_single_parent_with_child_under_12_is_exempt(self) -> None:
         """Single parent with child under 12 is exempt (E5)."""
         self.screen.household_size = 2
         self.screen.save()
@@ -117,7 +117,7 @@ class TestNcSnapIneligibleStudentDependency(TestCase):
 
     # ── Federal E6: TANF ──────────────────────────────────────────────────────
 
-    def test_tanf_household_is_exempt(self):
+    def test_tanf_household_is_exempt(self) -> None:
         """Student in a household receiving TANF/Work First is exempt (E6).
 
         E6 keys off `Program.base_program == "tanf"`, so the seeded nc_tanf
@@ -134,7 +134,7 @@ class TestNcSnapIneligibleStudentDependency(TestCase):
 
     # ── NC Step 3: employment exemptions ──────────────────────────────────────
 
-    def test_job_training_program_is_exempt(self):
+    def test_job_training_program_is_exempt(self) -> None:
         """Student in a job training program is exempt (NC Step 3)."""
         member = HouseholdMember.objects.create(
             screen=self.screen,
@@ -145,7 +145,7 @@ class TestNcSnapIneligibleStudentDependency(TestCase):
         )
         self.assertFalse(self._dep(member).value())
 
-    def test_work_study_is_exempt(self):
+    def test_work_study_is_exempt(self) -> None:
         """Student with federal work study is exempt (NC Step 3)."""
         member = HouseholdMember.objects.create(
             screen=self.screen,
@@ -156,7 +156,7 @@ class TestNcSnapIneligibleStudentDependency(TestCase):
         )
         self.assertFalse(self._dep(member).value())
 
-    def test_works_20_plus_hours_is_exempt(self):
+    def test_works_20_plus_hours_is_exempt(self) -> None:
         """Student working 20+ hours per week is exempt (NC Step 3)."""
         member = HouseholdMember.objects.create(
             screen=self.screen,
@@ -169,7 +169,7 @@ class TestNcSnapIneligibleStudentDependency(TestCase):
 
     # ── Ineligible path ───────────────────────────────────────────────────────
 
-    def test_ineligible_when_no_exemption_applies(self):
+    def test_ineligible_when_no_exemption_applies(self) -> None:
         """Full-time student with no exemptions is excluded from the SNAP unit."""
         member = HouseholdMember.objects.create(
             screen=self.screen,

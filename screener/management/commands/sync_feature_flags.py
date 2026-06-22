@@ -5,14 +5,14 @@ from screener.models import WhiteLabel
 class Command(BaseCommand):
     help = "Sync feature_flags JSONField with FEATURE_FLAGS definition for all WhiteLabels"
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser) -> None:
         parser.add_argument(
             "--dry-run",
             action="store_true",
             help="Show what would be changed without making changes",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         dry_run = options["dry_run"]
         valid_keys = set(WhiteLabel.FEATURE_FLAGS.keys())
 

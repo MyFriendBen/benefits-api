@@ -17,7 +17,7 @@ from validations.models import Validation
 class Command(BaseCommand):
     help = "Import validation test cases from a JSON file"
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser) -> None:
         parser.add_argument(
             "json_file",
             type=str,

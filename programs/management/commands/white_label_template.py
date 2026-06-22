@@ -36,7 +36,7 @@ class Command(BaseCommand):
         FileTemplate("urgent_need_init", Template("programs/programs/urgent_needs/{{code}}/__init__.py")),
     ]
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser) -> None:
         parser.add_argument(
             "code",
             nargs=None,
@@ -54,7 +54,7 @@ class Command(BaseCommand):
         )
 
     @transaction.atomic
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         if str(settings.BASE_DIR) != os.getcwd():
             self.stdout.write(self.style.ERROR(f"Please run this command from the root directory of this project"))
             return
@@ -76,7 +76,7 @@ class Command(BaseCommand):
         if self.dry_run:
             white_label.delete()
 
-    def _build_template(self, white_label: WhiteLabel, template: FileTemplate):
+    def _build_template(self, white_label: WhiteLabel, template: FileTemplate) -> None:
         context = {"code": white_label.code, "name": white_label.name, "code_capitalize": white_label.code.capitalize()}
         contents = loader.render_to_string(f"new_white_label/{template.template_name}.py", context=context)
         path = template.output_path.render(Context(context))
@@ -90,5 +90,5 @@ class Command(BaseCommand):
         output_file.parent.mkdir(exist_ok=True, parents=True)
         output_file.write_text(contents)
 
-    def _message(self, message: str):
+    def _message(self, message: str) -> None:
         self.stdout.write(self.style.SUCCESS(message))

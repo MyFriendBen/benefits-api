@@ -37,7 +37,10 @@ class EnergyCalculatorHomeEfficiencyAssistance(ProgramCalculator):
     ]
     smi_percent = 0.6
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            e.condition(False)
+            return
 
         # check if has any of the presumptive eligibility programs
         presumed_eligible = any(self.screen.has_benefit(program) for program in self.presumptive_eligibility)

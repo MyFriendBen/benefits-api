@@ -8,6 +8,8 @@ class AlternativeHousingVoucher(UrgentNeedFunction):
     max_age = 60
 
     def eligible(self):
+        if self.urgent_need.year is None:
+            return False
         # income
         income_limit = ami.get_screen_ami(self.screen, self.ami_percent, self.urgent_need.year.period, limit_type="il")
         income = self.screen.calc_gross_income("yearly", ["all"])
@@ -16,6 +18,8 @@ class AlternativeHousingVoucher(UrgentNeedFunction):
         # disability
         member_eligible = False
         for member in self.screen.household_members.all():
+            if member.age is None:
+                continue
             if member.has_disability() and member.age < self.max_age:
                 member_eligible = True
 

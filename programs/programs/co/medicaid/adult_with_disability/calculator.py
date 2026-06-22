@@ -14,14 +14,19 @@ class MedicaidAdultWithDisability(ProgramCalculator):
     dependencies = ["insurance", "age", "household_size", "income_type", "income_amount", "income_frequency"]
     member_amount = 310 * 12
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         # Does not qualify for Medicaid
         e.condition(not medicaid_eligible(self.data), messages.must_not_have_benefit("Medicaid"))
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
+        if self.program.year is None:
+            e.condition(False)
+            return
         member = e.member
 
         # age
+        if member.age is None:
+            return
         e.condition(member.age >= MedicaidAdultWithDisability.min_age)
 
         # disability

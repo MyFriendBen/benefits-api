@@ -7,7 +7,7 @@ from collections import defaultdict
 class Command(BaseCommand):
     help = "Removed duplicate urgent need categories"
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         UrgentNeed = apps.get_model("programs", "UrgentNeed")
         UrgentNeedCategory = apps.get_model("programs", "UrgentNeedCategory")
 

@@ -78,7 +78,9 @@ class WaWsosGrd(ProgramCalculator):
             return self.MFI_155_BY_SIZE[size]
         return self.MFI_155_BY_SIZE[6] + (size - 6) * self.MFI_155_PER_EXTRA_PERSON_ABOVE_TABLE
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.screen.household_size is None:
+            return
         # `calc_gross_income` returns a float; compare against the limit at full
         # precision so a household whose annual income is fractionally above the
         # 155% MFI cap (e.g. $181,500.50 for a 3-person household) is correctly
@@ -88,13 +90,13 @@ class WaWsosGrd(ProgramCalculator):
         income_limit = self.income_limit_155()
         e.condition(gross_income <= income_limit, messages.income(gross_income, income_limit))
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         e.condition(bool(e.member.student))
 
     def household_value(self) -> int:
         return self.amount
 
-    def member_value(self, member):
+    def member_value(self, member) -> int:
         # The scholarship is a single lump-sum award per household; all of the
         # value is reported at the household level via household_value().
         return 0

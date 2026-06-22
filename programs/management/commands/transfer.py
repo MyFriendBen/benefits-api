@@ -12,7 +12,7 @@ from translations.models import Translation
 class Command(BaseCommand):
     help = "Transfer programs from one white label to another"
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser) -> None:
         parser.add_argument(
             "target_white_label",
             type=str,
@@ -25,7 +25,7 @@ class Command(BaseCommand):
             help="External names of programs to transfer",
         )
 
-    def validate_white_label(self, white_label_code):
+    def validate_white_label(self, white_label_code) -> bool:
         """Validate white label exists in config and database"""
         if white_label_code not in white_label_config:
             self.stdout.write(
@@ -49,7 +49,7 @@ class Command(BaseCommand):
             return False
 
     @transaction.atomic
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         target_code = options["target_white_label"]
         external_names = options["external_names"]
 

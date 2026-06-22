@@ -22,7 +22,7 @@ class TestSnapIneligibleStudentHelper(TestCase):
     if a student is ineligible for SNAP benefits.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test data for snap_ineligible_student tests."""
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
@@ -30,7 +30,7 @@ class TestSnapIneligibleStudentHelper(TestCase):
             white_label=self.white_label, zipcode="78701", county="Test County", household_size=1, completed=False
         )
 
-    def test_snap_ineligible_student_returns_false_for_non_student(self):
+    def test_snap_ineligible_student_returns_false_for_non_student(self) -> None:
         """Test that non-students are eligible (returns False)."""
         member = HouseholdMember.objects.create(
             screen=self.screen, relationship="headOfHousehold", age=25, student=False
@@ -39,14 +39,14 @@ class TestSnapIneligibleStudentHelper(TestCase):
         result = snap_ineligible_student(self.screen, member)
         self.assertFalse(result)
 
-    def test_snap_ineligible_student_returns_false_for_student_under_18(self):
+    def test_snap_ineligible_student_returns_false_for_student_under_18(self) -> None:
         """Test that students under 18 are eligible (returns False)."""
         member = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=17, student=True)
 
         result = snap_ineligible_student(self.screen, member)
         self.assertFalse(result)
 
-    def test_snap_ineligible_student_returns_false_for_student_age_50_or_older(self):
+    def test_snap_ineligible_student_returns_false_for_student_age_50_or_older(self) -> None:
         """Test that students 50+ are eligible (returns False)."""
         member = HouseholdMember.objects.create(
             screen=self.screen, relationship="headOfHousehold", age=50, student=True
@@ -55,7 +55,7 @@ class TestSnapIneligibleStudentHelper(TestCase):
         result = snap_ineligible_student(self.screen, member)
         self.assertFalse(result)
 
-    def test_snap_ineligible_student_returns_false_for_disabled_student(self):
+    def test_snap_ineligible_student_returns_false_for_disabled_student(self) -> None:
         """Test that disabled students are eligible (returns False)."""
         member = HouseholdMember.objects.create(
             screen=self.screen, relationship="headOfHousehold", age=25, student=True, disabled=True
@@ -64,7 +64,7 @@ class TestSnapIneligibleStudentHelper(TestCase):
         result = snap_ineligible_student(self.screen, member)
         self.assertFalse(result)
 
-    def test_snap_ineligible_student_returns_false_for_head_with_child_under_6(self):
+    def test_snap_ineligible_student_returns_false_for_head_with_child_under_6(self) -> None:
         """Test that head of household with child under 6 is eligible (returns False)."""
         self.screen.household_size = 3
         self.screen.save()
@@ -80,7 +80,7 @@ class TestSnapIneligibleStudentHelper(TestCase):
         result = snap_ineligible_student(self.screen, head)
         self.assertFalse(result)
 
-    def test_snap_ineligible_student_returns_false_for_spouse_with_child_under_6(self):
+    def test_snap_ineligible_student_returns_false_for_spouse_with_child_under_6(self) -> None:
         """Test that spouse with child under 6 is eligible (returns False)."""
         self.screen.household_size = 3
         self.screen.save()
@@ -95,7 +95,7 @@ class TestSnapIneligibleStudentHelper(TestCase):
         result = snap_ineligible_student(self.screen, spouse)
         self.assertFalse(result)
 
-    def test_snap_ineligible_student_returns_false_for_single_parent_with_child_under_12(self):
+    def test_snap_ineligible_student_returns_false_for_single_parent_with_child_under_12(self) -> None:
         """Test that single parent with child under 12 is eligible (returns False)."""
         self.screen.household_size = 2
         self.screen.save()
@@ -109,7 +109,7 @@ class TestSnapIneligibleStudentHelper(TestCase):
         result = snap_ineligible_student(self.screen, head)
         self.assertFalse(result)
 
-    def test_snap_ineligible_student_returns_true_for_student_age_18_49_no_exceptions(self):
+    def test_snap_ineligible_student_returns_true_for_student_age_18_49_no_exceptions(self) -> None:
         """Test that student age 18-49 with no exceptions is ineligible (returns True)."""
         member = HouseholdMember.objects.create(
             screen=self.screen, relationship="headOfHousehold", age=25, student=True, disabled=False
@@ -119,7 +119,7 @@ class TestSnapIneligibleStudentHelper(TestCase):
         result = snap_ineligible_student(self.screen, member)
         self.assertTrue(result)
 
-    def test_snap_ineligible_student_returns_true_for_student_age_18_exactly_no_exceptions(self):
+    def test_snap_ineligible_student_returns_true_for_student_age_18_exactly_no_exceptions(self) -> None:
         """Test edge case: student exactly age 18 with no exceptions is ineligible."""
         # Need head of household for relationship_map
         HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=45)
@@ -129,7 +129,7 @@ class TestSnapIneligibleStudentHelper(TestCase):
         result = snap_ineligible_student(self.screen, member)
         self.assertTrue(result)
 
-    def test_snap_ineligible_student_returns_true_for_student_age_49_exactly_no_exceptions(self):
+    def test_snap_ineligible_student_returns_true_for_student_age_49_exactly_no_exceptions(self) -> None:
         """Test edge case: student exactly age 49 with no exceptions is ineligible."""
         member = HouseholdMember.objects.create(
             screen=self.screen, relationship="headOfHousehold", age=49, student=True
@@ -138,7 +138,7 @@ class TestSnapIneligibleStudentHelper(TestCase):
         result = snap_ineligible_student(self.screen, member)
         self.assertTrue(result)
 
-    def test_snap_ineligible_student_returns_true_for_married_head_with_child_age_6(self):
+    def test_snap_ineligible_student_returns_true_for_married_head_with_child_age_6(self) -> None:
         """Test that married head with child age 6 (not under 6) is ineligible."""
         self.screen.household_size = 3
         self.screen.save()
@@ -154,7 +154,7 @@ class TestSnapIneligibleStudentHelper(TestCase):
         result = snap_ineligible_student(self.screen, head)
         self.assertTrue(result)
 
-    def test_snap_ineligible_student_returns_true_for_single_parent_with_child_age_12(self):
+    def test_snap_ineligible_student_returns_true_for_single_parent_with_child_age_12(self) -> None:
         """Test that single parent with child age 12 (not under 12) is ineligible."""
         self.screen.household_size = 2
         self.screen.save()
@@ -168,7 +168,7 @@ class TestSnapIneligibleStudentHelper(TestCase):
         result = snap_ineligible_student(self.screen, head)
         self.assertTrue(result)
 
-    def test_snap_ineligible_student_returns_false_for_tanf_household(self):
+    def test_snap_ineligible_student_returns_false_for_tanf_household(self) -> None:
         """Test that student in a household receiving TANF is exempt (Exemption 6).
 
         E6 keys off `Program.base_program == "tanf"`, so the seeded program must
@@ -185,7 +185,7 @@ class TestSnapIneligibleStudentHelper(TestCase):
         result = snap_ineligible_student(self.screen, member)
         self.assertFalse(result)
 
-    def test_snap_ineligible_student_exemption_matches_any_tanf_variant(self):
+    def test_snap_ineligible_student_exemption_matches_any_tanf_variant(self) -> None:
         """A prefixed TANF variant (e.g. wa_tanf) with base_program="tanf" still
         triggers Exemption 6 — has_base_benefit groups by base_program, so a newly
         added state variant is covered without editing any name list. (wa_tanf was
@@ -201,7 +201,7 @@ class TestSnapIneligibleStudentHelper(TestCase):
         result = snap_ineligible_student(self.screen, member)
         self.assertFalse(result)
 
-    def test_nc_fields_do_not_affect_federal_helper(self):
+    def test_nc_fields_do_not_affect_federal_helper(self) -> None:
         """NC-specific fields (student_full_time, job training, etc.) are ignored by the federal helper."""
         member = HouseholdMember.objects.create(
             screen=self.screen,

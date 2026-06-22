@@ -3,7 +3,7 @@
 from django.db import migrations
 
 
-def add_warning_message_links(apps, schema_editor):
+def add_warning_message_links(apps, schema_editor) -> None:
     WarningMessage = apps.get_model("programs", "WarningMessage")
     Translation = apps.get_model("translations", "Translation")
 

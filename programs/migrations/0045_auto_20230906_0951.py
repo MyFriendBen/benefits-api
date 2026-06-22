@@ -3,7 +3,7 @@
 from django.db import migrations
 
 
-def other_data_migrations(apps, _):
+def other_data_migrations(apps, _) -> None:
     Program = apps.get_model("programs", "Program")
 
     non_translated_fields = ("active", "legal_status_required", "name_abbreviated")

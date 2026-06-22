@@ -10,6 +10,8 @@ class Eoc(UrgentNeedFunction):
         """
         Return True if the household is below the income limit for their county and household size
         """
+        if self.urgent_need.year is None:
+            return False
         # income
         income = int(self.screen.calc_gross_income("yearly", ["all"]))
         income_limit = ami.get_screen_ami(self.screen, self.ami_percent, self.urgent_need.year.period)

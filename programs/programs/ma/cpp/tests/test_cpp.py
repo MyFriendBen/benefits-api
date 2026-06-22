@@ -23,35 +23,35 @@ from programs.programs.calc import ProgramCalculator
 class TestMaCppCalculator(TestCase):
     """Tests for MaCpp calculator class attributes and registration."""
 
-    def test_exists_and_is_subclass_of_program_calculator(self):
+    def test_exists_and_is_subclass_of_program_calculator(self) -> None:
         """Test that MaCpp calculator class exists and inherits correctly."""
         self.assertTrue(issubclass(MaCpp, ProgramCalculator))
 
-    def test_is_registered_in_ma_calculators(self):
+    def test_is_registered_in_ma_calculators(self) -> None:
         """Test that CPP is registered in the MA calculators dictionary."""
         self.assertIn("ma_cpp", ma_calculators)
         self.assertEqual(ma_calculators["ma_cpp"], MaCpp)
 
-    def test_eligible_city_is_cambridge(self):
+    def test_eligible_city_is_cambridge(self) -> None:
         """Test that the eligible city is set to Cambridge."""
         self.assertEqual(MaCpp.eligible_city, "Cambridge")
 
-    def test_child_age_range_is_preschool(self):
+    def test_child_age_range_is_preschool(self) -> None:
         """Test that the child age range is set correctly for preschool (ages 3-4)."""
         self.assertEqual(MaCpp.min_child_age, 3)
         self.assertEqual(MaCpp.max_child_age, 4)
 
-    def test_hud_county_is_middlesex(self):
+    def test_hud_county_is_middlesex(self) -> None:
         """Test that the HUD county is Middlesex (Cambridge's county)."""
         self.assertEqual(MaCpp.hud_county, "Middlesex")
 
-    def test_uses_approximate_for_65_percent_ami(self):
+    def test_uses_approximate_for_65_percent_ami(self) -> None:
         """Test that 65% AMI is estimated via hud_client.approximate_screen_mtsp_ami (no class attribute)."""
         # 65% AMI is looked up at runtime via approximate_screen_mtsp_ami("65%", ...).
         # There is intentionally no max_ami_percent class attribute.
         self.assertFalse(hasattr(MaCpp, "max_ami_percent"))
 
-    def test_dependencies_are_defined(self):
+    def test_dependencies_are_defined(self) -> None:
         """Test that required dependencies are properly defined."""
         expected_deps = [
             "income_amount",
@@ -61,7 +61,7 @@ class TestMaCppCalculator(TestCase):
         ]
         self.assertEqual(list(MaCpp.dependencies), expected_deps)
 
-    def test_amount_is_one_for_varies(self):
+    def test_amount_is_one_for_varies(self) -> None:
         """Test that amount is 1 (frontend displays 'Varies' for free preschool)."""
         self.assertEqual(MaCpp.amount, 1)
 
@@ -69,13 +69,13 @@ class TestMaCppCalculator(TestCase):
 class TestMaCppLocationEligibility(TestCase):
     """Tests for Cambridge location eligibility check."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.mock_program = Mock()
         self.mock_data = {}
         self.mock_missing_deps = Mock()
         self.mock_missing_deps.has.return_value = False
 
-    def _create_calculator(self, county, children_ages, has_benefit=False):
+    def _create_calculator(self, county, children_ages, has_benefit: bool = False):
         """Helper to create a calculator with mocked screen."""
         mock_screen = Mock()
         mock_screen.county = county
@@ -91,20 +91,20 @@ class TestMaCppLocationEligibility(TestCase):
         return MaCpp(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
     @patch("programs.programs.ma.cpp.calculator.hud_client")
-    def test_cambridge_resident_with_preschool_child_passes(self, mock_hud_client):
+    def test_cambridge_resident_with_preschool_child_passes(self, mock_hud_client) -> None:
         """Test that Cambridge residents with a 3-year-old below income limit are eligible."""
         mock_hud_client.approximate_screen_mtsp_ami.return_value = 80000
         calculator = self._create_calculator("Cambridge", [3])
         eligibility = calculator.eligible()
         self.assertTrue(eligibility.eligible)
 
-    def test_non_cambridge_resident_fails(self):
+    def test_non_cambridge_resident_fails(self) -> None:
         """Test that non-Cambridge residents are not eligible (Scenario 7)."""
         calculator = self._create_calculator("Somerville", [4])
         eligibility = calculator.eligible()
         self.assertFalse(eligibility.eligible)
 
-    def test_boston_resident_fails(self):
+    def test_boston_resident_fails(self) -> None:
         """Test that Boston residents are not eligible."""
         calculator = self._create_calculator("Boston", [4])
         eligibility = calculator.eligible()
@@ -114,7 +114,7 @@ class TestMaCppLocationEligibility(TestCase):
 class TestMaCppMemberEligibility(TestCase):
     """Tests for child age eligibility and income checks."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.mock_program = Mock()
         self.mock_data = {}
         self.mock_missing_deps = Mock()
@@ -123,9 +123,9 @@ class TestMaCppMemberEligibility(TestCase):
     def _create_calculator(
         self,
         children_ages,
-        gross_income_yearly=10000,
-        county="Cambridge",
-        has_benefit=False,
+        gross_income_yearly: int = 10000,
+        county: str = "Cambridge",
+        has_benefit: bool = False,
     ):
         """Helper to create a calculator with mocked screen."""
         mock_screen = Mock()
@@ -142,7 +142,7 @@ class TestMaCppMemberEligibility(TestCase):
         return MaCpp(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
     @patch("programs.programs.ma.cpp.calculator.hud_client")
-    def test_scenario1_three_year_old_low_income_eligible(self, mock_hud_client):
+    def test_scenario1_three_year_old_low_income_eligible(self, mock_hud_client) -> None:
         """Scenario 1: 3-year-old Cambridge family well below income limit → Eligible."""
         mock_hud_client.approximate_screen_mtsp_ami.return_value = 80000
         # $2,000/month = $24,000/year → well below 65% AMI
@@ -151,7 +151,7 @@ class TestMaCppMemberEligibility(TestCase):
         self.assertTrue(eligibility.eligible)
 
     @patch("programs.programs.ma.cpp.calculator.hud_client")
-    def test_scenario2_four_year_old_high_income_eligible(self, mock_hud_client):
+    def test_scenario2_four_year_old_high_income_eligible(self, mock_hud_client) -> None:
         """Scenario 2: 4-year-old with high income → Eligible (no income restriction for 4yo)."""
         # HUD client should NOT be called for a 4-year-old
         calculator = self._create_calculator([4], gross_income_yearly=180000)
@@ -160,7 +160,7 @@ class TestMaCppMemberEligibility(TestCase):
         mock_hud_client.approximate_screen_mtsp_ami.assert_not_called()
 
     @patch("programs.programs.ma.cpp.calculator.hud_client")
-    def test_scenario3_three_year_old_just_below_income_limit_eligible(self, mock_hud_client):
+    def test_scenario3_three_year_old_just_below_income_limit_eligible(self, mock_hud_client) -> None:
         """Scenario 3: 3-year-old, income just below interpolated 65% AMI threshold → Eligible."""
         mock_hud_client.approximate_screen_mtsp_ami.return_value = 75000
         calculator = self._create_calculator([3], gross_income_yearly=74999)
@@ -168,7 +168,7 @@ class TestMaCppMemberEligibility(TestCase):
         self.assertTrue(eligibility.eligible)
 
     @patch("programs.programs.ma.cpp.calculator.hud_client")
-    def test_scenario4_three_year_old_just_above_income_limit_ineligible(self, mock_hud_client):
+    def test_scenario4_three_year_old_just_above_income_limit_ineligible(self, mock_hud_client) -> None:
         """Scenario 4: 3-year-old, income just above interpolated 65% AMI threshold → Not eligible."""
         mock_hud_client.approximate_screen_mtsp_ami.return_value = 75000
         calculator = self._create_calculator([3], gross_income_yearly=75001)
@@ -176,7 +176,7 @@ class TestMaCppMemberEligibility(TestCase):
         self.assertFalse(eligibility.eligible)
 
     @patch("programs.programs.ma.cpp.calculator.hud_client")
-    def test_calls_approximate_with_65_percent(self, mock_hud_client):
+    def test_calls_approximate_with_65_percent(self, mock_hud_client) -> None:
         """Calculator calls approximate_screen_mtsp_ami with '65%' for 3-year-old income check.
 
         Uses a realistic Middlesex County interpolated value:
@@ -192,26 +192,26 @@ class TestMaCppMemberEligibility(TestCase):
         call_args = mock_hud_client.approximate_screen_mtsp_ami.call_args
         self.assertEqual(call_args[0][1], "65%")
 
-    def test_scenario5_child_age_2_too_young_ineligible(self):
+    def test_scenario5_child_age_2_too_young_ineligible(self) -> None:
         """Scenario 5: Child age 2 (too young) → Not eligible."""
         calculator = self._create_calculator([2])
         eligibility = calculator.eligible()
         self.assertFalse(eligibility.eligible)
 
-    def test_scenario6_child_age_5_too_old_ineligible(self):
+    def test_scenario6_child_age_5_too_old_ineligible(self) -> None:
         """Scenario 6: Child age 5 (too old) → Not eligible."""
         calculator = self._create_calculator([5])
         eligibility = calculator.eligible()
         self.assertFalse(eligibility.eligible)
 
-    def test_scenario10_no_children_ineligible(self):
+    def test_scenario10_no_children_ineligible(self) -> None:
         """Scenario 10: No children in household → Not eligible."""
         calculator = self._create_calculator([])
         eligibility = calculator.eligible()
         self.assertFalse(eligibility.eligible)
 
     @patch("programs.programs.ma.cpp.calculator.hud_client")
-    def test_scenario9_mixed_household_3yo_eligible_6yo_not(self, mock_hud_client):
+    def test_scenario9_mixed_household_3yo_eligible_6yo_not(self, mock_hud_client) -> None:
         """Scenario 9: Household with 3-year-old and 6-year-old → Eligible (3yo qualifies)."""
         mock_hud_client.approximate_screen_mtsp_ami.return_value = 80000
         calculator = self._create_calculator([3, 6], gross_income_yearly=24000)
@@ -219,7 +219,7 @@ class TestMaCppMemberEligibility(TestCase):
         self.assertTrue(eligibility.eligible)
 
     @patch("programs.programs.ma.cpp.calculator.hud_client")
-    def test_mixed_household_3yo_and_4yo_high_income_only_4yo_eligible(self, mock_hud_client):
+    def test_mixed_household_3yo_and_4yo_high_income_only_4yo_eligible(self, mock_hud_client) -> None:
         """Mixed household: 3yo + 4yo with income above limit → only 4yo is eligible member."""
         mock_hud_client.approximate_screen_mtsp_ami.return_value = 60000
         # Income above limit for 3yo, but 4yo has no income restriction
@@ -237,7 +237,7 @@ class TestMaCppMemberEligibility(TestCase):
         self.assertTrue(four_yo.eligible)
 
     @patch("programs.programs.ma.cpp.calculator.hud_client")
-    def test_hud_api_error_marks_3yo_ineligible(self, mock_hud_client):
+    def test_hud_api_error_marks_3yo_ineligible(self, mock_hud_client) -> None:
         """HUD API error for a 3-year-old → member ineligible (conservative behavior)."""
         from integrations.clients.hud_income_limits import HudIncomeClientError
 
@@ -247,14 +247,14 @@ class TestMaCppMemberEligibility(TestCase):
         self.assertFalse(eligibility.eligible)
 
     @patch("programs.programs.ma.cpp.calculator.hud_client")
-    def test_hud_api_not_called_for_4yo(self, mock_hud_client):
+    def test_hud_api_not_called_for_4yo(self, mock_hud_client) -> None:
         """HUD API should not be called when only 4-year-olds are present."""
         calculator = self._create_calculator([4])
         calculator.eligible()
         mock_hud_client.approximate_screen_mtsp_ami.assert_not_called()
 
     @patch("programs.programs.ma.cpp.calculator.hud_client")
-    def test_income_exactly_at_limit_eligible(self, mock_hud_client):
+    def test_income_exactly_at_limit_eligible(self, mock_hud_client) -> None:
         """3-year-old with income exactly at the limit → Eligible (≤ not <)."""
         mock_hud_client.approximate_screen_mtsp_ami.return_value = 60000
         calculator = self._create_calculator([3], gross_income_yearly=60000)
@@ -265,13 +265,13 @@ class TestMaCppMemberEligibility(TestCase):
 class TestMaCppHasBenefit(TestCase):
     """Tests for has_benefit exclusion (already enrolled households)."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.mock_program = Mock()
         self.mock_data = {}
         self.mock_missing_deps = Mock()
         self.mock_missing_deps.has.return_value = False
 
-    def _create_calculator(self, has_benefit=False):
+    def _create_calculator(self, has_benefit: bool = False):
         mock_screen = Mock()
         mock_screen.county = "Cambridge"
         mock_screen.household_size = 2
@@ -283,7 +283,7 @@ class TestMaCppHasBenefit(TestCase):
 
         return MaCpp(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
-    def test_without_benefit_is_eligible(self):
+    def test_without_benefit_is_eligible(self) -> None:
         """Test that households without the benefit can be eligible."""
         calculator = self._create_calculator(has_benefit=False)
         eligibility = calculator.eligible()
@@ -293,7 +293,7 @@ class TestMaCppHasBenefit(TestCase):
 class TestMaCppFosterCare(TestCase):
     """Tests for foster care eligibility — foster children bypass the 3yo income restriction."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.mock_program = Mock()
         self.mock_data = {}
         self.mock_missing_deps = Mock()
@@ -314,7 +314,7 @@ class TestMaCppFosterCare(TestCase):
         return MaCpp(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
     @patch("programs.programs.ma.cpp.calculator.hud_client")
-    def test_foster_child_age_3_above_income_limit_is_eligible(self, mock_hud_client):
+    def test_foster_child_age_3_above_income_limit_is_eligible(self, mock_hud_client) -> None:
         """Foster care child age 3 with income above 65% AMI → Eligible (bypasses income check)."""
         mock_hud_client.approximate_screen_mtsp_ami.return_value = 84120
         # $10,000/month = $120,000/year, well above the ~$84,120 interpolated 65% AMI limit
@@ -323,14 +323,14 @@ class TestMaCppFosterCare(TestCase):
         self.assertTrue(eligibility.eligible)
 
     @patch("programs.programs.ma.cpp.calculator.hud_client")
-    def test_foster_child_age_3_does_not_call_hud_api(self, mock_hud_client):
+    def test_foster_child_age_3_does_not_call_hud_api(self, mock_hud_client) -> None:
         """HUD API should not be called for a 3-year-old foster child."""
         calculator = self._create_calculator(child_age=3, relationship="fosterChild", gross_income_yearly=120000)
         calculator.eligible()
         mock_hud_client.approximate_screen_mtsp_ami.assert_not_called()
 
     @patch("programs.programs.ma.cpp.calculator.hud_client")
-    def test_non_foster_child_age_3_above_income_limit_is_ineligible(self, mock_hud_client):
+    def test_non_foster_child_age_3_above_income_limit_is_ineligible(self, mock_hud_client) -> None:
         """Non-foster child age 3 with income above 65% AMI → Not eligible (income check applies)."""
         mock_hud_client.approximate_screen_mtsp_ami.return_value = 84120
         calculator = self._create_calculator(child_age=3, relationship="child", gross_income_yearly=120000)
@@ -338,7 +338,7 @@ class TestMaCppFosterCare(TestCase):
         self.assertFalse(eligibility.eligible)
 
     @patch("programs.programs.ma.cpp.calculator.hud_client")
-    def test_foster_child_age_4_is_eligible(self, mock_hud_client):
+    def test_foster_child_age_4_is_eligible(self, mock_hud_client) -> None:
         """Foster care child age 4 → Eligible (4-year-olds always pass regardless of relation)."""
         calculator = self._create_calculator(child_age=4, relationship="fosterChild", gross_income_yearly=120000)
         eligibility = calculator.eligible()
@@ -349,7 +349,7 @@ class TestMaCppFosterCare(TestCase):
 class TestMaCppValue(TestCase):
     """Tests for benefit value calculation."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.mock_program = Mock()
         self.mock_data = {}
         self.mock_missing_deps = Mock()
@@ -372,14 +372,14 @@ class TestMaCppValue(TestCase):
 
         return MaCpp(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
-    def test_value_is_one_for_eligible_household(self):
+    def test_value_is_one_for_eligible_household(self) -> None:
         """Test that household value is 1 (representing 'Varies')."""
         calculator = self._create_calculator([4])
         eligibility = calculator.eligible()
         calculator.value(eligibility)
         self.assertEqual(eligibility.household_value, 1)
 
-    def test_value_is_zero_when_ineligible(self):
+    def test_value_is_zero_when_ineligible(self) -> None:
         """Test that value remains 0 when household is ineligible."""
         mock_screen = Mock()
         mock_screen.county = "Somerville"  # Not Cambridge

@@ -11,7 +11,10 @@ class NCFamilyPlanningServices(ProgramCalculator):
     dependencies = ["age", "insurance", "income_frequency", "income_amount", "household_size"]
     ineligible_insurance_types = ["medicaid", "emergency_medicaid", "family_planning"]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            e.condition(False)
+            return
 
         fpl = self.program.year
 
@@ -31,7 +34,7 @@ class NCFamilyPlanningServices(ProgramCalculator):
         if gross_income < income_limit_for_full_medicaid:
             e.condition(not medicaid_eligible(self.data), messages.must_not_have_benefit("Medicaid"))
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
 
         # Member must not be pregnant
@@ -44,4 +47,6 @@ class NCFamilyPlanningServices(ProgramCalculator):
         e.condition(member.is_head() or member.is_spouse())
 
         # Member must meet minimum age requirement
+        if member.age is None:
+            return
         e.condition(member.age >= NCFamilyPlanningServices.min_age)

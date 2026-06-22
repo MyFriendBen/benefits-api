@@ -9,7 +9,10 @@ class SunBucks(ProgramCalculator):
     fpl_percent = 1.85
     dependencies = ["age", "insurance", "income_amount", "income_frequency", "household_size"]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
+        if self.program.year is None:
+            e.condition(False)
+            return
         # Income
         fpl = self.program.year
         income_limit = int(self.fpl_percent * fpl.get_limit(self.screen.household_size))
@@ -21,10 +24,12 @@ class SunBucks(ProgramCalculator):
 
         e.condition(gross_income < income_limit, messages.income(gross_income, income_limit))
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
         member = e.member
 
         # age eligibility
+        if member.age is None:
+            return
         e.condition(SunBucks.min_age <= member.age <= SunBucks.max_age)
 
         e.condition(not member.has_insurance("medicaid"))

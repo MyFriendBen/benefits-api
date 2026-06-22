@@ -20,28 +20,28 @@ from programs.programs.calc import ProgramCalculator, Eligibility
 class TestMaHomeBridgeCalculator(TestCase):
     """Tests for MaHomeBridge calculator class."""
 
-    def test_exists_and_is_subclass_of_program_calculator(self):
+    def test_exists_and_is_subclass_of_program_calculator(self) -> None:
         """Test that MaHomeBridge calculator class exists and inherits correctly."""
         self.assertTrue(issubclass(MaHomeBridge, ProgramCalculator))
 
-    def test_is_registered_in_ma_calculators(self):
+    def test_is_registered_in_ma_calculators(self) -> None:
         """Test that HomeBridge is registered in the MA calculators dictionary."""
         self.assertIn("ma_homebridge", ma_calculators)
         self.assertEqual(ma_calculators["ma_homebridge"], MaHomeBridge)
 
-    def test_eligible_city_is_cambridge(self):
+    def test_eligible_city_is_cambridge(self) -> None:
         """Test that the eligible city is set to Cambridge."""
         self.assertEqual(MaHomeBridge.eligible_city, "Cambridge")
 
-    def test_hud_county_is_middlesex(self):
+    def test_hud_county_is_middlesex(self) -> None:
         """Test that the HUD county is Middlesex (Cambridge is in Middlesex County)."""
         self.assertEqual(MaHomeBridge.hud_county, "Middlesex")
 
-    def test_ami_max_multiplier_is_correct(self):
+    def test_ami_max_multiplier_is_correct(self) -> None:
         """Test that ami_max_multiplier is 1.5 (80% AMI × 1.5 = 120% AMI)."""
         self.assertEqual(MaHomeBridge.ami_max_multiplier, 1.5)
 
-    def test_dependencies_are_defined(self):
+    def test_dependencies_are_defined(self) -> None:
         """Test that required dependencies are properly defined."""
         expected_deps = ["zipcode", "income_amount", "income_frequency", "household_size"]
         self.assertEqual(list(MaHomeBridge.dependencies), expected_deps)
@@ -50,7 +50,7 @@ class TestMaHomeBridgeCalculator(TestCase):
 class TestMaHomeBridgeLocationEligibility(TestCase):
     """Tests for Cambridge location eligibility check."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test fixtures."""
         self.mock_program = Mock()
         self.mock_program.year = Mock()
@@ -59,7 +59,7 @@ class TestMaHomeBridgeLocationEligibility(TestCase):
         self.mock_missing_deps = Mock()
         self.mock_missing_deps.has.return_value = False
 
-    def _create_calculator(self, county, household_size=4, income=60000, has_benefit=False):
+    def _create_calculator(self, county, household_size: int = 4, income: int = 60000, has_benefit: bool = False):
         """Helper to create a calculator with mocked screen."""
         mock_screen = Mock()
         mock_screen.county = county
@@ -71,7 +71,7 @@ class TestMaHomeBridgeLocationEligibility(TestCase):
 
         return MaHomeBridge(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
-    def _mock_ami_values(self, mock_hud_client, ami_60=60000, ami_80=80000):
+    def _mock_ami_values(self, mock_hud_client, ami_60: int = 60000, ami_80: int = 80000) -> None:
         """Helper to mock HUD client returning values for 60% and 80% AMI.
 
         With ami_80=80000, the 120% ceiling is 80000 x 1.5 = 120000.
@@ -87,7 +87,7 @@ class TestMaHomeBridgeLocationEligibility(TestCase):
         mock_hud_client.get_screen_mtsp_ami.side_effect = side_effect
 
     @patch("programs.programs.ma.homebridge.calculator.hud_client")
-    def test_cambridge_resident_passes_location_check(self, mock_hud_client):
+    def test_cambridge_resident_passes_location_check(self, mock_hud_client) -> None:
         """Test that Cambridge residents pass the location eligibility check."""
         self._mock_ami_values(mock_hud_client)
 
@@ -100,7 +100,7 @@ class TestMaHomeBridgeLocationEligibility(TestCase):
         self.assertTrue(eligibility.eligible)
 
     @patch("programs.programs.ma.homebridge.calculator.hud_client")
-    def test_non_cambridge_resident_fails_location_check(self, mock_hud_client):
+    def test_non_cambridge_resident_fails_location_check(self, mock_hud_client) -> None:
         """Test that non-Cambridge residents fail the location eligibility check."""
         self._mock_ami_values(mock_hud_client)
 
@@ -113,7 +113,7 @@ class TestMaHomeBridgeLocationEligibility(TestCase):
         self.assertFalse(eligibility.eligible)
 
     @patch("programs.programs.ma.homebridge.calculator.hud_client")
-    def test_somerville_resident_fails_location_check(self, mock_hud_client):
+    def test_somerville_resident_fails_location_check(self, mock_hud_client) -> None:
         """Test that Somerville (adjacent to Cambridge) residents are not eligible."""
         self._mock_ami_values(mock_hud_client)
 
@@ -128,14 +128,14 @@ class TestMaHomeBridgeLocationEligibility(TestCase):
 class TestMaHomeBridgeIncomeEligibility(TestCase):
     """Tests for AMI-based income eligibility check."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test fixtures."""
         self.mock_program = Mock()
         self.mock_data = {}
         self.mock_missing_deps = Mock()
         self.mock_missing_deps.has.return_value = False
 
-    def _create_calculator(self, income, household_size=4, has_benefit=False):
+    def _create_calculator(self, income, household_size: int = 4, has_benefit: bool = False):
         """Helper to create a calculator with specified income."""
         mock_screen = Mock()
         mock_screen.county = "Cambridge"
@@ -147,7 +147,7 @@ class TestMaHomeBridgeIncomeEligibility(TestCase):
 
         return MaHomeBridge(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
-    def _mock_ami_values(self, mock_hud_client, ami_60=60000, ami_80=80000):
+    def _mock_ami_values(self, mock_hud_client, ami_60: int = 60000, ami_80: int = 80000) -> None:
         """Helper to mock HUD client returning values for 60% and 80% AMI.
 
         With ami_80=80000, the 120% ceiling is 80000 x 1.5 = 120000.
@@ -163,7 +163,7 @@ class TestMaHomeBridgeIncomeEligibility(TestCase):
         mock_hud_client.get_screen_mtsp_ami.side_effect = side_effect
 
     @patch("programs.programs.ma.homebridge.calculator.hud_client")
-    def test_income_at_60_percent_ami_is_eligible(self, mock_hud_client):
+    def test_income_at_60_percent_ami_is_eligible(self, mock_hud_client) -> None:
         """Test that income exactly at 60% AMI is eligible."""
         # 60% AMI = 60000, 80% AMI = 80000, so 120% AMI = 80000 x 1.5 = 120000
         self._mock_ami_values(mock_hud_client)
@@ -176,7 +176,7 @@ class TestMaHomeBridgeIncomeEligibility(TestCase):
         self.assertTrue(eligibility.eligible)
 
     @patch("programs.programs.ma.homebridge.calculator.hud_client")
-    def test_income_at_120_percent_ami_is_eligible(self, mock_hud_client):
+    def test_income_at_120_percent_ami_is_eligible(self, mock_hud_client) -> None:
         """Test that income exactly at 120% AMI is eligible."""
         # 60% AMI = 60000, 80% AMI = 80000, so 120% AMI = 80000 x 1.5 = 120000
         self._mock_ami_values(mock_hud_client)
@@ -189,7 +189,7 @@ class TestMaHomeBridgeIncomeEligibility(TestCase):
         self.assertTrue(eligibility.eligible)
 
     @patch("programs.programs.ma.homebridge.calculator.hud_client")
-    def test_income_between_60_and_120_percent_ami_is_eligible(self, mock_hud_client):
+    def test_income_between_60_and_120_percent_ami_is_eligible(self, mock_hud_client) -> None:
         """Test that income between 60% and 120% AMI is eligible."""
         # 60% AMI = 60000, 80% AMI = 80000, so 120% AMI = 120000; midpoint = 90000
         self._mock_ami_values(mock_hud_client)
@@ -202,7 +202,7 @@ class TestMaHomeBridgeIncomeEligibility(TestCase):
         self.assertTrue(eligibility.eligible)
 
     @patch("programs.programs.ma.homebridge.calculator.hud_client")
-    def test_income_below_60_percent_ami_is_ineligible(self, mock_hud_client):
+    def test_income_below_60_percent_ami_is_ineligible(self, mock_hud_client) -> None:
         """Test that income below 60% AMI is not eligible."""
         # 60% AMI = 60000
         self._mock_ami_values(mock_hud_client)
@@ -215,7 +215,7 @@ class TestMaHomeBridgeIncomeEligibility(TestCase):
         self.assertFalse(eligibility.eligible)
 
     @patch("programs.programs.ma.homebridge.calculator.hud_client")
-    def test_income_above_120_percent_ami_is_ineligible(self, mock_hud_client):
+    def test_income_above_120_percent_ami_is_ineligible(self, mock_hud_client) -> None:
         """Test that income above 120% AMI is not eligible."""
         # 80% AMI = 80000, so 120% AMI = 80000 x 1.5 = 120000
         self._mock_ami_values(mock_hud_client)
@@ -231,14 +231,14 @@ class TestMaHomeBridgeIncomeEligibility(TestCase):
 class TestMaHomeBridgeHudApiError(TestCase):
     """Tests for HUD API error handling."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test fixtures."""
         self.mock_program = Mock()
         self.mock_data = {}
         self.mock_missing_deps = Mock()
         self.mock_missing_deps.has.return_value = False
 
-    def _create_calculator(self, income=70000, has_benefit=False):
+    def _create_calculator(self, income: int = 70000, has_benefit: bool = False):
         """Helper to create a calculator."""
         mock_screen = Mock()
         mock_screen.county = "Cambridge"
@@ -251,7 +251,7 @@ class TestMaHomeBridgeHudApiError(TestCase):
         return MaHomeBridge(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
     @patch("programs.programs.ma.homebridge.calculator.hud_client")
-    def test_hud_api_error_results_in_ineligibility(self, mock_hud_client):
+    def test_hud_api_error_results_in_ineligibility(self, mock_hud_client) -> None:
         """Test that HUD API errors result in ineligibility (income cannot be verified)."""
         from integrations.clients.hud_income_limits import HudIncomeClientError
 
@@ -269,14 +269,14 @@ class TestMaHomeBridgeHudApiError(TestCase):
 class TestMaHomeBridgeHasBenefit(TestCase):
     """Tests for has_benefit behavior - users who already have the benefit should be ineligible."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test fixtures."""
         self.mock_program = Mock()
         self.mock_data = {}
         self.mock_missing_deps = Mock()
         self.mock_missing_deps.has.return_value = False
 
-    def _create_calculator(self, has_benefit=False, income=70000):
+    def _create_calculator(self, has_benefit: bool = False, income: int = 70000):
         """Helper to create a calculator."""
         mock_screen = Mock()
         mock_screen.county = "Cambridge"
@@ -288,7 +288,7 @@ class TestMaHomeBridgeHasBenefit(TestCase):
 
         return MaHomeBridge(mock_screen, self.mock_program, self.mock_data, self.mock_missing_deps)
 
-    def _mock_ami_values(self, mock_hud_client, ami_60=60000, ami_80=80000):
+    def _mock_ami_values(self, mock_hud_client, ami_60: int = 60000, ami_80: int = 80000) -> None:
         """Helper to mock HUD client returning values for 60% and 80% AMI.
 
         With ami_80=80000, the 120% ceiling is 80000 x 1.5 = 120000.
@@ -304,7 +304,7 @@ class TestMaHomeBridgeHasBenefit(TestCase):
         mock_hud_client.get_screen_mtsp_ami.side_effect = side_effect
 
     @patch("programs.programs.ma.homebridge.calculator.hud_client")
-    def test_user_without_benefit_is_eligible(self, mock_hud_client):
+    def test_user_without_benefit_is_eligible(self, mock_hud_client) -> None:
         """Test that users who don't have the benefit can be eligible."""
         self._mock_ami_values(mock_hud_client)
 
@@ -319,6 +319,6 @@ class TestMaHomeBridgeHasBenefit(TestCase):
 class TestMaHomeBridgeValue(TestCase):
     """Tests for benefit value calculation."""
 
-    def test_amount_is_one(self):
+    def test_amount_is_one(self) -> None:
         """Test that amount is 1 (FE displays 'Varies' for low_confidence programs)."""
         self.assertEqual(MaHomeBridge.amount, 1)

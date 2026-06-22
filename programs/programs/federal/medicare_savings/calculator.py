@@ -26,7 +26,7 @@ class MedicareSavings(ProgramCalculator):
         is_married = member.is_married()
         return ("married" if is_married["is_married"] else "single"), is_married.get("married_to")
 
-    def get_combined_income(self, member, spouse=None, include_ssi=True):
+    def get_combined_income(self, member, spouse=None, include_ssi: bool = True):
         earned = member.calc_gross_income("yearly", ["earned"])
         unearned = member.calc_gross_income("yearly", ["unearned"], ["sSI"] if include_ssi else [])
         ssi = member.calc_gross_income("yearly", ["sSI"]) if include_ssi else 0
@@ -51,7 +51,7 @@ class MedicareSavings(ProgramCalculator):
         earned /= 2
         return earned, unearned
 
-    def get_fpl_limits(self, household_size, min_percent=None):
+    def get_fpl_limits(self, household_size: int, min_percent=None):
         fpl = self.program.year.as_dict().get(household_size)
         if fpl is None:
             return None, None
@@ -60,10 +60,15 @@ class MedicareSavings(ProgramCalculator):
         return min_income, max_income
 
     # ---------- main eligibility ----------
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
+        if self.program.year is None:
+            e.condition(False)
+            return
         member = e.member
 
         # age
+        if member.age is None:
+            return
         e.condition(member.age >= self.min_age)
 
         # insurance
@@ -71,12 +76,14 @@ class MedicareSavings(ProgramCalculator):
 
         # marital status & assets
         status, spouse = self.get_marital_status(member)
+        if self.screen.household_assets is None:
+            return
         e.condition(self.screen.household_assets <= self.asset_limit[status])
 
         # income limits check (federal logic)
         self.check_income_limits(e, member, spouse)
 
-    def check_income_limits(self, e: MemberEligibility, member, spouse):
+    def check_income_limits(self, e: MemberEligibility, member, spouse) -> None:
         """Default federal logic (includes SSI)."""
         earned, unearned, ssi = self.get_combined_income(member, spouse, include_ssi=True)
         earned, unearned = self.apply_income_disregards(earned, unearned)

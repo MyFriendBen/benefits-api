@@ -2,7 +2,7 @@
 from django.db import migrations
 
 
-def add_website_description(apps, schema_editor):
+def add_website_description(apps, schema_editor) -> None:
     Program = apps.get_model("programs", "Program")
     Translation = apps.get_model("translations", "Translation")
 

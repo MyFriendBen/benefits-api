@@ -4,7 +4,7 @@ from ..base import UrgentNeedFunction
 class MealInCounties(UrgentNeedFunction):
     dependencies = ["county"]
 
-    def eligible(self):
+    def eligible(self) -> bool:
         """
         MEAL (Additional Resource for food) eligibility function.
 

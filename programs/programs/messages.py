@@ -1,4 +1,4 @@
-def translation(name, i, message):
+def translation(name: str, i, message):
     return {"default_message": message, "label": f"eligibility_message.{name}-{i}"}
 
 
@@ -58,7 +58,7 @@ def assets(asset_limit):
     )
 
 
-def child(min_age=0, max_age=18):
+def child(min_age: int = 0, max_age: int = 18):
     """
     Must have a child between the ages of {min_age} and {max_age}
     """
@@ -93,14 +93,14 @@ def older_than(min_age):
     )
 
 
-def must_have_benefit(benefit_name):
+def must_have_benefit(benefit_name: str):
     """
     Household must have {benefit_name}
     """
     return (translation("has_benefit", 0, "Household must have"), f" {benefit_name}")
 
 
-def must_not_have_benefit(benefit_name):
+def must_not_have_benefit(benefit_name: str):
     """
     Household must not have {benefit_name}
     """

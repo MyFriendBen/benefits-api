@@ -44,11 +44,15 @@ class CoNurseFamilyPartnership(ProgramCalculator):
         "pregnant",
     ]
 
-    def household_eligible(self, e: Eligibility):
+    def household_eligible(self, e: Eligibility) -> None:
         # no other children
         e.condition(self.screen.num_children(child_relationship=self.child_relationships) == 0)
 
-    def member_eligible(self, e: MemberEligibility):
+    def member_eligible(self, e: MemberEligibility) -> None:
+        if self.program.year is None:
+            e.condition(False)
+            return
+
         member = e.member
 
         # pregnant

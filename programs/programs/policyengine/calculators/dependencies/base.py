@@ -29,7 +29,7 @@ class PolicyEngineScreenInput:
     min_pe_version: tuple = ()
     max_pe_version: tuple = ()
 
-    def __init__(self, screen: Screen, members: List[HouseholdMember], relationship_map):
+    def __init__(self, screen: Screen, members: List[HouseholdMember], relationship_map) -> None:
         self.screen = screen
         self.members = members
         self.relationship_map = relationship_map
@@ -74,7 +74,7 @@ class Member(PolicyEngineScreenInput):
 
     unit = "people"
 
-    def __init__(self, screen: Screen, member: HouseholdMember, relationship_map):
+    def __init__(self, screen: Screen, member: HouseholdMember, relationship_map) -> None:
         self.screen = screen
         self.member = member
         self.relationship_map = relationship_map

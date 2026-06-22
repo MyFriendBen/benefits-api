@@ -17,11 +17,11 @@ from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibi
 
 
 def make_calculator(
-    has_snap=False,
-    has_tanf=False,
-    household_income=0,
-    household_size=1,
-    fpl_limit=15000,
+    has_snap: bool = False,
+    has_tanf: bool = False,
+    household_income: int = 0,
+    household_size: int = 1,
+    fpl_limit: int = 15000,
 ):
     """Create a TxCcad calculator with a mocked screen and program."""
     mock_program = Mock()
@@ -38,7 +38,14 @@ def make_calculator(
     return TxCcad(mock_screen, mock_program, {}, mock_missing_deps)
 
 
-def make_member(age, disabled=False, long_term_disability=False, visually_impaired=False, ssi_income=0, medicaid=False):
+def make_member(
+    age,
+    disabled: bool = False,
+    long_term_disability: bool = False,
+    visually_impaired: bool = False,
+    ssi_income: int = 0,
+    medicaid: bool = False,
+):
     """Create a mock household member."""
     member = Mock()
     member.age = age
@@ -60,23 +67,23 @@ def make_eligible_member_e(member):
 
 
 class TestTxCcadClassAttributes(TestCase):
-    def test_is_subclass_of_program_calculator(self):
+    def test_is_subclass_of_program_calculator(self) -> None:
         self.assertTrue(issubclass(TxCcad, ProgramCalculator))
 
-    def test_is_registered_in_tx_calculators(self):
+    def test_is_registered_in_tx_calculators(self) -> None:
         self.assertIn("tx_ccad", tx_calculators)
         self.assertEqual(tx_calculators["tx_ccad"], TxCcad)
 
-    def test_min_age_is_65(self):
+    def test_min_age_is_65(self) -> None:
         self.assertEqual(TxCcad.min_age, 65)
 
-    def test_min_age_disabled_is_21(self):
+    def test_min_age_disabled_is_21(self) -> None:
         self.assertEqual(TxCcad.min_age_disabled, 21)
 
-    def test_fpl_percent_is_3(self):
+    def test_fpl_percent_is_3(self) -> None:
         self.assertEqual(TxCcad.fpl_percent, 3)
 
-    def test_amount_is_10000(self):
+    def test_amount_is_10000(self) -> None:
         self.assertEqual(TxCcad.amount, 10_000)
 
 
@@ -89,38 +96,38 @@ class TestTxCcadMemberEligibility(TestCase):
         calc.member_eligible(e)
         return e.eligible
 
-    def test_age_65_is_eligible(self):
+    def test_age_65_is_eligible(self) -> None:
         self.assertTrue(self._run(make_member(age=65)))
 
-    def test_age_64_without_disability_is_ineligible(self):
+    def test_age_64_without_disability_is_ineligible(self) -> None:
         self.assertFalse(self._run(make_member(age=64)))
 
-    def test_age_21_with_disability_is_eligible(self):
+    def test_age_21_with_disability_is_eligible(self) -> None:
         self.assertTrue(self._run(make_member(age=21, disabled=True)))
 
-    def test_age_21_without_disability_is_ineligible(self):
+    def test_age_21_without_disability_is_ineligible(self) -> None:
         self.assertFalse(self._run(make_member(age=21, disabled=False)))
 
-    def test_age_20_with_disability_is_ineligible(self):
+    def test_age_20_with_disability_is_ineligible(self) -> None:
         self.assertFalse(self._run(make_member(age=20, disabled=True)))
 
-    def test_age_none_is_ineligible(self):
+    def test_age_none_is_ineligible(self) -> None:
         self.assertFalse(self._run(make_member(age=None)))
 
-    def test_long_term_disability_qualifies_as_disability(self):
+    def test_long_term_disability_qualifies_as_disability(self) -> None:
         self.assertTrue(self._run(make_member(age=21, long_term_disability=True)))
 
-    def test_visually_impaired_qualifies_as_disability(self):
+    def test_visually_impaired_qualifies_as_disability(self) -> None:
         self.assertTrue(self._run(make_member(age=21, visually_impaired=True)))
 
-    def test_age_80_no_disability_required(self):
+    def test_age_80_no_disability_required(self) -> None:
         self.assertTrue(self._run(make_member(age=80, disabled=False)))
 
 
 class TestTxCcadHouseholdIncomeEligibility(TestCase):
     """Tests for the income gate — 300% FPL with no categorical bypass."""
 
-    def _run(self, household_income, fpl_limit=15000):
+    def _run(self, household_income, fpl_limit: int = 15000):
         # fpl_percent=3, so income_limit = 3 * fpl_limit
         calc = make_calculator(household_income=household_income, fpl_limit=fpl_limit)
         member = make_member(age=68)
@@ -129,20 +136,22 @@ class TestTxCcadHouseholdIncomeEligibility(TestCase):
         calc.household_eligible(e)
         return e.eligible
 
-    def test_income_below_300_fpl_is_eligible(self):
+    def test_income_below_300_fpl_is_eligible(self) -> None:
         self.assertTrue(self._run(household_income=10000, fpl_limit=5000))  # limit=15000, income=10000
 
-    def test_income_exactly_at_300_fpl_is_eligible(self):
+    def test_income_exactly_at_300_fpl_is_eligible(self) -> None:
         self.assertTrue(self._run(household_income=15000, fpl_limit=5000))  # limit=15000, income=15000
 
-    def test_income_above_300_fpl_is_ineligible(self):
+    def test_income_above_300_fpl_is_ineligible(self) -> None:
         self.assertFalse(self._run(household_income=15001, fpl_limit=5000))  # limit=15000, income=15001
 
 
 class TestTxCcadSnapTanfCategoricalEligibility(TestCase):
     """SNAP and TANF are household-level and bypass the income test."""
 
-    def _run(self, has_snap=False, has_tanf=False, household_income=99999, fpl_limit=5000):
+    def _run(
+        self, has_snap: bool = False, has_tanf: bool = False, household_income: int = 99999, fpl_limit: int = 5000
+    ):
         calc = make_calculator(
             has_snap=has_snap, has_tanf=has_tanf, household_income=household_income, fpl_limit=fpl_limit
         )
@@ -152,20 +161,20 @@ class TestTxCcadSnapTanfCategoricalEligibility(TestCase):
         calc.household_eligible(e)
         return e.eligible
 
-    def test_snap_bypasses_income_test(self):
+    def test_snap_bypasses_income_test(self) -> None:
         self.assertTrue(self._run(has_snap=True))
 
-    def test_tanf_bypasses_income_test(self):
+    def test_tanf_bypasses_income_test(self) -> None:
         self.assertTrue(self._run(has_tanf=True))
 
-    def test_no_categorical_and_high_income_is_ineligible(self):
+    def test_no_categorical_and_high_income_is_ineligible(self) -> None:
         self.assertFalse(self._run())
 
 
 class TestTxCcadMedicaidSsiCategoricalEligibility(TestCase):
     """SSI and Medicaid only count for the age-eligible member — not other household members."""
 
-    def _make_calc_with_members(self, eligible_members, household_income=99999, fpl_limit=5000):
+    def _make_calc_with_members(self, eligible_members, household_income: int = 99999, fpl_limit: int = 5000):
         calc = make_calculator(household_income=household_income, fpl_limit=fpl_limit)
         e = Eligibility()
         for member in eligible_members:
@@ -173,15 +182,15 @@ class TestTxCcadMedicaidSsiCategoricalEligibility(TestCase):
         calc.household_eligible(e)
         return e.eligible
 
-    def test_medicaid_on_eligible_member_bypasses_income(self):
+    def test_medicaid_on_eligible_member_bypasses_income(self) -> None:
         member = make_member(age=68, medicaid=True)
         self.assertTrue(self._make_calc_with_members([member]))
 
-    def test_ssi_income_on_eligible_member_bypasses_income(self):
+    def test_ssi_income_on_eligible_member_bypasses_income(self) -> None:
         member = make_member(age=68, ssi_income=943)
         self.assertTrue(self._make_calc_with_members([member]))
 
-    def test_medicaid_on_ineligible_member_does_not_bypass_income(self):
+    def test_medicaid_on_ineligible_member_does_not_bypass_income(self) -> None:
         """A 35-year-old with Medicaid should not grant categorical eligibility to the age-eligible member."""
         age_eligible = make_member(age=68, medicaid=False)
         ineligible_with_medicaid = make_member(age=35, medicaid=True)
@@ -196,11 +205,11 @@ class TestTxCcadMedicaidSsiCategoricalEligibility(TestCase):
         calc.household_eligible(e)
         self.assertFalse(e.eligible)
 
-    def test_no_ssi_or_medicaid_and_high_income_is_ineligible(self):
+    def test_no_ssi_or_medicaid_and_high_income_is_ineligible(self) -> None:
         member = make_member(age=68, ssi_income=0, medicaid=False)
         self.assertFalse(self._make_calc_with_members([member]))
 
-    def test_ssi_mock_does_not_trigger_on_wrong_income_type(self):
+    def test_ssi_mock_does_not_trigger_on_wrong_income_type(self) -> None:
         """Regression: calc_gross_income("yearly", ["all"]) must not return ssi_income.
 
         The mock returns ssi_income only for ("yearly", ["sSI"]).  The household
@@ -221,7 +230,7 @@ class TestTxCcadMedicaidSsiCategoricalEligibility(TestCase):
 class TestTxCcadMultiMemberHousehold(TestCase):
     """Tests for multi-member households (scenarios 8 and 9)."""
 
-    def test_eligible_senior_with_ineligible_adult_child(self):
+    def test_eligible_senior_with_ineligible_adult_child(self) -> None:
         """Scenario 8: senior is eligible; combined income is within 300% FPL for household size 2."""
         # household_size=2, fpl_limit for size 2 = 20000, so income_limit = 60000
         calc = make_calculator(household_income=45600, household_size=2, fpl_limit=20000)
@@ -238,7 +247,7 @@ class TestTxCcadMultiMemberHousehold(TestCase):
         calc.household_eligible(e)
         self.assertTrue(e.eligible)
 
-    def test_married_couple_both_65_combined_income_below_300_fpl(self):
+    def test_married_couple_both_65_combined_income_below_300_fpl(self) -> None:
         """Scenario 9: both spouses 65+, combined income within 300% FPL for household of 2."""
         # household_size=2, fpl_limit for size 2 = 20000, so income_limit = 60000
         # combined income = $1,200 + $1,000 = $2,200/month = $26,400/year

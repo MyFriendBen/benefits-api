@@ -11,7 +11,7 @@ import requests
 class Command(BaseCommand):
     help = "Pull a single screen from a remote environment into the local database"
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser) -> None:
         parser.add_argument(
             "domain",
             nargs=None,
@@ -29,7 +29,7 @@ class Command(BaseCommand):
         )
 
     @transaction.atomic
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         domain = options["domain"]
         uuid = options["uuid"]
 
@@ -46,7 +46,7 @@ class Command(BaseCommand):
 
         self._upsert_screen(uuid, remote_screen)
 
-    def _upsert_screen(self, uuid: str, remote_screen: dict):
+    def _upsert_screen(self, uuid: str, remote_screen: dict) -> None:
         try:
             # update
             screen = Screen.objects.get(uuid=uuid)
