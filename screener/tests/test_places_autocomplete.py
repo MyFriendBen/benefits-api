@@ -7,6 +7,7 @@ Unit tests for the Google Places Autocomplete proxy:
 import requests
 from unittest.mock import patch, Mock
 
+from django.core.cache import cache
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -78,6 +79,31 @@ class TestGooglePlacesClient(TestCase):
         results = GooglePlacesClient().autocomplete_address("123 Main")
 
         self.assertEqual(results[0]["description"], "123 Main St, Denver, CO 80014")
+
+    @patch("integrations.clients.google_places.requests.get")
+    def test_cache_hit_skips_api_call(self, mock_get):
+        mock_get.return_value = Mock(json=lambda: self.MOCK_GOOGLE_RESPONSE)
+        mock_get.return_value.raise_for_status = Mock()
+
+        client = GooglePlacesClient()
+        client.autocomplete_address("123 Main")
+        client.autocomplete_address("123 Main")
+
+        mock_get.assert_called_once()
+
+    @patch("integrations.clients.google_places.requests.get")
+    def test_cache_key_is_case_insensitive(self, mock_get):
+        mock_get.return_value = Mock(json=lambda: self.MOCK_GOOGLE_RESPONSE)
+        mock_get.return_value.raise_for_status = Mock()
+
+        client = GooglePlacesClient()
+        client.autocomplete_address("123 Main")
+        client.autocomplete_address("123 MAIN")
+
+        mock_get.assert_called_once()
+
+    def tearDown(self):
+        cache.clear()
 
 
 class TestPlacesAutocompleteView(APITestCase):
