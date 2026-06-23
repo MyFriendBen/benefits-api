@@ -379,7 +379,6 @@ class Command(BaseCommand):
             "screen.last_email_request_date": "Timestamp when results email was last sent to user",
             "screen.alternate_path": "Secondary screener flow identifier (currently unused)",
             "screen.is_verified": "Whether user identity has been verified (currently unused)",
-            # Screen fields - has_* benefits (current enrollment)
             "screen.has_benefits": "Whether user has any current benefits (yes/no/preferNotToAnswer)",
             # Screen fields - needs_* (self-reported needs)
             "screen.needs_food": "User indicated need for food assistance",

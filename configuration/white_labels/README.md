@@ -190,7 +190,7 @@ category_benefits = {
 **To add a new benefit:**
 1. Add key to `category_benefits` (e.g., `"my_benefit"`)
 2. Add mapping in `has_benefit()` name_map for all program variants that share this benefit: `"my_benefit"`, `"co_my_benefit"`, etc.
-3. The frontend sends the key as part of `current_benefits` — no `has_*` model field is needed
+3. The frontend sends the key as part of `current_benefits`
 
 See [_template.py](./template.py) for detailed documentation.
 
@@ -330,7 +330,7 @@ Multiple program variants can map to the same benefit in `has_benefit()`:
 - `"co_snap"` → checks `screen.current_benefits` for a program with `name_abbreviated = "co_snap"` (same real-world benefit)
 - `"il_snap"` → checks `screen.current_benefits` for a program with `name_abbreviated = "il_snap"` (same real-world benefit)
 
-Current benefit enrollment is tracked via `Screen.current_benefits` (the `CurrentBenefit` relation). The `has_benefit()` method checks whether a matching `name_abbreviated` appears in that relation — there are no `has_*` boolean columns on `Screen`.
+Current benefit enrollment is tracked via `Screen.current_benefits` (the `CurrentBenefit` relation). The `has_benefit()` method checks whether a matching `name_abbreviated` appears in that relation.
 
 ## Related Files
 
