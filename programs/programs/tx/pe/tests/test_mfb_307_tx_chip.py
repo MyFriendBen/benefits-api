@@ -17,7 +17,6 @@ class TestMfb307TxChipIntegration(TestCase):
             household_size=4,
             household_assets=0,
             completed=False,
-            last_tax_filing_year="2025",
         )
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=41)
         IncomeStream.objects.create(

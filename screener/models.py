@@ -603,7 +603,7 @@ class HouseholdMember(models.Model):
     def is_spouse(self) -> bool:
         return self.screen.relationship_map()[self.screen.get_head().id] == self.id
 
-    def is_dependent(self):
+    def is_dependent(self) -> bool:
         is_tax_unit_spouse = self.is_spouse()
         is_tax_unit_head = self.is_head()
         if is_tax_unit_head or is_tax_unit_spouse:
@@ -615,7 +615,7 @@ class HouseholdMember(models.Model):
         )
 
         # Path 2: Qualifying Relative
-        threshold = get_qualifying_relative_threshold(self.screen.last_tax_filing_year)
+        threshold = get_qualifying_relative_threshold(self.screen.get_reference_date().year)
         is_qualifying_relative = self.calc_gross_income("yearly", ["all"]) < threshold
 
         return is_qualifying_child or is_qualifying_relative

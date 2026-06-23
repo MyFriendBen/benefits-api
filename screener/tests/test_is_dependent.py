@@ -1,5 +1,6 @@
 from django.test import TestCase
 from screener.models import Screen, HouseholdMember, WhiteLabel, IncomeStream
+from screener.irs_parameters import get_qualifying_relative_threshold
 
 
 class TestIsDependent(TestCase):
@@ -10,7 +11,6 @@ class TestIsDependent(TestCase):
         self.screen = Screen.objects.create(
             white_label=self.white_label,
             completed=False,
-            last_tax_filing_year="2025",
         )
         self.head = HouseholdMember.objects.create(
             screen=self.screen,
@@ -61,16 +61,18 @@ class TestIsDependent(TestCase):
 
     def test_qualifying_relative_exactly_at_threshold(self):
         # IRS rule is "less than" — at threshold should NOT be a dependent
+        threshold = get_qualifying_relative_threshold(self.screen.get_reference_date().year)
         adult_child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=19)
         IncomeStream.objects.create(
-            screen=self.screen, household_member=adult_child, type="wages", amount=5_200, frequency="yearly"
+            screen=self.screen, household_member=adult_child, type="wages", amount=threshold, frequency="yearly"
         )
         self.assertFalse(adult_child.is_dependent())
 
     def test_qualifying_relative_above_threshold(self):
+        threshold = get_qualifying_relative_threshold(self.screen.get_reference_date().year)
         adult_child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=19)
         IncomeStream.objects.create(
-            screen=self.screen, household_member=adult_child, type="wages", amount=5_201, frequency="yearly"
+            screen=self.screen, household_member=adult_child, type="wages", amount=threshold + 1, frequency="yearly"
         )
         self.assertFalse(adult_child.is_dependent())
 
@@ -142,7 +144,7 @@ class TestIsDependent(TestCase):
         )
         self.assertTrue(grandchild.is_dependent())
 
-    def test_disabled_adult_at_threshold_margin(self):
+    def test_disabled_adult_above_qualifying_relative_threshold_still_dependent(self):
         IncomeStream.objects.create(
             screen=self.screen, household_member=self.head, type="wages", amount=100_000, frequency="yearly"
         )

@@ -12,7 +12,6 @@ class TestQualifyingRelativeUnitSplitting(TestCase):
         self.screen = Screen.objects.create(
             white_label=self.white_label,
             completed=False,
-            last_tax_filing_year="2025",
             household_size=2,
         )
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=40)

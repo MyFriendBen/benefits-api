@@ -38,7 +38,6 @@ class TestRtdLiveQualifyingRelativeImpact(TestCase):
         return Screen.objects.create(
             white_label=self.white_label,
             completed=False,
-            last_tax_filing_year="2025",
             zipcode=zipcode,
         )
 
@@ -129,7 +128,6 @@ class TestPropertyCreditRebateQualifyingRelativeImpact(TestCase):
         self.screen = Screen.objects.create(
             white_label=self.white_label,
             completed=False,
-            last_tax_filing_year="2025",
         )
         HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=45)
 
