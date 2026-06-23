@@ -12,15 +12,12 @@
     "year": "2026",
     "legal_status_required": [
       "citizen",
-      "non_citizen",
-      "refugee",
       "gc_5plus",
-      "gc_5less",
-      "otherWithWorkPermission"
+      "gc_5less"
     ],
     "name": "Food Assistance (SNAP)",
     "description_short": "Monthly food benefits loaded onto an EBT card for low-income households",
-    "description": "Food Assistance is Kansas's name for the federal Supplemental Nutrition Assistance Program (SNAP). It provides monthly benefits to help low-income households buy food.\n\nEach month, benefits go onto a Kansas Benefits Card—an EBT card that works like a debit card. Use it at grocery stores, farmers markets, and select online stores. If you receive Food Assistance, your children may also qualify for free school meals.\n\nA limit applies to savings and bank accounts. Households with an elderly or disabled member get a higher limit. Adults without dependents may need to work or train to keep their benefits.\n\nApply online or get a paper application from your local DCF office. After applying, you will need to complete a phone or in-person interview. It may take several weeks to hear back. If your income is very low, you may get benefits sooner.",
+    "description": "Food Assistance is Kansas's name for the federal Supplemental Nutrition Assistance Program (SNAP). It helps low-income households buy food each month. The amount you get depends on your household's size and income.\n\nEach month, your benefits go on a Kansas Benefits Card, which works like a debit card. You can use it at grocery stores, farmers markets, and many online stores. If you get Food Assistance, your children may also qualify for free school meals.\n\nAdults without dependents may need to work or train to keep their benefits. Single parents may need to cooperate with child support services to get benefits. Some exceptions apply, such as for safety reasons.\n\nTo apply, start your application online, or get a paper application from a local DCF office. After you apply, you'll have a phone or in-person interview. It may take a few weeks to hear back. If your income is very low, you may hear back sooner.",
     "learn_more_link": "https://www.dcf.ks.gov/services/ees/Pages/Food/FoodAssistanceFAQs.aspx",
     "apply_button_link": "https://cssp.kees.ks.gov/apspssp/sspNonMed.portal/login/doView",
     "apply_button_description": "",
@@ -55,6 +52,12 @@
       "link_text": ""
     },
     {
+      "external_name": "ks_snap_proof_address",
+      "text": "Proof of Kansas address (e.g. lease, utility bill, or mail with your name and address)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
       "external_name": "ks_snap_proof_income",
       "text": "Proof of income for all household members (e.g. pay stubs, award letters)",
       "link_url": "",
@@ -80,25 +83,17 @@
       "email": "info@mirrorinc.org",
       "phone_number": "+13162836743",
       "description": "Helps Kansas residents in the Wichita and KC areas apply for Food Assistance and understand their eligibility.",
-      "assistance_link": "https://www.mirrorinc.org/contact-us",
+      "assistance_link": "https://www.dcf.ks.gov/services/ees/pages/Food-Assistance-Application-Assistance-(SNAP-Outreach).aspx",
       "counties": ["Johnson", "Shawnee", "Harvey", "Sedgwick", "Douglas", "Barber", "Harper"]
     },
     {
       "external_name": "ks_harvesters",
       "name": "Harvesters — The Community Food Network",
       "email": "inforequest@harvesters.org",
-      "phone_number": "+17858617700",
+      "phone_number": "+18776539522",
       "description": "Helps Kansas City-area Kansas residents apply for Food Assistance by phone — no need to visit a government office.",
       "assistance_link": "https://www.harvesters.org/get-food-assistance/snap-assistance",
       "counties": ["Washington", "Marshall", "Nemaha", "Clay", "Riley", "Pottawatomie", "Jackson", "Jefferson", "Shawnee", "Wabaunsee", "Douglas", "Johnson", "Leavenworth", "Wyandotte", "Osage", "Franklin", "Miami"]
-    },
-    {
-      "external_name": "ks_kansas_food_bank",
-      "name": "Kansas Food Bank",
-      "email": "info@kansasfoodbank.org",
-      "phone_number": "+18002893356",
-      "description": "Statewide SNAP outreach organization. Assists Kansas residents with SNAP applications by phone and online.",
-      "assistance_link": "https://kansasfoodbank.org/snapinkansas/"
     }
   ]
 }
