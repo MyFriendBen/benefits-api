@@ -7,6 +7,7 @@ Exports completed screener data from the following tables:
 - IncomeStream
 - Expense
 - Insurance
+- CurrentBenefit (programs the user already receives at the time of screening)
 - ProgramEligibility (merged from EligibilitySnapshot + ProgramEligibilitySnapshot,
   only the most recent snapshot per screen to match current screen data)
 - WhiteLabel (lookup table for white_label_id)
@@ -47,6 +48,7 @@ from screener.models import (
     IncomeStream,
     Expense,
     Insurance,
+    CurrentBenefit,
     EligibilitySnapshot,
     ProgramEligibilitySnapshot,
     WhiteLabel,
@@ -249,6 +251,16 @@ class Command(BaseCommand):
         )
         self.stdout.write(f"  Exported {insurance_records.count()} insurance records")
 
+        # Export current benefits (programs the user already has)
+        current_benefit_fields = self._get_model_fields(CurrentBenefit)
+        current_benefits = CurrentBenefit.objects.filter(screen_id__in=screen_ids_subquery)
+        self._write_csv(
+            os.path.join(output_dir, "current_benefits.csv"),
+            current_benefit_fields,
+            current_benefits.values(*current_benefit_fields),
+        )
+        self.stdout.write(f"  Exported {current_benefits.count()} current benefit records")
+
         # Export program eligibility (merged table with screen_id, only most recent snapshot per screen)
         self._export_program_eligibility(screen_ids_subquery, output_dir)
 
@@ -368,7 +380,7 @@ class Command(BaseCommand):
             "screen.alternate_path": "Secondary screener flow identifier (currently unused)",
             "screen.is_verified": "Whether user identity has been verified (currently unused)",
             # Screen fields - has_* benefits (current enrollment)
-            "screen.has_benefits": "Whether user has any current benefits",
+            "screen.has_benefits": "Whether user has any current benefits (yes/no/preferNotToAnswer)",
             # Screen fields - needs_* (self-reported needs)
             "screen.needs_food": "User indicated need for food assistance",
             "screen.needs_baby_supplies": "User indicated need for baby supplies",
@@ -382,6 +394,8 @@ class Command(BaseCommand):
             "screen.needs_legal_services": "User indicated need for legal services",
             "screen.needs_college_savings": "User indicated need for college savings assistance",
             "screen.needs_veteran_services": "User indicated need for veteran services",
+            "screen.needs_disability_resources": "User indicated need for disability resources",
+            "screen.needs_aging_resources": "User indicated need for aging/senior resources",
             # Screen fields - UTM tracking
             "screen.utm_id": "UTM tracking: unique identifier",
             "screen.utm_source": "UTM tracking: traffic source",
@@ -409,6 +423,9 @@ class Command(BaseCommand):
             "household_member.has_income": "Whether member has income",
             "household_member.has_expenses": "Whether member has expenses",
             "household_member.is_care_worker": "Whether member is a care worker",
+            "household_member.student_job_training_program": "Whether student member is in a job training program",
+            "household_member.student_has_work_study": "Whether student member has a work-study position",
+            "household_member.student_works_20_plus_hrs": "Whether student member works 20 or more hours per week",
             "household_member.insurance": "Foreign key to insurance record",
             "household_member.energy_calculator": "Foreign key to energy calculator member data",
             # IncomeStream fields
@@ -442,6 +459,10 @@ class Command(BaseCommand):
             "insurance.family_planning": "Has family planning coverage",
             "insurance.va": "Has Veterans Affairs coverage",
             "insurance.mass_health": "Has Massachusetts MassHealth (Medicaid/CHIP)",
+            # CurrentBenefit fields
+            "current_benefit.id": "Unique identifier for the current benefit record",
+            "current_benefit.screen_id": "Foreign key to screens table",
+            "current_benefit.program_id": "Foreign key to programs table (the benefit already enrolled in)",
             # ProgramEligibility fields
             "program_eligibility.screen_id": "Foreign key to screens table",
             "program_eligibility.id": "Unique identifier for the eligibility record",
@@ -462,6 +483,7 @@ class Command(BaseCommand):
             "white_label.name": "Display name of the white label instance",
             "white_label.state_code": "Two-letter state code (e.g., 'CO', 'NC')",
             "white_label.cms_method": "CRM integration type (e.g., 'co_hubspot', 'nc_hubspot')",
+            "white_label.feature_flags": "JSON object of feature flag keys and their enabled/disabled state",
         }
 
         dictionary = []
@@ -472,6 +494,7 @@ class Command(BaseCommand):
             ("income_stream", IncomeStream),
             ("expense", Expense),
             ("insurance", Insurance),
+            ("current_benefit", CurrentBenefit),
             ("program_eligibility", ProgramEligibilitySnapshot),
             ("white_label", WhiteLabel),
         ]
@@ -544,6 +567,9 @@ class Command(BaseCommand):
         self.stdout.write(f"  Expenses: {Expense.objects.filter(screen_id__in=screen_ids_subquery).count()}")
         self.stdout.write(
             f"  Insurance records: {Insurance.objects.filter(household_member_id__in=member_ids_subquery).count()}"
+        )
+        self.stdout.write(
+            f"  Current benefit records: {CurrentBenefit.objects.filter(screen_id__in=screen_ids_subquery).count()}"
         )
 
         latest_snapshot_ids_subquery = (

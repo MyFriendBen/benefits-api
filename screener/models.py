@@ -71,6 +71,7 @@ class Screen(models.Model):
     user = models.ForeignKey(User, related_name="screens", on_delete=models.SET_NULL, blank=True, null=True)
     external_id = models.CharField(max_length=120, blank=True, null=True)
     request_language_code = models.CharField(max_length=12, blank=True, null=True)
+    # current_benefits: reverse FK from CurrentBenefit (related_name="current_benefits") — lists the specific programs already enrolled in
     has_benefits = models.CharField(max_length=32, default="preferNotToAnswer", blank=True, null=True)
     needs_food = models.BooleanField(default=False, blank=True, null=True)
     needs_baby_supplies = models.BooleanField(default=False, blank=True, null=True)

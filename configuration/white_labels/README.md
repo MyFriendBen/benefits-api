@@ -326,16 +326,16 @@ This ensures translations are available across all environments and languages.
 Programs are registered with a `name_abbreviated` (e.g., `"snap"`, `"co_snap"`, `"cesn_leap"`).
 
 Multiple program variants can map to the same benefit in `has_benefit()`:
-- `"snap"` → checks `screener_current_benefits` for `"snap"`
-- `"co_snap"` → checks `screener_current_benefits` for `"snap"` (same real-world benefit)
-- `"il_snap"` → checks `screener_current_benefits` for `"snap"` (same real-world benefit)
+- `"snap"` → checks `screen.current_benefits` for a program with `name_abbreviated = "snap"`
+- `"co_snap"` → checks `screen.current_benefits` for a program with `name_abbreviated = "co_snap"` (same real-world benefit)
+- `"il_snap"` → checks `screen.current_benefits` for a program with `name_abbreviated = "il_snap"` (same real-world benefit)
 
-Current benefit enrollment is stored in the `screener_current_benefits` join table. The `has_benefit()` method queries this table — there are no `has_*` boolean columns on `screener_screen`.
+Current benefit enrollment is tracked via `Screen.current_benefits` (the `CurrentBenefit` relation). The `has_benefit()` method checks whether a matching `name_abbreviated` appears in that relation — there are no `has_*` boolean columns on `Screen`.
 
 ## Related Files
 
 ### Backend (benefits-api)
-- `screener/models.py` - Screen model and `has_benefit()` method (queries `screener_current_benefits` join table)
+- `screener/models.py` - Screen model and `has_benefit()` method (checks `Screen.current_benefits`)
 - `screener/views.py` - `eligibility_results()` serialization
 - `programs/programs/{state}/__init__.py` - Program registrations
 

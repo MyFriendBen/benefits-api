@@ -400,15 +400,7 @@ The benefit key in `category_benefits` creates a critical chain that must be con
 
 2. **Frontend Field**: In `benefits-calculator/src/Assets/updateScreen.ts`, the benefit key is sent as part of `current_benefits` (not a `has_*` field).
 
-3. **Backend Mapping**: In `screener/models.py`, `has_benefit()` queries the `screener_current_benefits` join table:
-   ```python
-   name_map = {
-       "snap": "snap",
-       "co_snap": "snap",        # Multiple programs, same real-world benefit
-       "tx_snap": "snap",
-       "federal_snap": "snap",
-   }
-   ```
+3. **Backend Lookup**: In `screener/models.py`, `has_benefit(name_abbreviated)` checks `self.current_benefits.all()` for a `CurrentBenefit` record whose linked program has a matching `name_abbreviated`. No name mapping is involved — the lookup is a direct match on that field.
 
 ### Multiple Programs, Same Benefit
 
@@ -417,7 +409,7 @@ Multiple programs can check the same benefit field. For example:
 - State variant: `name_abbreviated = "co_snap"`
 - Calculator variant: `name_abbreviated = "cesn_snap"`
 
-**All must map to the SAME canonical benefit name** in the `has_benefit()` name_map, which is looked up in the `screener_current_benefits` join table.
+**All are checked independently** by `has_benefit()` via a direct `name_abbreviated` lookup against `Screen.current_benefits` — no name mapping is applied.
 
 ### Adding a New Program with Benefit Checkbox
 
