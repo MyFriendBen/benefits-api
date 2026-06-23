@@ -111,7 +111,9 @@ class ExportScreenerDataCommandTest(TestCase):
     def test_exports_income_streams(self):
         screen = make_screen(self.white_label)
         member = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=30)
-        IncomeStream.objects.create(screen=screen, household_member=member, type="wages", amount=2000, frequency="monthly")
+        IncomeStream.objects.create(
+            screen=screen, household_member=member, type="wages", amount=2000, frequency="monthly"
+        )
         with tempfile.TemporaryDirectory() as output_dir:
             self._call(output_dir)
             rows = self._read_csv(output_dir, "income_streams.csv")
@@ -129,6 +131,7 @@ class ExportScreenerDataCommandTest(TestCase):
         screen = make_screen(self.white_label)
         seed_program(self.white_label, "snap")
         from programs.models import Program
+
         program = Program.objects.get(name_abbreviated="snap")
         CurrentBenefit.objects.create(screen=screen, program=program)
         with tempfile.TemporaryDirectory() as output_dir:
@@ -259,9 +262,7 @@ class ExportScreenerDataCommandTest(TestCase):
 
     def test_dry_run_outputs_counts(self):
         make_screen(self.white_label)
-        HouseholdMember.objects.create(
-            screen=Screen.objects.first(), relationship="headOfHousehold", age=30
-        )
+        HouseholdMember.objects.create(screen=Screen.objects.first(), relationship="headOfHousehold", age=30)
         with tempfile.TemporaryDirectory() as output_dir:
             self._call(output_dir, dry_run=True)
         output = self.out.getvalue()
