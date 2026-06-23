@@ -281,7 +281,6 @@ class ScreenSerializer(serializers.ModelSerializer):
             "request_language_code",
             "current_benefits",
             "has_benefits",
-
             "needs_food",
             "needs_baby_supplies",
             "needs_housing_help",
