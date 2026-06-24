@@ -98,7 +98,7 @@ twilio==7.16.3
 typing_extensions==4.12.2
 tzdata==2023.3
 uritemplate==4.1.1
-urllib3==2.5.0
+urllib3==2.6.3
 vcrpy==7.0.0
 whitenoise==6.2.0
 xlrd==2.0.1
