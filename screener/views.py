@@ -902,8 +902,9 @@ class PlacesAutocompleteView(views.APIView):
             client = GooglePlacesClient()
             predictions = client.autocomplete_address(input_text)
         except requests.HTTPError as e:
+            http_status = e.response.status_code if e.response is not None else "unknown"
             return Response(
-                {"error": f"Google Places API error: {e.response.status_code}"},
+                {"error": f"Google Places API error: {http_status}"},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
         except requests.RequestException as e:

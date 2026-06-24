@@ -1,16 +1,25 @@
 import hashlib
+import logging
+from typing import TypedDict
 
 import requests
 from django.conf import settings
 from django.core.cache import cache
 
+logger = logging.getLogger(__name__)
+
 AUTOCOMPLETE_CACHE_TTL = 60 * 60 * 24 * 7  # 7 days
+
+
+class AddressPrediction(TypedDict):
+    description: str
+    place_id: str
 
 
 class GooglePlacesClient:
     BASE_URL = "https://maps.googleapis.com"
 
-    def autocomplete_address(self, input_text: str) -> list[dict]:
+    def autocomplete_address(self, input_text: str) -> list[AddressPrediction]:
         cache_key = "places_autocomplete_" + hashlib.md5(input_text.lower().encode()).hexdigest()
         cached = cache.get(cache_key)
         if cached is not None:
@@ -28,7 +37,10 @@ class GooglePlacesClient:
         )
         response.raise_for_status()
         data = response.json()
-        results = [
+        api_status = data.get("status")
+        if api_status not in ("OK", "ZERO_RESULTS"):
+            logger.warning("Google Places API returned status %s for input %r", api_status, input_text)
+        results: list[AddressPrediction] = [
             {
                 "description": p["description"].removesuffix(", USA"),
                 "place_id": p["place_id"],
