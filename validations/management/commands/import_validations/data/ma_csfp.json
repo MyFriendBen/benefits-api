@@ -22,7 +22,7 @@
     "expected_results": {
       "program_name": "ma_csfp",
       "eligible": true,
-      "value": 330
+      "value": 601
     }
   },
   {
@@ -130,11 +130,11 @@
     "expected_results": {
       "program_name": "ma_csfp",
       "eligible": true,
-      "value": 330
+      "value": 601
     }
   },
   {
-    "notes": "MA CSFP - Eligible: Two seniors 60+ in household (both qualify for $330 each)",
+    "notes": "MA CSFP - Eligible: Two seniors 60+ in household (both qualify for $601 each)",
     "household": {
       "white_label": "ma",
       "zipcode": "02101",
@@ -165,7 +165,7 @@
     "expected_results": {
       "program_name": "ma_csfp",
       "eligible": true,
-      "value": 660
+      "value": 1202
     }
   },
   {
@@ -175,7 +175,7 @@
       "zipcode": "02101",
       "county": "Suffolk",
       "household_size": 1,
-      "has_csfp": true,
+      "current_benefits": ["ma_csfp"],
       "household_members": [
         {
           "relationship": "headOfHousehold",
@@ -195,7 +195,7 @@
     }
   },
   {
-    "notes": "MA CSFP - Eligible: Weekly income converted to monthly stays under 150% FPL in Worcester County",
+    "notes": "MA CSFP - Eligible: Senior in Worcester County with monthly income below 150% FPL",
     "household": {
       "white_label": "ma",
       "zipcode": "01601",
@@ -207,7 +207,7 @@
           "age": 63,
           "has_income": true,
           "income_streams": [
-            { "type": "wages", "amount": 400, "frequency": "weekly" }
+            { "type": "wages", "amount": 1733, "frequency": "monthly" }
           ],
           "insurance": { "none": true }
         }
@@ -217,7 +217,7 @@
     "expected_results": {
       "program_name": "ma_csfp",
       "eligible": true,
-      "value": 330
+      "value": 601
     }
   },
   {
@@ -241,7 +241,7 @@
     "expected_results": {
       "program_name": "ma_csfp",
       "eligible": true,
-      "value": 330
+      "value": 601
     }
   },
   {
@@ -267,7 +267,7 @@
     "expected_results": {
       "program_name": "ma_csfp",
       "eligible": true,
-      "value": 330
+      "value": 601
     }
   },
   {
@@ -293,7 +293,7 @@
     "expected_results": {
       "program_name": "ma_csfp",
       "eligible": true,
-      "value": 330
+      "value": 601
     }
   },
   {
@@ -319,7 +319,7 @@
     "expected_results": {
       "program_name": "ma_csfp",
       "eligible": true,
-      "value": 330
+      "value": 601
     }
   },
   {
