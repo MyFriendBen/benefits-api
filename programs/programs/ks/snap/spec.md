@@ -136,17 +136,17 @@ The screener evaluates the criteria that drive nearly all SNAP outcomes: gross i
 
 ## Acceptance Criteria
 
-- [ ] Scenario 1 (Single Adult Worker — Clearly Eligible): **eligible**
-- [ ] Scenario 2 (Family of Four — Just Under 130% Gross & 100% Net): **eligible**
-- [ ] Scenario 3 (Single Parent HH2 — Gross $1 Below 130% FPL): **eligible**
-- [ ] Scenario 4 (Single Adult — Gross Above 130% FPL): **ineligible**
-- [ ] Scenario 5 (Net Income Test Failure — Gross Passes, Net Fails): **ineligible**
-- [ ] Scenario 6 (Non-Elderly Household — Assets Above $3,000): **ineligible**
-- [ ] Scenario 7 (Elderly — Gross Above 130%, Net Below 100%, Assets ≤ $4,500): **eligible**
-- [ ] Scenario 8 (Categorical Eligibility — All Members on SSI, Income/Assets Above Limits): **eligible**
-- [ ] Scenario 9 (Half-Time Student 18–49, No Exemption): **ineligible**
-- [ ] Scenario 10 (Half-Time Student with 20+ hrs/week Work Exemption): **eligible**
-- [ ] Scenario 11 (Already Receiving SNAP — Duplicate Exclusion): **ineligible**
+- [ ] Scenario 1 (Single Adult Worker — Clearly Eligible): **eligible**, **$897/yr ($75/mo)**
+- [ ] Scenario 2 (Family of Four — Just Under 130% Gross & 100% Net): **eligible**, **$6,508/yr ($542/mo)**
+- [ ] Scenario 3 (Single Parent HH2 — Gross $1 Below 130% FPL): **eligible**, **$3,589/yr ($299/mo)**
+- [ ] Scenario 4 (Single Adult — Gross Above 130% FPL): **ineligible** ($0)
+- [ ] Scenario 5 (Net Income Test Failure — Gross Passes, Net Fails): **ineligible** ($0)
+- [ ] Scenario 6 (Non-Elderly Household — Assets Above $3,000): **ineligible** ($0)
+- [ ] Scenario 7 (Elderly — Gross Above 130%, Net Below 100%, Assets ≤ $4,500): **eligible**, **$310/yr ($26/mo)**
+- [ ] Scenario 8 (Categorical Eligibility — All Members on SSI, Income/Assets Above Limits): **eligible** (gated by MFB SSI categorical logic, not raw PE)
+- [ ] Scenario 9 (Half-Time Student 18–49, No Exemption): **ineligible** ($0)
+- [ ] Scenario 10 (Half-Time Student with 20+ hrs/week Work Exemption): **eligible**, **$897/yr ($75/mo)**
+- [ ] Scenario 11 (Already Receiving SNAP — Duplicate Exclusion): **ineligible** (gated by MFB `already_has` results-layer filter, not raw PE)
 - [ ] Scenario 12 (SUA value — Single Adult): **eligible**, **$2,461/yr ($205/mo)**
 - [ ] Scenario 13 (SUA value — Elderly Individual): **eligible**, **$3,596/yr ($300/mo)**
 - [ ] Scenario 14 (SUA value — Family of Three): **eligible**, **$4,738/yr ($395/mo)**
@@ -154,13 +154,13 @@ The screener evaluates the criteria that drive nearly all SNAP outcomes: gross i
 
 ## Test Scenarios
 
-> All scenarios verified through PolicyEngine (`policyengine-us` 1.739.4, period 2026, `state_code=KS`). Scenarios 1–10 confirm the eligible/ineligible outcome; 12–14 also carry committed SUA-isolating dollar amounts (each changes −$248/yr if the KS HCSUA drifts $469→$400). Two modeling notes: **Scenario 11** (already receiving SNAP) is not a calculator check — the generic `already_has` results-layer workflow filters the program out when the household reports it (read via `screen.has_benefit("ks_snap")`), so it's verified by design. **Scenarios 9–10** (students) are handled by the federal SNAP calculator's `is_snap_ineligible_student` **dependency** (`SnapIneligibleStudentDependency`), which computes student ineligibility from screener fields and passes it to PolicyEngine as an input (not a post-hoc override) — PolicyEngine then applies it. All inputs use screener-measurable fields.
+> All value-bearing scenarios verified against the **live PolicyEngine API** (the path benefits-api uses; version 1.715.2), period 2026, `state_code=KS`. Every scenario carries an expected dollar outcome: the eligible cases (1–3, 7, 10, 12–14) assert the computed annual benefit, and the ineligible cases (4–6, 9) assert **$0**. Two scenarios are gated by MFB *outside* PE and verified by design rather than via a raw PE value: **Scenario 8** (all-SSI categorical eligibility) is decided by MFB's SSI categorical logic, and **Scenario 11** (already receiving SNAP) is filtered out by the generic `already_has` results-layer workflow when the household reports it (read via `screen.has_benefit("ks_snap")`). **Scenarios 9–10** (students) are handled by the federal SNAP calculator's `is_snap_ineligible_student` **dependency** (`SnapIneligibleStudentDependency`), which computes student ineligibility from screener fields and passes it to PolicyEngine as an input (not a post-hoc override) — PolicyEngine then applies it. All inputs use screener-measurable fields.
 
 ### Scenario 1: Single Adult Worker — Clearly Eligible for Food Assistance
 
 **What we're checking**: Typical single adult with low wage income who clearly meets both the federal gross (130% FPL) and net (100% FPL) income tests (criteria 1–2).
 
-**Expected**: Eligible
+**Expected**: Eligible — $897/yr ($75/mo)
 
 **Steps**:
 - **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
@@ -178,7 +178,7 @@ The screener evaluates the criteria that drive nearly all SNAP outcomes: gross i
 
 **What we're checking**: A household that barely meets both the gross (130% FPL) and net (100% FPL) income tests, validating edge-case eligibility at the income ceiling with shelter and dependent-care deductions (criteria 1, 2, 4, 16).
 
-**Expected**: Eligible
+**Expected**: Eligible — $6,508/yr ($542/mo)
 
 **Steps**:
 - **Location**: Enter ZIP code `66603`, Select county `Shawnee`
@@ -199,7 +199,7 @@ The screener evaluates the criteria that drive nearly all SNAP outcomes: gross i
 
 **What we're checking**: A 2-person household with gross monthly income $1 below the 130% FPL threshold ($2,292/mo for HH2) is correctly found eligible (criterion 1, boundary).
 
-**Expected**: Eligible
+**Expected**: Eligible — $3,589/yr ($299/mo)
 
 **Steps**:
 - **Location**: Enter ZIP code `66102`, Select county `Wyandotte`
@@ -268,7 +268,7 @@ The screener evaluates the criteria that drive nearly all SNAP outcomes: gross i
 
 **What we're checking**: The federal elderly/disabled treatment — a 60+ household is exempt from the gross income test and qualifies on net income alone, using the higher $4,500 asset limit and an uncapped shelter deduction (criterion 6).
 
-**Expected**: Eligible
+**Expected**: Eligible — $310/yr ($26/mo)
 
 **Steps**:
 - **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
@@ -322,7 +322,7 @@ The screener evaluates the criteria that drive nearly all SNAP outcomes: gross i
 
 **What we're checking**: A half-time college student who works 20+ hours/week meets a student exemption and is eligible (criterion 7, exemption regression guard).
 
-**Expected**: Eligible
+**Expected**: Eligible — $897/yr ($75/mo)
 
 **Steps**:
 - **Location**: Enter ZIP code `66045`, Select county `Douglas`
