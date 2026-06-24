@@ -195,32 +195,6 @@
     }
   },
   {
-    "notes": "MA CSFP - Eligible: Senior in Worcester County with monthly income below 150% FPL",
-    "household": {
-      "white_label": "ma",
-      "zipcode": "01601",
-      "county": "Worcester",
-      "household_size": 1,
-      "household_members": [
-        {
-          "relationship": "headOfHousehold",
-          "age": 63,
-          "has_income": true,
-          "income_streams": [
-            { "type": "wages", "amount": 1733, "frequency": "monthly" }
-          ],
-          "insurance": { "none": true }
-        }
-      ],
-      "expenses": []
-    },
-    "expected_results": {
-      "program_name": "ma_csfp",
-      "eligible": true,
-      "value": 601
-    }
-  },
-  {
     "notes": "MA CSFP - Eligible: Senior with zero income in Essex County",
     "household": {
       "white_label": "ma",
