@@ -282,6 +282,10 @@ class TxTanf(SpmUnit):
     field = "tx_tanf"
 
 
+class KsTanf(SpmUnit):
+    field = "ks_tanf"
+
+
 class PreSubsidyChildcareExpensesDependency(SpmUnit):
     field = "spm_unit_pre_subsidy_childcare_expenses"
 

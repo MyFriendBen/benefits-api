@@ -1,0 +1,102 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "program_category": {
+    "external_name": "ks_cash"
+  },
+  "program": {
+    "name_abbreviated": "ks_tanf",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "refugee",
+      "gc_5plus",
+      "gc_5less",
+      "otherWithWorkPermission"
+    ],
+    "name": "Temporary Assistance for Needy Families (Successful Families)",
+    "description": "The Successful Families Program provides monthly cash to low-income Kansas families with children. Your benefits load onto a Kansas Benefits EBT card each month.\n\nYour EBT card works like a debit card. You can use it at most stores to cover everyday needs like food, clothing, and household items. Some purchases — like alcohol, tobacco, and lottery tickets — are not allowed.\n\nCash help has a lifetime limit. If anyone in your household has received it before, you may have less time remaining. If you share your home with adults who are not part of your case, your actual benefit may be lower than shown.\n\nMost adults must join a work program or look for work while receiving benefits. Apply online, by calling 1-888-369-4777, or at your local DCF office.",
+    "description_short": "Monthly cash help for families with children",
+    "learn_more_link": "https://www.dcf.ks.gov/services/ees/Pages/Cash/TANF.aspx",
+    "apply_button_link": "https://cssp.kees.ks.gov/apspssp/sspNonMed.portal/login/doView",
+    "apply_button_description": "",
+    "estimated_application_time": "30 minutes",
+    "estimated_delivery_time": "55 days",
+    "estimated_value": "",
+    "value_format": null,
+    "value_type": "benefit",
+    "website_description": "Monthly cash help for families with children",
+    "base_program": "tanf",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": true
+  },
+  "navigators": [
+    {
+      "external_name": "ks_dcf_benefits",
+      "name": "Kansas DCF — Benefits Assistance",
+      "email": "DCF.CustomerService@ks.gov",
+      "phone_number": "+18883694777",
+      "description": "The Kansas Department for Children and Families administers the Successful Families Program (TANF). Call, apply online, or visit a local DCF office to apply for cash assistance. Caseworkers can guide you through the application and answer eligibility questions.",
+      "assistance_link": "https://www.dcf.ks.gov/services/ees/Pages/Cash/TANF.aspx"
+    }
+  ],
+  "documents": [
+    {
+      "external_name": "ks_id_proof",
+      "text": "Proof of identity (e.g., driver's license, state ID, passport)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_tanf_birth_certificate",
+      "text": "Proof of age and relationship for each child (e.g., birth certificate, hospital record, school record)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_ssn",
+      "text": "Your Social Security Number",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_tanf_proof_residency",
+      "text": "Proof of Kansas residency (e.g., utility bill, lease agreement)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_tanf_proof_income",
+      "text": "Proof of income (e.g., pay stubs, employer letter, benefit award letters)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_tanf_citizenship_status",
+      "text": "Proof of citizenship or immigration status (e.g., passport, immigration documents)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_tanf_proof_assets",
+      "text": "Proof of resources (e.g., bank statements)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_tanf_child_support",
+      "text": "Child support records, if applicable (e.g., court order, payment records)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_tanf_pregnancy_verification",
+      "text": "Proof of pregnancy with expected due date, if applicable (e.g., documentation from a healthcare provider)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ]
+}
