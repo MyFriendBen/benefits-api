@@ -29,7 +29,7 @@ class NcEmergencyMedicaid(ProgramCalculator):
 
         # Income
         fpl = self.program.year
-        income_limit = int(fpl_percent * fpl.get_limit(self.screen.household_size))
+        income_limit = round(fpl_percent * fpl.get_limit(self.screen.household_size))
         gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
 
         e.condition(gross_income < income_limit, messages.income(gross_income, income_limit))
