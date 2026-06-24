@@ -475,7 +475,6 @@ class TestSnapDependency(TestCase):
             zipcode="78701",
             county="Test County",
             household_size=2,
-            has_snap=False,
             completed=False,
         )
 
@@ -493,9 +492,6 @@ class TestSnapDependency(TestCase):
 
     def test_value_returns_none_when_screen_does_not_have_snap(self):
         """When user does not report SNAP, return None so PE calculates the benefit amount."""
-        self.screen.has_snap = False
-        self.screen.save()
-
         dep = spm.Snap(self.screen, None, {})
         self.assertIsNone(dep.value())
 
@@ -510,7 +506,6 @@ class TestTanfDependency(TestCase):
             zipcode="78701",
             county="Test County",
             household_size=2,
-            has_tanf=False,
             completed=False,
         )
 
@@ -528,9 +523,6 @@ class TestTanfDependency(TestCase):
 
     def test_value_returns_none_when_screen_does_not_have_tanf(self):
         """When user does not report TANF, return None so PE calculates the benefit amount."""
-        self.screen.has_tanf = False
-        self.screen.save()
-
         dep = spm.Tanf(self.screen, None, {})
         self.assertIsNone(dep.value())
 

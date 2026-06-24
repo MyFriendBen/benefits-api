@@ -237,25 +237,23 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # Shown in "Additional Resources" step when users indicate they already receive benefits.
     # Selected benefits are filtered from results.
     #
-    # CRITICAL NAMING CONVENTION - THE DICTIONARY KEY MUST MATCH THE BACKEND FIELD:
+    # CRITICAL NAMING CONVENTION - THE DICTIONARY KEY MUST MATCH THE PROGRAM name_abbreviated:
     #
     # The benefit key (e.g., "snap", "leap", "tanf") determines:
     #   1. Frontend field: formData.benefits.{key}
-    #   2. Backend field mapping: benefits-calculator/src/Assets/updateScreen.ts
-    #      Example: has_snap: formData.benefits.snap
-    #   3. Database field: screener/models.py Screen model
-    #      Example: has_snap field on Screen model
-    #   4. Backend mapping: screener/models.py has_benefit() method
-    #      Example: name_map uses program's name_abbreviated as key, returns self.has_{key}
+    #   2. Backend write: updateScreen.ts sends current_benefits: [array of keys]
+    #   3. Database write: serializer stores a CurrentBenefit row per key
+    #      (screener_current_benefits join table: screen_id + program_id)
+    #   4. Backend read: Screen.has_benefit(name_abbreviated) checks screen.current_benefits
     #
     # WORKFLOW EXAMPLE FOR "SNAP":
     #   1. Config key: "snap" (this file)
     #   2. User checks "SNAP" checkbox in "Additional Resources" step
     #   3. Frontend stores: formData.benefits.snap = true
-    #   4. updateScreen.ts sends: has_snap = formData.benefits.snap
-    #   5. Database saves: screen.has_snap = True
+    #   4. updateScreen.ts sends: current_benefits: ["snap"]
+    #   5. Serializer creates: CurrentBenefit(screen=screen, program=Program(name_abbreviated="snap"))
     #   6. Program registered with name_abbreviated = "snap" (or "co_snap", etc.)
-    #   7. has_benefit("snap") or has_benefit("co_snap") returns: self.has_snap (True)
+    #   7. has_benefit("snap") checks screen.current_benefits for a matching name_abbreviated
     #   8. Results serialization: "already_has": True
     #   9. Frontend filters: SNAP program hidden from results
     #
@@ -264,18 +262,15 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     #   - Regular screener program: name_abbreviated = "snap"
     #   - State variant program: name_abbreviated = "co_snap"
     #
-    #   Both must map to the SAME benefit in has_benefit() name_map:
-    #     "snap": self.has_snap,
-    #     "co_snap": self.has_snap,  # Same has_* field!
+    #   Each is looked up independently by has_benefit() — no mapping needed.
+    #   A user who selected "snap" will have a CurrentBenefit row for the snap
+    #   program; has_benefit("co_snap") checks for co_snap separately.
     #
     # STEPS TO ADD A NEW BENEFIT:
-    #   1. Add benefit key here (e.g., "my_benefit")
-    #   2. Add has_my_benefit field to Screen model (screener/models.py)
-    #   3. Add mapping in updateScreen.ts: has_my_benefit: formData.benefits.my_benefit
-    #   4. Add mapping in has_benefit() name_map for ALL program name_abbreviated variants:
-    #      "my_benefit": self.has_my_benefit,
-    #      "co_my_benefit": self.has_my_benefit,
-    #      "cesn_my_benefit": self.has_my_benefit,
+    #   1. Add benefit key here matching the program's name_abbreviated (e.g., "my_benefit")
+    #   2. Add mapping in updateScreen.ts: include "my_benefit" in the current_benefits array
+    #   3. Ensure the Program row exists with name_abbreviated = "my_benefit"
+    #   4. Screen.has_benefit("my_benefit") works automatically via the CurrentBenefit relation
     #
     # Structure:
     #   {

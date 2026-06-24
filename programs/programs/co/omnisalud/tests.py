@@ -13,7 +13,6 @@ class TestOmniSaludPension(TestCase):
             county="Denver County",
             household_size=1,
             household_assets=0,
-            has_no_hi=True,
         )
         self.person1 = HouseholdMember.objects.create(
             screen=self.screen1,
@@ -37,8 +36,6 @@ class TestOmniSaludPension(TestCase):
         self.assertTrue(eligibility["eligible"])
 
     def test_omnisalud_failed_all_conditions(self):
-        self.screen1.has_no_hi = False
-        self.screen1.save()
         IncomeStream.objects.create(
             screen=self.screen1, household_member=self.person1, type="wages", amount=2000, frequency="monthly"
         )
