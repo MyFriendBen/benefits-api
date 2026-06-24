@@ -44,6 +44,22 @@ class TestWaStateCodeDependency(TestCase):
         self.assertEqual(dep.field, "state_code")
 
 
+class TestKsStateCodeDependency(TestCase):
+    """Tests for KsStateCodeDependency class used by KsCdcc calculator."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="66044", county="Douglas", household_size=1, completed=False
+        )
+
+    def test_value_returns_ks_state_code(self):
+        dep = household.KsStateCodeDependency(self.screen, None, {})
+        self.assertEqual(dep.value(), "KS")
+        self.assertEqual(dep.field, "state_code")
+
+
 class TestCountyDependency(TestCase):
     """Tests for CountyDependency class and its subclasses."""
 
