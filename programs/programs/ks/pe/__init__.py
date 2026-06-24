@@ -1,4 +1,3 @@
-import programs.programs.ks.pe.member as member
 import programs.programs.ks.pe.spm as spm
 from programs.programs.policyengine.calculators.base import PolicyEngineCalulator
 
