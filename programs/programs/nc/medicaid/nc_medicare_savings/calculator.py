@@ -7,7 +7,7 @@ class MedicareSavingsNC(MedicareSavings):
     ineligible_insurance_types: ClassVar[tuple[str, ...]] = ("va", "medicaid")
     asset_limit: ClassVar[dict[str, int]] = {"single": 9_660, "married": 14_470}
     min_income_percent: ClassVar[float] = 1.0
-    # NC-specific: 2026 Medicare Part B premium ($203/month per eligible member)
+    # NC-specific: 2026 Medicare Part B premium ($202.90/month → rounded to $203/month per eligible member)
     # Source: https://www.cms.gov/newsroom/fact-sheets/2026-medicare-parts-b-premiums-deductibles
     member_amount: ClassVar[int] = 203 * 12
 
