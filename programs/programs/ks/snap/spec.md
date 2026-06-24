@@ -148,7 +148,7 @@ The screener evaluates the criteria that drive nearly all SNAP outcomes: gross i
 - [ ] Scenario 10 (Half-Time Student with 20+ hrs/week Work Exemption): **eligible**
 - [ ] Scenario 11 (Already Receiving SNAP — Duplicate Exclusion): **ineligible**
 - [ ] Scenario 12 (SUA value — Single Adult): **eligible**, **$2,461/yr ($205/mo)**
-- [ ] Scenario 13 (SUA value — Elderly Individual): **eligible**, **$2,533/yr ($211/mo)**
+- [ ] Scenario 13 (SUA value — Elderly Individual): **eligible**, **$3,596/yr ($300/mo)**
 - [ ] Scenario 14 (SUA value — Family of Three): **eligible**, **$4,738/yr ($395/mo)**
 
 
@@ -372,7 +372,7 @@ The screener evaluates the criteria that drive nearly all SNAP outcomes: gross i
 
 ### Scenario 13: Standard Utility Allowance — Elderly Individual
 
-**What we're checking**: An elderly household (uncapped shelter deduction) where the SUA is binding. Committed expected benefit: **$2,533/yr ($211/mo)**.
+**What we're checking**: An elderly household (uncapped shelter deduction) where the SUA is binding. Committed expected benefit: **$3,596/yr ($300/mo)**. The uncapped elderly shelter deduction (rent + HCSUA) drives net income to $0, so the household qualifies for the full max allotment for a household of 1 (~$300/mo).
 
 **Expected**: Eligible
 
@@ -385,7 +385,7 @@ The screener evaluates the criteria that drive nearly all SNAP outcomes: gross i
 - **Assets**: Below the $4,500 elderly/disabled limit
 - **Current Benefits**: Not currently receiving SNAP/Food Assistance, Not receiving TANF, Not receiving SSI
 
-**Why this matters**: SUA validation on the elderly/disabled path; SUA-sensitive (−$248/yr if HCSUA $469→$400). PolicyEngine-verified on `policyengine-us` 1.739.4.
+**Why this matters**: SUA validation on the elderly/disabled path; the HCSUA feeds the uncapped elderly shelter deduction that zeroes net income. Verified against the live PolicyEngine API (the path benefits-api uses), version 1.715.2.
 
 ---
 
@@ -435,7 +435,7 @@ Scenarios 1–14. Expected `eligible`:
 - `true`: 1, 2, 3, 7, 8, 10, 12, 13, 14
 - `false`: 4, 5, 6, 9, 11
 
-Value scenarios 12–14 carry committed amounts ($2,461 / $2,533 / $4,738 per year), computed on `policyengine-us` 1.739.4.
+Value scenarios 12–14 carry committed amounts ($2,461 / $3,596 / $4,738 per year), verified against the live PolicyEngine API (the path benefits-api uses), version 1.715.2.
 
 
 ## Generated Program Configuration
