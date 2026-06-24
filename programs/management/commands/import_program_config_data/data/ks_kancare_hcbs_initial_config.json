@@ -1,0 +1,129 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "program_category": {
+    "external_name": "ks_health_care",
+    "name": "Health Care",
+    "icon": "health_care"
+  },
+  "program": {
+    "name_abbreviated": "ks_kancare_hcbs",
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "refugee",
+      "gc_5plus",
+      "gc_5less",
+      "otherWithWorkPermission"
+    ],
+    "name": "KanCare Home and Community Based Services (HCBS) Waivers",
+    "description": "KanCare HCBS waivers help people stay at home or in their community instead of moving to a nursing home. Services can include help with daily tasks, meal delivery, and home changes. The type of support you get depends on which waiver fits your needs.\n\nKanCare pays your service providers through Medicaid. You work with a care coordinator to build a plan based on your needs and goals.\n\nTo qualify, you will also need a formal care assessment to show you need a high level of care. This is separate from the online screening. Some waivers have waiting lists, so you may qualify but not start services right away. Some rules apply if you gave away money or property in the last five years. A Medicaid attorney can help you understand if this affects you.\n\nApplication steps vary by waiver. Select \"Find a Waiver\" to see each program's eligibility and application steps, or call the ADRC at 1-855-200-2372 for help getting started.",
+    "description_short": "Home care services for elderly or disabled Kansans",
+    "learn_more_link": "https://www.kdads.ks.gov/services-programs/long-term-services-supports/home-and-community-based-services-hcbs-programs",
+    "apply_button_link": "https://www.kdads.ks.gov/services-programs/long-term-services-supports/home-and-community-based-services-hcbs-programs/hcbs-programs",
+    "apply_button_description": "Find a Waiver",
+    "estimated_application_time": "90 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": "estimated_annual",
+    "value_type": "benefit",
+    "website_description": "Home care services for elderly or disabled Kansans",
+    "base_program": "medicaid",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false
+  },
+  "warning_messages": [
+    {
+      "external_name": "ks_kancare_hcbs_waitlist",
+      "calculator": "_show",
+      "message": "The Physical Disability and Intellectual/Developmental Disability (I/DD) waivers currently have waiting lists. The Autism waiver also has limited spots available. If you qualify for one of these waivers, you may be approved but not start services right away. Other waivers do not currently have waiting lists, though this can change."
+    },
+    {
+      "external_name": "ks_kancare_hcbs_married_assets",
+      "calculator": "_show",
+      "message": "KanCare HCBS has an asset limit. Married couples have a higher limit than single people. If one spouse needs care and the other does not, the spouse staying home can keep more in savings. So a married person may qualify even with more savings. If you are married, your assets were not considered when checking HCBS eligibility. KanCare will check whether your assets qualify when you apply."
+    }
+  ],
+  "documents": [
+    {
+      "external_name": "ks_home",
+      "text": "Proof of home address (e.g. lease, utility bill)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_id_proof",
+      "text": "Proof of identity (e.g. driver's license, state ID, passport)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_ssn",
+      "text": "Social Security Number or card",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_us_status",
+      "text": "Proof of U.S. citizenship or immigration status (e.g. birth certificate, passport, green card)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_proof_income",
+      "text": "Proof of all income (e.g. pay stubs, Social Security award letter, pension statements)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_assets",
+      "text": "Proof of assets (e.g. bank statements, investment account statements)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_medical_records",
+      "text": "Medical records or doctor's statement about your disability or care needs (e.g. diagnosis records, treatment plans)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_insurance",
+      "text": "Health insurance information (e.g. Medicare card, private insurance cards)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_guardianship",
+      "text": "Legal guardianship or power of attorney documentation (if applicable)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_iep",
+      "text": "Individual Education Plan (IEP) if the applicant is or was recently in school (if applicable)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "ks_kdads",
+      "name": "Kansas Department for Aging and Disability Services (KDADS)",
+      "phone_number": "+18004323535",
+      "email": "HCBS-KS@kdads.ks.gov",
+      "description": "KDADS oversees Kansas HCBS waiver programs. Contact them to learn about waiver options and start the application process. For Frail Elderly, Physical Disability, or Brain Injury waivers, ask to be connected with the Aging and Disability Resource Center (ADRC).",
+      "assistance_link": "https://www.kdads.ks.gov/services-programs/long-term-services-supports/home-and-community-based-services-hcbs-programs"
+    },
+    {
+      "external_name": "ks_kancare_ombudsman",
+      "name": "KanCare Ombudsman",
+      "phone_number": "+18556438180",
+      "email": "KanCare.Ombudsman@ks.gov",
+      "description": "The KanCare Ombudsman helps KanCare members access HCBS waiver programs and can assist with problems related to access, rights, services, and coverage. They also provide information about grievance, appeal, and fair hearing processes.",
+      "assistance_link": "https://www.kancare.ks.gov/members/help-resources/kancare-ombudsman"
+    }
+  ]
+}
