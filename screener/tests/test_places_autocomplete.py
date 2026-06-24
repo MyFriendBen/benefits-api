@@ -102,6 +102,21 @@ class TestGooglePlacesClient(TestCase):
 
         mock_get.assert_called_once()
 
+    @patch("integrations.clients.google_places.requests.get")
+    def test_error_status_raises_and_is_not_cached(self, mock_get):
+        mock_get.return_value = Mock(json=lambda: {"predictions": [], "status": "REQUEST_DENIED"})
+        mock_get.return_value.raise_for_status = Mock()
+
+        client = GooglePlacesClient()
+        with self.assertRaises(requests.RequestException):
+            client.autocomplete_address("123 Main")
+
+        # A second call must hit the API again — error responses must not be cached.
+        with self.assertRaises(requests.RequestException):
+            client.autocomplete_address("123 Main")
+
+        self.assertEqual(mock_get.call_count, 2)
+
     def tearDown(self):
         cache.clear()
 
@@ -134,6 +149,13 @@ class TestPlacesAutocompleteView(APITestCase):
         self.assertEqual(response.data, [])
 
     # ── 502: upstream errors ──────────────────────────────────────────────────
+
+    @patch("screener.views.GooglePlacesClient.autocomplete_address")
+    def test_google_api_error_status_returns_502(self, mock_autocomplete):
+        mock_autocomplete.side_effect = requests.RequestException("Google Places API error status: REQUEST_DENIED")
+        response = self.client.get(self.URL, {"input": "123 Main"})
+        self.assertEqual(response.status_code, status.HTTP_502_BAD_GATEWAY)
+        self.assertIn("error", response.data)
 
     @patch("screener.views.GooglePlacesClient.autocomplete_address")
     def test_google_http_error_returns_502(self, mock_autocomplete):

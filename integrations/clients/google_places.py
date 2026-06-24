@@ -40,6 +40,7 @@ class GooglePlacesClient:
         api_status = data.get("status")
         if api_status not in ("OK", "ZERO_RESULTS"):
             logger.warning("Google Places API returned status %s for input %r", api_status, input_text)
+            raise requests.RequestException(f"Google Places API error status: {api_status}")
         results: list[AddressPrediction] = [
             {
                 "description": p["description"].removesuffix(", USA"),
