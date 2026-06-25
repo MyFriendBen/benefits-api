@@ -136,31 +136,65 @@ The screener evaluates the criteria that drive nearly all SNAP outcomes: gross i
 
 ## Acceptance Criteria
 
-- [ ] Scenario 1 (Single Adult Worker — Clearly Eligible): **eligible**, **$897/yr ($75/mo)**
-- [ ] Scenario 2 (Family of Four — Just Under 130% Gross & 100% Net): **eligible**, **$6,508/yr ($542/mo)**
-- [ ] Scenario 3 (Single Parent HH2 — Gross $1 Below 130% FPL): **eligible**, **$3,589/yr ($299/mo)**
+All dollar values are the expected annual benefit, derived independently from the FY2026 SNAP
+benefit formula (max allotment − 30% of net income, with the standard, 20%-earned-income, and
+excess-shelter/SUA deductions) and confirmed against the calculator. Monthly figures are shown
+for reference.
+
+- [ ] Scenario 1 (Single Adult Worker — Clearly Eligible): **eligible**, **$864/yr ($72/mo)**
+- [ ] Scenario 2 (Family of Four — Just Under 130% Gross & 100% Net): **eligible**, **$6,432/yr ($536/mo)**
+- [ ] Scenario 3 (Single Parent HH2 — Gross $1 Below 130% FPL): **eligible**, **$3,540/yr ($295/mo)**
 - [ ] Scenario 4 (Single Adult — Gross Above 130% FPL): **ineligible** ($0)
 - [ ] Scenario 5 (Net Income Test Failure — Gross Passes, Net Fails): **ineligible** ($0)
 - [ ] Scenario 6 (Non-Elderly Household — Assets Above $3,000): **ineligible** ($0)
-- [ ] Scenario 7 (Elderly — Gross Above 130%, Net Below 100%, Assets ≤ $4,500): **eligible**, **$310/yr ($26/mo)**
-- [ ] Scenario 8 (Categorical Eligibility — All Members on SSI, Income/Assets Above Limits): **eligible** (gated by MFB SSI categorical logic, not raw PE)
+- [ ] Scenario 7 (Elderly — Gross Above 130%, Net Below 100%, Assets ≤ $4,500): **eligible**, **$276/yr ($23/mo)**
+- [ ] Scenario 8 (Categorical Eligibility — All Members on SSI, Income/Assets Above Limits): **eligible**, **$1,080/yr ($90/mo)**
 - [ ] Scenario 9 (Half-Time Student 18–49, No Exemption): **ineligible** ($0)
-- [ ] Scenario 10 (Half-Time Student with 20+ hrs/week Work Exemption): **eligible**, **$897/yr ($75/mo)**
+- [ ] Scenario 10 (Half-Time Student with Job-Training Exemption): **eligible**, **$864/yr ($72/mo)** ⛔ *blocked on PE — see note*
 - [ ] Scenario 11 (Already Receiving SNAP — Duplicate Exclusion): **ineligible** (gated by MFB `already_has` results-layer filter, not raw PE)
-- [ ] Scenario 12 (SUA value — Single Adult): **eligible**, **$2,461/yr ($205/mo)**
-- [ ] Scenario 13 (SUA value — Elderly Individual): **eligible**, **$3,596/yr ($300/mo)**
-- [ ] Scenario 14 (SUA value — Family of Three): **eligible**, **$4,738/yr ($395/mo)**
+- [ ] Scenario 12 (SUA value — Single Adult): **eligible**, **$2,424/yr ($202/mo)**
+- [ ] Scenario 13 (SUA value — Elderly Individual): **eligible**, **$3,576/yr ($298/mo)**
+- [ ] Scenario 14 (SUA value — Family of Three): **eligible**, **$4,668/yr ($389/mo)**
+- [ ] Scenario 15 (Asset Test Pass — Below Standard $3,000 Limit): **eligible**, **$1,728/yr ($144/mo)**
+- [ ] Scenario 16 (Large Household of Five): **eligible**, **$7,212/yr ($601/mo)**
+- [ ] Scenario 17 (Disabled Non-Elderly — Uncapped Shelter & $4,500 Asset Limit): **eligible**, **$1,884/yr ($157/mo)**
+- [ ] Scenario 18 (TANF Categorical Eligibility — Cash Recipient, Assets Above Limit): **eligible** ⛔ *blocked on PE — see note*
 
 
 ## Test Scenarios
 
-> All value-bearing scenarios verified against the **live PolicyEngine API** (the path benefits-api uses; version 1.715.2), period 2026, `state_code=KS`. Every scenario carries an expected dollar outcome: the eligible cases (1–3, 7, 10, 12–14) assert the computed annual benefit, and the ineligible cases (4–6, 9) assert **$0**. Two scenarios are gated by MFB *outside* PE and verified by design rather than via a raw PE value: **Scenario 8** (all-SSI categorical eligibility) is decided by MFB's SSI categorical logic, and **Scenario 11** (already receiving SNAP) is filtered out by the generic `already_has` results-layer workflow when the household reports it (read via `screen.has_benefit("ks_snap")`). **Scenarios 9–10** (students) are handled by the federal SNAP calculator's `is_snap_ineligible_student` **dependency** (`SnapIneligibleStudentDependency`), which computes student ineligibility from screener fields and passes it to PolicyEngine as an input (not a post-hoc override) — PolicyEngine then applies it. All inputs use screener-measurable fields.
+> **Verification method.** Each value is derived independently from the FY2026 SNAP policy
+> formula (KEESM Appendix F-2 / FNS FY2026 parameters) and then checked against the calculator —
+> the spec is the oracle, not a copy of calculator output. Eligible cases assert the computed
+> annual benefit; ineligible cases (4–6, 9) assert **$0**. **Scenario 11** (already receiving
+> SNAP) is filtered out by the generic `already_has` results-layer workflow when the household
+> reports it (`screen.has_benefit("ks_snap")`), so it's verified by design rather than a raw PE value.
+>
+> **Categorical & disability inputs (fixed in this PR).** SNAP now sends the `Ssi` dependency
+> (reported SSI receipt → PE's computed `ssi`), so an all-SSI household is correctly categorically
+> eligible (**Scenario 8**, previously denied). It also sends `SsdiReportedDependency` so a disabled
+> SSDI recipient receives the elderly/disabled treatment — the uncapped excess-shelter deduction and
+> the higher $4,500 asset limit (**Scenario 17**). Both bypass the income/asset tests via PE's
+> `meets_snap_categorical_eligibility` / `is_usda_disabled` rather than any MFB post-hoc override.
+>
+> **⛔ Two scenarios are blocked on PolicyEngine and intentionally fail today:**
+> - **Scenario 10** (student with a job-training/E&T exemption): PE's `is_snap_ineligible_student`
+>   does not yet model the workforce/job-training exemption (7 CFR 273.5(b)(3)). PE is adding an
+>   `is_snap_work_program_participant` input to feed the student-eligibility path; until it ships,
+>   this household is wrongly flagged an ineligible student. (Other student exemptions — age,
+>   disability, 20-hr work, work-study, parent/child-age — already work via `SnapIneligibleStudentDependency`.)
+> - **Scenario 18** (TANF cash categorical eligibility): PE's SNAP `categorical_eligibility` list
+>   only honors `ssi` and the BBCE `is_tanf_non_cash_eligible` path; direct `tanf` cash receipt is
+>   commented out ("IL only"). Kansas has not adopted BBCE, and feeding the `tanf` input has no
+>   effect, so a KS TANF-cash household over the asset limit is wrongly denied. Pending a PE change
+>   to honor `tanf` cash receipt in non-BBCE states.
 
 ### Scenario 1: Single Adult Worker — Clearly Eligible for Food Assistance
 
 **What we're checking**: Typical single adult with low wage income who clearly meets both the federal gross (130% FPL) and net (100% FPL) income tests (criteria 1–2).
 
-**Expected**: Eligible — $897/yr ($75/mo)
+**Expected**: Eligible — $864/yr ($72/mo)
+**Benefit math** (FY2026): gross $1,200/mo earned; net = 1,200 − 209 std − 240 (20% earned) = $751; benefit = 298 max − 0.30 × 751 = **$72/mo**.
 
 **Steps**:
 - **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
@@ -178,7 +212,7 @@ The screener evaluates the criteria that drive nearly all SNAP outcomes: gross i
 
 **What we're checking**: A household that barely meets both the gross (130% FPL) and net (100% FPL) income tests, validating edge-case eligibility at the income ceiling with shelter and dependent-care deductions (criteria 1, 2, 4, 16).
 
-**Expected**: Eligible — $6,508/yr ($542/mo)
+**Expected**: Eligible — $6,432/yr ($536/mo)
 
 **Steps**:
 - **Location**: Enter ZIP code `66603`, Select county `Shawnee`
@@ -199,7 +233,7 @@ The screener evaluates the criteria that drive nearly all SNAP outcomes: gross i
 
 **What we're checking**: A 2-person household with gross monthly income $1 below the 130% FPL threshold ($2,292/mo for HH2) is correctly found eligible (criterion 1, boundary).
 
-**Expected**: Eligible — $3,589/yr ($299/mo)
+**Expected**: Eligible — $3,540/yr ($295/mo)
 
 **Steps**:
 - **Location**: Enter ZIP code `66102`, Select county `Wyandotte`
@@ -268,7 +302,7 @@ The screener evaluates the criteria that drive nearly all SNAP outcomes: gross i
 
 **What we're checking**: The federal elderly/disabled treatment — a 60+ household is exempt from the gross income test and qualifies on net income alone, using the higher $4,500 asset limit and an uncapped shelter deduction (criterion 6).
 
-**Expected**: Eligible — $310/yr ($26/mo)
+**Expected**: Eligible — $276/yr ($23/mo)
 
 **Steps**:
 - **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
@@ -287,17 +321,17 @@ The screener evaluates the criteria that drive nearly all SNAP outcomes: gross i
 
 **What we're checking**: A household in which all members receive SSI is categorically eligible — the income and asset tests are bypassed (criterion 5).
 
-**Expected**: Eligible
+**Expected**: Eligible — $1,080/yr ($90/mo)
 
 **Steps**:
 - **Location**: Enter ZIP code `66102`, Select county `Wyandotte`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `January 1981` (age 45), Relationship: Head of Household, Not a student, Not pregnant, No disability, U.S. citizen
-- **Income**: Other income above the standard limit (with SSI received)
+- **Person 1**: Birth month/year: `January 1981` (age 45), Relationship: Head of Household, Not a student, Not pregnant, Disabled, U.S. citizen
+- **Income**: SSI income `$900`/month (reported SSI receipt)
 - **Assets**: `$6,000` (above the $3,000 standard limit)
-- **Current Benefits**: Currently receiving SSI (`has_ssi` = Yes), Not currently receiving SNAP/Food Assistance, Not receiving TANF
+- **Current Benefits**: Currently receiving SSI, Not currently receiving SNAP/Food Assistance, Not receiving TANF
 
-**Why this matters**: Validates that an all-SSI household is categorically eligible regardless of income or assets — confirms categorical eligibility correctly overrides the financial tests.
+**Why this matters**: Validates that an all-SSI household is categorically eligible regardless of income or assets. This works because SNAP sends the `Ssi` dependency (reported SSI receipt → PE's computed `ssi`), which drives PE's `meets_snap_categorical_eligibility` and bypasses the asset/income tests. Without that input (the prior behavior) this household was wrongly denied.
 
 ---
 
@@ -318,20 +352,20 @@ The screener evaluates the criteria that drive nearly all SNAP outcomes: gross i
 
 ---
 
-### Scenario 10: Half-Time College Student with 20+ Hours/Week Work Exemption
+### Scenario 10: Half-Time College Student with Job-Training Exemption
 
-**What we're checking**: A half-time college student who works 20+ hours/week meets a student exemption and is eligible (criterion 7, exemption regression guard).
+**What we're checking**: A half-time college student aged 18–49 who is enrolled in a workforce/job-training program (WIOA, SNAP E&T, career/technical ed) meets a student exemption under 7 CFR 273.5(b)(3) and is eligible (criterion 7).
 
-**Expected**: Eligible — $897/yr ($75/mo)
+**Expected**: Eligible — $864/yr ($72/mo)  ⛔ **Currently fails — blocked on PolicyEngine.**
 
 **Steps**:
 - **Location**: Enter ZIP code `66045`, Select county `Douglas`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `January 2004` (age 22), Relationship: Head of Household, Student status: enrolled in higher education at least half-time, Works 20+ hours per week (qualifies for the student exemption), No disability
-- **Income**: Employment income consistent with 20+ hours/week
+- **Person 1**: Birth month/year: `January 2004` (age 22), Relationship: Head of Household, Student status: enrolled in higher education at least half-time, Enrolled in a job-training program (`student_job_training_program` = Yes), Not working 20+ hrs, No disability
+- **Income**: Employment income `$1,200`/month
 - **Current Benefits**: Not currently receiving SNAP/Food Assistance, Not receiving TANF, Not receiving SSI
 
-**Why this matters**: Confirms a qualifying student exemption restores eligibility, guarding against the screener over-applying the student restriction.
+**Why this matters**: The job-training exemption is one of the federal student exemptions. PE's `is_snap_ineligible_student` does **not yet** model it, so this student is currently flagged ineligible (returns $0) despite qualifying. PE is adding an `is_snap_work_program_participant` input to feed the student-eligibility path; once it ships, this scenario should return the expected $864/yr. The other student exemptions (age, disability, 20-hr work, work-study, parent/child-age) already work today via `SnapIneligibleStudentDependency`, so this is the single remaining student gap.
 
 ---
 
@@ -354,7 +388,7 @@ The screener evaluates the criteria that drive nearly all SNAP outcomes: gross i
 
 ### Scenario 12: Standard Utility Allowance — Single Adult, Moderate Income
 
-**What we're checking**: A single adult below the maximum allotment with a binding excess-shelter deduction, so the KS Standard Utility Allowance ($469/mo HCSUA) flows through to the benefit. Committed expected benefit: **$2,461/yr ($205/mo)**.
+**What we're checking**: A single adult below the maximum allotment with a binding excess-shelter deduction, so the KS Standard Utility Allowance ($469/mo HCSUA) flows through to the benefit. Committed expected benefit: **$2,424/yr ($202/mo)**.
 
 **Expected**: Eligible
 
@@ -372,7 +406,7 @@ The screener evaluates the criteria that drive nearly all SNAP outcomes: gross i
 
 ### Scenario 13: Standard Utility Allowance — Elderly Individual
 
-**What we're checking**: An elderly household (uncapped shelter deduction) where the SUA is binding. Committed expected benefit: **$3,596/yr ($300/mo)**. The uncapped elderly shelter deduction (rent + HCSUA) drives net income to $0, so the household qualifies for the full max allotment for a household of 1 (~$300/mo).
+**What we're checking**: An elderly household (uncapped shelter deduction) where the SUA is binding. Committed expected benefit: **$3,576/yr ($298/mo)**. The uncapped elderly shelter deduction (rent + HCSUA) drives net income to $0, so the household qualifies for the full HH1 max allotment ($298/mo). Note: $298 is the FY2026 HH1 maximum — the benefit cannot exceed it, which is why the prior $300/mo value was impossible.
 
 **Expected**: Eligible
 
@@ -391,7 +425,7 @@ The screener evaluates the criteria that drive nearly all SNAP outcomes: gross i
 
 ### Scenario 14: Standard Utility Allowance — Family of Three
 
-**What we're checking**: A three-person working household below the maximum allotment with a binding shelter deduction. Committed expected benefit: **$4,738/yr ($395/mo)**.
+**What we're checking**: A three-person working household below the maximum allotment with a binding shelter deduction. Committed expected benefit: **$4,668/yr ($389/mo)**.
 
 **Expected**: Eligible
 
@@ -404,12 +438,92 @@ The screener evaluates the criteria that drive nearly all SNAP outcomes: gross i
 - **Expenses**: Monthly rent: `$900`, Heating/cooling utilities (qualifies for HCSUA $469/mo)
 - **Current Benefits**: Not currently receiving SNAP/Food Assistance, Not receiving TANF, Not receiving SSI
 
-**Why this matters**: SUA validation at a larger household size; SUA-sensitive (−$248/yr if HCSUA $469→$400). PolicyEngine-verified on `policyengine-us` 1.739.4.
+**Why this matters**: SUA validation at a larger household size; confirms the KS HCSUA flows through the excess-shelter deduction for a multi-person household.
+
+---
+
+### Scenario 15: Asset Test Pass — Below the Standard $3,000 Limit
+
+**What we're checking**: A non-elderly/non-disabled household with low income and countable assets just **below** the $3,000 standard limit is eligible (criterion 3, the passing side of the asset test).
+
+**Expected**: Eligible — $1,728/yr ($144/mo)
+
+**Steps**:
+- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+- **Household**: Number of people: `1`
+- **Person 1**: Birth month/year: `January 1992` (age 34), Relationship: Head of Household, Not a student, No disability, U.S. citizen
+- **Income**: Employment income `$900`/month
+- **Assets**: `$2,900` (just below the $3,000 standard limit)
+- **Current Benefits**: Not currently receiving SNAP/Food Assistance, Not receiving TANF, Not receiving SSI
+
+**Why this matters**: Scenario 6 tests the asset test failing at $5,000; this is the passing counterpart just under the limit — together they pin the $3,000 boundary for a non-categorical household.
+
+---
+
+### Scenario 16: Large Household of Five
+
+**What we're checking**: A five-person household exercises the larger max allotment and the per-additional-person standards (criterion 4, household-size scaling).
+
+**Expected**: Eligible — $7,212/yr ($601/mo)
+
+**Steps**:
+- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+- **Household**: Number of people: `5`
+- **Person 1**: Birth month/year: `January 1986` (age 40), Relationship: Head of Household, Employment income: `$3,500`/month
+- **Person 2**: Birth month/year: `January 1988` (age 38), Relationship: Spouse, No income
+- **Persons 3–5**: Children ages 12, 8, 5, No income
+- **Expenses**: Monthly rent: `$1,400`, Heating/cooling utilities (HCSUA)
+- **Current Benefits**: Not currently receiving SNAP/Food Assistance, Not receiving TANF, Not receiving SSI
+
+**Why this matters**: Confirms benefit scaling for a larger household — the HH5 max allotment and standard deduction tier — beyond the HH1–4 cases above.
+
+---
+
+### Scenario 17: Disabled Non-Elderly — Uncapped Shelter & $4,500 Asset Limit
+
+**What we're checking**: A non-elderly disabled SSDI recipient receives the federal disabled treatment: the **uncapped** excess-shelter deduction and the higher **$4,500** asset limit (criterion 6, the disabled path).
+
+**Expected**: Eligible — $1,884/yr ($157/mo)
+
+**Steps**:
+- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+- **Household**: Number of people: `1`
+- **Person 1**: Birth month/year: `January 1981` (age 45), Relationship: Head of Household, **Disabled**, Not a student, U.S. citizen
+- **Income**: Social Security disability (SSDI) `$1,500`/month
+- **Expenses**: Monthly rent: `$1,000`, Heating/cooling utilities (HCSUA)
+- **Assets**: `$1,000` (below the $4,500 disabled limit)
+- **Current Benefits**: Not currently receiving SNAP/Food Assistance, Not receiving TANF, Not receiving SSI
+
+**Why this matters**: The disabled treatment keys off PE's `is_usda_disabled`, which requires **receipt of a qualifying disability program** (SSDI), not the generic `is_disabled` flag. SNAP now sends `SsdiReportedDependency`, so the SSDI amount feeds `social_security_disability` → `is_usda_disabled` → uncapped shelter + $4,500 asset limit. (A companion check: the same household with $4,000 in assets is eligible as disabled but would be **denied** if non-disabled, since $4,000 exceeds the $3,000 standard limit — confirming the higher disabled limit is applied.) Before this fix, the shelter deduction was wrongly capped at $744 and the benefit understated.
+
+---
+
+### Scenario 18: TANF Categorical Eligibility — Cash Recipient, Assets Above Limit
+
+**What we're checking**: A household receiving TANF cash assistance should be categorically eligible for SNAP — the income and asset tests are bypassed (criterion 5, the TANF path).
+
+**Expected**: Eligible  ⛔ **Currently fails — blocked on PolicyEngine.**
+
+**Steps**:
+- **Location**: Enter ZIP code `66102`, Select county `Wyandotte`
+- **Household**: Number of people: `1`
+- **Person 1**: Birth month/year: `January 1986` (age 40), Relationship: Head of Household, Not a student, No disability, U.S. citizen
+- **Income**: Employment income `$1,000`/month
+- **Assets**: `$6,000` (above the $3,000 standard limit)
+- **Current Benefits**: Currently receiving TANF cash assistance, Not currently receiving SNAP/Food Assistance, Not receiving SSI
+
+**Why this matters**: TANF cash recipients are categorically eligible under 7 U.S.C. § 2014(a). PE's SNAP `categorical_eligibility` list only honors `ssi` and the BBCE `is_tanf_non_cash_eligible` path; direct `tanf` cash receipt is commented out ("IL only"). Kansas has not adopted BBCE, and feeding the `tanf` input has no effect, so this household is wrongly denied on the asset test. Pending a PolicyEngine change to honor `tanf` cash receipt for non-BBCE states. (This is the SNAP analog to the now-fixed SSI categorical path in Scenario 8.)
 
 
 ## PE Verification
 
-Full detail in the MFB-1049 "PE Verification — final verdict" comment. Summary: **no PE request required, nothing blocks implementation.** KS uses the federal SNAP calculator (`KsSnap(Snap)`) with no eligibility variance; the KS SUA values ($469/$345/$44, eff. 2025-10-01) and all FY2026 standards (max allotment, deductions, shelter cap, asset/income limits) match KEESM/FNS in PolicyEngine. Open SNAP issues triaged and cleared for MFB — #8296 (COFA) and OBBBA non-citizen narrowing bypassed via the `CITIZEN` default; #7745 (OBBBA HCSUA restriction) doesn't affect MFB (actual-expense pathway); #8133/#8134 (student-filter bugs) don't reach MFB; the 3-month ABAWD time-limit clock is an architectural PE limitation.
+KS uses the federal SNAP calculator (`KsSnap(Snap)`) with no eligibility variance; the KS SUA values ($469/$345/$44, eff. 2025-10-01) and all FY2026 standards (max allotment, deductions, shelter cap, asset/income limits) match KEESM/FNS in PolicyEngine.
+
+**Two open PolicyEngine items (Scenarios 10 and 18 fail until resolved):**
+- **Student job-training exemption** — PE's `is_snap_ineligible_student` does not model the workforce/job-training exemption (7 CFR 273.5(b)(3)). PE is adding an `is_snap_work_program_participant` input; once it ships, Scenario 10 should pass.
+- **TANF cash categorical eligibility** — PE's SNAP `categorical_eligibility` list excludes direct `tanf` cash receipt (modeled only for IL / via BBCE). KS is non-BBCE, so Scenario 18 is wrongly denied; pending a PE change to honor `tanf` cash receipt for non-BBCE states.
+
+Previously triaged and cleared for MFB — #8296 (COFA) and OBBBA non-citizen narrowing bypassed via the `CITIZEN` default; #7745 (OBBBA HCSUA restriction) doesn't affect MFB (actual-expense pathway); the 3-month ABAWD time-limit clock is an architectural PE limitation.
 
 
 ## Research Sources
@@ -435,7 +549,7 @@ Scenarios 1–14. Expected `eligible`:
 - `true`: 1, 2, 3, 7, 8, 10, 12, 13, 14
 - `false`: 4, 5, 6, 9, 11
 
-Value scenarios 12–14 carry committed amounts ($2,461 / $3,596 / $4,738 per year), verified against the live PolicyEngine API (the path benefits-api uses), version 1.715.2.
+SUA value scenarios 12–14 carry committed amounts ($2,424 / $3,576 / $4,668 per year), each hand-derived from the FY2026 formula and confirmed against the calculator.
 
 
 ## Generated Program Configuration
