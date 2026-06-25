@@ -356,11 +356,6 @@ class MaCsfp(CommoditySupplementalFoodProgram):
         dependency.household.MaCountyDependency,
     ]
 
-    def member_value(self, member: HouseholdMember):
-        if self.screen.has_benefit("ma_csfp"):
-            return 0
-        return super().member_value(member)
-
 
 class MaEarlyHeadStart(PolicyEngineMembersCalculator):
     pe_name = "early_head_start"

@@ -51,7 +51,7 @@
     }
   },
   {
-    "notes": "MA CSFP - Ineligible: Non-eligible county (Berkshire not served by PE county filter)",
+    "notes": "MA CSFP - Ineligible: Berkshire is not an eligible county for CSFP",
     "household": {
       "white_label": "ma",
       "zipcode": "01201",
@@ -297,7 +297,7 @@
     }
   },
   {
-    "notes": "MA CSFP - Ineligible: Non-eligible county (Hampden not served by PE county filter)",
+    "notes": "MA CSFP - Ineligible: Hampden is not an eligible county for CSFP",
     "household": {
       "white_label": "ma",
       "zipcode": "01103",
@@ -322,7 +322,7 @@
     }
   },
   {
-    "notes": "MA CSFP - Ineligible: Non-eligible county (Franklin not served by PE county filter)",
+    "notes": "MA CSFP - Ineligible: Franklin is not an eligible county for CSFP",
     "household": {
       "white_label": "ma",
       "zipcode": "01301",
