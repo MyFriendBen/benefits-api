@@ -1,0 +1,66 @@
+{
+  "white_label": {
+    "code": "il"
+  },
+  "program_category": {
+    "external_name": "il_health"
+  },
+  "program": {
+    "name_abbreviated": "il_access_dupage",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission",
+      "non_citizen"
+    ],
+    "name": "Access DuPage",
+    "description": "Access DuPage provides free or low-cost health care to adults without insurance in DuPage County. The program connects people with a group of doctor, specialist, lab, and pharmacy volunteers who give free or lower-cost care. The DuPage Health Coalition runs the program.\n\nThe program is a safety net for people who do not have health insurance and cannot get other public help. Access DuPage helps residents no matter what their immigration status is. This makes it one of the few options for people who cannot get public insurance.\n\nTo get started, visit the Access DuPage website using the button below. You can apply in-person or over the phone. You can find info about sign-up locations near you and what to bring to your visit. Spanish-speaking enrollment assistants are available.",
+    "description_short": "Free or low-cost health care for uninsured adults in DuPage County",
+    "learn_more_link": "https://dupagehealthcoalition.org/access-dupage/",
+    "apply_button_link": "https://dupagehealthcoalition.org/access-dupage/",
+    "apply_button_description": "Learn More",
+    "estimated_application_time": "",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": null,
+    "value_type": "benefit",
+    "website_description": "Free or low-cost health care for uninsured adults in DuPage County",
+    "has_calculator": true,
+    "show_on_current_benefits": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": [
+    {
+      "external_name": "il_home",
+      "text": "Proof of DuPage County address (ex: utility bill, lease agreement, mortgage statement, or bank statement with DuPage County address)",
+      "link_url": "https://dupagehealthcoalition.org/wp-content/uploads/2024/12/2020-Examples-of-proofs-002.pdf",
+      "link_text": "Examples of accepted documents"
+    },
+    {
+      "external_name": "id_proof",
+      "text": "Proof of identity (ex: government-issued photo ID, passport, consular ID, or school ID)",
+      "link_url": "https://dupagehealthcoalition.org/wp-content/uploads/2024/12/2020-Examples-of-proofs-002.pdf",
+      "link_text": "Examples of accepted documents"
+    },
+    {
+      "external_name": "il_earned_income",
+      "text": "Proof of income (ex: pay stubs, tax returns, employer letter, self-employment records, or Social Security award letter)",
+      "link_url": "https://dupagehealthcoalition.org/wp-content/uploads/2024/12/2020-Examples-of-proofs-002.pdf",
+      "link_text": "Examples of accepted documents"
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "il_dupage_health_coalition",
+      "name": "DuPage Health Coalition",
+      "phone_number": "",
+      "email": "",
+      "assistance_link": "https://dupagehealthcoalition.org/access-dupage/",
+      "languages": ["en", "es"],
+      "description": "The DuPage Health Coalition runs the Access DuPage program. Spanish-speaking enrollment assistants are available. Visit their website to find enrollment locations and get help applying."
+    }
+  ]
+}
