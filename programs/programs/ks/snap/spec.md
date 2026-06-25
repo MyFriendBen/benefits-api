@@ -172,10 +172,12 @@ for reference.
 >
 > **Categorical & disability inputs (fixed in this PR).** SNAP now sends the `Ssi` dependency
 > (reported SSI receipt → PE's computed `ssi`), so an all-SSI household is correctly categorically
-> eligible (**Scenario 8**, previously denied). It also sends `SsdiReportedDependency` so a disabled
-> SSDI recipient receives the elderly/disabled treatment — the uncapped excess-shelter deduction and
-> the higher $4,500 asset limit (**Scenario 17**). Both bypass the income/asset tests via PE's
-> `meets_snap_categorical_eligibility` / `is_usda_disabled` rather than any MFB post-hoc override.
+> eligible (**Scenario 8**, previously denied) via PE's `meets_snap_categorical_eligibility`, which
+> bypasses the income/asset tests. It also sends `SsdiReportedDependency` so a disabled SSDI
+> recipient receives the elderly/disabled treatment — no gross-income test, the higher $4,500 asset
+> limit, and the uncapped excess-shelter deduction (**Scenario 17**) — through PE's `is_usda_disabled`.
+> (The disabled treatment applies the elderly/disabled *rules*; it does not categorically bypass the
+> tests the way the SSI path does.) Neither relies on an MFB post-hoc override.
 >
 > **⛔ Two scenarios are blocked on PolicyEngine and intentionally fail today:**
 > - **Scenario 10** (student with a job-training/E&T exemption): PE's `is_snap_ineligible_student`
