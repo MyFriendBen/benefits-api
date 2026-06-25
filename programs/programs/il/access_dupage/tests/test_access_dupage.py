@@ -7,8 +7,10 @@ Eligibility requirements (spec.md):
 - At least one household member age 19+ who reports being uninsured and has no
   disqualifying coverage (Medicaid, Medicare, employer, private)
 
-Access DuPage is an in-kind program with no dollar benefit, so the calculated value
-is always $0.
+Access DuPage is an in-kind program with no dollar benefit. The calculator returns a
+nominal $1 per eligible member (a sentinel so the program clears the frontend's
+`value > 0` visibility filter); users see the "Varies" estimated_value override, never
+the "$1".
 
 2026 FPL anchors used in these tests (100% FPL): HH1 = $15,960 -> 250% = $39,900.
 """
@@ -81,9 +83,11 @@ class TestIlAccessDuPageClassAttributes(TestCase):
     def test_eligible_counties(self):
         self.assertEqual(IlAccessDuPage.eligible_counties, ["DuPage"])
 
-    def test_no_dollar_value(self):
+    def test_nominal_member_value_sentinel(self):
+        # No household-level dollar benefit, but a nominal $1 per member so the program
+        # clears the frontend's `value > 0` visibility filter (displayed as "Varies").
         self.assertEqual(IlAccessDuPage.amount, 0)
-        self.assertEqual(IlAccessDuPage.member_amount, 0)
+        self.assertEqual(IlAccessDuPage.member_amount, 1)
 
 
 class TestIlAccessDuPageMemberEligibility(TestCase):
@@ -196,8 +200,9 @@ class TestIlAccessDuPageIntegration(TestCase):
             )
         )
 
-    def test_value_is_zero_for_eligible_household(self):
+    def test_nominal_value_for_eligible_household(self):
+        # $1 per eligible member sentinel (one eligible adult here); displayed as "Varies".
         members = [make_member(age=40, insurance="none")]
         eligibility = make_calculator(county="DuPage", household_income=21_600, members=members).calc()
         self.assertTrue(eligibility.eligible)
-        self.assertEqual(eligibility.value, 0)
+        self.assertEqual(eligibility.value, 1)

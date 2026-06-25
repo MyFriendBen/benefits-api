@@ -8,8 +8,11 @@ class IlAccessDuPage(ProgramCalculator):
 
     Free or low-cost in-kind health care for uninsured adults in DuPage County, run by
     the DuPage Health Coalition. Access DuPage is not health insurance and provides no
-    fixed dollar benefit, so the calculator determines eligibility only and returns a
-    value of $0.
+    fixed dollar benefit, so the calculator determines eligibility only. It returns a
+    nominal value of $1 per eligible member: the frontend hides any program whose value
+    is not > 0 (filterPrograms.ts), so a literal $0 would never render. The "$1" is never
+    shown to users — the program's estimated_value translation override displays "Varies"
+    instead. This mirrors IlTransportationMixin.member_value.
 
     Eligibility (from spec.md):
       - Permanent DuPage County resident. The screener verifies county, not the 30-day
@@ -25,6 +28,9 @@ class IlAccessDuPage(ProgramCalculator):
 
     fpl_percent = 2.5
     min_age = 19
+    # Nominal sentinel so the program clears the frontend's `value > 0` visibility
+    # filter; the "Varies" estimated_value override is what users actually see.
+    member_amount = 1
     eligible_counties = ["DuPage"]
     # Coverage that disqualifies a member from Access DuPage
     disqualifying_insurance = ["medicaid", "medicare", "employer", "private"]
