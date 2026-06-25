@@ -76,6 +76,10 @@ class IlCountyDependency(CountyDependency):
     state_dependency_class = IlStateCodeDependency
 
 
+class MaCountyDependency(CountyDependency):
+    state_dependency_class = MaStateCodeDependency
+
+
 class TxCountyDependency(CountyDependency):
     state_dependency_class = TxStateCodeDependency
 
