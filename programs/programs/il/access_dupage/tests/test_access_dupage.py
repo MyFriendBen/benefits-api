@@ -191,7 +191,9 @@ class TestIlAccessDuPageIntegration(TestCase):
             make_member(age=67, insurance="medicare"),
         ]
         self.assertTrue(
-            self._eligible(county="DuPage", household_income=61_320, household_size=4, fpl_limit=33_000, members=members)
+            self._eligible(
+                county="DuPage", household_income=61_320, household_size=4, fpl_limit=33_000, members=members
+            )
         )
 
     def test_value_is_zero_for_eligible_household(self):
