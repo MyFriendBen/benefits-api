@@ -23,7 +23,7 @@
      - `HouseholdMember.birth_year`
      - `HouseholdMember.birth_month`
      - `HouseholdMember.relationship`
-   - Source: 26 U.S.C. § 32(a)(2), (b); IRS Rev. Proc. for Tax Year 2025 inflation adjustments
+   - Source: 26 U.S.C. § 32(a)(2), (b); IRS Rev. Proc. 2025-32 (Tax Year 2026 inflation adjustments)
 
 3. **Number of qualifying children determines credit amount tier (0, 1, 2, or 3+)**
    - Screener fields:
@@ -38,7 +38,7 @@
      - `HouseholdMember.birth_month`
      - `HouseholdMember.relationship`
    - Source: 26 U.S.C. § 32(c)(1)(A)(ii)(II)
-   - Note: The ARPA (2021) temporarily removed the upper age limit for TY2021 only. For TY2022 onward (including TY2025), the upper age limit of 65 applies and the minimum age remains 25.
+   - Note: The ARPA (2021) temporarily removed the upper age limit for TY2021 only. For TY2022 onward (including TY2026), the upper age limit of 65 applies and the minimum age remains 25.
 
 5. **Filing status cannot be Married Filing Separately** ⚠️ *data gap*
    - Note: The screener cannot represent Married Filing Separately. `screen.is_joint()` returns True whenever a spouse is present in the household, so a married couple living together is always treated as filing jointly. There is no way to model an MFS election, so this exclusion cannot be evaluated. (No test scenario exists for it; an MFJ-eligible case is covered by Scenario 9.)
@@ -66,7 +66,7 @@
    - Source: 26 U.S.C. § 32(c)(1)(D)
    - Impact: ImpactLevel.HIGH
 
-10. **Investment income must not exceed the threshold ($11,600 for TY2024, indexed for TY2025)** ⚠️ *data gap*
+10. **Investment income must not exceed the threshold (indexed annually for inflation)** ⚠️ *data gap*
     - Note: Investment income includes interest, dividends, capital gains, rental income, and royalties. While the screener collects some income types, it may not separately identify all investment income categories with sufficient granularity to apply this test precisely. The threshold is indexed annually.
     - Source: 26 U.S.C. § 32(i)
     - Impact: ImpactLevel.MEDIUM
@@ -98,9 +98,7 @@
 
 ## Benefit Value
 
-The Kansas EITC equals **17% of the federal EITC amount**, per K.S.A. § 79-32,205 (effective tax year 2013 and all tax years thereafter). All test-scenario values in this spec are computed for **tax year 2026** — the program is configured with `year: 2026`, and PolicyEngine has published (not extrapolated) TY2026 federal EITC parameters from IRS Rev. Proc. 2025-32.
-
-> ⚠️ **Rate correction:** The original discovery artifact stated 25%. The correct statutory rate is **17%** per K.S.A. § 79-32,205(a). No legislation has changed this rate since 2013. The 25% figure is likely a confusion with the Kansas Child and Dependent Care Credit (CDCC), which is 25% of the federal CDCC.
+The Kansas EITC equals **17% of the federal EITC amount**, per K.S.A. § 79-32,205(a) (effective tax year 2013 and all tax years thereafter). All test-scenario values in this spec are computed for **tax year 2026** — the program is configured with `year: 2026`, and PolicyEngine has published (not extrapolated) TY2026 federal EITC parameters from IRS Rev. Proc. 2025-32.
 
 The credit has two components:
 - **Refundable portion**: If the credit exceeds the taxpayer's Kansas income tax liability, the excess is refunded per K.S.A. § 79-32,205(b).
@@ -175,7 +173,7 @@ Source: K.S.A. § 79-32,205 (Justia, verified current to Jan 1 2025); ITEP State
 - **Person 5**: Birth month/year: `November 2018` (age 7), Relationship: Child
 - **Person 6**: Birth month/year: `June 2022` (age 4), Relationship: Child
 
-**Why this matters**: Tests the upper income boundary for the 3+ children tier on a MFJ return. The TY2025 MFJ limit for 3+ qualifying children is approximately $68,675 (verify against IRS Rev. Proc. 2024-61). At $68,575 the household is just $100 below that threshold.
+**Why this matters**: Tests the upper income boundary for the 3+ children tier on a MFJ return. The TY2026 MFJ limit for 3+ qualifying children is in the high-$60,000s (per IRS Rev. Proc. 2025-32); at $68,575 the household is just below that threshold and is confirmed eligible with a small residual credit ($60) via the live PolicyEngine API.
 
 ---
 
@@ -189,7 +187,7 @@ Source: K.S.A. § 79-32,205 (Justia, verified current to Jan 1 2025); ITEP State
 - **Person 1**: Birth month/year: `September 1990` (age 35), Relationship: Head of Household, Has earned income: Yes, Annual wages/salary: `$50,434`, Income frequency: Yearly, Filed Kansas tax return last year: Yes
 - **Person 2**: Birth month/year: `January 2016` (age 10), Relationship: Child, Has income: No
 
-**Why this matters**: The TY2025 single/HOH AGI limit for 1 qualifying child is approximately $50,434 (verify against IRS Rev. Proc. 2024-61; TY2024 was $49,084). Confirms the screener uses "at or below" logic per 26 U.S.C. § 32(a)(2).
+**Why this matters**: At a single/HOH income of $50,434 with 1 qualifying child, the TY2026 EITC is still in its phase-out range (per IRS Rev. Proc. 2025-32), yielding a small residual credit ($32). Confirms the screener uses "at or below" logic per 26 U.S.C. § 32(a)(2).
 
 ---
 
@@ -289,7 +287,7 @@ The 20-year-old is not a dependent in MFB's tax-unit logic (over 18, not a stude
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `September 1961` (age 64), Relationship: `headOfHousehold`, Has earned income: Yes, Annual wages/salary: `$100` (minimal), Filed Kansas tax return last year: Yes (last_tax_filing_year: 2025)
 
-**Why this matters**: For TY2025, the upper age limit for childless filers is under 65 (ARPA's removal of this limit expired after TY2021). A 64-year-old is just inside the limit. Confirms the ceiling is enforced as `< 65`, not `<= 65`.
+**Why this matters**: The upper age limit for childless filers is under 65 (ARPA's removal of this limit expired after TY2021). A 64-year-old is just inside the limit. Confirms the ceiling is enforced as `< 65`, not `<= 65`.
 
 ---
 
