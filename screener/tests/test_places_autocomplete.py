@@ -49,7 +49,7 @@ class TestGooglePlacesClient(TestCase):
 
     @patch("integrations.clients.google_places.requests.get")
     def test_passes_correct_params_to_google(self, mock_get):
-        mock_get.return_value = Mock(json=lambda: {"predictions": []})
+        mock_get.return_value = Mock(json=lambda: {"predictions": [], "status": "ZERO_RESULTS"})
         mock_get.return_value.raise_for_status = Mock()
 
         GooglePlacesClient().autocomplete_address("456 Oak")
@@ -72,7 +72,7 @@ class TestGooglePlacesClient(TestCase):
     @patch("integrations.clients.google_places.requests.get")
     def test_preserves_non_usa_descriptions_unchanged(self, mock_get):
         mock_get.return_value = Mock(
-            json=lambda: {"predictions": [{"description": "123 Main St, Denver, CO 80014", "place_id": "xyz"}]}
+            json=lambda: {"predictions": [{"description": "123 Main St, Denver, CO 80014", "place_id": "xyz"}], "status": "OK"}
         )
         mock_get.return_value.raise_for_status = Mock()
 

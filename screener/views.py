@@ -669,55 +669,27 @@ def urgent_need_results(screen: Screen, data):
     return eligible_urgent_needs
 
 
-class RemRateThrottle(throttling.AnonRateThrottle):
-    """
-    Rate throttle for REM impact proxy requests to prevent API key abuse.
-    Rate is configured via DEFAULT_THROTTLE_RATES["rem"] in settings.
-    Uses a hashed IP as the cache key to avoid storing raw IPs.
-    """
+class HashedIPAnonRateThrottle(throttling.AnonRateThrottle):
+    """AnonRateThrottle that keys on a hashed IP so raw IPs aren't stored."""
 
+    def get_cache_key(self, request, view):
+        ident = self.get_ident(request)
+        if ident is None:
+            return None
+        hashed = hashlib.sha256(ident.encode()).hexdigest()
+        return self.cache_format % {"scope": self.scope, "ident": hashed}
+
+
+class RemRateThrottle(HashedIPAnonRateThrottle):
     scope = "rem"
 
-    def get_cache_key(self, request, view):
-        ident = self.get_ident(request)
-        if ident is None:
-            return None
-        hashed = hashlib.sha256(ident.encode()).hexdigest()
-        return self.cache_format % {"scope": self.scope, "ident": hashed}
 
-
-class NPSRateThrottle(throttling.AnonRateThrottle):
-    """
-    Rate throttle for NPS submissions to prevent abuse.
-    Rate is configured via DEFAULT_THROTTLE_RATES["nps"] in settings.
-    Uses a hashed IP as the cache key to avoid storing raw IPs.
-    """
-
+class NPSRateThrottle(HashedIPAnonRateThrottle):
     scope = "nps"
 
-    def get_cache_key(self, request, view):
-        ident = self.get_ident(request)
-        if ident is None:
-            return None
-        hashed = hashlib.sha256(ident.encode()).hexdigest()
-        return self.cache_format % {"scope": self.scope, "ident": hashed}
 
-
-class PlacesRateThrottle(throttling.AnonRateThrottle):
-    """
-    Rate throttle for Google Places Autocomplete proxy requests.
-    Rate is configured via DEFAULT_THROTTLE_RATES["places"] in settings.
-    Uses a hashed IP as the cache key to avoid storing raw IPs.
-    """
-
+class PlacesRateThrottle(HashedIPAnonRateThrottle):
     scope = "places"
-
-    def get_cache_key(self, request, view):
-        ident = self.get_ident(request)
-        if ident is None:
-            return None
-        hashed = hashlib.sha256(ident.encode()).hexdigest()
-        return self.cache_format % {"scope": self.scope, "ident": hashed}
 
 
 class NPSScoreView(views.APIView):
