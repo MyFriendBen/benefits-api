@@ -41,15 +41,16 @@ class ChildCareAssistance(ProgramCalculator):
                 county_name = county
         e.condition(in_county_limits, messages.location())
 
-        # income
-        frequency = "yearly"
-        gross_income = self.screen.calc_gross_income(frequency, ["all"], ["cashAssistance"])
-        deductions = self.screen.calc_expenses(frequency, ["childSupport"])
-        net_income = gross_income - deductions
-        fpl_percent = cccap_county_limits[county_name] / 100
-        fpl = self.program.year.as_dict()
-        income_limit = fpl[self.screen.household_size] * fpl_percent
-        e.condition(net_income <= income_limit, messages.income(net_income, income_limit))
+        # income — only calculated if county is in CCCAP limits
+        if in_county_limits:
+            frequency = "yearly"
+            gross_income = self.screen.calc_gross_income(frequency, ["all"], ["cashAssistance"])
+            deductions = self.screen.calc_expenses(frequency, ["childSupport"])
+            net_income = gross_income - deductions
+            fpl_percent = cccap_county_limits[county_name] / 100
+            fpl = self.program.year.as_dict()
+            income_limit = fpl[self.screen.household_size] * fpl_percent
+            e.condition(net_income <= income_limit, messages.income(net_income, income_limit))
 
         # assets
         assets = self.screen.household_assets if self.screen.household_assets is not None else 0

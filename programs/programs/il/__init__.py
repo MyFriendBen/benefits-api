@@ -8,6 +8,7 @@ from .transit_reduced_fare.calculator import IlTransitReducedFare
 from .commodity_supplemental_food_program.calculator import IlCommoditySupplementalFoodProgram
 from .ccap.calculator import IlChildCareAssistanceProgram
 from .nurse_family_partnership.calculator import IlNurseFamilyPartnership
+from .silver_access.calculator import IlSilverAccess
 from ..calc import ProgramCalculator
 
 il_calculators: dict[str, type[ProgramCalculator]] = {
@@ -21,4 +22,5 @@ il_calculators: dict[str, type[ProgramCalculator]] = {
     "il_csfp": IlCommoditySupplementalFoodProgram,
     "il_ccap": IlChildCareAssistanceProgram,
     "il_nfp": IlNurseFamilyPartnership,
+    "il_silver_access": IlSilverAccess,
 }

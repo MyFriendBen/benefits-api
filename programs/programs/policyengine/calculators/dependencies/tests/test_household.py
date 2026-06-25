@@ -45,13 +45,13 @@ class TestWaStateCodeDependency(TestCase):
 
 
 class TestKsStateCodeDependency(TestCase):
-    """Tests for KsStateCodeDependency class used by Kseitc calculator."""
+    """Tests for KsStateCodeDependency class used by the Kseitc and KsSnap calculators."""
 
     def setUp(self):
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
 
         self.screen = Screen.objects.create(
-            white_label=self.white_label, zipcode="67202", county="Sedgwick County", household_size=1, completed=False
+            white_label=self.white_label, zipcode="66603", county="Shawnee County", household_size=1, completed=False
         )
 
     def test_value_returns_ks_state_code(self):
