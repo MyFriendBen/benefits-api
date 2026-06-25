@@ -40,9 +40,8 @@
    - Source: 26 U.S.C. § 32(c)(1)(A)(ii)(II)
    - Note: The ARPA (2021) temporarily removed the upper age limit for TY2021 only. For TY2022 onward (including TY2025), the upper age limit of 65 applies and the minimum age remains 25.
 
-5. **Filing status cannot be Married Filing Separately**
-   - Screener fields:
-     - `screen.is_joint()`
+5. **Filing status cannot be Married Filing Separately** ⚠️ *data gap*
+   - Note: The screener cannot represent Married Filing Separately. `screen.is_joint()` returns True whenever a spouse is present in the household, so a married couple living together is always treated as filing jointly. There is no way to model an MFS election, so this exclusion cannot be evaluated. (No test scenario exists for it; an MFJ-eligible case is covered by Scenario 9.)
    - Source: 26 U.S.C. § 32(d)
 
 6. **Must file a Kansas individual income tax return (Form K-40)** ⚠️ *data gap*
@@ -99,7 +98,7 @@
 
 ## Benefit Value
 
-The Kansas EITC equals **17% of the federal EITC amount** for tax year 2025, per K.S.A. § 79-32,205 (effective tax year 2013 and all tax years thereafter).
+The Kansas EITC equals **17% of the federal EITC amount**, per K.S.A. § 79-32,205 (effective tax year 2013 and all tax years thereafter). All test-scenario values in this spec are computed for **tax year 2026** — the program is configured with `year: 2026`, and PolicyEngine has published (not extrapolated) TY2026 federal EITC parameters from IRS Rev. Proc. 2025-32.
 
 > ⚠️ **Rate correction:** The original discovery artifact stated 25%. The correct statutory rate is **17%** per K.S.A. § 79-32,205(a). No legislation has changed this rate since 2013. The 25% figure is likely a confusion with the Kansas Child and Dependent Care Credit (CDCC), which is 25% of the federal CDCC.
 
@@ -109,17 +108,17 @@ The credit has two components:
 
 The PE calculator computes both components (`ks_refundable_eitc`, `ks_nonrefundable_eitc`, `ks_total_eitc`). The annual benefit value is the total KS EITC — the sum of refundable and non-refundable portions.
 
-For reference, the federal EITC maximums for TY2025 (on which the KS credit is based) are approximately:
-- 0 qualifying children: ~$632
-- 1 qualifying child: ~$4,213
-- 2 qualifying children: ~$6,960
-- 3+ qualifying children: ~$7,830
+For reference, the federal EITC maximums for TY2026 (on which the KS credit is based, per IRS Rev. Proc. 2025-32) are:
+- 0 qualifying children: $664
+- 1 qualifying child: $4,427
+- 2 qualifying children: $7,316
+- 3+ qualifying children: $8,231
 
 KS EITC = 17% of federal EITC = approximately:
-- 0 qualifying children: ~$107
-- 1 qualifying child: ~$716
-- 2 qualifying children: ~$1,183
-- 3+ qualifying children: ~$1,331
+- 0 qualifying children: ~$113
+- 1 qualifying child: ~$753
+- 2 qualifying children: ~$1,244
+- 3+ qualifying children: ~$1,399
 
 All values should be expressed as **annual** amounts. The PE calculator will compute exact values based on each household's specific income and family composition.
 
@@ -127,10 +126,10 @@ Source: K.S.A. § 79-32,205 (Justia, verified current to Jan 1 2025); ITEP State
 
 ## Implementation Coverage
 
-- ✅ Evaluable criteria: 6
-- ⚠️  Data gaps: 9
+- ✅ Evaluable criteria: 5
+- ⚠️  Data gaps: 10
 
-6 criteria can be at least partially evaluated with current screener fields (criteria 1–5, 7), and 9 criteria cannot be evaluated (criteria 6, 8–15). The core eligibility determination (earned income, income thresholds, number of qualifying children, age requirements, filing status, Kansas residency) can be reasonably approximated using available screener fields. The most significant gaps are citizenship/immigration status and qualifying child residency, which are high-impact requirements that cannot be assessed. The Kansas EITC is fundamentally a piggyback credit on the federal EITC (17% of federal amount per K.S.A. § 79-32,205), so all federal EITC eligibility criteria apply in addition to Kansas filing requirements.
+5 criteria can be at least partially evaluated with current screener fields (criteria 1–4, 7), and 10 criteria cannot be evaluated (criteria 5, 6, 8–15). The core eligibility determination (earned income, income thresholds, number of qualifying children, age requirements, Kansas residency) can be reasonably approximated using available screener fields. Filing status (criterion 5) is a data gap because the screener cannot represent Married Filing Separately. The most significant gaps are citizenship/immigration status and qualifying child residency, which are high-impact requirements that cannot be assessed. The Kansas EITC is fundamentally a piggyback credit on the federal EITC (17% of federal amount per K.S.A. § 79-32,205), so all federal EITC eligibility criteria apply in addition to Kansas filing requirements.
 
 ## Research Sources
 
@@ -149,7 +148,7 @@ Source: K.S.A. § 79-32,205 (Justia, verified current to Jan 1 2025); ITEP State
 
 ### Scenario 1: Single Parent with Two Qualifying Children - Clearly Eligible
 **What we're checking**: Verifies that a typical Kansas resident with earned income, two qualifying children, and income well below the EITC threshold qualifies for the Kansas EITC (17% of federal EITC)
-**Expected**: Eligible — $1,050/year (federal EITC $6,173.55 × 17%)
+**Expected**: Eligible — $1,097/year (federal EITC $6,450.43 × 17%, TY2026)
 
 **Steps**:
 - **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
@@ -162,26 +161,9 @@ Source: K.S.A. § 79-32,205 (Justia, verified current to Jan 1 2025); ITEP State
 
 ---
 
-### Scenario 2: Married Couple Filing Separately - Not Eligible Due to Filing Status
-**What we're checking**: Validates that a married couple who files separately (not jointly) is excluded from EITC regardless of income or qualifying children
-**Expected**: Not eligible
-
-**Steps**:
-- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
-- **Household**: Number of people: `4`
-- **Person 1**: Birth month/year: `June 1988` (age 37), Relationship: Head of Household, Has earned income: Yes, Annual wages/salary: `$32,000`, Filed Kansas tax return last year: Yes
-- **Person 2**: Birth month/year: `March 1989` (age 36), Relationship: Spouse, Has earned income: No
-- **Person 3**: Birth month/year: `May 2016` (age 9), Relationship: Child
-- **Person 4**: Birth month/year: `October 2019` (age 6), Relationship: Child
-- **Filing status**: Married Filing Separately (`screen.is_joint()` = false)
-
-**Why this matters**: 26 U.S.C. § 32(d) is a hard categorical exclusion — MFS filers cannot claim EITC regardless of income, children, or residency. This is the only ineligible case for criterion 5.
-
----
-
-### Scenario 3: Married Couple with Four Qualifying Children - Income Just Below MFJ AGI Limit
+### Scenario 2: Married Couple with Four Qualifying Children - Income Just Below MFJ AGI Limit
 **What we're checking**: Validates that a married-filing-jointly household with income just below the MFJ AGI limit for 3+ qualifying children is correctly identified as eligible
-**Expected**: Eligible — $4/year (boundary test; income is $100 below limit, federal EITC $21.09, KS EITC $3.58 → $4 — this scenario tests eligibility determination, not calculator value)
+**Expected**: Eligible — $60/year (boundary test; income is just below the 3+ children MFJ limit, federal EITC $351.40 × 17% → $60, TY2026 — this scenario primarily tests eligibility determination at the income boundary)
 
 **Steps**:
 - **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
@@ -197,9 +179,9 @@ Source: K.S.A. § 79-32,205 (Justia, verified current to Jan 1 2025); ITEP State
 
 ---
 
-### Scenario 4: Single Filer with One Qualifying Child - Income Exactly at AGI Limit
+### Scenario 3: Single Filer with One Qualifying Child - Income Exactly at AGI Limit
 **What we're checking**: Validates that a household with income exactly at the EITC AGI threshold for one qualifying child is still eligible (boundary is inclusive)
-**Expected**: Eligible — ~$0 (the AGI limit is the point where the phase-out reaches zero; this scenario tests that the screener uses "does not exceed" logic, not calculator output — expected value is $0 at exactly the limit)
+**Expected**: Eligible — $32/year (federal EITC $185.27 × 17% → $32 at $50,434 income with 1 qualifying child, TY2026; the phase-out has not fully reached zero at this income, so a small residual credit remains. This scenario tests that the screener uses "at or below" eligibility logic)
 
 **Steps**:
 - **Location**: Enter ZIP code `66604`, Select county `Shawnee`
@@ -211,22 +193,22 @@ Source: K.S.A. § 79-32,205 (Justia, verified current to Jan 1 2025); ITEP State
 
 ---
 
-### Scenario 5: Single Filer with No Qualifying Children - Income Just Above AGI Limit
+### Scenario 4: Single Filer with No Qualifying Children - Income Just Above AGI Limit
 **What we're checking**: Validates that a single childless filer whose income exceeds the 0-children AGI threshold is correctly denied eligibility
-**Expected**: Not eligible
+**Expected**: Not eligible — $0 (income is past the point where the childless EITC phase-out reaches zero, TY2026)
 
 **Steps**:
 - **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `March 1986` (age 40), Relationship: `headOfHousehold`, Has earned income: Yes, Annual wages/salary: `$19,200` (equivalent to `$1,600` monthly), Filed Kansas tax return last year: Yes (last_tax_filing_year: 2025)
+- **Person 1**: Birth month/year: `March 1986` (age 40), Relationship: `headOfHousehold`, Has earned income: Yes, Annual wages/salary: `$20,000` (equivalent to `$1,667` monthly), Filed Kansas tax return last year: Yes (last_tax_filing_year: 2025)
 
-**Why this matters**: The 0-children AGI limit is the lowest of all tiers — approximately $19,104 for single/HOH filers in TY2025 (verify against IRS Rev. Proc. 2024-61). At $19,200, the household is $96 over the limit.
+**Why this matters**: The 0-children tier has the lowest income ceiling and the steepest phase-out. At $20,000 the childless EITC has fully phased out to $0, confirming the screener correctly denies a childless filer past the income limit. (Note: at $19,200 a small residual credit (~$4) still remains for TY2026, so $20,000 is used to land cleanly in the ineligible range.)
 
 ---
 
-### Scenario 6: Single Filer, No Qualifying Children, Age Exactly 25 - Meets Minimum Age Requirement
+### Scenario 5: Single Filer, No Qualifying Children, Age Exactly 25 - Meets Minimum Age Requirement
 **What we're checking**: Validates that a taxpayer exactly at the minimum age for childless EITC (25) is eligible
-**Expected**: Eligible — $53/year (federal EITC $313.93 × 17% at $15k income, 0 children)
+**Expected**: Eligible — $59/year (federal EITC $347.29 × 17% at $15k income, 0 children, TY2026)
 
 **Steps**:
 - **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
@@ -237,9 +219,9 @@ Source: K.S.A. § 79-32,205 (Justia, verified current to Jan 1 2025); ITEP State
 
 ---
 
-### Scenario 7: Single Filer, No Qualifying Children, Age 24 - Below Minimum Age Requirement
+### Scenario 6: Single Filer, No Qualifying Children, Age 24 - Below Minimum Age Requirement
 **What we're checking**: Validates that a taxpayer aged 24 with no qualifying children is not eligible
-**Expected**: Not eligible
+**Expected**: Not eligible — $0 (PolicyEngine applies the childless minimum-age rule)
 
 **Steps**:
 - **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
@@ -250,9 +232,9 @@ Source: K.S.A. § 79-32,205 (Justia, verified current to Jan 1 2025); ITEP State
 
 ---
 
-### Scenario 8: Single Parent with No Earned Income - Excluded Due to SSI-Only Income
+### Scenario 7: Single Parent with No Earned Income - Excluded Due to SSI-Only Income
 **What we're checking**: Verifies that a household with no earned income (SSI only) is excluded from EITC
-**Expected**: Not eligible
+**Expected**: Not eligible — $0 (PolicyEngine requires earned income; SSI is unearned and does not qualify)
 
 **Steps**:
 - **Location**: Enter ZIP code `66604`, Select county `Shawnee`
@@ -265,9 +247,11 @@ Source: K.S.A. § 79-32,205 (Justia, verified current to Jan 1 2025); ITEP State
 
 ---
 
-### Scenario 9: Mixed Household - Adult Child Does Not Count Toward Qualifying Child Tier
+### Scenario 8: Mixed Household - Adult Child Does Not Count Toward Qualifying Child Tier
 **What we're checking**: Validates that a 20-year-old household member is not counted as a qualifying child, placing the household in the 1-child tier rather than 2-child tier
-**Expected**: Eligible — $314/year (federal EITC $1,846.31 × 17% at $32k income, 1 qualifying child tier)
+**Expected**: Eligible — $532/year (federal EITC $3,131.02 × 17% at $32k income, 1 qualifying child tier, TY2026)
+
+The 20-year-old is not a dependent in MFB's tax-unit logic (over 18, not a student ≤23, not disabled per `is_dependent()`), so MFB places them in a separate tax unit before sending to PolicyEngine. Their $14k therefore does not enter the head's EITC calculation — the head's tax unit is head ($32k) + the 13-year-old (one qualifying child). Verified end-to-end through the MFB calculator.
 
 **Steps**:
 - **Location**: Enter ZIP code `66502`, Select county `Riley`
@@ -280,9 +264,9 @@ Source: K.S.A. § 79-32,205 (Justia, verified current to Jan 1 2025); ITEP State
 
 ---
 
-### Scenario 10: Two-Adult Household with Both Adults Having Earned Income and Two Qualifying Children
+### Scenario 9: Two-Adult Household with Both Adults Having Earned Income and Two Qualifying Children
 **What we're checking**: Validates that combined household income from two earners is correctly aggregated for AGI eligibility
-**Expected**: Eligible — $889/year (federal EITC $5,229.22 × 17% at $39,600 combined income, 2 children, MFJ)
+**Expected**: Eligible — $942/year (federal EITC $5,538.54 × 17% at $39,600 combined income, 2 children, MFJ, TY2026)
 
 **Steps**:
 - **Location**: Enter ZIP code `66502`, Select county `Riley`
@@ -296,9 +280,9 @@ Source: K.S.A. § 79-32,205 (Justia, verified current to Jan 1 2025); ITEP State
 
 ---
 
-### Scenario 11: Single Filer, No Qualifying Children, Age Exactly 64 - At Upper Age Boundary
+### Scenario 10: Single Filer, No Qualifying Children, Age Exactly 64 - At Upper Age Boundary
 **What we're checking**: Validates that a childless filer at age 64 (one year below the upper limit) is eligible
-**Expected**: Eligible — $1/year (federal EITC $7.65 × 17% at $100 income, KS EITC $1.30 → $1; this scenario tests age eligibility, not calculator value)
+**Expected**: Eligible — $1/year (federal EITC $7.65 × 17% at $100 income, KS EITC $1.30 → $1, TY2026; this scenario tests age eligibility at the upper boundary, not calculator value)
 
 **Steps**:
 - **Location**: Enter ZIP code `66502`, Select county `Riley`
