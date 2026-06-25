@@ -10,6 +10,25 @@ SNAP_BASE_INPUTS = [
     dependency.member.AgeDependency,
     dependency.member.MedicalExpenseDependency,
     dependency.member.IsDisabledDependency,
+    # Reported SSI receipt. PE's `meets_snap_categorical_eligibility` keys off the computed
+    # `ssi` variable, so a real SSI recipient whose unearned income is high enough that PE
+    # recomputes `ssi = 0` would otherwise be denied categorical eligibility (and the
+    # elderly/disabled asset limit). Feeding reported SSI as the `ssi` input — the same
+    # pattern other calculators use — lets actual receipt drive categorical eligibility.
+    dependency.member.Ssi,
+    # Reported TANF cash receipt. PE doesn't yet honor `tanf` for SNAP categorical eligibility
+    # in non-BBCE states (it's modeled for IL / via the BBCE non-cash path only), so this has no
+    # effect for KS today — but sending it now means the categorical path is correctly armed and
+    # will work the moment PE adds `tanf` to its SNAP categorical_eligibility list. Mirrors `Ssi`.
+    dependency.spm.Tanf,
+    # PE's SNAP elderly/disabled treatment (uncapped excess-shelter deduction and the higher
+    # $4,500 asset limit) keys off `is_usda_disabled`, which requires receipt of a qualifying
+    # disability program — NOT the generic `is_disabled` flag. SsdiReportedDependency feeds
+    # the SSDI benefit amount so a disabled applicant on SSDI gets the disabled treatment
+    # (otherwise the shelter deduction is wrongly capped). MeetsSsiDisabilityCriteriaDependency
+    # is version-gated and only takes effect once a supporting PE version is pinned.
+    dependency.member.SsdiReportedDependency,
+    dependency.member.MeetsSsiDisabilityCriteriaDependency,
     dependency.spm.SnapEmergencyAllotmentDependency,
     dependency.spm.HousingCostDependency,
     dependency.spm.HasPhoneExpenseDependency,
