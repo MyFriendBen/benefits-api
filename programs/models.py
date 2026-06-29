@@ -197,6 +197,46 @@ class CategoryIconName(models.Model):
         return self.name
 
 
+class Icon(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    lucide_name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.lucide_name})"
+
+    class Meta:
+        ordering = ["name"]
+
+
+class FormOption(models.Model):
+    OPTION_TYPE_CHOICES = [
+        ("condition", "Condition"),
+        ("health_insurance", "Health Insurance"),
+        ("referral", "Referral Source"),
+    ]
+
+    white_label = models.ForeignKey(WhiteLabel, on_delete=models.CASCADE, related_name="form_options")
+    option_type = models.CharField(max_length=50, choices=OPTION_TYPE_CHOICES)
+    value = models.CharField(max_length=100)
+    icon = models.ForeignKey(Icon, on_delete=models.SET_NULL, null=True, blank=True)
+    text = models.ForeignKey(Translation, on_delete=models.CASCADE)
+    order = models.IntegerField(default=0)
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.white_label.code} - {self.option_type}: {self.value}"
+
+    class Meta:
+        unique_together = [["white_label", "option_type", "value"]]
+        ordering = ["white_label", "option_type", "order"]
+        indexes = [
+            models.Index(fields=["white_label", "option_type"]),
+        ]
+
+
 class ProgramCategoryManager(models.Manager):
     translated_fields = ("name", "description")
 

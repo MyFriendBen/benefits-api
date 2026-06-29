@@ -12,6 +12,8 @@ from .models import (
     UrgentNeed,
     UrgentNeedType,
     CategoryIconName,
+    Icon,
+    FormOption,
     Navigator,
     UrgentNeedFunction,
     FederalPoveryLimit,
@@ -598,6 +600,20 @@ class CategoryIconNameAdmin(SecureAdmin):
     search_fields = ("name",)
 
 
+class IconAdmin(SecureAdmin):
+    list_display = ["name", "lucide_name", "description"]
+    search_fields = ["name", "lucide_name"]
+    ordering = ["name"]
+
+
+class FormOptionAdmin(SecureAdmin):
+    list_display = ["white_label", "option_type", "value", "icon", "order", "active"]
+    list_filter = ["white_label", "option_type", "active"]
+    search_fields = ["value", "white_label__code"]
+    ordering = ["white_label", "option_type", "order"]
+    autocomplete_fields = ["icon"]
+
+
 admin.site.register(LegalStatus, LegalStatusAdmin)
 admin.site.register(Program, ProgramAdmin)
 admin.site.register(County, CountiesAdmin)
@@ -616,3 +632,5 @@ admin.site.register(TranslationOverride, TranslationOverrideAdmin)
 admin.site.register(ProgramCategory, ProgramCategoryAdmin)
 admin.site.register(UrgentNeedType, UrgentNeedTypeAdmin)
 admin.site.register(CategoryIconName, CategoryIconNameAdmin)
+admin.site.register(Icon, IconAdmin)
+admin.site.register(FormOption, FormOptionAdmin)
