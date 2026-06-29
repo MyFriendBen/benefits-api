@@ -33,9 +33,7 @@ class TestFormOptionModel(TestCase):
     def setUp(self):
         self.wl = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
         self.icon = Icon.objects.create(name="House", lucide_name="house")
-        self.translation = Translation.objects.add_translation(
-            "test.housing", "Help with housing"
-        )
+        self.translation = Translation.objects.add_translation("test.housing", "Help with housing")
 
     def test_str(self):
         opt = FormOption.objects.create(
@@ -92,9 +90,7 @@ class TestGetFormOptionsEndpoint(APITestCase):
         self.wl = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
         self.other_wl = WhiteLabel.objects.create(name="Other State", code="other", state_code="OS")
         self.icon = Icon.objects.create(name="House", lucide_name="house")
-        self.translation = Translation.objects.add_translation(
-            "test.housing", "Help with housing"
-        )
+        self.translation = Translation.objects.add_translation("test.housing", "Help with housing")
         self.url = "/api/test/form-options/"
         self.user = User.objects.create_user(email_or_cell="testuser@example.com", password="password")
         self.client = APIClient()
@@ -183,12 +179,11 @@ class TestGetFormOptionsEndpoint(APITestCase):
     def test_options_returned_in_order(self):
         t2 = Translation.objects.add_translation("test.food", "Food")
         t3 = Translation.objects.add_translation("test.baby", "Baby supplies")
-        FormOption.objects.create(white_label=self.wl, option_type="condition",
-                                   value="housing", text=self.translation, order=2)
-        FormOption.objects.create(white_label=self.wl, option_type="condition",
-                                   value="food", text=t2, order=1)
-        FormOption.objects.create(white_label=self.wl, option_type="condition",
-                                   value="baby", text=t3, order=3)
+        FormOption.objects.create(
+            white_label=self.wl, option_type="condition", value="housing", text=self.translation, order=2
+        )
+        FormOption.objects.create(white_label=self.wl, option_type="condition", value="food", text=t2, order=1)
+        FormOption.objects.create(white_label=self.wl, option_type="condition", value="baby", text=t3, order=3)
         response = self.client.get(self.url)
         values = [opt["value"] for opt in response.data["condition_options"]]
         self.assertEqual(values, ["food", "housing", "baby"])
