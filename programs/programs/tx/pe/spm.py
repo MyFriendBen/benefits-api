@@ -103,6 +103,16 @@ class TxCeap(PolicyEngineSpmCalulator):
     pe_inputs = [
         dependency.household.TxStateCodeDependency,
         *dependency.irs_gross_income,
+        # As of policyengine-us 1.728.0, tx_ceap derives countable income from the TX
+        # state-plan income sources list (full Social Security, pension, alimony; cap
+        # gains and child support excluded) rather than irs_gross_income. That list
+        # counts applicable_ssi, which resolves to the household's reported SSI only
+        # when use_reported_ssi is True (added in 1.742.0) — so we send both the
+        # reported SSI amount and the toggle. Without them, PE's modeled (calculated)
+        # SSI is counted instead, undercounting income and over-tiering SS/SSI
+        # households (the MFB-1146 gap).
+        dependency.member.SsiReportedDependency,
+        dependency.member.UseReportedSsiDependency,
         # tx_ceap caps the payment at electricity_expense + gas_expense; route the
         # screener's energy expenses into electricity_expense so the cap is non-zero.
         dependency.spm.TxCeapEnergyExpenseDependency,

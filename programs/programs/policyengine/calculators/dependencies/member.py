@@ -248,6 +248,30 @@ class SsiReportedDependency(Member):
         return self.member.calc_gross_income("yearly", ["sSI"])
 
 
+class UseReportedSsiDependency(Member):
+    """
+    Tells PolicyEngine to count the household's *reported* SSI (ssi_reported)
+    instead of PE's *calculated* ssi when a program's countable income includes
+    applicable_ssi. Programs affected today: tx_ceap (TX CEAP/LIHEAP) and ks_tanf.
+
+    Without this, tx_ceap counts PE's modeled SSI (~$0 for a household that
+    reports receiving SSI but whose modeled entitlement differs), undercounting
+    income and pushing SS/SSI households into the wrong (too-generous) benefit
+    tier. We always send True so the screener's reported SSI drives the income
+    test — matching what the user told us.
+
+    min_pe_version gates this: use_reported_ssi / applicable_ssi were added in
+    policyengine-us 1.742.0 (PR #8732, 2026-06-23). Sending it to an earlier
+    model 400s the whole request.
+    """
+
+    field = "use_reported_ssi"
+    min_pe_version = (1, 742, 0)
+
+    def value(self):
+        return True
+
+
 class SsdiReportedDependency(Member):
     # Amount in "Social Security disability benefits (SSDI)"
     field = "social_security_disability"
