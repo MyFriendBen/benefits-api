@@ -363,18 +363,6 @@ All eligible scenarios include **heating `$200/month`**, required for PolicyEngi
 
 ---
 
-## Pre-Handoff Notes (Dev Items)
-
-1. **PE contribution — VA pension:** Add `veteran` income stream to `tx_ceap_eligible.py` (current categorical formula: TANF | SNAP | SSI only).
-2. **Screener gap:** Add `has_tx_liheap` to the TX white-label existing-benefits step under a new "Housing & Utilities" category (no generic `has_liheap` exists; `has_il_liheap` is IL-specific).
-3. **Screener gap:** Surface `electricity_is_disconnected` / `has_past_due_energy_bills` from the Energy Calculator into the standard screener (crisis component).
-4. **Screener gap (optional):** `pays_own_energy_bills` household-level question (criterion 4 data gap).
-5. **Import pre-check:** Confirm a 2026 `FederalPoveryLimit` row exists — the importer only *warns* if `year` lookup fails, which would silently ship the program with no income test. Run with `--dry-run` first.
-6. **Verify:** `show_in_has_benefits_step: false` — check whether the SNAP Heat-and-Eat exception applies.
-7. **Optional admin update:** The reused `211_texas` navigator (shared with `tx_wap`) has a non-E.164 phone and empty email; improved contact info (phone `+18775417905`, email `211@hhs.texas.gov`, "press Option 1") must be applied via admin — the importer does not update existing navigators.
-
----
-
 ## Source Documentation
 
 - https://liheapch.acf.gov/docs/2026/state-plans/TX_Plan_2026.pdf
