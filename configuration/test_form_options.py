@@ -211,3 +211,36 @@ class TestGetFormOptionsEndpoint(APITestCase):
         self.assertEqual(len(response.data["health_insurance_options"]), 1)
         self.assertEqual(response.data["health_insurance_options"][0]["value"], "medicaid")
         self.assertEqual(len(response.data["condition_options"]), 0)
+
+    def test_referral_options_not_in_response(self):
+        # Referral sources are managed by the Referrer model, not this endpoint.
+        response = self.client.get(self.url)
+        self.assertNotIn("referral_options", response.data)
+
+    def test_query_count_does_not_grow_with_option_count(self):
+        """Guards against N+1 queries: the endpoint must issue a constant number of
+        queries regardless of how many options (and their translations) it serializes."""
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        def add_condition(value):
+            translation = Translation.objects.add_translation(f"test.{value}", value)
+            FormOption.objects.create(
+                white_label=self.wl,
+                option_type="condition",
+                value=value,
+                icon=self.icon,
+                text=translation,
+            )
+
+        add_condition("a")
+        with CaptureQueriesContext(connection) as ctx:
+            self.client.get(self.url)
+        baseline = len(ctx.captured_queries)
+
+        for value in ("b", "c", "d"):
+            add_condition(value)
+        with CaptureQueriesContext(connection) as ctx:
+            self.client.get(self.url)
+
+        self.assertEqual(len(ctx.captured_queries), baseline)
