@@ -251,18 +251,16 @@ class SsiReportedDependency(Member):
 class UseReportedSsiDependency(Member):
     """
     Tells PolicyEngine to count the household's *reported* SSI (ssi_reported)
-    instead of PE's *calculated* ssi when a program's countable income includes
-    applicable_ssi. Programs affected today: tx_ceap (TX CEAP/LIHEAP) and ks_tanf.
+    instead of PE's *calculated* ssi wherever a program's countable income reads
+    applicable_ssi (the calculator opts in by including this in its pe_inputs).
+    We always send True so the screener's reported SSI drives the income test.
 
-    Without this, tx_ceap counts PE's modeled SSI (~$0 for a household that
-    reports receiving SSI but whose modeled entitlement differs), undercounting
-    income and pushing SS/SSI households into the wrong (too-generous) benefit
-    tier. We always send True so the screener's reported SSI drives the income
-    test — matching what the user told us.
+    Person-level and global within a request: it flips applicable_ssi for every
+    program in that request, so only add it to calculators where reported SSI is
+    the correct measure.
 
-    min_pe_version gates this: use_reported_ssi / applicable_ssi were added in
-    policyengine-us 1.742.0 (PR #8732, 2026-06-23). Sending it to an earlier
-    model 400s the whole request.
+    min_pe_version gates this to the first model that defines use_reported_ssi;
+    sending it to an earlier model 400s the whole request.
     """
 
     field = "use_reported_ssi"
