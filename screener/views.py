@@ -165,15 +165,19 @@ class EligibilityTranslationView(views.APIView):
         EligibilitySnapshot — that ordering is locked by
         screener/tests/test_pe_version_override.py.
         """
-        screen = Screen.objects.select_related("white_label").prefetch_related(
-            "household_members",
-            "household_members__income_streams",
-            "household_members__insurance",
-            "household_members__energy_calculator",
-            "expenses",
-            "energy_calculator",
-            "current_benefits__program",
-        ).get(uuid=id)
+        screen = (
+            Screen.objects.select_related("white_label")
+            .prefetch_related(
+                "household_members",
+                "household_members__income_streams",
+                "household_members__insurance",
+                "household_members__energy_calculator",
+                "expenses",
+                "energy_calculator",
+                "current_benefits__program",
+            )
+            .get(uuid=id)
+        )
 
         is_admin = request.query_params.get("admin")
 
