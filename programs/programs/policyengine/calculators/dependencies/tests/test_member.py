@@ -173,54 +173,54 @@ class TestHeatingExpensePersonDependency(TestCase):
         self.assertEqual(dep.value(), 0)
 
 
-class TestSnapIneligibleStudentDependency(TestCase):
-    """Tests for SnapIneligibleStudentDependency class used by TxSnap calculator."""
-
-    def setUp(self):
-        """Set up test data for student eligibility tests."""
-        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
-
-        self.screen = Screen.objects.create(
-            white_label=self.white_label,
-            zipcode="78701",
-            county="Test County",
-            household_size=2,
-            completed=False,
-        )
-
-        # Need head of household for relationship_map
-        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=45)
-
-    def test_value_evaluates_adult_student(self):
-        """Test value() evaluates adult student eligibility based on helper logic."""
-        student = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=20, student=True)
-
-        dep = member.SnapIneligibleStudentDependency(self.screen, student, {})
-        # Result depends on snap_ineligible_student helper logic
-        self.assertIsNotNone(dep.value())
-        self.assertEqual(dep.field, "is_snap_ineligible_student")
-
-    def test_value_returns_false_for_young_student(self):
-        """Test value() returns False for student under 18."""
-        young_student = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=16, student=True)
-
-        dep = member.SnapIneligibleStudentDependency(self.screen, young_student, {})
-        # Students under 18 are eligible
-        self.assertFalse(dep.value())
-
-    def test_value_returns_false_for_disabled_student(self):
-        """Test value() returns False for disabled student."""
-        disabled_student = HouseholdMember.objects.create(
-            screen=self.screen,
-            relationship="child",
-            age=20,
-            student=True,
-            disabled=True,
-        )
-
-        dep = member.SnapIneligibleStudentDependency(self.screen, disabled_student, {})
-        # Disabled students are eligible
-        self.assertFalse(dep.value())
+# class TestSnapIneligibleStudentDependency(TestCase):
+#     """Tests for SnapIneligibleStudentDependency class used by TxSnap calculator."""
+#
+#     def setUp(self):
+#         """Set up test data for student eligibility tests."""
+#         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+#
+#         self.screen = Screen.objects.create(
+#             white_label=self.white_label,
+#             zipcode="78701",
+#             county="Test County",
+#             household_size=2,
+#             completed=False,
+#         )
+#
+#         # Need head of household for relationship_map
+#         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=45)
+#
+#     def test_value_evaluates_adult_student(self):
+#         """Test value() evaluates adult student eligibility based on helper logic."""
+#         student = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=20, student=True)
+#
+#         dep = member.SnapIneligibleStudentDependency(self.screen, student, {})
+#         # Result depends on snap_ineligible_student helper logic
+#         self.assertIsNotNone(dep.value())
+#         self.assertEqual(dep.field, "is_snap_ineligible_student")
+#
+#     def test_value_returns_false_for_young_student(self):
+#         """Test value() returns False for student under 18."""
+#         young_student = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=16, student=True)
+#
+#         dep = member.SnapIneligibleStudentDependency(self.screen, young_student, {})
+#         # Students under 18 are eligible
+#         self.assertFalse(dep.value())
+#
+#     def test_value_returns_false_for_disabled_student(self):
+#         """Test value() returns False for disabled student."""
+#         disabled_student = HouseholdMember.objects.create(
+#             screen=self.screen,
+#             relationship="child",
+#             age=20,
+#             student=True,
+#             disabled=True,
+#         )
+#
+#         dep = member.SnapIneligibleStudentDependency(self.screen, disabled_student, {})
+#         # Disabled students are eligible
+#         self.assertFalse(dep.value())
 
 
 class TestEmploymentIncomeDependency(TestCase):

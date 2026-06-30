@@ -1,4 +1,3 @@
-from programs.programs.helpers import snap_ineligible_student
 from .base import Member
 
 
@@ -38,7 +37,28 @@ class FullTimeCollegeStudentDependency(Member):
     field = "is_full_time_college_student"
 
     def value(self):
+        return bool(self.member.student and self.member.student_full_time)
+
+
+class SnapHigherEdStudentDependency(Member):
+    field = "is_snap_higher_ed_student"
+
+    def value(self):
         return self.member.student or False
+
+
+class PartTimeCollegeStudentDependency(Member):
+    field = "is_part_time_college_student"
+
+    def value(self):
+        return bool(self.member.student and self.member.student_full_time is False)
+
+
+class FederalWorkStudyParticipantDependency(Member):
+    field = "is_federal_work_study_participant"
+
+    def value(self):
+        return self.member.student_has_work_study or False
 
 
 class TaxUnitHeadDependency(Member):
@@ -353,54 +373,6 @@ class SnapChildSupportDependency(Member):
 
     def value(self):
         return self.screen.calc_expenses("yearly", ["childSupport"]) / self.screen.household_size
-
-
-class SnapIneligibleStudentDependency(Member):
-    field = "is_snap_ineligible_student"
-    dependencies = ("age",)
-
-    # PE does not take the age of the children into acount, so we calculate this ourselves
-    def value(self):
-        return snap_ineligible_student(self.screen, self.member)
-
-
-class NcSnapIneligibleStudentDependency(SnapIneligibleStudentDependency):
-    def value(self):
-        member = self.member
-        screen = self.screen
-
-        if not member.student:
-            return False
-
-        # NC part-time exemption
-        if member.student_full_time is False:
-            return False
-
-        # Shared federal exemptions (E1–E6)
-        if member.age < 18 or member.age >= 50:
-            return False
-
-        if member.has_disability():
-            return False
-
-        head_or_spouse = member.is_head() or member.is_spouse()
-
-        if head_or_spouse and screen.num_children(age_max=5) > 0:
-            return False
-
-        single_parent = member.is_head() and not member.is_married()["is_married"]
-
-        if single_parent and screen.num_children(age_max=11) > 0:
-            return False
-
-        if screen.has_base_benefit("tanf"):
-            return False
-
-        # NC Step 3: employment exemptions
-        if member.student_job_training_program or member.student_has_work_study or member.student_works_20_plus_hrs:
-            return False
-
-        return True
 
 
 class TotalHoursWorkedDependency(Member):
