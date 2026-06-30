@@ -11,12 +11,14 @@ from programs.models import Referrer
 from programs.programs.helpers import STATE_MEDICAID_OPTIONS
 from programs.programs.policyengine.calculators.registry import all_calculators
 from programs.programs.urgent_needs.base import UrgentNeedFunction
+from django.db import transaction
 from screener.models import (
     Screen,
     HouseholdMember,
     IncomeStream,
     Expense,
     Message,
+    CurrentBenefit,
     EligibilitySnapshot,
     ProgramEligibilitySnapshot,
 )
@@ -35,6 +37,7 @@ from screener.serializers import (
     NPSScoreSerializer,
     NPSScoreReasonSerializer,
     RemImpactSerializer,
+    CurrentBenefitToggleSerializer,
 )
 from programs.programs.policyengine.policy_engine import calc_pe_eligibility
 from programs.util import DependencyError, Dependencies
@@ -101,6 +104,60 @@ class ScreenViewSet(
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
+
+class ScreenCurrentBenefitsView(views.APIView):
+    """
+    PATCH /api/v2/screens/<uuid>/current-benefits/
+
+    Lightweight single-benefit toggle for the results-page "already have this"
+    control (MFB-871). Adds or removes exactly one CurrentBenefit row instead of
+    revalidating and rewriting the whole screen the way the Screen PATCH path does.
+    Idempotent — repeating the same payload is a no-op:
+
+        body: {"program": "snap", "has": true}   # ensure the row exists
+        body: {"program": "snap", "has": false}  # ensure the row is absent
+
+    `program` is a `name_abbreviated` resolved against the screen's white label;
+    an unknown name (or one offered only by another white label) is a 404, so a
+    toggle can't write a cross-WL program. Returns the updated current-benefits
+    list as {"current_benefits": [...sorted name_abbreviated...]}.
+
+    Unlike the bulk write path (`_write_current_benefits`), this does NOT OR in
+    derived benefits (e.g. SSI implied by an sSI income stream) — it's a targeted
+    single-row operation. The next full Screen PATCH reapplies those compound rules.
+    """
+
+    # Same gate as the Screen PATCH path: DjangoModelPermissions maps PATCH to
+    # `screener.change_screen`, so whoever may edit the screen may toggle its
+    # benefits. The queryset is required for DjangoModelPermissions to resolve
+    # the model the permission is checked against.
+    permission_classes = [permissions.DjangoModelPermissions]
+    queryset = Screen.objects.all()
+
+    def patch(self, request, screen_uuid):
+        screen = get_object_or_404(Screen, uuid=screen_uuid)
+
+        serializer = CurrentBenefitToggleSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        program_name = serializer.validated_data["program"]
+        has = serializer.validated_data["has"]
+
+        program = get_object_or_404(Program, white_label=screen.white_label, name_abbreviated=program_name)
+
+        # Lock the screen for the read-modify-write so concurrent toggles (or a
+        # toggle racing a Screen PATCH) can't interleave on the join table.
+        with transaction.atomic():
+            locked = Screen.objects.select_for_update().get(pk=screen.pk)
+            if has:
+                CurrentBenefit.objects.get_or_create(screen=locked, program=program)
+            else:
+                CurrentBenefit.objects.filter(screen=locked, program=program).delete()
+            current_benefits = sorted(
+                CurrentBenefit.objects.filter(screen=locked).values_list("program__name_abbreviated", flat=True)
+            )
+
+        return Response({"current_benefits": current_benefits})
 
 
 class HouseholdMemberViewSet(viewsets.ModelViewSet):

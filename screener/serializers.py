@@ -420,6 +420,18 @@ class ScreenSerializer(serializers.ModelSerializer):
         return instance
 
 
+class CurrentBenefitToggleSerializer(serializers.Serializer):
+    """Input for the single-benefit toggle endpoint (PATCH .../current-benefits/).
+
+    `program` is a `name_abbreviated`; `has` selects add (True) vs remove (False).
+    Resolving the name to a Program and writing the join-table row happen in the
+    view, which has the screen (and thus its white_label) in hand.
+    """
+
+    program = serializers.CharField(max_length=64)
+    has = serializers.BooleanField()
+
+
 class NavigatorSerializer(serializers.Serializer):
     name = TranslationSerializer()
     phone_number = serializers.CharField()

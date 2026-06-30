@@ -13,6 +13,12 @@ urlpatterns = [
     path("api-auth/", include("rest_framework.urls", namespace="rest_framework")),
     path("eligibility/<id>", views.EligibilityTranslationView.as_view(), name="translated screen eligibility endpoint"),
     path("screens/<uuid:screen_uuid>/nps/", views.NPSScoreView.as_view(), name="nps-score"),
+    # Single-benefit toggle for the results-page "already have this" control (MFB-1094 / MFB-871).
+    path(
+        "v2/screens/<uuid:screen_uuid>/current-benefits/",
+        views.ScreenCurrentBenefitsView.as_view(),
+        name="screen-current-benefits",
+    ),
     # Benbot assistant — proxies to mfb-ai-service; gated by the 'benbot' feature flag.
     path(
         "screens/<uuid:screen_uuid>/assistant/conversations/",
