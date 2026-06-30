@@ -39,4 +39,9 @@ urlpatterns = [
         views.RemImpactView.as_view(),
         name="rem-impact",
     ),
+    path(
+        "places/autocomplete/",
+        views.PlacesAutocompleteView.as_view(),
+        name="places-autocomplete",
+    ),
 ]

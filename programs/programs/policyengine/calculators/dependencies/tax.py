@@ -34,6 +34,10 @@ class Ileitc(TaxUnit):
     field = "il_eitc"
 
 
+class Kseitc(TaxUnit):
+    field = "ks_total_eitc"
+
+
 class Ilctc(TaxUnit):
     field = "il_ctc"
 

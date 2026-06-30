@@ -350,33 +350,11 @@ class MaHeadStart(PolicyEngineMembersCalculator):
 
 
 class MaCsfp(CommoditySupplementalFoodProgram):
-    """
-    Massachusetts Commodity Supplemental Food Program (CSFP) calculator.
-    Extends the federal CSFP calculator with MA state code dependency and county filtering.
-    Only available in specific MA counties served by Greater Boston Food Bank.
-    """
-
-    eligible_counties = [
-        "Bristol",
-        "Essex",
-        "Middlesex",
-        "Norfolk",
-        "Plymouth",
-        "Suffolk",
-        "Worcester",
-    ]
-
     pe_inputs = [
         *CommoditySupplementalFoodProgram.pe_inputs,
         dependency.household.MaStateCodeDependency,
+        dependency.household.MaCountyDependency,
     ]
-
-    def member_value(self, member: HouseholdMember):
-        # County filtering - return 0 if not in eligible county
-        if self.screen.county not in self.eligible_counties:
-            return 0
-
-        return super().member_value(member)
 
 
 class MaEarlyHeadStart(PolicyEngineMembersCalculator):

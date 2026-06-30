@@ -79,7 +79,7 @@ class TestMaMiddleIncomeRentalLocationEligibility(TestCase):
         mock_screen.county = county
         mock_screen.household_size = household_size
         mock_screen.household_assets = assets
-        mock_screen.has_section_8 = False
+
         mock_screen.white_label = Mock()
         mock_screen.white_label.state_code = "MA"
         mock_screen.calc_gross_income = Mock(return_value=income)
@@ -150,7 +150,7 @@ class TestMaMiddleIncomeRentalHoHAge(TestCase):
         mock_screen.county = "Cambridge"
         mock_screen.household_size = 1
         mock_screen.household_assets = assets
-        mock_screen.has_section_8 = False
+
         mock_screen.white_label = Mock()
         mock_screen.white_label.state_code = "MA"
         mock_screen.calc_gross_income = Mock(return_value=income)
@@ -406,7 +406,7 @@ class TestMaMiddleIncomeRentalAssetEligibility(TestCase):
         mock_screen.county = "Cambridge"
         mock_screen.household_size = len(member_ages) if member_ages else 2
         mock_screen.household_assets = assets
-        mock_screen.has_section_8 = False
+
         mock_screen.white_label = Mock()
         mock_screen.white_label.state_code = "MA"
         mock_screen.calc_gross_income = Mock(return_value=income)
@@ -477,7 +477,7 @@ class TestMaMiddleIncomeRentalSeniorAssetException(TestCase):
         mock_screen.county = "Cambridge"
         mock_screen.household_size = len(member_ages)
         mock_screen.household_assets = assets
-        mock_screen.has_section_8 = False
+
         mock_screen.white_label = Mock()
         mock_screen.white_label.state_code = "MA"
         mock_screen.calc_gross_income = Mock(return_value=income)
@@ -594,7 +594,7 @@ class TestMaMiddleIncomeRentalHudApiError(TestCase):
         mock_screen.county = "Cambridge"
         mock_screen.household_size = 4
         mock_screen.household_assets = assets
-        mock_screen.has_section_8 = False
+
         mock_screen.white_label = Mock()
         mock_screen.white_label.state_code = "MA"
         mock_screen.calc_gross_income = Mock(return_value=income)
@@ -641,7 +641,7 @@ class TestMaMiddleIncomeRentalHasBenefit(TestCase):
         mock_screen.county = "Cambridge"
         mock_screen.household_size = 4
         mock_screen.household_assets = assets
-        mock_screen.has_section_8 = False
+
         mock_screen.white_label = Mock()
         mock_screen.white_label.state_code = "MA"
         mock_screen.calc_gross_income = Mock(return_value=income)
