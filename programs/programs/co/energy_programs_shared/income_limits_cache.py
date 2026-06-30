@@ -1,14 +1,23 @@
-from integrations.services.sheets import GoogleSheetsCache
-from typing import ClassVar
+from django.core.cache import cache
+from integrations.services.sheets.sheets import GoogleSheets
 
 
-class IncomeLimitsCache(GoogleSheetsCache):
+class IncomeLimitsCache:
     sheet_id = "1ZzQYhULtiP61crj0pbPjhX62L1TnyAisLcr_dQXbbFg"
     range_name = "A2:K"
-    default: ClassVar[dict] = {}
+    CACHE_KEY = "energy_income_limits_data"
+    CACHE_TIMEOUT = 60 * 60 * 24  # 24 hours
 
-    def update(self) -> dict[str, list[float]]:
-        data = super().update()
+    def _get_data(self) -> dict:
+        data = cache.get(self.CACHE_KEY)
+        if data is not None:
+            return data
+        data = self._process()
+        cache.set(self.CACHE_KEY, data, timeout=self.CACHE_TIMEOUT)
+        return data
+
+    def _process(self) -> dict[str, list[float]]:
+        data = GoogleSheets(self.sheet_id, self.range_name).data()
         result = {}
         for r in data:
             result[self._format_county(r[0])] = self._format_amounts(r[1:])

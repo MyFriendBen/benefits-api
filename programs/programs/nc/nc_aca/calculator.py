@@ -1,19 +1,40 @@
 from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
 from programs.programs.helpers import medicaid_eligible
 import programs.programs.messages as messages
-from integrations.services.sheets import GoogleSheetsCache
+from integrations.services.sheets.sheets import GoogleSheets
+from django.core.cache import cache
 from screener.models import HouseholdMember
 
 
-class ACACache(GoogleSheetsCache):
-    default = {}
+class ACACache:
+    CACHE_KEY = "nc_aca_data"
+    CACHE_TIMEOUT = 60 * 60 * 24  # 24 hours
     sheet_id = "1tk8zfO_Ou96UvGrIwZoI3Pv8TvPZZipg7YfzGMT2o3c"
     range_name = "'current report'!A2:B101"
 
-    def update(self):
-        data = super().update()
+    def _get_data(self) -> dict:
+        data = cache.get(self.CACHE_KEY)
+        if data is not None:
+            return data
+        data = self._process()
+        cache.set(self.CACHE_KEY, data, timeout=self.CACHE_TIMEOUT)
+        return data
 
-        return {d[0].strip() + " County": float(d[1].replace(",", "")) for d in data}
+    def _process(self):
+        data = GoogleSheets(self.sheet_id, self.range_name).data()
+
+        # return {d[0].strip() + " County": float(d[1].replace(",", "")) for d in data}
+        result = {}
+        for d in data:
+            if len(d) < 2:
+                continue
+            try:
+                county_key = d[0].strip() + " County"
+                premium_value = float(d[1].replace(",", ""))
+                result[county_key] = premium_value
+            except (IndexError, ValueError, AttributeError):
+                continue  # Skip malformed rows
+        return result
 
 
 class ACASubsidiesNC(ProgramCalculator):
@@ -43,5 +64,5 @@ class ACASubsidiesNC(ProgramCalculator):
         e.condition(not member.insurance.has_insurance_types(ACASubsidiesNC.ineligible_insurance_types))
 
     def member_value(self, member: HouseholdMember):
-        values = self.county_values.fetch()
+        values = self.county_values._get_data()
         return values[self.screen.county] * 12

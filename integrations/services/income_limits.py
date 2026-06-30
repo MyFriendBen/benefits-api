@@ -2,11 +2,12 @@ from typing import ClassVar, Literal, Union
 
 from sentry_sdk import capture_message, new_scope
 
-from integrations.services.sheets.sheets import GoogleSheetsCache
+from django.core.cache import cache
+from integrations.services.sheets.sheets import GoogleSheets
 from screener.models import Screen
 
 
-class Ami(GoogleSheetsCache):
+class Ami:
     """
     DEPRECATED: This Google Sheets-based AMI lookup is maintained for backwards compatibility only.
 
@@ -32,7 +33,8 @@ class Ami(GoogleSheetsCache):
 
     sheet_id = "1ZnOg_IuT7TYz2HeF31k_FSPcA-nraaMG3RUWJFUIIb8"
     range_name = "current!A2:CH"
-    default = {}
+    CACHE_KEY = "ami_data"
+    CACHE_TIMEOUT = 60 * 60 * 24  # 24 hours
 
     YEAR_INDEX = 0
     STATE_INDEX = 1
@@ -42,8 +44,16 @@ class Ami(GoogleSheetsCache):
     IL_PERCENTS = ["80%", "50%", "30%"]
     IL_LIMITS_START_INDEX = 62
 
-    def update(self) -> dict[str, dict[str, dict[str, dict[int, int]]]]:  # type: ignore[override]
-        data = super().update()
+    def _get_data(self) -> dict:
+        data = cache.get(self.CACHE_KEY)
+        if data is not None:
+            return data
+        data = self._process()
+        cache.set(self.CACHE_KEY, data, timeout=self.CACHE_TIMEOUT)
+        return data
+
+    def _process(self) -> dict[str, dict[str, dict[str, dict[int, int]]]]:
+        data = GoogleSheets(self.sheet_id, self.range_name).data()
 
         ami: dict[str, dict[str, dict[str, dict[int, int]]]] = {}
 
@@ -94,9 +104,7 @@ class Ami(GoogleSheetsCache):
         income_limit_values = {}
         for i, raw_value in enumerate(values):
             value = int(float(raw_value))
-
             income_limit_values[i + 1] = value
-
         return income_limit_values
 
     def get_screen_ami(
@@ -115,7 +123,7 @@ class Ami(GoogleSheetsCache):
         year: str,
         limit_type: Union[Literal["mtsp"], Literal["il"]] = "mtsp",
     ):
-        data = self.fetch()
+        data = self._get_data()
 
         if percent == "100%":
             return self.get_screen_ami(screen, "80%", year) / 0.8
@@ -126,17 +134,26 @@ class Ami(GoogleSheetsCache):
 ami = Ami()
 
 
-class Smi(GoogleSheetsCache):
+class Smi:
     sheet_id = "1kH--2b_VMY6lG_DXe2Xdhps3Flfi_ZIqc9oViWcxndE"
     range_name = "SMI!A2:J"
-    default = {}
+    CACHE_KEY = "smi_data"
+    CACHE_TIMEOUT = 60 * 60 * 24  # 24 hours
 
     YEAR_INDEX = 0
     STATE_INDEX = 1
     LIMITS_START_INDEX = 2
 
-    def update(self) -> dict[str, dict[str, dict[int, int]]]:  # type: ignore[override]
-        data = super().update()
+    def _get_data(self) -> dict:
+        data = cache.get(self.CACHE_KEY)
+        if data is not None:
+            return data
+        data = self._process()
+        cache.set(self.CACHE_KEY, data, timeout=self.CACHE_TIMEOUT)
+        return data
+
+    def _process(self) -> dict[str, dict[str, dict[int, int]]]:
+        data = GoogleSheets(self.sheet_id, self.range_name).data()
 
         smi = {}
         for row in data:
@@ -155,15 +172,14 @@ class Smi(GoogleSheetsCache):
         return smi
 
     def get_screen_smi(self, screen: Screen, year: int):
-        data = self.fetch()
-
+        data = self._get_data()
         return data[year][screen.white_label.state_code][screen.household_size]
 
 
 smi = Smi()
 
 
-class IncomeLimitsCache(GoogleSheetsCache):
+class IncomeLimitsCache:
     """
     Income Limits data used for
     - UtilityBillPay
@@ -172,10 +188,19 @@ class IncomeLimitsCache(GoogleSheetsCache):
 
     sheet_id = "1ZzQYhULtiP61crj0pbPjhX62L1TnyAisLcr_dQXbbFg"
     range_name = "A2:K"
-    default: ClassVar[dict] = {}
+    CACHE_KEY = "income_limits_data"
+    CACHE_TIMEOUT = 60 * 60 * 24  # 24 hours
 
-    def update(self) -> dict[str, list[float]]:
-        data = super().update()
+    def _get_data(self) -> dict:
+        data = cache.get(self.CACHE_KEY)
+        if data is not None:
+            return data
+        data = self._process()
+        cache.set(self.CACHE_KEY, data, timeout=self.CACHE_TIMEOUT)
+        return data
+
+    def _process(self) -> dict[str, list[float]]:
+        data = GoogleSheets(self.sheet_id, self.range_name).data()
         result = {}
         for r in data:
             result[self._format_county(r[0])] = self._format_amounts(r[1:])
@@ -194,7 +219,6 @@ class IncomeLimitsCache(GoogleSheetsCache):
                 result.append(float(cleaned) if cleaned else None)
             except ValueError:
                 result.append(None)
-
         return result
 
     @staticmethod
@@ -226,14 +250,10 @@ class IncomeLimitsCache(GoogleSheetsCache):
             Optional[int]: The income limit (or None if not found)
         """
 
-        # Get county
         county = screen.county
-
-        # Fetch income limits data (keys are "Adams County", "Alamosa County", etc.)
-        limits_by_county = self.fetch()
+        limits_by_county = self._get_data()
         size_index = screen.household_size - 1 if screen.household_size else None
 
-        # Check for valid income_limit
         if county not in limits_by_county:
             self._log_income_limit_error("County data not found", county=county)
             return None
@@ -267,7 +287,6 @@ class IncomeLimitsCache(GoogleSheetsCache):
             )
             return None
 
-        # valid income_limit
         return int(income_limit)
 
 

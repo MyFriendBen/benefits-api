@@ -7,7 +7,6 @@ import time
 import socket
 import ssl
 from googleapiclient.errors import HttpError
-from integrations.util.cache import Cache
 
 
 class GoogleSheets:
@@ -109,16 +108,3 @@ class GoogleSheets:
                 missing_columns.append(column)
 
         raise self.ColumnDoesNotExist(f"The following column headers are missing: {missing_columns}")
-
-
-class GoogleSheetsCache(Cache):
-    expire_time = 60 * 60 * 24
-    default = []
-
-    sheet_id = ""
-    range_name = ""
-
-    def update(self):
-        sheet_values = GoogleSheets(self.sheet_id, self.range_name).data()
-
-        return sheet_values

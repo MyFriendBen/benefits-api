@@ -36,7 +36,7 @@ def get_income_limit(screen: Screen) -> int | None:
 
     # Fetch income limits data (keys are "Adams County", "Alamosa County", etc.)
     income_limits_cache = IncomeLimitsCache()
-    limits_by_county = income_limits_cache.fetch()
+    limits_by_county = income_limits_cache._get_data()
     size_index = screen.household_size - 1 if screen.household_size else None
 
     # Check for valid income_limit
