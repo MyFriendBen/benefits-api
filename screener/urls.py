@@ -15,7 +15,7 @@ urlpatterns = [
     path("screens/<uuid:screen_uuid>/nps/", views.NPSScoreView.as_view(), name="nps-score"),
     # Single-benefit toggle for the results-page "already have this" control (MFB-1094 / MFB-871).
     path(
-        "v2/screens/<uuid:screen_uuid>/current-benefits/",
+        "screens/<uuid:screen_uuid>/current-benefits/",
         views.ScreenCurrentBenefitsView.as_view(),
         name="screen-current-benefits",
     ),

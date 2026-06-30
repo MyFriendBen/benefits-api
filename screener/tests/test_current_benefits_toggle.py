@@ -1,7 +1,7 @@
 """
 Tests for the single-benefit toggle endpoint:
 
-    PATCH /api/v2/screens/<uuid>/current-benefits/
+    PATCH /api/screens/<uuid>/current-benefits/
     body: {"program": "snap", "has": true|false}
 
 A lightweight add/remove of one CurrentBenefit row consumed by the results-page
@@ -26,7 +26,7 @@ class CurrentBenefitsToggleTests(APITestCase):
         )
         seed_program(self.white_label, "snap", "tanf")
 
-        self.url = f"/api/v2/screens/{self.screen.uuid}/current-benefits/"
+        self.url = f"/api/screens/{self.screen.uuid}/current-benefits/"
 
         # Same gate as the Screen PATCH path: DjangoModelPermissions maps PATCH to
         # screener.change_screen, so the test user needs that perm.
@@ -96,7 +96,7 @@ class CurrentBenefitsToggleTests(APITestCase):
 
     def test_unknown_screen_is_404(self):
         """An unknown screen uuid is a 404."""
-        url = "/api/v2/screens/00000000-0000-0000-0000-000000000000/current-benefits/"
+        url = "/api/screens/00000000-0000-0000-0000-000000000000/current-benefits/"
         response = self.client.patch(url, {"program": "snap", "has": True}, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

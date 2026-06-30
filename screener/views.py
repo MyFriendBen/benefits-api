@@ -108,7 +108,7 @@ class ScreenViewSet(
 
 class ScreenCurrentBenefitsView(views.APIView):
     """
-    PATCH /api/v2/screens/<uuid>/current-benefits/
+    PATCH /api/screens/<uuid>/current-benefits/
 
     Lightweight single-benefit toggle for the results-page "already have this"
     control (MFB-871). Adds or removes exactly one CurrentBenefit row instead of
