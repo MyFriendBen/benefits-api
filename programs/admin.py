@@ -601,6 +601,9 @@ class CategoryIconNameAdmin(SecureAdmin):
 
 
 class IconAdmin(SecureAdmin):
+    # Icon has no white_label, so non-superusers would otherwise be denied. Allow view access
+    # so white-label admins can use the icon autocomplete from FormOptionAdmin.
+    always_can_view = True
     list_display = ["name", "lucide_name", "description"]
     search_fields = ["name", "lucide_name"]
     ordering = ["name"]

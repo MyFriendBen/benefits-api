@@ -24,7 +24,7 @@ def _serialize_form_options(white_label: WhiteLabel, option_type: str) -> list:
         FormOption.objects.filter(white_label=white_label, option_type=option_type, active=True)
         .select_related("icon", "text")
         .prefetch_related("text__translations")
-        .order_by("order")
+        .order_by("order", "id")
     )
     return [
         {
@@ -41,9 +41,10 @@ def _serialize_form_options(white_label: WhiteLabel, option_type: str) -> list:
 
 @api_view(["GET"])
 def get_form_options(request, white_label_code: str):
-    try:
-        white_label = WhiteLabel.objects.get(code=white_label_code)
-    except WhiteLabel.DoesNotExist:
+    # code is not unique at the DB level, so .get() could raise MultipleObjectsReturned and 500.
+    # Select deterministically by lowest id and treat "no match" as a controlled 404.
+    white_label = WhiteLabel.objects.filter(code=white_label_code).order_by("id").first()
+    if white_label is None:
         return Response({"error": "White label not found"}, status=404)
 
     # referral_options is intentionally omitted — referral sources are managed by the Referrer model.
