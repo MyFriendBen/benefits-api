@@ -22,6 +22,11 @@ class PolicyEngineScreenInput:
     #   removed variable (dropped after X): max_pe_version = (last version that had it)
     #   windowed variable (existed A..B):  min_pe_version = A; max_pe_version = B
     #
+    # Sourcing: validate these bounds against the versions PolicyEngine actually serves
+    # (GET https://household.api.policyengine.org/versions/us -> current/frontier), not
+    # the changelog in isolation. A min_pe_version floor is the first *served* version
+    # that defines the variable, confirmed against /versions/us. (MFB-1234)
+    #
     # Scope: this gates whether a variable is SENT (add/remove across versions). It does
     # NOT handle a variable whose accepted value/format changes per version (e.g.
     # county_str -> county_fips); value() has no access to the resolved version today.
