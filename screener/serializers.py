@@ -242,9 +242,11 @@ class ScreenSerializer(serializers.ModelSerializer):
     # max_length bounds an otherwise-unbounded payload: there are ~130 distinct
     # name_abbreviated values across all white labels, so 256 is a comfortable
     # ceiling. Unknown names are dropped in _write_current_benefits(), so element
-    # content needn't be validated here.
+    # content needn't be validated here. The per-element cap mirrors the
+    # Program.name_abbreviated column (max_length=120) so no DB-valid name is
+    # rejected here.
     current_benefits = serializers.ListField(
-        child=serializers.CharField(max_length=64),
+        child=serializers.CharField(max_length=120),
         required=False,
         write_only=True,
         max_length=256,
@@ -426,9 +428,12 @@ class CurrentBenefitToggleSerializer(serializers.Serializer):
     `program` is a `name_abbreviated`; `has` selects add (True) vs remove (False).
     Resolving the name to a Program and writing the join-table row happen in the
     view, which has the screen (and thus its white_label) in hand.
+
+    `program`'s max_length mirrors the Program.name_abbreviated column (120) so no
+    DB-valid name is rejected before the white-label-scoped lookup in the view.
     """
 
-    program = serializers.CharField(max_length=64)
+    program = serializers.CharField(max_length=120)
     has = serializers.BooleanField()
 
 

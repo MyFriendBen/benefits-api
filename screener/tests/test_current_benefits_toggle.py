@@ -14,8 +14,13 @@ from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
 from authentication.models import User
+from programs.models import Program
 from screener.models import CurrentBenefit, Screen, WhiteLabel
+from screener.serializers import CurrentBenefitToggleSerializer
 from screener.tests.helpers import seed_program
+
+# Program.name_abbreviated column max_length — the `program` field cap must match it.
+NAME_ABBREVIATED_MAX_LENGTH = Program._meta.get_field("name_abbreviated").max_length
 
 
 class CurrentBenefitsToggleTests(APITestCase):
@@ -132,3 +137,27 @@ class CurrentBenefitsToggleTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(self._benefit_names(), set())
+
+    def test_program_cap_matches_db_column(self):
+        """The `program` field cap equals the Program.name_abbreviated column, so a
+        DB-valid name is never rejected for length before the WL-scoped lookup."""
+        field = CurrentBenefitToggleSerializer().fields["program"]
+        self.assertEqual(field.max_length, NAME_ABBREVIATED_MAX_LENGTH)
+
+    def test_name_at_column_max_clears_validation(self):
+        """A name as long as the column clears serializer validation and reaches the
+        WL-scoped lookup — 404 here only because no such Program exists, proving the
+        length didn't reject it (a 400 would mean the cap is too tight)."""
+        name = "a" * NAME_ABBREVIATED_MAX_LENGTH
+        response = self.client.patch(self.url, {"program": name, "has": True}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_name_over_column_max_is_400(self):
+        """A name longer than the column is rejected by the serializer (400), never
+        reaching the lookup."""
+        name = "a" * (NAME_ABBREVIATED_MAX_LENGTH + 1)
+        response = self.client.patch(self.url, {"program": name, "has": True}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("program", response.data)
