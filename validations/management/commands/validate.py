@@ -2,11 +2,12 @@ from datetime import datetime
 from enum import Enum
 from random import randint
 from typing import Optional
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from googleapiclient.errors import HttpError
 from integrations.services.sheets.formatting import color_cell, title_cell, wrap_row
 from screener.views import eligibility_results
+from programs.programs.policyengine import versions as pe_versions
 from validations.models import Validation
 from decouple import config
 from google_auth_httplib2 import AuthorizedHttp
@@ -155,8 +156,23 @@ class Command(BaseCommand):
         )
         parser.add_argument("-s", "--sheet-id", help="The Google sheet id to display results in")
         parser.add_argument("-w", "--white-label", help="What white label to run validations for")
+        parser.add_argument(
+            "--pe-version",
+            help=(
+                "PolicyEngine version to validate against for THIS RUN ONLY. Overrides the "
+                "DB PolicyEngineConfig pin without changing it. Accepts an exact version "
+                "('1.744.0') or an alias ('current'/'frontier'). Use to pre-validate a "
+                "target version before the pin is flipped."
+            ),
+        )
 
     def handle(self, *args, **options):
+        pe_version = options["pe_version"]
+        if pe_version is not None and not pe_versions.is_valid_override(pe_version):
+            raise CommandError("Invalid --pe-version: use an exact version like '1.744.0' or 'current'/'frontier'.")
+        if pe_version is not None:
+            self.stdout.write(f"Overriding PolicyEngine version for this run: {pe_version} (pin unchanged)")
+
         queryset = Validation.objects.all()
 
         if options["white_label"] is not None:
@@ -179,7 +195,7 @@ class Command(BaseCommand):
         for group in grouped_validations.values():
             screen = group[0].screen
             white_label = screen.white_label.code
-            results = eligibility_results(screen, batch=True)[0]
+            results = eligibility_results(screen, batch=True, pe_version=pe_version)[0]
 
             for validation in group:
                 program = self._find_program(validation, results)
