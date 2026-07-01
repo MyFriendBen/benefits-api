@@ -173,56 +173,6 @@ class TestHeatingExpensePersonDependency(TestCase):
         self.assertEqual(dep.value(), 0)
 
 
-class TestSnapIneligibleStudentDependency(TestCase):
-    """Tests for SnapIneligibleStudentDependency class used by TxSnap calculator."""
-
-    def setUp(self):
-        """Set up test data for student eligibility tests."""
-        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
-
-        self.screen = Screen.objects.create(
-            white_label=self.white_label,
-            zipcode="78701",
-            county="Test County",
-            household_size=2,
-            completed=False,
-        )
-
-        # Need head of household for relationship_map
-        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=45)
-
-    def test_value_evaluates_adult_student(self):
-        """Test value() evaluates adult student eligibility based on helper logic."""
-        student = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=20, student=True)
-
-        dep = member.SnapIneligibleStudentDependency(self.screen, student, {})
-        # Result depends on snap_ineligible_student helper logic
-        self.assertIsNotNone(dep.value())
-        self.assertEqual(dep.field, "is_snap_ineligible_student")
-
-    def test_value_returns_false_for_young_student(self):
-        """Test value() returns False for student under 18."""
-        young_student = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=16, student=True)
-
-        dep = member.SnapIneligibleStudentDependency(self.screen, young_student, {})
-        # Students under 18 are eligible
-        self.assertFalse(dep.value())
-
-    def test_value_returns_false_for_disabled_student(self):
-        """Test value() returns False for disabled student."""
-        disabled_student = HouseholdMember.objects.create(
-            screen=self.screen,
-            relationship="child",
-            age=20,
-            student=True,
-            disabled=True,
-        )
-
-        dep = member.SnapIneligibleStudentDependency(self.screen, disabled_student, {})
-        # Disabled students are eligible
-        self.assertFalse(dep.value())
-
-
 class TestEmploymentIncomeDependency(TestCase):
     """Tests for EmploymentIncomeDependency class used by TxLifeline calculator."""
 
@@ -1353,3 +1303,147 @@ class TestSelfEmploymentIncomeBeforeLsrDependency(TestCase):
         )
         dep = member.SelfEmploymentIncomeBeforeLsrDependency(self.screen, self.head, {})
         self.assertEqual(dep.value(), 0)
+
+
+class TestSnapHigherEdStudentDependency(TestCase):
+    """Tests for SnapHigherEdStudentDependency (PE input: is_snap_higher_ed_student).
+
+    True for any student enrolled half-time or more; False otherwise.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=1,
+            completed=False,
+        )
+
+    def _dep(self, **kwargs):
+        m = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=25, **kwargs)
+        return member.SnapHigherEdStudentDependency(self.screen, m, {})
+
+    def test_field_name(self):
+        self.assertEqual(self._dep(student=False).field, "is_snap_higher_ed_student")
+
+    def test_true_when_student(self):
+        self.assertTrue(self._dep(student=True).value())
+
+    def test_false_when_not_student(self):
+        self.assertFalse(self._dep(student=False).value())
+
+    def test_false_when_student_is_none(self):
+        self.assertFalse(self._dep(student=None).value())
+
+
+class TestPartTimeCollegeStudentDependency(TestCase):
+    """Tests for PartTimeCollegeStudentDependency (PE input: is_part_time_college_student).
+
+    True only when the member is enrolled (student=True) AND is not full-time
+    (student_full_time=False).
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=1,
+            completed=False,
+        )
+
+    def _dep(self, **kwargs):
+        m = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=25, **kwargs)
+        return member.PartTimeCollegeStudentDependency(self.screen, m, {})
+
+    def test_field_name(self):
+        self.assertEqual(self._dep(student=False).field, "is_part_time_college_student")
+
+    def test_true_when_student_and_not_full_time(self):
+        self.assertTrue(self._dep(student=True, student_full_time=False).value())
+
+    def test_false_when_student_and_full_time(self):
+        self.assertFalse(self._dep(student=True, student_full_time=True).value())
+
+    def test_false_when_student_full_time_is_none(self):
+        # Unknown enrollment status → not treated as part-time
+        self.assertFalse(self._dep(student=True, student_full_time=None).value())
+
+    def test_false_when_not_a_student(self):
+        self.assertFalse(self._dep(student=False, student_full_time=False).value())
+
+
+class TestFederalWorkStudyParticipantDependency(TestCase):
+    """Tests for FederalWorkStudyParticipantDependency (PE input: is_federal_work_study_participant).
+
+    Maps student_has_work_study → True/False.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=1,
+            completed=False,
+        )
+
+    def _dep(self, **kwargs):
+        m = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=25, **kwargs)
+        return member.FederalWorkStudyParticipantDependency(self.screen, m, {})
+
+    def test_field_name(self):
+        self.assertEqual(self._dep().field, "is_federal_work_study_participant")
+
+    def test_true_when_has_work_study(self):
+        self.assertTrue(self._dep(student_has_work_study=True).value())
+
+    def test_false_when_no_work_study(self):
+        self.assertFalse(self._dep(student_has_work_study=False).value())
+
+    def test_false_when_work_study_is_none(self):
+        self.assertFalse(self._dep(student_has_work_study=None).value())
+
+
+class TestFullTimeCollegeStudentDependencyFixed(TestCase):
+    """Tests for the corrected FullTimeCollegeStudentDependency (PE input: is_full_time_college_student).
+
+    Previously returned `student or False`, which treated every student as full-time.
+    Now returns `student and student_full_time`, correctly distinguishing full-time
+    from part-time enrolment.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=1,
+            completed=False,
+        )
+
+    def _dep(self, **kwargs):
+        m = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=25, **kwargs)
+        return member.FullTimeCollegeStudentDependency(self.screen, m, {})
+
+    def test_field_name(self):
+        self.assertEqual(self._dep(student=False).field, "is_full_time_college_student")
+
+    def test_true_when_student_and_full_time(self):
+        self.assertTrue(self._dep(student=True, student_full_time=True).value())
+
+    def test_false_when_student_and_part_time(self):
+        # Key regression test: old code returned True here; must now return False
+        self.assertFalse(self._dep(student=True, student_full_time=False).value())
+
+    def test_false_when_student_full_time_is_none(self):
+        # Unknown → conservative: not treated as full-time
+        self.assertFalse(self._dep(student=True, student_full_time=None).value())
+
+    def test_false_when_not_a_student(self):
+        self.assertFalse(self._dep(student=False, student_full_time=True).value())
