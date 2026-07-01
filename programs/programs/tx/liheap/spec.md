@@ -22,9 +22,9 @@
 2. **Categorical eligibility: Households where at least one member receives TANF, SSI, SNAP, or needs-tested veterans' benefits (VA pension) are categorically income-eligible**
 
    - Screener fields:
-     - `has_tanf`
-     - `has_ssi`
-     - `has_snap`
+     - `has_benefit("tanf")`
+     - `has_benefit("ssi")`
+     - `has_benefit("snap")`
      - `income_streams[].type === 'veteran'` (Veteran's Pension or Benefits under Government Benefits income category)
    - Source: 42 U.S.C. § 8624(b)(2)(A); 10 TAC §6.307(b) (verified — lists exactly SSI, Means-Tested Veterans Program payments, SNAP, and TANF); TX LIHEAP State Plan FFY 2026, Sections 1.4 and 1.6; https://liheapch.acf.gov/delivery/income_categorical.htm
    - Notes: Categorically eligible households bypass the income check for eligibility determination. Income is still collected and used to determine benefit tier. For VA pension: we treat any `veteran` income stream as the qualifying pathway — an inclusivity assumption. VA pension (means-tested) qualifies; VA compensation (not means-tested) technically does not, but the screener cannot distinguish between them. Surface in program description: "Households receiving VA pension benefits may qualify automatically."
@@ -46,10 +46,10 @@
 
 5. **Household must not have already received LIHEAP assistance for the current program year** (partially evaluable)
 
-   - Screener fields: `has_tx_liheap` (proposed — pending addition to TX white label existing benefits config; no generic `has_liheap` field exists in the system today)
+   - Screener fields: `tx_liheap` current benefit (proposed — pending addition to the TX white-label current-benefits config; no generic `liheap` current benefit exists in the system today)
    - Source: 10 TAC §6.309(b) (verified — total annual benefit capped at $12,600 per Program Year, not including arrears), §6.309(e) (per-component annual maximums), §6.309(i)(1)(B)–(C) (vulnerable households: remaining bills within the Program Year; non-vulnerable: up to six remaining bills); TX LIHEAP State Plan FFY 2026
    - Notes: Partially evaluable — if the household indicates current LIHEAP receipt in the existing benefits step, the screener can exclude them. Prior receipt in the same program year that isn't declared by the user cannot be verified. Assumption: household has not previously received LIHEAP this program year unless declared. Nuance per §6.309(i)(1): this is not literally a one-payment rule — benefits are paid against bills over the year up to the tier maximum (vulnerable households: all remaining bills; non-vulnerable: up to six) — but a household already enrolled this program year has its benefit in use, so excluding it from results remains correct. Surface in program description: "If you have already received LIHEAP this program year, you are not eligible to reapply."
-   - Screener improvement: Add LIHEAP to TX existing benefits step under a new "Housing & Utilities" category. Field: `has_tx_liheap` (new — the existing field is `has_il_liheap`, which is IL-specific; TX needs its own per the white-label field pattern).
+   - Screener improvement: Add LIHEAP to the TX current-benefits step under a new "Housing & Utilities" category. Entry: `tx_liheap` (new — the existing IL-specific entry is `il_liheap`; TX needs its own per the white-label pattern).
 
 6. **Crisis assistance: Household must have a qualifying home energy crisis to access the crisis component** (partially evaluable)
 

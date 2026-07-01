@@ -53,8 +53,8 @@
 4. **Applicant household must not currently be receiving Section 8 assistance from any PHA.**
    - Applies to both tenant-based (HCV) and project-based Section 8 — duplicate Section 8 subsidies are prohibited.
    - Screener fields:
-     - `has_section_8` (Screen-level Boolean)
-   - Note: Verified at application via HUD's EIV Existing Tenant Search. In the screener, this maps directly to the `has_section_8` Boolean field on the Screen model — when `has_section_8 = true`, the household is currently receiving Section 8 and is excluded from a duplicate voucher. There is no single clean CFR/USC citation for the prohibition itself — it is operationalized through the EIV procedural check at admission.
+     - `section_8` current benefit (checked via `has_benefit("section_8")`)
+   - Note: Verified at application via HUD's EIV Existing Tenant Search. In the screener, this maps directly to the household's current benefits — when `has_benefit("section_8")` is true, the household is currently receiving Section 8 and is excluded from a duplicate voucher. There is no single clean CFR/USC citation for the prohibition itself — it is operationalized through the EIV procedural check at admission.
    - Source: HCV Guidebook (Eligibility Determination chapter), § 2.2 and § 11.1 (EIV Existing Tenant Search and Avoiding Duplicate Subsidy)
 
 5. **Net family assets must not exceed $100,000.** ⚠️ *data gap (partial)*
@@ -266,7 +266,7 @@ Each scenario in the Test Scenarios section below is an acceptance criterion. Th
   - Income: Employment / Wages, `$1,800`/month
 - **Person 2**: birth `Sep 2016` (age 9), `relationship: child`
 - **Person 3**: birth `Jan 2021` (age 5), `relationship: child`
-- **Current benefits**: `has_section_8 = false`
+- **Current benefits**: none
 
 **Why this matters**: Single parents with young children are the most common HCV applicant type. This is the primary regression test for the standard income-eligible path through the calculator.
 
@@ -285,7 +285,7 @@ Each scenario in the Test Scenarios section below is an acceptance criterion. Th
 - **Person 2**: birth `Jul 1988` (age 37), `relationship: spouse`
 - **Person 3**: birth `Jan 2016` (age 10), `relationship: child`
 - **Person 4**: birth `Sep 2019` (age 6), `relationship: child`
-- **Current benefits**: `has_section_8 = false`
+- **Current benefits**: none
 
 **Why this matters**: Confirms the calculator correctly INCLUDES households whose income lands just below the VLI threshold. Boundary cases are where off-by-one comparison errors typically appear.
 
@@ -301,7 +301,7 @@ Each scenario in the Test Scenarios section below is an acceptance criterion. Th
 - **Household size**: 1
 - **Person 1** (head): birth `Aug 1981` (age 44)
   - Income: Employment / Wages, `$2,917`/month *(verify equals FY2026 1-person VLI for Portland-Vancouver-Hillsboro HMFA / 12)*
-- **Current benefits**: `has_section_8 = false`
+- **Current benefits**: none
 
 **Why this matters**: HUD income-limit policy treats income at the limit as eligible (the comparison is `<=`, not `<`). Easy to get wrong and silently exclude qualifying applicants.
 
@@ -320,7 +320,7 @@ Each scenario in the Test Scenarios section below is an acceptance criterion. Th
 - **Person 2**: birth `Nov 1988` (age 37), `relationship: spouse`
   - Income: Employment / Wages, `$1,250`/month
 - **Person 3**: birth `Mar 2018` (age 8), `relationship: child`
-- **Current benefits**: `has_section_8 = false`
+- **Current benefits**: none
 
 *(Combined annual income should be ~$50–$200 above the FY2026 3-person VLI for Seattle-Bellevue HMFA — verify against table.)*
 
@@ -339,7 +339,7 @@ Each scenario in the Test Scenarios section below is an acceptance criterion. Th
 - **Person 1** (head): birth `Jan 1951` (age 75)
   - Income: Social Security Retirement, `$1,200`/month
   - Insurance: Medicare
-- **Current benefits**: `has_section_8 = false`
+- **Current benefits**: none
 
 **Why this matters**: A large share of HCV applicants are seniors on fixed retirement income. Validates that non-wage income streams are correctly summed for the gross-income test and that elderly indicators don't trigger any unexpected calculator branches.
 
@@ -358,7 +358,7 @@ Each scenario in the Test Scenarios section below is an acceptance criterion. Th
 - **Person 2**: birth `Feb 1990` (age 36), `relationship: spouse`
   - Income: Employment / Wages, `$1,200`/month
 - **Person 3**: birth `Jul 2018` (age 7), `relationship: child`
-- **Current benefits**: `has_section_8 = false`
+- **Current benefits**: none
 
 **Why this matters**: WA's FMR and income-limit tables include both metro HMFAs and non-metro counties. This ensures rural counties aren't missing from the lookup table — a common implementation gap when teams test only major metros.
 
@@ -366,7 +366,7 @@ Each scenario in the Test Scenarios section below is an acceptance criterion. Th
 
 ### Scenario 7: Currently Receiving Section 8 (Criterion 4 Ineligible)
 
-**What we're checking**: Duplicate-Section-8 exclusion (Criterion 4 — `has_section_8 = true` should disqualify regardless of income).
+**What we're checking**: Duplicate-Section-8 exclusion (Criterion 4 — `has_benefit("section_8")` should disqualify regardless of income).
 **Expected**: Not eligible
 
 **Steps**:
@@ -377,7 +377,7 @@ Each scenario in the Test Scenarios section below is an acceptance criterion. Th
 - **Person 2**: birth `Jul 1982` (age 43), `relationship: spouse`
   - Income: Employment / Wages, `$1,200`/month
 - **Person 3**: birth `Sep 2016` (age 9), `relationship: child`
-- **Current benefits**: `has_section_8 = true`
+- **Current benefits**: `section_8` (Housing Choice Voucher / Section 8)
 
 **Why this matters**: The duplicate-subsidy prohibition is one of two fully evaluable criteria. A household that's otherwise income-eligible must still be excluded if they already have a voucher.
 
@@ -402,7 +402,7 @@ Each scenario in the Test Scenarios section below is an acceptance criterion. Th
   - Income: Employment / Wages, `$1,400`/month
 - **Person 4**: birth `Jun 2018` (age 7), `relationship: grandChild`
 - **Person 5**: birth `Nov 2021` (age 4), `relationship: grandChild`
-- **Current benefits**: `has_section_8 = false`
+- **Current benefits**: none
 
 **Why this matters**: Real HCV applicants often include several earners and several income types. Validates that the calculator sums correctly across members and types, and that elderly/disability fields on non-head members don't disrupt the eligibility calculation.
 
@@ -422,7 +422,7 @@ Each scenario in the Test Scenarios section below is an acceptance criterion. Th
   - Income: Employment / Wages, `$1,200`/month
 - **Person 3**: birth `Nov 1997` (age 28), `relationship: sibling`
   - Income: Employment / Wages, `$1,000`/month
-- **Current benefits**: `has_section_8 = false`
+- **Current benefits**: none
 
 **Why this matters**: HUD's family definition is broad — including non-traditional groupings like adult siblings sharing housing. Confirms the calculator doesn't accidentally require children, spouses, or seniors as a prerequisite.
 
@@ -447,7 +447,7 @@ Each scenario in the Test Scenarios section below is an acceptance criterion. Th
 - **Person 6**: birth `Nov 2015` (age 10), `relationship: child`
 - **Person 7**: birth `Apr 2018` (age 8), `relationship: child`
 - **Person 8**: birth `Jun 2021` (age 4), `relationship: child`
-- **Current benefits**: `has_section_8 = false`
+- **Current benefits**: none
 
 *(Combined annual income should be at or just below the FY2026 8-person VLI for Seattle-Bellevue HMFA — verify against table.)*
 
@@ -468,7 +468,7 @@ Each scenario in the Test Scenarios section below is an acceptance criterion. Th
 - **Person 2**: birth `Mar 1974` (age 51), `relationship: spouse`
   - Income: Employment / Wages, `$1,200`/month
 - **Household assets**: `$150,000`
-- **Current benefits**: `has_section_8 = false`
+- **Current benefits**: none
 
 **Why this matters**: The HOTMA $100K asset cap is the second fully evaluable criterion after the duplicate-Section-8 check. A household that's income-eligible but asset-ineligible must still be excluded.
 
@@ -485,7 +485,7 @@ Each scenario in the Test Scenarios section below is an acceptance criterion. Th
 - **Person 1** (head): birth `May 1995` (age 31)
   - `pregnant = true`
   - Income: Employment / Wages, `$2,400`/month *(should be at or below the FY2026 2-person VLI for Tacoma HMFA — verify)*
-- **Current benefits**: `has_section_8 = false`
+- **Current benefits**: none
 
 **Why this matters**: This is an HCV-specific quirk that's easy to miss. Without the special rule, a pregnant applicant living alone would be tested against the 1-person VLI instead of the (more generous) 2-person VLI and might be incorrectly excluded.
 
@@ -502,7 +502,7 @@ Each scenario in the Test Scenarios section below is an acceptance criterion. Th
 - **Person 1** (head): birth `Sep 2003` (age 22)
   - `student = true`; `student_half_time_or_more = true`
   - Income: Employment / Wages, `$1,200`/month
-- **Current benefits**: `has_section_8 = false`
+- **Current benefits**: none
 
 **Why this matters**: The student rule has many exemptions (veteran, foster youth, graduate student, married, etc.) the screener can't fully evaluate. The inclusivity assumption says we shouldn't flag students as ineligible based on partial-field heuristics alone — this prevents over-exclusion of edge-case exemptees.
 
