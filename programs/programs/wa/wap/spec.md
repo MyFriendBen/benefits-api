@@ -19,15 +19,15 @@
 
 2. **Categorical eligibility (federal): Households receiving TANF, SSI, or SNAP are automatically income-eligible**
    - Screener fields:
-     - `has_tanf`
-     - `has_ssi`
-     - `has_snap`
+     - `has_benefit("tanf")`
+     - `has_benefit("ssi")`
+     - `has_benefit("snap")`
    - Source: 42 U.S.C. § 6862(7); 10 CFR 440.22(b)
 
 3. **Categorical eligibility (WA state-level expansion): Households receiving Section 8 / HUD housing assistance or Medicaid (Apple Health) are also categorically income-eligible**
    - Screener fields:
-     - `has_section_8`
-     - `has_medicaid`
+     - `has_benefit("section_8")`
+     - `has_benefit("medicaid")`
    - Source: OIC of Washington Weatherization page; local WA agency pages referencing Section 8 and Medicaid/Apple Health as qualifying benefits
    - Note: This is a state/local extension of federal WAP categorical eligibility. While the federal statute (42 U.S.C. § 6862(7)) lists only TANF/SSI/SNAP, multiple Washington sub-grantees (OIC of Washington and others) accept Section 8 and Medicaid as automatically qualifying. Implementing both gives broader screener accuracy for WA applicants but may overstate eligibility at agencies that don't accept these pathways; document this in the program description so applicants verify with their local agency.
 
