@@ -95,7 +95,7 @@ The benefit is a variable annual amount based on household income as a percentag
 
 > **Important for testing:** Because PE caps the benefit at reported energy expenses, every eligible test scenario must include a heating or cooling expense of at least `tier_maximum / 12` per month — otherwise PE returns $0. All eligible scenarios below include **heating `$200/month`** ($2,400/year, ≥ all tier maximums).
 
-> ⚠️ **Known PE income-definition gap:** PE's `tx_ceap` computes income as `irs_gross_income` (IRC §61), which counts only the *taxable* portion of Social Security (≈ $0 at these income levels) and excludes SSI entirely. TDHCA's actual rules (10 TAC §6.4; State Plan §1.9) count **gross** SSA benefits and SSI. Expected values below follow the program rules; until the PE income measure is aligned, scenarios whose income is mostly Social Security or SSI (S1, S6, S8, S13) will return **$1,800** from the live calculator instead of the values below. Wage-based scenarios are unaffected (MFB maps wages → `irs_employment_income` ✓), and VA pension is unaffected (`veteran` → `taxable_pension_income`, which IS counted ✓). See Open Dev Items.
+**Income counting:** `tx_ceap` countable income follows the TDHCA state-plan income sources list — full Social Security, pension, and alimony are counted; capital gains and child support are excluded (10 TAC §6.4 / State Plan §1.9). SSI is counted using the household's reported amount. Requires PolicyEngine **≥ 1.742.0**.
 
 **Methodology — income tier maximums (2026):**
 
@@ -155,26 +155,16 @@ All eligible scenarios assume **heating expense `$200/month`** is entered in the
 - [ ] Scenario 7 (SNAP Categorical Eligibility): User should be **eligible** with **$1,200/year**
 - [ ] Scenario 8 (High-Income Household with Priority Members — Ineligible): User should be **ineligible**
 - [ ] Scenario 9 (Household of 1 with Zero Income): User should be **eligible** with **$1,800/year**
-- [ ] Scenario 10 (Elderly Couple on Social Security + SSI): User should be **eligible** with **$1,800/year** ⚠️ *PE income-definition gap: policy tier is $1,500, but the live calculator returns $1,800 until the PE income measure is aligned (see Open Dev Items)*
+- [ ] Scenario 10 (Elderly Couple on Social Security + SSI): User should be **eligible** with **$1,500/year**
+- [ ] Scenario 11 (Single Adult on Social Security Retirement only): User should be **eligible** with **$1,500/year**
 
-Expected values reflect TDHCA program rules (gross income incl. SSA benefits and SSI per 10 TAC §6.4 and State Plan §1.9). Scenario 10's **$1,800** is the *live* value (the PE income gap drops its SS/SSI income, pushing it to the 0–50% tier); its policy-correct value is $1,500.
-
-### Test-suite audit (2026-06-10)
-
-The original 14-scenario suite was trimmed to 10 to give full coverage of the **measurable** calculator behavior without redundancy:
-
-- **Removed #10** (Already Receiving LIHEAP): not testable — requires a `has_tx_liheap` existing-benefits field that does not exist in the screener (Dev Item #3). Restore once that field ships.
-- **Removed old #6, #8** (elderly age 60 / 78): the calculator does not surface elderly *priority* in its output (priority neither gates eligibility nor changes value), so these duplicated the single-adult 76–150% tier already covered by old #7 (now Scenario 5). Both also depended on the SS/SSI gap.
-- **Removed old #13** (multi-priority 5-person SS/SSI household): priority flags are not in the calculator output, and the case depended on the SS/SSI gap; added no unique measurable coverage.
-- **Kept one SS/SSI case** (old #1 → Scenario 10) for realism, since elderly-on-fixed-Social-Security is the archetypal LIHEAP household; its expected value is documented as the live $1,800.
-
-Coverage retained across the 10: income-ceiling boundary (inclusive / just-below / just-over / well-over / zero), all three benefit tiers ($1,800 / $1,500 / $1,200), SNAP and SSI categorical eligibility, and the energy-expense cap.
+Expected values reflect TDHCA program rules (gross income incl. SSA benefits and SSI per 10 TAC §6.4 and State Plan §1.9).
 
 ---
 
 ## Test Scenarios
 
-> **Suite note (2026-06-10):** Trimmed from 14 to 10 scenarios — see the *Test-suite audit* under Acceptance Criteria. Removed the untestable "already receiving LIHEAP" case (no `has_tx_liheap` field) and three redundant elderly/priority cases (priority is not in the calculator output). One elderly-on-Social-Security case is retained (Scenario 10) for realism, with its expected value documented as the live $1,800 produced by the PE SS/SSI income gap.
+All eligible scenarios include **heating `$200/month`**, required for PolicyEngine to return a non-zero benefit (the benefit is capped at reported energy expense — see Benefit Value).
 
 ### Scenario 1: Minimally Eligible Single Adult at Income Ceiling
 
@@ -215,7 +205,7 @@ Coverage retained across the 10: income-ceiling boundary (inclusive / just-below
 
 ### Scenario 3: VA Pension — 51–75% Tier
 
-**What we're checking**: Household with a veteran receiving VA pension income is eligible and lands in the 51–75% benefit tier. VA pension maps to `taxable_pension_income`, which the PE income measure counts correctly — so this tier is verifiable today (unlike SS/SSI income).
+**What we're checking**: Household with a veteran receiving VA pension income is eligible and lands in the 51–75% benefit tier.
 
 **Expected**: Eligible, **$1,500/year**
 
@@ -226,7 +216,7 @@ Coverage retained across the 10: income-ceiling boundary (inclusive / just-below
 - **Expenses**: Heating `$200/month`
 - **Current Benefits**: None
 
-**Why this matters**: Covers the 51–75% tier with income PE counts correctly. Income $800/month = $9,600/year; 60.2% of 2026 FPL for HH1 ($15,960) → 51–75% tier → $1,500/year. Screener captures this via `income_streams[].type === 'veteran'`. (Note: the spec's categorical VA-pension pathway in `tx_ceap_eligible` is a pending PE contribution — Dev Item #1 — but this household passes on income alone, so the tier and eligibility are verifiable now.)
+**Why this matters**: Covers the 51–75% tier. Income $800/month = $9,600/year; 60.2% of 2026 FPL for HH1 ($15,960) → 51–75% tier → $1,500/year. Screener captures this via `income_streams[].type === 'veteran'`.
 
 ---
 
@@ -317,7 +307,7 @@ Coverage retained across the 10: income-ceiling boundary (inclusive / just-below
 - **Person 4**: Birth `November 2022` (age 3), grandchild (select "Grandchild"), no income
 - **Current Benefits**: None (no TANF, SSI, or SNAP)
 
-**Why this matters**: Confirms that priority criteria (elderly, disabled, young child) do not bypass the income eligibility requirement. Combined income $6,600/month = $79,200/year; 240% of 2026 FPL for HH4 ($33,000) → correctly ineligible regardless of vulnerable household members. (Ineligible regardless of the SS/SSI income gap — even counting only the $5,700 wages, the household is far over the limit.)
+**Why this matters**: Confirms that priority criteria (elderly, disabled, young child) do not bypass the income eligibility requirement. Combined income $6,600/month = $79,200/year; 240% of 2026 FPL for HH4 ($33,000) → correctly ineligible regardless of vulnerable household members.
 
 ---
 
@@ -338,11 +328,11 @@ Coverage retained across the 10: income-ceiling boundary (inclusive / just-below
 
 ---
 
-### Scenario 10: Elderly Couple on Social Security + SSI (realism case)
+### Scenario 10: Elderly Couple on Social Security + SSI
 
-**What we're checking**: The archetypal LIHEAP household — an elderly couple on fixed Social Security with SSI — is eligible (via SSI categorical eligibility and on income grounds). This case documents the **PE SS/SSI income gap**: its policy-correct tier is 51–75% ($1,500), but the live calculator returns $1,800.
+**What we're checking**: An elderly couple on fixed Social Security with SSI is eligible (via SSI categorical eligibility and on income grounds) and lands in the 51–75% benefit tier. Verifies that full Social Security and reported SSI are counted in income.
 
-**Expected**: Eligible, **$1,800/year** ⚠️ *PE income-definition gap: `tx_ceap` uses `irs_gross_income`, which counts ~$0 of this household's Social Security and excludes SSI, dropping computed income to ~0% FPL → 0–50% tier → $1,800. Policy-correct value is $1,500 (66.5% FPL). Tracked as Dev Item #2.*
+**Expected**: Eligible, **$1,500/year**
 
 **Steps**:
 - **Location**: ZIP `78702`, county `Travis`
@@ -352,20 +342,24 @@ Coverage retained across the 10: income-ceiling boundary (inclusive / just-below
 - **Expenses**: Heating `$200/month`
 - **Current Benefits**: SSI → Yes
 
-**Why this matters**: Elderly-on-fixed-income is LIHEAP's core population, so the suite keeps one such case for realism even though its dollar value reflects the known PE gap. Validates SSI categorical eligibility. Policy: combined income $1,200/month = $14,400/year; 66.5% of 2026 FPL for HH2 ($21,640) → 51–75% tier → $1,500/year. Live: PE drops the SS/SSI income → 0–50% tier → $1,800/year.
+**Why this matters**: Elderly-on-fixed-income is LIHEAP's core population. Validates SSI categorical eligibility. Combined income $1,200/month = $14,400/year; 66.5% of 2026 FPL for HH2 ($21,640) → 51–75% tier → $1,500/year.
 
 ---
 
-## Pre-Handoff Notes (Dev Items)
+### Scenario 11: Single Adult on Social Security Retirement Only
 
-1. **PE contribution — VA pension:** Add `veteran` income stream to `tx_ceap_eligible.py` (current categorical formula: TANF | SNAP | SSI only).
-2. **PE contribution — income measure:** `tx_ceap`/`tx_ceap_eligible` use `irs_gross_income`, which counts only taxable Social Security and excludes SSI — contrary to 10 TAC §6.4 / State Plan §1.9 (gross income incl. SSA benefits and SSI). Until fixed, SS/SSI-income households are shown the $1,800 tier regardless of actual tier (affects Scenario 10 in the trimmed suite; originally also old Scenarios 6, 8, 13, which were removed as redundant). Raise alongside item 1.
-3. **Screener gap:** Add `has_tx_liheap` to the TX white-label existing-benefits step under a new "Housing & Utilities" category (no generic `has_liheap` exists; `has_il_liheap` is IL-specific). Unblocks Scenario 10.
-4. **Screener gap:** Surface `electricity_is_disconnected` / `has_past_due_energy_bills` from the Energy Calculator into the standard screener (crisis component).
-5. **Screener gap (optional):** `pays_own_energy_bills` household-level question (criterion 4 data gap).
-6. **Import pre-check:** Confirm a 2026 `FederalPoveryLimit` row exists — the importer only *warns* if `year` lookup fails, which would silently ship the program with no income test. Run with `--dry-run` first.
-7. **Verify:** `show_in_has_benefits_step: false` — check whether the SNAP Heat-and-Eat exception applies.
-8. **Optional admin update:** The reused `211_texas` navigator (shared with `tx_wap`) has a non-E.164 phone and empty email; improved contact info (phone `+18775417905`, email `211@hhs.texas.gov`, "press Option 1") must be applied via admin — the importer does not update existing navigators.
+**What we're checking**: A single elderly adult whose only income is Social Security Retirement is eligible and lands in the 51–75% tier, confirming full Social Security is counted in income.
+
+**Expected**: Eligible, **$1,500/year**
+
+**Steps**:
+- **Location**: ZIP `78701`, county `Travis`
+- **Household**: 1 person
+- **Person 1**: Birth `April 1958` (age 68), head of household, Social Security Retirement `$800/month`
+- **Expenses**: Heating `$200/month`
+- **Current Benefits**: None
+
+**Why this matters**: Income $800/month = $9,600/year; 60.2% of 2026 FPL for HH1 ($15,960) → 51–75% tier → $1,500/year. Covers the 51–75% tier via a Social Security income stream.
 
 ---
 
