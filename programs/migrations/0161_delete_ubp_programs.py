@@ -13,7 +13,7 @@ def delete_ubp_programs(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("programs", "0159_seed_ks_generic_referrers"),
+        ("programs", "0160_add_icon_and_form_option_models"),
     ]
 
     operations = [
