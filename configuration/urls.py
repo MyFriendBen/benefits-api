@@ -7,4 +7,5 @@ router.register(r"configuration/(?P<white_label>.+)", views.ConfigurationView, b
 
 urlpatterns = [
     path("", include(router.urls)),
+    path("<str:white_label_code>/form-options/", views.get_form_options, name="form-options"),
 ]

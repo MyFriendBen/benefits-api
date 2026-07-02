@@ -91,6 +91,17 @@ def all_eligibility(method: Sim, valid_programs: dict[str, PolicyEngineCalulator
     return all_eligibility
 
 
+def _has_gated_input(programs: List[PolicyEngineCalulator]) -> bool:
+    """True if any input/output in these programs is version-gated (has a
+    min_pe_version or max_pe_version). Lets us skip resolving the PE version when
+    nothing in the request depends on it."""
+    for program in programs:
+        for Data in program.pe_inputs + program.pe_outputs:
+            if getattr(Data, "min_pe_version", ()) or getattr(Data, "max_pe_version", ()):
+                return True
+    return False
+
+
 def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: Optional[str] = None):
     """
     Generate Policy Engine API request from the list of programs.
@@ -122,6 +133,18 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: 
     #   comparable_version (tuple)  -> tuple representation to gate which inputs are sent
     version = pe_versions.determine_pe_version(pe_version)
     comparable_version = pe_versions.to_comparable_pe_version(version)
+
+    # No pin (and no exact override) means "ride PE's current model": we omit the
+    # version string so PE serves current, but for input gating we still need to know
+    # what current concretely is — otherwise a min_pe_version floor can never be met
+    # and gated inputs (e.g. use_reported_ssi) are withheld forever. Resolve current
+    # from PE's published /versions/us. If PE is unreachable this stays None, keeping
+    # the conservative withhold-gated behavior (safe: PE just uses modeled values).
+    #
+    # Only bother resolving when this request actually carries a version-gated input —
+    # the vast majority don't, and resolving would be a needless (cached) lookup.
+    if comparable_version is None and _has_gated_input(programs):
+        comparable_version = pe_versions.resolve_unpinned_comparable_version()
 
     members: list[HouseholdMember] = screen.household_members.all()
     relationship_map = screen.relationship_map()

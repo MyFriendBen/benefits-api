@@ -13,8 +13,6 @@ class TestPropertyCreditRebatePension(TestCase):
             county="Denver County",
             household_size=2,
             household_assets=0,
-            has_tanf=False,
-            has_ssi=False,
         )
         self.person1 = HouseholdMember.objects.create(
             screen=self.screen1,

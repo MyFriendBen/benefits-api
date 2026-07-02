@@ -4,6 +4,7 @@ from typing import Optional
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from integrations.clients.rewiring_america import RewiringAmericaClient
+from integrations.clients.google_places import GooglePlacesClient
 from integrations.services.communications import MessageUser
 from programs.programs.policyengine import versions as pe_versions
 from programs.models import Referrer
@@ -667,38 +668,27 @@ def urgent_need_results(screen: Screen, data):
     return eligible_urgent_needs
 
 
-class RemRateThrottle(throttling.AnonRateThrottle):
-    """
-    Rate throttle for REM impact proxy requests to prevent API key abuse.
-    Rate is configured via DEFAULT_THROTTLE_RATES["rem"] in settings.
-    Uses a hashed IP as the cache key to avoid storing raw IPs.
-    """
+class HashedIPAnonRateThrottle(throttling.AnonRateThrottle):
+    """AnonRateThrottle that keys on a hashed IP so raw IPs aren't stored."""
 
+    def get_cache_key(self, request, view):
+        ident = self.get_ident(request)
+        if ident is None:
+            return None
+        hashed = hashlib.sha256(ident.encode()).hexdigest()
+        return self.cache_format % {"scope": self.scope, "ident": hashed}
+
+
+class RemRateThrottle(HashedIPAnonRateThrottle):
     scope = "rem"
 
-    def get_cache_key(self, request, view):
-        ident = self.get_ident(request)
-        if ident is None:
-            return None
-        hashed = hashlib.sha256(ident.encode()).hexdigest()
-        return self.cache_format % {"scope": self.scope, "ident": hashed}
 
-
-class NPSRateThrottle(throttling.AnonRateThrottle):
-    """
-    Rate throttle for NPS submissions to prevent abuse.
-    Rate is configured via DEFAULT_THROTTLE_RATES["nps"] in settings.
-    Uses a hashed IP as the cache key to avoid storing raw IPs.
-    """
-
+class NPSRateThrottle(HashedIPAnonRateThrottle):
     scope = "nps"
 
-    def get_cache_key(self, request, view):
-        ident = self.get_ident(request)
-        if ident is None:
-            return None
-        hashed = hashlib.sha256(ident.encode()).hexdigest()
-        return self.cache_format % {"scope": self.scope, "ident": hashed}
+
+class PlacesRateThrottle(HashedIPAnonRateThrottle):
+    scope = "places"
 
 
 class NPSScoreView(views.APIView):
@@ -826,6 +816,24 @@ class RemImpactView(views.APIView):
                 detail = e.response.json()
             except Exception:
                 detail = e.response.text
+            # REM returns 400 with a typed detail dict for address-level errors the frontend
+            # can surface meaningfully. Known types (per docs.rewiringamerica.org/api/
+            # residential-electrification-model#get-by-address):
+            #   multifamily_not_supported, building_type_not_supported,
+            #   address_not_parsable, building_not_supported
+            # Return 422 so the frontend can distinguish these from backend/network failures.
+            _ADDRESS_ERROR_TYPES = {
+                "multifamily_not_supported",
+                "building_type_not_supported",
+                "address_not_parsable",
+                "building_not_supported",
+            }
+            nested = detail.get("detail") if isinstance(detail, dict) else None
+            if e.response.status_code < 500 and isinstance(nested, dict) and nested.get("type") in _ADDRESS_ERROR_TYPES:
+                return Response(
+                    {"error": "address_not_supported", "detail": detail},
+                    status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                )
             return Response(
                 {"error": f"Rewiring America API error: {e.response.status_code}", "detail": detail},
                 status=status.HTTP_502_BAD_GATEWAY,
@@ -843,3 +851,37 @@ class RemImpactView(views.APIView):
 
         serializer = RemImpactSerializer(raw)
         return Response(serializer.data)
+
+
+class PlacesAutocompleteView(views.APIView):
+    """
+    Proxies address autocomplete requests to the Google Places API,
+    keeping the API key server-side. Returns US street address predictions
+    restricted to street-level addresses.
+    """
+
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [PlacesRateThrottle]
+
+    def get(self, request, **_kwargs) -> Response:
+        input_text = request.query_params.get("input", "").strip()
+
+        if not input_text:
+            return Response([], status=status.HTTP_200_OK)
+
+        try:
+            client = GooglePlacesClient()
+            predictions = client.autocomplete_address(input_text)
+        except requests.HTTPError as e:
+            http_status = e.response.status_code if e.response is not None else "unknown"
+            return Response(
+                {"error": f"Google Places API error: {http_status}"},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+        except requests.RequestException as e:
+            return Response(
+                {"error": "Google Places request failed.", "detail": str(e)},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        return Response(predictions)
