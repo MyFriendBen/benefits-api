@@ -77,9 +77,19 @@ class ScreenViewSet(
     API endpoint that allows screens to be viewed or edited.
     """
 
-    # Prefetch current_benefits__program so ScreenSerializer.to_representation can
-    # build the current_benefits list without a per-screen query.
-    queryset = Screen.objects.all().prefetch_related("current_benefits__program").order_by("-submission_date")
+    queryset = (
+        Screen.objects.all()
+        .select_related("user", "white_label")
+        .prefetch_related(
+            "current_benefits__program",
+            "household_members__income_streams",
+            "household_members__insurance",
+            "household_members__energy_calculator",
+            "expenses",
+            "energy_calculator",
+        )
+        .order_by("-submission_date")
+    )
     serializer_class = ScreenSerializer
     permission_classes = [permissions.DjangoModelPermissions]
     filterset_fields = ["agree_to_tos", "is_test"]
@@ -155,15 +165,19 @@ class EligibilityTranslationView(views.APIView):
         EligibilitySnapshot — that ordering is locked by
         screener/tests/test_pe_version_override.py.
         """
-        screen = Screen.objects.prefetch_related(
-            "household_members",
-            "household_members__income_streams",
-            "household_members__insurance",
-            "household_members__energy_calculator",
-            "expenses",
-            "energy_calculator",
-            "current_benefits__program",
-        ).get(uuid=id)
+        screen = (
+            Screen.objects.select_related("white_label")
+            .prefetch_related(
+                "household_members",
+                "household_members__income_streams",
+                "household_members__insurance",
+                "household_members__energy_calculator",
+                "expenses",
+                "energy_calculator",
+                "current_benefits__program",
+            )
+            .get(uuid=id)
+        )
 
         is_admin = request.query_params.get("admin")
 
@@ -344,12 +358,10 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
 
     missing_dependencies = screen.missing_fields()
 
+    program_by_abbr = {p.name_abbreviated: p for p in all_programs}
     pe_calculators = {}
     for calculator_name, Calculator in all_calculators.items():
-        program: Optional[Program] = None
-        for p in all_programs:
-            if calculator_name == p.name_abbreviated:
-                program = p
+        program = program_by_abbr.get(calculator_name)
 
         if program is not None:
             pe_calculators[calculator_name] = Calculator(screen, program, missing_dependencies)
