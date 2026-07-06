@@ -54,10 +54,12 @@
    - Source: IRC § 21(e)(6); K.S.A. 79-32,111
    - Impact: ImpactLevel.LOW
 
-9. **Full-time student or disabled spouse exception to the earned income requirement — if one spouse is a full-time student or disabled, they are deemed to have earned income of $250/month (one qualifying individual) or $500/month (two or more)** ⚠️ *data gap*
-    - Note: While the screener has student_full_time and disabled fields, the deemed income calculation for the spouse exception requires specific logic that may not be implemented. The fields exist but the complex interaction may not be fully evaluable.
+9. **Full-time student or disabled spouse exception to the earned income requirement — if one spouse is a full-time student or is incapable of self-care, they are deemed to have earned income of $250/month (one qualifying individual) or $500/month (two or more)** ⚠️ *upstream gap (not a screener data gap)*
+    - Screener fields:
+      - `student_full_time (HouseholdMember)`
+      - `disabled (HouseholdMember)`
+    - Note: The screener collects both triggers (`student_full_time` and `disabled`), so this criterion is fully expressible from screener data. It is not evaluable in the current calculator only because PolicyEngine's federal `cdcc` does not apply the § 21(d)(2) deeming — verified against live PE: a married household with a qualifying child and a non-earning full-time-student or disabled spouse returns $0, whereas the identical household with the spouse given a real $250/mo wage returns the credit. Tracked in [MFB-1244](https://linear.app/myfriendben/issue/MFB-1244), which also covers wiring the `student_full_time` / self-care inputs once PE supports them.
     - Source: IRC § 21(d)(2); K.S.A. 79-32,111
-    - Impact: ImpactLevel.LOW
 
 ## Benefit Value
 
@@ -72,29 +74,20 @@ Calculated by the Policy Engine `ks_cdcc` calculator. The credit is non-refundab
 
 ## Implementation Coverage
 
-- ✅ Evaluable criteria: 7
-- ⚠️  Data gaps: 2
+- ✅ Expressible from screener fields: 8
+- ⚠️  Screener data gap: 1 (Criterion 8 — care-provider identity)
+- ⏳ Blocked on PolicyEngine: 1 (Criterion 9 — § 21(d)(2) deeming; screenable, upstream gap, tracked in MFB-1244)
 
-7 of 9 total criteria can be evaluated with current screener fields. The core eligibility requirements — having a qualifying dependent (child under 13 or disabled dependent), having earned income, Kansas residency, having dependent care expenses, filing status, and co-residency — can all be assessed using available screener fields. The criteria that cannot be evaluated are administrative requirements verified at tax filing time (care provider identity) and the student/disabled spouse deemed income edge case. The screener provides a strong preliminary eligibility determination for the Kansas CDCC.
+The core eligibility requirements — having a qualifying dependent (child under 13 or disabled dependent), having earned income, Kansas residency, having dependent care expenses, filing status, and co-residency — can all be assessed from available screener fields. The one true screener data gap is Criterion 8 (care-provider identity), an administrative requirement verified at tax filing time. Criterion 9 (the full-time-student / disabled-spouse deemed-income exception) is expressible from screener data but currently blocked by an upstream PolicyEngine limitation. The screener provides a strong preliminary eligibility determination for the Kansas CDCC.
 
 ## Research Sources
 
 - [Kansas Individual Income Tax Return (K-40) Instructions - Tax Year 2010](https://www.ksrevenue.gov/pdf/k-40inst10.pdf)
 - [Kansas Department of Revenue Tax Notice 24-09 - Child Tax Credit and Related Tax Provisions (2024)](https://www.ksrevenue.gov/taxnotices/notice24-09.pdf#search=child%20tax%20credit)
 
-## Research Output
-
-Local path: `/app/output/ks_CDCC_20260602_231644`
-
-Files generated:
-- Program config: `{white_label}_{program_name}_initial_config.json`
-- Test cases: `{white_label}_{program_name}_test_cases.json`
-- Full research data in output directory
-
-
 ## Acceptance Criteria
 
-This section states the correct program behavior under IRC § 21 and K.S.A. 79-32,111c, independent of any current calculator limitation. Dollar values for the eligible child-path scenarios are PolicyEngine-verified (KS CDCC = 50% of the federal CDCC).
+Dollar values for the eligible scenarios are PolicyEngine-verified (KS CDCC = 50% of the federal CDCC).
 
 [ ] Scenario 1 (Golden path — single parent, child under 13, earned income, care expenses): User should be **eligible**, value: $540/year
 [ ] Scenario 2 (Married filing jointly, child age 12 — boundary condition): User should be **ineligible** (federal CDCC is non-refundable and this household's income tax liability is fully absorbed, leaving $0 of credit capacity)
@@ -104,8 +97,8 @@ This section states the correct program behavior under IRC § 21 and K.S.A. 79-3
 [ ] Scenario 6 (Two working parents, three qualifying children): User should be **eligible**, value: $1,050/year
 [ ] Scenario 7 (Child turns 13 mid-year — still 12 at time of screening): User should be **eligible**, value: $570/year
 [ ] Scenario 8 (No qualifying dependent — only teenager age 16 in household): User should be **ineligible**
-[ ] Scenario 9 (Disabled adult dependent — alternative qualifying individual): User should be **eligible** per IRC § 21 (a disabled dependent incapable of self-care is a qualifying individual at any age)
-[ ] Scenario 10 (Disabled spouse with no earned income — deemed-income path): User should be **eligible** per IRC § 21(d)(2) (a disabled spouse is deemed to have $250/month of earned income)
+[ ] Scenario 9 (Disabled adult dependent — alternative qualifying individual): User should be **eligible** per IRC § 21, value: $540/year
+[ ] Scenario 10 (Disabled spouse with no earned income — deemed-income path): User should be **eligible** per IRC § 21(d)(2), value: $525/year
 
 ## Test Scenarios
 
@@ -237,7 +230,7 @@ This section states the correct program behavior under IRC § 21 and K.S.A. 79-3
 
 ### Scenario 9: Disabled Adult Dependent — Alternative Qualifying Individual
 **What we're checking**: Household where the qualifying individual is a disabled dependent (not a child under 13). Tests the alternative path in criterion 1.
-**Expected**: Eligible per IRC § 21 — a disabled dependent incapable of self-care is a qualifying individual at any age. Care expenses for that dependent qualify the household for the credit.
+**Expected**: Eligible, value: $540/year. Per IRC § 21, a disabled dependent incapable of self-care is a qualifying individual at any age, so care expenses for that dependent qualify the household for the credit. (Value: $900/mo expenses exceed the $3,000 single-individual cap → 36% × $3,000 = $1,080 federal → 50% = $540 KS.)
 
 **Steps**:
 - **Location**: Enter ZIP code `66044`, Select county `Douglas`
@@ -252,7 +245,7 @@ This section states the correct program behavior under IRC § 21 and K.S.A. 79-3
 
 ### Scenario 10: Disabled Spouse with No Earned Income — Deemed-Income Path
 **What we're checking**: Married couple where one spouse is disabled (incapable of self-care) and has no earned income, with care expenses for that spouse. Under IRC § 21(d)(2), a spouse incapable of self-care is deemed to have earned income of $250/month (one qualifying individual), which both makes them a qualifying individual and satisfies the two-earner requirement — so the household should qualify.
-**Expected**: Eligible per IRC § 21(d)(2) — a disabled spouse incapable of self-care is deemed to have $250/month of earned income, which both makes them a qualifying individual and satisfies the two-earner requirement, so the household qualifies for the credit.
+**Expected**: Eligible, value: $525/year. Per IRC § 21(d)(2), a disabled spouse incapable of self-care is deemed to have $250/month of earned income, which both makes them a qualifying individual and satisfies the two-earner requirement, so the household qualifies for the credit. (Value: expenses limited to the lower "earner's" deemed $3,000/year → 35% × $3,000 = $1,050 federal → 50% = $525 KS.)
 
 **Steps**:
 - **Location**: Enter ZIP code `66044`, Select county `Douglas`
@@ -263,21 +256,11 @@ This section states the correct program behavior under IRC § 21 and K.S.A. 79-3
 
 **Why this matters**: This is the deemed-income path of IRC § 21(d)(2), distinct from Scenario 9's disabled-dependent path. A married household with one disabled non-earning spouse and care expenses for that spouse still qualifies — a real population that would otherwise be missed if the deemed $250/month were not applied.
 
----
-
-## Implementation note: disabled qualifying-individual coverage (Scenarios 9 & 10)
-
-Scenarios 9 and 10 above define the correct behavior under IRC § 21: care expenses for a disabled spouse or dependent incapable of self-care qualify the household for the credit regardless of the disabled person's age or earnings. This is the true program spec and the expected outcome for those scenarios.
-
-Closing these two paths in the calculator is tracked in follow-up ticket [MFB-1244](https://linear.app/myfriendben/issue/MFB-1244). All other scenarios (1–8) are covered by the calculator delivered in this program's PR; the disabled-adult and disabled-spouse paths are the remaining pieces MFB-1244 completes.
-
 ## Source Documentation
 
 - https://www.ksrevenue.gov/pdf/k-40inst10.pdf
 - https://www.ksrevenue.gov/taxnotices/notice24-09.pdf#search=child%20tax%20credit
 
-## JSON Test Cases
-File: `/app/output/ks_CDCC_20260602_231644/ticket_content/ks_CDCC_test_cases.json`
-
 ## Program Configuration
-File: `/app/output/ks_CDCC_20260602_231644/ticket_content/ks_CDCC_initial_config.json`
+
+`programs/management/commands/import_program_config_data/data/ks_cdcc_initial_config.json`
