@@ -183,7 +183,11 @@ class Tanf(SpmUnit):
     field = "tanf"
 
     def value(self):
-        return 1 if self.screen.has_benefit("tanf") else None
+        # Use has_base_benefit so every white-label TANF variant (ks_tanf, co_tanf,
+        # wa_tanf, ma_tafdc, …) counts — has_benefit("tanf") is an exact name match
+        # and would miss the prefixed names every white label actually records,
+        # silently disarming SNAP TANF categorical eligibility.
+        return 1 if self.screen.has_base_benefit("tanf") else None
 
 
 class CoTanf(SpmUnit):
