@@ -7,6 +7,7 @@ by PolicyEngine to determine TX SNAP eligibility and benefit amounts.
 
 from django.test import TestCase
 from screener.models import Screen, HouseholdMember, WhiteLabel, IncomeStream, Expense
+from programs.models import Program
 from screener.tests.helpers import seed_program
 from screener.serializers import _write_current_benefits
 from programs.programs.policyengine.calculators.dependencies import spm
@@ -513,13 +514,31 @@ class TestTanfDependency(TestCase):
         dep = spm.Tanf(self.screen, None, {})
         self.assertEqual(dep.field, "tanf")
 
-    def test_value_returns_1_when_screen_has_tanf(self):
-        """When user reports having TANF, send 1 to PE to enable categorical eligibility."""
+    def _report_tanf(self):
+        """Seed a TANF program with base_program set (seed_program leaves it None) and
+        record receipt on the screen, mirroring how has_base_benefit resolves variants."""
         seed_program(self.white_label, "tanf")
+        Program.objects.filter(white_label=self.white_label, name_abbreviated="tanf").update(base_program="tanf")
         _write_current_benefits(self.screen, ["tanf"])
 
+    def test_value_returns_reported_amount_when_screen_has_tanf(self):
+        """When the household reports TANF with a cash amount, send that amount to PE."""
+        head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=head, type="cashAssistance", amount=400, frequency="monthly"
+        )
+        self._report_tanf()
+
         dep = spm.Tanf(self.screen, None, {})
-        self.assertEqual(dep.value(), 1)
+        self.assertEqual(dep.value(), 4800)  # $400/month * 12
+
+    def test_value_returns_none_when_tanf_reported_without_amount(self):
+        """Reported receipt but no cash amount collected: return None (don't override with a
+        placeholder), so PE computes the benefit rather than seeing a bogus value."""
+        self._report_tanf()
+
+        dep = spm.Tanf(self.screen, None, {})
+        self.assertIsNone(dep.value())
 
     def test_value_returns_none_when_screen_does_not_have_tanf(self):
         """When user does not report TANF, return None so PE calculates the benefit amount."""
