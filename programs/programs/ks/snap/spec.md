@@ -158,7 +158,9 @@ for reference.
 - [ ] Scenario 15 (Asset Test Pass — Below Standard $3,000 Limit): **eligible**, **$1,728/yr ($144/mo)**
 - [ ] Scenario 16 (Large Household of Five): **eligible**, **$7,212/yr ($601/mo)**
 - [ ] Scenario 17 (Disabled Non-Elderly — Uncapped Shelter & $4,500 Asset Limit): **eligible**, **$1,884/yr ($157/mo)**
-- [ ] Scenario 18 (TANF Categorical Eligibility — Cash Recipient, Assets Above Limit): **eligible**
+- [ ] Scenario 18 (TANF Categorical Eligibility — Cash Recipient, Assets Above Limit): **eligible**, **$2,880/yr ($240/mo)**
+- [ ] Scenario 19 (Half-Time Student Working 20+ Hours/Week): **eligible**, **$864/yr ($72/mo)**
+- [ ] Scenario 20 (Half-Time Student with Federal Work-Study): **eligible**, **$864/yr ($72/mo)**
 
 
 ## Test Scenarios
@@ -180,9 +182,9 @@ for reference.
 > it does not categorically bypass the tests the way the SSI/TANF categorical path does.
 >
 > **Student exemptions.** A half-time+ college student aged 18–49 (**Scenario 9**) is an ineligible
-> student unless they meet an exemption — including a job-training / employment-and-training program
-> placement (**Scenario 10**), 20-hr work, work-study, or the parent/child-age exemptions
-> (7 CFR 273.5).
+> student unless they meet an exemption — a job-training / employment-and-training program placement
+> (**Scenario 10**), working 20+ hours/week (**Scenario 19**), federal work-study (**Scenario 20**),
+> or the parent/child-age exemptions (7 CFR 273.5).
 
 ### Scenario 1: Single Adult Worker — Clearly Eligible for Food Assistance
 
@@ -497,17 +499,51 @@ for reference.
 
 **What we're checking**: A household receiving TANF cash assistance should be categorically eligible for SNAP — the income and asset tests are bypassed (criterion 5, the TANF path).
 
-**Expected**: Eligible
+**Expected**: Eligible — $2,880/yr ($240/mo)
 
 **Steps**:
 - **Location**: Enter ZIP code `66102`, Select county `Wyandotte`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `January 1986` (age 40), Relationship: Head of Household, Not a student, No disability, U.S. citizen
-- **Income**: Employment income `$1,000`/month
+- **Income**: Cash assistance (TANF) `$400`/month
 - **Assets**: `$6,000` (above the $3,000 standard limit)
 - **Current Benefits**: Currently receiving TANF cash assistance, Not currently receiving SNAP/Food Assistance, Not receiving SSI
 
-**Why this matters**: TANF cash recipients are categorically eligible for SNAP under 7 U.S.C. § 2014(a); the income and asset tests are bypassed. This household is eligible despite $6,000 in assets (above the $3,000 standard limit). This is the TANF analog to the SSI categorical path in Scenario 8.
+**Why this matters**: TANF cash recipients are categorically eligible for SNAP under 7 U.S.C. § 2014(a); the income and asset tests are bypassed. This household is eligible despite $6,000 in assets (above the $3,000 standard limit), driven by the reported TANF cash amount. This is the TANF analog to the SSI categorical path in Scenario 8.
+
+---
+
+### Scenario 19: Half-Time College Student Working 20+ Hours/Week
+
+**What we're checking**: A half-time college student aged 18–49 who works at least 20 hours per week meets a student exemption (7 CFR 273.5(b)(2)) and is eligible (criterion 7, work-hours exemption).
+
+**Expected**: Eligible — $864/yr ($72/mo)
+
+**Steps**:
+- **Location**: Enter ZIP code `66045`, Select county `Douglas`
+- **Household**: Number of people: `1`
+- **Person 1**: Birth month/year: `January 2004` (age 22), Relationship: Head of Household, Student status: enrolled in higher education at least half-time, Working 20+ hrs/week, No work-study, No job-training program, No dependent child, No disability
+- **Income**: Employment income `$1,200`/month
+- **Current Benefits**: Not currently receiving SNAP/Food Assistance, Not receiving TANF, Not receiving SSI
+
+**Why this matters**: The 20-hour work exemption is one of the federal student exemptions. A half-time student who would otherwise be an ineligible student qualifies through it, so this household is eligible rather than denied at $0.
+
+---
+
+### Scenario 20: Half-Time College Student with Federal Work-Study
+
+**What we're checking**: A half-time college student aged 18–49 who participates in federal work-study meets a student exemption (7 CFR 273.5(b)(2)) and is eligible (criterion 7, work-study exemption).
+
+**Expected**: Eligible — $864/yr ($72/mo)
+
+**Steps**:
+- **Location**: Enter ZIP code `66045`, Select county `Douglas`
+- **Household**: Number of people: `1`
+- **Person 1**: Birth month/year: `January 2004` (age 22), Relationship: Head of Household, Student status: enrolled in higher education at least half-time, Participates in federal work-study, Not working 20+ hrs, No job-training program, No dependent child, No disability
+- **Income**: Employment income `$1,200`/month
+- **Current Benefits**: Not currently receiving SNAP/Food Assistance, Not receiving TANF, Not receiving SSI
+
+**Why this matters**: Work-study participation is one of the federal student exemptions. A half-time student who would otherwise be an ineligible student qualifies through it, so this household is eligible rather than denied at $0.
 
 
 ## PE Verification
