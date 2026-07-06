@@ -11,6 +11,7 @@ from django.utils.translation import gettext_lazy as _
 from programs.util import Dependencies
 from django.conf import settings
 from .feature_flags import FeatureFlagConfig, WHITELABEL_FEATURE_FLAGS
+from .irs_parameters import get_qualifying_relative_threshold
 
 
 class WhiteLabel(models.Model):
@@ -522,16 +523,22 @@ class HouseholdMember(models.Model):
     def is_spouse(self) -> bool:
         return self.screen.relationship_map()[self.screen.get_head().id] == self.id
 
-    def is_dependent(self):
+    def is_dependent(self) -> bool:
         is_tax_unit_spouse = self.is_spouse()
         is_tax_unit_head = self.is_head()
-        is_tax_unit_dependent = (
-            (self.age <= 18 or (self.student and self.age <= 23) or self.has_disability())
-            and (self.calc_gross_income("yearly", ["all"]) <= self.screen.calc_gross_income("yearly", ["all"]) / 2)
-            and (not (is_tax_unit_head or is_tax_unit_spouse))
+        if is_tax_unit_head or is_tax_unit_spouse:
+            return False
+
+        # Path 1: Qualifying Child
+        is_qualifying_child = (self.age <= 18 or (self.student and self.age <= 23) or self.has_disability()) and (
+            self.calc_gross_income("yearly", ["all"]) <= self.screen.calc_gross_income("yearly", ["all"]) / 2
         )
 
-        return is_tax_unit_dependent
+        # Path 2: Qualifying Relative
+        threshold = get_qualifying_relative_threshold(self.screen.get_reference_date().year)
+        is_qualifying_relative = self.calc_gross_income("yearly", ["all"]) < threshold
+
+        return is_qualifying_child or is_qualifying_relative
 
     def is_in_tax_unit(self):
         return self.is_head() or self.is_spouse() or self.is_dependent()
