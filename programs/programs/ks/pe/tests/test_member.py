@@ -344,10 +344,27 @@ class TestKsChip(TestCase):
         self.assertIn(PregnancyDependency, KsChip.pe_inputs)
         self.assertEqual(PregnancyDependency.field, "is_pregnant")
 
-    def test_pe_inputs_includes_medicaid_inputs(self):
-        """CHIP requires ~Medicaid, so all Medicaid inputs are present."""
+    def test_pe_inputs_match_ks_medicaid_inputs(self):
+        """CHIP gates on ~is_medicaid_eligible, and every program on a screen shares one
+        PolicyEngine simulation, so CHIP must send the exact same KS Medicaid inputs as
+        KsKanCare — otherwise the shared medicaid computation would be inconsistent."""
+        self.assertEqual(KsChip.pe_inputs, KsKanCare.pe_inputs)
+
+    def test_pe_inputs_includes_medicaid_inputs_except_assets(self):
+        """CHIP requires ~Medicaid, so every federal Medicaid input is present EXCEPT the
+        asset dependency, which KS drops (see test_pe_inputs_omit_ssi_countable_resources)."""
         for medicaid_input in Medicaid.pe_inputs:
-            self.assertIn(medicaid_input, KsChip.pe_inputs)
+            if medicaid_input is member_deps.SsiCountableResourcesDependency:
+                self.assertNotIn(medicaid_input, KsChip.pe_inputs)
+            else:
+                self.assertIn(medicaid_input, KsChip.pe_inputs)
+
+    def test_pe_inputs_omit_ssi_countable_resources(self):
+        """CHIP must NOT send ssi_countable_resources. It applies no resource test, and if it
+        did the input would leak into the shared PE sim and re-enable the ABD asset gate that
+        KsKanCare intentionally drops (Medicaid spec Implementation Note 2), wrongly denying
+        income-eligible seniors/ABD applicants whenever CHIP is active."""
+        self.assertNotIn(member_deps.SsiCountableResourcesDependency, KsChip.pe_inputs)
 
     def test_pe_inputs_includes_ks_state_code_dependency(self):
         """KsStateCodeDependency sets state_code=KS so PE applies the KS income limit (2.55)."""

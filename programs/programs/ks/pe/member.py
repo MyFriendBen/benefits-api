@@ -75,14 +75,24 @@ class KsChip(PolicyEngineMembersCalculator):
     variable returned as an ANNUAL figure = monthly premium x 12). It is surfaced
     for display alongside the coverage value (divide by 12 for the monthly amount)
     and is NOT netted against the coverage value.
+
+    Dependency on KanCare Medicaid: PE gates ``is_chip_eligible_child`` on
+    ``~is_medicaid_eligible``, so CHIP must compute Medicaid eligibility the same
+    way KanCare does. All programs on a screen share a single PolicyEngine
+    simulation (``pe_input`` merges every program's ``pe_inputs``), so CHIP reuses
+    ``KsKanCare.pe_inputs`` verbatim rather than the federal ``Medicaid.pe_inputs``.
+    This keeps the shared ``medicaid`` / ``is_medicaid_eligible`` computation
+    consistent and — critically — omits ``SsiCountableResourcesDependency``. If CHIP
+    sent ``ssi_countable_resources``, that input would leak into the shared sim and
+    re-enable the ABD asset gate that KanCare intentionally drops (Medicaid spec
+    Implementation Note 2), wrongly making income-eligible seniors/ABD applicants
+    ineligible for Medicaid whenever CHIP is also active. The asset input is not
+    needed for CHIP either — KanCare CHIP applies no resource test.
     """
 
     pe_name = "chip"
     pe_inputs = [
-        dependency.member.AgeDependency,
-        dependency.member.PregnancyDependency,
-        *Medicaid.pe_inputs,
-        dependency.household.KsStateCodeDependency,
+        *KsKanCare.pe_inputs,
     ]
     pe_outputs = [
         dependency.member.Chip,
