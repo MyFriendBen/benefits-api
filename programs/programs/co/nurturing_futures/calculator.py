@@ -10,12 +10,17 @@ class BoulderAmiCache:
     range_name = "AMI!B2:I2"
     CACHE_KEY = "boulder_ami_data"
     CACHE_TIMEOUT = 60 * 60 * 24  # 24 hours
+    DEFAULT_AMI_LIMITS = [0] * 8  # one per household size 1-8, matches the sheet's column count
 
     def _get_data(self) -> dict:
         data = cache.get(self.CACHE_KEY)
         if data is not None:
             return data
         data = self._process()
+        if not data:
+            # Don't cache an empty result — retry on the next request instead of
+            # locking every NurturingFutures screening out for 24 hours.
+            return self.DEFAULT_AMI_LIMITS
         cache.set(self.CACHE_KEY, data, timeout=self.CACHE_TIMEOUT)
         return data
 
@@ -28,7 +33,7 @@ class BoulderAmiCache:
         result = []
         for a in data[0]:
             try:
-                cleaned_value = a.replace(",", "".replace("$", ""))
+                cleaned_value = a.replace(",", "").replace("$", "")
                 result.append(int(cleaned_value))
             except (ValueError, AttributeError):
                 result.append(0)  # Use 0 as default for malformed values

@@ -30,6 +30,11 @@ def _get_cfh_county_values() -> dict:
         except (KeyError, ValueError, AttributeError):
             continue  # Skip malformed rows
 
+    if not values:
+        # Don't cache an empty result — retry on the next request instead of
+        # locking every Connect for Health screening out for 24 hours.
+        return values
+
     cache.set(_CFH_CACHE_KEY, values, timeout=_CFH_CACHE_TIMEOUT)
     return values
 
@@ -69,4 +74,4 @@ class ConnectForHealth(ProgramCalculator):
     def member_value(self, member: HouseholdMember):
         values = _get_cfh_county_values()
         county = counties_from_screen(self.screen)[0]
-        return int(values[county] * 12)
+        return int(values.get(county, 0) * 12)

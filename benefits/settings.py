@@ -333,6 +333,10 @@ if REDIS_URL:
                 },
                 "SOCKET_CONNECT_TIMEOUT": 5,  # seconds
                 "SOCKET_TIMEOUT": 5,  # seconds
+                # If Redis is down, treat it as a cache miss instead of raising —
+                # callers (including Parler) fall through to their source of truth
+                # rather than crashing the page.
+                "IGNORE_EXCEPTIONS": True,
             },
             "KEY_PREFIX": "benefits",
             "TIMEOUT": 300,
