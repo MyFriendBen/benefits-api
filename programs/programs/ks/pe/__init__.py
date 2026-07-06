@@ -5,6 +5,7 @@ from programs.programs.policyengine.calculators.base import PolicyEngineCalulato
 
 ks_member_calculators = {
     "ks_medicaid": member.KsKanCare,
+    "ks_chip": member.KsChip,
 }
 
 ks_tax_unit_calculators = {

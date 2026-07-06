@@ -769,6 +769,7 @@ class Insurance(models.Model):
             "co_medicaid": self.medicaid,
             "wa_apple_health_medicaid": self.medicaid,
             "wa_apple_health_for_kids": self.chp,
+            "ks_chip": self.chp,
             "ma_mass_health": self.mass_health or self.medicaid,
             "medicare": self.medicare,
             "emergency_medicaid": self.emergency_medicaid,
