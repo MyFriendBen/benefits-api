@@ -56,6 +56,8 @@ class SnapWorkExceptionDependency(Member):
 
 class SnapJobTrainingStudentDependency(Member):
     field = "is_snap_employment_training_or_work_incentive_student"
+    # First released in policyengine-us 1.752.0 (merged to main 2026-07-01).
+    min_pe_version = (1, 752, 0)
 
     def value(self):
         return self.member.student_job_training_program or False
