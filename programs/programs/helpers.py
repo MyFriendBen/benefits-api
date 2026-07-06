@@ -1,7 +1,7 @@
 from programs.programs.calc import Eligibility
 from screener.models import Screen, HouseholdMember
 
-STATE_MEDICAID_OPTIONS = ("co_medicaid", "nc_medicaid", "il_medicaid")
+STATE_MEDICAID_OPTIONS = ("co_medicaid", "nc_medicaid", "il_medicaid", "ks_medicaid")
 
 
 def medicaid_eligible(data: dict[str, Eligibility]):

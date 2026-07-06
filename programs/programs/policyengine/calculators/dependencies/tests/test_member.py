@@ -80,6 +80,36 @@ class TestMeetsSsiDisabilityCriteriaDependency(TestCase):
         self.assertFalse(dep.value())
 
 
+class TestIsBlindDependency(TestCase):
+    """Tests for IsBlindDependency, which maps the screener's visually_impaired flag
+    to PolicyEngine's is_blind input (relied on by KsKanCare / KS Medicaid, MFB-1054)."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=1,
+            completed=False,
+        )
+
+    def _member(self, **kwargs):
+        return HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=50, **kwargs)
+
+    def test_field_name(self):
+        dep = member.IsBlindDependency(self.screen, self._member(), {})
+        self.assertEqual(dep.field, "is_blind")
+
+    def test_true_when_visually_impaired(self):
+        dep = member.IsBlindDependency(self.screen, self._member(visually_impaired=True), {})
+        self.assertTrue(dep.value())
+
+    def test_false_when_not_visually_impaired(self):
+        dep = member.IsBlindDependency(self.screen, self._member(visually_impaired=False), {})
+        self.assertFalse(dep.value())
+
+
 class TestMemberExpenseDependency(TestCase):
     """Tests for member-level expense dependency classes: SnapChildSupportDependency, PropertyTaxExpenseDependency, and MedicalExpenseDependency."""
 
