@@ -170,23 +170,9 @@ class TestIlLiheap(TestCase):
         """Test that IlLiheap output dependency is in pe_outputs."""
         self.assertIn(spm_dependency.IlLiheap, IlLiheap.pe_outputs)
 
-    def test_household_value_returns_zero_when_already_has_benefit(self):
-        """Test that household_value returns 0 when already has IL LIHEAP."""
-        mock_screen = Mock()
-        mock_screen.has_benefit = Mock(return_value=True)
-
-        calculator = IlLiheap(mock_screen, Mock(), Mock())
-        calculator._sim = MagicMock()
-
-        result = calculator.household_value()
-
-        self.assertEqual(result, 0)
-        mock_screen.has_benefit.assert_called_once_with("il_liheap")
-
     def test_household_value_returns_zero_when_pe_returns_zero(self):
         """Test that household_value returns 0 when PE returns 0 (ineligible)."""
         mock_screen = Mock()
-        mock_screen.has_benefit = Mock(return_value=False)
 
         calculator = IlLiheap(mock_screen, Mock(), Mock())
         calculator._sim = MagicMock()
@@ -199,7 +185,6 @@ class TestIlLiheap(TestCase):
     def test_household_value_returns_pe_benefit_amount(self):
         """Test that household_value returns the dollar amount from PE."""
         mock_screen = Mock()
-        mock_screen.has_benefit = Mock(return_value=False)
 
         calculator = IlLiheap(mock_screen, Mock(), Mock())
         calculator._sim = MagicMock()
