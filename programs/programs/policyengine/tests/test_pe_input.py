@@ -8,6 +8,8 @@ independent of any specific calculator's dependencies.
 Calculator-specific dependency tests belong in the state's pe/tests/ directory.
 """
 
+from unittest.mock import patch
+
 from django.test import TestCase
 from screener.models import Screen, HouseholdMember, WhiteLabel, Expense, IncomeStream
 from programs.programs.policyengine.policy_engine import pe_input
@@ -311,12 +313,34 @@ class TestPeInputVersionGating(PeInputTestBase):
         result = pe_input(self.screen, [self.ssi], pe_version=version)
         return "meets_ssi_disability_criteria" in result["household"]["people"][self.head_id]
 
-    def test_omitted_when_no_version_pinned(self):
-        # No pin => current default model (1.691.1), which lacks the variable.
-        self.assertFalse(self._meets_ssi_field_present(None))
+    # When unpinned (None / "current"), gating resolves what PE's current model is via
+    # resolve_unpinned_comparable_version(); mock it so these tests are deterministic
+    # and never hit the network. meets_ssi_disability_criteria's floor is (1, 715, 2).
+    def _mock_unpinned(self, resolved):
+        return patch(
+            "programs.programs.policyengine.policy_engine.pe_versions.resolve_unpinned_comparable_version",
+            return_value=resolved,
+        )
 
-    def test_omitted_on_current_alias(self):
-        self.assertFalse(self._meets_ssi_field_present("current"))
+    def test_omitted_when_no_pin_and_current_below_floor(self):
+        # Unpinned + PE current resolves below the floor => variable does not exist there.
+        with self._mock_unpinned((1, 691, 1)):
+            self.assertFalse(self._meets_ssi_field_present(None))
+
+    def test_sent_when_no_pin_and_current_at_or_above_floor(self):
+        # Unpinned + PE current resolves at/above the floor => send it (this is the
+        # fix: gated inputs activate on an empty pin once current supports them).
+        with self._mock_unpinned((1, 732, 0)):
+            self.assertTrue(self._meets_ssi_field_present(None))
+
+    def test_omitted_when_no_pin_and_pe_unreachable(self):
+        # /versions/us unreachable => resolve returns None => conservative withhold.
+        with self._mock_unpinned(None):
+            self.assertFalse(self._meets_ssi_field_present(None))
+
+    def test_current_alias_resolves_like_no_pin(self):
+        with self._mock_unpinned((1, 732, 0)):
+            self.assertTrue(self._meets_ssi_field_present("current"))
 
     def test_omitted_on_older_pinned_version(self):
         self.assertFalse(self._meets_ssi_field_present("1.691.1"))
@@ -328,12 +352,14 @@ class TestPeInputVersionGating(PeInputTestBase):
         self.assertTrue(self._meets_ssi_field_present("1.800.0"))
 
     def test_sent_on_frontier_alias(self):
-        # frontier is the newest released model, so gated inputs are sent.
+        # frontier is the newest released model, so gated inputs are sent without a lookup.
         self.assertTrue(self._meets_ssi_field_present("frontier"))
 
     def test_ungated_input_always_present(self):
-        # A non-gated input (is_disabled) is sent regardless of version.
-        result = pe_input(self.screen, [self.ssi], pe_version=None)
+        # A non-gated input (is_disabled) is sent regardless of version. Ssi carries a
+        # gated input too, so an unpinned request resolves current — mock it offline.
+        with self._mock_unpinned(None):
+            result = pe_input(self.screen, [self.ssi], pe_version=None)
         self.assertIn("is_disabled", result["household"]["people"][self.head_id])
 
 
@@ -379,3 +405,63 @@ class TestVersionSupports(TestCase):
 
     def test_frontier_alias_satisfies_floor(self):
         self.assertTrue(self.supports(self.v("frontier"), (1, 715, 2), ()))
+
+
+class TestResolveUnpinnedVersion(TestCase):
+    """Unit tests for resolving PE's `current` from /versions/us for input gating
+    when there is no pin. Network is always mocked; cache is cleared per test."""
+
+    def setUp(self):
+        from programs.programs.policyengine import versions as pe_versions
+        from django.core.cache import cache
+
+        self.pe_versions = pe_versions
+        cache.delete(pe_versions._PE_VERSIONS_CACHE_KEY)
+
+    def _mock_get(self, *, json_data=None, exc=None, status_ok=True):
+        mock_resp = type("R", (), {})()
+        mock_resp.json = lambda: json_data
+        mock_resp.raise_for_status = (lambda: None) if status_ok else self._raise_http
+        if exc is not None:
+            return patch(
+                "programs.programs.policyengine.versions.requests.get",
+                side_effect=exc,
+            )
+        return patch(
+            "programs.programs.policyengine.versions.requests.get",
+            return_value=mock_resp,
+        )
+
+    @staticmethod
+    def _raise_http():
+        import requests
+
+        raise requests.HTTPError("500")
+
+    def test_resolves_current_to_tuple(self):
+        with self._mock_get(json_data={"current": "1.732.0", "frontier": "1.744.0"}):
+            self.assertEqual(self.pe_versions.resolve_unpinned_comparable_version(), (1, 732, 0))
+
+    def test_network_error_returns_none(self):
+        import requests
+
+        with self._mock_get(exc=requests.ConnectionError("down")):
+            self.assertIsNone(self.pe_versions.resolve_unpinned_comparable_version())
+
+    def test_malformed_payload_returns_none(self):
+        with self._mock_get(json_data={"unexpected": "shape"}):
+            self.assertIsNone(self.pe_versions.resolve_unpinned_comparable_version())
+
+    def test_result_is_cached(self):
+        with self._mock_get(json_data={"current": "1.732.0", "frontier": "1.744.0"}) as mock_get:
+            self.pe_versions.resolve_unpinned_comparable_version()
+            self.pe_versions.resolve_unpinned_comparable_version()
+            self.assertEqual(mock_get.call_count, 1)  # second call served from cache
+
+    def test_failure_not_cached(self):
+        import requests
+
+        with self._mock_get(exc=requests.ConnectionError("down")) as mock_get:
+            self.pe_versions.resolve_unpinned_comparable_version()
+            self.pe_versions.resolve_unpinned_comparable_version()
+            self.assertEqual(mock_get.call_count, 2)  # retried, not cached

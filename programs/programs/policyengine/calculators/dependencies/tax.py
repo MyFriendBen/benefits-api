@@ -34,6 +34,17 @@ class Ileitc(TaxUnit):
     field = "il_eitc"
 
 
+class Kseitc(TaxUnit):
+    field = "ks_total_eitc"
+
+
+class KsChipPremium(TaxUnit):
+    # KanCare CHIP monthly premium per household, returned by PE as an ANNUAL
+    # figure (monthly amount x 12). Surfaced for display (divide by 12 for the
+    # monthly amount); not netted against the CHIP coverage value.
+    field = "ks_chip_premium"
+
+
 class Ilctc(TaxUnit):
     field = "il_ctc"
 

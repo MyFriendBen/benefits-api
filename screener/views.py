@@ -4,6 +4,7 @@ from typing import Optional
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from integrations.clients.rewiring_america import RewiringAmericaClient
+from integrations.clients.google_places import GooglePlacesClient
 from integrations.services.communications import MessageUser
 from programs.programs.policyengine import versions as pe_versions
 from programs.models import Referrer
@@ -76,9 +77,19 @@ class ScreenViewSet(
     API endpoint that allows screens to be viewed or edited.
     """
 
-    # Prefetch current_benefits__program so ScreenSerializer.to_representation can
-    # build the current_benefits list without a per-screen query.
-    queryset = Screen.objects.all().prefetch_related("current_benefits__program").order_by("-submission_date")
+    queryset = (
+        Screen.objects.all()
+        .select_related("user", "white_label")
+        .prefetch_related(
+            "current_benefits__program",
+            "household_members__income_streams",
+            "household_members__insurance",
+            "household_members__energy_calculator",
+            "expenses",
+            "energy_calculator",
+        )
+        .order_by("-submission_date")
+    )
     serializer_class = ScreenSerializer
     permission_classes = [permissions.DjangoModelPermissions]
     filterset_fields = ["agree_to_tos", "is_test"]
@@ -154,15 +165,19 @@ class EligibilityTranslationView(views.APIView):
         EligibilitySnapshot — that ordering is locked by
         screener/tests/test_pe_version_override.py.
         """
-        screen = Screen.objects.prefetch_related(
-            "household_members",
-            "household_members__income_streams",
-            "household_members__insurance",
-            "household_members__energy_calculator",
-            "expenses",
-            "energy_calculator",
-            "current_benefits__program",
-        ).get(uuid=id)
+        screen = (
+            Screen.objects.select_related("white_label")
+            .prefetch_related(
+                "household_members",
+                "household_members__income_streams",
+                "household_members__insurance",
+                "household_members__energy_calculator",
+                "expenses",
+                "energy_calculator",
+                "current_benefits__program",
+            )
+            .get(uuid=id)
+        )
 
         is_admin = request.query_params.get("admin")
 
@@ -343,12 +358,10 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
 
     missing_dependencies = screen.missing_fields()
 
+    program_by_abbr = {p.name_abbreviated: p for p in all_programs}
     pe_calculators = {}
     for calculator_name, Calculator in all_calculators.items():
-        program: Optional[Program] = None
-        for p in all_programs:
-            if calculator_name == p.name_abbreviated:
-                program = p
+        program = program_by_abbr.get(calculator_name)
 
         if program is not None:
             pe_calculators[calculator_name] = Calculator(screen, program, missing_dependencies)
@@ -668,38 +681,27 @@ def urgent_need_results(screen: Screen, data):
     return eligible_urgent_needs
 
 
-class RemRateThrottle(throttling.AnonRateThrottle):
-    """
-    Rate throttle for REM impact proxy requests to prevent API key abuse.
-    Rate is configured via DEFAULT_THROTTLE_RATES["rem"] in settings.
-    Uses a hashed IP as the cache key to avoid storing raw IPs.
-    """
+class HashedIPAnonRateThrottle(throttling.AnonRateThrottle):
+    """AnonRateThrottle that keys on a hashed IP so raw IPs aren't stored."""
 
+    def get_cache_key(self, request, view):
+        ident = self.get_ident(request)
+        if ident is None:
+            return None
+        hashed = hashlib.sha256(ident.encode()).hexdigest()
+        return self.cache_format % {"scope": self.scope, "ident": hashed}
+
+
+class RemRateThrottle(HashedIPAnonRateThrottle):
     scope = "rem"
 
-    def get_cache_key(self, request, view):
-        ident = self.get_ident(request)
-        if ident is None:
-            return None
-        hashed = hashlib.sha256(ident.encode()).hexdigest()
-        return self.cache_format % {"scope": self.scope, "ident": hashed}
 
-
-class NPSRateThrottle(throttling.AnonRateThrottle):
-    """
-    Rate throttle for NPS submissions to prevent abuse.
-    Rate is configured via DEFAULT_THROTTLE_RATES["nps"] in settings.
-    Uses a hashed IP as the cache key to avoid storing raw IPs.
-    """
-
+class NPSRateThrottle(HashedIPAnonRateThrottle):
     scope = "nps"
 
-    def get_cache_key(self, request, view):
-        ident = self.get_ident(request)
-        if ident is None:
-            return None
-        hashed = hashlib.sha256(ident.encode()).hexdigest()
-        return self.cache_format % {"scope": self.scope, "ident": hashed}
+
+class PlacesRateThrottle(HashedIPAnonRateThrottle):
+    scope = "places"
 
 
 class NPSScoreView(views.APIView):
@@ -862,3 +864,37 @@ class RemImpactView(views.APIView):
 
         serializer = RemImpactSerializer(raw)
         return Response(serializer.data)
+
+
+class PlacesAutocompleteView(views.APIView):
+    """
+    Proxies address autocomplete requests to the Google Places API,
+    keeping the API key server-side. Returns US street address predictions
+    restricted to street-level addresses.
+    """
+
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [PlacesRateThrottle]
+
+    def get(self, request, **_kwargs) -> Response:
+        input_text = request.query_params.get("input", "").strip()
+
+        if not input_text:
+            return Response([], status=status.HTTP_200_OK)
+
+        try:
+            client = GooglePlacesClient()
+            predictions = client.autocomplete_address(input_text)
+        except requests.HTTPError as e:
+            http_status = e.response.status_code if e.response is not None else "unknown"
+            return Response(
+                {"error": f"Google Places API error: {http_status}"},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+        except requests.RequestException as e:
+            return Response(
+                {"error": "Google Places request failed.", "detail": str(e)},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        return Response(predictions)

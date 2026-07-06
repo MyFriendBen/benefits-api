@@ -84,6 +84,7 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "nps": "3/hour",  # Limit NPS submissions to prevent abuse
         "rem": "30/hour",  # Limit REM impact proxy requests to protect the upstream API key
+        "places": "200/hour",  # Limit Places Autocomplete proxy requests per IP
     },
 }
 
@@ -418,6 +419,7 @@ UNFOLD = {
 }
 
 REWIRING_AMERICA_API_KEY = config("REWIRING_AMERICA_API_KEY", default="")
+GOOGLE_MAPS_API_KEY = config("GOOGLE_MAPS_API_KEY", default="")
 
 # generate uml with: ./manage.py graph_models --pydot
 # adding -d will exclude the fields

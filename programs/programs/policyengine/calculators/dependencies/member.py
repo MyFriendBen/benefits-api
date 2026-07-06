@@ -1,4 +1,3 @@
-from programs.programs.helpers import snap_ineligible_student
 from .base import Member
 
 
@@ -38,7 +37,30 @@ class FullTimeCollegeStudentDependency(Member):
     field = "is_full_time_college_student"
 
     def value(self):
-        return self.member.student or False
+        return bool(self.member.student and self.member.student_full_time)
+
+
+class PartTimeCollegeStudentDependency(Member):
+    field = "is_part_time_college_student"
+
+    def value(self):
+        return bool(self.member.student and self.member.student_full_time is False)
+
+
+class SnapWorkExceptionDependency(Member):
+    field = "meets_snap_work_exception"
+
+    def value(self):
+        return bool(self.member.student_works_20_plus_hrs or self.member.student_has_work_study)
+
+
+class SnapJobTrainingStudentDependency(Member):
+    field = "is_snap_employment_training_or_work_incentive_student"
+    # First released in policyengine-us 1.752.0 (merged to main 2026-07-01).
+    min_pe_version = (1, 752, 0)
+
+    def value(self):
+        return self.member.student_job_training_program or False
 
 
 class TaxUnitHeadDependency(Member):
@@ -248,6 +270,28 @@ class SsiReportedDependency(Member):
         return self.member.calc_gross_income("yearly", ["sSI"])
 
 
+class UseReportedSsiDependency(Member):
+    """
+    Tells PolicyEngine to count the household's *reported* SSI (ssi_reported)
+    instead of PE's *calculated* ssi wherever a program's countable income reads
+    applicable_ssi (the calculator opts in by including this in its pe_inputs).
+    We always send True so the screener's reported SSI drives the income test.
+
+    Person-level and global within a request: it flips applicable_ssi for every
+    program in that request, so only add it to calculators where reported SSI is
+    the correct measure.
+
+    min_pe_version gates this to the first model that defines use_reported_ssi;
+    sending it to an earlier model 400s the whole request.
+    """
+
+    field = "use_reported_ssi"
+    min_pe_version = (1, 742, 0)
+
+    def value(self):
+        return True
+
+
 class SsdiReportedDependency(Member):
     # Amount in "Social Security disability benefits (SSDI)"
     field = "social_security_disability"
@@ -353,54 +397,6 @@ class SnapChildSupportDependency(Member):
 
     def value(self):
         return self.screen.calc_expenses("yearly", ["childSupport"]) / self.screen.household_size
-
-
-class SnapIneligibleStudentDependency(Member):
-    field = "is_snap_ineligible_student"
-    dependencies = ("age",)
-
-    # PE does not take the age of the children into acount, so we calculate this ourselves
-    def value(self):
-        return snap_ineligible_student(self.screen, self.member)
-
-
-class NcSnapIneligibleStudentDependency(SnapIneligibleStudentDependency):
-    def value(self):
-        member = self.member
-        screen = self.screen
-
-        if not member.student:
-            return False
-
-        # NC part-time exemption
-        if member.student_full_time is False:
-            return False
-
-        # Shared federal exemptions (E1–E6)
-        if member.age < 18 or member.age >= 50:
-            return False
-
-        if member.has_disability():
-            return False
-
-        head_or_spouse = member.is_head() or member.is_spouse()
-
-        if head_or_spouse and screen.num_children(age_max=5) > 0:
-            return False
-
-        single_parent = member.is_head() and not member.is_married()["is_married"]
-
-        if single_parent and screen.num_children(age_max=11) > 0:
-            return False
-
-        if screen.has_base_benefit("tanf"):
-            return False
-
-        # NC Step 3: employment exemptions
-        if member.student_job_training_program or member.student_has_work_study or member.student_works_20_plus_hrs:
-            return False
-
-        return True
 
 
 class TotalHoursWorkedDependency(Member):

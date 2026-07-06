@@ -4,7 +4,7 @@ what each form means. Imported by:
   - configuration.models.PolicyEngineConfig (validates the pinned config value)
   - screener.views (validates the ?pe_version= override)
   - programs.programs.policyengine.policy_engine (parses the resolved version for
-    input gating)
+    input gating; when unpinned, resolves PE's current via resolve_unpinned_comparable_version)
 
 Two kinds of version string:
   - an exact package version, e.g. "1.715.2" (MAJOR.MINOR.PATCH) — the only form
@@ -14,8 +14,14 @@ Two kinds of version string:
     promotes a release, so storing one would let our served version move under us).
 """
 
+import logging
 import re
 from typing import Optional
+
+import requests
+from django.core.cache import cache
+
+logger = logging.getLogger(__name__)
 
 # Exact MAJOR.MINOR.PATCH. The shape (not a hardcoded list) means new PolicyEngine
 # releases need no code change.
@@ -29,6 +35,17 @@ ALIASES = (CURRENT, FRONTIER)
 # Sentinel tuple meaning "newest released model" — compares greater than any real
 # version, so it satisfies any min_pe_version floor.
 NEWEST_VERSION = (float("inf"),)
+
+# PolicyEngine publishes what its floating aliases currently resolve to here:
+#   GET https://household.api.policyengine.org/versions/us -> {"current": "1.732.0", "frontier": "1.744.0"}
+# Used to gate inputs when we have NO pin (ride current): we must know what concrete
+# version "current" is right now, or a min_pe_version floor can never be satisfied.
+PE_VERSIONS_URL = "https://household.api.policyengine.org/versions/us"
+_PE_VERSIONS_CACHE_KEY = "pe_resolved_versions_us"
+# current/frontier only move when PE promotes a release, so a short TTL is plenty and
+# keeps this off the eligibility hot path. Worst case: gating is one TTL window stale
+# right after a PE promotion.
+_PE_VERSIONS_CACHE_TTL = 3600
 
 
 def is_valid_version_number(value: str) -> bool:
@@ -92,3 +109,39 @@ def version_supports(comparable_version: Optional[tuple], min_pe_version: tuple,
         if comparable_version is not None and comparable_version > max_pe_version:
             return False
     return True
+
+
+def _fetch_pe_versions() -> Optional[dict]:
+    """Fetch {"current": "...", "frontier": "..."} from PolicyEngine, cached.
+    Returns None on any failure (network, non-200, bad JSON) — callers must treat
+    None as "unknown" and fall back to the conservative (withhold-gated) path."""
+    cached = cache.get(_PE_VERSIONS_CACHE_KEY)
+    if cached is not None:
+        return cached
+    try:
+        res = requests.get(PE_VERSIONS_URL, timeout=(3, 5))
+        res.raise_for_status()
+        data = res.json()
+        if not isinstance(data, dict) or CURRENT not in data:
+            raise ValueError(f"unexpected payload: {data!r}")
+        cache.set(_PE_VERSIONS_CACHE_KEY, data, _PE_VERSIONS_CACHE_TTL)
+        return data
+    except (requests.RequestException, ValueError) as e:
+        # Don't cache failures — retry next request. Withholding gated inputs on a
+        # miss is safe (PE just uses modeled values); over-sending would 400.
+        logger.warning("Could not resolve PolicyEngine versions from %s: %s", PE_VERSIONS_URL, e)
+        return None
+
+
+def resolve_unpinned_comparable_version() -> Optional[tuple]:
+    """Comparable version to gate inputs against when there is NO pin (ride current).
+
+    With no pin we omit the version string so PE serves `current`; but for input
+    gating we must know what `current` concretely is, or a min_pe_version floor is
+    never satisfiable and version-gated inputs are withheld forever (silently). Ask
+    PE what `current` resolves to and gate against that. Returns None if PE can't be
+    reached — caller then keeps the conservative None (withhold-gated) behavior."""
+    data = _fetch_pe_versions()
+    if not data:
+        return None
+    return to_comparable_pe_version(data.get(CURRENT))
