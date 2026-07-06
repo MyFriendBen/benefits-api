@@ -23,7 +23,6 @@ class ACACache:
     def _process(self):
         data = GoogleSheets(self.sheet_id, self.range_name).data()
 
-        # return {d[0].strip() + " County": float(d[1].replace(",", "")) for d in data}
         result = {}
         for d in data:
             if len(d) < 2:
