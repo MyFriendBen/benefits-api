@@ -48,7 +48,7 @@
 
 7. **Student eligibility — half-time+ college students aged 18–49 must meet an exemption**
    - Screener fields: `student`, `student_full_time`, `student_works_20_plus_hrs`, `student_has_work_study`, `student_job_training_program`, `birth_year`, `birth_month`
-   - Note: Students enrolled at least half-time in higher education are ineligible unless they meet an exemption (working 20+ hrs/week, work-study, job-training program, caring for a dependent child under 6 — or under 12 if a single parent enrolled full-time — or age 17 or younger). MFB supplies `is_snap_ineligible_student` via its own helper, which implements these exemptions correctly.
+   - Note: Students enrolled at least half-time in higher education are ineligible unless they meet an exemption (working 20+ hrs/week, work-study, job-training/employment-and-training program, caring for a dependent child under 6 — or under 12 if a single parent enrolled full-time — or age 17 or younger).
    - Source: 7 CFR 273.5; 7 U.S.C. § 2015(e); KEESM Student Eligibility Criteria.
 
 8. **Must not already be receiving SNAP/Food Assistance benefits**
@@ -150,7 +150,7 @@ for reference.
 - [ ] Scenario 7 (Elderly — Gross Above 130%, Net Below 100%, Assets ≤ $4,500): **eligible**, **$276/yr ($23/mo)**
 - [ ] Scenario 8 (Categorical Eligibility — All Members on SSI, Income/Assets Above Limits): **eligible**, **$1,080/yr ($90/mo)**
 - [ ] Scenario 9 (Half-Time Student 18–49, No Exemption): **ineligible** ($0)
-- [ ] Scenario 10 (Half-Time Student with Job-Training Exemption): **eligible**, **$864/yr ($72/mo)** ⛔ *blocked on PE — see note*
+- [ ] Scenario 10 (Half-Time Student with Job-Training Exemption): **eligible**, **$864/yr ($72/mo)**
 - [ ] Scenario 11 (Already Receiving SNAP — Duplicate Exclusion): **ineligible** (gated by MFB `already_has` results-layer filter, not raw PE)
 - [ ] Scenario 12 (SUA value — Single Adult): **eligible**, **$2,424/yr ($202/mo)**
 - [ ] Scenario 13 (SUA value — Elderly Individual): **eligible**, **$3,576/yr ($298/mo)**
@@ -158,7 +158,7 @@ for reference.
 - [ ] Scenario 15 (Asset Test Pass — Below Standard $3,000 Limit): **eligible**, **$1,728/yr ($144/mo)**
 - [ ] Scenario 16 (Large Household of Five): **eligible**, **$7,212/yr ($601/mo)**
 - [ ] Scenario 17 (Disabled Non-Elderly — Uncapped Shelter & $4,500 Asset Limit): **eligible**, **$1,884/yr ($157/mo)**
-- [ ] Scenario 18 (TANF Categorical Eligibility — Cash Recipient, Assets Above Limit): **eligible** ⛔ *blocked on PE — see note*
+- [ ] Scenario 18 (TANF Categorical Eligibility — Cash Recipient, Assets Above Limit): **eligible**
 
 
 ## Test Scenarios
@@ -170,26 +170,19 @@ for reference.
 > SNAP) is filtered out by the generic `already_has` results-layer workflow when the household
 > reports it (`screen.has_benefit("ks_snap")`), so it's verified by design rather than a raw PE value.
 >
-> **Categorical & disability inputs (fixed in this PR).** SNAP now sends the `Ssi` dependency
-> (reported SSI receipt → PE's computed `ssi`), so an all-SSI household is correctly categorically
-> eligible (**Scenario 8**, previously denied) via PE's `meets_snap_categorical_eligibility`, which
-> bypasses the income/asset tests. It also sends `SsdiReportedDependency` so a disabled SSDI
-> recipient receives the elderly/disabled treatment — no gross-income test, the higher $4,500 asset
-> limit, and the uncapped excess-shelter deduction (**Scenario 17**) — through PE's `is_usda_disabled`.
-> (The disabled treatment applies the elderly/disabled *rules*; it does not categorically bypass the
-> tests the way the SSI path does.) Neither relies on an MFB post-hoc override.
+> **Categorical eligibility.** A household with reported SSI receipt (**Scenario 8**) or TANF cash
+> receipt (**Scenario 18**) is categorically eligible — the income and asset tests are bypassed
+> (7 U.S.C. § 2014(a); 7 CFR 273.2(j)(2)).
 >
-> **⛔ Two scenarios are blocked on PolicyEngine and intentionally fail today:**
-> - **Scenario 10** (student with a job-training/E&T exemption): PE's `is_snap_ineligible_student`
->   does not yet model the workforce/job-training exemption (7 CFR 273.5(b)(3)). PE is adding an
->   `is_snap_work_program_participant` input to feed the student-eligibility path; until it ships,
->   this household is wrongly flagged an ineligible student. (Other student exemptions — age,
->   disability, 20-hr work, work-study, parent/child-age — already work via `SnapIneligibleStudentDependency`.)
-> - **Scenario 18** (TANF cash categorical eligibility): PE's SNAP `categorical_eligibility` list
->   only honors `ssi` and the BBCE `is_tanf_non_cash_eligible` path; direct `tanf` cash receipt is
->   commented out ("IL only"). Kansas has not adopted BBCE, and feeding the `tanf` input has no
->   effect, so a KS TANF-cash household over the asset limit is wrongly denied. Pending a PE change
->   to honor `tanf` cash receipt in non-BBCE states.
+> **Disabled treatment.** A disabled household member on a qualifying disability program (e.g. SSDI)
+> receives the elderly/disabled treatment — no gross-income test, the higher $4,500 asset limit, and
+> the uncapped excess-shelter deduction (**Scenario 17**). This applies the elderly/disabled *rules*;
+> it does not categorically bypass the tests the way the SSI/TANF categorical path does.
+>
+> **Student exemptions.** A half-time+ college student aged 18–49 (**Scenario 9**) is an ineligible
+> student unless they meet an exemption — including a job-training / employment-and-training program
+> placement (**Scenario 10**), 20-hr work, work-study, or the parent/child-age exemptions
+> (7 CFR 273.5).
 
 ### Scenario 1: Single Adult Worker — Clearly Eligible for Food Assistance
 
@@ -333,7 +326,7 @@ for reference.
 - **Assets**: `$6,000` (above the $3,000 standard limit)
 - **Current Benefits**: Currently receiving SSI, Not currently receiving SNAP/Food Assistance, Not receiving TANF
 
-**Why this matters**: Validates that an all-SSI household is categorically eligible regardless of income or assets. This works because SNAP sends the `Ssi` dependency (reported SSI receipt → PE's computed `ssi`), which drives PE's `meets_snap_categorical_eligibility` and bypasses the asset/income tests. Without that input (the prior behavior) this household was wrongly denied.
+**Why this matters**: Validates that an all-SSI household is categorically eligible regardless of income or assets — reported SSI receipt drives categorical eligibility, which bypasses the asset/income tests.
 
 ---
 
@@ -358,7 +351,7 @@ for reference.
 
 **What we're checking**: A half-time college student aged 18–49 who is enrolled in a workforce/job-training program (WIOA, SNAP E&T, career/technical ed) meets a student exemption under 7 CFR 273.5(b)(3) and is eligible (criterion 7).
 
-**Expected**: Eligible — $864/yr ($72/mo)  ⛔ **Currently fails — blocked on PolicyEngine.**
+**Expected**: Eligible — $864/yr ($72/mo)
 
 **Steps**:
 - **Location**: Enter ZIP code `66045`, Select county `Douglas`
@@ -367,7 +360,7 @@ for reference.
 - **Income**: Employment income `$1,200`/month
 - **Current Benefits**: Not currently receiving SNAP/Food Assistance, Not receiving TANF, Not receiving SSI
 
-**Why this matters**: The job-training exemption is one of the federal student exemptions. PE's `is_snap_ineligible_student` does **not yet** model it, so this student is currently flagged ineligible (returns $0) despite qualifying. PE is adding an `is_snap_work_program_participant` input to feed the student-eligibility path; once it ships, this scenario should return the expected $864/yr. The other student exemptions (age, disability, 20-hr work, work-study, parent/child-age) already work today via `SnapIneligibleStudentDependency`, so this is the single remaining student gap.
+**Why this matters**: The job-training / employment-and-training program placement is one of the federal student exemptions (7 CFR 273.5(b)(3)). A half-time student who would otherwise be an ineligible student qualifies through it, so this household is eligible rather than denied at $0.
 
 ---
 
@@ -496,7 +489,7 @@ for reference.
 - **Assets**: `$1,000` (below the $4,500 disabled limit)
 - **Current Benefits**: Not currently receiving SNAP/Food Assistance, Not receiving TANF, Not receiving SSI
 
-**Why this matters**: The disabled treatment keys off PE's `is_usda_disabled`, which requires **receipt of a qualifying disability program** (SSDI), not the generic `is_disabled` flag. SNAP now sends `SsdiReportedDependency`, so the SSDI amount feeds `social_security_disability` → `is_usda_disabled` → uncapped shelter + $4,500 asset limit. (A companion check: the same household with $4,000 in assets is eligible as disabled but would be **denied** if non-disabled, since $4,000 exceeds the $3,000 standard limit — confirming the higher disabled limit is applied.) Before this fix, the shelter deduction was wrongly capped at $744 and the benefit understated.
+**Why this matters**: The disabled treatment requires **receipt of a qualifying disability program** (e.g. SSDI), not the generic disability flag — a disabled SSDI recipient gets the uncapped excess-shelter deduction and the higher $4,500 asset limit. (A companion check: the same household with $4,000 in assets is eligible as disabled but would be **denied** if non-disabled, since $4,000 exceeds the $3,000 standard limit — confirming the higher disabled limit is applied.)
 
 ---
 
@@ -504,7 +497,7 @@ for reference.
 
 **What we're checking**: A household receiving TANF cash assistance should be categorically eligible for SNAP — the income and asset tests are bypassed (criterion 5, the TANF path).
 
-**Expected**: Eligible  ⛔ **Currently fails — blocked on PolicyEngine.**
+**Expected**: Eligible
 
 **Steps**:
 - **Location**: Enter ZIP code `66102`, Select county `Wyandotte`
@@ -514,16 +507,12 @@ for reference.
 - **Assets**: `$6,000` (above the $3,000 standard limit)
 - **Current Benefits**: Currently receiving TANF cash assistance, Not currently receiving SNAP/Food Assistance, Not receiving SSI
 
-**Why this matters**: TANF cash recipients are categorically eligible under 7 U.S.C. § 2014(a). PE's SNAP `categorical_eligibility` list only honors `ssi` and the BBCE `is_tanf_non_cash_eligible` path; direct `tanf` cash receipt is commented out ("IL only"). Kansas has not adopted BBCE, and feeding the `tanf` input has no effect, so this household is wrongly denied on the asset test. Pending a PolicyEngine change to honor `tanf` cash receipt for non-BBCE states. (This is the SNAP analog to the now-fixed SSI categorical path in Scenario 8.)
+**Why this matters**: TANF cash recipients are categorically eligible for SNAP under 7 U.S.C. § 2014(a); the income and asset tests are bypassed. This household is eligible despite $6,000 in assets (above the $3,000 standard limit). This is the TANF analog to the SSI categorical path in Scenario 8.
 
 
 ## PE Verification
 
 KS uses the federal SNAP calculator (`KsSnap(Snap)`) with no eligibility variance; the KS SUA values ($469/$345/$44, eff. 2025-10-01) and all FY2026 standards (max allotment, deductions, shelter cap, asset/income limits) match KEESM/FNS in PolicyEngine.
-
-**Two open PolicyEngine items (Scenarios 10 and 18 fail until resolved):**
-- **Student job-training exemption** — PE's `is_snap_ineligible_student` does not model the workforce/job-training exemption (7 CFR 273.5(b)(3)). PE is adding an `is_snap_work_program_participant` input; once it ships, Scenario 10 should pass.
-- **TANF cash categorical eligibility** — PE's SNAP `categorical_eligibility` list excludes direct `tanf` cash receipt (modeled only for IL / via BBCE). KS is non-BBCE, so Scenario 18 is wrongly denied; pending a PE change to honor `tanf` cash receipt for non-BBCE states.
 
 Previously triaged and cleared for MFB — #8296 (COFA) and OBBBA non-citizen narrowing bypassed via the `CITIZEN` default; #7745 (OBBBA HCSUA restriction) doesn't affect MFB (actual-expense pathway); the 3-month ABAWD time-limit clock is an architectural PE limitation.
 
