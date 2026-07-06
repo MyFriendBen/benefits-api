@@ -27,11 +27,11 @@ class Snap(PolicyEngineSpmCalulator):
     pe_name = "snap"
     pe_inputs = [
         *SNAP_BASE_INPUTS,
-        dependency.member.SnapHigherEdStudentDependency,
-        dependency.member.PartTimeCollegeStudentDependency,
         dependency.member.FullTimeCollegeStudentDependency,
-        dependency.member.FederalWorkStudyParticipantDependency,
-        # Add student_works_20_plus_hrs dependency here once its PE field is confirmed
+        dependency.member.PartTimeCollegeStudentDependency,
+        dependency.member.SnapWorkExceptionDependency,
+        # SnapJobTrainingStudentDependency (is_snap_employment_training_or_work_incentive_student)
+        # not wired until PE API ships the variable (not in v1.744.0).
     ]
     pe_outputs = [dependency.spm.Snap]
     pe_period_month = "01"

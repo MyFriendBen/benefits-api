@@ -40,13 +40,6 @@ class FullTimeCollegeStudentDependency(Member):
         return bool(self.member.student and self.member.student_full_time)
 
 
-class SnapHigherEdStudentDependency(Member):
-    field = "is_snap_higher_ed_student"
-
-    def value(self):
-        return self.member.student or False
-
-
 class PartTimeCollegeStudentDependency(Member):
     field = "is_part_time_college_student"
 
@@ -54,11 +47,18 @@ class PartTimeCollegeStudentDependency(Member):
         return bool(self.member.student and self.member.student_full_time is False)
 
 
-class FederalWorkStudyParticipantDependency(Member):
-    field = "is_federal_work_study_participant"
+class SnapWorkExceptionDependency(Member):
+    field = "meets_snap_work_exception"
 
     def value(self):
-        return self.member.student_has_work_study or False
+        return bool(self.member.student_works_20_plus_hrs or self.member.student_has_work_study)
+
+
+class SnapJobTrainingStudentDependency(Member):
+    field = "is_snap_employment_training_or_work_incentive_student"
+
+    def value(self):
+        return self.member.student_job_training_program or False
 
 
 class TaxUnitHeadDependency(Member):

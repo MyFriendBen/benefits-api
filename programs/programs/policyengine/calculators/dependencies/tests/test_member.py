@@ -1305,39 +1305,6 @@ class TestSelfEmploymentIncomeBeforeLsrDependency(TestCase):
         self.assertEqual(dep.value(), 0)
 
 
-class TestSnapHigherEdStudentDependency(TestCase):
-    """Tests for SnapHigherEdStudentDependency (PE input: is_snap_higher_ed_student).
-
-    True for any student enrolled half-time or more; False otherwise.
-    """
-
-    def setUp(self):
-        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
-        self.screen = Screen.objects.create(
-            white_label=self.white_label,
-            zipcode="78701",
-            county="Test County",
-            household_size=1,
-            completed=False,
-        )
-
-    def _dep(self, **kwargs):
-        m = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=25, **kwargs)
-        return member.SnapHigherEdStudentDependency(self.screen, m, {})
-
-    def test_field_name(self):
-        self.assertEqual(self._dep(student=False).field, "is_snap_higher_ed_student")
-
-    def test_true_when_student(self):
-        self.assertTrue(self._dep(student=True).value())
-
-    def test_false_when_not_student(self):
-        self.assertFalse(self._dep(student=False).value())
-
-    def test_false_when_student_is_none(self):
-        self.assertFalse(self._dep(student=None).value())
-
-
 class TestPartTimeCollegeStudentDependency(TestCase):
     """Tests for PartTimeCollegeStudentDependency (PE input: is_part_time_college_student).
 
@@ -1376,10 +1343,12 @@ class TestPartTimeCollegeStudentDependency(TestCase):
         self.assertFalse(self._dep(student=False, student_full_time=False).value())
 
 
-class TestFederalWorkStudyParticipantDependency(TestCase):
-    """Tests for FederalWorkStudyParticipantDependency (PE input: is_federal_work_study_participant).
+class TestSnapWorkExceptionDependency(TestCase):
+    """Tests for SnapWorkExceptionDependency (PE input: meets_snap_work_exception).
 
-    Maps student_has_work_study → True/False.
+    PE's Exception 4: weekly_hours_worked_before_lsr >= 20 OR is_federal_work_study_participant.
+    MFB overrides the whole expression directly from the two self-reported screener flags,
+    avoiding the lossy income-approximated hours proxy.
     """
 
     def setUp(self):
@@ -1394,19 +1363,60 @@ class TestFederalWorkStudyParticipantDependency(TestCase):
 
     def _dep(self, **kwargs):
         m = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=25, **kwargs)
-        return member.FederalWorkStudyParticipantDependency(self.screen, m, {})
+        return member.SnapWorkExceptionDependency(self.screen, m, {})
 
     def test_field_name(self):
-        self.assertEqual(self._dep().field, "is_federal_work_study_participant")
+        self.assertEqual(self._dep().field, "meets_snap_work_exception")
+
+    def test_true_when_works_20_plus_hrs(self):
+        self.assertTrue(self._dep(student_works_20_plus_hrs=True).value())
 
     def test_true_when_has_work_study(self):
         self.assertTrue(self._dep(student_has_work_study=True).value())
 
-    def test_false_when_no_work_study(self):
-        self.assertFalse(self._dep(student_has_work_study=False).value())
+    def test_true_when_both_flags_set(self):
+        self.assertTrue(self._dep(student_works_20_plus_hrs=True, student_has_work_study=True).value())
 
-    def test_false_when_work_study_is_none(self):
-        self.assertFalse(self._dep(student_has_work_study=None).value())
+    def test_false_when_neither_flag_set(self):
+        self.assertFalse(self._dep(student_works_20_plus_hrs=False, student_has_work_study=False).value())
+
+    def test_false_when_both_flags_none(self):
+        self.assertFalse(self._dep(student_works_20_plus_hrs=None, student_has_work_study=None).value())
+
+
+class TestSnapJobTrainingStudentDependency(TestCase):
+    """Tests for SnapJobTrainingStudentDependency
+    (PE input: is_snap_employment_training_or_work_incentive_student).
+
+    Maps student_job_training_program → PE's Exception 3 / WIOA field, which PE
+    now models (shipped after MFB-640). Closes the NC job-training regression.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=1,
+            completed=False,
+        )
+
+    def _dep(self, **kwargs):
+        m = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=25, **kwargs)
+        return member.SnapJobTrainingStudentDependency(self.screen, m, {})
+
+    def test_field_name(self):
+        self.assertEqual(self._dep().field, "is_snap_employment_training_or_work_incentive_student")
+
+    def test_true_when_in_job_training(self):
+        self.assertTrue(self._dep(student_job_training_program=True).value())
+
+    def test_false_when_not_in_job_training(self):
+        self.assertFalse(self._dep(student_job_training_program=False).value())
+
+    def test_false_when_job_training_is_none(self):
+        self.assertFalse(self._dep(student_job_training_program=None).value())
 
 
 class TestFullTimeCollegeStudentDependencyFixed(TestCase):
