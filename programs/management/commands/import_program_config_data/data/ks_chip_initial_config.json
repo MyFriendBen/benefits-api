@@ -1,0 +1,72 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "program_category": {
+    "external_name": "ks_healthcare",
+    "name": "Health Care",
+    "icon": "health_care"
+  },
+  "program": {
+    "name_abbreviated": "ks_chip",
+    "year": 2026,
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "refugee"
+    ],
+    "name": "Children's Health Insurance Program (CHIP)",
+    "description": "CHIP gives free or low-cost health coverage to children under 19. It pays for doctor visits, dental and vision care, hospital stays, and prescriptions.\n\nIn Kansas, CHIP is part of KanCare. If your child qualifies, you pick a KanCare health plan that covers their care.\n\nCHIP is for families who earn too much for Medicaid but still need help paying for coverage. Depending on your income, you may pay a small monthly premium.\n\nYou apply for CHIP through KanCare. The same form also checks if your child can get Medicaid.",
+    "description_short": "Free or low-cost health coverage for kids under 19",
+    "learn_more_link": "https://www.kancare.ks.gov/apply-now/eligibility",
+    "apply_button_link": "https://cssp.kees.ks.gov/apspssp/",
+    "apply_button_description": "",
+    "estimated_application_time": "15 - 30 minutes",
+    "estimated_delivery_time": "30 - 45 days",
+    "estimated_value": "",
+    "value_format": "estimated_annual",
+    "value_type": "benefit",
+    "base_program": "chp",
+    "has_calculator": true,
+    "show_on_current_benefits": true,
+    "show_in_has_benefits_step": false,
+    "website_description": "Free or low-cost health coverage for kids under 19"
+  },
+  "documents": [
+    {
+      "external_name": "ks_home"
+    },
+    {
+      "external_name": "ks_child_id_proof",
+      "text": "Proof of identity for the child (ex: birth certificate, school ID)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_ssn_proof"
+    },
+    {
+      "external_name": "ks_earned_income"
+    },
+    {
+      "external_name": "ks_unearned_income",
+      "text": "Proof of unearned income, if any (ex: child support, Social Security, unemployment, or pension)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_us_status"
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "healthy_kansas_kids",
+      "name": "Healthy Kansas Kids (GraceMed Health Clinic)",
+      "email": "hkk@healthykansaskids.com",
+      "phone_number": "+18333090121",
+      "description": "Free help applying for or renewing KanCare (Medicaid and CHIP) for children, families, and pregnant women. Run by GraceMed Health Clinic — get help by phone, at a clinic, or at a community event across Kansas.",
+      "assistance_link": "https://www.healthykansaskids.org/application-assistance",
+      "languages": ["English", "Spanish"]
+    }
+  ]
+}
