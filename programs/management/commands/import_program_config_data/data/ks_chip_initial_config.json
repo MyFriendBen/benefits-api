@@ -55,7 +55,10 @@
       "link_text": ""
     },
     {
-      "external_name": "ks_us_status"
+      "external_name": "ks_us_status",
+      "text": "Proof of citizenship or immigration status (ex: birth certificate, passport, immigration documents)",
+      "link_url": "",
+      "link_text": ""
     }
   ],
   "navigators": [
