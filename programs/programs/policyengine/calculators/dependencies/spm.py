@@ -173,21 +173,23 @@ class Tanf(SpmUnit):
     """
     tanf as both PE input and output.
 
-    - If user reports having tanf: send 1 so PE treats the household as
-      receiving TANF, enabling categorical eligibility for programs like
-      Early Head Start.
-    - If no reported tanf: return None so PE calculates the TANF benefit
-      amount the household is eligible for.
+    When the household reports a TANF cash amount, send it as the `tanf` value. A
+    positive `tanf` drives SNAP/Head Start/WIC categorical eligibility, and consumers
+    that read the amount (spm_unit_benefits, tx_ceap_countable_income, HUD income) get
+    the real figure. Otherwise send None so PE computes the benefit — we only override
+    when we have an actual reported amount.
+
+    has_base_benefit covers every white-label variant (ks_tanf, co_tanf, ma_tafdc, …);
+    has_benefit is an exact match that would miss the prefixed names.
     """
 
     field = "tanf"
 
     def value(self):
-        # Use has_base_benefit so every white-label TANF variant (ks_tanf, co_tanf,
-        # wa_tanf, ma_tafdc, …) counts — has_benefit("tanf") is an exact name match
-        # and would miss the prefixed names every white label actually records,
-        # silently disarming SNAP TANF categorical eligibility.
-        return 1 if self.screen.has_base_benefit("tanf") else None
+        if not self.screen.has_base_benefit("tanf"):
+            return None
+        reported_amount = self.screen.calc_gross_income("yearly", ["cashAssistance"])
+        return reported_amount if reported_amount > 0 else None
 
 
 class CoTanf(SpmUnit):

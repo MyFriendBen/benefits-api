@@ -10,24 +10,15 @@ SNAP_BASE_INPUTS = [
     dependency.member.AgeDependency,
     dependency.member.MedicalExpenseDependency,
     dependency.member.IsDisabledDependency,
-    # Reported SSI receipt. PE's `meets_snap_categorical_eligibility` keys off the computed
-    # `ssi` variable, so a real SSI recipient whose unearned income is high enough that PE
-    # recomputes `ssi = 0` would otherwise be denied categorical eligibility (and the
-    # elderly/disabled asset limit). Feeding reported SSI as the `ssi` input — the same
-    # pattern other calculators use — lets actual receipt drive categorical eligibility.
+    # SSI and TANF cash receipt drive SNAP categorical eligibility (income/asset tests
+    # bypassed); both feed the reported amount so PE consumers that read the dollar value
+    # (e.g. spm_unit_benefits, tx_ceap income) stay correct.
     dependency.member.Ssi,
-    # Reported TANF cash receipt. A household receiving cash TANF is categorically eligible for
-    # SNAP — income and asset tests bypassed (7 CFR 273.2(j)(2)). PE honors `tanf` in its SNAP
-    # `categorical_eligibility` list, so feeding reported receipt as the `tanf` input drives
-    # categorical eligibility the same way `Ssi` does. (The dependency reads has_base_benefit so
-    # every white-label variant — ks_tanf, co_tanf, ma_tafdc … — counts.)
     dependency.spm.Tanf,
-    # PE's SNAP elderly/disabled treatment (uncapped excess-shelter deduction and the higher
-    # $4,500 asset limit) keys off `is_usda_disabled`, which requires receipt of a qualifying
-    # disability program — NOT the generic `is_disabled` flag. SsdiReportedDependency feeds
-    # the SSDI benefit amount so a disabled applicant on SSDI gets the disabled treatment
-    # (otherwise the shelter deduction is wrongly capped). MeetsSsiDisabilityCriteriaDependency
-    # is version-gated and only takes effect once a supporting PE version is pinned.
+    # Disabled treatment (uncapped shelter deduction, $4,500 asset limit) requires disability-
+    # program receipt via is_usda_disabled, not the generic is_disabled flag: SsdiReportedDependency
+    # feeds the SSDI amount, MeetsSsiDisabilityCriteriaDependency the SSI-disability input PE needs
+    # (both version-gated; see the dependency classes).
     dependency.member.SsdiReportedDependency,
     dependency.member.MeetsSsiDisabilityCriteriaDependency,
     dependency.spm.SnapEmergencyAllotmentDependency,
