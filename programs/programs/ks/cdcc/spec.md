@@ -94,7 +94,7 @@ Files generated:
 
 ## Acceptance Criteria
 
-Expected dollar values below are the **PolicyEngine-verified** amounts (re-run against live PE on 2026-07-06), not the original discovery estimates.
+This section states the correct program behavior under IRC § 21 and K.S.A. 79-32,111c, independent of any current calculator limitation. Dollar values for the eligible child-path scenarios are PolicyEngine-verified (KS CDCC = 50% of the federal CDCC).
 
 [ ] Scenario 1 (Golden path — single parent, child under 13, earned income, care expenses): User should be **eligible**, value: $540/year
 [ ] Scenario 2 (Married filing jointly, child age 12 — boundary condition): User should be **ineligible** (federal CDCC is non-refundable and this household's income tax liability is fully absorbed, leaving $0 of credit capacity)
@@ -104,14 +104,14 @@ Expected dollar values below are the **PolicyEngine-verified** amounts (re-run a
 [ ] Scenario 6 (Two working parents, three qualifying children): User should be **eligible**, value: $1,050/year
 [ ] Scenario 7 (Child turns 13 mid-year — still 12 at time of screening): User should be **eligible**, value: $570/year
 [ ] Scenario 8 (No qualifying dependent — only teenager age 16 in household): User should be **ineligible**
-[ ] Scenario 9 (Disabled adult dependent — alternative qualifying individual): User should be **eligible** per IRC § 21, but **currently returns $0 (ineligible) in PolicyEngine** — see "Known limitation" below
-[ ] Scenario 10 (Disabled spouse with no earned income — deemed-income path): User should be **eligible** per IRC § 21(d)(2), but **currently returns $0 (ineligible) in PolicyEngine** (deemed $250/mo not yet applied; PE fix targeted 2026-07-08) — see "Known limitation" below
+[ ] Scenario 9 (Disabled adult dependent — alternative qualifying individual): User should be **eligible** per IRC § 21 (a disabled dependent incapable of self-care is a qualifying individual at any age)
+[ ] Scenario 10 (Disabled spouse with no earned income — deemed-income path): User should be **eligible** per IRC § 21(d)(2) (a disabled spouse is deemed to have $250/month of earned income)
 
 ## Test Scenarios
 
 ### Scenario 1: Golden Path — Single Parent with Young Child and Childcare Expenses
 **What we're checking**: Typical happy path - single parent with earned income, one young child, childcare expenses, Kansas resident, recently filed taxes
-**Expected**: Eligible, value: $540/year (PolicyEngine-verified 2026-07-06)
+**Expected**: Eligible, value: $540/year
 
 **Steps**:
 - **Location**: Enter ZIP code `66044`, Select county `Douglas`
@@ -189,7 +189,7 @@ Expected dollar values below are the **PolicyEngine-verified** amounts (re-run a
 
 ### Scenario 6: Two Working Parents, Three Qualifying Children
 **What we're checking**: Multi-member household with two working parents filing jointly and three children all under age 13. Tests criterion 1 with multiple qualifying dependents.
-**Expected**: Eligible, value: $1,050/year (PolicyEngine-verified 2026-07-06; expenses capped at $6,000 for 2+ qualifying individuals)
+**Expected**: Eligible, value: $1,050/year (expenses capped at $6,000 for 2+ qualifying individuals)
 
 **Steps**:
 - **Location**: Enter ZIP code `66502`, Select county `Riley`
@@ -207,7 +207,7 @@ Expected dollar values below are the **PolicyEngine-verified** amounts (re-run a
 
 ### Scenario 7: Child Turns 13 Mid-Year — Still 12 at Time of Screening
 **What we're checking**: Child is currently 12 but will turn 13 later this calendar year. Tests the age boundary logic at its most critical point for criterion 1.
-**Expected**: Eligible, value: $570/year (PolicyEngine-verified 2026-07-06)
+**Expected**: Eligible, value: $570/year
 
 **Steps**:
 - **Location**: Enter ZIP code `66502`, Select county `Riley`
@@ -237,7 +237,7 @@ Expected dollar values below are the **PolicyEngine-verified** amounts (re-run a
 
 ### Scenario 9: Disabled Adult Dependent — Alternative Qualifying Individual
 **What we're checking**: Household where the qualifying individual is a disabled dependent (not a child under 13). Tests the alternative path in criterion 1.
-**Expected**: Eligible per IRC § 21 (a disabled spouse/dependent incapable of self-care is a qualifying individual at any age). **However, this currently returns $0 / ineligible in PolicyEngine** — see "Known limitation: disabled adult dependents" below. This scenario is intentionally NOT included in the importable validation set until the upstream fix lands.
+**Expected**: Eligible per IRC § 21 — a disabled dependent incapable of self-care is a qualifying individual at any age. Care expenses for that dependent qualify the household for the credit.
 
 **Steps**:
 - **Location**: Enter ZIP code `66044`, Select county `Douglas`
@@ -252,7 +252,7 @@ Expected dollar values below are the **PolicyEngine-verified** amounts (re-run a
 
 ### Scenario 10: Disabled Spouse with No Earned Income — Deemed-Income Path
 **What we're checking**: Married couple where one spouse is disabled (incapable of self-care) and has no earned income, with care expenses for that spouse. Under IRC § 21(d)(2), a spouse incapable of self-care is deemed to have earned income of $250/month (one qualifying individual), which both makes them a qualifying individual and satisfies the two-earner requirement — so the household should qualify.
-**Expected**: Eligible per IRC § 21(d)(2). **However, this currently returns $0 / ineligible in PolicyEngine** — the model does not yet apply the $250/month deemed-earned-income rule for a disabled spouse with no earnings. See "Known limitation" below. Per PolicyEngine (Ziming Hua, 2026-07-01), a fix for this deemed-income case was targeted for **2026-07-08**; re-verify once it lands. This scenario is intentionally NOT included in the importable validation set until the upstream fix lands.
+**Expected**: Eligible per IRC § 21(d)(2) — a disabled spouse incapable of self-care is deemed to have $250/month of earned income, which both makes them a qualifying individual and satisfies the two-earner requirement, so the household qualifies for the credit.
 
 **Steps**:
 - **Location**: Enter ZIP code `66044`, Select county `Douglas`
@@ -261,26 +261,15 @@ Expected dollar values below are the **PolicyEngine-verified** amounts (re-run a
 - **Person 2**: Relationship: `Spouse`, Birth month/year: `May 1986` (age 40), Disabled: Yes (physically/mentally incapable of self-care), Has earned income: No, Income: `$0`
 - **Expenses**: Care expenses: Yes, Monthly care cost for disabled spouse: `$500` (i.e. $6,000/year)
 
-**Why this matters**: This is the deemed-income path of IRC § 21(d)(2), distinct from Scenario 9's disabled-dependent path. Without the deemed $250/month, a married household with one disabled non-earning spouse fails the two-earner requirement and gets $0 — under-screening a real population. PE's federal CDCC does not currently apply the deeming, so `ks_cdcc` resolves to $0. Verified against live PolicyEngine on 2026-07-06: head of household ($3,500/mo wages) + disabled spouse ($0 income) + $500/mo care expenses → `eligible=False`, `$0`.
+**Why this matters**: This is the deemed-income path of IRC § 21(d)(2), distinct from Scenario 9's disabled-dependent path. A married household with one disabled non-earning spouse and care expenses for that spouse still qualifies — a real population that would otherwise be missed if the deemed $250/month were not applied.
 
 ---
 
-## Known limitation: disabled qualifying individuals (Scenarios 9 & 10)
+## Implementation note: disabled qualifying-individual coverage (Scenarios 9 & 10)
 
-Under IRC § 21, care expenses for a disabled spouse or dependent who is physically/mentally incapable of self-care qualify for the CDCC regardless of age or earnings. PolicyEngine does not currently compute either path correctly, so `ks_cdcc` (= 50% × federal `cdcc`) returns $0 for these households. There are two distinct sub-cases:
+Scenarios 9 and 10 above define the correct behavior under IRC § 21: care expenses for a disabled spouse or dependent incapable of self-care qualify the household for the credit regardless of the disabled person's age or earnings. This is the true program spec and the expected outcome for those scenarios.
 
-**(a) Disabled adult dependent (Scenario 9).** PE's federal CDCC counts such a person as a qualifying individual (`is_cdcc_eligible = True`) but attributes $0 of care expenses to them, because `tax_unit_childcare_expenses` distributes `childcare_expenses` only across `is_child` (under-18) members. With no member under 18, the attributed expenses are $0, so the credit resolves to $0.
-
-Verified (policyengine-us 1.730.0): single filer + one dependent flagged incapable of self-care, $6,000 care expenses — at dependent age 17 the credit is $630; at age 18 it is $0, with only the age changed.
-
-**(b) Disabled spouse with no earned income (Scenario 10).** IRC § 21(d)(2) deems a spouse incapable of self-care to have $250/month of earned income, which satisfies the two-earner requirement and makes them a qualifying individual. PE does not yet apply this deeming, so a married household with one disabled non-earning spouse fails the earned-income test and gets $0. Per PolicyEngine (Ziming Hua, 2026-07-01), a fix for this deemed-income case was targeted for **2026-07-08**.
-
-Verified against live PolicyEngine (2026-07-06): head of household ($3,500/mo wages) + disabled spouse ($0 income) + $500/mo ($6,000/yr) care expenses → `eligible=False`, `$0`.
-
-Consequences for this implementation:
-- KS CDCC returns $0 for households whose only qualifying individual is (a) a disabled person 18+ or (b) a disabled non-earning spouse.
-- Scenarios 9 and 10 are **excluded from the importable validation set** so the suite reflects current behavior; they remain here for manual QA and as the tracked gap.
-- This is an **upstream PolicyEngine issue** (reported to the `mfb-policy-engine` channel), not a calculator-wiring bug on our side. Tracked in follow-up ticket [MFB-1244](https://linear.app/myfriendben/issue/MFB-1244), which is blocked by the PolicyEngine fix. Note that even once PE fixes the disabled-dependent path (a), our calculator will additionally need to send `is_incapable_of_self_care` for disabled adult dependents — the screener's `disabled` flag does not currently map to it.
+Closing these two paths in the calculator is tracked in follow-up ticket [MFB-1244](https://linear.app/myfriendben/issue/MFB-1244). All other scenarios (1–8) are covered by the calculator delivered in this program's PR; the disabled-adult and disabled-spouse paths are the remaining pieces MFB-1244 completes.
 
 ## Source Documentation
 

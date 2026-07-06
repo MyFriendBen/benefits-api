@@ -204,11 +204,7 @@
   "definitions": {
     "householdMember": {
       "type": "object",
-      "required": ["relationship", "insurance"],
-      "anyOf": [
-        { "required": ["age"] },
-        { "required": ["birth_year", "birth_month"] }
-      ],
+      "required": ["relationship", "age", "insurance"],
       "properties": {
         "frontend_id": {
           "type": "string",
