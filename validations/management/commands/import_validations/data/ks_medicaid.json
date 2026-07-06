@@ -1,0 +1,706 @@
+[
+  {
+    "notes": "KS KanCare (Medicaid) - S1 Pregnant woman, low income - eligible (PREGNANT)",
+    "household": {
+      "white_label": "ks",
+      "household_size": 1,
+      "zipcode": "66603",
+      "county": "Shawnee",
+      "household_assets": 0.0,
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "pregnant": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 1200.0, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ks_medicaid",
+      "eligible": true,
+      "value": 3648
+    }
+  },
+  {
+    "notes": "KS KanCare (Medicaid) - S2 Pregnant woman near 171% FPL boundary - eligible (PREGNANT)",
+    "household": {
+      "white_label": "ks",
+      "household_size": 1,
+      "zipcode": "66502",
+      "county": "Riley",
+      "household_assets": 0.0,
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 29,
+          "pregnant": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 2900.0, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ks_medicaid",
+      "eligible": true,
+      "value": 3648
+    }
+  },
+  {
+    "notes": "KS KanCare (Medicaid) - S3 Parent + 2 children, very low income, on SNAP - all eligible (PARENT, OLDER_CHILD, YOUNG_CHILD)",
+    "household": {
+      "white_label": "ks",
+      "household_size": 3,
+      "zipcode": "66604",
+      "county": "Shawnee",
+      "household_assets": 0.0,
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "current_benefits": ["ks_snap"],
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 34,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 620.0, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "child",
+          "age": 8,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "child",
+          "age": 5,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ks_medicaid",
+      "eligible": true,
+      "value": 10944
+    }
+  },
+  {
+    "notes": "KS KanCare (Medicaid) - S4 Parent just over 38% FPL - children eligible, parent ineligible",
+    "household": {
+      "white_label": "ks",
+      "household_size": 3,
+      "zipcode": "66502",
+      "county": "Riley",
+      "household_assets": 0.0,
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 900.0, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "child",
+          "age": 8,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "child",
+          "age": 5,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ks_medicaid",
+      "eligible": true,
+      "value": 7296
+    }
+  },
+  {
+    "notes": "KS KanCare (Medicaid) - S5 Single childless adult, low income - ineligible (non-expansion)",
+    "household": {
+      "white_label": "ks",
+      "household_size": 1,
+      "zipcode": "66604",
+      "county": "Shawnee",
+      "household_assets": 0.0,
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 45,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 350.0, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ks_medicaid",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "KS KanCare (Medicaid) - S6 Childless adult age 64 - ineligible (not yet 65)",
+    "household": {
+      "white_label": "ks",
+      "household_size": 1,
+      "zipcode": "66604",
+      "county": "Shawnee",
+      "household_assets": 0.0,
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 64,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 250.0, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ks_medicaid",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "KS KanCare (Medicaid) - S7 Senior 65+, low income, assets above $2,000 limit - eligible (AGED); asset test not screened",
+    "household": {
+      "white_label": "ks",
+      "household_size": 1,
+      "zipcode": "67202",
+      "county": "Sedgwick",
+      "household_assets": 5000.0,
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 66,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 900.0, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ks_medicaid",
+      "eligible": true,
+      "value": 20508
+    }
+  },
+  {
+    "notes": "KS KanCare (Medicaid) - S8 Disabled adult on SSDI, low income - eligible (DISABLED)",
+    "household": {
+      "white_label": "ks",
+      "household_size": 1,
+      "zipcode": "66604",
+      "county": "Shawnee",
+      "household_assets": 0.0,
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 50,
+          "disabled": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSDisability", "amount": 800.0, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ks_medicaid",
+      "eligible": true,
+      "value": 32460
+    }
+  },
+  {
+    "notes": "KS KanCare (Medicaid) - S9 SSI recipient - eligible (SSI_RECIPIENT/DISABLED)",
+    "household": {
+      "white_label": "ks",
+      "household_size": 1,
+      "zipcode": "66102",
+      "county": "Wyandotte",
+      "household_assets": 1000.0,
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 40,
+          "disabled": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSI", "amount": 943.0, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ks_medicaid",
+      "eligible": true,
+      "value": 32460
+    }
+  },
+  {
+    "notes": "KS KanCare (Medicaid) - S10 Infant under 1 eligible, parents ineligible (INFANT)",
+    "household": {
+      "white_label": "ks",
+      "household_size": 3,
+      "zipcode": "66604",
+      "county": "Shawnee",
+      "household_assets": 0.0,
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 32,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 1800.0, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "spouse",
+          "age": 33,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 800.0, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "child",
+          "age": 0,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ks_medicaid",
+      "eligible": true,
+      "value": 3648
+    }
+  },
+  {
+    "notes": "KS KanCare (Medicaid) - S11 School-age child eligible, parent (employer insurance) ineligible (OLDER_CHILD)",
+    "household": {
+      "white_label": "ks",
+      "household_size": 2,
+      "zipcode": "66044",
+      "county": "Douglas",
+      "household_assets": 0.0,
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 41,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 1600.0, "frequency": "monthly" }
+          ],
+          "insurance": { "employer": true }
+        },
+        {
+          "relationship": "child",
+          "age": 11,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ks_medicaid",
+      "eligible": true,
+      "value": 3648
+    }
+  },
+  {
+    "notes": "KS KanCare (Medicaid) - S14 Young adult age 20, childless, low income - ineligible (young_adult KS -inf)",
+    "household": {
+      "white_label": "ks",
+      "household_size": 1,
+      "zipcode": "66604",
+      "county": "Shawnee",
+      "household_assets": 0.0,
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 20,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 300.0, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ks_medicaid",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "KS KanCare (Medicaid) - S15 Disabled adult, earnings above SGA - ineligible (SGA gate)",
+    "household": {
+      "white_label": "ks",
+      "household_size": 1,
+      "zipcode": "66604",
+      "county": "Shawnee",
+      "household_assets": 0.0,
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 50,
+          "disabled": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 2000.0, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ks_medicaid",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "KS KanCare (Medicaid) - S16 Legally blind, under 65, income under FBR - eligible (DISABLED)",
+    "household": {
+      "white_label": "ks",
+      "household_size": 1,
+      "zipcode": "66604",
+      "county": "Shawnee",
+      "household_assets": 0.0,
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 50,
+          "visually_impaired": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 500.0, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ks_medicaid",
+      "eligible": true,
+      "value": 32460
+    }
+  },
+  {
+    "notes": "KS KanCare (Medicaid) - S17 Long-term disability only (no disabled flag, no SSDI) - eligible (DISABLED)",
+    "household": {
+      "white_label": "ks",
+      "household_size": 1,
+      "zipcode": "66604",
+      "county": "Shawnee",
+      "household_assets": 0.0,
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 56,
+          "long_term_disability": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 600.0, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ks_medicaid",
+      "eligible": true,
+      "value": 32460
+    }
+  },
+  {
+    "notes": "KS KanCare (Medicaid) - S18 Aged, income above SSI FBR - ineligible (ABD income ceiling)",
+    "household": {
+      "white_label": "ks",
+      "household_size": 1,
+      "zipcode": "67202",
+      "county": "Sedgwick",
+      "household_assets": 0.0,
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 68,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 1100.0, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ks_medicaid",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "KS KanCare (Medicaid) - S19 Aged AND disabled - eligible (DISABLED value takes priority over AGED)",
+    "household": {
+      "white_label": "ks",
+      "household_size": 1,
+      "zipcode": "67202",
+      "county": "Sedgwick",
+      "household_assets": 0.0,
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 68,
+          "disabled": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "sSRetirement", "amount": 500.0, "frequency": "monthly" },
+            { "type": "sSDisability", "amount": 300.0, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ks_medicaid",
+      "eligible": true,
+      "value": 32460
+    }
+  },
+  {
+    "notes": "KS KanCare (Medicaid) - S20 Pregnant woman above 171% FPL - ineligible",
+    "household": {
+      "white_label": "ks",
+      "household_size": 1,
+      "zipcode": "66604",
+      "county": "Shawnee",
+      "household_assets": 0.0,
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 28,
+          "pregnant": true,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 3500.0, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ks_medicaid",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "KS KanCare (Medicaid) - S21 Parent + young child, income above child limits - both ineligible",
+    "household": {
+      "white_label": "ks",
+      "household_size": 2,
+      "zipcode": "66604",
+      "county": "Shawnee",
+      "household_assets": 0.0,
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 34,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 3500.0, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "child",
+          "age": 4,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ks_medicaid",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "KS KanCare (Medicaid) - S22 Parent + infant, income above infant's own 171% ceiling - both ineligible",
+    "household": {
+      "white_label": "ks",
+      "household_size": 2,
+      "zipcode": "66604",
+      "county": "Shawnee",
+      "household_assets": 0.0,
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 3500.0, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "child",
+          "age": 0,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ks_medicaid",
+      "eligible": false
+    }
+  },
+  {
+    "notes": "KS KanCare (Medicaid) - S23 Parent + older child, income above older child's own 138% ceiling - both ineligible",
+    "household": {
+      "white_label": "ks",
+      "household_size": 2,
+      "zipcode": "66044",
+      "county": "Douglas",
+      "household_assets": 0.0,
+      "is_test": true,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "age": 41,
+          "has_income": true,
+          "income_streams": [
+            { "type": "wages", "amount": 2600.0, "frequency": "monthly" }
+          ],
+          "insurance": { "none": true }
+        },
+        {
+          "relationship": "child",
+          "age": 11,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": { "none": true }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ks_medicaid",
+      "eligible": false
+    }
+  }
+]
