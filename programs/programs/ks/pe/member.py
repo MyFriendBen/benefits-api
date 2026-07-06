@@ -1,9 +1,60 @@
-from programs.programs.federal.pe.member import Medicaid
-from programs.programs.policyengine.calculators.base import (
-    PolicyEngineMembersCalculator,
-)
 import programs.programs.policyengine.calculators.dependencies as dependency
+from programs.programs.federal.pe.member import Medicaid
+from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
 from screener.models import HouseholdMember
+
+
+class KsKanCare(Medicaid):
+    """KanCare is Kansas's Medicaid program.
+
+    Subclass of the federal PE ``medicaid`` calculator (pattern: CO/NC/MA/WA).
+    Kansas has not adopted ACA adult expansion, so PE returns ineligible for
+    non-disabled, non-pregnant, childless adults under 65 at any income.
+
+    KS-specific input handling (see spec Implementation Notes 1-2):
+
+    - The federal ``SsiCountableResourcesDependency`` (``ssi_countable_resources``,
+      from ``household_assets``) is intentionally omitted so the ABD $2,000/$3,000
+      asset test never fires. MFB does not screen assets for this pathway; the
+      limit is surfaced in the program description instead. Income-eligible
+      seniors/ABD applicants therefore stay eligible.
+    - ``MeetsSsiDisabilityCriteriaDependency`` maps the screener's disability /
+      long-term-disability / SSDI signals to PE's ``meets_ssi_disability_criteria``
+      input (not ``is_ssi_disabled`` directly, so the SGA earnings test still
+      applies). ``IsBlindDependency`` maps ``visually_impaired`` to ``is_blind``,
+      which also exempts blind applicants from SGA. Without these, disabled/blind
+      applicants would wrongly return ineligible (non-expansion KS has no
+      adult-expansion fallback).
+    """
+
+    pe_inputs = [
+        dependency.member.AgeDependency,
+        dependency.member.PregnancyDependency,
+        dependency.member.IsDisabledDependency,
+        dependency.member.MeetsSsiDisabilityCriteriaDependency,
+        dependency.member.IsBlindDependency,
+        *dependency.irs_gross_income,
+        dependency.household.KsStateCodeDependency,
+    ]
+
+    # KHI / Kansas Action for Children FY2023 KS Medicaid & CHIP per-enrollee
+    # spending by group, monthly (annual figure returned = value * 12):
+    #   MAGI groups  -> $3,644/yr  -> $304/mo
+    #   aged (65+)   -> $20,511/yr -> $1,709/mo
+    #   disabled     -> $32,459/yr -> $2,705/mo
+    medicaid_categories = {
+        "NONE": 0,
+        "ADULT": 304,
+        "INFANT": 304,
+        "YOUNG_CHILD": 304,
+        "OLDER_CHILD": 304,
+        "PREGNANT": 304,
+        "YOUNG_ADULT": 304,
+        "PARENT": 304,
+        "SSI_RECIPIENT": 2705,
+        "AGED": 1709,
+        "DISABLED": 2705,
+    }
 
 
 class KsChip(PolicyEngineMembersCalculator):
@@ -24,14 +75,24 @@ class KsChip(PolicyEngineMembersCalculator):
     variable returned as an ANNUAL figure = monthly premium x 12). It is surfaced
     for display alongside the coverage value (divide by 12 for the monthly amount)
     and is NOT netted against the coverage value.
+
+    Dependency on KanCare Medicaid: PE gates ``is_chip_eligible_child`` on
+    ``~is_medicaid_eligible``, so CHIP must compute Medicaid eligibility the same
+    way KanCare does. All programs on a screen share a single PolicyEngine
+    simulation (``pe_input`` merges every program's ``pe_inputs``), so CHIP reuses
+    ``KsKanCare.pe_inputs`` verbatim rather than the federal ``Medicaid.pe_inputs``.
+    This keeps the shared ``medicaid`` / ``is_medicaid_eligible`` computation
+    consistent and — critically — omits ``SsiCountableResourcesDependency``. If CHIP
+    sent ``ssi_countable_resources``, that input would leak into the shared sim and
+    re-enable the ABD asset gate that KanCare intentionally drops (Medicaid spec
+    Implementation Note 2), wrongly making income-eligible seniors/ABD applicants
+    ineligible for Medicaid whenever CHIP is also active. The asset input is not
+    needed for CHIP either — KanCare CHIP applies no resource test.
     """
 
     pe_name = "chip"
     pe_inputs = [
-        dependency.member.AgeDependency,
-        dependency.member.PregnancyDependency,
-        *Medicaid.pe_inputs,
-        dependency.household.KsStateCodeDependency,
+        *KsKanCare.pe_inputs,
     ]
     pe_outputs = [
         dependency.member.Chip,

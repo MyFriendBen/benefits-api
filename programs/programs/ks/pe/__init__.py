@@ -4,6 +4,7 @@ import programs.programs.ks.pe.member as member
 from programs.programs.policyengine.calculators.base import PolicyEngineCalulator
 
 ks_member_calculators = {
+    "ks_medicaid": member.KsKanCare,
     "ks_chip": member.KsChip,
 }
 
