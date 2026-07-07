@@ -92,6 +92,13 @@ class Command(BaseCommand):
         # labels for a single end-of-run summary (and to drive --strict).
         self._unmapped_icons: set[str] = set()
 
+        # Icons and translations are otherwise re-resolved for every option on every white label,
+        # but the icon vocabulary is a small fixed set and many labels recur across sections/white
+        # labels. Cache both across the run so each is resolved with at most one DB round-trip
+        # instead of one per option — the seed's main source of N+1 queries.
+        self._icon_cache: dict[str, Icon] = {}
+        self._translation_cache: dict[str, Translation] = {}
+
         white_labels_to_update = white_label_config.keys() if options["all"] else options["white_labels"]
 
         if len(white_labels_to_update) == 0:
@@ -348,7 +355,9 @@ class Command(BaseCommand):
 
             # Reconcile: drop rows for this white label + option type that are no longer in the
             # Python config, so the table converges to the config on every run (mirroring how a
-            # Configuration JSON blob drops removed keys when it is overwritten).
+            # Configuration JSON blob drops removed keys when it is overwritten). The Translation
+            # a pruned row pointed at is intentionally left in place — translations are long-lived
+            # and may be shared; only the FormOption link is removed.
             FormOption.objects.filter(white_label=white_label, option_type=option_type).exclude(
                 id__in=seeded_ids
             ).delete()
@@ -367,14 +376,29 @@ class Command(BaseCommand):
                 lucide_name = FALLBACK_LUCIDE_NAME
                 self._unmapped_icons.add(icon_name)
 
+        cached = self._icon_cache.get(icon_name)
+        if cached is not None:
+            return cached
+
         icon, _ = Icon.objects.update_or_create(name=icon_name, defaults={"lucide_name": lucide_name})
+        self._icon_cache[icon_name] = icon
         return icon
 
     def _get_or_create_translation(self, text: dict) -> Translation:
         """Reuse an existing Translation by label (do not clobber human/auto translations);
         create it from the config default message only when missing (MFB-1200 decision)."""
         label = text.get("_label")
+        if not label:
+            # Every audited config entry has a text._label; fail loudly rather than silently
+            # seeding a null-label translation if that assumption is ever violated.
+            raise CommandError(f"Form option config entry is missing text._label (entry: {text!r}).")
+
+        cached = self._translation_cache.get(label)
+        if cached is not None:
+            return cached
+
         translation = Translation.objects.filter(label=label).first()
         if translation is None:
             translation = Translation.objects.add_translation(label, default_message=text.get("_default_message", ""))
+        self._translation_cache[label] = translation
         return translation

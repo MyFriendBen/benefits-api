@@ -2,6 +2,7 @@
 Tests for the get_form_options endpoint and related models.
 """
 
+from django.core.management.base import CommandError
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
@@ -252,8 +253,10 @@ class TestAddConfigIconResolution(TestCase):
 
     def setUp(self):
         self.cmd = Command()
-        # handle() initializes this; set it directly since we call the helper in isolation.
+        # handle() initializes these; set them directly since we call the helper in isolation.
         self.cmd._unmapped_icons = set()
+        self.cmd._icon_cache = {}
+        self.cmd._translation_cache = {}
 
     def test_mapped_icon_resolves_to_its_lucide_name(self):
         icon = self.cmd._get_or_create_icon("Medicaid")
@@ -279,3 +282,31 @@ class TestAddConfigIconResolution(TestCase):
         Icon.objects.create(name="Medicaid", lucide_name="stale")
         icon = self.cmd._get_or_create_icon("Medicaid")
         self.assertEqual(icon.lucide_name, "heart-pulse")
+
+    def test_icon_cache_avoids_repeat_queries(self):
+        # First resolution hits the DB; the cached second resolution must not (avoids the N+1
+        # of re-upserting the same icon for every option on every white label).
+        first = self.cmd._get_or_create_icon("Medicaid")
+        with self.assertNumQueries(0):
+            second = self.cmd._get_or_create_icon("Medicaid")
+        self.assertIs(first, second)
+
+
+class TestAddConfigTranslationResolution(TestCase):
+    """The add_config dual-write's text -> Translation resolution (MFB-1200)."""
+
+    def setUp(self):
+        self.cmd = Command()
+        self.cmd._translation_cache = {}
+
+    def test_missing_label_raises(self):
+        # A config entry with no text._label would otherwise seed a null-label translation;
+        # fail loudly instead.
+        with self.assertRaises(CommandError):
+            self.cmd._get_or_create_translation({})
+
+    def test_translation_cache_avoids_repeat_queries(self):
+        first = self.cmd._get_or_create_translation({"_label": "foo.bar", "_default_message": "Foo"})
+        with self.assertNumQueries(0):
+            second = self.cmd._get_or_create_translation({"_label": "foo.bar", "_default_message": "Foo"})
+        self.assertIs(first, second)
