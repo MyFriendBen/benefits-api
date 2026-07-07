@@ -9,6 +9,7 @@ from authentication.models import User
 from screener.models import WhiteLabel
 from programs.models import Icon, FormOption
 from translations.models import Translation
+from configuration.management.commands.add_config import Command, FALLBACK_LUCIDE_NAME
 
 
 class TestIconModel(TestCase):
@@ -244,3 +245,37 @@ class TestGetFormOptionsEndpoint(APITestCase):
             self.client.get(self.url)
 
         self.assertEqual(len(ctx.captured_queries), baseline)
+
+
+class TestAddConfigIconResolution(TestCase):
+    """The add_config dual-write's _icon -> Icon resolution (MFB-1200)."""
+
+    def setUp(self):
+        self.cmd = Command()
+        # handle() initializes this; set it directly since we call the helper in isolation.
+        self.cmd._unmapped_icons = set()
+
+    def test_mapped_icon_resolves_to_its_lucide_name(self):
+        icon = self.cmd._get_or_create_icon("Medicaid")
+        self.assertEqual(icon.name, "Medicaid")
+        self.assertEqual(icon.lucide_name, "heart-pulse")
+        self.assertEqual(self.cmd._unmapped_icons, set())
+
+    def test_missing_icon_falls_back_to_circle_dot(self):
+        # A config entry with no _icon is not drift, so it must not be recorded as unmapped.
+        icon = self.cmd._get_or_create_icon(None)
+        self.assertEqual(icon.name, FALLBACK_LUCIDE_NAME)
+        self.assertEqual(icon.lucide_name, FALLBACK_LUCIDE_NAME)
+        self.assertEqual(self.cmd._unmapped_icons, set())
+
+    def test_unmapped_icon_falls_back_and_is_recorded(self):
+        icon = self.cmd._get_or_create_icon("BogusIcon")
+        # The bad name is preserved (admin feedback) but rendered via the fallback glyph.
+        self.assertEqual(icon.name, "BogusIcon")
+        self.assertEqual(icon.lucide_name, FALLBACK_LUCIDE_NAME)
+        self.assertIn("BogusIcon", self.cmd._unmapped_icons)
+
+    def test_lucide_name_is_refreshed_on_reseed(self):
+        Icon.objects.create(name="Medicaid", lucide_name="stale")
+        icon = self.cmd._get_or_create_icon("Medicaid")
+        self.assertEqual(icon.lucide_name, "heart-pulse")

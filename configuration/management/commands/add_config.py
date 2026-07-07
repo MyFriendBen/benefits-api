@@ -1,14 +1,21 @@
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from configuration.models import (
     Configuration,
 )
 from configuration.white_labels import white_label_config
+from configuration.white_labels.base import ConfigurationData
 from programs.models import FormOption, Icon
-from screener.models import NPSScore
+from screener.models import NPSScore, WhiteLabel
 from translations.models import Translation
 import argparse
+
+
+# Lucide icon rendered when a config _icon key is missing or has no mapping. Mirrors the
+# frontend's `OPTION_CARD_ICON_MAP[icon._icon] ?? 'circle-dot'` fallback so a missing/unmapped
+# icon renders identically whether resolved on the frontend or served from the DB.
+FALLBACK_LUCIDE_NAME = "circle-dot"
 
 
 # Backend copy of the frontend OPTION_CARD_ICON_MAP (benefits-calculator
@@ -64,7 +71,7 @@ FORM_OPTION_SECTIONS = [
 class Command(BaseCommand):
     help = "Create and add config data to database"
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument("white_labels", nargs="*", type=str, help="The list of states to update the config for")
         parser.add_argument(
             "-a",
@@ -72,9 +79,19 @@ class Command(BaseCommand):
             action=argparse.BooleanOptionalAction,
             help="Update all states",
         )
+        parser.add_argument(
+            "--strict",
+            action="store_true",
+            help="Fail (and roll back) if any config _icon key has no Lucide mapping, instead of "
+            "defaulting it to circle-dot. Intended for CI / pre-merge checks.",
+        )
 
     @transaction.atomic
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
+        # Config _icon keys encountered with no ICON_LUCIDE_MAP entry, collected across all white
+        # labels for a single end-of-run summary (and to drive --strict).
+        self._unmapped_icons: set[str] = set()
+
         white_labels_to_update = white_label_config.keys() if options["all"] else options["white_labels"]
 
         if len(white_labels_to_update) == 0:
@@ -292,7 +309,20 @@ class Command(BaseCommand):
                 defaults={"data": WhiteLabelData.communications, "active": True},
             )
 
-    def _seed_form_options(self, white_label, WhiteLabelData):
+        # Surface any icon drift once, rather than one easy-to-miss warning per occurrence.
+        if self._unmapped_icons:
+            unmapped = ", ".join(sorted(self._unmapped_icons))
+            message = (
+                f"{len(self._unmapped_icons)} config icon(s) had no Lucide mapping and "
+                f'defaulted to "{FALLBACK_LUCIDE_NAME}": {unmapped}. '
+                "Add them to ICON_LUCIDE_MAP (and the frontend OPTION_CARD_ICON_MAP)."
+            )
+            if options["strict"]:
+                # Raising inside the atomic handle rolls back the whole seed.
+                raise CommandError(message)
+            self.stdout.write(self.style.WARNING(message))
+
+    def _seed_form_options(self, white_label: WhiteLabel, WhiteLabelData: type[ConfigurationData]) -> None:
         """Mirror the Python-config form options into the FormOption / Icon tables (MFB-1200)."""
         for attr, option_type, is_person_split in FORM_OPTION_SECTIONS:
             section = getattr(WhiteLabelData, attr, {}) or {}
@@ -323,23 +353,24 @@ class Command(BaseCommand):
                 id__in=seeded_ids
             ).delete()
 
-    def _get_or_create_icon(self, icon_name):
+    def _get_or_create_icon(self, icon_name: str | None) -> Icon:
         """Upsert an Icon row for the config _icon key, resolving its Lucide name from the map.
-        lucide_name is derived from the frontend, so overwriting it to match the map is intended."""
+        A missing _icon or one with no mapping both fall back to circle-dot, so the API never
+        serves a null icon and both cases render like the frontend's own fallback. lucide_name is
+        frontend-derived, so overwriting it to match the map on each run is intended."""
         if not icon_name:
-            return None
-
-        lucide_name = ICON_LUCIDE_MAP.get(icon_name)
-        if lucide_name is None:
-            lucide_name = "circle-dot"
-            self.stdout.write(
-                self.style.WARNING(f'No Lucide mapping for icon "{icon_name}"; defaulting to "circle-dot"')
-            )
+            icon_name = FALLBACK_LUCIDE_NAME
+            lucide_name = FALLBACK_LUCIDE_NAME
+        else:
+            lucide_name = ICON_LUCIDE_MAP.get(icon_name)
+            if lucide_name is None:
+                lucide_name = FALLBACK_LUCIDE_NAME
+                self._unmapped_icons.add(icon_name)
 
         icon, _ = Icon.objects.update_or_create(name=icon_name, defaults={"lucide_name": lucide_name})
         return icon
 
-    def _get_or_create_translation(self, text):
+    def _get_or_create_translation(self, text: dict) -> Translation:
         """Reuse an existing Translation by label (do not clobber human/auto translations);
         create it from the config default message only when missing (MFB-1200 decision)."""
         label = text.get("_label")
