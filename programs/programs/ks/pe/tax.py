@@ -10,3 +10,18 @@ class Kseitc(PolicyEngineTaxUnitCalulator):
         dependency.household.KsStateCodeDependency,
     ]
     pe_outputs = [dependency.tax.Kseitc]
+
+
+class KsCdcc(PolicyEngineTaxUnitCalulator):
+    pe_name = "ks_cdcc"
+    pe_inputs = [
+        dependency.member.AgeDependency,
+        dependency.member.TaxUnitHeadDependency,
+        dependency.member.TaxUnitSpouseDependency,
+        dependency.member.TaxUnitDependentDependency,
+        dependency.member.IsDisabledDependency,
+        dependency.spm.ChildCareDependency,
+        dependency.household.KsStateCodeDependency,
+        *dependency.irs_gross_income,
+    ]
+    pe_outputs = [dependency.tax.KsCdcc]
