@@ -147,7 +147,7 @@ The core screening factors are fully covered: age (under 19), income (at or belo
 - [ ] Scenario 13 (Age-banded Medicaid floor — child age 3, ~145% FPL): **ineligible for CHIP** (age 1–5 child is Medicaid-eligible)
 - [ ] Scenario 14 (Oldest eligible age — child age 18, ~177% FPL): **eligible**, $1,896/yr value, $20/mo premium
 - [ ] Scenario 15 (Child with non-ESI / private coverage — `has_health_coverage_other_than_chip=True`): **ineligible/$0** — PE correctly returns ineligible (gap #8577 resolved in PE 1.752.1)
-- [ ] Scenario 16 (Two CHIP-eligible uninsured children — ~178% FPL): **eligible**, $3,793/yr value (PE raw: 2 × $1,896.49 → $3,793), $20/mo premium (per-family charge, not doubled)
+- [ ] Scenario 16 (Two CHIP-eligible uninsured children — ~178% FPL): **eligible**, $3,792/yr value (PE raw per child $1,896.4944 → 2 × = $3,792.99, which the platform **truncates** to the integer **$3,792** — not rounded to $3,793), $20/mo premium (per-family charge, not doubled)
 
 ## Test Scenarios
 
@@ -377,8 +377,8 @@ Each scenario lists PE-verified expected eligibility and premium. Birth years as
 ---
 
 ### Scenario 16: Two CHIP-eligible uninsured children — value scales, premium stays flat
-**What we're checking**: When two siblings are both CHIP-eligible and uninsured, the coverage value is per-child ($1,896/yr × 2 → $3,793/yr PE total) while the household premium remains a single flat charge ($20/mo, not doubled).
-**Expected**: Eligible · coverage value **$3,793/yr** (PE raw: 2 × $1,896.49 → $3,793; display value $1,896/yr per child is per-child rounded) · **$20/mo** premium (per-family, FPL ≈178%)
+**What we're checking**: When two siblings are both CHIP-eligible and uninsured, the coverage value is per-child ($1,896.4944/yr × 2 = $3,792.99, truncated to **$3,792/yr** total) while the household premium remains a single flat charge ($20/mo, not doubled).
+**Expected**: Eligible · coverage value **$3,792/yr** (PE raw per child $1,896.4944; 2 × = $3,792.99, which the platform **truncates** to the integer **$3,792** — the per-child display value is still $1,896) · **$20/mo** premium (per-family, FPL ≈178%)
 
 **Steps**:
 - **Location**: ZIP `67202`, county `Sedgwick`
@@ -388,7 +388,7 @@ Each scenario lists PE-verified expected eligibility and premium. Birth years as
 - **Person 3**: Child, born `January 2019` (age 7), no income, insurance: none, not on Medicaid
 - **Person 4**: Child, born `March 2016` (age 10), no income, insurance: none, not on Medicaid
 
-**Why this matters**: Verifies two implementation requirements that could independently fail: (1) the coverage value aggregates per child — PE's `chip` output returns `per_capita_chip` (~$1,896.49) for each eligible member, so both must be summed (2 × $1,896.49 → $3,793; the $1,896 display value is per-child rounded, not the aggregate); (2) `ks_chip_premium` is a TaxUnit/household-level output — it returns one flat premium regardless of how many children are enrolled. A developer could plausibly double the premium for two children, or fail to sum per-child coverage values correctly. Both children are ages 6–18 at ~178% FPL (above the 133% Medicaid floor) and uninsured — each is independently CHIP-eligible.
+**Why this matters**: Verifies two implementation requirements that could independently fail: (1) the coverage value aggregates per child — PE's `chip` output returns `per_capita_chip` (~$1,896.49) for each eligible member, so both must be summed (2 × $1,896.4944 = $3,792.99, which the platform truncates to the integer **$3,792**; the $1,896 display value is the per-child figure, not the aggregate); (2) `ks_chip_premium` is a TaxUnit/household-level output — it returns one flat premium regardless of how many children are enrolled. A developer could plausibly double the premium for two children, or fail to sum per-child coverage values correctly. Both children are ages 6–18 at ~178% FPL (above the 133% Medicaid floor) and uninsured — each is independently CHIP-eligible.
 
 ---
 

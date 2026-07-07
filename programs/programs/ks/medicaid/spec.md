@@ -232,9 +232,9 @@ Scenarios 7, 8, 16, and 17 are eligible because of the KS calculator's committed
 **Steps**:
 - **Location**: ZIP `66604`, county `Shawnee`
 - **Household**: 1 person
-- **Person 1**: Head of Household, born `July 1961` (age 64), male, US citizen, not disabled, employment income `$250`/mo, insurance: none
+- **Person 1**: Head of Household, born `December 1961` (age 64), male, US citizen, not disabled, employment income `$250`/mo, insurance: none
 
-**Why this matters**: Distinguishes "not yet 65" from the ABD age trigger — pairs with Scenario 7 (age 66, eligible).
+**Why this matters**: Distinguishes "not yet 65" from the ABD age trigger — pairs with Scenario 7 (age 66, eligible). The birth month is intentionally late in the year (December) so the applicant is unambiguously age 64 on any run date; a birth month equal to the current month would resolve to age 65 under the platform's month-only age arithmetic and wrongly qualify under the AGED pathway.
 
 ---
 
