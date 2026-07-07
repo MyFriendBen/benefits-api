@@ -44,7 +44,7 @@ class TestFormOptionModel(TestCase):
             text=self.translation,
             order=1,
         )
-        self.assertEqual(str(opt), "test - condition: housing")
+        self.assertEqual(str(opt), "test - condition/all: housing")
 
     def test_null_icon_allowed(self):
         opt = FormOption.objects.create(

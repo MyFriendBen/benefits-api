@@ -5,8 +5,60 @@ from configuration.models import (
     Configuration,
 )
 from configuration.white_labels import white_label_config
+from programs.models import FormOption, Icon
 from screener.models import NPSScore
+from translations.models import Translation
 import argparse
+
+
+# Backend copy of the frontend OPTION_CARD_ICON_MAP (benefits-calculator
+# src/Components/Config/configHook.tsx) plus the three energy-calculator icons resolved in
+# transformItemIcon's switch. This is the canonical _icon -> Lucide-name vocabulary used to
+# seed the Icon table. Re-verify against the frontend after benefits-calculator PR #2142
+# (MFB-1245) merges.
+ICON_LUCIDE_MAP = {
+    # Health insurance
+    "None": "ban",
+    "Employer": "briefcase",
+    "PrivateInsurance": "circle-user-round",
+    "Medicaid": "heart-pulse",
+    "Medicare": "stethoscope",
+    "Chp": "baby",
+    "Emergency_medicaid": "ambulance",
+    "Family_planning": "heart-handshake",
+    "VA": "shield-plus",
+    # Conditions
+    "Student": "graduation-cap",
+    "Pregnant": "sprout",
+    "BlindOrVisuallyImpaired": "glasses",
+    "Disabled": "accessibility",
+    "LongTermDisability": "calendar-clock",
+    # Acute needs
+    "Food": "apple",
+    "Baby_supplies": "baby",
+    "Housing": "house",
+    "Support": "messages-square",
+    "Child_development": "shapes",
+    "Job_resources": "briefcase-business",
+    "Dental_care": "smile",
+    "Legal_services": "scale",
+    "Savings": "piggy-bank",
+    "Military": "shield",
+    "Aging": "tree-deciduous",
+    "Youth_development": "shapes",
+    # Energy-calculator icons (resolved in transformItemIcon's switch, per PR #2142)
+    "SurvivingSpouse": "user-round",
+    "Wheelchair": "accessibility",
+    "HeartRate": "square-activity",
+}
+
+# (config attribute, FormOption.option_type, has you/them split). Person-less sections use
+# the "all" sentinel.
+FORM_OPTION_SECTIONS = [
+    ("acute_condition_options", "acute_condition", False),
+    ("health_insurance_options", "health_insurance", True),
+    ("condition_options", "condition", True),
+]
 
 
 class Command(BaseCommand):
@@ -191,6 +243,13 @@ class Command(BaseCommand):
                 defaults={"data": WhiteLabelData.condition_options, "active": True},
             )
 
+            # Dual-write the you/them/all form options into the FormOption / Icon tables
+            # (MFB-1200). The Configuration rows above remain the source of truth consumed by
+            # the frontend until the unified endpoint (MFB-1247) and its consumer (MFB-1248)
+            # ship; this keeps the new tables in sync in the meantime. Placed after the
+            # is_default guard so _default is skipped, matching the Configuration rows above.
+            self._seed_form_options(white_label, WhiteLabelData)
+
             # Save counties_by_zipcode to database
             Configuration.objects.update_or_create(
                 name="counties_by_zipcode",
@@ -232,3 +291,59 @@ class Command(BaseCommand):
                 white_label=white_label,
                 defaults={"data": WhiteLabelData.communications, "active": True},
             )
+
+    def _seed_form_options(self, white_label, WhiteLabelData):
+        """Mirror the Python-config form options into the FormOption / Icon tables (MFB-1200)."""
+        for attr, option_type, is_person_split in FORM_OPTION_SECTIONS:
+            section = getattr(WhiteLabelData, attr, {}) or {}
+
+            if is_person_split:
+                person_groups = [(person, section.get(person, {})) for person in ("you", "them")]
+            else:
+                person_groups = [("all", section)]
+
+            seeded_ids = []
+            for person, options in person_groups:
+                for order, (value, entry) in enumerate(options.items()):
+                    icon = self._get_or_create_icon(entry.get("icon", {}).get("_icon"))
+                    text = self._get_or_create_translation(entry.get("text", {}))
+                    form_option, _ = FormOption.objects.update_or_create(
+                        white_label=white_label,
+                        option_type=option_type,
+                        person=person,
+                        value=value,
+                        defaults={"icon": icon, "text": text, "order": order, "active": True},
+                    )
+                    seeded_ids.append(form_option.id)
+
+            # Reconcile: drop rows for this white label + option type that are no longer in the
+            # Python config, so the table converges to the config on every run (mirroring how a
+            # Configuration JSON blob drops removed keys when it is overwritten).
+            FormOption.objects.filter(white_label=white_label, option_type=option_type).exclude(
+                id__in=seeded_ids
+            ).delete()
+
+    def _get_or_create_icon(self, icon_name):
+        """Upsert an Icon row for the config _icon key, resolving its Lucide name from the map.
+        lucide_name is derived from the frontend, so overwriting it to match the map is intended."""
+        if not icon_name:
+            return None
+
+        lucide_name = ICON_LUCIDE_MAP.get(icon_name)
+        if lucide_name is None:
+            lucide_name = "circle-dot"
+            self.stdout.write(
+                self.style.WARNING(f'No Lucide mapping for icon "{icon_name}"; defaulting to "circle-dot"')
+            )
+
+        icon, _ = Icon.objects.update_or_create(name=icon_name, defaults={"lucide_name": lucide_name})
+        return icon
+
+    def _get_or_create_translation(self, text):
+        """Reuse an existing Translation by label (do not clobber human/auto translations);
+        create it from the config default message only when missing (MFB-1200 decision)."""
+        label = text.get("_label")
+        translation = Translation.objects.filter(label=label).first()
+        if translation is None:
+            translation = Translation.objects.add_translation(label, default_message=text.get("_default_message", ""))
+        return translation
