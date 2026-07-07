@@ -161,6 +161,7 @@ for reference.
 - [ ] Scenario 18 (TANF Categorical Eligibility — Cash Recipient, Assets Above Limit): **eligible**, **$2,880/yr ($240/mo)**
 - [ ] Scenario 19 (Half-Time Student Working 20+ Hours/Week): **eligible**, **$864/yr ($72/mo)**
 - [ ] Scenario 20 (Half-Time Student with Federal Work-Study): **eligible**, **$864/yr ($72/mo)**
+- [ ] Scenario 21 (Single Full-Time Student Parent with Dependent Child): **eligible**, **$3,840/yr ($320/mo)**
 
 
 ## Test Scenarios
@@ -184,7 +185,7 @@ for reference.
 > **Student exemptions.** A half-time+ college student aged 18–49 (**Scenario 9**) is an ineligible
 > student unless they meet an exemption — a job-training / employment-and-training program placement
 > (**Scenario 10**), working 20+ hours/week (**Scenario 19**), federal work-study (**Scenario 20**),
-> or the parent/child-age exemptions (7 CFR 273.5).
+> or the parent-of-a-dependent-child exemption (**Scenario 21**) (7 CFR 273.5).
 
 ### Scenario 1: Single Adult Worker — Clearly Eligible for Food Assistance
 
@@ -544,6 +545,24 @@ for reference.
 - **Current Benefits**: Not currently receiving SNAP/Food Assistance, Not receiving TANF, Not receiving SSI
 
 **Why this matters**: Work-study participation is one of the federal student exemptions. A half-time student who would otherwise be an ineligible student qualifies through it, so this household is eligible rather than denied at $0.
+
+---
+
+### Scenario 21: Single Full-Time Student Parent with a Dependent Child
+
+**What we're checking**: A single parent enrolled full-time in higher education, responsible for a dependent child under 12, meets a student exemption (7 CFR 273.5(b)(4)) and is eligible (criterion 7, parent exemption).
+
+**Expected**: Eligible — $3,840/yr ($320/mo)
+
+**Steps**:
+- **Location**: Enter ZIP code `66045`, Select county `Douglas`
+- **Household**: Number of people: `2`
+- **Person 1**: Birth month/year: `January 2000` (age 26), Relationship: Head of Household, Student status: enrolled in higher education full-time, Not married, No work-study, No job-training program, Not working 20+ hrs, No disability
+- **Person 2**: Birth month/year: `January 2018` (age 8), Relationship: Child, No income
+- **Income**: Employment income (Person 1) `$1,200`/month
+- **Current Benefits**: Not currently receiving SNAP/Food Assistance, Not receiving TANF, Not receiving SSI
+
+**Why this matters**: The parent exemption is one of the federal student exemptions — a single parent enrolled full-time with a dependent child under 12 (or, for a two-parent household, a child under 6) qualifies. Without it, the student parent would be excluded and the household under-served.
 
 
 ## PE Verification
