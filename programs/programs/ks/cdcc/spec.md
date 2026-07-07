@@ -88,7 +88,7 @@ The core eligibility requirements — having a qualifying dependent (child under
 Dollar values for the eligible scenarios are PolicyEngine-verified (KS CDCC = 50% of the federal CDCC).
 
 [ ] Scenario 1 (Golden path — single parent, child under 13, earned income, care expenses): User should be **eligible**, value: $540/year
-[ ] Scenario 2 (Married filing jointly, child age 12 — boundary condition): User should be **ineligible** (federal CDCC is non-refundable and this household's income tax liability is fully absorbed, leaving $0 of credit capacity)
+[ ] Scenario 2 (Married filing jointly, child age 12 — boundary condition): User should be **ineligible** (at this income the household owes no federal income tax, and the CDCC is non-refundable, so it resolves to $0)
 [ ] Scenario 3 (Zero earned income — only investment income): User should be **ineligible**
 [ ] Scenario 4 (Child age 13 — just above qualifying age cutoff): User should be **ineligible**
 [ ] Scenario 5 (Married couple, non-working spouse — spouse lacks earned income): User should be **ineligible**
@@ -117,7 +117,7 @@ Dollar values for the eligible scenarios are PolicyEngine-verified (KS CDCC = 50
 
 ### Scenario 2: Married Filing Jointly — Child Age 12 Boundary Condition
 **What we're checking**: Married couple both with earned income, filing jointly, child just under the age 13 cutoff. Tests criterion 1 (age boundary) and criterion 3 (joint filing) together.
-**Expected**: Ineligible — at $22,800 MFJ income the household's federal income tax liability is fully absorbed by other credits, leaving $0 of capacity for the non-refundable CDCC, so the KS credit ($0) is $0. (The age-boundary and joint-filing eligibility logic is still exercised; only the dollar value resolves to $0.)
+**Expected**: Ineligible — at $22,800 MFJ income the household owes no federal income tax (taxable income is ~$0 after the standard deduction). The federal CDCC is non-refundable, so with no tax liability to offset it resolves to $0, and the KS credit (50% of $0) is $0. (The age-boundary and joint-filing eligibility logic is still exercised; only the dollar value resolves to $0.)
 
 **Steps**:
 - **Location**: Enter ZIP code `66002`, Select county `Atchison`
