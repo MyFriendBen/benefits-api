@@ -3,7 +3,10 @@
     "code": "ks"
   },
   "program_category": {
-    "external_name": "ks_tax"
+    "external_name": "ks_tax",
+    "name": "Tax Credits",
+    "icon": "tax_credit",
+    "tax_category": true
   },
   "program": {
     "name_abbreviated": "ks_cdcc",
