@@ -54,11 +54,10 @@
    - Source: IRC § 21(e)(6); K.S.A. 79-32,111
    - Impact: ImpactLevel.LOW
 
-9. **Full-time student or disabled spouse exception to the earned income requirement — if one spouse is a full-time student or is incapable of self-care, they are deemed to have earned income of $250/month (one qualifying individual) or $500/month (two or more)** ⚠️ *upstream gap (not a screener data gap)*
+9. **Full-time student or disabled spouse exception to the earned income requirement — if one spouse is a full-time student or is incapable of self-care, they are deemed to have earned income of $250/month (one qualifying individual) or $500/month (two or more), satisfying the earned-income requirement even with no actual earnings**
     - Screener fields:
       - `student_full_time (HouseholdMember)`
       - `disabled (HouseholdMember)`
-    - Note: The screener collects both triggers (`student_full_time` and `disabled`), so this criterion is fully expressible from screener data. It is not evaluable in the current calculator only because PolicyEngine's federal `cdcc` does not apply the § 21(d)(2) deeming — verified against live PE: a married household with a qualifying child and a non-earning full-time-student or disabled spouse returns $0, whereas the identical household with the spouse given a real $250/mo wage returns the credit. Tracked in [MFB-1244](https://linear.app/myfriendben/issue/MFB-1244), which also covers wiring the `student_full_time` / self-care inputs once PE supports them.
     - Source: IRC § 21(d)(2); K.S.A. 79-32,111
 
 ## Benefit Value
@@ -74,11 +73,10 @@ Calculated by the Policy Engine `ks_cdcc` calculator. The credit is non-refundab
 
 ## Implementation Coverage
 
-- ✅ Expressible from screener fields: 8
-- ⚠️  Screener data gap: 1 (Criterion 8 — care-provider identity)
-- ⏳ Blocked on PolicyEngine: 1 (Criterion 9 — § 21(d)(2) deeming; screenable, upstream gap, tracked in MFB-1244)
+- ✅ Evaluable criteria: 8
+- ⚠️  Data gaps: 1 (Criterion 8 — care-provider identity)
 
-The core eligibility requirements — having a qualifying dependent (child under 13 or disabled dependent), having earned income, Kansas residency, having dependent care expenses, filing status, and co-residency — can all be assessed from available screener fields. The one true screener data gap is Criterion 8 (care-provider identity), an administrative requirement verified at tax filing time. Criterion 9 (the full-time-student / disabled-spouse deemed-income exception) is expressible from screener data but currently blocked by an upstream PolicyEngine limitation. The screener provides a strong preliminary eligibility determination for the Kansas CDCC.
+The core eligibility requirements — having a qualifying dependent (child under 13, or a disabled spouse/dependent incapable of self-care), having earned income (including the § 21(d)(2) deemed income for a full-time-student or disabled spouse), Kansas residency, dependent care expenses, filing status, and co-residency — can all be assessed from available screener fields. The one data gap is Criterion 8 (care-provider identity), an administrative requirement verified at tax filing time. The screener provides a strong preliminary eligibility determination for the Kansas CDCC.
 
 ## Research Sources
 
