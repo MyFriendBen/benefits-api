@@ -11,9 +11,12 @@ SNAP_BASE_INPUTS = [
     dependency.member.MedicalExpenseDependency,
     dependency.member.IsDisabledDependency,
     # SSI and TANF cash receipt drive SNAP categorical eligibility (income/asset tests
-    # bypassed); both feed the reported amount so PE consumers that read the dollar value
-    # (e.g. spm_unit_benefits, tx_ceap income) stay correct.
-    dependency.member.Ssi,
+    # bypassed). SSI feeds reported receipt through PE's own seam: ssi_reported + the
+    # use_reported_ssi flag make PE's applicable_ssi reflect actual receipt, without
+    # overriding the computed ssi output. TANF has no such seam, so it sends the reported
+    # amount directly as the tanf value.
+    dependency.member.SsiReportedDependency,
+    dependency.member.UseReportedSsiDependency,
     dependency.spm.Tanf,
     # Disabled treatment (uncapped shelter deduction, $4,500 asset limit) requires disability-
     # program receipt via is_usda_disabled, not the generic is_disabled flag: SsdiReportedDependency

@@ -162,6 +162,7 @@ for reference.
 - [ ] Scenario 19 (Half-Time Student Working 20+ Hours/Week): **eligible**, **$864/yr ($72/mo)**
 - [ ] Scenario 20 (Half-Time Student with Federal Work-Study): **eligible**, **$864/yr ($72/mo)**
 - [ ] Scenario 21 (Single Full-Time Student Parent with Dependent Child): **eligible**, **$3,840/yr ($320/mo)**
+- [ ] Scenario 22 (SSI Categorical — Reported Receipt with High Other Income): **eligible**, **$276/yr ($23/mo)**
 
 
 ## Test Scenarios
@@ -173,9 +174,10 @@ for reference.
 > SNAP) is filtered out by the generic `already_has` results-layer workflow when the household
 > reports it (`screen.has_benefit("ks_snap")`), so it's verified by design rather than a raw PE value.
 >
-> **Categorical eligibility.** A household with reported SSI receipt (**Scenario 8**) or TANF cash
-> receipt (**Scenario 18**) is categorically eligible — the income and asset tests are bypassed
-> (7 U.S.C. § 2014(a); 7 CFR 273.2(j)(2)).
+> **Categorical eligibility.** A household with reported SSI receipt (**Scenarios 8, 22**) or TANF
+> cash receipt (**Scenario 18**) is categorically eligible — the income and asset tests are bypassed
+> (7 U.S.C. § 2014(a); 7 CFR 273.2(j)(2)). Categorical eligibility keys off *reported* receipt, not a
+> recalculated benefit amount (**Scenario 22**).
 >
 > **Disabled treatment.** A disabled household member on a qualifying disability program (e.g. SSDI)
 > receives the elderly/disabled treatment — no gross-income test, the higher $4,500 asset limit, and
@@ -563,6 +565,24 @@ for reference.
 - **Current Benefits**: Not currently receiving SNAP/Food Assistance, Not receiving TANF, Not receiving SSI
 
 **Why this matters**: The parent exemption is one of the federal student exemptions — a single parent enrolled full-time with a dependent child under 12 (or, for a two-parent household, a child under 6) qualifies. Without it, the student parent would be excluded and the household under-served.
+
+---
+
+### Scenario 22: SSI Categorical Eligibility — Reported Receipt with High Other Income
+
+**What we're checking**: A household reporting SSI receipt is categorically eligible even when other income is high enough that the modeled SSI amount would compute to $0. Categorical eligibility must key off *reported* receipt, not a recalculated SSI amount (criterion 5, the SSI path).
+
+**Expected**: Eligible — $276/yr ($23/mo)
+
+**Steps**:
+- **Location**: Enter ZIP code `66102`, Select county `Wyandotte`
+- **Household**: Number of people: `1`
+- **Person 1**: Birth month/year: `January 1981` (age 45), Relationship: Head of Household, Disabled, Not a student, U.S. citizen
+- **Income**: SSI income `$900`/month (reported SSI receipt), Pension `$2,000`/month
+- **Assets**: `$6,000` (above the $3,000 standard limit)
+- **Current Benefits**: Currently receiving SSI, Not currently receiving SNAP/Food Assistance, Not receiving TANF
+
+**Why this matters**: With $24,000/yr of pension income, a from-scratch SSI computation would return $0 (over the SSI income limit) — which would wrongly deny categorical eligibility. Because the household's *reported* SSI receipt drives the categorical check, it stays eligible. This scenario fails if categorical eligibility ever reverts to using the modeled SSI amount instead of reported receipt.
 
 
 ## PE Verification
