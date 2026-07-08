@@ -4,9 +4,9 @@
     "external_name": "ks_food"
   },
   "program": {
-    "name_abbreviated": "ks_school_meal_daily_subsidy",
+    "name_abbreviated": "ks_nslp",
     "year": "2026",
-    "base_program": "school_meal_daily_subsidy",
+    "base_program": "nslp",
     "legal_status_required": ["citizen", "non_citizen", "refugee", "gc_5plus", "gc_5less", "otherWithWorkPermission"],
     "name": "National School Lunch Program",
     "description_short": "Free or reduced-price school meals for eligible Kansas students",
