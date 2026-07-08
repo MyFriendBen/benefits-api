@@ -1,0 +1,94 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "program_category": {
+    "external_name": "ks_housing",
+    "name": "Housing and Utilities",
+    "icon": "housing"
+  },
+  "program": {
+    "name_abbreviated": "ks_k40h",
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "refugee",
+      "gc_5plus",
+      "gc_5less",
+      "otherWithWorkPermission"
+    ],
+    "name": "Kansas Homestead Refund (K-40H)",
+    "description": "The Kansas Homestead Refund gives back part of the property taxes you paid on your home. You can get up to $700 each year.\n\nYou file a claim with the Kansas Department of Revenue once a year, between January 1 and April 15. The refund comes as a check or direct deposit. If you miss the deadline, you may still be able to file late if you have a good reason.\n\nTo qualify, you must have owned and lived in your home in Kansas for the whole year. Renters do not qualify. Your home's appraised value must be $350,000 or less. Disabled veterans with a VA disability rating of 50% or more may also qualify. So may un-remarried surviving spouses of such veterans, or of service members who died in the line of duty.\n\nYou can file on paper or through approved tax software. If you have filed a Kansas Homestead claim in the last few years, you can also file online for free using the state's WebFile tool, which finds the property tax refund you qualify for and picks the largest one. Your household can only file one claim per year (K-40H, K-40PT, or K-40SVR).",
+    "description_short": "A refund of up to $700 of the property taxes paid on your Kansas home",
+    "learn_more_link": "https://www.ksrevenue.gov/perstaxtypeshs.html",
+    "apply_button_link": "https://www.ksrevenue.gov/pdf/k-40h25.pdf",
+    "apply_button_description": "Get the K-40H Form",
+    "estimated_application_time": "30 - 45 minutes",
+    "estimated_delivery_time": "20 to 24 weeks",
+    "estimated_value": "",
+    "value_format": "estimated_annual",
+    "value_type": "benefit",
+    "website_description": "A refund of up to $700 of the property taxes paid on your Kansas home",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false,
+    "year": "2026"
+  },
+  "documents": [
+    {
+      "external_name": "ks_ssn_proof",
+      "text": "Your Social Security Number",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_federal_1040",
+      "text": "Copy of pages 1 and 2 of your federal income tax return (Form 1040), if you file one",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_benefit_statements",
+      "text": "Social Security, DCF, or other benefit statements for everyone in your home",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_earned_income",
+      "text": "Proof of current earnings (e.g. W-2 forms, pay stubs, or self-employment tax returns)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_property_tax_statement",
+      "text": "Your county property tax statement (keep a copy; it also shows your home's appraised value, which must be $350,000 or less)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_disability_certification",
+      "text": "Social Security disability letter, or a Certificate of Disability (Schedule DIS) completed by your doctor, if applying based on disability",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_va_disability_letter",
+      "text": "VA letter showing a disability rating of 50% or more, if applying as a disabled veteran or surviving spouse",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "ks_aarp_tax_aide",
+      "name": "AARP Foundation Tax-Aide",
+      "email": "taxaide@aarp.org",
+      "description": "AARP Foundation Tax-Aide provides free, IRS-certified tax help across Kansas and will prepare and file your Homestead (K-40H) refund claim. It is open to everyone, with no age or AARP membership requirement, and gives priority to people 50 and older with low to moderate income. Appointments are seasonal and fill quickly.",
+      "assistance_link": "https://www.kstaxaide.com/homestead-2025",
+      "phone_number": "+18882277669",
+      "languages": [
+        "en"
+      ]
+    }
+  ]
+}
