@@ -12,7 +12,6 @@ ks_member_calculators = {
 ks_tax_unit_calculators = {
     "ks_eitc": tax.Kseitc,
     "ks_cdcc": tax.KsCdcc,
-    # Federal Child Tax Credit, used as-is (no KS variance). Mirrors wa_ctc.
     "ks_ctc": Ctc,
 }
 
