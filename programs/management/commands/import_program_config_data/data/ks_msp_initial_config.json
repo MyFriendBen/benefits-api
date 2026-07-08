@@ -4,7 +4,7 @@
   },
   "program_category": {
     "external_name": "ks_healthcare",
-    "name": "Healthcare",
+    "name": "Health Care",
     "icon": "health_care"
   },
   "program": {
@@ -14,20 +14,23 @@
     "legal_status_required": [
       "citizen",
       "gc_5plus",
-      "gc_5less",
       "refugee",
       "otherWithWorkPermission"
     ],
     "name": "Medicare Savings Program (MSP)",
-    "description": "People pay a monthly fee called a premium to keep their Medicare. MSP helps pay these premiums if you have a low income.\n\nHow much help you get depends on your income:\n- Very low income: MSP pays your premium, plus your deductibles (the amount you pay before Medicare starts paying) and the copayments and coinsurance you pay when you get care.\n- A little higher income: MSP pays your premium only.\n\nThe estimated savings shown above only includes what you save on premiums. Your actual savings could be much higher if you qualify for the very low income level, which also covers your deductibles and other costs when you get care.\n\nThe estimated savings assumes you or your spouse worked at least 10 years. If not, your savings may be slightly lower.\n\nMSP also has a limit on the value of assets you own. Many things are not counted toward this limit, including your home, one vehicle, household goods, personal belongings, burial funds up to $1,500, and life insurance with a face value up to $1,500. When estimating your assets, do not include these items.\n\nTo apply, you must already be enrolled in Medicare.",
     "description_short": "Help paying for Medicare premiums and costs",
+    "description": "Medicare Savings Program (MSP) helps people with Medicare pay their monthly premiums. If your income is low enough, it may also cover your copays and other out-of-pocket costs.\n\nIf approved, Kansas pays your Medicare premiums for you. You won't get a check — the coverage just starts. If you qualify for the most help, your doctor and hospital bills will have no copays or deductibles.\n\nMSP has a limit on the assets you own, but many things don't count. Things that don't count: your home, one vehicle, household goods, burial funds up to $1,500, and life insurance with a face value up to $1,500.\n\nClick Apply Now to start your application on Kansas's online benefits portal.",
     "learn_more_link": "https://www.medicare.gov/basics/costs/help/medicare-savings-programs",
-    "apply_button_link": "https://cssp.kees.ks.gov/apspssp/",
+    "apply_button_link": "https://cssp.kees.ks.gov/apspssp/ssp.portal",
     "apply_button_description": "",
-    "estimated_application_time": "1 hour",
-    "estimated_delivery_time": "30 days",
+    "estimated_application_time": "15–30 minutes",
+    "estimated_delivery_time": "",
     "estimated_value": "",
-    "website_description": "Helps pay Medicare premiums, deductibles, and copays for people with low income"
+    "value_type": "benefit",
+    "website_description": "Help paying for Medicare premiums and costs",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false
   },
   "documents": [
     {
@@ -38,7 +41,7 @@
     },
     {
       "external_name": "ks_id_proof",
-      "text": "Proof of identity",
+      "text": "Proof of identity (e.g. driver's license, state ID, passport)",
       "link_url": "",
       "link_text": ""
     },
@@ -55,14 +58,14 @@
       "link_text": ""
     },
     {
-      "external_name": "ks_earned_income",
+      "external_name": "ks_income_proof",
       "text": "Proof of income (ex: pay stubs, Social Security statement, pension statement)",
       "link_url": "",
       "link_text": ""
     },
     {
       "external_name": "ks_assets",
-      "text": "Proof of assets (ex: bank statements, investment accounts). Do not include your home, one vehicle, household goods, or burial funds up to $1,500",
+      "text": "Proof of assets (ex: bank statements, investment accounts). Do not include your home, one vehicle, household goods, burial funds up to $1,500, or life insurance with a face value up to $1,500",
       "link_url": "",
       "link_text": ""
     },
@@ -71,24 +74,19 @@
       "text": "Proof of U.S. citizenship or qualified immigration status",
       "link_url": "",
       "link_text": ""
-    },
-    {
-      "external_name": "ks_disability_proof",
-      "text": "Proof of disability (for QDWI program only)",
-      "link_url": "",
-      "link_text": ""
     }
   ],
   "navigators": [
     {
-      "external_name": "ks_shick",
-      "name": "Senior Health Insurance Counseling for Kansas (SHICK)",
-      "email": "",
-      "description": "SHICK provides free, unbiased Medicare counseling statewide through trained community volunteers. SHICK counselors can help you understand and apply for Medicare Savings Programs. Call to be connected with a certified counselor near you.",
-      "assistance_link": "https://www.kdads.ks.gov/services-programs/aging/medicare-programs/senior-health-insurance-counseling-for-kansas-shick/locating-help",
-      "phone_number": "800-860-5260",
-      "counties": [],
-      "languages": []
+      "external_name": "ks_shick"
+    },
+    {
+      "external_name": "ks_kancare_ombudsman",
+      "name": "KanCare Ombudsman",
+      "email": "KanCare.Ombudsman@ks.gov",
+      "description": "The KanCare Ombudsman Office helps KanCare members and applicants resolve problems with their application, coverage, access, or rights — including help completing a KanCare application. The service is free and available statewide.",
+      "assistance_link": "https://www.kancare.ks.gov/members/help-resources/kancare-ombudsman/about-contact-us",
+      "phone_number": "+18556438180"
     }
   ]
 }
