@@ -1,0 +1,76 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "program_category": {
+    "external_name": "ks_tax_credit",
+    "name": "Tax Credits",
+    "icon": "tax_credit",
+    "tax_category": true
+  },
+  "program": {
+    "name_abbreviated": "ks_ctc",
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "refugee",
+      "gc_5plus",
+      "gc_5less",
+      "otherWithWorkPermission"
+    ],
+    "name": "Federal Child Tax Credit (CTC)",
+    "description_short": "Federal tax credit for families with children or other dependents",
+    "description": "The Child Tax Credit lowers the amount you owe on your federal taxes. You can claim one credit for each qualifying child in your household.\n\nYou claim the credit when you file your federal tax return. If it is larger than what you owe, you get the difference back as a refund by direct deposit or check.\n\nEach qualifying child must be a U.S. citizen or resident and have a Social Security number. Higher incomes may reduce your credit amount. A free tax preparer can help confirm what you qualify for.\n\nTo claim this credit, click \"File for free\" to file your federal tax return at no cost.",
+    "learn_more_link": "https://www.irs.gov/credits-deductions/individuals/child-tax-credit",
+    "apply_button_link": "https://www.getyourrefund.org/en",
+    "apply_button_description": "File for free",
+    "estimated_application_time": "45 minutes",
+    "estimated_delivery_time": "21 days after e-filing",
+    "estimated_value": "",
+    "value_format": "estimated_annual",
+    "value_type": "tax_credit",
+    "website_description": "Federal tax credit for families with children or other dependents",
+    "base_program": "ctc",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": [
+    {
+      "external_name": "ks_ctc_ssn",
+      "text": "Social Security card for each qualifying child",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_id_proof",
+      "text": "Proof of identity (e.g. driver's license, state ID, passport)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_ctc_w2",
+      "text": "Form W-2 for all household members in tax unit",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_ctc_1099",
+      "text": "1099 for all household members in tax unit",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_ctc_schedule_8812",
+      "text": "Schedule 8812 (Credits for Qualifying Children and Other Dependents)",
+      "link_url": "https://www.irs.gov/forms-pubs/about-schedule-8812-form-1040",
+      "link_text": "View Schedule 8812 on IRS.gov"
+    },
+    {
+      "external_name": "ks_ctc_form_1040",
+      "text": "Form 1040 (U.S. Individual Income Tax Return)",
+      "link_url": "https://www.irs.gov/forms-pubs/about-form-1040",
+      "link_text": "View Form 1040 on IRS.gov"
+    }
+  ]
+}
