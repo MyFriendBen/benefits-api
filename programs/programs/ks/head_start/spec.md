@@ -88,11 +88,11 @@ Head Start eligibility can be substantially evaluated with current screener fiel
 
 ## Test Scenarios
 
-> These scenarios document expected behavior. Because Head Start is implemented as a PolicyEngine program (Fed as-is), eligibility/value correctness is verified against PolicyEngine and covered by the shared federal `head_start` calculator's tests; these scenarios are the source of truth for QA.
+> **Tier: `Fed (value varies)`.** Head Start is a PolicyEngine program whose per-child benefit value is a KS-keyed parameter (`spending[KS] / enrollment[KS]`). Per the Discovery doc, the deliverable for this tier is a **light spec whose scenarios isolate the state-specific value** plus a **PE delta report** (posted as a ticket comment) confirming PE's KS value matches the current ACF source and driving the delta to zero. The eligible scenarios below therefore assert the expected **dollar value** — they must break if the KS per-child figure drifts. Current KS value (FY2024, PE param `2023-09-01`): **$14,534/child/year** ($66,709,446 ÷ 4,590). Eligibility branches are included for completeness but the value assertions are the point.
 
-### Scenario 1: Low-Income Family with 3-Year-Old Child — Clearly Eligible for Head Start
-**What we're checking**: Typical low-income household with a preschool-age child who clearly meets Head Start age and income requirements
-**Expected**: Eligible (PolicyEngine `head_start` value for one eligible child)
+### Scenario 1: Low-Income Family with 3-Year-Old Child — value = one child
+**What we're checking**: One eligible preschooler → the KS per-child value. **This is the primary value-isolation scenario** — if PE's KS spending/enrollment params drift, this expected amount breaks.
+**Expected**: Eligible — **$14,534/year** (1 eligible child × KS FY2024 per-child value)
 
 **Steps**:
 - **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
@@ -124,7 +124,7 @@ Head Start eligibility can be substantially evaluated with current screener fiel
 
 ### Scenario 3: Family Above 135% FPL Receiving SNAP — Categorical Eligibility Override
 **What we're checking**: A family whose income exceeds the 135% FPL ceiling is still eligible because they receive SNAP, which confers categorical eligibility regardless of income
-**Expected**: Eligible (one eligible child)
+**Expected**: Eligible — **$14,534/year** (one eligible child × KS per-child value)
 
 **Steps**:
 - **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
@@ -156,7 +156,7 @@ Head Start eligibility can be substantially evaluated with current screener fiel
 
 ### Scenario 5: Foster Child — Categorical Eligibility via Foster Care
 **What we're checking**: A child in foster care qualifies regardless of household income
-**Expected**: Eligible (one eligible child)
+**Expected**: Eligible — **$14,534/year** (one eligible child × KS per-child value)
 
 **Steps**:
 - **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
@@ -166,3 +166,20 @@ Head Start eligibility can be substantially evaluated with current screener fiel
 - **Current Benefits**: Select no current benefits
 
 **Why this matters**: Validates that foster care status (45 CFR § 1302.12(c)(1)(iii)) independently qualifies a child regardless of household income.
+
+---
+
+### Scenario 6: Two Eligible Preschoolers — value scales per eligible child
+**What we're checking**: The **value-scaling** dimension of "value varies" — the per-child figure is applied once per eligible child, so two eligible children should yield 2× the KS per-child value.
+**Expected**: Eligible — **$29,068/year** (2 eligible children × $14,534)
+
+**Steps**:
+- **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+- **Household**: Number of people: `4`
+- **Person 1 (Head of Household)**: Birth month/year: `March 1990` (age 36), Relationship: `Head of Household`, Has income: `Yes`, Employment income: `$1,500` per month, Citizenship: `U.S. Citizen`
+- **Person 2 (Child)**: Birth month/year: `September 2021` (age 4), Relationship: `Child`, Has income: `No`
+- **Person 3 (Child)**: Birth month/year: `January 2023` (age 3), Relationship: `Child`, Has income: `No`
+- **Person 4 (Spouse)**: Birth month/year: `July 1992` (age 33), Relationship: `Spouse`, Has income: `No`
+- **Current Benefits**: Select no current benefits
+
+**Why this matters**: Isolates the per-eligible-child scaling — the one within-household way this program's value "varies." If the calculator applied the value per household instead of per eligible child, this scenario (and only this one) would break.
