@@ -11,7 +11,6 @@ from screener.models import NPSScore, WhiteLabel
 from translations.models import Translation
 import argparse
 
-
 # Lucide icon rendered when a config _icon key is missing or has no mapping. Mirrors the
 # frontend's `OPTION_CARD_ICON_MAP[icon._icon] ?? 'circle-dot'` fallback so a missing/unmapped
 # icon renders identically whether resolved on the frontend or served from the DB.
@@ -62,9 +61,9 @@ ICON_LUCIDE_MAP = {
 # (config attribute, FormOption.option_type, has you/them split). Person-less sections use
 # the "all" sentinel.
 FORM_OPTION_SECTIONS = [
-    ("acute_condition_options", "acute_condition", False),
-    ("health_insurance_options", "health_insurance", True),
-    ("condition_options", "condition", True),
+    ("acute_condition", False),
+    ("health_insurance", True),
+    ("condition", True),
 ]
 
 
@@ -331,8 +330,9 @@ class Command(BaseCommand):
 
     def _seed_form_options(self, white_label: WhiteLabel, WhiteLabelData: type[ConfigurationData]) -> None:
         """Mirror the Python-config form options into the FormOption / Icon tables (MFB-1200)."""
-        for attr, option_type, is_person_split in FORM_OPTION_SECTIONS:
-            section = getattr(WhiteLabelData, attr, {}) or {}
+        for option_type, is_person_split in FORM_OPTION_SECTIONS:
+            selector = f"{option_type}_options"
+            section = getattr(WhiteLabelData, selector, {}) or {}
 
             if is_person_split:
                 person_groups = [(person, section.get(person, {})) for person in ("you", "them")]
