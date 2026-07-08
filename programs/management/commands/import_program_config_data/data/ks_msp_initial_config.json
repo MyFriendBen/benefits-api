@@ -10,6 +10,7 @@
   "program": {
     "name_abbreviated": "ks_medicare_savings",
     "year": "2026",
+    "base_program": "medicare_savings",
     "legal_status_required": [
       "citizen",
       "gc_5plus",
