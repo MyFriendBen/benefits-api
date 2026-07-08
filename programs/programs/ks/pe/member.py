@@ -1,7 +1,31 @@
 import programs.programs.policyengine.calculators.dependencies as dependency
-from programs.programs.federal.pe.member import Medicaid
+from programs.programs.federal.pe.member import Medicaid, Ssi
 from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
 from screener.models import HouseholdMember
+
+
+class KsSsi(Ssi):
+    """
+    Kansas Supplemental Security Income — federal SSI applied to KS residents.
+
+    A thin wrapper around the federal ``Ssi`` PolicyEngine calculator that adds the
+    KS state code so PolicyEngine can apply state-specific SSI handling. Kansas pays
+    no general SSI state supplement (the KS supplement, SSPP, is tracked as its own
+    program), so the output is the federal Federal Benefit Rate (FBR) minus
+    PolicyEngine's countable income. The FBR is sourced from PolicyEngine's
+    parameters at calculation time, so the value tracks SSA COLA updates year over
+    year. Mirrors the WaSsi / TxSsi precedents.
+
+    All eligibility math (aged / blind / disabled categorical entry, the
+    $20 + $65 + 1/2 income exclusions, SGA cutoff, resource limits, deeming) is
+    handled by PolicyEngine. Duplicate-enrollment filtering ("not already
+    receiving SSI") is enforced via ``Screen.has_benefit("ks_ssi")``.
+    """
+
+    pe_inputs = [
+        *Ssi.pe_inputs,
+        dependency.household.KsStateCodeDependency,
+    ]
 
 
 class KsKanCare(Medicaid):
