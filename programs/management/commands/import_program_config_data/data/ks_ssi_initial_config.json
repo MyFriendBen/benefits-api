@@ -1,0 +1,83 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "program_category": {
+    "external_name": "ks_cash"
+  },
+  "program": {
+    "name_abbreviated": "ks_ssi",
+    "year": "2026",
+    "base_program": "ssi",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "refugee"
+    ],
+    "name": "Supplemental Security Income (SSI)",
+    "description": "Supplemental Security Income (SSI) is a federal program that gives monthly cash payments. It helps people who have low income and few assets. The money can be used for food, clothing, and housing.\n\nYou may qualify if you are 65 or older, blind, or have a disability. You must have limited income and resources. For one person, you can have up to $2,000 in assets. For a couple, the limit is $3,000. You must apply through the Social Security Administration. A letter will be mailed to you with the decision. If approved, you will get monthly payments in the form of direct deposits. The amount depends on your income and living situation.",
+    "description_short": "Monthly cash help for people who are older, blind, or disabled",
+    "learn_more_link": "https://www.ssa.gov/ssi/eligibility",
+    "apply_button_link": "https://www.ssa.gov/apply/ssi",
+    "apply_button_description": "",
+    "estimated_application_time": "1 hour",
+    "estimated_delivery_time": "6 to 8 months",
+    "estimated_value": "",
+    "value_type": "benefit",
+    "has_calculator": true,
+    "show_on_current_benefits": true,
+    "show_in_has_benefits_step": true,
+    "website_description": "Monthly cash help for people 65 or older, blind, or disabled with low income and few assets"
+  },
+  "documents": [
+    {
+      "external_name": "ks_id_proof",
+      "text": "Proof of identity (ex: driver's license, state ID, passport)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_ssn",
+      "text": "Social Security card or number",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_home",
+      "text": "Proof of home address (ex: lease, utility bill, mail)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_earned_income",
+      "text": "Proof of income (ex: pay stubs, benefit letters, bank statements)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_us_status",
+      "text": "Proof of U.S. citizenship or qualifying immigration status",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_assets",
+      "text": "Proof of resources and assets (ex: bank statements, investment records)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_medical",
+      "text": "Medical records or doctor's information (if applying based on disability or blindness)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_birth_certificate",
+      "text": "Birth certificate or proof of age",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": []
+}
