@@ -37,22 +37,22 @@ The benefit value scales with the number of household members aged 19–64.
 
 ### Criterion 2 — Pathway A: enrolled in a qualifying Washington benefit program
 
-- **Screener fields** (Screen level — household-wide flags):
-  - `has_medicaid` — legacy general Medicaid flag
+- **Screener fields** (Screen level — current benefits, checked via `has_benefit(...)`):
+  - `medicaid` — general Medicaid current-benefit enrollment
   - `wa_apple_health_medicaid` — WA Apple Health (Medicaid) program (name_abbreviated)
   - `wa_apple_health_for_kids` — WA Apple Health for Kids program (name_abbreviated)
-  - `has_snap` — Washington Basic Food / EBT
-  - `has_wic`
-- **Note**: If any household member is enrolled in Apple Health/Medicaid, Washington Basic Food, or WIC, the entire household qualifies for ORCA LIFT regardless of income. The calculator checks both the legacy `has_medicaid` flag and the dedicated WA Apple Health programs (`wa_apple_health_medicaid`, `wa_apple_health_for_kids`) via `has_benefit()` — both pathways trigger the same categorical bypass. The per-member `medicaid` insurance flag is separate and should not be substituted.
+  - `snap` — Washington Basic Food / EBT
+  - `wic`
+- **Note**: If any household member is enrolled in Apple Health/Medicaid, Washington Basic Food, or WIC, the entire household qualifies for ORCA LIFT regardless of income. The calculator checks the household's Medicaid current benefit and the dedicated WA Apple Health programs (`wa_apple_health_medicaid`, `wa_apple_health_for_kids`) via `has_benefit()` — both pathways trigger the same categorical bypass. The per-member `medicaid` insurance flag is separate and should not be substituted.
 - **Source**: [King County Metro — ORCA LIFT](https://kingcounty.gov/en/dept/metro/fares-and-payment/reduced-fares/orca-lift) ("Those receiving Apple Health Medicaid, WIC and Basic Food are eligible for the program."); [Reduced Fare Portal](https://reducedfare.kingcounty.gov/en-US/orca-lift-main/)
 
 ---
 
 ### Criterion 3 — Pathway B: Washington State Opportunity Grant recipient ⚠️ *data gap*
 
-- **Screener fields**: `none`. No `has_opportunity_grant` (or equivalent) field exists in the screener inventory. The closest available fields (`has_pell_grant`, `student`, `student_full_time`, `student_job_training_program`) all capture related but different concepts — none of them isolates Washington State Opportunity Grant enrollment specifically.
+- **Screener fields**: `none`. No `opportunity_grant` (or equivalent) current benefit exists in the screener inventory. The closest available fields (the `pell_grant` current benefit, `student`, `student_full_time`, `student_job_training_program`) all capture related but different concepts — none of them isolates Washington State Opportunity Grant enrollment specifically.
 - **Note**: The screener cannot directly detect Opportunity Grant recipients. For the calculator we apply an **inclusivity assumption** and skip this pathway entirely — Opportunity Grant recipients must be at or below 200% FPL as a condition of the grant itself ([SBCTC — Opportunity Grant](https://www.sbctc.edu/paying-for-college/opportunity-grant-student.aspx)), so they will be captured by Criterion 4 (income) in the vast majority of cases. The only edge case this assumption may miss is a grant recipient whose income rose just over 200% FPL after award but who remains eligible for ORCA LIFT for the duration of the grant. Surfaced in the program description so users know to apply via this pathway directly if needed.
-- **Suggested screener improvement**: Add a new state-specific `has_opportunity_grant` (or `has_wa_opportunity_grant`) checkbox to the WA white-label's current-benefits follow-up list on the screener's **Section 10 — Current Public Assistance Benefits** page (per `mfb_screener_fields_source.md`), under the question *"Does anyone in your household currently have public assistance benefits?"*. Best placed alongside existing education/student-aid benefits — analogous to where `has_pell_grant` lives — likely under a "Child Care, Youth, & Education" or equivalent WA-specific category. Once the field exists, the calculator can check it directly and this inclusivity assumption becomes unnecessary, closing the only data gap in the ORCA LIFT eligibility logic.
+- **Suggested screener improvement**: Add a new state-specific `opportunity_grant` (or `wa_opportunity_grant`) entry to the WA white-label's current-benefits follow-up list on the screener's **Section 10 — Current Public Assistance Benefits** page (per `mfb_screener_fields_source.md`), under the question *"Does anyone in your household currently have public assistance benefits?"*. Best placed alongside existing education/student-aid benefits — analogous to where the `pell_grant` current benefit lives — likely under a "Child Care, Youth, & Education" or equivalent WA-specific category. Once the entry exists, the calculator can check it via `has_benefit(...)` and this inclusivity assumption becomes unnecessary, closing the only data gap in the ORCA LIFT eligibility logic.
 - **Source**: [Reduced Fare Portal](https://reducedfare.kingcounty.gov/en-US/orca-lift-main/) ("If you're a college student who receives the Washington State Opportunity Grant, you qualify for ORCA LIFT."); [SBCTC — Opportunity Grant Information for Students](https://www.sbctc.edu/paying-for-college/opportunity-grant-student.aspx)
 
 ---
@@ -101,10 +101,10 @@ Complete inventory of the data the calculator needs, mapped to available screene
 | Data needed | Screener field | Status | Handling |
 |---|---|---|---|
 | Age 19–64 | `birth_year`, `birth_month` (HouseholdMember) | ✓ Available | Calculator computes age per member; counts those in range to scale benefit |
-| Apple Health / Medicaid enrollment | `has_medicaid` (Screen, legacy); `wa_apple_health_medicaid` / `wa_apple_health_for_kids` (CurrentBenefit join table) | ✓ Available | All three checked via `has_benefit()` for Criterion 2 |
-| SNAP / Basic Food enrollment | `has_snap` (Screen) | ✓ Available | Used directly for Criterion 2 |
-| WIC enrollment | `has_wic` (Screen) | ✓ Available | Used directly for Criterion 2 |
-| WA State Opportunity Grant enrollment | *(no field — suggested: add `has_opportunity_grant` to Section 10 "Current Public Assistance Benefits" follow-up list, alongside `has_pell_grant`)* | ⚠️ **Data gap** | **Inclusive assumption** — calculator skips Pathway B (Criterion 3) entirely. Opportunity Grant recipients are caught via Criterion 4 (the grant itself requires ≤200% FPL). Surfaced in description so users can apply via this pathway directly. **Closing this gap**: adding the suggested field would let the calculator check it directly. |
+| Apple Health / Medicaid enrollment | `medicaid` current benefit; `wa_apple_health_medicaid` / `wa_apple_health_for_kids` (CurrentBenefit join table) | ✓ Available | All three checked via `has_benefit()` for Criterion 2 |
+| SNAP / Basic Food enrollment | `snap` current benefit (`current_benefits`) | ✓ Available | Checked via `has_benefit()` for Criterion 2 |
+| WIC enrollment | `wic` current benefit (`current_benefits`) | ✓ Available | Checked via `has_benefit()` for Criterion 2 |
+| WA State Opportunity Grant enrollment | *(no field — suggested: add an `opportunity_grant` entry to the Section 10 "Current Public Assistance Benefits" follow-up list, alongside the `pell_grant` current benefit)* | ⚠️ **Data gap** | **Inclusive assumption** — calculator skips Pathway B (Criterion 3) entirely. Opportunity Grant recipients are caught via Criterion 4 (the grant itself requires ≤200% FPL). Surfaced in description so users can apply via this pathway directly. **Closing this gap**: adding the suggested entry would let the calculator check it directly. |
 | Household gross income | `income_streams[].type` / `.amount` / `.frequency` (HouseholdMember), `household_size` (Screen) | ✓ Available | `calc_gross_income('monthly', ['all'])` compared to 200% FPL for `household_size` |
 | WA residency / Puget Sound location | `zipcode`, `county` (Screen) | ✓ Available | Handled by `white_label = wa` at program level; service-area limitation surfaced in description |
 | Citizenship / immigration status | *(no field — global screener gap)* | ✓ Not needed | Program has no restriction; all 6 `legal_status_required` values used |
@@ -170,7 +170,7 @@ This spec defines 8 scenarios covering every major branch of the eligibility log
 - **Person 1** (head): birth `Mar 1991` (age 35), `relationship: headOfHousehold`
   - Income: Employment / Wages, `$2,000`/month
   - Insurance: I do not have health insurance
-- **Current benefits**: `has_medicaid = false`, `has_snap = false`, `has_wic = false`
+- **Current benefits**: none
 
 **Why this matters**: The most common ORCA LIFT applicant profile — a working adult whose wages fall below 200% FPL in the program's core service area (King County). This is the program's primary regression test: if this scenario breaks, the income pathway is broken end-to-end. Expected calculator output: 1 × $864 = $864/year (stored annual; displayed as $72/month).
 
@@ -187,7 +187,7 @@ This spec defines 8 scenarios covering every major branch of the eligibility log
 - **Person 1** (head): birth `Mar 1991` (age 35), `relationship: headOfHousehold`
   - Income: Employment / Wages, `$4,500`/month
   - Insurance: Employer-provided health insurance
-- **Current benefits**: `has_medicaid = false`, `has_snap = false`, `has_wic = false`
+- **Current benefits**: none
 
 **Why this matters**: The most common ineligible case — a moderate-income adult above the ceiling with no qualifying benefits. Confirms that the income test rejects households over the threshold and that the calculator doesn't silently let everyone through. Without this scenario, an open income test bug could go undetected.
 
@@ -210,7 +210,7 @@ This spec defines 8 scenarios covering every major branch of the eligibility log
   - Insurance: I do not have health insurance
 - **Person 4**: birth `Feb 2018` (age 8), `relationship: child`
   - Insurance: I do not have health insurance
-- **Current benefits**: `has_snap = true`, `has_medicaid = false`, `has_wic = false`
+- **Current benefits**: `snap` (Washington Basic Food)
 
 **Why this matters**: Many working families with children are above 200% FPL on paper but receive Basic Food — and those families still qualify for ORCA LIFT through the categorical pathway. This is the most distinctive branch of ORCA LIFT eligibility, and it's easy for a calculator to silently skip if the dev only implements the income test. Also validates that benefit value reflects only the 19–64 member (the 30-year-old): the 65-year-old would use Senior RRFP and the children would use Youth Ride Free — both out of scope. Expected calculator output: 1 × $864 = $864/year (stored annual; displayed as $72/month).
 
@@ -230,7 +230,7 @@ This spec defines 8 scenarios covering every major branch of the eligibility log
 - **Person 2**: birth `Jan 1998` (age 28), `relationship: spouse`
   - Income: Employment / Wages, `$2,000`/month
   - Insurance: Apple Health (Medicaid)
-- **Current benefits**: `has_medicaid = true`, `has_snap = false`, `has_wic = false`
+- **Current benefits**: `medicaid`
 
 **Why this matters**: Apple Health (Washington's Medicaid brand) is one of the three categorical pathways explicitly listed by King County Metro. This scenario also exercises per-member benefit value scaling: with two eligible adults, the household value should double. Catches calculator bugs where value defaults to one cardholder regardless of household composition. Expected calculator output: 2 × $864 = $1,728/year (stored annual; displayed as $144/month).
 
@@ -253,7 +253,7 @@ This spec defines 8 scenarios covering every major branch of the eligibility log
   - Insurance: Employer-provided health insurance
 - **Person 3**: birth `Apr 2025` (age 1), `relationship: child`
   - Insurance: Apple Health (Medicaid)
-- **Current benefits**: `has_wic = true`, `has_medicaid = false`, `has_snap = false`
+- **Current benefits**: `wic`
 
 **Why this matters**: WIC is the third categorical pathway and is most commonly held by households with pregnant members and young children. This scenario validates that a typical young-family WIC composition with `pregnant = true` on a spouse triggers ORCA LIFT eligibility correctly, and confirms the calculator treats `pregnant` as a member-level flag without surprising the eligibility logic. Expected calculator output: 2 × $864 = $1,728/year (stored annual; displayed as $144/month).
 
@@ -275,7 +275,7 @@ This spec defines 8 scenarios covering every major branch of the eligibility log
   - Insurance: Apple Health (Medicaid)
 - **Person 3**: birth `Mar 2016` (age 10), `relationship: grandChild`
   - Insurance: Apple Health (Medicaid)
-- **Current benefits**: `has_medicaid = true`, `has_snap = false`, `has_wic = false`
+- **Current benefits**: `medicaid`
 
 **Why this matters**: Grandparent-headed households raising grandchildren are common in lower-income Puget Sound demographics. This scenario validates that the age gate (Criterion 1) is enforced as a hard requirement — the household qualifies on both income ($3,000/month is below the $4,553.33 size-3 threshold) AND categorical (Medicaid), but no member is 19–64, so no one can actually receive a card. Catches a common AI/calculator bug where income/categorical alone are treated as sufficient and the age requirement is silently dropped.
 
@@ -292,7 +292,7 @@ This spec defines 8 scenarios covering every major branch of the eligibility log
 - **Person 1** (head): birth `Jan 1996` (age 30), `relationship: headOfHousehold`
   - Income: Employment / Wages, `$2,660`/month (exactly the 2026 200% FPL for size 1)
   - Insurance: I do not have health insurance
-- **Current benefits**: `has_medicaid = false`, `has_snap = false`, `has_wic = false`
+- **Current benefits**: none
 
 **Why this matters**: The King County Metro source uses the phrase "no more than 200 percent" (inclusive language). This boundary test ensures the calculator uses `<=` rather than `<`. An off-by-one rejection at the threshold would silently exclude every household landing exactly on the line — a real and common occurrence for households on standardized benefit amounts. Expected calculator output: 1 × $864 = $864/year (stored annual; displayed as $72/month).
 
@@ -309,7 +309,7 @@ This spec defines 8 scenarios covering every major branch of the eligibility log
 - **Person 1** (head): birth `Jan 1996` (age 30), `relationship: headOfHousehold`
   - Income: Employment / Wages, `$2,661`/month (one dollar above the 2026 200% FPL for size 1)
   - Insurance: I do not have health insurance
-- **Current benefits**: `has_medicaid = false`, `has_snap = false`, `has_wic = false`
+- **Current benefits**: none
 
 **Why this matters**: The ceiling-side companion to Scenario 7. Together they bracket the threshold exactly — Scenario 7 confirms the calculator includes the boundary, this scenario confirms it excludes one dollar above. Without both, a comparison-operator bug could pass undetected.
 
@@ -341,11 +341,11 @@ The remaining 5 scenarios (4–8) live in this spec as documentation for the dev
 
 - Eligibility is a household-level OR across three pathways (categorical / Opportunity Grant data gap / income). The data gap is intentionally skipped in the calculator (inclusivity assumption).
 - Benefit value scales linearly with `count(household_members where 19 <= age <= 64)`. Use `birth_year`/`birth_month` for age — `age` is deprecated.
-- The categorical Apple Health check covers three cases: legacy `has_medicaid` flag, the `wa_apple_health_medicaid` program, and the `wa_apple_health_for_kids` program. All three are checked via `has_benefit()` — if any returns true, the household qualifies categorically.
+- The categorical Apple Health check covers three cases: the `medicaid` current benefit, the `wa_apple_health_medicaid` program, and the `wa_apple_health_for_kids` program. All three are checked via `has_benefit()` — if any returns true, the household qualifies categorically.
 - Use the 2026 HHS Poverty Guidelines for the 200% threshold (table above).
 - The service-area limitation is surfaced in the description, not enforced by the calculator.
 - No `base_program` value currently fits ORCA LIFT — flag for the dev team to consider adding `"orca_lift"` or a generic `"transit_reduced_fare"` once the related ORCA programs (Youth, Senior RRFP, Disability RRFP, Subsidized Annual Pass) are added.
-- Optional screener enhancement: there is no `has_orca_lift` field, so households already enrolled will still see ORCA LIFT recommended in their results. Consider adding `has_orca_lift` to the WA white-label's Section 10 current-benefits follow-up list (alongside `has_lifeline` / `has_section_8`-style state-specific transit/regional benefits) to suppress duplicate recommendations.
+- Optional screener enhancement: there is no `orca_lift` current benefit, so households already enrolled will still see ORCA LIFT recommended in their results. Consider adding an `orca_lift` entry to the WA white-label's Section 10 current-benefits follow-up list (alongside `lifeline` / `section_8`-style state-specific transit/regional benefits) so `has_benefit("orca_lift")` can suppress duplicate recommendations.
 - Navigator emails: all three verified by the program researcher (`chap@kingcounty.gov`, `info@withinreachwa.org`, `info@ccsww.org`).
 
 ## Research Sources

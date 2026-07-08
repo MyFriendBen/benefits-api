@@ -37,7 +37,7 @@
    - Source: 7 CFR 273.1(a)-(b); KEESM.
 
 5. **TANF/SSI categorical eligibility — households where all members receive TANF or SSI are categorically eligible** *(priority)*
-   - Screener fields: `has_tanf`, `has_ssi`
+   - Screener fields: current benefits `has_benefit("tanf")`, `has_benefit("ssi")`
    - Note: Categorical eligibility bypasses the financial (income and asset) tests; non-financial rules (student, citizenship, residency) still apply. *All* members must receive TANF or SSI. (KS's SSPP does not independently confer categorical eligibility — SSPP recipients qualify via their SSI status.)
    - Source: 7 CFR 273.2(j); 7 U.S.C. § 2014(a); KEESM Section 2510.
 
@@ -295,7 +295,7 @@ The screener evaluates the criteria that drive nearly all SNAP outcomes: gross i
 - **Person 1**: Birth month/year: `January 1981` (age 45), Relationship: Head of Household, Not a student, Not pregnant, No disability, U.S. citizen
 - **Income**: Other income above the standard limit (with SSI received)
 - **Assets**: `$6,000` (above the $3,000 standard limit)
-- **Current Benefits**: Currently receiving SSI (`has_ssi` = Yes), Not currently receiving SNAP/Food Assistance, Not receiving TANF
+- **Current Benefits**: Currently receiving SSI, Not currently receiving SNAP/Food Assistance, Not receiving TANF
 
 **Why this matters**: Validates that an all-SSI household is categorically eligible regardless of income or assets — confirms categorical eligibility correctly overrides the financial tests.
 
