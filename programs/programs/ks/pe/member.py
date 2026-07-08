@@ -112,3 +112,38 @@ class KsChip(PolicyEngineMembersCalculator):
             return pe_value
 
         return 0
+
+
+class KsHeadStart(PolicyEngineMembersCalculator):
+    """
+    Kansas Head Start calculator using PolicyEngine.
+
+    Federal early-childhood program providing comprehensive education, health,
+    and family-support services to low-income children ages 3-5. Early Head Start
+    (birth to age 3, and pregnant women) is a separate program tracked under its
+    own ticket and is intentionally out of scope here.
+
+    Eligibility (determined by PolicyEngine's ``head_start`` variable):
+        - Child age 3-5
+        - Household income at or below 130% FPL, OR
+        - Categorical eligibility (family eligible for/receiving SNAP, TANF, or SSI),
+          OR foster care
+
+    Benefit value comes from PolicyEngine's ``head_start`` output at calculation
+    time (per-child, from ACF spending/enrollment parameters), so it tracks the
+    latest federal-year figures PE carries rather than a pinned constant. No KS
+    variance from the federal rules. Mirrors the tx_head_start / ma_head_start
+    precedents (PE approach); Kansas uses PE's calculated categorical eligibility.
+    """
+
+    pe_name = "head_start"
+    pe_inputs = [
+        dependency.member.AgeDependency,
+        dependency.member.FosterCareDependency,
+        dependency.household.KsStateCodeDependency,
+        *dependency.irs_gross_income,
+        dependency.member.Ssi,
+        dependency.spm.Snap,
+        dependency.spm.Tanf,
+    ]
+    pe_outputs = [dependency.member.HeadStart]
