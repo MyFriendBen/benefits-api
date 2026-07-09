@@ -7,7 +7,8 @@ KsKanCare coverage is two layers:
 1. **Wiring** — KsKanCare subclasses the federal ``Medicaid`` calculator, is registered
    as ``ks_medicaid``, and carries the KS-specific ``pe_inputs`` handling from the spec's
    Implementation Notes 1–2:
-     - the federal ``SsiCountableResourcesDependency`` is dropped (ABD asset test not screened),
+     - the federal ``SsiCountableResourcesDependency`` is sent (ABD asset test screened,
+       shared with MSP — see Implementation Note 2 / MFB-1042),
      - ``MeetsSsiDisabilityCriteriaDependency`` + ``IsBlindDependency`` are added (disability /
        blindness mapping), and ``KsStateCodeDependency`` selects KS parameters.
 
@@ -41,7 +42,7 @@ from programs.programs.policyengine.calculators.dependencies.member import (
 )
 from programs.programs.policyengine.calculators.dependencies.tax import KsChipPremium
 from programs.programs.ks.pe import ks_member_calculators, ks_pe_calculators
-from programs.programs.ks.pe.member import KsKanCare, KsChip
+from programs.programs.ks.pe.member import KsKanCare, KsChip, KsMsp
 
 # Annual value tiers (medicaid_categories * 12)
 MAGI = 3_648  # INFANT / YOUNG_CHILD / OLDER_CHILD / PREGNANT / PARENT / ADULT / YOUNG_ADULT
@@ -69,9 +70,11 @@ class TestKsKanCareWiring(TestCase):
     def test_pe_inputs_includes_ks_state_code(self):
         self.assertIn(KsStateCodeDependency, KsKanCare.pe_inputs)
 
-    def test_pe_inputs_drops_ssi_countable_resources(self):
-        """Implementation Note 2: assets are not screened for the ABD pathway."""
-        self.assertNotIn(member_deps.SsiCountableResourcesDependency, KsKanCare.pe_inputs)
+    def test_pe_inputs_sends_ssi_countable_resources(self):
+        """Implementation Note 2: the ABD asset test IS screened, and the input must be
+        present so it stays consistent with MSP, which shares the same ssi_countable_resources
+        variable in the single PolicyEngine simulation (MFB-1042)."""
+        self.assertIn(member_deps.SsiCountableResourcesDependency, KsKanCare.pe_inputs)
 
     def test_pe_inputs_adds_meets_ssi_disability_criteria(self):
         """Implementation Note 1: map disability/SSDI signals to meets_ssi_disability_criteria."""
@@ -350,21 +353,19 @@ class TestKsChip(TestCase):
         KsKanCare — otherwise the shared medicaid computation would be inconsistent."""
         self.assertEqual(KsChip.pe_inputs, KsKanCare.pe_inputs)
 
-    def test_pe_inputs_includes_medicaid_inputs_except_assets(self):
-        """CHIP requires ~Medicaid, so every federal Medicaid input is present EXCEPT the
-        asset dependency, which KS drops (see test_pe_inputs_omit_ssi_countable_resources)."""
-        for medicaid_input in Medicaid.pe_inputs:
-            if medicaid_input is member_deps.SsiCountableResourcesDependency:
-                self.assertNotIn(medicaid_input, KsChip.pe_inputs)
-            else:
-                self.assertIn(medicaid_input, KsChip.pe_inputs)
+    def test_pe_inputs_includes_all_ks_medicaid_inputs(self):
+        """CHIP requires ~Medicaid, and reuses KsKanCare.pe_inputs verbatim, so it carries the
+        same KS Medicaid inputs — including SsiCountableResourcesDependency (see
+        test_pe_inputs_includes_ssi_countable_resources)."""
+        for kancare_input in KsKanCare.pe_inputs:
+            self.assertIn(kancare_input, KsChip.pe_inputs)
 
-    def test_pe_inputs_omit_ssi_countable_resources(self):
-        """CHIP must NOT send ssi_countable_resources. It applies no resource test, and if it
-        did the input would leak into the shared PE sim and re-enable the ABD asset gate that
-        KsKanCare intentionally drops (Medicaid spec Implementation Note 2), wrongly denying
-        income-eligible seniors/ABD applicants whenever CHIP is active."""
-        self.assertNotIn(member_deps.SsiCountableResourcesDependency, KsChip.pe_inputs)
+    def test_pe_inputs_includes_ssi_countable_resources(self):
+        """CHIP reuses KsKanCare.pe_inputs, which now sends ssi_countable_resources so KanCare's
+        ABD asset test stays consistent with MSP's shared use of the same input (MFB-1042). CHIP
+        applies no resource test of its own; it carries the input only to keep the shared
+        is_medicaid_eligible gate it depends on identical to KanCare's."""
+        self.assertIn(member_deps.SsiCountableResourcesDependency, KsChip.pe_inputs)
 
     def test_pe_inputs_includes_ks_state_code_dependency(self):
         """KsStateCodeDependency sets state_code=KS so PE applies the KS income limit (2.55)."""
@@ -416,3 +417,62 @@ class TestKsChip(TestCase):
 
         self.assertEqual(result, 0)
         member.has_insurance_types.assert_called_once_with(("none",))
+
+
+class TestKsMspWiring(TestCase):
+    """KsMsp registration and pe_inputs handling."""
+
+    def test_is_registered_in_ks_member_calculators(self):
+        self.assertIn("ks_medicare_savings", ks_member_calculators)
+        self.assertEqual(ks_member_calculators["ks_medicare_savings"], KsMsp)
+
+    def test_pe_name_is_msp(self):
+        self.assertEqual(KsMsp.pe_name, "msp")
+
+    def test_pe_inputs_includes_medicaid_inputs(self):
+        """MSP includes *Medicaid.pe_inputs for two reasons: QI requires ~is_medicaid_eligible,
+        and MSP's own asset test (msp_asset_eligible) reads ssi_countable_resources, which
+        Medicaid.pe_inputs supplies."""
+        for medicaid_input in Medicaid.pe_inputs:
+            self.assertIn(medicaid_input, KsMsp.pe_inputs)
+
+    def test_pe_inputs_includes_ssi_countable_resources(self):
+        """MSP's msp_asset_eligible reads ssi_countable_resources; without this dependency
+        MSP's asset test sees $0 and never fails (an over-asset senior would wrongly qualify)."""
+        self.assertIn(member_deps.SsiCountableResourcesDependency, KsMsp.pe_inputs)
+
+
+class TestKsMspKanCareAssetConsistency(TestCase):
+    """
+    Regression guard for the MSP <-> KanCare shared-simulation asset conflict (MFB-1042).
+
+    MSP's ``msp_asset_eligible`` and KanCare's ABD gate
+    ``is_optional_senior_or_disabled_asset_eligible`` BOTH read the single per-person PE variable
+    ``ssi_countable_resources``. Every program on a screen shares one PolicyEngine simulation, so
+    that variable is set once per person — there is no per-program isolation. If one program sends
+    ``SsiCountableResourcesDependency`` and the other omits it, the shared input is inconsistent:
+
+    - MSP present / KanCare absent  -> KanCare's ABD asset gate fires and wrongly denies
+      income-eligible seniors Medicaid whenever MSP is active.
+    - MSP absent / KanCare present   -> MSP's asset test sees $0 and never fails.
+
+    Both programs must therefore agree: either both send the dependency or neither does. KS sends
+    it for both (matching IL/CO/MA). These assertions fail if a future change reintroduces the
+    divergence (e.g. re-dropping it from KanCare to restore the old "assets not screened" handling
+    without also dropping MSP's asset test).
+    """
+
+    def test_kancare_and_msp_agree_on_ssi_countable_resources(self):
+        kancare_sends = member_deps.SsiCountableResourcesDependency in KsKanCare.pe_inputs
+        msp_sends = member_deps.SsiCountableResourcesDependency in KsMsp.pe_inputs
+        self.assertEqual(
+            kancare_sends,
+            msp_sends,
+            "KsKanCare and KsMsp must handle ssi_countable_resources identically — they share one "
+            "PolicyEngine simulation and both read this variable. Divergence corrupts one program.",
+        )
+
+    def test_both_send_ssi_countable_resources(self):
+        """KS's committed choice: screen assets for both (Implementation Note 2 / MFB-1042)."""
+        self.assertIn(member_deps.SsiCountableResourcesDependency, KsKanCare.pe_inputs)
+        self.assertIn(member_deps.SsiCountableResourcesDependency, KsMsp.pe_inputs)

@@ -13,11 +13,16 @@ class KsKanCare(Medicaid):
 
     KS-specific input handling (see spec Implementation Notes 1-2):
 
-    - The federal ``SsiCountableResourcesDependency`` (``ssi_countable_resources``,
-      from ``household_assets``) is intentionally omitted so the ABD $2,000/$3,000
-      asset test never fires. MFB does not screen assets for this pathway; the
-      limit is surfaced in the program description instead. Income-eligible
-      seniors/ABD applicants therefore stay eligible.
+    - ``SsiCountableResourcesDependency`` (``ssi_countable_resources``, derived from
+      ``household_assets`` as ``household_assets / num_adults`` per adult) is sent, so
+      the ABD $2,000/$3,000 resource test fires — consistent with every other state
+      that runs Medicaid + MSP (IL/CO/MA all send it). The same ``ssi_countable_resources``
+      variable also drives MSP's ``msp_asset_eligible``, and both programs share one
+      PolicyEngine simulation, so KanCare and MSP must handle assets consistently: either
+      both screen assets or neither. We screen for both. The per-adult sharding errs lax
+      (a third adult's presence under-counts an applicant's countable resources, since PE
+      sums only the applicant's marital/tax unit), which is the acceptable over-inclusive
+      direction for a screener.
     - ``MeetsSsiDisabilityCriteriaDependency`` maps the screener's disability /
       long-term-disability / SSDI signals to PE's ``meets_ssi_disability_criteria``
       input (not ``is_ssi_disabled`` directly, so the SGA earnings test still
@@ -33,6 +38,7 @@ class KsKanCare(Medicaid):
         dependency.member.IsDisabledDependency,
         dependency.member.MeetsSsiDisabilityCriteriaDependency,
         dependency.member.IsBlindDependency,
+        dependency.member.SsiCountableResourcesDependency,
         *dependency.irs_gross_income,
         dependency.household.KsStateCodeDependency,
     ]
@@ -80,14 +86,11 @@ class KsChip(PolicyEngineMembersCalculator):
     ``~is_medicaid_eligible``, so CHIP must compute Medicaid eligibility the same
     way KanCare does. All programs on a screen share a single PolicyEngine
     simulation (``pe_input`` merges every program's ``pe_inputs``), so CHIP reuses
-    ``KsKanCare.pe_inputs`` verbatim rather than the federal ``Medicaid.pe_inputs``.
-    This keeps the shared ``medicaid`` / ``is_medicaid_eligible`` computation
-    consistent and — critically — omits ``SsiCountableResourcesDependency``. If CHIP
-    sent ``ssi_countable_resources``, that input would leak into the shared sim and
-    re-enable the ABD asset gate that KanCare intentionally drops (Medicaid spec
-    Implementation Note 2), wrongly making income-eligible seniors/ABD applicants
-    ineligible for Medicaid whenever CHIP is also active. The asset input is not
-    needed for CHIP either — KanCare CHIP applies no resource test.
+    ``KsKanCare.pe_inputs`` verbatim (including ``SsiCountableResourcesDependency``)
+    rather than the federal ``Medicaid.pe_inputs`` — this keeps the shared
+    ``medicaid`` / ``is_medicaid_eligible`` computation identical to KanCare's.
+    CHIP applies no resource test of its own; it inherits the shared asset input
+    only so the Medicaid-eligibility gate it depends on is computed consistently.
     """
 
     pe_name = "chip"
@@ -133,19 +136,22 @@ class KsMsp(PolicyEngineMembersCalculator):
           but IsMedicareEligibleDependency short-circuits for users who have Medicare selected
         - Assumes 40 quarters of Medicare-covered employment (Part A is free); ~99% of beneficiaries
           meet this threshold (per CMS)
-        - household_assets (household-level total) is passed directly to PolicyEngine for all household
-          sizes. MSP only counts the applicant's and spouse's resources, so for households with
-          non-eligible members (e.g., adult children), this may be stricter than the actual rule (known data gap)
+        - MSP's asset test (``msp_asset_eligible``) reads ``ssi_countable_resources``, which MFB
+          shards as ``household_assets / num_adults`` per adult. PE then sums only the applicant's
+          marital unit, so in households with a third adult (e.g. an adult child) the applicant's
+          countable resources are under-counted — erring lax / over-inclusive, the acceptable
+          direction for a screener (known data gap)
         - Benefit value is premium savings only; QMB deductible/coinsurance coverage is not included
 
-    Note: The is_medicaid_eligible inputs are needed because QI requires checking that the
-    individual is not eligible for other Medicaid benefits. We reuse ``KsKanCare.pe_inputs``
-    (which mirrors the federal Medicaid inputs) rather than ``Medicaid.pe_inputs`` directly,
-    so that ``SsiCountableResourcesDependency`` stays out of the shared simulation — sending
-    ``ssi_countable_resources`` would re-enable the ABD asset gate that KanCare intentionally
-    drops (see KsKanCare / KsChip), wrongly making income-eligible seniors ineligible for KS
-    Medicaid whenever MSP is also active. MSP applies its own asset test via
-    ``CashAssetsDependency`` and does not need ``ssi_countable_resources``.
+    Note: Includes ``*Medicaid.pe_inputs`` + IsMedicaidEligibleDependency. These serve two
+    purposes: QI requires checking the individual is not eligible for other Medicaid benefits,
+    AND MSP's own asset test (``msp_asset_eligible``) reads ``ssi_countable_resources``, which
+    ``Medicaid.pe_inputs`` supplies. Because MSP and KanCare share one PolicyEngine simulation
+    and both key off ``ssi_countable_resources``, they must treat assets consistently — KanCare
+    now also sends ``SsiCountableResourcesDependency`` (see KsKanCare) so both programs screen
+    assets, matching IL/CO/MA. Omitting it would break MSP's asset test; sending it from MSP
+    while omitting it from KanCare would corrupt KanCare Medicaid eligibility for asset-holding
+    seniors. Consistent handling avoids both failure modes.
 
     References:
         - Medicare Savings Programs: https://www.medicare.gov/basics/costs/help/medicare-savings-programs
@@ -162,7 +168,8 @@ class KsMsp(PolicyEngineMembersCalculator):
         # msp_countable_income (uses SSI methodology)
         dependency.member.SsiEarnedIncomeDependency,
         dependency.member.SsiUnearnedIncomeDependency,
-        # msp_asset_eligible
+        # spm_unit_cash_assets (msp_countable_income resource-related inputs; the
+        # msp_asset_eligible test itself reads ssi_countable_resources from *Medicaid.pe_inputs)
         dependency.spm.CashAssetsDependency,
         # state
         dependency.household.KsStateCodeDependency,
@@ -171,10 +178,8 @@ class KsMsp(PolicyEngineMembersCalculator):
         dependency.member.MedicareQuartersOfCoverageDependency,
         # is_medicaid_eligible (for QI exclusion) - override when user reports Medicaid
         dependency.member.IsMedicaidEligibleDependency,
-        # Medicaid dependencies for PE's is_medicaid_eligible calculation. Reuse
-        # KsKanCare.pe_inputs (NOT Medicaid.pe_inputs) so SsiCountableResourcesDependency
-        # is not leaked into the shared sim (see docstring / KsKanCare note).
-        *KsKanCare.pe_inputs,
+        # Medicaid dependencies (for PolicyEngine's is_medicaid_eligible calculation)
+        *Medicaid.pe_inputs,
     ]
     pe_outputs = [
         dependency.member.MspEligible,
