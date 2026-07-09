@@ -32,7 +32,7 @@ A person qualifies by meeting the **general requirements** and **one categorical
    - Screener fields: `birth_year`/`birth_month`, income streams, `household_size`
    - Source: KFMAM Appendix F-8 §A.1 ("149% Children age 1-5"); K.A.R. 129-6-72; 42 CFR 435.118 (PE `young_child` = 1.54)
 
-5. **Child age 6–18** — household MAGI ≤ **138% FPL effective**. F-8 covers ages 6–18 under Medicaid to **113%** (HH1 $1,503) plus Medicaid-funded **M-CHIP to 133%** (HH1 $1,769); with the 5-pt disregard PE's `medicaid` ceiling = 138% (`older_child` = 1.38). Coverage from ~134–255% FPL is separate CHIP (MFB-1055), not this calculator.
+5. **Child age 6–18** — household MAGI ≤ **138% FPL effective**. F-8 covers ages 6–18 under Medicaid to **113%** (HH1 $1,503) plus Medicaid-funded **M-CHIP to 133%** (HH1 $1,769); with the 5-pt disregard PE's `medicaid` ceiling = 138% (`older_child` = 1.38). Coverage from ~134–255% FPL is separate CHIP, not this calculator.
    - Screener fields: `birth_year`/`birth_month`, income streams, `household_size`
    - Source: KFMAM Appendix F-8 §A.1 ("113% / 113-133% Children age 6-18"); K.A.R. 129-6-72; 42 CFR 435.118
 
@@ -46,7 +46,7 @@ A person qualifies by meeting the **general requirements** and **one categorical
 
 8. **Aged 65+, blind, or disabled (ABD / SSI-related)** — countable income ≤ the **SSI federal benefit rate** ($994/mo individual, $1,491/mo couple) **and** countable resources ≤ the ABD limit ($2,000 individual / $3,000 couple). Screened on income, categorical status, **and assets** (see note).
    - Screener fields: `birth_year`/`birth_month` (65+), `disabled` / `long_term_disability` / `visually_impaired`, income streams, `household_assets`
-   - ⚠️ **Asset test IS screened (shared with MSP).** KanCare's ABD pathway has a $2,000 ind / $3,000 couple resource limit, which PE gates on via `ssi_countable_resources`. MFB **sends** `SsiCountableResourcesDependency` (`household_assets / num_adults` per adult), so an over-asset senior returns ineligible for the ABD pathway. This matches every other state that runs Medicaid alongside MSP (IL/CO/MA all send it). The reason is a shared-simulation constraint: MSP's own asset test (`msp_asset_eligible`) reads the **same** `ssi_countable_resources` variable, and all programs share one PolicyEngine simulation — so KanCare and MSP must handle assets consistently. Suppressing it for KanCare while MSP needs it present is impossible in one sim. The per-adult sharding errs lax (a third adult under-counts an applicant's resources, since PE sums only the marital/tax unit), the acceptable over-inclusive direction. **Note:** this reverses the earlier "asset test not screened" inclusivity handling from MFB-1054 (PR #1616); it changed when MSP (MFB-1042) was added, because the two programs can no longer diverge on this shared input.
+   - ⚠️ **Asset test is screened, shared with the Medicare Savings Program.** KanCare's ABD pathway has a $2,000 individual / $3,000 couple resource limit, which PE gates on via `ssi_countable_resources`. MFB sends `SsiCountableResourcesDependency` (`household_assets / num_adults` per adult), so an over-asset applicant returns ineligible for the ABD pathway. The Medicare Savings Program's own asset test (`msp_asset_eligible`) reads the **same** `ssi_countable_resources` variable, and all programs on a screen share one PolicyEngine simulation, so that input is set once per person for every program at once — KanCare and MSP must therefore screen assets identically. KanCare's asset handling matches every other state that offers both Medicaid and MSP (CO/IL/MA). The per-adult sharding errs lax (a third adult under-counts an applicant's resources, since PE sums only the applicant's marital/tax unit), the acceptable over-inclusive direction for a screener.
    - ⚠️ **Disability determination — inclusivity assumption + build mapping.** PE's ABD/disability eligibility keys off `is_ssi_disabled` (an SSA determination), computed as `meets_ssi_disability_criteria & ~ssi_engaged_in_sga` — not the generic `is_disabled`. The screener captures `disabled`/`long_term_disability` and SSDI receipt but can't make a formal SSA determination, so self-reported disability/SSDI signals are treated as meeting the criterion (mapped to `meets_ssi_disability_criteria` — see Implementation Notes) and the agency makes the official determination at application. Without this mapping, a disabled, under-65, not-yet-on-SSI applicant is wrongly excluded (non-expansion KS has no adult-expansion fallback).
    - For a low-income senior/ABD applicant, PE's binding pathway is the SSI-recipient route (FBR-based: countable income = income − $20 general exclusion, eligible up to ~$1,014/mo), not the lower 75%-FPL optional-senior pathway. PE's threshold slightly exceeds the KS $994 standard, so there is no under-inclusion gap at the $978–$994 income band.
    - Source: KFMAM Appendix F-8 §A.2 ("Presumptive Medicaid Disability: SI-Related… must not exceed the applicable SSI federal benefit rate") + §E Resource Standards ("SSI Medical $2,000 / $3,000"); K.A.R. 129-6-85 ("aged, blind, or disabled… based on social security administration criteria" — confirmed verbatim), 129-6-103, 129-6-106–110
@@ -73,7 +73,7 @@ A person qualifies by meeting the **general requirements** and **one categorical
 
 15. **Early Detection Works (breast/cervical cancer), TB-inpatient** ⚠️ *data gap* — diagnosis-specific, tiny populations. Screener fields: none. Handling: covered by a generic catch-all line in the `description` rather than named individually (naming them would alarm/clutter for almost no one).
 
-**Out of scope, not data gaps:** Working Healthy disabled buy-in (MFB-1066) and HCBS/long-term care (MFB-1072) are separate tickets.
+**Out of scope, not data gaps:** Working Healthy disabled buy-in and HCBS/long-term care are separate programs.
 
 ## Priority Criteria
 
@@ -102,12 +102,11 @@ Source: KHI / Kansas Action for Children, FY2023 KS Medicaid & CHIP per-enrollee
 
 ## Implementation Notes
 
-The KS subclass requires four `pe_inputs`/registry changes. These are committed implementation steps.
+The KS subclass requires these `pe_inputs`/registry changes.
 
 1. **Add a disability→SSI-criterion dependency.** On production PE, `is_ssi_disabled = meets_ssi_disability_criteria & ~ssi_engaged_in_sga`, where `meets_ssi_disability_criteria` is a pure input (defaults False); `is_disabled` does not feed it. Add a dependency mapping the screener's `disabled`/`long_term_disability`/SSDI signals → **`meets_ssi_disability_criteria`** (not by overriding `is_ssi_disabled` directly, so the SGA test still applies — see Scenario 15). Also map `visually_impaired` → PE's **`is_blind`** input (also a pure input, defaults False) — K.A.R. 129-6-85 covers *blind* as a qualifying status distinct from disabled, and `is_blind=True` exempts from SGA entirely (`ssi_engaged_in_sga = (earned_income > $1,690/mo) & ~is_blind`; 20 CFR 416.971). See Scenario 16.
-2. **Send assets for the ABD pathway (shared with MSP).** Include `SsiCountableResourcesDependency` (→ `ssi_countable_resources`, `household_assets / num_adults` per adult) in the KS `pe_inputs`, so PE gates the ABD pathway on the $2,000/$3,000 resource limit. This is **required for consistency with MSP** (MFB-1042): `msp_asset_eligible` reads the same `ssi_countable_resources`, and all programs share one PolicyEngine simulation — the input is either present for both or absent for both. Every other Medicaid+MSP state (IL/CO/MA) sends it. *(Reverses the original MFB-1054 handling, which dropped this dependency to surface the limit in the `description` only; that was viable only while MSP was absent.)*
-3. **Add `ks_medicaid` to `STATE_MEDICAID_OPTIONS`** in `benefits-api/programs/programs/helpers.py` (currently `("co_medicaid", "nc_medicaid", "il_medicaid")`). The `medicaid_eligible()` helper gates ~15 programs on calculated Medicaid eligibility — without KS, this program won't exclude Medicaid-eligible Kansans from the KS ACA Premium Tax Credit (MFB-1052) or feed KS Medicaid sub-pathways.
-4. **Register the `ks` `white_label` enum** in the test-case schema — shared KS-launch infrastructure across all KS tickets, not specific to this one.
+2. **Send assets for the ABD pathway.** Include `SsiCountableResourcesDependency` (→ `ssi_countable_resources`, `household_assets / num_adults` per adult) in the KS `pe_inputs`, so PE gates the ABD pathway on the $2,000/$3,000 resource limit. This must stay consistent with the Medicare Savings Program: `msp_asset_eligible` reads the same `ssi_countable_resources`, and all programs share one PolicyEngine simulation, so the input is either present for both programs or absent for both. Every state that offers both Medicaid and MSP (CO/IL/MA) sends it.
+3. **Add `ks_medicaid` to `STATE_MEDICAID_OPTIONS`** in `programs/programs/helpers.py`. The `medicaid_eligible()` helper gates other programs on calculated Medicaid eligibility — without KS, this program won't exclude Medicaid-eligible Kansans from the KS ACA Premium Tax Credit or feed KS Medicaid sub-pathways.
 
 **`show_in_has_benefits_step` = false:** Medicaid conferral runs off the calculated `medicaid_eligible()` helper, and "already enrolled" is detected via the Step 8 insurance question — not the Has-Benefits step.
 
@@ -124,7 +123,7 @@ The KS subclass requires four `pe_inputs`/registry changes. These are committed 
 
 ## Acceptance Criteria
 
-All scenarios run through PolicyEngine. **Note:** Scenario 7 flipped to **ineligible** and Scenario 7b was added when the ABD asset test was turned on (Implementation Note 2, MFB-1042); re-verify the full set after that change (superseding the earlier 2026-07-06 / `policyengine-us` 1.755.5 run of 37/37).
+All scenarios run through PolicyEngine.
 
 - [ ] Scenario 1 (Pregnant, low income): **eligible**, $3,648/yr
 - [ ] Scenario 2 (Pregnant, near 171% boundary): **eligible**, $3,648/yr
@@ -155,9 +154,7 @@ All scenarios run through PolicyEngine. **Note:** Scenario 7 flipped to **inelig
 
 Expected values use the Benefit Value table above (annual figures). ZIP/county pairs: 66603/66604/66044/66502 = Shawnee/Shawnee/Douglas/Riley; 67202 = Sedgwick; 66102 = Wyandotte.
 
-Scenarios 8, 16, and 17 are eligible because of the KS calculator's disability-mapping input handling (Implementation Note 1: mapping disability/SSDI/long-term-disability/blindness signals to `meets_ssi_disability_criteria`/`is_blind`). With the federal `pe_inputs` inherited unchanged, all three would return ineligible. This is intentional KS input handling, not a PolicyEngine defect.
-
-Scenario 7 (senior with assets **above** the ABD limit) is **ineligible**, and Scenario 7b (assets **below** the limit) is eligible — the ABD asset test is screened via `SsiCountableResourcesDependency` (Implementation Note 2), for consistency with MSP's shared use of the same `ssi_countable_resources` input.
+Scenarios 8, 16, and 17 are eligible because of the KS disability-mapping input handling (Implementation Note 1). With the federal `pe_inputs` inherited unchanged, all three would return ineligible. Scenario 7 (senior with assets above the ABD limit) is ineligible and Scenario 7b (assets below the limit) is eligible, per the ABD asset test (Implementation Note 2).
 
 ### Scenario 1: Pregnant woman, low income
 **What we're checking**: Golden-path pregnancy eligibility (criterion 6), well under the 171% FPL threshold.
@@ -250,7 +247,7 @@ Scenario 7 (senior with assets **above** the ABD limit) is **ineligible**, and S
 - **Household**: 1 person
 - **Person 1**: Head of Household, born `April 1960` (age 66), male, US citizen, not disabled, Social Security income `$900`/mo, `household_assets`: `$5,000`, insurance: none
 
-**Why this matters**: Income qualifies ($900 < $994 SSI FBR), but the $5,000 exceeds KanCare's $2,000 ABD individual resource limit. MFB sends `ssi_countable_resources` (`household_assets / num_adults` = $5,000 for this 1-adult household), so PE gates the ABD pathway on assets and returns ineligible. The asset test is shared with MSP (`msp_asset_eligible` reads the same input in one shared simulation), so KanCare and MSP screen assets consistently — matching IL/CO/MA.
+**Why this matters**: Income qualifies ($900 < $994 SSI FBR), but the $5,000 exceeds KanCare's $2,000 ABD individual resource limit, so the ABD asset test returns ineligible.
 
 ---
 
@@ -263,7 +260,7 @@ Scenario 7 (senior with assets **above** the ABD limit) is **ineligible**, and S
 - **Household**: 1 person
 - **Person 1**: Head of Household, born `April 1960` (age 66), male, US citizen, not disabled, Social Security income `$900`/mo, `household_assets`: `$1,500`, insurance: none
 
-**Why this matters**: Income qualifies ($900 < $994 SSI FBR) and $1,500 is under the $2,000 ABD limit → asset test passes → eligible for the AGED pathway. Paired with Scenario 7, this confirms the asset gate is actually screened (not merely off), and that it binds at the $2,000 boundary.
+**Why this matters**: Income qualifies ($900 < $994 SSI FBR) and $1,500 is under the $2,000 ABD limit → eligible for the AGED pathway. Paired with Scenario 7, confirms the asset test binds at the $2,000 boundary.
 
 ---
 
@@ -501,4 +498,4 @@ Every scenario field (age, `is_pregnant`, income streams, `is_disabled`/`meets_s
 - KHI / Kansas Action for Children, FY2023 KS Medicaid & CHIP per-enrollee spending — https://www.khi.org/articles/2024-kansas-medicaid-a-primer/ ; https://www.kac.org/budget_summary_medicaid
 
 ### PolicyEngine verification
-- `policyengine-us` 1.755.5 — live run 2026-07-06, all 23 scenarios / 37 person-level assertions matched (Scenarios 22–23 added this pass to close infant/older-child upper-bound coverage). Formulas confirmed directly from source: `is_ssi_disabled`, `is_ssi_aged_blind_disabled`, `ssi_engaged_in_sga`, `is_blind`, `meets_ssi_disability_criteria`; parameters confirmed: KS category ratios (`gov/hhs/medicaid/eligibility/categories/*/income_limit.yaml`), SSI FBR (`gov/ssa/ssi/amount/*.yaml`), SGA threshold (`gov/ssa/sga/non_blind.yaml`)
+- Formulas confirmed directly from source: `is_ssi_disabled`, `is_ssi_aged_blind_disabled`, `ssi_engaged_in_sga`, `is_blind`, `meets_ssi_disability_criteria`; parameters: KS category ratios (`gov/hhs/medicaid/eligibility/categories/*/income_limit.yaml`), SSI FBR (`gov/ssa/ssi/amount/*.yaml`), SGA threshold (`gov/ssa/sga/non_blind.yaml`)
