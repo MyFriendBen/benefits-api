@@ -1,5 +1,5 @@
 import programs.programs.policyengine.calculators.dependencies as dependency
-from programs.programs.federal.pe.member import Medicaid
+from programs.programs.federal.pe.member import Medicaid, HeadStart
 from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
 from screener.models import HouseholdMember
 
@@ -138,8 +138,14 @@ class KsMsp(PolicyEngineMembersCalculator):
           non-eligible members (e.g., adult children), this may be stricter than the actual rule (known data gap)
         - Benefit value is premium savings only; QMB deductible/coinsurance coverage is not included
 
-    Note: Includes Medicaid pe_inputs + IsMedicaidEligibleDependency because QI requires checking
-    that the individual is not eligible for other Medicaid benefits.
+    Note: The is_medicaid_eligible inputs are needed because QI requires checking that the
+    individual is not eligible for other Medicaid benefits. We reuse ``KsKanCare.pe_inputs``
+    (which mirrors the federal Medicaid inputs) rather than ``Medicaid.pe_inputs`` directly,
+    so that ``SsiCountableResourcesDependency`` stays out of the shared simulation — sending
+    ``ssi_countable_resources`` would re-enable the ABD asset gate that KanCare intentionally
+    drops (see KsKanCare / KsChip), wrongly making income-eligible seniors ineligible for KS
+    Medicaid whenever MSP is also active. MSP applies its own asset test via
+    ``CashAssetsDependency`` and does not need ``ssi_countable_resources``.
 
     References:
         - Medicare Savings Programs: https://www.medicare.gov/basics/costs/help/medicare-savings-programs
@@ -165,11 +171,27 @@ class KsMsp(PolicyEngineMembersCalculator):
         dependency.member.MedicareQuartersOfCoverageDependency,
         # is_medicaid_eligible (for QI exclusion) - override when user reports Medicaid
         dependency.member.IsMedicaidEligibleDependency,
-        # Medicaid dependencies (for PolicyEngine's is_medicaid_eligible calculation)
-        *Medicaid.pe_inputs,
+        # Medicaid dependencies for PE's is_medicaid_eligible calculation. Reuse
+        # KsKanCare.pe_inputs (NOT Medicaid.pe_inputs) so SsiCountableResourcesDependency
+        # is not leaked into the shared sim (see docstring / KsKanCare note).
+        *KsKanCare.pe_inputs,
     ]
     pe_outputs = [
         dependency.member.MspEligible,
         dependency.member.MspCategory,
         dependency.member.Msp,
+    ]
+
+
+class KsHeadStart(HeadStart):
+    """
+    Kansas Head Start (ages 3-5). Thin wrapper on the federal ``HeadStart`` PE
+    calculator that adds the KS state code; all eligibility and the per-child
+    value are computed by PolicyEngine with no KS-specific variance. Early Head
+    Start (birth to age 3, and pregnant women) is a separate program.
+    """
+
+    pe_inputs = [
+        *HeadStart.pe_inputs,
+        dependency.household.KsStateCodeDependency,
     ]

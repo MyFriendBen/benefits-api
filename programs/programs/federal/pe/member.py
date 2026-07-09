@@ -183,3 +183,44 @@ class Ccdf(PolicyEngineMembersCalculator):
             return 0
 
         return self.child_care_cost(member)
+
+
+class HeadStart(PolicyEngineMembersCalculator):
+    """
+    Federal Head Start (ages 3-5). Eligibility and per-child value are computed by
+    PolicyEngine's ``head_start`` variable. State subclasses add their state-code
+    dependency; the rest of the inputs are shared. Categorical eligibility is fed
+    by the SSI/SNAP/TANF inputs plus foster care.
+    """
+
+    pe_name = "head_start"
+    pe_inputs = [
+        dependency.member.AgeDependency,
+        dependency.member.FosterCareDependency,
+        *dependency.irs_gross_income,
+        dependency.member.Ssi,
+        dependency.spm.Snap,
+        dependency.spm.Tanf,
+    ]
+    pe_outputs = [dependency.member.HeadStart]
+
+
+class EarlyHeadStart(PolicyEngineMembersCalculator):
+    """
+    Federal Early Head Start (birth to age 3, and pregnant women). Same computed
+    eligibility/value model as ``HeadStart`` via PolicyEngine's ``early_head_start``
+    variable, plus a pregnancy input (EHS serves pregnant women). State subclasses
+    add their state-code dependency.
+    """
+
+    pe_name = "early_head_start"
+    pe_inputs = [
+        dependency.member.AgeDependency,
+        dependency.member.PregnancyDependency,
+        dependency.member.FosterCareDependency,
+        *dependency.irs_gross_income,
+        dependency.member.Ssi,
+        dependency.spm.Snap,
+        dependency.spm.Tanf,
+    ]
+    pe_outputs = [dependency.member.EarlyHeadStart]
