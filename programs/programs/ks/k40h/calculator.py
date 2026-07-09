@@ -98,6 +98,12 @@ class KsK40h(ProgramCalculator):
         income = self._household_income()
         e.condition(income <= self.income_limit, messages.income(income, self.income_limit))
 
+        # Refunds under $5 are not issued (KDOR). A computed refund below the floor
+        # means the household is not eligible for a payable benefit — fail eligibility
+        # rather than showing an eligible $0 result. (Also covers the no-property-tax
+        # / fully-tax-exempt case, which naturally yields a $0 refund.)
+        e.condition(self._refund_amount() >= self.min_refund)
+
     def member_eligible(self, e: MemberEligibility):
         # At least one member must satisfy a categorical path. Eligibility is
         # household-level, but the framework requires >=1 eligible member, so we
@@ -160,7 +166,11 @@ class KsK40h(ProgramCalculator):
 
         return int(total)
 
-    def household_value(self) -> int:
+    def _refund_amount(self) -> float:
+        """
+        Exact (unrounded) K-40H refund = allowed property tax x refund-table %.
+        Used both to gate eligibility (>= $5 floor) and to produce the value.
+        """
         income = self._household_income()
 
         percent = 0.0
@@ -170,17 +180,20 @@ class KsK40h(ProgramCalculator):
                 break
 
         if percent == 0.0:
-            return 0
+            return 0.0
 
         # Allowed property tax: min(annual propertyTax expense, $700); if none
         # entered, assume the $700 cap (median KS residential bills exceed $700).
         property_tax = self.screen.calc_expenses("yearly", ["propertyTax"])
         allowed = min(property_tax, self.max_property_tax) if property_tax > 0 else self.max_property_tax
 
-        refund = allowed * percent
+        return allowed * percent
 
-        # Refunds under $5 are not issued. Apply the floor to the exact (unrounded)
-        # refund — e.g. $96 x 5% = $4.80 is not payable and must not round up to $5.
+    def household_value(self) -> int:
+        refund = self._refund_amount()
+
+        # Refunds under $5 are not issued (the floor is enforced as an eligibility
+        # condition in household_eligible; return 0 here as a defensive fallback).
         if refund < self.min_refund:
             return 0
 

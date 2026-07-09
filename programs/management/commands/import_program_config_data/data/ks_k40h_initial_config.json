@@ -31,8 +31,7 @@
     "website_description": "A refund of up to $700 of the property taxes paid on your Kansas home",
     "show_on_current_benefits": true,
     "has_calculator": true,
-    "show_in_has_benefits_step": false,
-    "year": "2026"
+    "show_in_has_benefits_step": false
   },
   "documents": [
     {

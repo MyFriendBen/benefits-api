@@ -178,10 +178,10 @@ class TestSpecScenarios(TestCase):
 
     def test_s15_sub_5_refund_not_issued(self):
         # income 43200 -> 5%; propertyTax $96/yr -> min(96,700)=96; 96*.05=4.8 < $5
+        # Sub-$5 refunds are not issued -> household is NOT eligible (not an eligible $0).
         m = make_member(birth_year=1957, age=69, income={"pension": 43_200})
         eligible, value = run(make_calculator([m], property_tax=8 * 12))
-        # refund below floor -> value 0 (ineligible / no payable value)
-        self.assertEqual(value, 0)
+        self.assertFalse(eligible)
 
     def test_s16_surviving_spouse_sssurvivor_ssi_50pct(self):
         m = make_member(
