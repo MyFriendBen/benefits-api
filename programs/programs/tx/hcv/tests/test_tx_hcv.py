@@ -116,7 +116,15 @@ class TestTxHcvClassAttributes(TestCase):
         self.assertEqual(TxHcv.BEDROOM_MAP, {1: 0, 2: 1, 3: 2, 4: 2, 5: 3, 6: 3, 7: 4, 8: 4})
 
     def test_dependencies(self):
-        for field in ("income_amount", "household_size", "county", "zipcode", "household_assets", "age", "relationship"):
+        for field in (
+            "income_amount",
+            "household_size",
+            "county",
+            "zipcode",
+            "household_assets",
+            "age",
+            "relationship",
+        ):
             self.assertIn(field, TxHcv.dependencies)
 
 

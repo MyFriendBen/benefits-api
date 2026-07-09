@@ -394,9 +394,7 @@ class HudIncomeClient:
         year = int(year) if isinstance(year, str) else year
         self._validate_bedrooms(bedrooms)
         area_data = self._fetch_fmr_area_data(screen, year, county_override)
-        return self._metro_fmr_value(
-            area_data.get("basicdata", {}), bedrooms, county_override or screen.county
-        )
+        return self._metro_fmr_value(area_data.get("basicdata", {}), bedrooms, county_override or screen.county)
 
     def get_screen_safmr(
         self,
