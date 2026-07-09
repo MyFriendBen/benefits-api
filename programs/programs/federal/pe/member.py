@@ -246,8 +246,6 @@ class Msp(PolicyEngineMembersCalculator):
     """
 
     pe_name = "msp"
-    # Shared inputs. State subclasses append their state-code dependency and the state's
-    # Medicaid inputs (see e.g. TxMsp / KsMsp / IlMsp).
     pe_inputs = [
         # is_medicare_eligible: overrides PE when the user reports Medicare
         dependency.member.IsMedicareEligibleDependency,
