@@ -29,23 +29,21 @@ class KsKanCare(Medicaid):
     Kansas has not adopted ACA adult expansion, so PE returns ineligible for
     non-disabled, non-pregnant, childless adults under 65 at any income.
 
-    KS-specific inputs beyond the federal Medicaid set:
+    KS-specific inputs added on top of the federal Medicaid set:
 
-    - ``SsiCountableResourcesDependency`` screens the ABD $2,000/$3,000 resource limit.
     - ``MeetsSsiDisabilityCriteriaDependency`` / ``IsBlindDependency`` map the screener's
       disability, long-term-disability, SSDI, and visual-impairment signals to PE's
       SSI-criterion inputs (leaving the SGA earnings test intact). Without them,
       disabled/blind applicants would wrongly return ineligible.
+
+    The ABD $2,000/$3,000 resource limit is screened by the inherited
+    ``SsiCountableResourcesDependency`` (part of the federal Medicaid inputs).
     """
 
     pe_inputs = [
-        dependency.member.AgeDependency,
-        dependency.member.PregnancyDependency,
-        dependency.member.IsDisabledDependency,
+        *Medicaid.pe_inputs,
         dependency.member.MeetsSsiDisabilityCriteriaDependency,
         dependency.member.IsBlindDependency,
-        dependency.member.SsiCountableResourcesDependency,
-        *dependency.irs_gross_income,
         dependency.household.KsStateCodeDependency,
     ]
 
