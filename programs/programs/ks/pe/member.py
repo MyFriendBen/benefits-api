@@ -1,5 +1,5 @@
 import programs.programs.policyengine.calculators.dependencies as dependency
-from programs.programs.federal.pe.member import Medicaid, Ssi, HeadStart
+from programs.programs.federal.pe.member import Medicaid, Ssi, HeadStart, Msp
 from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
 from screener.models import HouseholdMember
 
@@ -24,35 +24,23 @@ class KsSsi(Ssi):
 
 
 class KsKanCare(Medicaid):
-    """KanCare is Kansas's Medicaid program.
+    """KanCare is Kansas's Medicaid program (subclass of the federal ``medicaid`` calculator).
 
-    Subclass of the federal PE ``medicaid`` calculator (pattern: CO/NC/MA/WA).
     Kansas has not adopted ACA adult expansion, so PE returns ineligible for
     non-disabled, non-pregnant, childless adults under 65 at any income.
 
-    KS-specific input handling (see spec Implementation Notes 1-2):
+    KS-specific inputs added on top of the federal Medicaid set:
 
-    - The federal ``SsiCountableResourcesDependency`` (``ssi_countable_resources``,
-      from ``household_assets``) is intentionally omitted so the ABD $2,000/$3,000
-      asset test never fires. MFB does not screen assets for this pathway; the
-      limit is surfaced in the program description instead. Income-eligible
-      seniors/ABD applicants therefore stay eligible.
-    - ``MeetsSsiDisabilityCriteriaDependency`` maps the screener's disability /
-      long-term-disability / SSDI signals to PE's ``meets_ssi_disability_criteria``
-      input (not ``is_ssi_disabled`` directly, so the SGA earnings test still
-      applies). ``IsBlindDependency`` maps ``visually_impaired`` to ``is_blind``,
-      which also exempts blind applicants from SGA. Without these, disabled/blind
-      applicants would wrongly return ineligible (non-expansion KS has no
-      adult-expansion fallback).
+    - ``MeetsSsiDisabilityCriteriaDependency`` / ``IsBlindDependency`` map the screener's
+      disability, long-term-disability, SSDI, and visual-impairment signals to PE's
+      SSI-criterion inputs (leaving the SGA earnings test intact). Without them,
+      disabled/blind applicants would wrongly return ineligible.
     """
 
     pe_inputs = [
-        dependency.member.AgeDependency,
-        dependency.member.PregnancyDependency,
-        dependency.member.IsDisabledDependency,
+        *Medicaid.pe_inputs,
         dependency.member.MeetsSsiDisabilityCriteriaDependency,
         dependency.member.IsBlindDependency,
-        *dependency.irs_gross_income,
         dependency.household.KsStateCodeDependency,
     ]
 
@@ -77,36 +65,17 @@ class KsKanCare(Medicaid):
 
 
 class KsChip(PolicyEngineMembersCalculator):
-    """
-    Kansas CHIP (Children's Health Insurance Program) calculator.
+    """Kansas CHIP calculator (mirrors the TxChip precedent).
 
-    Composes PolicyEngine's federal ``chip`` eligibility/value output with the
-    Kansas-specific ``ks_chip_premium``. Mirrors the TxChip precedent:
+    Member value is PE's federal ``chip`` output (all CHIP eligibility logic — under 19,
+    income ≤ the 255% FPL effective cap, not Medicaid-eligible — is already baked in),
+    surfaced only for children whose insurance is exactly ``none``. Also outputs the
+    Kansas ``ks_chip_premium`` (annual = monthly premium × 12) for display; it is not
+    netted against the coverage value.
 
-    - ``chip`` (the per-child coverage value, ~``per_capita_chip``) is the member
-      value. All CHIP eligibility logic (under 19, income at/below the 255% FPL
-      effective cap, ~Medicaid-eligible) is already baked into PE's ``chip`` output.
-    - The "uninsured children only" rule is enforced via MFB's hybrid zero-out:
-      a child's CHIP value is surfaced only when their insurance is exactly
-      ``none``; any other coverage type zeroes it out.
-
-    KS-specific: additionally outputs ``ks_chip_premium`` (a TaxUnit-level PE
-    variable returned as an ANNUAL figure = monthly premium x 12). It is surfaced
-    for display alongside the coverage value (divide by 12 for the monthly amount)
-    and is NOT netted against the coverage value.
-
-    Dependency on KanCare Medicaid: PE gates ``is_chip_eligible_child`` on
-    ``~is_medicaid_eligible``, so CHIP must compute Medicaid eligibility the same
-    way KanCare does. All programs on a screen share a single PolicyEngine
-    simulation (``pe_input`` merges every program's ``pe_inputs``), so CHIP reuses
-    ``KsKanCare.pe_inputs`` verbatim rather than the federal ``Medicaid.pe_inputs``.
-    This keeps the shared ``medicaid`` / ``is_medicaid_eligible`` computation
-    consistent and — critically — omits ``SsiCountableResourcesDependency``. If CHIP
-    sent ``ssi_countable_resources``, that input would leak into the shared sim and
-    re-enable the ABD asset gate that KanCare intentionally drops (Medicaid spec
-    Implementation Note 2), wrongly making income-eligible seniors/ABD applicants
-    ineligible for Medicaid whenever CHIP is also active. The asset input is not
-    needed for CHIP either — KanCare CHIP applies no resource test.
+    PE gates CHIP on ``~is_medicaid_eligible``, so CHIP reuses ``KsKanCare.pe_inputs``
+    to compute Medicaid eligibility the same way KanCare does. CHIP applies no resource
+    test of its own.
     """
 
     pe_name = "chip"
@@ -131,6 +100,17 @@ class KsChip(PolicyEngineMembersCalculator):
             return pe_value
 
         return 0
+
+
+class KsMsp(Msp):
+    """Kansas Medicare Savings Program. Federal ``Msp`` plus the KS state code and KanCare's
+    Medicaid inputs (see ``Msp`` for why the Medicaid inputs are required)."""
+
+    pe_inputs = [
+        *Msp.pe_inputs,
+        dependency.household.KsStateCodeDependency,
+        *Medicaid.pe_inputs,
+    ]
 
 
 class KsHeadStart(HeadStart):
