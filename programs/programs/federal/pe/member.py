@@ -247,7 +247,6 @@ class Msp(PolicyEngineMembersCalculator):
 
     pe_name = "msp"
     pe_inputs = [
-        # is_medicare_eligible: overrides PE when the user reports Medicare
         dependency.member.IsMedicareEligibleDependency,
         dependency.member.AgeDependency,
         dependency.member.SsdiReportedDependency,
@@ -255,9 +254,7 @@ class Msp(PolicyEngineMembersCalculator):
         dependency.member.SsiEarnedIncomeDependency,
         dependency.member.SsiUnearnedIncomeDependency,
         dependency.spm.CashAssetsDependency,
-        # 40 quarters -> free Part A -> QMB value is the Part B premium
         dependency.member.MedicareQuartersOfCoverageDependency,
-        # is_medicaid_eligible for the QI exclusion; overrides when the user reports Medicaid
         dependency.member.IsMedicaidEligibleDependency,
     ]
     pe_outputs = [
