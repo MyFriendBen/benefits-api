@@ -206,11 +206,22 @@ class TestKsKanCareScenarios(TestCase):
         self._magi_ineligible(calc)
         self.assertEqual(calc.member_value(self._make_member(age=64)), 0)
 
-    # --- Scenario 7: senior 65+, assets over limit -> AGED (asset test not screened) ---
-    def test_s7_senior_assets_over_limit_eligible_aged(self):
+    # --- Scenario 7 / 7b: senior 65+ on the ABD pathway -> AGED value tier ---
+    # The ABD asset gate itself lives in PolicyEngine (msp_asset_eligible /
+    # is_optional_senior_or_disabled_asset_eligible), so it is verified end-to-end by the
+    # spec's live-PE run, not here. This asserts only MFB's value routing: once PE finds a
+    # non-disabled senior ABD-eligible, the value is the AGED tier.
+    def test_s7_senior_abd_eligible_gets_aged_value(self):
         calc = self._make_calculator()
         self._abd(calc, True)
         self.assertEqual(calc.member_value(self._make_member(age=66, is_disabled=False)), AGED)
+
+    def test_s7_senior_abd_ineligible_gets_zero(self):
+        """When PE finds the senior ABD-ineligible (e.g. assets over the limit, Scenario 7),
+        the value is $0."""
+        calc = self._make_calculator()
+        self._abd(calc, False)
+        self.assertEqual(calc.member_value(self._make_member(age=66, is_disabled=False)), 0)
 
     # --- Scenario 8: disabled adult on SSDI -> DISABLED ---
     def test_s8_disabled_on_ssdi_eligible_disabled(self):
