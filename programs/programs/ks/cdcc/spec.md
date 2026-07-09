@@ -96,7 +96,7 @@ Dollar values for the eligible scenarios are PolicyEngine-verified (KS CDCC = 50
 [ ] Scenario 7 (Child turns 13 mid-year — still 12 at time of screening): User should be **eligible**, value: $570/year
 [ ] Scenario 8 (No qualifying dependent — only teenager age 16 in household): User should be **ineligible**
 [ ] Scenario 9 (Disabled adult dependent — alternative qualifying individual): User should be **eligible** per IRC § 21, value: $540/year
-[ ] Scenario 10 (Disabled spouse with no earned income — deemed-income path): User should be **eligible** per IRC § 21(d)(2), value: $525/year
+[ ] Scenario 10 (Disabled spouse with no earned income — deemed-income path): User should be **eligible** per IRC § 21(d)(2), value: $490/year
 
 ## Test Scenarios
 
@@ -243,7 +243,7 @@ Dollar values for the eligible scenarios are PolicyEngine-verified (KS CDCC = 50
 
 ### Scenario 10: Disabled Spouse with No Earned Income — Deemed-Income Path
 **What we're checking**: Married couple where one spouse is disabled (incapable of self-care) and has no earned income, with care expenses for that spouse. Under IRC § 21(d)(2), a spouse incapable of self-care is deemed to have earned income of $250/month (one qualifying individual), which both makes them a qualifying individual and satisfies the two-earner requirement — so the household should qualify.
-**Expected**: Eligible, value: $525/year. Per IRC § 21(d)(2), a disabled spouse incapable of self-care is deemed to have $250/month of earned income, which both makes them a qualifying individual and satisfies the two-earner requirement, so the household qualifies for the credit. (Value: expenses limited to the lower "earner's" deemed $3,000/year → 35% × $3,000 = $1,050 federal → 50% = $525 KS.)
+**Expected**: Eligible, value: $490/year. Per IRC § 21(d)(2), a disabled spouse incapable of self-care is deemed to have $250/month of earned income, which both makes them a qualifying individual and satisfies the two-earner requirement, so the household qualifies for the credit. (Federal CDCC computes to $980 for this household; KS credit = 50% = $490.)
 
 **Steps**:
 - **Location**: Enter ZIP code `66044`, Select county `Douglas`
