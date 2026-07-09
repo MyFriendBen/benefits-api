@@ -230,9 +230,16 @@ class Msp(PolicyEngineMembersCalculator):
     """
     Federal Medicare Savings Program (QMB/SLMB/QI). Eligibility, category, and value
     are computed by PolicyEngine's ``msp`` variable; MSP rules are federal, so state
-    subclasses only add their state-code dependency and the state's Medicaid inputs
-    (``msp`` gates QI on ``~is_medicaid_eligible`` and reads ``ssi_countable_resources``,
-    both of which come from the Medicaid input set).
+    subclasses only add their state-code dependency and the state's Medicaid inputs.
+
+    The Medicaid inputs are load-bearing for MSP in two ways:
+        - QI eligibility requires the applicant NOT be eligible for full Medicaid, so ``msp``
+          reads ``is_medicaid_eligible`` — which is only computed when the Medicaid inputs
+          (age, income, disability, pregnancy) are present in the shared simulation.
+        - MSP's asset test (``msp_asset_eligible``) reads ``ssi_countable_resources``, which is
+          supplied by ``SsiCountableResourcesDependency`` from the Medicaid input set.
+    Without the Medicaid inputs, QI would never exclude Medicaid-eligible applicants and the
+    asset test would see $0 resources.
 
     Categories: QMB (≤100% FPL, Part A/B premiums + deductibles + coinsurance),
     SLMB (100-120% FPL, Part B premium), QI (120-135% FPL and not Medicaid-eligible,

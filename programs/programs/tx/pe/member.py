@@ -383,7 +383,7 @@ class TxEarlyHeadStart(EarlyHeadStart):
 
 class TxMsp(Msp):
     """Texas Medicare Savings Program. Federal ``Msp`` plus the TX state code and the state's
-    Medicaid inputs (which supply ``is_medicaid_eligible`` and ``ssi_countable_resources``)."""
+    Medicaid inputs (see ``Msp`` for why the Medicaid inputs are required)."""
 
     pe_inputs = [
         *Msp.pe_inputs,

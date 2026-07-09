@@ -109,7 +109,7 @@ class KsChip(PolicyEngineMembersCalculator):
 
 class KsMsp(Msp):
     """Kansas Medicare Savings Program. Federal ``Msp`` plus the KS state code and KanCare's
-    Medicaid inputs (which supply ``is_medicaid_eligible`` and ``ssi_countable_resources``)."""
+    Medicaid inputs (see ``Msp`` for why the Medicaid inputs are required)."""
 
     pe_inputs = [
         *Msp.pe_inputs,

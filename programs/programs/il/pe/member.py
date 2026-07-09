@@ -307,7 +307,7 @@ class IlMpe(PolicyEngineMembersCalculator):
 
 class IlMsp(federal_member.Msp):
     """Illinois Medicare Savings Program. Federal ``Msp`` plus the IL state code and
-    ``IlMedicaid`` inputs (which supply ``is_medicaid_eligible`` and ``ssi_countable_resources``)."""
+    ``IlMedicaid`` inputs (see ``Msp`` for why the Medicaid inputs are required)."""
 
     pe_inputs = [
         *federal_member.Msp.pe_inputs,
