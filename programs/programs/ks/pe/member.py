@@ -1,5 +1,5 @@
 import programs.programs.policyengine.calculators.dependencies as dependency
-from programs.programs.federal.pe.member import Medicaid, HeadStart
+from programs.programs.federal.pe.member import Medicaid, HeadStart, Msp
 from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
 from screener.models import HouseholdMember
 
@@ -88,50 +88,14 @@ class KsChip(PolicyEngineMembersCalculator):
         return 0
 
 
-class KsMsp(PolicyEngineMembersCalculator):
-    """Kansas Medicare Savings Program (QMB/SLMB/QI), using PolicyEngine's federal ``msp``
-    calculator as-is (no Kansas-specific variance).
+class KsMsp(Msp):
+    """Kansas Medicare Savings Program. Federal ``Msp`` plus the KS state code and KanCare's
+    Medicaid inputs (which supply ``is_medicaid_eligible`` and ``ssi_countable_resources``)."""
 
-    Categories, determined by PE: QMB (≤100% FPL, Part A/B premiums + deductibles +
-    coinsurance), SLMB (100-120% FPL, Part B premium), QI (120-135% FPL and not
-    Medicaid-eligible, Part B premium).
-
-    Limitations inherited from the federal calculator:
-        - SSDI pathway partial: months_receiving_social_security_disability isn't collected,
-          but IsMedicareEligibleDependency short-circuits when the user reports Medicare.
-        - Assumes 40 quarters of covered employment (free Part A); ~99% of beneficiaries qualify.
-        - Assets are screened against ``household_assets / num_adults`` per adult; PE sums only
-          the applicant's marital unit, so a third adult under-counts resources (lax, the
-          acceptable over-inclusive direction).
-        - Benefit value is premium savings only (no QMB deductible/coinsurance).
-
-    References:
-        - https://www.medicare.gov/basics/costs/help/medicare-savings-programs
-        - https://www.cms.gov/newsroom/fact-sheets/2026-medicare-parts-b-premiums-deductibles
-    """
-
-    pe_name = "msp"
     pe_inputs = [
-        # is_medicare_eligible: overrides PE when the user reports Medicare
-        dependency.member.IsMedicareEligibleDependency,
-        dependency.member.AgeDependency,
-        dependency.member.SsdiReportedDependency,
-        # msp_countable_income (SSI methodology)
-        dependency.member.SsiEarnedIncomeDependency,
-        dependency.member.SsiUnearnedIncomeDependency,
-        dependency.spm.CashAssetsDependency,
+        *Msp.pe_inputs,
         dependency.household.KsStateCodeDependency,
-        # 40 quarters -> free Part A -> QMB value is the Part B premium
-        dependency.member.MedicareQuartersOfCoverageDependency,
-        # is_medicaid_eligible for the QI exclusion; overrides when the user reports Medicaid
-        dependency.member.IsMedicaidEligibleDependency,
-        # Medicaid inputs power is_medicaid_eligible and the msp_asset_eligible resource test
         *Medicaid.pe_inputs,
-    ]
-    pe_outputs = [
-        dependency.member.MspEligible,
-        dependency.member.MspCategory,
-        dependency.member.Msp,
     ]
 
 

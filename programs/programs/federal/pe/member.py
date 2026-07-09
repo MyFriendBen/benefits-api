@@ -224,3 +224,46 @@ class EarlyHeadStart(PolicyEngineMembersCalculator):
         dependency.spm.Tanf,
     ]
     pe_outputs = [dependency.member.EarlyHeadStart]
+
+
+class Msp(PolicyEngineMembersCalculator):
+    """
+    Federal Medicare Savings Program (QMB/SLMB/QI). Eligibility, category, and value
+    are computed by PolicyEngine's ``msp`` variable; MSP rules are federal, so state
+    subclasses only add their state-code dependency and the state's Medicaid inputs
+    (``msp`` gates QI on ``~is_medicaid_eligible`` and reads ``ssi_countable_resources``,
+    both of which come from the Medicaid input set).
+
+    Categories: QMB (≤100% FPL, Part A/B premiums + deductibles + coinsurance),
+    SLMB (100-120% FPL, Part B premium), QI (120-135% FPL and not Medicaid-eligible,
+    Part B premium).
+
+    Limitations:
+        - SSDI pathway partial: months_receiving_social_security_disability isn't collected,
+          but IsMedicareEligibleDependency short-circuits when the user reports Medicare.
+        - Assumes 40 quarters of covered employment (free Part A); ~99% of beneficiaries qualify.
+        - Benefit value is premium savings only (no QMB deductible/coinsurance).
+    """
+
+    pe_name = "msp"
+    # Shared inputs. State subclasses append their state-code dependency and the state's
+    # Medicaid inputs (see e.g. TxMsp / KsMsp / IlMsp).
+    pe_inputs = [
+        # is_medicare_eligible: overrides PE when the user reports Medicare
+        dependency.member.IsMedicareEligibleDependency,
+        dependency.member.AgeDependency,
+        dependency.member.SsdiReportedDependency,
+        # msp_countable_income (SSI methodology)
+        dependency.member.SsiEarnedIncomeDependency,
+        dependency.member.SsiUnearnedIncomeDependency,
+        dependency.spm.CashAssetsDependency,
+        # 40 quarters -> free Part A -> QMB value is the Part B premium
+        dependency.member.MedicareQuartersOfCoverageDependency,
+        # is_medicaid_eligible for the QI exclusion; overrides when the user reports Medicaid
+        dependency.member.IsMedicaidEligibleDependency,
+    ]
+    pe_outputs = [
+        dependency.member.MspEligible,
+        dependency.member.MspCategory,
+        dependency.member.Msp,
+    ]
