@@ -35,9 +35,6 @@ class KsKanCare(Medicaid):
       disability, long-term-disability, SSDI, and visual-impairment signals to PE's
       SSI-criterion inputs (leaving the SGA earnings test intact). Without them,
       disabled/blind applicants would wrongly return ineligible.
-
-    The ABD $2,000/$3,000 resource limit is screened by the inherited
-    ``SsiCountableResourcesDependency`` (part of the federal Medicaid inputs).
     """
 
     pe_inputs = [
