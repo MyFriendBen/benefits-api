@@ -390,10 +390,11 @@ class TestMaEarlyHeadStart(TestCase):
         """
         Test that MaEarlyHeadStart has the expected number of pe_inputs.
 
-        Should have: 1 AgeDependency + 1 MaStateCodeDependency + 8 IRS income dependencies = 10 total
+        MaEarlyHeadStart now inherits the shared federal EarlyHeadStart base class,
+        which carries the full input set for categorical eligibility:
+        Age + Pregnancy + FosterCare + 8 IRS income dependencies + Ssi + Snap + Tanf
+        = 14 base inputs, plus MaStateCodeDependency = 15 total.
         """
-        # Count expected inputs
-        # 1 Age + 1 State + 8 IRS income types (unemployment, investment, retirement distributions)
-        expected_count = 10
+        expected_count = 15
 
         self.assertEqual(len(MaEarlyHeadStart.pe_inputs), expected_count)

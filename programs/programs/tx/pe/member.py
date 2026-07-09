@@ -3,6 +3,8 @@ from programs.programs.federal.pe.member import (
     Ssi,
     Medicaid,
     CommoditySupplementalFoodProgram,
+    HeadStart,
+    EarlyHeadStart,
 )
 from programs.programs.policyengine.calculators.base import (
     PolicyEngineMembersCalculator,
@@ -360,60 +362,22 @@ class TxDart(PolicyEngineMembersCalculator):
         return self.get_member_variable(member.id)
 
 
-class TxHeadStart(PolicyEngineMembersCalculator):
-    """
-    Texas Head Start calculator using PolicyEngine.
+class TxHeadStart(HeadStart):
+    """Texas Head Start (ages 3-5) — federal ``HeadStart`` PE calculator + TX state code."""
 
-    Federal early childhood program providing comprehensive education, health,
-    and family support services to low-income children (ages 3-5) and their families.
-
-    Eligibility (determined by PolicyEngine):
-        - Child must be age 3-5 (Early Head Start covers 0-2)
-        - Household income at or below 130% FPL
-        - Automatic eligibility for families eligible for or receiving SNAP, TANF, or SSI
-    """
-
-    pe_name = "head_start"
     pe_inputs = [
-        dependency.member.AgeDependency,
-        dependency.member.FosterCareDependency,
+        *HeadStart.pe_inputs,
         dependency.household.TxStateCodeDependency,
-        *dependency.irs_gross_income,
-        dependency.member.Ssi,
-        dependency.spm.Snap,
-        dependency.spm.Tanf,
     ]
-    pe_outputs = [dependency.member.HeadStart]
 
 
-class TxEarlyHeadStart(PolicyEngineMembersCalculator):
-    """
-    Texas Early Head Start calculator using PolicyEngine.
+class TxEarlyHeadStart(EarlyHeadStart):
+    """Texas Early Head Start (birth-3 / pregnant) — federal ``EarlyHeadStart`` PE calculator + TX state code."""
 
-    Provides comprehensive early childhood services (education, health, nutrition,
-    and family support) to income-eligible families with children under age 3 or
-    pregnant women in Texas.
-
-    Eligibility pathways (45 CFR 1302.12):
-    - Age: child under 36 months OR pregnant woman
-    - Income: family income at or below 130% FPL (covers both the primary 100% FPL
-      threshold and the over-income band up to 130% FPL per 45 CFR 1302.12(d))
-    - Categorical: family receives SNAP, TANF, or SSI (income test waived)
-    - Foster care: child is in foster care (income test waived)
-    """
-
-    pe_name = "early_head_start"
     pe_inputs = [
-        dependency.member.AgeDependency,
-        dependency.member.PregnancyDependency,
-        dependency.member.FosterCareDependency,
+        *EarlyHeadStart.pe_inputs,
         dependency.household.TxStateCodeDependency,
-        *dependency.irs_gross_income,
-        dependency.member.Ssi,
-        dependency.spm.Snap,
-        dependency.spm.Tanf,
     ]
-    pe_outputs = [dependency.member.EarlyHeadStart]
 
 
 class TxMsp(PolicyEngineMembersCalculator):
