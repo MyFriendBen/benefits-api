@@ -168,6 +168,43 @@ class IsDisabledDependency(Member):
         return self.member.disabled or self.member.long_term_disability or self.member.visually_impaired
 
 
+class IsIncapableOfSelfCareDependency(Member):
+    field = "is_incapable_of_self_care"
+
+    def value(self):
+        # PolicyEngine's CDCC treats a spouse/dependent who is incapable of self-care as a
+        # qualifying individual at any age. We infer this from the same self-reported disability
+        # signals as is_disabled (the screener has no dedicated incapable-of-self-care field).
+        return self.member.disabled or self.member.long_term_disability or self.member.visually_impaired
+
+
+class CareExpensesDependency(Member):
+    field = "care_expenses"
+
+    def value(self):
+        # PolicyEngine's federal CDCC reads care costs for a disabled adult/spouse from the
+        # person-level `care_expenses` variable (distinct from spm-level `childcare_expenses`,
+        # which only distributes to under-13 children). The screener collects a single
+        # household-level "Dependent Care" (dependentCare) expense with no per-member
+        # attribution, so we split it evenly across the members who are incapable of self-care
+        # and assign this member their share. An even split is safe for the credit: the federal
+        # CDCC caps relevant expenses at $3,000 (one qualifying individual) / $6,000 (two or more),
+        # so the split lands on the cap in the cases that matter.
+        if not (self.member.disabled or self.member.long_term_disability or self.member.visually_impaired):
+            return 0
+
+        incapable_members = [
+            m
+            for m in self.screen.household_members.all()
+            if (m.disabled or m.long_term_disability or m.visually_impaired)
+        ]
+        if not incapable_members:
+            return 0
+
+        dependent_care_total = self.screen.calc_expenses("yearly", ["dependentCare"])
+        return dependent_care_total / len(incapable_members)
+
+
 class MeetsSsiDisabilityCriteriaDependency(Member):
     """
     PolicyEngine frontier (policyengine-us 1.715.2) requires this person input to

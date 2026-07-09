@@ -20,7 +20,9 @@ class KsCdcc(PolicyEngineTaxUnitCalulator):
         dependency.member.TaxUnitSpouseDependency,
         dependency.member.TaxUnitDependentDependency,
         dependency.member.IsDisabledDependency,
+        dependency.member.IsIncapableOfSelfCareDependency,
         dependency.spm.ChildCareDependency,
+        dependency.member.CareExpensesDependency,
         dependency.household.KsStateCodeDependency,
         *dependency.irs_gross_income,
     ]
