@@ -136,25 +136,25 @@ class ScreenCurrentBenefitsView(views.APIView):
     queryset = Screen.objects.all()
 
     def patch(self, request, screen_uuid):
-        screen = get_object_or_404(Screen, uuid=screen_uuid)
-
         serializer = CurrentBenefitToggleSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         program_name = serializer.validated_data["program"]
         has = serializer.validated_data["has"]
 
-        program = get_object_or_404(Program, white_label=screen.white_label, name_abbreviated=program_name)
-
         # Lock the screen for the read-modify-write so concurrent toggles (or a
-        # toggle racing a Screen PATCH) can't interleave on the join table.
+        # toggle racing a Screen PATCH) can't interleave on the join table. The
+        # locked fetch also serves as the screen-missing 404 (an empty
+        # transaction just rolls back), and the program lookup resolves against
+        # the locked screen's white label rather than a pre-lock read.
         with transaction.atomic():
-            locked = Screen.objects.select_for_update().get(pk=screen.pk)
+            screen = get_object_or_404(Screen.objects.select_for_update(), uuid=screen_uuid)
+            program = get_object_or_404(Program, white_label=screen.white_label, name_abbreviated=program_name)
             if has:
-                CurrentBenefit.objects.get_or_create(screen=locked, program=program)
+                CurrentBenefit.objects.get_or_create(screen=screen, program=program)
             else:
-                CurrentBenefit.objects.filter(screen=locked, program=program).delete()
+                CurrentBenefit.objects.filter(screen=screen, program=program).delete()
             current_benefits = sorted(
-                CurrentBenefit.objects.filter(screen=locked).values_list("program__name_abbreviated", flat=True)
+                CurrentBenefit.objects.filter(screen=screen).values_list("program__name_abbreviated", flat=True)
             )
 
         return Response({"current_benefits": current_benefits})

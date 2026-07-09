@@ -423,17 +423,17 @@ class ScreenSerializer(serializers.ModelSerializer):
 
 
 class CurrentBenefitToggleSerializer(serializers.Serializer):
-    """Input for the single-benefit toggle endpoint (PATCH .../current-benefits/).
+    """Input for the single-benefit toggle endpoint (PATCH /screens/<uuid:screen_uuid>/current-benefits/).
 
-    `program` is a `name_abbreviated`; `has` selects add (True) vs remove (False).
+    `name_abbreviated` is a program name_abbreviated value; `has` selects add (True) vs remove (False).
     Resolving the name to a Program and writing the join-table row happen in the
     view, which has the screen (and thus its white_label) in hand.
 
-    `program`'s max_length mirrors the Program.name_abbreviated column (120) so no
+    `name_abbreviated`'s max_length mirrors the Program.name_abbreviated column (120) so no
     DB-valid name is rejected before the white-label-scoped lookup in the view.
     """
 
-    program = serializers.CharField(max_length=120)
+    name_abbreviated = serializers.CharField(max_length=120)
     has = serializers.BooleanField()
 
 

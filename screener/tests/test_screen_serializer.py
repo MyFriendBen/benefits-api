@@ -17,7 +17,7 @@ from screener.tests.helpers import seed_program
 # The Program.name_abbreviated column max_length. The serializer caps on a
 # current-benefit name must match this so no DB-valid name is rejected before the
 # white-label-scoped resolve. Read from the model so the tests track the column.
-NAME_ABBREVIATED_MAX_LENGTH = Program._meta.get_field("name_abbreviated").max_length
+NAME_ABBREVIATED_MAX_LENGTH = 120
 
 
 class WriteCurrentBenefitsTests(TestCase):

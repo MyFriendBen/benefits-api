@@ -5,7 +5,7 @@ Tests for the single-benefit toggle endpoint:
     body: {"program": "snap", "has": true|false}
 
 A lightweight add/remove of one CurrentBenefit row consumed by the results-page
-"already have this" toggle (MFB-871). Resolution is white-label-scoped and the
+"already have this" toggle. Resolution is white-label-scoped and the
 operation is idempotent. See screener.views.ScreenCurrentBenefitsView.
 """
 
