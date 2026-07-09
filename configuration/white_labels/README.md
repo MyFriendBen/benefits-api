@@ -181,7 +181,7 @@ category_benefits = {
 
 **Data Flow:**
 1. Config key: `"snap"` →
-2. Frontend: `formData.benefits.snap` →
+2. Frontend: `formData.benefits.has("snap")` (a `Set<string>`) →
 3. API: `current_benefits: ["snap"]` written to `screener_current_benefits` join table →
 4. Backend: `has_benefit("snap")` queries join table →
 5. Results: `"already_has": True` →
@@ -189,7 +189,7 @@ category_benefits = {
 
 **To add a new benefit:**
 1. Add key to `category_benefits` (e.g., `"my_benefit"`)
-2. Add mapping in `has_benefit()` name_map for all program variants that share this benefit: `"my_benefit"`, `"co_my_benefit"`, etc.
+2. Register a `Program` whose `name_abbreviated` matches that key. To group white-label variants of the same real-world benefit (`"my_benefit"`, `"co_my_benefit"`, etc.), give them a shared `Program.base_program` so `has_base_benefit()` covers them all.
 3. The frontend sends the key as part of `current_benefits`
 
 See [_template.py](./template.py) for detailed documentation.
@@ -325,12 +325,13 @@ This ensures translations are available across all environments and languages.
 
 Programs are registered with a `name_abbreviated` (e.g., `"snap"`, `"co_snap"`, `"cesn_leap"`).
 
-Multiple program variants can map to the same benefit in `has_benefit()`:
+`has_benefit(name_abbreviated)` matches a single program exactly:
 - `"snap"` → checks `screen.current_benefits` for a program with `name_abbreviated = "snap"`
-- `"co_snap"` → checks `screen.current_benefits` for a program with `name_abbreviated = "co_snap"` (same real-world benefit)
-- `"il_snap"` → checks `screen.current_benefits` for a program with `name_abbreviated = "il_snap"` (same real-world benefit)
+- `"co_snap"` → checks `screen.current_benefits` for a program with `name_abbreviated = "co_snap"`
 
-Current benefit enrollment is tracked via `Screen.current_benefits` (the `CurrentBenefit` relation). The `has_benefit()` method checks whether a matching `name_abbreviated` appears in that relation.
+To treat white-label variants of the same real-world benefit as equivalent, give them a shared `Program.base_program` and check with `has_base_benefit("snap")`, which matches any variant (`snap` / `co_snap` / `il_snap`) without enumerating names.
+
+Current benefit enrollment is tracked via `Screen.current_benefits` (the `CurrentBenefit` relation). `has_benefit()` checks whether a matching `name_abbreviated` appears in that relation.
 
 ## Related Files
 
@@ -352,7 +353,7 @@ Current benefit enrollment is tracked via `Screen.current_benefits` (the `Curren
 Check the complete chain:
 1. ✓ Benefit key in `category_benefits` config
 2. ✓ Frontend sends key via `current_benefits` in the API payload
-3. ✓ Mapping in `has_benefit()` name_map for ALL program variants
+3. ✓ A `Program` exists whose `name_abbreviated` (or shared `base_program`) matches the benefit key
 4. ✓ Frontend filtering using `already_has` flag
 
 ### Program not showing up?

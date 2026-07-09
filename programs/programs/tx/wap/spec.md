@@ -17,23 +17,23 @@
 
 2. **Categorical eligibility: Household automatically income-eligible if any member receives SSI (Supplemental Security Income)**
    - Screener fields:
-     - `has_ssi`
+     - `has_benefit("ssi")`
    - Source: 10 CFR 440.22(a)(2); 42 U.S.C. § 1381 et seq. (SSA Title XVI)
 
 3. **Categorical eligibility: Household automatically income-eligible if any member receives TANF (Temporary Assistance for Needy Families)**
    - Screener fields:
-     - `has_tanf`
+     - `has_benefit("tanf")`
    - Source: 10 CFR 440.22(a)(2); 42 U.S.C. § 601 et seq. (SSA Title IV)
 
 4. **Categorical eligibility: Household automatically income-eligible if any member receives SNAP (Supplemental Nutrition Assistance Program)**
    - Screener fields:
-     - `has_snap`
+     - `has_benefit("snap")`
    - Source: 10 CFR 440.22(a)(2); 7 U.S.C. § 2011 et seq. (Food and Nutrition Act of 2008)
 
 5. **Categorical eligibility: Household automatically income-eligible if eligible for LIHEAP (Low-Income Home Energy Assistance Program)**
    - Screener fields:
-     - `has_liheap` *(field needs to be added to screener)*
-   - Note: The screener currently has `has_il_liheap` (Illinois-specific) but no generic LIHEAP field. A `has_liheap` field will need to be added.
+     - `liheap` current benefit *(needs to be added to the screener)*
+   - Note: The screener currently has an `il_liheap` current benefit (Illinois-specific) but no generic LIHEAP entry. A `liheap` current benefit will need to be added.
    - Source: 10 CFR 440.22(a)(3); 42 U.S.C. § 8621 et seq.
 
 6. **Applicant must reside in the state of Texas**
@@ -70,7 +70,7 @@ TX-specific note: Texas households tend to have above-average cooling loads (hot
 - ✅ Evaluable criteria: 6
 - ⚠️  Data gaps: 2
 
-6 of 8 total criteria can be evaluated with current screener fields. The core eligibility requirements — income at or below 200% FPL, categorical eligibility via SSI/TANF/SNAP/LIHEAP, and Texas residency — are well-covered (`has_snap` already exists in the screener; LIHEAP requires a new `has_liheap` screener field). The 2 data gaps are dwelling-specific requirements verified during the formal application and on-site audit process.
+6 of 8 total criteria can be evaluated with current screener fields. The core eligibility requirements — income at or below 200% FPL, categorical eligibility via SSI/TANF/SNAP/LIHEAP, and Texas residency — are well-covered (a `snap` current benefit already exists in the screener; LIHEAP requires a new `liheap` current benefit). The 2 data gaps are dwelling-specific requirements verified during the formal application and on-site audit process.
 
 ## Research Sources
 

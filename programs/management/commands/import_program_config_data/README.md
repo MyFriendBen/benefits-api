@@ -429,7 +429,7 @@ If your program needs an "I already have this" checkbox:
    }
    ```
 
-2. **Add backend mapping** in `has_benefit()` name_map for ALL variant names of your program
+2. **Register the program** with a `name_abbreviated` matching the config key. To group white-label variants of one real-world benefit, give them a shared `Program.base_program` so `has_base_benefit()` matches any variant.
 
 For complete details, see: `configuration/white_labels/_template.py` (lines 243-303)
 

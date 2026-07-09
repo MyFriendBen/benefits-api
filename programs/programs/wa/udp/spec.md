@@ -160,7 +160,7 @@ In plain English: a household must be in Seattle's SCL/SPU service area (Criteri
 **Household is currently certified for SNAP (federal Supplemental Nutrition Assistance Program) or WA Basic Food Assistance. This pathway is treated as proof of income eligibility (no further income verification required) and effectively bypasses Criteria 2 and 3 for screener purposes.**
 
 - Screener fields:
-   - `has_snap == true`
+   - `has_benefit("snap")`
 
 - Source: SCL DPP 500 P III-428 §5.1.2; SPU CS-700 §3.B.2; seattle.gov/utilities UDP page
 
@@ -170,7 +170,7 @@ In plain English: a household must be in Seattle's SCL/SPU service area (Criteri
 
    - **Why it's screener-safe**: SNAP's WA threshold (~130% FPL with deductions) is more restrictive than 70% SMI, so any SNAP-enrolled household passes the UDP income test. Treating SNAP as a pathway can't create false positives.
 
-   - **WA Basic Food = SNAP**: Same program, WA's name. Policy docs reference both interchangeably. MFB's `has_snap` captures both — no separate `has_wa_basic_food` field needed.
+   - **WA Basic Food = SNAP**: Same program, WA's name. Policy docs reference both interchangeably. MFB's `has_benefit("snap")` captures both — no separate `wa_basic_food` current benefit needed.
 
 ## Ineligibility / Exclusions
 
@@ -322,7 +322,7 @@ For the landlord-paid utility credit path: the screener can't identify these hou
 - Person 1: age 35, headOfHousehold, wages $5,000/mo
 - Person 2: age 33, spouse, wages $2,500/mo
 - Person 3: age 8, child
-- Total adult monthly income: $7,500 (> $6,895 HH=3 limit) BUT `has_snap = true`
+- Total adult monthly income: $7,500 (> $6,895 HH=3 limit) BUT receiving SNAP (`has_benefit("snap")`)
 
 **Covers**: SNAP streamlined pathway (Criterion 5) bypasses Criteria 2 and 3.
 
@@ -340,7 +340,7 @@ For the landlord-paid utility credit path: the screener can't identify these hou
 - ZIP 98003 (Federal Way), King County, HH=2
 - Person 1: age 40, headOfHousehold, wages $1,000/mo
 - Person 2: age 38, spouse, no income
-- `has_snap = true` (testing that categorical pathway alone does not override residency)
+- receiving SNAP — `has_benefit("snap")` (testing that categorical pathway alone does not override residency)
 
 **Covers**: Criterion 1 fails; categorical pathways do not override location.
 
@@ -396,7 +396,7 @@ For the landlord-paid utility credit path: the screener can't identify these hou
 **Steps**:
 - ZIP 98144, King County, HH=1
 - Person 1: age 29, headOfHousehold, no income
-- `has_snap = true`
+- receiving SNAP (`has_benefit("snap")`)
 
 **Covers**: Zero-income edge case; SNAP path works independent of income.
 
