@@ -48,6 +48,32 @@ class HudIncomeClient:
     BASE_URL = "https://www.huduser.gov/hudapi/public"
     CACHE_TTL = 86400  # 24 hours in seconds
 
+    # HUD refreshed its county FIPS codes in 2025 and exposes them via the
+    # listCounties `updated` parameter. The refresh has a single vintage (2025):
+    # requesting `updated=2026` (or any non-refresh year) returns HTTP 400. So we
+    # pin `updated` to this vintage for every year >= 2025 rather than echoing the
+    # data year, which previously broke all FMR/IL lookups for 2026+ data.
+    FIPS_UPDATE_VINTAGE = 2025
+
+    # HUD area_name values for the metros where Small Area FMRs (ZIP-level payment
+    # standards) are MANDATORY, per HUD Notice PIH 2023-32 Appendix A. Membership
+    # can't be derived from the API's `smallarea_status` flag alone — that flag is
+    # 1 for any metro HUD *publishes* SAFMR data for (e.g. Houston), not just the
+    # mandatory ones. `get_screen_payment_standard` uses ZIP-level SAFMR only for
+    # these areas and metro-level FMR everywhere else. Extend as more metros are
+    # onboarded (national list is ~24 metros).
+    MANDATORY_SAFMR_AREA_NAMES = frozenset(
+        {
+            # Texas (MFB-1121)
+            "Dallas, TX HUD Metro FMR Area",
+            "Fort Worth-Arlington, TX HUD Metro FMR Area",
+            "San Antonio-New Braunfels, TX HUD Metro FMR Area",
+            "Beaumont-Port Arthur, TX MSA",
+            # Washington (WA HCV / Seattle)
+            "Seattle-Bellevue, WA HUD Metro FMR Area",
+        }
+    )
+
     # Standard Section 8 Income Limit category mappings per HUD API spec
     # Maps AMI percentage to HUD's nested category name
     SECTION8_CATEGORIES = {"30": "extremely_low", "50": "very_low", "80": "low"}  # 30% AMI  # 50% AMI  # 80% AMI
@@ -279,6 +305,64 @@ class HudIncomeClient:
                     return item
         return {}
 
+    def _validate_bedrooms(self, bedrooms: int) -> None:
+        if bedrooms < 0 or bedrooms > 4:
+            raise HudIncomeClientError(f"Bedroom count must be 0–4, got {bedrooms}")
+
+    def _fetch_fmr_area_data(
+        self,
+        screen: Screen,
+        year: int,
+        county_override: Optional[str] = None,
+    ) -> dict:
+        """
+        Fetch and cache the HUD `fmr/data` payload for a Screen's county, returning
+        the inner `data` object (which carries `area_name`, `smallarea_status`, and
+        `basicdata`). `basicdata` is a dict for non-SAFMR counties and a list of
+        per-ZIP records (with a leading "MSA level" row) for SAFMR metros.
+        """
+        county = county_override if county_override else screen.county
+        entity_id = self._get_entity_id(screen.white_label.state_code, county, year)
+
+        cache_key = f"hud_fmr_{entity_id}_{year}"
+        data = self._fetch_cached_data(cache_key, f"fmr/data/{entity_id}", year)
+
+        if not data or "data" not in data:
+            raise HudIncomeClientError(f"No FMR data found for {county}, {screen.white_label.state_code}")
+
+        area_data = data["data"]
+        if not isinstance(area_data, dict):
+            raise HudIncomeClientError(
+                f"FMR data for {county}, {screen.white_label.state_code} is in an unsupported "
+                f"format (got {type(area_data).__name__} instead of dict)."
+            )
+        return area_data
+
+    def _metro_fmr_value(self, basic_data: object, bedrooms: int, county: str) -> int:
+        """Metro/county-level FMR from a `basicdata` payload (dict, or the SAFMR
+        list's "MSA level" row via `_normalize_fmr_basicdata`)."""
+        field = self.FMR_BEDROOM_FIELDS[bedrooms]
+        record = self._normalize_fmr_basicdata(basic_data, field)
+        value = record.get(field)
+        if value is None:
+            raise HudIncomeClientError(f"No FMR data for {bedrooms}-bedroom in {county}")
+        return int(value)
+
+    def _safmr_value(self, basic_data: object, zipcode: object, bedrooms: int) -> Optional[int]:
+        """ZIP-level SAFMR from a `basicdata` list. Returns None when the payload
+        isn't a SAFMR list or the ZIP isn't present, so callers can fall back."""
+        if not isinstance(basic_data, list):
+            return None
+        target = str(zipcode or "").strip()
+        if not target:
+            return None
+        field = self.FMR_BEDROOM_FIELDS[bedrooms]
+        for row in basic_data:
+            if isinstance(row, dict) and str(row.get("zip_code", "")).strip() == target:
+                value = row.get(field)
+                return int(value) if value is not None else None
+        return None
+
     def get_screen_fmr(
         self,
         screen: Screen,
@@ -287,10 +371,12 @@ class HudIncomeClient:
         county_override: Optional[str] = None,
     ) -> int:
         """
-        Get Fair Market Rent for a Screen's county and bedroom size.
+        Get the metro/county-level Fair Market Rent for a Screen's county and
+        bedroom size.
 
-        Uses HUD's FMR endpoint to look up the monthly FMR for the given
-        county/metro area and number of bedrooms (0–4).
+        For SAFMR metros (where `basicdata` is a list of ZIP records) this returns
+        the metro-wide ("MSA level") FMR. Use `get_screen_safmr` or
+        `get_screen_payment_standard` when a ZIP-level payment standard is required.
 
         Args:
             screen: Screen object with white_label.state_code and county
@@ -306,38 +392,91 @@ class HudIncomeClient:
             2082
         """
         year = int(year) if isinstance(year, str) else year
-        if bedrooms < 0 or bedrooms > 4:
-            raise HudIncomeClientError(f"Bedroom count must be 0–4, got {bedrooms}")
+        self._validate_bedrooms(bedrooms)
+        area_data = self._fetch_fmr_area_data(screen, year, county_override)
+        return self._metro_fmr_value(
+            area_data.get("basicdata", {}), bedrooms, county_override or screen.county
+        )
 
-        county = county_override if county_override else screen.county
-        entity_id = self._get_entity_id(screen.white_label.state_code, county, year)
+    def get_screen_safmr(
+        self,
+        screen: Screen,
+        bedrooms: int,
+        year: Union[int, str],
+        county_override: Optional[str] = None,
+    ) -> int:
+        """
+        Get the ZIP-level Small Area Fair Market Rent for a Screen's zipcode and
+        bedroom size.
 
-        cache_key = f"hud_fmr_{entity_id}_{year}"
-        data = self._fetch_cached_data(cache_key, f"fmr/data/{entity_id}", year)
+        Only valid in SAFMR metros (where HUD publishes per-ZIP records). Raises
+        HudIncomeClientError if the area isn't a SAFMR area or the Screen's zipcode
+        isn't in HUD's table.
 
-        if not data or "data" not in data:
-            raise HudIncomeClientError(f"No FMR data found for {county}, {screen.white_label.state_code}")
+        Args:
+            screen: Screen object with white_label.state_code, county, and zipcode
+            bedrooms: Number of bedrooms (0=Efficiency, 1–4=standard sizes)
+            year: Year for FMR data (e.g., 2026 or "2026")
+            county_override: Optional county name to use instead of screen.county
 
-        area_data = data["data"]
-        if not isinstance(area_data, dict):
-            # SAFMR areas (e.g. Seattle-Bellevue) return a list of ZIP-level records
-            # rather than a single county dict. We cannot use those for a county-level
-            # estimate, so surface a typed error instead of crashing on .get().
-            raise HudIncomeClientError(
-                f"FMR data for {county}, {screen.white_label.state_code} is in an unsupported "
-                f"format (got {type(area_data).__name__} instead of dict). "
-                f"This county may be a Small Area FMR (SAFMR) area."
-            )
+        Returns:
+            Monthly Small Area Fair Market Rent in dollars
 
-        basic_data = area_data.get("basicdata") or {}
-
-        field = self.FMR_BEDROOM_FIELDS[bedrooms]
-        basic_data = self._normalize_fmr_basicdata(area_data.get("basicdata", {}), field)
-        value = basic_data.get(field)
+        Example:
+            >>> hud_client.get_screen_safmr(screen, 2, "2026")  # ZIP 75201
+            2900
+        """
+        year = int(year) if isinstance(year, str) else year
+        self._validate_bedrooms(bedrooms)
+        area_data = self._fetch_fmr_area_data(screen, year, county_override)
+        value = self._safmr_value(area_data.get("basicdata", {}), screen.zipcode, bedrooms)
         if value is None:
-            raise HudIncomeClientError(f"No FMR data for {bedrooms}-bedroom in {county}")
+            raise HudIncomeClientError(
+                f"No Small Area FMR data for ZIP {screen.zipcode} in "
+                f"{county_override or screen.county}, {screen.white_label.state_code}"
+            )
+        return value
 
-        return int(value)
+    def get_screen_payment_standard(
+        self,
+        screen: Screen,
+        bedrooms: int,
+        year: Union[int, str],
+        county_override: Optional[str] = None,
+    ) -> int:
+        """
+        Get the HCV payment standard for a Screen — ZIP-level SAFMR in mandatory
+        SAFMR metros, metro/county-level FMR everywhere else.
+
+        This is the method HCV calculators should call. The mandatory-SAFMR
+        determination is by HUD `area_name` (see `MANDATORY_SAFMR_AREA_NAMES`),
+        because HUD's `smallarea_status` flag is set for any metro that merely
+        *publishes* SAFMR data (e.g. Houston), not just the mandatory ones. If a
+        household's ZIP is missing from the SAFMR table, falls back to the
+        metro-level FMR.
+
+        Args:
+            screen: Screen object with white_label.state_code, county, and zipcode
+            bedrooms: Number of bedrooms (0=Efficiency, 1–4=standard sizes)
+            year: Year for FMR data (e.g., 2026 or "2026")
+            county_override: Optional county name to use instead of screen.county
+
+        Returns:
+            Monthly payment standard in dollars
+        """
+        year = int(year) if isinstance(year, str) else year
+        self._validate_bedrooms(bedrooms)
+        area_data = self._fetch_fmr_area_data(screen, year, county_override)
+        basic_data = area_data.get("basicdata", {})
+        area_name = (area_data.get("area_name") or "").strip()
+
+        if area_name in self.MANDATORY_SAFMR_AREA_NAMES:
+            zip_value = self._safmr_value(basic_data, screen.zipcode, bedrooms)
+            if zip_value is not None:
+                return zip_value
+            # ZIP missing from the SAFMR table — fall back to the metro-level FMR.
+
+        return self._metro_fmr_value(basic_data, bedrooms, county_override or screen.county)
 
     # Derived from MtspAmiPercent so the two stay in sync automatically
     MTSP_THRESHOLDS: list[int] = sorted(int(p.rstrip("%")) for p in get_args(MtspAmiPercent))
@@ -443,7 +582,9 @@ class HudIncomeClient:
             if year:
                 params["year"] = str(year)
                 if year >= 2025:
-                    params["updated"] = str(year)
+                    # Pin to the FIPS-refresh vintage, not the data year: HUD only
+                    # published one refresh (2025), and `updated=2026` returns 400.
+                    params["updated"] = str(min(year, self.FIPS_UPDATE_VINTAGE))
             counties = self._api_request(f"fmr/listCounties/{state_code.upper()}", params)
             cache.set(cache_key, counties, self.CACHE_TTL)
 
