@@ -78,7 +78,12 @@
   ],
   "navigators": [
     {
-      "external_name": "ks_shick"
+      "external_name": "ks_shick",
+      "name": "Senior Health Insurance Counseling for Kansas (SHICK)",
+      "email": "KDADS_Medicare@ks.gov",
+      "description": "SHICK offers free, unbiased Medicare counseling from trained volunteers. They can explain your Medicare options and help you compare plans. They can also help fix billing or enrollment problems. Counselors don't sell insurance or charge fees, and the service is available statewide.",
+      "assistance_link": "https://www.kdads.ks.gov/services-programs/aging/medicare-programs/senior-health-insurance-counseling-for-kansas-shick",
+      "phone_number": "+18008605260"
     },
     {
       "external_name": "ks_kancare_ombudsman",
