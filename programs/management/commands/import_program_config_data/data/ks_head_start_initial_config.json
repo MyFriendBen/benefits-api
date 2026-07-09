@@ -1,0 +1,61 @@
+{
+    "white_label": {"code": "ks"},
+    "program_category": {
+        "external_name": "ks_child_care",
+        "name": "Child Care",
+        "icon": "child_care"
+    },
+    "program": {
+        "name_abbreviated": "ks_head_start",
+        "year": "2026",
+        "base_program": "head_start",
+        "legal_status_required": ["citizen", "non_citizen", "refugee", "gc_5plus", "gc_5less", "gc_under18_no5", "gc_18plus_no5", "otherWithWorkPermission"],
+        "name": "Head Start",
+        "description": "Free preschool and family support for children ages 3 to 5 in Kansas. Head Start provides early learning, health care, healthy meals, and family support services at no cost to families.\n\nServices are provided in-person at local Head Start centers. Your child will attend preschool classes and receive meals, health screenings, and developmental support directly at the program site.\n\nFamilies with low income can apply. Children who receive SNAP (food stamps), TANF (cash help), or SSI (disability benefits) qualify automatically. Children in foster care also qualify.\n\nHead Start is run by local agencies across Kansas. Services and availability vary by location. There may be a waitlist in some areas.\n\nTo apply, find your local Head Start program using the link below. They will help you check eligibility. They will also help you complete the application and gather any required documents.",
+        "description_short": "Free preschool for children ages 3 to 5",
+        "learn_more_link": "https://www.ksheadstart.org/locations",
+        "apply_button_link": "https://headstart.gov/center-locator?state=KS&radius=50",
+        "apply_button_description": "Find your local Head Start agency",
+        "estimated_application_time": "30 minutes",
+        "estimated_delivery_time": "",
+        "estimated_value": "",
+        "value_type": "benefit",
+        "value_format": "estimated_annual",
+        "has_calculator": true,
+        "show_on_current_benefits": true,
+        "show_in_has_benefits_step": false,
+        "website_description": "Free preschool, meals, and health services for children ages 3 to 5 from low-income families"
+    },
+    "documents": [
+        {
+            "external_name": "ks_child_birth_certificate",
+            "text": "Child's birth certificate or proof of age",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "ks_earned_income",
+            "text": "Proof of income (pay stubs, tax returns, benefit award letters)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "ks_home",
+            "text": "Proof of home address (lease, utility bill, etc.)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "ks_immunization_records",
+            "text": "Child's immunization records",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "ks_benefit_proof",
+            "text": "Proof of SNAP, TANF, or SSI benefits (if applicable)",
+            "link_url": "",
+            "link_text": ""
+        }
+    ]
+}
