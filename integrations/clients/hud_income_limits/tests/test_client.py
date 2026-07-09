@@ -857,5 +857,5 @@ class TestHudIncomeClientFmrAndSafmr(HudClientTestBase):
 
     def test_invalid_bedrooms_raises(self) -> None:
         client = self._client()
-        with self.assertRaisesRegex(HudIncomeClientError, r"Bedroom count must be 0–4"):
+        with self.assertRaisesRegex(HudIncomeClientError, r"Bedroom count must be 0-4"):
             client.get_screen_fmr(self.screen, 5, 2026)

@@ -24,7 +24,7 @@ def make_member(
     member.student_full_time = student_full_time
     member.has_disability = Mock(return_value=disabled)
 
-    def calc_gross_income(frequency, types, exclude=[]):
+    def calc_gross_income(frequency, types):
         total = 0
         if "all" in types:
             total = earned + unearned

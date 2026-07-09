@@ -1,6 +1,11 @@
+import logging
+from types import MappingProxyType
+
 from integrations.clients.hud_income_limits import hud_client, HudIncomeClientError
 from programs.programs.calc import Eligibility, ProgramCalculator
 import programs.programs.messages as messages
+
+logger = logging.getLogger(__name__)
 
 
 class TxHcv(ProgramCalculator):
@@ -49,7 +54,8 @@ class TxHcv(ProgramCalculator):
 
     # Household size → voucher bedroom size (24 CFR 982.402; TDHCA Ch. 5 Part II).
     # A single-person household defaults to 0BR (TDHCA's conservative choice).
-    BEDROOM_MAP = {1: 0, 2: 1, 3: 2, 4: 2, 5: 3, 6: 3, 7: 4, 8: 4}
+    # Immutable (MappingProxyType) to prevent accidental shared-state mutation.
+    BEDROOM_MAP = MappingProxyType({1: 0, 2: 1, 3: 2, 4: 2, 5: 3, 6: 3, 7: 4, 8: 4})
 
     _elderly_family_relationships = ("headOfHousehold", "spouse", "domesticPartner")
 
@@ -167,6 +173,16 @@ class TxHcv(ProgramCalculator):
             hap = max(0, gross_rent - ttp)
             return int(hap * 12)
         except HudIncomeClientError:
+            # Expected when HUD data is unavailable (API down, county/ZIP not found,
+            # year unconfigured) — degrade to $0 without noise.
             return 0
         except Exception:
+            # Unexpected bug in the value calculation — still degrade to $0 so one
+            # program can't 500 the whole eligibility response, but log it so the
+            # failure is observable rather than silently swallowed.
+            logger.exception(
+                "TxHcv.household_value failed unexpectedly (white_label=%s, household_size=%s)",
+                getattr(self.screen.white_label, "code", None),
+                self.screen.household_size,
+            )
             return 0

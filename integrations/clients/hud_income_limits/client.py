@@ -385,7 +385,7 @@ class HudIncomeClient:
 
         Args:
             screen: Screen object with white_label.state_code and county
-            bedrooms: Number of bedrooms (0=Efficiency, 1–4=standard sizes)
+            bedrooms: Number of bedrooms (0=Efficiency, 1-4=standard sizes)
             year: Year for FMR data (e.g., 2026 or "2026")
             county_override: Optional county name to use instead of screen.county
 
@@ -418,7 +418,7 @@ class HudIncomeClient:
 
         Args:
             screen: Screen object with white_label.state_code, county, and zipcode
-            bedrooms: Number of bedrooms (0=Efficiency, 1–4=standard sizes)
+            bedrooms: Number of bedrooms (0=Efficiency, 1-4=standard sizes)
             year: Year for FMR data (e.g., 2026 or "2026")
             county_override: Optional county name to use instead of screen.county
 
@@ -460,7 +460,7 @@ class HudIncomeClient:
 
         Args:
             screen: Screen object with white_label.state_code, county, and zipcode
-            bedrooms: Number of bedrooms (0=Efficiency, 1–4=standard sizes)
+            bedrooms: Number of bedrooms (0=Efficiency, 1-4=standard sizes)
             year: Year for FMR data (e.g., 2026 or "2026")
             county_override: Optional county name to use instead of screen.county
 
