@@ -257,7 +257,8 @@ class Msp(PolicyEngineMembersCalculator):
         dependency.member.IsMedicareEligibleDependency,
         dependency.member.AgeDependency,
         dependency.member.SsdiReportedDependency,
-        # msp_countable_income (SSI methodology)
+        # MSP's income test (msp_countable_income) uses SSI income methodology,
+        # so send SSI earned/unearned income rather than plain gross income.
         dependency.member.SsiEarnedIncomeDependency,
         dependency.member.SsiUnearnedIncomeDependency,
         dependency.spm.CashAssetsDependency,
