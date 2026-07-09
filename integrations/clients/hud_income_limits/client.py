@@ -312,7 +312,7 @@ class HudIncomeClient:
 
     def _validate_bedrooms(self, bedrooms: int) -> None:
         if bedrooms < 0 or bedrooms > 4:
-            raise HudIncomeClientError(f"Bedroom count must be 0–4, got {bedrooms}")
+            raise HudIncomeClientError(f"Bedroom count must be 0-4, got {bedrooms}")
 
     def _fetch_fmr_area_data(
         self,
