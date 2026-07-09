@@ -115,10 +115,10 @@ class ScreenCurrentBenefitsView(views.APIView):
     revalidating and rewriting the whole screen the way the Screen PATCH path does.
     Idempotent — repeating the same payload is a no-op:
 
-        body: {"program": "snap", "has": true}   # ensure the row exists
-        body: {"program": "snap", "has": false}  # ensure the row is absent
+        body: {"name_abbreviated": "snap", "has": true}   # ensure the row exists
+        body: {"name_abbreviated": "snap", "has": false}  # ensure the row is absent
 
-    `program` is a `name_abbreviated` resolved against the screen's white label;
+    `name_abbreviated` is a program name resolved against the screen's white label;
     an unknown name (or one offered only by another white label) is a 404, so a
     toggle can't write a cross-WL program. Returns the updated current-benefits
     list as {"current_benefits": [...sorted name_abbreviated...]}.
@@ -138,7 +138,7 @@ class ScreenCurrentBenefitsView(views.APIView):
     def patch(self, request, screen_uuid):
         serializer = CurrentBenefitToggleSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        program_name = serializer.validated_data["program"]
+        name_abbreviated = serializer.validated_data["name_abbreviated"]
         has = serializer.validated_data["has"]
 
         # Lock the screen for the read-modify-write so concurrent toggles (or a
@@ -148,7 +148,7 @@ class ScreenCurrentBenefitsView(views.APIView):
         # the locked screen's white label rather than a pre-lock read.
         with transaction.atomic():
             screen = get_object_or_404(Screen.objects.select_for_update(), uuid=screen_uuid)
-            program = get_object_or_404(Program, white_label=screen.white_label, name_abbreviated=program_name)
+            program = get_object_or_404(Program, white_label=screen.white_label, name_abbreviated=name_abbreviated)
             if has:
                 CurrentBenefit.objects.get_or_create(screen=screen, program=program)
             else:
