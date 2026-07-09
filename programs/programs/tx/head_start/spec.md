@@ -27,9 +27,9 @@
 
 3. **Child receives or family is eligible for TANF, SSI, or SNAP (categorical eligibility)**
    - Screener fields:
-     - `has_tanf`
-     - `has_ssi`
-     - `has_snap`
+     - `has_benefit("tanf")`
+     - `has_benefit("ssi")`
+     - `has_benefit("snap")`
    - Source: 45 CFR § 1302.12(a)(1)(ii)(B) - Categorical eligibility; [Head Start FAQ](https://headstart.gov/about-us/article/head-start-faqs) - SNAP listed alongside TANF and SSI as qualifying benefits
 
 4. **Child is in foster care**

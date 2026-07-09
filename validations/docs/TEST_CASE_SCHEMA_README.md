@@ -47,16 +47,14 @@ The complete household data that will be submitted to create a Screen. This obje
 - `household_assets` (number)
 - `last_tax_filing_year` (string, YYYY format)
 
-**Program Status Fields (has_*):**
-Boolean flags indicating if the household already receives benefits:
-- `has_snap`, `has_tanf`, `has_wic`, `has_medicaid`, `has_aca`, etc.
+**Current Benefits (`current_benefits`):**
+Array of program `name_abbreviated` strings the household already receives (e.g., `["snap", "tx_tanf"]`). This is the supported way to record current-benefit enrollment; matching programs are filtered out of results via the `already_has` flag. (The legacy per-benefit `has_*` boolean flags are no longer persisted by `ScreenSerializer` — see MFB-720.)
 
 **Needs Fields (needs_*):**
 Boolean flags indicating what assistance the household needs:
 - `needs_food`, `needs_housing_help`, `needs_baby_supplies`, etc.
 
-**Health Insurance Type Fields (has_*_hi):**
-- `has_employer_hi`, `has_private_hi`, `has_medicaid_hi`, etc.
+Household health insurance is recorded per member via the member `insurance` object (see [Insurance Structure](#insurance-structure) below), not with screen-level flags.
 
 **Nested Objects:**
 - `household_members` - Array of household member objects (see below)

@@ -9,9 +9,15 @@ shared helper) directly and the serializer `create()` / `update()` paths end to 
 
 from django.test import TestCase
 
+from programs.models import Program
 from screener.models import CurrentBenefit, HouseholdMember, IncomeStream, Screen, WhiteLabel
 from screener.serializers import ScreenSerializer, _write_current_benefits
 from screener.tests.helpers import seed_program
+
+# The Program.name_abbreviated column max_length. The serializer caps on a
+# current-benefit name must match this so no DB-valid name is rejected before the
+# white-label-scoped resolve. Read from the model so the tests track the column.
+NAME_ABBREVIATED_MAX_LENGTH = 120
 
 
 class WriteCurrentBenefitsTests(TestCase):
@@ -278,3 +284,38 @@ class ScreenSerializerCreateTests(TestCase):
         screen = serializer.save()
 
         self.assertEqual(self._benefit_names(screen), set())
+
+
+class CurrentBenefitsNameLengthTests(TestCase):
+    """The per-element cap on `current_benefits` must match the
+    Program.name_abbreviated column so a DB-valid name is never rejected before the
+    write path (which silently drops unknown names). Guards against the serializer
+    cap and the column drifting apart."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+
+    def _payload(self, names):
+        return {
+            "white_label": self.white_label.code,
+            "household_members": [],
+            "expenses": [],
+            "current_benefits": names,
+        }
+
+    def test_child_cap_matches_db_column(self):
+        """The ListField child's max_length equals the Program.name_abbreviated column."""
+        child = ScreenSerializer().fields["current_benefits"].child
+        self.assertEqual(child.max_length, NAME_ABBREVIATED_MAX_LENGTH)
+
+    def test_name_at_column_max_passes_validation(self):
+        """A name as long as the column is accepted by validation (dropped later only
+        if no Program matches — not rejected for length)."""
+        serializer = ScreenSerializer(data=self._payload(["a" * NAME_ABBREVIATED_MAX_LENGTH]))
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+    def test_name_over_column_max_is_rejected(self):
+        """A name longer than the column is rejected by validation."""
+        serializer = ScreenSerializer(data=self._payload(["a" * (NAME_ABBREVIATED_MAX_LENGTH + 1)]))
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("current_benefits", serializer.errors)

@@ -110,7 +110,7 @@
 * **Person 1**: Birth month/year: `March 1986` (age 40), Relationship: `Head of Household`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$1,800`, Citizenship: `US Citizen`, Insurance: `None`
 * **Assets**: `$5,000`
 
-**Why this matters**: Baseline happy path. Countable earned income (($21,600 − $65) × 0.5 = $10,768/yr) is well under the 2026 individual limit ($47,880), assets are under $15,000, and the member is a disabled worker — eligible on every dimension.
+**Why this matters**: Baseline happy path. Countable earned income (int(($21,600 − $65) × 0.5) = $10,767/yr — the calculator truncates with `int()`) is well under the 2026 individual limit ($47,880), assets are under $15,000, and the member is a disabled worker — eligible on every dimension.
 
 ---
 
@@ -174,7 +174,7 @@
 * **Person 1**: Birth month/year: `September 1981` (age 44), Relationship: `Head of Household`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$7,900`, Citizenship: `US Citizen`, Insurance: `None`
 * **Assets**: `$5,000`
 
-**Why this matters**: Countable earned = ($94,800 − $65) × 0.5 = $47,368, just under the 2026 individual limit ($47,880). Confirms the ceiling is inclusive just below and that the earned-income disregard is applied (gross wages alone would falsely exceed the limit).
+**Why this matters**: Countable earned = int(($94,800 − $65) × 0.5) = $47,367 (truncated), just under the 2026 individual limit ($47,880). Confirms the ceiling is inclusive just below and that the earned-income disregard is applied (gross wages alone would falsely exceed the limit).
 
 ---
 
@@ -190,7 +190,7 @@
 * **Person 1**: Birth month/year: `September 1981` (age 44), Relationship: `Head of Household`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$8,500`, Citizenship: `US Citizen`, Insurance: `None`
 * **Assets**: `$5,000`
 
-**Why this matters**: Countable earned = ($102,000 − $65) × 0.5 = $50,968 > $47,880. Regression test for the corrected FPL basis + earned-income disregard (the prior 300% FBR figure was wrong).
+**Why this matters**: Countable earned = int(($102,000 − $65) × 0.5) = $50,967 (truncated) > $47,880. Regression test for the corrected FPL basis + earned-income disregard (the prior 300% FBR figure was wrong).
 
 ---
 

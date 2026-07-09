@@ -147,87 +147,49 @@ class TestIlLiheap(TestCase):
         self.assertIn("il_liheap", il_spm_calculators)
         self.assertEqual(il_spm_calculators["il_liheap"], IlLiheap)
 
-    def test_pe_name_is_il_liheap_income_eligible(self):
-        """Test that pe_name uses income eligibility check."""
-        self.assertEqual(IlLiheap.pe_name, "il_liheap_income_eligible")
+    def test_pe_name_is_il_liheap(self):
+        """Test that pe_name is il_liheap."""
+        self.assertEqual(IlLiheap.pe_name, "il_liheap")
 
     def test_pe_inputs_includes_il_state_code_dependency(self):
         """Test that IlStateCodeDependency is in pe_inputs."""
         self.assertIn(IlStateCodeDependency, IlLiheap.pe_inputs)
 
-    def test_pe_outputs_includes_il_liheap_income_eligible(self):
-        """Test that IlLiheapIncomeEligible output is in pe_outputs."""
-        self.assertIn(spm_dependency.IlLiheapIncomeEligible, IlLiheap.pe_outputs)
+    def test_pe_inputs_includes_heating_and_electricity_dependencies(self):
+        """Test that energy expense dependencies are in pe_inputs."""
+        self.assertIn(spm_dependency.HasHeatingCoolingExpenseDependency, IlLiheap.pe_inputs)
+        self.assertIn(spm_dependency.ElectricityExpenseDependency, IlLiheap.pe_inputs)
 
-    def test_benefit_amounts_defined_for_household_sizes(self):
-        """Test that benefit amounts are defined for household sizes 1-6."""
-        self.assertIn(1, IlLiheap.benefit_amounts)
-        self.assertIn(2, IlLiheap.benefit_amounts)
-        self.assertIn(3, IlLiheap.benefit_amounts)
-        self.assertIn(4, IlLiheap.benefit_amounts)
-        self.assertIn(5, IlLiheap.benefit_amounts)
-        self.assertIn(6, IlLiheap.benefit_amounts)
+    def test_pe_inputs_includes_heating_expense_person_dependency(self):
+        """Test that HeatingExpensePersonDependency is in pe_inputs."""
+        from programs.programs.policyengine.calculators.dependencies import member as member_dependency
 
-    def test_benefit_amount_for_single_person(self):
-        """Test that benefit amount for 1 person is $315."""
-        self.assertEqual(IlLiheap.benefit_amounts[1], 315)
+        self.assertIn(member_dependency.HeatingExpensePersonDependency, IlLiheap.pe_inputs)
 
-    def test_benefit_amount_for_six_plus_people(self):
-        """Test that benefit amount for 6+ people is $375."""
-        self.assertEqual(IlLiheap.benefit_amounts[6], 375)
+    def test_pe_outputs_includes_il_liheap(self):
+        """Test that IlLiheap output dependency is in pe_outputs."""
+        self.assertIn(spm_dependency.IlLiheap, IlLiheap.pe_outputs)
 
-    def test_household_value_returns_zero_when_already_has_benefit(self):
-        """Test that household_value returns 0 when already has IL LIHEAP."""
+    def test_household_value_returns_zero_when_pe_returns_zero(self):
+        """Test that household_value returns 0 when PE returns 0 (ineligible)."""
         mock_screen = Mock()
-        mock_screen.has_benefit = Mock(return_value=True)
 
         calculator = IlLiheap(mock_screen, Mock(), Mock())
         calculator._sim = MagicMock()
-
-        result = calculator.household_value()
-
-        self.assertEqual(result, 0)
-        mock_screen.has_benefit.assert_called_once_with("il_liheap")
-
-    def test_household_value_returns_zero_when_not_income_eligible(self):
-        """Test that household_value returns 0 when not income eligible."""
-        mock_screen = Mock()
-        mock_screen.has_benefit = Mock(return_value=False)
-
-        calculator = IlLiheap(mock_screen, Mock(), Mock())
-        calculator._sim = MagicMock()
-        calculator.get_variable = Mock(return_value=False)
+        calculator.get_variable = Mock(return_value=0)
 
         result = calculator.household_value()
 
         self.assertEqual(result, 0)
 
-    def test_household_value_returns_zero_when_no_qualifying_expenses(self):
-        """Test that household_value returns 0 when no rent/mortgage expenses."""
+    def test_household_value_returns_pe_benefit_amount(self):
+        """Test that household_value returns the dollar amount from PE."""
         mock_screen = Mock()
-        mock_screen.has_benefit = Mock(return_value=False)
-        mock_screen.has_expense = Mock(return_value=False)
 
         calculator = IlLiheap(mock_screen, Mock(), Mock())
         calculator._sim = MagicMock()
-        calculator.get_variable = Mock(return_value=True)
+        calculator.get_variable = Mock(return_value=400)
 
         result = calculator.household_value()
 
-        self.assertEqual(result, 0)
-        mock_screen.has_expense.assert_called_once_with(["rent", "mortgage"])
-
-    def test_household_value_returns_benefit_when_eligible(self):
-        """Test that household_value returns correct benefit when eligible."""
-        mock_screen = Mock()
-        mock_screen.has_benefit = Mock(return_value=False)
-        mock_screen.has_expense = Mock(return_value=True)
-        mock_screen.household_size = 3
-
-        calculator = IlLiheap(mock_screen, Mock(), Mock())
-        calculator._sim = MagicMock()
-        calculator.get_variable = Mock(return_value=True)
-
-        result = calculator.household_value()
-
-        self.assertEqual(result, 340)  # Benefit for household size 3
+        self.assertEqual(result, 400)

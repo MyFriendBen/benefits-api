@@ -29,7 +29,7 @@ prior strict "no insurance" filter to a Medicaid-only exclusion.
      regardless of the 250% FPL test:
      - SNAP — `screen.has_benefit("snap")`
      - WIC — `screen.has_benefit("wic")`
-     - CHIP (applicant or their child) — `screen.has_chp`
+     - CHIP (applicant or their child) — `screen.has_benefit("chp")`
      - ⚠️ *data gap:* CHIP Perinatal, the 4th §4140 program, is not collected by the screener.
 
 3. **Not enrolled in (full) Medicaid** (§4100)
@@ -64,7 +64,7 @@ prior strict "no insurance" filter to a Medicaid-only exclusion.
 |-----------|--------|-------|
 | Age ≤ 64 | `birth_year`, `birth_month` | per-member; None-safe |
 | Income ≤ 250% FPL | `calc_gross_income`, `household_size`, `program.year` | gross income, all types |
-| §4140 bypass | `has_snap`, `has_wic`, `has_chp` | CHIP Perinatal not captured (gap) |
+| §4140 bypass | `has_benefit("snap")`, `has_benefit("wic")`, `has_benefit("chp")` | CHIP Perinatal not captured (gap) |
 | Medicaid exclusion | `member.insurance.medicaid` | Emergency Medicaid excluded from match |
 
 ## Validation Scenarios

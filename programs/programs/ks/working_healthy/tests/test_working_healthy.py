@@ -49,7 +49,8 @@ def make_member(
         earned = monthly_earned * factor
         unearned = monthly_unearned * factor
         ssi = monthly_ssi * factor
-        # unearned in this helper already excludes SSI unless asked for sSI
+        # SSI is unearned income: it's part of the "unearned" total and is also
+        # queryable on its own via ["sSI"] (matches the real income model).
         if types == ["sSI"]:
             return ssi
         if types == ["earned"]:
