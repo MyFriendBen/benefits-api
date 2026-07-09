@@ -62,8 +62,8 @@
 
 ## Benefit Value
 
-- Per-child annual value is computed by PolicyEngine's `head_start` variable from ACF program spending ÷ enrollment (currently FY2024: $66,709,446 ÷ 4,590 ≈ **$14,534/child/year** for Kansas). Because the value is read from PolicyEngine at calculation time, it tracks the latest federal-year figures PE carries rather than a pinned constant. Value scales with the number of eligible children in the household.
-- *Note for QA:* the discovery config/spec draft carried $15,664/child, which does not match the FY2024 (or FY2023 $14,020) ACF-derived figure and appears to be a stale number. Using the PE approach avoids hardcoding it.
+- Per-child annual value is computed by PolicyEngine's `head_start` variable: KS ACF program spending ÷ enrollment, **uprated (CPI) to the screener's calculation year**. PE returns **$15,664/child/year** for Kansas (verified via API against PE current 1.755.0 and frontier 1.768.1). Note: the raw FY2024 ratio ($66,709,446 ÷ 4,590 = **$14,534**) is *not* what PE returns — PE applies `gov.hhs.uprating` to the spending, yielding **$15,664**; do not use the un-uprated ratio. Because the value is read from PolicyEngine at calculation time, it tracks federal-year + uprating changes rather than a pinned constant. Value scales with the number of eligible children.
+- *Note for QA:* the discovery config/spec draft's $15,664 was correct after all (it's PE's uprated output). An earlier delta report's $14,534 was the un-uprated raw ratio — do not substitute it. Using the PE approach means no hardcoded value.
 
 ---
 
@@ -88,11 +88,15 @@ Head Start eligibility can be substantially evaluated with current screener fiel
 
 ## Test Scenarios
 
-> **Tier: `Fed (value varies)`.** Head Start is a PolicyEngine program whose per-child benefit value is a KS-keyed parameter (`spending[KS] / enrollment[KS]`). Per the Discovery doc, the deliverable for this tier is a **light spec whose scenarios isolate the state-specific value** plus a **PE delta report** (posted as a ticket comment) confirming PE's KS value matches the current ACF source and driving the delta to zero. The eligible scenarios below therefore assert the expected **dollar value** — they must break if the KS per-child figure drifts. Current KS value (FY2024, PE param `2023-09-01`): **$14,534/child/year** ($66,709,446 ÷ 4,590). Eligibility branches are included for completeness but the value assertions are the point.
+> **Tier: `Fed (value varies)`.** Head Start is a PolicyEngine program whose per-child benefit value is a KS-keyed parameter (`spending[KS] / enrollment[KS]`). Per the Discovery doc, the deliverable for this tier is a **light spec whose scenarios isolate the state-specific value** plus a **PE delta report** (posted as a ticket comment) confirming PE's KS value matches the current ACF source and driving the delta to zero. The eligible scenarios below therefore assert the expected **dollar value** — they must break if the KS per-child figure drifts. Current KS value: **$15,664/child/year** (FY2024 spending uprated to the calc year; the raw $66,709,446 ÷ 4,590 = $14,534 ratio is pre-uprating and not what PE returns). Eligibility branches are included for completeness but the value assertions are the point.
+
+> **⚠️ Requires PE version 1.768.1+ (frontier).** Verified: on PE `current` (1.755.0) a 5-year-old is wrongly excluded (fixed by PE #8846, only in 1.768.1). KS Head Start must be served on a PE version ≥ 1.768.1 or age-5 children are under-included. Pin `PolicyEngineConfig` accordingly per environment.
+>
+> **⚠️ Known PE limitation (Scenario 3):** categorical eligibility uses PE's *calculated* SNAP/TANF/SSI, not *reported* receipt. A family that actually receives SNAP but is above PE's calculated SNAP threshold is denied the categorical path. PE trialed a reported-receipt toggle and reverted it (`f00efba472`), so there is no PE input to change this. Only a custom calculator (WA-style `has_benefit`) would honor reported receipt. Accepted for now (PE approach retained).
 
 ### Scenario 1: Low-Income Family with 3-Year-Old Child — value = one child
 **What we're checking**: One eligible preschooler → the KS per-child value. **This is the primary value-isolation scenario** — if PE's KS spending/enrollment params drift, this expected amount breaks.
-**Expected**: Eligible — **$14,534/year** (1 eligible child × KS FY2024 per-child value)
+**Expected**: Eligible — **$15,664/year** (1 eligible child × KS FY2024 per-child value)
 
 **Steps**:
 - **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
@@ -124,7 +128,7 @@ Head Start eligibility can be substantially evaluated with current screener fiel
 
 ### Scenario 3: Family Above 135% FPL Receiving SNAP — Categorical Eligibility Override
 **What we're checking**: A family whose income exceeds the 135% FPL ceiling is still eligible because they receive SNAP, which confers categorical eligibility regardless of income
-**Expected**: Eligible — **$14,534/year** (one eligible child × KS per-child value)
+**Expected**: Eligible — **$15,664/year** (one eligible child × KS per-child value)
 
 **Steps**:
 - **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
@@ -156,7 +160,7 @@ Head Start eligibility can be substantially evaluated with current screener fiel
 
 ### Scenario 5: Foster Child — Categorical Eligibility via Foster Care
 **What we're checking**: A child in foster care qualifies regardless of household income
-**Expected**: Eligible — **$14,534/year** (one eligible child × KS per-child value)
+**Expected**: Eligible — **$15,664/year** (one eligible child × KS per-child value)
 
 **Steps**:
 - **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
@@ -171,7 +175,7 @@ Head Start eligibility can be substantially evaluated with current screener fiel
 
 ### Scenario 6: Two Eligible Preschoolers — value scales per eligible child
 **What we're checking**: The **value-scaling** dimension of "value varies" — the per-child figure is applied once per eligible child, so two eligible children should yield 2× the KS per-child value.
-**Expected**: Eligible — **$29,068/year** (2 eligible children × $14,534)
+**Expected**: Eligible — **$31,328/year** (2 eligible children × $15,664 = $31,328)
 
 **Steps**:
 - **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
