@@ -48,11 +48,16 @@ class HudIncomeClient:
     BASE_URL = "https://www.huduser.gov/hudapi/public"
     CACHE_TTL = 86400  # 24 hours in seconds
 
-    # HUD refreshed its county FIPS codes in 2025 and exposes them via the
-    # listCounties `updated` parameter. The refresh has a single vintage (2025):
-    # requesting `updated=2026` (or any non-refresh year) returns HTTP 400. So we
-    # pin `updated` to this vintage for every year >= 2025 rather than echoing the
-    # data year, which previously broke all FMR/IL lookups for 2026+ data.
+    # `updated` on listCounties selects HUD's FIPS-code REFRESH VINTAGE — it is NOT
+    # the data year (that's the `year` param, which is current: 2026 works, 2027 is
+    # unpublished). HUD has shipped a single refresh (2025), so `updated=2025` is the
+    # only value it accepts — 2024/2026/2027 all return HTTP 400, for every data year.
+    # Sending it is REQUIRED, not optional: without it, states re-coded in the refresh
+    # return stale FIPS (e.g. CT returns old "Fairfield County" instead of "Capitol
+    # Planning Region"), breaking the county→FIPS lookup. So pin to the vintage for
+    # every year >= 2025 rather than echoing the data year (which broke 2026 lookups)
+    # or dropping the param (which returns stale codes). Bump only if HUD ships a new
+    # refresh.
     FIPS_UPDATE_VINTAGE = 2025
 
     # HUD area_name values for the metros where Small Area FMRs (ZIP-level payment
