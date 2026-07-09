@@ -496,6 +496,3 @@ Every scenario field (age, `is_pregnant`, income streams, `is_disabled`/`meets_s
 
 ### Benefit value source
 - KHI / Kansas Action for Children, FY2023 KS Medicaid & CHIP per-enrollee spending — https://www.khi.org/articles/2024-kansas-medicaid-a-primer/ ; https://www.kac.org/budget_summary_medicaid
-
-### PolicyEngine verification
-- Formulas confirmed directly from source: `is_ssi_disabled`, `is_ssi_aged_blind_disabled`, `ssi_engaged_in_sga`, `is_blind`, `meets_ssi_disability_criteria`; parameters: KS category ratios (`gov/hhs/medicaid/eligibility/categories/*/income_limit.yaml`), SSI FBR (`gov/ssa/ssi/amount/*.yaml`), SGA threshold (`gov/ssa/sga/non_blind.yaml`)
