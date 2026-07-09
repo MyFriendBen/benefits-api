@@ -14,7 +14,7 @@ class KsSsi(Ssi):
     program), so the output is the federal Federal Benefit Rate (FBR) minus
     PolicyEngine's countable income. The FBR is sourced from PolicyEngine's
     parameters at calculation time, so the value tracks SSA COLA updates year over
-    year. 
+    year.
     """
 
     pe_inputs = [
