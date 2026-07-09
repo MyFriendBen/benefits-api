@@ -508,3 +508,59 @@ class TestTxHcvScenarios(TestCase):
             make_member(age=10, relationship="fosterChild", unearned=2_400),
         ]
         self._assert_scenario(members, il_ami=41_600, payment_standard=1323, expected_value=11_556, county="Harris")
+
+
+class TestTxHcvNeverRaises(TestCase):
+    """A HUD lookup that raises must never propagate out of the calculator and
+    break the eligibility run. calc() must finish and fall back to the safe guess
+    (income gate we can't evaluate -> not eligible; value we can't compute -> $0),
+    for BOTH the typed HudIncomeClientError and any unexpected exception.
+    """
+
+    def _calc(self):
+        return make_calculator(members=[make_member(age=35, earned=12_000)], household_size=1)
+
+    def test_calc_finishes_when_income_lookup_raises_hud_error(self):
+        calc = self._calc()
+        with patch.multiple(
+            "programs.programs.tx.hcv.calculator.hud_client",
+            get_screen_il_ami=Mock(side_effect=HudIncomeClientError("HUD unavailable")),
+            get_screen_payment_standard=Mock(return_value=1000),
+        ):
+            e = calc.calc()  # must not raise
+        self.assertFalse(e.eligible)
+        self.assertEqual(e.value, 0)
+
+    def test_calc_finishes_when_income_lookup_raises_unexpected_exception(self):
+        """A non-HudIncomeClientError from the HUD layer must still be swallowed."""
+        calc = self._calc()
+        with patch.multiple(
+            "programs.programs.tx.hcv.calculator.hud_client",
+            get_screen_il_ami=Mock(side_effect=ValueError("unexpected boom")),
+            get_screen_payment_standard=Mock(return_value=1000),
+        ):
+            e = calc.calc()  # must not raise, despite a non-typed exception
+        self.assertFalse(e.eligible)
+        self.assertEqual(e.value, 0)
+
+    def test_calc_finishes_when_payment_standard_raises_hud_error(self):
+        calc = self._calc()  # income-eligible below
+        with patch.multiple(
+            "programs.programs.tx.hcv.calculator.hud_client",
+            get_screen_il_ami=Mock(return_value=40_000),
+            get_screen_payment_standard=Mock(side_effect=HudIncomeClientError("no FMR")),
+        ):
+            e = calc.calc()  # must not raise
+        self.assertTrue(e.eligible)  # eligibility resolved before the value lookup
+        self.assertEqual(e.value, 0)  # value degrades to $0
+
+    def test_calc_finishes_when_payment_standard_raises_unexpected_exception(self):
+        calc = self._calc()
+        with patch.multiple(
+            "programs.programs.tx.hcv.calculator.hud_client",
+            get_screen_il_ami=Mock(return_value=40_000),
+            get_screen_payment_standard=Mock(side_effect=KeyError("unexpected")),
+        ):
+            e = calc.calc()  # must not raise, despite a non-typed exception
+        self.assertTrue(e.eligible)
+        self.assertEqual(e.value, 0)

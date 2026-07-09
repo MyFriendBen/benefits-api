@@ -142,11 +142,25 @@ class TxHcv(ProgramCalculator):
         e.condition(self._head_age_ok(), messages.older_than(self.min_head_age))
 
         # Criterion 1: income at or below 50% AMI (Very Low Income).
+        # Never let a HUD lookup failure raise out of the calculator and break the
+        # whole eligibility run — the safest guess for an income gate we can't
+        # evaluate is "not eligible".
         try:
             gross_income = int(self._countable_gross_income())
             income_limit = hud_client.get_screen_il_ami(self.screen, self.ami_percent, self._year_period())
             e.condition(gross_income <= income_limit, messages.income(gross_income, income_limit))
         except HudIncomeClientError:
+            # Expected when HUD data is unavailable (API down, county/ZIP not found,
+            # year unconfigured) — mark not eligible without noise.
+            e.condition(False, messages.income_limit_unknown())
+        except Exception:
+            # Unexpected failure — still degrade to not eligible rather than raise,
+            # and log so it's observable.
+            logger.exception(
+                "TxHcv.household_eligible income check failed unexpectedly (white_label=%s, household_size=%s)",
+                getattr(self.screen.white_label, "code", None),
+                self.screen.household_size,
+            )
             e.condition(False, messages.income_limit_unknown())
 
     def household_value(self) -> int:
