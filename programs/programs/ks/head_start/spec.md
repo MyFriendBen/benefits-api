@@ -5,10 +5,8 @@
 - **Program**: Head Start (ages 3–5)
 - **State**: KS
 - **White Label**: ks
-- **Research Date**: 2026-06-12
-- **Review Date**: 2026-06-19
-- **Scope note**: This ticket (MFB-1053) covers **Head Start only** (ages 3–5). Early Head Start (birth–3 and pregnant women) is a separate program tracked under its own ticket and is out of scope here. EHS content from the original combined research has been removed from this spec.
-- **Implementation**: PolicyEngine (`head_start` variable), mirroring `tx_head_start` / `ma_head_start`. Eligibility and benefit value are computed by PolicyEngine; Kansas adds only the state code. Benefit value is PE's per-child `head_start` output (derived from ACF spending/enrollment parameters, currently FY2024), not a pinned constant.
+- **Scope**: Head Start only (ages 3–5). Early Head Start (birth–3 and pregnant women) is a separate program.
+- **Implementation**: PolicyEngine (`head_start` variable), mirroring `tx_head_start` / `ma_head_start`. Eligibility and benefit value are computed by PolicyEngine; Kansas adds only the state code.
 
 ---
 
@@ -62,8 +60,7 @@
 
 ## Benefit Value
 
-- Per-child annual value is computed by PolicyEngine's `head_start` variable: KS ACF program spending ÷ enrollment, **uprated (CPI) to the screener's calculation year**. PE returns **$15,664/child/year** for Kansas (verified via API against PE current 1.755.0 and frontier 1.768.1). Note: the raw FY2024 ratio ($66,709,446 ÷ 4,590 = **$14,534**) is *not* what PE returns — PE applies `gov.hhs.uprating` to the spending, yielding **$15,664**; do not use the un-uprated ratio. Because the value is read from PolicyEngine at calculation time, it tracks federal-year + uprating changes rather than a pinned constant. Value scales with the number of eligible children.
-- *Note for QA:* the discovery config/spec draft's $15,664 was correct after all (it's PE's uprated output). An earlier delta report's $14,534 was the un-uprated raw ratio — do not substitute it. Using the PE approach means no hardcoded value.
+- Per-child annual value is computed by PolicyEngine's `head_start` variable: Kansas ACF program spending ÷ enrollment, uprated to the calculation year. This resolves to **$15,664/child/year** for Kansas. The value is read from PolicyEngine at calculation time (not a pinned constant), and scales by the number of eligible children (e.g. two eligible children = $31,328).
 
 ---
 
@@ -88,15 +85,11 @@ Head Start eligibility can be substantially evaluated with current screener fiel
 
 ## Test Scenarios
 
-> **Tier: `Fed (value varies)`.** Head Start is a PolicyEngine program whose per-child benefit value is a KS-keyed parameter (`spending[KS] / enrollment[KS]`). Per the Discovery doc, the deliverable for this tier is a **light spec whose scenarios isolate the state-specific value** plus a **PE delta report** (posted as a ticket comment) confirming PE's KS value matches the current ACF source and driving the delta to zero. The eligible scenarios below therefore assert the expected **dollar value** — they must break if the KS per-child figure drifts. Current KS value: **$15,664/child/year** (FY2024 spending uprated to the calc year; the raw $66,709,446 ÷ 4,590 = $14,534 ratio is pre-uprating and not what PE returns). Eligibility branches are included for completeness but the value assertions are the point.
-
-> **⚠️ Requires PE version 1.768.1+ (frontier).** Verified: on PE `current` (1.755.0) a 5-year-old is wrongly excluded (fixed by PE #8846, only in 1.768.1). KS Head Start must be served on a PE version ≥ 1.768.1 or age-5 children are under-included. Pin `PolicyEngineConfig` accordingly per environment.
->
-> **⚠️ Known PE limitation (Scenario 3):** categorical eligibility uses PE's *calculated* SNAP/TANF/SSI, not *reported* receipt. A family that actually receives SNAP but is above PE's calculated SNAP threshold is denied the categorical path. PE trialed a reported-receipt toggle and reverted it (`f00efba472`), so there is no PE input to change this. Only a custom calculator (WA-style `has_benefit`) would honor reported receipt. Accepted for now (PE approach retained).
+> Each eligible scenario asserts the expected **dollar value** ($15,664 per eligible child), so a scenario breaks if the Kansas per-child value drifts. Ineligible scenarios carry no value.
 
 ### Scenario 1: Low-Income Family with 3-Year-Old Child — value = one child
 **What we're checking**: One eligible preschooler → the KS per-child value. **This is the primary value-isolation scenario** — if PE's KS spending/enrollment params drift, this expected amount breaks.
-**Expected**: Eligible — **$15,664/year** (1 eligible child × KS FY2024 per-child value)
+**Expected**: Eligible — **$15,664/year** (1 eligible child)
 
 **Steps**:
 - **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
@@ -128,7 +121,7 @@ Head Start eligibility can be substantially evaluated with current screener fiel
 
 ### Scenario 3: Family Above 135% FPL Receiving SNAP — Categorical Eligibility Override
 **What we're checking**: A family whose income exceeds the 135% FPL ceiling is still eligible because they receive SNAP, which confers categorical eligibility regardless of income
-**Expected**: Eligible — **$15,664/year** (one eligible child × KS per-child value)
+**Expected**: Eligible — **$15,664/year** (one eligible child)
 
 **Steps**:
 - **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
@@ -139,6 +132,8 @@ Head Start eligibility can be substantially evaluated with current screener fiel
 - **Current Benefits**: Select `SNAP`
 
 **Why this matters**: Validates that SNAP categorical eligibility (45 CFR § 1302.12(a)(1)(ii)(B)) independently qualifies a family regardless of income. The same logic applies to TANF and SSI.
+
+**Known limitation**: PolicyEngine determines categorical eligibility from *calculated* SNAP/TANF/SSI, not reported receipt. A household that reports receiving SNAP but whose income is above PolicyEngine's calculated SNAP threshold is not caught by this path, so this scenario is not satisfied by the current PolicyEngine implementation.
 
 ---
 
@@ -160,7 +155,7 @@ Head Start eligibility can be substantially evaluated with current screener fiel
 
 ### Scenario 5: Foster Child — Categorical Eligibility via Foster Care
 **What we're checking**: A child in foster care qualifies regardless of household income
-**Expected**: Eligible — **$15,664/year** (one eligible child × KS per-child value)
+**Expected**: Eligible — **$15,664/year** (one eligible child)
 
 **Steps**:
 - **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
