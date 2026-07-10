@@ -73,21 +73,12 @@ class TestIlNslp(TestCase):
         for parent_input in SchoolLunch.pe_inputs:
             self.assertIn(parent_input, IlNslp.pe_inputs)
 
-    def test_tier_1_fpl_is_130_percent(self):
-        """Test that tier 1 FPL threshold is 130%."""
-        self.assertEqual(IlNslp.tier_1_fpl, 1.30)
-
-    def test_tier_2_fpl_is_185_percent(self):
-        """Test that tier 2 FPL threshold is 185%."""
-        self.assertEqual(IlNslp.tier_2_fpl, 1.85)
-
-    def test_tier_1_amount_is_935(self):
-        """Test that tier 1 benefit amount is $935."""
-        self.assertEqual(IlNslp.tier_1_amount, 935)
-
-    def test_tier_2_amount_is_805(self):
-        """Test that tier 2 benefit amount is $805."""
-        self.assertEqual(IlNslp.tier_2_amount, 805)
+    def test_uses_pe_net_subsidy_value(self):
+        """IlNslp inherits the federal SchoolLunch value (PolicyEngine's
+        school_meal_net_subsidy) rather than the removed hardcoded tier amounts."""
+        self.assertEqual(IlNslp.pe_name, "school_meal_net_subsidy")
+        self.assertFalse(hasattr(IlNslp, "tier_1_amount"))
+        self.assertFalse(hasattr(IlNslp, "tier_2_amount"))
 
 
 class TestIlTanf(TestCase):
