@@ -8,6 +8,10 @@ Working Healthy eligibility (KEESM §2664):
 - Countable income <= 300% FPL (assistance-plan size), awd_medicaid disregards
 - Countable resources <= $15,000 (flat)
 - Insurance none/employer/private; not an SSI recipient
+- Criterion-8 mutex: excluded if the household is eligible for regular KanCare Medicaid
+  (medicaid_eligible() reads the calculated `ks_medicaid` result). A low-income minor
+  (children's Medicaid) or low-income disabled adult (ABD Medicaid) is excluded — see
+  Sc 2/10 and the spec's mutex note.
 - KS residency handled by white-label routing (Scenario 17 not a calculator test)
 
 Benefit value: $19,051/year per eligible member (KS MAR FY2025 Working Healthy
@@ -78,11 +82,14 @@ def make_calculator(members=None, household_assets=5_000, fpl_limit=FPL_1, medic
     mock_screen.household_assets = household_assets
     mock_screen.household_members.all = Mock(return_value=members)
 
+    # The Criterion-8 mutex reads the calculated regular-Medicaid result via
+    # medicaid_eligible(), which looks up the STATE_MEDICAID_OPTIONS keys — for KS
+    # that is "ks_medicaid" (NOT "medicaid"; keying it wrong makes the mutex a no-op).
     data = {}
     if medicaid_eligible_data:
         med = Mock()
         med.eligible = True
-        data["medicaid"] = med
+        data["ks_medicaid"] = med
 
     mock_missing_deps = Mock()
     mock_missing_deps.has.return_value = False
@@ -120,11 +127,16 @@ class TestSpecScenarios(TestCase):
         self.assertTrue(eligible)
         self.assertEqual(value, VALUE_PER_MEMBER)
 
-    def test_scenario_2_minimally_eligible(self):
-        calc = make_calculator([make_member(age=16, monthly_earned=200)], household_assets=500)
-        eligible, value = run(calc)
-        self.assertTrue(eligible)
-        self.assertEqual(value, VALUE_PER_MEMBER)
+    def test_scenario_2_low_income_minor_medicaid_mutex_ineligible(self):
+        # A low-income working disabled 16-year-old independently qualifies for
+        # children's KanCare Medicaid (older-child pathway), so the Criterion-8
+        # mutex excludes them from Working Healthy. medicaid_eligible_data models
+        # ks_medicaid returning eligible for this household.
+        calc = make_calculator(
+            [make_member(age=16, monthly_earned=200)], household_assets=500, medicaid_eligible_data=True
+        )
+        eligible, _ = run(calc)
+        self.assertFalse(eligible)
 
     def test_scenario_3_not_working_ineligible(self):
         # SSDI (unearned) only, no earned income -> fails employment requirement
@@ -169,11 +181,14 @@ class TestSpecScenarios(TestCase):
         eligible, _ = run(calc)
         self.assertFalse(eligible)
 
-    def test_scenario_10_age_16_eligible(self):
-        calc = make_calculator([make_member(age=16, monthly_earned=800)], household_assets=1_000)
-        eligible, value = run(calc)
-        self.assertTrue(eligible)
-        self.assertEqual(value, VALUE_PER_MEMBER)
+    def test_scenario_10_low_income_minor_medicaid_mutex_ineligible(self):
+        # Same children's-Medicaid mutex as Sc 2, at a higher (still Medicaid-eligible)
+        # earned income — confirms the exclusion isn't an artifact of Sc 2's near-zero income.
+        calc = make_calculator(
+            [make_member(age=16, monthly_earned=800)], household_assets=1_000, medicaid_eligible_data=True
+        )
+        eligible, _ = run(calc)
+        self.assertFalse(eligible)
 
     def test_scenario_11_age_15_ineligible(self):
         calc = make_calculator([make_member(age=15, monthly_earned=800)], household_assets=1_000)
@@ -260,6 +275,42 @@ class TestSpecScenarios(TestCase):
         calc = self._size_aware_calc([minor], minor)
         eligible, _ = run(calc)
         self.assertFalse(eligible)
+
+    def test_scenario_21_age_16_above_medicaid_eligible(self):
+        # Age-16 floor from the ELIGIBLE side, mutex not firing: a 16-year-old whose
+        # income is above the children's-Medicaid ceiling (medicaid_eligible_data=False)
+        # but within WH's 300% FPL limit under 2-person (minor-with-parent) sizing.
+        # $8,300/mo -> countable $49,767: over 1-person ($47,880), under 2-person ($64,920).
+        parent = make_member(age=46, monthly_earned=0, relationship="headOfHousehold")
+        minor = make_member(age=16, monthly_earned=8_300, relationship="child")
+        calc = self._size_aware_calc([parent, minor], minor)  # medicaid mutex off by default
+        eligible, value = run(calc)
+        self.assertTrue(eligible)
+        self.assertEqual(value, VALUE_PER_MEMBER)  # minor only; parent has no earned income
+
+    def test_scenario_22_min_earned_income_not_medicaid_eligible(self):
+        # Earned-income floor from the ELIGIBLE side, mutex not firing: a disabled adult
+        # just over the $65/mo floor whose $5,000 assets fail the ABD Medicaid test
+        # (>$2,000) but pass the WH limit (<$15,000). medicaid_eligible_data=False models
+        # ks_medicaid returning ineligible (over-asset), so the mutex does not fire.
+        calc = make_calculator([make_member(age=40, monthly_earned=100)], household_assets=5_000)
+        eligible, value = run(calc)
+        self.assertTrue(eligible)
+        self.assertEqual(value, VALUE_PER_MEMBER)
+
+    def test_medicaid_mutex_reads_ks_medicaid_key(self):
+        # Structural coverage for the Criterion-8 mutex (household_eligible ->
+        # medicaid_eligible()). Take an otherwise fully-eligible adult and toggle only
+        # the regular-Medicaid result. This is the branch the QA gap exposed: the mutex
+        # keys off "ks_medicaid" (a STATE_MEDICAID_OPTIONS entry), so a household that
+        # qualifies for regular Medicaid is excluded from Working Healthy.
+        base = dict(age=40, monthly_earned=1_800)
+
+        eligible_no_medicaid, _ = run(make_calculator([make_member(**base)], medicaid_eligible_data=False))
+        self.assertTrue(eligible_no_medicaid)
+
+        eligible_with_medicaid, _ = run(make_calculator([make_member(**base)], medicaid_eligible_data=True))
+        self.assertFalse(eligible_with_medicaid)
 
     def test_assistance_plan_size_all_branches(self):
         # Directly exercise every _assistance_plan_size branch.
