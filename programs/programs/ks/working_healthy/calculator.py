@@ -103,21 +103,36 @@ class KsWorkingHealthy(ProgramCalculator):
         unearned = int(member.calc_gross_income("yearly", ["unearned"])) - self.unearned_deduction
         e.condition(earned + unearned <= income_limit)
 
+    # Relationships are stored relative to the head of household, so a minor living
+    # with their parent can be coded two ways: the minor is a child/stepChild/
+    # fosterChild of the head (parent = headOfHousehold/spouse), OR the minor is the
+    # head and the adult is coded parent/stepParent/fosterParent. Both must size to 2.
+    child_relationships = ("child", "stepChild", "fosterChild")
+    parent_relationships = ("parent", "stepParent", "fosterParent")
+
     def _assistance_plan_size(self, member) -> int:
         """
         Individual-centric assistance-plan size for the income test:
         married -> 2; minor (<18) living with a parent -> 2; otherwise -> 1.
-        (MFB policy choice extended from the premium-sizing convention; the
-        stricter 2-person bracket errs toward false negatives, the safe direction.)
+        (MFB policy choice extended from the premium-sizing convention.)
         """
         if member.is_married()["is_married"]:
             return 2
 
-        if member.age is not None and member.age < 18:
-            has_parent = any(
-                m.relationship in ("parent", "stepParent", "fosterParent") for m in self.screen.household_members.all()
-            )
-            if has_parent:
-                return 2
+        if member.age is not None and member.age < 18 and self._minor_lives_with_parent(member):
+            return 2
 
         return 1
+
+    def _minor_lives_with_parent(self, member) -> bool:
+        """A parent-figure is present for this minor under either relationship coding
+        (see class note): the minor is the head's child and an adult head/spouse is
+        present, or an adult is explicitly coded as the minor's parent."""
+        others = [m for m in self.screen.household_members.all() if m is not member]
+
+        if member.relationship in self.child_relationships:
+            # Minor is the head's child; a head-of-household or spouse adult is the parent.
+            return any(m.relationship in ("headOfHousehold", "spouse", "domesticPartner") for m in others)
+
+        # Minor is the head (or otherwise); an adult explicitly coded as their parent.
+        return any(m.relationship in self.parent_relationships for m in others)

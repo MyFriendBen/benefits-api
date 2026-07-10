@@ -92,7 +92,7 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 
 ## Test Scenarios
 
-*The 17 scenarios below cover all major eligibility branches: the golden-path eligible case, an ineligible case per each major exclusion criterion, boundary/edge values, both disability paths (long-term disability and blindness), multi-member, and the SSI/HCBS mutex. Eligible value = $19,051/year per eligible member (annual); $38,102/year for a 2-member eligible household. (KS residency isn't a scenario here — it's enforced by white-label routing, not the calculator.)*
+*The 20 scenarios below cover all major eligibility branches: the golden-path eligible case, an ineligible case per each major exclusion criterion, boundary/edge values, both disability paths (long-term disability and blindness), multi-member, assistance-plan sizing (minor-with-parent under both relationship codings, and the unaccompanied-minor 1-person case), and the SSI/HCBS mutex. Eligible value = $19,051/year per eligible member (annual); $38,102/year for a 2-member eligible household. (KS residency isn't a scenario here — it's enforced by white-label routing, not the calculator.)*
 
 ### Scenario 1: Clearly eligible disabled worker
 
@@ -363,6 +363,56 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 * **Assets**: `$3,000`
 
 **Why this matters**: KEESM §2664.2 → §2662 treats blindness as a qualifying status distinct from disability. Confirms the calculator qualifies a blind-only applicant; a bug that only honored `long_term_disability` would wrongly deny them.
+
+---
+
+### Scenario 18: Minor living with a parent — 2-person sizing (child coding) — eligible
+
+**What we're checking**: A minor (<18) living with their parent sizes as a **2-person** assistance plan for the income test. Here the minor is the head's **child** (the common relationship coding). The income is chosen to land **between** the 1-person and 2-person 300%-FPL ceilings, so the result depends on getting the sizing right.
+**Expected**: Eligible, value $19,051/year (minor only)
+
+**Steps**:
+
+* **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+* **Household**: Number of people: `2`
+* **Person 1** (parent): Birth month/year: `March 1980` (age 46), Relationship: `Head of Household`, no earned income, Insurance: `None`
+* **Person 2** (minor applicant): Birth month/year: `March 2009` (age 17), Relationship: `Child`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$8,300`, Insurance: `None`
+* **Assets**: `$2,000`
+
+**Why this matters**: The minor's countable earned income (int(($99,600 − $65) × 0.5) = $49,767) exceeds the 1-person 300%-FPL ceiling ($47,880) but is under the 2-person ceiling ($64,920). Correct 2-person sizing (minor living with a parent) makes them eligible; 1-person sizing would wrongly deny them. This is the common coding (minor = head's `child`), which a naive "look for a member coded `parent`" check would miss.
+
+---
+
+### Scenario 19: Minor living with a parent — 2-person sizing (parent coding) — eligible
+
+**What we're checking**: The same minor-with-parent case under the **inverted** relationship coding — the minor is the `Head of Household` and the adult is coded `Parent`. Must produce the **same** 2-person sizing and the same result as Scenario 18.
+**Expected**: Eligible, value $19,051/year (minor only)
+
+**Steps**:
+
+* **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+* **Household**: Number of people: `2`
+* **Person 1** (minor applicant): Birth month/year: `March 2009` (age 17), Relationship: `Head of Household`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$8,300`, Insurance: `None`
+* **Person 2** (parent): Birth month/year: `March 1980` (age 46), Relationship: `Parent`, no earned income, Insurance: `None`
+* **Assets**: `$2,000`
+
+**Why this matters**: Relationships are stored relative to the head, so a minor-with-parent household can be coded either way (Sc 18 vs. this). Both must size to 2-person; testing only one coding would leave the other branch of `_assistance_plan_size` uncovered.
+
+---
+
+### Scenario 20: Unaccompanied minor, no parent present — 1-person sizing — ineligible
+
+**What we're checking**: A minor (<18) with **no** parent-figure in the household sizes as a **1-person** plan (the parent-present condition must actually gate — it isn't "every minor gets 2-person").
+**Expected**: Not eligible
+
+**Steps**:
+
+* **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+* **Household**: Number of people: `1`
+* **Person 1** (minor applicant): Birth month/year: `March 2009` (age 17), Relationship: `Head of Household`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$8,300`, Insurance: `None`
+* **Assets**: `$2,000`
+
+**Why this matters**: Same $8,300/mo income as Sc 18–19, but with no parent present the plan is 1-person, so countable $49,767 exceeds the 1-person ceiling ($47,880) → ineligible. Confirms the sizing bites in both directions and that "minor living with a parent" is a real condition, not a blanket 2-person rule for all minors.
 
 ---
 

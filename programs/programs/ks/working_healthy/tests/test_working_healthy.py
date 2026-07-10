@@ -226,26 +226,70 @@ class TestSpecScenarios(TestCase):
         self.assertTrue(eligible)
         self.assertEqual(value, VALUE_PER_MEMBER)
 
-    def test_assistance_plan_size_single_married_and_minor(self):
-        # Directly exercise the three _assistance_plan_size branches (single -> 1;
-        # married -> 2; minor <18 living with a parent -> 2).
+    # --- Scenarios 18-20: assistance-plan sizing (income between the 1- and 2-person
+    # 300%-FPL ceilings, so sizing determines the outcome). $8,300/mo earned ->
+    # countable int(($99,600 - 65) * 0.5) = $49,767: over 1-person ($47,880), under
+    # 2-person ($64,920). ---
+    @staticmethod
+    def _size_aware_calc(members, minor):
+        calc = make_calculator(members, household_assets=2_000)
+        calc.program.year.get_limit = Mock(side_effect=lambda size: {1: FPL_1, 2: 21_640}[size])
+        return calc
+
+    def test_scenario_18_minor_with_parent_child_coding_eligible(self):
+        # Common coding: minor is the head's `child`, an adult head is the parent.
+        parent = make_member(age=46, monthly_earned=0, relationship="headOfHousehold")
+        minor = make_member(age=17, monthly_earned=8_300, relationship="child")
+        calc = self._size_aware_calc([parent, minor], minor)
+        eligible, value = run(calc)
+        self.assertTrue(eligible)
+        self.assertEqual(value, VALUE_PER_MEMBER)  # minor only; parent has no earned income
+
+    def test_scenario_19_minor_with_parent_parent_coding_eligible(self):
+        # Inverted coding: minor is the head, adult is coded `parent`. Same result as Sc 18.
+        minor = make_member(age=17, monthly_earned=8_300, relationship="headOfHousehold")
+        parent = make_member(age=46, monthly_earned=0, relationship="parent")
+        calc = self._size_aware_calc([minor, parent], minor)
+        eligible, value = run(calc)
+        self.assertTrue(eligible)
+        self.assertEqual(value, VALUE_PER_MEMBER)
+
+    def test_scenario_20_unaccompanied_minor_1person_ineligible(self):
+        # No parent-figure -> 1-person sizing -> same income now exceeds the ceiling.
+        minor = make_member(age=17, monthly_earned=8_300, relationship="headOfHousehold")
+        calc = self._size_aware_calc([minor], minor)
+        eligible, _ = run(calc)
+        self.assertFalse(eligible)
+
+    def test_assistance_plan_size_all_branches(self):
+        # Directly exercise every _assistance_plan_size branch.
         calc = make_calculator([make_member(age=40)])
 
-        single = make_member(age=40, relationship="headOfHousehold")
-        self.assertEqual(calc._assistance_plan_size(single), 1)
+        # single adult -> 1
+        self.assertEqual(calc._assistance_plan_size(make_member(age=40, relationship="headOfHousehold")), 1)
 
+        # married -> 2
         a = make_member(age=42, relationship="headOfHousehold")
         b = make_member(age=40, relationship="spouse")
         a.is_married = Mock(return_value={"is_married": True, "married_to": b})
         self.assertEqual(calc._assistance_plan_size(a), 2)
 
-        # Relationships are stored relative to the head. The sizing branch keys off a
-        # household member coded parent/stepParent/fosterParent, i.e. the minor applicant
-        # is the head and their parent is present in the household.
-        minor = make_member(age=16, relationship="headOfHousehold")
-        parent = make_member(age=45, relationship="parent")
-        calc_minor = make_calculator([minor, parent])
-        self.assertEqual(calc_minor._assistance_plan_size(minor), 2)
+        # minor coded `child`, adult head present -> 2 (the common coding)
+        parent = make_member(age=45, relationship="headOfHousehold")
+        minor_child = make_member(age=16, relationship="child")
+        self.assertEqual(make_calculator([parent, minor_child])._assistance_plan_size(minor_child), 2)
+
+        # minor coded head, adult coded `parent` -> 2 (inverted coding)
+        minor_head = make_member(age=16, relationship="headOfHousehold")
+        parent_coded = make_member(age=45, relationship="parent")
+        self.assertEqual(make_calculator([minor_head, parent_coded])._assistance_plan_size(minor_head), 2)
+
+        # minor with no parent-figure present -> 1
+        lone_minor = make_member(age=16, relationship="headOfHousehold")
+        self.assertEqual(make_calculator([lone_minor])._assistance_plan_size(lone_minor), 1)
+
+        # age unknown -> 1 (no minor branch)
+        self.assertEqual(calc._assistance_plan_size(make_member(age=None, relationship="headOfHousehold")), 1)
 
     # KS residency (non-KS resident ineligibility) is enforced by white-label
     # routing, not the calculator, so there is no calculator-level unit test for it.
