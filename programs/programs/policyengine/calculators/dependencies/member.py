@@ -169,27 +169,37 @@ class IsDisabledDependency(Member):
 
 
 class IsIncapableOfSelfCareDependency(Member):
+    """
+    PolicyEngine's `is_incapable_of_self_care` person input — used across care-related
+    calculations (e.g. the federal CDCC, where such a person is a qualifying individual
+    at any age). We infer it from the same self-reported disability signals as
+    is_disabled, since the screener has no dedicated incapable-of-self-care field.
+    """
+
     field = "is_incapable_of_self_care"
 
     def value(self):
-        # PolicyEngine's CDCC treats a spouse/dependent who is incapable of self-care as a
-        # qualifying individual at any age. We infer this from the same self-reported disability
-        # signals as is_disabled (the screener has no dedicated incapable-of-self-care field).
         return self.member.disabled or self.member.long_term_disability or self.member.visually_impaired
 
 
 class CareExpensesDependency(Member):
+    """
+    PolicyEngine's `care_expenses` person input — the cost of caring for a member who
+    is incapable of self-care. Distinct from the spm-level `childcare_expenses`, which
+    PE distributes only across under-13 children. It feeds the federal CDCC and any
+    state credit derived from it.
+
+    Our screener captures a single household-level "Dependent Care" (dependentCare)
+    expense with no per-member attribution, so we split it evenly across the members
+    who are incapable of self-care and assign this member their share (others get 0).
+    The even split is safe for the CDCC, which caps relevant expenses at $3,000 (one
+    qualifying individual) / $6,000 (two or more) — the split lands on the cap in the
+    cases that matter.
+    """
+
     field = "care_expenses"
 
     def value(self):
-        # PolicyEngine's federal CDCC reads care costs for a disabled adult/spouse from the
-        # person-level `care_expenses` variable (distinct from spm-level `childcare_expenses`,
-        # which only distributes to under-13 children). The screener collects a single
-        # household-level "Dependent Care" (dependentCare) expense with no per-member
-        # attribution, so we split it evenly across the members who are incapable of self-care
-        # and assign this member their share. An even split is safe for the credit: the federal
-        # CDCC caps relevant expenses at $3,000 (one qualifying individual) / $6,000 (two or more),
-        # so the split lands on the cap in the cases that matter.
         if not (self.member.disabled or self.member.long_term_disability or self.member.visually_impaired):
             return 0
 
