@@ -215,5 +215,37 @@ class TestSpecScenarios(TestCase):
         eligible, _ = run(calc)
         self.assertFalse(eligible)
 
-    # Scenario 17 (non-KS resident) is enforced by white-label routing, not the
-    # calculator, so there is no calculator-level unit test for it.
+    def test_scenario_17_blind_eligible(self):
+        # Qualifying path via visually_impaired (not long_term_disability) — the
+        # other half of the disability OR.
+        calc = make_calculator(
+            [make_member(age=40, monthly_earned=1_200, long_term_disability=False, visually_impaired=True)],
+            household_assets=3_000,
+        )
+        eligible, value = run(calc)
+        self.assertTrue(eligible)
+        self.assertEqual(value, VALUE_PER_MEMBER)
+
+    def test_assistance_plan_size_single_married_and_minor(self):
+        # Directly exercise the three _assistance_plan_size branches (single -> 1;
+        # married -> 2; minor <18 living with a parent -> 2).
+        calc = make_calculator([make_member(age=40)])
+
+        single = make_member(age=40, relationship="headOfHousehold")
+        self.assertEqual(calc._assistance_plan_size(single), 1)
+
+        a = make_member(age=42, relationship="headOfHousehold")
+        b = make_member(age=40, relationship="spouse")
+        a.is_married = Mock(return_value={"is_married": True, "married_to": b})
+        self.assertEqual(calc._assistance_plan_size(a), 2)
+
+        # Relationships are stored relative to the head. The sizing branch keys off a
+        # household member coded parent/stepParent/fosterParent, i.e. the minor applicant
+        # is the head and their parent is present in the household.
+        minor = make_member(age=16, relationship="headOfHousehold")
+        parent = make_member(age=45, relationship="parent")
+        calc_minor = make_calculator([minor, parent])
+        self.assertEqual(calc_minor._assistance_plan_size(minor), 2)
+
+    # KS residency (non-KS resident ineligibility) is enforced by white-label
+    # routing, not the calculator, so there is no calculator-level unit test for it.
