@@ -10,11 +10,12 @@
 
 ## Eligibility Criteria
 
-1. **Must have at least one qualifying dependent: a child under age 13, or a disabled spouse or dependent of any age who is physically or mentally incapable of self-care**
+1. **Must have at least one qualifying individual: a dependent under age 13, or a spouse or dependent of any age who is physically or mentally incapable of self-care**
    - Screener fields:
      - `birth_year + birth_month (HouseholdMember)`
      - `relationship (HouseholdMember)`
-     - `disabled (HouseholdMember)`
+     - `disabled`, `long_term_disability`, `visually_impaired (HouseholdMember)` (any of these marks a member incapable of self-care)
+   - Note: A full-time student is **not** a qualifying individual — only a child under 13 or a person incapable of self-care qualifies. (Student status matters separately, for the deemed-income exception in Criterion 9.)
    - Source: IRC § 21(b)(1); K.S.A. 79-32,111 (Kansas adopts federal definitions); Kansas K-40 Instructions - Child and Dependent Care Credit section
 
 2. **Must have earned income (wages, salaries, tips, self-employment income) during the tax year**
@@ -54,10 +55,10 @@
    - Source: IRC § 21(e)(6); K.S.A. 79-32,111
    - Impact: ImpactLevel.LOW
 
-9. **Full-time student or disabled spouse exception to the earned income requirement — if one spouse is a full-time student or is incapable of self-care, they are deemed to have earned income of $250/month (one qualifying individual) or $500/month (two or more), satisfying the earned-income requirement even with no actual earnings**
+9. **Full-time student or incapable-of-self-care spouse — deemed-income exception to the earned income requirement.** If a spouse is a full-time student or is incapable of self-care, they are deemed to have earned income of $250/month (when the household has one qualifying individual) or $500/month (two or more), which satisfies the two-earner requirement in Criterion 2 even when that spouse has no actual earnings. This does **not** make the spouse a qualifying individual (see Criterion 1) — it only supplies earned income so a real qualifying individual's care expenses become creditable.
     - Screener fields:
       - `student_full_time (HouseholdMember)`
-      - `disabled (HouseholdMember)`
+      - `disabled`, `long_term_disability`, `visually_impaired (HouseholdMember)`
     - Source: IRC § 21(d)(2); K.S.A. 79-32,111
 
 ## Benefit Value
