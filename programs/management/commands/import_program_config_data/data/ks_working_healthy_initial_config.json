@@ -1,0 +1,91 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "program_category": {
+    "external_name": "ks_health_care",
+    "name": "Health Care",
+    "icon": "health_care"
+  },
+  "program": {
+    "name_abbreviated": "ks_working_healthy",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "refugee",
+      "gc_5plus",
+      "otherWithWorkPermission"
+    ],
+    "name": "Working Healthy (WH)",
+    "description": "Working Healthy is a Medicaid program for Kansans with disabilities who are working. It lets you keep full health coverage even if you earn too much for regular Medicaid.\n\nIt covers the same care as regular KanCare. You can use it for things like doctor visits, hospital stays, and prescriptions. Depending on your income, you may pay a small monthly premium to keep it.\n\nYou may still qualify even if your income or savings look too high. Some income and savings may not count. Disability-related work costs can lower the income we count. And savings like retirement accounts may not count toward the limit. This program is for people living in the community, not a long-term care facility. You may need to show proof of your disability, such as an SSI or SSDI award letter or a doctor's statement.\n\nClick 'Apply Now' to start a KanCare application online, or call 1-866-305-5147 to have one mailed to you. A regional Benefits Specialist can help you understand how working affects your coverage.",
+    "description_short": "Health coverage for working Kansans with disabilities",
+    "learn_more_link": "https://www.kancare.ks.gov/members/benefits-services/working-healthy",
+    "apply_button_link": "https://cssp.kees.ks.gov/apspssp/",
+    "apply_button_description": "",
+    "estimated_application_time": "30 - 60 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_type": "benefit",
+    "value_format": "estimated_annual",
+    "base_program": "medicaid",
+    "website_description": "Health coverage for working Kansans with disabilities",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false,
+    "active": false
+  },
+  "documents": [
+    {
+      "external_name": "ks_id_proof",
+      "text": "Proof of identity (e.g. driver's license, state ID, passport)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_home",
+      "text": "Proof of home address (ex: lease, utility bill)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_ssn_proof",
+      "text": "Your Social Security Number",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_us_status",
+      "text": "Proof of U.S. citizenship or qualified immigration status",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_earned_income",
+      "text": "Proof of current earnings (e.g. W-2 forms, pay stubs, or self-employment tax returns)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_working_healthy_disability",
+      "text": "Proof of disability (e.g. SSI or SSDI award letter, or medical records from your doctors)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_assets",
+      "text": "Proof of assets (ex: bank statements, investment accounts). Do not include your home, one vehicle, household goods, or burial funds up to $1,500",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "ks_working_healthy_benefits_specialist",
+      "name": "Working Healthy Benefits Specialists",
+      "email": "billie.crawshaw@ks.gov",
+      "description": "Working Healthy Benefits Specialists offer free benefits counseling. They explain eligibility, estimate your monthly premium, help you understand how working affects your other benefits, and connect you to other resources. Reach a Specialist near you through the regional contact list, or contact the Working Healthy team directly.",
+      "assistance_link": "https://www.kancare.ks.gov/members/benefits-services/working-healthy/benefits-specialists",
+      "phone_number": "+17852616122"
+    }
+  ]
+}
