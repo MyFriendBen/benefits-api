@@ -185,9 +185,10 @@ class IsIncapableOfSelfCareDependency(Member):
 class CareExpensesDependency(Member):
     """
     PolicyEngine's `care_expenses` person input — the cost of caring for a member who
-    is incapable of self-care. Distinct from the spm-level `childcare_expenses`, which
-    PE distributes only across under-13 children. It feeds the federal CDCC and any
-    state credit derived from it.
+    is incapable of self-care. Distinct from the spm-unit-level `childcare_expenses`,
+    which PE aggregates into `tax_unit_childcare_expenses` by distributing only across
+    under-13 children (so an adult qualifying individual gets $0 from that path). It
+    feeds the federal CDCC and any state credit derived from it.
 
     Our screener captures a single household-level "Dependent Care" (dependentCare)
     expense with no per-member attribution, so we split it evenly across the members
