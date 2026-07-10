@@ -10,11 +10,12 @@
 
 ## Eligibility Criteria
 
-1. **Must have at least one qualifying dependent: a child under age 13, or a disabled spouse or dependent of any age who is physically or mentally incapable of self-care**
+1. **Must have at least one qualifying individual: a dependent under age 13, or a spouse or dependent of any age who is physically or mentally incapable of self-care**
    - Screener fields:
      - `birth_year + birth_month (HouseholdMember)`
      - `relationship (HouseholdMember)`
-     - `disabled (HouseholdMember)`
+     - `disabled`, `long_term_disability`, `visually_impaired (HouseholdMember)` (any of these marks a member incapable of self-care)
+   - Note: A full-time student is **not** a qualifying individual — only a child under 13 or a person incapable of self-care qualifies. (Student status matters separately, for the deemed-income exception in Criterion 9.)
    - Source: IRC § 21(b)(1); K.S.A. 79-32,111 (Kansas adopts federal definitions); Kansas K-40 Instructions - Child and Dependent Care Credit section
 
 2. **Must have earned income (wages, salaries, tips, self-employment income) during the tax year**
@@ -54,10 +55,10 @@
    - Source: IRC § 21(e)(6); K.S.A. 79-32,111
    - Impact: ImpactLevel.LOW
 
-9. **Full-time student or disabled spouse exception to the earned income requirement — if one spouse is a full-time student or is incapable of self-care, they are deemed to have earned income of $250/month (one qualifying individual) or $500/month (two or more), satisfying the earned-income requirement even with no actual earnings**
+9. **Full-time student or incapable-of-self-care spouse — deemed-income exception to the earned income requirement.** If a spouse is a full-time student or is incapable of self-care, they are deemed to have earned income of $250/month (when the household has one qualifying individual) or $500/month (two or more), which satisfies the two-earner requirement in Criterion 2 even when that spouse has no actual earnings. This does **not** make the spouse a qualifying individual (see Criterion 1) — it only supplies earned income so a real qualifying individual's care expenses become creditable.
     - Screener fields:
       - `student_full_time (HouseholdMember)`
-      - `disabled (HouseholdMember)`
+      - `disabled`, `long_term_disability`, `visually_impaired (HouseholdMember)`
     - Source: IRC § 21(d)(2); K.S.A. 79-32,111
 
 ## Benefit Value
@@ -96,7 +97,9 @@ Dollar values for the eligible scenarios are PolicyEngine-verified (KS CDCC = 50
 [ ] Scenario 7 (Child turns 13 mid-year — still 12 at time of screening): User should be **eligible**, value: $570/year
 [ ] Scenario 8 (No qualifying dependent — only teenager age 16 in household): User should be **ineligible**
 [ ] Scenario 9 (Disabled adult dependent — alternative qualifying individual): User should be **eligible** per IRC § 21, value: $540/year
-[ ] Scenario 10 (Disabled spouse with no earned income — deemed-income path): User should be **eligible** per IRC § 21(d)(2), value: $525/year
+[ ] Scenario 10 (Disabled spouse with no earned income — deemed-income path): User should be **eligible** per IRC § 21(d)(2), value: $490/year
+[ ] Scenario 11 (Full-time student spouse with a qualifying child — deemed-income path): User should be **eligible** per IRC § 21(d)(2), value: $490/year
+[ ] Scenario 12 (Full-time student spouse with no qualifying individual): User should be **ineligible** (a student is not a qualifying individual under § 21(b)(1))
 
 ## Test Scenarios
 
@@ -242,8 +245,8 @@ Dollar values for the eligible scenarios are PolicyEngine-verified (KS CDCC = 50
 ---
 
 ### Scenario 10: Disabled Spouse with No Earned Income — Deemed-Income Path
-**What we're checking**: Married couple where one spouse is disabled (incapable of self-care) and has no earned income, with care expenses for that spouse. Under IRC § 21(d)(2), a spouse incapable of self-care is deemed to have earned income of $250/month (one qualifying individual), which both makes them a qualifying individual and satisfies the two-earner requirement — so the household should qualify.
-**Expected**: Eligible, value: $525/year. Per IRC § 21(d)(2), a disabled spouse incapable of self-care is deemed to have $250/month of earned income, which both makes them a qualifying individual and satisfies the two-earner requirement, so the household qualifies for the credit. (Value: expenses limited to the lower "earner's" deemed $3,000/year → 35% × $3,000 = $1,050 federal → 50% = $525 KS.)
+**What we're checking**: Married couple where one spouse is disabled (incapable of self-care) and has no earned income, with care expenses for that spouse. Under IRC § 21(b)(1)(C) the disabled spouse is a qualifying individual; under § 21(d)(2) they are deemed to have $250/month of earned income, satisfying the two-earner requirement so the care expenses become creditable — so the household should qualify.
+**Expected**: Eligible, value: $490/year. The disabled spouse is a qualifying individual (§ 21(b)(1)(C)), and the § 21(d)(2) deemed $250/month of earned income satisfies the two-earner requirement, so their care expenses are creditable. (Federal CDCC computes to $980 for this household; KS credit = 50% = $490.)
 
 **Steps**:
 - **Location**: Enter ZIP code `66044`, Select county `Douglas`
@@ -253,6 +256,37 @@ Dollar values for the eligible scenarios are PolicyEngine-verified (KS CDCC = 50
 - **Expenses**: Care expenses: Yes, Monthly care cost for disabled spouse: `$500` (i.e. $6,000/year)
 
 **Why this matters**: This is the deemed-income path of IRC § 21(d)(2), distinct from Scenario 9's disabled-dependent path. A married household with one disabled non-earning spouse and care expenses for that spouse still qualifies — a real population that would otherwise be missed if the deemed $250/month were not applied.
+
+---
+
+### Scenario 11: Full-Time Student Spouse with a Qualifying Child — Deemed-Income Path
+**What we're checking**: Married couple filing jointly with one qualifying child under 13 and childcare expenses, where the non-working spouse is a full-time student. Under IRC § 21(d)(2), a full-time-student spouse is deemed to have $250/month of earned income, which satisfies the two-earner requirement so the child's childcare expenses become creditable. (Distinct from the disabled cases: a student is **not** itself a qualifying individual under § 21(b)(1) — the child is the qualifying individual here.)
+**Expected**: Eligible, value: $490/year. The child under 13 is the qualifying individual; the § 21(d)(2) deemed earned income for the full-time-student spouse satisfies the two-earner test, so the child's childcare is creditable. (Federal CDCC computes to $980 for this household; KS credit = 50% = $490.)
+
+**Steps**:
+- **Location**: Enter ZIP code `66044`, Select county `Douglas`
+- **Household**: Number of people: `3`
+- **Person 1**: Relationship: `Head of Household`, Birth month/year: `March 1985` (age 41), Has earned income: Yes, Employment income: `$3,500/month`, Filing status: Married Filing Jointly, Last tax filing year: `2025`
+- **Person 2**: Relationship: `Spouse`, Birth month/year: `May 1990` (age 36), Full-time student: Yes, Has earned income: No, Income: `$0`
+- **Person 3**: Relationship: `Child`, Birth month/year: `January 2023` (age 3), No income
+- **Expenses**: Child care expenses: Yes, Monthly childcare cost: `$900` (i.e. $10,800/year)
+
+**Why this matters**: Without the § 21(d)(2) deeming, a married household with one full-time-student spouse who has no earnings would fail the two-earner test and get $0 despite a qualifying child in paid care — a real population (student-parent households) that would otherwise be under-screened. Requires the screener's `student_full_time` flag to reach the calculator.
+
+---
+
+### Scenario 12: Full-Time Student Spouse with No Qualifying Individual — Ineligible
+**What we're checking**: Married couple filing jointly where the non-working spouse is a full-time student, but there is **no** qualifying individual — no child under 13 and no one incapable of self-care. Tests that a full-time student is not itself a qualifying individual.
+**Expected**: Not eligible. A full-time student is not a qualifying individual under IRC § 21(b)(1); the § 21(d)(2) deeming only supplies earned income and does not create a qualifying individual. With no child under 13 and no one incapable of self-care, there are no creditable care expenses.
+
+**Steps**:
+- **Location**: Enter ZIP code `66044`, Select county `Douglas`
+- **Household**: Number of people: `2`
+- **Person 1**: Relationship: `Head of Household`, Birth month/year: `March 1985` (age 41), Has earned income: Yes, Employment income: `$3,500/month`, Filing status: Married Filing Jointly, Last tax filing year: `2025`
+- **Person 2**: Relationship: `Spouse`, Birth month/year: `May 1990` (age 36), Full-time student: Yes, Has earned income: No, Income: `$0`
+- **Expenses**: Care expenses: Yes, Monthly care cost: `$900`
+
+**Why this matters**: Confirms the boundary of § 21: the student-spouse deeming does not, by itself, make anyone a qualifying individual. A household with a full-time-student spouse but no child under 13 and no disabled member correctly gets $0 — distinguishing the "deemed income" mechanic from "qualifying individual" status.
 
 ## Source Documentation
 
