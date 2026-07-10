@@ -10,8 +10,8 @@ Working Healthy eligibility (KEESM §2664):
 - Insurance none/employer/private; not an SSI recipient
 - KS residency handled by white-label routing (Scenario 17 not a calculator test)
 
-Benefit value: $30,192/year per eligible member (KFF; see calculator note — value
-method flagged for sign-off before activation).
+Benefit value: $19,051/year per eligible member (KS MAR FY2025 Working Healthy
+per-enrollee cost; see calculator + spec.md Benefit Value).
 """
 
 from django.test import TestCase
@@ -21,7 +21,7 @@ from programs.programs.ks import ks_calculators
 from programs.programs.ks.working_healthy.calculator import KsWorkingHealthy
 from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
 
-VALUE_PER_MEMBER = 30_192
+VALUE_PER_MEMBER = 19_051
 
 # 2026 FPL used in tests (single-person). 300% of this is the income ceiling.
 FPL_1 = 15_960

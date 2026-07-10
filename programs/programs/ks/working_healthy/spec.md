@@ -85,23 +85,21 @@
 ## Benefit Value
 
 - **Shape:** Insurance coverage (full Medicaid benefit package; no managed care, no spenddown).
-- **Methodology, corrected 2026-07-07 (was overstated):** insurance coverage is valued by total program spending ÷ beneficiaries (average per-enrollee Medicaid cost, from KFF). For each eligible household member, assign the KS per-enrollee figure and sum across eligible members. **This is NOT an established MFB convention** — checked against every already-*shipped* Medicaid/health-insurance calculator in `benefits-api` (IL, NC, CO, MA — 10+ programs, including `awd_medicaid` itself): all of them value coverage with a flat nominal `member_amount` (a monthly figure × 12), not a KFF spending-per-enrollee figure. This approach appears only here and in one other **equally unimplemented** draft spec, `wa_apple_health_hwd` (MFB-790) — the two specs agree with each other, but neither is validated against production code. **Flagged for the dev/team to confirm before this ships**, since it would be the first real implementation of this valuation pattern rather than a proven-in-production choice. The reasoning for preferring it over a flat nominal amount still holds (a real spending figure is more defensible than an arbitrary one) — this is a flag for awareness, not a claim that it's wrong.
-- **Value:** **$30,192/year per eligible member** — KFF State Health Facts, "Medicaid Spending per Full-Benefit Enrollee by Enrollment Group," *People with Disabilities*, Kansas, 2023. Two eligible members → $60,384/year. Stored and displayed as the **annual** value (`value_format: "estimated_annual"`).
-- **Rationale for the People-with-Disabilities figure:** Working Healthy enrollees are by definition disabled working adults, so that per-enrollee bucket is the correct match (the same choice made in the equally-unimplemented `wa_apple_health_hwd` draft — see methodology note above). *(Verified 2026-06-16 against the KFF "Full-Benefit Enrollee" indicator — Kansas, People with Disabilities = $30,192. Note: this is distinct from the KFF "full-or-partial benefit" indicator, which reports a lower ~$17,153 because it includes partial-benefit enrollees; the full-benefit figure is the correct one.)*
-- **Premium — corrected 2026-07-06 against the current F-8 (rev. 04-26, user-provided PDF):** the "above 100% FPL" trigger stated here previously was wrong. F-8 p.5's premium table gives $0-premium net-income ceilings of $2,993 (1-person) and $4,058 (2- and 3-person) — those are **~225% of the 1-/2-person 100% FPL benchmark and ~178% of the 3-person benchmark**, not 100%. Above those ceilings, premiums scale from $124 up to $205/month depending on net income and household size (full table in F-8 p.5). American Indian/Alaska Native members are exempt (confirmed, KEESM §2664.5). The premium is **not** netted from the gross coverage value; it is surfaced in the program description as a potential monthly cost, not calculated. (Net value to a non-AI/AN enrollee is lower by their premium — tribal affiliation isn't collected, a known Benefit-Value gap.)
+- **Methodology:** the value is the actual cost of the Working Healthy program in Kansas — total program expenditure ÷ average enrollment, from KDHE's Medical Assistance Report (MAR), which tracks Working Healthy as its own population line (separate from SSI Blind/Disabled and Medically Needy Blind/Disabled, the groups that hold most LTSS/HCBS users). For each eligible household member, assign this per-enrollee figure and sum across eligible members. Because the MAR isolates the Working Healthy population, this excludes the LTSS/institutional enrollees that inflate a general disabled-Medicaid average.
+- **Value:** **$19,051/year per eligible member** — KS MAR, FY2025 (Jul 2024–Jun 2025): $24,879,015 cumulative Working Healthy expenditure ÷ 1,306 average monthly beneficiaries. Two eligible members → $38,102/year. Stored and displayed as the **annual** value (`value_format: "estimated_annual"`).
+- **Premium:** F-8 p.5's premium table gives $0-premium net-income ceilings of $2,993 (1-person) and $4,058 (2- and 3-person) — ~225% of the 1-/2-person 100% FPL benchmark and ~178% of the 3-person benchmark. Above those ceilings, premiums scale from $124 up to $205/month depending on net income and household size (full table in F-8 p.5). American Indian/Alaska Native members are exempt (KEESM §2664.5). The premium is **not** netted from the gross coverage value; it is surfaced in the program description as a potential monthly cost, not calculated. (Net value to a non-AI/AN enrollee is lower by their premium — tribal affiliation isn't collected, a known Benefit-Value gap.)
 - **Config:** `estimated_value` = "" (calculator outputs the value); `value_type` = "benefit"; `value_format` = "estimated_annual"; `base_program` = "medicaid".
-- ⚠️ *Refresh note:* KFF 2023 figures are point-in-time; refresh when KFF publishes newer data.
 
 ---
 
 ## Test Scenarios
 
-*The 17 scenarios below cover all major eligibility branches: the golden-path eligible case, an ineligible case per each major exclusion criterion, boundary/edge values, multi-member, and the SSI/HCBS mutex. Sc 1, 3, and 15 are also carried in the legacy validation JSON (`ks_working_healthy.json`) for import into the validation harness. Eligible value = $30,192/year per eligible member (annual); $60,384/year for a 2-member eligible household.*
+*The 17 scenarios below cover all major eligibility branches: the golden-path eligible case, an ineligible case per each major exclusion criterion, boundary/edge values, multi-member, and the SSI/HCBS mutex. Eligible value = $19,051/year per eligible member (annual); $38,102/year for a 2-member eligible household.*
 
-### Scenario 1: Clearly eligible disabled worker -- in validation JSON
+### Scenario 1: Clearly eligible disabled worker
 
 **What we're checking**: Typical applicant who meets all criteria — KS resident, disabled, employed, age 16–64, income and resources within limits.
-**Expected**: Eligible, value $30,192/year (1 × $30,192)
+**Expected**: Eligible, value $19,051/year (1 × $19,051)
 
 **Steps**:
 
@@ -117,7 +115,7 @@
 ### Scenario 2: Minimally eligible — barely meets all thresholds
 
 **What we're checking**: Applicant who just clears every floor: exactly age 16, minimal employment income, confirmed disability.
-**Expected**: Eligible, value $30,192/year
+**Expected**: Eligible, value $19,051/year
 
 **Steps**:
 
@@ -130,7 +128,7 @@
 
 ---
 
-### Scenario 3: Disabled but not currently working — ineligible -- in validation JSON
+### Scenario 3: Disabled but not currently working — ineligible
 
 **What we're checking**: Disabled applicant with SSDI income only and no earned income — fails the employment requirement.
 **Expected**: Not eligible (would route to ABD/spenddown Medicaid instead)
@@ -165,7 +163,7 @@
 ### Scenario 5: Income just under 300% FPL — eligible (edge)
 
 **What we're checking**: Disabled worker whose countable income lands just below the 300% FPL ceiling.
-**Expected**: Eligible, value $30,192/year
+**Expected**: Eligible, value $19,051/year
 
 **Steps**:
 
@@ -197,7 +195,7 @@
 ### Scenario 7: Resources exactly $15,000 — eligible (edge)
 
 **What we're checking**: Disabled worker with countable resources exactly at the limit.
-**Expected**: Eligible, value $30,192/year
+**Expected**: Eligible, value $19,051/year
 
 **Steps**:
 
@@ -245,7 +243,7 @@
 ### Scenario 10: Age exactly 16 — minimum age threshold
 
 **What we're checking**: Whether a person who is exactly 16 (the minimum age) qualifies.
-**Expected**: Eligible, value $30,192/year
+**Expected**: Eligible, value $19,051/year
 
 **Steps**:
 
@@ -277,7 +275,7 @@
 ### Scenario 12: Age exactly 64 — maximum age — eligible
 
 **What we're checking**: A person at the upper age boundary.
-**Expected**: Eligible, value $30,192/year
+**Expected**: Eligible, value $19,051/year
 
 **Steps**:
 
@@ -309,7 +307,7 @@
 ### Scenario 14: Multi-member — two disabled working spouses — eligible
 
 **What we're checking**: A 2-person household where both members independently meet all criteria; value aggregates across both.
-**Expected**: Eligible (both), value $60,384/year (2 × $30,192)
+**Expected**: Eligible (both), value $38,102/year (2 × $19,051)
 
 **Steps**:
 
@@ -319,11 +317,11 @@
 * **Person 2**: Birth month/year: `September 1990` (age 35), Relationship: `Spouse`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$950`, Citizenship: `US Citizen`, Insurance: `None`
 * **Assets**: `$8,000`
 
-**Why this matters**: Working Healthy is individual-level. Each member is evaluated independently and each eligible member contributes the per-enrollee value, so the household value sums to $60,384/year.
+**Why this matters**: Working Healthy is individual-level. Each member is evaluated independently and each eligible member contributes the per-enrollee value, so the household value sums to $38,102/year.
 
 ---
 
-### Scenario 15: SSI recipient — ineligible (mutex) -- in validation JSON
+### Scenario 15: SSI recipient — ineligible (mutex)
 
 **What we're checking**: Disabled, employed, within income/resource limits, but receiving SSI. SSI recipients remain in the SI program and are excluded from Working Healthy.
 **Expected**: Not eligible
@@ -367,7 +365,7 @@
 * **Person 1**: Birth month/year: `March 1986` (age 40), Relationship: `Head of Household`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$1,800`, Citizenship: `US Citizen`, Insurance: `None`
 * **Assets**: `$5,000`
 
-**Why this matters**: §2664.1 → §2150 — Working Healthy is a Kansas Medicaid program; a non-KS resident is ineligible. Documented for traceability; in practice the KS white-label only serves KS residents, so this is not carried into the validation JSON.
+**Why this matters**: §2664.1 → §2150 — Working Healthy is a Kansas Medicaid program; a non-KS resident is ineligible. Documented for traceability; in practice the KS white-label only serves KS residents, so this is enforced by routing rather than the calculator (no calculator-level unit test).
 
 ---
 
@@ -444,7 +442,7 @@ After review, **none of these gaps warrant a new screener field for this program
 - KEESM §6410(34) — Individual Development Account resource/income exemption: https://khap.kdhe.ks.gov/KEESM/Nov_2022_Output/keesm6410.htm (fetched live this session — verbatim, "IDAs are exempt resources for all programs")
 - **F-8 Kansas Medical Standards, rev. 04-26 (current; user-provided PDF, verified directly 2026-07-06)** — confirms verbatim: Working Healthy income standards $3,990 / $5,410 / $6,830 / +$1,420 = "monthly 300% poverty level standard" (p.5); resource limit $15,000, no couple-scaling (p.8); federal tax deductions inapplicable to Working Healthy (p.6); premium brackets by household size (p.5). Supersedes the earlier "rev. 07-26" citation, which was never independently confirmed and is now corrected to the actual current revision label.
 - KanCare Working Healthy page — confirms the **300% FPL** income limit, age 16–64, SSA-determined disability, >$65/mo + FICA/SECA earned income, not-SSI, not-HCBS, not-nursing-facility, and the **$15,000** resource limit: https://www.kancare.ks.gov/members/benefits-services/working-healthy (⚠️ **not independently re-verified this session** — every automated fetch attempt against this URL returned 403, confirmed multiple times across multiple rounds; this citation rests on a human's direct confirmation from 2026-06-17, now three weeks old)
-- KFF State Health Facts — Medicaid Spending per Full-Benefit Enrollee by Enrollment Group (People with Disabilities, KS, 2023 = $30,192): https://www.kff.org/medicaid/state-indicator/medicaid-spending-per-full-benefit-enrollee/ (fetched live this session — exact match, $30,192, 2023)
+- Kansas Medical Assistance Report (MAR), FY2025, KDHE Division of Health Care Finance — https://www.kdhe.ks.gov/ArchiveCenter/ViewFile/Item/2842 . Benefit value source: "Working Healthy" row on the "Beneficiaries by Population Group" table (Monthly Average = 1,306) and "Expenditures by Population Group" table (Fiscal Year-to-Date Total = $24,879,015); $24,879,015 ÷ 1,306 = $19,051/enrollee. Current/future MAR editions: https://www.kdhe.ks.gov/229/Data-Reports
 - HHS 2026 Poverty Guidelines (basis for the 300% FPL standards): https://www.federalregister.gov/documents/2026/01/15/2026-00755/annual-update-of-the-hhs-poverty-guidelines (⚠️ **not independently fetched this session** — this URL redirected to an unblock/verification page that was never followed up on; the 300%-FPL dollar figures it underpins are instead cross-validated via the `benefits-api` repo's own `FplCache` 2026 table, an independent source that reproduces them to the dollar)
 
 **Citation-currency findings — fully resolved 2026-07-06:**

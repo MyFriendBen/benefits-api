@@ -46,16 +46,12 @@ class KsWorkingHealthy(ProgramCalculator):
     earned_monthly_floor = 65
     insurance_types = ("employer", "private", "none")
 
-    # NOTE (value method — FLAGGED FOR DEV/TEAM SIGN-OFF before activation):
-    # $30,192/yr per eligible member is the KFF "Medicaid Spending per Full-Benefit
-    # Enrollee, People with Disabilities, Kansas, 2023" figure (already annual).
-    # This spending-per-enrollee valuation is NOT the established MFB convention —
-    # every shipped Medicaid/health calculator (CO/IL/NC/MA, incl. awd_medicaid)
-    # uses a flat nominal member_amount instead. KS would be the first production
-    # use of this pattern (~8x the sibling programs). Ships inactive; the valuation
-    # method must be confirmed before the program is activated. See spec.md Benefit
-    # Value and the KS-launch QA review.
-    member_amount = 30_192
+    # $19,051/yr per eligible member: KS Working Healthy program cost per enrollee,
+    # from KDHE's Medical Assistance Report (MAR), FY2025 — $24,879,015 total Working
+    # Healthy expenditure / 1,306 average monthly beneficiaries. The MAR tracks Working
+    # Healthy as its own population line, so this excludes the LTSS/institutional
+    # enrollees that inflate the general disabled-Medicaid figure. See spec.md Benefit Value.
+    member_amount = 19_051
 
     dependencies = [
         "age",
