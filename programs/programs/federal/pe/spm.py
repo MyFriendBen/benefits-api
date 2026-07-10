@@ -44,21 +44,22 @@ class Snap(PolicyEngineSpmCalulator):
 
 
 class SchoolLunch(PolicyEngineSpmCalulator):
-    pe_name = "school_meal_daily_subsidy"
-    pe_inputs = [dependency.spm.SchoolMealCountableIncomeDependency]
-    pe_outputs = [dependency.spm.SchoolMealDailySubsidy, dependency.spm.SchoolMealTier]
+    """
+    National School Lunch Program (NSLP) — free/reduced-price school meals.
 
-    amount = 120
+    The value is PolicyEngine's ``school_meal_net_subsidy``: the annual value of
+    free/reduced meals above the full-price baseline, computed from USDA per-meal
+    rates × school days × the household's K-12 children (ages 5–17, imputed by PE
+    from ``age``). PAID-tier households net to $0, so eligibility is value > 0.
+    ``AgeDependency`` is sent so PE can derive ``is_in_k12_school``.
+    """
 
-    def household_value(self):
-        value = 0
-        num_children = self.screen.num_children(3, 18)
-
-        if self.get_variable() > 0 and num_children > 0:
-            if self.get_dependency_value(dependency.spm.SchoolMealTier) != "PAID":
-                value = SchoolLunch.amount * num_children
-
-        return value
+    pe_name = "school_meal_net_subsidy"
+    pe_inputs = [
+        dependency.spm.SchoolMealCountableIncomeDependency,
+        dependency.member.AgeDependency,
+    ]
+    pe_outputs = [dependency.spm.SchoolMealNetSubsidy, dependency.spm.SchoolMealTier]
 
 
 class Tanf(PolicyEngineSpmCalulator):

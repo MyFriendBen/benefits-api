@@ -161,6 +161,14 @@ class SchoolMealDailySubsidy(SpmUnit):
     field = "school_meal_daily_subsidy"
 
 
+class SchoolMealNetSubsidy(SpmUnit):
+    # Annual free/reduced-price school meal value: PolicyEngine multiplies the
+    # per-child-per-day net subsidy (daily subsidy minus the full-price baseline)
+    # by the number of K-12 children and the number of school days in the year.
+    # PAID-tier households net to $0.
+    field = "school_meal_net_subsidy"
+
+
 class SchoolMealTier(SpmUnit):
     field = "school_meal_tier"
 
