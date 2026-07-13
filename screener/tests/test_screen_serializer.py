@@ -10,7 +10,7 @@ shared helper) directly and the serializer `create()` / `update()` paths end to 
 from django.test import TestCase
 
 from programs.models import Program
-from screener.models import CurrentBenefit, HouseholdMember, IncomeStream, Screen, WhiteLabel
+from screener.models import CurrentBenefit, HouseholdMember, IncomeStream, Insurance, Screen, WhiteLabel
 from screener.serializers import ScreenSerializer, _write_current_benefits
 from screener.tests.helpers import seed_program
 
@@ -284,6 +284,87 @@ class ScreenSerializerCreateTests(TestCase):
         screen = serializer.save()
 
         self.assertEqual(self._benefit_names(screen), set())
+
+
+class HouseholdMemberInsuranceTests(TestCase):
+    """Regression coverage for the optional `insurance` field on household members.
+
+    `insurance` is `required=False` on HouseholdMemberSerializer, so a client can omit
+    the key entirely (distinct from sending `null`): on omission the key is absent from
+    validated_data, on null it's present as None. A bare `member.pop("insurance")`
+    KeyErrors on the omission case (a prod 500). create()/update() must treat an absent
+    key the same as null — these pin both paths against that regression.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+
+    def _base_payload(self, members):
+        return {
+            "white_label": self.white_label.code,
+            "household_members": members,
+            "expenses": [],
+            "current_benefits": [],
+        }
+
+    def _member(self, **extra):
+        # income_streams is the only required nested field on a member; everything
+        # else (including insurance) is optional. Tests override via **extra.
+        member = {"relationship": "headOfHousehold", "age": 40, "income_streams": []}
+        member.update(extra)
+        return member
+
+    def test_create_member_omitting_insurance_key_succeeds(self):
+        """A member with no `insurance` key at all creates without error and writes no
+        Insurance row (the prod KeyError regression)."""
+        member = self._member()
+        self.assertNotIn("insurance", member)
+
+        serializer = ScreenSerializer(data=self._base_payload([member]))
+        serializer.is_valid(raise_exception=True)
+        screen = serializer.save()
+
+        hhm = HouseholdMember.objects.get(screen=screen)
+        self.assertFalse(Insurance.objects.filter(household_member=hhm).exists())
+
+    def test_create_member_with_null_insurance_succeeds(self):
+        """An explicit `insurance: None` also creates no Insurance row."""
+        serializer = ScreenSerializer(data=self._base_payload([self._member(insurance=None)]))
+        serializer.is_valid(raise_exception=True)
+        screen = serializer.save()
+
+        hhm = HouseholdMember.objects.get(screen=screen)
+        self.assertFalse(Insurance.objects.filter(household_member=hhm).exists())
+
+    def test_create_member_with_insurance_writes_row(self):
+        """A provided insurance object is written with its flags."""
+        serializer = ScreenSerializer(
+            data=self._base_payload([self._member(insurance={"none": False, "medicaid": True, "medicare": True})])
+        )
+        serializer.is_valid(raise_exception=True)
+        screen = serializer.save()
+
+        hhm = HouseholdMember.objects.get(screen=screen)
+        row = Insurance.objects.get(household_member=hhm)
+        self.assertTrue(row.medicaid)
+        self.assertTrue(row.medicare)
+        self.assertFalse(row.none)
+
+    def test_update_member_omitting_insurance_key_succeeds(self):
+        """update() already defaults the absent key; lock it so it can't regress to a
+        bare pop (KeyError) like create() had."""
+        screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="78701", household_size=1, completed=False
+        )
+        member = self._member()
+        self.assertNotIn("insurance", member)
+
+        serializer = ScreenSerializer(screen, data=self._base_payload([member]))
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        hhm = HouseholdMember.objects.get(screen=screen)
+        self.assertFalse(Insurance.objects.filter(household_member=hhm).exists())
 
 
 class CurrentBenefitsNameLengthTests(TestCase):
