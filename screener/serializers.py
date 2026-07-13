@@ -359,7 +359,9 @@ class ScreenSerializer(serializers.ModelSerializer):
         screen.set_screen_is_test()
         for member in household_members:
             incomes = member.pop("income_streams")
-            insurance = member.pop("insurance")
+            # insurance is required=False on the serializer, so the key is absent
+            # (not None) when a client omits it — match update() and default to None.
+            insurance = member.pop("insurance", None)
             energy_calculator_member = member.pop("energy_calculator", None)
             household_member = HouseholdMember.objects.create(**member, screen=screen)
             for income in incomes:
