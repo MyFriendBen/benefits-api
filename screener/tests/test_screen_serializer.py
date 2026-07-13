@@ -353,9 +353,7 @@ class HouseholdMemberInsuranceTests(TestCase):
     def test_update_member_omitting_insurance_key_succeeds(self):
         """update() already defaults the absent key; lock it so it can't regress to a
         bare pop (KeyError) like create() had."""
-        screen = Screen.objects.create(
-            white_label=self.white_label, zipcode="78701", household_size=1, completed=False
-        )
+        screen = Screen.objects.create(white_label=self.white_label, zipcode="78701", household_size=1, completed=False)
         member = self._member()
         self.assertNotIn("insurance", member)
 
