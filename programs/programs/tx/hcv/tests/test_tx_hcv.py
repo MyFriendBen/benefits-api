@@ -59,7 +59,9 @@ def make_calculator(
     screen.zipcode = zipcode
     screen.household_assets = household_assets
     screen.household_members.all = Mock(return_value=members)
-    screen.has_benefit = Mock(side_effect=lambda name: has_section_8 if name == "section_8" else False)
+    screen.has_benefit = Mock(return_value=False)
+    # Section 8 is matched via base_program ("section_8" → tx_hcv), not an exact name.
+    screen.has_base_benefit = Mock(side_effect=lambda base: has_section_8 if base == "section_8" else False)
     screen.calc_expenses = Mock(return_value=reported_rent)
     head = next((m for m in members if m.relationship == "headOfHousehold"), members[0] if members else None)
     screen.get_head = Mock(return_value=head)
@@ -254,6 +256,19 @@ class TestTxHcvEligibility(TestCase):
             e = Eligibility()
             calc.household_eligible(e)
             self.assertFalse(e.eligible)
+
+    def test_section_8_check_uses_base_benefit_not_exact_name(self):
+        """Section 8 is the HCV program via base_program ("section_8" → tx_hcv);
+        the gate must call has_base_benefit, not the dead has_benefit("section_8")."""
+        calc = make_calculator(members=[make_member(age=35, earned=10_000)])
+        # Exact-name has_benefit is always False; only has_base_benefit("section_8") is True.
+        calc.screen.has_benefit = Mock(return_value=False)
+        calc.screen.has_base_benefit = Mock(side_effect=lambda base: base == "section_8")
+        with patch_hud(il_ami=46_800):
+            e = Eligibility()
+            calc.household_eligible(e)
+            self.assertFalse(e.eligible)
+            calc.screen.has_base_benefit.assert_any_call("section_8")
 
     def test_assets_above_100k_ineligible(self):
         calc = make_calculator(members=[make_member(age=35, earned=14_400)], household_assets=150_000)

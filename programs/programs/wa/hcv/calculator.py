@@ -72,7 +72,10 @@ class WaHcv(ProgramCalculator):
         return self.program.year.period
 
     def household_eligible(self, e: Eligibility):
-        has_section_8 = self.screen.has_benefit("section_8")
+        # "Section 8" is the HCV program itself (base_program "section_8"): wa_hcv,
+        # co_section_8, ma_section_8, etc. Use has_base_benefit so it matches every
+        # white-label variant
+        has_section_8 = self.screen.has_base_benefit("section_8")
         e.condition(not has_section_8, messages.must_not_have_benefit("Section 8"))
 
         assets = self.screen.household_assets if self.screen.household_assets is not None else 0

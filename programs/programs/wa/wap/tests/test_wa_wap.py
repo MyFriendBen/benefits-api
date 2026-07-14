@@ -27,7 +27,7 @@ def make_calculator(
     has_wa_snap=False,
     has_wa_tanf=False,
     has_wa_ssi=False,
-    has_wa_hcv=False,
+    has_section_8=False,
     members=None,
 ):
     mock_screen = Mock()
@@ -39,10 +39,11 @@ def make_calculator(
             "wa_snap": has_wa_snap,
             "wa_tanf": has_wa_tanf,
             "wa_ssi": has_wa_ssi,
-            "wa_hcv": has_wa_hcv,
         }.get(name, False)
 
     mock_screen.has_benefit = Mock(side_effect=benefit_side_effect)
+    # Section 8 is matched via base_program ("section_8" → wa_hcv), not an exact name.
+    mock_screen.has_base_benefit = Mock(side_effect=lambda base: has_section_8 if base == "section_8" else False)
 
     mock_program = Mock()
     mock_program.year.get_limit = Mock(return_value=fpl_limit)
@@ -106,8 +107,21 @@ class TestWaWapHouseholdEligibility(TestCase):
     def test_ssi_bypasses_income(self):
         self.assertTrue(self._run(50_000, has_wa_ssi=True))
 
-    def test_hcv_bypasses_income(self):
-        self.assertTrue(self._run(50_000, has_wa_hcv=True))
+    def test_section_8_bypasses_income(self):
+        # Section 8 receipt (HCV, via base_program "section_8") is a categorical pathway.
+        self.assertTrue(self._run(50_000, has_section_8=True))
+
+    def test_section_8_check_uses_base_benefit_not_exact_name(self):
+        """Section 8 categorical eligibility must match via has_base_benefit("section_8"),
+        not a dead exact-name has_benefit("section_8")/("wa_hcv") lookup."""
+        calc = make_calculator(yearly_income=50_000, has_section_8=True)
+        e = Eligibility()
+        me = MemberEligibility(make_member())
+        me.eligible = True
+        e.add_member_eligibility(me)
+        calc.household_eligible(e)
+        self.assertTrue(e.eligible)
+        calc.screen.has_base_benefit.assert_any_call("section_8")
 
     def test_no_categorical_no_income_ineligible(self):
         self.assertFalse(self._run(40_000))

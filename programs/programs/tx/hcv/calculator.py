@@ -132,7 +132,10 @@ class TxHcv(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility):
         # Criterion 2: not already receiving Section 8 / HCV assistance.
-        e.condition(not self.screen.has_benefit("section_8"), messages.must_not_have_benefit("Section 8"))
+        # "Section 8" is the HCV program itself (base_program "section_8"): tx_hcv,
+        # wa_hcv, co_section_8, etc. Use has_base_benefit so it matches every
+        # white-label variant
+        e.condition(not self.screen.has_base_benefit("section_8"), messages.must_not_have_benefit("Section 8"))
 
         # Criterion 9: HOTMA net-asset limit — only a gate when reported over $100k.
         assets = self.screen.household_assets if self.screen.household_assets is not None else 0

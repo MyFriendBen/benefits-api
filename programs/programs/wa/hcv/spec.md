@@ -53,8 +53,8 @@
 4. **Applicant household must not currently be receiving Section 8 assistance from any PHA.**
    - Applies to both tenant-based (HCV) and project-based Section 8 — duplicate Section 8 subsidies are prohibited.
    - Screener fields:
-     - `section_8` current benefit (checked via `has_benefit("section_8")`)
-   - Note: Verified at application via HUD's EIV Existing Tenant Search. In the screener, this maps directly to the household's current benefits — when `has_benefit("section_8")` is true, the household is currently receiving Section 8 and is excluded from a duplicate voucher. There is no single clean CFR/USC citation for the prohibition itself — it is operationalized through the EIV procedural check at admission.
+     - `wa_hcv` current benefit — "Section 8" is the HCV program itself (base_program `section_8`), checked via `has_base_benefit("section_8")` so it matches every white-label variant (`wa_hcv`, `co_section_8`, …).
+   - Note: Verified at application via HUD's EIV Existing Tenant Search. In the screener, this maps directly to the household's current benefits — when `has_base_benefit("section_8")` is true, the household is currently receiving Section 8 and is excluded from a duplicate voucher. There is no single clean CFR/USC citation for the prohibition itself — it is operationalized through the EIV procedural check at admission.
    - Source: HCV Guidebook (Eligibility Determination chapter), § 2.2 and § 11.1 (EIV Existing Tenant Search and Avoiding Duplicate Subsidy)
 
 5. **Net family assets must not exceed $100,000.** ⚠️ *data gap (partial)*
@@ -366,7 +366,7 @@ Each scenario in the Test Scenarios section below is an acceptance criterion. Th
 
 ### Scenario 7: Currently Receiving Section 8 (Criterion 4 Ineligible)
 
-**What we're checking**: Duplicate-Section-8 exclusion (Criterion 4 — `has_benefit("section_8")` should disqualify regardless of income).
+**What we're checking**: Duplicate-Section-8 exclusion (Criterion 4 — `has_base_benefit("section_8")` should disqualify regardless of income).
 **Expected**: Not eligible
 
 **Steps**:
@@ -377,7 +377,7 @@ Each scenario in the Test Scenarios section below is an acceptance criterion. Th
 - **Person 2**: birth `Jul 1982` (age 43), `relationship: spouse`
   - Income: Employment / Wages, `$1,200`/month
 - **Person 3**: birth `Sep 2016` (age 9), `relationship: child`
-- **Current benefits**: `section_8` (Housing Choice Voucher / Section 8)
+- **Current benefits**: `wa_hcv` (Housing Choice Voucher / Section 8)
 
 **Why this matters**: The duplicate-subsidy prohibition is one of two fully evaluable criteria. A household that's otherwise income-eligible must still be excluded if they already have a voucher.
 

@@ -39,7 +39,10 @@ class WaWap(ProgramCalculator):
             self.screen.has_benefit("wa_snap")
             or self.screen.has_benefit("wa_tanf")
             or self.screen.has_benefit("wa_ssi")
-            or self.screen.has_benefit("wa_hcv")
+            # Section 8 = the HCV program (base_program "section_8", e.g. wa_hcv).
+            # has_base_benefit matches every variant; has_benefit("section_8") is a
+            # dead check because the bare name_abbreviated "section_8" exists nowhere.
+            or self.screen.has_base_benefit("section_8")
         )
 
         categorically_eligible = has_wa_wap_eligible_benefit or any(
