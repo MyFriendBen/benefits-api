@@ -316,13 +316,13 @@ Each scenario in the Test Scenarios section below is an acceptance criterion. Th
 - **Location**: ZIP `98201`, county `Snohomish County`
 - **Household size**: 3
 - **Person 1** (head): birth `Aug 1986` (age 39)
-  - Income: Employment / Wages, `$3,542`/month
+  - Income: Employment / Wages, `$4,500`/month
 - **Person 2**: birth `Nov 1988` (age 37), `relationship: spouse`
-  - Income: Employment / Wages, `$1,250`/month
+  - Income: Employment / Wages, `$1,750`/month
 - **Person 3**: birth `Mar 2018` (age 8), `relationship: child`
 - **Current benefits**: none
 
-*(Combined annual income should be ~$50–$200 above the FY2026 3-person VLI for Seattle-Bellevue HMFA — verify against table.)*
+*(Combined annual income $75,000 is just above the FY2026 3-person VLI for the Seattle-Bellevue HMFA — $74,000, verified against the live HUD Section 8 Income Limits on 2026-07-14. Re-verify if the FY changes.)*
 
 **Why this matters**: Confirms the calculator correctly EXCLUDES households just above the VLI threshold. Pairs with Scenario 2 to lock down both sides of the boundary.
 
