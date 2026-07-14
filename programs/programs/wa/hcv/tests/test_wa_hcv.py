@@ -46,6 +46,7 @@ def make_calculator(
     gross_income=21600,
     il_ami_value=50000,
     fmr_value=2000,
+    reported_rent=0,
 ):
     if members is None:
         members = [make_member()]
@@ -60,6 +61,7 @@ def make_calculator(
     mock_screen.household_assets = household_assets
     mock_screen.household_members.all = Mock(return_value=members)
     mock_screen.calc_gross_income = Mock(return_value=gross_income)
+    mock_screen.calc_expenses = Mock(return_value=reported_rent)
     mock_screen.has_benefit = Mock(side_effect=lambda name: has_section_8 if name == "section_8" else False)
     mock_screen.get_head = Mock(return_value=members[0] if members else None)
 
@@ -76,7 +78,11 @@ def make_calculator(
 
 
 def patch_hud_client(il_ami_value=50000, fmr_value=2000, il_error=False, fmr_error=False):
-    """Return a context manager that patches both HUD client methods."""
+    """Return a context manager that patches both HUD client methods.
+
+    ``fmr_value`` / ``fmr_error`` feed the payment standard returned by
+    ``get_screen_payment_standard`` (ZIP-level SAFMR or metro FMR).
+    """
     from integrations.clients.hud_income_limits import HudIncomeClientError
 
     def il_side_effect(*args, **kwargs):
@@ -84,7 +90,7 @@ def patch_hud_client(il_ami_value=50000, fmr_value=2000, il_error=False, fmr_err
             raise HudIncomeClientError("test error")
         return il_ami_value
 
-    def fmr_side_effect(*args, **kwargs):
+    def payment_standard_side_effect(*args, **kwargs):
         if fmr_error:
             raise HudIncomeClientError("test error")
         return fmr_value
@@ -92,7 +98,7 @@ def patch_hud_client(il_ami_value=50000, fmr_value=2000, il_error=False, fmr_err
     return patch.multiple(
         "programs.programs.wa.hcv.calculator.hud_client",
         get_screen_il_ami=Mock(side_effect=il_side_effect),
-        get_screen_fmr=Mock(side_effect=fmr_side_effect),
+        get_screen_payment_standard=Mock(side_effect=payment_standard_side_effect),
     )
 
 
@@ -297,6 +303,23 @@ class TestWaHcvBenefitValue(TestCase):
             value = calc.household_value()
             self.assertEqual(value, 12780)
 
+    def test_reported_rent_below_payment_standard_caps_gross_rent(self):
+        """Reported rent below the payment standard caps gross rent (24 CFR § 982.505)."""
+        head = make_member(age=35)
+        calc = make_calculator(members=[head], household_size=1, gross_income=21600, reported_rent=600)
+        # TTP = 540 (as in basic case). gross_rent = min(1605, 600) = 600
+        # HAP = max(0, 600 - 540) = 60 → annual = 720
+        with patch_hud_client(fmr_value=1605):
+            self.assertEqual(calc.household_value(), 720)
+
+    def test_reported_rent_above_payment_standard_uses_payment_standard(self):
+        """Reported rent above the payment standard leaves the payment standard as gross rent."""
+        head = make_member(age=35)
+        calc = make_calculator(members=[head], household_size=1, gross_income=21600, reported_rent=3000)
+        # gross_rent = min(1605, 3000) = 1605 → same as no-rent basic case (12780)
+        with patch_hud_client(fmr_value=1605):
+            self.assertEqual(calc.household_value(), 12780)
+
     def test_hap_with_dependents(self):
         """Single mother + 2 children, $1,800/mo, 2 dependents."""
         head = make_member(age=35)
@@ -390,13 +413,26 @@ class TestWaHcvCalc(TestCase):
         with patch_hud_client(fmr_value=2000):
             self.assertEqual(calc.household_value(), 0)
 
-    def test_household_value_unexpected_fmr_error_returns_zero(self):
-        """Non-HudIncomeClientError from get_screen_fmr must not propagate as a 500."""
+    def test_household_value_unexpected_error_returns_zero(self):
+        """Non-HudIncomeClientError from get_screen_payment_standard must not propagate as a 500."""
         head = make_member(age=35)
         calc = make_calculator(members=[head], household_size=1, gross_income=21600)
         with patch.multiple(
             "programs.programs.wa.hcv.calculator.hud_client",
             get_screen_il_ami=Mock(return_value=50000),
-            get_screen_fmr=Mock(side_effect=KeyError("unexpected")),
+            get_screen_payment_standard=Mock(side_effect=KeyError("unexpected")),
         ):
             self.assertEqual(calc.household_value(), 0)
+
+    def test_household_eligible_unexpected_error_makes_ineligible(self):
+        """Non-HudIncomeClientError from get_screen_il_ami must degrade to not eligible, not 500."""
+        head = make_member(age=35)
+        calc = make_calculator(members=[head], gross_income=21600)
+        with patch.multiple(
+            "programs.programs.wa.hcv.calculator.hud_client",
+            get_screen_il_ami=Mock(side_effect=KeyError("unexpected")),
+            get_screen_payment_standard=Mock(return_value=2000),
+        ):
+            e = Eligibility()
+            calc.household_eligible(e)
+            self.assertFalse(e.eligible)

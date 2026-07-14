@@ -1,6 +1,10 @@
+import logging
+
 from integrations.clients.hud_income_limits import hud_client, HudIncomeClientError
 from programs.programs.calc import Eligibility, ProgramCalculator
 import programs.programs.messages as messages
+
+logger = logging.getLogger(__name__)
 
 
 class WaHcv(ProgramCalculator):
@@ -86,6 +90,17 @@ class WaHcv(ProgramCalculator):
                 self.screen.household_size = original_hh
             e.condition(gross_income <= income_limit, messages.income(gross_income, income_limit))
         except HudIncomeClientError:
+            # Expected when HUD data is unavailable (API down, county/ZIP not found,
+            # year unconfigured) — mark not eligible without noise.
+            e.condition(False, messages.income_limit_unknown())
+        except Exception:
+            # Unexpected failure — still degrade to not eligible rather than raise,
+            # so one program can't 500 the whole eligibility run, and log it.
+            logger.exception(
+                "WaHcv.household_eligible income check failed unexpectedly (white_label=%s, household_size=%s)",
+                getattr(self.screen.white_label, "code", None),
+                self.screen.household_size,
+            )
             e.condition(False, messages.income_limit_unknown())
 
     def household_value(self) -> int:
@@ -101,11 +116,29 @@ class WaHcv(ProgramCalculator):
             ttp = max(0.30 * monthly_adjusted, 0.10 * monthly_gross, self.min_rent_monthly)
 
             bedrooms = self._estimate_bedrooms()
-            fmr = hud_client.get_screen_fmr(self.screen, bedrooms, self._get_year_period())
+            # Payment standard = ZIP-level SAFMR for mandatory-SAFMR metros
+            # (Seattle-Bellevue HMFA), metro/county FMR everywhere else and on
+            # missing-ZIP fallback. Assumed at 100% of FMR (WA PHAs set 90-110%).
+            payment_standard = hud_client.get_screen_payment_standard(self.screen, bedrooms, self._get_year_period())
 
-            hap = max(0, fmr - ttp)
+            # Gross rent = the household's reported rent when available (lower of it
+            # and the payment standard), else the payment standard alone
+            # (24 CFR § 982.505: HAP uses the lower of payment standard / gross rent).
+            reported_rent = self.screen.calc_expenses("monthly", ["rent", "mortgage"])
+            gross_rent = min(payment_standard, reported_rent) if reported_rent > 0 else payment_standard
+
+            hap = max(0, gross_rent - ttp)
             return int(hap * 12)
         except HudIncomeClientError:
+            # Expected when HUD data is unavailable (API down, county/ZIP not found,
+            # year unconfigured) — degrade to $0 without noise.
             return 0
         except Exception:
+            # Unexpected bug in the value calculation — still degrade to $0 so one
+            # program can't 500 the whole eligibility response, but log it.
+            logger.exception(
+                "WaHcv.household_value failed unexpectedly (white_label=%s, household_size=%s)",
+                getattr(self.screen.white_label, "code", None),
+                self.screen.household_size,
+            )
             return 0
