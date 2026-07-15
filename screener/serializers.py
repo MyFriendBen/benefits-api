@@ -544,6 +544,9 @@ class ResultsSerializer(serializers.Serializer):
     validations = ValidationSerializer(many=True)
     program_categories = ProgramCategorySerializer(many=True)
     pe_data = serializers.DictField(required=False, allow_null=True)
+    # Ids of external APIs (e.g. "policy_engine") that failed while computing these
+    # results, so the frontend can warn the user the results may be incomplete.
+    external_api_failures = serializers.ListField(child=serializers.CharField(), required=False)
 
 
 def get_latest_eligibility_snapshot(screen_uuid):

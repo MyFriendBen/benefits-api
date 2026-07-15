@@ -4,9 +4,10 @@ from programs.programs.calc import Eligibility
 from .calculators.dependencies.base import DependencyError, Member, TaxUnit
 from typing import Any, Dict, List, Optional, TypedDict
 from sentry_sdk import capture_exception, capture_message
-from .engines import Sim, pe_engines
+from .engines import Sim, pe_engines, PolicyEngineAPIError
 from .calculators.constants import MAIN_TAX_UNIT, SECONDARY_TAX_UNIT
 from . import versions as pe_versions
+from integrations.external_api_status import record_external_api_failure, POLICY_ENGINE
 from django.conf import settings
 
 
@@ -42,7 +43,8 @@ def calc_pe_eligibility(
 
     input_data = pe_input(screen, valid_programs.values(), pe_version=pe_version)
 
-    for Method in pe_engines:
+    for i, Method in enumerate(pe_engines):
+        is_fallback = i > 0
         try:
             method_instance = Method(input_data)
             eligibility = all_eligibility(method_instance, valid_programs)
@@ -65,6 +67,29 @@ def calc_pe_eligibility(
                 level="error",
             )
             raise
+        except PolicyEngineAPIError as e:
+            if settings.DEBUG:
+                print(repr(e))
+            # A 400 means our request payload is malformed (unknown variable/version):
+            # every endpoint will reject it identically, so falling back only hides the
+            # real bug and wastes a call. Surface it loudly (error, not warning) and stop
+            # — the PE programs degrade to "missing", which is recorded for the frontend.
+            if e.status_code == 400:
+                capture_exception(e, level="error")
+                capture_message(
+                    f"PolicyEngine rejected the request with a 400 via the {Method.method_name} "
+                    f"method; not falling back (the payload is malformed and every endpoint "
+                    f"would reject it identically)",
+                    level="error",
+                )
+                record_external_api_failure(POLICY_ENGINE)
+                return empty_result
+            # Transient (timeout / 5xx / auth): allow the fallback engine to try.
+            capture_exception(e, level="warning")
+            capture_message(
+                f"Failed to calculate eligibility with the {Method.method_name} method",
+                level="warning",
+            )
         except Exception as e:
             if settings.DEBUG:
                 print(repr(e))
@@ -74,8 +99,30 @@ def calc_pe_eligibility(
                 level="warning",
             )
         else:
+            if is_fallback:
+                # We only reach the fallback engine (public api.policyengine.org) after the
+                # primary (household.api) already failed. Two problems make this a degraded
+                # result, not a routine endpoint choice:
+                #   - it implies the primary is down (auth/token/timeout/5xx), and
+                #   - the public endpoint has NO way to pin the model version (verified
+                #     against its source: /calculate reads only household+policy, never a
+                #     version), so it computes against whatever it has deployed — which can
+                #     differ from the version we resolved for the primary.
+                # So surface it loudly in Sentry AND record it for the frontend, so the
+                # served-but-possibly-version-skewed result is flagged to the user rather
+                # than presented silently.
+                capture_message(
+                    f"PolicyEngine primary endpoint failed; served eligibility from the fallback "
+                    f"{Method.method_name}, which cannot honor the resolved version. Results may be "
+                    f"computed against a different model version.",
+                    level="error",
+                )
+                record_external_api_failure(POLICY_ENGINE)
             return result
 
+    # Every engine failed (all transient). PE programs degrade to "missing"; record it
+    # so the frontend can warn the user that results may be incomplete.
+    record_external_api_failure(POLICY_ENGINE)
     return empty_result
 
 
@@ -89,17 +136,6 @@ def all_eligibility(method: Sim, valid_programs: dict[str, PolicyEngineCalulator
         all_eligibility[name_abbr] = e
 
     return all_eligibility
-
-
-def _has_gated_input(programs: List[PolicyEngineCalulator]) -> bool:
-    """True if any input/output in these programs is version-gated (has a
-    min_pe_version or max_pe_version). Lets us skip resolving the PE version when
-    nothing in the request depends on it."""
-    for program in programs:
-        for Data in program.pe_inputs + program.pe_outputs:
-            if getattr(Data, "min_pe_version", ()) or getattr(Data, "max_pe_version", ()):
-                return True
-    return False
 
 
 def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: Optional[str] = None):
@@ -134,17 +170,25 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: 
     version = pe_versions.determine_pe_version(pe_version)
     comparable_version = pe_versions.to_comparable_pe_version(version)
 
-    # No pin (and no exact override) means "ride PE's current model": we omit the
-    # version string so PE serves current, but for input gating we still need to know
-    # what current concretely is — otherwise a min_pe_version floor can never be met
-    # and gated inputs (e.g. use_reported_ssi) are withheld forever. Resolve current
-    # from PE's published /versions/us. If PE is unreachable this stays None, keeping
-    # the conservative withhold-gated behavior (safe: PE just uses modeled values).
-    #
-    # Only bother resolving when this request actually carries a version-gated input —
-    # the vast majority don't, and resolving would be a needless (cached) lookup.
-    if comparable_version is None and _has_gated_input(programs):
-        comparable_version = pe_versions.resolve_unpinned_comparable_version()
+    # No pin (comparable_version is None means unpinned or the "current" alias): resolve
+    # what PE's current concretely is right now and pin it explicitly. This serves two
+    # purposes:
+    #   1. Version parity across engines (MFB-1246): calc_pe_eligibility tries the
+    #      private household.api then falls back to the public api. Each endpoint applies
+    #      its own "current" default when the request omits a version, and those defaults
+    #      can differ — so a fallback would silently change the served model. Sending an
+    #      explicit resolved version makes both engines compute against the same model.
+    #   2. Input gating: a min_pe_version floor can only be satisfied if we know what
+    #      current concretely is; otherwise gated inputs (e.g. use_reported_ssi) are
+    #      withheld forever.
+    # If PE's /versions/us is unreachable, resolved stays None and we keep the
+    # conservative unpinned behavior (omit version, withhold gated inputs) — safe: PE
+    # just uses modeled values.
+    if comparable_version is None:
+        resolved = pe_versions.resolve_unpinned_version()
+        if resolved is not None:
+            version = resolved
+            comparable_version = pe_versions.to_comparable_pe_version(resolved)
 
     members: list[HouseholdMember] = screen.household_members.all()
     relationship_map = screen.relationship_map()

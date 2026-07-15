@@ -133,15 +133,25 @@ def _fetch_pe_versions() -> Optional[dict]:
         return None
 
 
-def resolve_unpinned_comparable_version() -> Optional[tuple]:
-    """Comparable version to gate inputs against when there is NO pin (ride current).
+def resolve_unpinned_version() -> Optional[str]:
+    """The concrete version string PE's `current` alias resolves to right now (e.g.
+    "1.755.0"), from PE's published /versions/us. None if PE can't be reached.
 
-    With no pin we omit the version string so PE serves `current`; but for input
-    gating we must know what `current` concretely is, or a min_pe_version floor is
-    never satisfiable and version-gated inputs are withheld forever (silently). Ask
-    PE what `current` resolves to and gate against that. Returns None if PE can't be
-    reached — caller then keeps the conservative None (withhold-gated) behavior."""
+    Used when there is NO pin: instead of omitting the version and letting each
+    endpoint apply its own `current` default (which can differ between household.api
+    and the public api — MFB-1246), we resolve `current` once and send it explicitly,
+    so the primary and fallback engines compute against the same model."""
     data = _fetch_pe_versions()
     if not data:
         return None
-    return to_comparable_pe_version(data.get(CURRENT))
+    return data.get(CURRENT)
+
+
+def resolve_unpinned_comparable_version() -> Optional[tuple]:
+    """Comparable version to gate inputs against when there is NO pin (ride current).
+
+    With no pin we must know what `current` concretely is, or a min_pe_version floor is
+    never satisfiable and version-gated inputs are withheld forever (silently). Ask
+    PE what `current` resolves to and gate against that. Returns None if PE can't be
+    reached — caller then keeps the conservative None (withhold-gated) behavior."""
+    return to_comparable_pe_version(resolve_unpinned_version())

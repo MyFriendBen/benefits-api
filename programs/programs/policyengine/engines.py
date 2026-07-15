@@ -1,6 +1,18 @@
+from typing import Optional
 from integrations.util.cache import Cache
 from decouple import config
 import requests
+
+
+class PolicyEngineAPIError(RuntimeError):
+    """A PolicyEngine request failed. Carries the HTTP status code (when the failure
+    was an HTTP error response) so callers can react to it — notably, a 400 means our
+    payload is malformed and every endpoint will reject it identically, so it should
+    fail loudly rather than trigger a silent fallback."""
+
+    def __init__(self, message: str, status_code: Optional[int] = None) -> None:
+        super().__init__(message)
+        self.status_code = status_code
 
 
 def _request_failed_message(method_name: str, error: Exception) -> str:
@@ -44,11 +56,12 @@ class ApiSim(Sim):
             res.raise_for_status()
             self.response_json = res.json()
         except requests.RequestException as e:
-            raise RuntimeError(_request_failed_message(self.method_name, e)) from e
+            status_code = getattr(getattr(e, "response", None), "status_code", None)
+            raise PolicyEngineAPIError(_request_failed_message(self.method_name, e), status_code) from e
         except ValueError as e:
-            raise RuntimeError(f"{self.method_name} returned non-JSON {e}") from e
+            raise PolicyEngineAPIError(f"{self.method_name} returned non-JSON {e}") from e
         if "result" not in self.response_json:
-            raise RuntimeError("Missing 'result' key in Policy Engine response")
+            raise PolicyEngineAPIError("Missing 'result' key in Policy Engine response")
         self.data = self.response_json["result"]
 
     def value(self, unit, sub_unit, variable, period):
@@ -102,11 +115,12 @@ class PrivateApiSim(ApiSim):
             res.raise_for_status()
             self.response_json = res.json()
         except requests.RequestException as e:
-            raise RuntimeError(_request_failed_message(self.method_name, e)) from e
+            status_code = getattr(getattr(e, "response", None), "status_code", None)
+            raise PolicyEngineAPIError(_request_failed_message(self.method_name, e), status_code) from e
         except ValueError as e:
-            raise RuntimeError(f"{self.method_name} returned non-JSON {e}") from e
+            raise PolicyEngineAPIError(f"{self.method_name} returned non-JSON {e}") from e
         if "result" not in self.response_json:
-            raise RuntimeError("Missing 'result' key in Policy Engine response")
+            raise PolicyEngineAPIError("Missing 'result' key in Policy Engine response")
         self.data = self.response_json["result"]
 
 
