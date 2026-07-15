@@ -325,20 +325,20 @@ class TestBroadbandCostDependency(TestCase):
             white_label=self.white_label, zipcode="78701", county="Test County", household_size=2, completed=False
         )
 
-    def test_value_returns_fixed_broadband_cost(self):
-        """Test value() returns hardcoded broadband cost of 500."""
+    def test_value_reads_annual_internet_expense_when_reported(self):
+        """value() sends the household's reported annual internet expense as broadband_cost."""
+        Expense.objects.create(screen=self.screen, type="internet", amount=50, frequency="monthly")
+
         dep = spm.BroadbandCostDependency(self.screen, None, {})
-        self.assertEqual(dep.value(), 500)
+        self.assertEqual(dep.value(), 600)  # $50 * 12
         self.assertEqual(dep.field, "broadband_cost")
 
-    def test_value_returns_constant_regardless_of_household_data(self):
-        """Test value() returns 500 regardless of household characteristics."""
-        # Test with different household size
-        self.screen.household_size = 5
-        self.screen.save()
-
+    def test_value_falls_back_when_no_internet_expense_reported(self):
+        """No reported internet expense -> fall back to NO_DATA_FALLBACK (not $0), so an
+        eligible household isn't capped to $0 and hidden by the value>0 rule."""
         dep = spm.BroadbandCostDependency(self.screen, None, {})
-        self.assertEqual(dep.value(), 500)
+        self.assertEqual(dep.value(), spm.BroadbandCostDependency.NO_DATA_FALLBACK)
+        self.assertGreater(dep.value(), 0)
 
 
 class TestSchoolMealCountableIncomeDependency(TestCase):

@@ -339,10 +339,22 @@ class NcSccaCountableIncomeDependency(SpmUnit):
 
 
 class BroadbandCostDependency(SpmUnit):
+    # PE's Lifeline benefit is capped at the household's phone + broadband spend
+    # (min_(phone_cost + broadband_cost, max_amount)). A blank internet expense means
+    # "not reported," not "$0 spent" — sending 0 would let PE cap the benefit to $0 and,
+    # via MFB's value>0 rule, hide an eligible household. So: send the reported internet
+    # cost when we have one (PE legitimately caps the discount at actual spend), otherwise
+    # fall back to a value above the benefit ceiling so an eligible household still sees
+    # the full benefit they'd receive once enrolled in service. NO_DATA_FALLBACK keeps the
+    # prior hardcoded behavior for the no-data case (strict improvement: no regression when
+    # the field is blank, real data used when it's present).
     field = "broadband_cost"
+    NO_DATA_FALLBACK = 500
 
     def value(self):
-        return 500
+        if self.screen.has_expense(["internet"]):
+            return int(self.screen.calc_expenses("yearly", ["internet"]))
+        return self.NO_DATA_FALLBACK
 
 
 class SchoolMealCountableIncomeDependency(SpmUnit):
