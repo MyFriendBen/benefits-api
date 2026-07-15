@@ -9,6 +9,7 @@ ks_member_calculators = {
     "ks_chip": member.KsChip,
     "ks_ssi": member.KsSsi,
     "ks_head_start": member.KsHeadStart,
+    "ks_early_head_start": member.KsEarlyHeadStart,
     "ks_medicare_savings": member.KsMsp,
 }
 

@@ -1,5 +1,5 @@
 import programs.programs.policyengine.calculators.dependencies as dependency
-from programs.programs.federal.pe.member import Medicaid, Ssi, HeadStart, Msp
+from programs.programs.federal.pe.member import Medicaid, Ssi, HeadStart, EarlyHeadStart, Msp
 from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
 from screener.models import HouseholdMember
 
@@ -123,5 +123,20 @@ class KsHeadStart(HeadStart):
 
     pe_inputs = [
         *HeadStart.pe_inputs,
+        dependency.household.KsStateCodeDependency,
+    ]
+
+
+class KsEarlyHeadStart(EarlyHeadStart):
+    """
+    Kansas Early Head Start (birth to age 3, and pregnant women). Thin wrapper on
+    the federal ``EarlyHeadStart`` PE calculator that adds the KS state code; all
+    eligibility and the per-individual value are computed by PolicyEngine's
+    ``early_head_start`` variable with no KS-specific variance. Head Start (ages
+    3-5) is a separate program (``KsHeadStart``).
+    """
+
+    pe_inputs = [
+        *EarlyHeadStart.pe_inputs,
         dependency.household.KsStateCodeDependency,
     ]
