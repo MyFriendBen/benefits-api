@@ -4,7 +4,7 @@ from programs.programs.calc import Eligibility
 from .calculators.dependencies.base import DependencyError, Member, TaxUnit
 from typing import Any, Dict, List, Optional, TypedDict
 from sentry_sdk import capture_exception, capture_message
-from .engines import Sim, pe_engines, PolicyEngineAPIError
+from .engines import Sim, pe_engines
 from .calculators.constants import MAIN_TAX_UNIT, SECONDARY_TAX_UNIT
 from . import versions as pe_versions
 from integrations.external_api_status import record_external_api_failure, POLICY_ENGINE
@@ -43,8 +43,12 @@ def calc_pe_eligibility(
 
     input_data = pe_input(screen, valid_programs.values(), pe_version=pe_version)
 
-    for i, Method in enumerate(pe_engines):
-        is_fallback = i > 0
+    # A single engine: the authenticated private household.api. There is deliberately no
+    # fallback to the public api.policyengine.org — it ignores the request `version` field
+    # (verified against its source) and would silently compute against a different model
+    # version than the one we resolve and pin. So any failure here means PolicyEngine
+    # programs are unavailable for this screen.
+    for Method in pe_engines:
         try:
             method_instance = Method(input_data)
             eligibility = all_eligibility(method_instance, valid_programs)
@@ -67,62 +71,25 @@ def calc_pe_eligibility(
                 level="error",
             )
             raise
-        except PolicyEngineAPIError as e:
-            if settings.DEBUG:
-                print(repr(e))
-            # A 400 means our request payload is malformed (unknown variable/version):
-            # every endpoint will reject it identically, so falling back only hides the
-            # real bug and wastes a call. Surface it loudly (error, not warning) and stop
-            # — the PE programs degrade to "missing", which is recorded for the frontend.
-            if e.status_code == 400:
-                capture_exception(e, level="error")
-                capture_message(
-                    f"PolicyEngine rejected the request with a 400 via the {Method.method_name} "
-                    f"method; not falling back (the payload is malformed and every endpoint "
-                    f"would reject it identically)",
-                    level="error",
-                )
-                record_external_api_failure(POLICY_ENGINE)
-                return empty_result
-            # Transient (timeout / 5xx / auth): allow the fallback engine to try.
-            capture_exception(e, level="warning")
-            capture_message(
-                f"Failed to calculate eligibility with the {Method.method_name} method",
-                level="warning",
-            )
         except Exception as e:
+            # Any PolicyEngine failure (malformed payload/400, timeout, 5xx, auth, non-JSON):
+            # with no fallback endpoint, PolicyEngine programs can't be computed for this
+            # screen. Surface it loudly (Sentry error), record it so the frontend can warn
+            # the user, and return an empty PE result so the caller still computes the
+            # non-PolicyEngine (custom) calculators.
             if settings.DEBUG:
                 print(repr(e))
-            capture_exception(e, level="warning")
+            capture_exception(e, level="error")
             capture_message(
-                f"Failed to calculate eligibility with the {Method.method_name} method",
-                level="warning",
+                f"Failed to calculate eligibility with the {Method.method_name} method; "
+                f"PolicyEngine programs are unavailable for this screen.",
+                level="error",
             )
+            record_external_api_failure(POLICY_ENGINE)
+            return empty_result
         else:
-            if is_fallback:
-                # We only reach the fallback engine (public api.policyengine.org) after the
-                # primary (household.api) already failed. Two problems make this a degraded
-                # result, not a routine endpoint choice:
-                #   - it implies the primary is down (auth/token/timeout/5xx), and
-                #   - the public endpoint has NO way to pin the model version (verified
-                #     against its source: /calculate reads only household+policy, never a
-                #     version), so it computes against whatever it has deployed — which can
-                #     differ from the version we resolved for the primary.
-                # So surface it loudly in Sentry AND record it for the frontend, so the
-                # served-but-possibly-version-skewed result is flagged to the user rather
-                # than presented silently.
-                capture_message(
-                    f"PolicyEngine primary endpoint failed; served eligibility from the fallback "
-                    f"{Method.method_name}, which cannot honor the resolved version. Results may be "
-                    f"computed against a different model version.",
-                    level="error",
-                )
-                record_external_api_failure(POLICY_ENGINE)
             return result
 
-    # Every engine failed (all transient). PE programs degrade to "missing"; record it
-    # so the frontend can warn the user that results may be incomplete.
-    record_external_api_failure(POLICY_ENGINE)
     return empty_result
 
 

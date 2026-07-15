@@ -6,9 +6,9 @@ import requests
 
 class PolicyEngineAPIError(RuntimeError):
     """A PolicyEngine request failed. Carries the HTTP status code (when the failure
-    was an HTTP error response) so callers can react to it — notably, a 400 means our
-    payload is malformed and every endpoint will reject it identically, so it should
-    fail loudly rather than trigger a silent fallback."""
+    was an HTTP error response) for diagnostics. There is no fallback endpoint: a
+    failure means PolicyEngine programs are unavailable for the screen, so it is
+    surfaced loudly and reported to the frontend rather than silently worked around."""
 
     def __init__(self, message: str, status_code: Optional[int] = None) -> None:
         super().__init__(message)
@@ -45,32 +45,6 @@ class Sim:
         raise NotImplementedError
 
 
-class ApiSim(Sim):
-    method_name = "Policy Engine API"
-    pe_url = "https://api.policyengine.org/us/calculate"
-
-    def __init__(self, data) -> None:
-        self.request_payload = data
-        try:
-            res = requests.post(self.pe_url, json=data, timeout=(5, 30))
-            res.raise_for_status()
-            self.response_json = res.json()
-        except requests.RequestException as e:
-            status_code = getattr(getattr(e, "response", None), "status_code", None)
-            raise PolicyEngineAPIError(_request_failed_message(self.method_name, e), status_code) from e
-        except ValueError as e:
-            raise PolicyEngineAPIError(f"{self.method_name} returned non-JSON {e}") from e
-        if "result" not in self.response_json:
-            raise PolicyEngineAPIError("Missing 'result' key in Policy Engine response")
-        self.data = self.response_json["result"]
-
-    def value(self, unit, sub_unit, variable, period):
-        return self.data[unit][sub_unit][variable][period]
-
-    def members(self, unit, sub_unit):
-        return self.data[unit][sub_unit]["members"]
-
-
 class PolicyEngineBearerTokenCache(Cache):
     expire_time = 60 * 60 * 24 * 29
     default = ""
@@ -97,7 +71,16 @@ class PolicyEngineBearerTokenCache(Cache):
         return res.json()["access_token"]
 
 
-class PrivateApiSim(ApiSim):
+class PrivateApiSim(Sim):
+    """The only PolicyEngine engine: the authenticated private household.api endpoint.
+
+    We do NOT fall back to the public api.policyengine.org: it ignores the request
+    `version` field (verified against its source — the /calculate handler reads only
+    household+policy and has no version parameter), so it can silently compute against
+    a different model version than the one we resolve and pin here. If this request
+    fails, PolicyEngine programs are treated as unavailable for the screen (see
+    calc_pe_eligibility)."""
+
     method_name = "Private Policy Engine API"
     token = PolicyEngineBearerTokenCache()
     pe_url = "https://household.api.policyengine.org/us/calculate"
@@ -123,5 +106,11 @@ class PrivateApiSim(ApiSim):
             raise PolicyEngineAPIError("Missing 'result' key in Policy Engine response")
         self.data = self.response_json["result"]
 
+    def value(self, unit, sub_unit, variable, period):
+        return self.data[unit][sub_unit][variable][period]
 
-pe_engines: list[Sim] = [PrivateApiSim, ApiSim]
+    def members(self, unit, sub_unit):
+        return self.data[unit][sub_unit]["members"]
+
+
+pe_engines: list[Sim] = [PrivateApiSim]
