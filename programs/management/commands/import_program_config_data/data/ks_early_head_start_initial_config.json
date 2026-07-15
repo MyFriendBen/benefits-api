@@ -1,0 +1,61 @@
+{
+    "white_label": {"code": "ks"},
+    "program_category": {
+        "external_name": "ks_child_care",
+        "name": "Child Care",
+        "icon": "child_care"
+    },
+    "program": {
+        "name_abbreviated": "ks_early_head_start",
+        "base_program": "early_head_start",
+        "year": "2026",
+        "legal_status_required": ["citizen", "non_citizen", "refugee", "gc_5plus", "gc_5less", "gc_under18_no5", "gc_18plus_no5", "otherWithWorkPermission"],
+        "name": "Early Head Start",
+        "description": "Free early learning and family support for babies, toddlers, and pregnant women in Kansas. Early Head Start provides free early childhood development services. It also provides health care, healthy meals, and family support at no cost.\n\nServices are provided in-person at local Early Head Start centers. Your child will attend classes and receive meals at the site. Your child will also receive health checkups and learning support at the site. Pregnant women receive health services before and after giving birth. These services are provided through home visits or at a local center. Families with low incomes can apply. Children qualify automatically if they are in foster care. They also qualify automatically if they get SNAP (food stamps), TANF (cash help), or SSI (disability benefits).\n\nEarly Head Start is run by local agencies across Kansas. Services and availability vary by location. There may be a waitlist in some areas.\n\nTo apply, find your local Early Head Start program using the link below. They will help you check eligibility. They will also help you complete the application and gather any required documents.",
+        "description_short": "Free early learning program for infants, toddlers, and pregnant women",
+        "learn_more_link": "https://www.ksheadstart.org/locations",
+        "apply_button_link": "https://headstart.gov/center-locator?state=KS&radius=50",
+        "apply_button_description": "Find your local Early Head Start agency",
+        "estimated_application_time": "30 minutes",
+        "estimated_delivery_time": "",
+        "estimated_value": "",
+        "value_type": "benefit",
+        "value_format": "estimated_annual",
+        "has_calculator": true,
+        "show_on_current_benefits": true,
+        "show_in_has_benefits_step": false,
+        "website_description": "Free early learning and support for infants, toddlers, and pregnant women"
+    },
+    "documents": [
+        {
+            "external_name": "ks_child_birth_certificate",
+            "text": "Child's birth certificate or proof of age (or pregnancy documentation for prenatal services)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "ks_earned_income",
+            "text": "Proof of income (pay stubs, tax returns, benefit award letters)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "ks_home",
+            "text": "Proof of home address (lease, utility bill, etc.)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "ks_immunization_records",
+            "text": "Child's immunization records",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "ks_benefit_proof",
+            "text": "Proof of SNAP, TANF, or SSI benefits (if applicable)",
+            "link_url": "",
+            "link_text": ""
+        }
+    ]
+}
