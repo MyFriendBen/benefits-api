@@ -105,6 +105,17 @@ def all_eligibility(method: Sim, valid_programs: dict[str, PolicyEngineCalulator
     return all_eligibility
 
 
+def _has_gated_input(programs: List[PolicyEngineCalulator]) -> bool:
+    """True if any input/output in these programs is version-gated (has a
+    min_pe_version or max_pe_version). Lets us skip resolving the PE version when
+    nothing in the request depends on it."""
+    for program in programs:
+        for Data in program.pe_inputs + program.pe_outputs:
+            if getattr(Data, "min_pe_version", ()) or getattr(Data, "max_pe_version", ()):
+                return True
+    return False
+
+
 def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: Optional[str] = None):
     """
     Generate Policy Engine API request from the list of programs.
@@ -131,31 +142,22 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: 
         }
     }
     # Two values from one resolved version, for two consumers:
-    #   version (string)            -> version to send in PE API request body (if None/omitted,
-    #                                   PE defaults to current version)
+    #   version (string)            -> version to send in the PE API request body. Always
+    #                                   set: the DB pin, the test override, or the literal
+    #                                   "current" alias (household.api resolves it server-side).
     #   comparable_version (tuple)  -> tuple representation to gate which inputs are sent
     version = pe_versions.determine_pe_version(pe_version)
     comparable_version = pe_versions.to_comparable_pe_version(version)
 
-    # No pin (comparable_version is None means unpinned or the "current" alias): resolve
-    # what PE's current concretely is right now and pin it explicitly. This serves two
-    # purposes:
-    #   1. Version parity across engines (MFB-1246): calc_pe_eligibility tries the
-    #      private household.api then falls back to the public api. Each endpoint applies
-    #      its own "current" default when the request omits a version, and those defaults
-    #      can differ — so a fallback would silently change the served model. Sending an
-    #      explicit resolved version makes both engines compute against the same model.
-    #   2. Input gating: a min_pe_version floor can only be satisfied if we know what
-    #      current concretely is; otherwise gated inputs (e.g. use_reported_ssi) are
-    #      withheld forever.
-    # If PE's /versions/us is unreachable, resolved stays None and we keep the
-    # conservative unpinned behavior (omit version, withhold gated inputs) — safe: PE
-    # just uses modeled values.
-    if comparable_version is None:
-        resolved = pe_versions.resolve_unpinned_version()
-        if resolved is not None:
-            version = resolved
-            comparable_version = pe_versions.to_comparable_pe_version(resolved)
+    # We send the "current" alias unpinned (comparable_version is None), but for input
+    # gating we still need to know what current concretely is — otherwise a min_pe_version
+    # floor can never be met and gated inputs (e.g. use_reported_ssi) are withheld forever.
+    # Resolve current from PE's published /versions/us. If PE is unreachable this stays
+    # None, keeping the conservative withhold-gated behavior (safe: PE just uses modeled
+    # values). Only bother resolving when this request actually carries a version-gated
+    # input — the vast majority don't, and resolving would be a needless (cached) lookup.
+    if comparable_version is None and _has_gated_input(programs):
+        comparable_version = pe_versions.resolve_unpinned_comparable_version()
 
     members: list[HouseholdMember] = screen.household_members.all()
     relationship_map = screen.relationship_map()
@@ -233,9 +235,9 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: 
     if len(secondary_tax_members) == 0:
         del raw_input["household"]["tax_units"][SECONDARY_TAX_UNIT]
 
-    # Inject the resolved version (override > config); None means omit the field.
-    if version is not None:
-        raw_input["version"] = version
+    # Always inject the version (override > DB pin > "current"): determine_pe_version
+    # never returns None, so a version is always sent.
+    raw_input["version"] = version
 
     return raw_input
 

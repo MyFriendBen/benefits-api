@@ -75,10 +75,13 @@ def to_comparable_pe_version(version: Optional[str]) -> Optional[tuple]:
         return None
 
 
-def determine_pe_version(pe_version_override: Optional[str] = None) -> Optional[str]:
+def determine_pe_version(pe_version_override: Optional[str] = None) -> str:
     """Determine the PolicyEngine version string to send: per-request override
     (test-only, passed down as a url param) wins, then the global DB PolicyEngineConfig
-    pin, else None (omit the field, i.e. PolicyEngine's default version). The override
+    pin, else the "current" alias. We always send a version (never omit): when nothing is
+    pinned we send the literal "current" so household.api resolves it server-side at
+    request time — robust to PolicyEngine promoting a new current between requests, and
+    avoids ever sending a stale exact version the endpoint no longer serves. The override
     may be a floating alias ("frontier"/"current"); the config value must be an exact
     MAJOR.MINOR.PATCH version (enforced on the model)."""
     if pe_version_override:
@@ -89,7 +92,7 @@ def determine_pe_version(pe_version_override: Optional[str] = None) -> Optional[
     from configuration.models import PolicyEngineConfig
 
     # Read-only accessor: must not write a row on the eligibility hot path.
-    return PolicyEngineConfig.current_version() or None
+    return PolicyEngineConfig.current_version() or CURRENT
 
 
 def version_supports(comparable_version: Optional[tuple], min_pe_version: tuple, max_pe_version: tuple) -> bool:
@@ -133,25 +136,16 @@ def _fetch_pe_versions() -> Optional[dict]:
         return None
 
 
-def resolve_unpinned_version() -> Optional[str]:
-    """The concrete version string PE's `current` alias resolves to right now (e.g.
-    "1.755.0"), from PE's published /versions/us. None if PE can't be reached.
-
-    Used when there is NO pin: instead of omitting the version and letting each
-    endpoint apply its own `current` default (which can differ between household.api
-    and the public api — MFB-1246), we resolve `current` once and send it explicitly,
-    so the primary and fallback engines compute against the same model."""
-    data = _fetch_pe_versions()
-    if not data:
-        return None
-    return data.get(CURRENT)
-
-
 def resolve_unpinned_comparable_version() -> Optional[tuple]:
     """Comparable version to gate inputs against when there is NO pin (ride current).
 
-    With no pin we must know what `current` concretely is, or a min_pe_version floor is
-    never satisfiable and version-gated inputs are withheld forever (silently). Ask
-    PE what `current` resolves to and gate against that. Returns None if PE can't be
-    reached — caller then keeps the conservative None (withhold-gated) behavior."""
-    return to_comparable_pe_version(resolve_unpinned_version())
+    We send the literal "current" alias in the request body (household.api resolves it
+    server-side), but for input GATING we still need to know what `current` concretely
+    is — otherwise a min_pe_version floor is never satisfiable and version-gated inputs
+    are withheld forever (silently). Ask PE what `current` resolves to and gate against
+    that. Returns None if PE can't be reached — caller then keeps the conservative None
+    (withhold-gated) behavior."""
+    data = _fetch_pe_versions()
+    if not data:
+        return None
+    return to_comparable_pe_version(data.get(CURRENT))

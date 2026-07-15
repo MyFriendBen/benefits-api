@@ -313,25 +313,24 @@ class TestPeInputVersionGating(PeInputTestBase):
         result = pe_input(self.screen, [self.ssi], pe_version=version)
         return "meets_ssi_disability_criteria" in result["household"]["people"][self.head_id]
 
-    # When unpinned (None / "current"), pe_input resolves PE's concrete current version
-    # via resolve_unpinned_version() and pins it (both to gate inputs and to send an
-    # explicit version to both engines); mock it so these tests are deterministic and
-    # never hit the network. meets_ssi_disability_criteria's floor is 1.715.2.
-    def _mock_unpinned(self, resolved_version):
+    # When unpinned (None / "current"), gating resolves what PE's current model is via
+    # resolve_unpinned_comparable_version(); mock it so these tests are deterministic and
+    # never hit the network. meets_ssi_disability_criteria's floor is (1, 715, 2).
+    def _mock_unpinned(self, resolved):
         return patch(
-            "programs.programs.policyengine.policy_engine.pe_versions.resolve_unpinned_version",
-            return_value=resolved_version,
+            "programs.programs.policyengine.policy_engine.pe_versions.resolve_unpinned_comparable_version",
+            return_value=resolved,
         )
 
     def test_omitted_when_no_pin_and_current_below_floor(self):
         # Unpinned + PE current resolves below the floor => variable does not exist there.
-        with self._mock_unpinned("1.691.1"):
+        with self._mock_unpinned((1, 691, 1)):
             self.assertFalse(self._meets_ssi_field_present(None))
 
     def test_sent_when_no_pin_and_current_at_or_above_floor(self):
         # Unpinned + PE current resolves at/above the floor => send it (this is the
         # fix: gated inputs activate on an empty pin once current supports them).
-        with self._mock_unpinned("1.732.0"):
+        with self._mock_unpinned((1, 732, 0)):
             self.assertTrue(self._meets_ssi_field_present(None))
 
     def test_omitted_when_no_pin_and_pe_unreachable(self):
@@ -340,7 +339,7 @@ class TestPeInputVersionGating(PeInputTestBase):
             self.assertFalse(self._meets_ssi_field_present(None))
 
     def test_current_alias_resolves_like_no_pin(self):
-        with self._mock_unpinned("1.732.0"):
+        with self._mock_unpinned((1, 732, 0)):
             self.assertTrue(self._meets_ssi_field_present("current"))
 
     def test_omitted_on_older_pinned_version(self):
