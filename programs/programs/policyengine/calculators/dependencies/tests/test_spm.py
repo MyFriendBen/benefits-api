@@ -159,6 +159,31 @@ class TestUtilityExpenseDependency(TestCase):
         self.assertEqual(dep.value(), 600)  # $50 * 12
         self.assertEqual(dep.field, "phone_expense")
 
+    def test_phone_cost_calculates_annual_phone_cost(self):
+        """PhoneCostDependency.value() sends annual telephone cost under the phone_cost
+        field that PE's Lifeline formula reads for the KS state supplement."""
+        Expense.objects.create(screen=self.screen, type="telephone", amount=50, frequency="monthly")
+
+        dep = spm.PhoneCostDependency(self.screen, None, {})
+        self.assertEqual(dep.value(), 600)  # $50 * 12
+        self.assertEqual(dep.field, "phone_cost")
+
+    def test_phone_cost_shares_phone_expense_data_source(self):
+        """phone_cost and phone_expense are distinct PE fields but must derive from the
+        same telephone screener data — guards against them drifting apart."""
+        Expense.objects.create(screen=self.screen, type="telephone", amount=50, frequency="monthly")
+
+        phone_cost = spm.PhoneCostDependency(self.screen, None, {})
+        phone_expense = spm.PhoneExpenseDependency(self.screen, None, {})
+        self.assertEqual(phone_cost.value(), phone_expense.value())
+        self.assertNotEqual(phone_cost.field, phone_expense.field)
+
+    def test_phone_cost_is_zero_without_telephone_expense(self):
+        """No telephone expense -> phone_cost 0, so PE's KS supplement (min_(phone_cost, ...))
+        correctly stays $0 for broadband-only households."""
+        dep = spm.PhoneCostDependency(self.screen, None, {})
+        self.assertEqual(dep.value(), 0)
+
     def test_value_calculates_annual_water_from_other_utilities(self):
         """Test WaterExpenseDependency.value() calculates annual water costs from otherUtilities expense."""
         Expense.objects.create(screen=self.screen, type="otherUtilities", amount=60, frequency="monthly")

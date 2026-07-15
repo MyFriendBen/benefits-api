@@ -101,6 +101,18 @@ class PhoneExpenseDependency(SpmUnit):
         return self.screen.calc_expenses("yearly", ["telephone"])
 
 
+class PhoneCostDependency(SpmUnit):
+    # PE's Lifeline formula reads phone_cost (distinct from phone_expense, which SNAP
+    # uses for a yes/no utility check) to release the KS Lifeline state supplement:
+    # min_(phone_cost, ks_supplement * MONTHS_IN_YEAR). Same underlying screener data
+    # as PhoneExpenseDependency, just mapped to the field PE's Lifeline branch expects.
+    # Without it PE treats phone_cost as $0 and the KS supplement always computes to $0.
+    field = "phone_cost"
+
+    def value(self):
+        return self.screen.calc_expenses("yearly", ["telephone"])
+
+
 class ElectricityExpenseDependency(SpmUnit):
     field = "electricity_expense"
 
