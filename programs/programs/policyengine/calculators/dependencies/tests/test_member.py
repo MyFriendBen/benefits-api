@@ -1487,3 +1487,80 @@ class TestFullTimeCollegeStudentDependencyFixed(TestCase):
 
     def test_false_when_not_a_student(self):
         self.assertFalse(self._dep(student=False, student_full_time=True).value())
+
+
+class TestIsIncapableOfSelfCareDependency(TestCase):
+    """Tests for IsIncapableOfSelfCareDependency, PolicyEngine's
+    `is_incapable_of_self_care` person input used by the federal CDCC to mark a
+    qualifying individual of any age. Inferred from the same disability signals as
+    is_disabled (disabled OR long_term_disability OR visually_impaired)."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=1,
+            completed=False,
+        )
+
+    def _dep(self, **kwargs):
+        m = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=40, **kwargs)
+        return member.IsIncapableOfSelfCareDependency(self.screen, m, {})
+
+    def test_field_name(self):
+        self.assertEqual(self._dep().field, "is_incapable_of_self_care")
+
+    def test_true_when_disabled(self):
+        self.assertTrue(self._dep(disabled=True).value())
+
+    def test_true_when_long_term_disability(self):
+        self.assertTrue(self._dep(long_term_disability=True).value())
+
+    def test_true_when_visually_impaired(self):
+        self.assertTrue(self._dep(visually_impaired=True).value())
+
+    def test_false_when_no_disability_signal(self):
+        self.assertFalse(self._dep(disabled=False, long_term_disability=False, visually_impaired=False).value())
+
+
+class TestCareExpensesDependency(TestCase):
+    """Tests for CareExpensesDependency, PolicyEngine's `care_expenses` person input
+    used by the federal CDCC. Our screener captures a single household-level
+    `dependentCare` expense with no per-member attribution, so it is split evenly
+    across members who are incapable of self-care; members who are not get 0."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=1,
+            completed=False,
+        )
+
+    def test_field_name(self):
+        m = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=40)
+        self.assertEqual(member.CareExpensesDependency(self.screen, m, {}).field, "care_expenses")
+
+    def test_zero_when_member_not_incapable(self):
+        Expense.objects.create(screen=self.screen, type="dependentCare", amount=500, frequency="monthly")
+        m = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=40)
+        self.assertEqual(member.CareExpensesDependency(self.screen, m, {}).value(), 0)
+
+    def test_full_amount_when_single_incapable_member(self):
+        Expense.objects.create(screen=self.screen, type="dependentCare", amount=500, frequency="monthly")
+        disabled = HouseholdMember.objects.create(
+            screen=self.screen, relationship="headOfHousehold", age=40, disabled=True
+        )
+        # $500/mo → $6,000/yr, single incapable member gets the whole amount.
+        self.assertEqual(member.CareExpensesDependency(self.screen, disabled, {}).value(), 6000)
+
+    def test_split_evenly_across_incapable_members(self):
+        Expense.objects.create(screen=self.screen, type="dependentCare", amount=500, frequency="monthly")
+        d1 = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=40, disabled=True)
+        HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=38, long_term_disability=True)
+        # $6,000/yr split across 2 incapable members → $3,000 each.
+        self.assertEqual(member.CareExpensesDependency(self.screen, d1, {}).value(), 3000)
