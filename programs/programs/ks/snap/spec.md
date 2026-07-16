@@ -148,7 +148,7 @@ for reference.
 - [ ] Scenario 5 (Net Income Test Failure — Gross Passes, Net Fails): **ineligible** ($0)
 - [ ] Scenario 6 (Non-Elderly Household — Assets Above $3,000): **ineligible** ($0)
 - [ ] Scenario 7 (Elderly — Gross Above 130%, Net Below 100%, Assets ≤ $4,500): **eligible**, **$276/yr ($23/mo)**
-- [ ] Scenario 8 (Categorical Eligibility — All Members on SSI, Income/Assets Above Limits): **eligible**, **$1,080/yr ($90/mo)**
+- [ ] Scenario 8 (Categorical Eligibility — All Members on SSI, Income/Assets Above Limits): **eligible**, **$1,080/yr ($90/mo)** — ⏸️ *deferred to MFB-1312 (SSI categorical requires the global `use_reported_ssi` change; not wired in this PR)*
 - [ ] Scenario 9 (Half-Time Student 18–49, No Exemption): **ineligible** ($0)
 - [ ] Scenario 10 (Half-Time Student with Job-Training Exemption): **eligible**, **$864/yr ($72/mo)**
 - [ ] Scenario 11 (Already Receiving SNAP — Duplicate Exclusion): **ineligible** (gated by MFB `already_has` results-layer filter, not raw PE)
@@ -162,7 +162,7 @@ for reference.
 - [ ] Scenario 19 (Half-Time Student Working 20+ Hours/Week): **eligible**, **$864/yr ($72/mo)**
 - [ ] Scenario 20 (Half-Time Student with Federal Work-Study): **eligible**, **$864/yr ($72/mo)**
 - [ ] Scenario 21 (Single Full-Time Student Parent with Dependent Child): **eligible**, **$3,840/yr ($320/mo)**
-- [ ] Scenario 22 (SSI Categorical — Reported Receipt with High Other Income): **eligible**, **$276/yr ($23/mo)**
+- [ ] Scenario 22 (SSI Categorical — Reported Receipt with High Other Income): **eligible**, **$276/yr ($23/mo)** — ⏸️ *deferred to MFB-1312 (SSI categorical requires the global `use_reported_ssi` change; not wired in this PR)*
 
 
 ## Test Scenarios
@@ -320,6 +320,8 @@ for reference.
 ### Scenario 8: Categorical Eligibility — All Members Receive SSI, Income and Assets Above Limits
 
 **What we're checking**: A household in which all members receive SSI is categorically eligible — the income and asset tests are bypassed (criterion 5).
+
+> ⏸️ **Deferred to MFB-1312.** SSI categorical eligibility requires `use_reported_ssi`, which is global per PE request (flips `applicable_ssi` for every program — SNAP, IL AABD, KS TANF, TX CEAP). That federal all-state change (verified IL AABD $0→$10k swing) is out of scope for this KS SNAP PR and is handled in MFB-1312. This scenario does not pass in the code shipping with this PR.
 
 **Expected**: Eligible — $1,080/yr ($90/mo)
 
@@ -571,6 +573,8 @@ for reference.
 ### Scenario 22: SSI Categorical Eligibility — Reported Receipt with High Other Income
 
 **What we're checking**: A household reporting SSI receipt is categorically eligible even when other income is high enough that the modeled SSI amount would compute to $0. Categorical eligibility must key off *reported* receipt, not a recalculated SSI amount (criterion 5, the SSI path).
+
+> ⏸️ **Deferred to MFB-1312.** Same reason as Scenario 8 — the reported-SSI categorical path depends on the global `use_reported_ssi` change tracked in MFB-1312. Not wired in this PR.
 
 **Expected**: Eligible — $276/yr ($23/mo)
 
