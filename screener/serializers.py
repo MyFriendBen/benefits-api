@@ -536,6 +536,15 @@ class UrgentNeedSerializer(serializers.Serializer):
 
 
 class ResultsSerializer(serializers.Serializer):
+    """Documents the /eligibility results payload for Swagger only.
+
+    NOTE: EligibilityTranslationView.get() returns Response(results) — the raw dict from
+    all_results() — so this serializer never shapes or validates the response. Field
+    options here (required, allow_null, etc.) feed the generated schema only; they do
+    NOT enforce the response contract. To actually validate, the view would have to run
+    the dict through this serializer first.
+    """
+
     programs = EligibilitySerializer(many=True)
     urgent_needs = UrgentNeedSerializer(many=True)
     screen_id = serializers.CharField()
