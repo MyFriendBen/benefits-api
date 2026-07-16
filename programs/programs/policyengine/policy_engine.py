@@ -86,7 +86,13 @@ def calc_pe_eligibility(
                 level="error",
             )
             record_external_api_failure(POLICY_ENGINE)
-            return empty_result
+            # Preserve the payload that triggered the failure so admins can debug it
+            # (the exact request is the most useful thing for diagnosing a 400).
+            # _pe_data.request is admin-only — already popped for non-admins downstream.
+            return {
+                "eligibility": {},
+                "_pe_data": {"request": input_data, "response": None},
+            }
         else:
             return result
 
@@ -192,10 +198,11 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: 
 
     for program in programs:
         for Data in program.pe_inputs + program.pe_outputs:
-            # Skip inputs that the resolved model version doesn't define yet — sending
-            # an unknown variable 400s the whole request (e.g. meets_ssi_disability_criteria
-            # on 1.691.1). With no pin (comparable_version is None) we omit gated inputs
-            # too, since the unpinned default is the current model that lacks them.
+            # Skip inputs the resolved model version doesn't define yet — sending an
+            # unknown variable 400s the whole request (e.g. meets_ssi_disability_criteria
+            # on 1.691.1). comparable_version is the concrete "current" resolved above
+            # when this request carries a version-gated input; if PE was unreachable it
+            # stays None and version_supports conservatively withholds min-gated inputs.
             if not pe_versions.version_supports(
                 comparable_version,
                 getattr(Data, "min_pe_version", ()),
