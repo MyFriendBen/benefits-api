@@ -1,0 +1,72 @@
+interactions:
+- request:
+    body: '{"household": {"people": {"8933": {"age": {"2024": 32}, "is_full_time_college_student":
+      {"2024": false}, "is_tax_unit_dependent": {"2024": false}, "employment_income":
+      {"2024": 2400}, "self_employment_income": {"2024": 0}, "rental_income": {"2024":
+      0}, "taxable_pension_income": {"2024": 0}, "social_security": {"2024": 0}, "unemployment_compensation":
+      {"2024": 0}, "long_term_capital_gains": {"2024": 0}, "taxable_ira_distributions":
+      {"2024": 0}}, "8934": {"age": {"2024": 8}, "is_full_time_college_student": {"2024":
+      false}, "is_tax_unit_dependent": {"2024": true}, "employment_income": {"2024":
+      0}, "self_employment_income": {"2024": 0}, "rental_income": {"2024": 0}, "taxable_pension_income":
+      {"2024": 0}, "social_security": {"2024": 0}, "unemployment_compensation": {"2024":
+      0}, "long_term_capital_gains": {"2024": 0}, "taxable_ira_distributions": {"2024":
+      0}}}, "tax_units": {"main_tax_unit": {"members": ["8933", "8934"]}}, "families":
+      {"family": {"members": ["8933", "8934"]}}, "households": {"household": {"members":
+      ["8933", "8934"], "state_code": {"2024": "TX"}}}, "spm_units": {"spm_unit":
+      {"members": ["8933", "8934"], "tx_tanf": {"2024": null}}}, "marital_units":
+      {}}}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1182'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.4
+    method: POST
+    uri: http://localhost:8080/us/calculate
+  response:
+    body:
+      string: '{"status": "ok", "message": null, "result": {"people": {"8933": {"age":
+        {"2024": 32}, "is_full_time_college_student": {"2024": false}, "is_tax_unit_dependent":
+        {"2024": false}, "employment_income": {"2024": 2400}, "self_employment_income":
+        {"2024": 0}, "rental_income": {"2024": 0}, "taxable_pension_income": {"2024":
+        0}, "social_security": {"2024": 0}, "unemployment_compensation": {"2024":
+        0}, "long_term_capital_gains": {"2024": 0}, "taxable_ira_distributions": {"2024":
+        0}}, "8934": {"age": {"2024": 8}, "is_full_time_college_student": {"2024":
+        false}, "is_tax_unit_dependent": {"2024": true}, "employment_income": {"2024":
+        0}, "self_employment_income": {"2024": 0}, "rental_income": {"2024": 0}, "taxable_pension_income":
+        {"2024": 0}, "social_security": {"2024": 0}, "unemployment_compensation":
+        {"2024": 0}, "long_term_capital_gains": {"2024": 0}, "taxable_ira_distributions":
+        {"2024": 0}}}, "tax_units": {"main_tax_unit": {"members": ["8933", "8934"]}},
+        "families": {"family": {"members": ["8933", "8934"]}}, "households": {"household":
+        {"members": ["8933", "8934"], "state_code": {"2024": "TX"}}}, "spm_units":
+        {"spm_unit": {"members": ["8933", "8934"], "tx_tanf": {"2024": 3061.7998}}},
+        "marital_units": {}}, "policyengine_bundle": {"model_version": "1.755.0",
+        "data_version": null, "dataset": null}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - close
+      Content-Length:
+      - '1309'
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 16 Jul 2026 01:52:26 GMT
+      Server:
+      - gunicorn
+      X-PolicyEngine-Request-Id:
+      - ff5ed0be-ed0a-4950-a45d-a71c7ee0bbf2
+      traceparent:
+      - 00-a29a1c937b99d7df69121a0a9afeed9d-69bcbc69aec98fe3-01
+    status:
+      code: 200
+      message: OK
+version: 1

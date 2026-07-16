@@ -1,0 +1,108 @@
+interactions:
+- request:
+    body: '{"household": {"people": {"10042": {"child_support_expense": {"2024": 0.0},
+      "real_estate_taxes": {"2024": 0}, "age": {"2024": 43}, "other_medical_expenses":
+      {"2024": 0}, "is_disabled": {"2024": null}, "is_full_time_college_student":
+      {"2024": false}, "is_part_time_college_student": {"2024": false}, "meets_snap_work_exception":
+      {"2024": false}, "is_snap_employment_training_or_work_incentive_student": {"2024":
+      false}}, "10043": {"child_support_expense": {"2024": 0.0}, "real_estate_taxes":
+      {"2024": 0}, "age": {"2024": 42}, "other_medical_expenses": {"2024": 0}, "is_disabled":
+      {"2024": null}, "is_full_time_college_student": {"2024": false}, "is_part_time_college_student":
+      {"2024": false}, "meets_snap_work_exception": {"2024": false}, "is_snap_employment_training_or_work_incentive_student":
+      {"2024": false}}, "10044": {"child_support_expense": {"2024": 0.0}, "real_estate_taxes":
+      {"2024": 0}, "age": {"2024": 14}, "other_medical_expenses": {"2024": 0}, "is_disabled":
+      {"2024": null}, "is_full_time_college_student": {"2024": false}, "is_part_time_college_student":
+      {"2024": false}, "meets_snap_work_exception": {"2024": false}, "is_snap_employment_training_or_work_incentive_student":
+      {"2024": false}}, "10045": {"child_support_expense": {"2024": 0.0}, "real_estate_taxes":
+      {"2024": 0}, "age": {"2024": 11}, "other_medical_expenses": {"2024": 0}, "is_disabled":
+      {"2024": null}, "is_full_time_college_student": {"2024": false}, "is_part_time_college_student":
+      {"2024": false}, "meets_snap_work_exception": {"2024": false}, "is_snap_employment_training_or_work_incentive_student":
+      {"2024": false}}, "10046": {"child_support_expense": {"2024": 0.0}, "real_estate_taxes":
+      {"2024": 0}, "age": {"2024": 6}, "other_medical_expenses": {"2024": 0}, "is_disabled":
+      {"2024": null}, "is_full_time_college_student": {"2024": false}, "is_part_time_college_student":
+      {"2024": false}, "meets_snap_work_exception": {"2024": false}, "is_snap_employment_training_or_work_incentive_student":
+      {"2024": false}}}, "tax_units": {"main_tax_unit": {"members": ["10042", "10043",
+      "10044", "10045", "10046"]}}, "families": {"family": {"members": ["10042", "10043",
+      "10044", "10045", "10046"]}}, "households": {"household": {"members": ["10042",
+      "10043", "10044", "10045", "10046"], "state_code": {"2024": "IL"}}}, "spm_units":
+      {"spm_unit": {"members": ["10042", "10043", "10044", "10045", "10046"], "snap_unearned_income":
+      {"2024": 0.0}, "snap_earned_income": {"2024": 31200.0}, "snap_assets": {"2024":
+      0}, "snap_emergency_allotment": {"2024": 0}, "housing_cost": {"2024": 0}, "has_phone_expense":
+      {"2024": false}, "has_heating_cooling_expense": {"2024": false}, "heating_cooling_expense":
+      {"2024": 0.0}, "childcare_expenses": {"2024": 0.0}, "water_expense": {"2024":
+      0.0}, "phone_expense": {"2024": 0.0}, "homeowners_association_fees": {"2024":
+      0.0}, "homeowners_insurance": {"2024": 0.0}, "snap": {"2024-01": null}}}, "marital_units":
+      {"10042-10043": {"members": ["10042", "10043"]}}}}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '2964'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.4
+    method: POST
+    uri: http://localhost:8080/us/calculate
+  response:
+    body:
+      string: '{"status": "ok", "message": null, "result": {"people": {"10042": {"child_support_expense":
+        {"2024": 0.0}, "real_estate_taxes": {"2024": 0}, "age": {"2024": 43}, "other_medical_expenses":
+        {"2024": 0}, "is_disabled": {"2024": false}, "is_full_time_college_student":
+        {"2024": false}, "is_part_time_college_student": {"2024": false}, "meets_snap_work_exception":
+        {"2024": false}, "is_snap_employment_training_or_work_incentive_student":
+        {"2024": false}}, "10043": {"child_support_expense": {"2024": 0.0}, "real_estate_taxes":
+        {"2024": 0}, "age": {"2024": 42}, "other_medical_expenses": {"2024": 0}, "is_disabled":
+        {"2024": false}, "is_full_time_college_student": {"2024": false}, "is_part_time_college_student":
+        {"2024": false}, "meets_snap_work_exception": {"2024": false}, "is_snap_employment_training_or_work_incentive_student":
+        {"2024": false}}, "10044": {"child_support_expense": {"2024": 0.0}, "real_estate_taxes":
+        {"2024": 0}, "age": {"2024": 14}, "other_medical_expenses": {"2024": 0}, "is_disabled":
+        {"2024": false}, "is_full_time_college_student": {"2024": false}, "is_part_time_college_student":
+        {"2024": false}, "meets_snap_work_exception": {"2024": false}, "is_snap_employment_training_or_work_incentive_student":
+        {"2024": false}}, "10045": {"child_support_expense": {"2024": 0.0}, "real_estate_taxes":
+        {"2024": 0}, "age": {"2024": 11}, "other_medical_expenses": {"2024": 0}, "is_disabled":
+        {"2024": false}, "is_full_time_college_student": {"2024": false}, "is_part_time_college_student":
+        {"2024": false}, "meets_snap_work_exception": {"2024": false}, "is_snap_employment_training_or_work_incentive_student":
+        {"2024": false}}, "10046": {"child_support_expense": {"2024": 0.0}, "real_estate_taxes":
+        {"2024": 0}, "age": {"2024": 6}, "other_medical_expenses": {"2024": 0}, "is_disabled":
+        {"2024": false}, "is_full_time_college_student": {"2024": false}, "is_part_time_college_student":
+        {"2024": false}, "meets_snap_work_exception": {"2024": false}, "is_snap_employment_training_or_work_incentive_student":
+        {"2024": false}}}, "tax_units": {"main_tax_unit": {"members": ["10042", "10043",
+        "10044", "10045", "10046"]}}, "families": {"family": {"members": ["10042",
+        "10043", "10044", "10045", "10046"]}}, "households": {"household": {"members":
+        ["10042", "10043", "10044", "10045", "10046"], "state_code": {"2024": "IL"}}},
+        "spm_units": {"spm_unit": {"members": ["10042", "10043", "10044", "10045",
+        "10046"], "snap_unearned_income": {"2024": 0.0}, "snap_earned_income": {"2024":
+        31200.0}, "snap_assets": {"2024": 0}, "snap_emergency_allotment": {"2024":
+        0}, "housing_cost": {"2024": 0}, "has_phone_expense": {"2024": false}, "has_heating_cooling_expense":
+        {"2024": false}, "heating_cooling_expense": {"2024": 0.0}, "childcare_expenses":
+        {"2024": 0.0}, "water_expense": {"2024": 0.0}, "phone_expense": {"2024": 0.0},
+        "homeowners_association_fees": {"2024": 0.0}, "homeowners_insurance": {"2024":
+        0.0}, "snap": {"2024-01": 604.19995}}}, "marital_units": {"10042-10043": {"members":
+        ["10042", "10043"]}}}, "policyengine_bundle": {"model_version": "1.755.0",
+        "data_version": null, "dataset": null}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - close
+      Content-Length:
+      - '3096'
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 16 Jul 2026 03:08:33 GMT
+      Server:
+      - gunicorn
+      X-PolicyEngine-Request-Id:
+      - 3a4c3481-b9ba-4ffd-8228-ca4f1aff68b8
+      traceparent:
+      - 00-0471091808cf615e3ed2054241dd0774-4a7f5c76cdb1474b-01
+    status:
+      code: 200
+      message: OK
+version: 1

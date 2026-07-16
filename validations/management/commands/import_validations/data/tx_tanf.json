@@ -1,0 +1,98 @@
+[
+  {
+    "scenario_key": "clearly_eligible",
+    "notes": "TX TANF - Single Parent, 1 Qualifying Child, Low Wage Income - Clearly Eligible. Used by the TX TANF parallel-verification harness (DECISIONS.md D-019) to compare old TxTanf vs the new registered ConfigurableCalculator against a real PolicyEngine response.",
+    "household": {
+      "white_label": "tx",
+      "household_size": 2,
+      "zipcode": "79901",
+      "county": "El Paso County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 6,
+          "birth_year": 1994,
+          "age": 30,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 200.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 4,
+          "birth_year": 2018,
+          "age": 8,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_tanf",
+      "eligible": true
+    }
+  },
+  {
+    "scenario_key": "clearly_ineligible",
+    "notes": "TX TANF - Single Parent, 1 Qualifying Child, High Wage Income - Should NOT Be Eligible. Used by the TX TANF parallel-verification harness (DECISIONS.md D-019) to compare old TxTanf vs the new registered ConfigurableCalculator against a real PolicyEngine response.",
+    "household": {
+      "white_label": "tx",
+      "household_size": 2,
+      "zipcode": "79901",
+      "county": "El Paso County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 6,
+          "birth_year": 1994,
+          "age": 30,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 5000.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 4,
+          "birth_year": 2018,
+          "age": 8,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_tanf",
+      "eligible": false
+    }
+  }
+]
