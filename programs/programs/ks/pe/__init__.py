@@ -23,6 +23,7 @@ ks_tax_unit_calculators = {
 ks_spm_calculators = {
     "ks_snap": spm.KsSnap,
     "ks_nslp": spm.KsNslp,
+    "ks_lifeline": spm.KsLifeline,
 }
 
 ks_pe_calculators: dict[str, type[PolicyEngineCalulator]] = {

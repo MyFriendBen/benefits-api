@@ -84,6 +84,11 @@ class Lifeline(PolicyEngineSpmCalulator):
     pe_name = "lifeline"
     pe_inputs = [
         dependency.spm.BroadbandCostDependency,
+        # phone_cost gates PE's state Lifeline supplements (e.g. KS: the supplement is
+        # released only up to phone_cost). Sent for all states that inherit Lifeline so
+        # a phone-service supplement is never silently zeroed out; states without such a
+        # supplement (TX, WA) are unaffected since their value doesn't depend on it.
+        dependency.spm.PhoneCostDependency,
         *dependency.irs_gross_income,
     ]
     pe_outputs = [dependency.spm.Lifeline]
