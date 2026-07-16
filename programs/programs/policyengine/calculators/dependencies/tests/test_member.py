@@ -1522,9 +1522,7 @@ class TestIsIncapableOfSelfCareDependency(TestCase):
         self.assertTrue(self._dep(visually_impaired=True).value())
 
     def test_false_when_no_disability_signal(self):
-        self.assertFalse(
-            self._dep(disabled=False, long_term_disability=False, visually_impaired=False).value()
-        )
+        self.assertFalse(self._dep(disabled=False, long_term_disability=False, visually_impaired=False).value())
 
 
 class TestCareExpensesDependency(TestCase):
@@ -1562,11 +1560,7 @@ class TestCareExpensesDependency(TestCase):
 
     def test_split_evenly_across_incapable_members(self):
         Expense.objects.create(screen=self.screen, type="dependentCare", amount=500, frequency="monthly")
-        d1 = HouseholdMember.objects.create(
-            screen=self.screen, relationship="headOfHousehold", age=40, disabled=True
-        )
-        HouseholdMember.objects.create(
-            screen=self.screen, relationship="spouse", age=38, long_term_disability=True
-        )
+        d1 = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=40, disabled=True)
+        HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=38, long_term_disability=True)
         # $6,000/yr split across 2 incapable members → $3,000 each.
         self.assertEqual(member.CareExpensesDependency(self.screen, d1, {}).value(), 3000)
