@@ -126,9 +126,7 @@ class TestTxFppMemberValue(TestCase):
 
     def test_emergency_medicaid_remains_eligible(self):
         calc = make_calculator(age_eligible=1, income_eligible=1)
-        self.assertAlmostEqual(
-            calc.member_value(make_member(none=False, emergency_medicaid=True)), ANNUAL_BENEFIT
-        )
+        self.assertAlmostEqual(calc.member_value(make_member(none=False, emergency_medicaid=True)), ANNUAL_BENEFIT)
 
     def test_employer_insurance_does_not_disqualify(self):
         calc = make_calculator(age_eligible=1, income_eligible=1)
@@ -236,9 +234,7 @@ class TestTxFppSpecScenarios(TestCase):
 
     def test_s8_snap_adjunctive_bypass_above_income_eligible(self):
         """§4140: income above 250% FPL (income_eligible=0) but enrolled in SNAP -> 266."""
-        calc = make_calculator(
-            age_eligible=1, income_eligible=0, current_benefits=["tx_snap"], members=[make_member()]
-        )
+        calc = make_calculator(age_eligible=1, income_eligible=0, current_benefits=["tx_snap"], members=[make_member()])
         e = calc.calc()
         self.assertTrue(e.eligible)
         self.assertAlmostEqual(e.value, ANNUAL_BENEFIT)
