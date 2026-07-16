@@ -20,9 +20,9 @@
 
 2. **Applicant must not currently be receiving HCV/Section 8 assistance.**
 
-   - **Screener fields:** `has_section_8`
+   - **Screener fields:** `tx_hcv` current benefit — "Section 8" is the HCV program itself (base_program `section_8`), checked via `has_base_benefit("section_8")` so it matches every white-label variant (`tx_hcv`, `wa_hcv`, `co_section_8`, …).
    - **Source:** 24 CFR 982.551(n)
-   - **Implementation:** `has_section_8 == true` → ineligible, as a hard override. A household already receiving Section 8/HCV assistance cannot receive a second voucher.
+   - **Implementation:** `has_base_benefit("section_8") == true` → ineligible, as a hard override. A household already receiving Section 8/HCV assistance cannot receive a second voucher.
 
 3. **Head of household, spouse, or co-head must have the legal capacity to enter a lease under Texas law** — in practice, age 18, unless the applicant is an emancipated minor. ⚠️ *data gap — handled conservatively, not by inclusivity default*
 
@@ -421,9 +421,9 @@ SSN is a document requirement (the config's `tx_ssn` document), not an eligibili
 - **Location**: Enter ZIP code `77001`, Select county `Harris`
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `March 1986` (age 40), Relationship: Head of Household, Has income: No
-- **Current Benefits**: Indicate household is **already receiving Section 8 / Housing Choice Voucher assistance** (`has_section_8: true`)
+- **Current Benefits**: Indicate household is **already receiving Section 8 / Housing Choice Voucher assistance** — select the `tx_hcv` current benefit
 
-**Why this matters**: 24 CFR 982.551(n) prohibits duplicate HCV assistance. The JSON test case must include `has_section_8: true` at the household level to trigger this exclusion (see Criterion 2).
+**Why this matters**: 24 CFR 982.551(n) prohibits duplicate HCV assistance. The JSON test case must include `tx_hcv` in the household's `current_benefits` list to trigger this exclusion — the check is `has_base_benefit("section_8")` (see Criterion 2).
 
 ---
 
@@ -439,7 +439,7 @@ SSN is a document requirement (the config's `tx_ssn` document), not an eligibili
 - **Person 1**: Birth month/year: `March 1988` (age 38), Relationship: Head of Household, Has income: Yes, Employment income: `$1,800` per month
 - **Person 2**: Birth month/year: `September 2014` (age 11), Relationship: Child, Has income: No
 - **Person 3**: Birth month/year: `January 2018` (age 8), Relationship: Child, Has income: No
-- **Current Benefits**: Indicate household is currently receiving Section 8 / Housing Choice Voucher assistance (`has_section_8: true`)
+- **Current Benefits**: Indicate household is currently receiving Section 8 / Housing Choice Voucher assistance — select the `tx_hcv` current benefit
 
 **Why this matters**: Confirms the exclusion holds for larger households too, not just single-person ones.
 
