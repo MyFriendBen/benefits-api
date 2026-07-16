@@ -390,3 +390,99 @@ class TxMsp(Msp):
         dependency.household.TxStateCodeDependency,
         *Medicaid.pe_inputs,
     ]
+
+
+class TxFpp(PolicyEngineMembersCalculator):
+    """
+    Texas Family Planning Program (FPP).
+
+    State-funded HHSC program offering free or low-cost reproductive and preventive
+    health care to Texans through age 64.
+
+    Hybrid PolicyEngine calculator: PolicyEngine owns the income determination — the
+    countable-income formula and its earned/unearned source lists (1 TAC 382.109), the
+    child-earnings exemption, the child-support/dependent-care deductions, and the 250%
+    FPG limit — read back as ``tx_fpp_income_eligible``. Age (§4130) is read as
+    ``tx_fpp_age_eligible``. MFB layers on the two rules PolicyEngine cannot model because
+    they depend on data PE never sees (MFB-1088):
+      - §4140 adjunctive income bypass — enrollment in SNAP, WIC, or CHIP (applicant or
+        their child) makes the household income-eligible regardless of the FPG test.
+      - §4100 insurance rule — only *full* Medicaid disqualifies; Emergency Medicaid
+        (underinsured) and other coverage remain eligible (§4200 exception surfaced in copy).
+
+    Deferring the income math to PolicyEngine is the point of this shape: PE's periodic
+    fixes to the FPP income sources / countable-income formula flow in automatically instead
+    of silently drifting from a hand-maintained copy. MFB-1088 originally migrated this to a
+    fully custom calculator to enforce §4140/§4100; those overlays are preserved here while
+    the income calculation moves back to PE.
+
+    Texas residency is handled automatically by the TX white label.
+
+    Benefit value:
+    - $266.84/year per eligible participant — the average annual benefit from the TX HHS
+      Women's Health Programs Report FY2024 ($78,705,897 / 294,954 clients). Mirrors
+      PolicyEngine's ``gov.states.tx.fpp.annual_benefit``. Kept as an MFB constant rather
+      than read from PE's ``tx_fpp_benefit``, because that variable is $0 whenever the
+      household is not income-eligible and so would zero out the §4140 adjunctive-bypass
+      cases. The household total is the sum across eligible members.
+    """
+
+    member_amount = 266.84
+
+    # Required by the base class. We read the two eligibility sub-variables (pe_outputs)
+    # rather than this benefit value, so the household total stays member_amount even in
+    # §4140 adjunctive-bypass cases (where tx_fpp_benefit itself would be $0).
+    pe_name = "tx_fpp_benefit"
+
+    pe_inputs = [
+        dependency.member.AgeDependency,
+        dependency.household.TxStateCodeDependency,
+        # Feed PolicyEngine's countable-income calculation.
+        *dependency.irs_gross_income,
+    ]
+    pe_outputs = [
+        dependency.member.TxFppAgeEligible,
+        dependency.spm.TxFppIncomeEligible,
+    ]
+
+    # can_calc gate: insurance (§4100 overlay) and income (feeds PE's income test) must be
+    # present. Age is required via the AgeDependency pe_input.
+    dependencies = ("age", "insurance", "income_amount", "income_frequency")
+
+    def member_value(self, member: HouseholdMember) -> float:
+        # §4130 age: 64 or younger — PolicyEngine's tx_fpp_age_eligible (upper bound only,
+        # no minimum age). A member with no recorded age comes back not age-eligible.
+        if not self.get_member_dependency_value(dependency.member.TxFppAgeEligible, member.id):
+            return 0
+
+        # §4100: only full Medicaid disqualifies. Emergency Medicaid (a separate insurance
+        # flag) is underinsured and stays eligible; employer/private/CHIP does not disqualify.
+        if member.insurance.has_insurance_types(("medicaid",)):
+            return 0
+
+        # Income: PolicyEngine's 250% FPG countable-income test, OR the §4140 adjunctive
+        # bypass (SNAP/WIC/CHIP enrollment), which makes the income test moot.
+        if self._income_eligible() or self._has_adjunctive_bypass():
+            return self.member_amount
+
+        return 0
+
+    def _income_eligible(self) -> bool:
+        """PolicyEngine's SPM-unit ``tx_fpp_income_eligible`` (countable income <= 250% FPG)."""
+        return bool(self.get_dependency_value(dependency.spm.TxFppIncomeEligible))
+
+    def _has_adjunctive_bypass(self) -> bool:
+        """§4140 — SNAP/WIC read from the CurrentBenefit join table under their TX-scoped
+        names (tx_snap, tx_wic) via has_benefit(); CHIP read from per-member insurance
+        (applicant or their child) via has_insurance_types(("chp",)). CHIP is never a
+        current-benefit tile (tx_chip is a PE eligibility program, so has_benefit("tx_chip")
+        is always False). Do NOT read the legacy has_snap/has_wic/has_chp columns — the
+        join-table migration (MFB-720) left them permanently False.
+
+        CHIP Perinatal, the 4th §4140 program, is not collected by the screener (data gap).
+        """
+        return (
+            self.screen.has_benefit("tx_snap")
+            or self.screen.has_benefit("tx_wic")
+            or self.screen.has_insurance_types(("chp",))
+        )

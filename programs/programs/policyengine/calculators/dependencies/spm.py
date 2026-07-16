@@ -290,6 +290,14 @@ class TxTanf(SpmUnit):
     field = "tx_tanf"
 
 
+class TxFppIncomeEligible(SpmUnit):
+    """Output dependency: PolicyEngine's TX FPP income-eligibility flag — countable income
+    (1 TAC 382.109) at or below 250% FPG. Consumed alongside the §4140 adjunctive bypass,
+    so PolicyEngine owns the income sources list and countable-income formula."""
+
+    field = "tx_fpp_income_eligible"
+
+
 class PreSubsidyChildcareExpensesDependency(SpmUnit):
     field = "spm_unit_pre_subsidy_childcare_expenses"
 

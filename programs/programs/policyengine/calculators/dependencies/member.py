@@ -783,6 +783,13 @@ class TxFpp(Member):
     field = "tx_fpp_benefit"
 
 
+class TxFppAgeEligible(Member):
+    """Output dependency: PolicyEngine's TX FPP age-eligibility flag (§4130 — 64 or
+    younger, upper bound only, no minimum age)."""
+
+    field = "tx_fpp_age_eligible"
+
+
 class MspEligible(Member):
     """Output dependency for Medicare Savings Program eligibility."""
 
