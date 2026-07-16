@@ -1,0 +1,16 @@
+{
+  "program": "wic",
+  "state": "nc",
+  "category_amounts": {
+    "NONE": 0,
+    "INFANT": 60,
+    "CHILD": 60,
+    "PREGNANT": 60,
+    "POSTPARTUM": 60,
+    "BREASTFEEDING": 60
+  },
+  "source": {
+    "status": "guessed",
+    "citation": null
+  }
+}
