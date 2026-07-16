@@ -36,11 +36,15 @@ class TestExternalApiStatus(SimpleTestCase):
         # After the block, a fresh read sees nothing (the scope was reset).
         self.assertEqual(get_external_api_failures(), [])
 
-    def test_nested_contexts_are_isolated(self):
+    def test_nested_contexts_share_the_outer_scope(self):
+        # A nested context reuses the outer set: failures recorded inside it stay visible
+        # to the outer scope (only the outermost context initializes/resets).
         with track_external_api_failures():
             record_external_api_failure(POLICY_ENGINE)
             with track_external_api_failures():
                 record_external_api_failure(HUD)
-                self.assertEqual(get_external_api_failures(), [HUD])
-            # Outer scope is restored intact after the inner block exits.
-            self.assertEqual(get_external_api_failures(), [POLICY_ENGINE])
+                self.assertEqual(get_external_api_failures(), sorted([HUD, POLICY_ENGINE]))
+            # Inner failure remains after the nested block exits.
+            self.assertEqual(get_external_api_failures(), sorted([HUD, POLICY_ENGINE]))
+        # The outermost context resets everything on exit.
+        self.assertEqual(get_external_api_failures(), [])

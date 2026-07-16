@@ -29,9 +29,17 @@ _failures: contextvars.ContextVar = contextvars.ContextVar("external_api_failure
 
 @contextmanager
 def track_external_api_failures():
-    """Start a fresh failure-collection scope for the duration of the block, then
-    reset it. Read the collected ids with get_external_api_failures() inside the block
-    (before it exits)."""
+    """Collect external-API failures for the duration of the block. Read the collected
+    ids with get_external_api_failures() inside the block (before it exits).
+
+    Only the outermost context initializes and resets the collector; a nested context
+    reuses the existing set so failures recorded inside it stay visible to the outer
+    scope (the whole point is "did anything fail during this request")."""
+    if _failures.get() is not None:
+        # Already tracking (nested): reuse the outer set; the outermost context owns
+        # init/reset.
+        yield
+        return
     token = _failures.set(set())
     try:
         yield
