@@ -129,8 +129,6 @@ class HouseholdMemberSerializer(serializers.ModelSerializer):
             "disability_medicaid",
             "has_income",
             "is_employed",
-            "has_gig_income",
-            "has_other_income",
             "income_streams",
             "insurance",
             "birth_year",

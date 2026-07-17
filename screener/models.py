@@ -460,13 +460,13 @@ class HouseholdMember(models.Model):
     medicaid = models.BooleanField(blank=True, null=True)
     disability_medicaid = models.BooleanField(blank=True, null=True)
     has_income = models.BooleanField(blank=True, null=True)
-    # Answers to the three Income Sources questions (MFB-1178). Persisted so the
-    # Yes/No selections — including explicit "No" answers, which leave no income
-    # stream behind — survive a full reload. Income eligibility still derives from
-    # the income_streams themselves; these record the user's stated answers.
+    # Answer to the "Are you currently employed?" income question (MFB-1178).
+    # Persisted because it can't be reconstructed from the income streams alone: a
+    # self-employment-only member could have answered either "employed" (Q1) or
+    # "gig/occasional work" (Q2). The gig and other-income answers ARE derivable
+    # from the streams (given the member completed the form), so only this one is
+    # stored. Income eligibility still derives from the income_streams themselves.
     is_employed = models.BooleanField(blank=True, null=True)
-    has_gig_income = models.BooleanField(blank=True, null=True)
-    has_other_income = models.BooleanField(blank=True, null=True)
     has_expenses = models.BooleanField(blank=True, null=True)
     is_care_worker = models.BooleanField(blank=True, null=True)
 
