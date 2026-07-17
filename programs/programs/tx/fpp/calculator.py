@@ -19,11 +19,9 @@ class TxFpp(ProgramCalculator):
       adjunctive income eligibility via enrollment in SNAP, WIC, or CHIP — applicant
       or their child (§4140). CHIP Perinatal, the 4th §4140 program, is not collected
       by the screener and is tracked as a data gap.
-      The income test uses a *countable* income that mirrors PolicyEngine's
-      gov.states.tx.fpp countable-income model at the version we serve (policyengine-us
-      1.768.1) — see ``_countable_income``. It is NOT a flat gross-income total; PE is
-      treated as the source of truth (not independently verified against 1 TAC §382.109
-      / the FPP Policy Manual). If PE changes its FPP countable-income logic, re-sync.
+      The income test uses a *countable* income (see ``_countable_income``), not a flat
+      gross-income total, per the FPP Policy Manual "Definition of Income" (Rev 24-2,
+      Oct. 15, 2024) and §4140. Re-check against the manual if it is revised.
     - Not enrolled in (full) Medicaid (§4100). FPP serves those who earn too much for
       regular Medicaid. Emergency Medicaid recipients are classified as underinsured
       and remain eligible, so they are NOT excluded. Other coverage (employer, private,
@@ -36,23 +34,23 @@ class TxFpp(ProgramCalculator):
     Benefit value:
     - $266.84/year per eligible participant — the average annual benefit value from the
       TX HHS Women's Health Programs Report FY2024 (total expenditures $78,705,897 ÷
-      294,954 clients served). Mirrors PolicyEngine's gov.states.tx.fpp.annual_benefit
-      parameter. The household total scales with the number of eligible members.
+      294,954 clients served). The household total scales with the number of eligible
+      members.
     """
 
     max_age = 64
     fpl_percent = 2.5
     member_amount = 266.84
 
-    # Earnings of members below this age are exempt from countable income — mirrors
-    # PolicyEngine (1 TAC §382.109(3)(A); FPP Policy Manual 4140 treats 18-year-olds as
-    # adults). PE is treated as the source of truth here; not independently verified.
+    # Earnings of members below this age are exempt from countable income. The FPP
+    # Definition of Income (Rev 24-2) exempts a child's earned income; §4140 / 1 TAC
+    # §382.109 set the cutoff by treating 18-year-olds as adults (so under-18 is exempt).
     child_age_threshold = 18
 
     # Monthly disregard applied to child support *received* before it counts as income —
-    # only the amount above this counts. $75/month per the Texas FPP Policy Manual
-    # (Definition of Income, Rev 24-2), mirroring PolicyEngine's
-    # gov.states.tx.fpp.income.child_support_disregard (unchanged since 2016-07-01).
+    # only the amount above this counts. FPP Definition of Income (Rev 24-2): "Count
+    # income after deducting $75 from the total monthly child support payments the
+    # household receives."
     child_support_received_disregard_monthly = 75
 
     dependencies: ClassVar[list[str]] = [
@@ -106,17 +104,19 @@ class TxFpp(ProgramCalculator):
         e.condition(countable_income <= income_limit, messages.income(countable_income, income_limit))
 
     def _countable_income(self) -> int:
-        """TX FPP countable income, mirroring PolicyEngine's gov.states.tx.fpp
-        (``tx_fpp_countable_income``) at the version we serve (policyengine-us 1.768.1).
+        """TX FPP countable income per the FPP Policy Manual "Definition of Income"
+        (Rev 24-2, Oct. 15, 2024) and §4140.
 
-        Differs from a flat gross-income total in three ways (PE treated as source of
-        truth; not independently verified against 1 TAC §382.109 / the FPP Policy Manual):
-          - earnings of members under ``child_age_threshold`` are exempt,
-          - child support *paid* is deducted,
-          - child support *received* counts only above a monthly disregard.
+        Differs from a flat gross-income total in three ways:
+          - a child's earned income is exempt (members under ``child_age_threshold``),
+          - child support *paid* by a household member is deducted (§4140 Step 2),
+          - child support *received* counts only above the monthly disregard.
 
-        The dependent-care deduction PE added in 1.771.2 (frontier) is intentionally NOT
-        applied — it is absent from the 1.768.1 model we serve.
+        Known limitation: the manual's "Types of Income" table exempts several other
+        income types this method still counts via the broad "unearned" bucket — e.g. SSI,
+        TANF, dividends/interest, EITC, and various assistance payments. Fully honoring
+        that table (an ``exclude`` list of the FPP-exempt income types) is a tracked
+        follow-up, not implemented here.
         """
         # Earned income counts only for adults (under-18 earnings are exempt). Members
         # with no recorded age are not counted as adults.

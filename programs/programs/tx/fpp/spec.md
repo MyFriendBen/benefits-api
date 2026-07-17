@@ -3,7 +3,7 @@
 - **Program:** Family Planning Program (FPP)
 - **State:** TX (`tx`)
 - **name_abbreviated:** `tx_fpp`
-- **Tickets:** MFB-1088 (custom migration), MFB-1325 (income mirror of PolicyEngine)
+- **Tickets:** MFB-1088 (custom migration), MFB-1325 (countable-income rules per FPP Policy Manual)
 - **Calculator:** `programs/programs/tx/fpp/calculator.py` (`TxFpp`)
 
 ## Background
@@ -19,28 +19,33 @@ prior strict "no insurance" filter to a Medicaid-only exclusion.
 
 1. **Age 64 or younger** (§4130)
    - Screener fields: `birth_year` + `birth_month` (→ `member.age`)
-   - No minimum age. HHSC states only "64 or younger"; this matches PolicyEngine's
-     `tx_fpp_age_eligible` (upper bound only). Members with no recorded age are not counted.
+   - No minimum age — the FPP Policy Manual states only "64 or younger" (§4130, upper
+     bound only). Members with no recorded age are not counted.
 
 2. **Countable income at or below 250% FPL** (§4130), **OR adjunctive income eligibility** (§4140)
    - Income limit = `2.5 × FPL(household_size)` for the program's FPL year (2026)
      (`self.program.year.get_limit(household_size)`).
-   - **Countable income is not a flat gross total** — it mirrors PolicyEngine's
-     `gov.states.tx.fpp` countable-income model at the version we serve (policyengine-us
-     **1.768.1**), computed in `_countable_income()`. PolicyEngine is treated as the source of
-     truth here (not independently verified against 1 TAC §382.109 / the FPP Policy Manual).
-     It is `adult_earned + unearned + countable_child_support − child_support_paid`, floored at 0:
+   - **Countable income is not a flat gross total** — it follows the FPP Policy Manual
+     "Definition of Income" (Rev 24-2, Oct. 15, 2024) and §4140, computed in
+     `_countable_income()`. It is `adult_earned + unearned + countable_child_support −
+     child_support_paid`, floored at 0:
      - **adult_earned** — earned income (`wages`, `selfEmployment`) summed only for members
-       age ≥ 18. Under-18 earnings are **exempt** (`child_age_threshold = 18`).
-     - **unearned** — all unearned income *except* child support received.
-     - **countable_child_support** — `max(0, child_support_received − disregard)`. The disregard
-       is **$75/month** ($900/yr) per the Texas FPP Policy Manual (Definition of Income, Rev 24-2),
-       mirroring PolicyEngine's `gov.states.tx.fpp.income.child_support_disregard` (unchanged
-       since 2016-07-01). Received child support ("Child Support (Received)" income) at or under
-       $900/yr counts as $0.
-     - **child_support_paid** — the `childSupport` expense, **deducted**.
-     - *Not applied:* the dependent-care deduction PolicyEngine added in 1.771.2 (frontier),
-       which is absent from the 1.768.1 model we serve. Re-sync if PE changes this logic.
+       age ≥ 18. A child's earned income is **exempt** (`child_age_threshold = 18`, per §4140 /
+       1 TAC §382.109).
+     - **unearned** — unearned income *except* child support received (see the limitation below).
+     - **countable_child_support** — `max(0, child_support_received − disregard)`. Per the
+       Definition of Income: *"Count income after deducting **$75** from the total monthly child
+       support payments the household receives."* Received child support ("Child Support
+       (Received)") at or under $900/yr counts as $0.
+     - **child_support_paid** — legally obligated child support paid by a household member is
+       **deducted** (§4140 Step 2); read from the `childSupport` expense.
+   - ⚠️ **Known limitation — exempt income types not yet excluded.** The Definition of Income
+     "Types of Income" table marks several types **Exempt** that `_countable_income()` still
+     counts through the broad `unearned` bucket — notably **SSI**, **TANF**, **dividends/interest
+     (`investment`)**, **EITC**, and various assistance / adoption / foster-care / in-kind
+     payments. The `exclude=` argument on `calc_gross_income` supports fixing this (an
+     FPP-exempt income-type list); it is a tracked follow-up, not implemented here. Effect: the
+     calc over-counts income for a narrow set of households and can under-approve at the margin.
    - **§4140 bypass** — enrollment in any of the following makes the household income-eligible
      regardless of the countable-income test:
      - SNAP — `screen.has_benefit("tx_snap")`
@@ -72,7 +77,7 @@ prior strict "no insurance" filter to a Medicaid-only exclusion.
 
 - **$266.84 / year per eligible member** (annual). Source: TX HHS Women's Health Programs
   Report FY2024 — total expenditures $78,705,897 ÷ 294,954 clients served = $266.84 average
-  annual benefit per participant. Mirrors PolicyEngine's `gov.states.tx.fpp.annual_benefit`.
+  annual benefit per participant.
 - The household total is the sum across eligible members (e.g., two eligible members →
   `trunc(266.84 × 2) = 533`).
 
@@ -81,7 +86,7 @@ prior strict "no insurance" filter to a Medicaid-only exclusion.
 | Criterion | Fields | Notes |
 |-----------|--------|-------|
 | Age ≤ 64 | `birth_year`, `birth_month` | per-member; None-safe |
-| Countable income ≤ 250% FPL | per-member `calc_gross_income(["earned"])` (adults only), screen `["unearned"]` / `["childSupport"]`, `calc_expenses(["childSupport"])`, `household_size`, `program.year` | mirrors PE `tx_fpp` countable income (1.768.1); child-support-received disregard $75/mo |
+| Countable income ≤ 250% FPL | per-member `calc_gross_income(["earned"])` (adults only), screen `["unearned"]` / `["childSupport"]`, `calc_expenses(["childSupport"])`, `household_size`, `program.year` | per FPP Definition of Income (Rev 24-2) + §4140; $75/mo child-support-received disregard; exempt income types not yet excluded (see limitation) |
 | §4140 bypass | `has_benefit("tx_snap")`, `has_benefit("tx_wic")`, `has_insurance_types(("chp",))` | CHIP Perinatal not captured (gap) |
 | Medicaid exclusion | `member.insurance.medicaid` | Emergency Medicaid excluded from match |
 

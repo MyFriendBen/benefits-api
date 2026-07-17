@@ -6,10 +6,9 @@ Eligibility:
 - Not enrolled in full Medicaid (Emergency Medicaid and other coverage are OK)
 - Countable income <= 250% FPL, OR §4140 adjunctive bypass (SNAP / WIC / CHIP)
 
-Countable income mirrors PolicyEngine's gov.states.tx.fpp model at the version we serve
-(policyengine-us 1.768.1): under-18 earnings are exempt, child support paid is deducted,
-and child support received counts only above a monthly disregard. PE is treated as the
-source of truth (not verified against 1 TAC §382.109 / the FPP Policy Manual).
+Countable income follows the FPP Policy Manual "Definition of Income" (Rev 24-2) and §4140:
+under-18 earnings are exempt, child support paid is deducted, and child support received
+counts only above a $75/month disregard.
 
 Benefit value: $266.84/year per eligible member.
 """
@@ -187,7 +186,8 @@ class TestTxFppHouseholdIncome(TestCase):
 
 
 class TestTxFppCountableIncome(TestCase):
-    """The three ways countable income mirrors PolicyEngine (vs a flat gross total)."""
+    """The three ways countable income differs from a flat gross total (per the FPP
+    Definition of Income)."""
 
     def _household_eligible(self, calc):
         e = Eligibility()
