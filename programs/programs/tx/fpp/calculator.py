@@ -130,9 +130,7 @@ class TxFpp(ProgramCalculator):
         # the unearned bucket and re-added net of its (annualized) disregard.
         unearned = self.screen.calc_gross_income("yearly", ["unearned"], exclude=["childSupport"])
         child_support_received = self.screen.calc_gross_income("yearly", ["childSupport"])
-        countable_child_support = max(
-            0, child_support_received - self.child_support_received_disregard_monthly * 12
-        )
+        countable_child_support = max(0, child_support_received - self.child_support_received_disregard_monthly * 12)
 
         # Child support paid is deducted.
         child_support_paid = self.screen.calc_expenses("yearly", ["childSupport"])
