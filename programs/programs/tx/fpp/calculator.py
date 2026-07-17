@@ -19,6 +19,11 @@ class TxFpp(ProgramCalculator):
       adjunctive income eligibility via enrollment in SNAP, WIC, or CHIP — applicant
       or their child (§4140). CHIP Perinatal, the 4th §4140 program, is not collected
       by the screener and is tracked as a data gap.
+      The income test uses a *countable* income that mirrors PolicyEngine's
+      gov.states.tx.fpp countable-income model at the version we serve (policyengine-us
+      1.768.1) — see ``_countable_income``. It is NOT a flat gross-income total; PE is
+      treated as the source of truth (not independently verified against 1 TAC §382.109
+      / the FPP Policy Manual). If PE changes its FPP countable-income logic, re-sync.
     - Not enrolled in (full) Medicaid (§4100). FPP serves those who earn too much for
       regular Medicaid. Emergency Medicaid recipients are classified as underinsured
       and remain eligible, so they are NOT excluded. Other coverage (employer, private,
@@ -38,9 +43,22 @@ class TxFpp(ProgramCalculator):
     max_age = 64
     fpl_percent = 2.5
     member_amount = 266.84
+
+    # Earnings of members below this age are exempt from countable income — mirrors
+    # PolicyEngine (1 TAC §382.109(3)(A); FPP Policy Manual 4140 treats 18-year-olds as
+    # adults). PE is treated as the source of truth here; not independently verified.
+    child_age_threshold = 18
+
+    # Monthly disregard applied to child support *received* before it counts as income —
+    # only the amount above this counts. $75/month per the Texas FPP Policy Manual
+    # (Definition of Income, Rev 24-2), mirroring PolicyEngine's
+    # gov.states.tx.fpp.income.child_support_disregard (unchanged since 2016-07-01).
+    child_support_received_disregard_monthly = 75
+
     dependencies: ClassVar[list[str]] = [
         "age",
         "insurance",
+        "income_type",
         "income_amount",
         "income_frequency",
         "household_size",
@@ -83,6 +101,40 @@ class TxFpp(ProgramCalculator):
             e.condition(True, messages.presumed_eligibility())
             return
 
-        gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
+        countable_income = self._countable_income()
         income_limit = int(self.fpl_percent * self.program.year.get_limit(self.screen.household_size))
-        e.condition(gross_income <= income_limit, messages.income(gross_income, income_limit))
+        e.condition(countable_income <= income_limit, messages.income(countable_income, income_limit))
+
+    def _countable_income(self) -> int:
+        """TX FPP countable income, mirroring PolicyEngine's gov.states.tx.fpp
+        (``tx_fpp_countable_income``) at the version we serve (policyengine-us 1.768.1).
+
+        Differs from a flat gross-income total in three ways (PE treated as source of
+        truth; not independently verified against 1 TAC §382.109 / the FPP Policy Manual):
+          - earnings of members under ``child_age_threshold`` are exempt,
+          - child support *paid* is deducted,
+          - child support *received* counts only above a monthly disregard.
+
+        The dependent-care deduction PE added in 1.771.2 (frontier) is intentionally NOT
+        applied — it is absent from the 1.768.1 model we serve.
+        """
+        # Earned income counts only for adults (under-18 earnings are exempt). Members
+        # with no recorded age are not counted as adults.
+        adult_earned = sum(
+            member.calc_gross_income("yearly", ["earned"])
+            for member in self.screen.household_members.all()
+            if member.age is not None and member.age >= self.child_age_threshold
+        )
+
+        # Unearned income counts for all ages. Child support received is pulled out of
+        # the unearned bucket and re-added net of its (annualized) disregard.
+        unearned = self.screen.calc_gross_income("yearly", ["unearned"], exclude=["childSupport"])
+        child_support_received = self.screen.calc_gross_income("yearly", ["childSupport"])
+        countable_child_support = max(
+            0, child_support_received - self.child_support_received_disregard_monthly * 12
+        )
+
+        # Child support paid is deducted.
+        child_support_paid = self.screen.calc_expenses("yearly", ["childSupport"])
+
+        return int(max(0, adult_earned + unearned + countable_child_support - child_support_paid))
