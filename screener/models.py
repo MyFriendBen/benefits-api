@@ -14,6 +14,31 @@ from .feature_flags import FeatureFlagConfig, WHITELABEL_FEATURE_FLAGS
 from .irs_parameters import get_qualifying_relative_threshold
 
 
+# Relationship values that are eligible for the dependent relationship checks
+# currently modeled in this method (qualifying-child proxy + qualifying-relative
+# proxy). NOTE:
+# - domesticPartner is intentionally excluded because it is treated as a
+#   spouse-equivalent in relationship_map()/is_spouse(), and therefore returns
+#   False early in is_dependent().
+# - roommate / boyfriendOrGirlfriend are intentionally excluded for the
+#   qualifying-relative path as a conservative proxy because we do not collect
+#   the full IRS non-relative tests (all-year residency + >50% support).
+DEPENDENT_ELIGIBLE_RELATIONSHIPS: frozenset[str] = frozenset(
+    {
+        "child",
+        "fosterChild",
+        "stepChild",
+        "grandChild",
+        "parent",
+        "stepParent",
+        "grandParent",
+        "sisterOrBrother",
+        "stepSisterOrBrother",
+        "relatedOther",
+    }
+)
+
+
 class WhiteLabel(models.Model):
     FEATURE_FLAGS: ClassVar[dict[str, FeatureFlagConfig]] = WHITELABEL_FEATURE_FLAGS
 
@@ -529,14 +554,18 @@ class HouseholdMember(models.Model):
         if is_tax_unit_head or is_tax_unit_spouse:
             return False
 
+        has_eligible_relationship = self.relationship in DEPENDENT_ELIGIBLE_RELATIONSHIPS
+
         # Path 1: Qualifying Child
-        is_qualifying_child = (self.age <= 18 or (self.student and self.age <= 23) or self.has_disability()) and (
+        is_qualifying_child = has_eligible_relationship and (
+            self.age <= 18 or (self.student and self.age <= 23) or self.has_disability()
+        ) and (
             self.calc_gross_income("yearly", ["all"]) <= self.screen.calc_gross_income("yearly", ["all"]) / 2
         )
 
         # Path 2: Qualifying Relative
         threshold = get_qualifying_relative_threshold(self.screen.get_reference_date().year)
-        is_qualifying_relative = self.calc_gross_income("yearly", ["all"]) < threshold
+        is_qualifying_relative = has_eligible_relationship and self.calc_gross_income("yearly", ["all"]) < threshold
 
         return is_qualifying_child or is_qualifying_relative
 
