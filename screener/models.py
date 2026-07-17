@@ -460,7 +460,7 @@ class HouseholdMember(models.Model):
     medicaid = models.BooleanField(blank=True, null=True)
     disability_medicaid = models.BooleanField(blank=True, null=True)
     has_income = models.BooleanField(blank=True, null=True)
-    # Answer to the "Are you currently employed?" income question (MFB-1178).
+    # Answer to the "Are you currently employed?" income question.
     # Persisted because it can't be reconstructed from the income streams alone: a
     # self-employment-only member could have answered either "employed" (Q1) or
     # "gig/occasional work" (Q2). The gig and other-income answers ARE derivable
