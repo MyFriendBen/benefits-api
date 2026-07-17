@@ -45,7 +45,6 @@ def make_calculator(
     county="Harris",
     zipcode="77002",
     household_assets=0,
-    has_section_8=False,
     reported_rent=0,
 ):
     if members is None:
@@ -60,8 +59,7 @@ def make_calculator(
     screen.household_assets = household_assets
     screen.household_members.all = Mock(return_value=members)
     screen.has_benefit = Mock(return_value=False)
-    # Section 8 is matched via base_program ("section_8" → tx_hcv), not an exact name.
-    screen.has_base_benefit = Mock(side_effect=lambda base: has_section_8 if base == "section_8" else False)
+    screen.has_base_benefit = Mock(return_value=False)
     screen.calc_expenses = Mock(return_value=reported_rent)
     head = next((m for m in members if m.relationship == "headOfHousehold"), members[0] if members else None)
     screen.get_head = Mock(return_value=head)
@@ -250,25 +248,16 @@ class TestTxHcvEligibility(TestCase):
             calc.household_eligible(e)
             self.assertTrue(e.eligible)
 
-    def test_has_section_8_is_ineligible(self):
-        calc = make_calculator(members=[make_member(age=35, earned=10_000)], has_section_8=True)
-        with patch_hud(il_ami=46_800):
-            e = Eligibility()
-            calc.household_eligible(e)
-            self.assertFalse(e.eligible)
-
-    def test_section_8_check_uses_base_benefit_not_exact_name(self):
-        """Section 8 is the HCV program via base_program ("section_8" → tx_hcv);
-        the gate must call has_base_benefit, not the dead has_benefit("section_8")."""
+    def test_already_has_section_8_not_self_excluded_by_calculator(self):
+        """tx_hcv *is* the "section_8" program, so the duplicate-subsidy case is
+        handled by the results-layer `already_has` filter, not the calculator.
+        An otherwise-eligible household reporting Section 8 stays eligible here."""
         calc = make_calculator(members=[make_member(age=35, earned=10_000)])
-        # Exact-name has_benefit is always False; only has_base_benefit("section_8") is True.
-        calc.screen.has_benefit = Mock(return_value=False)
         calc.screen.has_base_benefit = Mock(side_effect=lambda base: base == "section_8")
         with patch_hud(il_ami=46_800):
             e = Eligibility()
             calc.household_eligible(e)
-            self.assertFalse(e.eligible)
-            calc.screen.has_base_benefit.assert_any_call("section_8")
+            self.assertTrue(e.eligible)
 
     def test_assets_above_100k_ineligible(self):
         calc = make_calculator(members=[make_member(age=35, earned=14_400)], household_assets=150_000)
@@ -422,8 +411,14 @@ class TestTxHcvScenarios(TestCase):
         self._assert_scenario(members, il_ami=35_000, payment_standard=1424, expected_value=12_768, county="Midland")
 
     def test_scenario_10_already_receiving_section8_harris(self):
+        # tx_hcv *is* the Section 8 program, so the duplicate case is filtered by the
+        # results-layer `already_has` workflow, not the calculator. The calculator
+        # itself still returns eligible (income permitting).
         members = [make_member(age=40, earned=0)]
-        self._assert_ineligible(members, il_ami=46_800, has_section_8=True, county="Harris")
+        calc = make_calculator(members=members, county="Harris")
+        calc.screen.has_base_benefit = Mock(side_effect=lambda base: base == "section_8")
+        with patch_hud(il_ami=46_800):
+            self.assertTrue(calc.calc().eligible)
 
     def test_scenario_11_already_receiving_section8_dallas(self):
         members = [
@@ -431,7 +426,10 @@ class TestTxHcvScenarios(TestCase):
             make_member(age=11, relationship="child"),
             make_member(age=8, relationship="child"),
         ]
-        self._assert_ineligible(members, il_ami=60_550, has_section_8=True, county="Dallas")
+        calc = make_calculator(members=members, county="Dallas")
+        calc.screen.has_base_benefit = Mock(side_effect=lambda base: base == "section_8")
+        with patch_hud(il_ami=60_550):
+            self.assertTrue(calc.calc().eligible)
 
     def test_scenario_12_mixed_generation_hidalgo(self):
         members = [

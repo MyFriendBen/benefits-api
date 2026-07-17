@@ -42,7 +42,6 @@ def make_calculator(
     county="King County",
     zipcode="98108",
     household_assets=0,
-    has_section_8=False,
     gross_income=21600,
     il_ami_value=50000,
     fmr_value=2000,
@@ -63,8 +62,7 @@ def make_calculator(
     mock_screen.calc_gross_income = Mock(return_value=gross_income)
     mock_screen.calc_expenses = Mock(return_value=reported_rent)
     mock_screen.has_benefit = Mock(return_value=False)
-    # Section 8 is matched via base_program ("section_8" → wa_hcv), not an exact name.
-    mock_screen.has_base_benefit = Mock(side_effect=lambda base: has_section_8 if base == "section_8" else False)
+    mock_screen.has_base_benefit = Mock(return_value=False)
     mock_screen.get_head = Mock(return_value=members[0] if members else None)
 
     mock_program = Mock()
@@ -154,27 +152,17 @@ class TestWaHcvEligibility(TestCase):
             calc.household_eligible(e)
             self.assertTrue(e.eligible)
 
-    def test_has_section_8_is_ineligible(self):
-        head = make_member(age=35)
-        calc = make_calculator(members=[head], has_section_8=True, gross_income=21600)
-        with patch_hud_client(il_ami_value=50000):
-            e = Eligibility()
-            calc.household_eligible(e)
-            self.assertFalse(e.eligible)
-
-    def test_section_8_check_uses_base_benefit_not_exact_name(self):
-        """Section 8 is the HCV program via base_program ("section_8" → wa_hcv);
-        the gate must call has_base_benefit, not the dead has_benefit("section_8")."""
+    def test_already_has_section_8_not_self_excluded_by_calculator(self):
+        """wa_hcv *is* the "section_8" program, so the duplicate-subsidy case is
+        handled by the results-layer `already_has` filter, not the calculator.
+        An otherwise-eligible household reporting Section 8 stays eligible here."""
         head = make_member(age=35)
         calc = make_calculator(members=[head], gross_income=21600)
-        # Exact-name has_benefit is always False; only has_base_benefit("section_8") is True.
-        calc.screen.has_benefit = Mock(return_value=False)
         calc.screen.has_base_benefit = Mock(side_effect=lambda base: base == "section_8")
         with patch_hud_client(il_ami_value=50000):
             e = Eligibility()
             calc.household_eligible(e)
-            self.assertFalse(e.eligible)
-            calc.screen.has_base_benefit.assert_any_call("section_8")
+            self.assertTrue(e.eligible)
 
     def test_assets_above_100k_is_ineligible(self):
         head = make_member(age=35)
@@ -394,11 +382,13 @@ class TestWaHcvCalc(TestCase):
             self.assertEqual(e.value, 23832)
 
     def test_calc_ineligible_returns_zero_value(self):
+        # Income above the 50% AMI limit → ineligible → value 0.
         head = make_member(age=35)
-        calc = make_calculator(members=[head], has_section_8=True, gross_income=21600)
+        calc = make_calculator(members=[head], gross_income=60000)
         with patch_hud_client(il_ami_value=50000, fmr_value=2000):
             e = calc.calc()
             self.assertFalse(e.eligible)
+            self.assertEqual(e.value, 0)
 
     def test_calc_pregnant_single_eligible(self):
         head = make_member(age=31, pregnant=True)

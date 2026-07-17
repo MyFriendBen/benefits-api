@@ -20,9 +20,9 @@
 
 2. **Applicant must not currently be receiving HCV/Section 8 assistance.**
 
-   - **Screener fields:** `tx_hcv` current benefit — "Section 8" is the HCV program itself (base_program `section_8`), checked via `has_base_benefit("section_8")` so it matches every white-label variant (`tx_hcv`, `wa_hcv`, `co_section_8`, …).
+   - **Screener fields:** `tx_hcv` current benefit — "Section 8" *is* this program (base_program `section_8`), so "already receiving Section 8" means "already has `tx_hcv`".
    - **Source:** 24 CFR 982.551(n)
-   - **Implementation:** `has_base_benefit("section_8") == true` → ineligible, as a hard override. A household already receiving Section 8/HCV assistance cannot receive a second voucher.
+   - **Implementation:** Not a calculator check. The generic results-layer `already_has` workflow filters `tx_hcv` out of results when the household reports it (via `screen.has_benefit("tx_hcv")`). The calculator does not self-exclude — it only checks *other* programs to inform eligibility.
 
 3. **Head of household, spouse, or co-head must have the legal capacity to enter a lease under Texas law** — in practice, age 18, unless the applicant is an emancipated minor. ⚠️ *data gap — handled conservatively, not by inclusivity default*
 
@@ -413,9 +413,9 @@ SSN is a document requirement (the config's `tx_ssn` document), not an eligibili
 
 ### Scenario 10: Single Adult Already Receiving Section 8/HCV Assistance in Harris County
 
-**What we're checking**: The duplicate-benefit exclusion (Criterion 2) for a household already receiving Section 8.
+**What we're checking**: The duplicate-benefit exclusion (Criterion 2) for a household already receiving Section 8. `tx_hcv` *is* the Section 8 program, so this is not a calculator check — the generic results-layer `already_has` filter removes `tx_hcv` from results when the household reports it. The calculator itself still returns eligible (income permitting).
 
-**Expected**: Not eligible
+**Expected**: Eligible from the calculator; filtered out of results by `already_has` (not shown to the user).
 
 **Steps**:
 - **Location**: Enter ZIP code `77001`, Select county `Harris`
@@ -423,15 +423,15 @@ SSN is a document requirement (the config's `tx_ssn` document), not an eligibili
 - **Person 1**: Birth month/year: `March 1986` (age 40), Relationship: Head of Household, Has income: No
 - **Current Benefits**: Indicate household is **already receiving Section 8 / Housing Choice Voucher assistance** — select the `tx_hcv` current benefit
 
-**Why this matters**: 24 CFR 982.551(n) prohibits duplicate HCV assistance. The JSON test case must include `tx_hcv` in the household's `current_benefits` list to trigger this exclusion — the check is `has_base_benefit("section_8")` (see Criterion 2).
+**Why this matters**: 24 CFR 982.551(n) prohibits duplicate HCV assistance, but because `tx_hcv` is itself the Section 8 program the duplicate case is handled generically by the `already_has` results-layer filter (`screen.has_benefit("tx_hcv")`), not a calculator self-check (see Criterion 2).
 
 ---
 
 ### Scenario 11: Currently Receiving HCV/Section 8 Assistance - Duplicate Benefit Exclusion in Dallas County
 
-**What we're checking**: The same duplicate-benefit exclusion for a multi-person household.
+**What we're checking**: The same duplicate-benefit exclusion for a multi-person household — handled by the `already_has` results-layer filter, not a calculator self-check.
 
-**Expected**: Not eligible
+**Expected**: Eligible from the calculator; filtered out of results by `already_has` (not shown to the user).
 
 **Steps**:
 - **Location**: Enter ZIP code `75201`, Select county `Dallas`

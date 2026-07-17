@@ -72,12 +72,11 @@ class WaHcv(ProgramCalculator):
         return self.program.year.period
 
     def household_eligible(self, e: Eligibility):
-        # "Section 8" is the HCV program itself (base_program "section_8"): wa_hcv,
-        # co_section_8, ma_section_8, etc. Use has_base_benefit so it matches every
-        # white-label variant
-        has_section_8 = self.screen.has_base_benefit("section_8")
-        e.condition(not has_section_8, messages.must_not_have_benefit("Section 8"))
-
+        # No self-exclusion for already receiving Section 8: wa_hcv *is* the
+        # "section_8" program, so "already has Section 8" == "already has wa_hcv".
+        # That duplicate-subsidy case is handled generically by the results-layer
+        # `already_has` filter (screen.has_benefit(program.name_abbreviated)), not
+        # here — calculators only check *other* programs to inform eligibility.
         assets = self.screen.household_assets if self.screen.household_assets is not None else 0
         e.condition(assets <= self.asset_limit, messages.assets(self.asset_limit))
 

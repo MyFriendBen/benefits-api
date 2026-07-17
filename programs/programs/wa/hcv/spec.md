@@ -53,8 +53,9 @@
 4. **Applicant household must not currently be receiving Section 8 assistance from any PHA.**
    - Applies to both tenant-based (HCV) and project-based Section 8 — duplicate Section 8 subsidies are prohibited.
    - Screener fields:
-     - `wa_hcv` current benefit — "Section 8" is the HCV program itself (base_program `section_8`), checked via `has_base_benefit("section_8")` so it matches every white-label variant (`wa_hcv`, `co_section_8`, …).
-   - Note: Verified at application via HUD's EIV Existing Tenant Search. In the screener, this maps directly to the household's current benefits — when `has_base_benefit("section_8")` is true, the household is currently receiving Section 8 and is excluded from a duplicate voucher. There is no single clean CFR/USC citation for the prohibition itself — it is operationalized through the EIV procedural check at admission.
+     - `wa_hcv` current benefit — "Section 8" *is* this program (base_program `section_8`), so "already receiving Section 8" means "already has `wa_hcv`".
+   - **Implementation**: Not a calculator check. The generic results-layer `already_has` workflow filters `wa_hcv` out of results when the household reports it (via `screen.has_benefit("wa_hcv")`). The calculator does not self-exclude — it only checks *other* programs to inform eligibility.
+   - Note: Verified at application via HUD's EIV Existing Tenant Search. There is no single clean CFR/USC citation for the prohibition itself — it is operationalized through the EIV procedural check at admission.
    - Source: HCV Guidebook (Eligibility Determination chapter), § 2.2 and § 11.1 (EIV Existing Tenant Search and Avoiding Duplicate Subsidy)
 
 5. **Net family assets must not exceed $100,000.** ⚠️ *data gap (partial)*
@@ -364,10 +365,10 @@ Each scenario in the Test Scenarios section below is an acceptance criterion. Th
 
 ---
 
-### Scenario 7: Currently Receiving Section 8 (Criterion 4 Ineligible)
+### Scenario 7: Currently Receiving Section 8 (Criterion 4 — handled by `already_has`)
 
-**What we're checking**: Duplicate-Section-8 exclusion (Criterion 4 — `has_base_benefit("section_8")` should disqualify regardless of income).
-**Expected**: Not eligible
+**What we're checking**: Duplicate-Section-8 exclusion (Criterion 4). `wa_hcv` *is* the Section 8 program, so this is not a calculator check — the generic results-layer `already_has` filter removes `wa_hcv` from results when the household reports it. The calculator itself still returns eligible (income permitting).
+**Expected**: Eligible from the calculator; filtered out of results by `already_has` (not shown to the user).
 
 **Steps**:
 - **Location**: ZIP `98103`, county `King County`
