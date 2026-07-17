@@ -183,7 +183,7 @@ class ConfigurationData:
             "wages": {"_label": "incomeOptions.wages", "_default_message": "Wages, salaries, or tips"},
             "selfEmployment": {
                 "_label": "incomeOptions.selfEmployment",
-                "_default_message": "Self-employment, freelance, or independent contractor",
+                "_default_message": "Self-employment, freelance, gig, or contract work",
             },
         },
         "government": {
