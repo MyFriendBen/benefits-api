@@ -460,6 +460,13 @@ class HouseholdMember(models.Model):
     medicaid = models.BooleanField(blank=True, null=True)
     disability_medicaid = models.BooleanField(blank=True, null=True)
     has_income = models.BooleanField(blank=True, null=True)
+    # Answers to the three Income Sources questions (MFB-1178). Persisted so the
+    # Yes/No selections — including explicit "No" answers, which leave no income
+    # stream behind — survive a full reload. Income eligibility still derives from
+    # the income_streams themselves; these record the user's stated answers.
+    is_employed = models.BooleanField(blank=True, null=True)
+    has_gig_income = models.BooleanField(blank=True, null=True)
+    has_other_income = models.BooleanField(blank=True, null=True)
     has_expenses = models.BooleanField(blank=True, null=True)
     is_care_worker = models.BooleanField(blank=True, null=True)
 
