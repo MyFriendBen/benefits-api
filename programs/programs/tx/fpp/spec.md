@@ -3,14 +3,13 @@
 - **Program:** Family Planning Program (FPP)
 - **State:** TX (`tx`)
 - **name_abbreviated:** `tx_fpp`
-- **Tickets:** MFB-1088 (custom migration), MFB-1325 (countable-income rules per FPP Policy Manual)
 - **Calculator:** `programs/programs/tx/fpp/calculator.py` (`TxFpp`)
 
 ## Background
 
 FPP is a state-funded HHSC program offering free or low-cost reproductive and preventive
 health care to Texans through age 64. It was previously screened via a PolicyEngine
-calculator (`tx_fpp_benefit`). MFB-1088 migrates it to a **custom calculator** so the
+calculator (`tx_fpp_benefit`). It has been migrated to a **custom calculator** so the
 §4140 adjunctive income bypass — which depends on MFB enrollment flags PolicyEngine cannot
 see — can be enforced directly, and so the §4100 insurance rule can be relaxed from the
 prior strict "no insurance" filter to a Medicaid-only exclusion.
@@ -64,14 +63,14 @@ prior strict "no insurance" filter to a Medicaid-only exclusion.
        clients still qualify if they have a confidentiality concern OR an annual deductible
        > 5% of annual income. The screener cannot capture those conditions, so insured
        (non-Medicaid) clients are included and the §4200 caveat is surfaced in the program
-       description copy (added in MFB-1014).
+       description copy.
 
 4. **Texas residency** (§4130) — handled automatically by the TX white label; not re-checked.
 
 5. **Citizenship / immigration status — not required** (§4130)
    - `legal_status_required` includes all six values (no restriction). Per §4130, Form 1065,
-     and TMPPM Vol. 2 §1.1, FPP is available regardless of immigration status. (Team decision
-     on MFB-1088 #3: relax the prior restrictive filter.)
+     and TMPPM Vol. 2 §1.1, FPP is available regardless of immigration status. (Team decision:
+     relax the prior restrictive filter.)
 
 ## Benefit Value
 

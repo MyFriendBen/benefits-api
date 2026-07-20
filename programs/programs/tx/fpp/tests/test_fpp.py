@@ -71,7 +71,7 @@ def make_calculator(
 
     benefits = set(current_benefits or [])
 
-    def _gross(freq, types, exclude=[]):
+    def _gross(freq, types, exclude=None):
         if "unearned" in types:
             return unearned
         if "childSupport" in types:
