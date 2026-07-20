@@ -54,7 +54,7 @@
    - Applies to both tenant-based (HCV) and project-based Section 8 — duplicate Section 8 subsidies are prohibited.
    - Screener fields:
      - `wa_hcv` current benefit — "Section 8" *is* this program (base_program `section_8`), so "already receiving Section 8" means "already has `wa_hcv`".
-   - **Implementation**: Not a calculator check. The generic results-layer `already_has` workflow filters `wa_hcv` out of results when the household reports it (via `screen.has_benefit("wa_hcv")`). The calculator does not self-exclude — it only checks *other* programs to inform eligibility.
+   - **Implementation**: Not a calculator check. Because `wa_hcv` *is* the Section 8 program, checking "already receiving Section 8" would be a self-check, which calculators don't do.
    - Note: Verified at application via HUD's EIV Existing Tenant Search. There is no single clean CFR/USC citation for the prohibition itself — it is operationalized through the EIV procedural check at admission.
    - Source: HCV Guidebook (Eligibility Determination chapter), § 2.2 and § 11.1 (EIV Existing Tenant Search and Avoiding Duplicate Subsidy)
 
@@ -365,26 +365,7 @@ Each scenario in the Test Scenarios section below is an acceptance criterion. Th
 
 ---
 
-### Scenario 7: Currently Receiving Section 8 (Criterion 4 — handled by `already_has`)
-
-**What we're checking**: Duplicate-Section-8 exclusion (Criterion 4). `wa_hcv` *is* the Section 8 program, so this is not a calculator check — the generic results-layer `already_has` filter removes `wa_hcv` from results when the household reports it. The calculator itself still returns eligible (income permitting).
-**Expected**: Eligible from the calculator; filtered out of results by `already_has` (not shown to the user).
-
-**Steps**:
-- **Location**: ZIP `98103`, county `King County`
-- **Household size**: 3
-- **Person 1** (head): birth `Mar 1980` (age 46)
-  - Income: Employment / Wages, `$2,000`/month
-- **Person 2**: birth `Jul 1982` (age 43), `relationship: spouse`
-  - Income: Employment / Wages, `$1,200`/month
-- **Person 3**: birth `Sep 2016` (age 9), `relationship: child`
-- **Current benefits**: `wa_hcv` (Housing Choice Voucher / Section 8)
-
-**Why this matters**: The duplicate-subsidy prohibition is one of two fully evaluable criteria. A household that's otherwise income-eligible must still be excluded if they already have a voucher.
-
----
-
-### Scenario 8: Multi-Generational Household with Multiple Income Types, Grant County
+### Scenario 7: Multi-Generational Household with Multiple Income Types, Grant County
 
 **What we're checking**: Multi-member income aggregation (Criterion 1) across multiple income types (Social Security Retirement, VA Pension, SSDI, wages), with elderly and disability indicators on different members.
 **Expected**: Eligible
@@ -409,7 +390,7 @@ Each scenario in the Test Scenarios section below is an acceptance criterion. Th
 
 ---
 
-### Scenario 9: Three Adult Siblings Sharing Household, Whatcom County
+### Scenario 8: Three Adult Siblings Sharing Household, Whatcom County
 
 **What we're checking**: Family-definition flexibility (Criterion 2) and multi-adult income aggregation (Criterion 1) for a non-traditional household.
 **Expected**: Eligible
@@ -429,7 +410,7 @@ Each scenario in the Test Scenarios section below is an acceptance criterion. Th
 
 ---
 
-### Scenario 10: Household of 8 at VLI, King County (Large Household Edge Case)
+### Scenario 9: Household of 8 at VLI, King County (Large Household Edge Case)
 
 **What we're checking**: Large-household income-limit lookup (Criterion 1 — 8-person VLI for Seattle-Bellevue HMFA, applying the 1.32× 4-person multiplier).
 **Expected**: Eligible
@@ -456,7 +437,7 @@ Each scenario in the Test Scenarios section below is an acceptance criterion. Th
 
 ---
 
-### Scenario 11: Otherwise-Eligible Household with Liquid Assets > $100K, Spokane County (Asset Cap Ineligible)
+### Scenario 10: Otherwise-Eligible Household with Liquid Assets > $100K, Spokane County (Asset Cap Ineligible)
 
 **What we're checking**: HOTMA asset cap exclusion (Criterion 5 — `household_assets > $100,000` disqualifies regardless of income).
 **Expected**: Not eligible
@@ -475,7 +456,7 @@ Each scenario in the Test Scenarios section below is an acceptance criterion. Th
 
 ---
 
-### Scenario 12: Single Pregnant Adult, Pierce County (Pregnant = 2-Person Family Rule)
+### Scenario 11: Single Pregnant Adult, Pierce County (Pregnant = 2-Person Family Rule)
 
 **What we're checking**: Pregnancy + household-size special rule (Criterion 2 — a pregnant person with no other household members is counted as 2 for income-limit purposes per 24 CFR § 982.402(b)(5)).
 **Expected**: Eligible
@@ -492,7 +473,7 @@ Each scenario in the Test Scenarios section below is an acceptance criterion. Th
 
 ---
 
-### Scenario 13: Single Student Under 24, No Disqualifying Factors (Student Inclusivity)
+### Scenario 12: Single Student Under 24, No Disqualifying Factors (Student Inclusivity)
 
 **What we're checking**: Student-rule inclusivity (Criterion 11 — a single student under 24 with no parent/spouse/child/disability/VA-insurance indicator should still be eligible per the inclusivity assumption).
 **Expected**: Eligible

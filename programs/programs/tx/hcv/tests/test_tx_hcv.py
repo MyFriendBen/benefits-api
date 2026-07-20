@@ -248,17 +248,6 @@ class TestTxHcvEligibility(TestCase):
             calc.household_eligible(e)
             self.assertTrue(e.eligible)
 
-    def test_already_has_section_8_not_self_excluded_by_calculator(self):
-        """tx_hcv *is* the "section_8" program, so the duplicate-subsidy case is
-        handled by the results-layer `already_has` filter, not the calculator.
-        An otherwise-eligible household reporting Section 8 stays eligible here."""
-        calc = make_calculator(members=[make_member(age=35, earned=10_000)])
-        calc.screen.has_base_benefit = Mock(side_effect=lambda base: base == "section_8")
-        with patch_hud(il_ami=46_800):
-            e = Eligibility()
-            calc.household_eligible(e)
-            self.assertTrue(e.eligible)
-
     def test_assets_above_100k_ineligible(self):
         calc = make_calculator(members=[make_member(age=35, earned=14_400)], household_assets=150_000)
         with patch_hud(il_ami=46_800):
@@ -410,28 +399,7 @@ class TestTxHcvScenarios(TestCase):
         members = [make_member(age=35, earned=14_400)]
         self._assert_scenario(members, il_ami=35_000, payment_standard=1424, expected_value=12_768, county="Midland")
 
-    def test_scenario_10_already_receiving_section8_harris(self):
-        # tx_hcv *is* the Section 8 program, so the duplicate case is filtered by the
-        # results-layer `already_has` workflow, not the calculator. The calculator
-        # itself still returns eligible (income permitting).
-        members = [make_member(age=40, earned=0)]
-        calc = make_calculator(members=members, county="Harris")
-        calc.screen.has_base_benefit = Mock(side_effect=lambda base: base == "section_8")
-        with patch_hud(il_ami=46_800):
-            self.assertTrue(calc.calc().eligible)
-
-    def test_scenario_11_already_receiving_section8_dallas(self):
-        members = [
-            make_member(age=38, earned=21_600),
-            make_member(age=11, relationship="child"),
-            make_member(age=8, relationship="child"),
-        ]
-        calc = make_calculator(members=members, county="Dallas")
-        calc.screen.has_base_benefit = Mock(side_effect=lambda base: base == "section_8")
-        with patch_hud(il_ami=60_550):
-            self.assertTrue(calc.calc().eligible)
-
-    def test_scenario_12_mixed_generation_hidalgo(self):
+    def test_scenario_10_mixed_generation_hidalgo(self):
         members = [
             make_member(age=35, earned=16_800),
             make_member(age=68, relationship="parent", unearned=9_000),
@@ -439,7 +407,7 @@ class TestTxHcvScenarios(TestCase):
         ]
         self._assert_scenario(members, il_ami=37_700, payment_standard=1060, expected_value=5_124, county="Hidalgo")
 
-    def test_scenario_13_two_working_adults_two_children_collin(self):
+    def test_scenario_11_two_working_adults_two_children_collin(self):
         members = [
             make_member(age=35, earned=16_800),
             make_member(age=32, relationship="spouse", earned=14_400),
@@ -448,15 +416,15 @@ class TestTxHcvScenarios(TestCase):
         ]
         self._assert_scenario(members, il_ami=60_550, payment_standard=2580, expected_value=21_888, county="Collin")
 
-    def test_scenario_14_zero_income_cameron(self):
+    def test_scenario_12_zero_income_cameron(self):
         members = [make_member(age=30, earned=0)]
         self._assert_scenario(members, il_ami=20_000, payment_standard=773, expected_value=8_976, county="Cameron")
 
-    def test_scenario_15_full_time_student_lubbock(self):
+    def test_scenario_13_full_time_student_lubbock(self):
         members = [make_member(age=22, earned=9_600, student_full_time=True)]
         self._assert_scenario(members, il_ami=29_300, payment_standard=818, expected_value=6_936, county="Lubbock")
 
-    def test_scenario_16_household_of_five_mclennan(self):
+    def test_scenario_14_household_of_five_mclennan(self):
         members = [
             make_member(age=41, earned=24_000),
             make_member(age=38, relationship="spouse"),
@@ -466,11 +434,11 @@ class TestTxHcvScenarios(TestCase):
         ]
         self._assert_scenario(members, il_ami=48_800, payment_standard=1599, expected_value=12_420, county="McLennan")
 
-    def test_scenario_17_between_50_and_80_ami_travis_ineligible(self):
+    def test_scenario_15_between_50_and_80_ami_travis_ineligible(self):
         members = [make_member(age=35, earned=55_000)]
         self._assert_ineligible(members, il_ami=47_050, county="Travis")
 
-    def test_scenario_18_family_of_seven_mclennan_4br(self):
+    def test_scenario_16_family_of_seven_mclennan_4br(self):
         members = [
             make_member(age=41, earned=27_600),
             make_member(age=38, relationship="spouse"),
@@ -482,17 +450,17 @@ class TestTxHcvScenarios(TestCase):
         ]
         self._assert_scenario(members, il_ami=55_000, payment_standard=1644, expected_value=12_168, county="McLennan")
 
-    def test_scenario_19_reported_rent_el_paso(self):
+    def test_scenario_17_reported_rent_el_paso(self):
         members = [make_member(age=35, earned=18_000)]
         self._assert_scenario(
             members, il_ami=29_300, payment_standard=821, expected_value=1_800, county="El Paso", reported_rent=600
         )
 
-    def test_scenario_20_assets_over_limit_harris_ineligible(self):
+    def test_scenario_18_assets_over_limit_harris_ineligible(self):
         members = [make_member(age=35, earned=14_400)]
         self._assert_ineligible(members, il_ami=46_800, household_assets=150_000, county="Harris")
 
-    def test_scenario_21_elderly_head_disabled_adult_dependent_bexar(self):
+    def test_scenario_19_elderly_head_disabled_adult_dependent_bexar(self):
         members = [
             make_member(age=63, earned=16_800),
             make_member(age=19, relationship="child", disabled=True),
@@ -501,21 +469,21 @@ class TestTxHcvScenarios(TestCase):
             members, il_ami=40_250, payment_standard=870, expected_value=5_700, county="Bexar", zipcode="78207"
         )
 
-    def test_scenario_22_foster_child_excluded_from_dependent_deduction_harris(self):
+    def test_scenario_20_foster_child_excluded_from_dependent_deduction_harris(self):
         members = [
             make_member(age=35, earned=14_400),
             make_member(age=10, relationship="fosterChild"),
         ]
         self._assert_scenario(members, il_ami=41_600, payment_standard=1323, expected_value=11_556, county="Harris")
 
-    def test_scenario_23_teen_wages_excluded_el_paso(self):
+    def test_scenario_21_teen_wages_excluded_el_paso(self):
         members = [
             make_member(age=38, earned=12_000),
             make_member(age=16, relationship="child", earned=4_800),
         ]
         self._assert_scenario(members, il_ami=33_500, payment_standard=1013, expected_value=8_700, county="El Paso")
 
-    def test_scenario_24_foster_child_unearned_income_excluded_harris(self):
+    def test_scenario_22_foster_child_unearned_income_excluded_harris(self):
         members = [
             make_member(age=35, earned=14_400),
             make_member(age=10, relationship="fosterChild", unearned=2_400),

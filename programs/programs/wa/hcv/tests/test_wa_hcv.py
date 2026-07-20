@@ -152,18 +152,6 @@ class TestWaHcvEligibility(TestCase):
             calc.household_eligible(e)
             self.assertTrue(e.eligible)
 
-    def test_already_has_section_8_not_self_excluded_by_calculator(self):
-        """wa_hcv *is* the "section_8" program, so the duplicate-subsidy case is
-        handled by the results-layer `already_has` filter, not the calculator.
-        An otherwise-eligible household reporting Section 8 stays eligible here."""
-        head = make_member(age=35)
-        calc = make_calculator(members=[head], gross_income=21600)
-        calc.screen.has_base_benefit = Mock(side_effect=lambda base: base == "section_8")
-        with patch_hud_client(il_ami_value=50000):
-            e = Eligibility()
-            calc.household_eligible(e)
-            self.assertTrue(e.eligible)
-
     def test_assets_above_100k_is_ineligible(self):
         head = make_member(age=35)
         calc = make_calculator(members=[head], household_assets=150000, gross_income=21600)

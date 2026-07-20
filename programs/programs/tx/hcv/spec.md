@@ -15,14 +15,14 @@
 
    - **Screener fields:** `household_size`, `county`, `calc_gross_income("yearly", ["all"])`
    - **Source:** TDHCA HCV Administrative Plan (Sept. 2022 update), Ch. 3 Part II; 24 CFR 982.201(b); 42 U.S.C. § 1437n(b)(1)
-   - **Implementation:** Compare household income against the 50% AMI limit for the household's county and size, looked up from HUD's published FY2026 Section 8 Income Limits dataset (see Research Sources) — re-fetch annually when HUD updates it. TDHCA extends eligibility to 80% AMI ("Low Income") only for five narrow categories — continuously-assisted families, HOPE 1/2 homeownership residents, mortgage-prepayment-displaced families, Disaster preference, and Project Access (see Priority Criteria) — none of which apply to an ordinary applicant, so the 50% ceiling governs by default. Scenario 17 is the regression test confirming a household between the two ceilings is correctly rejected. **The same income-exclusion rules used for Benefit Value (see "Income exclusions modeled") apply here too** — a naive `calc_gross_income("yearly", ["all"])` call with no filtering could wrongly count a minor's wages or a foster child's income toward this ceiling and push an otherwise-eligible household over it, which is an eligibility miss, not just a value error.
+   - **Implementation:** Compare household income against the 50% AMI limit for the household's county and size, looked up from HUD's published FY2026 Section 8 Income Limits dataset (see Research Sources) — re-fetch annually when HUD updates it. TDHCA extends eligibility to 80% AMI ("Low Income") only for five narrow categories — continuously-assisted families, HOPE 1/2 homeownership residents, mortgage-prepayment-displaced families, Disaster preference, and Project Access (see Priority Criteria) — none of which apply to an ordinary applicant, so the 50% ceiling governs by default. Scenario 15 is the regression test confirming a household between the two ceilings is correctly rejected. **The same income-exclusion rules used for Benefit Value (see "Income exclusions modeled") apply here too** — a naive `calc_gross_income("yearly", ["all"])` call with no filtering could wrongly count a minor's wages or a foster child's income toward this ceiling and push an otherwise-eligible household over it, which is an eligibility miss, not just a value error.
    - **Known limitation:** the calculator can't detect Disaster preference or Project Access status from screener data, so a household in one of those two categories, between the 50% and 80% ceilings, would be incorrectly shown as ineligible. Handled conservatively, not by inclusivity default — same reasoning as Criterion 3's emancipated-minor exception. Documented, not a bug to fix in this ticket. **Surfaced in the description** ("if your community was recently declared a disaster area, or you're moving out of an institution due to a disability, you may still qualify...") since, unlike Criterion 3, this affects a more recognizable, actionable population.
 
 2. **Applicant must not currently be receiving HCV/Section 8 assistance.**
 
    - **Screener fields:** `tx_hcv` current benefit — "Section 8" *is* this program (base_program `section_8`), so "already receiving Section 8" means "already has `tx_hcv`".
    - **Source:** 24 CFR 982.551(n)
-   - **Implementation:** Not a calculator check. The generic results-layer `already_has` workflow filters `tx_hcv` out of results when the household reports it (via `screen.has_benefit("tx_hcv")`). The calculator does not self-exclude — it only checks *other* programs to inform eligibility.
+   - **Implementation:** Not a calculator check. Because `tx_hcv` *is* the Section 8 program, checking "already receiving Section 8" would be a self-check, which calculators don't do.
 
 3. **Head of household, spouse, or co-head must have the legal capacity to enter a lease under Texas law** — in practice, age 18, unless the applicant is an emancipated minor. ⚠️ *data gap — handled conservatively, not by inclusivity default*
 
@@ -135,9 +135,9 @@ These do not determine eligibility but affect waitlist position or access to spe
 > Monthly HAP = min(Payment Standard, Gross Rent) − Total Tenant Payment (TTP), floored at $0
 > Annual value = Monthly HAP × 12
 
-MFB does collect a household's rent, via the `rent`/`mortgage` expense fields (`screen.calc_expenses("monthly", ["rent", "mortgage"])`) — but it's optional and not reliably captured (the same limitation noted for the rent-burden priority factor). Where reported, use `min(Payment Standard, reported rent)` per the formula above; where not reported, fall back to Payment Standard alone as a reasonable upper-bound estimate. Scenario 19 tests the reported-rent branch; Scenarios 1–18 test the no-rent-reported fallback. The $0 floor is a real, tested outcome (see Scenario 4), not an error condition — a household can be eligible for the voucher program with zero net subsidy if TTP exceeds the payment standard (or reported rent).
+MFB does collect a household's rent, via the `rent`/`mortgage` expense fields (`screen.calc_expenses("monthly", ["rent", "mortgage"])`) — but it's optional and not reliably captured (the same limitation noted for the rent-burden priority factor). Where reported, use `min(Payment Standard, reported rent)` per the formula above; where not reported, fall back to Payment Standard alone as a reasonable upper-bound estimate. Scenario 17 tests the reported-rent branch; Scenarios 1–16 test the no-rent-reported fallback. The $0 floor is a real, tested outcome (see Scenario 4), not an error condition — a household can be eligible for the voucher program with zero net subsidy if TTP exceeds the payment standard (or reported rent).
 
-**Documented simplification — no utility allowance.** TDHCA defines Gross Rent as rent-to-owner *plus* a PHA-published utility allowance for tenant-paid utilities (24 CFR 982.517; TDHCA Admin Plan, Ch. 6 Part III, p.93–94), not bare contract rent. This calculator uses the household's reported rent alone as Gross Rent (Scenario 19), with no utility allowance added — MFB's screener doesn't collect utility costs, and TDHCA's allowance schedule (which varies by unit size and is revised at least annually) isn't captured anywhere in MFB's data. This understates Gross Rent, and therefore HAP, for the subset of households responsible for paying their own utilities. A known, deliberate simplification, matching the medical/childcare deduction deferrals above, not an oversight.
+**Documented simplification — no utility allowance.** TDHCA defines Gross Rent as rent-to-owner *plus* a PHA-published utility allowance for tenant-paid utilities (24 CFR 982.517; TDHCA Admin Plan, Ch. 6 Part III, p.93–94), not bare contract rent. This calculator uses the household's reported rent alone as Gross Rent (Scenario 17), with no utility allowance added — MFB's screener doesn't collect utility costs, and TDHCA's allowance schedule (which varies by unit size and is revised at least annually) isn't captured anywhere in MFB's data. This understates Gross Rent, and therefore HAP, for the subset of households responsible for paying their own utilities. A known, deliberate simplification, matching the medical/childcare deduction deferrals above, not an oversight.
 
 **Total Tenant Payment (TTP)** is the highest of (24 CFR 5.628):
 1. 30% of monthly adjusted income
@@ -145,9 +145,9 @@ MFB does collect a household's rent, via the `rent`/`mortgage` expense fields (`
 3. Welfare rent — N/A for this program (TDHCA's plan: "Welfare rent does not apply")
 4. Minimum rent, **$25/month** — 24 CFR 5.630(a)(2) actually gives TDHCA *discretion* to set HCV's minimum rent anywhere from $0 to $50 (HCV is grouped with public housing and moderate rehab in the discretionary range, not the flat-$25 "other section 8" bucket in (a)(3)); TDHCA elected $25 within that range (Admin Plan, p.90: *"The minimum rent for all Department localities is $25.00 per month"*). Waivable for documented financial hardship (temporary hardship: 90-day suspension; permanent hardship: ongoing exemption) — not evaluable from screener data
 
-**Calculator implementation:** Adjusted annual income = gross annual income (`calc_gross_income("yearly", ["all"])`) minus the two deductions below; adjusted monthly income = adjusted annual income ÷ 12. Implement all three TTP components (30%-of-adjusted, 10%-of-gross, $25 floor) and take the highest — don't skip item 2 as an optimization, even though no scenario in this spec exercises it as the binding term. That's a real property of the math, not an oversight: for a very-low-income household with dependents, 30%-of-adjusted can drop below 10%-of-gross, but at that point both are already close to the $25 floor, so the floor — not the 10% term — ends up deciding TTP. The zero-income case (Scenario 14) is where the $25 floor binds. Round TTP to the nearest dollar (24 CFR 5.628).
+**Calculator implementation:** Adjusted annual income = gross annual income (`calc_gross_income("yearly", ["all"])`) minus the two deductions below; adjusted monthly income = adjusted annual income ÷ 12. Implement all three TTP components (30%-of-adjusted, 10%-of-gross, $25 floor) and take the highest — don't skip item 2 as an optimization, even though no scenario in this spec exercises it as the binding term. That's a real property of the math, not an oversight: for a very-low-income household with dependents, 30%-of-adjusted can drop below 10%-of-gross, but at that point both are already close to the $25 floor, so the floor — not the 10% term — ends up deciding TTP. The zero-income case (Scenario 12) is where the $25 floor binds. Round TTP to the nearest dollar (24 CFR 5.628).
 
-**Income exclusions modeled** (24 CFR 5.609(b)) — apply before computing gross income, for both this eligibility test and the benefit value calculation below: (1) earned income (wages/self-employment) of a household member under 18 is excluded entirely — their *unearned* income (Social Security, child support, etc.) still counts; (2) all income of a `fosterChild`-relationship member is excluded entirely, earned or unearned. MFB's `calc_gross_income("yearly", ["all"])` sums every member's income with no such filtering — implement this by filtering `income_streams` by member age/type and by `relationship == "fosterChild"` before summing, not by using that call as-is. Scenario 23 tests the under-18-earned-income exclusion; Scenario 24 tests the foster-child exclusion (which is broader than the under-18 exclusion — it also covers a foster child's *unearned* income, which would otherwise still count for an ordinary minor).
+**Income exclusions modeled** (24 CFR 5.609(b)) — apply before computing gross income, for both this eligibility test and the benefit value calculation below: (1) earned income (wages/self-employment) of a household member under 18 is excluded entirely — their *unearned* income (Social Security, child support, etc.) still counts; (2) all income of a `fosterChild`-relationship member is excluded entirely, earned or unearned. MFB's `calc_gross_income("yearly", ["all"])` sums every member's income with no such filtering — implement this by filtering `income_streams` by member age/type and by `relationship == "fosterChild"` before summing, not by using that call as-is. Scenario 21 tests the under-18-earned-income exclusion; Scenario 22 tests the foster-child exclusion (which is broader than the under-18 exclusion — it also covers a foster child's *unearned* income, which would otherwise still count for an ordinary minor).
 
 **Other income exclusions — data gap, not modeled.** 24 CFR 5.609(b) also excludes foster-care/kinship-guardianship care payments, student financial assistance (scholarships/grants), insurance settlements, medical-expense reimbursements, disability-related civil-action settlements, PASS-plan set-asides, resident service stipends (≤$200/month), employment-training program earnings, and 529/Coverdell/baby-bond income, among others. None of these have a distinct `income_streams` type in MFB's screener (confirmed against the model) — a household receiving any of them has no way to report it as anything other than generic `other` income, so the calculator can't detect and exclude them specifically. Not evaluable, and no scenario is possible for these: there's no way to construct a household input that isolates them from ordinary `other` income. A genuine screener-driven data gap, not a modeling gap — flagged here rather than left silent.
 
@@ -249,21 +249,19 @@ SSN is a document requirement (the config's `tx_ssn` document), not an eligibili
 [ ] Scenario 7 (17-Year-Old Head of Household in El Paso County - Below Minimum Age): User should be **ineligible**
 [ ] Scenario 8 (45-Year-Old Head of Household Well Above Minimum Age in Lubbock County): User should be **eligible** with $5,496/year
 [ ] Scenario 9 (Eligible Single Adult in Midland County - West Texas Service Area): User should be **eligible** with $12,768/year
-[ ] Scenario 10 (Single Adult Already Receiving Section 8/HCV Assistance in Harris County): User should be **ineligible**
-[ ] Scenario 11 (Currently Receiving HCV/Section 8 Assistance - Duplicate Benefit Exclusion in Dallas County): User should be **ineligible**
-[ ] Scenario 12 (Mixed Household - Adult Head with Elderly Parent and Minor Child in Hidalgo County): User should be **eligible** with $5,124/year
-[ ] Scenario 13 (Multiple Eligible Adults in Same Household - Two Working Adults with Two Children in Collin County): User should be **eligible** with $21,888/year
-[ ] Scenario 14 (Household of One with Exactly Zero Income in Cameron County): User should be **eligible** with $8,976/year
-[ ] Scenario 15 (Full-Time Student with Low Income in Lubbock County): User should be **eligible** with $6,936/year
-[ ] Scenario 16 (Household of Five in McLennan County — Waco): User should be **eligible** with $12,420/year
-[ ] Scenario 17 (Single Adult Between 50% and 80% AMI in Travis County — Ineligible Despite Clearing the Generic Federal Ceiling): User should be **ineligible**
-[ ] Scenario 18 (Large Family of Seven in McLennan County — Waco, Tests 4BR Payment Standard Tier): User should be **eligible** with $12,168/year
-[ ] Scenario 19 (Reported Rent Below Payment Standard in El Paso County): User should be **eligible** with $1,800/year
-[ ] Scenario 20 (Household Exceeding the HOTMA Net-Asset Limit in Harris County): User should be **ineligible**
-[ ] Scenario 21 (Elderly Head of Household with an 18+ Disabled Dependent in Bexar County): User should be **eligible** with $5,700/year
-[ ] Scenario 22 (Foster Child Correctly Excluded from the Dependent Deduction in Harris County): User should be **eligible** with $11,556/year
-[ ] Scenario 23 (Working Teenager's Wages Correctly Excluded from Countable Income in El Paso County): User should be **eligible** with $8,700/year
-[ ] Scenario 24 (Foster Child's Unearned Income Correctly Excluded in Harris County): User should be **eligible** with $11,556/year
+[ ] Scenario 10 (Mixed Household - Adult Head with Elderly Parent and Minor Child in Hidalgo County): User should be **eligible** with $5,124/year
+[ ] Scenario 11 (Multiple Eligible Adults in Same Household - Two Working Adults with Two Children in Collin County): User should be **eligible** with $21,888/year
+[ ] Scenario 12 (Household of One with Exactly Zero Income in Cameron County): User should be **eligible** with $8,976/year
+[ ] Scenario 13 (Full-Time Student with Low Income in Lubbock County): User should be **eligible** with $6,936/year
+[ ] Scenario 14 (Household of Five in McLennan County — Waco): User should be **eligible** with $12,420/year
+[ ] Scenario 15 (Single Adult Between 50% and 80% AMI in Travis County — Ineligible Despite Clearing the Generic Federal Ceiling): User should be **ineligible**
+[ ] Scenario 16 (Large Family of Seven in McLennan County — Waco, Tests 4BR Payment Standard Tier): User should be **eligible** with $12,168/year
+[ ] Scenario 17 (Reported Rent Below Payment Standard in El Paso County): User should be **eligible** with $1,800/year
+[ ] Scenario 18 (Household Exceeding the HOTMA Net-Asset Limit in Harris County): User should be **ineligible**
+[ ] Scenario 19 (Elderly Head of Household with an 18+ Disabled Dependent in Bexar County): User should be **eligible** with $5,700/year
+[ ] Scenario 20 (Foster Child Correctly Excluded from the Dependent Deduction in Harris County): User should be **eligible** with $11,556/year
+[ ] Scenario 21 (Working Teenager's Wages Correctly Excluded from Countable Income in El Paso County): User should be **eligible** with $8,700/year
+[ ] Scenario 22 (Foster Child's Unearned Income Correctly Excluded in Harris County): User should be **eligible** with $11,556/year
 
 ## Test Scenarios
 
@@ -347,7 +345,7 @@ SSN is a document requirement (the config's `tx_ssn` document), not an eligibili
 - **Household**: Number of people: `1`
 - **Person 1**: Birth month/year: `March 1991` (age 35), Relationship: Head of Household, Has income: Yes, Employment income: `$6,250` per month, No current benefits
 
-**Why this matters**: Travis County's 1-person VLI is **$47,050/year (FY2026)**; at $75,000/year, income exceeds it by a wide margin — an unambiguous ineligible case (also above the generic federal 80% AMI ceiling of **$74,800 (FY2026)**, so it stays ineligible under either standard). Contrast with Scenario 17, which sits between the two ceilings and depends on using the correct one.
+**Why this matters**: Travis County's 1-person VLI is **$47,050/year (FY2026)**; at $75,000/year, income exceeds it by a wide margin — an unambiguous ineligible case (also above the generic federal 80% AMI ceiling of **$74,800 (FY2026)**, so it stays ineligible under either standard). Contrast with Scenario 15, which sits between the two ceilings and depends on using the correct one.
 
 ---
 
@@ -411,41 +409,7 @@ SSN is a document requirement (the config's `tx_ssn` document), not an eligibili
 
 ---
 
-### Scenario 10: Single Adult Already Receiving Section 8/HCV Assistance in Harris County
-
-**What we're checking**: The duplicate-benefit exclusion (Criterion 2) for a household already receiving Section 8. `tx_hcv` *is* the Section 8 program, so this is not a calculator check — the generic results-layer `already_has` filter removes `tx_hcv` from results when the household reports it. The calculator itself still returns eligible (income permitting).
-
-**Expected**: Eligible from the calculator; filtered out of results by `already_has` (not shown to the user).
-
-**Steps**:
-- **Location**: Enter ZIP code `77001`, Select county `Harris`
-- **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `March 1986` (age 40), Relationship: Head of Household, Has income: No
-- **Current Benefits**: Indicate household is **already receiving Section 8 / Housing Choice Voucher assistance** — select the `tx_hcv` current benefit
-
-**Why this matters**: 24 CFR 982.551(n) prohibits duplicate HCV assistance, but because `tx_hcv` is itself the Section 8 program the duplicate case is handled generically by the `already_has` results-layer filter (`screen.has_benefit("tx_hcv")`), not a calculator self-check (see Criterion 2).
-
----
-
-### Scenario 11: Currently Receiving HCV/Section 8 Assistance - Duplicate Benefit Exclusion in Dallas County
-
-**What we're checking**: The same duplicate-benefit exclusion for a multi-person household — handled by the `already_has` results-layer filter, not a calculator self-check.
-
-**Expected**: Eligible from the calculator; filtered out of results by `already_has` (not shown to the user).
-
-**Steps**:
-- **Location**: Enter ZIP code `75201`, Select county `Dallas`
-- **Household**: Number of people: `3`
-- **Person 1**: Birth month/year: `March 1988` (age 38), Relationship: Head of Household, Has income: Yes, Employment income: `$1,800` per month
-- **Person 2**: Birth month/year: `September 2014` (age 11), Relationship: Child, Has income: No
-- **Person 3**: Birth month/year: `January 2018` (age 8), Relationship: Child, Has income: No
-- **Current Benefits**: Indicate household is currently receiving Section 8 / Housing Choice Voucher assistance — select the `tx_hcv` current benefit
-
-**Why this matters**: Confirms the exclusion holds for larger households too, not just single-person ones.
-
----
-
-### Scenario 12: Mixed Household - Adult Head with Elderly Parent and Minor Child in Hidalgo County
+### Scenario 10: Mixed Household - Adult Head with Elderly Parent and Minor Child in Hidalgo County
 
 **What we're checking**: Income aggregation across a mixed-generation household with multiple income sources.
 
@@ -463,7 +427,7 @@ SSN is a document requirement (the config's `tx_ssn` document), not an eligibili
 
 ---
 
-### Scenario 13: Multiple Eligible Adults in Same Household - Two Working Adults with Two Children in Collin County
+### Scenario 11: Multiple Eligible Adults in Same Household - Two Working Adults with Two Children in Collin County
 
 **What we're checking**: Multiple income-earning adults are aggregated into one household total.
 
@@ -482,7 +446,7 @@ SSN is a document requirement (the config's `tx_ssn` document), not an eligibili
 
 ---
 
-### Scenario 14: Household of One with Exactly Zero Income in Cameron County
+### Scenario 12: Household of One with Exactly Zero Income in Cameron County
 
 **What we're checking**: Zero income is handled gracefully, and — the key thing this scenario tests — TDHCA's $25/month minimum-rent floor is applied to TTP rather than letting it collapse to literal $0.
 
@@ -497,7 +461,7 @@ SSN is a document requirement (the config's `tx_ssn` document), not an eligibili
 
 ---
 
-### Scenario 15: Full-Time Student with Low Income in Lubbock County
+### Scenario 13: Full-Time Student with Low Income in Lubbock County
 
 **What we're checking**: The student-restrictions inclusivity assumption (Criterion 8) — a full-time student with no disqualifying flags still shows as eligible.
 
@@ -512,7 +476,7 @@ SSN is a document requirement (the config's `tx_ssn` document), not an eligibili
 
 ---
 
-### Scenario 16: Household of Five in McLennan County (Waco) — Tests 3BR Payment Standard Tier
+### Scenario 14: Household of Five in McLennan County (Waco) — Tests 3BR Payment Standard Tier
 
 **What we're checking**: A 5-person household correctly maps to the 3BR voucher bedroom size, and the county-level FMR payment standard is applied correctly.
 
@@ -532,7 +496,7 @@ SSN is a document requirement (the config's `tx_ssn` document), not an eligibili
 
 ---
 
-### Scenario 17: Single Adult Between 50% and 80% AMI in Travis County (Austin) — Ineligible Despite Clearing the Generic Federal Ceiling
+### Scenario 15: Single Adult Between 50% and 80% AMI in Travis County (Austin) — Ineligible Despite Clearing the Generic Federal Ceiling
 
 **What we're checking**: The key regression test for Criterion 1 — confirms the calculator uses TDHCA's real, tighter 50% AMI ceiling for ordinary applicants, not the generic 80% AMI figure sometimes cited for Section 8 nationally.
 
@@ -547,9 +511,9 @@ SSN is a document requirement (the config's `tx_ssn` document), not an eligibili
 
 ---
 
-### Scenario 18: Large Family of Seven in McLennan County (Waco) — Tests 4BR Payment Standard Tier
+### Scenario 16: Large Family of Seven in McLennan County (Waco) — Tests 4BR Payment Standard Tier
 
-**What we're checking**: A 7-person household correctly maps to the largest voucher bedroom size (4BR) — the one bedroom-size tier no other scenario exercises (Scenarios 1, 3, 4, and 16 cover 2BR, 2BR, 1BR, and 3BR respectively; nothing previously tested 4BR).
+**What we're checking**: A 7-person household correctly maps to the largest voucher bedroom size (4BR) — the one bedroom-size tier no other scenario exercises (Scenarios 1, 3, 4, and 14 cover 2BR, 2BR, 1BR, and 3BR respectively; nothing previously tested 4BR).
 
 **Expected**: Eligible, $12,168/year
 
@@ -569,7 +533,7 @@ SSN is a document requirement (the config's `tx_ssn` document), not an eligibili
 
 ---
 
-### Scenario 19: Reported Rent Below Payment Standard in El Paso County
+### Scenario 17: Reported Rent Below Payment Standard in El Paso County
 
 **What we're checking**: When a household reports actual rent lower than the Payment Standard, HAP uses `min(Payment Standard, reported rent)` — not Payment Standard alone. Confirms the calculator reads the `rent` expense field rather than defaulting to the Payment-Standard-only estimate every time it's available.
 
@@ -585,7 +549,7 @@ SSN is a document requirement (the config's `tx_ssn` document), not an eligibili
 
 ---
 
-### Scenario 20: Household Exceeding the HOTMA Net-Asset Limit in Harris County
+### Scenario 18: Household Exceeding the HOTMA Net-Asset Limit in Harris County
 
 **What we're checking**: The net-assets eligibility gate (Criterion 9) — a household otherwise well within the income limit is correctly rejected once reported assets exceed the $100,000 HOTMA cap.
 
@@ -601,7 +565,7 @@ SSN is a document requirement (the config's `tx_ssn` document), not an eligibili
 
 ---
 
-### Scenario 21: Elderly Head of Household with an 18+ Disabled Dependent in Bexar County
+### Scenario 19: Elderly Head of Household with an 18+ Disabled Dependent in Bexar County
 
 **What we're checking**: Two previously-untested branches of the dependent deduction at once — (1) a dependent who qualifies via the "18+ and disabled or a full-time student" path rather than being under 18, and (2) the $480/dependent and $525/elderly-family deductions both applying to the same household simultaneously (every other scenario with dependents has a non-elderly head, and Scenario 4's elderly-family case has no dependents).
 
@@ -617,7 +581,7 @@ SSN is a document requirement (the config's `tx_ssn` document), not an eligibili
 
 ---
 
-### Scenario 22: Foster Child Correctly Excluded from the Dependent Deduction in Harris County
+### Scenario 20: Foster Child Correctly Excluded from the Dependent Deduction in Harris County
 
 **What we're checking**: The dependent deduction must exclude foster children — MFB's `relationship` field has a distinct `fosterChild` value specifically so the calculator can tell them apart from a household's own children, but no prior scenario actually included one to confirm the exclusion works.
 
@@ -633,7 +597,7 @@ SSN is a document requirement (the config's `tx_ssn` document), not an eligibili
 
 ---
 
-### Scenario 23: Working Teenager's Wages Correctly Excluded from Countable Income in El Paso County
+### Scenario 21: Working Teenager's Wages Correctly Excluded from Countable Income in El Paso County
 
 **What we're checking**: 24 CFR 5.609(b)(3) excludes the *earned* income of a household member under 18 entirely — their unearned income (SS, child support) would still count, but wages don't. This is a different, previously-untested branch of the income calculation from the dependent deduction: it's about what counts as *gross income* in the first place, not about the per-dependent deduction. No prior scenario has a child with any income at all.
 
@@ -649,9 +613,9 @@ SSN is a document requirement (the config's `tx_ssn` document), not an eligibili
 
 ---
 
-### Scenario 24: Foster Child's Unearned Income Correctly Excluded in Harris County
+### Scenario 22: Foster Child's Unearned Income Correctly Excluded in Harris County
 
-**What we're checking**: 24 CFR 5.609(b)(8) excludes *all* income of a foster child — earned or unearned — which is broader than the under-18 exclusion tested in Scenario 23 (that one only excludes a regular minor's *earned* income; their unearned income, like Social Security, would still count). Giving the foster child unearned income specifically isolates this broader rule from the narrower one.
+**What we're checking**: 24 CFR 5.609(b)(8) excludes *all* income of a foster child — earned or unearned — which is broader than the under-18 exclusion tested in Scenario 21 (that one only excludes a regular minor's *earned* income; their unearned income, like Social Security, would still count). Giving the foster child unearned income specifically isolates this broader rule from the narrower one.
 
 **Expected**: Eligible, $11,556/year
 
@@ -661,4 +625,4 @@ SSN is a document requirement (the config's `tx_ssn` document), not an eligibili
 - **Person 1**: Birth month/year: `March 1991` (age 35), Relationship: Head of Household, Has income: Yes, Employment income: `$1,200` per month, No current Section 8/HCV assistance
 - **Person 2**: Birth month/year: `June 2016` (age 10), Relationship: Foster Child, Has income: Yes, Income type: Social Security, Amount: `$200` per month
 
-**Why this matters**: This scenario is identical to Scenario 22 except the foster child now has $200/month in Social Security income — and the expected result is deliberately **unchanged** from Scenario 22 ($11,556/year), because that income must be excluded entirely. If the foster child's income were wrongly included, gross annual income would be $16,800 instead of $14,400, adjusted monthly would rise to $1,400, TTP would rise to $420 (30% of $1,400), and HAP would drop to $903/month = $10,836/year — a $720/year detectable shortfall versus the correct value. The unchanged expected value, next to Scenario 22, is the point: it proves adding income to a foster child doesn't affect the result, the way it would for any other household member.
+**Why this matters**: This scenario is identical to Scenario 20 except the foster child now has $200/month in Social Security income — and the expected result is deliberately **unchanged** from Scenario 20 ($11,556/year), because that income must be excluded entirely. If the foster child's income were wrongly included, gross annual income would be $16,800 instead of $14,400, adjusted monthly would rise to $1,400, TTP would rise to $420 (30% of $1,400), and HAP would drop to $903/month = $10,836/year — a $720/year detectable shortfall versus the correct value. The unchanged expected value, next to Scenario 20, is the point: it proves adding income to a foster child doesn't affect the result, the way it would for any other household member.
