@@ -145,12 +145,11 @@ The highest-impact criteria (income at or below 200% FPL, federal categorical el
 [ ] Scenario 5 (Person Exactly Age 60 - Meets Elderly Priority Threshold): User should be **eligible**, value: $7,669
 [ ] Scenario 6 (Person Age 59 - Just Below Elderly Priority Threshold): User should be **ineligible**
 [ ] Scenario 7 (Washington State Resident in Spokane County - Eligible Location): User should be **eligible**, value: $7,669
-[ ] Scenario 8 (Household Already Receiving Weatherization Assistance - Exclusion): User should be **ineligible**
-[ ] Scenario 9 (Mixed Household - High-Earning Adult with Elderly Disabled Parent and Young Child): User should be **eligible**, value: $7,669
-[ ] Scenario 10 (Five-Member Multi-Generational Household with TANF/SSI and Disabled Members): User should be **eligible**, value: $7,669
-[ ] Scenario 11 (Zero Income Household with No Current Benefits - Eligible by Income Only): User should be **eligible**, value: $7,669
-[ ] Scenario 12 (Apple Health (Medicaid) Recipient Above 200% FPL - State Categorical Eligibility): User should be **eligible**, value: $7,669
-[ ] Scenario 13 (High Energy Burden Priority - Household with Disproportionate Utility Costs): User should be **eligible**, value: $7,669
+[ ] Scenario 8 (Mixed Household - High-Earning Adult with Elderly Disabled Parent and Young Child): User should be **eligible**, value: $7,669
+[ ] Scenario 9 (Five-Member Multi-Generational Household with TANF/SSI and Disabled Members): User should be **eligible**, value: $7,669
+[ ] Scenario 10 (Zero Income Household with No Current Benefits - Eligible by Income Only): User should be **eligible**, value: $7,669
+[ ] Scenario 11 (Apple Health (Medicaid) Recipient Above 200% FPL - State Categorical Eligibility): User should be **eligible**, value: $7,669
+[ ] Scenario 12 (High Energy Burden Priority - Household with Disproportionate Utility Costs): User should be **eligible**, value: $7,669
 
 ## Test Scenarios
 
@@ -262,23 +261,7 @@ The highest-impact criteria (income at or below 200% FPL, federal categorical el
 
 ---
 
-### Scenario 8: Household Already Receiving Weatherization Assistance - Exclusion
-**What we're checking**: Whether a household that already receives the Weatherization Assistance Program benefit is flagged as ineligible or shown a different message, since the program typically weatherizes a home only once
-**Expected**: Not eligible
-
-**Steps**:
-- **Location**: Enter ZIP code `98103`, Select county `King County`
-- **Household**: Number of people: `2`
-- **Person 1**: Birth month/year: `March 1980` (age 46), Relationship: Head of Household, Has income: Yes, Employment income: `$1,500` per month, Citizenship: US Citizen
-- **Person 2**: Birth month/year: `July 1982` (age 43), Relationship: Spouse, Has income: Yes, Employment income: `$1,200` per month
-- **Current Benefits**: Select that the household currently receives **Weatherization Assistance Program** (WAP) benefits, If the screener lists WAP or similar energy assistance weatherization benefit, check/select it
-- **Housing**: Select homeowner
-
-**Why this matters**: The Weatherization Assistance Program is typically a one-time service per dwelling. A household that has already received weatherization should not be directed to apply again. This tests that the screener correctly handles the exclusion case where the applicant already has the benefit, preventing duplicate referrals and ensuring accurate program recommendations.
-
----
-
-### Scenario 9: Mixed Household - High-Earning Adult with Elderly Disabled Parent and Young Child
+### Scenario 8: Mixed Household - High-Earning Adult with Elderly Disabled Parent and Young Child
 **What we're checking**: Validates that household-level income eligibility is assessed collectively (total household income vs. household size FPL), even when individual members have varying characteristics - one high-earning adult, one elderly disabled member on SSI, and one child
 **Expected**: Eligible, value: $7,669
 
@@ -295,7 +278,7 @@ The highest-impact criteria (income at or below 200% FPL, federal categorical el
 
 ---
 
-### Scenario 10: Five-Member Multi-Generational Household with TANF/SSI and Disabled Members
+### Scenario 9: Five-Member Multi-Generational Household with TANF/SSI and Disabled Members
 **What we're checking**: Validates that a multi-member household where multiple members independently trigger eligibility criteria (categorical eligibility via TANF/SSI, disability priority, child priority, elderly priority) is correctly identified as eligible with all priority flags
 **Expected**: Eligible, value: $7,669
 
@@ -314,7 +297,7 @@ The highest-impact criteria (income at or below 200% FPL, federal categorical el
 
 ---
 
-### Scenario 11: Zero Income Household with No Current Benefits - Eligible by Income Only
+### Scenario 10: Zero Income Household with No Current Benefits - Eligible by Income Only
 **What we're checking**: Tests whether a household reporting exactly $0 income (an edge case boundary) qualifies based on income alone without any categorical eligibility from benefits, and verifies the system handles zero income correctly
 **Expected**: Eligible, value: $7,669
 
@@ -327,7 +310,7 @@ The highest-impact criteria (income at or below 200% FPL, federal categorical el
 
 ---
 
-### Scenario 12: Apple Health (Medicaid) Recipient Above 200% FPL - State Categorical Eligibility
+### Scenario 11: Apple Health (Medicaid) Recipient Above 200% FPL - State Categorical Eligibility
 **What we're checking**: Validates that a household enrolled in Apple Health (Medicaid) qualifies via WA state-level categorical eligibility expansion (Criterion 3) even when income exceeds 200% FPL and no federal categorical benefit (TANF/SSI/SNAP) applies
 **Expected**: Eligible, value: $7,669
 
@@ -342,7 +325,7 @@ The highest-impact criteria (income at or below 200% FPL, federal categorical el
 
 ---
 
-### Scenario 13: High Energy Burden Priority - Household with Disproportionate Utility Costs
+### Scenario 12: High Energy Burden Priority - Household with Disproportionate Utility Costs
 **What we're checking**: Validates that a household with income at or below 200% FPL AND high energy costs relative to income triggers the high energy burden priority flag (Priority Criterion 4)
 **Expected**: Eligible, value: $7,669
 
