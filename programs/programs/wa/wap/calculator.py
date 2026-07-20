@@ -39,8 +39,6 @@ class WaWap(ProgramCalculator):
             self.screen.has_benefit("wa_snap")
             or self.screen.has_benefit("wa_tanf")
             or self.screen.has_benefit("wa_ssi")
-            # Section 8 is the HCV program (base_program "section_8", e.g. wa_hcv);
-            # has_base_benefit matches every white-label variant.
             or self.screen.has_base_benefit("section_8")
         )
 
