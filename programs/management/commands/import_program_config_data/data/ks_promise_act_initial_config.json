@@ -3,9 +3,9 @@
     "code": "ks"
   },
   "program_category": {
-    "external_name": "ks_education",
-    "name": "Education",
-    "icon": "education"
+    "external_name": "ks_child_care",
+    "name": "Child Care, Youth, and Education",
+    "icon": "child_care"
   },
   "program": {
     "name_abbreviated": "ks_promise_act",

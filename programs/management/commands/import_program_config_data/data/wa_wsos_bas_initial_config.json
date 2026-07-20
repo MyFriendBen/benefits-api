@@ -3,9 +3,9 @@
     "code": "wa"
   },
   "program_category": {
-    "external_name": "wa_education",
-    "name": "Education",
-    "icon": "education"
+    "external_name": "wa_child_care",
+    "name": "Child Care, Youth, and Education",
+    "icon": "child_care"
   },
   "program": {
     "name_abbreviated": "wa_wsos_bas",
