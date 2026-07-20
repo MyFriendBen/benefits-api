@@ -32,7 +32,6 @@ from programs.programs.ks import ks_calculators
 from programs.programs.ks.lieap.calculator import KsLieap
 from programs.programs.calc import ProgramCalculator, Eligibility
 
-
 # 100% FPL by household size such that 1.5x matches DCF's published 150% caps.
 FPL_100 = {
     1: 15_648,  # 1.5x = 23,472
