@@ -1,0 +1,242 @@
+[
+  {
+    "scenario_key": "clearly_eligible",
+    "notes": "IL Basic Food (SNAP) - Single Adult, Income Well Below Federal 130% FPL Gross Test - Clearly Eligible. Own household (Chicago, own income), not copied from any other state's fixture.",
+    "household": {
+      "white_label": "il",
+      "household_size": 1,
+      "zipcode": "60601",
+      "county": "Cook County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 2,
+          "birth_year": 1988,
+          "age": 38,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 900.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_snap",
+      "eligible": true
+    }
+  },
+  {
+    "scenario_key": "clearly_ineligible",
+    "notes": "IL Basic Food (SNAP) - Single Adult, Gross Income Above IL's 165% FPL BBCE Ceiling - Should NOT Be Eligible. Income of $3,200/mo for HH=1 exceeds both the federal 130% FPL test and IL's own 165% FPL BBCE gross ceiling (IDHS MR #15.23 / PA 099-0170), so no categorical-eligibility path applies either.",
+    "household": {
+      "white_label": "il",
+      "household_size": 1,
+      "zipcode": "62701",
+      "county": "Sangamon County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 8,
+          "birth_year": 1985,
+          "age": 40,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3200.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_snap",
+      "eligible": false
+    }
+  },
+  {
+    "scenario_key": "household_size_edge",
+    "notes": "IL Basic Food (SNAP) - Household of 5, Moderate Income - Tests Household-Size Scaling. Own household (Rockford, own ages/income) distinct from any other state's household_size_edge scenario.",
+    "household": {
+      "white_label": "il",
+      "household_size": 5,
+      "zipcode": "61101",
+      "county": "Winnebago County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 11,
+          "birth_year": 1982,
+          "age": 43,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2600.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "birth_month": 5,
+          "birth_year": 1984,
+          "age": 42,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 1,
+          "birth_year": 2012,
+          "age": 14,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 6,
+          "birth_year": 2015,
+          "age": 11,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 10,
+          "birth_year": 2019,
+          "age": 6,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_snap",
+      "eligible": true
+    }
+  },
+  {
+    "scenario_key": "elderly_member",
+    "notes": "IL Basic Food (SNAP) - Elderly Individual (Age 68), Fixed Income - Tests the AgeDependency/elderly-related deduction path. Own household (Peoria, own age/income), not copied from any other state's elderly_member scenario.",
+    "household": {
+      "white_label": "il",
+      "household_size": 1,
+      "zipcode": "61602",
+      "county": "Peoria County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 4,
+          "birth_year": 1958,
+          "age": 68,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "socialSecurity",
+              "amount": 1150.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "medicare": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_snap",
+      "eligible": true
+    }
+  },
+  {
+    "scenario_key": "bbce_net_income_waiver",
+    "notes": "IL Basic Food (SNAP) - BBCE Stress Test - Gross Income Between Federal 130% and IL's 165% FPL Ceiling, Net Income Above 100% FPL - Expected Eligible Under Full Waiver. Own household (Chicago, single parent + 1 child), designed per DECISIONS.md D-022's IL BBCE research: PolicyEngine's real gov/hhs/tanf/non_cash/income_limit/gross.yaml sets IL's BBCE gross ceiling at 165% FPL (IDHS MR #15.23 / PA 099-0170), net_applies/non_hheod.yaml waives the net income test for IL, and asset_limit.yaml sets IL's asset limit to .inf -- a full gross+net+asset waiver, the same shape as WA/NC/TX, not MA's partial (gross-only) pattern. Gross $2,500/mo for HH=2 falls between the federal 130% FPL gross test (~$2,214/mo for HH=2) and IL's 165% FPL BBCE ceiling (~$2,811/mo); net income after standard/earned-income deductions is expected to land above the 100% FPL net-income limit (~$1,703/mo for HH=2), which would deny eligibility under the ordinary net income test but not under IL's full waiver.",
+    "household": {
+      "white_label": "il",
+      "household_size": 2,
+      "zipcode": "60601",
+      "county": "Cook County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 2,
+          "birth_year": 1988,
+          "age": 38,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2500.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 12,
+          "birth_year": 2016,
+          "age": 9,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "il_snap",
+      "eligible": true
+    }
+  }
+]

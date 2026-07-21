@@ -1,0 +1,75 @@
+interactions:
+- request:
+    body: '{"household": {"people": {"10050": {"age": {"2024": 30}, "is_full_time_college_student":
+      {"2024": false}, "is_pregnant": {"2024": false}, "employment_income_before_lsr":
+      {"2024": 9600}, "self_employment_income_before_lsr": {"2024": 0}, "social_security":
+      {"2024": 0}, "unemployment_compensation": {"2024": 0}}, "10051": {"age": {"2024":
+      7}, "is_full_time_college_student": {"2024": false}, "is_pregnant": {"2024":
+      false}, "employment_income_before_lsr": {"2024": 0}, "self_employment_income_before_lsr":
+      {"2024": 0}, "social_security": {"2024": 0}, "unemployment_compensation": {"2024":
+      0}}, "10052": {"age": {"2024": 4}, "is_full_time_college_student": {"2024":
+      false}, "is_pregnant": {"2024": false}, "employment_income_before_lsr": {"2024":
+      0}, "self_employment_income_before_lsr": {"2024": 0}, "social_security": {"2024":
+      0}, "unemployment_compensation": {"2024": 0}}}, "tax_units": {"main_tax_unit":
+      {"members": ["10050", "10051", "10052"]}}, "families": {"family": {"members":
+      ["10050", "10051", "10052"]}}, "households": {"household": {"members": ["10050",
+      "10051", "10052"], "state_code": {"2024": "WA"}}}, "spm_units": {"spm_unit":
+      {"members": ["10050", "10051", "10052"], "spm_unit_cash_assets": {"2024": 1500},
+      "wa_show_all_cash_assistance_programs": {"2024": true}, "wa_tanf": {"2024":
+      null}}}, "marital_units": {}}}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1328'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.4
+    method: POST
+    uri: http://localhost:8080/us/calculate
+  response:
+    body:
+      string: '{"status": "ok", "message": null, "result": {"people": {"10050": {"age":
+        {"2024": 30}, "is_full_time_college_student": {"2024": false}, "is_pregnant":
+        {"2024": false}, "employment_income_before_lsr": {"2024": 9600}, "self_employment_income_before_lsr":
+        {"2024": 0}, "social_security": {"2024": 0}, "unemployment_compensation":
+        {"2024": 0}}, "10051": {"age": {"2024": 7}, "is_full_time_college_student":
+        {"2024": false}, "is_pregnant": {"2024": false}, "employment_income_before_lsr":
+        {"2024": 0}, "self_employment_income_before_lsr": {"2024": 0}, "social_security":
+        {"2024": 0}, "unemployment_compensation": {"2024": 0}}, "10052": {"age": {"2024":
+        4}, "is_full_time_college_student": {"2024": false}, "is_pregnant": {"2024":
+        false}, "employment_income_before_lsr": {"2024": 0}, "self_employment_income_before_lsr":
+        {"2024": 0}, "social_security": {"2024": 0}, "unemployment_compensation":
+        {"2024": 0}}}, "tax_units": {"main_tax_unit": {"members": ["10050", "10051",
+        "10052"]}}, "families": {"family": {"members": ["10050", "10051", "10052"]}},
+        "households": {"household": {"members": ["10050", "10051", "10052"], "state_code":
+        {"2024": "WA"}}}, "spm_units": {"spm_unit": {"members": ["10050", "10051",
+        "10052"], "spm_unit_cash_assets": {"2024": 1500}, "wa_show_all_cash_assistance_programs":
+        {"2024": true}, "wa_tanf": {"2024": 4922.0}}}, "marital_units": {}}, "policyengine_bundle":
+        {"model_version": "1.755.0", "data_version": null, "dataset": null}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - close
+      Content-Length:
+      - '1452'
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 16 Jul 2026 03:08:41 GMT
+      Server:
+      - gunicorn
+      X-PolicyEngine-Request-Id:
+      - d96a1ec8-abb6-4030-8ee1-6b2adabd74fd
+      traceparent:
+      - 00-5adf1d0199e447bf0d5c41f62518b069-f62c75ea97cdbd95-01
+    status:
+      code: 200
+      message: OK
+version: 1

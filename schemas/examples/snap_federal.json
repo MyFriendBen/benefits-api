@@ -1,0 +1,33 @@
+{
+  "program": "snap",
+  "state": "federal",
+  "pe_name": "snap",
+  "pe_entity": "spm_unit",
+  "state_dependency": null,
+  "extends": null,
+  "additional_inputs": [
+    "SnapUnearnedIncomeDependency",
+    "SnapEarnedIncomeDependency",
+    "SnapAssetsDependency",
+    "SnapChildSupportDependency",
+    "PropertyTaxExpenseDependency",
+    "AgeDependency",
+    "MedicalExpenseDependency",
+    "IsDisabledDependency",
+    "SnapEmergencyAllotmentDependency",
+    "HousingCostDependency",
+    "HasPhoneExpenseDependency",
+    "HasHeatingCoolingExpenseDependency",
+    "HeatingCoolingExpenseDependency",
+    "ChildCareDependency",
+    "WaterExpenseDependency",
+    "PhoneExpenseDependency",
+    "HoaFeesExpenseDependency",
+    "HomeownersInsuranceExpenseDependency",
+    "FullTimeCollegeStudentDependency",
+    "PartTimeCollegeStudentDependency",
+    "SnapWorkExceptionDependency",
+    "SnapJobTrainingStudentDependency"
+  ],
+  "pe_period_month": "01"
+}

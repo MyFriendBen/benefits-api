@@ -1,0 +1,10 @@
+{
+  "program": "tanf",
+  "state": "federal",
+  "pe_name": "tanf",
+  "pe_entity": "spm_unit",
+  "state_dependency": null,
+  "extends": null,
+  "additional_inputs": ["AgeDependency", "FullTimeCollegeStudentDependency"],
+  "pe_period_month": null
+}

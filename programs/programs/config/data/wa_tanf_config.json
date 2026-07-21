@@ -1,0 +1,18 @@
+{
+  "program": "tanf",
+  "state": "wa",
+  "pe_name": "wa_tanf",
+  "pe_entity": "spm_unit",
+  "state_dependency": "WaStateCodeDependency",
+  "extends": "tanf",
+  "additional_inputs": [
+    "PregnancyDependency",
+    "EmploymentIncomeBeforeLsrDependency",
+    "SelfEmploymentIncomeBeforeLsrDependency",
+    "SocialSecurityIncomeDependency",
+    "UnemploymentIncomeDependency",
+    "CashAssetsDependency",
+    "WaShowAllCashAssistanceProgramsDependency"
+  ],
+  "pe_period_month": null
+}
