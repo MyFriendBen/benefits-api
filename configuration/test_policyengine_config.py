@@ -110,13 +110,13 @@ class TestResolvePeVersion(TestCase):
         PolicyEngineConfig.objects.create(policyengine_version="1.715.2")
         self.assertEqual(determine_pe_version(None), "1.715.2")
 
-    def test_returns_none_when_unset_and_no_override(self):
-        # No config row, no override => omit the version field.
-        self.assertIsNone(determine_pe_version(None))
+    def test_defaults_to_current_when_unset_and_no_override(self):
+        # No config row, no override => send the "current" alias (host resolves it).
+        self.assertEqual(determine_pe_version(None), "current")
 
-    def test_blank_config_returns_none(self):
+    def test_blank_config_defaults_to_current(self):
         PolicyEngineConfig.objects.create(policyengine_version="")
-        self.assertIsNone(determine_pe_version(None))
+        self.assertEqual(determine_pe_version(None), "current")
 
 
 class TestPeInputVersionInjection(TestCase):
@@ -124,9 +124,11 @@ class TestPeInputVersionInjection(TestCase):
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
         self.screen = Screen.objects.create(white_label=self.white_label, completed=False)
 
-    def test_omits_version_when_unset(self):
+    def test_defaults_to_current_when_unset(self):
+        # Nothing pinned => send the "current" alias (no gated inputs here, so no
+        # /versions/us lookup happens).
         raw_input = pe_input(self.screen, [])
-        self.assertNotIn("version", raw_input)
+        self.assertEqual(raw_input["version"], "current")
 
     def test_injects_config_version(self):
         PolicyEngineConfig.objects.create(policyengine_version="1.715.2")

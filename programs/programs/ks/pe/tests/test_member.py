@@ -1,13 +1,13 @@
 """
-Unit tests for the KS member-level PolicyEngine calculators (KsKanCare / KS Medicaid, MFB-1054;
-and KsChip / KS CHIP).
+Unit tests for the KS member-level PolicyEngine calculators (KsKanCare / KS Medicaid,
+KsChip / KS CHIP, and KsMsp / KS Medicare Savings Program).
 
 KsKanCare coverage is two layers:
 
 1. **Wiring** — KsKanCare subclasses the federal ``Medicaid`` calculator, is registered
    as ``ks_medicaid``, and carries the KS-specific ``pe_inputs`` handling from the spec's
    Implementation Notes 1–2:
-     - the federal ``SsiCountableResourcesDependency`` is dropped (ABD asset test not screened),
+     - the federal ``SsiCountableResourcesDependency`` is sent (ABD asset test screened),
      - ``MeetsSsiDisabilityCriteriaDependency`` + ``IsBlindDependency`` are added (disability /
        blindness mapping), and ``KsStateCodeDependency`` selects KS parameters.
 
@@ -19,7 +19,7 @@ KsKanCare coverage is two layers:
    documents PE returning for that household. The assertion is on the KS calculator's MFB-side
    output: the per-member dollar value and the value-tier routing (MAGI $3,648 / AGED $20,508 /
    DISABLED $32,460, and DISABLED-over-AGED priority). The FPL/FBR threshold math itself lives in
-   PolicyEngine and was verified end-to-end by the discovery PE run (37/37 on policyengine-us 1.755.5).
+   PolicyEngine and is verified end-to-end by the spec's PolicyEngine run.
 
 Scenarios 12 (already-enrolled suppression) and 13 (no-separate-unborn-enrollee) are MFB
 display-layer / household-construction rules with no calculator logic, so they are not unit-tested
@@ -41,7 +41,12 @@ from programs.programs.policyengine.calculators.dependencies.member import (
 )
 from programs.programs.policyengine.calculators.dependencies.tax import KsChipPremium
 from programs.programs.ks.pe import ks_member_calculators, ks_pe_calculators
-from programs.programs.ks.pe.member import KsKanCare, KsChip
+from programs.programs.ks.pe.member import KsKanCare, KsChip, KsMsp, KsEarlyHeadStart
+from programs.programs.federal.pe.member import EarlyHeadStart
+from programs.programs.policyengine.calculators.dependencies.member import (
+    FosterCareDependency,
+    EarlyHeadStart as EarlyHeadStartOutput,
+)
 
 # Annual value tiers (medicaid_categories * 12)
 MAGI = 3_648  # INFANT / YOUNG_CHILD / OLDER_CHILD / PREGNANT / PARENT / ADULT / YOUNG_ADULT
@@ -69,9 +74,9 @@ class TestKsKanCareWiring(TestCase):
     def test_pe_inputs_includes_ks_state_code(self):
         self.assertIn(KsStateCodeDependency, KsKanCare.pe_inputs)
 
-    def test_pe_inputs_drops_ssi_countable_resources(self):
-        """Implementation Note 2: assets are not screened for the ABD pathway."""
-        self.assertNotIn(member_deps.SsiCountableResourcesDependency, KsKanCare.pe_inputs)
+    def test_pe_inputs_sends_ssi_countable_resources(self):
+        """Implementation Note 2: the ABD asset test is screened."""
+        self.assertIn(member_deps.SsiCountableResourcesDependency, KsKanCare.pe_inputs)
 
     def test_pe_inputs_adds_meets_ssi_disability_criteria(self):
         """Implementation Note 1: map disability/SSDI signals to meets_ssi_disability_criteria."""
@@ -206,11 +211,22 @@ class TestKsKanCareScenarios(TestCase):
         self._magi_ineligible(calc)
         self.assertEqual(calc.member_value(self._make_member(age=64)), 0)
 
-    # --- Scenario 7: senior 65+, assets over limit -> AGED (asset test not screened) ---
-    def test_s7_senior_assets_over_limit_eligible_aged(self):
+    # --- Scenario 7 / 7b: senior 65+ on the ABD pathway -> AGED value tier ---
+    # The ABD asset gate itself lives in PolicyEngine (msp_asset_eligible /
+    # is_optional_senior_or_disabled_asset_eligible), so it is verified end-to-end by the
+    # spec's live-PE run, not here. This asserts only MFB's value routing: once PE finds a
+    # non-disabled senior ABD-eligible, the value is the AGED tier.
+    def test_s7_senior_abd_eligible_gets_aged_value(self):
         calc = self._make_calculator()
         self._abd(calc, True)
         self.assertEqual(calc.member_value(self._make_member(age=66, is_disabled=False)), AGED)
+
+    def test_s7_senior_abd_ineligible_gets_zero(self):
+        """When PE finds the senior ABD-ineligible (e.g. assets over the limit, Scenario 7),
+        the value is $0."""
+        calc = self._make_calculator()
+        self._abd(calc, False)
+        self.assertEqual(calc.member_value(self._make_member(age=66, is_disabled=False)), 0)
 
     # --- Scenario 8: disabled adult on SSDI -> DISABLED ---
     def test_s8_disabled_on_ssdi_eligible_disabled(self):
@@ -350,21 +366,14 @@ class TestKsChip(TestCase):
         KsKanCare — otherwise the shared medicaid computation would be inconsistent."""
         self.assertEqual(KsChip.pe_inputs, KsKanCare.pe_inputs)
 
-    def test_pe_inputs_includes_medicaid_inputs_except_assets(self):
-        """CHIP requires ~Medicaid, so every federal Medicaid input is present EXCEPT the
-        asset dependency, which KS drops (see test_pe_inputs_omit_ssi_countable_resources)."""
-        for medicaid_input in Medicaid.pe_inputs:
-            if medicaid_input is member_deps.SsiCountableResourcesDependency:
-                self.assertNotIn(medicaid_input, KsChip.pe_inputs)
-            else:
-                self.assertIn(medicaid_input, KsChip.pe_inputs)
+    def test_pe_inputs_includes_all_ks_medicaid_inputs(self):
+        """CHIP reuses KsKanCare.pe_inputs verbatim, so it carries every KS Medicaid input."""
+        for kancare_input in KsKanCare.pe_inputs:
+            self.assertIn(kancare_input, KsChip.pe_inputs)
 
-    def test_pe_inputs_omit_ssi_countable_resources(self):
-        """CHIP must NOT send ssi_countable_resources. It applies no resource test, and if it
-        did the input would leak into the shared PE sim and re-enable the ABD asset gate that
-        KsKanCare intentionally drops (Medicaid spec Implementation Note 2), wrongly denying
-        income-eligible seniors/ABD applicants whenever CHIP is active."""
-        self.assertNotIn(member_deps.SsiCountableResourcesDependency, KsChip.pe_inputs)
+    def test_pe_inputs_includes_ssi_countable_resources(self):
+        """Inherited via KsKanCare.pe_inputs; CHIP applies no resource test of its own."""
+        self.assertIn(member_deps.SsiCountableResourcesDependency, KsChip.pe_inputs)
 
     def test_pe_inputs_includes_ks_state_code_dependency(self):
         """KsStateCodeDependency sets state_code=KS so PE applies the KS income limit (2.55)."""
@@ -416,3 +425,94 @@ class TestKsChip(TestCase):
 
         self.assertEqual(result, 0)
         member.has_insurance_types.assert_called_once_with(("none",))
+
+
+class TestKsMspWiring(TestCase):
+    """KsMsp registration and pe_inputs handling."""
+
+    def test_is_registered_in_ks_member_calculators(self):
+        self.assertIn("ks_medicare_savings", ks_member_calculators)
+        self.assertEqual(ks_member_calculators["ks_medicare_savings"], KsMsp)
+
+    def test_pe_name_is_msp(self):
+        self.assertEqual(KsMsp.pe_name, "msp")
+
+    def test_pe_inputs_includes_medicaid_inputs(self):
+        """MSP needs *Medicaid.pe_inputs for the QI ~is_medicaid_eligible check and for the
+        msp_asset_eligible resource test."""
+        for medicaid_input in Medicaid.pe_inputs:
+            self.assertIn(medicaid_input, KsMsp.pe_inputs)
+
+    def test_pe_inputs_includes_ssi_countable_resources(self):
+        """Without it, msp_asset_eligible sees $0 and an over-asset applicant wrongly qualifies."""
+        self.assertIn(member_deps.SsiCountableResourcesDependency, KsMsp.pe_inputs)
+
+
+class TestKsMspKanCareAssetConsistency(TestCase):
+    """KanCare and MSP both read ssi_countable_resources in one shared simulation, so they must
+    screen assets identically — sending it from one but not the other corrupts that program's
+    eligibility. These assertions fail if the two ever diverge."""
+
+    def test_kancare_and_msp_agree_on_ssi_countable_resources(self):
+        kancare_sends = member_deps.SsiCountableResourcesDependency in KsKanCare.pe_inputs
+        msp_sends = member_deps.SsiCountableResourcesDependency in KsMsp.pe_inputs
+        self.assertEqual(kancare_sends, msp_sends)
+
+    def test_both_send_ssi_countable_resources(self):
+        self.assertIn(member_deps.SsiCountableResourcesDependency, KsKanCare.pe_inputs)
+        self.assertIn(member_deps.SsiCountableResourcesDependency, KsMsp.pe_inputs)
+
+
+class TestKsEarlyHeadStartWiring(TestCase):
+    """
+    KsEarlyHeadStart is a thin wrapper on the federal ``EarlyHeadStart`` PE
+    calculator that adds only the KS state code — all eligibility and the
+    per-individual value come from PolicyEngine's ``early_head_start`` variable
+    with no KS-specific variance (mirrors ``KsHeadStart`` / ``TxEarlyHeadStart`` /
+    ``MaEarlyHeadStart``).
+
+    The federal ``EarlyHeadStart`` dependency logic is covered in
+    ``policyengine/calculators/dependencies/tests/test_member.py``; here we assert
+    only the KS wiring. The spec's dollar-value scenarios (birth-3 / pregnant /
+    foster categorical, $13,323 per eligible individual) are verified end-to-end
+    against the live PolicyEngine API — see ``programs/programs/ks/early_head_start/spec.md``.
+    """
+
+    def test_is_subclass_of_early_head_start(self):
+        self.assertTrue(issubclass(KsEarlyHeadStart, EarlyHeadStart))
+
+    def test_is_registered_in_ks_member_calculators(self):
+        self.assertIn("ks_early_head_start", ks_member_calculators)
+        self.assertEqual(ks_member_calculators["ks_early_head_start"], KsEarlyHeadStart)
+
+    def test_is_registered_in_ks_pe_calculators(self):
+        self.assertIn("ks_early_head_start", ks_pe_calculators)
+        self.assertEqual(ks_pe_calculators["ks_early_head_start"], KsEarlyHeadStart)
+
+    def test_pe_name_is_early_head_start(self):
+        self.assertEqual(KsEarlyHeadStart.pe_name, "early_head_start")
+
+    def test_pe_inputs_includes_ks_state_code(self):
+        self.assertIn(KsStateCodeDependency, KsEarlyHeadStart.pe_inputs)
+
+    def test_pe_inputs_preserve_federal_early_head_start_inputs(self):
+        """The KS wrapper only appends the state code; it must not drop any federal input."""
+        for dep in EarlyHeadStart.pe_inputs:
+            self.assertIn(dep, KsEarlyHeadStart.pe_inputs)
+
+    def test_pe_inputs_include_age_pregnancy_and_foster_pathways(self):
+        """Birth-3 (age), pregnant-woman, and foster-care categorical pathways per the spec."""
+        self.assertIn(AgeDependency, KsEarlyHeadStart.pe_inputs)
+        self.assertIn(PregnancyDependency, KsEarlyHeadStart.pe_inputs)
+        self.assertIn(FosterCareDependency, KsEarlyHeadStart.pe_inputs)
+
+    def test_pe_inputs_include_categorical_benefit_signals(self):
+        """SNAP / TANF / SSI feed PolicyEngine's categorical-eligibility determination."""
+        self.assertIn(member_deps.Ssi, KsEarlyHeadStart.pe_inputs)
+
+    def test_pe_outputs_is_early_head_start_variable(self):
+        self.assertEqual(KsEarlyHeadStart.pe_outputs, [EarlyHeadStartOutput])
+
+    def test_does_not_reuse_head_start_variable(self):
+        """EHS must resolve PE's ``early_head_start`` variable, not the ``head_start`` one."""
+        self.assertNotEqual(KsEarlyHeadStart.pe_name, "head_start")

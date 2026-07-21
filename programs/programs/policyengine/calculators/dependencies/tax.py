@@ -53,6 +53,14 @@ class MaChildFamilyCredit(TaxUnit):
     field = "ma_child_and_family_credit"
 
 
+class Cdcc(TaxUnit):
+    field = "cdcc"
+
+
+class KsCdcc(TaxUnit):
+    field = "ks_cdcc"
+
+
 class Aca(TaxUnit):
     field = "aca_ptc"
 

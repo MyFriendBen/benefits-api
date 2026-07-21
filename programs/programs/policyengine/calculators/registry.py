@@ -40,7 +40,6 @@ from programs.programs.ma.pe import (
     ma_spm_calculators,
     ma_tax_unit_calculators,
 )
-from programs.programs.ks.pe import ks_tax_unit_calculators
 from programs.programs.nc.pe import nc_member_calculators, nc_spm_calculators
 from programs.programs.tx.pe import (
     tx_member_calculators,

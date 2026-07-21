@@ -145,7 +145,7 @@ class TestTxNslp(TestCase):
         self.assertTrue(issubclass(TxNslp, SchoolLunch))
 
         # Verify it has the expected properties from parent
-        self.assertEqual(TxNslp.pe_name, "school_meal_daily_subsidy")
+        self.assertEqual(TxNslp.pe_name, "school_meal_net_subsidy")
         self.assertIsNotNone(TxNslp.pe_inputs)
         self.assertGreater(len(TxNslp.pe_inputs), 0)
 

@@ -419,6 +419,7 @@ class Document(models.Model):
 class BaseProgram(models.TextChoices):
     ACA = "aca", "ACA"
     CCAP = "ccap", "CCAP"
+    CDCC = "cdcc", "CDCC"
     CHP = "chp", "CHP"
     CSFP = "csfp", "CSFP"
     CTC = "ctc", "CTC"

@@ -242,9 +242,11 @@ class ScreenSerializer(serializers.ModelSerializer):
     # max_length bounds an otherwise-unbounded payload: there are ~130 distinct
     # name_abbreviated values across all white labels, so 256 is a comfortable
     # ceiling. Unknown names are dropped in _write_current_benefits(), so element
-    # content needn't be validated here.
+    # content needn't be validated here. The per-element cap mirrors the
+    # Program.name_abbreviated column (max_length=120) so no DB-valid name is
+    # rejected here.
     current_benefits = serializers.ListField(
-        child=serializers.CharField(max_length=64),
+        child=serializers.CharField(max_length=120),
         required=False,
         write_only=True,
         max_length=256,
@@ -357,7 +359,9 @@ class ScreenSerializer(serializers.ModelSerializer):
         screen.set_screen_is_test()
         for member in household_members:
             incomes = member.pop("income_streams")
-            insurance = member.pop("insurance")
+            # insurance is required=False on the serializer, so the key is absent
+            # (not None) when a client omits it — match update() and default to None.
+            insurance = member.pop("insurance", None)
             energy_calculator_member = member.pop("energy_calculator", None)
             household_member = HouseholdMember.objects.create(**member, screen=screen)
             for income in incomes:
@@ -418,6 +422,21 @@ class ScreenSerializer(serializers.ModelSerializer):
         # to_representation re-reads the committed rows.
         instance.invalidate_current_benefits_cache()
         return instance
+
+
+class CurrentBenefitToggleSerializer(serializers.Serializer):
+    """Input for the single-benefit toggle endpoint (PATCH /screens/<uuid:screen_uuid>/current-benefits/).
+
+    `name_abbreviated` is a program name_abbreviated value; `has` selects add (True) vs remove (False).
+    Resolving the name to a Program and writing the join-table row happen in the
+    view, which has the screen (and thus its white_label) in hand.
+
+    `name_abbreviated`'s max_length mirrors the Program.name_abbreviated column (120) so no
+    DB-valid name is rejected before the white-label-scoped lookup in the view.
+    """
+
+    name_abbreviated = serializers.CharField(max_length=120)
+    has = serializers.BooleanField()
 
 
 class NavigatorSerializer(serializers.Serializer):
@@ -517,6 +536,15 @@ class UrgentNeedSerializer(serializers.Serializer):
 
 
 class ResultsSerializer(serializers.Serializer):
+    """Documents the /eligibility results payload for Swagger only.
+
+    NOTE: EligibilityTranslationView.get() returns Response(results) — the raw dict from
+    all_results() — so this serializer never shapes or validates the response. Field
+    options here (required, allow_null, etc.) feed the generated schema only; they do
+    NOT enforce the response contract. To actually validate, the view would have to run
+    the dict through this serializer first.
+    """
+
     programs = EligibilitySerializer(many=True)
     urgent_needs = UrgentNeedSerializer(many=True)
     screen_id = serializers.CharField()
@@ -525,6 +553,9 @@ class ResultsSerializer(serializers.Serializer):
     validations = ValidationSerializer(many=True)
     program_categories = ProgramCategorySerializer(many=True)
     pe_data = serializers.DictField(required=False, allow_null=True)
+    # Ids of external APIs (e.g. "policy_engine") that failed while computing these
+    # results, so the frontend can warn the user the results may be incomplete.
+    external_api_failures = serializers.ListField(child=serializers.CharField(), required=False)
 
 
 def get_latest_eligibility_snapshot(screen_uuid):
