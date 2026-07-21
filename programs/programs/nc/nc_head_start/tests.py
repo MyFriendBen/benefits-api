@@ -120,7 +120,7 @@ class TestNCHeadStart(TestCase):
     # ============================================================================
     # TEST CASE 1: Pregnant with SSI (Presumptive Eligibility)
     # ============================================================================
-    @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache._get_data")
+    @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache.get_data")
     def test_case_1_pregnant_with_ssi_eligible(self, mock_fetch):
         """
         Test Case 1: Bertie County, HH=2
@@ -173,7 +173,7 @@ class TestNCHeadStart(TestCase):
     # ============================================================================
     # TEST CASE 2: Over Income Without Presumptive Eligibility
     # ============================================================================
-    @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache._get_data")
+    @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache.get_data")
     def test_case_2_over_income_not_eligible(self, mock_fetch):
         """
         Test Case 2: Bertie County, HH=2
@@ -225,7 +225,7 @@ class TestNCHeadStart(TestCase):
     # ============================================================================
     # TEST CASE 3: Over Income with Low Rent (Not Enough Adjustment)
     # ============================================================================
-    @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache._get_data")
+    @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache.get_data")
     def test_case_3_over_income_low_rent_not_eligible(self, mock_fetch):
         """
         Test Case 3: Durham County, HH=3
@@ -287,7 +287,7 @@ class TestNCHeadStart(TestCase):
     # ============================================================================
     # TEST CASE 4: Over Income with High Rent (Housing Cost Adjustment)
     # ============================================================================
-    @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache._get_data")
+    @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache.get_data")
     def test_case_4_over_income_high_rent_eligible(self, mock_fetch):
         """
         Test Case 4: Durham County, HH=3
@@ -362,7 +362,7 @@ class TestNCHeadStart(TestCase):
     # ============================================================================
     # ADDITIONAL TESTS: Age Eligibility
     # ============================================================================
-    @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache._get_data")
+    @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache.get_data")
     def test_child_age_0_to_5_eligible(self, mock_fetch):
         """Test that children aged 0-5 are eligible"""
         mock_fetch.return_value = self.MARKET_RATES_DATA
@@ -399,7 +399,7 @@ class TestNCHeadStart(TestCase):
                 # Check that child is eligible
                 self.assertTrue(len(eligibility.eligible_members) > 0, f"Child age {age} should be eligible")
 
-    @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache._get_data")
+    @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache.get_data")
     def test_pregnant_member_eligible(self, mock_fetch):
         """Test that pregnant household member is eligible regardless of age"""
         mock_fetch.return_value = self.MARKET_RATES_DATA
@@ -428,7 +428,7 @@ class TestNCHeadStart(TestCase):
     # ============================================================================
     # ADDITIONAL TESTS: County Market Rate Data
     # ============================================================================
-    @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache._get_data")
+    @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache.get_data")
     def test_multiple_children_different_ages(self, mock_fetch):
         """Test value calculation with multiple children at different ages"""
         mock_fetch.return_value = self.MARKET_RATES_DATA
@@ -472,7 +472,7 @@ class TestNCHeadStart(TestCase):
         self.assertEqual(len(eligible_children), 3, "Should have 3 eligible children")
         self.assertEqual(eligibility.value, expected_value, f"Estimated value should be ${expected_value}")
 
-    @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache._get_data")
+    @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache.get_data")
     def test_ineligible_county(self, mock_fetch):
         """Test household in county without Head Start market rates"""
         # Mock with limited counties (exclude the test county)
@@ -503,7 +503,7 @@ class TestNCHeadStart(TestCase):
         # Should NOT be eligible - county not in market rates
         self.assertFalse(eligibility.eligible, "Should NOT be eligible - county not in market rates")
 
-    @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache._get_data")
+    @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache.get_data")
     def test_countable_income_types_only(self, mock_fetch):
         """Test that only specific income types are counted"""
         mock_fetch.return_value = self.MARKET_RATES_DATA
@@ -541,7 +541,7 @@ class TestNCHeadStart(TestCase):
             eligibility.eligible, "Should be eligible - only wages ($2,000/month) are counted, child support ignored"
         )
 
-    @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache._get_data")
+    @patch("programs.programs.nc.nc_head_start.calculator.NcHeadStartMarketRatesCache.get_data")
     def test_member_value_returns_zero(self, mock_fetch):
         """Test that member_value returns 0 (all value at household level)"""
         mock_fetch.return_value = self.MARKET_RATES_DATA

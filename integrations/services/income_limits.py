@@ -1,13 +1,12 @@
-from typing import ClassVar, Literal, Union
+from typing import Literal, Union
 
 from sentry_sdk import capture_message, new_scope
 
-from django.core.cache import cache
-from integrations.services.sheets.sheets import GoogleSheets
+from integrations.services.sheets.cache import GoogleSheetsCache
 from screener.models import Screen
 
 
-class Ami:
+class Ami(GoogleSheetsCache):
     """
     DEPRECATED: This Google Sheets-based AMI lookup is maintained for backwards compatibility only.
 
@@ -34,7 +33,6 @@ class Ami:
     sheet_id = "1ZnOg_IuT7TYz2HeF31k_FSPcA-nraaMG3RUWJFUIIb8"
     range_name = "current!A2:CH"
     CACHE_KEY = "ami_data"
-    CACHE_TIMEOUT = 60 * 60 * 24  # 24 hours
 
     YEAR_INDEX = 0
     STATE_INDEX = 1
@@ -44,20 +42,10 @@ class Ami:
     IL_PERCENTS = ["80%", "50%", "30%"]
     IL_LIMITS_START_INDEX = 62
 
-    def _get_data(self) -> dict:
-        data = cache.get(self.CACHE_KEY)
-        if data is not None:
-            return data
-        data = self._process()
-        cache.set(self.CACHE_KEY, data, timeout=self.CACHE_TIMEOUT)
-        return data
-
-    def _process(self) -> dict[str, dict[str, dict[str, dict[int, int]]]]:
-        data = GoogleSheets(self.sheet_id, self.range_name).data()
-
+    def _process(self, raw_data) -> dict[str, dict[str, dict[str, dict[int, int]]]]:
         ami: dict[str, dict[str, dict[str, dict[int, int]]]] = {}
 
-        for row in data:
+        for row in raw_data:
             year = row[self.YEAR_INDEX]
             state = row[self.STATE_INDEX]
             county = row[self.COUNTY_INDEX]
@@ -123,7 +111,7 @@ class Ami:
         year: str,
         limit_type: Union[Literal["mtsp"], Literal["il"]] = "mtsp",
     ):
-        data = self._get_data()
+        data = self.get_data()
 
         if percent == "100%":
             return self.get_screen_ami(screen, "80%", year) / 0.8
@@ -134,29 +122,18 @@ class Ami:
 ami = Ami()
 
 
-class Smi:
+class Smi(GoogleSheetsCache):
     sheet_id = "1kH--2b_VMY6lG_DXe2Xdhps3Flfi_ZIqc9oViWcxndE"
     range_name = "SMI!A2:J"
     CACHE_KEY = "smi_data"
-    CACHE_TIMEOUT = 60 * 60 * 24  # 24 hours
 
     YEAR_INDEX = 0
     STATE_INDEX = 1
     LIMITS_START_INDEX = 2
 
-    def _get_data(self) -> dict:
-        data = cache.get(self.CACHE_KEY)
-        if data is not None:
-            return data
-        data = self._process()
-        cache.set(self.CACHE_KEY, data, timeout=self.CACHE_TIMEOUT)
-        return data
-
-    def _process(self) -> dict[str, dict[str, dict[int, int]]]:
-        data = GoogleSheets(self.sheet_id, self.range_name).data()
-
+    def _process(self, raw_data) -> dict[str, dict[str, dict[int, int]]]:
         smi = {}
-        for row in data:
+        for row in raw_data:
             year = row[self.YEAR_INDEX]
             state = row[self.STATE_INDEX]
 
@@ -172,14 +149,14 @@ class Smi:
         return smi
 
     def get_screen_smi(self, screen: Screen, year: int):
-        data = self._get_data()
+        data = self.get_data()
         return data[year][screen.white_label.state_code][screen.household_size]
 
 
 smi = Smi()
 
 
-class IncomeLimitsCache:
+class IncomeLimitsCache(GoogleSheetsCache):
     """
     Income Limits data used for
     - UtilityBillPay
@@ -189,20 +166,10 @@ class IncomeLimitsCache:
     sheet_id = "1ZzQYhULtiP61crj0pbPjhX62L1TnyAisLcr_dQXbbFg"
     range_name = "A2:K"
     CACHE_KEY = "income_limits_data"
-    CACHE_TIMEOUT = 60 * 60 * 24  # 24 hours
 
-    def _get_data(self) -> dict:
-        data = cache.get(self.CACHE_KEY)
-        if data is not None:
-            return data
-        data = self._process()
-        cache.set(self.CACHE_KEY, data, timeout=self.CACHE_TIMEOUT)
-        return data
-
-    def _process(self) -> dict[str, list[float]]:
-        data = GoogleSheets(self.sheet_id, self.range_name).data()
+    def _process(self, raw_data) -> dict[str, list[float]]:
         result = {}
-        for r in data:
+        for r in raw_data:
             result[self._format_county(r[0])] = self._format_amounts(r[1:])
         return result
 
@@ -251,7 +218,7 @@ class IncomeLimitsCache:
         """
 
         county = screen.county
-        limits_by_county = self._get_data()
+        limits_by_county = self.get_data()
         size_index = screen.household_size - 1 if screen.household_size else None
 
         if county not in limits_by_county:

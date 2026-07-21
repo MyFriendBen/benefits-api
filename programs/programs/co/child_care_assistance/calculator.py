@@ -1,32 +1,22 @@
 from screener.models import HouseholdMember
 from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
-from integrations.services.sheets.sheets import GoogleSheets
-from django.core.cache import cache
+from integrations.services.sheets.cache import GoogleSheetsCache
 
 from programs.co_county_zips import counties_from_screen
 import programs.programs.messages as messages
 
 
-class CccapFplCache:
+class CccapFplCache(GoogleSheetsCache):
     sheet_id = "1otQxo_hZu2pS1_1EBsPLVKP9HYFCdcYWZKNM24dbjvg"
     range_name = "current FPL %!A2:B"
     CACHE_KEY = "cccap_fpl_data"
-    CACHE_TIMEOUT = 60 * 60 * 24  # 24 hours
 
-    def _process(self):
-        data = GoogleSheets(self.sheet_id, self.range_name).data()
-
-        county_fpls = {r[0] + " County": int(r[1]) for r in data}
-
+    def _process(self, raw_data):
+        """
+        Process the raw data from Google Sheets into a dictionary mapping county names to FPL percentages.
+        """
+        county_fpls = {r[0] + " County": int(r[1]) for r in raw_data}
         return county_fpls
-
-    def _get_data(self):
-        data = cache.get(self.CACHE_KEY)
-        if data is not None:
-            return data
-        data = self._process()
-        cache.set(self.CACHE_KEY, data, timeout=self.CACHE_TIMEOUT)
-        return data
 
 
 class ChildCareAssistance(ProgramCalculator):
@@ -40,7 +30,7 @@ class ChildCareAssistance(ProgramCalculator):
     fpl_limits = CccapFplCache()
 
     def household_eligible(self, e: Eligibility):
-        cccap_county_limits = self.fpl_limits._get_data()
+        cccap_county_limits = self.fpl_limits.get_data()
 
         # location
         counties = counties_from_screen(self.screen)

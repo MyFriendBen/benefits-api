@@ -1,42 +1,32 @@
 from integrations.services.sheets.sheets import GoogleSheets
-from django.core.cache import cache
+from integrations.services.sheets.cache import GoogleSheetsCache
 from programs.co_county_zips import counties_from_screen
 from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
 from screener.models import HouseholdMember
 from programs.programs.helpers import medicaid_eligible
 import programs.programs.messages as messages
 
-_CFH_CACHE_KEY = "cfh_county_values"
-_CFH_CACHE_TIMEOUT = 60 * 60 * 24  # 1 day
 
-_CFH_SHEET_ID = "1SuOhwX5psXsipMS_G5DE_f9jLS2qWxf6temxY445EQg"
-_CFH_RANGE_NAME = "current report"
-_CFH_AVERAGE_COLUMN = "Average Monthly Premium Tax Credit"
-_CFH_COUNTY_COLUMN = "County\n(source here)"
+class CfhCountyValuesCache(GoogleSheetsCache):
+    CACHE_KEY = "cfh_county_values"
+    sheet_id = "1SuOhwX5psXsipMS_G5DE_f9jLS2qWxf6temxY445EQg"
+    range_name = "current report"
+    _COUNTY_COLUMN = "County\n(source here)"
+    _AVERAGE_COLUMN = "Average Monthly Premium Tax Credit"
 
+    def _fetch_raw(self):
+        return GoogleSheets(self.sheet_id, self.range_name).data_by_column(self._COUNTY_COLUMN, self._AVERAGE_COLUMN)
 
-def _get_cfh_county_values() -> dict:
-    values = cache.get(_CFH_CACHE_KEY)
-    if values is not None:
+    def _process(self, raw_data):
+        values = {}
+        for row in raw_data:
+            try:
+                county_key = row[self._COUNTY_COLUMN].strip() + " County"
+                premium_value = float(row[self._AVERAGE_COLUMN])
+                values[county_key] = premium_value
+            except (KeyError, ValueError, AttributeError):
+                continue  # Skip malformed rows
         return values
-
-    data = GoogleSheets(_CFH_SHEET_ID, _CFH_RANGE_NAME).data_by_column(_CFH_COUNTY_COLUMN, _CFH_AVERAGE_COLUMN)
-    values = {}
-    for row in data:
-        try:
-            county_key = row[_CFH_COUNTY_COLUMN].strip() + " County"
-            premium_value = float(row[_CFH_AVERAGE_COLUMN])
-            values[county_key] = premium_value
-        except (KeyError, ValueError, AttributeError):
-            continue  # Skip malformed rows
-
-    if not values:
-        # Don't cache an empty result — retry on the next request instead of
-        # locking every Connect for Health screening out for 24 hours.
-        return values
-
-    cache.set(_CFH_CACHE_KEY, values, timeout=_CFH_CACHE_TIMEOUT)
-    return values
 
 
 class ConnectForHealth(ProgramCalculator):
@@ -44,6 +34,7 @@ class ConnectForHealth(ProgramCalculator):
     dependencies = ["insurance", "income_amount", "income_frequency", "zipcode", "household_size"]
     eligible_insurance_types = ["none", "private"]
     ineligible_insurance_types = ["va"]
+    county_values = CfhCountyValuesCache()
 
     def household_eligible(self, e: Eligibility):
         # Medicade eligibility
@@ -72,6 +63,6 @@ class ConnectForHealth(ProgramCalculator):
         e.condition(not member.insurance.has_insurance_types(ConnectForHealth.ineligible_insurance_types))
 
     def member_value(self, member: HouseholdMember):
-        values = _get_cfh_county_values()
+        values = self.county_values.get_data()
         county = counties_from_screen(self.screen)[0]
         return int(values.get(county, 0) * 12)

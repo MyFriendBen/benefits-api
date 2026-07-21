@@ -1,21 +1,17 @@
-from django.core.cache import cache
-from integrations.services.sheets.sheets import GoogleSheets
+from integrations.services.sheets.cache import GoogleSheetsCache
 from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
 import programs.programs.messages as messages
 from programs.co_county_zips import counties_from_screen
 
 
-class CoHeadStartCountyEligibleCache:
+class CoHeadStartCountyEligibleCache(GoogleSheetsCache):
     CACHE_KEY = "co_head_start_data"
-    CACHE_TIMEOUT = 60 * 60 * 24  # 24 hours
     sheet_id = "1suOcBpJPJGIXHljypNSCxGDWEvydG-t8erh2rzUtWcE"
     range_name = "HEAD START COUNTIES FOR MFB!A2:B"
 
-    def _process(self):
-        data = GoogleSheets(self.sheet_id, self.range_name).data()
-
+    def _process(self, raw_data):
         result = {}
-        for row in data:
+        for row in raw_data:
             if len(row) < 2:
                 continue
             try:
@@ -26,14 +22,6 @@ class CoHeadStartCountyEligibleCache:
                 continue  # Skip malformed rows
 
         return result
-
-    def _get_data(self) -> dict:
-        data = cache.get(self.CACHE_KEY)
-        if data is not None:
-            return data
-        data = self._process()
-        cache.set(self.CACHE_KEY, data, timeout=self.CACHE_TIMEOUT)
-        return data
 
 
 class CoHeadStart(ProgramCalculator):
@@ -50,7 +38,7 @@ class CoHeadStart(ProgramCalculator):
         counties = counties_from_screen(self.screen)
 
         in_eligible_county = False
-        eligible_counties = CoHeadStart.counties._get_data()
+        eligible_counties = CoHeadStart.counties.get_data()
         for county in counties:
             if county in eligible_counties:
                 in_eligible_county = eligible_counties[county]
