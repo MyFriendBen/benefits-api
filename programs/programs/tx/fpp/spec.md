@@ -3,6 +3,7 @@
 - **Program:** Family Planning Program (FPP)
 - **State:** TX (`tx`)
 - **name_abbreviated:** `tx_fpp`
+- **Tickets:** MFB-1088 (custom-calculator migration), MFB-1325 (FPP Policy Manual countable-income rules)
 - **Calculator:** `programs/programs/tx/fpp/calculator.py` (`TxFpp`)
 
 ## Background
@@ -89,15 +90,57 @@ prior strict "no insurance" filter to a Medicaid-only exclusion.
 | §4140 bypass | `has_benefit("tx_snap")`, `has_benefit("tx_wic")`, `has_insurance_types(("chp",))` | CHIP Perinatal not captured (gap) |
 | Medicaid exclusion | `member.insurance.medicaid` | Emergency Medicaid excluded from match |
 
-## Validation Scenarios
+## Test Scenarios
 
-See `validations/management/commands/import_validations/data/tx_fpp.json`. Coverage includes:
-the eligible standard case, the age-64 upper boundary, age-65/70 ineligible, the Medicaid-only
-insurance rule (employer-insured now eligible; full-Medicaid excluded; Emergency Medicaid
-eligible), the 250% FPL income ceiling, the §4140 adjunctive bypass (income over 250% FPL but
-on SNAP → eligible), and a multi-eligible-member household (value 533).
+These scenarios document the logic implemented in `calculator.py` (the source of truth) and
+are the basis for the unit tests in `tx/fpp/tests/test_fpp.py`. The income limit is
+`2.5 × FPL(household_size)`; examples below use an FPL of $15,000 → limit **$37,500**.
 
-The **countable-income** behaviors (under-18 earnings exempt, child support paid deducted,
-child support received $75/mo disregard) are covered by unit tests in
-`tx/fpp/tests/test_fpp.py::TestTxFppCountableIncome`; the validation JSON does not yet include
-cases for them and should be extended to cover them.
+**Age / insurance — per member (`member_eligible`)**
+
+| Scenario | Expected |
+|----------|----------|
+| Age 64 (upper boundary) | eligible |
+| Age 65 | ineligible |
+| Age unknown (`None`) | ineligible |
+| Young child (no minimum age) | eligible |
+| Uninsured | eligible |
+| Full Medicaid | ineligible |
+| Emergency Medicaid | eligible (underinsured, §4100) |
+| Employer / private / CHIP coverage | eligible (§4200) |
+
+**Income — countable vs 250% FPL (`household_eligible` / `_countable_income`)**
+
+| Scenario | Countable income | Expected |
+|----------|------------------|----------|
+| Unearned $20k | $20,000 | eligible |
+| Unearned exactly at limit | $37,500 | eligible |
+| Unearned $37,501 | $37,501 | ineligible |
+| Adult $30k earned + minor $15k earned | $30,000 (minor exempt) | eligible |
+| Two adults $30k + $15k (age 18 = adult) | $45,000 | ineligible |
+| Unknown-age member's earnings | not counted (can't confirm 18+) | — |
+| Unearned $40k − $5k child support paid | $35,000 | eligible |
+| Unearned $28k + $10k child support received ($75/mo disregard) | $37,100 | eligible |
+| Child support received ≤ $900/yr | $0 (fully disregarded) | — |
+| Deductions exceed income | floored at $0 | — |
+| All components combined | adult earned + unearned + (received − disregard) − paid | — |
+
+**§4140 adjunctive bypass — waives the income test**
+
+| Scenario | Expected |
+|----------|----------|
+| Enrolled in SNAP (`tx_snap`) | eligible regardless of income |
+| Enrolled in WIC (`tx_wic`) | eligible regardless of income |
+| CHIP coverage (per-member insurance) | eligible regardless of income |
+| High income, no bypass | ineligible |
+| Bare `snap` / `wic` (legacy unprefixed name) | no bypass |
+| `tx_chip` as a current benefit | no bypass (PE program, never a benefit tile) |
+| Bypass, but the only member is full-Medicaid | ineligible (bypass waives income only) |
+
+**Benefit value**
+
+| Scenario | Expected |
+|----------|----------|
+| One eligible member | $266.84 |
+| Two eligible members | $533.68 (sum) |
+| Ineligible member (Medicaid / over-age) in household | excluded from value |

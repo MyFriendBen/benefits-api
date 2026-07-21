@@ -118,21 +118,19 @@ class TxFpp(ProgramCalculator):
         that table (an ``exclude`` list of the FPP-exempt income types) is a tracked
         follow-up, not implemented here.
         """
-        # Earned income counts only for adults (under-18 earnings are exempt). Members
-        # with no recorded age are not counted as adults.
+        # Adults only — under-18 (and unknown-age) earnings are exempt.
         adult_earned = sum(
             member.calc_gross_income("yearly", ["earned"])
             for member in self.screen.household_members.all()
             if member.age is not None and member.age >= self.child_age_threshold
         )
 
-        # Unearned income counts for all ages. Child support received is pulled out of
-        # the unearned bucket and re-added net of its (annualized) disregard.
+        # Child support received is pulled from the unearned bucket and re-added net of its
+        # annualized disregard.
         unearned = self.screen.calc_gross_income("yearly", ["unearned"], exclude=["childSupport"])
         child_support_received = self.screen.calc_gross_income("yearly", ["childSupport"])
         countable_child_support = max(0, child_support_received - self.child_support_received_disregard_monthly * 12)
 
-        # Child support paid is deducted.
         child_support_paid = self.screen.calc_expenses("yearly", ["childSupport"])
 
         return int(max(0, adult_earned + unearned + countable_child_support - child_support_paid))
