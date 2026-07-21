@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://myfriendben.org/schemas/config-layer-v1.json",
+  "title": "Program config layer",
+  "description": "Wires a state's program to a PolicyEngine variable. Depth constraint (not expressible in this schema, enforced at runtime/CI instead): a config whose 'extends' is non-null must point to a config whose own 'extends' is null -- one level only, no chains, no cycles.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "program",
+    "state",
+    "pe_name",
+    "pe_entity",
+    "state_dependency",
+    "extends",
+    "additional_inputs",
+    "pe_period_month"
+  ],
+  "properties": {
+    "program": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string",
+      "description": "Use \"federal\" as the sentinel for a base config that other configs extend."
+    },
+    "pe_name": {
+      "type": "string",
+      "description": "The PolicyEngine variable name, e.g. 'snap', 'co_tanf'."
+    },
+    "pe_entity": {
+      "type": "string",
+      "enum": ["spm_unit", "tax_unit", "person", "household", "family", "marital_unit"]
+    },
+    "state_dependency": {
+      "type": ["string", "null"],
+      "description": "The one state-code dependency class, e.g. CoStateCodeDependency. Null for federal-only configs."
+    },
+    "extends": {
+      "type": ["string", "null"],
+      "description": "The 'program' name of the base config this one extends, e.g. 'snap'. Null if fully self-contained."
+    },
+    "additional_inputs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Dependency class names beyond extends's base (or the complete list if extends is null). Does not include state_dependency."
+    },
+    "pe_period_month": {
+      "type": ["string", "null"],
+      "description": "Default null (use pe_period as-is). Only federal SNAP sets this today, to '01'."
+    }
+  }
+}
