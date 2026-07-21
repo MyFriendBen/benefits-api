@@ -1,0 +1,82 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "program_category": {
+    "external_name": "ks_healthcare",
+    "name": "Health Care",
+    "icon": "health_care"
+  },
+  "program": {
+    "name_abbreviated": "ks_nurse_family_partnership",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission",
+      "non_citizen"
+    ],
+    "name": "Nurse-Family Partnership (NFP)",
+    "description": "Nurse-Family Partnership (NFP) is a free home visiting program for first-time moms. A registered nurse visits you at home during pregnancy and until your child turns two. Your nurse will help you stay healthy during pregnancy. They’ll prepare you for birth, care for your newborn, support breastfeeding, and track your baby’s growth. After your baby arrives, they will visit to help with newborn care, breastfeeding, and your child's growth as they get older. They will check on how you feel. They will also help you find local resources, like food assistance, housing help, and other programs. This program is completely free and private.\n\nIn Kansas, local county health departments run this program. It is for residents of Johnson County and Shawnee County. Once you enroll, your nurse will schedule regular home visits around your schedule. Because each nurse can only help a small group of families at one time, local agencies may use a waitlist if their program reaches full capacity.\n\nThis screener checks if you meet the basic rules to join the program. Local staff must confirm a few final details before you can start. For example, they will verify your exact home address to ensure you live within the county service zone, and confirm this is your first pregnancy resulting in a live birth. They will also look at how far along you are in your pregnancy, as the program prefers to connect you with a nurse as early as possible.\n\nCall your local county health department for more information or to apply.",
+    "description_short": "Free nurse home visits for first-time pregnant moms",
+    "learn_more_link": "https://changent.org/what-we-do/nurse-family-partnership/",
+    "apply_button_link": "https://changent.org/what-we-do/nurse-family-partnership/",
+    "apply_button_description": "Learn More",
+    "estimated_application_time": "",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_type": "benefit",
+    "value_format": "estimated_annual",
+    "base_program": "nfp",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false,
+    "website_description": "Free nurse home visits for first-time pregnant moms"
+  },
+  "documents": [
+    {
+      "external_name": "ks_home",
+      "text": "Proof of home address (ex: lease, utility bill)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_id_proof",
+      "text": "Proof of identity (ex: driver's license, state ID)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_earned_income",
+      "text": "Proof of income (ex: pay stubs, tax return, benefits letter)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_pregnancy_verification",
+      "text": "Proof of pregnancy (ex: doctor's note, prenatal visit record)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "ks_shawnee_county_health_dept",
+      "name": "Shawnee County Health Department",
+      "phone_number": "+17852515659",
+      "email": "",
+      "assistance_link": "https://www.snco.gov/hd/nurse_family_partnership.php",
+      "description": "Runs the Nurse-Family Partnership program in Shawnee County, Kansas. Contact Ariona Atkinson at (785) 251-5659 to ask about eligibility or to make a referral."
+    },
+    {
+      "external_name": "ks_johnson_county_health_dept",
+      "name": "Johnson County Department of Health and Environment",
+      "phone_number": "+19138261228",
+      "email": "jcdhe@jocogov.org",
+      "assistance_link": "https://www.jocogov.org/department/health/pregnancy-services",
+      "description": "Runs the Nurse-Family Partnership program in Johnson County, Kansas. Call (913) 826-1228 to ask about eligibility or to make a referral."
+    }
+  ]
+}
