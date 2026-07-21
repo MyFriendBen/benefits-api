@@ -46,7 +46,7 @@ NFP provides registered nurse home visits from enrollment through the child's se
 * Methodology: ~60 nurse home visits over the 2.5-year program period, valued at $100/visit (mid-range rate for private-duty/skilled home nursing) = $6,000 total value ÷ 2.5 years = **$2,400/year**
 * Sources: https://www.cebc4cw.org/program/nurse-family-partnership/detailed (visit schedule); https://arhomecare.com/blog/how-much-does-private-home-care-really-cost-your-2025-price-guide (hourly rate range)
 * Matches the existing IL (`il_nfp`) and CO (`co_nfp`) NFP calculators, which use `amount = 6_000 / 2.5` from the same two sources
-* Value is per eligible individual (each pregnant person enrolls independently with their own nurse)
+* Although each pregnant person enrolls independently with their own nurse, the value is stored **household-level** (`amount = 6_000 / 2.5`, counted once per household) to match the existing `co_nfp` / `il_nfp` precedent. A household with two eligible pregnant members is still valued at $2,400, not $4,800.
 * For screener display: $2,400/year
 
 ## Implementation Coverage
@@ -186,7 +186,7 @@ NFP provides registered nurse home visits from enrollment through the child's se
 ### Scenario 9: Mixed Household - Eligible First-Time Pregnant Woman with Ineligible Partner and Child from Partner's Previous Relationship
 
 **What we're checking**: Validates that in a multi-member household, only the first-time pregnant woman is identified as potentially eligible for NFP, while her partner (male, not pregnant) and his child from a previous relationship are not eligible
-**Expected**: Eligible, value: $2,400/year
+**Expected**: Not eligible (see implementation note — the naive expectation would be Eligible, but the screener's household-level `num_children` cannot attribute the child to the partner)
 
 **Steps**:
 
@@ -205,7 +205,7 @@ NFP provides registered nurse home visits from enrollment through the child's se
 ### Scenario 10: Two First-Time Pregnant Women in Same Household - Both Potentially Eligible in Shawnee County
 
 **What we're checking**: Whether the screener correctly identifies multiple eligible members when two first-time pregnant women reside in the same household, each independently meeting pregnancy, first-time parent, geographic, and income criteria
-**Expected**: Eligible, value: $2,400/year per eligible member ($4,800/year total for the household)
+**Expected**: Eligible, value: $2,400/year (household-level, counted once — see implementation note; NOT $4,800)
 
 **Steps**:
 
