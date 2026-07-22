@@ -733,6 +733,16 @@ class Program(models.Model):
         null=True,
         on_delete=models.SET_NULL,
     )
+    YEAR_TYPE_CHOICES = [
+        ("hardcoded", "Hardcoded"),
+        ("fiscal_year", "Fiscal Year"),
+        ("calendar_year", "Calendar Year"),
+    ]
+    year_type = models.CharField(
+        max_length=32,
+        default="hardcoded",
+        choices=YEAR_TYPE_CHOICES,
+    )
     category = models.ForeignKey(
         ProgramCategory,
         related_name="programs",
