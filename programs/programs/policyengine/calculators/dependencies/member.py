@@ -227,8 +227,8 @@ class MeetsSsiDisabilityCriteriaDependency(Member):
     is_ssi_aged OR is_blind OR is_ssi_disabled (verified in policyengine-us source),
     so including blindness here only adds to an OR and can never reduce eligibility.
 
-    min_pe_version gates this so it's only sent to models that define the variable —
-    it does not exist in 1.691.1 (current), where sending it 400s the whole request.
+    min_pe_version gates this so it's only sent to models that define it (first added in
+    1.715.2); sending it to an earlier pinned version would 400 the whole request.
     """
 
     field = "meets_ssi_disability_criteria"

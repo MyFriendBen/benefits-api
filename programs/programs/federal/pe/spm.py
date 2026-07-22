@@ -10,6 +10,22 @@ SNAP_BASE_INPUTS = [
     dependency.member.AgeDependency,
     dependency.member.MedicalExpenseDependency,
     dependency.member.IsDisabledDependency,
+    # TANF cash receipt drives SNAP categorical eligibility (income/asset tests bypassed):
+    # send the reported tanf amount directly as the tanf value. TANF has no reported/toggle
+    # seam, so a positive tanf value is what confers categorical eligibility.
+    #
+    # SSI categorical eligibility is deliberately NOT wired here. It requires
+    # use_reported_ssi, which is global per PE request (flips applicable_ssi for every
+    # program in the request — SNAP, IL AABD, KS TANF, TX CEAP), so it's a federal
+    # all-state change with cross-program effects (verified IL AABD $0->$10k swing).
+    # That work lives in MFB-1312 with all-consumer QA, not in this KS SNAP PR.
+    dependency.spm.Tanf,
+    # Disabled treatment (uncapped shelter deduction, $4,500 asset limit) requires disability-
+    # program receipt via is_usda_disabled, not the generic is_disabled flag: SsdiReportedDependency
+    # feeds the SSDI amount, MeetsSsiDisabilityCriteriaDependency the SSI-disability input PE needs
+    # (both version-gated; see the dependency classes).
+    dependency.member.SsdiReportedDependency,
+    dependency.member.MeetsSsiDisabilityCriteriaDependency,
     dependency.spm.SnapEmergencyAllotmentDependency,
     dependency.spm.HousingCostDependency,
     dependency.spm.HasPhoneExpenseDependency,
