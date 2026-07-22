@@ -18,11 +18,18 @@ class TxHse(ProgramCalculator):
     https://statutes.capitol.texas.gov/Docs/TX/htm/TX.11.htm#11.13
 
     Benefit amount:
-    - $800/year (estimated typical tax savings for a low-income TX homeowner
-      under the general homestead exemption)
-    - $1200/year for seniors (age 65+) or people with disabilities (estimated
+    - $1200/year (estimated typical school-tax savings for a TX homeowner under
+      the general homestead exemption)
+    - $1700/year for seniors (age 65+) or people with disabilities (estimated
       typical savings under the general + senior/disabled exemption combined)
-    Note: actual savings vary by taxing unit and appraised value.
+
+    These estimates approximate savings = exemption amount x school district tax
+    rate. The 2025 propositions set the school-tax homestead exemption at
+    $140,000 (standard) and $200,000 (senior/disabled). The senior/disabled
+    figure scales the base by the exemption ratio (200,000 / 140,000 ~= 1.43),
+    i.e. $1200 x 1.43 ~= $1700.
+    Note: actual savings vary by taxing unit and appraised value. For homes
+    worth less than the exemption, real savings are capped at home value x rate.
 
     Disability eligibility follows the SSA test (Texas Tax Code § 11.13):
     - Medically determinable physical or mental impairment (proxied by long_term_disability)
@@ -33,8 +40,8 @@ class TxHse(ProgramCalculator):
     Source: https://statutes.capitol.texas.gov/?tab=1&code=TX&chapter=TX.11&artSec=
     """
 
-    amount = 800
-    senior_disabled_amount = 1200
+    amount = 1200
+    senior_disabled_amount = 1700
     senior_age = 65
     blind_senior_age = 55
     dependencies: ClassVar[list[str]] = ["age"]
