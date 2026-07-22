@@ -2095,7 +2095,7 @@ class CoConfigurationData(ConfigurationData):
     # only the keys CO customizes.
     referrer_data = {
         **ConfigurationData.referrer_data,
-        "theme": {"default": "default", "211co": "twoOneOne"},
+        "theme": {"default": "default", "211co": "twoOneOne", "cudenver": "cu_denver"},
         "logoSource": {
             "default": "MFB_COLogo",
             "bia": "BIA_MFBLogo",
@@ -2118,6 +2118,7 @@ class CoConfigurationData(ConfigurationData):
             "tellercounty": "TC_MFBLogo",
             "pueblo": "PC_MFBLogo",
             "pitkin": "PitkinCounty_MFBLogo",
+            "cudenver": "CUDenver_Logo",
         },
         "logoAlt": {
             "default": {"id": "referrerHook.logoAlts.default", "defaultMessage": "MyFriendBen home page button"},
@@ -2188,6 +2189,10 @@ class CoConfigurationData(ConfigurationData):
                 "id": "referrerHook.logoAlts.pitkin",
                 "defaultMessage": "Pitkin County and MyFriendBen home page button",
             },
+            "cudenver": {
+                "id": "referrerHook.logoAlts.cudenver",
+                "defaultMessage": "CU Denver home page button",
+            },
         },
         "logoFooterSource": {"default": "MFB_Logo"},
         "logoFooterAlt": {"default": {"id": "footer.logo.alt", "defaultMessage": "MFB Logo"}},
@@ -2200,6 +2205,7 @@ class CoConfigurationData(ConfigurationData):
             "tellercounty": "tellercounty-logo-size",
             "pueblo": "pueblocounty-logo-size",
             "pitkin": "pitkincounty-logo-size",
+            "cudenver": "cudenver-logo-size",
         },
         "twoOneOneLink": {
             "default": 'https://www.211colorado.org/?utm_source=myfriendben&utm_medium=inlink&utm_campaign=organic&utm_id="211mfb"',
