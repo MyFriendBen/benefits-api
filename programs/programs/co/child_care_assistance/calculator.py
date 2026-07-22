@@ -15,7 +15,16 @@ class CccapFplCache(GoogleSheetsCache):
         """
         Process the raw data from Google Sheets into a dictionary mapping county names to FPL percentages.
         """
-        county_fpls = {r[0] + " County": int(r[1]) for r in raw_data}
+        county_fpls = {}
+        for r in raw_data:
+            if len(r) < 2:
+                continue
+            try:
+                county_name = r[0].strip() + " County"
+                fpl_percent = int(r[1])
+                county_fpls[county_name] = fpl_percent
+            except (IndexError, ValueError, AttributeError):
+                continue  # Skip malformed rows
         return county_fpls
 
 

@@ -12,7 +12,15 @@ class LeapValueCache(GoogleSheetsCache):
     range_name = "'FFY 2025'!A2:G65"
 
     def _process(self, raw_data):
-        return [[self._transform_name(row[0]), self._transform_value(row[6])] for row in raw_data if row != []]
+        result = []
+        for row in raw_data:
+            if row == []:
+                continue
+            try:
+                result.append([self._transform_name(row[0]), self._transform_value(row[6])])
+            except (IndexError, ValueError, AttributeError):
+                continue  # Skip short/malformed rows
+        return result
 
     def _transform_name(self, raw_name: str) -> str:
         return raw_name.strip().replace("Application County: ", "") + " County"

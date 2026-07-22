@@ -46,9 +46,12 @@ class Ami(GoogleSheetsCache):
         ami: dict[str, dict[str, dict[str, dict[int, int]]]] = {}
 
         for row in raw_data:
-            year = row[self.YEAR_INDEX]
-            state = row[self.STATE_INDEX]
-            county = row[self.COUNTY_INDEX]
+            try:
+                year = row[self.YEAR_INDEX]
+                state = row[self.STATE_INDEX]
+                county = row[self.COUNTY_INDEX]
+            except IndexError:
+                continue  # Skip short/malformed rows
 
             values = {"mtsp": {}, "il": {}}
             continue_outer = False
@@ -60,7 +63,7 @@ class Ami(GoogleSheetsCache):
             ):
                 try:
                     income_limit_values = self._get_income_limits(row[i : i + self.MAX_HOUSEHOLD_SIZE])
-                except ValueError:
+                except (ValueError, TypeError):
                     continue_outer = True
                     break
                 values["mtsp"][str(percent) + "%"] = income_limit_values
@@ -70,7 +73,7 @@ class Ami(GoogleSheetsCache):
             for percent in self.IL_PERCENTS:
                 try:
                     income_limit_values = self._get_income_limits(row[i : i + self.MAX_HOUSEHOLD_SIZE])
-                except ValueError:
+                except (ValueError, TypeError):
                     continue_outer = True
                     break
                 values["il"][percent] = income_limit_values
@@ -134,12 +137,15 @@ class Smi(GoogleSheetsCache):
     def _process(self, raw_data) -> dict[str, dict[str, dict[int, int]]]:
         smi = {}
         for row in raw_data:
-            year = row[self.YEAR_INDEX]
-            state = row[self.STATE_INDEX]
+            try:
+                year = row[self.YEAR_INDEX]
+                state = row[self.STATE_INDEX]
 
-            limits = {}
-            for i, limit in enumerate(row[self.LIMITS_START_INDEX :]):
-                limits[i + 1] = int(float(limit))
+                limits = {}
+                for i, limit in enumerate(row[self.LIMITS_START_INDEX :]):
+                    limits[i + 1] = int(float(limit))
+            except (IndexError, ValueError, TypeError):
+                continue  # Skip short/malformed rows
 
             if year not in smi:
                 smi[year] = {}
@@ -169,7 +175,11 @@ class IncomeLimitsCache(GoogleSheetsCache):
     def _process(self, raw_data) -> dict[str, list[float]]:
         result = {}
         for r in raw_data:
-            result[self._format_county(r[0])] = self._format_amounts(r[1:])
+            try:
+                county = self._format_county(r[0])
+            except (IndexError, AttributeError):
+                continue  # Skip short/malformed rows
+            result[county] = self._format_amounts(r[1:])
         return result
 
     @staticmethod
@@ -180,10 +190,10 @@ class IncomeLimitsCache(GoogleSheetsCache):
     def _format_amounts(amounts: list[str]):
         result = []
         for a in amounts:
-            cleaned = a.strip().replace("$", "").replace(",", "")
             try:
+                cleaned = a.strip().replace("$", "").replace(",", "")
                 result.append(float(cleaned) if cleaned else None)
-            except ValueError:
+            except (ValueError, AttributeError):
                 result.append(None)
         return result
 
