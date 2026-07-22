@@ -120,10 +120,6 @@
 
 ## Implementation Notes
 
-### Already-Has Check
-
-No code change required. The old hardcoded `already_has` dict in `screener/models.py` was removed (migration `0157_drop_has_columns`). The `already_has` flag is now computed generically in `screener/views.py` (`"already_has": screen.has_benefit(program.name_abbreviated)`), so any program is suppressed automatically once its `name_abbreviated` is present in the screen's `current_benefits`. For `ks_tanf` this works out of the box given `show_in_has_benefits_step: true` in the config — a household that reports currently receiving TANF is returned with `already_has: true` and is not shown as newly eligible.
-
 ### SSI Unit Composition
 
 The codebase confirms (models.py line 388): `has_ssi_or_ssi_income = self.has_ssi or self.calc_gross_income("yearly", ["sSI"]) > 0`. Use this same pattern for the `ks_tanf` SSI unit exclusion check — if a household member has income_streams of type `sSI`, they should be excluded from the assistance unit.
