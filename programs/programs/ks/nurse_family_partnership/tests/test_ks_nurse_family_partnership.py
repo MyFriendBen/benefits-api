@@ -50,13 +50,15 @@ class TestKsNurseFamilyPartnership(TestCase):
             completed=False,
         )
 
-    def add_member(self, screen, relationship="headOfHousehold", age=25, pregnant=False, monthly_income=0):
+    def add_member(
+        self, screen, relationship="headOfHousehold", age=25, pregnant=False, monthly_income=0, yearly_income=0
+    ):
         member = HouseholdMember.objects.create(
             screen=screen,
             relationship=relationship,
             age=age,
             pregnant=pregnant,
-            has_income=monthly_income > 0,
+            has_income=(monthly_income > 0 or yearly_income > 0),
         )
         if monthly_income > 0:
             IncomeStream.objects.create(
@@ -65,6 +67,14 @@ class TestKsNurseFamilyPartnership(TestCase):
                 type="wages",
                 amount=monthly_income,
                 frequency="monthly",
+            )
+        if yearly_income > 0:
+            IncomeStream.objects.create(
+                screen=screen,
+                household_member=member,
+                type="wages",
+                amount=yearly_income,
+                frequency="yearly",
             )
         return member
 
@@ -120,12 +130,16 @@ class TestKsNurseFamilyPartnership(TestCase):
         self.assertTrue(self.calculator(screen).eligible().eligible)
 
     # ------------------------------------------------------------------ #
-    # Scenario 4: income exactly at the 171% FPL threshold -> eligible
-    # 2026 FPL(1) = 15,960; 171% = 27,291 (int). $2,274/mo = 27,288/yr <= limit
+    # Scenario 4: income exactly at the 171% FPL threshold -> eligible.
+    # 2026 FPL(1) = 15,960; 171% = 15,960 * 1.71 = 27,291.60, rounded to the
+    # nearest whole dollar = $27,292. A household earning exactly $27,292/year
+    # must be eligible. This also guards the rounding rule: with truncation the
+    # limit would be $27,291 and this exact-boundary household would be wrongly
+    # excluded.
     # ------------------------------------------------------------------ #
     def test_scenario_4_income_at_threshold(self):
         screen = self.make_screen(county="Shawnee County", zipcode="66603")
-        self.add_member(screen, age=23, pregnant=True, monthly_income=2_274)
+        self.add_member(screen, age=23, pregnant=True, yearly_income=27_292)
         self.assertTrue(self.calculator(screen).eligible().eligible)
 
     # ------------------------------------------------------------------ #

@@ -71,8 +71,10 @@ class KsNurseFamilyPartnership(ProgramCalculator):
         # first-time parent proxy: no existing children of the head in the household
         e.condition(self.screen.num_children(child_relationship=self.child_relationships) == 0)
 
-        # income <= 171% FPL for the household
-        income_limit = int(self.fpl_percent * self.program.year.get_limit(self.screen.household_size))
+        # income <= 171% FPL for the household. Round to the nearest whole dollar
+        # (not truncate) so the limit matches the documented threshold: for a
+        # 1-person household in 2026, 15,960 * 1.71 = 27,291.6 -> $27,292.
+        income_limit = round(self.fpl_percent * self.program.year.get_limit(self.screen.household_size))
         gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
         e.condition(gross_income <= income_limit, messages.income(gross_income, income_limit))
 

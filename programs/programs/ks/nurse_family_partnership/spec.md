@@ -30,7 +30,7 @@
      * `household_size`
      * `calc_gross_income("monthly", ["all"])`
    * Source: Shawnee County NFP page (snco.gov): *"Low-income"* listed as an eligibility requirement; Kansas Medicaid (KanCare) covers pregnant women at 171% FPL (https://www.kancare.ks.gov) — this is the standard low-income proxy used by NFP sites statewide. HomVEE model profile: *"Nurse-Family Partnership serves low-income, first-time mothers."*
-   * Note: 171% FPL for a 1-person household in 2026 = $15,960 × 1.71 = $27,292/year = $2,274/month. Some sites may accept participants slightly above this threshold at nurse discretion; lean inclusive on edge cases.
+   * Note: 171% FPL for a 1-person household in 2026 = $15,960 × 1.71 = $27,291.60, rounded to the nearest whole dollar = **$27,292/year** ≈ $2,274/month. The calculator rounds the FPL-derived limit to the nearest whole dollar (not truncate) so the threshold matches this documented figure; a household earning exactly $27,292/year is income-eligible. Some sites may accept participants slightly above this threshold at nurse discretion; lean inclusive on edge cases.
 5. **Must enroll early enough in pregnancy (ideally by 28th week of gestation, must enroll before birth)** ⚠️ *data gap*
    * Note: The screener has a 'pregnant' boolean field but does not capture gestational age or due date. The program requires enrollment during pregnancy, ideally by 28 weeks. Some sites may accept enrollment later in pregnancy but before birth. The screener cannot determine how far along the pregnancy is. Impact: Medium.
    * Source: HomVEE: 'Visits begin during pregnancy (as early as possible and no later than the 28th week of pregnancy)'; Changent: enrollment during pregnancy
