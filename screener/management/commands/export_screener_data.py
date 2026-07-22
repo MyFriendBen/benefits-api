@@ -7,6 +7,7 @@ Exports completed screener data from the following tables:
 - IncomeStream
 - Expense
 - Insurance
+- CurrentBenefit (programs the user already receives at the time of screening)
 - ProgramEligibility (merged from EligibilitySnapshot + ProgramEligibilitySnapshot,
   only the most recent snapshot per screen to match current screen data)
 - WhiteLabel (lookup table for white_label_id)
@@ -47,6 +48,7 @@ from screener.models import (
     IncomeStream,
     Expense,
     Insurance,
+    CurrentBenefit,
     EligibilitySnapshot,
     ProgramEligibilitySnapshot,
     WhiteLabel,
@@ -249,6 +251,16 @@ class Command(BaseCommand):
         )
         self.stdout.write(f"  Exported {insurance_records.count()} insurance records")
 
+        # Export current benefits (programs the user already has)
+        current_benefit_fields = self._get_model_fields(CurrentBenefit)
+        current_benefits = CurrentBenefit.objects.filter(screen_id__in=screen_ids_subquery)
+        self._write_csv(
+            os.path.join(output_dir, "current_benefits.csv"),
+            current_benefit_fields,
+            current_benefits.values(*current_benefit_fields),
+        )
+        self.stdout.write(f"  Exported {current_benefits.count()} current benefit records")
+
         # Export program eligibility (merged table with screen_id, only most recent snapshot per screen)
         self._export_program_eligibility(screen_ids_subquery, output_dir)
 
@@ -367,80 +379,7 @@ class Command(BaseCommand):
             "screen.last_email_request_date": "Timestamp when results email was last sent to user",
             "screen.alternate_path": "Secondary screener flow identifier (currently unused)",
             "screen.is_verified": "Whether user identity has been verified (currently unused)",
-            # Screen fields - has_* benefits (current enrollment)
-            "screen.has_benefits": "Whether user has any current benefits",
-            "screen.has_tanf": "Has Temporary Assistance for Needy Families",
-            "screen.has_wic": "Has Women, Infants, and Children program",
-            "screen.has_snap": "Has Supplemental Nutrition Assistance Program (food stamps)",
-            "screen.has_sunbucks": "Has Summer EBT/Sun Bucks program",
-            "screen.has_lifeline": "Has Lifeline phone/internet discount",
-            "screen.has_acp": "Has Affordable Connectivity Program",
-            "screen.has_eitc": "Has Earned Income Tax Credit",
-            "screen.has_coeitc": "Has Colorado Earned Income Tax Credit",
-            "screen.has_il_eitc": "Has Illinois Earned Income Tax Credit",
-            "screen.has_nslp": "Has National School Lunch Program",
-            "screen.has_ctc": "Has Child Tax Credit",
-            "screen.has_il_ctc": "Has Illinois Child Tax Credit",
-            "screen.has_il_transit_reduced_fare": "Has Illinois reduced transit fare",
-            "screen.has_il_bap": "Has Illinois Benefit Access Program",
-            "screen.has_medicaid": "Has Medicaid health insurance",
-            "screen.has_rtdlive": "Has RTD LiVE transit discount (Colorado)",
-            "screen.has_ccap": "Has Colorado Child Care Assistance Program",
-            "screen.has_mydenver": "Has MyDenver card",
-            "screen.has_chp": "Has Child Health Plan Plus (CHP+)",
-            "screen.has_ccb": "Has Colorado Child Care Benefit",
-            "screen.has_ssi": "Has Supplemental Security Income",
-            "screen.has_andcs": "Has Aid to Needy Disabled (Colorado State)",
-            "screen.has_cpcr": "Has Colorado Property/Rent/Heat Credit",
-            "screen.has_cdhcs": "Has Colorado Disabled Health Care Subsidy",
-            "screen.has_dpp": "Has Denver Preschool Program",
-            "screen.has_ede": "Has Emergency Dental Extraction",
-            "screen.has_erc": "Has Energy Resource Center assistance",
-            "screen.has_leap": "Has Low-Income Energy Assistance Program (Colorado)",
-            "screen.has_il_liheap": "Has Illinois LIHEAP energy assistance",
-            "screen.has_ma_heap": "Has Massachusetts HEAP energy assistance",
-            "screen.has_nc_lieap": "Has North Carolina LIEAP energy assistance",
-            "screen.has_oap": "Has Old Age Pension",
-            "screen.has_nccip": "Has NC Care for Children and Infant Program",
-            "screen.has_ncscca": "Has NC Senior Center for Creative Arts",
-            "screen.has_coctc": "Has Colorado Child Tax Credit",
-            "screen.has_upk": "Has Universal Pre-K",
-            "screen.has_ssdi": "Has Social Security Disability Insurance",
-            "screen.has_cowap": "Has Colorado Weatherization Assistance Program",
-            "screen.has_ncwap": "Has North Carolina Weatherization Assistance Program",
-            "screen.has_ubp": "Has Utility Bill Payment assistance",
-            "screen.has_pell_grant": "Has Pell Grant",
-            "screen.has_rag": "Has Refugee Assistance Grant",
-            "screen.has_nfp": "Has Nurse-Family Partnership",
-            "screen.has_fatc": "Has Food Assistance Tax Credit",
-            "screen.has_section_8": "Has Section 8 housing voucher",
-            "screen.has_csfp": "Has Commodity Supplemental Food Program",
-            "screen.has_ccdf": "Has Child Care and Development Fund",
-            "screen.has_aca": "Has Affordable Care Act marketplace insurance",
-            "screen.has_ma_eaedc": "Has Massachusetts Emergency Aid to Elderly, Disabled and Children",
-            "screen.has_ma_ssp": "Has Massachusetts State Supplement Program",
-            "screen.has_ma_mbta": "Has Massachusetts MBTA reduced fare",
-            "screen.has_ma_maeitc": "Has Massachusetts Earned Income Tax Credit",
-            "screen.has_ma_macfc": "Has Massachusetts Child and Family Tax Credit",
-            "screen.has_ma_homebridge": "Has Massachusetts HomeBridge program",
-            "screen.has_ma_dhsp_afterschool": "Has Massachusetts DHSP Afterschool program",
-            "screen.has_ma_door_to_door": "Has Massachusetts Door to Door transportation",
-            "screen.has_head_start": "Has Head Start program",
-            "screen.has_early_head_start": "Has Early Head Start program",
-            "screen.has_co_andso": "Has Colorado AND-SO (Aid to Needy Disabled - State Only)",
-            "screen.has_co_care": "Has Colorado CARE program",
-            "screen.has_cfhc": "Has Children's Family Health Coverage",
-            "screen.has_shitc": "Has State Health Insurance Tax Credit",
-            "screen.has_employer_hi": "Has employer-provided health insurance",
-            "screen.has_private_hi": "Has private health insurance",
-            "screen.has_medicaid_hi": "Has Medicaid health insurance (duplicate flag)",
-            "screen.has_medicare_hi": "Has Medicare health insurance",
-            "screen.has_nc_medicare_savings": "Has NC Medicare Savings Program",
-            "screen.has_chp_hi": "Has CHP+ health insurance",
-            "screen.has_no_hi": "Has no health insurance",
-            "screen.has_va": "Has Veterans Affairs benefits",
-            "screen.has_project_cope": "Has Project COPE assistance",
-            "screen.has_cesn_heap": "Has CESN HEAP energy assistance",
+            "screen.has_benefits": "Whether user has any current benefits (yes/no/preferNotToAnswer)",
             # Screen fields - needs_* (self-reported needs)
             "screen.needs_food": "User indicated need for food assistance",
             "screen.needs_baby_supplies": "User indicated need for baby supplies",
@@ -454,6 +393,8 @@ class Command(BaseCommand):
             "screen.needs_legal_services": "User indicated need for legal services",
             "screen.needs_college_savings": "User indicated need for college savings assistance",
             "screen.needs_veteran_services": "User indicated need for veteran services",
+            "screen.needs_disability_resources": "User indicated need for disability resources",
+            "screen.needs_aging_resources": "User indicated need for aging/senior resources",
             # Screen fields - UTM tracking
             "screen.utm_id": "UTM tracking: unique identifier",
             "screen.utm_source": "UTM tracking: traffic source",
@@ -481,6 +422,9 @@ class Command(BaseCommand):
             "household_member.has_income": "Whether member has income",
             "household_member.has_expenses": "Whether member has expenses",
             "household_member.is_care_worker": "Whether member is a care worker",
+            "household_member.student_job_training_program": "Whether student member is in a job training program",
+            "household_member.student_has_work_study": "Whether student member has a work-study position",
+            "household_member.student_works_20_plus_hrs": "Whether student member works 20 or more hours per week",
             "household_member.insurance": "Foreign key to insurance record",
             "household_member.energy_calculator": "Foreign key to energy calculator member data",
             # IncomeStream fields
@@ -514,6 +458,10 @@ class Command(BaseCommand):
             "insurance.family_planning": "Has family planning coverage",
             "insurance.va": "Has Veterans Affairs coverage",
             "insurance.mass_health": "Has Massachusetts MassHealth (Medicaid/CHIP)",
+            # CurrentBenefit fields
+            "current_benefit.id": "Unique identifier for the current benefit record",
+            "current_benefit.screen_id": "Foreign key to screens table",
+            "current_benefit.program_id": "Foreign key to programs table (the benefit already enrolled in)",
             # ProgramEligibility fields
             "program_eligibility.screen_id": "Foreign key to screens table",
             "program_eligibility.id": "Unique identifier for the eligibility record",
@@ -534,6 +482,7 @@ class Command(BaseCommand):
             "white_label.name": "Display name of the white label instance",
             "white_label.state_code": "Two-letter state code (e.g., 'CO', 'NC')",
             "white_label.cms_method": "CRM integration type (e.g., 'co_hubspot', 'nc_hubspot')",
+            "white_label.feature_flags": "JSON object of feature flag keys and their enabled/disabled state",
         }
 
         dictionary = []
@@ -544,6 +493,7 @@ class Command(BaseCommand):
             ("income_stream", IncomeStream),
             ("expense", Expense),
             ("insurance", Insurance),
+            ("current_benefit", CurrentBenefit),
             ("program_eligibility", ProgramEligibilitySnapshot),
             ("white_label", WhiteLabel),
         ]
@@ -616,6 +566,9 @@ class Command(BaseCommand):
         self.stdout.write(f"  Expenses: {Expense.objects.filter(screen_id__in=screen_ids_subquery).count()}")
         self.stdout.write(
             f"  Insurance records: {Insurance.objects.filter(household_member_id__in=member_ids_subquery).count()}"
+        )
+        self.stdout.write(
+            f"  Current benefit records: {CurrentBenefit.objects.filter(screen_id__in=screen_ids_subquery).count()}"
         )
 
         latest_snapshot_ids_subquery = (

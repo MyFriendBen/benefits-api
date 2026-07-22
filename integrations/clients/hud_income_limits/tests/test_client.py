@@ -529,6 +529,18 @@ class TestHudIncomeClientCountyLookup(HudClientTestBase):
             # Explicitly verify 'updated' is NOT present
             self.assertNotIn("updated", first_call_args[0][1])
 
+    def test_county_lookup_2026_pins_updated_to_2025(self) -> None:
+        """`updated` must be pinned to the 2025 FIPS-refresh vintage, not echo the
+        data year — HUD returns HTTP 400 for updated=2026 (regression: MFB-1121)."""
+        client = HudIncomeClient(api_token="test_token")
+
+        with self.mock_api_responses(client, self.mock_counties_response, self.mock_mtsp_response) as mock_api:
+            client.get_screen_mtsp_ami(self.screen, "80%", 2026)
+
+            first_call_args = mock_api.call_args_list[0]
+            self.assertEqual(first_call_args[0][0], "fmr/listCounties/IL")
+            self.assertEqual(first_call_args[0][1], {"year": "2026", "updated": "2025"})
+
     def test_empty_counties_list(self) -> None:
         """Test that empty counties list raises error."""
         client = HudIncomeClient(api_token="test_token")
@@ -721,3 +733,129 @@ class TestHudIncomeClientFmrBasicdata(TestCase):
     def test_normalize_non_dict_non_list(self) -> None:
         self.assertEqual(HudIncomeClient._normalize_fmr_basicdata(None, "Two-Bedroom"), {})
         self.assertEqual(HudIncomeClient._normalize_fmr_basicdata("bad", "Two-Bedroom"), {})
+
+
+class TestHudIncomeClientFmrAndSafmr(HudClientTestBase):
+    """FMR, ZIP-level SAFMR, and payment-standard routing (MFB-1121)."""
+
+    # Plain county: basicdata is a dict.
+    PLAIN_COUNTY_FMR = {
+        "data": {
+            "area_name": "El Paso, TX HUD Metro FMR Area",
+            "basicdata": {
+                "Efficiency": 821,
+                "One-Bedroom": 1013,
+                "Two-Bedroom": 1191,
+                "Three-Bedroom": 1633,
+                "Four-Bedroom": 1998,
+            },
+        }
+    }
+
+    # Mandatory-SAFMR metro (Dallas): basicdata is a list, "MSA level" first.
+    MANDATORY_SAFMR_FMR = {
+        "data": {
+            "area_name": "Dallas, TX HUD Metro FMR Area",
+            "smallarea_status": 1,
+            "basicdata": [
+                {
+                    "zip_code": "MSA level",
+                    "Efficiency": 1582,
+                    "One-Bedroom": 1648,
+                    "Two-Bedroom": 1931,
+                    "Three-Bedroom": 2431,
+                    "Four-Bedroom": 3091,
+                },
+                {
+                    "zip_code": "75201",
+                    "Efficiency": 2500,
+                    "One-Bedroom": 2700,
+                    "Two-Bedroom": 2900,
+                    "Three-Bedroom": 3600,
+                    "Four-Bedroom": 4400,
+                },
+            ],
+        }
+    }
+
+    # Non-mandatory metro that still publishes SAFMR data (Houston).
+    NON_MANDATORY_SAFMR_FMR = {
+        "data": {
+            "area_name": "Houston-The Woodlands-Sugar Land, TX HUD Metro FMR Area",
+            "smallarea_status": 1,
+            "basicdata": [
+                {
+                    "zip_code": "MSA level",
+                    "Efficiency": 1280,
+                    "One-Bedroom": 1323,
+                    "Two-Bedroom": 1573,
+                    "Three-Bedroom": 2116,
+                    "Four-Bedroom": 2639,
+                },
+                {"zip_code": "77002", "Two-Bedroom": 1900},
+            ],
+        }
+    }
+
+    def _client(self) -> HudIncomeClient:
+        return HudIncomeClient(api_token="test_token")
+
+    def test_get_screen_fmr_plain_county(self) -> None:
+        client = self._client()
+        with self.mock_api_responses(client, self.mock_counties_response, self.PLAIN_COUNTY_FMR):
+            self.assertEqual(client.get_screen_fmr(self.screen, 2, 2026), 1191)
+
+    def test_get_screen_fmr_safmr_area_returns_metro_level(self) -> None:
+        """SAFMR list → get_screen_fmr returns the metro-wide ("MSA level") row."""
+        client = self._client()
+        with self.mock_api_responses(client, self.mock_counties_response, self.MANDATORY_SAFMR_FMR):
+            self.assertEqual(client.get_screen_fmr(self.screen, 2, 2026), 1931)
+
+    def test_get_screen_safmr_returns_zip_level(self) -> None:
+        client = self._client()
+        self.screen.zipcode = "75201"
+        with self.mock_api_responses(client, self.mock_counties_response, self.MANDATORY_SAFMR_FMR):
+            self.assertEqual(client.get_screen_safmr(self.screen, 2, 2026), 2900)
+
+    def test_get_screen_safmr_missing_zip_raises(self) -> None:
+        client = self._client()
+        self.screen.zipcode = "99999"
+        with self.mock_api_responses(client, self.mock_counties_response, self.MANDATORY_SAFMR_FMR):
+            with self.assertRaisesRegex(HudIncomeClientError, r"No Small Area FMR data for ZIP"):
+                client.get_screen_safmr(self.screen, 2, 2026)
+
+    def test_get_screen_safmr_plain_county_raises(self) -> None:
+        client = self._client()
+        with self.mock_api_responses(client, self.mock_counties_response, self.PLAIN_COUNTY_FMR):
+            with self.assertRaisesRegex(HudIncomeClientError, r"No Small Area FMR data for ZIP"):
+                client.get_screen_safmr(self.screen, 2, 2026)
+
+    def test_payment_standard_mandatory_metro_uses_zip(self) -> None:
+        client = self._client()
+        self.screen.zipcode = "75201"
+        with self.mock_api_responses(client, self.mock_counties_response, self.MANDATORY_SAFMR_FMR):
+            self.assertEqual(client.get_screen_payment_standard(self.screen, 2, 2026), 2900)
+
+    def test_payment_standard_mandatory_metro_missing_zip_falls_back_to_metro(self) -> None:
+        client = self._client()
+        self.screen.zipcode = "99999"
+        with self.mock_api_responses(client, self.mock_counties_response, self.MANDATORY_SAFMR_FMR):
+            self.assertEqual(client.get_screen_payment_standard(self.screen, 2, 2026), 1931)
+
+    def test_payment_standard_non_mandatory_metro_uses_metro_level(self) -> None:
+        """Houston publishes SAFMR data (smallarea_status=1) but is not mandatory,
+        so the payment standard is the metro-level FMR, not the ZIP value."""
+        client = self._client()
+        self.screen.zipcode = "77002"
+        with self.mock_api_responses(client, self.mock_counties_response, self.NON_MANDATORY_SAFMR_FMR):
+            self.assertEqual(client.get_screen_payment_standard(self.screen, 2, 2026), 1573)
+
+    def test_payment_standard_plain_county(self) -> None:
+        client = self._client()
+        with self.mock_api_responses(client, self.mock_counties_response, self.PLAIN_COUNTY_FMR):
+            self.assertEqual(client.get_screen_payment_standard(self.screen, 0, 2026), 821)
+
+    def test_invalid_bedrooms_raises(self) -> None:
+        client = self._client()
+        with self.assertRaisesRegex(HudIncomeClientError, r"Bedroom count must be 0-4"):
+            client.get_screen_fmr(self.screen, 5, 2026)

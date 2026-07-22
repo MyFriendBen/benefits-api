@@ -1,0 +1,81 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "program_category": {
+    "external_name": "ks_tax"
+  },
+  "program": {
+    "name_abbreviated": "ks_cdcc_federal",
+    "external_name": "ks_cdcc_federal",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission"
+    ],
+    "name": "Federal Child and Dependent Care Credit (CDCC)",
+    "description_short": "Federal tax credit for childcare or dependent care expenses when you work or look for work",
+    "description": "This is a federal tax credit for people who pay for childcare or dependent care. It can lower how much you owe on your federal taxes.\n\nThe amount depends on your income and what you spent on care. Lower-income households get a larger credit. This credit is non-refundable: it can bring your tax bill to zero, but you will not get a cash refund.\n\nMarried people who file separate tax returns generally cannot claim this credit. If you use a Dependent Care FSA through your employer, it will reduce your credit.\n\nThis is a federal credit — there is no separate Kansas state application. You claim it on your federal tax return using Form 2441. You will need your care provider's name, address, and tax ID number to complete the form. Free filing help is available through VITA sites and IRS Free File.",
+    "learn_more_link": "https://www.irs.gov/credits-deductions/individuals/child-and-dependent-care-credit-information",
+    "apply_button_link": "https://www.getyourrefund.org/en",
+    "apply_button_description": "File for free",
+    "estimated_application_time": "45 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": "estimated_annual",
+    "value_type": "tax_credit",
+    "website_description": "Federal tax credit for childcare or dependent care expenses when you work or look for work",
+    "base_program": "cdcc",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": [
+    {
+      "external_name": "ks_ssn_or_itin",
+      "text": "SSN or ITIN for you, your spouse (if filing jointly), and each qualifying person",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_earned_income",
+      "text": "Proof of earned income (W-2, 1099, or Schedule C)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_dependent_care_expenses",
+      "text": "Dependent care receipts with your provider's name, address, and tax ID (TIN or EIN)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_dependent_documents",
+      "text": "Qualifying dependent records (birth certificate, custody order, or disability documentation)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "ks_211",
+      "name": "Kansas 211",
+      "email": "",
+      "description": "Kansas 211 connects residents to local services. During tax season it can point people to free tax preparation sites (VITA) where you can get help claiming the Child and Dependent Care Credit on your federal return.",
+      "assistance_link": "https://211.org/get-help",
+      "phone_number": "+18884134327"
+    },
+    {
+      "external_name": "ks_aarp_tax_aide",
+      "name": "AARP Foundation Tax-Aide",
+      "email": "taxaide@aarp.org",
+      "description": "AARP Foundation Tax-Aide provides free federal tax preparation help at sites across Kansas. Volunteers can help you claim the Child and Dependent Care Credit on your federal return. No AARP membership required. Use the site locator to find an appointment near you.",
+      "assistance_link": "https://www.aarp.org/money/taxes/aarp-taxaide/locations/",
+      "phone_number": "+18882277669"
+    }
+  ]
+}

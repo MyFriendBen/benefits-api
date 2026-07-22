@@ -7,6 +7,7 @@ by PolicyEngine to determine TX SNAP eligibility and benefit amounts.
 
 from django.test import TestCase
 from screener.models import Screen, HouseholdMember, WhiteLabel, IncomeStream, Expense
+from programs.models import Program
 from screener.tests.helpers import seed_program
 from screener.serializers import _write_current_benefits
 from programs.programs.policyengine.calculators.dependencies import spm
@@ -190,6 +191,31 @@ class TestUtilityExpenseDependency(TestCase):
         self.assertEqual(dep.value(), 600)  # $50 * 12
         self.assertEqual(dep.field, "phone_expense")
 
+    def test_phone_cost_calculates_annual_phone_cost(self):
+        """PhoneCostDependency.value() sends annual telephone cost under the phone_cost
+        field that PE's Lifeline formula reads for the KS state supplement."""
+        Expense.objects.create(screen=self.screen, type="telephone", amount=50, frequency="monthly")
+
+        dep = spm.PhoneCostDependency(self.screen, None, {})
+        self.assertEqual(dep.value(), 600)  # $50 * 12
+        self.assertEqual(dep.field, "phone_cost")
+
+    def test_phone_cost_shares_phone_expense_data_source(self):
+        """phone_cost and phone_expense are distinct PE fields but must derive from the
+        same telephone screener data — guards against them drifting apart."""
+        Expense.objects.create(screen=self.screen, type="telephone", amount=50, frequency="monthly")
+
+        phone_cost = spm.PhoneCostDependency(self.screen, None, {})
+        phone_expense = spm.PhoneExpenseDependency(self.screen, None, {})
+        self.assertEqual(phone_cost.value(), phone_expense.value())
+        self.assertNotEqual(phone_cost.field, phone_expense.field)
+
+    def test_phone_cost_is_zero_without_telephone_expense(self):
+        """No telephone expense -> phone_cost 0, so PE's KS supplement (min_(phone_cost, ...))
+        correctly stays $0 for broadband-only households."""
+        dep = spm.PhoneCostDependency(self.screen, None, {})
+        self.assertEqual(dep.value(), 0)
+
     def test_value_calculates_annual_water_from_other_utilities(self):
         """Test WaterExpenseDependency.value() calculates annual water costs from otherUtilities expense."""
         Expense.objects.create(screen=self.screen, type="otherUtilities", amount=60, frequency="monthly")
@@ -331,20 +357,20 @@ class TestBroadbandCostDependency(TestCase):
             white_label=self.white_label, zipcode="78701", county="Test County", household_size=2, completed=False
         )
 
-    def test_value_returns_fixed_broadband_cost(self):
-        """Test value() returns hardcoded broadband cost of 500."""
+    def test_value_reads_annual_internet_expense_when_reported(self):
+        """value() sends the household's reported annual internet expense as broadband_cost."""
+        Expense.objects.create(screen=self.screen, type="internet", amount=50, frequency="monthly")
+
         dep = spm.BroadbandCostDependency(self.screen, None, {})
-        self.assertEqual(dep.value(), 500)
+        self.assertEqual(dep.value(), 600)  # $50 * 12
         self.assertEqual(dep.field, "broadband_cost")
 
-    def test_value_returns_constant_regardless_of_household_data(self):
-        """Test value() returns 500 regardless of household characteristics."""
-        # Test with different household size
-        self.screen.household_size = 5
-        self.screen.save()
-
+    def test_value_falls_back_when_no_internet_expense_reported(self):
+        """No reported internet expense -> fall back to NO_DATA_FALLBACK (not $0), so an
+        eligible household isn't capped to $0 and hidden by the value>0 rule."""
         dep = spm.BroadbandCostDependency(self.screen, None, {})
-        self.assertEqual(dep.value(), 500)
+        self.assertEqual(dep.value(), spm.BroadbandCostDependency.NO_DATA_FALLBACK)
+        self.assertGreater(dep.value(), 0)
 
 
 class TestSchoolMealCountableIncomeDependency(TestCase):
@@ -506,7 +532,6 @@ class TestSnapDependency(TestCase):
             zipcode="78701",
             county="Test County",
             household_size=2,
-            has_snap=False,
             completed=False,
         )
 
@@ -524,9 +549,6 @@ class TestSnapDependency(TestCase):
 
     def test_value_returns_none_when_screen_does_not_have_snap(self):
         """When user does not report SNAP, return None so PE calculates the benefit amount."""
-        self.screen.has_snap = False
-        self.screen.save()
-
         dep = spm.Snap(self.screen, None, {})
         self.assertIsNone(dep.value())
 
@@ -541,7 +563,6 @@ class TestTanfDependency(TestCase):
             zipcode="78701",
             county="Test County",
             household_size=2,
-            has_tanf=False,
             completed=False,
         )
 
@@ -549,19 +570,34 @@ class TestTanfDependency(TestCase):
         dep = spm.Tanf(self.screen, None, {})
         self.assertEqual(dep.field, "tanf")
 
-    def test_value_returns_1_when_screen_has_tanf(self):
-        """When user reports having TANF, send 1 to PE to enable categorical eligibility."""
+    def _report_tanf(self):
+        """Seed a TANF program with base_program set (seed_program leaves it None) and
+        record receipt on the screen, mirroring how has_base_benefit resolves variants."""
         seed_program(self.white_label, "tanf")
+        Program.objects.filter(white_label=self.white_label, name_abbreviated="tanf").update(base_program="tanf")
         _write_current_benefits(self.screen, ["tanf"])
 
+    def test_value_returns_reported_amount_when_screen_has_tanf(self):
+        """When the household reports TANF with a cash amount, send that amount to PE."""
+        head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=head, type="cashAssistance", amount=400, frequency="monthly"
+        )
+        self._report_tanf()
+
         dep = spm.Tanf(self.screen, None, {})
-        self.assertEqual(dep.value(), 1)
+        self.assertEqual(dep.value(), 4800)  # $400/month * 12
+
+    def test_value_returns_none_when_tanf_reported_without_amount(self):
+        """Reported receipt but no cash amount collected: return None (don't override with a
+        placeholder), so PE computes the benefit rather than seeing a bogus value."""
+        self._report_tanf()
+
+        dep = spm.Tanf(self.screen, None, {})
+        self.assertIsNone(dep.value())
 
     def test_value_returns_none_when_screen_does_not_have_tanf(self):
         """When user does not report TANF, return None so PE calculates the benefit amount."""
-        self.screen.has_tanf = False
-        self.screen.save()
-
         dep = spm.Tanf(self.screen, None, {})
         self.assertIsNone(dep.value())
 

@@ -142,7 +142,6 @@ class TestNCHeadStart(TestCase):
             household_assets=0,
             white_label=self.nc_white_label,
             completed=False,
-            has_ssi=True,  # Household receives SSI - presumptive eligibility
         )
 
         # Person 1: Pregnant person with wages
@@ -196,9 +195,6 @@ class TestNCHeadStart(TestCase):
             household_assets=0,
             white_label=self.nc_white_label,
             completed=False,
-            has_ssi=False,
-            has_snap=False,
-            has_tanf=False,
         )
 
         # Person 1: Pregnant person with wages above 130% FPL

@@ -1,4 +1,3 @@
-from programs.programs.helpers import snap_ineligible_student
 from .base import Member
 
 
@@ -38,7 +37,30 @@ class FullTimeCollegeStudentDependency(Member):
     field = "is_full_time_college_student"
 
     def value(self):
-        return self.member.student or False
+        return bool(self.member.student and self.member.student_full_time)
+
+
+class PartTimeCollegeStudentDependency(Member):
+    field = "is_part_time_college_student"
+
+    def value(self):
+        return bool(self.member.student and self.member.student_full_time is False)
+
+
+class SnapWorkExceptionDependency(Member):
+    field = "meets_snap_work_exception"
+
+    def value(self):
+        return bool(self.member.student_works_20_plus_hrs or self.member.student_has_work_study)
+
+
+class SnapJobTrainingStudentDependency(Member):
+    field = "is_snap_employment_training_or_work_incentive_student"
+    # First released in policyengine-us 1.752.0 (merged to main 2026-07-01).
+    min_pe_version = (1, 752, 0)
+
+    def value(self):
+        return self.member.student_job_training_program or False
 
 
 class TaxUnitHeadDependency(Member):
@@ -146,6 +168,54 @@ class IsDisabledDependency(Member):
         return self.member.disabled or self.member.long_term_disability or self.member.visually_impaired
 
 
+class IsIncapableOfSelfCareDependency(Member):
+    """
+    PolicyEngine's `is_incapable_of_self_care` person input — used across care-related
+    calculations (e.g. the federal CDCC, where such a person is a qualifying individual
+    at any age). We infer it from the same self-reported disability signals as
+    is_disabled, since the screener has no dedicated incapable-of-self-care field.
+    """
+
+    field = "is_incapable_of_self_care"
+
+    def value(self):
+        return self.member.disabled or self.member.long_term_disability or self.member.visually_impaired
+
+
+class CareExpensesDependency(Member):
+    """
+    PolicyEngine's `care_expenses` person input — the cost of caring for a member who
+    is incapable of self-care. Distinct from the spm-unit-level `childcare_expenses`,
+    which PE aggregates into `tax_unit_childcare_expenses` by distributing only across
+    under-13 children (so an adult qualifying individual gets $0 from that path). It
+    feeds the federal CDCC and any state credit derived from it.
+
+    Our screener captures a single household-level "Dependent Care" (dependentCare)
+    expense with no per-member attribution, so we split it evenly across the members
+    who are incapable of self-care and assign this member their share (others get 0).
+    The even split is safe for the CDCC, which caps relevant expenses at $3,000 (one
+    qualifying individual) / $6,000 (two or more) — the split lands on the cap in the
+    cases that matter.
+    """
+
+    field = "care_expenses"
+
+    def value(self):
+        if not (self.member.disabled or self.member.long_term_disability or self.member.visually_impaired):
+            return 0
+
+        incapable_members = [
+            m
+            for m in self.screen.household_members.all()
+            if (m.disabled or m.long_term_disability or m.visually_impaired)
+        ]
+        if not incapable_members:
+            return 0
+
+        dependent_care_total = self.screen.calc_expenses("yearly", ["dependentCare"])
+        return dependent_care_total / len(incapable_members)
+
+
 class MeetsSsiDisabilityCriteriaDependency(Member):
     """
     PolicyEngine frontier (policyengine-us 1.715.2) requires this person input to
@@ -157,8 +227,8 @@ class MeetsSsiDisabilityCriteriaDependency(Member):
     is_ssi_aged OR is_blind OR is_ssi_disabled (verified in policyengine-us source),
     so including blindness here only adds to an OR and can never reduce eligibility.
 
-    min_pe_version gates this so it's only sent to models that define the variable —
-    it does not exist in 1.691.1 (current), where sending it 400s the whole request.
+    min_pe_version gates this so it's only sent to models that define it (first added in
+    1.715.2); sending it to an earlier pinned version would 400 the whole request.
     """
 
     field = "meets_ssi_disability_criteria"
@@ -246,6 +316,28 @@ class SsiReportedDependency(Member):
 
     def value(self):
         return self.member.calc_gross_income("yearly", ["sSI"])
+
+
+class UseReportedSsiDependency(Member):
+    """
+    Tells PolicyEngine to count the household's *reported* SSI (ssi_reported)
+    instead of PE's *calculated* ssi wherever a program's countable income reads
+    applicable_ssi (the calculator opts in by including this in its pe_inputs).
+    We always send True so the screener's reported SSI drives the income test.
+
+    Person-level and global within a request: it flips applicable_ssi for every
+    program in that request, so only add it to calculators where reported SSI is
+    the correct measure.
+
+    min_pe_version gates this to the first model that defines use_reported_ssi;
+    sending it to an earlier model 400s the whole request.
+    """
+
+    field = "use_reported_ssi"
+    min_pe_version = (1, 742, 0)
+
+    def value(self):
+        return True
 
 
 class SsdiReportedDependency(Member):
@@ -353,54 +445,6 @@ class SnapChildSupportDependency(Member):
 
     def value(self):
         return self.screen.calc_expenses("yearly", ["childSupport"]) / self.screen.household_size
-
-
-class SnapIneligibleStudentDependency(Member):
-    field = "is_snap_ineligible_student"
-    dependencies = ("age",)
-
-    # PE does not take the age of the children into acount, so we calculate this ourselves
-    def value(self):
-        return snap_ineligible_student(self.screen, self.member)
-
-
-class NcSnapIneligibleStudentDependency(SnapIneligibleStudentDependency):
-    def value(self):
-        member = self.member
-        screen = self.screen
-
-        if not member.student:
-            return False
-
-        # NC part-time exemption
-        if member.student_full_time is False:
-            return False
-
-        # Shared federal exemptions (E1–E6)
-        if member.age < 18 or member.age >= 50:
-            return False
-
-        if member.has_disability():
-            return False
-
-        head_or_spouse = member.is_head() or member.is_spouse()
-
-        if head_or_spouse and screen.num_children(age_max=5) > 0:
-            return False
-
-        single_parent = member.is_head() and not member.is_married()["is_married"]
-
-        if single_parent and screen.num_children(age_max=11) > 0:
-            return False
-
-        if screen.has_base_benefit("tanf"):
-            return False
-
-        # NC Step 3: employment exemptions
-        if member.student_job_training_program or member.student_has_work_study or member.student_works_20_plus_hrs:
-            return False
-
-        return True
 
 
 class TotalHoursWorkedDependency(Member):

@@ -4,18 +4,21 @@ from typing import Optional
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from integrations.clients.rewiring_america import RewiringAmericaClient
+from integrations.clients.google_places import GooglePlacesClient
 from integrations.services.communications import MessageUser
 from programs.programs.policyengine import versions as pe_versions
 from programs.models import Referrer
 from programs.programs.helpers import STATE_MEDICAID_OPTIONS
 from programs.programs.policyengine.calculators.registry import all_calculators
 from programs.programs.urgent_needs.base import UrgentNeedFunction
+from django.db import transaction
 from screener.models import (
     Screen,
     HouseholdMember,
     IncomeStream,
     Expense,
     Message,
+    CurrentBenefit,
     EligibilitySnapshot,
     ProgramEligibilitySnapshot,
 )
@@ -34,8 +37,10 @@ from screener.serializers import (
     NPSScoreSerializer,
     NPSScoreReasonSerializer,
     RemImpactSerializer,
+    CurrentBenefitToggleSerializer,
 )
 from programs.programs.policyengine.policy_engine import calc_pe_eligibility
+from integrations.external_api_status import track_external_api_failures, get_external_api_failures
 from programs.util import DependencyError, Dependencies
 from programs.programs.urgent_needs import urgent_need_functions
 from programs.models import (
@@ -76,9 +81,19 @@ class ScreenViewSet(
     API endpoint that allows screens to be viewed or edited.
     """
 
-    # Prefetch current_benefits__program so ScreenSerializer.to_representation can
-    # build the current_benefits list without a per-screen query.
-    queryset = Screen.objects.all().prefetch_related("current_benefits__program").order_by("-submission_date")
+    queryset = (
+        Screen.objects.all()
+        .select_related("user", "white_label")
+        .prefetch_related(
+            "current_benefits__program",
+            "household_members__income_streams",
+            "household_members__insurance",
+            "household_members__energy_calculator",
+            "expenses",
+            "energy_calculator",
+        )
+        .order_by("-submission_date")
+    )
     serializer_class = ScreenSerializer
     permission_classes = [permissions.DjangoModelPermissions]
     filterset_fields = ["agree_to_tos", "is_test"]
@@ -100,6 +115,60 @@ class ScreenViewSet(
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
+
+class ScreenCurrentBenefitsView(views.APIView):
+    """
+    PATCH /api/screens/<uuid>/current-benefits/
+
+    Lightweight single-benefit toggle for the results-page "already have this"
+    control (MFB-871). Adds or removes exactly one CurrentBenefit row instead of
+    revalidating and rewriting the whole screen the way the Screen PATCH path does.
+    Idempotent — repeating the same payload is a no-op:
+
+        body: {"name_abbreviated": "snap", "has": true}   # ensure the row exists
+        body: {"name_abbreviated": "snap", "has": false}  # ensure the row is absent
+
+    `name_abbreviated` is a program name resolved against the screen's white label;
+    an unknown name (or one offered only by another white label) is a 404, so a
+    toggle can't write a cross-WL program. Returns the updated current-benefits
+    list as {"current_benefits": [...sorted name_abbreviated...]}.
+
+    Unlike the bulk write path (`_write_current_benefits`), this does NOT OR in
+    derived benefits (e.g. SSI implied by an sSI income stream) — it's a targeted
+    single-row operation. The next full Screen PATCH reapplies those compound rules.
+    """
+
+    # Same gate as the Screen PATCH path: DjangoModelPermissions maps PATCH to
+    # `screener.change_screen`, so whoever may edit the screen may toggle its
+    # benefits. The queryset is required for DjangoModelPermissions to resolve
+    # the model the permission is checked against.
+    permission_classes = [permissions.DjangoModelPermissions]
+    queryset = Screen.objects.all()
+
+    def patch(self, request, screen_uuid):
+        serializer = CurrentBenefitToggleSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        name_abbreviated = serializer.validated_data["name_abbreviated"]
+        has = serializer.validated_data["has"]
+
+        # Lock the screen for the read-modify-write so concurrent toggles (or a
+        # toggle racing a Screen PATCH) can't interleave on the join table. The
+        # locked fetch also serves as the screen-missing 404 (an empty
+        # transaction just rolls back), and the program lookup resolves against
+        # the locked screen's white label rather than a pre-lock read.
+        with transaction.atomic():
+            screen = get_object_or_404(Screen.objects.select_for_update(), uuid=screen_uuid)
+            program = get_object_or_404(Program, white_label=screen.white_label, name_abbreviated=name_abbreviated)
+            if has:
+                CurrentBenefit.objects.get_or_create(screen=screen, program=program)
+            else:
+                CurrentBenefit.objects.filter(screen=screen, program=program).delete()
+            current_benefits = sorted(
+                CurrentBenefit.objects.filter(screen=screen).values_list("program__name_abbreviated", flat=True)
+            )
+
+        return Response({"current_benefits": current_benefits})
 
 
 class HouseholdMemberViewSet(viewsets.ModelViewSet):
@@ -154,15 +223,19 @@ class EligibilityTranslationView(views.APIView):
         EligibilitySnapshot — that ordering is locked by
         screener/tests/test_pe_version_override.py.
         """
-        screen = Screen.objects.prefetch_related(
-            "household_members",
-            "household_members__income_streams",
-            "household_members__insurance",
-            "household_members__energy_calculator",
-            "expenses",
-            "energy_calculator",
-            "current_benefits__program",
-        ).get(uuid=id)
+        screen = (
+            Screen.objects.select_related("white_label")
+            .prefetch_related(
+                "household_members",
+                "household_members__income_streams",
+                "household_members__insurance",
+                "household_members__energy_calculator",
+                "expenses",
+                "energy_calculator",
+                "current_benefits__program",
+            )
+            .get(uuid=id)
+        )
 
         is_admin = request.query_params.get("admin")
 
@@ -219,8 +292,12 @@ class MessageViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
 
 
 def all_results(screen: Screen, batch=False, is_admin: bool = False, pe_version: Optional[str] = None):
-    eligibility, missing_programs, categories, _pe_data = eligibility_results(screen, batch, pe_version=pe_version)
-    urgent_needs = urgent_need_results(screen, eligibility)
+    # Track any external-API failure (e.g. PolicyEngine) that occurs while computing
+    # this screen's results, so we can tell the frontend results may be incomplete.
+    with track_external_api_failures():
+        eligibility, missing_programs, categories, _pe_data = eligibility_results(screen, batch, pe_version=pe_version)
+        urgent_needs = urgent_need_results(screen, eligibility)
+        external_api_failures = get_external_api_failures()
     validations = ValidationSerializer(screen.validations.all(), many=True).data
 
     results = {
@@ -232,6 +309,9 @@ def all_results(screen: Screen, batch=False, is_admin: bool = False, pe_version:
         "validations": validations,
         "program_categories": categories,
         "pe_data": _pe_data,
+        # Unlike pe_data (admin-only, popped below), this is sent to all users so the
+        # results page can show a "some results may be unavailable" banner.
+        "external_api_failures": external_api_failures,
     }
 
     if not is_admin:
@@ -343,12 +423,10 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
 
     missing_dependencies = screen.missing_fields()
 
+    program_by_abbr = {p.name_abbreviated: p for p in all_programs}
     pe_calculators = {}
     for calculator_name, Calculator in all_calculators.items():
-        program: Optional[Program] = None
-        for p in all_programs:
-            if calculator_name == p.name_abbreviated:
-                program = p
+        program = program_by_abbr.get(calculator_name)
 
         if program is not None:
             pe_calculators[calculator_name] = Calculator(screen, program, missing_dependencies)
@@ -373,7 +451,6 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
             "cesn_leap",
             "cesn_eoc",
             "cesn_cowap",
-            "cesn_ubp",
             "cesn_care",
         )
 
@@ -668,38 +745,27 @@ def urgent_need_results(screen: Screen, data):
     return eligible_urgent_needs
 
 
-class RemRateThrottle(throttling.AnonRateThrottle):
-    """
-    Rate throttle for REM impact proxy requests to prevent API key abuse.
-    Rate is configured via DEFAULT_THROTTLE_RATES["rem"] in settings.
-    Uses a hashed IP as the cache key to avoid storing raw IPs.
-    """
+class HashedIPAnonRateThrottle(throttling.AnonRateThrottle):
+    """AnonRateThrottle that keys on a hashed IP so raw IPs aren't stored."""
 
+    def get_cache_key(self, request, view):
+        ident = self.get_ident(request)
+        if ident is None:
+            return None
+        hashed = hashlib.sha256(ident.encode()).hexdigest()
+        return self.cache_format % {"scope": self.scope, "ident": hashed}
+
+
+class RemRateThrottle(HashedIPAnonRateThrottle):
     scope = "rem"
 
-    def get_cache_key(self, request, view):
-        ident = self.get_ident(request)
-        if ident is None:
-            return None
-        hashed = hashlib.sha256(ident.encode()).hexdigest()
-        return self.cache_format % {"scope": self.scope, "ident": hashed}
 
-
-class NPSRateThrottle(throttling.AnonRateThrottle):
-    """
-    Rate throttle for NPS submissions to prevent abuse.
-    Rate is configured via DEFAULT_THROTTLE_RATES["nps"] in settings.
-    Uses a hashed IP as the cache key to avoid storing raw IPs.
-    """
-
+class NPSRateThrottle(HashedIPAnonRateThrottle):
     scope = "nps"
 
-    def get_cache_key(self, request, view):
-        ident = self.get_ident(request)
-        if ident is None:
-            return None
-        hashed = hashlib.sha256(ident.encode()).hexdigest()
-        return self.cache_format % {"scope": self.scope, "ident": hashed}
+
+class PlacesRateThrottle(HashedIPAnonRateThrottle):
+    scope = "places"
 
 
 class NPSScoreView(views.APIView):
@@ -827,6 +893,24 @@ class RemImpactView(views.APIView):
                 detail = e.response.json()
             except Exception:
                 detail = e.response.text
+            # REM returns 400 with a typed detail dict for address-level errors the frontend
+            # can surface meaningfully. Known types (per docs.rewiringamerica.org/api/
+            # residential-electrification-model#get-by-address):
+            #   multifamily_not_supported, building_type_not_supported,
+            #   address_not_parsable, building_not_supported
+            # Return 422 so the frontend can distinguish these from backend/network failures.
+            _ADDRESS_ERROR_TYPES = {
+                "multifamily_not_supported",
+                "building_type_not_supported",
+                "address_not_parsable",
+                "building_not_supported",
+            }
+            nested = detail.get("detail") if isinstance(detail, dict) else None
+            if e.response.status_code < 500 and isinstance(nested, dict) and nested.get("type") in _ADDRESS_ERROR_TYPES:
+                return Response(
+                    {"error": "address_not_supported", "detail": detail},
+                    status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                )
             return Response(
                 {"error": f"Rewiring America API error: {e.response.status_code}", "detail": detail},
                 status=status.HTTP_502_BAD_GATEWAY,
@@ -844,3 +928,37 @@ class RemImpactView(views.APIView):
 
         serializer = RemImpactSerializer(raw)
         return Response(serializer.data)
+
+
+class PlacesAutocompleteView(views.APIView):
+    """
+    Proxies address autocomplete requests to the Google Places API,
+    keeping the API key server-side. Returns US street address predictions
+    restricted to street-level addresses.
+    """
+
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [PlacesRateThrottle]
+
+    def get(self, request, **_kwargs) -> Response:
+        input_text = request.query_params.get("input", "").strip()
+
+        if not input_text:
+            return Response([], status=status.HTTP_200_OK)
+
+        try:
+            client = GooglePlacesClient()
+            predictions = client.autocomplete_address(input_text)
+        except requests.HTTPError as e:
+            http_status = e.response.status_code if e.response is not None else "unknown"
+            return Response(
+                {"error": f"Google Places API error: {http_status}"},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+        except requests.RequestException as e:
+            return Response(
+                {"error": "Google Places request failed.", "detail": str(e)},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        return Response(predictions)

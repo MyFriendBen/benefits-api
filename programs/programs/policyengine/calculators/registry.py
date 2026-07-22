@@ -30,7 +30,11 @@ from programs.programs.il.pe import (
     il_spm_calculators,
     il_tax_unit_calculators,
 )
-from programs.programs.ks.pe import ks_member_calculators, ks_spm_calculators
+from programs.programs.ks.pe import (
+    ks_member_calculators,
+    ks_spm_calculators,
+    ks_tax_unit_calculators,
+)
 from programs.programs.ma.pe import (
     ma_member_calculators,
     ma_spm_calculators,
@@ -70,6 +74,7 @@ all_tax_unit_calculators: dict[str, type[PolicyEngineTaxUnitCalulator]] = {
     **co_tax_unit_calculators,
     **federal_tax_unit_calculators,
     **il_tax_unit_calculators,
+    **ks_tax_unit_calculators,
     **ma_tax_unit_calculators,
     **tx_tax_unit_calculators,
     **wa_tax_calculators,

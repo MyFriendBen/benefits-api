@@ -7,6 +7,7 @@ from sentry_sdk import capture_exception, capture_message
 from .engines import Sim, pe_engines
 from .calculators.constants import MAIN_TAX_UNIT, SECONDARY_TAX_UNIT
 from . import versions as pe_versions
+from integrations.external_api_status import record_external_api_failure, POLICY_ENGINE
 from django.conf import settings
 
 
@@ -42,6 +43,11 @@ def calc_pe_eligibility(
 
     input_data = pe_input(screen, valid_programs.values(), pe_version=pe_version)
 
+    # A single engine: the authenticated private household.api. There is deliberately no
+    # fallback to the public api.policyengine.org — it ignores the request `version` field
+    # (verified against its source) and would silently compute against a different model
+    # version than the one we resolve and pin. So any failure here means PolicyEngine
+    # programs are unavailable for this screen.
     for Method in pe_engines:
         try:
             method_instance = Method(input_data)
@@ -66,13 +72,27 @@ def calc_pe_eligibility(
             )
             raise
         except Exception as e:
+            # Any PolicyEngine failure (malformed payload/400, timeout, 5xx, auth, non-JSON):
+            # with no fallback endpoint, PolicyEngine programs can't be computed for this
+            # screen. Surface it loudly (Sentry error), record it so the frontend can warn
+            # the user, and return an empty PE result so the caller still computes the
+            # non-PolicyEngine (custom) calculators.
             if settings.DEBUG:
                 print(repr(e))
-            capture_exception(e, level="warning")
+            capture_exception(e, level="error")
             capture_message(
-                f"Failed to calculate eligibility with the {Method.method_name} method",
-                level="warning",
+                f"Failed to calculate eligibility with the {Method.method_name} method; "
+                f"PolicyEngine programs are unavailable for this screen.",
+                level="error",
             )
+            record_external_api_failure(POLICY_ENGINE)
+            # Preserve the payload that triggered the failure so admins can debug it
+            # (the exact request is the most useful thing for diagnosing a 400).
+            # _pe_data.request is admin-only — already popped for non-admins downstream.
+            return {
+                "eligibility": {},
+                "_pe_data": {"request": input_data, "response": None},
+            }
         else:
             return result
 
@@ -89,6 +109,17 @@ def all_eligibility(method: Sim, valid_programs: dict[str, PolicyEngineCalulator
         all_eligibility[name_abbr] = e
 
     return all_eligibility
+
+
+def _has_gated_input(programs: List[PolicyEngineCalulator]) -> bool:
+    """True if any input/output in these programs is version-gated (has a
+    min_pe_version or max_pe_version). Lets us skip resolving the PE version when
+    nothing in the request depends on it."""
+    for program in programs:
+        for Data in program.pe_inputs + program.pe_outputs:
+            if getattr(Data, "min_pe_version", ()) or getattr(Data, "max_pe_version", ()):
+                return True
+    return False
 
 
 def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: Optional[str] = None):
@@ -117,11 +148,22 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: 
         }
     }
     # Two values from one resolved version, for two consumers:
-    #   version (string)            -> version to send in PE API request body (if None/omitted,
-    #                                   PE defaults to current version)
+    #   version (string)            -> version to send in the PE API request body. Always
+    #                                   set: the DB pin, the test override, or the literal
+    #                                   "current" alias (household.api resolves it server-side).
     #   comparable_version (tuple)  -> tuple representation to gate which inputs are sent
     version = pe_versions.determine_pe_version(pe_version)
     comparable_version = pe_versions.to_comparable_pe_version(version)
+
+    # We send the "current" alias unpinned (comparable_version is None), but for input
+    # gating we still need to know what current concretely is — otherwise a min_pe_version
+    # floor can never be met and gated inputs (e.g. use_reported_ssi) are withheld forever.
+    # Resolve current from PE's published /versions/us. If PE is unreachable this stays
+    # None, keeping the conservative withhold-gated behavior (safe: PE just uses modeled
+    # values). Only bother resolving when this request actually carries a version-gated
+    # input — the vast majority don't, and resolving would be a needless (cached) lookup.
+    if comparable_version is None and _has_gated_input(programs):
+        comparable_version = pe_versions.resolve_unpinned_comparable_version()
 
     members: list[HouseholdMember] = screen.household_members.all()
     relationship_map = screen.relationship_map()
@@ -156,10 +198,11 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: 
 
     for program in programs:
         for Data in program.pe_inputs + program.pe_outputs:
-            # Skip inputs that the resolved model version doesn't define yet — sending
-            # an unknown variable 400s the whole request (e.g. meets_ssi_disability_criteria
-            # on 1.691.1). With no pin (comparable_version is None) we omit gated inputs
-            # too, since the unpinned default is the current model that lacks them.
+            # Skip inputs the resolved model version doesn't define yet — sending an
+            # unknown variable 400s the whole request (e.g. meets_ssi_disability_criteria
+            # on 1.691.1). comparable_version is the concrete "current" resolved above
+            # when this request carries a version-gated input; if PE was unreachable it
+            # stays None and version_supports conservatively withholds min-gated inputs.
             if not pe_versions.version_supports(
                 comparable_version,
                 getattr(Data, "min_pe_version", ()),
@@ -199,9 +242,9 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: 
     if len(secondary_tax_members) == 0:
         del raw_input["household"]["tax_units"][SECONDARY_TAX_UNIT]
 
-    # Inject the resolved version (override > config); None means omit the field.
-    if version is not None:
-        raw_input["version"] = version
+    # Always inject the version (override > DB pin > "current"): determine_pe_version
+    # never returns None, so a version is always sent.
+    raw_input["version"] = version
 
     return raw_input
 
