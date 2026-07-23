@@ -3,7 +3,6 @@ from .util import LivesInDenver, Child, HasRentOrMortgage
 from .meal_in_counties import MealInCounties
 from .helpkitchen_zipcode import HelpkitchenZipcode
 from .bia_food_delivery import BiaFoodDelivery
-from .trua import Trua
 from .foreclosure_fin_assist_program import ForeclosureFinAssistProgram
 from .eoc import Eoc
 from .co_legal_services import CoLegalServices
@@ -25,7 +24,6 @@ co_urgent_need_functions: dict[str, type[UrgentNeedFunction]] = {
     "meal": MealInCounties,
     "helpkitchen_zipcode": HelpkitchenZipcode,
     "bia_food_delivery": BiaFoodDelivery,
-    "trua": Trua,
     "ffap": ForeclosureFinAssistProgram,
     "eoc": Eoc,
     "co_legal_services": CoLegalServices,

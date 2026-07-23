@@ -314,8 +314,8 @@ class TestPeInputVersionGating(PeInputTestBase):
         return "meets_ssi_disability_criteria" in result["household"]["people"][self.head_id]
 
     # When unpinned (None / "current"), gating resolves what PE's current model is via
-    # resolve_unpinned_comparable_version(); mock it so these tests are deterministic
-    # and never hit the network. meets_ssi_disability_criteria's floor is (1, 715, 2).
+    # resolve_unpinned_comparable_version(); mock it so these tests are deterministic and
+    # never hit the network. meets_ssi_disability_criteria's floor is (1, 715, 2).
     def _mock_unpinned(self, resolved):
         return patch(
             "programs.programs.policyengine.policy_engine.pe_versions.resolve_unpinned_comparable_version",

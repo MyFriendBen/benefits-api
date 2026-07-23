@@ -16,28 +16,6 @@ class IlNslp(SchoolLunch):
         dependency.household.IlStateCodeDependency,
     ]
 
-    tier_1_fpl = 1.30
-    tier_2_fpl = 1.85
-
-    tier_1_amount = 935
-    tier_2_amount = 805
-
-    def household_value(self):
-        value = 0
-        num_children = self.screen.num_children(3, 18)
-        if self.get_variable() > 0 and num_children > 0:
-            if self.get_dependency_value(dependency.spm.SchoolMealTier) != "PAID":
-                countable_income = self.get_dependency_value(dependency.spm.SchoolMealCountableIncomeDependency)
-                fpl_limit = self.program.year.get_limit(self.screen.household_size)
-
-                if countable_income <= int(self.tier_1_fpl * fpl_limit):
-                    value = self.tier_1_amount * num_children
-
-                elif countable_income <= int(self.tier_2_fpl * fpl_limit):
-                    value = self.tier_2_amount * num_children
-
-        return value
-
 
 class IlTanf(Tanf):
     pe_name = "il_tanf"

@@ -92,7 +92,9 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 
 ## Test Scenarios
 
-*The 20 scenarios below cover all major eligibility branches: the golden-path eligible case, an ineligible case per each major exclusion criterion, boundary/edge values, both disability paths (long-term disability and blindness), multi-member, assistance-plan sizing (minor-with-parent under both relationship codings, and the unaccompanied-minor 1-person case), and the SSI/HCBS mutex. Eligible value = $19,051/year per eligible member (annual); $38,102/year for a 2-member eligible household. (KS residency isn't a scenario here — it's enforced by white-label routing, not the calculator.)*
+*The 22 scenarios below cover all major eligibility branches: the golden-path eligible case, an ineligible case per each major exclusion criterion, boundary/edge values, both disability paths (long-term disability and blindness), multi-member, assistance-plan sizing (minor-with-parent under both relationship codings, and the unaccompanied-minor 1-person case), and the full mutex set — the already-on-Medicaid case (Sc 9), the SSI/HCBS mutex (Sc 15), and the **children's-Medicaid mutex for a low-income minor** (Sc 2 and Sc 10). Eligible value = $19,051/year per eligible member (annual); $38,102/year for a 2-member eligible household. (KS residency isn't a scenario here — it's enforced by white-label routing, not the calculator.)*
+
+**Criterion 8 mutex depends on regular KanCare eligibility, which is evaluated live.** Working Healthy excludes anyone who qualifies for full Medicaid through another category (`household_eligible` → `medicaid_eligible()`, which reads the `ks_medicaid` result computed on the same screen). Two everyday shapes trip this: an **age-16–18 minor at low income** qualifies for children's KanCare Medicaid (older-child pathway, ≤138% FPL) and a **low-income disabled adult** qualifies for the ABD pathway (countable income ≤ the SSI FBR **and** assets ≤ $2,000). Both are excluded from Working Healthy by design — regular Medicaid is the better coverage and WH is the buy-in for those who earn too much for it. Scenarios that intend to test a WH *edge* (minimum age, the earned-income floor) must therefore put the household **above** the regular-Medicaid threshold, or they are really testing the mutex, not the edge. Sc 2/10 test the minor mutex; Sc 21/22 test the age and earned-income edges with the mutex deliberately not firing.*
 
 ### Scenario 1: Clearly eligible disabled worker
 
@@ -110,10 +112,10 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 
 ---
 
-### Scenario 2: Minimally eligible — barely meets all thresholds
+### Scenario 2: Low-income minor covered by children's Medicaid — ineligible (mutex)
 
-**What we're checking**: Applicant who just clears every floor: exactly age 16, minimal employment income, confirmed disability.
-**Expected**: Eligible, value $19,051/year
+**What we're checking**: A disabled, working, age-16 applicant at low income who *independently qualifies for children's KanCare Medicaid*. Working Healthy's Criterion-8 mutex must exclude them — regular Medicaid is the better coverage, and WH is the buy-in for those who earn too much for it.
+**Expected**: Not eligible (routes to children's KanCare Medicaid instead)
 
 **Steps**:
 
@@ -122,7 +124,7 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 * **Person 1**: Birth month/year: `June 2010` (age 16), Relationship: `Head of Household`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$200`, Citizenship: `US Citizen`, Insurance: `None`
 * **Assets**: `$500`
 
-**Why this matters**: Tests minimum age and minimal employment together. Any earned income above the $65/mo disregard satisfies §2664.3; countable income is negligible, so the member is eligible at the edge.
+**Why this matters**: A 16-year-old at $200/mo is far under the children's-Medicaid older-child ceiling (6–18, ≤138% FPL), so `ks_medicaid` returns eligible and the WH `medicaid_eligible()` mutex fires (KEESM §2664 intro — "not otherwise covered by full Medicaid"). This is the everyday case a naive "minimally eligible minor" reading misses: a low-income working disabled minor belongs on children's Medicaid, not the buy-in. The age-16 *floor* itself is tested — without the mutex — in Scenario 21. (Discovery gap corrected: MFB-1066 staging QA flagged that the original spec expected Eligible here and in Sc 10, but the calculator correctly returns Not eligible.)
 
 ---
 
@@ -238,10 +240,10 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 
 ---
 
-### Scenario 10: Age exactly 16 — minimum age threshold
+### Scenario 10: Low-income minor covered by children's Medicaid — ineligible (mutex, higher income)
 
-**What we're checking**: Whether a person who is exactly 16 (the minimum age) qualifies.
-**Expected**: Eligible, value $19,051/year
+**What we're checking**: The same children's-Medicaid mutex as Scenario 2, at a higher (but still Medicaid-eligible) earned income, to confirm the exclusion isn't an artifact of the near-zero income in Sc 2.
+**Expected**: Not eligible (routes to children's KanCare Medicaid instead)
 
 **Steps**:
 
@@ -250,7 +252,7 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 * **Person 1**: Birth month/year: `March 2010` (age 16), Relationship: `Head of Household`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$800`, Citizenship: `US Citizen`, Insurance: `None`
 * **Assets**: `$1,000`
 
-**Why this matters**: §2664.2 sets the minimum age at 16, inclusive. Confirms the age floor does not reject a 16-year-old who otherwise qualifies.
+**Why this matters**: At $800/mo a single 16-year-old is still well under the children's-Medicaid older-child ceiling (138% FPL HH1 ≈ $1,769/mo of MAGI income), so `ks_medicaid` is eligible and the WH mutex fires. Confirms the exclusion holds across the low-income band, not just at the Sc 2 floor. The age-16 *eligibility* edge (a 16-year-old who is **not** Medicaid-eligible) is Scenario 21. (Discovery gap corrected per MFB-1066 staging QA — the original spec wrongly expected Eligible.)
 
 ---
 
@@ -413,6 +415,39 @@ The income, resource, age, employment, disability, insurance, and SSI criteria a
 * **Assets**: `$2,000`
 
 **Why this matters**: Same $8,300/mo income as Sc 18–19, but with no parent present the plan is 1-person, so countable $49,767 exceeds the 1-person ceiling ($47,880) → ineligible. Confirms the sizing bites in both directions and that "minor living with a parent" is a real condition, not a blanket 2-person rule for all minors.
+
+---
+
+### Scenario 21: Age exactly 16, above children's-Medicaid income — eligible (age floor, mutex not firing)
+
+**What we're checking**: The age-16 minimum-age floor from the *eligible* side, isolated from the children's-Medicaid mutex. A 16-year-old whose household income is **above** the children's-Medicaid older-child ceiling (so `ks_medicaid` is not eligible and Criterion 8 does not fire) but still within Working Healthy's 300% FPL limit. This is the eligible-edge test that Scenario 10 used to (incorrectly) claim.
+**Expected**: Eligible, value $19,051/year (minor only)
+
+**Steps**:
+
+* **Location**: Enter ZIP code `66502`, Select county `Riley`
+* **Household**: Number of people: `2`
+* **Person 1** (parent): Birth month/year: `March 1980` (age 46), Relationship: `Head of Household`, no earned income, Insurance: `None`
+* **Person 2** (minor applicant): Birth month/year: `March 2010` (age 16), Relationship: `Child`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$8,300`, Citizenship: `US Citizen`, Insurance: `None`
+* **Assets**: `$2,000`
+
+**Why this matters**: §2664.2 sets the minimum age at 16, inclusive — a qualifying 16-year-old must be eligible. At $8,300/mo the minor is far over the children's-Medicaid older-child ceiling (138% FPL), so the mutex does **not** fire; the minor-with-parent 2-person sizing (Sc 18) puts countable income ($49,767) under the 2-person 300%-FPL ceiling ($64,920), so Working Healthy admits them. This is the honest age-16 floor test: unlike the original Sc 10 (which tripped the mutex), the only thing keeping a *younger* applicant out here would be the age gate. Pairs with Sc 11 (age 15 → ineligible).
+
+---
+
+### Scenario 22: Minimum earned income above the $65 floor, not Medicaid-eligible — eligible (earned floor, mutex not firing)
+
+**What we're checking**: The $65/month earned-income floor from the *eligible* side — an applicant just above the floor who does **not** qualify for regular Medicaid, so the mutex doesn't mask the result. A disabled adult with minimal earned income but countable resources over the ABD Medicaid limit ($2,000) and under the Working Healthy limit ($15,000).
+**Expected**: Eligible, value $19,051/year
+
+**Steps**:
+
+* **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
+* **Household**: Number of people: `1`
+* **Person 1**: Birth month/year: `March 1986` (age 40), Relationship: `Head of Household`, Disability: `Yes`, Currently employed: `Yes`, Monthly wages: `$100`, Citizenship: `US Citizen`, Insurance: `None`
+* **Assets**: `$5,000`
+
+**Why this matters**: $100/mo gross earned is just over the $65 floor (§2664.3), so the employment gate passes and countable income is negligible — WH-eligible on income and age. The $5,000 in assets *fails* the ABD Medicaid asset test ($2,000 individual limit) so `ks_medicaid` is **not** eligible and the mutex doesn't fire, but is well under the $15,000 Working Healthy resource limit. This isolates the earned-floor's eligible side, complementing Sc 16 (earnings **below** the floor → ineligible). Without the asset spread, a low-income disabled adult would qualify for ABD Medicaid and be excluded by the mutex — exactly the trap that Sc 2/10 fell into.
 
 ---
 

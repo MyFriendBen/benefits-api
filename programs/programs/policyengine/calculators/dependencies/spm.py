@@ -101,6 +101,18 @@ class PhoneExpenseDependency(SpmUnit):
         return self.screen.calc_expenses("yearly", ["telephone"])
 
 
+class PhoneCostDependency(SpmUnit):
+    # PE's Lifeline formula reads phone_cost (distinct from phone_expense, which SNAP
+    # uses for a yes/no utility check) to release the KS Lifeline state supplement:
+    # min_(phone_cost, ks_supplement * MONTHS_IN_YEAR). Same underlying screener data
+    # as PhoneExpenseDependency, just mapped to the field PE's Lifeline branch expects.
+    # Without it PE treats phone_cost as $0 and the KS supplement always computes to $0.
+    field = "phone_cost"
+
+    def value(self):
+        return self.screen.calc_expenses("yearly", ["telephone"])
+
+
 class ElectricityExpenseDependency(SpmUnit):
     field = "electricity_expense"
 
@@ -161,6 +173,14 @@ class SchoolMealDailySubsidy(SpmUnit):
     field = "school_meal_daily_subsidy"
 
 
+class SchoolMealNetSubsidy(SpmUnit):
+    # Annual free/reduced-price school meal value: PolicyEngine multiplies the
+    # per-child-per-day net subsidy (daily subsidy minus the full-price baseline)
+    # by the number of K-12 children and the number of school days in the year.
+    # PAID-tier households net to $0.
+    field = "school_meal_net_subsidy"
+
+
 class SchoolMealTier(SpmUnit):
     field = "school_meal_tier"
 
@@ -173,17 +193,23 @@ class Tanf(SpmUnit):
     """
     tanf as both PE input and output.
 
-    - If user reports having tanf: send 1 so PE treats the household as
-      receiving TANF, enabling categorical eligibility for programs like
-      Early Head Start.
-    - If no reported tanf: return None so PE calculates the TANF benefit
-      amount the household is eligible for.
+    When the household reports a TANF cash amount, send it as the `tanf` value. A
+    positive `tanf` drives SNAP/Head Start/WIC categorical eligibility, and consumers
+    that read the amount (spm_unit_benefits, tx_ceap_countable_income, HUD income) get
+    the real figure. Otherwise send None so PE computes the benefit — we only override
+    when we have an actual reported amount.
+
+    has_base_benefit covers every white-label variant (ks_tanf, co_tanf, ma_tafdc, …);
+    has_benefit is an exact match that would miss the prefixed names.
     """
 
     field = "tanf"
 
     def value(self):
-        return 1 if self.screen.has_benefit("tanf") else None
+        if not self.screen.has_base_benefit("tanf"):
+            return None
+        reported_amount = self.screen.calc_gross_income("yearly", ["cashAssistance"])
+        return reported_amount if reported_amount > 0 else None
 
 
 class CoTanf(SpmUnit):
@@ -282,6 +308,10 @@ class TxTanf(SpmUnit):
     field = "tx_tanf"
 
 
+class KsTanf(SpmUnit):
+    field = "ks_tanf"
+
+
 class PreSubsidyChildcareExpensesDependency(SpmUnit):
     field = "spm_unit_pre_subsidy_childcare_expenses"
 
@@ -319,10 +349,22 @@ class NcSccaCountableIncomeDependency(SpmUnit):
 
 
 class BroadbandCostDependency(SpmUnit):
+    # PE's Lifeline benefit is capped at the household's phone + broadband spend
+    # (min_(phone_cost + broadband_cost, max_amount)). A blank internet expense means
+    # "not reported," not "$0 spent" — sending 0 would let PE cap the benefit to $0 and,
+    # via MFB's value>0 rule, hide an eligible household. So: send the reported internet
+    # cost when we have one (PE legitimately caps the discount at actual spend), otherwise
+    # fall back to a value above the benefit ceiling so an eligible household still sees
+    # the full benefit they'd receive once enrolled in service. NO_DATA_FALLBACK keeps the
+    # prior hardcoded behavior for the no-data case (strict improvement: no regression when
+    # the field is blank, real data used when it's present).
     field = "broadband_cost"
+    NO_DATA_FALLBACK = 500
 
     def value(self):
-        return 500
+        if self.screen.has_expense(["internet"]):
+            return int(self.screen.calc_expenses("yearly", ["internet"]))
+        return self.NO_DATA_FALLBACK
 
 
 class SchoolMealCountableIncomeDependency(SpmUnit):

@@ -41,7 +41,12 @@ from programs.programs.policyengine.calculators.dependencies.member import (
 )
 from programs.programs.policyengine.calculators.dependencies.tax import KsChipPremium
 from programs.programs.ks.pe import ks_member_calculators, ks_pe_calculators
-from programs.programs.ks.pe.member import KsKanCare, KsChip, KsMsp
+from programs.programs.ks.pe.member import KsKanCare, KsChip, KsMsp, KsEarlyHeadStart
+from programs.programs.federal.pe.member import EarlyHeadStart
+from programs.programs.policyengine.calculators.dependencies.member import (
+    FosterCareDependency,
+    EarlyHeadStart as EarlyHeadStartOutput,
+)
 
 # Annual value tiers (medicaid_categories * 12)
 MAGI = 3_648  # INFANT / YOUNG_CHILD / OLDER_CHILD / PREGNANT / PARENT / ADULT / YOUNG_ADULT
@@ -456,3 +461,58 @@ class TestKsMspKanCareAssetConsistency(TestCase):
     def test_both_send_ssi_countable_resources(self):
         self.assertIn(member_deps.SsiCountableResourcesDependency, KsKanCare.pe_inputs)
         self.assertIn(member_deps.SsiCountableResourcesDependency, KsMsp.pe_inputs)
+
+
+class TestKsEarlyHeadStartWiring(TestCase):
+    """
+    KsEarlyHeadStart is a thin wrapper on the federal ``EarlyHeadStart`` PE
+    calculator that adds only the KS state code — all eligibility and the
+    per-individual value come from PolicyEngine's ``early_head_start`` variable
+    with no KS-specific variance (mirrors ``KsHeadStart`` / ``TxEarlyHeadStart`` /
+    ``MaEarlyHeadStart``).
+
+    The federal ``EarlyHeadStart`` dependency logic is covered in
+    ``policyengine/calculators/dependencies/tests/test_member.py``; here we assert
+    only the KS wiring. The spec's dollar-value scenarios (birth-3 / pregnant /
+    foster categorical, $13,323 per eligible individual) are verified end-to-end
+    against the live PolicyEngine API — see ``programs/programs/ks/early_head_start/spec.md``.
+    """
+
+    def test_is_subclass_of_early_head_start(self):
+        self.assertTrue(issubclass(KsEarlyHeadStart, EarlyHeadStart))
+
+    def test_is_registered_in_ks_member_calculators(self):
+        self.assertIn("ks_early_head_start", ks_member_calculators)
+        self.assertEqual(ks_member_calculators["ks_early_head_start"], KsEarlyHeadStart)
+
+    def test_is_registered_in_ks_pe_calculators(self):
+        self.assertIn("ks_early_head_start", ks_pe_calculators)
+        self.assertEqual(ks_pe_calculators["ks_early_head_start"], KsEarlyHeadStart)
+
+    def test_pe_name_is_early_head_start(self):
+        self.assertEqual(KsEarlyHeadStart.pe_name, "early_head_start")
+
+    def test_pe_inputs_includes_ks_state_code(self):
+        self.assertIn(KsStateCodeDependency, KsEarlyHeadStart.pe_inputs)
+
+    def test_pe_inputs_preserve_federal_early_head_start_inputs(self):
+        """The KS wrapper only appends the state code; it must not drop any federal input."""
+        for dep in EarlyHeadStart.pe_inputs:
+            self.assertIn(dep, KsEarlyHeadStart.pe_inputs)
+
+    def test_pe_inputs_include_age_pregnancy_and_foster_pathways(self):
+        """Birth-3 (age), pregnant-woman, and foster-care categorical pathways per the spec."""
+        self.assertIn(AgeDependency, KsEarlyHeadStart.pe_inputs)
+        self.assertIn(PregnancyDependency, KsEarlyHeadStart.pe_inputs)
+        self.assertIn(FosterCareDependency, KsEarlyHeadStart.pe_inputs)
+
+    def test_pe_inputs_include_categorical_benefit_signals(self):
+        """SNAP / TANF / SSI feed PolicyEngine's categorical-eligibility determination."""
+        self.assertIn(member_deps.Ssi, KsEarlyHeadStart.pe_inputs)
+
+    def test_pe_outputs_is_early_head_start_variable(self):
+        self.assertEqual(KsEarlyHeadStart.pe_outputs, [EarlyHeadStartOutput])
+
+    def test_does_not_reuse_head_start_variable(self):
+        """EHS must resolve PE's ``early_head_start`` variable, not the ``head_start`` one."""
+        self.assertNotEqual(KsEarlyHeadStart.pe_name, "head_start")

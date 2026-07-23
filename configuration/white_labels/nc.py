@@ -2572,7 +2572,7 @@ class NcConfigurationData(ConfigurationData):
     }
 
     referrer_data = {
-        "theme": {"default": "default", "211nc": "twoOneOneNC", "lanc": "nc_lanc"},
+        "theme": {"default": "default", "211nc": "twoOneOneNC", "lanc": "nc_lanc", "ccla": "nc_ccla"},
         "logoSource": {
             "default": "MFB_NCLogo",
             "hfed": "HispanicFederation_MFBLogo",
@@ -2601,6 +2601,7 @@ class NcConfigurationData(ConfigurationData):
             "default": "https://screener.myfriendben.org/nc",
             "211nc": "https://screener.myfriendben.org/nc?referrer=211nc",
             "lanc": "https://screener.myfriendben.org/nc?referrer=lanc",
+            "ccla": "https://screener.myfriendben.org/nc/step-1?referrer=ccla",
         },
         "stepDirectory": {
             "default": [
@@ -2630,6 +2631,7 @@ class NcConfigurationData(ConfigurationData):
             "211nc": ["no_results_more_help", "nc_show_211_link", "211nc"],
             "hfed": ["no_results_more_help", "hfed"],
             "lanc": ["no_results_more_help", "nc_show_211_link", "lanc"],
+            "ccla": ["no_results_more_help", "nc_show_211_link", "ccla"],
         },
         "noResultMessage": {
             "default": {

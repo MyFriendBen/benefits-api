@@ -126,12 +126,22 @@ class TestCountyDependency(TestCase):
     def test_tx_county_dependency_state_dependency_class(self):
         self.assertIs(household.TxCountyDependency.state_dependency_class, household.TxStateCodeDependency)
 
+    def test_ks_county_dependency_state_dependency_class(self):
+        self.assertIs(household.KsCountyDependency.state_dependency_class, household.KsStateCodeDependency)
+
     def test_ma_county_dependency_value_formats_correctly(self):
         screen = Screen.objects.create(
             white_label=self.white_label, zipcode="02101", county="Suffolk", household_size=1, completed=False
         )
         dep = household.MaCountyDependency(screen, None, {})
         self.assertEqual(dep.value(), "SUFFOLK_COUNTY_MA")
+
+    def test_ks_county_dependency_value_formats_correctly(self):
+        screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="67202", county="Sedgwick County", household_size=1, completed=False
+        )
+        dep = household.KsCountyDependency(screen, None, {})
+        self.assertEqual(dep.value(), "SEDGWICK_COUNTY_KS")
 
     # --- shared normalization (via NcCountyDependency as representative subclass) ---
 

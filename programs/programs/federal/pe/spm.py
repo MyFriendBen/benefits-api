@@ -10,6 +10,22 @@ SNAP_BASE_INPUTS = [
     dependency.member.AgeDependency,
     dependency.member.MedicalExpenseDependency,
     dependency.member.IsDisabledDependency,
+    # TANF cash receipt drives SNAP categorical eligibility (income/asset tests bypassed):
+    # send the reported tanf amount directly as the tanf value. TANF has no reported/toggle
+    # seam, so a positive tanf value is what confers categorical eligibility.
+    #
+    # SSI categorical eligibility is deliberately NOT wired here. It requires
+    # use_reported_ssi, which is global per PE request (flips applicable_ssi for every
+    # program in the request — SNAP, IL AABD, KS TANF, TX CEAP), so it's a federal
+    # all-state change with cross-program effects (verified IL AABD $0->$10k swing).
+    # That work lives in MFB-1312 with all-consumer QA, not in this KS SNAP PR.
+    dependency.spm.Tanf,
+    # Disabled treatment (uncapped shelter deduction, $4,500 asset limit) requires disability-
+    # program receipt via is_usda_disabled, not the generic is_disabled flag: SsdiReportedDependency
+    # feeds the SSDI amount, MeetsSsiDisabilityCriteriaDependency the SSI-disability input PE needs
+    # (both version-gated; see the dependency classes).
+    dependency.member.SsdiReportedDependency,
+    dependency.member.MeetsSsiDisabilityCriteriaDependency,
     dependency.spm.SnapEmergencyAllotmentDependency,
     dependency.spm.HousingCostDependency,
     dependency.spm.HasPhoneExpenseDependency,
@@ -44,21 +60,22 @@ class Snap(PolicyEngineSpmCalulator):
 
 
 class SchoolLunch(PolicyEngineSpmCalulator):
-    pe_name = "school_meal_daily_subsidy"
-    pe_inputs = [dependency.spm.SchoolMealCountableIncomeDependency]
-    pe_outputs = [dependency.spm.SchoolMealDailySubsidy, dependency.spm.SchoolMealTier]
+    """
+    National School Lunch Program (NSLP) — free/reduced-price school meals.
 
-    amount = 120
+    The value is PolicyEngine's ``school_meal_net_subsidy``: the annual value of
+    free/reduced meals above the full-price baseline, computed from USDA per-meal
+    rates × school days × the household's K-12 children (ages 5–17, imputed by PE
+    from ``age``). PAID-tier households net to $0, so eligibility is value > 0.
+    ``AgeDependency`` is sent so PE can derive ``is_in_k12_school``.
+    """
 
-    def household_value(self):
-        value = 0
-        num_children = self.screen.num_children(3, 18)
-
-        if self.get_variable() > 0 and num_children > 0:
-            if self.get_dependency_value(dependency.spm.SchoolMealTier) != "PAID":
-                value = SchoolLunch.amount * num_children
-
-        return value
+    pe_name = "school_meal_net_subsidy"
+    pe_inputs = [
+        dependency.spm.SchoolMealCountableIncomeDependency,
+        dependency.member.AgeDependency,
+    ]
+    pe_outputs = [dependency.spm.SchoolMealNetSubsidy, dependency.spm.SchoolMealTier]
 
 
 class Tanf(PolicyEngineSpmCalulator):
@@ -83,6 +100,11 @@ class Lifeline(PolicyEngineSpmCalulator):
     pe_name = "lifeline"
     pe_inputs = [
         dependency.spm.BroadbandCostDependency,
+        # phone_cost gates PE's state Lifeline supplements (e.g. KS: the supplement is
+        # released only up to phone_cost). Sent for all states that inherit Lifeline so
+        # a phone-service supplement is never silently zeroed out; states without such a
+        # supplement (TX, WA) are unaffected since their value doesn't depend on it.
+        dependency.spm.PhoneCostDependency,
         *dependency.irs_gross_income,
     ]
     pe_outputs = [dependency.spm.Lifeline]

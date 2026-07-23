@@ -359,7 +359,9 @@ class ScreenSerializer(serializers.ModelSerializer):
         screen.set_screen_is_test()
         for member in household_members:
             incomes = member.pop("income_streams")
-            insurance = member.pop("insurance")
+            # insurance is required=False on the serializer, so the key is absent
+            # (not None) when a client omits it — match update() and default to None.
+            insurance = member.pop("insurance", None)
             energy_calculator_member = member.pop("energy_calculator", None)
             household_member = HouseholdMember.objects.create(**member, screen=screen)
             for income in incomes:
@@ -534,6 +536,15 @@ class UrgentNeedSerializer(serializers.Serializer):
 
 
 class ResultsSerializer(serializers.Serializer):
+    """Documents the /eligibility results payload for Swagger only.
+
+    NOTE: EligibilityTranslationView.get() returns Response(results) — the raw dict from
+    all_results() — so this serializer never shapes or validates the response. Field
+    options here (required, allow_null, etc.) feed the generated schema only; they do
+    NOT enforce the response contract. To actually validate, the view would have to run
+    the dict through this serializer first.
+    """
+
     programs = EligibilitySerializer(many=True)
     urgent_needs = UrgentNeedSerializer(many=True)
     screen_id = serializers.CharField()
@@ -542,6 +553,9 @@ class ResultsSerializer(serializers.Serializer):
     validations = ValidationSerializer(many=True)
     program_categories = ProgramCategorySerializer(many=True)
     pe_data = serializers.DictField(required=False, allow_null=True)
+    # Ids of external APIs (e.g. "policy_engine") that failed while computing these
+    # results, so the frontend can warn the user the results may be incomplete.
+    external_api_failures = serializers.ListField(child=serializers.CharField(), required=False)
 
 
 def get_latest_eligibility_snapshot(screen_uuid):
