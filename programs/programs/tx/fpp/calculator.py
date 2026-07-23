@@ -59,6 +59,11 @@ class TxFpp(ProgramCalculator):
         "income_type",
         "income_amount",
         "income_frequency",
+        # _countable_income() reads the childSupport expense via calc_expenses(); declare the
+        # expense dependencies so an incomplete expense row makes can_calc() skip this program
+        # (DependencyError) instead of crashing calc_expenses() and 500-ing the whole request.
+        "expense_type",
+        "expense_amount",
         "household_size",
     ]
 

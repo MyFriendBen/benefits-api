@@ -72,8 +72,14 @@ def make_calculator(
     benefits = set(current_benefits or [])
 
     def _gross(freq, types, exclude=None):
+        exclude = exclude or []
         if "unearned" in types:
-            return unearned
+            # In the real model childSupport lives in the "unearned" bucket; only exclude=
+            # removes it. Mirror that here so dropping exclude=["childSupport"] in the
+            # calculator (a double-count regression) actually breaks these tests.
+            if "childSupport" in exclude:
+                return unearned
+            return unearned + child_support_received
         if "childSupport" in types:
             return child_support_received
         return 0
@@ -125,6 +131,13 @@ class TestTxFppClassAttributes(TestCase):
         """Child-support-received disregard is $75/month (Texas FPP Policy Manual,
         Definition of Income Rev 24-2; PE gov.states.tx.fpp.income.child_support_disregard)."""
         self.assertEqual(TxFpp.child_support_received_disregard_monthly, 75)
+
+    def test_declares_expense_dependencies(self):
+        """_countable_income() reads the childSupport expense, so the expense deps must be
+        declared — otherwise an incomplete expense row crashes calc_expenses() and 500s the
+        whole eligibility request instead of skipping this program via DependencyError."""
+        self.assertIn("expense_type", TxFpp.dependencies)
+        self.assertIn("expense_amount", TxFpp.dependencies)
 
 
 class TestTxFppMemberEligibility(TestCase):
@@ -273,6 +286,20 @@ class TestTxFppCountableIncome(TestCase):
             members=[adult, minor],
         )
         self.assertEqual(calc._countable_income(), 30_100)
+
+    def test_unearned_query_excludes_child_support(self):
+        """Regression guard against double-counting child support. In the real model
+        childSupport lives in the "unearned" bucket, so the unearned query MUST pass
+        exclude=["childSupport"] — it is re-added once, net of the disregard. If a future
+        edit drops the exclude, production would count child support twice. This pins the
+        call contract directly, independent of the mock's fidelity."""
+        calc = make_calculator(unearned=20_000, child_support_received=10_000, fpl_limit=15_000)
+        calc._countable_income()
+
+        unearned_calls = [c for c in calc.screen.calc_gross_income.call_args_list if "unearned" in c.args[1]]
+        self.assertTrue(unearned_calls, "expected an unearned-income query")
+        for c in unearned_calls:
+            self.assertEqual(c.kwargs.get("exclude"), ["childSupport"])
 
 
 class TestTxFppAdjunctiveBypass(TestCase):
