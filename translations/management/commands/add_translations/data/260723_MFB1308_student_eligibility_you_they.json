@@ -1,0 +1,10 @@
+{
+  "studentEligibility.enrolledHalfTime-you": "Are you enrolled half-time or more in a university, college, or community college as defined by the educational institution?",
+  "studentEligibility.enrolledHalfTime-they": "Are they enrolled half-time or more in a university, college, or community college as defined by the educational institution?",
+  "studentEligibility.jobTraining-you": "Is the program that you are enrolled in a job training program?",
+  "studentEligibility.jobTraining-they": "Is the program that they are enrolled in a job training program?",
+  "studentEligibility.workStudy-you": "Do you have a federal or state work study program?",
+  "studentEligibility.workStudy-they": "Do they have a federal or state work study program?",
+  "studentEligibility.works20Hours-you": "Do you work 20 or more hours per week in other employment, including self-employment? (If the hours you work changes each week, do you work at least 80 hours in a month?)",
+  "studentEligibility.works20Hours-they": "Do they work 20 or more hours per week in other employment, including self-employment? (If the hours they work changes each week, do they work at least 80 hours in a month?)"
+}
