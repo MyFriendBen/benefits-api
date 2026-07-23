@@ -2662,4 +2662,16 @@ class NcConfigurationData(ConfigurationData):
         "email": "myfriendben@codethedream.org",
     }
 
+    results_survey = {
+        "link": "https://unxld498dnz.typeform.com/to/UGxcaziD",
+        "intro": {
+            "_label": "resultsSurvey.intro",
+            "_default_message": "Help us improve MyFriendBen — tell us about your experience.",
+        },
+        "button": {
+            "_label": "resultsSurvey.button",
+            "_default_message": "Share your feedback",
+        },
+    }
+
     override_text = {}

@@ -83,6 +83,13 @@ class Command(BaseCommand):
                 defaults={"data": WhiteLabelData.feedback_links, "active": True},
             )
 
+            # Save results_survey to database
+            Configuration.objects.update_or_create(
+                name="results_survey",
+                white_label=white_label,
+                defaults={"data": WhiteLabelData.results_survey, "active": True},
+            )
+
             # Save override_text to database
             Configuration.objects.update_or_create(
                 name="override_text",
