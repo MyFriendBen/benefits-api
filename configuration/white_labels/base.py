@@ -168,7 +168,14 @@ class ConfigurationData:
     }
 
     # Types of income to collect (customize for state-specific income types)
-    # Organized by category for two-level dropdown selection
+    # Organized by category for two-level dropdown selection.
+    #
+    # CONTRACT: the frontend reconstructs the three income-question answers from
+    # income streams and relies on these exact keys — the "employment" category
+    # and its "wages" / "selfEmployment" sources (see benefits-calculator
+    # utils/helpers.ts `deriveIncomeAnswers` and utils/constants EMPLOYMENT_CATEGORY
+    # / WAGES_SOURCE / SELF_EMPLOYMENT_SOURCE). Renaming these keys will break that
+    # reconstruction; coordinate any change with the frontend.
     income_categories = {
         "employment": {"_label": "incomeCategories.employment", "_default_message": "Work & Self-Employment Income"},
         "government": {"_label": "incomeCategories.government", "_default_message": "Government Benefits"},
