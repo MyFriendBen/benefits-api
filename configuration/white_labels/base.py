@@ -181,7 +181,7 @@ class ConfigurationData:
         "government": {"_label": "incomeCategories.government", "_default_message": "Government Benefits"},
         "investment": {"_label": "incomeCategories.investment", "_default_message": "Investment & Retirement"},
         "property": {"_label": "incomeCategories.property", "_default_message": "Property Income"},
-        "support": {"_label": "incomeCategories.support", "_default_message": "Family Support & Gifts"},
+        "support": {"_label": "incomeCategories.support", "_default_message": "Child Support, Alimony & Gifts"},
     }
 
     # Nested income options organized by category
