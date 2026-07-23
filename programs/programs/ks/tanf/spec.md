@@ -22,7 +22,9 @@
    - Source: [KS TANF State Plan FFY 2024–2026](https://www.dcf.ks.gov/services/ees/Documents/Reports/TANF%20State%20Plan%20FFY%202024%20-%202026.pdf), p. 2; KEESM 2110
 
 3. **Gross household income must be less than 30% of the Federal Poverty Level (FPL)**
-   - Income disregards apply: $90 flat plus 60% of earned income is excluded from countable income (countable earned income = max(0, 40% × earnings − $90)). Earnings of children are fully excluded.
+   - Income disregards apply: $90 per employed person is subtracted first, then 60% of the remainder is excluded from countable income (countable earned income = (earnings − $90) × 40%, minimum $0). Earnings of children are fully excluded.
+   - Whose income counts (mandatory filing unit): per K.S.A. 39-709(a)(1)(A)(i)–(ii) and (b)(1), the mandatory filing unit is the responsible adult, their spouse **or cohabiting partner**, and their minor children/stepchildren; a cohabiting partner's income and resources are counted. Other relatives may be included only at the household's discretion. PE counts the income of every assistance-unit member (all household members except SSI recipients), and MFB places every household member — including a `domesticPartner` — into a single PE `spm_unit` (`policy_engine.py`), so cohabiting-partner income is counted correctly, consistent with the statute.
+   - ⚠️ *data gap (understates)* — Because MFB pools **all** co-residents into one assistance unit, there is no mechanism to exercise the KEESM-permitted discretion to *exclude* a non-mandatory relative (e.g., an adult sibling or grandparent who is not the responsible adult) whose income the household could leave out. When such a relative has income, MFB/PE count it, which can **understate** eligibility or benefit value. Shared MFB architecture limitation, not KS-specific; handled by directing borderline households to apply and confirm with DCF.
    - Note: PE runs two income checks — both must pass:
      1. **Gross income < 30% FPL** (`ks_tanf_gross_income_eligible`) — the initial eligibility gate per the TANF State Plan
      2. **Countable income < payment standard** (`ks_tanf_income_eligible`) — after applying the $90 + 60% earned income disregard; per K.A.R. 30-4-110 and KEESM 7110
@@ -34,10 +36,11 @@
    - Source: [KS TANF State Plan FFY 2024–2026](https://www.dcf.ks.gov/services/ees/Documents/Reports/TANF%20State%20Plan%20FFY%202024%20-%202026.pdf), p. 2; Appendix 1, p. 28 (income disregard); [KEESM 7200 — Income](https://content.dcf.ks.gov/ees/keesm/current/keesm7200.htm); [KEESM 7110](https://content.dcf.ks.gov/ees/keesm/current/keesm7110.htm); K.A.R. 30-4-110; K.S.A. 39-709
 
 4. **Countable household assets must be below $3,000** ⚠️ *partial data gap*
-   - Exempt resources include: the home in which the family resides, household furnishings/equipment in use, personal effects, tools in use, vehicles used for employment/education/training or to produce income, educational accounts for minors (529 plans), individual development accounts (IDAs), and earnings of children.
+   - Exempt resources (statute/KEESM policy — see the caveat below on what PE actually enforces): per K.S.A. 39-709(a)(1)(A)(iv), **one motor vehicle is exempt regardless of its value or use**; equity in a boat, RV, or ATV, and in any additional vehicle, is countable, except an additional vehicle used primarily to earn income may be exempted at the agency's discretion. Also exempt: the home the family resides in, household furnishings/equipment/personal effects/tools in use, educational accounts for minors (529 plans), individual development accounts (IDAs), and earnings of children.
+   - ⚠️ **PE does not model any of the above resource exemptions.** PE's `ks_tanf_resources_eligible` tests `spm_unit_cash_assets` (cash, checking/savings, stocks, bonds, mutual funds) against the $3,000 limit and counts **no vehicles or other non-liquid property at all**. MFB sends liquid `household_assets` → `spm_unit_cash_assets`, so in practice the calculator already exempts every vehicle. The vehicle/exempt-resource detail above is documented for policy accuracy, not because the calculator applies it.
    - Note: PE's `ks_tanf_resources_eligible` uses **$3,000**, citing KEESM 5110 as the operational source (confirmed in PE parameter file). The DCF public-facing TANF page also states $3,000. The TANF State Plan Appendix 1 states "$2,750" — this appears to be a different or outdated reference. For the calculator, use **$3,000** consistent with PE and KEESM 5110. The $2,000/$3,000 age-based tier in the original draft was a SNAP rule incorrectly applied here — TANF has no age-based asset exception.
    - ⚠️ *partial data gap* — `household_assets` captures liquid assets only (cash, checking/savings, stocks, bonds, mutual funds). Non-liquid countable resources — primarily non-work vehicles (vehicles not used for employment, education, or training) and life insurance cash surrender value — are not captured. For the calculator, assume no countable non-liquid assets (inclusivity assumption). In practice this affects very few TANF applicants; households with countable non-liquid assets above the threshold would need to disclose these at application.
-   - 💡 **Screener improvement:** When the household has entered assets below $3,000, show a follow-up: *"Does your household own any vehicles not used primarily for work, school, or job training?"* with an optional estimated value field. Sum the vehicle value with `household_assets` for the resource test. If combined value would exceed $3,000, surface a note to verify with DCF rather than excluding the program outright (the vehicle may still qualify for an exemption). Also benefits other programs with asset/resource limits (e.g., SNAP).
+   - ~~💡 Screener improvement (withdrawn): ask about non-work vehicles and add their value to the resource test.~~ **Do not implement.** It contradicts both PE (which counts cash assets only — no vehicles) and the statute (K.S.A. 39-709(a)(1)(A)(iv) exempts one vehicle regardless of value). Summing a vehicle's value into the test would make MFB stricter than PE and the law, risking false ineligibility. The correct behavior — count liquid assets only — is already what the calculator does.
    - Screener fields:
      - `household_assets` (liquid assets only — non-liquid countable resources not captured; see data gap above)
    - Source: [KEESM 5110 — Resource Limitation](https://content.dcf.ks.gov/ees/keesm/current/keesm5000.htm); [KS DCF TANF page](https://www.dcf.ks.gov/services/ees/pages/cash/tanf.aspx); K.A.R. 30-4-40
@@ -53,7 +56,7 @@
    - **Narrow minor exceptions exist** (KEESM 2112): a minor may act in their own behalf only if: (a) emancipated by a court, (b) age 16 or 17 and married, (c) no available caretaker in specified circumstances, (d) placed in DCF independent living, (e) in a transitional living program (e.g., MINK), or (f) in Job Corps or an approved adult-supervised living arrangement (requires EES Program Administrator approval). The TANF State Plan's reference to "minor caregivers" likely refers to this narrow exception pathway, not a general minor-parent rule.
    - ⚠️ *data gap* — The screener captures `birth_year`/`birth_month` so a minor HOH is detectable, but the screener cannot determine which narrow exception applies (emancipation, marriage, independent living, Job Corps, etc.). For the calculator, apply the **inclusivity assumption**: if the HOH is under 18 and the exception field is not checked, still show the program as potentially eligible.
    - 💡 **Screener improvement:** Add a single optional checkbox to the Special Circumstances section (step 5), shown **only when the detected HOH age is under 18**: *"I am authorized to apply for benefits independently (e.g., emancipated by a court, married, or in an independent living arrangement)."* Checking this confirms the minor exception pathway without requiring detail. Optional — if left blank, the inclusivity assumption applies. Most users never see it. Also benefits any other program with a minor applicant pathway.
-   - Note: PE's `ks_tanf_eligible` does not implement this check (`is_demographic_tanf_eligible` only checks child age and pregnancy). Flag in the PE delta report.
+   - **PE gap — deferred, not implemented MFB-side.** PE's `ks_tanf_eligible` does not implement this check (verified against the PE source: it ANDs only `is_demographic_tanf_eligible` (child age/pregnancy), immigration, non-empty assistance unit, income, and resources — no applicant-age or act-on-own-behalf test). MFB will **not** add an MFB-side eligibility override for it: `ks_tanf` is a pure PolicyEngine calculator, and per team policy calculators are kept either pure-PE *or* pure-custom — no hybrid PE-passthrough-plus-override. Enforcing the minor-capacity gate is therefore deferred to PolicyEngine (raise in the PE delta report). Until PE implements it, the inclusivity assumption above stands and a minor-applicant household is shown as potentially eligible; final capacity is confirmed by DCF at application.
    - Screener fields: `household_members.birth_year` + `household_members.birth_month`, `household_members.relationship`
    - Source: [KEESM 2111–2112 — Act in Own Behalf](https://content.dcf.ks.gov/ees/keesm/current/keesm2100.htm); [KS TANF State Plan FFY 2024–2026](https://www.dcf.ks.gov/services/ees/Documents/Reports/TANF%20State%20Plan%20FFY%202024%20-%202026.pdf), p. 4
 
@@ -79,7 +82,7 @@
    - The screener captures `has_tanf` (currently receiving TANF) but not prior receipt history. For the calculator, assume the household has not exhausted their time limit — this applies to both the standard 24-month limit and the 18-month diversion payment variant; the calculator cannot distinguish between them and treats both with the same inclusivity assumption. Surface the 24-month limit in the program description.
    - 💡 **Screener improvement:** When a user selects `has_tanf` (currently receiving TANF) or a new "previously received TANF" option in Current Household Benefits, show a conditional optional follow-up checkbox: *"I have received TANF cash assistance for 24 months or more in my lifetime."* If checked, the calculator surfaces a time-limit warning and directs the user to contact DCF about hardship extension eligibility. If unchecked or skipped, the inclusivity assumption applies. This pattern only appears for users already engaging with TANF in the benefits section — no burden on everyone else. Also benefits all other state TANF implementations.
    - Screener fields: none (partial: `has_tanf` captures current TANF receipt only)
-   - Source: [KS TANF State Plan FFY 2024–2026](https://www.dcf.ks.gov/services/ees/Documents/Reports/TANF%20State%20Plan%20FFY%202024%20-%202026.pdf), p. 15–16; [KEESM Appendix E-4](https://content.dcf.ks.gov/EES/KEESM/Appendix/E-4_24_mo_limited_questions_07_19.pdf); K.S.A. 39-709(h)
+   - Source: [KS TANF State Plan FFY 2024–2026](https://www.dcf.ks.gov/services/ees/Documents/Reports/TANF%20State%20Plan%20FFY%202024%20-%202026.pdf), p. 15–16; [KEESM Appendix E-4](https://content.dcf.ks.gov/EES/KEESM/Appendix/E-4_24_mo_limited_questions_07_19.pdf); K.S.A. 39-709(b)(3)
    - Impact: HIGH
 
 10. **Must not be a fleeing felon or in violation of probation/parole** ⚠️ *data gap*
@@ -91,7 +94,7 @@
 11. **Drug felony conviction restrictions (Kansas-specific)** ⚠️ *data gap*
     - Note: Kansas has modified the federal drug felon ban. First drug felony conviction (on or after July 1, 2013): 5-year ineligibility. Second offense: lifetime ineligibility. Drug testing is also required on reasonable suspicion. The screener does not collect criminal history. For the calculator, assume this disqualification does not apply (inclusivity assumption). No screener improvement is recommended — collecting criminal conviction history is sensitive and inappropriate for a public-facing screening tool.
     - Screener fields: none
-    - Source: [KS TANF State Plan FFY 2024–2026](https://www.dcf.ks.gov/services/ees/Documents/Reports/TANF%20State%20Plan%20FFY%202024%20-%202026.pdf), Appendix 1, p. 27; K.S.A. 39-709(g); 21 U.S.C. § 862a
+    - Source: [KS TANF State Plan FFY 2024–2026](https://www.dcf.ks.gov/services/ees/Documents/Reports/TANF%20State%20Plan%20FFY%202024%20-%202026.pdf), Appendix 1, p. 27; K.S.A. 39-709(f)(3); 21 U.S.C. § 862a
     - Impact: LOW
 
 12. **SSI recipients are excluded from the TANF assistance unit** ⚠️ *partial data gap*
@@ -119,6 +122,17 @@
 ---
 
 ## Implementation Notes
+
+### Calculator type: pure PolicyEngine (no hybrid)
+
+`ks_tanf` is implemented as a **pure PolicyEngine passthrough** (`KsTanf` in `programs/programs/ks/pe/spm.py`): it wires the household's circumstances into PE via `pe_inputs` and returns PE's eligibility and benefit value unchanged. Per team policy, calculators are kept either **pure-PE** or **pure-custom** — MFB does **not** add MFB-side eligibility overrides on top of a PE calculator (no hybrid). Any KS TANF rule that PolicyEngine does not model is therefore handled by an inclusivity assumption and/or raised in the PE delta report for PE to implement — it is not coded on the MFB side.
+
+### Deferred, PE-dependent limitations
+
+These rules are verified against the PE `ks_tanf` source and are **not** enforced today. They are intentionally left to PolicyEngine (see "pure PolicyEngine" above); until PE implements them, the inclusivity assumptions in the referenced criteria apply.
+
+- **Minor application capacity (KEESM 2111–2112) — Criterion 6.** A minor who cannot act on their own behalf is ineligible unless a narrow exception applies or a legally permitted adult applies for them. PE's `ks_tanf_eligible` has no applicant-age/capacity test, so a minor-applicant household is shown potentially eligible. Deferred to PE; raise in the PE delta report. This is why Scenario 7 expects **Eligible** (matching PE + the inclusivity assumption), not Not eligible.
+- **Incapacitated-person care deduction scope (KEESM 7211).** PE's `ks_tanf_countable_earned_income` deducts incapacitated-person care expenses but, per its own code comment, does **not** enforce KEESM 7211's requirement that the cared-for dependent be a member of the assistance unit. Minor over-inclusivity in PE's favor of the applicant; note for the PE delta report.
 
 ### SSI Unit Composition
 
@@ -150,9 +164,9 @@ None. Kansas TANF (Successful Families Program) is an entitlement — every hous
 #### Step 1 — Countable Income
 
 Apply income disregards to gross income:
-- Earned income disregard: exclude $90 + 60% of adult earned income
-  - Formula: countable earned income = max(0, 40% × earnings − $90)
-  - Example: $500/month earned → countable = max(0, $200 − $90) = $110/month
+- Earned income disregard: subtract $90 per employed person first, then exclude 60% of the remainder
+  - Formula: countable earned income = (earnings − $90) × 40% per employed person (minimum $0)
+  - Example: $500/month earned → countable = ($500 − $90) × 40% = $164/month
 - Children's earnings: fully excluded
 - Unearned income (e.g., Social Security, child support): counted in full with no disregard
 
@@ -221,7 +235,7 @@ Source: [KS DCF Cash Assistance Payment Standards](https://www.dcf.ks.gov/servic
 
 *All scenarios use 2026 FPL values (matching the config's `year` field). Scenarios 1, 10, and 15 are reflected in the validation JSON (`ks_tanf.json`). All other scenarios are for QA coverage and traceability. Scenarios marked ⚠️ PE depend on MFB-level logic not yet in PE and should be confirmed via the PE delta report.*
 
-Payment standard assumptions: non-shared living (inclusivity assumption). County tiers per KEESM Appendix T-2. Income disregard: countable = max(0, 40% × earnings − $90) applied at the household level.
+Payment standard assumptions: non-shared living (inclusivity assumption). County tiers per KEESM Appendix T-2. Income disregard: countable = (earnings − $90) × 40% (minimum $0), applied per employed person.
 
 ---
 
@@ -257,7 +271,7 @@ Payment standard assumptions: non-shared living (inclusivity assumption). County
 ### Scenario 3: Income just below 30% FPL boundary, family 3
 
 **What we're checking**: Household with gross income just under the 30% FPL ceiling. Validates that the earned income disregard formula is applied correctly and eligibility is granted at the boundary.
-**Expected**: Eligible — $229/month (countable = max(0, 40% × $660 − $90) = $174; payment standard $403 − $174 = $229).
+**Expected**: Eligible — $175/month (countable = ($660 − $90) × 40% = $228; payment standard $403 − $228 = $175).
 **Steps**:
 * Location: ZIP `66502`, county `Riley`
 * Household size: `3`, assets: $200
@@ -316,22 +330,22 @@ Payment standard assumptions: non-shared living (inclusivity assumption). County
 
 ### Scenario 7: Non-parent caretaker age 17, caring for minor sibling ⚠️ PE
 
-**What we're checking**: HOH age 17 caring for a 15-year-old sibling. Under the caretaker age-18+ rule (Criterion 6), this household is ineligible unless the minor exception applies. PE does not implement this check — current PE logic may show Eligible.
-**Expected**: Not eligible *(PE dependent — confirm before go-live)*.
+**What we're checking**: HOH age 17 caring for a 15-year-old sibling. Under the caretaker age-18+ rule (Criterion 6) the household would be ineligible unless a minor exception applies, but PE's `ks_tanf_eligible` has no applicant-capacity check and MFB does not add an MFB-side gate (pure-PE calculator — see Implementation Notes). Under the inclusivity assumption the household is therefore shown as potentially eligible; DCF confirms capacity at application.
+**Expected**: Eligible — $326/month (Shawnee = High Population tier, family 2, non-shared: $326 − $0 countable = $326). *Minor-capacity gate is a deferred PE limitation (Criterion 6); revisit if PE implements it.*
 **Steps**:
 * Location: ZIP `66604`, county `Shawnee`
 * Household size: `2`, assets: $200
 * Person 1: Birth month/year `March 2009` (age 17), `headOfHousehold`, no income, insurance: none
-* Person 2: Birth month/year `March 2011` (age 15), `sibling`, no income, insurance: none
+* Person 2: Birth month/year `March 2011` (age 15), `sisterOrBrother`, no income, insurance: none
 
-**Why this matters**: Tests that a minor caretaker without an active exception is correctly identified as ineligible. Also validates that `sibling` is recognized as a qualifying child relationship (Criterion 1). Pairs with Scenario 2 to test the minor caretaker pathway from both sides.
+**Why this matters**: Confirms the minor-caretaker inclusivity assumption (Criterion 6) — a minor HOH is shown potentially eligible rather than screened out, since the capacity gate is a deferred PE limitation, not an MFB-side check. Also validates that `sisterOrBrother` is recognized as a qualifying child relationship (Criterion 1). Pairs with Scenario 2 (minor parent) to cover the minor-HOH pathway across relationship types — both now expect Eligible.
 
 ---
 
 ### Scenario 8: Two-parent household, 3 children, combined $500 earned income
 
 **What we're checking**: Earned income disregard applied to a larger household. Validates that countable income is correctly calculated and subtracted from a higher payment standard.
-**Expected**: Eligible — $422/month (countable = max(0, 40% × $500 − $90) = $110; payment standard family 5, High Pop $532 − $110 = $422).
+**Expected**: Eligible — $404/month (countable applied per employed person: HOH ($300 − $90) × 40% = $84, spouse ($200 − $90) × 40% = $44, total $128; payment standard family 5, High Pop $532 − $128 = $404).
 **Steps**:
 * Location: ZIP `66502`, county `Riley`
 * Household size: `5`, assets: $400
@@ -341,7 +355,7 @@ Payment standard assumptions: non-shared living (inclusivity assumption). County
 * Person 4: Birth month/year `June 2018` (age 7), `child`, no income, insurance: none
 * Person 5: Birth month/year `September 2021` (age 4), `child`, no income, insurance: none
 
-> ⚠️ **PE verification needed:** If PE applies the $90 disregard per earner rather than per household ($300 earner → countable $30, $200 earner → countable $0; total $30 → benefit $502), the expected value changes. Confirm which approach `ks_tanf_income_eligible` uses and update this scenario accordingly.
+> **PE behavior confirmed (2026-07-23, live PE):** PE applies the $90 work expense **per employed person**, then 40% of each person's remainder — HOH ($300 − $90) × 40% = $84, spouse ($200 − $90) × 40% = $44, total $128 countable → benefit $404. Verified via live-PE API QA (screen `6642e382`).
 
 **Why this matters**: Tests the income disregard on a two-parent, multi-child household. Also confirms the payment standard scales correctly to family size 5.
 
@@ -378,20 +392,20 @@ Payment standard assumptions: non-shared living (inclusivity assumption). County
 ### Scenario 11: Pregnant woman with no other children
 
 **What we're checking**: Alternative eligibility pathway under Criterion 2. A pregnant adult with no children qualifies; confirms pregnancy confers eligibility independently of child presence.
-**Expected**: Eligible — $241/month (countable = max(0, 40% × $200 − $90) = $0; payment standard family 1, High Pop $241 − $0 = $241).
+**Expected**: Eligible — $197/month (countable = ($200 − $90) × 40% = $44; payment standard family 1, High Pop $241 − $44 = $197).
 **Steps**:
 * Location: ZIP `66604`, county `Shawnee`
 * Household size: `1`, assets: $200
 * Person 1: Birth month/year `May 1994` (age 32), `headOfHousehold`, pregnant: yes, wages: $200/month, insurance: none
 
-**Why this matters**: Validates the pregnancy pathway as an independent eligibility route (Criterion 2). Also confirms the income disregard correctly produces $0 countable when gross earnings fall below the $90 floor.
+**Why this matters**: Validates the pregnancy pathway as an independent eligibility route (Criterion 2). Also confirms the earned-income disregard is applied to the HOH's wages even without a qualifying child present — countable = ($200 − $90) × 40% = $44.
 
 ---
 
 ### Scenario 12: Rural county tier (Allen County, Group I)
 
 **What we're checking**: T-2 county tier lookup for the lowest payment tier. Validates that the Rural payment standard is applied when `county` maps to Group I in the T-2 lookup.
-**Expected**: Eligible — $386/month (countable = max(0, 40% × $200 − $90) = $0; payment standard family 3, Rural $386 − $0 = $386).
+**Expected**: Eligible — $342/month (countable = ($200 − $90) × 40% = $44; payment standard family 3, Rural $386 − $44 = $342).
 **Steps**:
 * Location: ZIP `66749`, county `Allen`
 * Household size: `3`, assets: $200
@@ -435,7 +449,7 @@ Payment standard assumptions: non-shared living (inclusivity assumption). County
 ### Scenario 15: Income disregard + county tier — single parent, earned income, Johnson County ✓ in validation JSON
 
 **What we're checking**: The $90 + 60% earned income disregard formula and the T-2 HC+HP county tier lookup together. Uses a mid-range income to produce a non-zero countable amount and tests the highest-tier payment standard.
-**Expected**: Eligible — $322/month (gross $300 < ~$541 (30% FPL for family 2) ✓; countable = max(0, 40% × $300 − $90) = $30; payment standard family 2, HC+HP $352 − $30 = $322).
+**Expected**: Eligible — $268/month (gross $300 < ~$541 (30% FPL for family 2) ✓; countable = ($300 − $90) × 40% = $84; payment standard family 2, HC+HP $352 − $84 = $268).
 **Steps**:
 * Location: ZIP `66062`, county `Johnson`
 * Household size: `2`, assets: $300
