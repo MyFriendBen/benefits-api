@@ -40,6 +40,7 @@ from screener.serializers import (
     CurrentBenefitToggleSerializer,
 )
 from programs.programs.policyengine.policy_engine import calc_pe_eligibility
+from integrations.external_api_status import track_external_api_failures, get_external_api_failures
 from programs.util import DependencyError, Dependencies
 from programs.programs.urgent_needs import urgent_need_functions
 from programs.models import (
@@ -291,8 +292,12 @@ class MessageViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
 
 
 def all_results(screen: Screen, batch=False, is_admin: bool = False, pe_version: Optional[str] = None):
-    eligibility, missing_programs, categories, _pe_data = eligibility_results(screen, batch, pe_version=pe_version)
-    urgent_needs = urgent_need_results(screen, eligibility)
+    # Track any external-API failure (e.g. PolicyEngine) that occurs while computing
+    # this screen's results, so we can tell the frontend results may be incomplete.
+    with track_external_api_failures():
+        eligibility, missing_programs, categories, _pe_data = eligibility_results(screen, batch, pe_version=pe_version)
+        urgent_needs = urgent_need_results(screen, eligibility)
+        external_api_failures = get_external_api_failures()
     validations = ValidationSerializer(screen.validations.all(), many=True).data
 
     results = {
@@ -304,6 +309,9 @@ def all_results(screen: Screen, batch=False, is_admin: bool = False, pe_version:
         "validations": validations,
         "program_categories": categories,
         "pe_data": _pe_data,
+        # Unlike pe_data (admin-only, popped below), this is sent to all users so the
+        # results page can show a "some results may be unavailable" banner.
+        "external_api_failures": external_api_failures,
     }
 
     if not is_admin:
@@ -443,7 +451,6 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
             "cesn_leap",
             "cesn_eoc",
             "cesn_cowap",
-            "cesn_ubp",
             "cesn_care",
         )
 
