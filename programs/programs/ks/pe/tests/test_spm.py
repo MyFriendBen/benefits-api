@@ -3,10 +3,9 @@ Unit tests for the KS SPM-level PolicyEngine calculator ``KsTanf`` (ks_tanf).
 
 KsTanf is a straight passthrough to PolicyEngine's KS-specific ``ks_tanf`` calculator:
 eligibility and the benefit dollar value come from PE, so there is no MFB-side routing
-to unit-test the way KS Medicaid has. What *does* live on the MFB side — and what broke
-during discovery (21/26 scenarios failing on PR #1588) — is the set of ``pe_inputs`` that
-feed the household's real circumstances into PE. Per the finalized discovery artifacts
-(MFB-1062), four inputs beyond the state code are load-bearing:
+to unit-test the way KS Medicaid has. What *does* live on the MFB side is the set of
+``pe_inputs`` that feed the household's real circumstances into PE. Four inputs beyond
+the state code are load-bearing:
 
   - ``KsCountyDependency``                    — county tier (KEESM T-2); absent → Group I statewide
   - ``Ssi``                                   — SSI assistance-unit exclusion (KEESM 2210)
