@@ -13,7 +13,6 @@ from django.conf import settings
 from .feature_flags import FeatureFlagConfig, WHITELABEL_FEATURE_FLAGS
 from .irs_parameters import get_qualifying_relative_threshold
 
-
 # Relationship values that are eligible for the dependent relationship checks
 # currently modeled in this method (qualifying-child proxy + qualifying-relative
 # proxy). NOTE:

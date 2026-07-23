@@ -9,7 +9,6 @@ from screener.models import (
     WhiteLabel,
 )
 
-
 ALL_RELATIONSHIP_OPTIONS = set(ConfigurationData.relationship_options.keys())
 
 
