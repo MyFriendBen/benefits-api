@@ -557,10 +557,10 @@ class HouseholdMember(models.Model):
         has_eligible_relationship = self.relationship in DEPENDENT_ELIGIBLE_RELATIONSHIPS
 
         # Path 1: Qualifying Child
-        is_qualifying_child = has_eligible_relationship and (
-            self.age <= 18 or (self.student and self.age <= 23) or self.has_disability()
-        ) and (
-            self.calc_gross_income("yearly", ["all"]) <= self.screen.calc_gross_income("yearly", ["all"]) / 2
+        is_qualifying_child = (
+            has_eligible_relationship
+            and (self.age <= 18 or (self.student and self.age <= 23) or self.has_disability())
+            and (self.calc_gross_income("yearly", ["all"]) <= self.screen.calc_gross_income("yearly", ["all"]) / 2)
         )
 
         # Path 2: Qualifying Relative
