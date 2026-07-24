@@ -36,17 +36,24 @@ class GoogleSheetsCache(ABC, Generic[T]):
             data = self._process(self._fetch_raw())
         except Exception as exc:
             capture_exception(exc)
-            stale_data = cache.get(self._stale_cache_key)
-            return stale_data if stale_data is not None else self._empty_fallback()
+            return self._stale_or_fallback()
 
         if not data:
-            # don't cache empty data/falsy result - retry on the next request, return it directly
-            # instead of locking every dependent screening out for 24h.
-            return self._empty_fallback()
+            # Don't cache an empty result - retry on the next request instead of
+            # locking every dependent screening out for the full CACHE_TIMEOUT.
+            return self._stale_or_fallback()
 
         cache.set(self.CACHE_KEY, data, timeout=self.CACHE_TIMEOUT)
         cache.set(self._stale_cache_key, data, timeout=self.STALE_CACHE_TIMEOUT)
         return data
+
+    def _stale_or_fallback(self) -> T:
+        """
+        Serve the last known-good (stale) value if one is cached, otherwise fall back
+        to `_empty_fallback()`. Used whenever a fresh fetch fails or comes back empty.
+        """
+        stale_data = cache.get(self._stale_cache_key)
+        return stale_data if stale_data is not None else self._empty_fallback()
 
     def _fetch_raw(self):
         """
