@@ -544,6 +544,19 @@ class ConfigurationData:
         "survey": "https://myfriendben.fillout.com/report-an-issue",
     }
 
+    # Results-page feedback survey (shown when the `nc_results_survey` flag is on); empty link = not shown.
+    results_survey = {
+        "link": "",
+        "intro": {
+            "_label": "resultsSurvey.intro",
+            "_default_message": "Help us improve MyFriendBen — tell us about your experience.",
+        },
+        "button": {
+            "_label": "resultsSurvey.button",
+            "_default_message": "Share your feedback",
+        },
+    }
+
     # Text for "Current Benefits" page
     current_benefits = {
         "title": {
