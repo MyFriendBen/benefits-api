@@ -11,6 +11,11 @@ class LeapValueCache(GoogleSheetsCache):
     sheet_id = "1W8WbJsb5Mgb4CUkte2SCuDnqigqkmaO3LC0KSfhEdGg"
     range_name = "'FFY 2025'!A2:G65"
 
+    def _empty_fallback(self):
+        # household_value() iterates this as a list of [county, value] pairs,
+        # not a dict, so the fallback must match that shape.
+        return []
+
     def _process(self, raw_data):
         result = []
         for row in raw_data:
