@@ -420,6 +420,7 @@ class Command(BaseCommand):
             "household_member.medicaid": "Whether member has Medicaid",
             "household_member.disability_medicaid": "Whether member has disability-based Medicaid",
             "household_member.has_income": "Whether member has income",
+            "household_member.is_employed": "Answer to the 'Are you currently employed?' income question",
             "household_member.has_expenses": "Whether member has expenses",
             "household_member.is_care_worker": "Whether member is a care worker",
             "household_member.student_job_training_program": "Whether student member is in a job training program",

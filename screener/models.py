@@ -460,6 +460,7 @@ class HouseholdMember(models.Model):
     medicaid = models.BooleanField(blank=True, null=True)
     disability_medicaid = models.BooleanField(blank=True, null=True)
     has_income = models.BooleanField(blank=True, null=True)
+    is_employed = models.BooleanField(blank=True, null=True)
     has_expenses = models.BooleanField(blank=True, null=True)
     is_care_worker = models.BooleanField(blank=True, null=True)
 
