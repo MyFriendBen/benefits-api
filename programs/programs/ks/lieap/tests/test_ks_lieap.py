@@ -21,8 +21,9 @@ Not tested here (handled outside the calculator):
 Benefit value is a flat $680/year for every eligible household.
 
 The 100% FPL limits used below are chosen so that 1.5x equals the exact
-per-household-size 150% FPL dollar thresholds Kansas DCF publishes, so the
-"barely eligible" / "just above" boundary scenarios test the real cutoffs.
+per-household-size 150% FPL dollar thresholds from the 2026 federal poverty
+guidelines (the calculator's configured FPL year), so the "barely eligible" /
+"just above" boundary scenarios test the real cutoffs.
 """
 
 from django.test import TestCase
@@ -32,13 +33,14 @@ from programs.programs.ks import ks_calculators
 from programs.programs.ks.lieap.calculator import KsLieap
 from programs.programs.calc import ProgramCalculator, Eligibility
 
-# 100% FPL by household size such that 1.5x matches DCF's published 150% caps.
+# 100% FPL by household size such that 1.5x matches the 2026 150% FPL caps
+# (the calculator's configured FPL year; see spec.md Criterion 1).
 FPL_100 = {
-    1: 15_648,  # 1.5x = 23,472
-    2: 21_152,  # 1.5x = 31,728
-    3: 26_648,  # 1.5x = 39,972
-    4: 32_152,  # 1.5x = 48,228
-    5: 37_648,  # 1.5x = 56,472
+    1: 15_960,  # 1.5x = 23,940
+    2: 21_640,  # 1.5x = 32,460
+    3: 27_320,  # 1.5x = 40,980
+    4: 33_000,  # 1.5x = 49,500
+    5: 38_680,  # 1.5x = 58,020
 }
 
 
@@ -113,11 +115,11 @@ class TestKsLieapIncomeEligibility(TestCase):
         self.assertTrue(run_household_eligible(make_calculator(income=10_000, household_size=1)).eligible)
 
     def test_income_exactly_at_cap_is_eligible(self):
-        # inclusive comparison (<=): 1-person cap is 23,472
-        self.assertTrue(run_household_eligible(make_calculator(income=23_472, household_size=1)).eligible)
+        # inclusive comparison (<=): 1-person cap is 23,940
+        self.assertTrue(run_household_eligible(make_calculator(income=23_940, household_size=1)).eligible)
 
     def test_income_just_above_cap_is_ineligible(self):
-        self.assertFalse(run_household_eligible(make_calculator(income=23_473, household_size=1)).eligible)
+        self.assertFalse(run_household_eligible(make_calculator(income=23_941, household_size=1)).eligible)
 
     def test_income_pass_message_included(self):
         e = run_household_eligible(make_calculator(income=10_000, household_size=1))
@@ -204,22 +206,26 @@ class TestKsLieapScenarios(TestCase):
         self.assertEqual(e.value, 680)
 
     def test_scenario_2_two_person_near_ceiling(self):
-        e = self._calc(income=31_680, household_size=2)
+        # $2,700/mo = $32,400/yr, $60 under the 2-person cap ($32,460)
+        e = self._calc(income=32_400, household_size=2)
         self.assertTrue(e.eligible)
         self.assertEqual(e.value, 680)
 
     def test_scenario_3_three_person_just_below_cap(self):
-        e = self._calc(income=39_840, household_size=3)
+        # $3,400/mo = $40,800/yr, $180 under the 3-person cap ($40,980)
+        e = self._calc(income=40_800, household_size=3)
         self.assertTrue(e.eligible)
         self.assertEqual(e.value, 680)
 
     def test_scenario_4_four_person_exactly_at_cap(self):
-        e = self._calc(income=48_228, household_size=4)
+        # $4,125/mo = $49,500/yr, exactly the 4-person cap (inclusive <=)
+        e = self._calc(income=49_500, household_size=4)
         self.assertTrue(e.eligible)
         self.assertEqual(e.value, 680)
 
     def test_scenario_5_single_adult_just_above_cap(self):
-        e = self._calc(income=23_640, household_size=1)
+        # $2,000/mo = $24,000/yr, $60 over the 1-person cap ($23,940)
+        e = self._calc(income=24_000, household_size=1)
         self.assertFalse(e.eligible)
 
     def test_scenario_6_senior_social_security(self):
@@ -257,7 +263,7 @@ class TestKsLieapScenarios(TestCase):
         self.assertEqual(e.value, 680)
 
     def test_scenario_12_over_income_but_snap_categorical(self):
-        # $38,400/yr is above the 2-person cap ($31,728) but SNAP receipt qualifies
+        # $38,400/yr is above the 2-person cap ($32,460) but SNAP receipt qualifies
         e = self._calc(income=38_400, household_size=2, has_snap=True)
         self.assertTrue(e.eligible)
         self.assertEqual(e.value, 680)

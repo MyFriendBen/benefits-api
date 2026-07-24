@@ -19,7 +19,7 @@ Our deployment workflows use **composite actions** to maintain DRY (Don't Repeat
 
 All composite actions are located in `.github/actions/`:
 
-1. **setup-python-django** - Sets up Python 3.10 with pip caching and installs dependencies from `requirements.txt`
+1. **setup-python-django** - Sets up Python 3.12 with pip caching and installs dependencies from `requirements.txt`
 2. **run-django-checks** - Runs Django system checks and database migrations
 3. **deploy-to-heroku** - Installs Heroku CLI and deploys using `akhileshns/heroku-deploy@v3.14.15`
 4. **heroku-post-deploy** - Runs post-deployment scripts (migrations, config, validations)

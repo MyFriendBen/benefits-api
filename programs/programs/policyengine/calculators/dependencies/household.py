@@ -84,6 +84,10 @@ class TxCountyDependency(CountyDependency):
     state_dependency_class = TxStateCodeDependency
 
 
+class KsCountyDependency(CountyDependency):
+    state_dependency_class = KsStateCodeDependency
+
+
 class ZipCodeDependency(Household):
     field = "zip_code"
     dependencies = ["zipcode"]

@@ -14,7 +14,8 @@
    * Screener fields:
      * `household_size`
      * `calc_gross_income("yearly", ["all"])`
-   * Source: 42 U.S.C. § 8624(b)(2)(B) — quoted: *"households with incomes which do not exceed the greater of— (i) an amount equal to 150 percent of the poverty level for such State; or (ii) an amount equal to 60 percent of the State median income"*. Kansas DCF publishes the applicable dollar amounts directly (see scenarios below), tied to household size: *"The combined gross income (before deductions) of all persons living at the address may not exceed 150% of the federal poverty level."*
+   * Source: 42 U.S.C. § 8624(b)(2)(B) — quoted: *"households with incomes which do not exceed the greater of— (i) an amount equal to 150 percent of the poverty level for such State; or (ii) an amount equal to 60 percent of the State median income"*. Kansas DCF publishes dollar amounts tied to household size: *"The combined gross income (before deductions) of all persons living at the address may not exceed 150% of the federal poverty level."*
+   * **FPL year:** the calculator applies 150% of the **2026** federal poverty guidelines (config `year: 2026`). The 150% caps used in the scenarios below are computed from those guidelines, not from DCF's most-recent published season table (which was based on the 2025 guidelines). Caps: HH1 $23,940/yr ($1,995/mo), HH2 $32,460 ($2,705/mo), HH3 $40,980 ($3,415/mo), HH4 $49,500 ($4,125/mo), HH5 $58,020 ($4,835/mo).
    * Household definition: "household" means everyone living at the address, not just people on a lease or related by blood. This is how the screener's `household_size` field should be interpreted for this program — everyone at the address, not a tax-filing unit or family-relationship count.
 2. **Categorical eligibility: households with a member receiving TANF, SSI, or SNAP qualify regardless of income**
    * Screener fields:
@@ -96,7 +97,7 @@
 
 * **Location**: Enter ZIP code `66603`, Select county `Shawnee`
 * **Household**: Number of people: `1`
-* **Person 1**: Birth month/year: `March 1971` (age 55), Relationship: `Head of Household`, U.S. citizen: `Yes`, Has income: `Yes`, Employment/wages income: `$1,200` per month ($14,400/year — well below the $23,472/year (150% FPL) threshold DCF publishes for a household of 1: $1,956/month × 12)
+* **Person 1**: Birth month/year: `March 1971` (age 55), Relationship: `Head of Household`, U.S. citizen: `Yes`, Has income: `Yes`, Employment/wages income: `$1,200` per month ($14,400/year — well below the $23,940/year (150% FPL) threshold for a household of 1: $1,995/month × 12)
 * **Energy Costs**: Indicate household is responsible for home energy costs: `Yes`, Select heating fuel type if prompted (e.g., `Natural Gas`)
 * **Current Benefits**: No current benefits selected
 
@@ -106,7 +107,7 @@
 
 ### Scenario 2: Two-Person Household Near Income Ceiling - Barely Eligible
 
-**What we're checking**: Household with gross income just under DCF's published 150% FPL threshold for a 2-person household ($31,728/year = $2,644/month × 12)
+**What we're checking**: Household with gross income just under the 150% FPL threshold for a 2-person household ($32,460/year = $2,705/month × 12)
 **Expected**: Eligible, $680/year
 
 **Steps**:
@@ -114,64 +115,64 @@
 * **Location**: Enter ZIP code `66502`, Select county `Riley`
 * **Household**: Number of people: `2`
 * **Person 1**: Birth month/year: `January 1986` (age 40), Relationship: `Head of Household`, U.S. citizen: `Yes`, Has income: `Yes`, Employment income: `$1,500` per month
-* **Person 2**: Birth month/year: `March 1988` (age 38), Relationship: `Spouse`, U.S. citizen: `Yes`, Has income: `Yes`, Employment income: `$1,140` per month
+* **Person 2**: Birth month/year: `March 1988` (age 38), Relationship: `Spouse`, U.S. citizen: `Yes`, Has income: `Yes`, Employment income: `$1,200` per month
 * **Energy Costs**: Indicate household is responsible for home heating costs: `Yes`, Select heating fuel type if prompted (e.g., `Natural Gas`)
 
-**Why this matters**: Combined income is $2,640/month ($31,680/year) — $48/year under DCF's published $31,728 cap. Confirms the screener does not incorrectly reject households barely within the income limit.
+**Why this matters**: Combined income is $2,700/month ($32,400/year) — $60/year under the $32,460 cap. Confirms the screener does not incorrectly reject households barely within the income limit.
 
 ---
 
 ### Scenario 3: Three-Person Household Income Just Below 150% FPL - Barely Eligible
 
-**What we're checking**: A household of 3 with gross annual income just below DCF's published 150% FPL threshold ($39,972/year = $3,331/month × 12)
+**What we're checking**: A household of 3 with gross annual income just below the 150% FPL threshold ($40,980/year = $3,415/month × 12)
 **Expected**: Eligible, $680/year
 
 **Steps**:
 
 * **Location**: Enter ZIP code `66502`, Select county `Riley`
 * **Household**: Number of people: `3`
-* **Person 1**: Birth month/year: `March 1991` (age 35), Relationship: `Head of Household`, U.S. citizen: `Yes`, Has income: `Yes`, Employment income: `$3,320` per month
+* **Person 1**: Birth month/year: `March 1991` (age 35), Relationship: `Head of Household`, U.S. citizen: `Yes`, Has income: `Yes`, Employment income: `$3,400` per month
 * **Person 2**: Birth month/year: `September 1992` (age 33), Relationship: `Spouse`, U.S. citizen: `Yes`, Has income: `No`
 * **Person 3**: Birth month/year: `January 2021` (age 5), Relationship: `Child`, U.S. citizen: `Yes`, Has income: `No`
 * **Energy Costs**: Indicate the household is responsible for home energy costs: `Yes`, Select heating fuel type if prompted: `Natural Gas`
 
-**Why this matters**: Combined income is $3,320/month ($39,840/year) — $132/year under DCF's published $39,972 cap.
+**Why this matters**: Combined income is $3,400/month ($40,800/year) — $180/year under the $40,980 cap.
 
 ---
 
 ### Scenario 4: Four-Person Household Income Exactly at 150% FPL - Boundary Eligible
 
-**What we're checking**: A 4-person household whose gross monthly income equals exactly DCF's published cap ($4,019/month = $48,228/year)
+**What we're checking**: A 4-person household whose gross monthly income equals exactly the 150% FPL cap ($4,125/month = $49,500/year)
 **Expected**: Eligible, $680/year
 
 **Steps**:
 
 * **Location**: Enter ZIP code `66604`, Select county `Shawnee`
 * **Household**: Number of people: `4`
-* **Person 1**: Birth month/year: `March 1986` (age 40), Relationship: `Head of Household`, U.S. citizen: `Yes`, Has income: `Yes`, Employment income: `$3,019` monthly, No other income sources
+* **Person 1**: Birth month/year: `March 1986` (age 40), Relationship: `Head of Household`, U.S. citizen: `Yes`, Has income: `Yes`, Employment income: `$3,125` monthly, No other income sources
 * **Person 2**: Birth month/year: `September 1988` (age 37), Relationship: `Spouse`, U.S. citizen: `Yes`, Has income: `Yes`, Employment income: `$1,000` monthly, No other income sources
 * **Person 3**: Birth month/year: `January 2016` (age 10), Relationship: `Child`, U.S. citizen: `Yes`, Has income: `No`
 * **Person 4**: Birth month/year: `June 2019` (age 7), Relationship: `Child`, U.S. citizen: `Yes`, Has income: `No`
 * **Energy Costs**: Indicate household is responsible for home energy costs: `Yes`, Heating fuel type: `Natural gas`
 
-**Why this matters**: Combined monthly income ($3,019 + $1,000 = $4,019) exactly matches DCF's published monthly cap for a 4-person household. Tests that the comparison is inclusive (≤), not strictly less-than.
+**Why this matters**: Combined monthly income ($3,125 + $1,000 = $4,125) exactly matches the 150% FPL monthly cap for a 4-person household. Tests that the comparison is inclusive (≤), not strictly less-than.
 
 ---
 
 ### Scenario 5: Single Adult Income Just Above 150% FPL - Ineligible
 
-**What we're checking**: A single-person household with gross income just above DCF's published cap ($1,956/month) is correctly denied
+**What we're checking**: A single-person household with gross income just above the 150% FPL cap ($1,995/month) is correctly denied
 **Expected**: Not eligible
 
 **Steps**:
 
 * **Location**: Enter ZIP code `66502`, Select county `Riley`
 * **Household**: Number of people: `1`
-* **Person 1**: Birth month/year: `March 1976` (age 50), Relationship: `Head of Household`, U.S. citizen: `Yes`, Has income: `Yes`, Employment income: `$1,970` per month (annualizes to $23,640/year, above the $23,472/year cap), No other income sources
+* **Person 1**: Birth month/year: `March 1976` (age 50), Relationship: `Head of Household`, U.S. citizen: `Yes`, Has income: `Yes`, Employment income: `$2,000` per month (annualizes to $24,000/year, above the $23,940/year cap), No other income sources
 * **Energy Costs**: Indicate household is responsible for home energy costs: `Yes`
 * **Current Benefits**: No current benefits selected
 
-**Why this matters**: $1,970/month is $14 above DCF's published $1,956 monthly cap for a 1-person household — a genuine "just above" test using the same authoritative threshold as Scenario 1.
+**Why this matters**: $2,000/month is $5 above the $1,995 monthly cap ($60/year above the $23,940 annual cap) for a 1-person household — a genuine "just above" test using the same 150% FPL threshold as Scenario 1.
 
 ---
 
@@ -265,7 +266,7 @@
 * **Energy Costs**: Indicate household is responsible for home energy costs: `Yes`, Heating fuel type: `Natural Gas`
 * **Current Benefits**: LIEAP currently receiving: `No`
 
-**Why this matters**: Combined income $3,600/month ($43,200/year) is well under DCF's 5-person cap ($4,706/month = $56,472/year). Confirms multi-earner, multi-child aggregation.
+**Why this matters**: Combined income $3,600/month ($43,200/year) is well under the 5-person cap ($4,835/month = $58,020/year). Confirms multi-earner, multi-child aggregation.
 
 ---
 
@@ -296,7 +297,7 @@
 * **Household**: Number of people: `2`
 * **Person 1**: Birth month/year: `March 1985` (age 41), Relationship: `Head of Household`, U.S. citizen: `Yes`, Has income: `Yes`, Employment income: `$3,200`/month
 * **Person 2**: Birth month/year: `June 1987` (age 39), Relationship: `Spouse`, U.S. citizen: `Yes`, Has income: `Yes`, Employment income: `$0`/month
-* **Income total**: $3,200/month = $38,400/year — **above** DCF's $31,728/year (150% FPL) cap for a 2-person household
+* **Income total**: $3,200/month = $38,400/year — **above** the $32,460/year (150% FPL) cap for a 2-person household
 * **Energy Costs**: Indicate household is responsible for home energy costs: `Yes`
 * **Current Benefits**: Select that the household currently receives `SNAP` (Supplemental Nutrition Assistance Program)
 
