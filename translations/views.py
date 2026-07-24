@@ -3,7 +3,7 @@ from django.shortcuts import render
 from django.conf import settings
 from authentication.models import User
 from screener.models import WhiteLabel
-from .models import Translation, HistoricalTranslation
+from .models import Translation, HistoricalTranslation, _invalidate_translation_cache
 from simple_history.utils import update_change_reason
 from rest_framework.response import Response
 from rest_framework import views
@@ -50,7 +50,7 @@ class TranslationView(views.APIView):
             return Response(translations)
         except Exception as _:
             # Cache is likely empty or corrupted, force rebuild and retry once
-            Translation.objects.translation_cache.invalid = True
+            _invalidate_translation_cache()
             try:
                 if language in all_langs:
                     translations = Translation.objects.all_translations([language])

@@ -1,19 +1,27 @@
 from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
 from programs.programs.helpers import medicaid_eligible
 import programs.programs.messages as messages
-from integrations.services.sheets import GoogleSheetsCache
+from integrations.services.sheets.cache import GoogleSheetsCache
 from screener.models import HouseholdMember
 
 
 class ACACache(GoogleSheetsCache):
-    default = {}
+    CACHE_KEY = "nc_aca_data"
     sheet_id = "1tk8zfO_Ou96UvGrIwZoI3Pv8TvPZZipg7YfzGMT2o3c"
     range_name = "'current report'!A2:B101"
 
-    def update(self):
-        data = super().update()
-
-        return {d[0].strip() + " County": float(d[1].replace(",", "")) for d in data}
+    def _process(self, raw_data):
+        result = {}
+        for d in raw_data:
+            if len(d) < 2:
+                continue
+            try:
+                county_key = d[0].strip() + " County"
+                premium_value = float(d[1].replace(",", ""))
+                result[county_key] = premium_value
+            except (IndexError, ValueError, AttributeError):
+                continue  # Skip malformed rows
+        return result
 
 
 class ACASubsidiesNC(ProgramCalculator):
@@ -43,5 +51,5 @@ class ACASubsidiesNC(ProgramCalculator):
         e.condition(not member.insurance.has_insurance_types(ACASubsidiesNC.ineligible_insurance_types))
 
     def member_value(self, member: HouseholdMember):
-        values = self.county_values.fetch()
-        return values[self.screen.county] * 12
+        values = self.county_values.get_data()
+        return values.get(self.screen.county, 0) * 12
