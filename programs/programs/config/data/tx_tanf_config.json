@@ -1,0 +1,20 @@
+{
+  "program": "tanf",
+  "state": "tx",
+  "pe_name": "tx_tanf",
+  "pe_entity": "spm_unit",
+  "state_dependency": "TxStateCodeDependency",
+  "extends": "tanf",
+  "additional_inputs": [
+    "TaxUnitDependentDependency",
+    "EmploymentIncomeDependency",
+    "SelfEmploymentIncomeDependency",
+    "RentalIncomeDependency",
+    "PensionIncomeDependency",
+    "SocialSecurityIncomeDependency",
+    "UnemploymentIncomeDependency",
+    "InvestmentIncomeDependency",
+    "RetirementDistributionsDependency"
+  ],
+  "pe_period_month": null
+}

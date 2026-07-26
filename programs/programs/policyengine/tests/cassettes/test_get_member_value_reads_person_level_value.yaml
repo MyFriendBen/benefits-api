@@ -1,0 +1,53 @@
+interactions:
+- request:
+    body: '{"household": {"people": {"you": {"age": {"2024": 30}, "employment_income":
+      {"2024": 20000}}}, "families": {"your family": {"members": ["you"]}}, "spm_units":
+      {"spm_unit": {"members": ["you"], "snap": {"2024": null}}}, "tax_units": {"your
+      tax unit": {"members": ["you"]}}, "households": {"your household": {"members":
+      ["you"], "state_name": {"2024": "CO"}}}, "marital_units": {"your marital unit":
+      {"members": ["you"]}}}}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '421'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.4
+    method: POST
+    uri: http://localhost:8080/us/calculate
+  response:
+    body:
+      string: '{"status": "ok", "message": null, "result": {"people": {"you": {"age":
+        {"2024": 30}, "employment_income": {"2024": 20000}}}, "families": {"your family":
+        {"members": ["you"]}}, "spm_units": {"spm_unit": {"members": ["you"], "snap":
+        {"2024": 279.59998}}}, "tax_units": {"your tax unit": {"members": ["you"]}},
+        "households": {"your household": {"members": ["you"], "state_name": {"2024":
+        "CO"}}}, "marital_units": {"your marital unit": {"members": ["you"]}}}, "policyengine_bundle":
+        {"model_version": "1.755.0", "data_version": null, "dataset": null}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - close
+      Content-Length:
+      - '548'
+      Content-Type:
+      - application/json
+      Date:
+      - Sun, 12 Jul 2026 07:07:08 GMT
+      Server:
+      - gunicorn
+      X-PolicyEngine-Request-Id:
+      - e1b25928-17df-40d7-b6ad-b2b5a4cde466
+      traceparent:
+      - 00-3d20267716db429f5d2fd611b92e777e-436bde7bbaca4bf3-01
+    status:
+      code: 200
+      message: OK
+version: 1

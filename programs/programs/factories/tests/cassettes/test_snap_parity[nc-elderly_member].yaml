@@ -1,0 +1,72 @@
+interactions:
+- request:
+    body: '{"household": {"people": {"4393": {"child_support_expense": {"2024": 0.0},
+      "real_estate_taxes": {"2024": 0}, "age": {"2024": 68}, "other_medical_expenses":
+      {"2024": 0}, "is_disabled": {"2024": null}, "is_full_time_college_student":
+      {"2024": false}, "is_part_time_college_student": {"2024": false}, "meets_snap_work_exception":
+      {"2024": false}, "is_snap_employment_training_or_work_incentive_student": {"2024":
+      false}}}, "tax_units": {"main_tax_unit": {"members": ["4393"]}}, "families":
+      {"family": {"members": ["4393"]}}, "households": {"household": {"members": ["4393"],
+      "state_code": {"2024": "NC"}}}, "spm_units": {"spm_unit": {"members": ["4393"],
+      "snap_unearned_income": {"2024": 12600.0}, "snap_earned_income": {"2024": 0.0},
+      "snap_assets": {"2024": 0}, "snap_emergency_allotment": {"2024": 0}, "housing_cost":
+      {"2024": 9000}, "has_phone_expense": {"2024": false}, "has_heating_cooling_expense":
+      {"2024": false}, "heating_cooling_expense": {"2024": 0.0}, "childcare_expenses":
+      {"2024": 0.0}, "water_expense": {"2024": 0.0}, "phone_expense": {"2024": 0.0},
+      "homeowners_association_fees": {"2024": 0.0}, "homeowners_insurance": {"2024":
+      0.0}, "snap": {"2024-01": null}}}, "marital_units": {}}}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1197'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.4
+    method: POST
+    uri: http://localhost:8080/us/calculate
+  response:
+    body:
+      string: '{"status": "ok", "message": null, "result": {"people": {"4393": {"child_support_expense":
+        {"2024": 0.0}, "real_estate_taxes": {"2024": 0}, "age": {"2024": 68}, "other_medical_expenses":
+        {"2024": 0}, "is_disabled": {"2024": false}, "is_full_time_college_student":
+        {"2024": false}, "is_part_time_college_student": {"2024": false}, "meets_snap_work_exception":
+        {"2024": false}, "is_snap_employment_training_or_work_incentive_student":
+        {"2024": false}}}, "tax_units": {"main_tax_unit": {"members": ["4393"]}},
+        "families": {"family": {"members": ["4393"]}}, "households": {"household":
+        {"members": ["4393"], "state_code": {"2024": "NC"}}}, "spm_units": {"spm_unit":
+        {"members": ["4393"], "snap_unearned_income": {"2024": 12600.0}, "snap_earned_income":
+        {"2024": 0.0}, "snap_assets": {"2024": 0}, "snap_emergency_allotment": {"2024":
+        0}, "housing_cost": {"2024": 9000}, "has_phone_expense": {"2024": false},
+        "has_heating_cooling_expense": {"2024": false}, "heating_cooling_expense":
+        {"2024": 0.0}, "childcare_expenses": {"2024": 0.0}, "water_expense": {"2024":
+        0.0}, "phone_expense": {"2024": 0.0}, "homeowners_association_fees": {"2024":
+        0.0}, "homeowners_insurance": {"2024": 0.0}, "snap": {"2024-01": 132.59999}}},
+        "marital_units": {}}, "policyengine_bundle": {"model_version": "1.755.0",
+        "data_version": null, "dataset": null}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - close
+      Content-Length:
+      - '1325'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 13 Jul 2026 18:38:08 GMT
+      Server:
+      - gunicorn
+      X-PolicyEngine-Request-Id:
+      - fbfa4623-5ae5-4c8b-8880-70e86d3ebfd2
+      traceparent:
+      - 00-68cb8dadfdab3d0dd52c55988f36b05e-277a662a6c531d91-01
+    status:
+      code: 200
+      message: OK
+version: 1
