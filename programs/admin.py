@@ -610,10 +610,10 @@ class IconAdmin(SecureAdmin):
 
 
 class FormOptionAdmin(SecureAdmin):
-    list_display = ["white_label", "option_type", "value", "icon", "order", "active"]
-    list_filter = ["white_label", "option_type", "active"]
+    list_display = ["white_label", "option_type", "person", "value", "icon", "order", "active"]
+    list_filter = ["white_label", "option_type", "person", "active"]
     search_fields = ["value", "white_label__code"]
-    ordering = ["white_label", "option_type", "order"]
+    ordering = ["white_label", "option_type", "person", "order"]
     autocomplete_fields = ["icon"]
 
 

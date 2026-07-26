@@ -2,6 +2,7 @@
 Tests for the get_form_options endpoint and related models.
 """
 
+from django.core.management.base import CommandError
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
@@ -9,6 +10,7 @@ from authentication.models import User
 from screener.models import WhiteLabel
 from programs.models import Icon, FormOption
 from translations.models import Translation
+from configuration.management.commands.add_config import Command, FALLBACK_LUCIDE_NAME
 
 
 class TestIconModel(TestCase):
@@ -44,7 +46,7 @@ class TestFormOptionModel(TestCase):
             text=self.translation,
             order=1,
         )
-        self.assertEqual(str(opt), "test - condition: housing")
+        self.assertEqual(str(opt), "test - condition/all: housing")
 
     def test_null_icon_allowed(self):
         opt = FormOption.objects.create(
@@ -244,3 +246,67 @@ class TestGetFormOptionsEndpoint(APITestCase):
             self.client.get(self.url)
 
         self.assertEqual(len(ctx.captured_queries), baseline)
+
+
+class TestAddConfigIconResolution(TestCase):
+    """The add_config dual-write's _icon -> Icon resolution (MFB-1200)."""
+
+    def setUp(self):
+        self.cmd = Command()
+        # handle() initializes these; set them directly since we call the helper in isolation.
+        self.cmd._unmapped_icons = set()
+        self.cmd._icon_cache = {}
+        self.cmd._translation_cache = {}
+
+    def test_mapped_icon_resolves_to_its_lucide_name(self):
+        icon = self.cmd._get_or_create_icon("Medicaid")
+        self.assertEqual(icon.name, "Medicaid")
+        self.assertEqual(icon.lucide_name, "heart-pulse")
+        self.assertEqual(self.cmd._unmapped_icons, set())
+
+    def test_missing_icon_falls_back_to_circle_dot(self):
+        # A config entry with no _icon is not drift, so it must not be recorded as unmapped.
+        icon = self.cmd._get_or_create_icon(None)
+        self.assertEqual(icon.name, FALLBACK_LUCIDE_NAME)
+        self.assertEqual(icon.lucide_name, FALLBACK_LUCIDE_NAME)
+        self.assertEqual(self.cmd._unmapped_icons, set())
+
+    def test_unmapped_icon_falls_back_and_is_recorded(self):
+        icon = self.cmd._get_or_create_icon("BogusIcon")
+        # The bad name is preserved (admin feedback) but rendered via the fallback glyph.
+        self.assertEqual(icon.name, "BogusIcon")
+        self.assertEqual(icon.lucide_name, FALLBACK_LUCIDE_NAME)
+        self.assertIn("BogusIcon", self.cmd._unmapped_icons)
+
+    def test_lucide_name_is_refreshed_on_reseed(self):
+        Icon.objects.create(name="Medicaid", lucide_name="stale")
+        icon = self.cmd._get_or_create_icon("Medicaid")
+        self.assertEqual(icon.lucide_name, "heart-pulse")
+
+    def test_icon_cache_avoids_repeat_queries(self):
+        # First resolution hits the DB; the cached second resolution must not (avoids the N+1
+        # of re-upserting the same icon for every option on every white label).
+        first = self.cmd._get_or_create_icon("Medicaid")
+        with self.assertNumQueries(0):
+            second = self.cmd._get_or_create_icon("Medicaid")
+        self.assertIs(first, second)
+
+
+class TestAddConfigTranslationResolution(TestCase):
+    """The add_config dual-write's text -> Translation resolution (MFB-1200)."""
+
+    def setUp(self):
+        self.cmd = Command()
+        self.cmd._translation_cache = {}
+
+    def test_missing_label_raises(self):
+        # A config entry with no text._label would otherwise seed a null-label translation;
+        # fail loudly instead.
+        with self.assertRaises(CommandError):
+            self.cmd._get_or_create_translation({})
+
+    def test_translation_cache_avoids_repeat_queries(self):
+        first = self.cmd._get_or_create_translation({"_label": "foo.bar", "_default_message": "Foo"})
+        with self.assertNumQueries(0):
+            second = self.cmd._get_or_create_translation({"_label": "foo.bar", "_default_message": "Foo"})
+        self.assertIs(first, second)

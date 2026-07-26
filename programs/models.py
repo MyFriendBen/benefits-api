@@ -213,13 +213,25 @@ class Icon(models.Model):
 
 class FormOption(models.Model):
     OPTION_TYPE_CHOICES = [
+        ("acute_condition", "Acute Condition"),
         ("condition", "Condition"),
         ("health_insurance", "Health Insurance"),
-        ("referral", "Referral Source"),
+    ]
+
+    # Which household member the option variant applies to. Health-insurance and condition
+    # options have distinct you/them wording for the same value; acute conditions have no
+    # such split and use "all". "all" is a non-null sentinel (not NULL) so the uniqueness
+    # constraint below is always enforced — Postgres treats NULLs as distinct, which would
+    # let duplicate person-less rows slip through.
+    PERSON_CHOICES = [
+        ("you", "You"),
+        ("them", "Them"),
+        ("all", "All"),
     ]
 
     white_label = models.ForeignKey(WhiteLabel, on_delete=models.CASCADE, related_name="form_options")
     option_type = models.CharField(max_length=50, choices=OPTION_TYPE_CHOICES)
+    person = models.CharField(max_length=4, choices=PERSON_CHOICES, default="all")
     value = models.CharField(max_length=100)
     icon = models.ForeignKey(Icon, on_delete=models.SET_NULL, null=True, blank=True)
     text = models.ForeignKey(Translation, on_delete=models.CASCADE)
@@ -227,11 +239,11 @@ class FormOption(models.Model):
     active = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"{self.white_label.code} - {self.option_type}: {self.value}"
+        return f"{self.white_label.code} - {self.option_type}/{self.person}: {self.value}"
 
     class Meta:
-        unique_together = [["white_label", "option_type", "value"]]
-        ordering = ["white_label", "option_type", "order"]
+        unique_together = [["white_label", "option_type", "person", "value"]]
+        ordering = ["white_label", "option_type", "person", "order"]
         indexes = [
             models.Index(fields=["white_label", "option_type"]),
         ]
