@@ -1,0 +1,16 @@
+{
+  "program": "wic",
+  "state": "co",
+  "category_amounts": {
+    "NONE": 0,
+    "INFANT": 130,
+    "CHILD": 79,
+    "PREGNANT": 104,
+    "POSTPARTUM": 88,
+    "BREASTFEEDING": 121
+  },
+  "source": {
+    "status": "unsourced",
+    "citation": null
+  }
+}
