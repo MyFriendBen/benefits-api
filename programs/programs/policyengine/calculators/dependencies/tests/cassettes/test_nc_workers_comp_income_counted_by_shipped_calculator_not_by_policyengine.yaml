@@ -1,0 +1,112 @@
+interactions:
+- request:
+    body: '{"household": {"people": {"7804": {"age": {"2024": 36}, "is_full_time_college_student":
+      {"2024": false}}, "7805": {"age": {"2024": 8}, "is_full_time_college_student":
+      {"2024": false}}}, "tax_units": {"main_tax_unit": {"members": ["7804", "7805"]}},
+      "families": {"family": {"members": ["7804", "7805"]}}, "households": {"household":
+      {"members": ["7804", "7805"], "state_code": {"2024": "NC"}}}, "spm_units": {"spm_unit":
+      {"members": ["7804", "7805"], "nc_tanf_countable_earned_income": {"2024": 0},
+      "nc_tanf_countable_gross_unearned_income": {"2024": 12000}, "nc_tanf": {"2024":
+      null}}}, "marital_units": {}}}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '608'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.4
+    method: POST
+    uri: http://localhost:8080/us/calculate
+  response:
+    body:
+      string: '{"status": "ok", "message": null, "result": {"people": {"7804": {"age":
+        {"2024": 36}, "is_full_time_college_student": {"2024": false}}, "7805": {"age":
+        {"2024": 8}, "is_full_time_college_student": {"2024": false}}}, "tax_units":
+        {"main_tax_unit": {"members": ["7804", "7805"]}}, "families": {"family": {"members":
+        ["7804", "7805"]}}, "households": {"household": {"members": ["7804", "7805"],
+        "state_code": {"2024": "NC"}}}, "spm_units": {"spm_unit": {"members": ["7804",
+        "7805"], "nc_tanf_countable_earned_income": {"2024": 0}, "nc_tanf_countable_gross_unearned_income":
+        {"2024": 12000}, "nc_tanf": {"2024": 0.0}}}, "marital_units": {}}, "policyengine_bundle":
+        {"model_version": "1.755.0", "data_version": null, "dataset": null}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - close
+      Content-Length:
+      - '729'
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 16 Jul 2026 01:31:32 GMT
+      Server:
+      - gunicorn
+      X-PolicyEngine-Request-Id:
+      - 3e9b4e16-dfe3-4182-8014-7f291192aaba
+      traceparent:
+      - 00-113fbab360a1f45cde035816c3085eab-00784c52e4a58b94-01
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"household": {"people": {"7804": {"age": {"2024": 36}, "is_full_time_college_student":
+      {"2024": false}, "workers_compensation": {"2024": 12000}}, "7805": {"age": {"2024":
+      8}, "is_full_time_college_student": {"2024": false}, "workers_compensation":
+      {"2024": 0}}}, "tax_units": {"main_tax_unit": {"members": ["7804", "7805"]}},
+      "families": {"family": {"members": ["7804", "7805"]}}, "households": {"household":
+      {"members": ["7804", "7805"], "state_code": {"2024": "NC"}}}, "spm_units": {"spm_unit":
+      {"members": ["7804", "7805"], "nc_tanf": {"2024": null}}}, "marital_units":
+      {}}}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '578'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.4
+    method: POST
+    uri: http://localhost:8080/us/calculate
+  response:
+    body:
+      string: '{"status": "ok", "message": null, "result": {"people": {"7804": {"age":
+        {"2024": 36}, "is_full_time_college_student": {"2024": false}, "workers_compensation":
+        {"2024": 12000}}, "7805": {"age": {"2024": 8}, "is_full_time_college_student":
+        {"2024": false}, "workers_compensation": {"2024": 0}}}, "tax_units": {"main_tax_unit":
+        {"members": ["7804", "7805"]}}, "families": {"family": {"members": ["7804",
+        "7805"]}}, "households": {"household": {"members": ["7804", "7805"], "state_code":
+        {"2024": "NC"}}}, "spm_units": {"spm_unit": {"members": ["7804", "7805"],
+        "nc_tanf": {"2024": 2832.0}}}, "marital_units": {}}, "policyengine_bundle":
+        {"model_version": "1.755.0", "data_version": null, "dataset": null}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Connection:
+      - close
+      Content-Length:
+      - '702'
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 16 Jul 2026 01:31:32 GMT
+      Server:
+      - gunicorn
+      X-PolicyEngine-Request-Id:
+      - e1fd3bb4-cca7-4070-9310-bbe3ddf60579
+      traceparent:
+      - 00-b91023abef5948e660cbbf02735d17eb-dbc075ce9c395426-01
+    status:
+      code: 200
+      message: OK
+version: 1
