@@ -59,16 +59,21 @@ class TestCalcPeEligibilityFailure(TestCase):
 
     def _run(self, engines):
         """Run calc_pe_eligibility with `engines` as the engine list, everything else
-        mocked. Returns (result, constructed, capture_message, failures)."""
+        mocked. Returns (result, constructed, capture_message, failures).
+
+        The Sentry calls are patched in `integrations.external_api_status`, not here:
+        the failure path delegates to `report_external_api_failure`, which is the shared
+        "loud + flag" handling PolicyEngine and HUD both go through. Patching
+        `pe.capture_message` would only intercept the SystemExit branch."""
         constructed = []
         engine_classes = [_make_engine(name, constructed, raises=raises) for name, raises in engines]
 
         with patch.object(pe, "pe_engines", engine_classes), patch.object(
             pe, "pe_input", return_value={}
-        ), patch.object(pe, "all_eligibility", return_value={"prog": MagicMock()}), patch.object(
-            pe, "capture_message"
-        ) as capture_message, patch.object(
-            pe, "capture_exception"
+        ), patch.object(pe, "all_eligibility", return_value={"prog": MagicMock()}), patch(
+            "integrations.external_api_status.capture_message"
+        ) as capture_message, patch(
+            "integrations.external_api_status.capture_exception"
         ), track_external_api_failures():
             result = pe.calc_pe_eligibility(self.screen, self.calculators)
             failures = get_external_api_failures()
