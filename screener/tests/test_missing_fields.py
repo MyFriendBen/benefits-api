@@ -69,8 +69,7 @@ class TestIncomeStreamMissingFields(MissingFieldsTestBase):
         missing = income.missing_fields()
 
         self.assertIn("income_type", missing)
-        self.assertEqual(len(missing.malformed), 1)
-        self.assertIn("income_type", missing.malformed[0])
+        self.assertEqual([m.field for m in missing.malformed], ["income_type"])
 
     def test_unsupported_frequency_is_missing_and_malformed(self):
         """yearly() matches no branch for this value and raises UnboundLocalError."""
@@ -81,8 +80,8 @@ class TestIncomeStreamMissingFields(MissingFieldsTestBase):
         missing = income.missing_fields()
 
         self.assertIn("income_frequency", missing)
-        self.assertEqual(len(missing.malformed), 1)
-        self.assertIn("income_frequency", missing.malformed[0])
+        self.assertEqual([m.field for m in missing.malformed], ["income_frequency"])
+        self.assertEqual(missing.malformed[0].value, "fortnightly")
 
     def test_every_supported_frequency_is_accepted(self):
         for frequency in IncomeStream.SUPPORTED_FREQUENCIES:
@@ -112,8 +111,7 @@ class TestIncomeStreamMissingFields(MissingFieldsTestBase):
         missing = income.missing_fields()
 
         self.assertIn("income_amount", missing)
-        self.assertEqual(len(missing.malformed), 1)
-        self.assertIn("income_hours_worked", missing.malformed[0])
+        self.assertEqual([m.field for m in missing.malformed], ["income_hours_worked"])
 
     def test_hourly_with_hours_worked_is_fine(self):
         income = IncomeStream.objects.create(
@@ -163,7 +161,7 @@ class TestExpenseMissingFields(MissingFieldsTestBase):
         missing = expense.missing_fields()
 
         self.assertIn("expense_frequency", missing)
-        self.assertEqual(len(missing.malformed), 1)
+        self.assertEqual([m.field for m in missing.malformed], ["expense_frequency"])
 
     def test_blank_type_is_missing_and_malformed(self):
         expense = Expense.objects.create(
@@ -173,8 +171,7 @@ class TestExpenseMissingFields(MissingFieldsTestBase):
         missing = expense.missing_fields()
 
         self.assertIn("expense_type", missing)
-        self.assertEqual(len(missing.malformed), 1)
-        self.assertIn("expense_type", missing.malformed[0])
+        self.assertEqual([m.field for m in missing.malformed], ["expense_type"])
 
 
 class TestScreenMissingFieldsAggregation(MissingFieldsTestBase):
@@ -192,7 +189,7 @@ class TestScreenMissingFieldsAggregation(MissingFieldsTestBase):
 
         self.assertIn("income_frequency", missing)
         self.assertIn("expense_frequency", missing)
-        self.assertEqual(len(missing.malformed), 2)
+        self.assertEqual(sorted(m.field for m in missing.malformed), ["expense_frequency", "income_frequency"])
 
     def test_clean_screen_has_no_malformed_detail(self):
         IncomeStream.objects.create(

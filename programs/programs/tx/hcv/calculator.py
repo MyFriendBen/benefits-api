@@ -3,6 +3,7 @@ from types import MappingProxyType
 
 from integrations.clients.hud_income_limits import hud_client, HudIncomeClientError
 from programs.programs.calc import Eligibility, ProgramCalculator
+from programs.util import DependencyError, ProgramConfigurationError
 import programs.programs.messages as messages
 
 logger = logging.getLogger(__name__)
@@ -72,7 +73,10 @@ class TxHcv(ProgramCalculator):
 
     def _year_period(self) -> str:
         if self.program.year is None:
-            raise HudIncomeClientError("Program year not configured")
+            # Our own configuration is wrong, not HUD's availability. Raising
+            # HudIncomeClientError here made it indistinguishable from an outage and let
+            # the handler below bury it as "income limit unknown" forever.
+            raise ProgramConfigurationError("TxHcv program year is not configured")
         return self.program.year.period
 
     def _countable_gross_income(self) -> float:
@@ -146,9 +150,14 @@ class TxHcv(ProgramCalculator):
             gross_income = int(self._countable_gross_income())
             income_limit = hud_client.get_screen_il_ami(self.screen, self.ami_percent, self._year_period())
             e.condition(gross_income <= income_limit, messages.income(gross_income, income_limit))
+        except (DependencyError, ProgramConfigurationError):
+            # Not answers we can degrade into "not eligible": the household is outside
+            # HUD's published tables, or the program is misconfigured. Let them reach
+            # eligibility_results, which omits the program and flags the response.
+            raise
         except HudIncomeClientError:
-            # Expected when HUD data is unavailable (API down, county/ZIP not found,
-            # year unconfigured) — mark not eligible without noise.
+            # Expected when HUD data is unavailable (API down, county/ZIP not found) —
+            # mark not eligible without noise.
             e.condition(False, messages.income_limit_unknown())
         except Exception:
             # Unexpected failure — still degrade to not eligible rather than raise,
@@ -183,9 +192,11 @@ class TxHcv(ProgramCalculator):
 
             hap = max(0, gross_rent - ttp)
             return int(hap * 12)
+        except (DependencyError, ProgramConfigurationError):
+            raise
         except HudIncomeClientError:
-            # Expected when HUD data is unavailable (API down, county/ZIP not found,
-            # year unconfigured) — degrade to $0 without noise.
+            # Expected when HUD data is unavailable (API down, county/ZIP not found) —
+            # degrade to $0 without noise.
             return 0
         except Exception:
             # Unexpected bug in the value calculation — still degrade to $0 so one

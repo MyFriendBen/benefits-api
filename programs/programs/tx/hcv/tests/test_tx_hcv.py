@@ -5,6 +5,7 @@ from integrations.clients.hud_income_limits import HudIncomeClientError
 from programs.programs.tx import tx_calculators
 from programs.programs.tx.hcv.calculator import TxHcv
 from programs.programs.calc import ProgramCalculator, Eligibility
+from programs.util import DependencyError, ProgramConfigurationError
 
 
 def make_member(
@@ -545,3 +546,39 @@ class TestTxHcvNeverRaises(TestCase):
             e = calc.calc()  # must not raise, despite a non-typed exception
         self.assertTrue(e.eligible)
         self.assertEqual(e.value, 0)
+
+
+class TestTxHcvDoesNotBuryOurOwnDefects(TestCase):
+    """The blanket degrade-to-"not eligible" above is right for a HUD outage, but two
+    cases must escape it: our own configuration being wrong, and a household outside
+    HUD's published tables. Both used to be answered with a definite "No" nobody could
+    see was unfounded."""
+
+    def _calc(self):
+        return make_calculator(members=[make_member(age=35, earned=12_000)], household_size=1)
+
+    def test_null_program_year_raises_configuration_error(self):
+        calc = self._calc()
+        calc.program.year = None
+        with patch_hud(il_ami=40_000, payment_standard=1000):
+            with self.assertRaises(ProgramConfigurationError):
+                calc.calc()
+
+    def test_null_program_year_raises_from_household_value(self):
+        calc = self._calc()
+        calc.program.year = None
+        with patch_hud(il_ami=40_000, payment_standard=1000):
+            with self.assertRaises(ProgramConfigurationError):
+                calc.household_value()
+
+    def test_household_outside_hud_tables_raises_dependency_error(self):
+        """The client turns an out-of-range household size into DependencyError; the
+        calculator must let it through so the program is omitted rather than answered."""
+        calc = self._calc()
+        with patch.multiple(
+            "programs.programs.tx.hcv.calculator.hud_client",
+            get_screen_il_ami=Mock(side_effect=DependencyError()),
+            get_screen_payment_standard=Mock(return_value=1000),
+        ):
+            with self.assertRaises(DependencyError):
+                calc.calc()

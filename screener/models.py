@@ -411,10 +411,10 @@ class Screen(models.Model):
                 missing_fields.add(field)
 
         for member in self.household_members.all():
-            missing_fields.merge(member.missing_fields())
+            missing_fields.update(member.missing_fields())
 
         for expence in self.expenses.all():
-            missing_fields.merge(expence.missing_fields())
+            missing_fields.update(expence.missing_fields())
 
         return missing_fields
 
@@ -612,7 +612,7 @@ class HouseholdMember(models.Model):
                 missing_fields.add(field)
 
         for income in self.income_streams.all():
-            missing_fields.merge(income.missing_fields())
+            missing_fields.update(income.missing_fields())
 
         return missing_fields
 

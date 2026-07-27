@@ -81,9 +81,10 @@ def calc_pe_eligibility(
                 print(repr(e))
             report_external_api_failure(
                 POLICY_ENGINE,
-                f"Failed to calculate eligibility with the {Method.method_name} method; "
-                f"PolicyEngine programs are unavailable for this screen.",
+                "Failed to calculate eligibility with PolicyEngine; PolicyEngine programs "
+                "are unavailable for this screen.",
                 e,
+                context={"method": Method.method_name},
             )
             # Preserve the payload that triggered the failure so admins can debug it
             # (the exact request is the most useful thing for diagnosing a 400).

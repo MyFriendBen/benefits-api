@@ -18,6 +18,12 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from django.core.cache import cache
 from integrations.external_api_status import report_external_api_failure, HUD
+
+# `DependencyError` is the eligibility loop's "skip this program" signal. Reaching into
+# programs/ from an integration client is a layering compromise, made deliberately: the
+# alternative is repeating the same translation in all seven HUD-backed calculators,
+# where forgetting it silently reintroduces an unjustified "not eligible".
+from programs.util import DependencyError
 from screener.models import Screen
 
 # Type alias for MTSP AMI percentage levels (Multifamily Tax Subsidy Project)
@@ -40,12 +46,21 @@ class HudIncomeClientInputError(HudIncomeClientError):
 
     Separate from the base class so `_report_hud_failure` does NOT treat these as HUD
     being unavailable — a 9-person household is ordinary screener data, not an outage,
-    and flagging it would fire a Sentry error and a frontend warning on every such
-    screen. Subclasses HudIncomeClientError so the existing `except HudIncomeClientError`
-    handlers in the HUD-backed calculators keep catching it unchanged.
+    and flagging it would fire a Sentry error and warn the user that an external service
+    failed when nothing external did.
+
+    It never escapes the client: `_report_hud_failure` translates it into a
+    `DependencyError` so the calling program is omitted from the results and the response
+    is flagged incomplete. Subclassing HudIncomeClientError keeps it catchable by the
+    calculators' existing handlers for any path that bypasses the decorator.
     """
 
     pass
+
+
+# Upstream response bodies land in exception messages; HUD serves HTML error pages, so
+# cap what we forward to Sentry.
+_ERROR_DETAIL_MAX_CHARS = 500
 
 
 def _report_hud_failure(method):
@@ -61,26 +76,38 @@ def _report_hud_failure(method):
     has to be recorded here — by the time the calculator swallows it, the fact that the
     number came from a failed lookup is gone.
 
-    Reports once per exception instance: `approximate_screen_mtsp_ami` calls
-    `get_screen_mtsp_ami` internally, and both are decorated.
+    Two failure classes, handled differently:
+
+    - `HudIncomeClientInputError` — the household is outside HUD's published tables
+      (>8 people, most often). Nothing failed, so no Sentry error; but we still have no
+      income limit, and letting the calculators' `except HudIncomeClientError` handlers
+      see it would turn "we can't evaluate this gate" into a definite "not eligible" we
+      can't justify. Translated to `DependencyError`, which the eligibility loop already
+      understands: the program is omitted rather than answered wrongly, and
+      `missing_programs` is set.
+    - everything else — a genuine HUD failure. Reported once per exception instance
+      (`approximate_screen_mtsp_ami` calls `get_screen_mtsp_ami`, and both are
+      decorated) and, via `report_external_api_failure`, once per service per run.
     """
 
     @functools.wraps(method)
     def wrapper(self, *args, **kwargs):
         try:
             return method(self, *args, **kwargs)
-        except HudIncomeClientInputError:
-            # Out-of-range arguments, not a HUD failure. Propagate untouched.
-            raise
+        except HudIncomeClientInputError as e:
+            raise DependencyError() from e
         except HudIncomeClientError as e:
             if not getattr(e, "_mfb_reported", False):
                 e._mfb_reported = True
                 report_external_api_failure(
                     HUD,
-                    f"HUD Income Limits lookup failed in {type(self).__name__}.{method.__name__}: {e}. "
-                    f"HUD-backed programs fall back to 'not eligible (income limit unknown)' "
-                    f"for this screen.",
+                    "HUD Income Limits lookup failed; HUD-backed programs fall back to "
+                    "'not eligible (income limit unknown)'.",
                     e,
+                    context={
+                        "method": f"{type(self).__name__}.{method.__name__}",
+                        "detail": str(e)[:_ERROR_DETAIL_MAX_CHARS],
+                    },
                 )
             raise
 
@@ -713,7 +740,9 @@ class HudIncomeClient:
             elif status_code == 429:
                 raise HudIncomeClientError("Rate limit exceeded. Please wait before making more requests.") from e
             else:
-                raise HudIncomeClientError(f"API request failed ({status_code}): {e.response.text}") from e
+                raise HudIncomeClientError(
+                    f"API request failed ({status_code}): {e.response.text[:_ERROR_DETAIL_MAX_CHARS]}"
+                ) from e
         except requests.exceptions.Timeout as e:
             raise HudIncomeClientError(
                 "Request timeout after multiple retries. The HUD API may be experiencing issues."

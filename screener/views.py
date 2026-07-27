@@ -428,13 +428,25 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
     # question this is data corruption or serializer drift, and until now it either 500'd
     # the request or silently produced a wrong number, so report it loudly. One event per
     # request listing every affected field, rather than one per row.
-    malformed_fields = getattr(missing_dependencies, "malformed", [])
-    if malformed_fields:
+    #
+    # The message is static and the fingerprint is the set of affected field names, so
+    # Sentry groups by *kind* of corruption — one issue per drift pattern to chase down,
+    # not one per screen. Screen id and the offending values ride along as context.
+    malformed_values = missing_dependencies.malformed
+    if malformed_values:
+        malformed_field_names = sorted({m.field for m in malformed_values})
         capture_message(
-            f"Malformed screen data treated as missing dependencies (screen {screen.id}): "
-            f"{'; '.join(malformed_fields)}. Any program declaring these fields was skipped; "
-            f"results are flagged incomplete either way.",
+            "Malformed screen data treated as missing dependencies. Any program declaring "
+            "these fields was skipped; results are flagged incomplete either way.",
             level="error",
+            contexts={
+                "screen": {"id": screen.id, "white_label": screen.white_label.code},
+                "malformed_data": {
+                    "fields": malformed_field_names,
+                    "values": [m.describe() for m in malformed_values],
+                },
+            },
+            fingerprint=["malformed-screen-data", *malformed_field_names],
         )
 
     program_by_abbr = {p.name_abbreviated: p for p in all_programs}
@@ -476,7 +488,7 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
     # Flagged on malformed data whether or not any calculator happens to declare the
     # affected field: a program that read it without declaring it produced a number from
     # data we know is bad, which is exactly the case that used to pass silently.
-    missing_programs = bool(malformed_fields)
+    missing_programs = bool(malformed_values)
 
     # make certain benifits calculate first so that they can be used in other benefits
     all_programs = sorted(all_programs, key=sort_first)
@@ -485,6 +497,26 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
     eligible_program_data: list[tuple] = []  # (program, data_index) for post-loop navigator pass
 
     program_eligibility = {}
+
+    def report_program_failure(program: Program, e: Exception, stage: str) -> None:
+        """One crashing program must not cost the user every other program's results.
+        Report loudly, then let the caller skip just this one.
+
+        The message is static and fingerprinted on the program: Sentry should show one
+        issue per broken program to fix, not one per screen that hit it. `capture_exception`
+        is left to group on its own stack trace so two different bugs in the same program
+        stay distinguishable."""
+        context = {
+            "program": {"name_abbreviated": program.name_abbreviated, "id": program.id, "stage": stage},
+            "screen": {"id": screen.id, "white_label": screen.white_label.code},
+        }
+        capture_exception(e, level="error", contexts=context)
+        capture_message(
+            "Failed to calculate eligibility for a program; it was skipped for this screen.",
+            level="error",
+            contexts=context,
+            fingerprint=["program-eligibility-failure", program.name_abbreviated, stage],
+        )
 
     for program in all_programs:
         # Tracking-only programs (has_calculator=False) and disabled programs
@@ -498,22 +530,18 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
             try:
                 eligibility = program.eligibility(screen, program_eligibility, missing_dependencies)
             except DependencyError:
-                # Expected: a declared dependency was unanswered. Skip quietly — this is
-                # ordinary partial-screen behavior, not a defect.
+                # Expected: a declared dependency was unanswered, or the household falls
+                # outside an external table we depend on. Skip quietly — this is ordinary
+                # partial-screen behavior, not a defect.
                 missing_programs = True
                 continue
             except Exception as e:
-                # A calculator raised something other than DependencyError — a bug, or
-                # screen data that is malformed rather than null and so slipped past
-                # can_calc(). Previously this escaped the loop and 500'd the whole
-                # response, losing every other program's results. Skip just this program,
-                # loudly, and flag the response as incomplete.
-                capture_exception(e, level="error")
-                capture_message(
-                    f"Failed to calculate eligibility for program {program.name_abbreviated} "
-                    f"(screen {screen.id}); the program was skipped for this screen.",
-                    level="error",
-                )
+                # A calculator raised something other than DependencyError — a bug, a
+                # misconfigured program (ProgramConfigurationError), or screen data that is
+                # malformed rather than null and so slipped past can_calc(). Previously this
+                # escaped the loop and 500'd the whole response, losing every other program's
+                # results. Skip just this program, loudly, and flag the response incomplete.
+                report_program_failure(program, e, "eligibility")
                 missing_programs = True
                 continue
         else:
@@ -525,99 +553,120 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
 
         program_eligibility[program.name_abbreviated] = eligibility
 
-        if previous_snapshot is not None:
-            new = True
-            for previous_snapshot in previous_results:
-                if (
-                    previous_snapshot.name_abbreviated == program.name_abbreviated
-                    and eligibility.eligible == previous_snapshot.eligible
-                ):
-                    new = False
-        else:
-            new = False
+        # Everything from here on is presentation: warning calculators, translation
+        # lookups and snapshot construction, all of which read the same screen data the
+        # eligibility calculators do. A `fortnightly` income row crashing
+        # `screen.calc_gross_income()` inside a warning calculator is the same defect as
+        # one crashing the calculator itself, and it 500'd the whole response just as
+        # hard. Guard it the same way, rolling back this program's partial output so a
+        # half-rendered entry never reaches the response.
+        snapshots_len, data_len, eligible_len = len(program_snapshots), len(data), len(eligible_program_data)
+        try:
+            if previous_snapshot is not None:
+                new = True
+                for previous_snapshot in previous_results:
+                    if (
+                        previous_snapshot.name_abbreviated == program.name_abbreviated
+                        and eligibility.eligible == previous_snapshot.eligible
+                    ):
+                        new = False
+            else:
+                new = False
 
-        warnings = []
+            warnings = []
 
-        # don't calculate warnings for ineligible programs
-        if eligibility.eligible:
-            for warning in program.warning_messages.all():
-                if warning.calculator not in warning_calculators:
-                    raise Exception(f"{warning.calculator} is not a valid calculator name")
+            # don't calculate warnings for ineligible programs
+            if eligibility.eligible:
+                for warning in program.warning_messages.all():
+                    if warning.calculator not in warning_calculators:
+                        raise Exception(f"{warning.calculator} is not a valid calculator name")
 
-                warning_calculator = warning_calculators[warning.calculator](
-                    screen, warning, eligibility, missing_dependencies
+                    warning_calculator = warning_calculators[warning.calculator](
+                        screen, warning, eligibility, missing_dependencies
+                    )
+
+                    if warning_calculator.calc():
+                        warnings.append(WarningMessageSerializer(warning).data)
+
+            if not skip and program.active:
+                legal_status = [status.status for status in program.legal_status_required.all()]
+                program_snapshots.append(
+                    ProgramEligibilitySnapshot(
+                        eligibility_snapshot=snapshot,
+                        name=program.name.text,
+                        name_abbreviated=program.name_abbreviated,
+                        value_type=program.value_type,
+                        estimated_value=eligibility.value,
+                        estimated_delivery_time=program.estimated_delivery_time.text,
+                        estimated_application_time=program.estimated_application_time.text,
+                        eligible=eligibility.eligible,
+                        failed_tests=json.dumps(eligibility.fail_messages),
+                        passed_tests=json.dumps(eligibility.pass_messages),
+                        new=new,
+                    )
                 )
+                program_translations = GetProgramTranslation(screen, program, missing_dependencies)
 
-                if warning_calculator.calc():
-                    warnings.append(WarningMessageSerializer(warning).data)
+                member_data = []
+                for member_eligibility in eligibility.eligible_members:
+                    member_data.append(
+                        {
+                            "frontend_id": str(member_eligibility.member.frontend_id),
+                            "eligible": member_eligibility.eligible,
+                            "value": member_eligibility.value,
+                            "already_has": member_eligibility.member.has_insurance(program.name_abbreviated),
+                        }
+                    )
 
-        if not skip and program.active:
-            legal_status = [status.status for status in program.legal_status_required.all()]
-            program_snapshots.append(
-                ProgramEligibilitySnapshot(
-                    eligibility_snapshot=snapshot,
-                    name=program.name.text,
-                    name_abbreviated=program.name_abbreviated,
-                    value_type=program.value_type,
-                    estimated_value=eligibility.value,
-                    estimated_delivery_time=program.estimated_delivery_time.text,
-                    estimated_application_time=program.estimated_application_time.text,
-                    eligible=eligibility.eligible,
-                    failed_tests=json.dumps(eligibility.fail_messages),
-                    passed_tests=json.dumps(eligibility.pass_messages),
-                    new=new,
-                )
-            )
-            program_translations = GetProgramTranslation(screen, program, missing_dependencies)
-
-            member_data = []
-            for member_eligibility in eligibility.eligible_members:
-                member_data.append(
+                data.append(
                     {
-                        "frontend_id": str(member_eligibility.member.frontend_id),
-                        "eligible": member_eligibility.eligible,
-                        "value": member_eligibility.value,
-                        "already_has": member_eligibility.member.has_insurance(program.name_abbreviated),
+                        "program_id": program.id,
+                        "name": program_translations.get_translation("name"),
+                        "name_abbreviated": program.name_abbreviated,
+                        "external_name": program.external_name,
+                        "estimated_value": eligibility.value,
+                        "household_value": eligibility.household_value,
+                        "estimated_delivery_time": program_translations.get_translation("estimated_delivery_time"),
+                        "estimated_application_time": program_translations.get_translation(
+                            "estimated_application_time"
+                        ),
+                        "description_short": program_translations.get_translation("description_short"),
+                        "short_name": program.name_abbreviated,
+                        "description": program_translations.get_translation("description"),
+                        "value_type": program.value_type,
+                        "learn_more_link": program_translations.get_translation("learn_more_link"),
+                        "apply_button_link": program_translations.get_translation("apply_button_link"),
+                        "apply_button_description": program_translations.get_translation("apply_button_description"),
+                        "legal_status_required": legal_status,
+                        "estimated_value_override": program_translations.get_translation("estimated_value"),
+                        "eligible": eligibility.eligible,
+                        "members": member_data,
+                        "failed_tests": eligibility.fail_messages,
+                        "passed_tests": eligibility.pass_messages,
+                        "navigators": [],  # populated in second pass once program_eligibility is complete
+                        "already_has": screen.has_benefit(program.name_abbreviated),
+                        "new": new,
+                        "low_confidence": program.low_confidence,
+                        "documents": [serialized_document(document) for document in program.documents.all()],
+                        "warning_messages": warnings,
+                        "required_programs": [p.id for p in program.required_programs.all()],
+                        "excludes_programs": [p.id for p in program.excludes_programs.all()],
+                        "value_format": program.value_format,
                     }
                 )
 
-            data.append(
-                {
-                    "program_id": program.id,
-                    "name": program_translations.get_translation("name"),
-                    "name_abbreviated": program.name_abbreviated,
-                    "external_name": program.external_name,
-                    "estimated_value": eligibility.value,
-                    "household_value": eligibility.household_value,
-                    "estimated_delivery_time": program_translations.get_translation("estimated_delivery_time"),
-                    "estimated_application_time": program_translations.get_translation("estimated_application_time"),
-                    "description_short": program_translations.get_translation("description_short"),
-                    "short_name": program.name_abbreviated,
-                    "description": program_translations.get_translation("description"),
-                    "value_type": program.value_type,
-                    "learn_more_link": program_translations.get_translation("learn_more_link"),
-                    "apply_button_link": program_translations.get_translation("apply_button_link"),
-                    "apply_button_description": program_translations.get_translation("apply_button_description"),
-                    "legal_status_required": legal_status,
-                    "estimated_value_override": program_translations.get_translation("estimated_value"),
-                    "eligible": eligibility.eligible,
-                    "members": member_data,
-                    "failed_tests": eligibility.fail_messages,
-                    "passed_tests": eligibility.pass_messages,
-                    "navigators": [],  # populated in second pass once program_eligibility is complete
-                    "already_has": screen.has_benefit(program.name_abbreviated),
-                    "new": new,
-                    "low_confidence": program.low_confidence,
-                    "documents": [serialized_document(document) for document in program.documents.all()],
-                    "warning_messages": warnings,
-                    "required_programs": [p.id for p in program.required_programs.all()],
-                    "excludes_programs": [p.id for p in program.excludes_programs.all()],
-                    "value_format": program.value_format,
-                }
-            )
-
-            if eligibility.eligible:
-                eligible_program_data.append((program, len(data) - 1))
+                if eligibility.eligible:
+                    eligible_program_data.append((program, len(data) - 1))
+        except Exception as e:
+            del program_snapshots[snapshots_len:]
+            del data[data_len:]
+            del eligible_program_data[eligible_len:]
+            # program_eligibility keeps its entry on purpose: the eligibility value was
+            # computed correctly and later programs may depend on it. Only the rendering
+            # of this program failed.
+            report_program_failure(program, e, "presentation")
+            missing_programs = True
+            continue
 
     update_navigators(eligible_program_data, program_eligibility, data, screen.county, referrer)
 
@@ -757,33 +806,54 @@ def urgent_need_results(screen: Screen, data):
 
     eligible_urgent_needs = []
     for need in urgent_need_resources:
-        eligible = True
+        # Urgent-need functions run the same eligibility machinery as the programs above
+        # and reach the same integrations — IlRentAsst calls the HUD client with no
+        # handler of its own — so an outage or a malformed income row raising here took
+        # the whole results response down with it. Skip the one need instead.
+        try:
+            eligible = True
 
-        calculators = [urgent_need_functions[f.name] for f in need.functions.all()]
+            calculators = [urgent_need_functions[f.name] for f in need.functions.all()]
 
-        if len(calculators) == 0:
-            calculators = [UrgentNeedFunction]
+            if len(calculators) == 0:
+                calculators = [UrgentNeedFunction]
 
-        for Calculator in calculators:
-            calculator = Calculator(screen, need, missing_dependencies, data)
+            for Calculator in calculators:
+                calculator = Calculator(screen, need, missing_dependencies, data)
 
-            if not calculator.calc():
-                eligible = False
-        if eligible:
-            phone_number = str(need.phone_number) if need.phone_number else None
-            need_data = {
-                "name": default_message(need.name),
-                "description": default_message(need.description),
-                "link": default_message(need.link),
-                "category_type": default_message(need.category_type.name),
-                "icon": need.category_type.icon_name,
-                "warning": default_message(need.warning),
-                "phone_number": phone_number,
-                "notification_message": (
-                    default_message(need.notification_message) if need.notification_message else None
-                ),
+                if not calculator.calc():
+                    eligible = False
+            if eligible:
+                phone_number = str(need.phone_number) if need.phone_number else None
+                need_data = {
+                    "name": default_message(need.name),
+                    "description": default_message(need.description),
+                    "link": default_message(need.link),
+                    "category_type": default_message(need.category_type.name),
+                    "icon": need.category_type.icon_name,
+                    "warning": default_message(need.warning),
+                    "phone_number": phone_number,
+                    "notification_message": (
+                        default_message(need.notification_message) if need.notification_message else None
+                    ),
+                }
+                eligible_urgent_needs.append(need_data)
+        except DependencyError:
+            # Expected: unanswered screen data, or a household outside an external table.
+            continue
+        except Exception as e:
+            context = {
+                "urgent_need": {"id": need.id, "name": default_message(need.name)},
+                "screen": {"id": screen.id, "white_label": screen.white_label.code},
             }
-            eligible_urgent_needs.append(need_data)
+            capture_exception(e, level="error", contexts=context)
+            capture_message(
+                "Failed to calculate an urgent need; it was skipped for this screen.",
+                level="error",
+                contexts=context,
+                fingerprint=["urgent-need-failure", str(need.id)],
+            )
+            continue
 
     return eligible_urgent_needs
 
