@@ -1,6 +1,7 @@
 import hashlib
 import requests
 from typing import Optional
+from sentry_sdk import capture_exception, capture_message
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from integrations.clients.rewiring_america import RewiringAmericaClient
@@ -423,6 +424,19 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
 
     missing_dependencies = screen.missing_fields()
 
+    # Fields that hold an unusable value rather than being unanswered. Unlike a blank
+    # question this is data corruption or serializer drift, and until now it either 500'd
+    # the request or silently produced a wrong number, so report it loudly. One event per
+    # request listing every affected field, rather than one per row.
+    malformed_fields = getattr(missing_dependencies, "malformed", [])
+    if malformed_fields:
+        capture_message(
+            f"Malformed screen data treated as missing dependencies (screen {screen.id}): "
+            f"{'; '.join(malformed_fields)}. Any program declaring these fields was skipped; "
+            f"results are flagged incomplete either way.",
+            level="error",
+        )
+
     program_by_abbr = {p.name_abbreviated: p for p in all_programs}
     pe_calculators = {}
     for calculator_name, Calculator in all_calculators.items():
@@ -459,7 +473,10 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
 
         return calc_order.index(program.name_abbreviated)
 
-    missing_programs = False
+    # Flagged on malformed data whether or not any calculator happens to declare the
+    # affected field: a program that read it without declaring it produced a number from
+    # data we know is bad, which is exactly the case that used to pass silently.
+    missing_programs = bool(malformed_fields)
 
     # make certain benifits calculate first so that they can be used in other benefits
     all_programs = sorted(all_programs, key=sort_first)
@@ -481,6 +498,22 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
             try:
                 eligibility = program.eligibility(screen, program_eligibility, missing_dependencies)
             except DependencyError:
+                # Expected: a declared dependency was unanswered. Skip quietly — this is
+                # ordinary partial-screen behavior, not a defect.
+                missing_programs = True
+                continue
+            except Exception as e:
+                # A calculator raised something other than DependencyError — a bug, or
+                # screen data that is malformed rather than null and so slipped past
+                # can_calc(). Previously this escaped the loop and 500'd the whole
+                # response, losing every other program's results. Skip just this program,
+                # loudly, and flag the response as incomplete.
+                capture_exception(e, level="error")
+                capture_message(
+                    f"Failed to calculate eligibility for program {program.name_abbreviated} "
+                    f"(screen {screen.id}); the program was skipped for this screen.",
+                    level="error",
+                )
                 missing_programs = True
                 continue
         else:
@@ -630,6 +663,16 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
         clean_program = program
         clean_program["estimated_value"] = math.trunc(clean_program["estimated_value"])
         eligible_programs.append(clean_program)
+
+    # An integration that failed during this run means some program was computed from a
+    # fallback rather than real data — HUD-backed programs, for instance, degrade to "not
+    # eligible (income limit unknown)" and would otherwise present that guess as a
+    # confident answer. PolicyEngine already reaches missing_programs via the
+    # `not in pe_eligibility` branch above; this covers every other integration.
+    # Reads the collector established by track_external_api_failures() around the caller;
+    # empty (harmless) when no tracking context is active.
+    if get_external_api_failures():
+        missing_programs = True
 
     return eligible_programs, missing_programs, categories, pe_data
 

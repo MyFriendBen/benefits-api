@@ -10,13 +10,14 @@ Provides access to two HUD Income Limits datasets:
 API Documentation: https://www.huduser.gov/portal/dataset/fmr-api.html
 """
 
+import functools
 from typing import Union, Literal, Optional, cast, get_args
 from decouple import config
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-from sentry_sdk import capture_exception
 from django.core.cache import cache
+from integrations.external_api_status import report_external_api_failure, HUD
 from screener.models import Screen
 
 # Type alias for MTSP AMI percentage levels (Multifamily Tax Subsidy Project)
@@ -30,6 +31,60 @@ class HudIncomeClientError(Exception):
     """Base exception for HUD Income Client errors"""
 
     pass
+
+
+class HudIncomeClientInputError(HudIncomeClientError):
+    """A lookup we never even attempted because the arguments were out of range
+    (household size outside HUD's 1-8 table, bedroom count outside 0-4, an AMI
+    percentage outside the MTSP range).
+
+    Separate from the base class so `_report_hud_failure` does NOT treat these as HUD
+    being unavailable — a 9-person household is ordinary screener data, not an outage,
+    and flagging it would fire a Sentry error and a frontend warning on every such
+    screen. Subclasses HudIncomeClientError so the existing `except HudIncomeClientError`
+    handlers in the HUD-backed calculators keep catching it unchanged.
+    """
+
+    pass
+
+
+def _report_hud_failure(method):
+    """Report any HUD lookup failure that means "we could not get a usable number from
+    HUD" — loud Sentry error plus the request-scoped flag that makes `missing_programs`
+    true and warns the frontend.
+
+    Applied at the public-method boundary rather than at each `raise` site so every
+    failure path is covered: transport errors from `_api_request`, an unrecognized
+    county from `_get_entity_id`, and a 200 response missing the field we need. The
+    HUD-backed calculators all catch HudIncomeClientError and degrade to "not eligible
+    (income limit unknown)", which is a real answer shown to the user, so the failure
+    has to be recorded here — by the time the calculator swallows it, the fact that the
+    number came from a failed lookup is gone.
+
+    Reports once per exception instance: `approximate_screen_mtsp_ami` calls
+    `get_screen_mtsp_ami` internally, and both are decorated.
+    """
+
+    @functools.wraps(method)
+    def wrapper(self, *args, **kwargs):
+        try:
+            return method(self, *args, **kwargs)
+        except HudIncomeClientInputError:
+            # Out-of-range arguments, not a HUD failure. Propagate untouched.
+            raise
+        except HudIncomeClientError as e:
+            if not getattr(e, "_mfb_reported", False):
+                e._mfb_reported = True
+                report_external_api_failure(
+                    HUD,
+                    f"HUD Income Limits lookup failed in {type(self).__name__}.{method.__name__}: {e}. "
+                    f"HUD-backed programs fall back to 'not eligible (income limit unknown)' "
+                    f"for this screen.",
+                    e,
+                )
+            raise
+
+    return wrapper
 
 
 class HudIncomeClient:
@@ -145,6 +200,7 @@ class HudIncomeClient:
             self._headers = {"Authorization": f"Bearer {token}"}
         return self._headers
 
+    @_report_hud_failure
     def get_screen_mtsp_ami(
         self,
         screen: Screen,
@@ -214,6 +270,7 @@ class HudIncomeClient:
 
         return int(value)
 
+    @_report_hud_failure
     def get_screen_il_ami(
         self,
         screen,
@@ -312,7 +369,7 @@ class HudIncomeClient:
 
     def _validate_bedrooms(self, bedrooms: int) -> None:
         if bedrooms < 0 or bedrooms > 4:
-            raise HudIncomeClientError(f"Bedroom count must be 0-4, got {bedrooms}")
+            raise HudIncomeClientInputError(f"Bedroom count must be 0-4, got {bedrooms}")
 
     def _fetch_fmr_area_data(
         self,
@@ -368,6 +425,7 @@ class HudIncomeClient:
                 return int(value) if value is not None else None
         return None
 
+    @_report_hud_failure
     def get_screen_fmr(
         self,
         screen: Screen,
@@ -401,6 +459,7 @@ class HudIncomeClient:
         area_data = self._fetch_fmr_area_data(screen, year, county_override)
         return self._metro_fmr_value(area_data.get("basicdata", {}), bedrooms, county_override or screen.county)
 
+    @_report_hud_failure
     def get_screen_safmr(
         self,
         screen: Screen,
@@ -440,6 +499,7 @@ class HudIncomeClient:
             )
         return value
 
+    @_report_hud_failure
     def get_screen_payment_standard(
         self,
         screen: Screen,
@@ -484,6 +544,7 @@ class HudIncomeClient:
     # Derived from MtspAmiPercent so the two stay in sync automatically
     MTSP_THRESHOLDS: list[int] = sorted(int(p.rstrip("%")) for p in get_args(MtspAmiPercent))
 
+    @_report_hud_failure
     def approximate_screen_mtsp_ami(
         self,
         screen: Screen,
@@ -525,7 +586,7 @@ class HudIncomeClient:
         target_num = int(str(target_percent).rstrip("%"))
 
         if target_num < self.MTSP_THRESHOLDS[0] or target_num > self.MTSP_THRESHOLDS[-1]:
-            raise HudIncomeClientError(
+            raise HudIncomeClientInputError(
                 f"target_percent {target_percent} is outside the supported MTSP range "
                 f"[{self.MTSP_THRESHOLDS[0]}%, {self.MTSP_THRESHOLDS[-1]}%]"
             )
@@ -545,7 +606,7 @@ class HudIncomeClient:
     def _validate_household_size(self, household_size: int) -> None:
         """Validate household size is within HUD API bounds (1-8)."""
         if household_size < 1 or household_size > 8:
-            raise HudIncomeClientError("Household size must be between 1 and 8")
+            raise HudIncomeClientInputError("Household size must be between 1 and 8")
 
     def _fetch_cached_data(self, cache_key: str, endpoint: str, year: int) -> dict:
         """Fetch data from cache or API and cache the result."""
@@ -625,43 +686,44 @@ class HudIncomeClient:
         Raises:
             HudIncomeClientError: On authentication, authorization, or data errors
         """
+        # Every raise below chains the underlying requests exception with `from e`, so the
+        # single Sentry event reported by `_report_hud_failure` at the public-method
+        # boundary carries the full cause chain. Don't capture here as well — that would
+        # fire a duplicate event per failure.
         try:
             response = self._session.get(f"{self.BASE_URL}/{endpoint}", headers=self.headers, params=params, timeout=30)
             response.raise_for_status()
             try:
                 return response.json()
             except ValueError as e:
-                capture_exception(e)
                 raise HudIncomeClientError(f"Non-JSON response from HUD API ({endpoint}): {response.text[:200]}") from e
         except requests.exceptions.HTTPError as e:
-            capture_exception(e)
             status_code = e.response.status_code
             if status_code == 401:
-                raise HudIncomeClientError("Authentication failed. Check HUD_API_TOKEN is set and valid.")
+                raise HudIncomeClientError("Authentication failed. Check HUD_API_TOKEN is set and valid.") from e
             elif status_code == 403:
                 raise HudIncomeClientError(
                     "Access denied. Ensure your HUD API account is registered for both "
                     "FMR and Income Limits datasets at https://www.huduser.gov/hudapi/public/register"
-                )
+                ) from e
             elif status_code == 404:
                 raise HudIncomeClientError(
                     f"Data not found for endpoint: {endpoint}. " "Check that the state/county exists and year is valid."
-                )
+                ) from e
             elif status_code == 429:
-                raise HudIncomeClientError("Rate limit exceeded. Please wait before making more requests.")
+                raise HudIncomeClientError("Rate limit exceeded. Please wait before making more requests.") from e
             else:
-                raise HudIncomeClientError(f"API request failed ({status_code}): {e.response.text}")
+                raise HudIncomeClientError(f"API request failed ({status_code}): {e.response.text}") from e
         except requests.exceptions.Timeout as e:
-            capture_exception(e)
             raise HudIncomeClientError(
                 "Request timeout after multiple retries. The HUD API may be experiencing issues."
-            )
+            ) from e
         except requests.exceptions.ConnectionError as e:
-            capture_exception(e)
-            raise HudIncomeClientError("Connection failed. Please check your network connection or try again later.")
+            raise HudIncomeClientError(
+                "Connection failed. Please check your network connection or try again later."
+            ) from e
         except requests.exceptions.RequestException as e:
-            capture_exception(e)
-            raise HudIncomeClientError(f"Request failed: {str(e)}")
+            raise HudIncomeClientError(f"Request failed: {str(e)}") from e
 
 
 # Default client instance

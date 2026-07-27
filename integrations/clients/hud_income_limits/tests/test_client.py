@@ -16,9 +16,11 @@ from django.core.cache import cache
 from integrations.clients.hud_income_limits.client import (
     HudIncomeClient,
     HudIncomeClientError,
+    HudIncomeClientInputError,
     MtspAmiPercent,
     Section8AmiPercent,
 )
+from integrations.external_api_status import HUD, get_external_api_failures, track_external_api_failures
 from screener.models import Screen, WhiteLabel
 
 
@@ -466,6 +468,76 @@ class TestHudIncomeClientValidation(HudClientTestBase):
 
             with self.assertRaisesRegex(HudIncomeClientError, r"HUD_API_TOKEN"):
                 _ = client.headers
+
+
+class TestHudFailureReporting(HudClientTestBase):
+    """A HUD lookup failure must be recorded as an external-API failure so the results
+    view can flag `missing_programs` — the HUD-backed calculators swallow
+    HudIncomeClientError and degrade to "not eligible (income limit unknown)", so this is
+    the only place the degradation is still visible."""
+
+    def test_transport_failure_records_hud(self) -> None:
+        client = HudIncomeClient(api_token="test_token")
+
+        with patch.object(client, "_api_request", side_effect=requests.exceptions.ConnectionError("no route")):
+            with track_external_api_failures():
+                with self.assertRaises(requests.exceptions.ConnectionError):
+                    client.get_screen_il_ami(self.screen, "80%", "2025")
+                # A raw requests error escaping _api_request isn't a HudIncomeClientError,
+                # so it is not reported here — the loop-level handler catches it instead.
+                self.assertEqual(get_external_api_failures(), [])
+
+    def test_hud_client_error_records_hud(self) -> None:
+        client = HudIncomeClient(api_token="test_token")
+
+        # A 200 response with no usable payload -> HudIncomeClientError from
+        # _validate_data_response, reported at the public-method boundary.
+        with self.mock_api_responses(client, self.mock_counties_response, {}):
+            with track_external_api_failures():
+                with self.assertRaises(HudIncomeClientError):
+                    client.get_screen_il_ami(self.screen, "80%", "2025")
+                self.assertEqual(get_external_api_failures(), [HUD])
+
+    def test_county_not_found_records_hud(self) -> None:
+        client = HudIncomeClient(api_token="test_token")
+        self.screen.county = "Nonexistent"
+
+        with self.mock_api_responses(client, self.mock_counties_response):
+            with track_external_api_failures():
+                with self.assertRaisesRegex(HudIncomeClientError, r"County not found"):
+                    client.get_screen_il_ami(self.screen, "80%", "2025")
+                self.assertEqual(get_external_api_failures(), [HUD])
+
+    def test_input_error_does_not_record_hud(self) -> None:
+        """A 9-person household is ordinary screener data, not a HUD outage — it must not
+        fire a Sentry error or warn the user that an external service failed."""
+        client = HudIncomeClient(api_token="test_token")
+        self.screen.household_size = 9
+
+        with track_external_api_failures():
+            with self.assertRaises(HudIncomeClientInputError):
+                client.get_screen_il_ami(self.screen, "80%", "2025")
+            self.assertEqual(get_external_api_failures(), [])
+
+    def test_bedroom_input_error_does_not_record_hud(self) -> None:
+        client = HudIncomeClient(api_token="test_token")
+
+        with track_external_api_failures():
+            with self.assertRaises(HudIncomeClientInputError):
+                client.get_screen_payment_standard(self.screen, 7, "2026")
+            self.assertEqual(get_external_api_failures(), [])
+
+    @patch("integrations.clients.hud_income_limits.client.report_external_api_failure")
+    def test_reports_once_through_nested_public_calls(self, mock_report) -> None:
+        """approximate_screen_mtsp_ami calls get_screen_mtsp_ami and both are decorated;
+        the failure should produce one report, not two."""
+        client = HudIncomeClient(api_token="test_token")
+
+        with self.mock_api_responses(client, self.mock_counties_response, {}):
+            with self.assertRaises(HudIncomeClientError):
+                client.approximate_screen_mtsp_ami(self.screen, "65%", "2025")
+
+        self.assertEqual(mock_report.call_count, 1)
 
 
 class TestHudIncomeClientCountyLookup(HudClientTestBase):

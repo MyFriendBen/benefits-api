@@ -1,6 +1,8 @@
 """Tests for the request-scoped external-API failure registry
 (integrations/external_api_status.py)."""
 
+from unittest.mock import patch
+
 from django.test import SimpleTestCase
 
 from integrations.external_api_status import (
@@ -8,6 +10,7 @@ from integrations.external_api_status import (
     POLICY_ENGINE,
     get_external_api_failures,
     record_external_api_failure,
+    report_external_api_failure,
     track_external_api_failures,
 )
 
@@ -48,3 +51,29 @@ class TestExternalApiStatus(SimpleTestCase):
             self.assertEqual(get_external_api_failures(), sorted([HUD, POLICY_ENGINE]))
         # The outermost context resets everything on exit.
         self.assertEqual(get_external_api_failures(), [])
+
+
+class TestReportExternalApiFailure(SimpleTestCase):
+    """report_external_api_failure is the canonical "loud + flag" handling shared by the
+    PolicyEngine and HUD integrations."""
+
+    @patch("integrations.external_api_status.capture_message")
+    @patch("integrations.external_api_status.capture_exception")
+    def test_captures_exception_and_message_at_error_level(self, mock_capture_exception, mock_capture_message):
+        boom = ValueError("boom")
+        with track_external_api_failures():
+            report_external_api_failure(HUD, "HUD is down", boom)
+            self.assertEqual(get_external_api_failures(), [HUD])
+
+        mock_capture_exception.assert_called_once_with(boom, level="error")
+        mock_capture_message.assert_called_once_with("HUD is down", level="error")
+
+    @patch("integrations.external_api_status.capture_message")
+    @patch("integrations.external_api_status.capture_exception")
+    def test_message_only_when_no_exception(self, mock_capture_exception, mock_capture_message):
+        with track_external_api_failures():
+            report_external_api_failure(POLICY_ENGINE, "no exception here")
+            self.assertEqual(get_external_api_failures(), [POLICY_ENGINE])
+
+        mock_capture_exception.assert_not_called()
+        mock_capture_message.assert_called_once_with("no exception here", level="error")
