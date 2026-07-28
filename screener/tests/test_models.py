@@ -434,6 +434,56 @@ class TestScreen(TestCase):
             self.assertFalse(prefetched.has_benefit("wic"))
             self.assertFalse(prefetched.has_benefit("ssi"))
 
+    # Tests for Screen.has_benefit_or_variant() / has_benefit_from_list()
+    #
+    # A white label ships state-prefixed programs (co_snap, ks_snap, …), so an exact-name
+    # read of a base program name (has_benefit("snap")) is always False. These pin the two
+    # ways calculators are allowed to ask the question.
+
+    def test_has_benefit_or_variant_matches_base_program(self):
+        """A base program name resolves through the variant the white label actually ships."""
+        seed_program(self.white_label, "wa_snap", base_program="snap")
+        _write_current_benefits(self.screen, ["wa_snap"])
+
+        self.assertTrue(self.screen.has_benefit_or_variant("snap"))
+        self.assertFalse(self.screen.has_benefit("snap"))  # exact-name read stays False
+
+    def test_has_benefit_or_variant_matches_exact_name(self):
+        """A state-specific name still matches exactly, even with no base_program set."""
+        seed_program(self.white_label, "rtdlive")
+        _write_current_benefits(self.screen, ["rtdlive"])
+
+        self.assertTrue(self.screen.has_benefit_or_variant("rtdlive"))
+
+    def test_has_benefit_or_variant_false_when_not_received(self):
+        seed_program(self.white_label, "wa_snap", base_program="snap")
+
+        self.assertFalse(self.screen.has_benefit_or_variant("snap"))
+        self.assertFalse(self.screen.has_benefit_or_variant("rtdlive"))
+
+    def test_has_benefit_from_list_mixed_exact_and_base_names(self):
+        """presumptive_eligibility lists hold both kinds of name — CO WAP's
+        ("andcs", "ssi", "snap", "leap", "tanf") mixes CO-only programs with base programs.
+        Each entry must resolve on its own terms."""
+        seed_program(self.white_label, "andcs")
+        seed_program(self.white_label, "co_snap", base_program="snap")
+        presumptive = ["andcs", "ssi", "snap", "leap", "tanf"]
+
+        # base-program entry matches the prefixed variant
+        _write_current_benefits(self.screen, ["co_snap"])
+        self.screen.invalidate_current_benefits_cache()
+        self.assertTrue(self.screen.has_benefit_from_list(presumptive))
+
+        # exact-name entry still matches
+        _write_current_benefits(self.screen, ["andcs"])
+        self.screen.invalidate_current_benefits_cache()
+        self.assertTrue(self.screen.has_benefit_from_list(presumptive))
+
+        # nothing received → False
+        _write_current_benefits(self.screen, [])
+        self.screen.invalidate_current_benefits_cache()
+        self.assertFalse(self.screen.has_benefit_from_list(presumptive))
+
     # Tests for Screen.invalidate_current_benefits_cache()
     #
     # The hazard: a Screen whose current-benefits cache was populated BEFORE a write

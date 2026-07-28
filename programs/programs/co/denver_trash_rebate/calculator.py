@@ -23,11 +23,7 @@ class DenverTrashRebate(ProgramCalculator):
         income_eligible = income <= income_limit
 
         # categorical eligibility
-        categorical_eligible = False
-        for program in DenverTrashRebate.presumptive_eligibility:
-            if self.screen.has_benefit(program):
-                categorical_eligible = True
-                break
+        categorical_eligible = self.screen.has_benefit_from_list(DenverTrashRebate.presumptive_eligibility)
 
         for member in self.screen.household_members.all():
             if member.has_insurance("co_medicaid"):

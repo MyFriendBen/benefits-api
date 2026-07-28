@@ -92,8 +92,9 @@ class KsSsdi(ProgramCalculator):
         e.condition(not already_receiving_ss_retirement)
 
     def household_eligible(self, e: Eligibility):
+        # has_base_benefit resolves ks_ssdi; the bare name matches nothing in this WL.
         e.condition(
-            not self.screen.has_benefit("ssdi"),
+            not self.screen.has_base_benefit("ssdi"),
             messages.must_not_have_benefit("SSDI"),
         )
 

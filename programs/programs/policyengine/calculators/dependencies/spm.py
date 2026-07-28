@@ -157,12 +157,17 @@ class Snap(SpmUnit):
       Early Head Start.
     - If no reported snap: return None so PE calculates the SNAP benefit
       amount the household is eligible for.
+
+    has_base_benefit covers every white-label variant (co_snap, ks_snap, wa_snap, …),
+    matching Tanf below. has_benefit("snap") was an exact-name match and no white label
+    offers a program named plain "snap", so the receipt sentinel never fired for any
+    state — the household always looked like a non-recipient to PolicyEngine.
     """
 
     field = "snap"
 
     def value(self):
-        return 1 if self.screen.has_benefit("snap") else None
+        return 1 if self.screen.has_base_benefit("snap") else None
 
 
 class Acp(SpmUnit):
