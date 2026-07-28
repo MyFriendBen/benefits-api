@@ -541,8 +541,19 @@ class TestSnapDependency(TestCase):
 
     def test_value_returns_1_when_screen_has_snap(self):
         """When user reports having SNAP, send 1 to PE to enable categorical eligibility."""
-        seed_program(self.white_label, "snap")
-        _write_current_benefits(self.screen, ["snap"])
+        seed_program(self.white_label, "test_snap", base_program="snap")
+        _write_current_benefits(self.screen, ["test_snap"])
+
+        dep = spm.Snap(self.screen, None, {})
+        self.assertEqual(dep.value(), 1)
+
+    def test_value_returns_1_for_a_prefixed_variant(self):
+        """Regression: receipt is resolved through base_program, so the state-prefixed names
+        that white labels actually ship (co_snap, ks_snap, wa_snap, …) fire the sentinel.
+        The old exact-match has_benefit("snap") matched no program in any white label, so
+        every household looked like a SNAP non-recipient to PolicyEngine."""
+        seed_program(self.white_label, "wa_snap", base_program="snap")
+        _write_current_benefits(self.screen, ["wa_snap"])
 
         dep = spm.Snap(self.screen, None, {})
         self.assertEqual(dep.value(), 1)

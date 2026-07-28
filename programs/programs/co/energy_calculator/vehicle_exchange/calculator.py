@@ -17,10 +17,7 @@ class EnergyCalculatorVehicleExchange(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility):
         # presumptive eligibility
-        has_benefit = False
-        for benefit in self.presumptive_eligibility:
-            if self.screen.has_benefit(benefit):
-                has_benefit = True
+        has_benefit = self.screen.has_benefit_from_list(self.presumptive_eligibility)
 
         for program in self.calculated_presumptive_eligibility:
             entry = self.data.get(program)

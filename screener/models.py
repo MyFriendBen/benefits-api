@@ -298,8 +298,13 @@ class Screen(models.Model):
         return any(member.has_insurance_types(types, strict) for member in self.household_members.all())
 
     def has_benefit_from_list(self, names: list[str]):
+        """True if the household receives any of `names`, where each entry may be an
+        exact `name_abbreviated` or a `base_program` group — see
+        has_benefit_or_variant(). Presumptive-eligibility lists mix both (e.g.
+        ("andcs", "ssi", "snap", "leap", "tanf") on CO WAP: state-specific names
+        alongside cross-state base programs)."""
         for program in names:
-            if self.has_benefit(program):
+            if self.has_benefit_or_variant(program):
                 return True
 
         return False
@@ -371,6 +376,23 @@ class Screen(models.Model):
         automatically as long as its `base_program` is set.
         """
         return base_program in self._current_benefit_base_programs
+
+    def has_benefit_or_variant(self, name: str) -> bool:
+        """True if `name` matches the household's current benefits either exactly
+        (`name_abbreviated`) or structurally (`base_program`).
+
+        For a single benefit prefer the precise method: `has_benefit("tx_snap")` when
+        the intent is that one state's program, `has_base_benefit("snap")` when it's
+        "any variant of SNAP". This exists for the mixed lists — a
+        `presumptive_eligibility` tuple naturally holds both kinds of name (e.g. the
+        CO-only `andcs` next to the cross-state `snap`).
+
+        Where a name is both an exact program and a base_program group in one white
+        label, the group only ever holds variants of that same benefit (CO's retired
+        `wic` row alongside `co_wic`; `medicaid` alongside `co_medicaid` /
+        `awd_medicaid`), so matching either is the intended reading.
+        """
+        return self.has_benefit(name) or self.has_base_benefit(name)
 
     def set_screen_is_test(self):
         referral_source_tests = ["testorprospect", "test"]
