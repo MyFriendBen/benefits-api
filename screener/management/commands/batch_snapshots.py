@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand
+from integrations.external_api_status import track_external_api_failures
 from screener.models import Screen
 from screener.views import eligibility_results
 from tqdm import trange
@@ -39,7 +40,12 @@ class Command(BaseCommand):
         errors = []
         for i in trange(len(screens), desc="Screens"):
             try:
-                eligibility_results(screens[i], batch=True)
+                # Scope external-API failure tracking to one screen so an outage reports
+                # once per screen rather than once per integration call. Without a context
+                # the per-run dedupe in report_external_api_failure has nothing to dedupe
+                # against, and a batch over every screen becomes a Sentry flood.
+                with track_external_api_failures():
+                    eligibility_results(screens[i], batch=True)
                 time.sleep(1)
             except Exception as e:
                 errors.append(str(screens[i].id) + ": " + str(e))

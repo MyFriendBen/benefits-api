@@ -7,7 +7,7 @@ from sentry_sdk import capture_exception, capture_message
 from .engines import Sim, pe_engines
 from .calculators.constants import MAIN_TAX_UNIT, SECONDARY_TAX_UNIT
 from . import versions as pe_versions
-from integrations.external_api_status import record_external_api_failure, POLICY_ENGINE
+from integrations.external_api_status import report_external_api_failure, POLICY_ENGINE
 from django.conf import settings
 
 
@@ -79,13 +79,13 @@ def calc_pe_eligibility(
             # non-PolicyEngine (custom) calculators.
             if settings.DEBUG:
                 print(repr(e))
-            capture_exception(e, level="error")
-            capture_message(
-                f"Failed to calculate eligibility with the {Method.method_name} method; "
-                f"PolicyEngine programs are unavailable for this screen.",
-                level="error",
+            report_external_api_failure(
+                POLICY_ENGINE,
+                "Failed to calculate eligibility with PolicyEngine; PolicyEngine programs "
+                "are unavailable for this screen.",
+                e,
+                context={"method": Method.method_name},
             )
-            record_external_api_failure(POLICY_ENGINE)
             # Preserve the payload that triggered the failure so admins can debug it
             # (the exact request is the most useful thing for diagnosing a 400).
             # _pe_data.request is admin-only — already popped for non-admins downstream.

@@ -16,9 +16,12 @@ from django.core.cache import cache
 from integrations.clients.hud_income_limits.client import (
     HudIncomeClient,
     HudIncomeClientError,
+    HudIncomeClientInputError,
     MtspAmiPercent,
     Section8AmiPercent,
 )
+from integrations.external_api_status import HUD, get_external_api_failures, track_external_api_failures
+from programs.util import DependencyError
 from screener.models import Screen, WhiteLabel
 
 
@@ -404,13 +407,14 @@ class TestHudIncomeClientApproximate(HudClientTestBase):
             self.assertEqual(result, 84120)
 
     def test_out_of_range_raises_error(self) -> None:
-        """Targets outside [20, 100] raise HudIncomeClientError."""
+        """Targets outside [20, 100] are out-of-range input -> DependencyError."""
         client = HudIncomeClient(api_token="test_token")
 
-        with self.assertRaisesRegex(HudIncomeClientError, r"outside the supported MTSP range"):
+        with self.assertRaises(DependencyError) as ctx:
             client.approximate_screen_mtsp_ami(self.screen, "10%", "2025")
+        self.assertIn("outside the supported MTSP range", str(ctx.exception.__cause__))
 
-        with self.assertRaisesRegex(HudIncomeClientError, r"outside the supported MTSP range"):
+        with self.assertRaises(DependencyError):
             client.approximate_screen_mtsp_ami(self.screen, "105%", "2025")
 
     def test_propagates_hud_api_error(self) -> None:
@@ -437,25 +441,31 @@ class TestHudIncomeClientValidation(HudClientTestBase):
     """Test shared validation logic across both endpoints."""
 
     def test_household_size_validation_too_small(self) -> None:
-        """Test that household size < 1 raises error for both endpoints."""
+        """Household size < 1 is out-of-range input, surfaced as DependencyError."""
         self.screen.household_size = 0
         client = HudIncomeClient(api_token="test_token")
 
-        with self.assertRaisesRegex(HudIncomeClientError, r"between 1 and 8"):
+        with self.assertRaises(DependencyError):
             client.get_screen_mtsp_ami(self.screen, "80%", "2025")
 
-        with self.assertRaisesRegex(HudIncomeClientError, r"between 1 and 8"):
+        with self.assertRaises(DependencyError):
             client.get_screen_il_ami(self.screen, "80%", "2025")
 
     def test_household_size_validation_too_large(self) -> None:
-        """Test that household size > 8 raises error for both endpoints."""
+        """HUD's tables stop at 8 people. A 9-person household is ordinary screener data,
+        so the public methods raise DependencyError — the eligibility loop omits the
+        program and flags the response, rather than the calculators turning "we have no
+        income limit" into a definite "not eligible"."""
         self.screen.household_size = 9
         client = HudIncomeClient(api_token="test_token")
 
-        with self.assertRaisesRegex(HudIncomeClientError, r"between 1 and 8"):
+        with self.assertRaises(DependencyError) as ctx:
             client.get_screen_mtsp_ami(self.screen, "80%", "2025")
+        # The originating reason is preserved on the cause chain for debugging.
+        self.assertIsInstance(ctx.exception.__cause__, HudIncomeClientInputError)
+        self.assertIn("between 1 and 8", str(ctx.exception.__cause__))
 
-        with self.assertRaisesRegex(HudIncomeClientError, r"between 1 and 8"):
+        with self.assertRaises(DependencyError):
             client.get_screen_il_ami(self.screen, "80%", "2025")
 
     def test_missing_api_token_raises_error(self) -> None:
@@ -466,6 +476,128 @@ class TestHudIncomeClientValidation(HudClientTestBase):
 
             with self.assertRaisesRegex(HudIncomeClientError, r"HUD_API_TOKEN"):
                 _ = client.headers
+
+
+class TestHudFailureReporting(HudClientTestBase):
+    """A HUD lookup failure must be recorded as an external-API failure so the results
+    view can flag `missing_programs` — the HUD-backed calculators swallow
+    HudIncomeClientError and degrade to "not eligible (income limit unknown)", so this is
+    the only place the degradation is still visible."""
+
+    def test_transport_failure_records_hud(self) -> None:
+        client = HudIncomeClient(api_token="test_token")
+
+        with patch.object(client, "_api_request", side_effect=requests.exceptions.ConnectionError("no route")):
+            with track_external_api_failures():
+                with self.assertRaises(requests.exceptions.ConnectionError):
+                    client.get_screen_il_ami(self.screen, "80%", "2025")
+                # A raw requests error escaping _api_request isn't a HudIncomeClientError,
+                # so it is not reported here — the loop-level handler catches it instead.
+                self.assertEqual(get_external_api_failures(), [])
+
+    def test_hud_client_error_records_hud(self) -> None:
+        client = HudIncomeClient(api_token="test_token")
+
+        # A 200 response with no usable payload -> HudIncomeClientError from
+        # _validate_data_response, reported at the public-method boundary.
+        with self.mock_api_responses(client, self.mock_counties_response, {}):
+            with track_external_api_failures():
+                with self.assertRaises(HudIncomeClientError):
+                    client.get_screen_il_ami(self.screen, "80%", "2025")
+                self.assertEqual(get_external_api_failures(), [HUD])
+
+    def test_county_not_found_records_hud(self) -> None:
+        client = HudIncomeClient(api_token="test_token")
+        self.screen.county = "Nonexistent"
+
+        with self.mock_api_responses(client, self.mock_counties_response):
+            with track_external_api_failures():
+                with self.assertRaisesRegex(HudIncomeClientError, r"County not found"):
+                    client.get_screen_il_ami(self.screen, "80%", "2025")
+                self.assertEqual(get_external_api_failures(), [HUD])
+
+    def test_input_error_does_not_record_hud(self) -> None:
+        """A 9-person household is ordinary screener data, not a HUD outage — it must not
+        fire a Sentry error or warn the user that an external service failed."""
+        client = HudIncomeClient(api_token="test_token")
+        self.screen.household_size = 9
+
+        with track_external_api_failures():
+            with self.assertRaises(DependencyError):
+                client.get_screen_il_ami(self.screen, "80%", "2025")
+            self.assertEqual(get_external_api_failures(), [])
+
+    def test_bedroom_input_error_does_not_record_hud(self) -> None:
+        client = HudIncomeClient(api_token="test_token")
+
+        with track_external_api_failures():
+            with self.assertRaises(DependencyError):
+                client.get_screen_payment_standard(self.screen, 7, "2026")
+            self.assertEqual(get_external_api_failures(), [])
+
+    @patch("integrations.clients.hud_income_limits.client.report_external_api_failure")
+    def test_reports_once_through_nested_public_calls(self, mock_report) -> None:
+        """approximate_screen_mtsp_ami calls get_screen_mtsp_ami and both are decorated;
+        the failure should produce one report, not two."""
+        client = HudIncomeClient(api_token="test_token")
+
+        with self.mock_api_responses(client, self.mock_counties_response, {}):
+            with self.assertRaises(HudIncomeClientError):
+                client.approximate_screen_mtsp_ami(self.screen, "65%", "2025")
+
+        self.assertEqual(mock_report.call_count, 1)
+
+    @patch("integrations.external_api_status.capture_message")
+    @patch("integrations.external_api_status.capture_exception")
+    def test_outage_reports_once_per_screen_not_once_per_lookup(self, mock_exc, mock_msg) -> None:
+        """One MA screen makes five HUD lookups across four calculators, each raising its
+        own exception. During an outage that used to be ten Sentry events per screen; the
+        per-run dedupe in report_external_api_failure makes it two."""
+        client = HudIncomeClient(api_token="test_token")
+
+        with track_external_api_failures():
+            for _ in range(5):
+                with self.mock_api_responses(client, self.mock_counties_response, {}):
+                    with self.assertRaises(HudIncomeClientError):
+                        client.get_screen_il_ami(self.screen, "80%", "2025")
+
+            self.assertEqual(get_external_api_failures(), [HUD])
+
+        self.assertEqual(mock_exc.call_count, 1)
+        self.assertEqual(mock_msg.call_count, 1)
+
+    @patch("integrations.external_api_status.capture_message")
+    @patch("integrations.external_api_status.capture_exception")
+    def test_report_uses_a_static_message_with_detail_in_context(self, mock_exc, mock_msg) -> None:
+        """The upstream error text must not reach the message body — Sentry groups
+        capture_message by its text, and HUD serves HTML error pages."""
+        client = HudIncomeClient(api_token="test_token")
+
+        with self.mock_api_responses(client, self.mock_counties_response, {}):
+            with track_external_api_failures():
+                with self.assertRaises(HudIncomeClientError):
+                    client.get_screen_il_ami(self.screen, "80%", "2025")
+
+        message = mock_msg.call_args.args[0]
+        self.assertNotIn("get_screen_il_ami", message)
+        context = mock_msg.call_args.kwargs["contexts"]["external_api"]
+        self.assertEqual(context["service"], HUD)
+        self.assertEqual(context["method"], "HudIncomeClient.get_screen_il_ami")
+        self.assertLessEqual(len(context["detail"]), 500)
+        self.assertEqual(mock_msg.call_args.kwargs["fingerprint"], ["external-api-failure", HUD])
+
+    def test_oversized_upstream_body_is_truncated_before_it_reaches_sentry(self) -> None:
+        """A 500 with a huge HTML body must not be pasted wholesale into the exception
+        message (which becomes the Sentry event title)."""
+        client = HudIncomeClient(api_token="test_token")
+        response = Mock(status_code=500, text="x" * 10_000)
+        http_error = requests.exceptions.HTTPError(response=response)
+
+        with patch.object(client._session, "get", side_effect=http_error):
+            with self.assertRaises(HudIncomeClientError) as ctx:
+                client._api_request("il/data/1234")
+
+        self.assertLess(len(str(ctx.exception)), 600)
 
 
 class TestHudIncomeClientCountyLookup(HudClientTestBase):
@@ -857,5 +989,6 @@ class TestHudIncomeClientFmrAndSafmr(HudClientTestBase):
 
     def test_invalid_bedrooms_raises(self) -> None:
         client = self._client()
-        with self.assertRaisesRegex(HudIncomeClientError, r"Bedroom count must be 0-4"):
+        with self.assertRaises(DependencyError) as ctx:
             client.get_screen_fmr(self.screen, 5, 2026)
+        self.assertIn("Bedroom count must be 0-4", str(ctx.exception.__cause__))

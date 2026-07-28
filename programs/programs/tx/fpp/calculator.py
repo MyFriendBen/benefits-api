@@ -64,6 +64,7 @@ class TxFpp(ProgramCalculator):
         # (DependencyError) instead of crashing calc_expenses() and 500-ing the whole request.
         "expense_type",
         "expense_amount",
+        "expense_frequency",
         "household_size",
     ]
 

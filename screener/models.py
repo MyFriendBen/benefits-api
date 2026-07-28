@@ -662,17 +662,44 @@ class IncomeStream(models.Model):
     def _hour_to_month(self):
         return self.amount * self.hours_worked * Decimal(4.35)
 
-    def missing_fields(self):
-        income_fields = (
-            "type",
-            "amount",
-            "frequency",
-        )
+    # The frequencies monthly()/yearly() above can actually convert. A present-but-
+    # unsupported value (including "") matches no branch, leaving the local unassigned
+    # and raising UnboundLocalError partway through a calculation — so it is treated as
+    # a missing dependency rather than allowed to reach the calculators.
+    SUPPORTED_FREQUENCIES: ClassVar[frozenset] = frozenset(
+        {"monthly", "weekly", "biweekly", "semimonthly", "yearly", "hourly"}
+    )
 
+    def missing_fields(self):
         missing_fields = Dependencies()
-        for field in income_fields:
-            if getattr(self, field) is None:
-                missing_fields.add("income_" + field)
+
+        if self.type is None:
+            missing_fields.add("income_type")
+        elif not str(self.type).strip():
+            # A blank type isn't null, so it clears the old `is None` gate, then fails
+            # every match in calc_gross_income except the unearned catch-all
+            # (`type not in earned_income_types`) — quietly counted as unearned income
+            # instead of crashing. Wrong totals, no error.
+            missing_fields.add("income_type")
+            missing_fields.report_malformed("income_type", self.type, "blank; would be counted as unearned income")
+
+        if self.amount is None:
+            missing_fields.add("income_amount")
+
+        if self.frequency is None:
+            missing_fields.add("income_frequency")
+        elif self.frequency not in self.SUPPORTED_FREQUENCIES:
+            missing_fields.add("income_frequency")
+            missing_fields.report_malformed("income_frequency", self.frequency, "monthly()/yearly() cannot convert it")
+
+        # hourly needs hours_worked to produce any figure (_hour_to_month). hours_worked
+        # is nullable and has never been part of the dependency vocabulary, so without
+        # this an hourly row with no hours raises TypeError mid-calculation. Reported
+        # under income_amount because that is the field calculators declare when they
+        # read an amount — a name no calculator declares would gate nothing.
+        if self.frequency == "hourly" and self.hours_worked is None:
+            missing_fields.add("income_amount")
+            missing_fields.report_malformed("income_hours_worked", None, "hourly income with no hours_worked")
 
         return missing_fields
 
@@ -712,14 +739,31 @@ class Expense(models.Model):
 
         return yearly
 
-    def missing_fields(self):
-        expense_fields = ("type", "amount")
+    # Same contract as IncomeStream.SUPPORTED_FREQUENCIES, minus "hourly" — Expense's
+    # monthly()/yearly() have no hourly branch.
+    SUPPORTED_FREQUENCIES: ClassVar[frozenset] = frozenset({"monthly", "weekly", "biweekly", "semimonthly", "yearly"})
 
+    def missing_fields(self):
         missing_fields = Dependencies()
 
-        for field in expense_fields:
-            if getattr(self, field) is None:
-                missing_fields.add("expense_" + field)
+        if self.type is None:
+            missing_fields.add("expense_type")
+        elif not str(self.type).strip():
+            missing_fields.add("expense_type")
+            missing_fields.report_malformed("expense_type", self.type, "blank; matches no expense type filter")
+
+        if self.amount is None:
+            missing_fields.add("expense_amount")
+
+        # frequency was absent from this list entirely, so a null or unsupported expense
+        # frequency reached Expense.yearly() and raised UnboundLocalError. Emitting it
+        # only gates calculators that declare "expense_frequency"; the catch-all in
+        # eligibility_results covers the ones that don't.
+        if self.frequency is None:
+            missing_fields.add("expense_frequency")
+        elif self.frequency not in self.SUPPORTED_FREQUENCIES:
+            missing_fields.add("expense_frequency")
+            missing_fields.report_malformed("expense_frequency", self.frequency, "monthly()/yearly() cannot convert it")
 
         return missing_fields
 

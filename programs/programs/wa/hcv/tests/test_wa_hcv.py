@@ -4,6 +4,7 @@ from unittest.mock import Mock, patch, PropertyMock
 from programs.programs.wa import wa_calculators
 from programs.programs.wa.hcv.calculator import WaHcv
 from programs.programs.calc import ProgramCalculator, Eligibility
+from programs.util import ProgramConfigurationError
 
 
 def make_member(
@@ -391,21 +392,28 @@ class TestWaHcvCalc(TestCase):
             self.assertTrue(e.eligible)
             self.assertEqual(e.value, 10620)
 
-    def test_calc_null_year_does_not_crash(self):
-        """Program.year = None must not raise AttributeError (crashes all WA programs)."""
+    def test_calc_null_year_raises_configuration_error(self):
+        """An unset program year is OUR configuration being wrong, not HUD being down.
+
+        It used to raise HudIncomeClientError, which the income handler caught and turned
+        into a permanent, silent "not eligible (income limit unknown)" — a misconfiguration
+        that could sit in production forever. It must now escape the calculator so
+        eligibility_results reports it and skips the program.
+        """
         head = make_member(age=35)
         calc = make_calculator(members=[head], gross_income=21600)
         calc.program.year = None
         with patch_hud_client(il_ami_value=50000, fmr_value=2000):
-            e = calc.calc()
-            self.assertFalse(e.eligible)
+            with self.assertRaises(ProgramConfigurationError):
+                calc.calc()
 
-    def test_household_value_null_year_returns_zero(self):
+    def test_household_value_null_year_raises_configuration_error(self):
         head = make_member(age=35)
         calc = make_calculator(members=[head], gross_income=21600)
         calc.program.year = None
         with patch_hud_client(fmr_value=2000):
-            self.assertEqual(calc.household_value(), 0)
+            with self.assertRaises(ProgramConfigurationError):
+                calc.household_value()
 
     def test_household_value_unexpected_error_returns_zero(self):
         """Non-HudIncomeClientError from get_screen_payment_standard must not propagate as a 500."""
