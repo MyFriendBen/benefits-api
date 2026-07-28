@@ -28,7 +28,6 @@
     "estimated_delivery_time": "",
     "estimated_value": "",
     "value_format": null,
-    "value_type": "benefit",
     "website_description": "Monthly cash benefits for people who cannot work due to disability",
     "base_program": "ssdi",
     "show_on_current_benefits": true,

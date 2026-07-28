@@ -23,7 +23,6 @@
         "estimated_delivery_time": "",
         "estimated_value": "",
         "value_format": "lump_sum",
-        "value_type": "benefit",
         "website_description": "$1,000 government deposit into a savings and investment account for U.S. citizen children born 2025-2028",
         "show_on_current_benefits": true,
         "has_calculator": true,

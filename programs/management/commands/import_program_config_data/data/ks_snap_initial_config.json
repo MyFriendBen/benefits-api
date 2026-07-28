@@ -25,7 +25,6 @@
     "estimated_delivery_time": "30 days",
     "estimated_value": "",
     "value_format": null,
-    "value_type": "benefit",
     "website_description": "Monthly food benefits loaded onto an EBT card for low-income households",
     "base_program": "snap",
     "show_on_current_benefits": true,

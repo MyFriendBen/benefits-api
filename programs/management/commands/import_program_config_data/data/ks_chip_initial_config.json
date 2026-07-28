@@ -25,7 +25,6 @@
     "estimated_delivery_time": "30 - 45 days",
     "estimated_value": "",
     "value_format": "estimated_annual",
-    "value_type": "benefit",
     "base_program": "chp",
     "has_calculator": true,
     "show_on_current_benefits": true,

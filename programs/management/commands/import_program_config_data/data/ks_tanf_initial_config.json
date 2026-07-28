@@ -26,7 +26,6 @@
     "estimated_delivery_time": "55 days",
     "estimated_value": "",
     "value_format": null,
-    "value_type": "benefit",
     "website_description": "Monthly cash help for families with children",
     "base_program": "tanf",
     "show_on_current_benefits": true,

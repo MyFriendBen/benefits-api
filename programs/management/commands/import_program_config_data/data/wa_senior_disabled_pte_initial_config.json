@@ -25,7 +25,6 @@
     "estimated_delivery_time": "",
     "estimated_value": "",
     "value_format": "estimated_annual",
-    "value_type": "benefit",
     "website_description": "Property tax relief for seniors and people with disabilities",
     "show_on_current_benefits": true,
     "has_calculator": true,

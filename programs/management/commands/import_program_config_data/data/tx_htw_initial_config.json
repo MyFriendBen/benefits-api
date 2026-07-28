@@ -25,7 +25,6 @@
     "estimated_delivery_time": "",
     "estimated_value": "Varies based on services used",
     "website_description": "Free health care for uninsured Texas women",
-    "value_type": "benefit",
     "show_in_has_benefits_step": false,
     "has_calculator": true
   },

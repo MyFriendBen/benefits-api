@@ -25,7 +25,6 @@
     "estimated_delivery_time": "",
     "estimated_value": "",
     "value_format": "estimated_annual",
-    "value_type": "benefit",
     "website_description": "Help paying rent for people with low income",
     "base_program": "section_8",
     "show_on_current_benefits": true,

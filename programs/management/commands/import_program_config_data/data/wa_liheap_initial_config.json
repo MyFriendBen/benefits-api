@@ -28,7 +28,6 @@
     "estimated_delivery_time": "",
     "estimated_value": "",
     "value_format": "lump_sum",
-    "value_type": "benefit",
     "website_description": "Help with home energy costs for low-income households in Washington",
     "base_program": "liheap",
     "show_on_current_benefits": true,
