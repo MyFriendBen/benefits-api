@@ -8,13 +8,15 @@ import requests
 from unittest.mock import patch, Mock
 
 from django.core.cache import cache
-from django.test import TestCase
+from django.test import TestCase, override_settings
+from benefits.test_cache import LOCAL_CACHE
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from integrations.clients.google_places import GooglePlacesClient
 
 
+@override_settings(CACHES=LOCAL_CACHE)
 class TestGooglePlacesClient(TestCase):
     """Unit tests for GooglePlacesClient.autocomplete_address."""
 
@@ -124,6 +126,7 @@ class TestGooglePlacesClient(TestCase):
         cache.clear()
 
 
+@override_settings(CACHES=LOCAL_CACHE)
 class TestPlacesAutocompleteView(APITestCase):
     """Integration tests for GET /api/places/autocomplete/."""
 

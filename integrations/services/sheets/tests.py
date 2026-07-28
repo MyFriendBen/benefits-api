@@ -9,9 +9,10 @@ rather than through any one of the real callers, since the logic under test
 from unittest.mock import patch
 
 from django.core.cache import cache
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, override_settings
 
 from integrations.services.sheets.cache import GoogleSheetsCache
+from benefits.test_cache import LOCAL_CACHE
 
 
 class FakeSheetsCache(GoogleSheetsCache):
@@ -41,6 +42,7 @@ class FakeSheetsCache(GoogleSheetsCache):
         return self.process_result
 
 
+@override_settings(CACHES=LOCAL_CACHE)
 class TestGoogleSheetsCacheGetData(SimpleTestCase):
     def setUp(self):
         cache.clear()

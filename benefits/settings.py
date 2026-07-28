@@ -21,6 +21,8 @@ import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 from django.conf.locale import LANG_INFO as DJANGO_LANG_INFO
 
+from benefits.cache_config import redis_pool_kwargs
+
 EXTRA_LANG_INFO = {
     "am": {
         "bidi": False,
@@ -328,10 +330,11 @@ if REDIS_URL:
             "LOCATION": REDIS_URL,
             "OPTIONS": {
                 "CLIENT_CLASS": "django_redis.client.DefaultClient",
-                "CONNECTION_POOL_KWARGS": {
-                    "max_connections": 50,
-                    "retry_on_timeout": True,
-                },
+                "CONNECTION_POOL_KWARGS": redis_pool_kwargs(REDIS_URL),
+                # Translation payloads dominate this cache and compress ~3.5x,
+                # which matters against a 25MB Redis shared with every other
+                # cache in the app.
+                "COMPRESSOR": "django_redis.compressors.zlib.ZlibCompressor",
                 "SOCKET_CONNECT_TIMEOUT": 5,  # seconds
                 "SOCKET_TIMEOUT": 5,  # seconds
                 # If Redis is down, treat it as a cache miss instead of raising —
@@ -356,6 +359,18 @@ else:
     }
 
 PARLER_CACHE_BACKEND = "default"
+
+# Parler caches each translation row individually. Nothing reads those entries --
+# /api/translations/ is served from the per-language aggregate built in
+# translations.models -- so they would add ~156k keys to a 25MB Redis for no
+# benefit, and writing them is what made a cold rebuild unserveable.
+PARLER_ENABLE_CACHING = False
+
+# IGNORE_EXCEPTIONS above keeps a Redis outage from taking the site down, but it
+# also hides hard misconfiguration (a bad URL or a rejected cert looks exactly
+# like a cache miss). Log what it swallows so those surface instead of showing
+# up only as latency.
+DJANGO_REDIS_LOG_IGNORED_EXCEPTIONS = True
 
 
 # UNFOLD SETTINGS
