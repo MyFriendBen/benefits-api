@@ -8,6 +8,7 @@ from .cpp.calculator import MaCpp
 from .middle_income_rental.calculator import MaMiddleIncomeRental
 from .cmsp.calculator import MaCmsp
 from .youthworks.calculator import MaYouthworks
+from .bsp.calculator import MaBabySteps
 
 ma_calculators: dict[str, type[ProgramCalculator]] = {
     "ma_homebridge": MaHomeBridge,
@@ -19,4 +20,5 @@ ma_calculators: dict[str, type[ProgramCalculator]] = {
     "ma_middle_income_rental": MaMiddleIncomeRental,
     "ma_cmsp": MaCmsp,
     "ma_youthworks": MaYouthworks,
+    "ma_bsp": MaBabySteps,
 }
