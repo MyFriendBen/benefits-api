@@ -1,8 +1,8 @@
-from typing import ClassVar, Literal, Union
+from typing import Literal, Union
 
 from sentry_sdk import capture_message, new_scope
 
-from integrations.services.sheets.sheets import GoogleSheetsCache
+from integrations.services.sheets.cache import GoogleSheetsCache
 from screener.models import Screen
 
 
@@ -32,7 +32,7 @@ class Ami(GoogleSheetsCache):
 
     sheet_id = "1ZnOg_IuT7TYz2HeF31k_FSPcA-nraaMG3RUWJFUIIb8"
     range_name = "current!A2:CH"
-    default = {}
+    CACHE_KEY = "ami_data"
 
     YEAR_INDEX = 0
     STATE_INDEX = 1
@@ -42,15 +42,16 @@ class Ami(GoogleSheetsCache):
     IL_PERCENTS = ["80%", "50%", "30%"]
     IL_LIMITS_START_INDEX = 62
 
-    def update(self) -> dict[str, dict[str, dict[str, dict[int, int]]]]:  # type: ignore[override]
-        data = super().update()
-
+    def _process(self, raw_data) -> dict[str, dict[str, dict[str, dict[int, int]]]]:
         ami: dict[str, dict[str, dict[str, dict[int, int]]]] = {}
 
-        for row in data:
-            year = row[self.YEAR_INDEX]
-            state = row[self.STATE_INDEX]
-            county = row[self.COUNTY_INDEX]
+        for row in raw_data:
+            try:
+                year = row[self.YEAR_INDEX]
+                state = row[self.STATE_INDEX]
+                county = row[self.COUNTY_INDEX]
+            except IndexError:
+                continue  # Skip short/malformed rows
 
             values = {"mtsp": {}, "il": {}}
             continue_outer = False
@@ -62,7 +63,7 @@ class Ami(GoogleSheetsCache):
             ):
                 try:
                     income_limit_values = self._get_income_limits(row[i : i + self.MAX_HOUSEHOLD_SIZE])
-                except ValueError:
+                except (ValueError, TypeError):
                     continue_outer = True
                     break
                 values["mtsp"][str(percent) + "%"] = income_limit_values
@@ -72,7 +73,7 @@ class Ami(GoogleSheetsCache):
             for percent in self.IL_PERCENTS:
                 try:
                     income_limit_values = self._get_income_limits(row[i : i + self.MAX_HOUSEHOLD_SIZE])
-                except ValueError:
+                except (ValueError, TypeError):
                     continue_outer = True
                     break
                 values["il"][percent] = income_limit_values
@@ -94,9 +95,7 @@ class Ami(GoogleSheetsCache):
         income_limit_values = {}
         for i, raw_value in enumerate(values):
             value = int(float(raw_value))
-
             income_limit_values[i + 1] = value
-
         return income_limit_values
 
     def get_screen_ami(
@@ -115,7 +114,7 @@ class Ami(GoogleSheetsCache):
         year: str,
         limit_type: Union[Literal["mtsp"], Literal["il"]] = "mtsp",
     ):
-        data = self.fetch()
+        data = self.get_data()
 
         if percent == "100%":
             return self.get_screen_ami(screen, "80%", year) / 0.8
@@ -129,23 +128,24 @@ ami = Ami()
 class Smi(GoogleSheetsCache):
     sheet_id = "1kH--2b_VMY6lG_DXe2Xdhps3Flfi_ZIqc9oViWcxndE"
     range_name = "SMI!A2:J"
-    default = {}
+    CACHE_KEY = "smi_data"
 
     YEAR_INDEX = 0
     STATE_INDEX = 1
     LIMITS_START_INDEX = 2
 
-    def update(self) -> dict[str, dict[str, dict[int, int]]]:  # type: ignore[override]
-        data = super().update()
-
+    def _process(self, raw_data) -> dict[str, dict[str, dict[int, int]]]:
         smi = {}
-        for row in data:
-            year = row[self.YEAR_INDEX]
-            state = row[self.STATE_INDEX]
+        for row in raw_data:
+            try:
+                year = row[self.YEAR_INDEX]
+                state = row[self.STATE_INDEX]
 
-            limits = {}
-            for i, limit in enumerate(row[self.LIMITS_START_INDEX :]):
-                limits[i + 1] = int(float(limit))
+                limits = {}
+                for i, limit in enumerate(row[self.LIMITS_START_INDEX :]):
+                    limits[i + 1] = int(float(limit))
+            except (IndexError, ValueError, TypeError):
+                continue  # Skip short/malformed rows
 
             if year not in smi:
                 smi[year] = {}
@@ -155,8 +155,7 @@ class Smi(GoogleSheetsCache):
         return smi
 
     def get_screen_smi(self, screen: Screen, year: int):
-        data = self.fetch()
-
+        data = self.get_data()
         return data[year][screen.white_label.state_code][screen.household_size]
 
 
@@ -171,13 +170,16 @@ class IncomeLimitsCache(GoogleSheetsCache):
 
     sheet_id = "1ZzQYhULtiP61crj0pbPjhX62L1TnyAisLcr_dQXbbFg"
     range_name = "A2:K"
-    default: ClassVar[dict] = {}
+    CACHE_KEY = "income_limits_data"
 
-    def update(self) -> dict[str, list[float]]:
-        data = super().update()
+    def _process(self, raw_data) -> dict[str, list[float]]:
         result = {}
-        for r in data:
-            result[self._format_county(r[0])] = self._format_amounts(r[1:])
+        for r in raw_data:
+            try:
+                county = self._format_county(r[0])
+            except (IndexError, AttributeError):
+                continue  # Skip short/malformed rows
+            result[county] = self._format_amounts(r[1:])
         return result
 
     @staticmethod
@@ -188,12 +190,11 @@ class IncomeLimitsCache(GoogleSheetsCache):
     def _format_amounts(amounts: list[str]):
         result = []
         for a in amounts:
-            cleaned = a.strip().replace("$", "").replace(",", "")
             try:
+                cleaned = a.strip().replace("$", "").replace(",", "")
                 result.append(float(cleaned) if cleaned else None)
-            except ValueError:
+            except (ValueError, AttributeError):
                 result.append(None)
-
         return result
 
     @staticmethod
@@ -225,14 +226,10 @@ class IncomeLimitsCache(GoogleSheetsCache):
             Optional[int]: The income limit (or None if not found)
         """
 
-        # Get county
         county = screen.county
-
-        # Fetch income limits data (keys are "Adams County", "Alamosa County", etc.)
-        limits_by_county = self.fetch()
+        limits_by_county = self.get_data()
         size_index = screen.household_size - 1 if screen.household_size else None
 
-        # Check for valid income_limit
         if county not in limits_by_county:
             self._log_income_limit_error("County data not found", county=county)
             return None
@@ -266,7 +263,6 @@ class IncomeLimitsCache(GoogleSheetsCache):
             )
             return None
 
-        # valid income_limit
         return int(income_limit)
 
 

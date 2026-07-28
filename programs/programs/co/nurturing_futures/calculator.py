@@ -1,4 +1,4 @@
-from integrations.services.sheets.sheets import GoogleSheetsCache
+from integrations.services.sheets.cache import GoogleSheetsCache
 from programs.co_county_zips import counties_from_screen
 from programs.programs.calc import Eligibility, ProgramCalculator
 import programs.programs.messages as messages
@@ -7,12 +7,26 @@ import programs.programs.messages as messages
 class BoulderAmiCache(GoogleSheetsCache):
     sheet_id = "1PRpQ76Xa9Ru0U9MiwgYY5Yfl923lFz4Uu8a4g6A5N6Q"
     range_name = "AMI!B2:I2"
-    default = [0, 0, 0, 0, 0, 0, 0, 0]
+    CACHE_KEY = "boulder_ami_data"
+    DEFAULT_AMI_LIMITS = [0] * 8  # one per household size 1-8, matches the sheet's column count
 
-    def update(self):
-        data = super().update()
+    def _empty_fallback(self):
+        # NurturingFutures indexes this list positionally by household size,
+        # so the fallback must be a same-shaped list, not the base class's {}.
+        return self.DEFAULT_AMI_LIMITS
 
-        return [int(a.replace(",", "").replace("$", "")) for a in data[0]]
+    def _process(self, raw_data):
+        if not raw_data or len(raw_data) == 0:
+            return []
+
+        result = []
+        for a in raw_data[0]:
+            try:
+                cleaned_value = a.replace(",", "").replace("$", "")
+                result.append(int(cleaned_value))
+            except (ValueError, AttributeError):
+                result.append(0)  # Use 0 as default for malformed values
+        return result
 
 
 class NurturingFutures(ProgramCalculator):
@@ -35,6 +49,6 @@ class NurturingFutures(ProgramCalculator):
         e.condition(self.screen.num_children(age_max=NurturingFutures.child_max_age))
 
         # income
-        income_limit = NurturingFutures.ami.fetch()[self.screen.household_size - 1] * NurturingFutures.ami_percent
+        income_limit = NurturingFutures.ami.get_data()[self.screen.household_size - 1] * NurturingFutures.ami_percent
         income = self.screen.calc_gross_income("yearly", ["all"])
         e.condition(income <= income_limit, messages.income(income, income_limit))
