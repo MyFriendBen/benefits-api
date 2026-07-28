@@ -1,17 +1,19 @@
-from integrations.services.sheets.cache import GoogleSheetsCache
+from integrations.services.sheets.sheets import GoogleSheetsCache
 from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
 import programs.programs.messages as messages
 from programs.co_county_zips import counties_from_screen
 
 
 class NcHeadStartMarketRatesCache(GoogleSheetsCache):
-    CACHE_KEY = "nc_head_start_data"
+    expire_time = 60 * 60 * 24
+    default = {}
     sheet_id = "1y7p8qkiOrMAM42rtSwT_ZXeA5tzew4edNkrTXACxf4M"
     range_name = "'Current report'!A2:F101"
 
-    def _process(self, raw_data):
+    def update(self):
+        data = super().update()
         rates = {}
-        for row in raw_data:
+        for row in data:
             if len(row) < 6:
                 continue
             county_name = row[0].strip()
@@ -49,7 +51,7 @@ class NCHeadStart(ProgramCalculator):
     def household_eligible(self, e: Eligibility):
         # location - check if county has market rates (means it's eligible)
         counties = counties_from_screen(self.screen)
-        market_rates_data = NCHeadStart.market_rates.get_data()
+        market_rates_data = NCHeadStart.market_rates.fetch()
 
         in_eligible_county = False
         for county in counties:
@@ -107,7 +109,7 @@ class NCHeadStart(ProgramCalculator):
         Formula: Sum of (monthly market rates * 12) for all eligible children
         """
         counties = counties_from_screen(self.screen)
-        market_rates_data = NCHeadStart.market_rates.get_data()
+        market_rates_data = NCHeadStart.market_rates.fetch()
 
         county_rates = None
         for county in counties:

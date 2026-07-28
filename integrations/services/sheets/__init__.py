@@ -1,1 +1,1 @@
-from .sheets import GoogleSheets
+from .sheets import GoogleSheets, GoogleSheetsCache

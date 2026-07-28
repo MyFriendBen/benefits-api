@@ -1,32 +1,19 @@
 from programs.programs.calc import ProgramCalculator, Eligibility
 import programs.programs.messages as messages
 from programs.co_county_zips import counties_from_screen
-from integrations.services.sheets.cache import GoogleSheetsCache
+from integrations.services.sheets import GoogleSheetsCache
 import math
 
 
 class RAGCache(GoogleSheetsCache):
-    CACHE_KEY = "rag_income_limits_data"
+    default = {}
     sheet_id = "1DntpIXZfUY2yTy1_rAhaGLUH4PUAfpTSAn-j2tf2tts"
     range_name = "'2023 80% AMI'!A2:I65"
 
-    def _process(self, raw_data):
-        result = {}
-        for d in raw_data:
-            if len(d) < 2:
-                continue
-            try:
-                county_key = d[0].strip() + " County"
-                income_values = []
-                for v in d[1:]:
-                    try:
-                        income_values.append(int(v.replace(",", "")))
-                    except (ValueError, AttributeError):
-                        income_values.append(0)
-                result[county_key] = income_values
-            except (IndexError, AttributeError):
-                continue
-        return result
+    def update(self):
+        data = super().update()
+
+        return {d[0].strip() + " County": [int(v.replace(",", "")) for v in d[1:]] for d in data}
 
 
 class RentalAssistanceGrant(ProgramCalculator):
@@ -38,7 +25,7 @@ class RentalAssistanceGrant(ProgramCalculator):
         # income
         gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
 
-        limits = self.income_limits.get_data()
+        limits = self.income_limits.fetch()
 
         counties = counties_from_screen(self.screen)
         county_name = counties[0]

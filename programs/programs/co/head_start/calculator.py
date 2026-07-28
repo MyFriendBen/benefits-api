@@ -1,27 +1,19 @@
-from integrations.services.sheets.cache import GoogleSheetsCache
+from integrations.services.sheets.sheets import GoogleSheetsCache
 from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
 import programs.programs.messages as messages
 from programs.co_county_zips import counties_from_screen
 
 
 class CoHeadStartCountyEligibleCache(GoogleSheetsCache):
-    CACHE_KEY = "co_head_start_data"
+    expire_time = 60 * 60 * 24
+    default = {}
     sheet_id = "1suOcBpJPJGIXHljypNSCxGDWEvydG-t8erh2rzUtWcE"
     range_name = "HEAD START COUNTIES FOR MFB!A2:B"
 
-    def _process(self, raw_data):
-        result = {}
-        for row in raw_data:
-            if len(row) < 2:
-                continue
-            try:
-                county_key = row[0].strip() + " County"
-                is_eligible = row[1] == "TRUE"
-                result[county_key] = is_eligible
-            except (IndexError, AttributeError):
-                continue  # Skip malformed rows
+    def update(self):
+        data = super().update()
 
-        return result
+        return {row[0].strip() + " County": row[1] == "TRUE" for row in data}
 
 
 class CoHeadStart(ProgramCalculator):
@@ -38,7 +30,7 @@ class CoHeadStart(ProgramCalculator):
         counties = counties_from_screen(self.screen)
 
         in_eligible_county = False
-        eligible_counties = CoHeadStart.counties.get_data()
+        eligible_counties = CoHeadStart.counties.fetch()
         for county in counties:
             if county in eligible_counties:
                 in_eligible_county = eligible_counties[county]

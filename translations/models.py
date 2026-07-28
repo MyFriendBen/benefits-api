@@ -4,43 +4,34 @@ from simple_history.models import HistoricalRecords
 from parler.models import TranslatableModel, TranslatedFields, TranslatableManager
 from django.conf import settings
 from dataclasses import dataclass
-from django.core.cache import cache
+from integrations.util.cache import Cache
 from translations.model_data import ModelDataController
 from sentry_sdk import capture_exception
 
 BLANK_TRANSLATION_PLACEHOLDER = "[PLACEHOLDER]"
 
-_TRANSLATION_CACHE_KEY = "translation_data"
-_TRANSLATION_CACHE_TIMEOUT = 60 * 60 * 24  # 1 day
 
+class TranslationCache(Cache):
+    expire_time = 24 * 60 * 60
+    default = {}
 
-def _get_translation_data() -> dict:
-    data = cache.get(_TRANSLATION_CACHE_KEY)
-    if data is not None:
-        return data
-
-    # If cache is empty, fetch all translations and cache them
-    langs = [lang["code"] for lang in settings.PARLER_LANGUAGES[None]]
-    translations = Translation.objects.prefetch_related("translations")
-    translations_dict = {}
-    for lang in langs:
-        lang_translations = {}
-        for translation in translations:
-            if translation.active:
-                translation.set_current_language(lang)
-                lang_translations[translation.label] = translation.text
-        translations_dict[lang] = lang_translations
-
-    cache.set(_TRANSLATION_CACHE_KEY, translations_dict, timeout=_TRANSLATION_CACHE_TIMEOUT)
-    return translations_dict
-
-
-def _invalidate_translation_cache() -> None:
-    cache.delete(_TRANSLATION_CACHE_KEY)
+    def update(self):
+        langs = [lang["code"] for lang in settings.PARLER_LANGUAGES[None]]
+        translations = Translation.objects.prefetch_related("translations")
+        translations_dict = {}
+        for lang in langs:
+            lang_translations = {}
+            for translation in translations:
+                if translation.active:
+                    translation.set_current_language(lang)
+                    lang_translations[translation.label] = translation.text
+            translations_dict[lang] = lang_translations
+        return translations_dict
 
 
 class TranslationManager(TranslatableManager):
     use_in_migrations = True
+    translation_cache = TranslationCache()
     all_langs = [lang["code"] for lang in settings.PARLER_LANGUAGES[None]]
 
     def add_translation(self, label, default_message=BLANK_TRANSLATION_PLACEHOLDER, active=True, no_auto=False):
@@ -68,7 +59,7 @@ class TranslationManager(TranslatableManager):
             # Check if translation exists before creating
             if not parent.has_translation(lang):
                 parent.create_translation(lang, text="", edited=False)
-        _invalidate_translation_cache()
+        self.translation_cache.invalid = True
         return parent
 
     def edit_translation(self, label, lang, translation, manual=True):
@@ -80,7 +71,7 @@ class TranslationManager(TranslatableManager):
         parent.text = translation
         parent.edited = manual
         parent.save()
-        _invalidate_translation_cache()
+        self.translation_cache.invalid = True
         return parent
 
     def edit_translation_by_id(self, id, lang, translation, manual=True):
@@ -92,14 +83,13 @@ class TranslationManager(TranslatableManager):
         parent.text = translation
         parent.edited = manual
         parent.save()
-        _invalidate_translation_cache()
+        self.translation_cache.invalid = True
         return parent
 
     def all_translations(self, langs=all_langs):
         translations_dict = {}
-        cached_translations = _get_translation_data()
         for lang in langs:
-            translations_dict[lang] = cached_translations[lang]
+            translations_dict[lang] = self.translation_cache.fetch()[lang]
 
         return translations_dict
 
@@ -184,11 +174,6 @@ class Translation(TranslatableModel):
     label = models.CharField(max_length=128, null=False, blank=False, unique=True)
 
     objects = TranslationManager()
-
-    def delete(self, *args, **kwargs):
-        result = super().delete(*args, **kwargs)
-        _invalidate_translation_cache()
-        return result
 
     def save(self, *args, **kwargs):
         """
