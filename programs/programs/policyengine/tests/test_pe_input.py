@@ -10,7 +10,8 @@ Calculator-specific dependency tests belong in the state's pe/tests/ directory.
 
 from unittest.mock import patch
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
+from benefits.test_cache import LOCAL_CACHE
 from screener.models import Screen, HouseholdMember, WhiteLabel, Expense, IncomeStream
 from programs.programs.policyengine.policy_engine import pe_input
 from programs.programs.policyengine.calculators.constants import (
@@ -19,6 +20,7 @@ from programs.programs.policyengine.calculators.constants import (
 )
 
 
+@override_settings(CACHES=LOCAL_CACHE)
 class PeInputTestBase(TestCase):
     """Base class with shared test fixtures for pe_input tests."""
 
@@ -363,6 +365,7 @@ class TestPeInputVersionGating(PeInputTestBase):
         self.assertIn("is_disabled", result["household"]["people"][self.head_id])
 
 
+@override_settings(CACHES=LOCAL_CACHE)
 class TestVersionSupports(TestCase):
     """Unit tests for the min/max version window logic, covering all three gating
     shapes (new / removed / windowed variable) and the asymmetric unknown-version rule."""
@@ -407,6 +410,7 @@ class TestVersionSupports(TestCase):
         self.assertTrue(self.supports(self.v("frontier"), (1, 715, 2), ()))
 
 
+@override_settings(CACHES=LOCAL_CACHE)
 class TestResolveUnpinnedVersion(TestCase):
     """Unit tests for resolving PE's `current` from /versions/us for input gating
     when there is no pin. Network is always mocked; cache is cleared per test."""
