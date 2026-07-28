@@ -1972,16 +1972,6 @@ class CoConfigurationData(ConfigurationData):
                         "_default_message": "Free home energy upgrades",
                     },
                 },
-                "ubp": {
-                    "name": {
-                        "_label": "housingAndUtilities.ubp",
-                        "_default_message": "Colorado Utility Bill Help Program: ",
-                    },
-                    "description": {
-                        "_label": "housingAndUtilities.ubp_desc",
-                        "_default_message": "Help paying utility bills",
-                    },
-                },
                 "coPropTaxRentHeatCreditRebate": {
                     "name": {
                         "_label": "cashAssistanceBenefits.coPropTaxRentHeatCreditRebate",

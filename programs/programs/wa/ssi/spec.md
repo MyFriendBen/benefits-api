@@ -52,7 +52,7 @@
    - Source: 42 U.S.C. § 1382c(a)(1)(B)(i); 20 CFR § 416.1603. WA white label + WA ZIP code satisfies state residency for screener purposes.
 
 6. **Not already receiving SSI**
-   - Screener fields: `screen.has_ssi`
+   - Screener fields: `screen.has_benefit("ssi")`
    - Note: Captured via the "Current household benefits" step. Households already receiving SSI are filtered out to prevent duplicate-enrollment recommendations.
    - Source: General SSI policy — households cannot be screened into a benefit they already receive.
 
@@ -320,7 +320,7 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 - **Person 1**: Age `70` (born 1956), Head of Household, U.S. Citizen, no disability, SSI income: `$994/month`
 - **Insurance**: None
 - **Household assets**: `$0`
-- **Current Benefits**: **Currently receiving SSI** (`has_ssi = true`)
+- **Current Benefits**: **Currently receiving SSI**
 
 **Why this matters**: Validates the "already has" path so existing recipients aren't redundantly listed under "Programs Found".
 

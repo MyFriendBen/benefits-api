@@ -38,7 +38,7 @@
 
 5. **Citizenship/immigration status** ⚠️ *data gap* — Federal TANF requires U.S. citizenship or qualified alien status; 5-year bar may apply for some qualified aliens. Washington SFA provides state-funded assistance for some immigrants who don't qualify federally. The screener has no citizenship/immigration field. `legal_status_required` is set to `["citizen", "gc_5plus", "gc_5less", "refugee", "otherWithWorkPermission"]` to reflect both federal TANF and WA SFA pathways and to favor false positives over false negatives. Source: 8 U.S.C. § 1612; WAC 388-424-0010
 
-6. **SSI receipt per member** ⚠️ *data gap* — SSI recipients are excluded from the TANF assistance unit. The screener has `has_ssi` at household level but not per-member. Source: WAC 388-450-0162
+6. **SSI receipt per member** ⚠️ *data gap* — SSI recipients are excluded from the TANF assistance unit. The screener captures SSI as a household-level current benefit (`has_benefit("ssi")`) but not per-member. Source: WAC 388-450-0162
 
 7. **60-month lifetime time limit** ⚠️ *data gap* — TANF has a 60-month federal lifetime limit on cash assistance. The screener does not track benefit history. Inclusivity assumption: we assume households have months remaining and rely on DSHS to enforce the limit at application. Source: WAC 388-484-0005; 42 U.S.C. § 608(a)(7)
 

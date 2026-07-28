@@ -27,9 +27,9 @@
 3. **Adjunctive income eligibility: Participants in SNAP, Medicaid, or TANF are automatically income-eligible for WIC**
    * Note: When any of these programs is active for the household, income is not evaluated as a disqualifying criterion.
    * Screener fields:
-     * `has_snap`
-     * `has_medicaid`
-     * `has_tanf`
+     * `has_benefit("snap")`
+     * `has_benefit("medicaid")`
+     * `has_benefit("tanf")`
    * Source: 7 CFR 246.7(d)(2)(iv); [https://doh.wa.gov/you-and-your-family/wic/wic-eligibility](https://doh.wa.gov/you-and-your-family/wic/wic-eligibility)
 4. **Residency: Must reside in the state of Washington**
    * Screener fields:

@@ -56,7 +56,7 @@ Additionally, two **discretionary enrollment pathways** exist outside the federa
 
 **3. Family receives public assistance — TANF, SSI, or SNAP.**
 
-   - Screener fields: `has_tanf`, `has_ssi`, `has_snap`
+   - Screener fields: `has_benefit("tanf")`, `has_benefit("ssi")`, `has_benefit("snap")`
    - Sources: [45 CFR § 1302.12(c)(1)(ii)](https://headstart.gov/policy/45-cfr-chap-xiii/1302-12-determining-verifying-documenting-eligibility); [Head Start FAQs](https://headstart.gov/about-us/article/head-start-faqs); [ERSEA Insights — Eligibility: Determining Need and Meeting Expectations](https://headstart.gov/ersea/ersea-insights/eligibility-determining-need-meeting-expectations); [ACF-IM-HS-22-03](https://headstart.gov/policy/im/acf-im-hs-22-03)
    - Note: Per OHS interpretation, "public assistance" under § 1302.12(c)(1)(ii) includes TANF, SSI, **and SNAP**. Receipt of any one confers categorical eligibility regardless of income.
 
@@ -396,7 +396,7 @@ WA doesn't add state-specific eligibility criteria beyond federal requirements. 
 
 **Annual income:** $18,000 — below FPL.
 
-**Why:** Operational exclusion (`has_head_start`), not eligibility criterion. Confirm with dev how MFB handles exclusion display.
+**Why:** Operational exclusion (`has_benefit("head_start")`), not eligibility criterion. Confirm with dev how MFB handles exclusion display.
 
 ---
 

@@ -103,6 +103,12 @@ class TxCeap(PolicyEngineSpmCalulator):
     pe_inputs = [
         dependency.household.TxStateCodeDependency,
         *dependency.irs_gross_income,
+        # tx_ceap counts SSI via applicable_ssi, which uses the household's reported
+        # SSI only when use_reported_ssi is True; otherwise PE substitutes its own
+        # modeled SSI (~0 for screener inputs), undercounting income. Send both the
+        # reported amount and the toggle so the household's actual SSI drives the tier.
+        dependency.member.SsiReportedDependency,
+        dependency.member.UseReportedSsiDependency,
         # tx_ceap caps the payment at electricity_expense + gas_expense; route the
         # screener's energy expenses into electricity_expense so the cap is non-zero.
         dependency.spm.TxCeapEnergyExpenseDependency,

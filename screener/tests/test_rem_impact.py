@@ -207,6 +207,37 @@ class TestRemImpactView(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_502_BAD_GATEWAY)
         self.assertIn("error", response.data)
 
+    # ── 422: address-level errors ─────────────────────────────────────────────
+
+    @patch("screener.views.RewiringAmericaClient.fetch_rem_impact")
+    def test_rem_400_with_known_address_error_type_returns_422(self, mock_fetch):
+        for error_type in (
+            "multifamily_not_supported",
+            "building_type_not_supported",
+            "address_not_parsable",
+            "building_not_supported",
+        ):
+            with self.subTest(error_type=error_type):
+                err = requests.HTTPError()
+                # REM wraps the typed error one level deep: {"detail": {"type": ..., "msg": ...}}
+                err.response = Mock(
+                    status_code=400,
+                    json=lambda t=error_type: {"detail": {"type": t, "msg": "some message"}},
+                )
+                mock_fetch.side_effect = err
+                response = self.client.get(self.URL, self.VALID_PARAMS)
+                self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
+                self.assertEqual(response.data["error"], "address_not_supported")
+                self.assertIn("detail", response.data)
+
+    @patch("screener.views.RewiringAmericaClient.fetch_rem_impact")
+    def test_rem_400_with_unknown_error_type_still_returns_502(self, mock_fetch):
+        err = requests.HTTPError()
+        err.response = Mock(status_code=400, json=lambda: {"detail": {"type": "some_future_type", "msg": "x"}})
+        mock_fetch.side_effect = err
+        response = self.client.get(self.URL, self.VALID_PARAMS)
+        self.assertEqual(response.status_code, status.HTTP_502_BAD_GATEWAY)
+
     # ── 200: happy path ───────────────────────────────────────────────────────
 
     @patch("screener.views.RewiringAmericaClient.fetch_rem_impact")

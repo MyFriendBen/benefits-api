@@ -22,7 +22,7 @@
     "expected_results": {
       "program_name": "ma_csfp",
       "eligible": true,
-      "value": 330
+      "value": 601
     }
   },
   {
@@ -51,7 +51,7 @@
     }
   },
   {
-    "notes": "MA CSFP - Ineligible: Non-eligible county (Berkshire not in eligible list)",
+    "notes": "MA CSFP - Ineligible: Berkshire is not an eligible county for CSFP",
     "household": {
       "white_label": "ma",
       "zipcode": "01201",
@@ -130,11 +130,11 @@
     "expected_results": {
       "program_name": "ma_csfp",
       "eligible": true,
-      "value": 330
+      "value": 601
     }
   },
   {
-    "notes": "MA CSFP - Eligible: Two seniors 60+ in household (both qualify for $330 each)",
+    "notes": "MA CSFP - Eligible: Two seniors 60+ in household (both qualify for $601 each)",
     "household": {
       "white_label": "ma",
       "zipcode": "02101",
@@ -165,7 +165,7 @@
     "expected_results": {
       "program_name": "ma_csfp",
       "eligible": true,
-      "value": 660
+      "value": 1202
     }
   },
   {
@@ -175,7 +175,7 @@
       "zipcode": "02101",
       "county": "Suffolk",
       "household_size": 1,
-      "has_csfp": true,
+      "current_benefits": ["ma_csfp"],
       "household_members": [
         {
           "relationship": "headOfHousehold",
@@ -192,32 +192,6 @@
     "expected_results": {
       "program_name": "ma_csfp",
       "eligible": false
-    }
-  },
-  {
-    "notes": "MA CSFP - Eligible: Weekly income converted to monthly stays under 150% FPL in Worcester County",
-    "household": {
-      "white_label": "ma",
-      "zipcode": "01601",
-      "county": "Worcester",
-      "household_size": 1,
-      "household_members": [
-        {
-          "relationship": "headOfHousehold",
-          "age": 63,
-          "has_income": true,
-          "income_streams": [
-            { "type": "wages", "amount": 400, "frequency": "weekly" }
-          ],
-          "insurance": { "none": true }
-        }
-      ],
-      "expenses": []
-    },
-    "expected_results": {
-      "program_name": "ma_csfp",
-      "eligible": true,
-      "value": 330
     }
   },
   {
@@ -241,7 +215,7 @@
     "expected_results": {
       "program_name": "ma_csfp",
       "eligible": true,
-      "value": 330
+      "value": 601
     }
   },
   {
@@ -267,7 +241,7 @@
     "expected_results": {
       "program_name": "ma_csfp",
       "eligible": true,
-      "value": 330
+      "value": 601
     }
   },
   {
@@ -293,7 +267,7 @@
     "expected_results": {
       "program_name": "ma_csfp",
       "eligible": true,
-      "value": 330
+      "value": 601
     }
   },
   {
@@ -319,11 +293,11 @@
     "expected_results": {
       "program_name": "ma_csfp",
       "eligible": true,
-      "value": 330
+      "value": 601
     }
   },
   {
-    "notes": "MA CSFP - Ineligible: Non-eligible county (Hampden not in eligible list)",
+    "notes": "MA CSFP - Ineligible: Hampden is not an eligible county for CSFP",
     "household": {
       "white_label": "ma",
       "zipcode": "01103",
@@ -348,7 +322,7 @@
     }
   },
   {
-    "notes": "MA CSFP - Ineligible: Non-eligible county (Franklin not in eligible list)",
+    "notes": "MA CSFP - Ineligible: Franklin is not an eligible county for CSFP",
     "household": {
       "white_label": "ma",
       "zipcode": "01301",

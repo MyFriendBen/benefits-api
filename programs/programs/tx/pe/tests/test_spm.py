@@ -145,7 +145,7 @@ class TestTxNslp(TestCase):
         self.assertTrue(issubclass(TxNslp, SchoolLunch))
 
         # Verify it has the expected properties from parent
-        self.assertEqual(TxNslp.pe_name, "school_meal_daily_subsidy")
+        self.assertEqual(TxNslp.pe_name, "school_meal_net_subsidy")
         self.assertIsNotNone(TxNslp.pe_inputs)
         self.assertGreater(len(TxNslp.pe_inputs), 0)
 
@@ -337,3 +337,29 @@ class TestTxCeap(TestCase):
         """The calculator outputs the tx_ceap variable to PolicyEngine."""
         self.assertIn(spm.TxCeap, TxCeap.pe_outputs)
         self.assertEqual(spm.TxCeap.field, "tx_ceap")
+
+    def test_pe_inputs_includes_reported_ssi_inputs(self):
+        """
+        MFB-1146: tx_ceap counts applicable_ssi, which only reflects the household's
+        *reported* SSI when use_reported_ssi is sent True. Both the reported amount
+        and the toggle must be in pe_inputs, otherwise PE counts modeled SSI and
+        SS/SSI households land in the wrong (too-generous) benefit tier.
+        """
+        self.assertIn(member.SsiReportedDependency, TxCeap.pe_inputs)
+        self.assertIn(member.UseReportedSsiDependency, TxCeap.pe_inputs)
+        self.assertEqual(member.UseReportedSsiDependency.field, "use_reported_ssi")
+
+    def test_use_reported_ssi_is_version_gated(self):
+        """
+        use_reported_ssi / applicable_ssi were added in policyengine-us 1.742.0.
+        The dependency must carry that floor so it is never sent to an earlier model
+        (which would 400 the whole request). The reported-amount input (ssi_reported)
+        has existed since 2022, so it stays ungated.
+        """
+        self.assertEqual(member.UseReportedSsiDependency.min_pe_version, (1, 742, 0))
+        self.assertEqual(member.SsiReportedDependency.min_pe_version, ())
+
+    def test_use_reported_ssi_value_is_true(self):
+        """The toggle is always True so the screener's reported SSI drives the income test."""
+        dep = member.UseReportedSsiDependency(None, None, {})
+        self.assertTrue(dep.value())

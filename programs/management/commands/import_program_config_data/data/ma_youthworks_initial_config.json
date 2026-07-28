@@ -1,0 +1,57 @@
+{
+  "white_label": {
+    "code": "ma"
+  },
+  "program_category": {
+    "external_name": "ma_employment",
+    "name": "Employment",
+    "icon": "job_resources"
+  },
+  "program": {
+    "name_abbreviated": "ma_youthworks",
+    "year": "2025",
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission"
+    ],
+    "name": "YouthWorks",
+    "description": "YouthWorks connects young people in Massachusetts with paid jobs. Participants work across many fields, including healthcare, education, technology, and the arts.\n\nJobs run in summer and during the school year, depending on the region. Participants earn an hourly wage. They also receive job readiness training and mentorship.\n\nYouthWorks serves youth from underserved communities and those facing employment barriers. Common barriers include housing instability, limited English, disability, and justice involvement. No prior work experience needed.\n\nLocal providers run YouthWorks through MassHire workforce regions across Massachusetts. Availability and application steps vary by region — use the link above to find your local provider and confirm current openings.",
+    "description_short": "Paid jobs and training for Massachusetts youth",
+    "learn_more_link": "https://commcorp.org/program/youthworks/",
+    "apply_button_link": "https://commcorp.org/resource/youthworks-regions-table",
+    "apply_button_description": "Find a Program Near You",
+    "estimated_application_time": "5 - 10 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_type": "benefit",
+    "value_format": "estimated_annual",
+    "has_calculator": true,
+    "show_on_current_benefits": true,
+    "show_in_has_benefits_step": false,
+    "website_description": "Paid jobs and training for Massachusetts youth"
+  },
+  "documents": [
+    {
+      "external_name": "ma_proof_address",
+      "text": "Proof of home address (ex: lease, utility bill, or school enrollment record)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ma_id_proof",
+      "text": "Proof of identity and age (ex: school ID, state ID, passport, or birth certificate)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ma_work_permit",
+      "text": "Work permit (required for youth under 18)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ]
+}

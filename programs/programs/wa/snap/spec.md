@@ -29,7 +29,7 @@
    - Source: 7 CFR 273.1(a)-(b); WAC 388-408-0015. People who live together and customarily purchase and prepare meals together are considered one SNAP household.
 
 5. **Must not already be receiving SNAP/Basic Food benefits**
-   - Screener fields: `has_snap`
+   - Screener fields: `has_benefit("snap")`
    - Source: General SNAP policy — households cannot receive duplicate benefits.
 
 6. **Student eligibility: College students enrolled at least half-time in an institution of higher education must meet an exemption to be eligible, unless they are age 17 or younger**
@@ -53,7 +53,7 @@
    - Source: 7 CFR 273.3; WAC 388-468-0005. Applicants must reside in the state where they apply.
 
 10. **TANF/SSI categorical eligibility — households where all members receive TANF or SSI are categorically eligible**
-    - Screener fields: `has_tanf`, `has_ssi`
+    - Screener fields: `has_benefit("tanf")`, `has_benefit("ssi")`
     - Note: Categorical eligibility bypasses the financial eligibility tests (income and asset), but non-financial eligibility rules (student status, citizenship, residency, etc.) still apply. The key phrase is *all members* — if even one household member does not receive TANF or SSI, this specific pathway does not apply.
     - Source: 7 CFR 273.2(j); 7 U.S.C. § 2014(a). *Statutory language — 7 U.S.C. § 2014(a): households in which each member receives benefits under a State program funded under part A of title IV of the Social Security Act (TANF), supplemental security income benefits under title XVI of the Social Security Act, or aid to the aged, blind, or disabled, shall be eligible to participate in the supplemental nutrition assistance program.*
 
@@ -331,7 +331,7 @@
 - **Household**: Number of people: `2`
 - **Person 1**: Birth month/year: `June 1985` (age 40), Relationship: Head of Household, Sex: Female, Not a student, Not pregnant, Not disabled, U.S. citizen, Employment income: `$1,800` per month
 - **Person 2**: Birth month/year: `September 2018` (age 7), Relationship: Child, Sex: Male, Not a student, Not disabled, U.S. citizen
-- **Current Benefits**: Select that the household **already receives SNAP/Basic Food** benefits (`has_snap` = Yes)
+- **Current Benefits**: Select that the household **already receives SNAP/Basic Food** benefits
 
 **Why this matters**: Preventing duplicate SNAP benefit enrollment is critical for program integrity. Households already receiving Basic Food should not be screened as eligible for a second enrollment.
 
@@ -407,7 +407,7 @@ File: `programs/management/commands/import_program_config_data/data/wa_snap_init
 
 | Date | Author | Change |
 |---|---|---|
-| 2026-04-13 | catonph (review) | Removed redundant Scenario 11 (duplicate `has_snap` check, parent-child household); renumbered Scenarios 12→11 and 13→12 |
+| 2026-04-13 | catonph (review) | Removed redundant Scenario 11 (duplicate current-benefits SNAP check, parent-child household); renumbered Scenarios 12→11 and 13→12 |
 | 2026-03-23 | Josh Mejia | Initial research and spec |
 | 2026-04-07 | patmanson | Corrections: pregnant women count as 1 HH member (not 2); updated 2026 FPL thresholds in scenarios 3/4/5; clarified elderly/disabled alternative path (criteria 2, 3, 7); recommended disclaimer for 60+/disabled edge case; removed scenario 14; estimated_value deferred to PolicyEngine |
 | 2026-04-13 | catonph | Scenario 9 replaced: geographic validation was redundant (all eligible scenarios use WA ZIP codes); new Scenario 9 isolates net income test failure — gross passes 200% FPL, net fails 100% FPL after standard SNAP deductions |

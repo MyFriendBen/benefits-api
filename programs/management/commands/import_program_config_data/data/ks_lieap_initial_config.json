@@ -1,0 +1,69 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "program_category": {
+    "external_name": "ks_housing",
+    "name": "Housing and Utilities",
+    "icon": "housing"
+  },
+  "program": {
+    "name_abbreviated": "ks_lieap",
+    "year": 2026,
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission"
+    ],
+    "name": "Low Income Energy Assistance Program (LIEAP)",
+    "description": "LIEAP (Low Income Energy Assistance Program) helps Kansas families pay their heating and cooling bills. The program provides a one-time payment to help cover your energy costs so you can stay safe at home.\n\nThe money is usually sent straight to your energy company as a credit to lower your bill. Some households may also get free home upgrades to lower future bills.\n\nYour benefit amount depends on factors like your income, household size, and heating fuel type. Please note that this program only takes sign-ups during a set window each winter.\n\nTo apply, fill out the online form through the Kansas self-service portal using the button below.",
+    "description_short": "Help paying home heating and cooling bills",
+    "learn_more_link": "https://www.dcf.ks.gov/services/ees/Pages/EnergyAssistance.aspx",
+    "apply_button_link": "https://cssp.kees.ks.gov/apspssp/sspNonMed.portal",
+    "apply_button_description": "Apply for Kansas LIEAP",
+    "estimated_application_time": "60 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": "lump_sum",
+    "value_type": "benefit",
+    "website_description": "Help paying home heating and cooling bills",
+    "base_program": "liheap",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": [
+    {
+      "external_name": "ks_id_proof",
+      "text": "Proof of identity (ex: driver's license, state ID, passport)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_ssn",
+      "text": "Social Security numbers for all household members",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_home",
+      "text": "Proof of home address (ex: lease, mortgage statement, utility bill)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_earned_income",
+      "text": "Proof of income for all household members (ex: pay stubs, Social Security award letter, pension statement)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_utility_bill",
+      "text": "Most recent utility bill or energy bill showing your account number and amount due",
+      "link_url": "",
+      "link_text": ""
+    }
+  ]
+}

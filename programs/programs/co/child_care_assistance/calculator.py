@@ -1,6 +1,7 @@
 from screener.models import HouseholdMember
 from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
-from integrations.services.sheets import GoogleSheetsCache
+from integrations.services.sheets.cache import GoogleSheetsCache
+
 from programs.co_county_zips import counties_from_screen
 import programs.programs.messages as messages
 
@@ -8,13 +9,22 @@ import programs.programs.messages as messages
 class CccapFplCache(GoogleSheetsCache):
     sheet_id = "1otQxo_hZu2pS1_1EBsPLVKP9HYFCdcYWZKNM24dbjvg"
     range_name = "current FPL %!A2:B"
-    default = {}
+    CACHE_KEY = "cccap_fpl_data"
 
-    def update(self):
-        data = super().update()
-
-        county_fpls = {r[0] + " County": int(r[1]) for r in data}
-
+    def _process(self, raw_data):
+        """
+        Process the raw data from Google Sheets into a dictionary mapping county names to FPL percentages.
+        """
+        county_fpls = {}
+        for r in raw_data:
+            if len(r) < 2:
+                continue
+            try:
+                county_name = r[0].strip() + " County"
+                fpl_percent = int(r[1])
+                county_fpls[county_name] = fpl_percent
+            except (IndexError, ValueError, AttributeError):
+                continue  # Skip malformed rows
         return county_fpls
 
 
@@ -29,7 +39,7 @@ class ChildCareAssistance(ProgramCalculator):
     fpl_limits = CccapFplCache()
 
     def household_eligible(self, e: Eligibility):
-        cccap_county_limits = self.fpl_limits.fetch()
+        cccap_county_limits = self.fpl_limits.get_data()
 
         # location
         counties = counties_from_screen(self.screen)
@@ -41,15 +51,16 @@ class ChildCareAssistance(ProgramCalculator):
                 county_name = county
         e.condition(in_county_limits, messages.location())
 
-        # income
-        frequency = "yearly"
-        gross_income = self.screen.calc_gross_income(frequency, ["all"], ["cashAssistance"])
-        deductions = self.screen.calc_expenses(frequency, ["childSupport"])
-        net_income = gross_income - deductions
-        fpl_percent = cccap_county_limits[county_name] / 100
-        fpl = self.program.year.as_dict()
-        income_limit = fpl[self.screen.household_size] * fpl_percent
-        e.condition(net_income <= income_limit, messages.income(net_income, income_limit))
+        # income — only calculated if county is in CCCAP limits
+        if in_county_limits:
+            frequency = "yearly"
+            gross_income = self.screen.calc_gross_income(frequency, ["all"], ["cashAssistance"])
+            deductions = self.screen.calc_expenses(frequency, ["childSupport"])
+            net_income = gross_income - deductions
+            fpl_percent = cccap_county_limits[county_name] / 100
+            fpl = self.program.year.as_dict()
+            income_limit = fpl[self.screen.household_size] * fpl_percent
+            e.condition(net_income <= income_limit, messages.income(net_income, income_limit))
 
         # assets
         assets = self.screen.household_assets if self.screen.household_assets is not None else 0

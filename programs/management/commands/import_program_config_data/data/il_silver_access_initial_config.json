@@ -1,0 +1,77 @@
+{
+  "white_label": {
+    "code": "il"
+  },
+  "program_category": {
+    "external_name": "il_health"
+  },
+  "program": {
+    "name_abbreviated": "il_silver_access",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "refugee",
+      "gc_5plus",
+      "gc_5less",
+      "otherWithWorkPermission"
+    ],
+    "name": "Silver Access",
+    "description": "Silver Access is a program from the DuPage Health Coalition. It helps you pay for a health plan from the ACA Marketplace (Get Covered Illinois). It is not health insurance by itself.\n\nEach month you pay a bill for your health plan, called a premium. The program pays part of that premium to your insurance company. To get this help, you must choose a Silver or Gold level Marketplace plan and use all of your premium tax credit. You also pay any premium the program does not cover, plus a yearly cost of about 1 to 3 months of your premium, based on your income and family size.\n\nThe program has limited spots and takes applications until it is full. The best time to apply is during Open Enrollment, which starts November 1.\n\nTo apply, fill out the Silver Access application online. For free help, call the Silver Access coordinator.",
+    "description_short": "Help paying for Marketplace health insurance in DuPage County",
+    "learn_more_link": "https://dupagehealthcoalition.org/silver-access/",
+    "apply_button_link": "https://form.jotform.com/253016629905156",
+    "apply_button_description": "Apply for Silver Access",
+    "estimated_application_time": "5 - 10 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": null,
+    "value_type": "benefit",
+    "website_description": "Help paying for Marketplace health insurance in DuPage County",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": [
+    {
+      "external_name": "il_home",
+      "text": "Proof of DuPage County address (like a lease, utility bill, or mail with your name and address)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "il_ID",
+      "text": "Photo ID (like a driver's license, state ID, passport, or matricula consular)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "IL_earned_income",
+      "text": "Proof of income (like pay stubs, W-2, tax return, Social Security award letter, or pension)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "il_silver_access_marketplace_info",
+      "text": "Your Get Covered Illinois (Marketplace) username, password, and plan details",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "il_silver_access_coordinator",
+      "name": "Silver Access (DuPage Health Coalition)",
+      "phone_number": "+13317167573",
+      "email": "vcorpus@dhchelps.org",
+      "assistance_link": "https://dupagehealthcoalition.org/silver-access/",
+      "description": "Vanessa Corpus, the Silver Access Manager, can help with all program questions, applications, and payments. Appointments are recommended; walk-ins are accepted. You can also reach the Silver Access office at 331-716-7573.",
+      "counties": ["DuPage"],
+      "languages": ["en", "es", "ur"]
+    }
+  ],
+  "warning_message": {
+    "external_name": "il_silver_access_notices",
+    "calculator": "_show",
+    "message": "Silver Access has limited spots and may stop taking applications once full. You must enroll in a Marketplace plan first, which is usually only possible during Open Enrollment (starts November 1)."
+  }
+}

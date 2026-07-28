@@ -46,6 +46,13 @@ class KsConfigurationData(ConfigurationData):
                     "_default_message": "KanCare (Medicaid)",
                 },
             },
+            "chp": {
+                "icon": {"_icon": "Chp", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "healthInsuranceOptions.chp.ks",
+                    "_default_message": "KanCare (CHIP)",
+                },
+            },
         },
         "them": {
             **ConfigurationData.health_insurance_options["them"],
@@ -54,6 +61,13 @@ class KsConfigurationData(ConfigurationData):
                 "text": {
                     "_label": "healthInsuranceOptions.medicaid.ks",
                     "_default_message": "KanCare (Medicaid)",
+                },
+            },
+            "chp": {
+                "icon": {"_icon": "Chp", "_classname": "option-card-icon"},
+                "text": {
+                    "_label": "healthInsuranceOptions.chp.ks",
+                    "_default_message": "KanCare (CHIP)",
                 },
             },
         },

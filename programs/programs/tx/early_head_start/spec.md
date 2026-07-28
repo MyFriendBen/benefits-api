@@ -27,9 +27,9 @@
 
 3. **Child receives or is eligible for public assistance (TANF, SSI, or SNAP)**
    - Screener fields:
-     - `has_tanf`
-     - `has_ssi`
-     - `has_snap`
+     - `has_benefit("tanf")`
+     - `has_benefit("ssi")`
+     - `has_benefit("snap")`
    - Source: 45 CFR 1302.12(a)(1)(ii)(A)-(C) - Categorical eligibility for families receiving TANF, SSI, or SNAP
 
 4. **Child is in foster care**

@@ -9,9 +9,15 @@ shared helper) directly and the serializer `create()` / `update()` paths end to 
 
 from django.test import TestCase
 
-from screener.models import CurrentBenefit, HouseholdMember, IncomeStream, Screen, WhiteLabel
+from programs.models import Program
+from screener.models import CurrentBenefit, HouseholdMember, IncomeStream, Insurance, Screen, WhiteLabel
 from screener.serializers import ScreenSerializer, _write_current_benefits
 from screener.tests.helpers import seed_program
+
+# The Program.name_abbreviated column max_length. The serializer caps on a
+# current-benefit name must match this so no DB-valid name is rejected before the
+# white-label-scoped resolve. Read from the model so the tests track the column.
+NAME_ABBREVIATED_MAX_LENGTH = 120
 
 
 class WriteCurrentBenefitsTests(TestCase):
@@ -278,3 +284,117 @@ class ScreenSerializerCreateTests(TestCase):
         screen = serializer.save()
 
         self.assertEqual(self._benefit_names(screen), set())
+
+
+class HouseholdMemberInsuranceTests(TestCase):
+    """Regression coverage for the optional `insurance` field on household members.
+
+    `insurance` is `required=False` on HouseholdMemberSerializer, so a client can omit
+    the key entirely (distinct from sending `null`): on omission the key is absent from
+    validated_data, on null it's present as None. A bare `member.pop("insurance")`
+    KeyErrors on the omission case (a prod 500). create()/update() must treat an absent
+    key the same as null — these pin both paths against that regression.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+
+    def _base_payload(self, members):
+        return {
+            "white_label": self.white_label.code,
+            "household_members": members,
+            "expenses": [],
+            "current_benefits": [],
+        }
+
+    def _member(self, **extra):
+        # income_streams is the only required nested field on a member; everything
+        # else (including insurance) is optional. Tests override via **extra.
+        member = {"relationship": "headOfHousehold", "age": 40, "income_streams": []}
+        member.update(extra)
+        return member
+
+    def test_create_member_omitting_insurance_key_succeeds(self):
+        """A member with no `insurance` key at all creates without error and writes no
+        Insurance row (the prod KeyError regression)."""
+        member = self._member()
+        self.assertNotIn("insurance", member)
+
+        serializer = ScreenSerializer(data=self._base_payload([member]))
+        serializer.is_valid(raise_exception=True)
+        screen = serializer.save()
+
+        hhm = HouseholdMember.objects.get(screen=screen)
+        self.assertFalse(Insurance.objects.filter(household_member=hhm).exists())
+
+    def test_create_member_with_null_insurance_succeeds(self):
+        """An explicit `insurance: None` also creates no Insurance row."""
+        serializer = ScreenSerializer(data=self._base_payload([self._member(insurance=None)]))
+        serializer.is_valid(raise_exception=True)
+        screen = serializer.save()
+
+        hhm = HouseholdMember.objects.get(screen=screen)
+        self.assertFalse(Insurance.objects.filter(household_member=hhm).exists())
+
+    def test_create_member_with_insurance_writes_row(self):
+        """A provided insurance object is written with its flags."""
+        serializer = ScreenSerializer(
+            data=self._base_payload([self._member(insurance={"none": False, "medicaid": True, "medicare": True})])
+        )
+        serializer.is_valid(raise_exception=True)
+        screen = serializer.save()
+
+        hhm = HouseholdMember.objects.get(screen=screen)
+        row = Insurance.objects.get(household_member=hhm)
+        self.assertTrue(row.medicaid)
+        self.assertTrue(row.medicare)
+        self.assertFalse(row.none)
+
+    def test_update_member_omitting_insurance_key_succeeds(self):
+        """update() already defaults the absent key; lock it so it can't regress to a
+        bare pop (KeyError) like create() had."""
+        screen = Screen.objects.create(white_label=self.white_label, zipcode="78701", household_size=1, completed=False)
+        member = self._member()
+        self.assertNotIn("insurance", member)
+
+        serializer = ScreenSerializer(screen, data=self._base_payload([member]))
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        hhm = HouseholdMember.objects.get(screen=screen)
+        self.assertFalse(Insurance.objects.filter(household_member=hhm).exists())
+
+
+class CurrentBenefitsNameLengthTests(TestCase):
+    """The per-element cap on `current_benefits` must match the
+    Program.name_abbreviated column so a DB-valid name is never rejected before the
+    write path (which silently drops unknown names). Guards against the serializer
+    cap and the column drifting apart."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+
+    def _payload(self, names):
+        return {
+            "white_label": self.white_label.code,
+            "household_members": [],
+            "expenses": [],
+            "current_benefits": names,
+        }
+
+    def test_child_cap_matches_db_column(self):
+        """The ListField child's max_length equals the Program.name_abbreviated column."""
+        child = ScreenSerializer().fields["current_benefits"].child
+        self.assertEqual(child.max_length, NAME_ABBREVIATED_MAX_LENGTH)
+
+    def test_name_at_column_max_passes_validation(self):
+        """A name as long as the column is accepted by validation (dropped later only
+        if no Program matches — not rejected for length)."""
+        serializer = ScreenSerializer(data=self._payload(["a" * NAME_ABBREVIATED_MAX_LENGTH]))
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+    def test_name_over_column_max_is_rejected(self):
+        """A name longer than the column is rejected by validation."""
+        serializer = ScreenSerializer(data=self._payload(["a" * (NAME_ABBREVIATED_MAX_LENGTH + 1)]))
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("current_benefits", serializer.errors)

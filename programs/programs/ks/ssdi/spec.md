@@ -31,7 +31,7 @@
 
 3. **Applicant must not already be receiving benefits on their own Social Security record**
    - Screener fields:
-     - `has_ssdi` (captured in current benefits section — "Social Security Disability Insurance (SSDI)")
+     - `has_benefit("ssdi")` (captured in current benefits section — "Social Security Disability Insurance (SSDI)")
    - Note: Someone already receiving SSDI should not be shown SSDI as a recommendation. Receiving SSI does NOT exclude someone from SSDI — concurrent SSI/SSDI receipt is allowed.
    - Source: https://www.ssa.gov/benefits/disability/qualify.html (How Does Someone Become Eligible)
 

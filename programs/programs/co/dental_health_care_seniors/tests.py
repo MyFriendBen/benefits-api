@@ -1,7 +1,7 @@
 from django.test import TestCase
 from unittest import skip
 from programs.programs.co.dental_health_care_seniors.calculator import DentalHealthCareSeniors
-from screener.models import Screen, HouseholdMember, IncomeStream
+from screener.models import Screen, HouseholdMember, IncomeStream, Insurance
 
 
 @skip("Calculator constructor signature changed - needs API update")
@@ -13,7 +13,6 @@ class TestDentalHealthCareSeniorsPension(TestCase):
             county="Denver County",
             household_size=1,
             household_assets=0,
-            has_no_hi=True,
         )
         self.person1 = HouseholdMember.objects.create(
             screen=self.screen1,
@@ -39,8 +38,7 @@ class TestDentalHealthCareSeniorsPension(TestCase):
     def test_dental_health_care_seniors_failed_all_conditions(self):
         self.person1.age = 20
         self.person1.save()
-        self.screen1.has_medicaid = True
-        self.screen1.save()
+        Insurance.objects.create(household_member=self.person1, medicaid=True, none=False)
         IncomeStream.objects.create(
             screen=self.screen1, household_member=self.person1, type="wages", amount=3000, frequency="monthly"
         )

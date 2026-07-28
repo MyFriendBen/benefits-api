@@ -1,0 +1,39 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "program_category": {
+    "external_name": "ks_tax",
+    "name": "Tax Credits",
+    "icon": "tax_credit",
+    "tax_category": true
+  },
+  "program": {
+    "name_abbreviated": "ks_cdcc",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission",
+      "non_citizen"
+    ],
+    "name": "Kansas Child and Dependent Care Credit (CDCC)",
+    "description": "The Kansas Child and Dependent Care Credit helps working families cover the cost of child care. This program lowers the amount of state income taxes you owe at the end of the year. The state gives you this benefit as a percentage match of your federal child care tax credit. If you qualify, this credit reduces your state tax bill dollar-for-dollar.\n\nThe Kansas Department of Revenue runs this program. You claim the benefit directly on your annual state tax return, so you do not receive a monthly check or a debit card. Instead, the money saves you tax dollars or increases your tax refund.\n\nThis screener checks if you are generally eligible, but the state must verify a few tax rules that we cannot check here. To get the credit, you must file your taxes using specific statuses, as it is generally not open to married couples who file separately. Both you and your spouse must also have valid Social Security Numbers. Finally, there are limits on the total amount of care expenses you can claim for your family.\n\nTo get this benefit, you must claim the federal child care credit on your federal tax return first. When you fill out your Kansas tax forms, you must list your child care provider's official tax identification number or Social Security Number. If you need help filing your taxes, you can visit a free local tax assistance center in your area.",
+    "description_short": "The Kansas Child and Dependent Care Credit helps lower your state income taxes if you pay for child care",
+    "learn_more_link": "https://www.ksrevenue.gov/taxnotices/notice24-09.pdf",
+    "apply_button_link": "https://www.kansas.gov/webfile/",
+    "apply_button_description": "",
+    "estimated_application_time": "30 - 60 minutes",
+    "estimated_delivery_time": "21 days after filing",
+    "estimated_value": "",
+    "value_format": "lump_sum",
+    "value_type": "tax_credit",
+    "website_description": "The Kansas Child and Dependent Care Credit helps lower your state income taxes if you pay for child care",
+    "has_calculator": true,
+    "show_on_current_benefits": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": []
+}

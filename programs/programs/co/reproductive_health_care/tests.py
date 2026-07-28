@@ -13,7 +13,6 @@ class TestReproductiveHealthCarePension(TestCase):
             county="Denver County",
             household_size=1,
             household_assets=0,
-            has_no_hi=True,
         )
         self.person1 = HouseholdMember.objects.create(
             screen=self.screen1,
@@ -37,9 +36,6 @@ class TestReproductiveHealthCarePension(TestCase):
         self.assertTrue(eligibility["eligible"])
 
     def test_reproductive_health_care_failed_all_conditions(self):
-        self.person1.has_no_hi = False
-        self.person1.save()
-
         rhc = ReproductiveHealthCare(self.screen1, [{"name_abbreviated": "medicaid", "eligible": False}])
         eligibility = rhc.eligibility
 

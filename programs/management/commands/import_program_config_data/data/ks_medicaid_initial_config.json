@@ -1,0 +1,85 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "program_category": {
+    "external_name": "ks_health_care",
+    "name": "Health Care",
+    "icon": "health_care",
+    "tax_category": false
+  },
+  "program": {
+    "name_abbreviated": "ks_medicaid",
+    "year": 2026,
+    "legal_status_required": [
+      "citizen",
+      "refugee",
+      "gc_5plus",
+      "otherWithWorkPermission"
+    ],
+    "name": "KanCare (Medicaid)",
+    "description": "KanCare is Kansas's Medicaid program. It helps pay for things like doctor visits, hospital stays, and prescriptions. It also covers dental, vision, and mental health care. There is little or no cost to you.\n\nYou pick a KanCare health plan that fits your needs. Then you use your member ID card at the doctor, pharmacy, and other providers.\n\nIf you are 65 or older, blind, or have a disability, there may be a limit on your savings and property. There is no savings limit for children and families. If your income is above the limit but you have high medical bills, you may still qualify through a \"spend-down.\" Children in foster care may also qualify regardless of income. So may former foster youth up to age 26 and children with adoption support payments. There are other ways to qualify too. It is worth applying if you are not sure.\n\nTo apply, click Apply Now to start your application online. You can also apply by phone or request a paper application. Call the KanCare Clearinghouse at 1-800-792-4884.",
+    "description_short": "Free or low-cost health coverage for eligible Kansans",
+    "learn_more_link": "https://www.kancare.ks.gov/apply-now/eligibility",
+    "apply_button_link": "https://cssp.kees.ks.gov/apspssp/",
+    "apply_button_description": "",
+    "estimated_application_time": "15 - 30 minutes",
+    "estimated_delivery_time": "45 - 90 days",
+    "estimated_value": "",
+    "value_format": "estimated_annual",
+    "value_type": "benefit",
+    "website_description": "Free or low-cost health coverage for eligible Kansans",
+    "base_program": "medicaid",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": [
+    {
+      "external_name": "ks_id_proof",
+      "text": "Proof of identity (e.g. driver's license, state ID, passport)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_ssn",
+      "text": "Social Security number for each person applying",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_home",
+      "text": "Proof of Kansas residency (e.g. lease, utility bill, mail with your address)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_income_proof",
+      "text": "Proof of income (e.g. pay stubs, tax return, employer letter)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_resources",
+      "text": "Proof of savings and resources, only if you are 65 or older, blind, or have a disability (e.g. recent bank statements)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_us_status",
+      "text": "Proof of U.S. citizenship or qualified immigration status (e.g. birth certificate, green card, work permit)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "ks_kancare_ombudsman",
+      "name": "KanCare Ombudsman Office",
+      "email": "KanCare.Ombudsman@ks.gov",
+      "phone_number": "+18556438180",
+      "description": "A free state office that helps Kansans understand KanCare, resolve problems with coverage or the Clearinghouse, and complete KanCare applications. Help is available statewide by phone, with in-person offices in the Kansas City metro and Wichita.",
+      "assistance_link": "https://www.kancare.ks.gov/members/help-resources/kancare-ombudsman"
+    }
+  ]
+}

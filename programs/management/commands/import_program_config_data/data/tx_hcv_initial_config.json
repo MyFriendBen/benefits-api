@@ -1,0 +1,136 @@
+{
+  "white_label": {
+    "code": "tx"
+  },
+  "program_category": {
+    "external_name": "tx_housing"
+  },
+  "program": {
+    "name_abbreviated": "tx_hcv",
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission"
+    ],
+    "name": "Housing Choice Voucher Program (Section 8)",
+    "description": "This program helps families with low income pay rent. It's known as Section 8 or the Housing Choice Voucher program, and it's run by your local housing authority.\n\nOnce you have a voucher, you can choose where you live, as long as the home passes a safety inspection. Each month, the housing authority pays part of your rent directly to your landlord, and you pay the rest. If you move, you can usually take your voucher with you.\n\nHousing authorities often give priority to certain groups. This includes seniors, veterans, people with disabilities, and families with children. They also favor families who are homeless. The same goes for families who spend a lot of their income on rent. Extra rules may apply for students. Households with a lot of savings or other assets may not qualify. Everyone in your household must agree to a background and income check. This happens when you apply. If you don't agree, you can't get a voucher. Some people can still qualify even with a higher income. This includes people living in a declared disaster area. It also includes people leaving a care facility because of a disability. Contact your local housing authority to check.\n\nTo apply, use the link above to find your local housing authority.",
+    "description_short": "Help paying rent for people with low income",
+    "learn_more_link": "https://www.hud.gov/helping-americans/housing-choice-vouchers-tenants",
+    "apply_button_link": "https://www.hud.gov/program_offices/public_indian_housing/pha/contacts",
+    "apply_button_description": "Find Your Local Housing Authority",
+    "estimated_application_time": "20-30 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": "estimated_annual",
+    "value_type": "benefit",
+    "website_description": "Help paying rent for people with low income",
+    "base_program": "section_8",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": [
+    {
+      "external_name": "tx_id_proof",
+      "text": "Proof of identity (ex: driver's license, official state ID card)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_ssn",
+      "text": "Social security number",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_earned_income",
+      "text": "Proof of earned income (ex: pay stubs, tax returns, W-2, 1099) & employer information",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_unearned_income",
+      "text": "Proof of unearned income (ex: child support, social security, unemployment)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_hcv_asset_proof",
+      "text": "Asset documents, if requested (ex: bank statements, savings or investment account statements)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_home",
+      "text": "Proof of home address (ex: lease, mortgage statement, utility bill)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_us_status",
+      "text": "Proof of status in U.S. (ex: birth certificate, green card, work permit)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "tx_birth_certificate",
+      "text": "Child's birth certificate or proof of age",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "tx_tdhca_hcv",
+      "name": "Texas Department of Housing and Community Affairs (TDHCA)",
+      "email": "info@tdhca.texas.gov",
+      "phone_number": "+18002376500",
+      "description": "TDHCA administers the Section 8 Housing Choice Voucher program in this area. Contact them to apply or get help with your voucher.",
+      "assistance_link": "https://www.tdhca.texas.gov/help-for-texans",
+      "counties": [
+        "Atascosa",
+        "Austin",
+        "Bandera",
+        "Bosque",
+        "Caldwell",
+        "Chambers",
+        "Colorado",
+        "Comal",
+        "Comanche",
+        "Crockett",
+        "Denton",
+        "Ellis",
+        "Erath",
+        "Falls",
+        "Fort Bend",
+        "Freestone",
+        "Frio",
+        "Galveston",
+        "Gillespie",
+        "Grimes",
+        "Guadalupe",
+        "Johnson",
+        "Karnes",
+        "Kendall",
+        "Kerr",
+        "Lee",
+        "Llano",
+        "McLennan",
+        "McMullen",
+        "Medina",
+        "Waller",
+        "Wharton",
+        "Wilson",
+        "Wise"
+      ]
+    }
+  ],
+  "warning_message": {
+    "external_name": "tx_hcv_warning",
+    "calculator": "_show",
+    "message": "Texas's own Housing Choice Voucher waitlist is closed right now. Other local waitlists may also be closed or have long waits. But waitlists like this can reopen with little notice. Contact your local housing authority to check availability before applying."
+  }
+}

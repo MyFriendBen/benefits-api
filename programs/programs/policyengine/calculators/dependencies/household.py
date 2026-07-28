@@ -36,6 +36,10 @@ class WaStateCodeDependency(StateCode):
     state = "WA"
 
 
+class KsStateCodeDependency(StateCode):
+    state = "KS"
+
+
 class CountyDependency(Household):
     field: ClassVar[str] = "county_str"
     dependencies: ClassVar[list[str]] = ["county"]
@@ -72,8 +76,16 @@ class IlCountyDependency(CountyDependency):
     state_dependency_class = IlStateCodeDependency
 
 
+class MaCountyDependency(CountyDependency):
+    state_dependency_class = MaStateCodeDependency
+
+
 class TxCountyDependency(CountyDependency):
     state_dependency_class = TxStateCodeDependency
+
+
+class KsCountyDependency(CountyDependency):
+    state_dependency_class = KsStateCodeDependency
 
 
 class ZipCodeDependency(Household):

@@ -28,7 +28,7 @@
 
 3. **Applicant must not already be receiving benefits on their own Social Security record**
    - Screener fields:
-     - `has_ssdi` (captured in current benefits section — "Social Security Disability Insurance (SSDI)")
+     - `has_benefit("ssdi")` (captured in current benefits section — "Social Security Disability Insurance (SSDI)")
    - Note: The screener's current benefits section includes SSDI. Someone already receiving SSDI should not be shown SSDI as a recommendation. Note that receiving SSI does NOT exclude someone from SSDI — concurrent SSI/SSDI receipt is allowed. Additionally, former SSDI recipients whose benefits stopped because they returned to work may be eligible for Expedited Reinstatement within 5 years — they do not need to file a new application and should contact SSA directly.
    - Source: https://www.ssa.gov/benefits/disability/qualify.html (How Does Someone Become Eligible)
 

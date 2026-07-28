@@ -1,0 +1,97 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "program_category": {
+    "external_name": "ks_healthcare",
+    "name": "Health Care",
+    "icon": "health_care"
+  },
+  "program": {
+    "name_abbreviated": "ks_medicare_savings",
+    "year": "2026",
+    "base_program": "medicare_savings",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "refugee",
+      "otherWithWorkPermission"
+    ],
+    "name": "Medicare Savings Program (MSP)",
+    "description_short": "Help paying for Medicare premiums and costs",
+    "description": "Medicare Savings Program (MSP) helps people with Medicare pay their monthly premiums. If your income is low enough, it may also cover your copays and other out-of-pocket costs.\n\nIf approved, Kansas pays your Medicare premiums for you. You won't get a check — the coverage just starts. If you qualify for the most help, your doctor and hospital bills will have no copays or deductibles.\n\nMSP has a limit on the assets you own, but many things don't count. Things that don't count: your home, one vehicle, household goods, burial funds up to $1,500, and life insurance with a face value up to $1,500.\n\nClick Apply Now to start your application on Kansas's online benefits portal.",
+    "learn_more_link": "https://www.medicare.gov/basics/costs/help/medicare-savings-programs",
+    "apply_button_link": "https://cssp.kees.ks.gov/apspssp/ssp.portal",
+    "apply_button_description": "",
+    "estimated_application_time": "15 - 30 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_type": "benefit",
+    "website_description": "Help paying for Medicare premiums and costs",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": [
+    {
+      "external_name": "ks_home",
+      "text": "Proof of home address (ex: lease, utility bill)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_id_proof",
+      "text": "Proof of identity (e.g. driver's license, state ID, passport)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_ssn_proof",
+      "text": "Social Security Number or proof you applied for one",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_medicare_card",
+      "text": "Medicare card showing Part A enrollment",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_income_proof",
+      "text": "Proof of income (ex: pay stubs, Social Security statement, pension statement)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_assets",
+      "text": "Proof of assets (ex: bank statements, investment accounts). Do not include your home, one vehicle, household goods, burial funds up to $1,500, or life insurance with a face value up to $1,500",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_us_status",
+      "text": "Proof of U.S. citizenship or qualified immigration status",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "ks_shick",
+      "name": "Senior Health Insurance Counseling for Kansas (SHICK)",
+      "email": "KDADS_Medicare@ks.gov",
+      "description": "SHICK offers free, unbiased Medicare counseling from trained volunteers. They can explain your Medicare options and help you compare plans. They can also help fix billing or enrollment problems. Counselors don't sell insurance or charge fees, and the service is available statewide.",
+      "assistance_link": "https://www.kdads.ks.gov/services-programs/aging/medicare-programs/senior-health-insurance-counseling-for-kansas-shick",
+      "phone_number": "+18008605260"
+    },
+    {
+      "external_name": "ks_kancare_ombudsman",
+      "name": "KanCare Ombudsman",
+      "email": "KanCare.Ombudsman@ks.gov",
+      "description": "The KanCare Ombudsman Office helps KanCare members and applicants resolve problems with their application, coverage, access, or rights — including help completing a KanCare application. The service is free and available statewide.",
+      "assistance_link": "https://www.kancare.ks.gov/members/help-resources/kancare-ombudsman/about-contact-us",
+      "phone_number": "+18556438180"
+    }
+  ]
+}

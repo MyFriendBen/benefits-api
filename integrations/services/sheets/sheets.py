@@ -3,7 +3,10 @@ from django.conf import settings
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
 import json
-from integrations.util.cache import Cache
+import time
+import socket
+import ssl
+from googleapiclient.errors import HttpError
 
 
 class GoogleSheets:
@@ -30,12 +33,27 @@ class GoogleSheets:
 
     def data(self) -> list[list[any]]:
         """
-        return a list of rows in the cell range
+        return a list of rows in the cell range, with retry on transient errors.
         """
-        result = self.sheet.values().get(spreadsheetId=self.spreadsheet_id, range=self.cell_range).execute()
-        values = result.get("values", [])
-
-        return values
+        max_attempts = 3
+        for attempt in range(max_attempts):
+            try:
+                result = (
+                    self.sheet.values()
+                    .get(
+                        spreadsheetId=self.spreadsheet_id,
+                        range=self.cell_range,
+                    )
+                    .execute()
+                )
+                return result.get("values", [])
+            except Exception as exc:
+                is_transient = isinstance(exc, (ssl.SSLError, TimeoutError, socket.timeout)) or (
+                    isinstance(exc, HttpError) and exc.resp is not None and exc.resp.status in {429, 500, 502, 503, 504}
+                )
+                if attempt == max_attempts - 1 or not is_transient:
+                    raise
+                time.sleep(2**attempt)
 
     def data_by_column(self, *column_names: str) -> list[dict[str, any]]:
         """
@@ -90,16 +108,3 @@ class GoogleSheets:
                 missing_columns.append(column)
 
         raise self.ColumnDoesNotExist(f"The following column headers are missing: {missing_columns}")
-
-
-class GoogleSheetsCache(Cache):
-    expire_time = 60 * 60 * 24
-    default = []
-
-    sheet_id = ""
-    range_name = ""
-
-    def update(self):
-        sheet_values = GoogleSheets(self.sheet_id, self.range_name).data()
-
-        return sheet_values

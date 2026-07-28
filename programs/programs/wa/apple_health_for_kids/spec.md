@@ -122,7 +122,7 @@ Roll-up of the suggested improvements documented per data-gap criterion above. N
 | Income — earned + unearned by type | `income_streams[].type`, `.amount`, `.frequency`; `calc_gross_income()` |
 | WA residency (criterion 3) | `zipcode`, `county` |
 | MAGI no-asset rule (criterion 4) | `household_assets` collected but deliberately ignored |
-| Already-enrolled exclusion | `insurance.medicaid` per-member; `has_medicaid` household-level |
+| Already-enrolled exclusion | `insurance.medicaid` per-member; `has_benefit("medicaid")` household-level |
 
 ### Gaps closed by inclusivity assumption (no field change recommended)
 

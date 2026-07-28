@@ -10,11 +10,11 @@
 | # | Criterion | Screener Fields | Logic | Can Evaluate? | Notes | Source |
 |---|-----------|-----------------|-------|---------------|-------|--------|
 | 1 | Age 65+ OR age 21+ with disability | `household_member.age`, `household_member.is_disabled` | `age >= 65 OR (age >= 21 AND is_disabled == True)` | ✅ | `is_disabled` is a calculated field covering `disabled`, `long_term_disability`, and `visually_impaired`. For applicants 65+, disability status is not required. | CCSE Handbook §3000 |
-| 2 | Income at or below 300% FPL, OR categorically eligible | `household_size`, all income fields, `has_snap`, `has_ssi`, `has_tanf`, `has_medicaid` | `calc_gross_income('yearly', 'all') <= FPL_300_PERCENT[household_size] OR has_snap OR has_ssi OR has_tanf OR has_medicaid` | ✅ | Categorical eligibility (SSI, TANF, SNAP, Medicaid, SLMB, QMB) bypasses the income test. See [CCSE §3300](https://www.hhs.texas.gov/handbooks/community-care-services-eligibility-handbook/3300-income-eligibility). | CCSE Handbook §3300 |
+| 2 | Income at or below 300% FPL, OR categorically eligible | `household_size`, all income fields, `has_benefit("snap")`, `has_benefit("ssi")`, `has_benefit("tanf")`, `has_benefit("medicaid")` | `calc_gross_income('yearly', 'all') <= FPL_300_PERCENT[household_size] OR has_benefit("snap") OR has_benefit("ssi") OR has_benefit("tanf") OR has_benefit("medicaid")` | ✅ | Categorical eligibility (SSI, TANF, SNAP, Medicaid, SLMB, QMB) bypasses the income test. See [CCSE §3300](https://www.hhs.texas.gov/handbooks/community-care-services-eligibility-handbook/3300-income-eligibility). | CCSE Handbook §3300 |
 | 3 | Functionally eligible (needs ADL assistance) | `household_member.age`, `household_member.disabled`, `household_member.long_term_disability` | `age >= 65 OR is_disabled == True` | ⚠️ | Screener has general disability fields but no detailed ADL assessment; CCAD requires professional nursing assessment of specific ADL limitations. For applicants 65+, `is_disabled` is not required as a proxy — seniors may need ADL assistance without being marked as disabled. For applicants under 65, `is_disabled` (covering `disabled`, `long_term_disability`, and `visually_impaired`) is used as a proxy. | CCSE Handbook §3000 |
 | 4 | Texas residency | — | Handled by TX white label association | ✅ | Not evaluated separately — CCAD is associated exclusively with the TX white label, so non-TX screens are filtered out before this check applies. | CCSE Handbook §3000 |
 | 5 | Must not be residing in a nursing facility | — | — | ❌ | **Gap**: `housing_situation` field does not exist in the screener | CCSE Handbook §3000 |
-| 6 | Medicaid eligible or categorically eligible | `has_medicaid`, `has_snap`, `has_ssi`, `has_tanf` | `has_medicaid OR has_snap OR has_ssi OR has_tanf` | ✅ | Overlaps with Criterion 2 categorical path; listed separately for clarity | CCSE Handbook §3000 |
+| 6 | Medicaid eligible or categorically eligible | `has_benefit("medicaid")`, `has_benefit("snap")`, `has_benefit("ssi")`, `has_benefit("tanf")` | `has_benefit("medicaid") OR has_benefit("snap") OR has_benefit("ssi") OR has_benefit("tanf")` | ✅ | Overlaps with Criterion 2 categorical path; listed separately for clarity | CCSE Handbook §3000 |
 | 7 | Asset limit: $2,000 individual / $3,000 couple (Medicaid standards) | `household_assets` | Not enforced | ⚠️ | **Gap (not enforced)**: Asset exemptions (home equity, one vehicle, burial funds) are complex and not fully captured. A warning message is shown to users instead. | CCSE Handbook §3000 |
 | 8 | At risk of nursing facility placement without services | — | Clinical determination | ❌ | No screener field captures nursing facility risk level | CCSE Handbook §3000 |
 | 9 | U.S. citizenship or qualified immigration status | `legal_status` | Via `legal_status_required` config filter | ✅ | Per CCSE §3110: most CCSE services are available regardless of immigration status; only Community Attendant Services (CAS) and waiver services require citizenship/identity verification. Config includes all statuses (citizen, gc_5plus, gc_5less, refugee, otherWithWorkPermission, non_citizen). Warning message surfaces the CAS/waiver caveat. | CCSE Handbook §3110 |
@@ -23,12 +23,12 @@
 | 12 | Must choose CCAD over nursing facility placement | — | Applicant preference | ❌ | Determined during application process, not captured in screener | CCSE Handbook §3000 |
 | 13 | Services available in applicant's geographic area | — | — | ❌ | No data on service availability or waiting lists by region; waiting list information is surfaced via program config | CCSE Handbook §2000 |
 | 14 | No responsible party able to provide necessary care | — | Informal caregiver assessment | ❌ | No field captures availability of informal caregivers or family support | CCSE Handbook §3000 |
-| 15 | Must not already be receiving CCAD | — | — | ❌ | **Gap**: No `has_ccad` field on the Screen model; duplicate enrollment is not checked by the calculator. | — |
+| 15 | Must not already be receiving CCAD | — | — | ❌ | **Gap**: No `ccad` current benefit is tracked; duplicate enrollment is not checked by the calculator. | — |
 
 ## Coverage
 
 - **Evaluable**: 5 of 15 criteria (33%)
-- **Summary**: The evaluable criteria include age requirements, income limits with categorical eligibility (300% FPL or SSI/TANF/SNAP/Medicaid), and citizenship/immigration status via config filter. Texas residency is handled automatically by the TX white label. Critical gaps include housing situation (no `housing_situation` field in screener), duplicate enrollment detection (no `has_ccad` field), detailed ADL functional assessment, nursing facility risk determination, asset evaluation with Medicaid exemptions, and asset transfer history. The most significant limitation is the inability to perform detailed functional assessment and asset evaluation, both of which are core CCAD eligibility requirements.
+- **Summary**: The evaluable criteria include age requirements, income limits with categorical eligibility (300% FPL or SSI/TANF/SNAP/Medicaid), and citizenship/immigration status via config filter. Texas residency is handled automatically by the TX white label. Critical gaps include housing situation (no `housing_situation` field in screener), duplicate enrollment detection (no `ccad` current benefit), detailed ADL functional assessment, nursing facility risk determination, asset evaluation with Medicaid exemptions, and asset transfer history. The most significant limitation is the inability to perform detailed functional assessment and asset evaluation, both of which are core CCAD eligibility requirements.
 
 ## Benefit Value
 
@@ -199,7 +199,7 @@ Scenarios marked `[validation]` are included in `tx_ccad.json` as automated vali
 
 **Steps**:
 - **Location**: ZIP `78701`, County `Travis`
-- **Household**: 1 person, currently receiving SNAP (`has_snap = True`)
+- **Household**: 1 person, currently receiving SNAP
 - **Person 1**: DOB `January 1958` (age 68), Head of Household, U.S. Citizen, Social Security Retirement `$4,500/month` (above 300% FPL), no disability, no insurance
 
 **Why this matters**: Confirms that categorical eligibility (SNAP) overrides the income test — a senior above 300% FPL who receives SNAP should still qualify.
@@ -213,7 +213,7 @@ Scenarios marked `[validation]` are included in `tx_ccad.json` as automated vali
 
 **Steps**:
 - **Location**: ZIP `78701`, County `Travis County`
-- **Household**: 1 person, `has_tanf = True`
+- **Household**: 1 person, currently receiving TANF
 - **Person 1**: DOB `January 1958` (age 68), Head of Household, U.S. Citizen, Social Security Retirement `$4,500/month` (above 300% FPL), no insurance
 
 **Why this matters**: Confirms TANF (a household-level benefit) bypasses the income test independently of SNAP. Scenario 10 covers SNAP; this isolates TANF.

@@ -1,0 +1,57 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "program_category": {
+    "external_name": "ks_education",
+    "name": "Education",
+    "icon": "education"
+  },
+  "program": {
+    "name_abbreviated": "ks_promise_act",
+    "legal_status_required": [
+      "citizen"
+    ],
+    "name": "Kansas Promise Scholarship Act",
+    "description": "The Kansas Promise Scholarship is for students at Kansas community and technical colleges. It can cover tuition, fees, and books.\n\nThis is a last-dollar scholarship. Your other grants and scholarships pay first — this covers the rest. Loans don't count against it. The award goes to your student account.\n\nYou must also have the right educational background. Recent Kansas graduates and long-term Kansas residents often qualify. See the program page for the full list. The program must be in a high-demand field like health care, technology, or skilled trades. If you're near the income limit, apply anyway. The program uses your FAFSA income, which may be lower than your total earnings. After you finish, you must live and work in Kansas for two years. The scholarship has a lifetime limit — visit the program page for details.\n\nComplete the FAFSA and visit the program page to find out how to apply at your institution.",
+    "description_short": "Scholarship covering tuition, fees, and books at Kansas community and technical colleges",
+    "learn_more_link": "https://www.kansasregents.gov/students/student_financial_aid/promise-act-scholarship",
+    "apply_button_link": "https://sfa.kansasregents.gov/login.jsp",
+    "apply_button_description": "",
+    "estimated_application_time": "30 - 45 minutes",
+    "estimated_delivery_time": "4 - 6 weeks",
+    "estimated_value": "",
+    "has_calculator": true,
+    "value_type": "benefit",
+    "value_format": "estimated_annual",
+    "show_on_current_benefits": true,
+    "show_in_has_benefits_step": false,
+    "website_description": "Scholarship covering tuition, fees, and books at Kansas community and technical colleges"
+  },
+  "documents": [
+    {
+      "external_name": "ks_home",
+      "text": "Proof of Kansas address (e.g., utility bill, lease or mortgage statement, bank statement)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_id_proof",
+      "text": "Government-issued photo ID (e.g., driver's license, state ID, passport)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ks_fafsa",
+      "text": "Completed FAFSA (Free Application for Federal Student Aid)",
+      "link_url": "https://studentaid.gov/h/apply-for-aid/fafsa",
+      "link_text": "Complete the FAFSA"
+    },
+    {
+      "external_name": "ks_diploma_ged",
+      "text": "Proof of high school diploma or GED",
+      "link_url": "",
+      "link_text": ""
+    }
+  ]
+}

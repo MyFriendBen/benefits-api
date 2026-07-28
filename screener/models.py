@@ -11,6 +11,7 @@ from django.utils.translation import gettext_lazy as _
 from programs.util import Dependencies
 from django.conf import settings
 from .feature_flags import FeatureFlagConfig, WHITELABEL_FEATURE_FLAGS
+from .irs_parameters import get_qualifying_relative_threshold
 
 
 class WhiteLabel(models.Model):
@@ -71,88 +72,8 @@ class Screen(models.Model):
     user = models.ForeignKey(User, related_name="screens", on_delete=models.SET_NULL, blank=True, null=True)
     external_id = models.CharField(max_length=120, blank=True, null=True)
     request_language_code = models.CharField(max_length=12, blank=True, null=True)
+    # current_benefits: reverse FK from CurrentBenefit (related_name="current_benefits") — lists the specific programs already enrolled in
     has_benefits = models.CharField(max_length=32, default="preferNotToAnswer", blank=True, null=True)
-    has_tanf = models.BooleanField(default=False, blank=True, null=True)
-    has_wic = models.BooleanField(default=False, blank=True, null=True)
-    has_snap = models.BooleanField(default=False, blank=True, null=True)
-    has_sunbucks = models.BooleanField(default=False, blank=True, null=True)
-    has_lifeline = models.BooleanField(default=False, blank=True, null=True)
-    has_acp = models.BooleanField(default=False, blank=True, null=True)
-    has_eitc = models.BooleanField(default=False, blank=True, null=True)
-    has_coeitc = models.BooleanField(default=False, blank=True, null=True)
-    has_il_eitc = models.BooleanField(default=False, blank=True, null=True)
-    has_nslp = models.BooleanField(default=False, blank=True, null=True)
-    has_ctc = models.BooleanField(default=False, blank=True, null=True)
-    has_il_ctc = models.BooleanField(default=False, blank=True, null=True)
-    has_il_transit_reduced_fare = models.BooleanField(default=False, blank=True, null=True)
-    has_il_bap = models.BooleanField(default=False, blank=True, null=True)
-    has_il_hbwd = models.BooleanField(default=False, blank=True, null=True)
-    has_harris_county_rides = models.BooleanField(default=False, blank=True, null=True)
-    has_medicaid = models.BooleanField(default=False, blank=True, null=True)
-    has_rtdlive = models.BooleanField(default=False, blank=True, null=True)
-    has_ccap = models.BooleanField(default=False, blank=True, null=True)
-    has_mydenver = models.BooleanField(default=False, blank=True, null=True)
-    has_chp = models.BooleanField(default=False, blank=True, null=True)
-    has_ccb = models.BooleanField(default=False, blank=True, null=True)
-    has_ssi = models.BooleanField(default=False, blank=True, null=True)
-    has_andcs = models.BooleanField(default=False, blank=True, null=True)
-    has_cpcr = models.BooleanField(default=False, blank=True, null=True)
-    has_cdhcs = models.BooleanField(default=False, blank=True, null=True)
-    has_dpp = models.BooleanField(default=False, blank=True, null=True)
-    has_ede = models.BooleanField(default=False, blank=True, null=True)
-    has_erc = models.BooleanField(default=False, blank=True, null=True)
-    has_leap = models.BooleanField(default=False, blank=True, null=True)
-    has_il_liheap = models.BooleanField(default=False, blank=True, null=True)
-    has_ma_heap = models.BooleanField(default=False, blank=True, null=True)
-    has_nc_lieap = models.BooleanField(default=False, blank=True, null=True)
-    has_oap = models.BooleanField(default=False, blank=True, null=True)
-    has_nccip = models.BooleanField(default=False, blank=True, null=True)
-    has_ncscca = models.BooleanField(default=False, blank=True, null=True)
-    has_coctc = models.BooleanField(default=False, blank=True, null=True)
-    has_upk = models.BooleanField(default=False, blank=True, null=True)
-    has_ssdi = models.BooleanField(default=False, blank=True, null=True)
-    has_cowap = models.BooleanField(default=False, blank=True, null=True)
-    has_ncwap = models.BooleanField(default=False, blank=True, null=True)
-    has_wa_wap = models.BooleanField(default=False, blank=True, null=True)
-    has_ubp = models.BooleanField(default=False, blank=True, null=True)
-    has_pell_grant = models.BooleanField(default=False, blank=True, null=True)
-    has_rag = models.BooleanField(default=False, blank=True, null=True)
-    has_nfp = models.BooleanField(default=False, blank=True, null=True)
-    has_fatc = models.BooleanField(default=False, blank=True, null=True)
-    has_section_8 = models.BooleanField(default=False, blank=True, null=True)
-    has_csfp = models.BooleanField(default=False, blank=True, null=True)
-    has_ccdf = models.BooleanField(default=False, blank=True, null=True)
-    has_aca = models.BooleanField(default=False, blank=True, null=True)
-    has_ma_eaedc = models.BooleanField(default=False, blank=True, null=True)
-    has_ma_ssp = models.BooleanField(default=False, blank=True, null=True)
-    has_ma_mbta = models.BooleanField(default=False, blank=True, null=True)
-    has_ma_maeitc = models.BooleanField(default=False, blank=True, null=True)
-    has_ma_macfc = models.BooleanField(default=False, blank=True, null=True)
-    has_ma_homebridge = models.BooleanField(default=False, blank=True, null=True)
-    has_ma_dhsp_afterschool = models.BooleanField(default=False, blank=True, null=True)
-    has_ma_door_to_door = models.BooleanField(default=False, blank=True, null=True)
-    has_ma_taxi_discount = models.BooleanField(default=False, blank=True, null=True)
-    has_ma_cpp = models.BooleanField(default=False, blank=True, null=True)
-    has_ma_middle_income_rental = models.BooleanField(default=False, blank=True, null=True)
-    has_ma_cmsp = models.BooleanField(default=False, blank=True, null=True)
-    has_head_start = models.BooleanField(default=False, blank=True, null=True)
-    has_early_head_start = models.BooleanField(default=False, blank=True, null=True)
-    has_co_andso = models.BooleanField(default=False, blank=True, null=True)
-    has_co_care = models.BooleanField(default=False, blank=True, null=True)
-    has_cfhc = models.BooleanField(default=False, blank=True, null=True)
-    has_shitc = models.BooleanField(default=False, blank=True, null=True)
-    has_employer_hi = models.BooleanField(default=None, blank=True, null=True)
-    has_private_hi = models.BooleanField(default=None, blank=True, null=True)
-    has_medicaid_hi = models.BooleanField(default=None, blank=True, null=True)
-    has_medicare_hi = models.BooleanField(default=None, blank=True, null=True)
-    has_nc_medicare_savings = models.BooleanField(default=None, blank=True, null=True)
-    has_chp_hi = models.BooleanField(default=None, blank=True, null=True)
-    has_no_hi = models.BooleanField(default=None, blank=True, null=True)
-    has_va = models.BooleanField(default=None, blank=True, null=True)
-    has_project_cope = models.BooleanField(default=False, blank=True, null=True)
-    has_cesn_heap = models.BooleanField(default=False, blank=True, null=True)
-    has_tx_dart = models.BooleanField(default=False, blank=True, null=True)
-    has_ccs = models.BooleanField(default=False, blank=True, null=True)
     needs_food = models.BooleanField(default=False, blank=True, null=True)
     needs_baby_supplies = models.BooleanField(default=False, blank=True, null=True)
     needs_housing_help = models.BooleanField(default=False, blank=True, null=True)
@@ -602,16 +523,22 @@ class HouseholdMember(models.Model):
     def is_spouse(self) -> bool:
         return self.screen.relationship_map()[self.screen.get_head().id] == self.id
 
-    def is_dependent(self):
+    def is_dependent(self) -> bool:
         is_tax_unit_spouse = self.is_spouse()
         is_tax_unit_head = self.is_head()
-        is_tax_unit_dependent = (
-            (self.age <= 18 or (self.student and self.age <= 23) or self.has_disability())
-            and (self.calc_gross_income("yearly", ["all"]) <= self.screen.calc_gross_income("yearly", ["all"]) / 2)
-            and (not (is_tax_unit_head or is_tax_unit_spouse))
+        if is_tax_unit_head or is_tax_unit_spouse:
+            return False
+
+        # Path 1: Qualifying Child
+        is_qualifying_child = (self.age <= 18 or (self.student and self.age <= 23) or self.has_disability()) and (
+            self.calc_gross_income("yearly", ["all"]) <= self.screen.calc_gross_income("yearly", ["all"]) / 2
         )
 
-        return is_tax_unit_dependent
+        # Path 2: Qualifying Relative
+        threshold = get_qualifying_relative_threshold(self.screen.get_reference_date().year)
+        is_qualifying_relative = self.calc_gross_income("yearly", ["all"]) < threshold
+
+        return is_qualifying_child or is_qualifying_relative
 
     def is_in_tax_unit(self):
         return self.is_head() or self.is_spouse() or self.is_dependent()
@@ -842,6 +769,7 @@ class Insurance(models.Model):
             "co_medicaid": self.medicaid,
             "wa_apple_health_medicaid": self.medicaid,
             "wa_apple_health_for_kids": self.chp,
+            "ks_chip": self.chp,
             "ma_mass_health": self.mass_health or self.medicaid,
             "medicare": self.medicare,
             "emergency_medicaid": self.emergency_medicaid,

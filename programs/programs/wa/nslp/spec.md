@@ -67,11 +67,11 @@ The calculator should be intentionally inclusive where MFB does not capture scho
 
    - **Screener fields:**
       - `has_benefits`
-      - `has_snap`
-      - `has_tanf`
-   - **How to implement:** If the household has at least one child/student who meets the MFB proxy and `has_snap` or `has_tanf` is true, screen the household as eligible regardless of income. Do not implement FDPIR as an automatic eligibility check unless a `has_fdpir` or equivalent field is confirmed.
+      - `has_benefit("snap")`
+      - `has_benefit("tanf")`
+   - **How to implement:** If the household has at least one child/student who meets the MFB proxy and `has_benefit("snap")` or `has_benefit("tanf")` is true, screen the household as eligible regardless of income. Do not implement FDPIR as an automatic eligibility check unless a `fdpir` current benefit or equivalent is confirmed.
    - **Notes:** In Washington, the application refers to SNAP as **Basic Food**. Federal rules extend categorical eligibility to all children in a household receiving SNAP, FDPIR, or TANF. The OSPI application asks for FDPIR case numbers, but MFB does not appear to capture FDPIR participation in the current screener field list. User-facing copy should mention that some pathways may not be fully captured by the screener.
-   - **Suggested screener improvement:** Consider adding `has_fdpir` to the WA current-benefits list if FDPIR should be reusable for categorical eligibility across programs.
+   - **Suggested screener improvement:** Consider adding `fdpir` to the WA current-benefits list if FDPIR should be reusable for categorical eligibility across programs.
    - **Sources:**
       - 7 CFR § 245.2
       - 7 CFR § 245.6(b)(7)
@@ -82,14 +82,14 @@ The calculator should be intentionally inclusive where MFB does not capture scho
 5. **Individual child is categorically eligible for free meals through Head Start, Early Head Start, foster care, homelessness, migrant status, or runaway status** ⚠️ *partial data gap*
 
    - **Screener fields:**
-      - `has_head_start`
-      - `has_early_head_start`
+      - `has_benefit("head_start")`
+      - `has_benefit("early_head_start")`
       - `household_members[].relationship` where relationship is `fosterChild` (partial proxy only)
       - `housing_situation` only if confirmed available for the WA flow (partial proxy only)
-   - **How to implement:** Treat `has_head_start` or `has_early_head_start` as a categorical pathway when a child/student who meets the MFB proxy is present. Treat `relationship == "fosterChild"` as a partial proxy for foster categorical eligibility, but note that formal foster status is ultimately verified by the school/agency. Do not implement migrant or runaway status unless a screener field is added. Do not rely on `needs_housing_help` as a homelessness proxy.
+   - **How to implement:** Treat `has_benefit("head_start")` or `has_benefit("early_head_start")` as a categorical pathway when a child/student who meets the MFB proxy is present. Treat `relationship == "fosterChild"` as a partial proxy for foster categorical eligibility, but note that formal foster status is ultimately verified by the school/agency. Do not implement migrant or runaway status unless a screener field is added. Do not rely on `needs_housing_help` as a homelessness proxy.
    - **Notes:** Under federal rules, foster/homeless/migrant/runaway/Head Start categorical eligibility is individual to that child and does not extend to all other children in the household. MFB should not overextend this pathway across the whole household unless the implementing calculator only returns one household-level recommendation and documents the simplification.
    - **Suggested screener improvement:** Do not add sensitive questions for this initial launch unless the team decides these pathways are important enough to screen directly. If added later, use simple optional yes/no questions, and avoid collecting more detail than needed.
-   - **Dev note (validation):** `has_head_start` and `has_early_head_start` exist in the screener model but are **not** currently in the `test_case_schema.json` household properties. Validation scenarios that test the Head Start pathway (Spec Scenario 7 below) cannot be represented in the JSON format. Recommend a follow-up engineering ticket to add these fields to `test_case_schema.json` so the Head Start categorical pathway becomes validation-testable. Coverage gap is acknowledged in the current 3-scenario validation file.
+   - **Dev note (validation):** The `head_start` and `early_head_start` current benefits exist in the screener's current-benefits list but are **not** currently in the `test_case_schema.json` household properties. Validation scenarios that test the Head Start pathway (Spec Scenario 7 below) cannot be represented in the JSON format. Recommend a follow-up engineering ticket to add these fields to `test_case_schema.json` so the Head Start categorical pathway becomes validation-testable. Coverage gap is acknowledged in the current 3-scenario validation file.
    - **Sources:**
       - 7 CFR § 245.2
       - 7 CFR § 245.6(b)(8)
@@ -101,8 +101,8 @@ The calculator should be intentionally inclusive where MFB does not capture scho
 
 ### Medicaid direct certification
 
-- **Screener fields:** `has_medicaid` and member-level Medicaid fields are **not sufficient by themselves**.
-- **How to implement:** Do not screen a household as NSLP-eligible based only on `has_medicaid`. The household may still qualify through income or other categorical pathways.
+- **Screener fields:** `has_benefit("medicaid")` and member-level Medicaid fields are **not sufficient by themselves**.
+- **How to implement:** Do not screen a household as NSLP-eligible based only on `has_benefit("medicaid")`. The household may still qualify through income or other categorical pathways.
 - **Notes:** Federal law allows direct certification through Medicaid for children in families with income at or below a specified poverty-line threshold, and federal verification rules require Medicaid income/household-size detail in states with higher Medicaid income limits. MFB does not capture the Medicaid income percentage or direct-certification match data needed to safely use this pathway.
 - **Suggested screener improvement:** Do not add a generic Medicaid shortcut. Only implement this pathway if MFB receives reliable state Medicaid direct-certification data or a direct-certification indicator.
 - **Sources:**
@@ -124,8 +124,8 @@ The calculator should be intentionally inclusive where MFB does not capture scho
 
 - **Screener fields:**
    - `has_benefits`
-   - `has_nslp`
-- **How to implement:** If `has_nslp` is true, suppress the program from the results or show it as already received, depending on MFB's standard current-benefits behavior.
+   - `has_benefit("nslp")`
+- **How to implement:** If `has_benefit("nslp")` is true, suppress the program from the results or show it as already received, depending on MFB's standard current-benefits behavior.
 - **Notes:** This is not an eligibility criterion; it is display/suppression logic.
 
 ## Priority Criteria
@@ -176,13 +176,13 @@ For mixed pay frequencies, annualize using the OSPI method:
 
 ## Suggested Implementation Logic
 
-1. If `has_nslp` is true, suppress or mark as already received.
+1. If `has_benefit("nslp")` is true, suppress or mark as already received.
 2. Count likely eligible students:
    - relationship in `child`, `fosterChild`, `grandChild`
    - age 5 through 18 using `birth_month` and `birth_year`
 3. If count is 0, return ineligible.
-4. If `has_snap` or `has_tanf` is true, return eligible with value `count * 828`.
-5. If `has_head_start` or `has_early_head_start` is true, return eligible with value `count * 828`, while noting this is an imperfect household-level simplification.
+4. If `has_benefit("snap")` or `has_benefit("tanf")` is true, return eligible with value `count * 828`.
+5. If `has_benefit("head_start")` or `has_benefit("early_head_start")` is true, return eligible with value `count * 828`, while noting this is an imperfect household-level simplification.
 6. Determine the household's income frequency. Compare household gross income to the OSPI reduced-price limit for `household_size` using the **frequency-matched column** (monthly income → monthly limit; yearly income → annual limit). If income streams are at mixed frequencies, annualize using `calc_gross_income("yearly", ["all"])` and compare to the annual limit.
 7. If income is at or below the reduced-price limit for the matched frequency, return eligible with value `count * 828`; otherwise return ineligible, but the program description should still explain that school-wide free meals may apply.
 
@@ -234,7 +234,7 @@ For mixed pay frequencies, annualize using the OSPI method:
 - Person 3: `child`, born September 2013, no income.
 - Current benefits: Medicaid reported, but no SNAP, TANF, Head Start, Early Head Start, or NSLP.
 
-**Why this matters:** `has_medicaid` alone is not enough because MFB does not capture Medicaid direct-certification income/match data. `$4,110/mo` exceeds the monthly limit ($4,109) directly and also exceeds the annual limit when annualized ($49,320 vs $49,303) — so this is unambiguously ineligible under any comparison approach.
+**Why this matters:** `has_benefit("medicaid")` alone is not enough because MFB does not capture Medicaid direct-certification income/match data. `$4,110/mo` exceeds the monthly limit ($4,109) directly and also exceeds the annual limit when annualized ($49,320 vs $49,303) — so this is unambiguously ineligible under any comparison approach.
 
 ### Scenario 4: Ineligible because there is no likely school-meal-eligible child
 
@@ -281,7 +281,7 @@ For mixed pay frequencies, annualize using the OSPI method:
 - Person 3: `child`, born October 2017, no income.
 - Current benefits: TANF selected; no NSLP.
 
-**Why this matters:** This separately validates `has_tanf`, which is a screenable household categorical pathway.
+**Why this matters:** This separately validates `has_benefit("tanf")`, which is a screenable household categorical pathway.
 
 ### Scenario 7: Eligible through Head Start / Early Head Start pathway
 
@@ -299,7 +299,7 @@ For mixed pay frequencies, annualize using the OSPI method:
 
 **Why this matters:** This validates the screenable child categorical pathway and checks that income does not block the categorical pathway.
 
-**Dev note:** This scenario cannot currently be expressed in the validation JSON because `has_head_start` and `has_early_head_start` are not in `test_case_schema.json` household properties. See Criterion 5 dev note. The calculator should still implement this pathway.
+**Dev note:** This scenario cannot currently be expressed in the validation JSON because the `head_start` and `early_head_start` current benefits are not in `test_case_schema.json` household properties. See Criterion 5 dev note. The calculator should still implement this pathway.
 
 ### Scenario 8: Already receiving NSLP suppression
 
@@ -346,10 +346,10 @@ The validation file contains 3 scenarios chosen to give broad coverage of the el
 
 2. **Ineligible by income — household just above the reduced-price limit; Medicaid alone is not enough**
    - WA household of 3 (head + spouse + child age 12). Head earns `$4,110/mo` wages — `$1` above the reduced-price monthly limit (`$4,109`). Household reports Medicaid but not SNAP, TANF, or Head Start.
-   - Expected: ineligible. Validates that `has_medicaid` alone is not a categorical pathway.
+   - Expected: ineligible. Validates that `has_benefit("medicaid")` alone is not a categorical pathway.
 
 3. **Eligible by categorical pathway — household receives Basic Food/SNAP despite income above the reduced-price limit**
-   - WA household of 3 (head + spouse + child age 10). Head earns `$7,000/mo` wages — far above the reduced-price limit — but `has_snap: true`.
+   - WA household of 3 (head + spouse + child age 10). Head earns `$7,000/mo` wages — far above the reduced-price limit — but receiving SNAP (`has_benefit("snap")`).
    - Expected: eligible, estimated value `$828`. Validates the SNAP categorical pathway overrides the income test.
 
 These 3 cover: (a) the standard income-eligible golden path, (b) the most common disqualifying reason with a noise variable (Medicaid) thrown in, and (c) the highest-volume categorical override. Spec Scenarios 2 (boundary), 4 (no child), 6 (TANF), 7 (Head Start), 8 (suppression), and 9 (multi-child value scaling) are documented in the spec but not in `wa_nslp.json` due to either the 3-scenario design constraint or current test-schema limitations (see Criterion 5 dev note for Head Start).

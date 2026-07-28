@@ -305,63 +305,12 @@ class IlMpe(PolicyEngineMembersCalculator):
         return 1
 
 
-class IlMsp(PolicyEngineMembersCalculator):
-    """
-    Illinois Medicare Savings Program (MSP)
+class IlMsp(federal_member.Msp):
+    """Illinois Medicare Savings Program. Federal ``Msp`` plus the IL state code and
+    ``IlMedicaid`` inputs (see ``Msp`` for why the Medicaid inputs are required)."""
 
-    Helps pay Medicare premiums, deductibles, and coinsurance for low-income
-    Medicare-eligible individuals.
-
-    Eligibility:
-        - Medicare eligible (age 65+ or SSDI for 24+ months)
-        - Meets income limits (SSI methodology)
-        - Meets asset limits ($9,660 individual / $14,470 couple for 2025)
-        - Illinois resident
-
-    Categories (determined by PolicyEngine):
-        - QMB (≤100% FPL): Part A/B premiums, deductibles, coinsurance
-        - SLMB (100-120% FPL): Part B premium only
-        - QI (120-135% FPL, no other Medicaid): Part B premium only
-
-    Limitations:
-        - SSDI pathway partially supported: we don't collect months on SSDI, but
-          we override Medicare eligibility for users who have Medicare selected
-        - Assumes 40 quarters of Medicare-covered employment (Part A is free);
-          ~99% of beneficiaries meet this threshold (per CMS)
-        - Benefit value is premium savings only; QMB deductible/coinsurance
-          coverage (~$1,933/year) is not included in the Policy Engine calculation
-
-    Note: Includes IlMedicaid.pe_inputs because QI requires checking that the
-    individual is not eligible for other Medicaid benefits.
-
-    References:
-        - IL DHS MSP: https://www.dhs.state.il.us/?item=33698
-        - Medicare.gov MSP: https://www.medicare.gov/basics/costs/help/medicare-savings-programs
-        - 2025 Medicare costs: https://www.cms.gov/newsroom/fact-sheets/2025-medicare-parts-b-premiums-and-deductibles
-    """
-
-    pe_name = "msp"
     pe_inputs = [
-        # is_medicare_eligible - override PE's calculation when user has Medicare selected
-        member_dependency.IsMedicareEligibleDependency,
-        member_dependency.AgeDependency,
-        member_dependency.SsdiReportedDependency,
-        # months_receiving_social_security_disability - not collected (see limitation #1)
-        # msp_countable_income (uses SSI methodology)
-        member_dependency.SsiEarnedIncomeDependency,
-        member_dependency.SsiUnearnedIncomeDependency,
-        # msp_asset_eligible
-        spm_dependency.CashAssetsDependency,
-        # state
+        *federal_member.Msp.pe_inputs,
         household_dependency.IlStateCodeDependency,
-        # Sends 40 quarters → is_premium_free_part_a=True → base_part_a_premium=$0
-        # QMB benefit value = Part B premium only (~99% of beneficiaries have free Part A)
-        member_dependency.MedicareQuartersOfCoverageDependency,
-        # Medicaid dependencies (for is_medicaid_eligible check in MSP)
         *IlMedicaid.pe_inputs,
-    ]
-    pe_outputs = [
-        member_dependency.MspEligible,
-        member_dependency.MspCategory,
-        member_dependency.Msp,
     ]

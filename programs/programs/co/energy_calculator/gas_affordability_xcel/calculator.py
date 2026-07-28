@@ -2,7 +2,6 @@ from programs.programs.calc import Eligibility, ProgramCalculator
 from programs.programs.co.energy_calculator.energy_assistance.calculator import EnergyCalculatorEnergyAssistance
 from programs.programs.co.energy_calculator.energy_outreach.calculator import EnergyCalculatorEnergyOutreach
 from programs.programs.co.energy_calculator.util import has_renter_expenses
-from programs.programs.co.energy_calculator.utility_bill_pay.calculator import EnergyCalculatorUtilityBillPay
 from programs.programs.co.energy_calculator.weatherization_assistance.calculator import (
     EnergyCalculatorWeatherizationAssistance,
 )
@@ -14,14 +13,12 @@ class EnergyCalculatorGasAffordabilityXcel(ProgramCalculator):
         *EnergyCalculatorEnergyAssistance.dependencies,
         *EnergyCalculatorEnergyOutreach.dependencies,
         *EnergyCalculatorWeatherizationAssistance.dependencies,
-        *EnergyCalculatorUtilityBillPay.dependencies,
         "energy_calculator",
     ]
     presumptive_eligibility = [
         "cesn_leap",
         "cesn_eoc",
         "cesn_cowap",
-        "cesn_ubp",
     ]
     gas_providers = ["co-xcel-energy-gas"]
 

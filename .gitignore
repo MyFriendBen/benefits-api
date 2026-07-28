@@ -1,6 +1,7 @@
 # Distribution / packaging
 .Python
 venv/
+venv*/
 env/
 *.sqlite3
 .idea/
@@ -45,3 +46,6 @@ readability-output/
 
 # Script for adding specific resources
 programs/management/commands/import_urgent_need_config_data/import_new_resources.sh
+
+# Old irrelevant files
+_archive/

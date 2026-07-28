@@ -2059,16 +2059,6 @@ class CesnConfigurationData(ConfigurationData):
                         "_default_message": "Home energy efficiency upgrades (Colorado Springs Utilities)",
                     },
                 },
-                "ubp": {
-                    "name": {
-                        "_label": "housingAndUtilities.ubp",
-                        "_default_message": "Colorado Utility Bill Help Program: ",
-                    },
-                    "description": {
-                        "_label": "housingAndUtilities.ubp_desc",
-                        "_default_message": "Help paying utility bills",
-                    },
-                },
                 "coPropTaxRentHeatCreditRebate": {
                     "name": {
                         "_label": "cashAssistanceBenefits.coPropTaxRentHeatCreditRebate",
@@ -2198,7 +2188,6 @@ class CesnConfigurationData(ConfigurationData):
                 "dont_show_category_values",
                 "logo_landing_page_link",
                 "no_lets_get_started",
-                "help_bubble_always_open",
                 "small_header_language_dropdown",
             ]
         },
