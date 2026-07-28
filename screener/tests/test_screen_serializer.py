@@ -70,7 +70,7 @@ class WriteCurrentBenefitsTests(TestCase):
 
     def test_new_path_injects_ssi_from_income_without_tile(self):
         """sSI income implies SSI even when the user didn't tick the SSI tile."""
-        seed_program(self.white_label, "ssi")
+        seed_program(self.white_label, "ssi", base_program="ssi")
         head = HouseholdMember.objects.create(
             screen=self.screen, relationship="headOfHousehold", age=40, has_income=True
         )
@@ -85,7 +85,7 @@ class WriteCurrentBenefitsTests(TestCase):
 
     def test_new_path_income_wins_over_explicit_deselect(self):
         """An explicit deselect can't remove SSI when sSI income is present (OR semantics)."""
-        seed_program(self.white_label, "ssi")
+        seed_program(self.white_label, "ssi", base_program="ssi")
         head = HouseholdMember.objects.create(
             screen=self.screen, relationship="headOfHousehold", age=40, has_income=True
         )
@@ -100,15 +100,18 @@ class WriteCurrentBenefitsTests(TestCase):
 
     def test_new_path_no_ssi_without_income_or_tile(self):
         """No SSI tile and no sSI income → SSI is not written."""
-        seed_program(self.white_label, "ssi")
+        seed_program(self.white_label, "ssi", base_program="ssi")
 
         _write_current_benefits(self.screen, ["snap"])
 
         self.assertEqual(self._benefit_names(self.screen), {"snap"})
 
     def test_new_path_derived_ssi_variant_not_in_other_wl(self):
-        """Derived SSI variants for other WLs (e.g. wa_ssi) aren't written to this WL."""
-        seed_program(self.white_label, "ssi")  # this WL only offers "ssi"
+        """Derivation resolves within the screen's white label — another WL's variant of the
+        same base program (e.g. wa_ssi on a CO screen) is never written."""
+        seed_program(self.white_label, "ssi", base_program="ssi")  # this WL only offers "ssi"
+        other_wl = WhiteLabel.objects.create(name="Other", code="other", state_code="OT")
+        seed_program(other_wl, "other_ssi", base_program="ssi")
         head = HouseholdMember.objects.create(
             screen=self.screen, relationship="headOfHousehold", age=40, has_income=True
         )
@@ -118,8 +121,85 @@ class WriteCurrentBenefitsTests(TestCase):
 
         _write_current_benefits(self.screen, [])
 
-        # Only the variant this WL offers is written; tx_ssi / wa_ssi / cesn_ssi are dropped.
         self.assertEqual(self._benefit_names(self.screen), {"ssi"})
+
+    def test_new_path_derives_prefixed_variant_via_base_program(self):
+        """A prefixed-only variant is derived through base_program. Regression: the previous
+        hardcoded name list ({ssi, tx_ssi, wa_ssi, cesn_ssi}) missed ks_ssi entirely, so KS
+        screens never recorded SSI receipt from reported income."""
+        seed_program(self.white_label, "ks_ssi", base_program="ssi")
+        head = HouseholdMember.objects.create(
+            screen=self.screen, relationship="headOfHousehold", age=40, has_income=True
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=head, type="sSI", amount=500, frequency="monthly"
+        )
+
+        _write_current_benefits(self.screen, [])
+
+        self.assertEqual(self._benefit_names(self.screen), {"ks_ssi"})
+
+    def test_new_path_injects_snap_from_income_without_tile(self):
+        """A reported SNAP income amount implies SNAP receipt (MFB-1382), so the amount and
+        the receipt signal can't disagree."""
+        seed_program(self.white_label, "test_snap", base_program="snap")
+        head = HouseholdMember.objects.create(
+            screen=self.screen, relationship="headOfHousehold", age=40, has_income=True
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=head, type="snap", amount=200, frequency="monthly"
+        )
+
+        _write_current_benefits(self.screen, [])
+
+        self.assertEqual(self._benefit_names(self.screen), {"test_snap"})
+
+    def test_new_path_injects_wic_from_income_without_tile(self):
+        """A reported WIC income amount implies WIC receipt."""
+        seed_program(self.white_label, "test_wic", base_program="wic")
+        head = HouseholdMember.objects.create(
+            screen=self.screen, relationship="headOfHousehold", age=30, has_income=True
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=head, type="wic", amount=50, frequency="monthly"
+        )
+
+        _write_current_benefits(self.screen, [])
+
+        self.assertEqual(self._benefit_names(self.screen), {"test_wic"})
+
+    def test_new_path_derivation_prefers_active_variant(self):
+        """When a white label carries both a live and a retired variant of one base program
+        (CO has co_wic active and a retired wic row), only the live one is recorded."""
+        seed_program(self.white_label, "live_wic", base_program="wic")
+        seed_program(self.white_label, "retired_wic", base_program="wic")
+        # new_program() creates rows inactive, so the live variant is switched on explicitly.
+        Program.objects.filter(white_label=self.white_label, name_abbreviated="live_wic").update(active=True)
+        head = HouseholdMember.objects.create(
+            screen=self.screen, relationship="headOfHousehold", age=30, has_income=True
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=head, type="wic", amount=50, frequency="monthly"
+        )
+
+        _write_current_benefits(self.screen, [])
+
+        self.assertEqual(self._benefit_names(self.screen), {"live_wic"})
+
+    def test_new_path_derivation_falls_back_to_retired_variant(self):
+        """If every variant of a base program is retired, receipt is still recorded — the
+        retired row is the only record available."""
+        seed_program(self.white_label, "retired_snap", base_program="snap")  # inactive by default
+        head = HouseholdMember.objects.create(
+            screen=self.screen, relationship="headOfHousehold", age=40, has_income=True
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=head, type="snap", amount=200, frequency="monthly"
+        )
+
+        _write_current_benefits(self.screen, [])
+
+        self.assertEqual(self._benefit_names(self.screen), {"retired_snap"})
 
 
 class ScreenSerializerUpdateTests(TestCase):
