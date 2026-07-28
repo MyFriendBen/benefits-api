@@ -6,12 +6,12 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("screener", "0156_add_needs_aging_resources"),
+        ("programs", "0162_alter_program_base_program"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name="programeligibilitysnapshot",
+            model_name="program",
             name="value_type",
         ),
     ]
