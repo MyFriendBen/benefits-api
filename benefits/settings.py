@@ -317,45 +317,46 @@ if config("SENTRY_DSN", None) is not None:
 django_heroku.settings(locals())
 
 # Cache Configuration
-# Multiple cache backends for different use cases
-# Heroku Redis automatically sets REDIS_URL when the add-on is provisioned
+# Uses Redis in production (REDIS_URL is set automatically by the Heroku Redis add-on).
+# Falls back to in-memory cache for local development when REDIS_URL is not set.
 REDIS_URL = config("REDIS_URL", default=None)
 
-# Always provide both cache backends
-CACHES = {
-    "default": {
-        # Use in-memory cache for Parler translations by default
-        # This avoids Redis connection issues and keeps translations fast
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "parler-translations",
-        "TIMEOUT": 300,
-        "OPTIONS": {
-            "MAX_ENTRIES": 10000,
-        },
-    },
-}
-
-# Add Redis cache backend if REDIS_URL is available
-if REDIS_URL:  # pragma: no cover
-    CACHES["redis"] = {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": REDIS_URL,
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            # Connection pool settings (good for production with multiple dynos)
-            "CONNECTION_POOL_KWARGS": {
-                "max_connections": 50,
-                "retry_on_timeout": True,
+if REDIS_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_URL,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                "CONNECTION_POOL_KWARGS": {
+                    "max_connections": 50,
+                    "retry_on_timeout": True,
+                },
+                "SOCKET_CONNECT_TIMEOUT": 5,  # seconds
+                "SOCKET_TIMEOUT": 5,  # seconds
+                # If Redis is down, treat it as a cache miss instead of raising —
+                # callers (including Parler) fall through to their source of truth
+                # rather than crashing the page.
+                "IGNORE_EXCEPTIONS": True,
             },
-            "SOCKET_CONNECT_TIMEOUT": 5,  # seconds
-            "SOCKET_TIMEOUT": 5,  # seconds
+            "KEY_PREFIX": "benefits",
+            "TIMEOUT": 300,
         },
-        "KEY_PREFIX": "benefits",  # Namespace for all cache keys
-        "TIMEOUT": 300,  # Default timeout: 5 minutes
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "parler-translations",
+            "TIMEOUT": 300,
+            "OPTIONS": {
+                "MAX_ENTRIES": 10000,
+            },
+        },
     }
 
-# Configure Parler to use the default (LocMemCache) backend
 PARLER_CACHE_BACKEND = "default"
+
 
 # UNFOLD SETTINGS
 UNFOLD = {
