@@ -1440,44 +1440,17 @@ class MoConfigurationData(ConfigurationData):
     # REFERRER DATA
     # ==========================================================================================
 
+    # MO uses generic MFB branding and the default step directory, so it inherits
+    # everything from base and overrides only the values that are MO-specific:
+    # the share link, the state name, and the no-results message.
     referrer_data = {
-        "theme": {"default": "default"},
-        "logoSource": {"default": "MFB_Logo"},
-        "logoAlt": {
-            "default": {
-                "id": "referrerHook.logoAlts.default",
-                "defaultMessage": "MyFriendBen home page button",
-            },
-        },
-        "logoFooterSource": {"default": "MFB_Logo"},
-        "logoFooterAlt": {
-            "default": {"id": "footer.logo.alt", "defaultMessage": "MFB Logo"},
-        },
-        "logoClass": {"default": "logo"},
-        "shareLink": {
-            "default": "https://screener.myfriendben.org/mo/step-1",
-        },
-        "stepDirectory": {
-            "default": [
-                "zipcode",
-                # the hhSize and hhData have to be consecutive
-                "householdSize",
-                "householdData",
-                "hasExpenses",
-                "householdAssets",
-                "hasBenefits",
-                "acuteHHConditions",
-                "referralSource",
-                "signUpInfo",
-            ],
-        },
-        "uiOptions": {"default": []},
+        **ConfigurationData.referrer_data,
+        "shareLink": {"default": "https://screener.myfriendben.org/mo/step-1"},
+        "stateName": {"default": "Missouri"},
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",
                 "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. If you indicated need for an immediate resource, please click on the \"Near-Term Benefits\" tab. For additional resources, please click the 'More Help' button below to get the resources you're looking for.",
             },
         },
-        "defaultLanguage": {"default": "en-us"},
-        "stateName": {"default": "Missouri"},
     }
