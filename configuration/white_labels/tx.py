@@ -3171,7 +3171,10 @@ class TxConfigurationData(ConfigurationData):
         "es": "https://www.myfriendben.org/privacidad/",
     }
 
+    # Inherit base referrer_data (favicon, noResultMessage, uiOptions, etc.) and
+    # override only the keys TX customizes.
     referrer_data = {
+        **ConfigurationData.referrer_data,
         "theme": {"default": "default"},
         "logoSource": {
             "default": "MFB_Logo",
@@ -3204,15 +3207,8 @@ class TxConfigurationData(ConfigurationData):
                 "signUpInfo",
             ],
         },
-        "uiOptions": {"default": []},
         "defaultLanguage": {"default": "en-us"},
         "stateName": {"default": "Texas"},
-        "noResultMessage": {
-            "default": {
-                "_label": "noResultMessage",
-                "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. If you indicated need for an immediate resource, please click on the \"Near-Term Benefits\" tab. For additional resources, please click the 'More Help' button below to get the resources you're looking for.",
-            },
-        },
     }
 
     override_text = {}

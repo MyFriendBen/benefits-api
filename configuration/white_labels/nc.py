@@ -2571,7 +2571,10 @@ class NcConfigurationData(ConfigurationData):
         },
     }
 
+    # Inherit base referrer_data (favicon, uiOptions, etc.) and override only the
+    # keys NC customizes. NC keeps its own noResultMessage (noResultMessage.nc key).
     referrer_data = {
+        **ConfigurationData.referrer_data,
         "theme": {"default": "default", "211nc": "twoOneOneNC", "lanc": "nc_lanc", "ccla": "nc_ccla"},
         "logoSource": {
             "default": "MFB_NCLogo",

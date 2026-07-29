@@ -60,7 +60,7 @@ This directory contains configuration files for MyFriendBen white labels (state/
 
    Then add any WL-specific partner codes on top of those.
 
-8. **Update Fillout Feedback Form:**
+9. **Update Fillout Feedback Form:**
 
    Add the new state to the feedback form so users can report issues/feedback for the new white label:
 
@@ -69,7 +69,7 @@ This directory contains configuration files for MyFriendBen white labels (state/
    - Add your state name (e.g., "Texas", "Illinois", etc.) as a new option
    - Publish the changes
 
-8. **Configure HubSpot Integration (Step 1 of 2):**
+10. **Configure HubSpot Integration (Step 1 of 2):**
 
    Add the state code to the HubSpot `states` property dropdown to enable texting integration:
 
@@ -77,7 +77,7 @@ This directory contains configuration files for MyFriendBen white labels (state/
    - Add your state code (e.g., "TX", "IL", "NC") to the allowed options
    - Save the changes
 
-8. **Add HubSpot Integration Class (Step 2 of 2):**
+11. **Add HubSpot Integration Class (Step 2 of 2):**
 
    Create a state-specific HubSpot integration class in `integrations/services/cms_integration.py`:
 
@@ -100,6 +100,14 @@ This directory contains configuration files for MyFriendBen white labels (state/
    ```
 
    Finally, set the `cms_method` in the Django admin for your white label to match the key (e.g., `"tx_hubspot"`)
+
+12. **Add Translation rows for new `_label` keys:**
+
+    Any new `_label` translation keys introduced by your config (e.g. `moreHelp.211.name.tx`, `healthInsuranceOptions.medicaid.tx`, `healthCareBenefits.medicaid.tx`) do **not** auto-create. Add a Translation row for each new key in the admin portal, **per environment (staging and production)**:
+
+    - Log in to the admin portal (staging, then production)
+    - Add each new `_label` key with translations for all supported languages
+    - Missing rows fall back to the `_default_message`, so an untranslated key silently ships English — double-check every new key exists in each environment
 
 ## File Structure
 
