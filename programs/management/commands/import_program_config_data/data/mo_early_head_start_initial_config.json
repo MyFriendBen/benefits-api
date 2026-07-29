@@ -1,0 +1,94 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "program_category": {
+    "external_name": "mo_child_care",
+    "name": "Child Care, Youth, and Education",
+    "icon": "child_care"
+  },
+  "program": {
+    "name_abbreviated": "mo_early_head_start",
+    "base_program": "early_head_start",
+    "year": 2026,
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission",
+      "non_citizen"
+    ],
+    "name": "Early Head Start",
+    "description": "Early Head Start is a free program for babies and toddlers. Some local programs also serve pregnant women. It helps children learn and grow.\n\nLocal Early Head Start programs may offer home visits. They can help with learning, parenting, and health. Families get free services and support, not money.\n\nFamilies without stable housing may qualify even if this estimate says they may not. Openings, services, and support for pregnant women can vary by local program.\n\nSelect \"Find your local Early Head Start agency\" to locate a nearby program and learn how to apply.",
+    "description_short": "Free early learning and family support for babies, toddlers, and pregnant women",
+    "learn_more_link": "https://dese.mo.gov/childhood/quality-programs/preschool-programs/early-head-start",
+    "apply_button_link": "https://headstart.gov/center-locator",
+    "apply_button_description": "Find your local Early Head Start agency",
+    "estimated_application_time": "30 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_type": "benefit",
+    "value_format": "estimated_annual",
+    "has_calculator": true,
+    "show_on_current_benefits": true,
+    "show_in_has_benefits_step": false,
+    "website_description": "Free early learning and family support for babies, toddlers, and pregnant women"
+  },
+  "documents": [
+    {
+      "external_name": "mo_home",
+      "text": "Proof of home address, if requested (ex: lease, utility bill)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_earned_income",
+      "text": "Proof of earned income, if requested (ex: pay stubs, tax returns, W-2, 1099)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_unearned_income",
+      "text": "Proof of unearned income, if requested (ex: child support, Social Security, unemployment)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_benefit_proof",
+      "text": "Proof of SNAP, TANF, or SSI benefits (if applicable)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_child_birth_certificate",
+      "text": "Child's birth certificate, hospital record, or other proof of age, if requested",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "pregnancy_proof",
+      "text": "Proof of pregnancy, if requested by the local program (ex: doctor's note, pregnancy test results, or ultrasound)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_foster_care",
+      "text": "Foster care documents, if applicable (ex: court order, child welfare letter)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_homelessness_verification",
+      "text": "Homelessness verification, if applicable (ex: school or shelter letter, signed family statement)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_immunization_records",
+      "text": "Child's immunization records, if requested",
+      "link_url": "",
+      "link_text": ""
+    }
+  ]
+}
