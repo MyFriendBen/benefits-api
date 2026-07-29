@@ -80,7 +80,7 @@ def remove_urgent_need_types(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("programs", "0162_alter_program_base_program"),
+        ("programs", "0163_drop_program_value_type"),
         ("screener", "0001_initial"),
         ("translations", "0001_initial"),
     ]

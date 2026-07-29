@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("screener", "0157_drop_has_columns"),
+        ("screener", "0158_drop_snapshot_value_type"),
     ]
 
     operations = [
