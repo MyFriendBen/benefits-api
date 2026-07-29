@@ -1,4 +1,7 @@
-from programs.programs.federal.pe.member import Wic
+from programs.programs.federal.pe.member import (
+    Wic,
+    EarlyHeadStart,
+)
 import programs.programs.policyengine.calculators.dependencies as dependency
 from screener.models import HouseholdMember
 
@@ -67,3 +70,12 @@ class MoWic(Wic):
     def member_value(self, member: HouseholdMember):
         """Return PolicyEngine's calculated WIC benefit for this member."""
         return self.get_member_variable(member.id)
+
+
+class MoEarlyHeadStart(EarlyHeadStart):
+    """Missouri Early Head Start (birth-3 / pregnant) — federal ``EarlyHeadStart`` PE calculator + MO state code."""
+
+    pe_inputs = [
+        *EarlyHeadStart.pe_inputs,
+        dependency.household.MoStateCodeDependency,
+    ]
