@@ -45,7 +45,7 @@ def reverse(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("programs", "0162_alter_program_base_program"),
+        ("programs", "0163_drop_program_value_type"),
     ]
 
     operations = [
