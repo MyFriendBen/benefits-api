@@ -67,4 +67,9 @@ WHITELABEL_FEATURE_FLAGS: dict[str, FeatureFlagConfig] = {
         ),
         scope="frontend",
     ),
+    "nc_results_survey": FeatureFlagConfig(
+        label="NC Results Survey",
+        description="Show a general feedback survey on the results page after a user completes a screen.",
+        scope="frontend",
+    ),
 }
