@@ -1,5 +1,7 @@
 import logging
+from collections import defaultdict
 from datetime import date
+from decimal import Decimal
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 from sentry_sdk import capture_message
@@ -163,11 +165,19 @@ def _derived_current_benefit_names(screen: Screen) -> set[str]:
     insurance checks (`HouseholdMember.has_benefit()` / `member.insurance.*`) and never
     flow through `current_benefits`. Add new derivable compounds here as they appear.
     """
-    base_programs = {
-        base_program
-        for income_type, base_program in _INCOME_TYPE_TO_BASE_PROGRAM.items()
-        if screen.calc_gross_income("yearly", (income_type,)) > 0
-    }
+    # One pass over the screen's income streams rather than a calc_gross_income() call per
+    # income type: each of those re-walks household_members and their income_streams, and
+    # this runs on every screen POST/PATCH against a freshly select_for_update()'d instance
+    # with nothing prefetched. Totals use IncomeStream.yearly() so the frequency handling
+    # (and the "> 0 across all streams of a type" test) matches calc_gross_income.
+    totals: dict[str, Decimal] = defaultdict(Decimal)
+    for stream in screen.income_streams.all():
+        base_program = _INCOME_TYPE_TO_BASE_PROGRAM.get(stream.type)
+        if base_program is None or stream.amount is None:
+            continue
+        totals[base_program] += stream.yearly()
+
+    base_programs = {base_program for base_program, total in totals.items() if total > 0}
     if not base_programs:
         return set()
 

@@ -465,3 +465,110 @@ class TestResolveUnpinnedVersion(TestCase):
             self.pe_versions.resolve_unpinned_comparable_version()
             self.pe_versions.resolve_unpinned_comparable_version()
             self.assertEqual(mock_get.call_count, 2)  # retried, not cached
+
+
+class TestPeInputReservedOutputSlots(TestCase):
+    """A field this request asks PolicyEngine to compute must be sent as None.
+
+    `spm.Snap` is the SNAP calculators' `pe_output` and Head Start's `pe_input`; `spm.Tanf`
+    is shaped the same way. Before the guard, a household reporting SNAP had the receipt
+    value written into both the annual input period and the SNAP calculator's monthly
+    output period, pinning the answer PE was asked for — measured against the live API,
+    computed SNAP fell from $3,708/yr to $12/yr.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.white_label = WhiteLabel.objects.create(name="Texas", code="tx", state_code="TX")
+
+    def setUp(self):
+        from programs.models import FederalPoveryLimit, Program
+        from programs.programs.tx.pe.member import TxHeadStart
+        from programs.programs.tx.pe.spm import TxSnap
+        from programs.util import Dependencies
+
+        self.fpl = FederalPoveryLimit.objects.create(year="2025", period="2025")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Travis County",
+            household_size=2,
+            household_assets=0,
+            completed=False,
+        )
+        self.head = HouseholdMember.objects.create(
+            screen=self.screen, relationship="headOfHousehold", age=30, disabled=False, student=False
+        )
+        HouseholdMember.objects.create(screen=self.screen, relationship="child", age=4, disabled=False, student=False)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="wages", amount=1500, frequency="monthly"
+        )
+
+        def program(name, base_program=None):
+            p = Program.objects.new_program(self.white_label.code, name)
+            p.year = self.fpl
+            p.base_program = base_program
+            p.save()
+            return p
+
+        self.snap_program = program("tx_snap", base_program="snap")
+        self.calculators = [
+            TxSnap(self.screen, self.snap_program, Dependencies()),
+            TxHeadStart(self.screen, program("tx_head_start"), Dependencies()),
+        ]
+        self.snap_calculator = self.calculators[0]
+
+    def _report_snap(self, monthly_amount=None):
+        from screener.models import CurrentBenefit
+
+        CurrentBenefit.objects.create(screen=self.screen, program=self.snap_program)
+        if monthly_amount is not None:
+            IncomeStream.objects.create(
+                screen=self.screen,
+                household_member=self.head,
+                type="snap",
+                amount=monthly_amount,
+                frequency="monthly",
+            )
+        self.screen.invalidate_current_benefits_cache()
+
+    def _snap_block(self):
+        payload = pe_input(self.screen, self.calculators)
+        return payload["household"]["spm_units"]["spm_unit"]["snap"]
+
+    def test_every_output_slot_is_sent_as_none(self):
+        """The general rule, across every program in the request."""
+        self._report_snap(monthly_amount=200)
+        payload = pe_input(self.screen, self.calculators)
+
+        for calculator in self.calculators:
+            period = getattr(calculator, "pe_output_period", None) or calculator.pe_period
+            for Data in calculator.pe_outputs:
+                for sub_unit in payload["household"].get(Data.unit, {}).values():
+                    if Data.field in sub_unit and period in sub_unit[Data.field]:
+                        self.assertIsNone(
+                            sub_unit[Data.field][period],
+                            f"{Data.field} at {period} is an output of {type(calculator).__name__} "
+                            f"but was sent with a value, which pins PolicyEngine's answer",
+                        )
+
+    def test_snap_output_period_reserved_while_input_period_carries_amount(self):
+        """The reported annual amount still reaches PE; only the monthly output slot is None."""
+        self._report_snap(monthly_amount=200)
+
+        snap = self._snap_block()
+        self.assertEqual(snap[self.snap_calculator.pe_period], 2400)  # $200/mo -> annual
+        self.assertIsNone(snap[self.snap_calculator.pe_output_period])
+
+    def test_snap_sentinel_when_receipt_reported_without_amount(self):
+        """Tile-only receipt still confers categorical eligibility via the sentinel."""
+        self._report_snap()
+
+        snap = self._snap_block()
+        self.assertEqual(snap[self.snap_calculator.pe_period], 1)
+        self.assertIsNone(snap[self.snap_calculator.pe_output_period])
+
+    def test_snap_unset_when_nothing_reported(self):
+        snap = self._snap_block()
+        self.assertIsNone(snap[self.snap_calculator.pe_period])
+        self.assertIsNone(snap[self.snap_calculator.pe_output_period])

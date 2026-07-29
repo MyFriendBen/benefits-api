@@ -32,9 +32,13 @@ class LowWageCovidRelief(ProgramCalculator):
         # other benefits
         has_benefit = False
 
+        # has_benefit_or_variant rather than has_benefit_from_list because each name is also
+        # used to look up a calculated result in self.data. tanf/snap/wic are base program
+        # names, so the exact-name read they used to do never matched CO's co_tanf/co_snap/
+        # co_wic; "leap" is a CO program name and matches exactly.
         for benefit in LowWageCovidRelief.auto_eligible_benefits:
             entry = self.data.get(benefit)
-            if self.screen.has_benefit(benefit) or (entry is not None and entry.eligible):
+            if self.screen.has_benefit_or_variant(benefit) or (entry is not None and entry.eligible):
                 has_benefit = True
                 break
 

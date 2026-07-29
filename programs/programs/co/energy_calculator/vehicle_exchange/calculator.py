@@ -11,7 +11,24 @@ class EnergyCalculatorVehicleExchange(ProgramCalculator):
     amount = 4_000
     min_age = 18
     ami_percent = "80%"
-    presumptive_eligibility = ["co_care", "cowap", "rtdlive", "cesn_section_8", "ssdi", "wic", "leap", "snap", "ssi"]
+    # These are CESN programs (see cesn_calculators), so the CESN-prefixed names are the
+    # ones the join table holds — the CO names this list used to carry (co_care, cowap,
+    # rtdlive, leap) match nothing on a CESN screen, and resolve through base_program no
+    # better: cesn_care and cesn_rtdlive have no base_program, cesn_cowap groups under
+    # "wap", cesn_leap under "liheap". calculated_presumptive_eligibility below already
+    # used the CESN names for the same two programs.
+    # ssdi / wic / snap / ssi are base program names and resolve via has_benefit_from_list.
+    presumptive_eligibility = [
+        "cesn_care",
+        "cesn_cowap",
+        "cesn_rtdlive",
+        "cesn_leap",
+        "cesn_section_8",
+        "ssdi",
+        "wic",
+        "snap",
+        "ssi",
+    ]
     calculated_presumptive_eligibility = ["cesn_care", "cesn_cowap"]
     dependencies = ["age", "income_frequency", "income_amount", "energy_calculator"]
 

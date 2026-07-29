@@ -28,8 +28,11 @@ class EnergyCalculatorHomeEfficiencyAssistance(ProgramCalculator):
         "county",
         "energy_calculator",
     ]
+    # CESN program (see cesn_calculators), so the CESN name is what the join table holds —
+    # bare "leap" is a CO program name and matched nothing here. cesn_leap groups under
+    # base_program "liheap", so a base-name read wouldn't have resolved it either.
     presumptive_eligibility = [
-        "leap",
+        "cesn_leap",
     ]
     utility_providers = [
         "co-colorado-springs-utilities",
@@ -40,7 +43,7 @@ class EnergyCalculatorHomeEfficiencyAssistance(ProgramCalculator):
     def household_eligible(self, e: Eligibility):
 
         # check if has any of the presumptive eligibility programs
-        presumed_eligible = any(self.screen.has_benefit(program) for program in self.presumptive_eligibility)
+        presumed_eligible = self.screen.has_benefit_from_list(self.presumptive_eligibility)
 
         if presumed_eligible:
             # if presumptive eligibility, done
