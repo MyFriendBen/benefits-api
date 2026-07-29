@@ -20,7 +20,7 @@ from integrations.clients.hud_income_limits.client import (
     Section8AmiPercent,
 )
 from screener.models import Screen, WhiteLabel
-from benefits.test_cache import LOCAL_CACHE
+from benefits.tests.cache_override import LOCAL_CACHE
 
 
 # Shared test fixtures

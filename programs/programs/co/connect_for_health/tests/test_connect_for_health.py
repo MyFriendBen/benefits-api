@@ -9,9 +9,9 @@ Eligibility requirements:
 
 Notes:
   - The member value is the county's average monthly premium tax credit from a Google
-    Sheet, annualised. `Cache.fetch()` returns `{}` when the sheet fetch fails, so
-    `member_value` raises `KeyError` for any county the sheet doesn't cover; that is
-    characterised below rather than silently accepted.
+    Sheet, annualised. `GoogleSheetsCache.get_data()` degrades to `{}` when the sheet
+    fetch fails and no stale value is cached, so a county the sheet doesn't cover is
+    worth 0 and is reported to Sentry rather than raising.
   - CHP+ eligibility is read out of the sibling program's `Eligibility` in `data`, so
     members are matched by id.
   - FPL figures are imported from `FplCache.default` rather than copied, so they cannot
@@ -22,12 +22,12 @@ Notes:
 
 from unittest.mock import Mock, patch
 
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 
 from programs.models import FplCache
 from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
 from programs.programs.co import co_calculators
-from programs.programs.co.connect_for_health.calculator import ConnectForHealth
+from programs.programs.co.connect_for_health.calculator import CfhCountyValuesCache, ConnectForHealth
 from programs.util import Dependencies, DependencyError
 from screener.models import Insurance
 
@@ -118,8 +118,8 @@ class TestConnectForHealthClassAttributes(TestCase):
             ["insurance", "income_amount", "income_frequency", "zipcode", "household_size"],
         )
 
-    def test_county_value_cache_defaults_to_empty(self):
-        self.assertEqual(ConnectForHealth.county_values.default, {})
+    def test_county_value_cache_falls_back_to_empty(self):
+        self.assertEqual(ConnectForHealth.county_values._empty_fallback(), {})
 
 
 class TestConnectForHealthMedicaidExclusion(TestCase):
@@ -276,7 +276,7 @@ class TestConnectForHealthValue(TestCase):
     """Member value is the county's average monthly premium tax credit, annualised."""
 
     def setUp(self):
-        patcher = patch.object(ConnectForHealth.county_values, "fetch", return_value=dict(COUNTY_PREMIUM_TAX_CREDITS))
+        patcher = patch.object(ConnectForHealth.county_values, "get_data", return_value=dict(COUNTY_PREMIUM_TAX_CREDITS))
         self.mock_county_values = patcher.start()
         self.addCleanup(patcher.stop)
 
@@ -302,21 +302,72 @@ class TestConnectForHealthValue(TestCase):
         calc = make_calculator(household_size=1, household_income=999_999, members=[make_member(none=True)])
         self.assertEqual(calc.calc().value, 0)
 
-    def test_county_missing_from_the_sheet_raises(self):
-        # characterises current behaviour: an uncovered county is a KeyError, not a $0 value
+    @patch("programs.programs.co.connect_for_health.calculator.capture_message")
+    def test_county_missing_from_the_sheet_is_worth_nothing(self, _capture):
         calc = make_calculator(county="Pueblo County")
-        with self.assertRaises(KeyError):
-            calc.member_value(make_member(none=True))
+        self.assertEqual(calc.member_value(make_member(none=True)), 0)
+
+    @patch("programs.programs.co.connect_for_health.calculator.capture_message")
+    def test_county_missing_from_the_sheet_is_reported(self, capture):
+        # a $0 value is dropped by the frontend's `value > 0` check, so the program
+        # silently vanishes from results unless the miss is reported
+        calc = make_calculator(county="Pueblo County")
+        calc.member_value(make_member(none=True))
+
+        capture.assert_called_once()
+        self.assertIn("Pueblo County", capture.call_args.args[0])
+
+    @patch("programs.programs.co.connect_for_health.calculator.capture_message")
+    def test_a_covered_county_reports_nothing(self, capture):
+        calc = make_calculator(county="Denver County")
+        calc.member_value(make_member(none=True))
+
+        self.assertFalse(capture.called)
 
 
 class TestConnectForHealthEmptyCountyValueSheet(TestCase):
-    """A failed sheet fetch degrades to `{}`, which makes valuation raise."""
+    """A failed sheet fetch with no stale value degrades to `{}`, so every county misses."""
 
-    def test_empty_sheet_raises_on_member_value(self):
-        with patch.object(ConnectForHealth.county_values, "fetch", return_value={}):
-            calc = make_calculator(county="Denver County")
-            with self.assertRaises(KeyError):
-                calc.member_value(make_member(none=True))
+    def setUp(self):
+        patcher = patch.object(ConnectForHealth.county_values, "get_data", return_value={})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    @patch("programs.programs.co.connect_for_health.calculator.capture_message")
+    def test_empty_sheet_makes_member_value_zero(self, _capture):
+        calc = make_calculator(county="Denver County")
+        self.assertEqual(calc.member_value(make_member(none=True)), 0)
+
+    @patch("programs.programs.co.connect_for_health.calculator.capture_message")
+    def test_empty_sheet_is_reported(self, capture):
+        calc = make_calculator(county="Denver County")
+        calc.member_value(make_member(none=True))
+
+        capture.assert_called_once()
+
+
+class TestCfhCountyValuesCacheProcess(SimpleTestCase):
+    """Row parsing: the county key gains a " County" suffix and bad rows are skipped."""
+
+    def setUp(self):
+        self.cache = CfhCountyValuesCache()
+
+    def _row(self, county, average):
+        return {
+            CfhCountyValuesCache._COUNTY_COLUMN: county,
+            CfhCountyValuesCache._AVERAGE_COLUMN: average,
+        }
+
+    def test_parses_county_rows(self):
+        self.assertEqual(self.cache._process([self._row("Denver", "123.45")]), {"Denver County": 123.45})
+
+    def test_skips_unparseable_values(self):
+        self.assertEqual(self.cache._process([self._row("Denver", "n/a")]), {})
+
+    def test_keeps_good_rows_alongside_bad(self):
+        rows = [self._row("Denver", "n/a"), self._row("Boulder", "50")]
+
+        self.assertEqual(self.cache._process(rows), {"Boulder County": 50.0})
 
 
 class TestConnectForHealthCanCalc(TestCase):

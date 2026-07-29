@@ -3,6 +3,7 @@ from programs.programs.helpers import medicaid_eligible
 import programs.programs.messages as messages
 from integrations.services.sheets.cache import GoogleSheetsCache
 from screener.models import HouseholdMember
+from sentry_sdk import capture_message
 
 
 class ACACache(GoogleSheetsCache):
@@ -52,4 +53,14 @@ class ACASubsidiesNC(ProgramCalculator):
 
     def member_value(self, member: HouseholdMember):
         values = self.county_values.get_data()
-        return values.get(self.screen.county, 0) * 12
+        county = self.screen.county
+        if county not in values:
+            # A $0 value is filtered out by the frontend's `value > 0` check, so the
+            # program silently vanishes from results rather than erroring. Report it,
+            # otherwise a renamed county or an empty sheet fetch is undetectable.
+            capture_message(
+                f"ACASubsidiesNC: no premium value for county {county!r} of {len(values)} cached",
+                level="warning",
+            )
+            return 0
+        return values[county] * 12

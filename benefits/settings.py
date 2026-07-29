@@ -358,8 +358,6 @@ else:
         },
     }
 
-PARLER_CACHE_BACKEND = "default"
-
 # Parler caches each translation row individually. Nothing reads those entries --
 # /api/translations/ is served from the per-language aggregate built in
 # translations.models -- so they would add ~156k keys to a 25MB Redis for no

@@ -7,13 +7,8 @@ from translations.model_data import ModelDataController
 from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
 from programs.programs import calculators
 from programs.util import Dependencies
-import requests
-from django.core.cache import cache
 from typing import Optional, TypedDict, Union
 from programs.programs.translation_overrides import warning_calculators
-
-_FPL_CACHE_KEY = "fpl_cache"
-_FPL_CACHE_TIMEOUT = 60 * 60 * 24  # 24 hours
 
 _FPL_DEFAULTS = {
     "2023": {
@@ -64,15 +59,20 @@ _FPL_DEFAULTS = {
 
 
 def _get_fpl_data() -> dict:
-    data = cache.get(_FPL_CACHE_KEY)
-    if data is not None:
-        return data
-    cache.set(_FPL_CACHE_KEY, _FPL_DEFAULTS, timeout=_FPL_CACHE_TIMEOUT)
+    """Return the FPL table.
+
+    Not cached: the values are a module-level constant, so a cache round-trip buys
+    nothing and costs a network hop. The pre-existing FplCache appeared to fetch
+    from the ASPE Poverty Guidelines API, but update() opened with
+    `return self.default`, leaving that request code unreachable -- the cached
+    value has only ever been this constant.
+
+    Returning it directly also removes an identity hazard: a cache miss handed
+    back _FPL_DEFAULTS itself while a hit handed back a deserialized copy, so a
+    caller mutating the result corrupted the constant for the life of the process
+    but only on the miss path.
+    """
     return _FPL_DEFAULTS
-
-
-def _invalidate_fpl_cache() -> None:
-    cache.delete(_FPL_CACHE_KEY)
 
 
 class FederalPoveryLimit(models.Model):
@@ -91,12 +91,7 @@ class FederalPoveryLimit(models.Model):
         return limits[self.MAX_DEFINED_SIZE] + limits["additional"] * additional_member_count
 
     def as_dict(self):
-        try:
-            return _get_fpl_data()[self.period]
-        except KeyError:
-            # the year is not cached, so invalidate the cache
-            _invalidate_fpl_cache()
-            return _get_fpl_data()[self.period]
+        return _get_fpl_data()[self.period]
 
     def __str__(self):
         return self.year

@@ -12,7 +12,7 @@ from django.core.cache import cache
 from django.test import SimpleTestCase, override_settings
 
 from integrations.services.sheets.cache import GoogleSheetsCache
-from benefits.test_cache import LOCAL_CACHE
+from benefits.tests.cache_override import LOCAL_CACHE
 
 
 class FakeSheetsCache(GoogleSheetsCache):

@@ -1,6 +1,6 @@
 """Tests that run against a real Redis rather than LocMemCache.
 
-Every other cache test pins LocMemCache for determinism (see benefits.test_cache),
+Every other cache test pins LocMemCache for determinism (see benefits.tests.cache_override),
 which means nothing would exercise django_redis itself: pickling, zlib compression,
 key prefixing, or the connection pool. That gap is how a Redis misconfiguration
 reached staging with a green build.

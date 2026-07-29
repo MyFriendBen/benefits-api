@@ -1,3 +1,4 @@
+import zlib
 from collections import defaultdict
 from typing import Any
 from django.db import models
@@ -13,6 +14,11 @@ BLANK_TRANSLATION_PLACEHOLDER = "[PLACEHOLDER]"
 
 _TRANSLATION_CACHE_TIMEOUT = 60 * 60 * 24  # 1 day
 
+# Spread expiry across this window instead of letting every language lapse at the
+# same instant. Written together, identical TTLs would guarantee a daily moment
+# where all 18 keys are cold at once and concurrent requests all rebuild.
+_TRANSLATION_CACHE_JITTER = 60 * 60 * 2  # 2 hours
+
 # Bump when the cached value's shape changes. Old entries are then ignored and
 # age out on their own TTL, so a format change is self-invalidating on deploy
 # instead of needing a coordinated flush.
@@ -25,6 +31,17 @@ def _all_langs() -> list[str]:
 
 def _translation_cache_key(lang: str) -> str:
     return f"translation_data:{_TRANSLATION_CACHE_VERSION}:{lang}"
+
+
+def _translation_cache_timeout(lang: str) -> int:
+    """TTL for one language, offset deterministically by language code.
+
+    Derived from a stable hash rather than a random one so every dyno agrees on
+    when a given language lapses; builtin hash() is salted per process and would
+    give each worker a different answer.
+    """
+    offset = zlib.crc32(lang.encode()) % _TRANSLATION_CACHE_JITTER
+    return _TRANSLATION_CACHE_TIMEOUT + offset
 
 
 def _build_translation_data() -> dict:
@@ -83,10 +100,10 @@ def _get_translation_data(langs: list[str] | None = None) -> dict:
 
     if missing:
         built = _build_translation_data()
-        cache.set_many(
-            {_translation_cache_key(lang): value for lang, value in built.items()},
-            timeout=_TRANSLATION_CACHE_TIMEOUT,
-        )
+        # Written one at a time rather than via set_many so each language can carry
+        # its own jittered TTL; set_many applies a single timeout to the whole batch.
+        for lang, value in built.items():
+            cache.set(_translation_cache_key(lang), value, timeout=_translation_cache_timeout(lang))
         for lang in missing:
             data[lang] = built[lang]
 

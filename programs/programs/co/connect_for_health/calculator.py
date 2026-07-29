@@ -5,6 +5,7 @@ from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibi
 from screener.models import HouseholdMember
 from programs.programs.helpers import medicaid_eligible
 import programs.programs.messages as messages
+from sentry_sdk import capture_message
 
 
 class CfhCountyValuesCache(GoogleSheetsCache):
@@ -65,4 +66,13 @@ class ConnectForHealth(ProgramCalculator):
     def member_value(self, member: HouseholdMember):
         values = self.county_values.get_data()
         county = counties_from_screen(self.screen)[0]
-        return int(values.get(county, 0) * 12)
+        if county not in values:
+            # A $0 value is filtered out by the frontend's `value > 0` check, so the
+            # program silently vanishes from results rather than erroring. Report it,
+            # otherwise a renamed county or an empty sheet fetch is undetectable.
+            capture_message(
+                f"ConnectForHealth: no premium value for county {county!r} of {len(values)} cached",
+                level="warning",
+            )
+            return 0
+        return int(values[county] * 12)

@@ -9,7 +9,7 @@ from unittest.mock import patch, Mock
 
 from django.core.cache import cache
 from django.test import TestCase, override_settings
-from benefits.test_cache import LOCAL_CACHE
+from benefits.tests.cache_override import LOCAL_CACHE
 from rest_framework import status
 from rest_framework.test import APITestCase
 

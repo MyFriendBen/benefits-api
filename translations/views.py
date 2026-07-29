@@ -3,7 +3,7 @@ from django.shortcuts import render
 from django.conf import settings
 from authentication.models import User
 from screener.models import WhiteLabel
-from .models import Translation, HistoricalTranslation, _invalidate_translation_cache
+from .models import Translation, HistoricalTranslation
 from simple_history.utils import update_change_reason
 from rest_framework.response import Response
 from rest_framework import views
@@ -49,17 +49,20 @@ class TranslationView(views.APIView):
 
             return Response(translations)
         except Exception as error:
-            # Drop a possibly-corrupt entry so the next request rebuilds, but do
-            # not retry the build inline: that doubles the work of an already
-            # failing request and is what pushed this endpoint past the 30s
-            # router timeout when the cache backend was unreachable.
-            _invalidate_translation_cache()
+            # Deliberately neither retry the build nor invalidate here.
+            #
+            # Retrying inline doubles the work of an already failing request, which
+            # is what pushed this endpoint past the 30s router timeout when the cache
+            # backend was unreachable. Invalidating is worse than useless: a failed
+            # rebuild writes nothing, so there is no bad entry to clear, and the far
+            # likelier exception source is the rebuild itself (DB blip, statement
+            # timeout). Clearing would throw away every still-warm language and force
+            # the next request into a full rebuild against the same sick dependency.
             capture_exception(error)
 
             error_response = {
                 "error": "Translations temporarily unavailable",
                 "error_type": type(error).__name__,
-                "message": str(error),
             }
 
             # Add traceback in debug mode

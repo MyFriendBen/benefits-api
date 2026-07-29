@@ -2,6 +2,7 @@ from integrations.services.sheets.cache import GoogleSheetsCache
 from programs.co_county_zips import counties_from_screen
 from programs.programs.calc import Eligibility, ProgramCalculator
 import programs.programs.messages as messages
+from sentry_sdk import capture_message
 
 
 class BoulderAmiCache(GoogleSheetsCache):
@@ -20,12 +21,32 @@ class BoulderAmiCache(GoogleSheetsCache):
             return []
 
         result = []
+        malformed = []
         for a in raw_data[0]:
             try:
                 cleaned_value = a.replace(",", "").replace("$", "")
                 result.append(int(cleaned_value))
             except (ValueError, AttributeError):
+                malformed.append(a)
                 result.append(0)  # Use 0 as default for malformed values
+
+        if malformed:
+            capture_message(
+                f"BoulderAmiCache: {len(malformed)} malformed AMI value(s) in sheet: {malformed!r}",
+                level="warning",
+            )
+
+        if not any(result):
+            # A list of zeros is truthy, so get_data()'s `if not data` guard would
+            # cache it for 24h and write it to the 7-day stale key. Every income check
+            # would then compare against a limit of 0 and nobody would qualify.
+            # Returning empty routes through the stale/fallback path instead.
+            capture_message(
+                "BoulderAmiCache: every AMI limit parsed as 0; refusing to cache",
+                level="error",
+            )
+            return []
+
         return result
 
 

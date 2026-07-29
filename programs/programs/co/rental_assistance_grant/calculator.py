@@ -2,6 +2,7 @@ from programs.programs.calc import ProgramCalculator, Eligibility
 import programs.programs.messages as messages
 from programs.co_county_zips import counties_from_screen
 from integrations.services.sheets.cache import GoogleSheetsCache
+from sentry_sdk import capture_message
 import math
 
 
@@ -12,6 +13,7 @@ class RAGCache(GoogleSheetsCache):
 
     def _process(self, raw_data):
         result = {}
+        all_zero_counties = []
         for d in raw_data:
             if len(d) < 2:
                 continue
@@ -23,9 +25,21 @@ class RAGCache(GoogleSheetsCache):
                         income_values.append(int(v.replace(",", "")))
                     except (ValueError, AttributeError):
                         income_values.append(0)
+                if not any(income_values):
+                    # A limit of 0 makes every income check fail, so the program
+                    # silently disappears for that county rather than erroring.
+                    all_zero_counties.append(county_key)
                 result[county_key] = income_values
             except (IndexError, AttributeError):
                 continue
+
+        if all_zero_counties:
+            capture_message(
+                f"RAGCache: all income limits parsed as 0 for {len(all_zero_counties)} "
+                f"county/counties: {all_zero_counties!r}",
+                level="warning",
+            )
+
         return result
 
 

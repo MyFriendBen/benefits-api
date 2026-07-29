@@ -8,7 +8,7 @@ Apply as a class decorator -- `override_settings` is the mechanism that works wi
 django.test.TestCase, which pytest-django's `settings` fixture does not:
 
     from django.test import override_settings
-    from benefits.test_cache import LOCAL_CACHE
+    from benefits.tests.cache_override import LOCAL_CACHE
 
     @override_settings(CACHES=LOCAL_CACHE)
     class TestSomething(TestCase):

@@ -11,7 +11,7 @@ Calculator-specific dependency tests belong in the state's pe/tests/ directory.
 from unittest.mock import patch
 
 from django.test import TestCase, override_settings
-from benefits.test_cache import LOCAL_CACHE
+from benefits.tests.cache_override import LOCAL_CACHE
 from screener.models import Screen, HouseholdMember, WhiteLabel, Expense, IncomeStream
 from programs.programs.policyengine.policy_engine import pe_input
 from programs.programs.policyengine.calculators.constants import (

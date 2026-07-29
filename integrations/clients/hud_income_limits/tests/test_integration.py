@@ -17,7 +17,7 @@ import time
 import pytest
 from django.test import TestCase, override_settings
 from django.core.cache import cache
-from benefits.test_cache import LOCAL_CACHE
+from benefits.tests.cache_override import LOCAL_CACHE
 
 from integrations.clients.hud_income_limits import hud_client, HudIncomeClientError
 from screener.models import Screen, WhiteLabel
