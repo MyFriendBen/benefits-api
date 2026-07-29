@@ -171,9 +171,9 @@ def _derived_current_benefit_names(screen: Screen) -> set[str]:
     if not base_programs:
         return set()
 
-    variants = Program.objects.filter(
-        white_label=screen.white_label, base_program__in=base_programs
-    ).values_list("base_program", "name_abbreviated", "active")
+    variants = Program.objects.filter(white_label=screen.white_label, base_program__in=base_programs).values_list(
+        "base_program", "name_abbreviated", "active"
+    )
 
     by_base: dict[str, list[tuple[str, bool]]] = {}
     for base_program, name, active in variants:
