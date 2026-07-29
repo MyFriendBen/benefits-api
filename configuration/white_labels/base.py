@@ -489,32 +489,28 @@ class ConfigurationData:
 
     # Configuration for branding, logos, steps, and UI options
     # See template for detailed documentation on each field
+    # Only "default" values live here so state configs can safely inherit via
+    # `**ConfigurationData.referrer_data`. To add a referrer-specific override
+    # (e.g. a partner code), add that key alongside "default" in the state config;
+    # see _template.py for the referrer-key naming convention.
     referrer_data = {
-        "theme": {"default": "default", "[REPLACE_ME]": ""},
+        "theme": {"default": "default"},
         "logoSource": {
             "default": "MFB_Logo",
-            "[REPLACE_ME]": "",
         },
         "faviconSource": {
             "default": "favicon.ico",
-            "[REPLACE_ME]": "",
         },
         "logoAlt": {
             "default": {"id": "referrerHook.logoAlts.default", "defaultMessage": "MyFriendBen home page button"},
-            "[REPLACE_ME]": {
-                "id": "",
-                "defaultMessage": "",
-            },
         },
-        "logoFooterSource": {"default": "MFB_Logo", "[REPLACE_ME]": ""},
+        "logoFooterSource": {"default": "MFB_Logo"},
         "logoFooterAlt": {
             "default": {"id": "footer.logo.alt", "defaultMessage": "MFB Logo"},
-            "[REPLACE_ME]": {"id": "", "defaultMessage": ""},
         },
-        "logoClass": {"default": "logo", "[REPLACE_ME]": ""},
+        "logoClass": {"default": "logo"},
         "shareLink": {
             "default": "",
-            "[REPLACE_ME]": "",
         },
         "stepDirectory": {
             "default": [
@@ -529,11 +525,10 @@ class ConfigurationData:
                 "referralSource",
                 "signUpInfo",
             ],
-            "[REPLACE_ME]": [],
         },
         "uiOptions": {"default": []},
-        "defaultLanguage": {"default": "en-us", "[REPLACE_ME]": ""},
-        "stateName": {"default": "", "[REPLACE_ME]": ""},
+        "defaultLanguage": {"default": "en-us"},
+        "stateName": {"default": ""},
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",

@@ -170,7 +170,6 @@ class MoConfigurationData(ConfigurationData):
         "65279": {"Boone County": "Boone County"},
         "65284": {"Boone County": "Boone County"},
         "65299": {"Boone County": "Boone County"},
-        "72643": {"Boone County": "Boone County"},
         # Buchanan County
         "64401": {"Buchanan County": "Buchanan County"},
         "64440": {"Buchanan County": "Buchanan County"},

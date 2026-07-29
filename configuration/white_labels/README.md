@@ -103,7 +103,7 @@ This directory contains configuration files for MyFriendBen white labels (state/
 
 12. **Add Translation rows for new `_label` keys:**
 
-    Any new `_label` translation keys introduced by your config (e.g. `moreHelp.211.name.tx`, `healthInsuranceOptions.medicaid.tx`, `healthCareBenefits.medicaid.tx`) do **not** auto-create. Add a Translation row for each new key in the admin portal, **per environment (staging and production)**:
+    Any new `_label` translation keys introduced by your config (e.g. `moreHelp.tx.211.name`, `healthInsuranceOptions.medicaid.tx`) do **not** auto-create. Copy the exact `_label` values from your config file — don't infer the naming. Add a Translation row for each new key in the admin portal, **per environment (staging and production)**:
 
     - Log in to the admin portal (staging, then production)
     - Add each new `_label` key with translations for all supported languages
