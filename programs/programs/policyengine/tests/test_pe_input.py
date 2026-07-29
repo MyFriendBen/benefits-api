@@ -544,9 +544,7 @@ class TestPeInputReservedOutputSlots(TestCase):
         payload = pe_input(self.screen, self.calculators)
 
         input_slots = {
-            (Data.field, calculator.pe_period)
-            for calculator in self.calculators
-            for Data in calculator.pe_inputs
+            (Data.field, calculator.pe_period) for calculator in self.calculators for Data in calculator.pe_inputs
         }
 
         for calculator in self.calculators:
@@ -634,9 +632,7 @@ class TestPeInputInputOutputCollision(TestCase):
     def _ssi_values(self, calculators):
         payload = pe_input(self.screen, calculators)
         period = self.ssi_calculator.pe_period
-        return [
-            person["ssi"][period] for person in payload["household"]["people"].values() if "ssi" in person
-        ]
+        return [person["ssi"][period] for person in payload["household"]["people"].values() if "ssi" in person]
 
     def test_reported_ssi_survives_when_the_ssi_program_claims_the_same_slot(self):
         """Both programs in one request: the reporting member's $900/mo reaches PE."""
