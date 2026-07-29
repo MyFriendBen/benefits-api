@@ -187,11 +187,11 @@ Resolved design requirements, not Discovery blockers — dependencies are alread
 - Aggregate all eligible persons' raw `early_head_start` values before the final whole-dollar serialization step (sum first, truncate once — see Benefit Value).
 - Use the screener mappings for age (`age` or `birth_year`/`birth_month`), `pregnant`, `relationship`, household size, income streams, current benefits, and SSI receipt — see Federal Eligibility Scope for the exact field paths.
 
-**Config** (`mo_ehs_initial_config.json`)
+**Config** (`mo_early_head_start_initial_config.json`)
 - `id_proof`: removed. 45 CFR § 1302.12(h) requires programs to verify age under their own procedures but prohibits requiring age-confirming documents when that would create an enrollment barrier — it does not establish a parent/guardian identity-document requirement, and neither it nor Missouri DESE's EHS page confirms one for Missouri specifically. TX's shipped config sharing this key is precedent only that the *entity name* is shared, not that Missouri's application requires it. Re-add only with a direct MO grantee/application source.
 - `program_category`: `mo_child_care`, matching the `{state}_child_care` convention (TX/MA/IL/WA). Confirmed absent from both `benefits-api`'s import data and the External Names reference spreadsheet — this is a new category. Add it to the reference spreadsheet; this is not a reuse of an existing row.
 
 ---
 
 ## Program Configuration
-File: `mo_ehs_initial_config.json` (same directory)
+File: `mo_early_head_start_initial_config.json` (same directory)
