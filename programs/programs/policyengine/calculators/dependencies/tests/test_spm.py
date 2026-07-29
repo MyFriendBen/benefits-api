@@ -540,12 +540,39 @@ class TestSnapDependency(TestCase):
         self.assertEqual(dep.field, "snap")
 
     def test_value_returns_1_when_screen_has_snap(self):
-        """When user reports having SNAP, send 1 to PE to enable categorical eligibility."""
+        """Receipt without a reported amount falls back to the sentinel, which is enough to
+        confer categorical eligibility."""
         seed_program(self.white_label, "test_snap", base_program="snap")
         _write_current_benefits(self.screen, ["test_snap"])
 
         dep = spm.Snap(self.screen, None, {})
         self.assertEqual(dep.value(), 1)
+
+    def test_value_returns_reported_annual_amount(self):
+        """A reported SNAP amount is sent as the annual figure instead of the sentinel, so PE
+        (and anything reading the variable back) sees the household's real number. The
+        sentinel depresses PE's computed SNAP toward $0; a real amount doesn't."""
+        seed_program(self.white_label, "test_snap", base_program="snap")
+        _write_current_benefits(self.screen, ["test_snap"])
+        head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=30)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=head, type="snap", amount=200, frequency="monthly"
+        )
+
+        dep = spm.Snap(self.screen, None, {})
+        self.assertEqual(dep.value(), 2400)  # $200/month * 12
+
+    def test_value_ignores_reported_amount_without_receipt(self):
+        """No recorded receipt means PE computes SNAP, even if an amount was somehow entered.
+        In practice the two can't disagree — a reported amount derives receipt at write time
+        (see _derived_current_benefit_names) — so this pins the guard, not a live path."""
+        head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=30)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=head, type="snap", amount=200, frequency="monthly"
+        )
+
+        dep = spm.Snap(self.screen, None, {})
+        self.assertIsNone(dep.value())
 
     def test_value_returns_1_for_a_prefixed_variant(self):
         """Regression: receipt is resolved through base_program, so the state-prefixed names

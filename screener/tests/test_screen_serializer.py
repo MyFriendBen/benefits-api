@@ -11,7 +11,7 @@ from django.test import TestCase
 
 from programs.models import Program
 from screener.models import CurrentBenefit, HouseholdMember, IncomeStream, Insurance, Screen, WhiteLabel
-from screener.serializers import ScreenSerializer, _write_current_benefits
+from screener.serializers import ScreenSerializer, _derived_current_benefit_names, _write_current_benefits
 from screener.tests.helpers import seed_program
 
 # The Program.name_abbreviated column max_length. The serializer caps on a
@@ -200,6 +200,51 @@ class WriteCurrentBenefitsTests(TestCase):
         _write_current_benefits(self.screen, [])
 
         self.assertEqual(self._benefit_names(self.screen), {"retired_snap"})
+
+    def test_derivation_reads_income_in_a_single_query(self):
+        """The income scan is one pass, not one calc_gross_income() per derivable type.
+        Each of those re-walks household_members and their income_streams, and this runs on
+        every screen POST/PATCH against a freshly locked instance with nothing prefetched."""
+        seed_program(self.white_label, "test_snap", base_program="snap")
+        seed_program(self.white_label, "test_wic", base_program="wic")
+        head = HouseholdMember.objects.create(
+            screen=self.screen, relationship="headOfHousehold", age=40, has_income=True
+        )
+        for income_type, amount in (("snap", 200), ("wic", 50), ("sSI", 500), ("wages", 2000)):
+            IncomeStream.objects.create(
+                screen=self.screen, household_member=head, type=income_type, amount=amount, frequency="monthly"
+            )
+
+        # 1 for the income streams + 1 for the Program variant lookup.
+        with self.assertNumQueries(2):
+            derived = _derived_current_benefit_names(self.screen)
+
+        self.assertEqual(derived, {"test_snap", "test_wic"})  # no SSI variant seeded
+
+    def test_derivation_respects_frequency_not_raw_amount(self):
+        """Totals go through IncomeStream.yearly(), so an hourly stream with no hours worked
+        contributes nothing — matching what calc_gross_income() would have returned."""
+        seed_program(self.white_label, "test_snap", base_program="snap")
+        head = HouseholdMember.objects.create(
+            screen=self.screen, relationship="headOfHousehold", age=40, has_income=True
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=head, type="snap", amount=200, frequency="hourly", hours_worked=0
+        )
+
+        self.assertEqual(_derived_current_benefit_names(self.screen), set())
+
+    def test_derivation_ignores_streams_with_no_amount(self):
+        """A partially filled stream (amount not yet entered) doesn't imply receipt."""
+        seed_program(self.white_label, "test_snap", base_program="snap")
+        head = HouseholdMember.objects.create(
+            screen=self.screen, relationship="headOfHousehold", age=40, has_income=True
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=head, type="snap", amount=None, frequency="monthly"
+        )
+
+        self.assertEqual(_derived_current_benefit_names(self.screen), set())
 
 
 class ScreenSerializerUpdateTests(TestCase):
