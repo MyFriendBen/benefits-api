@@ -537,13 +537,23 @@ class TestPeInputReservedOutputSlots(TestCase):
         return payload["household"]["spm_units"]["spm_unit"]["snap"]
 
     def test_every_output_slot_is_sent_as_none(self):
-        """The general rule, across every program in the request."""
+        """The general rule, across every program in the request: an output slot no input
+        claimed goes out as None. A slot an input *did* claim keeps the reported value —
+        see TestPeInputInputOutputCollision."""
         self._report_snap(monthly_amount=200)
         payload = pe_input(self.screen, self.calculators)
+
+        input_slots = {
+            (Data.field, calculator.pe_period)
+            for calculator in self.calculators
+            for Data in calculator.pe_inputs
+        }
 
         for calculator in self.calculators:
             period = getattr(calculator, "pe_output_period", None) or calculator.pe_period
             for Data in calculator.pe_outputs:
+                if (Data.field, period) in input_slots:
+                    continue
                 for sub_unit in payload["household"].get(Data.unit, {}).values():
                     if Data.field in sub_unit and period in sub_unit[Data.field]:
                         self.assertIsNone(
@@ -572,3 +582,77 @@ class TestPeInputReservedOutputSlots(TestCase):
         snap = self._snap_block()
         self.assertIsNone(snap[self.snap_calculator.pe_period])
         self.assertIsNone(snap[self.snap_calculator.pe_output_period])
+
+
+class TestPeInputInputOutputCollision(TestCase):
+    """When an input and an output claim the *same* (field, period), the reported value wins.
+
+    SNAP is the easy case: its output slot is monthly and inputs write annual, so the two
+    never meet. Every other dual-role field is annual on both sides. `member.Ssi` is the SSI
+    calculators' `pe_output` (federal `Ssi`, `ks_ssi`, `tx_ssi`, `wa_ssi`) *and* an input of
+    `ks_tanf`, `il_aabd` and the Head Start / Early Head Start calculators — all at the
+    annual period. Reserving that slot unconditionally sent reported SSI as None, which
+    breaks KEESM 2210: `ks_tanf_is_assistance_unit_member` excludes SSI recipients, so
+    without the reported amount the unit size inflates and an all-SSI household that should
+    be ineligible is shown as eligible (ks/pe/spm.py documents this).
+    """
+
+    def setUp(self):
+        from programs.models import FederalPoveryLimit, Program
+        from programs.programs.ks.pe.member import KsSsi
+        from programs.programs.ks.pe.spm import KsTanf
+        from programs.util import Dependencies
+
+        self.white_label = WhiteLabel.objects.create(name="Kansas", code="ks", state_code="KS")
+        self.fpl = FederalPoveryLimit.objects.create(year="2026", period="2026")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="67202",
+            county="Sedgwick County",
+            household_size=2,
+            household_assets=100,
+            completed=False,
+        )
+        self.head = HouseholdMember.objects.create(
+            screen=self.screen, relationship="headOfHousehold", age=40, disabled=True, student=False
+        )
+        HouseholdMember.objects.create(screen=self.screen, relationship="child", age=4, disabled=False, student=False)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="sSI", amount=900, frequency="monthly"
+        )
+
+        def program(name):
+            p = Program.objects.new_program(self.white_label.code, name)
+            p.year = self.fpl
+            p.save()
+            return p
+
+        # ks_ssi claims (ssi, 2026) as its output; ks_tanf supplies it as an input.
+        self.ssi_calculator = KsSsi(self.screen, program("ks_ssi"), Dependencies())
+        self.tanf_calculator = KsTanf(self.screen, program("ks_tanf"), Dependencies())
+
+    def _ssi_values(self, calculators):
+        payload = pe_input(self.screen, calculators)
+        period = self.ssi_calculator.pe_period
+        return [
+            person["ssi"][period] for person in payload["household"]["people"].values() if "ssi" in person
+        ]
+
+    def test_reported_ssi_survives_when_the_ssi_program_claims_the_same_slot(self):
+        """Both programs in one request: the reporting member's $900/mo reaches PE."""
+        values = self._ssi_values([self.ssi_calculator, self.tanf_calculator])
+
+        self.assertIn(10800, values)  # $900/mo -> annual
+
+    def test_order_does_not_matter(self):
+        """Precedence comes from the input/output pass, not from calculator ordering."""
+        values = self._ssi_values([self.tanf_calculator, self.ssi_calculator])
+
+        self.assertIn(10800, values)
+
+    def test_output_slot_is_none_without_a_consuming_input(self):
+        """With no input claiming `ssi`, the SSI program's own output slot is reserved so PE
+        computes the amount rather than echoing ours back."""
+        values = self._ssi_values([self.ssi_calculator])
+
+        self.assertEqual(values, [None, None])
