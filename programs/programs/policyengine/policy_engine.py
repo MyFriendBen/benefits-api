@@ -196,51 +196,62 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: 
         already_added.add(member_1)
         already_added.add(member_2)
 
-    reserved = _reserved_output_slots(programs)
+    # Two passes, inputs before outputs. A dependency class can serve as both — `spm.Snap`
+    # is the SNAP calculators' pe_output and Head Start's pe_input, `member.Ssi` is the SSI
+    # calculators' pe_output and KS TANF's / Head Start's pe_input — and the two roles want
+    # opposite things from the same field. Inputs carry the household's reported value;
+    # output slots are what we ask PE to compute, so they go out as None (writing a value
+    # there pins the answer: measured against the live API, a reporting household's computed
+    # SNAP collapsed from $3,708/yr to $12/yr when the receipt value also landed in the SNAP
+    # calculator's monthly output slot).
+    #
+    # Ordering makes the precedence explicit rather than accidental: an input's value is
+    # never displaced by an output's None. That matters when both target the *same*
+    # coordinate — KS sends reported `ssi` at the annual period while ks_ssi claims that same
+    # annual slot as its output, and reported SSI has to win or KEESM 2210's assistance-unit
+    # exclusion (ks_tanf_is_assistance_unit_member) silently stops working.
+    for pass_outputs in (False, True):
+        for program in programs:
+            for Data in program.pe_outputs if pass_outputs else program.pe_inputs:
+                # Skip inputs the resolved model version doesn't define yet — sending an
+                # unknown variable 400s the whole request (e.g. meets_ssi_disability_criteria
+                # on 1.691.1). comparable_version is the concrete "current" resolved above
+                # when this request carries a version-gated input; if PE was unreachable it
+                # stays None and version_supports conservatively withholds min-gated inputs.
+                if not pe_versions.version_supports(
+                    comparable_version,
+                    getattr(Data, "min_pe_version", ()),
+                    getattr(Data, "max_pe_version", ()),
+                ):
+                    continue
 
-    for program in programs:
-        for Data in program.pe_inputs + program.pe_outputs:
-            # Skip inputs the resolved model version doesn't define yet — sending an
-            # unknown variable 400s the whole request (e.g. meets_ssi_disability_criteria
-            # on 1.691.1). comparable_version is the concrete "current" resolved above
-            # when this request carries a version-gated input; if PE was unreachable it
-            # stays None and version_supports conservatively withholds min-gated inputs.
-            if not pe_versions.version_supports(
-                comparable_version,
-                getattr(Data, "min_pe_version", ()),
-                getattr(Data, "max_pe_version", ()),
-            ):
-                continue
+                period = program.pe_period
+                if pass_outputs and hasattr(program, "pe_output_period"):
+                    period = program.pe_output_period
 
-            period = program.pe_period
-            if hasattr(program, "pe_output_period") and Data in program.pe_outputs:
-                period = program.pe_output_period
+                if issubclass(Data, Member):
+                    for member in members:
+                        member_id = str(member.id)
+                        data = Data(screen, member, relationship_map)
+                        unit = raw_input["household"][data.unit][member_id]
 
-            reserve = (Data.field, period) in reserved
+                        update_unit(unit, data, period, reserve=pass_outputs)
+                elif issubclass(Data, TaxUnit):
+                    # split the household into the main and secondary tax unit.
+                    data = Data(screen, main_tax_members, relationship_map)
+                    unit = raw_input["household"][data.unit][MAIN_TAX_UNIT]
 
-            if issubclass(Data, Member):
-                for member in members:
-                    member_id = str(member.id)
-                    data = Data(screen, member, relationship_map)
-                    unit = raw_input["household"][data.unit][member_id]
+                    update_unit(unit, data, period, reserve=pass_outputs)
 
-                    update_unit(unit, data, period, reserve=reserve)
-            elif issubclass(Data, TaxUnit):
-                # split the household into the main and secondary tax unit.
-                data = Data(screen, main_tax_members, relationship_map)
-                unit = raw_input["household"][data.unit][MAIN_TAX_UNIT]
+                    data = Data(screen, secondary_tax_members, relationship_map)
+                    unit = raw_input["household"][data.unit][SECONDARY_TAX_UNIT]
 
-                update_unit(unit, data, period, reserve=reserve)
+                    update_unit(unit, data, period, reserve=pass_outputs)
+                else:
+                    data = Data(screen, members, relationship_map)
+                    unit = raw_input["household"][data.unit][data.sub_unit]
 
-                data = Data(screen, secondary_tax_members, relationship_map)
-                unit = raw_input["household"][data.unit][SECONDARY_TAX_UNIT]
-
-                update_unit(unit, data, period, reserve=reserve)
-            else:
-                data = Data(screen, members, relationship_map)
-                unit = raw_input["household"][data.unit][data.sub_unit]
-
-                update_unit(unit, data, period, reserve=reserve)
+                    update_unit(unit, data, period, reserve=pass_outputs)
 
     # delete the second tax unit if it is empty because PE can't handle empty tax units
     if len(secondary_tax_members) == 0:
@@ -253,35 +264,20 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: 
     return raw_input
 
 
-def _reserved_output_slots(programs: List[PolicyEngineCalulator]) -> set[tuple[str, str]]:
-    """The (field, period) coordinates this request asks PolicyEngine to *compute*.
-
-    A dependency class can serve as both input and output — `spm.Snap` is the SNAP
-    calculators' `pe_output` and Head Start's `pe_input`, `spm.Tanf` likewise. When such
-    a class carries a value, that value lands in the very slot we asked PE to fill and
-    pins the answer: verified against the live API, a household reporting SNAP had its
-    computed SNAP collapse from $3,708/yr to $12/yr because the receipt value was
-    written at both the annual input period and the SNAP calculator's `2025-01` output
-    period.
-
-    So any slot claimed as an output is reserved: it is always sent as None, whichever
-    list the write came from. An input may still supply the same *field* at a different
-    period — that is how reported-receipt values reach PE (an annual `snap` figure is
-    spread across the months) without overwriting the monthly answer we want back.
-    """
-    slots: set[tuple[str, str]] = set()
-    for program in programs:
-        period = getattr(program, "pe_output_period", None) or program.pe_period
-        for Data in program.pe_outputs:
-            slots.add((Data.field, period))
-    return slots
-
-
 def update_unit(unit, data: PolicyEngineCalulator, period: str, reserve: bool = False):
-    # `reserve` marks a slot this request asks PE to compute (see
-    # _reserved_output_slots): send None so PE calculates it rather than echoing back a
-    # value we supplied.
-    value = None if reserve else data.value()
+    # `reserve` marks an output write: this slot is one we ask PolicyEngine to compute, so
+    # it goes out as None rather than echoing back a value we supplied. An input that
+    # already claimed the same coordinate keeps its value — see the two-pass loop in
+    # pe_input() — so a reserved write never displaces a reported figure, and it isn't a
+    # dependency conflict either (the two roles are expected to meet on dual-role fields
+    # like snap / ssi).
+    if reserve:
+        if data.field in unit and period in unit[data.field]:
+            return
+        unit.setdefault(data.field, {})[period] = None
+        return
+
+    value = data.value()
     if data.field in unit and period in unit[data.field]:
         if value != unit[data.field][period]:
             raise DependencyError(data.field, value, unit[data.field][period])
