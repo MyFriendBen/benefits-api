@@ -20,7 +20,7 @@ class ConfigurationData:
         raise NotImplemented()
 
     # State name for display (override in your white label config)
-    state = {"name": "[REPLACE_ME]"}
+    state = {"name": ""}
 
     # Banner messages displayed at top of screener (optional)
     banner_messages = []
@@ -457,34 +457,20 @@ class ConfigurationData:
     #     configuration/white_labels/_template.py (search for "category_benefits")
     #     configuration/white_labels/README.md
     # ==================================================================================
-    category_benefits = {
-        "[REPLACE_ME]": {
-            "benefits": {
-                "[REPLACE_ME]": {
-                    "name": {
-                        "_label": "",
-                        "_default_message": "",
-                    },
-                    "description": {
-                        "_label": "",
-                        "_default_message": "",
-                    },
-                },
-            },
-            "category_name": {"_label": "", "_default_message": ""},
-        },
-    }
+    # Base default is empty; each white label overrides with its own benefits.
+    # For the expected structure and naming conventions, see:
+    #     configuration/white_labels/_template.py (search for "category_benefits")
+    #     configuration/white_labels/README.md
+    category_benefits = {}
 
-    # Links to consent/terms pages for each language
+    # Links to consent/terms pages, keyed by language code.
     consent_to_contact = {
         "en-us": "",
-        "[REPLACE_ME]": "",
     }
 
-    # Links to privacy policy for each language
+    # Links to privacy policy, keyed by language code.
     privacy_policy = {
         "en-us": "",
-        "[REPLACE_ME]": "",
     }
 
     # Configuration for branding, logos, steps, and UI options
@@ -566,7 +552,7 @@ class ConfigurationData:
     }
 
     # Custom translation overrides for specific text strings (optional)
-    # should follow format {"[REPLACE_ME]": {"_label": "[REPLACE_ME]", "_default_message": "[REPLACE_ME]"}}
+    # should follow format {"<key>": {"_label": "<label>", "_default_message": "<text>"}}
     override_text = {}
 
     # Email and SMS communication configuration

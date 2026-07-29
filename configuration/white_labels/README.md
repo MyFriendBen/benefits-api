@@ -22,7 +22,7 @@ This directory contains configuration files for MyFriendBen white labels (state/
        return WhiteLabel.objects.get(code="tx")
    ```
 
-4. **Fill in required fields** (marked with `TODO` or `[REPLACE_ME]`):
+4. **Fill in required fields** (marked with `TODO` comments and `your_*_key` placeholders):
    - `state["name"]` - State/region name
    - `counties_by_zipcode` - Zip code to county mappings (REQUIRED)
    - `category_benefits` - Benefits available in your state
