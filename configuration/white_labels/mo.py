@@ -1442,15 +1442,9 @@ class MoConfigurationData(ConfigurationData):
 
     # MO uses generic MFB branding and the default step directory, so it inherits
     # everything from base and overrides only the values that are MO-specific:
-    # the share link, the state name, and the no-results message.
+    # the share link and the state name.
     referrer_data = {
         **ConfigurationData.referrer_data,
         "shareLink": {"default": "https://screener.myfriendben.org/mo/step-1"},
         "stateName": {"default": "Missouri"},
-        "noResultMessage": {
-            "default": {
-                "_label": "noResultMessage",
-                "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. If you indicated need for an immediate resource, please click on the \"Near-Term Benefits\" tab. For additional resources, please click the 'More Help' button below to get the resources you're looking for.",
-            },
-        },
     }
