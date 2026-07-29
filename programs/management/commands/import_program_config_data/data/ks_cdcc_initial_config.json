@@ -29,7 +29,6 @@
     "estimated_delivery_time": "21 days after filing",
     "estimated_value": "",
     "value_format": "lump_sum",
-    "value_type": "tax_credit",
     "website_description": "The Kansas Child and Dependent Care Credit helps lower your state income taxes if you pay for child care",
     "has_calculator": true,
     "show_on_current_benefits": true,

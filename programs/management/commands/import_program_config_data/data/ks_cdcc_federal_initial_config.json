@@ -27,7 +27,6 @@
     "estimated_delivery_time": "",
     "estimated_value": "",
     "value_format": "estimated_annual",
-    "value_type": "tax_credit",
     "website_description": "Federal tax credit for childcare or dependent care expenses when you work or look for work",
     "base_program": "cdcc",
     "show_on_current_benefits": true,

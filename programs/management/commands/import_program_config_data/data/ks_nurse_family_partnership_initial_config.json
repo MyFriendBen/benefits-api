@@ -27,7 +27,6 @@
     "estimated_application_time": "10 minutes",
     "estimated_delivery_time": "",
     "estimated_value": "",
-    "value_type": "benefit",
     "value_format": "estimated_annual",
     "base_program": "nfp",
     "show_on_current_benefits": true,

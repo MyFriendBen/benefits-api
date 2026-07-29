@@ -19,7 +19,6 @@
       "non_citizen"
     ],
     "value_format": null,
-    "value_type": "benefit",
     "base_program": "csfp",
     "show_on_current_benefits": true,
     "has_calculator": true,

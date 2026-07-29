@@ -23,7 +23,6 @@
     "estimated_application_time": "90 minutes",
     "estimated_delivery_time": "6 to 8 months",
     "estimated_value": "",
-    "value_type": "benefit",
     "has_calculator": true,
     "show_on_current_benefits": true,
     "show_in_has_benefits_step": true,

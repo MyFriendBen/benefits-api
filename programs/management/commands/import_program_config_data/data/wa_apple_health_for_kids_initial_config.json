@@ -26,7 +26,6 @@
     "estimated_delivery_time": "",
     "estimated_value": "",
     "value_format": null,
-    "value_type": "benefit",
     "website_description": "Free or low-cost health coverage for kids in Washington",
     "base_program": "medicaid",
     "show_on_current_benefits": true,
