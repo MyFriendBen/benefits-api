@@ -72,6 +72,13 @@ class NcConfigurationData(ConfigurationData):
                 "_default_message": "Help with managing your mortgage, rent, or utilities",
             },
         },
+        "homelessServices": {
+            "icon": {"_icon": "Homeless_services", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.homelessServices",
+                "_default_message": "Help finding shelter",
+            },
+        },
         "support": {
             "icon": {"_icon": "Support", "_classname": "option-card-icon"},
             "text": {
@@ -105,6 +112,13 @@ class NcConfigurationData(ConfigurationData):
             "text": {
                 "_label": "acuteConditionOptions.dentalCare",
                 "_default_message": "Low-cost dental care",
+            },
+        },
+        "freeLowCostMedicalCare": {
+            "icon": {"_icon": "Health_care", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.freeLowCostMedicalCare",
+                "_default_message": "Free or lower cost health care",
             },
         },
         "legalServices": {
