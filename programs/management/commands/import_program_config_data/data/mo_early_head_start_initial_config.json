@@ -29,7 +29,7 @@
     "estimated_delivery_time": "",
     "estimated_value": "",
     "value_type": "benefit",
-    "value_format": "estimated_annual",
+    "value_format": null,
     "has_calculator": true,
     "show_on_current_benefits": true,
     "show_in_has_benefits_step": false,
