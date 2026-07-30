@@ -22,6 +22,29 @@ class MoWic(Wic):
     pe_inputs = [
         *Wic.pe_inputs,
         dependency.household.MoStateCodeDependency,
+        # PARTIAL income fix — makes wage-type income bind. See the gap note below.
+        #
+        # The federal ``Wic`` inputs carry only ``school_meal_countable_income``, the school-meals
+        # variable. PolicyEngine's WIC tree never reads it: ``wic_countable_income`` sums its own
+        # parameter list, ``gov.usda.wic.income.sources``. So with the federal inputs alone we
+        # supply *none* of WIC's income sources and PE substitutes its own imputation — it computes
+        # SSI/TANF for the household (both are in that sources list) and, seeing no earnings, finds
+        # every member Medicaid-eligible. Per ``is_wic_eligible``:
+        #
+        #     demographic_eligible & (meets_income_test | meets_categorical_test) & nutritional_risk
+        #
+        # the categorical (adjunct) branch then carries eligibility on its own, so WIC returns
+        # eligible at any reported income — verified live at $108k/yr.
+        #
+        # GAP: this bundle supplies only 5 of WIC's 24 income sources (employment, self-employment,
+        # social_security, unemployment_compensation, rental); its other three fields
+        # (taxable_pension_income, taxable_ira_distributions, long_term_capital_gains) are not in
+        # WIC's list and are inert here — WIC wants pension_income and retirement_distributions.
+        # Income the screener does collect but WIC still won't see includes veterans' benefits,
+        # workers' comp, alimony, investment and pension income. Mapping those needs new dependency
+        # classes, and the federal base class must be fixed for co/nc/ma/tx_wic, which changes
+        # results for shipped programs. Both are tracked separately, not done here.
+        *dependency.irs_gross_income,
     ]
 
     def member_value(self, member: HouseholdMember):
