@@ -43,7 +43,7 @@ def reverse_seed(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("programs", "0162_alter_program_base_program"),
+        ("programs", "0164_seed_mo_generic_referrers"),
     ]
 
     operations = [
