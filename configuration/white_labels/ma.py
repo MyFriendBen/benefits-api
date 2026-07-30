@@ -1448,7 +1448,10 @@ class MaConfigurationData(ConfigurationData):
         "es": "https://www.myfriendben.org/privacidad/",
     }
 
+    # Inherit base referrer_data (favicon, uiOptions, etc.) and override only the
+    # keys MA customizes. MA keeps its own noResultMessage (smart-quote variant).
     referrer_data = {
+        **ConfigurationData.referrer_data,
         "theme": {"default": "default"},
         "logoSource": {
             "default": "MFB_MALogo",
@@ -1478,7 +1481,6 @@ class MaConfigurationData(ConfigurationData):
                 "signUpInfo",
             ],
         },
-        "uiOptions": {"default": []},
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",

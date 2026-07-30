@@ -292,9 +292,9 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
 
     # TODO: Add benefits available in your state, organized by category
     category_benefits = {
-        "[REPLACE_ME]": {
+        "your_category_key": {
             "benefits": {
-                "[REPLACE_ME]": {  # ← This key is critical! Must match has_* field name
+                "your_benefit_key": {  # ← This key is critical! Must match has_* field name
                     "name": {"_label": "", "_default_message": ""},
                     "description": {"_label": "", "_default_message": ""},
                 },
