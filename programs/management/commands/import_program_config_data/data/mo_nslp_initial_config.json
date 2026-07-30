@@ -1,0 +1,66 @@
+{
+  "white_label": {"code": "mo"},
+  "program_category": {
+    "external_name": "mo_food",
+    "name": "Food and Nutrition",
+    "icon": "food"
+  },
+  "program": {
+    "name_abbreviated": "mo_nslp",
+    "year": "2026",
+    "base_program": "nslp",
+    "legal_status_required": ["citizen", "non_citizen", "refugee", "gc_5plus", "gc_5less", "otherWithWorkPermission"],
+    "name": "National School Lunch Program",
+    "description_short": "Free or reduced-price school meals for eligible Missouri students",
+    "description": "\n\nThe National School Lunch Program gives free or lower-cost meals to students at Missouri schools that take part.\n\nStudents from families with low incomes get free meals. Families with slightly higher incomes get lower-cost meals. Children get free meals right away if their family gets SNAP, FDPIR, or TANF benefits. Foster children, homeless children, runaway children, migrant children, and children in Head Start also get free meals right away.\n\nThe program is open to all students at schools that take part. Anyone who qualifies can get school meals, no matter their legal or immigration papers.\n\nTo apply, select Apply Now. Then find your school district and fill out the online form. If you cannot find your district or apply online, contact your child's school for help. You can apply at any time during the school year.",
+    "learn_more_link": "https://www.fna.usda.gov/nslp",
+    "apply_button_link": "https://www.myschoolapps.com/",
+    "apply_button_description": "",
+    "estimated_application_time": "5-15 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": null,
+    "value_type": "benefit",
+    "website_description": "Free or reduced-price school meals for eligible Missouri students",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": [
+    {
+      "external_name": "mo_nslp_application",
+      "text": "Completed school meal application (if applying with a paper form from your child's school or school district)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_nslp_income",
+      "text": "Proof of household income for all members (ex: pay stubs, tax returns, employer letter)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_nslp_case_number",
+      "text": "Case number for SNAP, FDPIR, or TANF (if applicable — waives income verification)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_nslp_ssn",
+      "text": "Last four digits of the Social Security Number of the adult household member signing the application (or a statement that no SSN has been assigned)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "usda_national_hunger_hotline",
+      "name": "USDA National Hunger Hotline",
+      "email": "",
+      "description": "A federal hotline staffed to help callers with school meal applications and other food assistance programs. Live representatives are available Monday–Friday, 7am–10pm ET, with Spanish-language support. You can also text for automated help.",
+      "assistance_link": "https://www.fna.usda.gov/national-hunger-hotline",
+      "phone_number": "+18663486479",
+      "languages": ["English", "Spanish"]
+    }
+  ]
+}
