@@ -40,6 +40,7 @@ from programs.programs.ma.pe import (
     ma_spm_calculators,
     ma_tax_unit_calculators,
 )
+from programs.programs.mo.pe import mo_member_calculators
 from programs.programs.nc.pe import nc_member_calculators, nc_spm_calculators
 from programs.programs.tx.pe import (
     tx_member_calculators,
@@ -54,6 +55,7 @@ all_member_calculators: dict[str, type[PolicyEngineMembersCalculator]] = {
     **il_member_calculators,
     **ks_member_calculators,
     **ma_member_calculators,
+    **mo_member_calculators,
     **nc_member_calculators,
     **tx_member_calculators,
     **wa_member_calculators,

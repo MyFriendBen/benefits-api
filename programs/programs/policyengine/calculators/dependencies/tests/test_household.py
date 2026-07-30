@@ -106,6 +106,22 @@ class TestKsStateCodeDependency(TestCase):
         self.assertEqual(dep.field, "state_code")
 
 
+class TestMoStateCodeDependency(TestCase):
+    """Tests for MoStateCodeDependency (sets state_code=MO for the MO PE calculators)."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="65101", county="Cole County", household_size=1, completed=False
+        )
+
+    def test_value_returns_mo_state_code(self):
+        dep = household.MoStateCodeDependency(self.screen, None, {})
+        self.assertEqual(dep.value(), "MO")
+        self.assertEqual(dep.field, "state_code")
+
+
 class TestCountyDependency(TestCase):
     """Tests for CountyDependency base class and all concrete subclasses."""
 
