@@ -39,11 +39,19 @@ class MoWic(Wic):
         # the categorical (adjunct) branch then carries eligibility on its own, so WIC returns
         # eligible at any reported income — verified live at $108k/yr.
         #
-        # NOTE: that test's *reported*-enrollment branches, ``receives_snap`` / ``receives_tanf``, are
-        # PE inputs nothing in our codebase populates. Today that is masked by the computed branch
-        # firing anyway. Once income is supplied correctly, a household genuinely enrolled in SNAP or
-        # TANF above 185% FPL is adjunct-eligible in real policy but would be denied here — so the
-        # full fix has to send those inputs too, not just income (see the follow-up ticket).
+        # Adjunct eligibility above 185% FPL is correct, not a bug: 42 USC 1786(d)(2)(A) makes
+        # SNAP/TANF/Medicaid receipt its own pathway, and MO HealthNet for Pregnant Women reaches
+        # 201% FPL (196% + 5% disregard, household includes the unborn child). Verified after this
+        # fix: a pregnant applicant at ~190% FPL is still eligible via the Medicaid branch, and only
+        # falls out at ~205% once both pathways fail. Expect the boundary at MO's Medicaid limit,
+        # not at 185% — QA scenarios should assert that.
+        #
+        # NOTE: the categorical test's *reported*-enrollment inputs (``receives_snap`` /
+        # ``receives_tanf``) are never populated by our code. That is a narrow gap, not a blocker:
+        # PE computes snap/tanf/medicaid eligibility from the income we now send, so genuinely
+        # eligible households still trip the branch. It only bites where PE's computed result
+        # disagrees with reported enrollment (state rules PE doesn't model, or income risen since
+        # enrollment). Tracked in the follow-up ticket.
         #
         # GAP: this bundle supplies only 5 of WIC's 24 income sources (employment, self-employment,
         # social_security, unemployment_compensation, rental); its other three fields
