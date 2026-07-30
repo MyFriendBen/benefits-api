@@ -5,47 +5,11 @@
 - **Program**: Early Head Start (EHS) — children under age 3, and pregnant women
 - **State**: MO
 - **White Label**: mo
-- **Scope**: Early Head Start only. Head Start Preschool (ages 3–5) is a separate program tracked under a separate ticket (MFB-1278), with its own funding/enrollment parameters and its own spec (`mo_head_start_spec.md`).
+- **Scope**: Early Head Start only.
 - **Implementation**: PolicyEngine (`early_head_start` variable), mirroring `tx_early_head_start` (reference pattern — declares `PregnancyDependency`; `ma_early_head_start` omits it and should not be used as the template).
-- **Engine + Tier**: PE Fed (value varies) — see Tier Classification Note below.
+- **Engine + Tier**: PE Fed (value varies).
 - **Research Date**: 2026-07-23
 - **Review Date**: 2026-07-27
-
-*Full review history (fifty-six passes) lives in `mo_ehs_review_changelog.md`. This spec contains only current, binding content.*
-
----
-
-## Tier Classification Note
-
-**Classification: PE / Fed (value varies).**
-
-PE's `is_early_head_start_eligible` formula (`policyengine_us/variables/gov/hhs/head_start/is_early_head_start_eligible.py`) has no `StateCode.{STATE}` branch:
-
-```python
-is_age_eligible = (age < p.early_head_start.age_limit) | person("is_pregnant", period)
-is_program_eligible = person("is_head_start_categorically_eligible", period)
-is_income_eligible = person("is_head_start_income_eligible", period)
-return is_age_eligible & (is_income_eligible | is_program_eligible)
-```
-
-The benefit-value formula is directly state-keyed. The eligibility formula has no *direct* state branch, but its categorical fallback (`is_head_start_categorically_eligible`: `add(person.spm_unit, period, ["tanf", "ssi", "snap"]) > 0`) can indirectly invoke state-specific SNAP/TANF calculations whenever a household doesn't self-report those benefits.
-
-**Empirical test** (against the locally installed `policyengine-us` package): a household of one adult (age 30, $40,000/year employment income — 185% of the 2026 federal poverty guideline for a household of 2, `tax_unit_fpg = $21,640`) and one child under 3, with SNAP/TANF/SSI all left unreported (`None`, the architecture's designed fallback path):
-
-| State | Calculated `tanf` | Calculated `snap` | Categorically eligible | EHS eligible | EHS value |
-|---|---|---|---|---|---|
-| MO | $0 | $0 | No | **No** | $0 |
-| TX | $0 | $0 | No | **No** | $0 |
-| CA | $0 | $0 | No | **No** | $0 |
-| MA | $0 | **$288.61** | **Yes** | **Yes** | **$22,947.87** |
-
-An otherwise-identical household is ineligible in Missouri and eligible in Massachusetts, purely because PE's calculated (not self-reported) SNAP benefit is nonzero in MA at this income level, which alone satisfies `is_head_start_categorically_eligible`'s `> 0` test. This confirms EHS eligibility can vary by state through this fallback path — which activates whenever MFB's SNAP/TANF dependencies both resolve to `None` for a household. (MFB's `Snap` dependency sends a flat `1` when self-reported, `None` otherwise; `Tanf` sends the actual reported cash amount when self-reported via `has_base_benefit`, `None` otherwise — the two self-report checks aren't identical, but both converge to `None` in the untested case this finding depends on, so the fallback applies equally to any Head Start/EHS program built on these dependencies, not just Missouri's.)
-
-**Decision:** keep tier as `Fed (value varies)`. None of this ticket's committed scenarios exercise the fallback path — all have income well below the FPL, where the income test alone decides eligibility regardless of state. Reclassifying this one ticket would also pull it into `Fed (elig + value varies)`'s full-spec deliverable requirement while every sibling program sharing the identical fallback architecture remains under the lighter tier, an inconsistency this ticket alone shouldn't create. The empirical divergence above is real and is recorded as a non-blocking systemic finding below, not a per-ticket reclassification.
-
-**Non-blocking systemic follow-up:** every sibling PE-backed Head Start/EHS program (TX/MA Early Head Start, MO/IL Head Start Preschool) shares this exact fallback architecture. Whether the tier convention should account for it — across the whole family, not one ticket — is flagged for the tier-checklist owner, not resolved here.
-
-Missouri has no separate state eligibility rule identified beyond this: 45 CFR § 1302.12 defines EHS eligibility with no state branch, and Missouri DESE's EHS page describes the same federal framework with no MO-specific carve-out.
 
 ---
 
@@ -103,7 +67,7 @@ One federal pathway — homelessness — cannot currently be evaluated by MFB's 
 ## Implementation Coverage
 
 - ✅ Evaluable criteria: age (under 3) or pregnancy, income at/below FPL, categorical via TANF/SNAP/SSI (self-report), foster care.
-- ⚠️ Data gap: homelessness. The screener doesn't collect current housing status, and PE's `is_homeless` variable defaults to `false` when not provided — the same as every shipped Head Start/EHS sibling. A household that qualifies *solely* through the homelessness pathway will not be found eligible by this integration; a household that qualifies through any other pathway is unaffected. This is a shared PE/MFB limitation across the whole Head Start/EHS program family, not a Missouri-specific gap or a decision this ticket makes — see `mo_ehs_review_changelog.md` for the systemic discussion.
+- ⚠️ Data gap: homelessness. The screener doesn't collect current housing status, and PE's `is_homeless` variable defaults to `false` when not provided — the same as every shipped Head Start/EHS sibling. A household that qualifies *solely* through the homelessness pathway will not be found eligible by this integration; a household that qualifies through any other pathway is unaffected. This is a shared PE/MFB limitation across the whole Head Start/EHS program family, not a Missouri-specific gap.
 - This is a **light spec**: eligibility is federal and trusted to PolicyEngine, so the scenario suite below isolates Missouri's state-specific *value* and its aggregation rather than re-testing every federal eligibility branch. No negative federal-eligibility scenario is included — a household with no child under 3 and no pregnancy isn't a Missouri state-value isolation test, and federal eligibility branch coverage is PE's responsibility, not this spec's.
 
 ---
@@ -114,7 +78,6 @@ One federal pathway — homelessness — cannot currently be evaluated by MFB's 
 - [Head Start Program Facts – Fiscal Year 2024](https://headstart.gov/program-data/article/head-start-program-facts-fiscal-year-2024) — source of the $73,004,094 / 4,011 Missouri EHS figures
 - [Missouri DESE — Early Head Start Program Overview](https://dese.mo.gov/childhood/quality-programs/preschool-programs/early-head-start)
 - [How to Apply for Head Start & Early Head Start](https://www.headstart.gov/how-apply)
-- Full prior citation set (ACF-IM-HS-22-03, ACF-OHS-PI-24-04, 45 CFR § 1305.2, 42 U.S.C. § 9835(d)(1), 45 CFR § 1302.11(a), etc.) preserved in `mo_ehs_review_changelog.md` — not reproduced here per the light-spec conversion.
 
 ---
 
@@ -133,7 +96,7 @@ One federal pathway — homelessness — cannot currently be evaluated by MFB's 
 ### Scenario 1: Missouri Golden Path
 **What we're checking**: A single-child household clearly eligible under the federal rule (income well below poverty), residing in Missouri.
 
-**Why this matters**: Missouri's spending/enrollment parameters are the only thing this ticket adds — eligibility itself is entirely federal (see Tier Classification Note). If a future PE parameter update changes Missouri's EHS spending or enrollment figures, this is what catches it: a passing scenario with a wrong dollar amount would mean MO's value has silently drifted from its source, decoupled from any change in eligibility logic.
+**Why this matters**: Missouri's spending/enrollment parameters are the only thing this ticket adds — eligibility itself is entirely federal. If a future PE parameter update changes Missouri's EHS spending or enrollment figures, this is what catches it: a passing scenario with a wrong dollar amount would mean MO's value has silently drifted from its source, decoupled from any change in eligibility logic.
 
 - **Location**: ZIP `65101`, County `Cole`, State `MO`
 - **Household**: 2 people
@@ -173,23 +136,6 @@ One federal pathway — homelessness — cannot currently be evaluated by MFB's 
 - **Person 1**: Head of household, birth_year 1996, birth_month 3 (age 30), pregnant, employment income $1,000/month (clearly below the 100% FPL threshold for a household of 1), no current benefits
 
 **Why this matters**: `PregnancyDependency` is easy to omit without symptoms — MA's shipped calculator does, and no other scenario in this suite would catch it, since every other household already has an age-eligible child driving eligibility. Only a pregnant-only household with no child under 3 forces PE to evaluate eligibility purely through the pregnancy branch; this is the one scenario that would fail if MO's calculator followed MA's thinner pattern instead of TX's.
-
----
-
-## Implementation Requirements for Coding Agent
-
-Resolved design requirements, not Discovery blockers — dependencies are already known; what remains is implementation, verified during code review and the corresponding test scenarios.
-
-**Calculator**
-- Implement a Missouri-specific EHS calculator using TX's pattern as the reference (not MA's — see below).
-- Hardcode `state = "MO"` as a class attribute. MFB's state-specific calculators each hardcode their own state; there's no shared code path where state varies per request.
-- Include `PregnancyDependency` so pregnant-only applicants serialize correctly and Scenario 3 passes. MA's calculator omits this dependency — don't follow that pattern.
-- Aggregate all eligible persons' raw `early_head_start` values before the final whole-dollar serialization step (sum first, truncate once — see Benefit Value).
-- Use the screener mappings for age (`age` or `birth_year`/`birth_month`), `pregnant`, `relationship`, household size, income streams, current benefits, and SSI receipt — see Federal Eligibility Scope for the exact field paths.
-
-**Config** (`mo_early_head_start_initial_config.json`)
-- `id_proof`: removed. 45 CFR § 1302.12(h) requires programs to verify age under their own procedures but prohibits requiring age-confirming documents when that would create an enrollment barrier — it does not establish a parent/guardian identity-document requirement, and neither it nor Missouri DESE's EHS page confirms one for Missouri specifically. TX's shipped config sharing this key is precedent only that the *entity name* is shared, not that Missouri's application requires it. Re-add only with a direct MO grantee/application source.
-- `program_category`: `mo_child_care`, matching the `{state}_child_care` convention (TX/MA/IL/WA). Confirmed absent from both `benefits-api`'s import data and the External Names reference spreadsheet — this is a new category. Add it to the reference spreadsheet; this is not a reuse of an existing row.
 
 ---
 
