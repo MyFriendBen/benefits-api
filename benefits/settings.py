@@ -85,6 +85,11 @@ REST_FRAMEWORK = {
         "nps": "3/hour",  # Limit NPS submissions to prevent abuse
         "rem": "30/hour",  # Limit REM impact proxy requests to protect the upstream API key
         "places": "200/hour",  # Limit Places Autocomplete proxy requests per IP
+        # Benbot proxies to a paid LLM and holds a worker for up to AI_SERVICE_TIMEOUT
+        # (60s) per message, on AllowAny endpoints. Generous enough for a real
+        # conversation, tight enough to bound cost and worker exhaustion.
+        "assistant_start": "30/hour",
+        "assistant_message": "120/hour",
     },
 }
 

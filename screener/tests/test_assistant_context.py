@@ -16,13 +16,15 @@ See the ai-service repo's docs/04-mfb-ai-service-api-contract.md (Layer 2).
 """
 
 from decimal import Decimal
-from types import SimpleNamespace
+from unittest import mock
 
 from django.conf import settings
 from django.db import connection
 from django.test import SimpleTestCase, TestCase
 from django.test.utils import CaptureQueriesContext
+from django.urls import reverse
 from django.utils import translation
+from rest_framework.test import APITestCase
 
 from programs.models import Program
 from screener.assistant import (
@@ -368,6 +370,67 @@ class BuildContextTests(TestCase):
 
         self.assertEqual(self.eligible_names(context), ["wic", "snap"])
 
+    def test_client_value_cannot_exceed_the_snapshot(self):
+        """The results page can only ever *reduce* the snapshot value (per covered
+        member), so anything above it is definitionally not a displayed value.
+
+        The bound is load-bearing, not cosmetic: AssistantStartView is AllowAny and the
+        screen UUID is also the results-page URL, and ai-service resumes by screen_uuid
+        and overwrites the stored context — so without this, anyone who has seen a link
+        could make that household's assistant quote an arbitrary amount."""
+        self.add_snapshot_row("snap", value="6636")
+
+        context = self.context(visible=[visible("snap", 999_999)])
+
+        self.assertEqual(context["eligible_programs"][0]["estimated_value"], 6636)
+
+    def test_client_value_of_zero_is_treated_as_hidden(self):
+        """The $0 gate must test the DISPLAYED figure, or a client value of 0 slips a
+        "~$0 per year" program in — exactly the row the results page hides."""
+        self.add_snapshot_row("snap", value="1200")
+        self.add_snapshot_row("wic", value="1200")
+
+        context = self.context(visible=[visible("snap", 0), visible("wic", 900)])
+
+        self.assertEqual(self.eligible_names(context), ["wic"])
+
+    def test_visible_programs_matching_nothing_falls_back(self):
+        """A list that matches no eligible row is malformed input, not an empty results
+        page. Without the fallback, `visible_programs: ["zzz"]` empties the list and
+        ai-service renders (and persists) "this person has NO eligible programs"."""
+        self.add_snapshot_row("snap")
+        self.add_snapshot_row("wic")
+
+        context = self.context(visible=[visible("zzz")])
+
+        self.assertEqual(sorted(self.eligible_names(context)), ["snap", "wic"])
+
+    def test_empty_visible_list_is_still_respected_after_the_fallback(self):
+        """An explicit [] means "showing nothing" and must stay distinguishable from
+        "names matched nothing"."""
+        self.add_snapshot_row("snap")
+
+        context = self.context(visible=[])
+
+        self.assertEqual(context["eligible_programs"], [])
+
+    def test_duplicate_visible_names_take_the_first_value(self):
+        """Last-wins would let a caller send the same program twice to choose which
+        value applies."""
+        self.add_snapshot_row("snap", value="6636")
+
+        parsed = _visible_programs(
+            {
+                "visible_programs": [
+                    {"name_abbreviated": "snap", "value": 100},
+                    {"name_abbreviated": "snap", "value": 5000},
+                ]
+            }
+        )
+        context = self.context(visible=parsed)
+
+        self.assertEqual(context["eligible_programs"][0]["estimated_value"], 100)
+
     # --- member-level insurance ---------------------------------------------
 
     def test_member_insurance_excludes_the_program(self):
@@ -385,6 +448,33 @@ class BuildContextTests(TestCase):
         context = self.context()
 
         self.assertEqual(self.eligible_names(context), ["snap"])
+
+    def test_member_insurance_gate_does_not_override_a_client_list(self):
+        """The client list is authoritative *precisely because* per-member insurance runs
+        client-side. `_has_member_insurance` is coarser than the page — it hides where
+        the page reduces the value — so applying it on top would drop a program the user
+        is looking at: the MFB-1427 failure in reverse."""
+        seed_program(self.white_label, "medicaid")
+        self.programs = {p.name_abbreviated: p for p in Program.objects.filter(white_label=self.white_label)}
+        self.add_snapshot_row("medicaid")
+        member = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=40)
+        Insurance.objects.create(household_member=member, medicaid=True)
+
+        context = self.context(visible=[visible("medicaid", 5280)])
+
+        self.assertEqual(self.eligible_names(context), ["medicaid"])
+
+    def test_insurance_held_program_appears_in_current_programs(self):
+        """Medicaid/CHP enrollment lives only in Insurance, so without the union it was
+        removed from eligible AND absent from current — and the closed-world rule then
+        forbids the assistant from naming it at all."""
+        seed_program(self.white_label, "medicaid")
+        member = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=40)
+        Insurance.objects.create(household_member=member, medicaid=True)
+
+        context = self.context()
+
+        self.assertIn("medicaid", self.current_names(context))
 
     def test_member_insurance_check_ignores_unmapped_programs(self):
         """strict=False means a program absent from insurance_map returns False, so this
@@ -491,8 +581,9 @@ class VisibleProgramsParsingTests(SimpleTestCase):
     one. No database needed."""
 
     def parse(self, value, present=True):
-        payload = {"visible_programs": value} if present else {}
-        return _visible_programs(SimpleNamespace(data=payload))
+        # Takes a plain dict now rather than a request, so there's no fake request
+        # object to keep in sync with DRF.
+        return _visible_programs({"visible_programs": value} if present else {})
 
     def test_absent_key_returns_none(self):
         """None selects the server-side fallback filters."""
@@ -556,3 +647,84 @@ class VisibleProgramsParsingTests(SimpleTestCase):
 
     def test_float_values_are_truncated_to_whole_dollars(self):
         self.assertEqual(self.parse([{"name_abbreviated": "snap", "value": 6636.7}]), [visible("snap", 6636)])
+
+
+class AssistantStartViewTests(APITestCase):
+    """End-to-end through the view.
+
+    Without this, both halves of the feature are tested and the join between them is
+    not: deleting `_visible_programs(body)` from the view, or deleting CONTEXT_PREFETCH
+    from its queryset, left the whole unit suite green (the N+1 tests supply the
+    prefetch themselves, which makes them tautological with respect to the constant).
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(
+            name="Test State", code="test", state_code="TS", feature_flags={"benbot": True}
+        )
+        self.screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="78701", household_size=2, completed=True
+        )
+        seed_program(self.white_label, "snap", "wic")
+        snapshot = EligibilitySnapshot.objects.create(screen=self.screen, is_batch=False, had_error=False)
+        for name, value in (("snap", "6636"), ("wic", "1224")):
+            ProgramEligibilitySnapshot.objects.create(
+                eligibility_snapshot=snapshot,
+                name=name.upper(),
+                name_abbreviated=name,
+                value_type="",
+                estimated_value=Decimal(value),
+                eligible=True,
+            )
+        self.url = reverse("assistant-start", args=[self.screen.uuid])
+
+    def _post(self, body):
+        """POST and return the payload the view forwarded to ai-service."""
+        with mock.patch("screener.assistant.requests.request") as request:
+            request.return_value = mock.Mock(status_code=201, json=lambda: {"conversation_id": "c1", "messages": []})
+            response = self.client.post(self.url, body, format="json")
+        self.assertEqual(response.status_code, 201, response.data)
+        return request.call_args.kwargs["json"]
+
+    def test_visible_programs_from_the_request_reaches_the_context(self):
+        payload = self._post({"visible_programs": [{"name_abbreviated": "wic", "value": 900}]})
+
+        eligible = payload["context"]["eligible_programs"]
+        self.assertEqual([p["external_name"] for p in eligible], ["wic"])
+        self.assertEqual(eligible[0]["estimated_value"], 900)
+
+    def test_omitting_visible_programs_uses_the_server_filters(self):
+        payload = self._post({})
+
+        eligible = payload["context"]["eligible_programs"]
+        self.assertEqual(sorted(p["external_name"] for p in eligible), ["snap", "wic"])
+
+    def test_json_array_body_does_not_500(self):
+        """`request.data` is a list for an array body, so `.get` isn't safe to assume."""
+        with mock.patch("screener.assistant.requests.request") as request:
+            request.return_value = mock.Mock(status_code=201, json=lambda: {})
+            response = self.client.post(self.url, [], format="json")
+
+        self.assertEqual(response.status_code, 201)
+
+    def test_query_count_is_bounded(self):
+        """Hardcoded so CONTEXT_PREFETCH disappearing from the view is caught here, even
+        though the unit-level N+1 tests supply the prefetch themselves.
+
+        The nine: screen lookup, the two CONTEXT_PREFETCH prefetches (current_benefits,
+        household_members), white_label (feature flag), snapshot, its program_snapshots
+        prefetch, the apply-link programs + their translations prefetch, and the
+        current-programs query. All flat in program and member count.
+        """
+        with mock.patch("screener.assistant.requests.request") as request:
+            request.return_value = mock.Mock(status_code=201, json=lambda: {})
+            with self.assertNumQueries(9):
+                self.client.post(self.url, {}, format="json")
+
+    def test_feature_flag_off_returns_403(self):
+        self.white_label.feature_flags = {"benbot": False}
+        self.white_label.save()
+
+        response = self.client.post(self.url, {}, format="json")
+
+        self.assertEqual(response.status_code, 403)
