@@ -19,16 +19,20 @@ from decimal import Decimal
 from unittest import mock
 
 from django.conf import settings
+from django.core.cache import cache
 from django.db import connection
 from django.test import SimpleTestCase, TestCase
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import translation
+from rest_framework import status
 from rest_framework.test import APITestCase
 
 from programs.models import Program
 from screener.assistant import (
     CONTEXT_PREFETCH,
+    AssistantMessageRateThrottle,
+    AssistantStartRateThrottle,
     MAX_PROGRAM_VALUE,
     MAX_VISIBLE_PROGRAMS,
     _build_context,
@@ -497,6 +501,91 @@ class BuildContextTests(TestCase):
 
         self.assertEqual(sorted(self.eligible_names(context)), ["snap", "wic"])
 
+    # --- review-round findings ----------------------------------------------
+
+    def test_a_long_apply_url_is_not_truncated(self):
+        """Two links in the shipped seed config exceed MAX_PROMPT_FIELD_LEN (tx_wic at
+        198 chars, il_ibccp at 174). Truncating a URL produces an authoritative-looking
+        404, and the prompt forbids the assistant from offering any other link — so
+        there'd be no fallback. URLs are validated, not clipped."""
+        long_url = "https://mywic.us/participantreferral?program=TX&_gl=1*" + ("a" * 140)
+        self.assertGreater(len(long_url), 160)
+        self.add_snapshot_row("snap")
+        set_translation(self.programs["snap"].apply_button_link, long_url)
+
+        context = self.context()
+
+        self.assertEqual(context["eligible_programs"][0]["apply_url"], long_url)
+
+    def test_an_absurdly_long_apply_url_is_dropped_not_truncated(self):
+        self.add_snapshot_row("snap")
+        set_translation(self.programs["snap"].apply_button_link, "https://x.example/?q=" + ("a" * 600))
+
+        context = self.context()
+
+        self.assertNotIn("apply_url", context["eligible_programs"][0])
+
+    def test_insurance_is_detected_via_base_program(self):
+        """`insurance_map()` has a generic `medicaid` key but no `ks_medicaid`, and
+        several state variants aren't listed at all. Resolving through `base_program` —
+        the same structural grouping `has_base_benefit` reads — covers them without a
+        hand-maintained list."""
+        Program.objects.new_program(self.white_label.code, "ks_medicaid")
+        Program.objects.filter(name_abbreviated="ks_medicaid").update(base_program="medicaid")
+        self.add_snapshot_row("ks_medicaid")
+        self.add_snapshot_row("snap")
+        member = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=40)
+        Insurance.objects.create(household_member=member, medicaid=True)
+
+        context = self.context()
+
+        self.assertEqual(self.eligible_names(context), ["snap"])
+        self.assertIn("ks_medicaid", self.current_names(context))
+
+    def test_lists_stay_disjoint_when_a_client_list_is_supplied(self):
+        """The insurance gate is skipped for a client list (it's coarser than the page),
+        but the insurance union in current_programs is unconditional — so a
+        partially-enrolled household could otherwise land the same program in both
+        lists, telling the assistant "recommend it, apply here" and "they already have
+        it" in one payload."""
+        Program.objects.new_program(self.white_label.code, "co_medicaid")
+        self.add_snapshot_row("co_medicaid")
+        member = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=40)
+        Insurance.objects.create(household_member=member, medicaid=True)
+
+        context = self.context(visible=[visible("co_medicaid", 5280)])
+
+        self.assertEqual(self.eligible_names(context), ["co_medicaid"])
+        self.assertNotIn("co_medicaid", self.current_names(context))
+        self.assertEqual(set(self.eligible_names(context)) & set(self.current_names(context)), set())
+
+    def test_a_valid_client_list_is_not_discarded_when_the_gates_empty_it(self):
+        """The page is showing only SNAP; the household then toggles "I already receive
+        SNAP" in another tab. `has_benefit` empties the list — but the client list was
+        never malformed, so falling back would hand over programs the page hid for legal
+        status and excludes_programs. Test the intersection, not the outcome."""
+        self.add_snapshot_row("snap")
+        self.add_snapshot_row("wic")  # hidden client-side, must not reappear
+        self.receives("snap")
+
+        context = self.context(visible=[visible("snap")])
+
+        self.assertEqual(context["eligible_programs"], [])
+        self.assertEqual(self.current_names(context), ["snap"])
+
+    def test_translation_falls_back_when_the_requested_language_has_no_row(self):
+        """`TranslationDoesNotExist` subclasses AttributeError, so returning on it
+        skipped the LANGUAGE_CODE fallback entirely — degrading every name to its
+        abbreviation for the whole conversation."""
+        set_translation(self.programs["snap"].name, "Basic Food (SNAP)")
+        self.receives("snap")
+        self.screen.request_language_code = "ar"  # no row for this language
+        self.screen.save()
+
+        context = self.context()
+
+        self.assertEqual(context["current_programs"][0]["name"], "Basic Food (SNAP)")
+
     # --- results_url --------------------------------------------------------
 
     def test_results_url_is_included(self):
@@ -707,19 +796,27 @@ class AssistantStartViewTests(APITestCase):
 
         self.assertEqual(response.status_code, 201)
 
-    def test_query_count_is_bounded(self):
-        """Hardcoded so CONTEXT_PREFETCH disappearing from the view is caught here, even
-        though the unit-level N+1 tests supply the prefetch themselves.
+    # Ceiling rather than an exact count: an exact number makes an unambiguous
+    # improvement (adding a select_related) look like a regression, which is what
+    # happened when `white_label` was added to the view's queryset.
+    MAX_START_QUERIES = 10
 
-        The nine: screen lookup, the two CONTEXT_PREFETCH prefetches (current_benefits,
-        household_members), white_label (feature flag), snapshot, its program_snapshots
-        prefetch, the apply-link programs + their translations prefetch, and the
-        current-programs query. All flat in program and member count.
+    def test_query_count_is_bounded(self):
+        """Bounded here so CONTEXT_PREFETCH disappearing from the view is caught, even
+        though the unit-level N+1 tests supply the prefetch themselves and so can't see
+        the constant going missing.
+
+        Roughly: screen (+white_label joined), the two CONTEXT_PREFETCH prefetches,
+        snapshot, its program_snapshots prefetch, the insurance name/base_program lookup,
+        the apply-link programs + their translations prefetch, and current_programs. All
+        flat in program and member count — which is what the sibling tests assert.
         """
         with mock.patch("screener.assistant.requests.request") as request:
             request.return_value = mock.Mock(status_code=201, json=lambda: {})
-            with self.assertNumQueries(9):
+            with CaptureQueriesContext(connection) as captured:
                 self.client.post(self.url, {}, format="json")
+
+        self.assertLessEqual(len(captured), self.MAX_START_QUERIES, f"{len(captured)} queries")
 
     def test_feature_flag_off_returns_403(self):
         self.white_label.feature_flags = {"benbot": False}
@@ -728,3 +825,44 @@ class AssistantStartViewTests(APITestCase):
         response = self.client.post(self.url, {}, format="json")
 
         self.assertEqual(response.status_code, 403)
+
+
+class AssistantThrottleTests(APITestCase):
+    """The throttles are on AllowAny endpoints that proxy to a paid LLM, so "it's
+    configured" isn't enough — assert one actually engages and returns 429.
+
+    Throttle history is cache-backed and LocMemCache is shared for the whole test
+    session, so every test here clears it. Without that, `AssistantStartViewTests`
+    spending part of the 30/hour budget would eventually make these fail for unrelated
+    reasons — and vice versa.
+    """
+
+    def setUp(self):
+        cache.clear()
+        self.addCleanup(cache.clear)
+        self.white_label = WhiteLabel.objects.create(
+            name="Test State", code="test", state_code="TS", feature_flags={"benbot": True}
+        )
+        self.screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="78701", household_size=1, completed=True
+        )
+        self.url = reverse("assistant-start", args=[self.screen.uuid])
+
+    def test_start_endpoint_throttles_and_returns_429(self):
+        rate = settings.REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["assistant_start"]
+        limit = int(rate.split("/")[0])
+
+        with mock.patch("screener.assistant.requests.request") as request:
+            request.return_value = mock.Mock(status_code=201, json=lambda: {})
+            statuses = [self.client.post(self.url, {}, format="json").status_code for _ in range(limit + 1)]
+
+        self.assertEqual(statuses[-1], status.HTTP_429_TOO_MANY_REQUESTS)
+        self.assertNotIn(status.HTTP_429_TOO_MANY_REQUESTS, statuses[:limit])
+
+    def test_message_endpoint_has_its_own_scope(self):
+        """Separate scopes so a long conversation can't exhaust the open budget."""
+        self.assertEqual(AssistantStartRateThrottle.scope, "assistant_start")
+        self.assertEqual(AssistantMessageRateThrottle.scope, "assistant_message")
+        rates = settings.REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]
+        self.assertIn("assistant_start", rates)
+        self.assertIn("assistant_message", rates)

@@ -745,27 +745,14 @@ def urgent_need_results(screen: Screen, data):
     return eligible_urgent_needs
 
 
-class HashedIPAnonRateThrottle(throttling.AnonRateThrottle):
-    """AnonRateThrottle that keys on a hashed IP so raw IPs aren't stored."""
-
-    def get_cache_key(self, request, view):
-        ident = self.get_ident(request)
-        if ident is None:
-            return None
-        hashed = hashlib.sha256(ident.encode()).hexdigest()
-        return self.cache_format % {"scope": self.scope, "ident": hashed}
-
-
-class RemRateThrottle(HashedIPAnonRateThrottle):
-    scope = "rem"
-
-
-class NPSRateThrottle(HashedIPAnonRateThrottle):
-    scope = "nps"
-
-
-class PlacesRateThrottle(HashedIPAnonRateThrottle):
-    scope = "places"
+# Throttles now live in screener/throttles.py so `assistant.py` can use the base class
+# without importing this module. Re-exported here for any existing references.
+from .throttles import (  # noqa: E402  (kept next to its former definition site)
+    HashedIPAnonRateThrottle,
+    NPSRateThrottle,
+    PlacesRateThrottle,
+    RemRateThrottle,
+)
 
 
 class NPSScoreView(views.APIView):

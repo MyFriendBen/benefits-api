@@ -16,22 +16,25 @@ See the ai-service repo's docs/ for the full API contract.
 
 import logging
 import os
+import re
 from typing import Optional
 
 import requests
 from django.conf import settings
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
-from django.utils.translation import get_language
 from rest_framework import permissions, status, views
+from rest_framework.request import Request
 from rest_framework.response import Response
 from sentry_sdk import capture_message
 
 from programs.models import Program
-from translations.models import BLANK_TRANSLATION_PLACEHOLDER
+from parler.models import TranslationDoesNotExist
 
-from .models import EligibilitySnapshot, Insurance, Screen
-from .views import HashedIPAnonRateThrottle
+from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
+
+from .models import EligibilitySnapshot, ProgramEligibilitySnapshot, Screen
+from .throttles import AssistantMessageRateThrottle, AssistantStartRateThrottle
 
 logger = logging.getLogger(__name__)
 
@@ -54,9 +57,13 @@ MAX_PROGRAM_VALUE = 1_000_000
 # highest-trust position in the request.
 MAX_PROMPT_FIELD_LEN = 160
 
-# Keys in Insurance.insurance_map() that describe a coverage *source* rather than a
-# MyFriendBen program, so they never correspond to a Program row.
-_NON_PROGRAM_INSURANCE_KEYS = frozenset({"dont_know", "none", "employer", "private"})
+# Apply links are dropped rather than truncated past this, so it's a reject threshold
+# and not a clip point. Comfortably above the longest link in the seed config (~200).
+MAX_URL_LEN = 500
+
+# Program names that look like member-level insurance, used only to report a config
+# gap loudly (see _insurance_program_names).
+_LOOKS_LIKE_INSURANCE = re.compile(r"medicaid|chip|medicare|mass_health|apple_health")
 
 # Relations _build_context reads per program. Both are per-program lookups, so without
 # these the query count grows with the number of eligible programs:
@@ -73,39 +80,50 @@ def _ai_headers() -> dict:
     return headers
 
 
-def _translated(translation, language_code: Optional[str] = None) -> str:
+def _translated(
+    translation: Optional[Translation],
+    language_code: Optional[str] = None,
+    max_len: Optional[int] = MAX_PROMPT_FIELD_LEN,
+) -> str:
     """Resolve a parler Translation to text, or "" if there isn't any usable text.
 
-    Tries `language_code` (default: the request's active language), then falls back to
-    `settings.LANGUAGE_CODE`. The fallback is necessary because non-default rows are
-    created with `text=""` (`translations.models.add_translation`), and because the row
-    *exists* parler's `hide_untranslated` never fires — so reading `.text` under a
-    Spanish request would yield empty strings rather than the English name.
+    Tries `language_code`, then falls back to `settings.LANGUAGE_CODE`. The fallback is
+    necessary because non-default rows are created with `text=""`
+    (`translations.models.add_translation`), and because the row *exists* parler's
+    `hide_untranslated` never fires — so reading `.text` under a Spanish request would
+    yield empty strings rather than the English name.
 
-    Trying the active language *first* matters for `apply_button_link`, where the
+    Trying the requested language *first* matters for `apply_button_link`, where the
     non-English row is often legitimately different (state portals have /es landing
-    pages). Pinning straight to LANGUAGE_CODE, as an earlier revision did, silently
-    served everyone the English URL.
+    pages). Pinning straight to LANGUAGE_CODE served everyone the English URL.
 
-    Also flattens whitespace and bounds length: these strings are interpolated into
-    ai-service's *system* prompt, and `Translation` rows are editable by admins and
-    translators, so a name containing newlines plus instruction-shaped text could
-    otherwise forge a prompt block. ai-service sanitizes again at render; this is the
-    cheap choke point on the way out.
+    `max_len=None` disables truncation. Names are capped because they're interpolated
+    into ai-service's *system* prompt and `Translation` rows are admin-editable, so a
+    name carrying newlines plus instruction-shaped text could forge a prompt block. URLs
+    must NOT be capped — see `_apply_urls_by_name`.
     """
-    for lang in (language_code or get_language(), settings.LANGUAGE_CODE):
+    if translation is None:
+        return ""
+    for lang in (language_code, settings.LANGUAGE_CODE):
         if not lang:
             continue
         try:
             translation.set_current_language(lang)
             text = (translation.text or "").strip()
+        except TranslationDoesNotExist:
+            # No row for this language at all. `hide_untranslated=True` means parler
+            # won't fall back for us, so try the next language rather than giving up —
+            # returning here skipped the LANGUAGE_CODE fallback entirely, which is the
+            # whole point of the loop.
+            continue
         except AttributeError:
-            # A None FK, or parler's TranslationDoesNotExist (an AttributeError
-            # subclass). Deliberately narrow — a bare `except Exception` here would
-            # swallow OperationalError and silently degrade every name.
+            # Genuinely not a translation object. Deliberately narrow: a bare
+            # `except Exception` would swallow OperationalError and silently degrade
+            # every name in the payload.
             return ""
         if text and text != BLANK_TRANSLATION_PLACEHOLDER:
-            return " ".join(text.split())[:MAX_PROMPT_FIELD_LEN]
+            flattened = " ".join(text.split())
+            return flattened[:max_len] if max_len else flattened
     return ""
 
 
@@ -126,13 +144,19 @@ def _latest_snapshot(screen: Screen):
         return None
 
 
-def _apply_urls_by_name(screen: Screen, name_abbreviations: list[str]) -> dict[str, str]:
+def _apply_urls_by_name(screen: Screen, name_abbreviations: list[str], language_code: str) -> dict[str, str]:
     """Map name_abbreviated -> apply link for the given programs (one query).
 
-    apply_button_link is a translated field, resolved through `_translated` so the
-    language is pinned and blank/placeholder links come back empty — the assistant
-    must never receive an empty or placeholder URL, since it's instructed to treat
-    the links it's given as the only ones it may share.
+    apply_button_link is a translated field, resolved through `_translated` so
+    blank/placeholder links come back empty — the assistant must never receive an empty
+    or placeholder URL, since it's instructed to treat the links it's given as the only
+    ones it may share.
+
+    URLs are **validated, not truncated.** The prompt orders the model to copy apply
+    links character-for-character, so a clipped link is an authoritative-looking 404 and
+    strictly worse than the designed "I don't have a direct link" fallback. Two links in
+    the current seed config already exceed the name cap (tx_wic at 198 chars, il_ibccp at
+    174), so truncating here would have shipped two dead links.
     """
     if not name_abbreviations:
         return {}
@@ -148,27 +172,63 @@ def _apply_urls_by_name(screen: Screen, name_abbreviations: list[str]) -> dict[s
 
     urls: dict[str, str] = {}
     for program in programs:
-        link = _translated(program.apply_button_link)
-        if link:
-            urls[program.name_abbreviated] = link
+        link = _translated(program.apply_button_link, language_code, max_len=None)
+        if not link:
+            continue
+        if len(link) > MAX_URL_LEN:
+            capture_message(
+                f"Dropping {program.name_abbreviated} apply link: {len(link)} chars exceeds "
+                f"MAX_URL_LEN={MAX_URL_LEN}",
+                level="warning",
+            )
+            continue
+        urls[program.name_abbreviated] = link
     return urls
 
 
 def _insurance_program_names(screen: Screen) -> set[str]:
-    """`name_abbreviated`s the household holds via the member-level Insurance system.
+    """`name_abbreviated`s of this white label's programs the household holds via the
+    member-level Insurance system.
 
-    Derived from `Insurance.insurance_map()`'s own keys so it can't go stale when a new
-    white-label variant is added there. Insurance-type keys that aren't programs
-    ("none", "employer", "private", "dont_know") are skipped.
+    Resolves each program two ways, because `insurance_map()`'s keys are a mix of generic
+    names and specific white-label ones:
+
+      1. exact `name_abbreviated` match  (`co_medicaid`, `wa_apple_health_medicaid`)
+      2. `base_program` match            (`ks_medicaid` -> base_program `medicaid`)
+
+    The `base_program` arm is what makes this generic rather than a hand-maintained list —
+    it's the same structural grouping `has_base_benefit` reads, so a new state variant is
+    covered as soon as its `base_program` is set.
+
+    Programs that resolve neither way are reported to Sentry rather than silently
+    mishandled: for those, an already-enrolled household still gets the program
+    recommended (the MFB-1427 bug) *and* it's missing from `current_programs`. Several
+    exist today (the `tx_medicaid_for_*` family, `tx_chip`, and the `*_emergency_medicaid`
+    pair have no `base_program`), and the fix is config, not code.
     """
-    members = list(screen.household_members.all())
-    if not members:
+    held_keys = screen.held_insurance_keys()
+    if not held_keys:
         return set()
-    candidates = set(Insurance.insurance_map(Insurance()).keys()) - _NON_PROGRAM_INSURANCE_KEYS
-    return {name for name in candidates if screen.has_insurance_types((name,), strict=False)}
+
+    rows = Program.objects.filter(white_label=screen.white_label).values_list("name_abbreviated", "base_program")
+    held_names: set[str] = set()
+    unmapped: list[str] = []
+    for name, base_program in rows:
+        if name in held_keys or (base_program and base_program in held_keys):
+            held_names.add(name)
+        elif _LOOKS_LIKE_INSURANCE.search(name) and not base_program:
+            unmapped.append(name)
+
+    if unmapped:
+        capture_message(
+            "Programs look like member-level insurance but map to no insurance_map key or "
+            f"base_program, so enrollment can't be detected for them: {sorted(unmapped)}",
+            level="warning",
+        )
+    return held_names
 
 
-def _current_programs(screen: Screen) -> list[dict]:
+def _current_programs(screen: Screen, language_code: str) -> list[dict]:
     """The programs this household told us they already receive.
 
     Read straight from the CurrentBenefit join table rather than the eligibility
@@ -181,7 +241,7 @@ def _current_programs(screen: Screen) -> list[dict]:
     `Insurance.insurance_map()` and never written to `CurrentBenefit` (deliberately —
     see `serializers._derived_current_benefit_names`). Without the union, a household
     on Medicaid would have Medicaid removed from `eligible_programs` by
-    `_has_member_insurance` AND absent here, so ai-service's closed-world rule would
+    the insurance gate AND absent here, so ai-service's closed-world rule would
     forbid the assistant from naming it at all — "why did my Medicaid renewal letter
     arrive?" would get a refusal.
 
@@ -221,7 +281,7 @@ def _current_programs(screen: Screen) -> list[dict]:
                 "external_name": program.name_abbreviated,
                 # Fall back to the abbreviation so the assistant can still name the
                 # program when the translation is missing or blank.
-                "name": _translated(program.name) or program.name_abbreviated,
+                "name": _translated(program.name, language_code) or program.name_abbreviated,
             }
         )
 
@@ -231,26 +291,7 @@ def _current_programs(screen: Screen) -> list[dict]:
     return current
 
 
-def _has_member_insurance(screen: Screen, name_abbreviated: str) -> bool:
-    """True if any household member already holds this program's insurance.
-
-    Enrollment lives in TWO independent systems. `CurrentBenefit` (read via
-    `screen.has_benefit`) is household-level and covers most programs; medicaid, CHP,
-    medicare, VA, emergency medicaid and family planning are member-level and live in
-    `Insurance.insurance_map()` instead — deliberately, per the note in
-    `serializers._derived_current_benefit_names`. Without this check a household
-    already on Medicaid gets Medicaid recommended.
-
-    Coarser than the results page, which reduces a program's value per covered member
-    rather than hiding it outright (see `FormattedValue.programValue`). We can't
-    reproduce that here — the snapshot stores no member breakdown — so this errs
-    toward silence. `strict=False` makes it safe to call for every program: names
-    absent from `insurance_map` return False.
-    """
-    return screen.has_insurance_types((name_abbreviated,), strict=False)
-
-
-def _displayed_value(row, visible: Optional[dict]) -> Optional[int]:
+def _displayed_value(row: ProgramEligibilitySnapshot, visible: Optional[dict[str, dict]]) -> Optional[int]:
     """The figure the user is looking at, in whole dollars.
 
     The results page reduces a program's value by each member who already holds its
@@ -302,6 +343,13 @@ def _build_context(screen: Screen, visible_programs: Optional[list[dict]] = None
     Already-received programs move to `current_programs` rather than disappearing, so
     the assistant keeps the context to answer questions about them.
     """
+    # The language the user chose in the app, NOT `get_language()` — that reflects the
+    # browser's Accept-Language header under LocaleMiddleware, so an English MFB session
+    # in a Spanish browser would get Spanish program names and Spanish /es apply links
+    # while `payload["locale"]` said en-US. `get_language_code()` is what the results
+    # email uses for the same reason.
+    language_code = screen.get_language_code()
+
     eligible_programs = []
     snapshot = _latest_snapshot(screen)
     if snapshot is not None:
@@ -309,46 +357,59 @@ def _build_context(screen: Screen, visible_programs: Optional[list[dict]] = None
         all_rows = list(snapshot.program_snapshots.all())
         values = {p.name_abbreviated: _displayed_value(p, visible) for p in all_rows}
 
+        insurance_held = _insurance_program_names(screen)
+
+        def passes_server_gates(row: ProgramEligibilitySnapshot, *, apply_insurance_gate: bool) -> bool:
+            """The gates we can reproduce from the snapshot.
+
+            One definition rather than two comprehensions twenty lines apart: those had
+            already drifted (the primary conditionalized the insurance gate, the fallback
+            didn't) with no test comparing them.
+            """
+            return (
+                row.eligible
+                # The DISPLAYED figure, not the snapshot's — a client value of 0 would
+                # otherwise slip a "~$0 per year" program in, exactly the row the results
+                # page hides.
+                and (values.get(row.name_abbreviated) or 0) > 0
+                and not screen.has_benefit(row.name_abbreviated)
+                and not (apply_insurance_gate and row.name_abbreviated in insurance_held)
+            )
+
+        # The insurance gate belongs to the FALLBACK only. It's deliberately coarser than
+        # the results page (it hides where the page reduces the value), so applying it on
+        # top of an authoritative client list would drop a program the user is looking at
+        # — the MFB-1427 failure in reverse.
         rows = [
             p
             for p in all_rows
-            if p.eligible
-            # Gate on the DISPLAYED figure, not the snapshot's — a client value of 0
-            # would otherwise slip a "~$0 per year" program into the list, which is
-            # exactly the row the results page hides.
-            and (values.get(p.name_abbreviated) or 0) > 0 and not screen.has_benefit(p.name_abbreviated)
-            # The member-insurance gate belongs to the FALLBACK only. It's deliberately
-            # coarser than the results page (hides where the page reduces the value), so
-            # applying it on top of an authoritative client list would drop a program
-            # the user is looking at — the MFB-1427 failure in reverse.
-            and (visible is not None or not _has_member_insurance(screen, p.name_abbreviated))
+            if passes_server_gates(p, apply_insurance_gate=visible is None)
             and (visible is None or p.name_abbreviated in visible)
         ]
 
-        # A client list that matches nothing is malformed input, not an empty results
-        # page — same reasoning as `_visible_programs`' own all-junk guard. Without
-        # this, `visible_programs: ["zzz"]` empties the list, and ai-service then
-        # renders "this person has NO eligible programs" and persists it. An
-        # explicitly empty list still means "showing nothing" and is left alone.
-        if visible and not rows and any(p.eligible for p in all_rows):
+        # A client list whose names match no eligible row is malformed input, not an empty
+        # results page — same reasoning as `_visible_programs`' own all-junk guard. Without
+        # this, `visible_programs: ["zzz"]` empties the list and ai-service renders (and
+        # persists) "this person has NO eligible programs".
+        #
+        # Tests the INTERSECTION, not `not rows`. Testing the outcome discarded a valid
+        # client list whenever the server gates happened to empty it: the page is showing
+        # only SNAP, the household toggles "I already receive SNAP" in another tab,
+        # has_benefit drops it, and the fallback then replaced the list with every
+        # server-filtered row *including the ones the page hid for legal status and
+        # excludes_programs*. That is the failure the client list exists to prevent.
+        if visible and not ({p.name_abbreviated for p in all_rows if p.eligible} & set(visible)):
             logger.warning(
                 "visible_programs for screen %s matched no eligible snapshot rows (%s); "
                 "falling back to the server-side filters",
                 screen.uuid,
                 sorted(visible)[:10],
             )
-            rows = [
-                p
-                for p in all_rows
-                if p.eligible
-                and (values.get(p.name_abbreviated) or 0) > 0
-                and not screen.has_benefit(p.name_abbreviated)
-                and not _has_member_insurance(screen, p.name_abbreviated)
-            ]
+            rows = [p for p in all_rows if passes_server_gates(p, apply_insurance_gate=True)]
 
         # Sort by what the user sees, so "your biggest one" agrees with their screen.
         rows.sort(key=lambda p: values.get(p.name_abbreviated) or 0, reverse=True)
-        apply_urls = _apply_urls_by_name(screen, [p.name_abbreviated for p in rows])
+        apply_urls = _apply_urls_by_name(screen, [p.name_abbreviated for p in rows], language_code)
         for p in rows:
             # The snapshot's `name` was captured as `program.name.text` under whatever
             # language was active when eligibility ran (screener.views, unpinned), and
@@ -372,10 +433,19 @@ def _build_context(screen: Screen, visible_programs: Optional[list[dict]] = None
                 program["apply_url"] = apply_url
             eligible_programs.append(program)
 
+    # Disjointness is enforced HERE, not merely asserted. The insurance gate above is
+    # skipped when the client sends a list (correctly — it's coarser than the page), but
+    # the insurance union in `_current_programs` is unconditional, so a partially-enrolled
+    # household could land the same program in both lists: "you may recommend
+    # co_medicaid, apply here" alongside "they already receive co_medicaid", in one
+    # payload. Eligible wins, because the page is showing it as available.
+    eligible_names = {p["external_name"] for p in eligible_programs}
+    current_programs = [p for p in _current_programs(screen, language_code) if p["external_name"] not in eligible_names]
+
     return {
         "household": {"size": screen.household_size},
         "eligible_programs": eligible_programs,
-        "current_programs": _current_programs(screen),
+        "current_programs": current_programs,
         # The assistant's guardrails offer "your results page" as the fallback when
         # it has nothing it may recommend. That fallback was dead — this key was
         # never sent, so on an empty eligible list the model had no legitimate exit
@@ -448,7 +518,7 @@ def _visible_programs(body: dict) -> Optional[list[dict]]:
     return programs
 
 
-def _clean_value(value) -> Optional[int]:
+def _clean_value(value: object) -> Optional[int]:
     """Coerce a client-supplied displayed value to whole dollars, or None.
 
     None means "no usable value, use the snapshot's". Bools are rejected explicitly
@@ -487,15 +557,7 @@ def _proxy(method: str, path: str, json_body: dict) -> Response:
     return Response(body, status=resp.status_code)
 
 
-class AssistantStartRateThrottle(HashedIPAnonRateThrottle):
-    scope = "assistant_start"
-
-
-class AssistantMessageRateThrottle(HashedIPAnonRateThrottle):
-    scope = "assistant_message"
-
-
-def _body(request) -> dict:
+def _body(request: Request) -> dict:
     """The request body as a dict.
 
     `request.data` is a list for a JSON array body and a QueryDict for a form post, so
@@ -518,7 +580,7 @@ class AssistantStartView(views.APIView):
         # zero-query path. _current_programs still issues its own query — it needs the
         # translated names, which these prefetches don't carry.
         screen = get_object_or_404(
-            Screen.objects.prefetch_related(*CONTEXT_PREFETCH),
+            Screen.objects.select_related("white_label").prefetch_related(*CONTEXT_PREFETCH),
             uuid=screen_uuid,
         )
         if not screen.white_label.has_feature("benbot"):
