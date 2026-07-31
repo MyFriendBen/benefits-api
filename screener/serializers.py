@@ -475,7 +475,6 @@ class EligibilitySerializer(serializers.Serializer):
     name_abbreviated = serializers.CharField()
     external_name = serializers.CharField()
     description = TranslationSerializer()
-    value_type = serializers.CharField()
     learn_more_link = TranslationSerializer()
     apply_button_link = TranslationSerializer()
     apply_button_description = TranslationSerializer()

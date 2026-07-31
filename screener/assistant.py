@@ -423,8 +423,10 @@ def _build_context(screen: Screen, visible_programs: Optional[list[dict]] = None
             program = {
                 "external_name": p.name_abbreviated,
                 "name": snapshot_name or p.name_abbreviated,
-                # Whole dollars. Frequency is governed by value_type; see the
-                # API contract's open question on units.
+                # Whole dollars, annual. MFB-1019 (#1591) dropped `value_type`, which
+                # used to govern frequency and left the units genuinely ambiguous; every
+                # snapshot value is now an annual total, which is what ai-service's
+                # prompt asserts.
                 "estimated_value": values.get(p.name_abbreviated),
                 "estimated_application_time": p.estimated_application_time,
             }

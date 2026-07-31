@@ -86,7 +86,6 @@ class BuildContextTests(TestCase):
             eligibility_snapshot=self.snapshot,
             name=name_abbreviated.upper(),
             name_abbreviated=name_abbreviated,
-            value_type="",
             estimated_value=Decimal(value),
             eligible=eligible,
         )
@@ -181,7 +180,6 @@ class BuildContextTests(TestCase):
             eligibility_snapshot=self.snapshot,
             name="",
             name_abbreviated="snap",
-            value_type="",
             estimated_value=Decimal("1200"),
             eligible=True,
         )
@@ -195,7 +193,6 @@ class BuildContextTests(TestCase):
             eligibility_snapshot=self.snapshot,
             name=BLANK_TRANSLATION_PLACEHOLDER,
             name_abbreviated="snap",
-            value_type="",
             estimated_value=Decimal("1200"),
             eligible=True,
         )
@@ -761,7 +758,6 @@ class AssistantStartViewTests(APITestCase):
                 eligibility_snapshot=snapshot,
                 name=name.upper(),
                 name_abbreviated=name,
-                value_type="",
                 estimated_value=Decimal(value),
                 eligible=True,
             )

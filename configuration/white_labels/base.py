@@ -20,7 +20,7 @@ class ConfigurationData:
         raise NotImplemented()
 
     # State name for display (override in your white label config)
-    state = {"name": "[REPLACE_ME]"}
+    state = {"name": ""}
 
     # Banner messages displayed at top of screener (optional)
     banner_messages = []
@@ -168,13 +168,20 @@ class ConfigurationData:
     }
 
     # Types of income to collect (customize for state-specific income types)
-    # Organized by category for two-level dropdown selection
+    # Organized by category for two-level dropdown selection.
+    #
+    # CONTRACT: the frontend reconstructs the three income-question answers from
+    # income streams and relies on these exact keys — the "employment" category
+    # and its "wages" / "selfEmployment" sources (see benefits-calculator
+    # utils/helpers.ts `deriveIncomeAnswers` and utils/constants EMPLOYMENT_CATEGORY
+    # / WAGES_SOURCE / SELF_EMPLOYMENT_SOURCE). Renaming these keys will break that
+    # reconstruction; coordinate any change with the frontend.
     income_categories = {
         "employment": {"_label": "incomeCategories.employment", "_default_message": "Work & Self-Employment Income"},
         "government": {"_label": "incomeCategories.government", "_default_message": "Government Benefits"},
         "investment": {"_label": "incomeCategories.investment", "_default_message": "Investment & Retirement"},
         "property": {"_label": "incomeCategories.property", "_default_message": "Property Income"},
-        "support": {"_label": "incomeCategories.support", "_default_message": "Family Support & Gifts"},
+        "support": {"_label": "incomeCategories.support", "_default_message": "Child Support, Alimony & Gifts"},
     }
 
     # Nested income options organized by category
@@ -183,7 +190,7 @@ class ConfigurationData:
             "wages": {"_label": "incomeOptions.wages", "_default_message": "Wages, salaries, or tips"},
             "selfEmployment": {
                 "_label": "incomeOptions.selfEmployment",
-                "_default_message": "Self-employment, freelance, or independent contractor",
+                "_default_message": "Self-employment, freelance, gig, or contract work",
             },
         },
         "government": {
@@ -450,64 +457,46 @@ class ConfigurationData:
     #     configuration/white_labels/_template.py (search for "category_benefits")
     #     configuration/white_labels/README.md
     # ==================================================================================
-    category_benefits = {
-        "[REPLACE_ME]": {
-            "benefits": {
-                "[REPLACE_ME]": {
-                    "name": {
-                        "_label": "",
-                        "_default_message": "",
-                    },
-                    "description": {
-                        "_label": "",
-                        "_default_message": "",
-                    },
-                },
-            },
-            "category_name": {"_label": "", "_default_message": ""},
-        },
-    }
+    # Base default is empty; each white label overrides with its own benefits.
+    # For the expected structure and naming conventions, see:
+    #     configuration/white_labels/_template.py (search for "category_benefits")
+    #     configuration/white_labels/README.md
+    category_benefits = {}
 
-    # Links to consent/terms pages for each language
+    # Links to consent/terms pages, keyed by language code.
     consent_to_contact = {
         "en-us": "",
-        "[REPLACE_ME]": "",
     }
 
-    # Links to privacy policy for each language
+    # Links to privacy policy, keyed by language code.
     privacy_policy = {
         "en-us": "",
-        "[REPLACE_ME]": "",
     }
 
     # Configuration for branding, logos, steps, and UI options
     # See template for detailed documentation on each field
+    # Only "default" values live here so state configs can safely inherit via
+    # `**ConfigurationData.referrer_data`. To add a referrer-specific override
+    # (e.g. a partner code), add that key alongside "default" in the state config;
+    # see _template.py for the referrer-key naming convention.
     referrer_data = {
-        "theme": {"default": "default", "[REPLACE_ME]": ""},
+        "theme": {"default": "default"},
         "logoSource": {
             "default": "MFB_Logo",
-            "[REPLACE_ME]": "",
         },
         "faviconSource": {
             "default": "favicon.ico",
-            "[REPLACE_ME]": "",
         },
         "logoAlt": {
             "default": {"id": "referrerHook.logoAlts.default", "defaultMessage": "MyFriendBen home page button"},
-            "[REPLACE_ME]": {
-                "id": "",
-                "defaultMessage": "",
-            },
         },
-        "logoFooterSource": {"default": "MFB_Logo", "[REPLACE_ME]": ""},
+        "logoFooterSource": {"default": "MFB_Logo"},
         "logoFooterAlt": {
             "default": {"id": "footer.logo.alt", "defaultMessage": "MFB Logo"},
-            "[REPLACE_ME]": {"id": "", "defaultMessage": ""},
         },
-        "logoClass": {"default": "logo", "[REPLACE_ME]": ""},
+        "logoClass": {"default": "logo"},
         "shareLink": {
             "default": "",
-            "[REPLACE_ME]": "",
         },
         "stepDirectory": {
             "default": [
@@ -522,11 +511,16 @@ class ConfigurationData:
                 "referralSource",
                 "signUpInfo",
             ],
-            "[REPLACE_ME]": [],
         },
         "uiOptions": {"default": []},
-        "defaultLanguage": {"default": "en-us", "[REPLACE_ME]": ""},
-        "stateName": {"default": "", "[REPLACE_ME]": ""},
+        "defaultLanguage": {"default": "en-us"},
+        "stateName": {"default": ""},
+        "noResultMessage": {
+            "default": {
+                "_label": "noResultMessage",
+                "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. If you indicated need for an immediate resource, please click on the \"Near-Term Benefits\" tab. For additional resources, please click the 'More Help' button below to get the resources you're looking for.",
+            },
+        },
     }
 
     # A/B test experiments with multi-variant support (each maps to a list of active variants)
@@ -544,6 +538,19 @@ class ConfigurationData:
         "survey": "https://myfriendben.fillout.com/report-an-issue",
     }
 
+    # Results-page feedback survey (shown when the `nc_results_survey` flag is on); empty link = not shown.
+    results_survey = {
+        "link": "",
+        "intro": {
+            "_label": "resultsSurvey.intro",
+            "_default_message": "Help us improve MyFriendBen — tell us about your experience.",
+        },
+        "button": {
+            "_label": "resultsSurvey.button",
+            "_default_message": "Share your feedback",
+        },
+    }
+
     # Text for "Current Benefits" page
     current_benefits = {
         "title": {
@@ -558,7 +565,7 @@ class ConfigurationData:
     }
 
     # Custom translation overrides for specific text strings (optional)
-    # should follow format {"[REPLACE_ME]": {"_label": "[REPLACE_ME]", "_default_message": "[REPLACE_ME]"}}
+    # should follow format {"<key>": {"_label": "<label>", "_default_message": "<text>"}}
     override_text = {}
 
     # Email and SMS communication configuration

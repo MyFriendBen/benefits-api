@@ -24,7 +24,6 @@
     "estimated_application_time": "30 - 60 minutes",
     "estimated_delivery_time": "",
     "estimated_value": "",
-    "value_type": "tax_credit",
     "value_format": "estimated_annual",
     "show_on_current_benefits": true,
     "has_calculator": true,

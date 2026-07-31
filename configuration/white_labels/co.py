@@ -2091,8 +2091,11 @@ class CoConfigurationData(ConfigurationData):
         "es": "https://www.myfriendben.org/privacidad/",
     }
 
+    # Inherit base referrer_data (favicon, noResultMessage, etc.) and override
+    # only the keys CO customizes.
     referrer_data = {
-        "theme": {"default": "default", "211co": "twoOneOne"},
+        **ConfigurationData.referrer_data,
+        "theme": {"default": "default", "211co": "twoOneOne", "cudenver": "cu_denver"},
         "logoSource": {
             "default": "MFB_COLogo",
             "bia": "BIA_MFBLogo",
@@ -2115,6 +2118,7 @@ class CoConfigurationData(ConfigurationData):
             "tellercounty": "TC_MFBLogo",
             "pueblo": "PC_MFBLogo",
             "pitkin": "PitkinCounty_MFBLogo",
+            "cudenver": "CUDenver_Logo",
         },
         "logoAlt": {
             "default": {"id": "referrerHook.logoAlts.default", "defaultMessage": "MyFriendBen home page button"},
@@ -2185,6 +2189,10 @@ class CoConfigurationData(ConfigurationData):
                 "id": "referrerHook.logoAlts.pitkin",
                 "defaultMessage": "Pitkin County and MyFriendBen home page button",
             },
+            "cudenver": {
+                "id": "referrerHook.logoAlts.cudenver",
+                "defaultMessage": "CU Denver home page button",
+            },
         },
         "logoFooterSource": {"default": "MFB_Logo"},
         "logoFooterAlt": {"default": {"id": "footer.logo.alt", "defaultMessage": "MFB Logo"}},
@@ -2197,6 +2205,7 @@ class CoConfigurationData(ConfigurationData):
             "tellercounty": "tellercounty-logo-size",
             "pueblo": "pueblocounty-logo-size",
             "pitkin": "pitkincounty-logo-size",
+            "cudenver": "cudenver-logo-size",
         },
         "twoOneOneLink": {
             "default": 'https://www.211colorado.org/?utm_source=myfriendben&utm_medium=inlink&utm_campaign=organic&utm_id="211mfb"',
@@ -2231,12 +2240,6 @@ class CoConfigurationData(ConfigurationData):
             ],
         },
         "uiOptions": {"default": [], "211co": ["no_results_more_help", "211co"]},
-        "noResultMessage": {
-            "default": {
-                "_label": "noResultMessage",
-                "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. If you indicated need for an immediate resource, please click on the \"Near-Term Benefits\" tab. For additional resources, please click the 'More Help' button below to get the resources you're looking for.",
-            },
-        },
         "defaultLanguage": {"default": "en-us"},
     }
 

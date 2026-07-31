@@ -2359,7 +2359,10 @@ class IlConfigurationData(ConfigurationData):
         "es": "https://www.myfriendben.org/privacidad/",
     }
 
+    # Inherit base referrer_data (favicon, noResultMessage, uiOptions, etc.) and
+    # override only the keys IL customizes.
     referrer_data = {
+        **ConfigurationData.referrer_data,
         "theme": {"default": "default"},
         "logoSource": {
             "default": "MFB_ILLogo",
@@ -2391,13 +2394,6 @@ class IlConfigurationData(ConfigurationData):
                 "referralSource",
                 "signUpInfo",
             ],
-        },
-        "uiOptions": {"default": []},
-        "noResultMessage": {
-            "default": {
-                "_label": "noResultMessage",
-                "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. If you indicated need for an immediate resource, please click on the \"Near-Term Benefits\" tab. For additional resources, please click the 'More Help' button below to get the resources you're looking for.",
-            },
         },
         "defaultLanguage": {"default": "en-us"},
     }

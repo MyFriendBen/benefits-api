@@ -1,0 +1,71 @@
+{
+  "white_label": {
+    "code": "ma"
+  },
+  "program_category": {
+    "external_name": "ma_savings",
+    "name": "Savings",
+    "icon": "savings"
+  },
+  "program": {
+    "name_abbreviated": "ma_bsp",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission",
+      "non_citizen"
+    ],
+    "name": "BabySteps Savings Plan",
+    "description": "BabySteps provides a one-time $50 deposit for each eligible child. The $50 goes into a new MEFA U.Fund 529 account. The savings can help pay for college, job training, and other education costs.\n\nFidelity manages the U.Fund account. The $50 usually appears in the account about six weeks after you open it. You do not need to add your own money to receive the deposit.\n\nYour child must live in Massachusetts and must have been born or adopted in the state. Open the account before your child's first birthday. If you adopted your child, open it before the first anniversary of the adoption. Then complete the BabySteps Adoption Verification Form. Each child can receive only one BabySteps deposit. Have the account owner's tax ID and the child's Social Security number or Tax ID number ready. You will also need basic information, such as names, birth dates, and addresses. You may need to confirm some details before you receive the deposit.\n\nSelect \"Open a U.Fund Account\" below to open a new individual account with Fidelity.",
+    "description_short": "Free college savings deposit for Massachusetts children",
+    "learn_more_link": "https://www.mass.gov/info-details/babysteps",
+    "apply_button_link": "https://www.fidelity.com/529-plans/massachusetts",
+    "apply_button_description": "Open a U.Fund Account",
+    "estimated_application_time": "5 minutes",
+    "estimated_delivery_time": "6 weeks",
+    "estimated_value": "",
+    "value_format": "lump_sum",
+    "value_type": "benefit",
+    "has_calculator": true,
+    "show_on_current_benefits": true,
+    "show_in_has_benefits_step": false,
+    "website_description": "Free college savings deposit for Massachusetts children"
+  },
+  "documents": [
+    {
+      "external_name": "ma_bsp_tax_ids",
+      "text": "Social Security or Tax ID numbers for the account owner and child",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "ma_id_proof"
+    },
+    {
+      "external_name": "ma_bsp_adoption_verification",
+      "text": "BabySteps Adoption Verification Form (for adopted children, completed after opening the account)",
+      "link_url": "https://www.mefa.org/babysteps-adoption-verification/",
+      "link_text": "Complete the Adoption Verification Form"
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "ma_mefa",
+      "name": "Massachusetts Educational Financing Authority (MEFA)",
+      "email": "collegeplanning@mefa.org",
+      "description": "MEFA can answer questions about the U.Fund and college savings.",
+      "assistance_link": "https://www.mefa.org/ways-to-save/mefa-u-fund/",
+      "phone_number": "+18005442776"
+    },
+    {
+      "external_name": "ma_oee_community_ambassadors",
+      "name": "Office of Economic Empowerment Community Ambassadors",
+      "email": "empowerment@tre.state.ma.us",
+      "description": "Community Ambassadors offer free one-on-one guidance with BabySteps enrollment. Use the directory to find an ambassador serving your area.",
+      "assistance_link": "https://www.mass.gov/info-details/community-ambassador-directory",
+      "phone_number": "+16173676900"
+    }
+  ]
+}

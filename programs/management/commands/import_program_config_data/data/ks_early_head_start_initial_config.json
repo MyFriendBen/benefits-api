@@ -19,7 +19,6 @@
         "estimated_application_time": "30 minutes",
         "estimated_delivery_time": "",
         "estimated_value": "",
-        "value_type": "benefit",
         "value_format": null,
         "has_calculator": true,
         "show_on_current_benefits": true,

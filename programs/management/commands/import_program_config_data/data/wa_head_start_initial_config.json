@@ -28,7 +28,6 @@
     "estimated_delivery_time": "",
     "estimated_value": "",
     "value_format": "estimated_annual",
-    "value_type": "benefit",
     "website_description": "Free preschool, meals, and health services for young children and pregnant women",
     "base_program": "head_start",
     "show_on_current_benefits": true,

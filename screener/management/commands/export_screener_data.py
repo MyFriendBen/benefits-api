@@ -470,7 +470,6 @@ class Command(BaseCommand):
             "program_eligibility.name_abbreviated": "Program abbreviation/code",
             "program_eligibility.eligible": "Whether user is eligible for this program",
             "program_eligibility.estimated_value": "Estimated annual benefit value in dollars",
-            "program_eligibility.value_type": "Type of value (monthly, annual, one-time)",
             "program_eligibility.new": "Whether this is a new benefit for the user",
             "program_eligibility.estimated_delivery_time": "Estimated time to receive benefit",
             "program_eligibility.estimated_application_time": "Estimated time to complete application",

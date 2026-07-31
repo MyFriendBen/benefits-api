@@ -27,7 +27,6 @@
     "estimated_delivery_time": "",
     "estimated_value": "",
     "value_format": "lump_sum",
-    "value_type": "benefit",
     "website_description": "Help paying home heating and cooling bills",
     "base_program": "liheap",
     "show_on_current_benefits": true,

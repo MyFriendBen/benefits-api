@@ -627,3 +627,58 @@ class TestWaTanfDependency(TestCase):
         """WaShowAllCashAssistanceProgramsDependency always returns True to bypass PE immigration checks."""
         dep = spm.WaShowAllCashAssistanceProgramsDependency(self.screen, None, {})
         self.assertTrue(dep.value())
+
+
+class TestSchoolMealOutputDependencies(TestCase):
+    """Tests for the school meal *output* dependencies read back from PolicyEngine.
+
+    ``SchoolMealNetSubsidy`` and ``SchoolMealTier`` are the ``pe_outputs`` of the federal
+    ``SchoolLunch`` calculator (and therefore of every state NSLP subclass — il_nslp,
+    ks_nslp, mo_nslp, tx_nslp, wa_nslp). The field strings below are what get written into
+    the PE request so PE returns them; a typo silently yields no value rather than an error,
+    so pin them. ``SchoolMealDailySubsidy`` is the per-day figure and is deliberately *not*
+    what the calculators value households on — it is defined but unused, and is pinned here
+    so it can't be confused for the annual variable.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Missouri", code="mo", state_code="MO")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="63101",
+            county="St. Louis City",
+            household_size=2,
+            completed=False,
+        )
+
+    def test_net_subsidy_field_name(self):
+        dep = spm.SchoolMealNetSubsidy(self.screen, None, {})
+        self.assertEqual(dep.field, "school_meal_net_subsidy")
+
+    def test_tier_field_name(self):
+        dep = spm.SchoolMealTier(self.screen, None, {})
+        self.assertEqual(dep.field, "school_meal_tier")
+
+    def test_daily_subsidy_field_name(self):
+        """The per-day variable — distinct from the annual net subsidy the calculators use."""
+        dep = spm.SchoolMealDailySubsidy(self.screen, None, {})
+        self.assertEqual(dep.field, "school_meal_daily_subsidy")
+
+    def test_all_are_spm_unit_scoped(self):
+        for Dep in (spm.SchoolMealNetSubsidy, spm.SchoolMealTier, spm.SchoolMealDailySubsidy):
+            dep = Dep(self.screen, None, {})
+            self.assertEqual(dep.unit, "spm_units")
+            self.assertEqual(dep.sub_unit, "spm_unit")
+
+    def test_outputs_send_no_input_value(self):
+        """These are read-back-only: value() must stay None so we never overwrite PE's
+        own computation with a placeholder."""
+        for Dep in (spm.SchoolMealNetSubsidy, spm.SchoolMealTier, spm.SchoolMealDailySubsidy):
+            dep = Dep(self.screen, None, {})
+            self.assertIsNone(dep.value())
+
+    def test_are_not_version_gated(self):
+        """No min/max PE version window, so pe_input never withholds them."""
+        for Dep in (spm.SchoolMealNetSubsidy, spm.SchoolMealTier, spm.SchoolMealDailySubsidy):
+            self.assertEqual(Dep.min_pe_version, ())
+            self.assertEqual(Dep.max_pe_version, ())
