@@ -3,6 +3,7 @@ from programs.programs.policyengine.calculators.base import PolicyEngineCalulato
 
 mo_member_calculators = {
     "mo_wic": member.MoWic,
+    "mo_head_start": member.MoHeadStart,
     "mo_early_head_start": member.MoEarlyHeadStart,
 }
 

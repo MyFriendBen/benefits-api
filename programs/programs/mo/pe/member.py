@@ -1,5 +1,6 @@
 from programs.programs.federal.pe.member import (
     Wic,
+    HeadStart,
     EarlyHeadStart,
 )
 import programs.programs.policyengine.calculators.dependencies as dependency
@@ -70,6 +71,15 @@ class MoWic(Wic):
     def member_value(self, member: HouseholdMember):
         """Return PolicyEngine's calculated WIC benefit for this member."""
         return self.get_member_variable(member.id)
+
+
+class MoHeadStart(HeadStart):
+    """Missouri Head Start (ages 3-5) — federal ``HeadStart`` PE calculator + MO state code."""
+
+    pe_inputs = [
+        *HeadStart.pe_inputs,
+        dependency.household.MoStateCodeDependency,
+    ]
 
 
 class MoEarlyHeadStart(EarlyHeadStart):
