@@ -25,9 +25,10 @@
     "estimated_application_time": "30 - 60 minutes",
     "estimated_delivery_time": "",
     "estimated_value": "",
-    "value_type": "benefit",
     "value_format": null,
     "website_description": "Monthly cash help for older adults and people who are blind or have a disability",
+    "active": true,
+    "low_confidence": false,
     "show_on_current_benefits": true,
     "show_in_has_benefits_step": true,
     "has_calculator": true
