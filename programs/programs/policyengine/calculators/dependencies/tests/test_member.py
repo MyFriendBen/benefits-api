@@ -1564,3 +1564,179 @@ class TestCareExpensesDependency(TestCase):
         HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=38, long_term_disability=True)
         # $6,000/yr split across 2 incapable members → $3,000 each.
         self.assertEqual(member.CareExpensesDependency(self.screen, d1, {}).value(), 3000)
+
+
+class TestSsiReportedDependency(TestCase):
+    """
+    Tests for SsiReportedDependency, which tells PolicyEngine how much SSI the member
+    already reports receiving. Only the screener's ``sSI`` income type counts — SSDI
+    (``sSDisability``) is a different program and must not be folded in.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="65101",
+            county="Test County",
+            household_size=1,
+            completed=False,
+        )
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=67)
+
+    def test_field_name(self):
+        self.assertEqual(member.SsiReportedDependency(self.screen, self.head, {}).field, "ssi_reported")
+
+    def test_value_annualizes_reported_ssi(self):
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="sSI", amount=943, frequency="monthly"
+        )
+        self.assertEqual(member.SsiReportedDependency(self.screen, self.head, {}).value(), 11316)
+
+    def test_value_returns_zero_when_no_ssi_reported(self):
+        self.assertEqual(member.SsiReportedDependency(self.screen, self.head, {}).value(), 0)
+
+    def test_value_excludes_ssdi_and_other_income(self):
+        """SSDI is a separate program; counting it as reported SSI would suppress the benefit."""
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="sSDisability", amount=1000, frequency="monthly"
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="wages", amount=500, frequency="monthly"
+        )
+        self.assertEqual(member.SsiReportedDependency(self.screen, self.head, {}).value(), 0)
+
+
+class TestSsiCountableResourcesDependency(TestCase):
+    """
+    Tests for SsiCountableResourcesDependency. SSI's resource limit is a hard cutoff, and
+    the screener collects assets only at the household level — so this splits the household
+    total evenly across adults (19+) to approximate a per-person figure, and attributes
+    nothing to children.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="65101",
+            county="Test County",
+            household_size=3,
+            household_assets=6000,
+            completed=False,
+        )
+
+    def test_field_name(self):
+        head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=67)
+        self.assertEqual(member.SsiCountableResourcesDependency(self.screen, head, {}).field, "ssi_countable_resources")
+
+    def test_single_adult_gets_all_household_assets(self):
+        screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="65101",
+            county="Test County",
+            household_size=1,
+            household_assets=1500,
+            completed=False,
+        )
+        head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=67)
+        self.assertEqual(member.SsiCountableResourcesDependency(screen, head, {}).value(), 1500)
+
+    def test_assets_split_evenly_across_adults(self):
+        head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=67)
+        HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=65)
+        HouseholdMember.objects.create(screen=self.screen, relationship="child", age=10)
+        # $6,000 across 2 adults (the 10-year-old is not counted) -> $3,000 each.
+        self.assertEqual(member.SsiCountableResourcesDependency(self.screen, head, {}).value(), 3000)
+
+    def test_children_are_attributed_no_resources(self):
+        HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=67)
+        child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=10)
+        self.assertEqual(member.SsiCountableResourcesDependency(self.screen, child, {}).value(), 0)
+
+    def test_age_19_counts_as_an_adult(self):
+        """num_adults() uses age_max=19, so 19 is the boundary — 18 gets nothing, 19 gets a share."""
+        eighteen = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=18)
+        nineteen = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=19)
+        HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=67)
+
+        self.assertEqual(member.SsiCountableResourcesDependency(self.screen, eighteen, {}).value(), 0)
+        # $6,000 across the 19-year-old and the 67-year-old -> $3,000 each.
+        self.assertEqual(member.SsiCountableResourcesDependency(self.screen, nineteen, {}).value(), 3000)
+
+    def test_value_is_an_int(self):
+        """PolicyEngine gets an int; an uneven split must not leak a float."""
+        head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=67)
+        HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=65)
+        HouseholdMember.objects.create(screen=self.screen, relationship="parent", age=88)
+
+        value = member.SsiCountableResourcesDependency(self.screen, head, {}).value()
+        self.assertIsInstance(value, int)
+        self.assertEqual(value, 2000)
+
+
+class TestSsiEarnedAndUnearnedIncomeDependencies(TestCase):
+    """
+    Tests for SsiEarnedIncomeDependency / SsiUnearnedIncomeDependency. SSI applies a
+    different exclusion to each ($20 general, then $65 + half of remaining earned), so the
+    two must stay split — collapsing them would understate the benefit.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="65101",
+            county="Test County",
+            household_size=1,
+            completed=False,
+        )
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=67)
+
+    def test_field_names(self):
+        self.assertEqual(member.SsiEarnedIncomeDependency(self.screen, self.head, {}).field, "ssi_earned_income")
+        self.assertEqual(member.SsiUnearnedIncomeDependency(self.screen, self.head, {}).field, "ssi_unearned_income")
+
+    def test_earned_covers_wages_and_self_employment_only(self):
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="wages", amount=1000, frequency="monthly"
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="selfEmployment", amount=500, frequency="monthly"
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="sSA", amount=800, frequency="monthly"
+        )
+
+        self.assertEqual(member.SsiEarnedIncomeDependency(self.screen, self.head, {}).value(), 18000)
+
+    def test_unearned_covers_everything_that_is_not_earned(self):
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="sSA", amount=800, frequency="monthly"
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="pension", amount=200, frequency="monthly"
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="wages", amount=1000, frequency="monthly"
+        )
+
+        self.assertEqual(member.SsiUnearnedIncomeDependency(self.screen, self.head, {}).value(), 12000)
+
+    def test_the_two_partition_all_income_without_overlap(self):
+        """Every income stream lands in exactly one bucket — nothing double-counted, nothing dropped."""
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="wages", amount=1000, frequency="monthly"
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="sSA", amount=800, frequency="monthly"
+        )
+
+        earned = member.SsiEarnedIncomeDependency(self.screen, self.head, {}).value()
+        unearned = member.SsiUnearnedIncomeDependency(self.screen, self.head, {}).value()
+
+        self.assertEqual(earned + unearned, self.head.calc_gross_income("yearly", ["all"]))
+
+    def test_both_return_zero_with_no_income(self):
+        self.assertEqual(member.SsiEarnedIncomeDependency(self.screen, self.head, {}).value(), 0)
+        self.assertEqual(member.SsiUnearnedIncomeDependency(self.screen, self.head, {}).value(), 0)
