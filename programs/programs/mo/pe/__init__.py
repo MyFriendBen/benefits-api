@@ -14,7 +14,6 @@ mo_spm_calculators = {
 }
 
 mo_tax_unit_calculators = {
-    # Federal Child Tax Credit, used as-is (no MO variance). Mirrors ks_ctc and wa_ctc.
     "mo_ctc": Ctc,
 }
 
