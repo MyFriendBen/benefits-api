@@ -25,8 +25,9 @@ name or a `base_program` group via `has_benefit_or_variant()`. Callers that need
 per-entry result (rather than "any of these") can call `has_benefit_or_variant()` directly.
 
 `has_base_benefit()`, `has_benefit_from_list()` and `has_benefit_or_variant()` are all
-unconstrained here — only the exact-match read is. Member-level `has_insurance()` and
-`HouseholdMember.has_benefit()` are a different lookup and out of scope.
+unconstrained here — only the exact-match read is. `has_benefit` is defined on `Screen`
+alone, so matching any `*.has_benefit(...)` receiver costs nothing today; member-level
+lookups (`member.insurance.has_insurance_types()`) go by another name.
 
 The source is parsed with `ast`, so prose in comments and docstrings that mentions the old
 call doesn't trip the check.

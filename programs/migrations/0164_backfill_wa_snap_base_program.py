@@ -17,29 +17,15 @@ from django.db import migrations
 
 
 def forward(apps, schema_editor):
-    # Live models, per the pattern in 0154 / 0152: a historical Program's FK expects a
-    # historical WhiteLabel, so mixing the two raises ValueError.
-    from programs.models import Program, WhiteLabel
+    # Historical model, not the live one: this has to keep running from scratch after a
+    # future model change (0163 dropping Program.value_type is the precedent). Traversing
+    # the FK by `white_label__code` sidesteps the live/historical WhiteLabel mismatch that
+    # 0152 / 0154 worked around by using live models throughout.
+    Program = apps.get_model("programs", "Program")
 
-    try:
-        wa = WhiteLabel.objects.get(code="wa")
-    except WhiteLabel.DoesNotExist:
-        return
-
-    Program.objects.filter(white_label=wa, name_abbreviated="wa_snap", base_program__isnull=True).update(
+    Program.objects.filter(white_label__code="wa", name_abbreviated="wa_snap", base_program__isnull=True).update(
         base_program="snap"
     )
-
-
-def reverse(apps, schema_editor):
-    from programs.models import Program, WhiteLabel
-
-    try:
-        wa = WhiteLabel.objects.get(code="wa")
-    except WhiteLabel.DoesNotExist:
-        return
-
-    Program.objects.filter(white_label=wa, name_abbreviated="wa_snap", base_program="snap").update(base_program=None)
 
 
 class Migration(migrations.Migration):
@@ -49,5 +35,8 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(forward, reverse),
+        # No-op reverse: forward fills NULLs only and doesn't record which rows it filled,
+        # so clearing every wa_snap row on the way back would also discard a base_program
+        # set independently (import_program_config writes the same field).
+        migrations.RunPython(forward, migrations.RunPython.noop),
     ]

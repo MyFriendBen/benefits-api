@@ -568,12 +568,14 @@ class TestPeInputReservedOutputSlots(TestCase):
         self.assertEqual(snap[self.snap_calculator.pe_period], 2400)  # $200/mo -> annual
         self.assertIsNone(snap[self.snap_calculator.pe_output_period])
 
-    def test_snap_sentinel_when_receipt_reported_without_amount(self):
-        """Tile-only receipt still confers categorical eligibility via the sentinel."""
+    def test_snap_left_computed_when_receipt_reported_without_amount(self):
+        """Tile-only receipt sends no value at all — a placeholder would come back as this
+        household's SNAP. Non-receipt is expressed with takes_up_snap_if_eligible (MFB-1312),
+        not with a number here."""
         self._report_snap()
 
         snap = self._snap_block()
-        self.assertEqual(snap[self.snap_calculator.pe_period], 1)
+        self.assertIsNone(snap[self.snap_calculator.pe_period])
         self.assertIsNone(snap[self.snap_calculator.pe_output_period])
 
     def test_snap_unset_when_nothing_reported(self):
