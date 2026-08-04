@@ -624,6 +624,16 @@ class AlimonyIncomeDependency(IncomeDependency):
     income_types = ["alimony"]
 
 
+class ChildSupportReceivedDependency(IncomeDependency):
+    """
+    Child support *received*, as income. Distinct from SnapChildSupportDependency
+    above, which sends child support *paid* as an expense (`child_support_expense`).
+    """
+
+    field = "child_support_received"
+    income_types = ["childSupport"]
+
+
 class RetirementDistributionsDependency(IncomeDependency):
     field = "taxable_ira_distributions"
     income_types = ["deferredComp"]

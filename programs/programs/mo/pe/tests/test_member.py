@@ -17,12 +17,12 @@ MO WIC layers:
    unchanged would value every eligible member at $0 and the frontend's ``value > 0``
    filter would drop the program from results entirely.
 
-3. **Income reaches PolicyEngine** — ``MoWic`` adds the ``irs_gross_income`` bundle the federal
-   inputs omit. Without it PE supplies none of WIC's own income sources, substitutes an
-   imputation, and returns WIC as eligible at any reported income (verified live: $108k/yr came
-   back eligible). This is a *partial* fix covering wage-type income only — see the gap note on
-   ``MoWic.pe_inputs``. co_wic / nc_wic / ma_wic / tx_wic remain affected and are tracked
-   separately.
+3. **Income reaches PolicyEngine** — WIC needs its own income sources sent or PE substitutes an
+   imputation and returns WIC as eligible at any reported income (verified live: $108k/yr came
+   back eligible). MO carried a partial fix for this; MFB-1571 moved the complete ``wic_income``
+   bundle onto the federal ``Wic``, which also fixed co_wic / nc_wic / ma_wic / tx_wic / il_wic.
+   MO now adds only its state code, and the tests here assert that inheritance rather than a
+   local copy.
 
 MO Head Start / Early Head Start:
 
@@ -60,6 +60,8 @@ from programs.programs.policyengine.calculators.dependencies.member import (
 )
 from programs.programs.policyengine.calculators.registry import all_calculators, all_member_calculators
 from programs.programs.policyengine.policy_engine import pe_input
+from screener.serializers import _write_current_benefits
+from screener.tests.helpers import seed_program
 
 
 class TestMoWicWiring(TestCase):
@@ -92,68 +94,31 @@ class TestMoWicWiring(TestCase):
         """
         Regression guard for WIC income-blindness.
 
-        The federal inputs carry only ``school_meal_countable_income``, which PolicyEngine's WIC
-        tree never reads — ``wic_countable_income`` sums ``gov.usda.wic.income.sources`` instead.
-        Supplying none of those sources lets PE substitute its own imputation and find the
-        household categorically (adjunct) eligible, and since ``is_wic_eligible`` is
-        ``demographic & (income_test | categorical) & nutritional_risk`` that alone returns WIC as
-        eligible at any reported income.
+        MoWic used to carry ``irs_gross_income`` itself, as a partial fix while the federal
+        base was still sending only ``school_meal_countable_income`` — a variable PolicyEngine's
+        WIC tree never reads (``wic_countable_income`` sums ``gov.usda.wic.income.sources``
+        instead). MFB-1571 moved the full bundle onto ``Wic``, so MO inherits it; the assertion
+        is unchanged because what matters is that the inputs arrive, not which class declares
+        them. Authoritative coverage lives in ``federal/pe/tests/test_wic.py``.
         """
         for dep in dependency.irs_gross_income:
             self.assertIn(dep, MoWic.pe_inputs)
 
-    def test_wic_income_source_coverage_is_partial(self):
-        """
-        Pins the known gap so it can't drift unnoticed.
+    def test_inherits_full_wic_income_bundle(self):
+        """MO adds only a state code now — every income source comes from the federal base."""
+        for dep in dependency.wic_income:
+            self.assertIn(dep, MoWic.pe_inputs)
 
-        ``irs_gross_income`` supplies 5 of the 24 variables in PE's ``gov.usda.wic.income.sources``.
-        If this starts failing, either the bundle or WIC's source list changed — re-check the gap
-        note on ``MoWic.pe_inputs`` before adjusting the number.
+    def test_declares_only_the_state_code_itself(self):
         """
-        wic_income_sources = {
-            "employment_income",
-            "self_employment_income",
-            "military_service_income",
-            "dividend_income",
-            "interest_income",
-            "gi_cash_assistance",
-            "social_security",
-            "ssi",
-            "tanf",
-            "pension_income",
-            "survivor_benefits",
-            "financial_assistance",
-            "miscellaneous_income",
-            "veterans_benefits",
-            "unemployment_compensation",
-            "strike_benefits",
-            "rental_income",
-            "retirement_distributions",
-            "alimony_income",
-            "child_support_received",
-            "disability_benefits",
-            "workers_compensation",
-            "educational_assistance",
-            "railroad_benefits",
-        }
-        sent = {dep.field for dep in MoWic.pe_inputs if hasattr(dep, "field")}
+        The inverse of the above: MO must not re-declare income inputs locally.
 
+        A state subclass that keeps its own copy is how the CO/NC/MA/TX/IL gap survived — the
+        fix lands on one class and the others silently keep the old set.
+        """
         self.assertEqual(
-            sent & wic_income_sources,
-            {
-                "employment_income",
-                "self_employment_income",
-                "social_security",
-                "unemployment_compensation",
-                "rental_income",
-            },
-        )
-
-    def test_federal_wic_alone_would_not_send_gross_income(self):
-        """Pins *why* the bundle is added here: the federal parent omits it (unlike ``Medicaid``)."""
-        self.assertFalse(
-            any(dep in Wic.pe_inputs for dep in dependency.irs_gross_income),
-            "federal Wic now sends gross income — MoWic's override and its comment are redundant",
+            [dep for dep in MoWic.pe_inputs if dep not in Wic.pe_inputs],
+            [MoStateCodeDependency],
         )
 
     def test_keeps_federal_pe_outputs(self):
@@ -261,8 +226,13 @@ class TestMoWicPeInput(TestCase):
         spm_unit = household["spm_units"]["spm_unit"]
         people = household["people"]
 
-        # SPM-level dependency
-        self.assertIn("school_meal_countable_income", spm_unit)
+        # SPM-level dependencies: the WIC income sources that live on the SPM unit, plus the
+        # reported-receipt flags the categorical test reads. school_meal_countable_income is
+        # deliberately absent — PolicyEngine's WIC tree never reads it (MFB-1571).
+        self.assertNotIn("school_meal_countable_income", spm_unit)
+        self.assertIn("tanf", spm_unit)
+        self.assertIn("receives_snap", spm_unit)
+        self.assertIn("receives_tanf", spm_unit)
 
         # Member-level dependencies
         head_id = str(self.head.id)
@@ -297,6 +267,47 @@ class TestMoWicPeInput(TestCase):
             member_id = str(member.id)
             self.assertIn("wic", people[member_id])
             self.assertIn("wic_category", people[member_id])
+
+    def test_wic_alone_carries_every_income_source(self):
+        """
+        WIC must be self-sufficient in a request where it is the only program.
+
+        PolicyEngine gets one merged household per screen, not one per program, so a
+        calculator missing an input is masked whenever some sibling program happens to send
+        the same field. That is why this bug hid for so long: CO/TX/MA/NC screens run Medicaid
+        and Head Start, which both send irs_gross_income, while MO shipped WIC as its only
+        program and the omission became visible immediately.
+
+        Building the payload from the WIC calculator alone is the only way to assert real
+        coverage — with siblings present, this passes either way.
+        """
+        result = pe_input(self.screen, [self._calculator()])
+        household = result["household"]
+        head = household["people"][str(self.head.id)]
+        spm_unit = household["spm_units"]["spm_unit"]
+
+        for dep in dependency.wic_income:
+            field = dep.field
+            unit = spm_unit if field in ("tanf",) else head
+            self.assertIn(field, unit, f"{field} is missing from a WIC-only payload")
+
+    def test_reported_snap_receipt_reaches_the_categorical_inputs(self):
+        """
+        Reported SNAP with no dollar amount — the common case — still has to reach PE.
+
+        It travels as ``receives_snap``, not as a ``snap`` amount: PolicyEngine hands back
+        whatever we put in the ``snap`` slot as this household's benefit, so inventing a
+        figure there would corrupt the SNAP result for every program in the request.
+        """
+        seed_program(self.white_label, "mo_snap", base_program="snap")
+        _write_current_benefits(self.screen, ["mo_snap"])
+
+        spm_unit = pe_input(self.screen, [self._calculator()])["household"]["spm_units"]["spm_unit"]
+
+        self.assertEqual(spm_unit["receives_snap"], {self.PERIOD: True})
+        # WIC doesn't send the `snap` amount input at all — SNAP is not a WIC income source,
+        # and the receipt flag is all the categorical test needs.
+        self.assertNotIn("snap", spm_unit)
 
 
 class TestMoHeadStartWiring(TestCase):

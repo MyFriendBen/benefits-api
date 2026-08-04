@@ -110,6 +110,72 @@ class TestIsBlindDependency(TestCase):
         self.assertFalse(dep.value())
 
 
+class TestChildSupportReceivedDependency(TestCase):
+    """
+    Tests for ChildSupportReceivedDependency — child support *received*, as income.
+
+    Easy to confuse with SnapChildSupportDependency below, which sends child support *paid*
+    as an expense (`child_support_expense`). Opposite direction, different PE field; the two
+    are asserted side by side here so a future edit can't collapse them.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=2,
+            completed=False,
+        )
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
+
+    def test_field_name(self):
+        dep = member.ChildSupportReceivedDependency(self.screen, self.head, {})
+        self.assertEqual(dep.field, "child_support_received")
+
+    def test_value_is_the_annual_reported_amount(self):
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="childSupport", amount=300, frequency="monthly"
+        )
+
+        dep = member.ChildSupportReceivedDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 3600)  # $300/month * 12
+
+    def test_value_is_zero_when_none_reported(self):
+        dep = member.ChildSupportReceivedDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 0)
+
+    def test_value_is_scoped_to_the_member(self):
+        """Person-level input: another member's child support must not be attributed here."""
+        spouse = HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=33)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=spouse, type="childSupport", amount=300, frequency="monthly"
+        )
+
+        dep = member.ChildSupportReceivedDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 0)
+
+    def test_ignores_other_income_types(self):
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="wages", amount=1000, frequency="monthly"
+        )
+
+        dep = member.ChildSupportReceivedDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 0)
+
+    def test_is_distinct_from_child_support_paid(self):
+        """Received income and paid expense are different PE fields; neither reads the other."""
+        Expense.objects.create(screen=self.screen, type="childSupport", amount=500, frequency="monthly")
+
+        received = member.ChildSupportReceivedDependency(self.screen, self.head, {})
+        paid = member.SnapChildSupportDependency(self.screen, self.head, {})
+
+        self.assertNotEqual(received.field, paid.field)
+        self.assertEqual(received.value(), 0)
+        self.assertEqual(paid.value(), 3000)
+
+
 class TestMemberExpenseDependency(TestCase):
     """Tests for member-level expense dependency classes: SnapChildSupportDependency, PropertyTaxExpenseDependency, and MedicalExpenseDependency."""
 
