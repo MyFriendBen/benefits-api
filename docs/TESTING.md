@@ -85,6 +85,74 @@ pytest integrations/clients/hud_income_limits/tests/test_integration.py::TestHud
 
 ---
 
+## PolicyEngine Spec-Scenario Tests
+
+Every program calculator gets tests that mirror its `spec.md` **Test Scenarios** 1:1 — one test per scenario, asserting eligibility *and* benefit value. Custom (MFB) calculators get plain unit tests, because the rules and amounts are our code. PolicyEngine calculators get the same assertions wrapped as VCR integration tests: the answer comes from PolicyEngine, so we record it once and replay it forever after.
+
+Helpers live in `programs/programs/policyengine/tests/spec_scenarios.py`; the harness itself is covered by `programs/programs/policyengine/tests/test_spec_scenarios.py`.
+
+### Writing one
+
+```python
+import pytest
+from programs.programs.policyengine.tests.spec_scenarios import (
+    PeSpecScenarioTestCase, add_income, add_member, calc_pe_program, make_program, make_screen,
+    screener_value,
+)
+
+@pytest.mark.integration          # applies VCR
+class TestTxHeadStart(PeSpecScenarioTestCase):
+    pe_version = "1.779.3"        # version the cassettes were recorded at
+
+    def test_scenario_1_single_parent_child_age_3_under_income_limit(self):
+        screen = make_screen(screen_id=1, white_label_code="tx", state_code="TX",
+                             household_size=2, zipcode="78701", county="Travis County")
+        parent = add_member(screen, member_id=1, relationship="headOfHousehold", age=34)
+        add_income(parent, amount=1_496)
+        add_member(screen, member_id=2, relationship="child", age=3)
+        program = make_program("tx", "tx_head_start", year="2025")
+
+        eligibility = calc_pe_program(screen, TxHeadStart, program)
+
+        self.assertTrue(eligibility.eligible)
+        self.assertEqual(screener_value(eligibility), 12_076)
+```
+
+Three rules make a PolicyEngine cassette replayable — the helpers enforce them, don't work around them:
+
+1. **Assign explicit primary keys.** The request keys `household.people` by member id and the *response* is keyed the same way, so a cassette recorded under different auto-increment pks can neither be matched nor read.
+2. **Pin the model version** via `pe_version`. Unpinned requests send the floating `current` alias, which makes the recorded body non-reproducible and can fire a second HTTP call (`GET /versions/us`).
+3. **Assert the truncated value** with `screener_value(...)`. PolicyEngine returns fractional dollars; the API truncates before serving, so whole dollars are what the spec and the user see.
+
+### Recording and verifying
+
+Run these with `pytest`, **not** `manage.py test` — VCR is a pytest fixture, so under the Django runner these tests would hit PolicyEngine live on every run.
+
+```bash
+# 1. Record (needs POLICY_ENGINE_CLIENT_ID / POLICY_ENGINE_CLIENT_SECRET)
+VCR_MODE=once venv/bin/pytest programs/programs/tx/head_start/tests/ -v
+
+# 2. Prove it replays with no network
+VCR_MODE=none venv/bin/pytest programs/programs/tx/head_start/tests/ -q
+
+# 3. Commit the cassettes with the tests
+git add programs/programs/tx/head_start/tests/
+```
+
+The pinned version must be one PolicyEngine currently serves — it rejects exact versions other than what `current`/`frontier` resolve to:
+
+```bash
+curl -s https://household.api.policyengine.org/versions/us
+```
+
+### Refreshing after PolicyEngine moves
+
+A cassette is a snapshot of one PolicyEngine version's answer. When we bump the pin, or PolicyEngine promotes a release past it, re-record: update `pe_version`, delete the affected cassettes, re-run step 1, and review the value diff. A changed value is a signal, not a formality — either the spec's expected number needs review or PolicyEngine changed behavior. Update `spec.md` and the assertion together.
+
+Cassettes are never written when a test raises (`record_on_exception=False`), so a failed recording can't leave an error response behind to replay. If a recording attempt fails, fix the cause and re-run.
+
+---
+
 ## Cassette Management
 
 ### Cassette Storage
