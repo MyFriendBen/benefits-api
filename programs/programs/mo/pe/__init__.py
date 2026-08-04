@@ -1,4 +1,4 @@
-from programs.programs.federal.pe.tax import Ctc
+from programs.programs.federal.pe.tax import Ctc, Eitc
 import programs.programs.mo.pe.member as member
 import programs.programs.mo.pe.spm as spm
 from programs.programs.policyengine.calculators.base import PolicyEngineCalulator
@@ -15,6 +15,7 @@ mo_spm_calculators = {
 
 mo_tax_unit_calculators = {
     "mo_ctc": Ctc,
+    "mo_eitc": Eitc,
 }
 
 mo_pe_calculators: dict[str, type[PolicyEngineCalulator]] = {

@@ -1,10 +1,13 @@
 """
 Unit tests for TX Tax Unit PolicyEngine calculator classes.
 
-These tests verify TX-specific tax calculator logic including:
-- Calculator registration
-- TX-specific pe_inputs (TxStateCodeDependency)
-- Inheritance from federal tax calculators
+``tx_eitc`` and ``tx_ctc`` register the shared federal ``Eitc``/``Ctc`` classes
+directly — neither federal credit has state variance — so those tests only pin
+the registration. The calculators' own properties live in
+``programs/programs/federal/pe/tests/test_tax.py``.
+
+``TxAca`` is a genuine TX subclass: ACA premiums are state-rated, so it does add
+``TxStateCodeDependency`` on top of the federal inputs.
 """
 
 from django.test import TestCase
@@ -19,94 +22,34 @@ from programs.programs.policyengine.calculators.registry import (
     all_tax_unit_calculators,
 )
 from programs.programs.tx.pe import tx_pe_calculators, tx_tax_unit_calculators
-from programs.programs.tx.pe.tax import TxEitc, TxAca
+from programs.programs.tx.pe.tax import TxAca
 
 
 class TestTxEitc(TestCase):
-    """Tests for TxEitc calculator class."""
+    """tx_eitc registration against the shared federal Eitc calculator.
 
-    def test_exists_and_is_subclass_of_policy_engine_tax_unit_calculator(self):
-        """
-        Test that TxEitc calculator class exists and is registered.
+    The federal EITC has no Texas variance, so the slug maps to the shared class
+    with no TX subclass. Its own properties are asserted once in
+    ``programs/programs/federal/pe/tests/test_tax.py``.
+    """
 
-        This verifies the calculator has been set up in the codebase.
-        """
-        # Verify TxEitc has the expected properties
-        self.assertEqual(TxEitc.pe_name, "eitc")
-        self.assertIsNotNone(TxEitc.pe_inputs)
-        self.assertGreater(len(TxEitc.pe_inputs), 0)
-        self.assertIsNotNone(TxEitc.pe_outputs)
-        self.assertGreater(len(TxEitc.pe_outputs), 0)
+    def test_is_federal_eitc_everywhere(self):
+        self.assertIs(tx_tax_unit_calculators["tx_eitc"], Eitc)
+        self.assertIs(tx_pe_calculators["tx_eitc"], Eitc)
+        self.assertIs(all_tax_unit_calculators["tx_eitc"], Eitc)
+        self.assertIs(all_calculators["tx_eitc"], Eitc)
 
-    def test_is_registered_in_tx_pe_calculators(self):
-        """Test that TX EITC is registered in the calculators dictionary."""
-        # Verify tx_eitc is in the calculators dictionary
-        self.assertIn("tx_eitc", tx_pe_calculators)
-
-        # Verify it points to the correct class
-        self.assertEqual(tx_pe_calculators["tx_eitc"], TxEitc)
-
-    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self):
-        """
-        Test that TxEitc has all expected pe_inputs from parent and TX-specific.
-
-        TxEitc should inherit all inputs from parent Eitc class plus add
-        TX-specific dependencies like TxStateCodeDependency.
-        """
-        # TxEitc should have all parent inputs plus TxStateCodeDependency
-        self.assertGreater(len(TxEitc.pe_inputs), len(Eitc.pe_inputs))
-
-        # Verify TxStateCodeDependency is in the list
-        self.assertIn(household.TxStateCodeDependency, TxEitc.pe_inputs)
-
-        # Verify all parent inputs are present
-        for parent_input in Eitc.pe_inputs:
-            self.assertIn(parent_input, TxEitc.pe_inputs)
-
-    def test_pe_inputs_includes_tx_state_code_dependency(self):
-        """
-        Test that TxStateCodeDependency is properly added to TX EITC inputs.
-
-        This is the key TX-specific dependency that sets state_code="TX" for
-        PolicyEngine calculations.
-        """
-        # Verify TxStateCodeDependency is in pe_inputs
-        self.assertIn(TxStateCodeDependency, TxEitc.pe_inputs)
-
-        # Verify it's configured correctly
-        self.assertEqual(TxStateCodeDependency.state, "TX")
-        self.assertEqual(TxStateCodeDependency.field, "state_code")
-
-    def test_pe_name_matches_federal_eitc(self):
-        """
-        Test that TxEitc uses the same pe_name as federal EITC.
-
-        Since this is the federal EITC program for Texas residents,
-        it should use the same PolicyEngine name as the federal calculator.
-        """
-        self.assertEqual(TxEitc.pe_name, "eitc")
-        self.assertEqual(TxEitc.pe_name, Eitc.pe_name)
-
-    def test_pe_outputs_matches_federal_eitc(self):
-        """
-        Test that TxEitc uses the same pe_outputs as federal EITC.
-
-        The outputs should be the same since this is calculating
-        the federal EITC benefit amount.
-        """
-        self.assertEqual(TxEitc.pe_outputs, Eitc.pe_outputs)
+    def test_matches_builtin_federal_registry_key(self):
+        """Same calculator the federal registry serves as ``eitc`` — no TX subclass."""
+        self.assertIs(all_tax_unit_calculators["tx_eitc"], all_tax_unit_calculators["eitc"])
 
 
 class TestTxCtc(TestCase):
     """tx_ctc registration against the shared federal Ctc calculator.
 
-    Texas previously registered a ``TxCtc`` subclass that appended
-    ``TxStateCodeDependency``. The federal CTC reads no state variable, so that
-    input changed no output — verified against live PE 1.779.3 across eight
-    households — and the subclass was removed in favor of the shared class.
-
-    The calculator's own properties (``pe_name``, ``pe_outputs``, the input set,
-    and the absence of a state code) are asserted once in
+    The federal CTC has no Texas variance, so the slug maps to the shared class
+    with no TX subclass. Its own properties (``pe_name``, ``pe_outputs``, the input
+    set, and the absence of a state code) are asserted once in
     ``programs/programs/federal/pe/tests/test_tax.py``.
     """
 
