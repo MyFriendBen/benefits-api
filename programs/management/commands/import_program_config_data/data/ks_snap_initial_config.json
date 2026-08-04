@@ -83,7 +83,15 @@
       "phone_number": "+13162836743",
       "description": "Helps Kansas residents in the Wichita and KC areas apply for Food Assistance and understand their eligibility.",
       "assistance_link": "https://www.dcf.ks.gov/services/ees/pages/Food-Assistance-Application-Assistance-(SNAP-Outreach).aspx",
-      "counties": ["Johnson", "Shawnee", "Harvey", "Sedgwick", "Douglas", "Barber", "Harper"]
+      "counties": [
+        "Johnson County",
+        "Shawnee County",
+        "Harvey County",
+        "Sedgwick County",
+        "Douglas County",
+        "Barber County",
+        "Harper County"
+      ]
     },
     {
       "external_name": "ks_harvesters",
@@ -92,7 +100,25 @@
       "phone_number": "+18776539522",
       "description": "Helps Kansas City-area Kansas residents apply for Food Assistance by phone — no need to visit a government office.",
       "assistance_link": "https://www.harvesters.org/get-food-assistance/snap-assistance",
-      "counties": ["Washington", "Marshall", "Nemaha", "Clay", "Riley", "Pottawatomie", "Jackson", "Jefferson", "Shawnee", "Wabaunsee", "Douglas", "Johnson", "Leavenworth", "Wyandotte", "Osage", "Franklin", "Miami"]
+      "counties": [
+        "Washington County",
+        "Marshall County",
+        "Nemaha County",
+        "Clay County",
+        "Riley County",
+        "Pottawatomie County",
+        "Jackson County",
+        "Jefferson County",
+        "Shawnee County",
+        "Wabaunsee County",
+        "Douglas County",
+        "Johnson County",
+        "Leavenworth County",
+        "Wyandotte County",
+        "Osage County",
+        "Franklin County",
+        "Miami County"
+      ]
     }
   ]
 }
