@@ -100,40 +100,25 @@ class TestTxEitc(TestCase):
 class TestTxCtc(TestCase):
     """tx_ctc registration against the shared federal Ctc calculator.
 
-    The federal Child Tax Credit has no state term: nothing under PolicyEngine's
-    ``gov/irs/credits/ctc`` variable tree reads ``state_code``. So tx_ctc maps
-    straight to the shared federal ``Ctc`` class rather than a TX subclass that
-    appends ``TxStateCodeDependency`` — sending that input changed no output.
-    Verified against live PE 1.779.3 across eight households (including $0 income,
-    three children, and the phase-out range): identical eligibility and value
-    either way.
+    Texas previously registered a ``TxCtc`` subclass that appended
+    ``TxStateCodeDependency``. The federal CTC reads no state variable, so that
+    input changed no output — verified against live PE 1.779.3 across eight
+    households — and the subclass was removed in favor of the shared class.
 
-    Contrast ``co_ctc`` / ``il_ctc``, which are genuine *state* credits living
-    under ``gov/states/`` and do need their state code.
+    The calculator's own properties (``pe_name``, ``pe_outputs``, the input set,
+    and the absence of a state code) are asserted once in
+    ``programs/programs/federal/pe/tests/test_tax.py``.
     """
 
-    def test_maps_to_the_shared_federal_ctc(self):
+    def test_is_federal_ctc_everywhere(self):
         self.assertIs(tx_tax_unit_calculators["tx_ctc"], Ctc)
-
-    def test_is_registered_in_tx_pe_calculators(self):
-        self.assertIn("tx_ctc", tx_pe_calculators)
         self.assertIs(tx_pe_calculators["tx_ctc"], Ctc)
-
-    def test_is_registered_in_the_global_registry(self):
-        """screener.views resolves Program.name_abbreviated against all_calculators."""
-        self.assertIn("tx_ctc", all_tax_unit_calculators)
         self.assertIs(all_tax_unit_calculators["tx_ctc"], Ctc)
-        self.assertIn("tx_ctc", all_calculators)
         self.assertIs(all_calculators["tx_ctc"], Ctc)
 
-    def test_pe_name_is_ctc_value(self):
-        """The amount actually received after limiting by tax liability plus the
-        refundable portion, not the headline ``ctc``."""
-        self.assertEqual(Ctc.pe_name, "ctc_value")
-
-    def test_pe_inputs_carry_no_state_code(self):
-        """The federal CTC formula reads no state variable, so no state code is sent."""
-        self.assertNotIn(TxStateCodeDependency, Ctc.pe_inputs)
+    def test_matches_builtin_federal_registry_key(self):
+        """Same calculator the federal registry serves as ``ctc`` — no TX subclass."""
+        self.assertIs(all_tax_unit_calculators["tx_ctc"], all_tax_unit_calculators["ctc"])
 
 
 class TestTxAca(TestCase):

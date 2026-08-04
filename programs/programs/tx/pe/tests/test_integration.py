@@ -13,7 +13,6 @@ from screener.models import Screen, HouseholdMember, WhiteLabel, Expense, Income
 from programs.programs.policyengine.policy_engine import pe_input
 from programs.programs.tx.pe.spm import TxSnap, TxLifeline, TxTanf
 from programs.programs.tx.pe.member import TxWic, TxSsi, TxCsfp, TxChip
-from programs.programs.federal.pe.tax import Ctc
 from programs.programs.tx.pe.tax import TxEitc, TxAca
 from programs.programs.policyengine.calculators.constants import (
     MAIN_TAX_UNIT,
@@ -558,39 +557,6 @@ class TestTxEitcPeInput(TxPeInputTestBase):
         self.assertIn(MAIN_TAX_UNIT, tax_units)
         self.assertIn(str(single_parent.id), tax_units[MAIN_TAX_UNIT]["members"])
         self.assertIn(str(child.id), tax_units[MAIN_TAX_UNIT]["members"])
-
-
-class TestTxCtcPeInput(TxPeInputTestBase):
-    """Tests for the tx_ctc calculator's pe_input dependencies.
-
-    tx_ctc is the shared federal ``Ctc`` class, so this exercises the federal
-    calculator against a TX screen.
-    """
-
-    def test_populates_tax_unit_fields(self):
-        """Test that Ctc populates tax unit and member fields correctly."""
-        result = pe_input(self.screen, [Ctc])
-        household = result["household"]
-        people = household["people"]
-        tax_units = household["tax_units"]
-
-        # Tax unit structure exists
-        self.assertIn(MAIN_TAX_UNIT, tax_units)
-        main_tax_unit = tax_units[MAIN_TAX_UNIT]
-
-        # All members in tax unit
-        self.assertIn(str(self.head.id), main_tax_unit["members"])
-        self.assertIn(str(self.spouse.id), main_tax_unit["members"])
-        self.assertIn(str(self.child.id), main_tax_unit["members"])
-
-        # CTC output field
-        self.assertIn("ctc_value", main_tax_unit)
-
-        # Member fields
-        head_id = str(self.head.id)
-        self.assertIn("age", people[head_id])
-        self.assertIn("is_tax_unit_dependent", people[head_id])
-        self.assertIn("employment_income", people[head_id])
 
 
 class TestTxAcaPeInput(TxPeInputTestBase):
