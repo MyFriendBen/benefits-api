@@ -12,8 +12,14 @@ VCR behavior controlled by VCR_MODE environment variable:
 - VCR_MODE=none (strict playback): Replays only, never records, errors on any new HTTP requests
 
 All integration tests marked with @pytest.mark.integration automatically use VCR.
+
+Two integrations use this harness:
+- HUD income limits (integrations/clients/hud_income_limits) — needs HUD_API_TOKEN to record
+- PolicyEngine program spec-scenario tests — see programs/programs/policyengine/tests/
+  spec_scenarios.py and docs/TESTING.md
 """
 
+import json
 import logging
 import os
 import re
@@ -22,6 +28,21 @@ import vcr as vcrpy
 from decouple import config
 
 logger = logging.getLogger(__name__)
+
+# PolicyEngine's household endpoint. Every program's eligibility comes from a POST to the
+# same URL, so cassette matching for this host has to consider the request body — see
+# policy_engine_body().
+PE_API_HOST = "household.api.policyengine.org"
+
+# Tests that need real HUD credentials to record. Used to scope the no-token skip below to
+# HUD only, instead of disabling every integration test in the suite.
+HUD_TEST_PATH_FRAGMENT = "hud_income_limits"
+
+# Hosts VCR passes straight through, never recording. PolicyEngine's OAuth exchange lives
+# here: its response body is a real bearer token, so it must not be written to a cassette.
+# Recording fetches a token live; replay pre-seeds a placeholder instead (see
+# programs/programs/policyengine/tests/spec_scenarios.py).
+VCR_IGNORE_HOSTS = ["policyengine.uk.auth0.com"]
 
 
 # Sensitive headers to redact in VCR cassettes
@@ -119,6 +140,54 @@ def scrub_response_body(response):
     return response
 
 
+def _json_body(request):
+    """Parse a VCR request body as JSON, falling back to the raw bytes if it isn't JSON."""
+    body = request.body
+    if body is None:
+        return None
+    if isinstance(body, bytes):
+        try:
+            body = body.decode("utf-8")
+        except UnicodeDecodeError:
+            return request.body
+    try:
+        return json.loads(body)
+    except (TypeError, ValueError):
+        return body
+
+
+def policy_engine_body(r1, r2):
+    """Match PolicyEngine requests on their body; ignore every other host.
+
+    All PolicyEngine calls go to the same URL (POST household.api.../us/calculate): the
+    household and the pinned model version travel in the JSON body. Matching only on
+    method/path would make a cassette replay its recorded response for *any* payload, so a
+    regression in how we assemble the request would replay the old answer and still pass —
+    exactly the wiring bug these tests exist to catch.
+
+    Household member ids are compared as recorded, deliberately un-normalized. The response
+    is keyed by those same ids (PrivateApiSim.value reads result[unit][member_id]), so a
+    cassette recorded under different primary keys cannot be replayed at all. A clean "no
+    matching request" error is the honest signal; see docs/TESTING.md on assigning explicit
+    primary keys in PolicyEngine tests.
+
+    Non-PolicyEngine requests return a match here and are still discriminated by the other
+    matchers (method/scheme/host/port/path/query), so existing cassettes are unaffected.
+    """
+    if r1.host != PE_API_HOST and r2.host != PE_API_HOST:
+        return True
+
+    body1 = _json_body(r1)
+    body2 = _json_body(r2)
+    if body1 != body2:
+        raise AssertionError(
+            "PolicyEngine request body does not match the recorded cassette. Either the "
+            "household/version changed (re-record the cassette) or the test's primary keys "
+            "differ from the recorded ones (assign explicit ids)."
+        )
+    return True
+
+
 @pytest.fixture(scope="module")
 def vcr_config(request):
     """
@@ -140,14 +209,21 @@ def vcr_config(request):
     return {
         "cassette_library_dir": cassette_dir,
         "record_mode": "once",  # Record once, then replay. Use 'new_episodes' to add new interactions
-        "match_on": ["method", "scheme", "host", "port", "path", "query"],
+        # policy_engine_body is a no-op for every host except PolicyEngine, whose requests
+        # are only distinguishable by their body (registered in auto_vcr).
+        "match_on": ["method", "scheme", "host", "port", "path", "query", "policy_engine_body"],
         # Use VCR's built-in filtering for headers, query params, and POST data
         "filter_headers": SENSITIVE_HEADERS,
         "filter_query_parameters": SENSITIVE_QUERY_PARAMS,
         "filter_post_data_parameters": SENSITIVE_POST_PARAMS,
+        "ignore_hosts": VCR_IGNORE_HOSTS,
         # Only use custom scrubbing for response body patterns VCR can't auto-detect
         "before_record_response": scrub_response_body,
         "decode_compressed_response": True,  # Auto-decompress gzipped responses
+        # Don't write a cassette when the test raises. A failed recording (bad credentials,
+        # a 4xx from the API) would otherwise leave a cassette holding the error response,
+        # which then replays forever and looks like a code failure.
+        "record_on_exception": False,
     }
 
 
@@ -193,8 +269,10 @@ def auto_vcr(request, vcr_config):
     # Log VCR configuration for visibility in CI
     logger.info(f"VCR mode: {record_mode} | Test: {request.node.name}")
 
-    # Create VCR instance and use cassette
+    # Create VCR instance and use cassette. Custom matchers must be registered on the
+    # instance before the cassette is used (match_on names are resolved lazily).
     vcr = vcrpy.VCR(**vcr_config)
+    vcr.register_matcher("policy_engine_body", policy_engine_body)
     cassette_name = f"{request.node.name}.yaml"
     with vcr.use_cassette(cassette_name, record_mode=record_mode):
         yield
@@ -233,6 +311,18 @@ def integration_requires_token():
         pytest.skip("HUD_API_TOKEN not set - skipping integration test")
 
 
+def _requires_hud_token(item) -> bool:
+    """Whether an integration test needs real HUD credentials.
+
+    Scoped by test location and by use of the ``integration_requires_token`` fixture rather
+    than by the ``integration`` marker, which other integrations (PolicyEngine) also use.
+    """
+    if HUD_TEST_PATH_FRAGMENT in str(getattr(item, "fspath", "")):
+        return True
+
+    return "integration_requires_token" in getattr(item, "fixturenames", ())
+
+
 def pytest_collection_modifyitems(config, items):
     """
     Skip HUD integration tests when no API token is configured.
@@ -240,13 +330,17 @@ def pytest_collection_modifyitems(config, items):
     Fork PR workflows do not receive repository secrets, so ``HUD_API_TOKEN`` is
     unset. Unittest TestCase subclasses do not always honor ``pytest_runtest_setup``;
     applying a skip marker at collection time is reliable.
+
+    Only HUD tests are skipped. Integration tests for other services replay from their
+    cassettes without credentials, and skipping them here would silently report them as
+    green while never running them.
     """
     from decouple import config as decouple_config
 
     token = decouple_config("HUD_API_TOKEN", default=None)
     if token:
         return
-    skip_integration = pytest.mark.skip(reason="HUD_API_TOKEN not set - skipping integration tests")
+    skip_integration = pytest.mark.skip(reason="HUD_API_TOKEN not set - skipping HUD integration tests")
     for item in items:
-        if item.get_closest_marker("integration"):
+        if item.get_closest_marker("integration") and _requires_hud_token(item):
             item.add_marker(skip_integration)
