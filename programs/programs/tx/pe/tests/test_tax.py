@@ -14,8 +14,12 @@ from programs.programs.policyengine.calculators.dependencies import household
 from programs.programs.policyengine.calculators.dependencies.household import (
     TxStateCodeDependency,
 )
-from programs.programs.tx.pe import tx_pe_calculators
-from programs.programs.tx.pe.tax import TxEitc, TxCtc, TxAca
+from programs.programs.policyengine.calculators.registry import (
+    all_calculators,
+    all_tax_unit_calculators,
+)
+from programs.programs.tx.pe import tx_pe_calculators, tx_tax_unit_calculators
+from programs.programs.tx.pe.tax import TxEitc, TxAca
 
 
 class TestTxEitc(TestCase):
@@ -94,64 +98,42 @@ class TestTxEitc(TestCase):
 
 
 class TestTxCtc(TestCase):
-    """Tests for TxCtc calculator class."""
+    """tx_ctc registration against the shared federal Ctc calculator.
 
-    def test_exists_and_is_subclass_of_ctc(self):
-        """
-        Test that TxCtc calculator class exists and is registered.
+    The federal Child Tax Credit has no state term: nothing under PolicyEngine's
+    ``gov/irs/credits/ctc`` variable tree reads ``state_code``. So tx_ctc maps
+    straight to the shared federal ``Ctc`` class rather than a TX subclass that
+    appends ``TxStateCodeDependency`` — sending that input changed no output.
+    Verified against live PE 1.779.3 across eight households (including $0 income,
+    three children, and the phase-out range): identical eligibility and value
+    either way.
 
-        This verifies the calculator has been set up in the codebase.
-        """
-        # Verify TxCtc inherits from PolicyEngineTaxUnitCalulator
-        from programs.programs.policyengine.calculators.base import (
-            PolicyEngineTaxUnitCalulator,
-        )
+    Contrast ``co_ctc`` / ``il_ctc``, which are genuine *state* credits living
+    under ``gov/states/`` and do need their state code.
+    """
 
-        self.assertTrue(issubclass(TxCtc, PolicyEngineTaxUnitCalulator))
-
-        # Verify it has the expected properties
-        self.assertEqual(TxCtc.pe_name, "ctc_value")
-        self.assertIsNotNone(TxCtc.pe_inputs)
-        self.assertGreater(len(TxCtc.pe_inputs), 0)
+    def test_maps_to_the_shared_federal_ctc(self):
+        self.assertIs(tx_tax_unit_calculators["tx_ctc"], Ctc)
 
     def test_is_registered_in_tx_pe_calculators(self):
-        """Test that TX CTC is registered in the calculators dictionary."""
-        # Verify tx_ctc is in the calculators dictionary
         self.assertIn("tx_ctc", tx_pe_calculators)
+        self.assertIs(tx_pe_calculators["tx_ctc"], Ctc)
 
-        # Verify it points to the correct class
-        self.assertEqual(tx_pe_calculators["tx_ctc"], TxCtc)
+    def test_is_registered_in_the_global_registry(self):
+        """screener.views resolves Program.name_abbreviated against all_calculators."""
+        self.assertIn("tx_ctc", all_tax_unit_calculators)
+        self.assertIs(all_tax_unit_calculators["tx_ctc"], Ctc)
+        self.assertIn("tx_ctc", all_calculators)
+        self.assertIs(all_calculators["tx_ctc"], Ctc)
 
-    def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self):
-        """
-        Test that TxCtc has all expected pe_inputs from parent and TX-specific.
+    def test_pe_name_is_ctc_value(self):
+        """The amount actually received after limiting by tax liability plus the
+        refundable portion, not the headline ``ctc``."""
+        self.assertEqual(Ctc.pe_name, "ctc_value")
 
-        TxCtc should inherit all inputs from parent Ctc class plus add
-        TX-specific dependencies like TxStateCodeDependency.
-        """
-        # TxCtc should have all parent inputs plus TxStateCodeDependency
-        self.assertGreater(len(TxCtc.pe_inputs), len(Ctc.pe_inputs))
-
-        # Verify TxStateCodeDependency is in the list
-        self.assertIn(household.TxStateCodeDependency, TxCtc.pe_inputs)
-
-        # Verify all parent inputs are present
-        for parent_input in Ctc.pe_inputs:
-            self.assertIn(parent_input, TxCtc.pe_inputs)
-
-    def test_pe_inputs_includes_tx_state_code_dependency(self):
-        """
-        Test that TxStateCodeDependency is properly added to TX CTC inputs.
-
-        This is the key TX-specific dependency that sets state_code="TX" for
-        PolicyEngine calculations.
-        """
-        # Verify TxStateCodeDependency is in pe_inputs
-        self.assertIn(TxStateCodeDependency, TxCtc.pe_inputs)
-
-        # Verify it's configured correctly
-        self.assertEqual(TxStateCodeDependency.state, "TX")
-        self.assertEqual(TxStateCodeDependency.field, "state_code")
+    def test_pe_inputs_carry_no_state_code(self):
+        """The federal CTC formula reads no state variable, so no state code is sent."""
+        self.assertNotIn(TxStateCodeDependency, Ctc.pe_inputs)
 
 
 class TestTxAca(TestCase):
