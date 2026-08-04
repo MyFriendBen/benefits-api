@@ -8,16 +8,14 @@ Missouri has no state CTC or state EITC and no MO-specific variance, so
 
 That makes registration the only MO-side fact to pin, and one part of it is
 load-bearing: ``mo_tax_unit_calculators`` must be spread into the global
-``all_tax_unit_calculators``. Missouri previously had no tax-unit calculators at
-all, so the registry imported only its member and SPM dicts. Registering
-``mo_ctc`` in ``mo_pe_calculators`` alone leaves it invisible to
-``screener.views``, which resolves ``Program.name_abbreviated`` against
-``all_calculators`` — the program would silently return no value.
+``all_tax_unit_calculators`` in ``registry.py``. ``screener.views`` resolves
+``Program.name_abbreviated`` against ``all_calculators``, so a program registered
+only in ``mo_pe_calculators`` is invisible to it and silently returns no value.
 
-Everything else about the calculator (``pe_name``, ``pe_outputs``, the input set,
-and the absence of a state code) is a property of the shared federal class and is
-asserted once in ``programs/programs/federal/pe/tests/test_tax.py``. Proving
-``mo_ctc`` *is* that object extends those guarantees here.
+Everything else about the calculators (``pe_name``, ``pe_outputs``, the input set,
+and the absence of a state code) is a property of the shared federal classes and
+is asserted once in ``programs/programs/federal/pe/tests/test_tax.py``. Proving
+these slugs *are* those objects extends those guarantees here.
 """
 
 from django.test import TestCase

@@ -37,11 +37,9 @@ from programs.programs.wa.pe.tax import WaWftc
 class TestWaEitc(TestCase):
     """`wa_eitc` reuses the federal Eitc calculator unchanged (same class object).
 
-    Washington previously registered a `WaEitc` subclass that appended
-    `WaStateCodeDependency` while still targeting the federal `eitc` variable. The
-    federal EITC reads no state variable, so that input changed no output and the
-    subclass was removed. Contrast `WaWftc` below, which targets the *state*
-    `wa_working_families_tax_credit` variable and genuinely needs the state code.
+    The federal EITC reads no state variable, so there is no WA subclass and no
+    state code. Contrast `WaWftc` below, which targets the *state*
+    `wa_working_families_tax_credit` variable and does need the state code.
 
     The calculator's own properties are asserted once in
     `programs/programs/federal/pe/tests/test_tax.py`.

@@ -28,13 +28,8 @@ from programs.programs.tx.pe.tax import TxAca
 class TestTxEitc(TestCase):
     """tx_eitc registration against the shared federal Eitc calculator.
 
-    Texas previously registered a ``TxEitc`` subclass that appended
-    ``TxStateCodeDependency`` while still targeting the federal ``eitc``
-    variable. The federal EITC reads no state variable, so that input changed no
-    output — verified against live PE 1.779.3 across six households — and the
-    subclass was removed in favor of the shared class.
-
-    The calculator's own properties are asserted once in
+    The federal EITC has no Texas variance, so the slug maps to the shared class
+    with no TX subclass. Its own properties are asserted once in
     ``programs/programs/federal/pe/tests/test_tax.py``.
     """
 
@@ -52,13 +47,9 @@ class TestTxEitc(TestCase):
 class TestTxCtc(TestCase):
     """tx_ctc registration against the shared federal Ctc calculator.
 
-    Texas previously registered a ``TxCtc`` subclass that appended
-    ``TxStateCodeDependency``. The federal CTC reads no state variable, so that
-    input changed no output — verified against live PE 1.779.3 across eight
-    households — and the subclass was removed in favor of the shared class.
-
-    The calculator's own properties (``pe_name``, ``pe_outputs``, the input set,
-    and the absence of a state code) are asserted once in
+    The federal CTC has no Texas variance, so the slug maps to the shared class
+    with no TX subclass. Its own properties (``pe_name``, ``pe_outputs``, the input
+    set, and the absence of a state code) are asserted once in
     ``programs/programs/federal/pe/tests/test_tax.py``.
     """
 

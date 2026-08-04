@@ -70,13 +70,11 @@ class TestFederalCtc(TestCase):
 
     def test_pe_inputs_carry_no_state_code(self):
         """Nothing under PolicyEngine's ``gov/irs/credits/ctc`` variable tree reads
-        ``state_code``, so no state's CTC should send one.
+        ``state_code``, so no state's CTC sends one — a state code here would be an
+        input the formula ignores.
 
-        Texas previously registered a ``TxCtc`` subclass that appended
-        ``TxStateCodeDependency`` to these inputs. It changed no output — verified
-        against live PE 1.779.3 across eight households — and was removed. This
-        asserts the general case rather than one state's dependency, so a subclass
-        for any state would have to fail it.
+        Asserted against the ``StateCode`` base class rather than one state's
+        dependency, so a subclass adding any state's code fails this.
 
         Contrast ``co_ctc`` and ``il_ctc``: those are genuine *state* credits under
         ``gov/states/`` with their own calculators, and they do need a state code.
@@ -121,13 +119,11 @@ class TestFederalEitc(TestCase):
 
     def test_pe_inputs_carry_no_state_code(self):
         """Nothing under PolicyEngine's ``gov/irs/credits/earned_income`` variable
-        tree reads ``state_code``, so no state's federal EITC should send one.
+        tree reads ``state_code``, so no state's federal EITC sends one — a state
+        code here would be an input the formula ignores.
 
-        ``TxEitc`` and ``WaEitc`` were subclasses that appended their state code to
-        these inputs while still targeting the federal ``eitc`` variable. It changed
-        no output — verified against live PE 1.779.3 across six households — and both
-        were removed. This asserts the general case, so a subclass for any state
-        would have to fail it.
+        Asserted against the ``StateCode`` base class rather than one state's
+        dependency, so a subclass adding any state's code fails this.
 
         Contrast ``co_eitc``, ``il_eitc``, ``ks_total_eitc``, and ``ma_eitc``: those
         are genuine *state* EITCs under ``gov/states/`` with their own calculators,

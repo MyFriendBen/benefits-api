@@ -20,11 +20,11 @@
     ],
     "name": "Federal Earned Income Tax Credit (EITC)",
     "description_short": "A federal tax credit for working people with lower incomes. It can lower your taxes or increase your refund",
-    "description": "The Earned Income Tax Credit (EITC) is a federal tax break. It helps working people with lower incomes.\n\nYou claim the EITC when you file your federal tax return. You do not need a separate Missouri application. The credit can lower the federal tax you owe. If the credit is more than you owe, you may get the rest as part of your refund.\n\nThis tool cannot check every tax rule. You need a valid Social Security number to claim the EITC. Your spouse also needs one if you file a joint return. Each child you claim for the EITC needs one too. You cannot claim the EITC if you file Form 2555 for foreign earned income.\n\nIf you do not claim a child for the EITC, you must have lived in the United States for more than half the year. No one else can claim you as a dependent or qualifying child on their tax return.\n\nTo claim the EITC, select \"File Your Taxes\" to prepare and file your federal tax return through IRS Free File.",
+    "description": "The Earned Income Tax Credit (EITC) is a federal tax break. It helps working people with lower incomes.\n\nYou claim the EITC when you file your federal tax return. You do not need a separate Missouri application. The credit can lower the federal tax you owe. If the credit is more than you owe, you may get the rest as part of your refund.\n\nThis tool cannot check every tax rule. You need a valid Social Security number to claim the EITC. Your spouse also needs one if you file a joint return. Each child you claim for the EITC needs one too. You cannot claim the EITC if you file Form 2555 for foreign earned income.\n\nIf you do not claim a child for the EITC, you must have lived in the United States for more than half the year. No one else can claim you as a dependent or qualifying child on their tax return.\n\nTo claim the EITC, select \"File for Free\" to prepare and file your federal tax return at no cost. If you would rather have someone help you file, see the \"Get Help Applying\" section.",
     "learn_more_link": "https://www.irs.gov/credits-deductions/individuals/earned-income-tax-credit/who-qualifies-for-the-earned-income-tax-credit-eitc",
     "apply_button_link": "https://www.irs.gov/filing/free-file-do-your-federal-taxes-for-free",
-    "apply_button_description": "File Your Taxes",
-    "estimated_application_time": "30 - 60 minutes",
+    "apply_button_description": "File for Free",
+    "estimated_application_time": "45 minutes",
     "estimated_delivery_time": "",
     "estimated_value": "",
     "value_format": "estimated_annual",
@@ -67,6 +67,14 @@
     }
   ],
   "navigators": [
+    {
+      "external_name": "mo_eitc_get_your_refund",
+      "name": "GetYourRefund",
+      "phone_number": "",
+      "email": "",
+      "assistance_link": "https://www.getyourrefund.org/en",
+      "description": "Free tax filing from Code for America, in partnership with IRS-certified VITA volunteers. You can file on your own with help by chat or email, have a tax expert file for you, or find an in-person site near you."
+    },
     {
       "external_name": "mo_eitc_vita_free_tax_prep",
       "name": "VITA Free Tax Preparation (IRS Volunteer Income Tax Assistance)",
