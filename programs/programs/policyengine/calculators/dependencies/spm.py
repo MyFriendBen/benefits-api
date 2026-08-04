@@ -152,29 +152,22 @@ class Snap(SpmUnit):
     """
     snap as both PE input and output, mirroring Tanf below.
 
-    A positive `snap` is what drives SNAP categorical eligibility in PE — verified
-    against the live API, `is_head_start_categorically_eligible` reads the amount, not
-    the `receives_snap` flag (setting that flag at annual, monthly, or all twelve months
-    left head_start at $0). So receipt has to be expressed as a value:
+    Only a known amount is ever sent:
 
-    - Reported amount available: send the annual figure. PE spreads it across the months,
-      so the household's own reported number is what any consumer reads back.
-    - Receipt reported without an amount: send the sentinel 1. Enough to confer
-      categorical eligibility, but it is not a real benefit figure — see the caveat below.
-    - Nothing reported: None, so PE calculates the amount the household is eligible for.
+    - Receipt with a reported amount: send the annual figure. PE spreads it across the
+      months, so the household's own number is what any consumer reads back.
+    - Receipt without an amount, or nothing reported: None, so PE computes it. Never a
+      placeholder — any value we invent is what PE hands back as this household's SNAP,
+      and a $1/yr stand-in collapses the computed benefit toward $0 for the request.
 
-    The value only ever lands in the annual input slot. The SNAP calculators' own monthly
-    output slot is reserved as None by _reserved_output_slots(), because writing to it
-    pins the answer we asked PE for (measured: computed SNAP fell from $3,708/yr to
-    $12/yr for a reporting household).
+    Reporting *non*-receipt is the missing leg: it needs `takes_up_snap_if_eligible=False`,
+    without which PE's simulated amount still counts as income downstream and still confers
+    categorical eligibility. That toggle arrives with MFB-1312.
 
-    Sentinel caveat: for a household PE considers SNAP-eligible, the sentinel still
-    depresses PE's computed SNAP toward $0 for that request, since $1/yr spread across
-    twelve months is what PE is told the household receives. That is accepted — those
-    households are already `has_base_benefit("snap")`, so the SNAP program is flagged
-    already_has and filtered from their results. It does mean the SNAP row in
-    ProgramEligibilitySnapshot understates for tile-only reporters until the reported
-    amount is widely collected.
+    The value only ever lands in the annual input slot; the SNAP calculators' own monthly
+    output slot goes out as None (see the two-pass write in pe_input()), because writing to
+    it pins the answer we asked PE for — measured, computed SNAP fell from $3,708/yr to
+    $12/yr for a reporting household.
 
     has_base_benefit covers every white-label variant (co_snap, ks_snap, wa_snap, …).
     has_benefit("snap") was an exact-name match and no white label offers a program named
@@ -188,7 +181,7 @@ class Snap(SpmUnit):
         if not self.screen.has_base_benefit("snap"):
             return None
         reported_amount = self.screen.calc_gross_income("yearly", ["snap"])
-        return reported_amount if reported_amount > 0 else 1
+        return reported_amount if reported_amount > 0 else None
 
 
 class Acp(SpmUnit):

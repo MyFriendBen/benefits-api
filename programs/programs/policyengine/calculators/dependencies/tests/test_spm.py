@@ -539,19 +539,19 @@ class TestSnapDependency(TestCase):
         dep = spm.Snap(self.screen, None, {})
         self.assertEqual(dep.field, "snap")
 
-    def test_value_returns_1_when_screen_has_snap(self):
-        """Receipt without a reported amount falls back to the sentinel, which is enough to
-        confer categorical eligibility."""
+    def test_value_returns_none_for_receipt_without_an_amount(self):
+        """Receipt with no reported amount leaves SNAP computed. No placeholder value: PE
+        hands whatever we send back as this household's SNAP, so a stand-in collapses the
+        computed benefit instead of describing it."""
         seed_program(self.white_label, "test_snap", base_program="snap")
         _write_current_benefits(self.screen, ["test_snap"])
 
         dep = spm.Snap(self.screen, None, {})
-        self.assertEqual(dep.value(), 1)
+        self.assertIsNone(dep.value())
 
     def test_value_returns_reported_annual_amount(self):
-        """A reported SNAP amount is sent as the annual figure instead of the sentinel, so PE
-        (and anything reading the variable back) sees the household's real number. The
-        sentinel depresses PE's computed SNAP toward $0; a real amount doesn't."""
+        """A reported SNAP amount is sent as the annual figure, so PE (and anything reading
+        the variable back) sees the household's real number."""
         seed_program(self.white_label, "test_snap", base_program="snap")
         _write_current_benefits(self.screen, ["test_snap"])
         head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=30)
@@ -574,16 +574,20 @@ class TestSnapDependency(TestCase):
         dep = spm.Snap(self.screen, None, {})
         self.assertIsNone(dep.value())
 
-    def test_value_returns_1_for_a_prefixed_variant(self):
+    def test_value_resolves_receipt_for_a_prefixed_variant(self):
         """Regression: receipt is resolved through base_program, so the state-prefixed names
-        that white labels actually ship (co_snap, ks_snap, wa_snap, …) fire the sentinel.
+        that white labels actually ship (co_snap, ks_snap, wa_snap, …) count as receipt.
         The old exact-match has_benefit("snap") matched no program in any white label, so
         every household looked like a SNAP non-recipient to PolicyEngine."""
         seed_program(self.white_label, "wa_snap", base_program="snap")
         _write_current_benefits(self.screen, ["wa_snap"])
+        head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=30)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=head, type="snap", amount=200, frequency="monthly"
+        )
 
         dep = spm.Snap(self.screen, None, {})
-        self.assertEqual(dep.value(), 1)
+        self.assertEqual(dep.value(), 2400)
 
     def test_value_returns_none_when_screen_does_not_have_snap(self):
         """When user does not report SNAP, return None so PE calculates the benefit amount."""

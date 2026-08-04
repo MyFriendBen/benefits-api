@@ -28,9 +28,7 @@ class EnergyCalculatorHomeEfficiencyAssistance(ProgramCalculator):
         "county",
         "energy_calculator",
     ]
-    # CESN program (see cesn_calculators), so the CESN name is what the join table holds —
-    # bare "leap" is a CO program name and matched nothing here. cesn_leap groups under
-    # base_program "liheap", so a base-name read wouldn't have resolved it either.
+    # CESN program (see cesn_calculators), so the CESN name is what the join table holds.
     presumptive_eligibility = [
         "cesn_leap",
     ]
