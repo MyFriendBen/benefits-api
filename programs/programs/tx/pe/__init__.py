@@ -1,4 +1,4 @@
-from programs.programs.federal.pe.tax import Ctc
+from programs.programs.federal.pe.tax import Ctc, Eitc
 import programs.programs.tx.pe.member as member
 import programs.programs.tx.pe.spm as spm
 import programs.programs.tx.pe.tax as tax
@@ -21,7 +21,7 @@ tx_member_calculators = {
 }
 
 tx_tax_unit_calculators = {
-    "tx_eitc": tax.TxEitc,
+    "tx_eitc": Eitc,
     "tx_ctc": Ctc,
     "tx_aca": tax.TxAca,
 }

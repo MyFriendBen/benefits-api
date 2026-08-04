@@ -1,22 +1,27 @@
 """
-Unit tests for the federal tax-unit PolicyEngine calculator ``Ctc``.
+Unit tests for the shared federal tax-unit PolicyEngine calculators.
 
-``Ctc`` is shared: Kansas, Missouri, Texas, and Washington all register their
-own program slug (``ks_ctc``, ``mo_ctc``, ...) against this exact class object
-rather than subclassing it, because the federal Child Tax Credit has no state
-variance. That makes this class's wiring a cross-state contract — the properties
-asserted here hold for every state that reuses it, so each state file only needs
-to prove it points at this object (see e.g. ``TestMoCtcWiring``).
+``Ctc`` and ``Eitc`` are shared: states register their own program slug
+(``ks_ctc``, ``mo_ctc``, ``mo_eitc``, ...) against these exact class objects
+rather than subclassing them, because neither federal credit has state variance.
+That makes each class's wiring a cross-state contract — the properties asserted
+here hold for every state that reuses it, so a state file only needs to prove it
+points at this object (see e.g. ``TestMoCtcWiring``).
 
-The eligibility math itself — the per-child maximum, the phase-out, the
-refundable portion, and the limitation by tax liability — lives in PolicyEngine
-and is covered by PolicyEngine's own test suite, not duplicated here.
+Neither federal credit reads ``state_code``: there is no state reference
+anywhere under PolicyEngine's ``gov/irs/credits/ctc`` or
+``gov/irs/credits/earned_income`` variable trees. ``test_pe_inputs_carry_no_state_code``
+pins that generically for both.
+
+The eligibility math itself — phase-ins, phase-outs, per-child maximums, the
+refundable portions, and the investment-income cap — lives in PolicyEngine and is
+covered by PolicyEngine's own test suite, not duplicated here.
 """
 
 from django.test import TestCase
 
 from programs.programs.federal.pe import federal_tax_unit_calculators
-from programs.programs.federal.pe.tax import Ctc
+from programs.programs.federal.pe.tax import Ctc, Eitc
 from programs.programs.policyengine.calculators.base import PolicyEngineTaxUnitCalulator
 from programs.programs.policyengine.calculators.dependencies import (
     irs_gross_income,
@@ -80,4 +85,56 @@ class TestFederalCtc(TestCase):
             self.assertFalse(
                 isinstance(pe_input, type) and issubclass(pe_input, StateCode),
                 f"{pe_input.__name__} sends a state code to the federal CTC",
+            )
+
+
+class TestFederalEitc(TestCase):
+    """Wiring of the shared federal Earned Income Tax Credit calculator."""
+
+    def test_is_a_tax_unit_calculator(self):
+        self.assertTrue(issubclass(Eitc, PolicyEngineTaxUnitCalulator))
+
+    def test_is_registered_as_eitc(self):
+        self.assertIs(federal_tax_unit_calculators["eitc"], Eitc)
+        self.assertIs(all_tax_unit_calculators["eitc"], Eitc)
+        self.assertIs(all_calculators["eitc"], Eitc)
+
+    def test_pe_name_is_eitc(self):
+        self.assertEqual(Eitc.pe_name, "eitc")
+
+    def test_pe_outputs_read_the_eitc_field(self):
+        self.assertEqual(Eitc.pe_outputs, [tax.Eitc])
+        self.assertEqual(tax.Eitc.field, "eitc")
+
+    def test_pe_inputs_include_age_and_tax_unit_composition(self):
+        """Age drives the 25-64 rule for childless filers; the dependent/spouse
+        structure drives the qualifying-child count and the joint-filer thresholds."""
+        self.assertIn(member.AgeDependency, Eitc.pe_inputs)
+        self.assertIn(member.TaxUnitDependentDependency, Eitc.pe_inputs)
+        self.assertIn(member.TaxUnitSpouseDependency, Eitc.pe_inputs)
+
+    def test_pe_inputs_include_irs_gross_income(self):
+        """The credit phases in and back out on income, so every gross income
+        input is sent."""
+        for income_input in irs_gross_income:
+            self.assertIn(income_input, Eitc.pe_inputs)
+
+    def test_pe_inputs_carry_no_state_code(self):
+        """Nothing under PolicyEngine's ``gov/irs/credits/earned_income`` variable
+        tree reads ``state_code``, so no state's federal EITC should send one.
+
+        ``TxEitc`` and ``WaEitc`` were subclasses that appended their state code to
+        these inputs while still targeting the federal ``eitc`` variable. It changed
+        no output — verified against live PE 1.779.3 across six households — and both
+        were removed. This asserts the general case, so a subclass for any state
+        would have to fail it.
+
+        Contrast ``co_eitc``, ``il_eitc``, ``ks_total_eitc``, and ``ma_eitc``: those
+        are genuine *state* EITCs under ``gov/states/`` with their own calculators,
+        and they do need a state code.
+        """
+        for pe_input in Eitc.pe_inputs:
+            self.assertFalse(
+                isinstance(pe_input, type) and issubclass(pe_input, StateCode),
+                f"{pe_input.__name__} sends a state code to the federal EITC",
             )
