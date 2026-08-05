@@ -1,0 +1,107 @@
+{
+  "white_label": {
+    "code": "il"
+  },
+  "program_category": {
+    "external_name": "il_child_care"
+  },
+  "program": {
+    "name_abbreviated": "il_head_start",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission",
+      "non_citizen"
+    ],
+    "name": "Head Start",
+    "description": "Head Start is a free preschool program for eligible children ages 3 to 5. It provides early learning, meals, health and dental screenings, and support for families. These services help children prepare for school.\n\nLocal organizations provide Head Start services in communities across Illinois. The value shown is an estimate of these services, not cash paid to your family. Each program serves a local area. Families with the greatest needs get priority, and there may be a waiting list.\n\nChildren experiencing homelessness qualify for Head Start regardless of family income. Some local programs can also enroll a limited number of children from families with higher incomes. Even if you don’t see eligibility in your results, contact a local program to ask about your options.\n\nSelect “Find your local Head Start agency” to find a nearby program and start the application process.",
+    "description_short": "Free preschool, meals, and health services for eligible children ages 3 to 5",
+    "learn_more_link": "https://headstart.gov/publication/discover-what-head-start-programs-offer",
+    "apply_button_link": "https://headstart.gov/center-locator?state=IL&radius=50",
+    "apply_button_description": "Find your local Head Start agency",
+    "estimated_application_time": "30 - 60 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": "estimated_annual",
+    "value_type": "benefit",
+    "website_description": "Free preschool, meals, and health services for eligible children ages 3 to 5",
+    "base_program": "head_start",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": true
+  },
+  "documents": [
+    {
+      "external_name": "il_home",
+      "text": "Proof of home address (ex: lease, utility bill, mail with your address)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "earned_income",
+      "text": "Proof of household income (ex: pay stubs, tax return, benefit award letter)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "il_benefit_proof",
+      "text": "Proof of SNAP, TANF, or SSI benefits, if requested",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "il_birth_certificate",
+      "text": "Child's birth certificate or proof of age, if requested",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "il_immunization_records",
+      "text": "Child's immunization (shot) records, if requested",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "il_unearned_income",
+      "text": "Proof of unearned income (ex: child support, social security, unemployment)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "il_foster_care",
+      "text": "Proof your child is in foster care, if requested",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "il_homelessness_verification",
+      "text": "A statement or other proof of your child's living situation, if requested",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "headstart_national_hotline",
+      "name": "Office of Head Start National Hotline",
+      "email": "HeadStart@eclkc.info",
+      "description": "The national Office of Head Start contact center. Can answer general questions about Head Start and help you find a program in your area.",
+      "assistance_link": "https://headstart.gov/how-apply",
+      "phone_number": "+18667636481",
+      "languages": ["english", "spanish"]
+    },
+    {
+      "external_name": "il_chicago_early_learning_hotline",
+      "name": "Chicago Early Learning Family Support Hotline",
+      "email": "",
+      "description": "Helps Chicago families apply for CPS Pre-K and community-based early learning programs, including Head Start.",
+      "assistance_link": "https://www.cps.edu/ChicagoEarlyLearning/",
+      "phone_number": "+13122291690",
+      "counties": ["Cook"],
+      "languages": ["english", "spanish"]
+    }
+  ]
+}
