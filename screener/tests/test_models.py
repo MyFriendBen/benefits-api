@@ -100,6 +100,70 @@ class TestScreen(TestCase):
         result = self.screen.calc_gross_income("yearly", ["earned"])
         self.assertEqual(result, 30000)  # ($2000 + $500) * 12
 
+    # Non-countable benefit income (SNAP/WIC): captured as income streams so the reported
+    # amount can be sent to PolicyEngine, but never folded into an income aggregate.
+
+    def test_calc_gross_income_excludes_snap_and_wic_from_all(self):
+        """SNAP/WIC amounts are collected as income streams but are not countable income,
+        so an "all" aggregate must not see them."""
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="wages", amount=2000, frequency="monthly"
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="snap", amount=200, frequency="monthly"
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="wic", amount=50, frequency="monthly"
+        )
+
+        result = self.screen.calc_gross_income("yearly", ["all"])
+        self.assertEqual(result, 24000)  # wages only
+
+    def test_calc_gross_income_excludes_snap_and_wic_from_unearned(self):
+        """They are also kept out of the "unearned" bucket, which would otherwise match any
+        type that isn't wages/selfEmployment."""
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="alimony", amount=500, frequency="monthly"
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="snap", amount=200, frequency="monthly"
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="wic", amount=50, frequency="monthly"
+        )
+
+        result = self.screen.calc_gross_income("yearly", ["unearned"])
+        self.assertEqual(result, 6000)  # alimony only
+
+    def test_calc_gross_income_returns_snap_when_named_explicitly(self):
+        """Naming the type is how a reported amount is read back: a caller that wants the
+        SNAP figure has to ask for it explicitly."""
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="snap", amount=200, frequency="monthly"
+        )
+
+        self.assertEqual(self.screen.calc_gross_income("yearly", ["snap"]), 2400)
+        self.assertEqual(self.screen.calc_gross_income("monthly", ["snap"]), 200)
+
+    def test_calc_gross_income_returns_wic_when_named_explicitly(self):
+        """Same for `wic`."""
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="wic", amount=50, frequency="monthly"
+        )
+
+        self.assertEqual(self.screen.calc_gross_income("yearly", ["wic"]), 600)
+
+    def test_calc_gross_income_snap_excluded_alongside_named_wic(self):
+        """A named non-countable type doesn't drag the other one in."""
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="snap", amount=200, frequency="monthly"
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="wic", amount=50, frequency="monthly"
+        )
+
+        self.assertEqual(self.screen.calc_gross_income("yearly", ["wic"]), 600)
+
     # Tests for Screen.calc_expenses() method
 
     def test_calc_expenses_single_type_yearly(self):
