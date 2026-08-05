@@ -7,6 +7,7 @@ mo_member_calculators = {
     "mo_wic": member.MoWic,
     "mo_head_start": member.MoHeadStart,
     "mo_early_head_start": member.MoEarlyHeadStart,
+    "mo_ssi": member.MoSsi,
 }
 
 mo_spm_calculators = {
