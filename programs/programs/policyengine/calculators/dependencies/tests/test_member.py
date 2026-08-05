@@ -1665,7 +1665,12 @@ class TestSsiCountableResourcesDependency(TestCase):
         self.assertEqual(member.SsiCountableResourcesDependency(self.screen, nineteen, {}).value(), 3000)
 
     def test_value_is_an_int(self):
-        """PolicyEngine gets an int; an uneven split must not leak a float."""
+        """PolicyEngine gets an int; an uneven split must not leak a Decimal."""
+        # $6,001 across 3 adults divides to Decimal('2000.333...'), so this exercises the
+        # int() truncation. An evenly divisible amount would pass whether or not the cast
+        # is there.
+        self.screen.household_assets = 6001
+        self.screen.save()
         head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=67)
         HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=65)
         HouseholdMember.objects.create(screen=self.screen, relationship="parent", age=88)
