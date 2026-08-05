@@ -44,7 +44,7 @@ MO SSI:
 ``gov.ssa.ssi.*``, and PE models state supplements for NM/SC/TX only), so the tests here pin
 the wiring and the two inherited inputs that are load-bearing rather than boilerplate:
 ``MeetsSsiDisabilityCriteriaDependency`` (without it, disabled non-aged/non-blind applicants
-get ``ssi: 0`` — MFB-1102) and ``SsiCountableResourcesDependency`` (the resource limit is a
+get ``ssi: 0``) and ``SsiCountableResourcesDependency`` (the resource limit is a
 hard cutoff). The dependency values themselves are covered in
 ``policyengine/calculators/dependencies/tests/test_member.py``.
 """
@@ -428,7 +428,7 @@ class TestMoSsiWiring(TestCase):
 
     def test_pe_inputs_include_disability_criteria(self):
         """
-        Regression guard for MFB-1102. PE 1.715.2+ stopped inferring SSI disability from
+        Regression guard. PE 1.715.2+ stopped inferring SSI disability from
         ``is_disabled`` / reported receipt, so dropping this input returns ``ssi: 0`` for a
         disabled non-aged, non-blind applicant.
         """

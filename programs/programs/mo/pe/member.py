@@ -106,7 +106,7 @@ class MoSsi(Ssi):
 
     Missouri's own state cash programs for this population — Blind Pension, Supplemental
     Aid to the Blind, and Supplemental Nursing Care — are deliberately out of scope here
-    and tracked as a separate program (MFB-1263).
+    and tracked as a separate program.
 
     All eligibility math lives in PolicyEngine: the aged / blind / disabled categorical
     entry, the $20 general + $65 earned + 1/2 remainder exclusion stack, the SGA cutoff,
@@ -118,8 +118,8 @@ class MoSsi(Ssi):
 
     - ``MeetsSsiDisabilityCriteriaDependency`` — PE 1.715.2+ no longer infers SSI
       disability from ``is_disabled`` or reported receipt, so without it a disabled
-      non-aged, non-blind applicant returns ``ssi: 0`` (MFB-1102). It is version-gated,
-      so it only reaches models that define the field.
+      non-aged, non-blind applicant returns ``ssi: 0``. It is version-gated, so it only
+      reaches models that define the field.
     - ``SsiCountableResourcesDependency`` — the resource limit is a hard cutoff, and this
       splits reported household assets across adults to approximate the per-person figure.
 
