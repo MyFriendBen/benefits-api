@@ -9,7 +9,7 @@ class Wic(PolicyEngineMembersCalculator):
 
         demographic_eligible & (meets_income_test | meets_categorical_test) & nutritional_risk
 
-    Both branches need feeding, and neither was (MFB-1571):
+    Both branches need feeding, and neither was:
 
     **Income.** The only income input here used to be ``school_meal_countable_income``,
     which WIC's tree never reads — ``wic_countable_income`` sums its own parameter list,

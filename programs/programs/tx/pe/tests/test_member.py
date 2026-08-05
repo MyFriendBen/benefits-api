@@ -114,7 +114,7 @@ class TestTxWic(TestCase):
         TxWic must not send school_meal_countable_income — PolicyEngine's WIC tree never reads
         it (``wic_countable_income`` sums ``gov.usda.wic.income.sources`` instead), and while it
         was WIC's only income input the program came back eligible at any reported income.
-        MFB-1571 replaced it with the ``wic_income`` bundle on the federal parent.
+        The ``wic_income`` bundle on the federal parent replaced it.
         """
         from programs.programs.policyengine.calculators.dependencies.spm import SchoolMealCountableIncomeDependency
 

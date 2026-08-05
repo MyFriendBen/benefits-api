@@ -282,7 +282,7 @@ class TestTxWicPeInput(TxPeInputTestBase):
         people = household["people"]
 
         # SPM-level dependencies. school_meal_countable_income is deliberately gone: WIC's tree
-        # never reads it, and it used to be the only income input WIC had (MFB-1571).
+        # never reads it, and it used to be the only income input WIC had.
         self.assertNotIn("school_meal_countable_income", spm_unit)
         self.assertIn("receives_snap", spm_unit)
         self.assertIn("receives_tanf", spm_unit)

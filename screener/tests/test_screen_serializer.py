@@ -140,8 +140,8 @@ class WriteCurrentBenefitsTests(TestCase):
         self.assertEqual(self._benefit_names(self.screen), {"ks_ssi"})
 
     def test_new_path_injects_snap_from_income_without_tile(self):
-        """A reported SNAP income amount implies SNAP receipt (MFB-1382), so the amount and
-        the receipt signal can't disagree."""
+        """A reported SNAP income amount implies SNAP receipt, so the amount and the receipt
+        signal can't disagree."""
         seed_program(self.white_label, "test_snap", base_program="snap")
         head = HouseholdMember.objects.create(
             screen=self.screen, relationship="headOfHousehold", age=40, has_income=True

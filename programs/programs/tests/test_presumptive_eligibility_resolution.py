@@ -1,6 +1,6 @@
 """
 Pins the presumptive/categorical eligibility resolution for the calculators whose reads
-were dead before MFB-1382 and which have no test suite of their own.
+were dead until this change and which have no test suite of their own.
 
 Each of these calculators declares a `presumptive_eligibility` (or `categorically_eligible`)
 list containing base program names — "snap", "tanf", "ssi", "wic". Those were read through

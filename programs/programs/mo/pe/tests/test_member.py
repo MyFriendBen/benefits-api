@@ -19,8 +19,8 @@ MO WIC layers:
 
 3. **Income reaches PolicyEngine** — WIC needs its own income sources sent or PE substitutes an
    imputation and returns WIC as eligible at any reported income (verified live: $108k/yr came
-   back eligible). MO carried a partial fix for this; MFB-1571 moved the complete ``wic_income``
-   bundle onto the federal ``Wic``, which also fixed co_wic / nc_wic / ma_wic / tx_wic / il_wic.
+   back eligible). MO carried a partial fix for this; the complete ``wic_income`` bundle now
+   lives on the federal ``Wic``, which also fixed co_wic / nc_wic / ma_wic / tx_wic / il_wic.
    MO now adds only its state code, and the tests here assert that inheritance rather than a
    local copy.
 
@@ -97,7 +97,7 @@ class TestMoWicWiring(TestCase):
         MoWic used to carry ``irs_gross_income`` itself, as a partial fix while the federal
         base was still sending only ``school_meal_countable_income`` — a variable PolicyEngine's
         WIC tree never reads (``wic_countable_income`` sums ``gov.usda.wic.income.sources``
-        instead). MFB-1571 moved the full bundle onto ``Wic``, so MO inherits it; the assertion
+        instead). The full bundle now lives on ``Wic``, so MO inherits it; the assertion
         is unchanged because what matters is that the inputs arrive, not which class declares
         them. Authoritative coverage lives in ``federal/pe/tests/test_wic.py``.
         """
@@ -228,7 +228,7 @@ class TestMoWicPeInput(TestCase):
 
         # SPM-level dependencies: the WIC income sources that live on the SPM unit, plus the
         # reported-receipt flags the categorical test reads. school_meal_countable_income is
-        # deliberately absent — PolicyEngine's WIC tree never reads it (MFB-1571).
+        # deliberately absent — PolicyEngine's WIC tree never reads it.
         self.assertNotIn("school_meal_countable_income", spm_unit)
         self.assertIn("tanf", spm_unit)
         self.assertIn("receives_snap", spm_unit)

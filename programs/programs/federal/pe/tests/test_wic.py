@@ -1,7 +1,7 @@
 """
 Unit tests for the federal ``Wic`` PolicyEngine calculator and the ``wic_income`` bundle.
 
-Background (MFB-1571): PolicyEngine decides WIC with
+Background: PolicyEngine decides WIC with
 
     is_wic_eligible = demographic_eligible & (meets_income_test | meets_categorical_test)
                       & nutritional_risk
@@ -177,9 +177,9 @@ class TestStateWicCalculatorsInherit(TestCase):
     """
     Every state WIC calculator must inherit the bundle.
 
-    This is the regression that MFB-1571 is about: the fix originally landed on one subclass
-    (MO) and the other five kept the old inputs. Enumerated from the registry rather than
-    hardcoded, so a new state WIC program is covered the day it's added.
+    This is the regression guard: the fix originally landed on one subclass (MO) and the
+    other five kept the old inputs. Enumerated from the registry rather than hardcoded, so
+    a new state WIC program is covered the day it's added.
     """
 
     def state_wic_calculators(self):

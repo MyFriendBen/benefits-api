@@ -18,7 +18,7 @@ irs_gross_income = [
 # that the screener actually collects. WIC's list is its own — it does NOT read
 # `school_meal_countable_income`, and `wic_countable_income` sums these plus positive
 # `capital_gains`, so a WIC calculator that sends none of them gets PE's imputation
-# instead of the household's income (MFB-1571).
+# instead of the household's income.
 #
 # Eight of WIC's sources are already reached through irs_gross_income, several via PE's
 # `adds` chains rather than by name — measured against the live API, each of these moves

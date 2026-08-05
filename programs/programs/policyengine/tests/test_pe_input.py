@@ -570,8 +570,8 @@ class TestPeInputReservedOutputSlots(TestCase):
 
     def test_snap_left_computed_when_receipt_reported_without_amount(self):
         """Tile-only receipt sends no value at all — a placeholder would come back as this
-        household's SNAP. Non-receipt is expressed with takes_up_snap_if_eligible (MFB-1312),
-        not with a number here."""
+        household's SNAP. Non-receipt belongs in takes_up_snap_if_eligible, not in a number
+        here."""
         self._report_snap()
 
         snap = self._snap_block()

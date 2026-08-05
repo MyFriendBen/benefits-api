@@ -23,9 +23,9 @@ class MoWic(Wic):
     the frontend's ``value > 0`` filter would drop the program from results entirely.
 
     This class used to carry its own ``*dependency.irs_gross_income`` as a partial fix for
-    WIC income-blindness, ahead of the federal base being fixed. MFB-1571 moved the full
-    ``wic_income`` bundle onto ``Wic``, so MO inherits it (and the other five WIC programs
-    get it too) and only the state code is added here.
+    WIC income-blindness, ahead of the federal base being fixed. The full ``wic_income``
+    bundle now lives on ``Wic``, so MO inherits it (and the other five WIC programs get it
+    too) and only the state code is added here.
     """
 
     pe_inputs = [

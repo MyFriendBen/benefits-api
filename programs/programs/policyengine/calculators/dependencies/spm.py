@@ -162,7 +162,7 @@ class Snap(SpmUnit):
 
     Reporting *non*-receipt is the missing leg: it needs `takes_up_snap_if_eligible=False`,
     without which PE's simulated amount still counts as income downstream and still confers
-    categorical eligibility. That toggle arrives with MFB-1312.
+    categorical eligibility. That toggle is not wired yet.
 
     The value only ever lands in the annual input slot; the SNAP calculators' own monthly
     output slot goes out as None (see the two-pass write in pe_input()), because writing to

@@ -9,7 +9,7 @@ can't answer.
    is always False and the categorical / adjunctive / presumptive-eligibility branch it
    guards silently never fires. That shipped in ~14 calculators across CO, IL, KS, NC, TX
    and WA (and in the PolicyEngine `Snap` input, where it meant every household looked
-   like a SNAP non-recipient), which is what MFB-1382 fixed.
+   like a SNAP non-recipient) until it was fixed.
 
 2. **A name held in a list.** Every one of those calculators reached the bad name by
    looping a class attribute — `presumptive_eligibility`, `categorically_eligible`,
