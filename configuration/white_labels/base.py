@@ -213,6 +213,14 @@ class ConfigurationData:
             },
             "unemployment": {"_label": "incomeOptions.unemployment", "_default_message": "Unemployment Benefits"},
             "cashAssistance": {"_label": "incomeOptions.cashAssistance", "_default_message": "Cash Assistance Grant"},
+            "snap": {
+                "_label": "incomeOptions.snap",
+                "_default_message": "Supplemental Nutrition Assistance Program (SNAP)",
+            },
+            "wic": {
+                "_label": "incomeOptions.wic",
+                "_default_message": "Women, Infants, and Children (WIC)",
+            },
             "workersComp": {"_label": "incomeOptions.workersComp", "_default_message": "Worker's Compensation"},
             "veteran": {"_label": "incomeOptions.veteran", "_default_message": "Veteran's Pension or Benefits"},
         },

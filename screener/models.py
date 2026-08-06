@@ -37,6 +37,15 @@ class WhiteLabel(models.Model):
         return self._get_flag_value(key)
 
 
+# Income types collected so the reported dollar amount is available to send to PolicyEngine
+# as that benefit's own input (the `snap`/`wic` fields), but which are NOT countable income:
+# federal rules exclude SNAP and WIC from income tests, and PolicyEngine computes both
+# separately, so folding them into an aggregate would double-count. calc_gross_income()
+# therefore skips them for the "all"/"earned"/"unearned" buckets and returns them only when
+# named explicitly, e.g. calc_gross_income("yearly", ["snap"]).
+NON_COUNTABLE_INCOME_TYPES = frozenset({"snap", "wic"})
+
+
 # The screen is the top most container for all information collected in the
 # app and is synonymous with a household model. In addition to general
 # application fields like submission_date, it also contains non-individual
@@ -472,8 +481,14 @@ class HouseholdMember(models.Model):
             if income_stream.type in exclude:
                 continue
 
-            include_all = "all" in types
             specific_match = income_stream.type in types
+
+            # Non-countable benefit income (SNAP/WIC) is only ever returned when the caller
+            # names the type; it never lands in an "all"/"earned"/"unearned" aggregate.
+            if income_stream.type in NON_COUNTABLE_INCOME_TYPES and not specific_match:
+                continue
+
+            include_all = "all" in types
             earned_income_match = "earned" in types and income_stream.type in earned_income_types
             unearned_income_match = "unearned" in types and income_stream.type not in earned_income_types
             if include_all or earned_income_match or unearned_income_match or specific_match:
