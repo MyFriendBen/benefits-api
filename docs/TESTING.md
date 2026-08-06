@@ -50,10 +50,13 @@ Controlled by the `VCR_MODE` environment variable:
 
 | Environment | VCR_MODE | Behavior | API Calls |
 |------------|----------|----------|-----------|
-| **PRs** | `new_episodes` | **Flexible:** Replays existing interactions. Records new HTTP requests not yet in cassette. | ✅ Yes (only for new HTTP requests) |
-| **Push to main** | `all` | **Fresh start:** Never replays. Re-records ALL cassettes from scratch. | ✅ Yes (overwrites everything) |
+| **PRs** (`pr-validation`) | `new_episodes` | **Flexible:** Replays existing interactions. Records new HTTP requests not yet in cassette. | ✅ Yes (only for new HTTP requests) |
+| **Push to main** (`deploy-staging`) | `new_episodes` | Same as PRs. | ✅ Yes (only for new HTTP requests) |
+| **Release** (`deploy-production`) | `all` | **Fresh start:** Never replays. Re-records ALL cassettes from scratch. | ✅ Yes (every test hits the live API) |
 | **Local (default)** | `once` | **Strict:** Replays existing cassettes. **Errors if test makes new HTTP request not in cassette.** | Only if entire cassette file missing |
 | **Strict playback** | `none` | **Read-only:** Replays only. Never records. Errors on any new HTTP requests. | ❌ No (never records) |
+
+Re-recording in CI is never committed — no workflow commits cassettes — so a CI run in `new_episodes` or `all` mode does not refresh what's in the repo. It only changes what that run tests against.
 
 ### Running Integration Tests Locally
 
@@ -157,15 +160,17 @@ Cassettes are never written when a test raises (`record_on_exception=False`), so
 
 ### Cassette Storage
 
-Cassettes are stored in `cassettes/` directories next to test files:
+Cassettes are stored in `cassettes/` directories next to test files, named `<TestClass>.<test_name>.yaml`:
 ```
 integrations/clients/hud_income_limits/tests/
 ├── test_integration.py
 └── cassettes/
-    ├── test_real_api_call_cook_county_il.yaml
-    ├── test_real_api_call_denver_county_co.yaml
+    ├── TestHudIntegrationMTSP.test_real_api_call_cook_county_il.yaml
+    ├── TestHudIntegrationMTSP.test_real_api_call_denver_county_co.yaml
     └── ...
 ```
+
+The class prefix matters: without it, two identically-named methods in different classes in the same module share one cassette and silently replay each other's recording.
 
 ### When to Update Cassettes
 
@@ -212,7 +217,11 @@ git diff integrations/**/cassettes/*.yaml
 
 **If new tests added**: New cassettes will be recorded automatically in CI.
 
-### Push to Main (VCR_MODE=all)
+### Push to Main (VCR_MODE=new_episodes)
+
+`deploy-staging` runs the same mode as PR validation — it does not re-record everything.
+
+### Release / Production Deploy (VCR_MODE=all)
 ```yaml
 - Re-records ALL cassettes
 - Makes real API calls for every test
@@ -221,7 +230,9 @@ git diff integrations/**/cassettes/*.yaml
 - Requires HUD_API_TOKEN secret
 ```
 
-**Purpose**: Catch API breaking changes and verify cassettes are up-to-date before merging to main.
+**Purpose**: Catch API breaking changes before a production release.
+
+**Caveat for PolicyEngine**: this makes a production deploy depend on live PolicyEngine, and it produces no drift report — a changed PE answer surfaces as a failed deploy rather than a triage signal. Whether `deploy-production` should keep `all` is an open question (see MFB-1565); the intended home for live PE re-runs is a scheduled, non-blocking drift job.
 
 ---
 
