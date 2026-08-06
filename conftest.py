@@ -23,6 +23,8 @@ import json
 import logging
 import os
 import re
+from typing import Optional
+
 import pytest
 import vcr as vcrpy
 from decouple import config
@@ -202,6 +204,53 @@ def policy_engine_body(r1, r2):
     return True
 
 
+@pytest.hookimpl(wrapper=True, tryfirst=True)
+def pytest_runtest_makereport(item, call):
+    """Stash each phase's report on the item so fixtures can see whether the test failed.
+
+    Needed because pytest does not throw a test's exception into a fixture generator: the
+    generator simply resumes at teardown. A fixture that opens a resource around ``yield``
+    (``auto_vcr`` and its cassette) therefore cannot tell a pass from a failure on its own,
+    and VCR's own ``record_on_exception`` never fires. See ``auto_vcr``.
+    """
+    report = yield
+    setattr(item, f"rep_{report.when}", report)
+    return report
+
+
+def _test_failed(request) -> bool:
+    """Whether the test body itself failed (as opposed to setup or teardown)."""
+    report = getattr(request.node, "rep_call", None)
+
+    return report is not None and report.failed
+
+
+def _discard_failed_recording(cassette_path: str, contents_before: Optional[bytes]) -> None:
+    """Undo any cassette write made by a failing test.
+
+    A failed recording — bad credentials, a 4xx, an unserved API version — otherwise leaves
+    a cassette holding the error response, which then replays forever and reads as a code
+    failure rather than as the recording problem it was. Restores the previous contents, or
+    removes the file if the test created it.
+    """
+    if contents_before is None:
+        if os.path.exists(cassette_path):
+            os.remove(cassette_path)
+            logger.warning("Discarded cassette recorded by a failing test: %s", cassette_path)
+        return
+
+    if not os.path.exists(cassette_path):
+        return
+
+    with open(cassette_path, "rb") as f:
+        if f.read() == contents_before:
+            return
+
+    with open(cassette_path, "wb") as f:
+        f.write(contents_before)
+    logger.warning("Reverted cassette modified by a failing test: %s", cassette_path)
+
+
 @pytest.fixture(scope="module")
 def vcr_config(request):
     """
@@ -234,9 +283,11 @@ def vcr_config(request):
         # Only use custom scrubbing for response body patterns VCR can't auto-detect
         "before_record_response": scrub_response_body,
         "decode_compressed_response": True,  # Auto-decompress gzipped responses
-        # Don't write a cassette when the test raises. A failed recording (bad credentials,
-        # a 4xx from the API) would otherwise leave a cassette holding the error response,
-        # which then replays forever and looks like a code failure.
+        # Don't write a cassette when the test raises. Belt-and-braces only: VCR checks this
+        # in Cassette.__exit__, keyed on an exception propagating out of the `with` block,
+        # and pytest never throws a test failure into a fixture generator — so for a cassette
+        # opened inside auto_vcr this never fires. The discard in auto_vcr is what actually
+        # keeps a failed recording out of the repo.
         "record_on_exception": False,
     }
 
@@ -257,6 +308,9 @@ def auto_vcr(request, vcr_config):
     Cassettes are stored in: <test_dir>/cassettes/<TestClass>.<test_name>.yaml
     Example: integrations/clients/hud_income_limits/tests/cassettes/
              TestHudIntegrationMTSP.test_real_api_call_cook_county_il.yaml
+
+    Anything recorded by a failing test is discarded on teardown, so a bad recording can't
+    leave an error response behind to replay (see _discard_failed_recording).
 
     Args:
         request: pytest request object
@@ -288,8 +342,20 @@ def auto_vcr(request, vcr_config):
     # instance before the cassette is used (match_on names are resolved lazily).
     vcr = vcrpy.VCR(**vcr_config)
     vcr.register_matcher("policy_engine_body", policy_engine_body)
+
+    # Snapshot the cassette so a failing test's recording can be thrown away afterwards.
+    # record_on_exception can't do this from inside a fixture — see pytest_runtest_makereport.
+    cassette_path = os.path.join(vcr_config["cassette_library_dir"], cassette_name(request))
+    contents_before = None
+    if os.path.exists(cassette_path):
+        with open(cassette_path, "rb") as f:
+            contents_before = f.read()
+
     with vcr.use_cassette(cassette_name(request), record_mode=record_mode):
         yield
+
+    if _test_failed(request):
+        _discard_failed_recording(cassette_path, contents_before)
 
 
 @pytest.fixture(autouse=True)
