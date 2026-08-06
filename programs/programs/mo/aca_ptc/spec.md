@@ -3,10 +3,13 @@
 ## Program Details
 
 - **Program**: ACA Premium Tax Credit (PTC)
+- **name_abbreviated**: `mo_aca_ptc`
 - **State**: MO
 - **White Label**: mo
 - **Engine + Tier**: PE Federal (value varies) — eligibility and the benefit formula are federal (26 U.S.C. § 36B); nothing that governs *whether* a Missouri household qualifies differs from any other state. What varies for Missouri is the **dollar value** of the credit, driven by the household's county (which sets the benchmark Silver-plan premium) and income relative to the federal poverty line (FPL).
 - **Research Date**: 2026-07-26
+
+**`estimated_value` is the annual figure.** The API returns the whole-dollar annual credit; the frontend divides by 12 for display (`value_format: null` → "Default (Monthly)"). Test scenarios assert the **annual** value, since that is what the API exposes.
 
 Missouri uses the federal Health Insurance Marketplace (HealthCare.gov), not a state-based exchange, so there is no state agency rule to research. A Missouri-specific wiring layer is still needed on the MFB side to get county and current-coverage data to PolicyEngine (PE), but the underlying eligibility/value formula itself is not Missouri-specific.
 
@@ -80,8 +83,9 @@ PolicyEngine implements federal ACA PTC eligibility nationwide (26 U.S.C. § 36B
 
 ## Implementation Coverage
 
-- ✅ Evaluable and isolated by this spec's scenarios: county-driven SLCSP variation (Scenarios 1–2), per-person mixed-coverage handling (Scenario 3), current employer-sponsored insurance wiring (Scenario 4).
-- ⚠️ Not yet built: county/FIPS derivation from ZIP, and `has_esi` (current employer-sponsored insurance) wiring to PolicyEngine — see the engineering implementation note under Acceptance Criteria below.
+- ✅ Evaluable and isolated by this spec's scenarios: county-driven SLCSP variation (Scenarios 1–2), per-person mixed-coverage handling (Scenario 3), current employer-sponsored insurance wiring (Scenario 4), independent-city county tokens (Scenario 5).
+- ✅ Built in MFB-1204: `MoAca` (registered as `mo_aca_ptc`), `MoCountyDependency` supplying `county_str`, and `HasEsiDependency` supplying `has_esi`. The county input turned out to be `county_str`, not a FIPS derivation from ZIP — PolicyEngine ignores `zip_code` for rating-area purposes, so the federal base class's `ZipCodeDependency` alone produced a state-default SLCSP.
+- ⚠️ Not asserted at the API level: the children's Medicaid eligibility in Scenario 3 (no MO Medicaid program exists to surface it — see that scenario's scope note).
 - This is a **light spec**: eligibility is federal and trusted to PolicyEngine, so the scenario suite isolates Missouri's state-specific *value* and the MFB wiring layer rather than re-testing every federal eligibility branch.
 
 ---
@@ -101,32 +105,37 @@ PolicyEngine implements federal ACA PTC eligibility nationwide (26 U.S.C. § 36B
 
 ## Acceptance Criteria
 
-- [ ] Scenario 1 (single adult, $30,000/year, Jackson County): **eligible**, $5,006/year ($417/month)
-- [ ] Scenario 2 (same household, Boone County — isolates county/SLCSP variation): **eligible**, $6,730/year ($561/month)
-- [ ] Scenario 3 (single parent + 2 children, $39,000/year, Jackson County — isolates per-person mixed coverage): parent **PTC-eligible**, $5,017/year ($418/month); both children **Medicaid-eligible**, not PTC-eligible
+- [ ] Scenario 1 (single adult, $30,000/year, Jackson County): **eligible**, $5,006/year ($417.17/month)
+- [ ] Scenario 2 (same household, Boone County — isolates county/SLCSP variation): **eligible**, $6,730/year ($560.83/month)
+- [ ] Scenario 3 (single parent + 2 children, $39,000/year, Jackson County — isolates per-person mixed coverage): parent **PTC-eligible**, $5,017/year ($418.08/month); both children **Medicaid-eligible**, not PTC-eligible (PolicyEngine-internal — see the scope note on Scenario 3)
 - [ ] Scenario 4 (single adult with employer-sponsored insurance, Jackson County — MFB wiring regression check): **not eligible**
+- [ ] Scenario 5 (single adult, $30,000/year, St. Louis City — independent-city county token regression check): **eligible**, $4,424/year ($368.67/month)
 
-**Engineering implementation note.** Build required, not promotion — none of this exists yet:
-- Register a Missouri-specific calculator (`MoAca`) under Missouri's `name_abbreviated` key.
-- Derive county/FIPS from the screener's ZIP code and pass it to PolicyEngine as the rating-area input.
-- Wire the screener's health-insurance field (`Employer-sponsored`) to PolicyEngine's `has_esi` input — today nothing wires this, so an otherwise-eligible household with employer coverage would incorrectly show as PTC-eligible until this is built (Scenario 4 is the regression check for it).
-- Do not set filing status from MFB — pass household relationship data (head of household, spouse, dependents) and let PolicyEngine derive filing status from it.
-- Handle mixed-eligibility households at the per-person level (see Benefit Value): a parent can be PTC-eligible while dependents are Medicaid-eligible in the same household, and the UI must reflect both statuses rather than one blanket status.
-- `value_format`: monthly (annual truncated value ÷ 12).
-- **Owner**: MFB engineering, during implementation. **Clears when**: `MoAca` is registered and all four scenarios pass through the real integrated `benefits-api` → PolicyEngine path.
+**Engineering implementation note.** Build required, not promotion — none of this existed at research time. Implemented in MFB-1204:
+- ✅ Register a Missouri-specific calculator (`MoAca`) under Missouri's `name_abbreviated` key (`mo_aca_ptc`).
+- ✅ Pass the household's county to PolicyEngine as the rating-area input. **Corrected during implementation:** the input is `county_str`, not a FIPS value derived from ZIP. The federal base class already sends `zip_code` and PolicyEngine ignores it for rating-area purposes — with ZIP alone, every Missouri county returns the same state-default SLCSP. Handled by `MoCountyDependency`, which also carries the St. Louis City carve-out (Scenario 5).
+- ✅ Wire the screener's health-insurance field (`Employer-sponsored`) to PolicyEngine's `has_esi` input, via `HasEsiDependency` (Scenario 4 is the regression check for it).
+- ✅ Do not set filing status from MFB — pass household relationship data (head of household, spouse, dependents) and let PolicyEngine derive filing status from it.
+- ✅ Handle mixed-eligibility households at the per-person level (see Benefit Value): a parent can be PTC-eligible while dependents are Medicaid-eligible in the same household. PolicyEngine evaluates this per person; MFB sends no household-wide coverage flag.
+- ✅ `value_format`: `null` ("Default (Monthly)") — the API returns the truncated annual value and the frontend divides by 12 for display.
+- **Owner**: MFB engineering, during implementation. **Clears when**: `MoAca` is registered and all five scenarios pass through the real integrated `benefits-api` → PolicyEngine path.
 
 ---
 
 ## Test Scenarios
 
 > Each eligible scenario asserts the expected **dollar value**, so a scenario breaks if Missouri's SLCSP or the calculation chain drifts. Ages are entered via birth month/year (the screener's actual fields, not a raw age field).
+>
+> **Assert the annual value.** `estimated_value` in the API response is annual; the monthly figure in parentheses is what the results page renders (annual ÷ 12, formatted to the cent — *not* rounded to a whole dollar). Both are given so a UI check and an API check agree.
+>
+> **County strings** use Missouri's "County" suffix, matching the screener's ZIP→county map. St. Louis City is the one exception — it is an independent city, not a county, and carries no suffix (Scenario 5).
 
 ### Scenario 1: Single adult, mid-income, Jackson County (Kansas City) — baseline
 **What we're checking**: Baseline PTC eligibility and value for a single adult with income in the Medicaid-expansion-to-400%-FPL band and no other coverage.
-**Expected**: Eligible — **$5,006/year ($417/month)**
+**Expected**: Eligible — estimated annual value `$5,006` (displays as $417.17/month)
 
 **Steps**:
-- **Location**: ZIP `64108`, county `Jackson`
+- **Location**: ZIP `64108`, county `Jackson County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, birth month/year `March 1986` (age 40), employment income $2,500/month ($30,000/year), no health insurance, US citizen
 
@@ -136,10 +145,10 @@ PolicyEngine implements federal ACA PTC eligibility nationwide (26 U.S.C. § 36B
 
 ### Scenario 2: Same person, same income, Boone County (Columbia) — isolates county/SLCSP variation
 **What we're checking**: Whether the credit's dollar value shifts correctly with rating area alone, holding income, age, and household composition constant.
-**Expected**: Eligible — **$6,730/year ($561/month)**
+**Expected**: Eligible — estimated annual value `$6,730` (displays as $560.83/month)
 
 **Steps**:
-- **Location**: ZIP `65201`, county `Boone`
+- **Location**: ZIP `65201`, county `Boone County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, birth month/year `March 1986` (age 40), employment income $2,500/month ($30,000/year), no health insurance, US citizen
 
@@ -149,10 +158,12 @@ PolicyEngine implements federal ACA PTC eligibility nationwide (26 U.S.C. § 36B
 
 ### Scenario 3: Single parent, mixed coverage — parent PTC-eligible, children Medicaid-eligible
 **What we're checking**: Whether the calculator correctly handles a mixed-coverage household, where the parent is PTC-eligible while both children are simultaneously Medicaid-eligible.
-**Expected**: Parent's PTC = **$5,017/year ($418/month)**; both children Medicaid-eligible, not PTC-eligible
+**Expected**: Eligible — estimated annual value `$5,017` (displays as $418.08/month)
+
+> **Scope note on the children's Medicaid status.** The household-level assertion above is the API-testable part. The children being *Medicaid-eligible* is a PolicyEngine-internal fact — MO's catalog has no Medicaid program (only `mo_aca_ptc`, `mo_nslp`, `mo_ssi`, `mo_wic`), so no Medicaid result surfaces in the screener response to assert against. What this scenario proves at the API level is that the presence of two Medicaid-eligible children does **not** suppress or alter the parent's PTC: the value must be the single-person SLCSP figure of `$5,017`, not a family-tier figure. Verified separately against PolicyEngine directly (both children return `medicaid > 0` and `is_aca_ptc_eligible: false`). Revisit if MO ever adds a Medicaid program.
 
 **Steps**:
-- **Location**: ZIP `64108`, county `Jackson`
+- **Location**: ZIP `64108`, county `Jackson County`
 - **Household**: 3 people
 - **Person 1**: Head of Household, birth month/year `March 1991` (age 35), employment income $3,250/month ($39,000/year), no health insurance, US citizen
 - **Person 2**: Child, birth month/year `January 2016`, no income, no health insurance
@@ -167,8 +178,21 @@ PolicyEngine implements federal ACA PTC eligibility nationwide (26 U.S.C. § 36B
 **Expected**: Not eligible
 
 **Steps**:
-- **Location**: ZIP `64108`, county `Jackson`
+- **Location**: ZIP `64108`, county `Jackson County`
 - **Household**: 1 person
 - **Person 1**: Head of Household, birth month/year `March 1986` (age 40), employment income $2,500/month ($30,000/year), health insurance: Employer-sponsored, US citizen
 
 **Why this matters**: confirms current employer coverage is correctly passed through and disqualifies the household — without the `has_esi` wiring (see the engineering implementation note under Acceptance Criteria), this household would incorrectly show as PTC-eligible.
+
+---
+
+### Scenario 5: St. Louis City — independent-city county token regression check
+**What we're checking**: Whether St. Louis City resolves to the correct rating area. St. Louis is an independent city (FIPS 29510), not part of St. Louis County, and PolicyEngine names it `ST_LOUIS_CITY_MO` with no `_COUNTY` insert. The shared county normalizer would otherwise produce `ST_LOUIS_CITY_COUNTY_MO`, which PolicyEngine **does not reject** — it silently falls back to a default rating area, returning a benchmark premium ~$2,846/year too high.
+**Expected**: Eligible — estimated annual value `$4,424` (displays as $368.67/month)
+
+**Steps**:
+- **Location**: ZIP `63101`, county `St. Louis City`
+- **Household**: 1 person
+- **Person 1**: Head of Household, birth month/year `March 1986` (age 40), employment income $2,500/month ($30,000/year), no health insurance, US citizen
+
+**Why this matters**: this is the only Missouri county string that breaks the shared normalizer — all 114 others were swept against the PolicyEngine API and resolve correctly. Because PolicyEngine fails *silently* on an unknown county, a regression here surfaces as a plausible-looking wrong number rather than an error. Holding income and household constant against Scenario 1 isolates the county token: $4,424 (St. Louis City) vs $5,006 (Jackson) vs the $7,271 the unrecognized token would produce.
