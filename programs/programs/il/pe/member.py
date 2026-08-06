@@ -314,3 +314,17 @@ class IlMsp(federal_member.Msp):
         household_dependency.IlStateCodeDependency,
         *IlMedicaid.pe_inputs,
     ]
+
+
+class IlHeadStart(federal_member.HeadStart):
+    """
+    Illinois Head Start (ages 3-5). Thin wrapper on the federal ``HeadStart`` PE
+    calculator that adds the IL state code; all eligibility and the per-child
+    value are computed by PolicyEngine with no IL-specific variance. Early Head
+    Start (birth to age 3, and pregnant women) is a separate program.
+    """
+
+    pe_inputs = [
+        *federal_member.HeadStart.pe_inputs,
+        household_dependency.IlStateCodeDependency,
+    ]

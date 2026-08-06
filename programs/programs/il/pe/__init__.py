@@ -14,6 +14,7 @@ il_member_calculators = {
     "il_fppe": member.IlFamilyPlanningProgram,
     "il_mpe": member.IlMpe,
     "il_msp": member.IlMsp,
+    "il_head_start": member.IlHeadStart,
 }
 
 il_tax_unit_calculators = {

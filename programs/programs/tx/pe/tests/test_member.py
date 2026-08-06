@@ -11,7 +11,14 @@ from django.test import TestCase
 
 from unittest.mock import Mock, MagicMock
 
-from programs.programs.federal.pe.member import Wic, Ssi, CommoditySupplementalFoodProgram, Medicaid
+from programs.programs.federal.pe.member import (
+    Wic,
+    Ssi,
+    CommoditySupplementalFoodProgram,
+    Medicaid,
+    HeadStart,
+    EarlyHeadStart,
+)
 from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
 from programs.programs.policyengine.calculators.dependencies import household, member
 from programs.programs.policyengine.calculators.dependencies.household import TxStateCodeDependency
@@ -27,6 +34,8 @@ from programs.programs.tx.pe.member import (
     TxHarrisCountyRides,
     TxEmergencyMedicaid,
     TxDart,
+    TxHeadStart,
+    TxEarlyHeadStart,
 )
 
 
@@ -1927,3 +1936,29 @@ class TestTxDart(TestCase):
 
         # Verify get_member_variable was called with the correct member ID
         calculator.get_member_variable.assert_called_once_with(42)
+
+
+class TestTxHeadStartWiring(TestCase):
+    """
+    TX-specific wiring for Head Start (ages 3-5) and Early Head Start (birth-3 /
+    pregnant). Both are thin wrappers on the federal calculators, adding only the
+    TX state code.
+
+    The shared contract (pe_name, pe_outputs, no federal input dropped, exactly one
+    state code matching the slug, no ``member_value`` override) is asserted once for
+    all registered subclasses in ``federal/pe/tests/test_head_start.py``.
+    """
+
+    def test_head_start_is_registered_as_tx_head_start(self):
+        self.assertIs(tx_pe_calculators["tx_head_start"], TxHeadStart)
+
+    def test_head_start_pe_inputs_includes_tx_state_code(self):
+        self.assertTrue(issubclass(TxHeadStart, HeadStart))
+        self.assertIn(TxStateCodeDependency, TxHeadStart.pe_inputs)
+
+    def test_early_head_start_is_registered_as_tx_early_head_start(self):
+        self.assertIs(tx_pe_calculators["tx_early_head_start"], TxEarlyHeadStart)
+
+    def test_early_head_start_pe_inputs_includes_tx_state_code(self):
+        self.assertTrue(issubclass(TxEarlyHeadStart, EarlyHeadStart))
+        self.assertIn(TxStateCodeDependency, TxEarlyHeadStart.pe_inputs)
