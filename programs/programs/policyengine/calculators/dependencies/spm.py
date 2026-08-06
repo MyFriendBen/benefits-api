@@ -150,19 +150,76 @@ class SnapEmergencyAllotmentDependency(SpmUnit):
 
 class Snap(SpmUnit):
     """
-    snap as both PE input and output.
+    snap as both PE input and output, mirroring Tanf below.
 
-    - If user reports having snap: send 1 so PE treats the household as
-      receiving SNAP, enabling categorical eligibility for programs like
-      Early Head Start.
-    - If no reported snap: return None so PE calculates the SNAP benefit
-      amount the household is eligible for.
+    Only a known amount is ever sent:
+
+    - Receipt with a reported amount: send the annual figure. PE spreads it across the
+      months, so the household's own number is what any consumer reads back.
+    - Receipt without an amount, or nothing reported: None, so PE computes it. Never a
+      placeholder — any value we invent is what PE hands back as this household's SNAP,
+      and a $1/yr stand-in collapses the computed benefit toward $0 for the request.
+
+    Reporting *non*-receipt is the missing leg: it needs `takes_up_snap_if_eligible=False`,
+    without which PE's simulated amount still counts as income downstream and still confers
+    categorical eligibility. That toggle is not wired yet.
+
+    The value only ever lands in the annual input slot; the SNAP calculators' own monthly
+    output slot goes out as None (see the two-pass write in pe_input()), because writing to
+    it pins the answer we asked PE for — measured, computed SNAP fell from $3,708/yr to
+    $12/yr for a reporting household.
+
+    has_base_benefit covers every white-label variant (co_snap, ks_snap, wa_snap, …).
+    has_benefit("snap") was an exact-name match and no white label offers a program named
+    plain "snap", so this never fired for any state — the household always looked like a
+    SNAP non-recipient to PolicyEngine.
     """
 
     field = "snap"
 
     def value(self):
-        return 1 if self.screen.has_benefit("snap") else None
+        if not self.screen.has_base_benefit("snap"):
+            return None
+        reported_amount = self.screen.calc_gross_income("yearly", ["snap"])
+        return reported_amount if reported_amount > 0 else None
+
+
+class ReceivesSnapDependency(SpmUnit):
+    """
+    PolicyEngine's `receives_snap` — reported SNAP receipt, independent of any amount.
+
+    A plain boolean input with no formula, read only by adjunctive/categorical tests
+    (WIC, Head Start, SNAP's own categorical branch, Medicaid community engagement).
+    That makes it the right home for "the household says it gets SNAP": unlike the
+    `Snap` amount input above, it confers categorical eligibility without pinning the
+    benefit figure PE computes.
+
+    Snap and this dependency cover different cases and are complementary. Snap needs a
+    reported dollar amount, which most households can't give — SNAP arrives on EBT
+    monthly and few people know an annual total. This one fires on the receipt signal
+    alone, which is what the has-benefits step actually collects.
+    """
+
+    field = "receives_snap"
+
+    def value(self):
+        return self.screen.has_base_benefit("snap")
+
+
+class ReceivesTanfDependency(SpmUnit):
+    """
+    PolicyEngine's `receives_tanf` — reported TANF receipt, independent of any amount.
+
+    Boolean counterpart to `Tanf` below, in the same relationship as
+    ReceivesSnapDependency is to `Snap`: `Tanf` sends the reported cash amount (which
+    also counts as income wherever TANF is a countable source), while this asserts
+    receipt for the categorical tests even when no amount was reported.
+    """
+
+    field = "receives_tanf"
+
+    def value(self):
+        return self.screen.has_base_benefit("tanf")
 
 
 class Acp(SpmUnit):

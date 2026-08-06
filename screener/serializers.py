@@ -1,5 +1,7 @@
 import logging
+from collections import defaultdict
 from datetime import date
+from decimal import Decimal
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 from sentry_sdk import capture_message
@@ -138,11 +140,12 @@ class HouseholdMemberSerializer(serializers.ModelSerializer):
         read_only_fields = ("screen", "id")
 
 
-# SSI program variants across white labels. An sSI income stream implies SSI
-# receipt regardless of whether the user ticked the tile, so all variants are
-# listed here; the WL-scoped resolve in `_write_current_benefits()` drops the
-# ones a given white label doesn't offer (e.g. `wa_ssi` on a CO screen).
-_SSI_BENEFIT_NAMES = frozenset({"ssi", "tx_ssi", "wa_ssi", "cesn_ssi"})
+# Income types that demonstrate receipt of a benefit, mapped to the `base_program` that
+# groups that benefit's white-label variants. Resolving through `base_program` rather than a
+# hardcoded name list means a new state variant is picked up automatically — the previous
+# list (`ssi`/`tx_ssi`/`wa_ssi`/`cesn_ssi`) silently missed `ks_ssi`, so KS screens never
+# derived SSI receipt from reported income.
+_INCOME_TYPE_TO_BASE_PROGRAM = {"sSI": "ssi", "snap": "snap", "wic": "wic"}
 
 
 def _derived_current_benefit_names(screen: Screen) -> set[str]:
@@ -154,14 +157,42 @@ def _derived_current_benefit_names(screen: Screen) -> set[str]:
     the tile wasn't ticked (or was explicitly unticked) — preserving the long-standing
     compound semantics of `Screen.has_benefit()`.
 
-    Today there is one rule: an sSI income stream implies SSI. The `chp` and
+    The rule is per `_INCOME_TYPE_TO_BASE_PROGRAM`: a reported income stream for one of
+    those benefits implies receipt of this white label's variant(s) of it. Active variants
+    win; an all-inactive base program still derives (its retired row is the only record of
+    receipt) but never adds a retired row alongside a live one. The `chp` and
     `ma_mass_health` compounds are deliberately NOT here — those are member-level
     insurance checks (`HouseholdMember.has_benefit()` / `member.insurance.*`) and never
     flow through `current_benefits`. Add new derivable compounds here as they appear.
     """
+    # One pass over the screen's income streams rather than a calc_gross_income() call per
+    # income type: each of those re-walks household_members and their income_streams, and
+    # this runs on every screen POST/PATCH against a freshly select_for_update()'d instance
+    # with nothing prefetched. Totals use IncomeStream.yearly() so the frequency handling
+    # (and the "> 0 across all streams of a type" test) matches calc_gross_income.
+    totals: dict[str, Decimal] = defaultdict(Decimal)
+    for stream in screen.income_streams.all():
+        base_program = _INCOME_TYPE_TO_BASE_PROGRAM.get(stream.type)
+        if base_program is None or stream.amount is None:
+            continue
+        totals[base_program] += stream.yearly()
+
+    base_programs = {base_program for base_program, total in totals.items() if total > 0}
+    if not base_programs:
+        return set()
+
+    variants = Program.objects.filter(white_label=screen.white_label, base_program__in=base_programs).values_list(
+        "base_program", "name_abbreviated", "active"
+    )
+
+    by_base: dict[str, list[tuple[str, bool]]] = {}
+    for base_program, name, active in variants:
+        by_base.setdefault(base_program, []).append((name, active))
+
     derived: set[str] = set()
-    if screen.calc_gross_income("yearly", ("sSI",)) > 0:
-        derived |= _SSI_BENEFIT_NAMES
+    for names in by_base.values():
+        active_names = {name for name, active in names if active}
+        derived |= active_names or {name for name, _ in names}
     return derived
 
 
@@ -172,8 +203,8 @@ def _write_current_benefits(screen: Screen, current_benefits: list[str]) -> None
     `current_benefits` is a list of `name_abbreviated` strings (e.g. ["tx_snap",
     "tanf"]). Each is resolved to a Program via the (white_label, name_abbreviated)
     lookup and written directly; a name the current WL doesn't offer is silently
-    skipped. Names derivable from screen state (currently SSI, via an sSI income
-    stream) are OR'd in via `_derived_current_benefit_names()` so the join table
+    skipped. Names derivable from screen state (SSI, SNAP and WIC, via their income
+    streams) are OR'd in via `_derived_current_benefit_names()` so the join table
     reflects benefits the household demonstrably receives even when the tile wasn't
     ticked.
 
@@ -185,9 +216,9 @@ def _write_current_benefits(screen: Screen, current_benefits: list[str]) -> None
     with transaction.atomic():
         screen = Screen.objects.select_for_update().get(pk=screen.pk)
 
-        # Frontend sent explicit program names, plus any names derivable from
-        # screen state (e.g. SSI from an sSI income stream). Resolve each in this
-        # screen's white label; silently drop any this WL doesn't offer.
+        # Frontend sent explicit program names, plus any names derivable from screen
+        # state (e.g. SSI from an sSI income stream). Resolve each in this screen's
+        # white label; silently drop any this WL doesn't offer.
         requested = set(current_benefits)
         derived = _derived_current_benefit_names(screen)
         resolved = Program.objects.filter(
@@ -202,9 +233,8 @@ def _write_current_benefits(screen: Screen, current_benefits: list[str]) -> None
         # worth surfacing, so report it to Sentry. capture_message groups identical
         # messages, so a recurring bad name collapses into one counted issue rather
         # than paging per request; level is "warning" (not "error") because a dropped
-        # name is benign per request. Derived names (e.g. wa_ssi injected on a CO
-        # screen) are excluded — those are expected cross-WL non-matches, not client
-        # errors.
+        # name is benign per request. Derived names can't appear here: they are already
+        # resolved within this white label, so they never look like a client error.
         dropped = requested - {name for _, name in resolved}
         if dropped:
             capture_message(

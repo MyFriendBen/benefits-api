@@ -21,7 +21,9 @@ def make_calculator(yearly_income=10_000, fpl_limit=15_000, members=None, has_be
     mock_screen.calc_gross_income = Mock(return_value=yearly_income)
     mock_screen.household_members.all = Mock(return_value=members or [make_member()])
     mock_screen.household_size = len(members) if members else 1
-    mock_screen.has_benefit = Mock(side_effect=lambda b: has_benefit.get(b, False))
+    # Adjunctive eligibility reads base_program names (wa_snap / wa_tanf / Apple Health).
+    mock_screen.has_benefit = Mock(return_value=False)
+    mock_screen.has_base_benefit = Mock(side_effect=lambda b: has_benefit.get(b, False))
 
     mock_program = Mock()
     mock_program.year.get_limit = Mock(return_value=fpl_limit)

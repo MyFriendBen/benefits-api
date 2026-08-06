@@ -281,14 +281,18 @@ class TestTxWicPeInput(TxPeInputTestBase):
         spm_unit = household["spm_units"]["spm_unit"]
         people = household["people"]
 
-        # SPM-level dependency
-        self.assertIn("school_meal_countable_income", spm_unit)
+        # SPM-level dependencies. school_meal_countable_income is deliberately gone: WIC's tree
+        # never reads it, and it used to be the only income input WIC had.
+        self.assertNotIn("school_meal_countable_income", spm_unit)
+        self.assertIn("receives_snap", spm_unit)
+        self.assertIn("receives_tanf", spm_unit)
 
         # Member-level dependencies
         head_id = str(self.head.id)
         self.assertIn("is_pregnant", people[head_id])
         self.assertIn("current_pregnancies", people[head_id])
         self.assertIn("age", people[head_id])
+        self.assertIn("employment_income", people[head_id])
 
     def test_includes_pe_output_fields(self):
         """Test that pe_input includes TxWic pe_outputs."""
@@ -644,12 +648,16 @@ class TestTxCombinedCalculatorsPeInput(TxPeInputTestBase):
         head_id = str(self.head.id)
 
         # TxWic fields
-        self.assertIn("school_meal_countable_income", spm_unit)
         self.assertIn("wic", people[head_id])
+        self.assertIn("receives_snap", spm_unit)
 
         # TxSnap fields
         self.assertIn("snap_assets", spm_unit)
         self.assertIn("snap", spm_unit)
+
+        # The two calculators meet on `tanf` (WIC income source and SNAP categorical input)
+        # without conflicting: one merged payload per request, one write per field.
+        self.assertIn("tanf", spm_unit)
 
     def test_eitc_and_snap_combined(self):
         """Test that pe_input handles both Eitc and TxSnap together."""

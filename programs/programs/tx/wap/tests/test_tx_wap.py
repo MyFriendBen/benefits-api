@@ -29,7 +29,13 @@ def make_calculator(
     benefit_map = {"ssi": has_ssi, "tanf": has_tanf, "snap": has_snap}
     mock_screen = Mock()
     mock_screen.household_size = household_size
-    mock_screen.has_benefit = Mock(side_effect=lambda b: benefit_map.get(b, False))
+    # categorically_eligible entries are base_program names, resolved through
+    # has_benefit_from_list -> has_benefit_or_variant, so both lookups are stubbed.
+    mock_screen.has_benefit = Mock(return_value=False)
+    mock_screen.has_base_benefit = Mock(side_effect=lambda b: benefit_map.get(b, False))
+    mock_screen.has_benefit_from_list = Mock(
+        side_effect=lambda names: any(benefit_map.get(name, False) for name in names)
+    )
     mock_screen.calc_gross_income = Mock(return_value=household_income)
 
     mock_missing_deps = Mock()

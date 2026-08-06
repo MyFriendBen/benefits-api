@@ -109,12 +109,23 @@ class TestTxWic(TestCase):
         self.assertIn(AgeDependency, TxWic.pe_inputs)
         self.assertEqual(AgeDependency.field, "age")
 
-    def test_pe_inputs_includes_school_meal_countable_income_dependency(self):
-        """Test that TxWic inherits SchoolMealCountableIncomeDependency from parent Wic class."""
+    def test_pe_inputs_exclude_school_meal_countable_income_dependency(self):
+        """
+        TxWic must not send school_meal_countable_income — PolicyEngine's WIC tree never reads
+        it (``wic_countable_income`` sums ``gov.usda.wic.income.sources`` instead), and while it
+        was WIC's only income input the program came back eligible at any reported income.
+        The ``wic_income`` bundle on the federal parent replaced it.
+        """
         from programs.programs.policyengine.calculators.dependencies.spm import SchoolMealCountableIncomeDependency
 
-        self.assertIn(SchoolMealCountableIncomeDependency, TxWic.pe_inputs)
-        self.assertEqual(SchoolMealCountableIncomeDependency.field, "school_meal_countable_income")
+        self.assertNotIn(SchoolMealCountableIncomeDependency, TxWic.pe_inputs)
+
+    def test_pe_inputs_include_the_wic_income_bundle(self):
+        """Inherited from the federal Wic — TX adds only its state code."""
+        import programs.programs.policyengine.calculators.dependencies as dependency
+
+        for dep in dependency.wic_income:
+            self.assertIn(dep, TxWic.pe_inputs)
 
     def test_has_same_pe_outputs_as_parent(self):
         """Test that TxWic has the same pe_outputs as parent Wic class."""

@@ -4,6 +4,37 @@ from screener.models import HouseholdMember
 
 
 class Wic(PolicyEngineMembersCalculator):
+    """
+    Federal WIC. Per PolicyEngine's ``is_wic_eligible``::
+
+        demographic_eligible & (meets_income_test | meets_categorical_test) & nutritional_risk
+
+    Both branches need feeding, and neither was:
+
+    **Income.** The only income input here used to be ``school_meal_countable_income``,
+    which WIC's tree never reads — ``wic_countable_income`` sums its own parameter list,
+    ``gov.usda.wic.income.sources``. Supplying none of those sources let PE substitute an
+    imputation and WIC came back eligible at any reported income (verified live at
+    $108k/yr). ``wic_income`` is that source list, as far as the screener collects it.
+
+    **Categorical.** ``meets_wic_categorical_eligibility`` is
+    ``receives_snap_or_tanf | receives_medicaid | pregnant_or_infant_medicaid_in_spmu``.
+    The Medicaid legs are computed by PE from the income above, but the reported-receipt
+    inputs (``receives_snap`` / ``receives_tanf``) had no dependency, so a household that
+    told us it gets SNAP could still fail the categorical test if PE's own SNAP
+    determination disagreed. The two ``Receives*`` inputs close that.
+
+    Note that adjunctive eligibility above 185% FPL is correct and expected, not a bug:
+    42 U.S.C. § 1786(d)(2)(A) makes SNAP/TANF/Medicaid receipt its own pathway, and the
+    185% figure attaches only to the income-test pathway. The practical boundary lands at
+    the state's Medicaid limit — in MO, ~201% FPL via MO HealthNet for Pregnant Women —
+    so QA scenarios asserting a hard 185% cutoff will flag correct behavior as a bug.
+
+    The base ``wic_categories`` are all zeros; state subclasses either override them with
+    per-category amounts (CO/NC/MA/IL) or override ``member_value`` to return PE's own
+    computed benefit (TX/MO).
+    """
+
     wic_categories = {
         "NONE": 0,
         "INFANT": 0,
@@ -17,7 +48,9 @@ class Wic(PolicyEngineMembersCalculator):
         dependency.member.PregnancyDependency,
         dependency.member.ExpectedChildrenPregnancyDependency,
         dependency.member.AgeDependency,
-        dependency.spm.SchoolMealCountableIncomeDependency,
+        *dependency.wic_income,
+        dependency.spm.ReceivesSnapDependency,
+        dependency.spm.ReceivesTanfDependency,
     ]
     pe_outputs = [dependency.member.Wic, dependency.member.WicCategory]
 

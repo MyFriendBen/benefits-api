@@ -89,6 +89,15 @@ class MaWic(Wic):
         "POSTPARTUM": 91,
         "BREASTFEEDING": 124,
     }
+    # Alone among the WIC subclasses, this sent no state code — it worked only because some
+    # other MA program in the same request put MA in the shared payload (PolicyEngine gets
+    # one merged household per screen, not one per program). WIC's FPG table is
+    # state-dependent (AK/HI vs. contiguous), so state it explicitly rather than inherit it
+    # by luck.
+    pe_inputs = [
+        *Wic.pe_inputs,
+        dependency.household.MaStateCodeDependency,
+    ]
 
 
 class MaCcdf(Ccdf):

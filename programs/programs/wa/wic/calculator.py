@@ -36,8 +36,13 @@ class WaWic(ProgramCalculator):
         e.condition(is_pregnant or is_under_5)
 
     def household_eligible(self, e: Eligibility):
+        # has_base_benefit resolves WA's variants (wa_snap / wa_tanf, and Apple Health for
+        # medicaid) — the bare names are exact-match reads that never hit, so adjunctive
+        # eligibility never fired and every household fell through to the income test.
         adjunctive_eligible = (
-            self.screen.has_benefit("snap") or self.screen.has_benefit("medicaid") or self.screen.has_benefit("tanf")
+            self.screen.has_base_benefit("snap")
+            or self.screen.has_base_benefit("medicaid")
+            or self.screen.has_base_benefit("tanf")
         )
 
         if adjunctive_eligible:

@@ -51,7 +51,8 @@ class IlNurseFamilyPartnership(ProgramCalculator):
         gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
         is_income_eligible = gross_income <= income_limit
 
-        has_wic = self.screen.has_benefit("wic")
+        # has_base_benefit resolves il_wic; the bare name matches nothing in this WL.
+        has_wic = self.screen.has_base_benefit("wic")
 
         e.condition(is_income_eligible or has_wic)
 

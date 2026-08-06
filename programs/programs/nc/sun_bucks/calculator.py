@@ -15,9 +15,12 @@ class SunBucks(ProgramCalculator):
         income_limit = int(self.fpl_percent * fpl.get_limit(self.screen.household_size))
         gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
 
-        # Must not have the following benefits
-        e.condition(not self.screen.has_benefit("snap"), messages.must_not_have_benefit("snap"))
-        e.condition(not self.screen.has_benefit("tanf"), messages.must_not_have_benefit("tanf"))
+        # Must not have the following benefits. has_base_benefit matches this white label's
+        # variants (nc_snap / nc_tanf); the exact-name reads never matched anything, so the
+        # conditions always passed and SNAP/TANF households — who are auto-enrolled in SUN
+        # Bucks — were shown the program anyway.
+        e.condition(not self.screen.has_base_benefit("snap"), messages.must_not_have_benefit("snap"))
+        e.condition(not self.screen.has_base_benefit("tanf"), messages.must_not_have_benefit("tanf"))
 
         e.condition(gross_income < income_limit, messages.income(gross_income, income_limit))
 

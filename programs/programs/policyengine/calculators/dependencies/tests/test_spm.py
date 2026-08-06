@@ -539,18 +539,150 @@ class TestSnapDependency(TestCase):
         dep = spm.Snap(self.screen, None, {})
         self.assertEqual(dep.field, "snap")
 
-    def test_value_returns_1_when_screen_has_snap(self):
-        """When user reports having SNAP, send 1 to PE to enable categorical eligibility."""
-        seed_program(self.white_label, "snap")
-        _write_current_benefits(self.screen, ["snap"])
+    def test_value_returns_none_for_receipt_without_an_amount(self):
+        """Receipt with no reported amount leaves SNAP computed. No placeholder value: PE
+        hands whatever we send back as this household's SNAP, so a stand-in collapses the
+        computed benefit instead of describing it."""
+        seed_program(self.white_label, "test_snap", base_program="snap")
+        _write_current_benefits(self.screen, ["test_snap"])
 
         dep = spm.Snap(self.screen, None, {})
-        self.assertEqual(dep.value(), 1)
+        self.assertIsNone(dep.value())
+
+    def test_value_returns_reported_annual_amount(self):
+        """A reported SNAP amount is sent as the annual figure, so PE (and anything reading
+        the variable back) sees the household's real number."""
+        seed_program(self.white_label, "test_snap", base_program="snap")
+        _write_current_benefits(self.screen, ["test_snap"])
+        head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=30)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=head, type="snap", amount=200, frequency="monthly"
+        )
+
+        dep = spm.Snap(self.screen, None, {})
+        self.assertEqual(dep.value(), 2400)  # $200/month * 12
+
+    def test_value_ignores_reported_amount_without_receipt(self):
+        """No recorded receipt means PE computes SNAP, even if an amount was somehow entered.
+        In practice the two can't disagree — a reported amount derives receipt at write time
+        (see _derived_current_benefit_names) — so this pins the guard, not a live path."""
+        head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=30)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=head, type="snap", amount=200, frequency="monthly"
+        )
+
+        dep = spm.Snap(self.screen, None, {})
+        self.assertIsNone(dep.value())
+
+    def test_value_resolves_receipt_for_a_prefixed_variant(self):
+        """Regression: receipt is resolved through base_program, so the state-prefixed names
+        that white labels actually ship (co_snap, ks_snap, wa_snap, …) count as receipt.
+        The old exact-match has_benefit("snap") matched no program in any white label, so
+        every household looked like a SNAP non-recipient to PolicyEngine."""
+        seed_program(self.white_label, "wa_snap", base_program="snap")
+        _write_current_benefits(self.screen, ["wa_snap"])
+        head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=30)
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=head, type="snap", amount=200, frequency="monthly"
+        )
+
+        dep = spm.Snap(self.screen, None, {})
+        self.assertEqual(dep.value(), 2400)
 
     def test_value_returns_none_when_screen_does_not_have_snap(self):
         """When user does not report SNAP, return None so PE calculates the benefit amount."""
         dep = spm.Snap(self.screen, None, {})
         self.assertIsNone(dep.value())
+
+
+class TestReceivesSnapDependency(TestCase):
+    """
+    Tests for ReceivesSnapDependency — reported SNAP receipt as a boolean, no amount involved.
+
+    Complements Snap above rather than duplicating it. Snap needs a dollar figure, which most
+    households can't supply (SNAP lands on EBT monthly), so on its own it leaves the common
+    case — "I get SNAP, no idea how much" — invisible to PolicyEngine's categorical tests.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=2,
+            completed=False,
+        )
+
+    def test_field_name(self):
+        dep = spm.ReceivesSnapDependency(self.screen, None, {})
+        self.assertEqual(dep.field, "receives_snap")
+
+    def test_true_on_reported_receipt_without_an_amount(self):
+        """The case Snap alone can't express: receipt is known, the amount isn't."""
+        seed_program(self.white_label, "test_snap", base_program="snap")
+        _write_current_benefits(self.screen, ["test_snap"])
+
+        dep = spm.ReceivesSnapDependency(self.screen, None, {})
+        self.assertTrue(dep.value())
+        self.assertIsNone(spm.Snap(self.screen, None, {}).value())
+
+    def test_true_for_a_prefixed_variant(self):
+        """Resolved through base_program, so the names white labels actually ship count."""
+        seed_program(self.white_label, "wa_snap", base_program="snap")
+        _write_current_benefits(self.screen, ["wa_snap"])
+
+        dep = spm.ReceivesSnapDependency(self.screen, None, {})
+        self.assertTrue(dep.value())
+
+    def test_false_when_no_snap_reported(self):
+        dep = spm.ReceivesSnapDependency(self.screen, None, {})
+        self.assertFalse(dep.value())
+
+    def test_false_for_an_unrelated_benefit(self):
+        seed_program(self.white_label, "test_tanf", base_program="tanf")
+        _write_current_benefits(self.screen, ["test_tanf"])
+
+        dep = spm.ReceivesSnapDependency(self.screen, None, {})
+        self.assertFalse(dep.value())
+
+
+class TestReceivesTanfDependency(TestCase):
+    """Tests for ReceivesTanfDependency — the TANF counterpart of ReceivesSnapDependency."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=2,
+            completed=False,
+        )
+
+    def test_field_name(self):
+        dep = spm.ReceivesTanfDependency(self.screen, None, {})
+        self.assertEqual(dep.field, "receives_tanf")
+
+    def test_true_on_reported_receipt_without_an_amount(self):
+        seed_program(self.white_label, "test_tanf", base_program="tanf")
+        _write_current_benefits(self.screen, ["test_tanf"])
+
+        dep = spm.ReceivesTanfDependency(self.screen, None, {})
+        self.assertTrue(dep.value())
+        self.assertIsNone(spm.Tanf(self.screen, None, {}).value())
+
+    def test_true_for_a_renamed_variant(self):
+        """MA ships TAFDC, whose name shares nothing with "tanf" — base_program is the link."""
+        seed_program(self.white_label, "ma_tafdc", base_program="tanf")
+        _write_current_benefits(self.screen, ["ma_tafdc"])
+
+        dep = spm.ReceivesTanfDependency(self.screen, None, {})
+        self.assertTrue(dep.value())
+
+    def test_false_when_no_tanf_reported(self):
+        dep = spm.ReceivesTanfDependency(self.screen, None, {})
+        self.assertFalse(dep.value())
 
 
 class TestTanfDependency(TestCase):

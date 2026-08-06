@@ -29,7 +29,10 @@ def make_calculator(
 
     mock_screen = Mock()
     mock_screen.household_size = household_size
-    mock_screen.has_benefit = Mock(side_effect=lambda b: {"snap": has_snap, "tanf": has_tanf}.get(b, False))
+    # SNAP/TANF are read via base_program so every white-label variant (tx_snap, tx_tanf)
+    # resolves; has_benefit is stubbed False so an exact-name read can't pass on a Mock.
+    mock_screen.has_benefit = Mock(return_value=False)
+    mock_screen.has_base_benefit = Mock(side_effect=lambda b: {"snap": has_snap, "tanf": has_tanf}.get(b, False))
     mock_screen.calc_gross_income = Mock(return_value=household_income)
 
     mock_missing_deps = Mock()
