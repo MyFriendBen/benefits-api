@@ -25,7 +25,7 @@
     "estimated_application_time": "30 - 60 minutes",
     "estimated_delivery_time": "",
     "estimated_value": "",
-    "value_format": "estimated_annual",
+    "value_format": null,
     "website_description": "Free preschool, meals, and health services for eligible children ages 3 to 5",
     "base_program": "head_start",
     "show_on_current_benefits": true,
