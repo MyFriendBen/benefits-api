@@ -539,16 +539,45 @@ class TestSnapDependency(TestCase):
         dep = spm.Snap(self.screen, None, {})
         self.assertEqual(dep.field, "snap")
 
+    def _report_snap(self, name_abbreviated: str):
+        """Seed a SNAP program under `name_abbreviated` with base_program set
+        (seed_program leaves it None) and record receipt on the screen, mirroring how
+        has_base_benefit resolves white-label variants."""
+        seed_program(self.white_label, name_abbreviated)
+        Program.objects.filter(white_label=self.white_label, name_abbreviated=name_abbreviated).update(
+            base_program="snap"
+        )
+        _write_current_benefits(self.screen, [name_abbreviated])
+
     def test_value_returns_1_when_screen_has_snap(self):
         """When user reports having SNAP, send 1 to PE to enable categorical eligibility."""
-        seed_program(self.white_label, "snap")
-        _write_current_benefits(self.screen, ["snap"])
+        self._report_snap("snap")
+
+        dep = spm.Snap(self.screen, None, {})
+        self.assertEqual(dep.value(), 1)
+
+    def test_value_returns_1_for_a_white_label_prefixed_snap(self):
+        """Every white label names its SNAP program with a prefix (il_snap, ks_snap, …).
+        Resolving by base_program rather than exact name is what lets reported SNAP reach
+        PE at all — an exact bare-name match found nothing, so no household ever hit the
+        Head Start / Early Head Start categorical branch."""
+        self._report_snap("il_snap")
 
         dep = spm.Snap(self.screen, None, {})
         self.assertEqual(dep.value(), 1)
 
     def test_value_returns_none_when_screen_does_not_have_snap(self):
         """When user does not report SNAP, return None so PE calculates the benefit amount."""
+        dep = spm.Snap(self.screen, None, {})
+        self.assertIsNone(dep.value())
+
+    def test_value_returns_none_for_an_unrelated_reported_benefit(self):
+        """base_program is what matches — an unrelated current benefit must not be read as
+        reported SNAP."""
+        seed_program(self.white_label, "il_tanf")
+        Program.objects.filter(white_label=self.white_label, name_abbreviated="il_tanf").update(base_program="tanf")
+        _write_current_benefits(self.screen, ["il_tanf"])
+
         dep = spm.Snap(self.screen, None, {})
         self.assertIsNone(dep.value())
 

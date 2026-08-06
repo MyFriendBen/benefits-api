@@ -154,15 +154,27 @@ class Snap(SpmUnit):
 
     - If user reports having snap: send 1 so PE treats the household as
       receiving SNAP, enabling categorical eligibility for programs like
-      Early Head Start.
+      Head Start and Early Head Start.
     - If no reported snap: return None so PE calculates the SNAP benefit
       amount the household is eligible for.
+
+    ``has_base_benefit`` covers every white-label variant (il_snap, ks_snap, co_snap,
+    …); ``has_benefit`` is an exact match on the bare name, which no white label uses,
+    so reported SNAP never reached PE and the categorical branch could not fire.
+    ``Tanf`` below reads the same way for the same reason.
+
+    Sending 1 does overwrite PE's *calculated* snap for this household, so the SNAP
+    program's own value becomes $1/mo. That is only ever the households that reported
+    receiving SNAP, and the results layer flags those `already_has` and filters the
+    program out (see ``isProgramBasicallyVisible``), so the clamped value is never
+    surfaced. PE models no reported-vs-calculated split for snap the way it does for
+    ssi (``ssi_reported`` / ``use_reported_ssi``), so this is the available signal.
     """
 
     field = "snap"
 
     def value(self):
-        return 1 if self.screen.has_benefit("snap") else None
+        return 1 if self.screen.has_base_benefit("snap") else None
 
 
 class Acp(SpmUnit):

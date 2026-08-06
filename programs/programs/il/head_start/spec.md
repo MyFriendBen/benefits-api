@@ -61,6 +61,17 @@ This is an estimated annual value of Head Start services, not cash paid to the h
 
 > Each eligible scenario asserts the expected **dollar value** ($17,227 per eligible child), so a scenario breaks if PolicyEngine's Illinois spending/enrollment parameters drift. Ineligible scenarios carry no value.
 
+All six verified locally against live PolicyEngine (model 1.784.3), 6/6 matching:
+
+| # | Scenario | Expected | Result |
+|---|----------|----------|--------|
+| 1 | Low-income, one child age 4 | Eligible $17,227 | Eligible **$17,227** |
+| 2 | Child age 7 — too old | Not eligible | Not eligible |
+| 3 | Two children ages 3 + 5 | Eligible $34,454 | Eligible **$34,454** |
+| 4 | Over-income + SNAP — categorical | Eligible $17,227 | Eligible **$17,227** |
+| 5 | Over-income, no categorical | Not eligible | Not eligible |
+| 6 | Foster child, over-income | Eligible $17,227 | Eligible **$17,227** |
+
 ### Scenario 1: Low-Income Family with One Eligible Child — Eligible, Value-Isolation
 **What we're checking**: Typical low-income household with a child age 3–5 who clearly meets Head Start age and income requirements. **This is the primary value-isolation scenario** — if PE's IL spending/enrollment params drift, this expected amount breaks.
 **Expected**: Eligible — $17,227/year (1 eligible child)
@@ -122,6 +133,8 @@ This is an estimated annual value of Head Start services, not cash paid to the h
 
 **Why this matters**: Validates that SNAP categorical eligibility independently qualifies a family regardless of income — a distinct code branch from Scenario 1. The same logic applies to TANF and SSI. The $50,000 figure is a test input chosen to clear the income limit, not Head Start's official threshold.
 
+Reaching this branch required fixing the `Snap` PE input dependency, which gated on `screen.has_benefit("snap")` — an exact match on a bare name no white label uses, so reported SNAP never reached PolicyEngine. It now reads `has_base_benefit("snap")`, matching the sibling `Tanf` dependency. KS shipped its Head Start with this scenario documented as a known limitation; it is now fixed for every state.
+
 ---
 
 ### Scenario 5: Above Income Limit, No Categorical Eligibility — Income Ineligible
@@ -136,7 +149,7 @@ This is an estimated annual value of Head Start services, not cash paid to the h
 - **Person 3 (Child)**: Birth month/year `March 2022` (age 4), Relationship `Child`, Has income `No`
 - **Current Benefits**: none
 
-**Why this matters**: This is the control for Scenario 4 — same household, no SNAP. Confirms eligibility there flows solely from categorical receipt.
+**Why this matters**: This is the control for Scenario 4 — same household, same income, no SNAP. Together the pair is a true A/B on categorical receipt: eligible at $17,227 with SNAP reported, ineligible without it, so eligibility there is demonstrably flowing from the categorical branch rather than from income.
 
 ---
 
