@@ -66,7 +66,7 @@ class WhiteLabel(models.Model):
 # application fields like submission_date, it also contains non-individual
 # household fields. Screen -> HouseholdMember -> IncomeStream & Expense & Insurance
 class Screen(models.Model):
-    uuid = models.UUIDField(default=uuid.uuid4)
+    uuid = models.UUIDField(default=uuid.uuid4, unique=True)
     white_label = models.ForeignKey(
         WhiteLabel,
         related_name="screens",
