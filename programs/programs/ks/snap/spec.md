@@ -147,7 +147,7 @@ for reference.
 - [ ] Scenario 4 (Single Adult — Gross Above 130% FPL): **ineligible** ($0)
 - [ ] Scenario 5 (Net Income Test Failure — Gross Passes, Net Fails): **ineligible** ($0)
 - [ ] Scenario 6 (Non-Elderly Household — Assets Above $3,000): **ineligible** ($0)
-- [ ] Scenario 7 (Elderly — Gross Above 130%, Net Below 100%, Assets ≤ $4,500): **eligible**, **$276/yr ($23/mo)**
+- [ ] Scenario 7 (Elderly — Gross Above 130%, Net Below 100%, Assets ≤ $4,500): **eligible**, **$288/yr ($24/mo)**
 - [ ] Scenario 8 (Categorical Eligibility — All Members on SSI, Income/Assets Above Limits): **eligible**, **$1,080/yr ($90/mo)**
 - [ ] Scenario 9 (Half-Time Student 18–49, No Exemption): **ineligible** ($0)
 - [ ] Scenario 10 (Half-Time Student with Job-Training Exemption): **eligible**, **$864/yr ($72/mo)**
@@ -162,7 +162,7 @@ for reference.
 - [ ] Scenario 19 (Half-Time Student Working 20+ Hours/Week): **eligible**, **$864/yr ($72/mo)**
 - [ ] Scenario 20 (Half-Time Student with Federal Work-Study): **eligible**, **$864/yr ($72/mo)**
 - [ ] Scenario 21 (Single Full-Time Student Parent with Dependent Child): **eligible**, **$3,840/yr ($320/mo)**
-- [ ] Scenario 22 (SSI Categorical — Reported Receipt with High Other Income): **eligible**, **$276/yr ($23/mo)**
+- [ ] Scenario 22 (SSI Categorical — Reported Receipt with High Other Income): **eligible**, **$288/yr ($24/mo)**
 
 
 ## Test Scenarios
@@ -188,6 +188,15 @@ for reference.
 > student unless they meet an exemption — a job-training / employment-and-training program placement
 > (**Scenario 10**), working 20+ hours/week (**Scenario 19**), federal work-study (**Scenario 20**),
 > or the parent-of-a-dependent-child exemption (**Scenario 21**) (7 CFR 273.5).
+>
+> **Minimum allotment.** When the computed allotment for a 1–2 person household falls below the
+> SNAP minimum, the household receives the minimum instead (**Scenarios 7, 22**). The minimum is
+> **8% of the one-person maximum allotment**, rounded to whole dollars
+> (7 CFR 273.10(e)(2)(ii)(C)). For FY2026: 8% × $298 = $23.84 → **$24/mo ($288/yr)**.
+>
+> These two expected values are **fiscal-year sensitive** and step with the October max allotment —
+> under FY2025 ($292 max) the minimum was 8% × $292 = $23.36 → $23/mo ($276/yr). Re-derive them
+> when the max allotment changes; a change here is not a regression.
 
 ### Scenario 1: Single Adult Worker — Clearly Eligible for Food Assistance
 
@@ -302,7 +311,8 @@ for reference.
 
 **What we're checking**: The federal elderly/disabled treatment — a 60+ household is exempt from the gross income test and qualifies on net income alone, using the higher $4,500 asset limit and an uncapped shelter deduction (criterion 6).
 
-**Expected**: Eligible — $276/yr ($23/mo)
+**Expected**: Eligible — $288/yr ($24/mo)
+**Benefit math** (FY2026): the computed allotment falls below the SNAP minimum, so the household receives the **minimum allotment** — see the note under Test Scenarios.
 
 **Steps**:
 - **Location**: Enter ZIP code `67202`, Select county `Sedgwick`
@@ -572,7 +582,8 @@ for reference.
 
 **What we're checking**: A household reporting SSI receipt is categorically eligible even when other income is high enough that the modeled SSI amount would compute to $0. Categorical eligibility must key off *reported* receipt, not a recalculated SSI amount (criterion 5, the SSI path).
 
-**Expected**: Eligible — $276/yr ($23/mo)
+**Expected**: Eligible — $288/yr ($24/mo)
+**Benefit math** (FY2026): the computed allotment falls below the SNAP minimum, so the household receives the **minimum allotment** — see the note under Test Scenarios.
 
 **Steps**:
 - **Location**: Enter ZIP code `66102`, Select county `Wyandotte`
@@ -641,3 +652,4 @@ Expected values for scenarios 12–14 were computed on `policyengine-us` 1.739.4
 | 2026-06-21 | Discovery QA | Citation fidelity pass — verified every spec citation against live primary sources. Two fixes: criterion 14 (drug felony) `7 U.S.C. § 2015(k)` → `21 U.S.C. § 862a` (2015 covers benefit-trafficking, not the felony ban); criterion 15 (fleeing felon) dropped the unverifiable `7 U.S.C. § 2015(k)`, kept `7 CFR 273.11(n)`. Confirmed `7 CFR 273.11(o)-(p)` is correct for child-support cooperation. All other CFR/USC/KEESM cites verified. |
 | 2026-06-21 | Discovery QA | Ran all eligibility scenarios through PolicyEngine (1.739.4): scenarios 1–10 confirm their eligible/ineligible outcomes, 12–14 confirm committed SUA amounts; scenario 11 (duplicate-benefit) is handled by the `already_has` results-layer workflow (`has_benefit("ks_snap")`), verified by design. Student scenarios are handled by the federal calculator's `is_snap_ineligible_student` dependency, computed from screener fields and passed to PE as an input. |
 | 2026-06-21 | Discovery QA | Added missing criteria: **child support cooperation** (criterion 13 — KS-specific state option mandated under the HOPE Act, verified via Kansas Action for Children / KEESM) and a distinct **general work requirement / work registrant 18–59** (criterion 11, KS HOPE Act 30-hr + mandatory E&T), split from the ABAWD time-limit criterion (12); folded the standalone voluntary-quit item into the general work requirement. Reformatted all test scenarios to match the `wa/snap/spec.md` structure. |
+| 2026-08-06 | Staging QA | Corrected Scenarios 7 and 22 from $276/yr ($23/mo) to **$288/yr ($24/mo)**. Both are minimum-allotment cases; the spec had assumed a flat $23/mo minimum. The minimum is 8% of the one-person maximum allotment rounded to whole dollars (7 CFR 273.10(e)(2)(ii)(C)) — FY2026: 8% × $298 = $23.84 → $24/mo. Verified against the private PolicyEngine API (model 1.784.3) by querying `snap_min_allotment` across periods: 2026-01 → 24.0, 2025-01 → 23.0, 2022-01 → 20.0. The $23/mo figure was correct under FY2025 parameters ($292 max). Added a Minimum allotment note documenting the derivation and its fiscal-year sensitivity. |
