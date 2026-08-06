@@ -1,5 +1,5 @@
 # Generated manually to add NC-only urgent need types for:
-# MFB-XXXX: NC - Add two new urgent need types to NC white label:
+# MFB-1310: NC - Add two new urgent need types to NC white label:
 #   Homeless Services & Free/Low-Cost Medical Care
 #
 # This creates two new UrgentNeedType rows scoped to the "nc" white label only
