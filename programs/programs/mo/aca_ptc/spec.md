@@ -37,7 +37,7 @@ PolicyEngine implements federal ACA PTC eligibility nationwide (26 U.S.C. § 36B
 5. Determine SLCSP for the coverage family's rating area (single-person tier when dependents don't pay a marketplace premium — see Mixed-coverage households below).
 6. PTC = max(0, SLCSP − required annual contribution).
 7. Truncate to a whole dollar (this is the binding annual value).
-8. Display monthly = truncated annual ÷ 12, rounded.
+8. Display monthly = truncated annual ÷ 12, rounded **to the cent** — not to a whole dollar. (`FormattedValue.tsx` formats via `formatToUSD`, which uses two decimal places for a fractional result and none when the division lands on a whole dollar.)
 
 **This is a benchmark-based maximum, not the household's final legal credit.** The statute determines the actual credit month-by-month and caps it at the premium of the plan someone actually picks — information the screener never has pre-application. A household may end up receiving less than the estimate if their selected plan's premium is below the benchmark. `estimated_value` and all user-facing copy must say "estimated" or "up to," never a guaranteed number.
 
@@ -55,7 +55,7 @@ PolicyEngine implements federal ACA PTC eligibility nationwide (26 U.S.C. § 36B
 | SLCSP (single-person tier — Scenario 3's children don't pay a premium) | $6,856.14 | $8,580.20 | $6,555.73 |
 | PTC = SLCSP − contribution | $5,006.28 | $6,730.34 | $5,017.98 |
 | **Binding annual value (whole-dollar truncated)** | **$5,006** | **$6,730** | **$5,017** |
-| **Displayed monthly (÷12, rounded)** | **$417/month** | **$561/month** | **$418/month** |
+| **Displayed monthly (÷12, to the cent)** | **$417.17/month** | **$560.83/month** | **$418.08/month** |
 
 **Sources for the two external inputs**, quoted so the numbers can't drift to the wrong year/row:
 
