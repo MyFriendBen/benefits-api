@@ -156,6 +156,20 @@ def _json_body(request):
         return body
 
 
+def cassette_name(request) -> str:
+    """Cassette filename for a test, qualified by its class when it has one.
+
+    The bare test name is ambiguous: two identically-named methods in different classes in
+    the same module would share one cassette and silently replay each other's recording.
+    Class-qualifying makes the filename unique for every test that can exist in a module.
+    """
+    test_class = getattr(request.node, "cls", None)
+    if test_class is None:
+        return f"{request.node.name}.yaml"
+
+    return f"{test_class.__name__}.{request.node.name}.yaml"
+
+
 def policy_engine_body(r1, r2):
     """Match PolicyEngine requests on their body; ignore every other host.
 
@@ -240,8 +254,9 @@ def auto_vcr(request, vcr_config):
     - VCR_MODE=once (local default): Strict - replays existing cassettes, errors if test makes new HTTP request
     - VCR_MODE=none (strict playback): Read-only - replays only, never records, errors on new HTTP requests
 
-    Cassettes are stored in: <test_dir>/cassettes/<test_name>.yaml
-    Example: integrations/clients/hud_income_limits/tests/cassettes/test_real_api_call_cook_county_il.yaml
+    Cassettes are stored in: <test_dir>/cassettes/<TestClass>.<test_name>.yaml
+    Example: integrations/clients/hud_income_limits/tests/cassettes/
+             TestHudIntegrationMTSP.test_real_api_call_cook_county_il.yaml
 
     Args:
         request: pytest request object
@@ -273,8 +288,7 @@ def auto_vcr(request, vcr_config):
     # instance before the cassette is used (match_on names are resolved lazily).
     vcr = vcrpy.VCR(**vcr_config)
     vcr.register_matcher("policy_engine_body", policy_engine_body)
-    cassette_name = f"{request.node.name}.yaml"
-    with vcr.use_cassette(cassette_name, record_mode=record_mode):
+    with vcr.use_cassette(cassette_name(request), record_mode=record_mode):
         yield
 
 
