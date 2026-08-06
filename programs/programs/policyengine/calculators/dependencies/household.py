@@ -92,6 +92,40 @@ class KsCountyDependency(CountyDependency):
     state_dependency_class = KsStateCodeDependency
 
 
+class MoCountyDependency(CountyDependency):
+    """
+    Missouri county token, with the St. Louis City special case handled.
+
+    Missouri has one independent city — St. Louis — which is its own county-equivalent
+    (FIPS 29510) and is *not* part of St. Louis County. The screener's ZIP map stores it
+    as the literal string ``"St. Louis City"``, and the base normalizer would append
+    ``_COUNTY`` to produce ``ST_LOUIS_CITY_COUNTY_MO``. PolicyEngine doesn't define that
+    token: it silently falls back to a default rating area rather than erroring, which
+    for ACA PTC returns an SLCSP of $9,121 instead of the correct $6,275 — overstating
+    the credit by roughly $2,846/year for the state's second-largest jurisdiction.
+
+    PolicyEngine's own token is ``ST_LOUIS_CITY_MO`` (verified against ``county_fips``
+    29510, which returns the same value), so drop the ``_COUNTY`` insert for it. Every
+    other one of Missouri's 114 counties resolves correctly through the base normalizer —
+    checked by sweeping the full ``counties_by_zipcode`` list against the PE API.
+    """
+
+    state_dependency_class = MoStateCodeDependency
+
+    # Screener county strings (normalized, pre-suffix) that PolicyEngine names without
+    # the "_COUNTY" insert. Missouri has exactly one independent city.
+    independent_cities = ("ST_LOUIS_CITY",)
+
+    def value(self):
+        county_token = super().value()
+
+        for city in self.independent_cities:
+            if county_token == f"{city}_COUNTY_{self.state_dependency_class.state}":
+                return f"{city}_{self.state_dependency_class.state}"
+
+        return county_token
+
+
 class ZipCodeDependency(Household):
     field = "zip_code"
     dependencies = ["zipcode"]

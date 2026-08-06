@@ -145,6 +145,9 @@ class TestCountyDependency(TestCase):
     def test_ks_county_dependency_state_dependency_class(self):
         self.assertIs(household.KsCountyDependency.state_dependency_class, household.KsStateCodeDependency)
 
+    def test_mo_county_dependency_state_dependency_class(self):
+        self.assertIs(household.MoCountyDependency.state_dependency_class, household.MoStateCodeDependency)
+
     def test_ma_county_dependency_value_formats_correctly(self):
         screen = Screen.objects.create(
             white_label=self.white_label, zipcode="02101", county="Suffolk", household_size=1, completed=False
@@ -213,6 +216,48 @@ class TestCountyDependency(TestCase):
         with self.assertRaises(ValueError) as context:
             dep.value()
         self.assertIn("must define state_dependency_class", str(context.exception))
+
+
+class TestMoCountyDependency(TestCase):
+    """
+    Tests for MoCountyDependency, which adds the St. Louis City carve-out.
+
+    St. Louis is an independent city (FIPS 29510), separate from St. Louis County. The
+    screener's ZIP map stores it as "St. Louis City", and the base normalizer's blanket
+    "_COUNTY" insert produces a token PolicyEngine doesn't define — PE then silently falls
+    back to a default rating area, overstating the ACA PTC benchmark premium rather than
+    raising. These tests pin the correct token so that regression can't return unnoticed.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+
+    def _dep(self, county, zipcode="63101"):
+        screen = Screen.objects.create(
+            white_label=self.white_label, zipcode=zipcode, county=county, household_size=1, completed=False
+        )
+        return household.MoCountyDependency(screen, None, {})
+
+    def test_st_louis_city_omits_county_insert(self):
+        self.assertEqual(self._dep("St. Louis City").value(), "ST_LOUIS_CITY_MO")
+
+    def test_st_louis_county_keeps_county_insert(self):
+        """The county and the independent city are distinct jurisdictions — don't conflate them."""
+        self.assertEqual(self._dep("St. Louis County", zipcode="63105").value(), "ST_LOUIS_COUNTY_MO")
+
+    def test_ordinary_county_uses_base_normalization(self):
+        self.assertEqual(self._dep("Jackson County", zipcode="64108").value(), "JACKSON_COUNTY_MO")
+
+    def test_county_without_suffix_gets_county_insert(self):
+        self.assertEqual(self._dep("Boone", zipcode="65201").value(), "BOONE_COUNTY_MO")
+
+    def test_county_with_period_is_normalized(self):
+        """ "Ste. Genevieve County" -> the period is stripped, not turned into a separator."""
+        self.assertEqual(self._dep("Ste. Genevieve County", zipcode="63670").value(), "STE_GENEVIEVE_COUNTY_MO")
+
+    def test_field_and_dependencies(self):
+        self.assertEqual(household.MoCountyDependency.field, "county_str")
+        self.assertEqual(household.MoCountyDependency.dependencies, ["county"])
 
 
 class TestZipCodeDependency(TestCase):
