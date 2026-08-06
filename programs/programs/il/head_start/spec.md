@@ -169,6 +169,12 @@ This is an estimated annual value of Head Start services, not cash paid to the h
 
 ---
 
+## Notes
+
+Head Start receipt does **not** confer categorical eligibility on any other program we model. The categorical arrow points inward only: SNAP, TANF, SSI, and foster care qualify a child *for* Head Start, but Head Start enrollment does not qualify a household for anything else. PolicyEngine models enrollment as a separate input variable (`is_enrolled_in_head_start`) that we do not send, and it has no formula linking it to the `head_start` eligibility this program computes.
+
+---
+
 ## Program Configuration
 
 File: `programs/management/commands/import_program_config_data/data/il_head_start_initial_config.json`
