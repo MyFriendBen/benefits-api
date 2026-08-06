@@ -213,9 +213,6 @@ class ConfigurationData:
             },
             "unemployment": {"_label": "incomeOptions.unemployment", "_default_message": "Unemployment Benefits"},
             "cashAssistance": {"_label": "incomeOptions.cashAssistance", "_default_message": "Cash Assistance Grant"},
-            # SNAP and WIC are collected here so the reported dollar amount is available to
-            # send to PolicyEngine as the snap/wic input. They are NOT countable income —
-            # see NON_COUNTABLE_INCOME_TYPES in screener/models.py.
             "snap": {
                 "_label": "incomeOptions.snap",
                 "_default_message": "Supplemental Nutrition Assistance Program (SNAP)",
