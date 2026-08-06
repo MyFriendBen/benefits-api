@@ -194,6 +194,13 @@ for reference.
 > (**Scenario 10**), working 20+ hours/week (**Scenario 19**), federal work-study (**Scenario 20**),
 > or the parent-of-a-dependent-child exemption (**Scenario 21**) (7 CFR 273.5).
 >
+> Each student scenario states **every** student flag explicitly, because the exemptions are what
+> distinguish Scenarios 10, 19 and 20 — their households are otherwise identical (half-time student,
+> $1,200/mo). Send each flag as a real `Yes`/`No`, not omitted: the screener fields are nullable and
+> `PartTimeCollegeStudentDependency` tests `student_full_time is False`, so an omitted
+> `student_full_time` leaves it `null` and the member never registers as a part-time student — the
+> ineligible-student rule then silently never applies and Scenario 9 wrongly passes as eligible.
+>
 > **Minimum allotment.** **Scenarios 7 and 22** land on the SNAP minimum allotment
 > (**$24/mo, $288/yr** for FY2026) rather than their calculated benefit. See *Benefit Value →
 > Minimum allotment* for the derivation and its fiscal-year sensitivity.
@@ -354,7 +361,7 @@ for reference.
 **Steps**:
 - **Location**: Enter ZIP code `66045`, Select county `Douglas`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `January 2006` (age 20), Relationship: Head of Household, Student status: enrolled in higher education at least half-time, Working: No, No work-study, No job-training program, No dependent child, No disability
+- **Person 1**: Birth month/year: `January 2006` (age 20), Relationship: Head of Household, Student status: enrolled in higher education at least half-time (`student` = Yes, `student_full_time` = **No**), No exemption — `student_works_20_plus_hrs` = **No**, `student_has_work_study` = **No**, `student_job_training_program` = **No**, No dependent child, No disability
 - **Income**: No earned or unearned income, Total gross monthly income: `$0`
 - **Current Benefits**: Not currently receiving SNAP/Food Assistance, Not receiving TANF, Not receiving SSI
 
@@ -371,7 +378,7 @@ for reference.
 **Steps**:
 - **Location**: Enter ZIP code `66045`, Select county `Douglas`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `January 2004` (age 22), Relationship: Head of Household, Student status: enrolled in higher education at least half-time, Enrolled in a job-training program (`student_job_training_program` = Yes), Not working 20+ hrs, No disability
+- **Person 1**: Birth month/year: `January 2004` (age 22), Relationship: Head of Household, Student status: enrolled in higher education at least half-time (`student` = Yes, `student_full_time` = **No**), Exemption — `student_job_training_program` = **Yes**; `student_works_20_plus_hrs` = **No**, `student_has_work_study` = **No**, No disability
 - **Income**: Employment income `$1,200`/month
 - **Current Benefits**: Not currently receiving SNAP/Food Assistance, Not receiving TANF, Not receiving SSI
 
@@ -535,7 +542,7 @@ for reference.
 **Steps**:
 - **Location**: Enter ZIP code `66045`, Select county `Douglas`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `January 2004` (age 22), Relationship: Head of Household, Student status: enrolled in higher education at least half-time, Working 20+ hrs/week, No work-study, No job-training program, No dependent child, No disability
+- **Person 1**: Birth month/year: `January 2004` (age 22), Relationship: Head of Household, Student status: enrolled in higher education at least half-time (`student` = Yes, `student_full_time` = **No**), Exemption — `student_works_20_plus_hrs` = **Yes**; `student_has_work_study` = **No**, `student_job_training_program` = **No**, No dependent child, No disability
 - **Income**: Employment income `$1,200`/month
 - **Current Benefits**: Not currently receiving SNAP/Food Assistance, Not receiving TANF, Not receiving SSI
 
@@ -552,7 +559,7 @@ for reference.
 **Steps**:
 - **Location**: Enter ZIP code `66045`, Select county `Douglas`
 - **Household**: Number of people: `1`
-- **Person 1**: Birth month/year: `January 2004` (age 22), Relationship: Head of Household, Student status: enrolled in higher education at least half-time, Participates in federal work-study, Not working 20+ hrs, No job-training program, No dependent child, No disability
+- **Person 1**: Birth month/year: `January 2004` (age 22), Relationship: Head of Household, Student status: enrolled in higher education at least half-time (`student` = Yes, `student_full_time` = **No**), Exemption — `student_has_work_study` = **Yes**; `student_works_20_plus_hrs` = **No**, `student_job_training_program` = **No**, No dependent child, No disability
 - **Income**: Employment income `$1,200`/month
 - **Current Benefits**: Not currently receiving SNAP/Food Assistance, Not receiving TANF, Not receiving SSI
 
@@ -569,7 +576,7 @@ for reference.
 **Steps**:
 - **Location**: Enter ZIP code `66045`, Select county `Douglas`
 - **Household**: Number of people: `2`
-- **Person 1**: Birth month/year: `January 2000` (age 26), Relationship: Head of Household, Student status: enrolled in higher education full-time, Not married, No work-study, No job-training program, Not working 20+ hrs, No disability
+- **Person 1**: Birth month/year: `January 2000` (age 26), Relationship: Head of Household, Student status: enrolled in higher education full-time (`student` = Yes, `student_full_time` = **Yes**), Not married, Exemption is the dependent child (Person 2) — `student_works_20_plus_hrs` = **No**, `student_has_work_study` = **No**, `student_job_training_program` = **No**, No disability
 - **Person 2**: Birth month/year: `January 2018` (age 8), Relationship: Child, No income
 - **Income**: Employment income (Person 1) `$1,200`/month
 - **Current Benefits**: Not currently receiving SNAP/Food Assistance, Not receiving TANF, Not receiving SSI
@@ -652,4 +659,5 @@ Expected values for scenarios 12–14 were computed on `policyengine-us` 1.739.4
 | 2026-06-21 | Discovery QA | Citation fidelity pass — verified every spec citation against live primary sources. Two fixes: criterion 14 (drug felony) `7 U.S.C. § 2015(k)` → `21 U.S.C. § 862a` (2015 covers benefit-trafficking, not the felony ban); criterion 15 (fleeing felon) dropped the unverifiable `7 U.S.C. § 2015(k)`, kept `7 CFR 273.11(n)`. Confirmed `7 CFR 273.11(o)-(p)` is correct for child-support cooperation. All other CFR/USC/KEESM cites verified. |
 | 2026-06-21 | Discovery QA | Ran all eligibility scenarios through PolicyEngine (1.739.4): scenarios 1–10 confirm their eligible/ineligible outcomes, 12–14 confirm committed SUA amounts; scenario 11 (duplicate-benefit) is handled by the `already_has` results-layer workflow (`has_benefit("ks_snap")`), verified by design. Student scenarios are handled by the federal calculator's `is_snap_ineligible_student` dependency, computed from screener fields and passed to PE as an input. |
 | 2026-06-21 | Discovery QA | Added missing criteria: **child support cooperation** (criterion 13 — KS-specific state option mandated under the HOPE Act, verified via Kansas Action for Children / KEESM) and a distinct **general work requirement / work registrant 18–59** (criterion 11, KS HOPE Act 30-hr + mandatory E&T), split from the ABAWD time-limit criterion (12); folded the standalone voluntary-quit item into the general work requirement. Reformatted all test scenarios to match the `wa/snap/spec.md` structure. |
+| 2026-08-06 | Staging QA | Made the student scenarios self-describing: Scenarios 9, 10, 19, 20 and 21 now state **every** student flag explicitly (`student_full_time`, `student_works_20_plus_hrs`, `student_has_work_study`, `student_job_training_program`) rather than naming the exemption only in prose. Scenarios 10/19/20 are otherwise identical households, so without the flags a test run can flatten all three to the same inputs and they pass without discriminating between the exemptions. Added a note that each flag must be sent as a real Yes/No — the fields are nullable and `PartTimeCollegeStudentDependency` tests `student_full_time is False`, so an omitted value leaves it `null`, the member never registers as a part-time student, and Scenario 9 wrongly passes as eligible. |
 | 2026-08-06 | Staging QA | Corrected Scenarios 7 and 22 from $276/yr ($23/mo) to **$288/yr ($24/mo)**. Both are minimum-allotment cases; the spec had assumed a flat $23/mo minimum. The minimum is 8% of the one-person maximum allotment rounded to whole dollars (7 CFR 273.10(e)(2)(ii)(C)) — FY2026: 8% × $298 = $23.84 → $24/mo. Verified against the private PolicyEngine API (model 1.784.3) by querying `snap_min_allotment` across periods: 2026-01 → 24.0, 2025-01 → 23.0, 2022-01 → 20.0. The $23/mo figure was correct under FY2025 parameters ($292 max). Documented the floor in **Benefit Value → Minimum allotment** (derivation, the 1–2 person cap per `min_allotment.maximum_household_size`, and its fiscal-year sensitivity), with pointers from the Test Scenarios preamble and both scenarios. |
