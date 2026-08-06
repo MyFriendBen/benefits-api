@@ -154,22 +154,9 @@ This is an estimated annual value of Head Start services, not cash paid to the h
 
 ---
 
-### Scenario 7: Already Receiving Head Start — Dedup Check
-**What we're checking**: A family already receiving Head Start is not redundantly recommended the same program.
-**Expected**: Not eligible
-
-**Steps**:
-- **Location**: ZIP code `60629`, county `Cook`
-- **Household**: Number of people: `2`
-- **Person 1 (Head of Household)**: Birth month/year `March 1990` (age 36), Relationship `Head of Household`, Has income `Yes`, Employment income `$1,200`/month, Citizenship `U.S. Citizen`
-- **Person 2 (Child)**: Birth month/year `March 2022` (age 4), Relationship `Child`, Has income `No`
-- **Current Benefits**: check `Head Start` only
-
-**Why this matters**: This is an MFB dedup/UX check, not a PE eligibility check. It depends on `show_in_has_benefits_step: true` in the config so "Head Start" is selectable as a current benefit — which is why IL diverges from KS/MO (both `false`) and follows WA (`true`). Verify during QA that the option actually renders on the current-benefits step.
-
----
-
 ## Notes
+
+`show_in_has_benefits_step` is `false`, matching the KS and MO precedent, so "Head Start" is not offered as a selectable current benefit on the has-benefits step. The research draft carried a seventh scenario checking that an existing Head Start recipient isn't redundantly recommended the program; that scenario is dropped because the flag it depended on is off — with the option absent from the step, there is no input by which a household could report current Head Start receipt.
 
 Head Start receipt does **not** confer categorical eligibility on any other program we model. The categorical arrow points inward only: SNAP, TANF, SSI, and foster care qualify a child *for* Head Start, but Head Start enrollment does not qualify a household for anything else. PolicyEngine models enrollment as a separate input variable (`is_enrolled_in_head_start`) that we do not send, and it has no formula linking it to the `head_start` eligibility this program computes.
 

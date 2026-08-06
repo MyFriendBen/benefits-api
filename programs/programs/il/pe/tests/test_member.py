@@ -479,56 +479,28 @@ class TestIlHeadStartWiring(TestCase):
     """
     IlHeadStart is a thin wrapper on the federal ``HeadStart`` PE calculator that
     adds only the IL state code — all eligibility and the per-child value come
-    from PolicyEngine's ``head_start`` variable with no IL-specific variance
-    (mirrors ``KsHeadStart`` / ``TxHeadStart`` / ``MaHeadStart``).
+    from PolicyEngine's ``head_start`` variable with no IL-specific variance.
 
-    The federal ``HeadStart`` dependency logic is covered in
-    ``policyengine/calculators/dependencies/tests/test_member.py``; here we assert
-    only the IL wiring. The spec's dollar-value scenarios ($17,227 per eligible
-    child) are verified against PolicyEngine's IL spending/enrollment parameters —
-    see ``programs/programs/il/head_start/spec.md``.
+    The shared contract every state's Head Start must satisfy (pe_name, pe_outputs,
+    no federal input dropped, exactly one state code matching the slug, no
+    ``member_value`` override) is asserted once for all registered subclasses in
+    ``federal/pe/tests/test_head_start.py``. Only the IL-specific wiring is
+    asserted here.
+
+    The spec's dollar-value scenarios ($17,227 per eligible child) are verified
+    against PolicyEngine's IL spending/enrollment parameters — see
+    ``programs/programs/il/head_start/spec.md``.
     """
 
     def test_is_subclass_of_head_start(self):
         self.assertTrue(issubclass(IlHeadStart, HeadStart))
 
-    def test_is_registered_in_il_member_calculators(self):
-        self.assertIn("il_head_start", il_member_calculators)
-        self.assertEqual(il_member_calculators["il_head_start"], IlHeadStart)
-
-    def test_is_registered_in_il_pe_calculators(self):
-        self.assertIn("il_head_start", il_pe_calculators)
-        self.assertEqual(il_pe_calculators["il_head_start"], IlHeadStart)
-
-    def test_pe_name_is_head_start(self):
-        self.assertEqual(IlHeadStart.pe_name, "head_start")
+    def test_is_registered_as_il_head_start(self):
+        self.assertIs(il_member_calculators["il_head_start"], IlHeadStart)
+        self.assertIs(il_pe_calculators["il_head_start"], IlHeadStart)
 
     def test_pe_inputs_includes_il_state_code(self):
-        """The IL state code is what selects IL's spending/enrollment parameters in PE."""
+        """The IL state code is what selects IL's spending/enrollment parameters in PE,
+        and so what makes the per-child value Illinois' rather than another state's."""
+        self.assertTrue(issubclass(IlHeadStart, HeadStart))
         self.assertIn(IlStateCodeDependency, IlHeadStart.pe_inputs)
-
-    def test_pe_inputs_preserve_federal_head_start_inputs(self):
-        """The IL wrapper only appends the state code; it must not drop any federal input."""
-        for dep in HeadStart.pe_inputs:
-            self.assertIn(dep, IlHeadStart.pe_inputs)
-
-    def test_pe_inputs_include_age_and_foster_pathways(self):
-        """Ages 3-5 (age) and the foster-care categorical pathway per the spec."""
-        self.assertIn(member_dependency.AgeDependency, IlHeadStart.pe_inputs)
-        self.assertIn(member_dependency.FosterCareDependency, IlHeadStart.pe_inputs)
-
-    def test_pe_inputs_include_categorical_benefit_signals(self):
-        """SNAP / TANF / SSI feed PolicyEngine's categorical-eligibility determination."""
-        self.assertIn(member_dependency.Ssi, IlHeadStart.pe_inputs)
-
-    def test_pe_inputs_include_income(self):
-        """Income drives the non-categorical eligibility pathway."""
-        for income_dependency in irs_gross_income:
-            self.assertIn(income_dependency, IlHeadStart.pe_inputs)
-
-    def test_pe_outputs_is_head_start_variable(self):
-        self.assertEqual(IlHeadStart.pe_outputs, [member_dependency.HeadStart])
-
-    def test_does_not_reuse_early_head_start_variable(self):
-        """Head Start must resolve PE's ``head_start`` variable, not ``early_head_start``."""
-        self.assertNotEqual(IlHeadStart.pe_name, "early_head_start")
