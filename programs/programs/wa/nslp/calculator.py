@@ -139,7 +139,7 @@ class WaNslp(ProgramCalculator):
 
         # Categorical eligibility: the household receives a qualifying benefit, or a
         # school-age foster child is present (a foster child is categorically eligible).
-        categorical = any(self.screen.has_benefit(program) for program in self.presumptive_eligibility) or any(
+        categorical = self.screen.has_benefit_from_list(self.presumptive_eligibility) or any(
             m.relationship == "fosterChild" and self._is_school_meal_proxy_student(m)
             for m in self.screen.household_members.all()
         )

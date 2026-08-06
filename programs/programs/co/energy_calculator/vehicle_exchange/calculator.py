@@ -11,16 +11,33 @@ class EnergyCalculatorVehicleExchange(ProgramCalculator):
     amount = 4_000
     min_age = 18
     ami_percent = "80%"
-    presumptive_eligibility = ["co_care", "cowap", "rtdlive", "cesn_section_8", "ssdi", "wic", "leap", "snap", "ssi"]
+    # CESN program (see cesn_calculators), so CESN's own names are what the join table can
+    # hold — the previous CO names (co_care, cowap, rtdlive, leap) match nothing on a CESN
+    # screen. has_benefit_from_list takes each entry as either an exact name or a
+    # base_program group, so both kinds can sit in one list.
+    #
+    # cesn_care / cesn_rtdlive / cesn_section_8 are reportable (show_in_has_benefits_step).
+    # liheap / wap are the base_program groups for cesn_leap / cesn_cowap, which are not
+    # reportable — CESN's category_benefits offers "leap" and "cowap", names that match no
+    # CESN program and are dropped on write, so those two legs stay False until that config
+    # gap is fixed (tracked separately).
+    presumptive_eligibility = [
+        "cesn_care",
+        "cesn_rtdlive",
+        "cesn_section_8",
+        "liheap",
+        "wap",
+        "ssdi",
+        "wic",
+        "snap",
+        "ssi",
+    ]
     calculated_presumptive_eligibility = ["cesn_care", "cesn_cowap"]
     dependencies = ["age", "income_frequency", "income_amount", "energy_calculator"]
 
     def household_eligible(self, e: Eligibility):
         # presumptive eligibility
-        has_benefit = False
-        for benefit in self.presumptive_eligibility:
-            if self.screen.has_benefit(benefit):
-                has_benefit = True
+        has_benefit = self.screen.has_benefit_from_list(self.presumptive_eligibility)
 
         for program in self.calculated_presumptive_eligibility:
             entry = self.data.get(program)
