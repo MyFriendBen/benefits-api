@@ -217,6 +217,60 @@ class TestCountyDependency(TestCase):
             dep.value()
         self.assertIn("must define state_dependency_class", str(context.exception))
 
+    # --- independent_cities (county-equivalents PE names without the "_COUNTY" insert) ---
+
+    def test_independent_cities_defaults_to_empty(self):
+        """Opt-in: states that don't set it keep the blanket "_COUNTY" behavior."""
+        self.assertEqual(household.CountyDependency.independent_cities, ())
+
+    def test_states_that_do_not_opt_in_are_unaffected(self):
+        for dependency_class in (
+            household.NcCountyDependency,
+            household.IlCountyDependency,
+            household.MaCountyDependency,
+            household.TxCountyDependency,
+            household.KsCountyDependency,
+        ):
+            with self.subTest(dependency_class=dependency_class.__name__):
+                self.assertEqual(dependency_class.independent_cities, ())
+
+    def test_independent_city_omits_county_insert(self):
+        """A token listed in independent_cities gets the state suffix and nothing else."""
+
+        class FakeCountyDependency(household.CountyDependency):
+            state_dependency_class = household.TxStateCodeDependency
+            independent_cities = ("CARSON_CITY",)
+
+        screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="89701", county="Carson City", household_size=1, completed=False
+        )
+        self.assertEqual(FakeCountyDependency(screen, None, {}).value(), "CARSON_CITY_TX")
+
+    def test_independent_cities_matches_after_normalization_not_before(self):
+        """The list holds normalized tokens, so punctuation and casing in the screener
+        string still match — "st. louis  city" must hit the same entry as "St. Louis City"."""
+
+        class FakeCountyDependency(household.CountyDependency):
+            state_dependency_class = household.TxStateCodeDependency
+            independent_cities = ("ST_LOUIS_CITY",)
+
+        screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="63101", county="st. louis  city", household_size=1, completed=False
+        )
+        self.assertEqual(FakeCountyDependency(screen, None, {}).value(), "ST_LOUIS_CITY_TX")
+
+    def test_non_listed_county_still_gets_county_insert(self):
+        """An opted-in subclass only special-cases what it lists — everything else is normal."""
+
+        class FakeCountyDependency(household.CountyDependency):
+            state_dependency_class = household.TxStateCodeDependency
+            independent_cities = ("ST_LOUIS_CITY",)
+
+        screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="78701", county="Travis", household_size=1, completed=False
+        )
+        self.assertEqual(FakeCountyDependency(screen, None, {}).value(), "TRAVIS_COUNTY_TX")
+
 
 class TestMoCountyDependency(TestCase):
     """
