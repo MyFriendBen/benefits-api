@@ -56,3 +56,39 @@ class TestQualifyingRelativeUnitSplitting(TestCase):
         self.assertIn(SECONDARY_TAX_UNIT, tax_units)
         self.assertIn(str(adult_child.id), tax_units[SECONDARY_TAX_UNIT]["members"])
         self.assertNotIn(str(adult_child.id), tax_units[MAIN_TAX_UNIT]["members"])
+
+    def test_unrelated_student_roommate_is_not_in_main_tax_unit(self):
+        """Path 1 regression: unrelated student roommate should remain outside main tax unit."""
+        roommate = HouseholdMember.objects.create(screen=self.screen, relationship="roommate", age=22, student=True)
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=roommate,
+            type="wages",
+            amount=3_000,
+            frequency="yearly",
+        )
+
+        result = pe_input(self.screen, [self.calc_class])
+        tax_units = result["household"]["tax_units"]
+
+        self.assertIn(SECONDARY_TAX_UNIT, tax_units)
+        self.assertIn(str(roommate.id), tax_units[SECONDARY_TAX_UNIT]["members"])
+        self.assertNotIn(str(roommate.id), tax_units[MAIN_TAX_UNIT]["members"])
+
+    def test_low_income_unrelated_housemate_is_not_in_main_tax_unit(self):
+        """Path 2 regression: low-income unrelated member should not be treated as dependent."""
+        housemate = HouseholdMember.objects.create(screen=self.screen, relationship="boyfriendOrGirlfriend", age=30)
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=housemate,
+            type="wages",
+            amount=1_000,
+            frequency="yearly",
+        )
+
+        result = pe_input(self.screen, [self.calc_class])
+        tax_units = result["household"]["tax_units"]
+
+        self.assertIn(SECONDARY_TAX_UNIT, tax_units)
+        self.assertIn(str(housemate.id), tax_units[SECONDARY_TAX_UNIT]["members"])
+        self.assertNotIn(str(housemate.id), tax_units[MAIN_TAX_UNIT]["members"])

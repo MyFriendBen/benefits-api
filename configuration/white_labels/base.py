@@ -143,7 +143,10 @@ class ConfigurationData:
         },
         "domesticPartner": {"_label": "relationshipOptions.domesticPartner", "_default_message": "Domestic Partner"},
         "roommate": {"_label": "relationshipOptions.roommate", "_default_message": "Roommate"},
-        "relatedOther": {"_label": "relationshipOptions.relatedOther", "_default_message": "Related in some other way"},
+        "relatedOther": {
+            "_label": "relationshipOptions.relatedOther",
+            "_default_message": "Other relative (aunt, uncle, cousin, in-law, etc.)",
+        },
     }
 
     # Languages available for translation (add/remove as needed for your state)
