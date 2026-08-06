@@ -1,0 +1,68 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "program_category": {
+    "external_name": "mo_food",
+    "name": "Food and Nutrition",
+    "icon": "food"
+  },
+  "program": {
+    "name_abbreviated": "mo_wic",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission",
+      "non_citizen"
+    ],
+    "name": "Women, Infants, and Children (WIC)",
+    "description": "WIC gives free healthy food and nutrition support. It helps pregnant and breastfeeding women, new moms, babies, and children under age 5.\n\nYou'll get a WIC card to buy approved foods like milk, eggs, fruits, and vegetables. WIC also offers nutrition education, breastfeeding support, and referrals to health care.\n\nWIC requires a nutrition need. We can't check this for you, but WIC staff will check it during your certification appointment.\n\nTo get started, submit the online interest form. A local WIC agency will contact you to schedule your certification appointment.",
+    "description_short": "Free healthy food for moms, babies, and young kids",
+    "learn_more_link": "https://health.mo.gov/living/families/wic/",
+    "apply_button_link": "https://moexperience.qualtrics.com/jfe/form/SV_9yOkwmd0Zv93emO",
+    "apply_button_description": "Submit Interest Form",
+    "estimated_application_time": "5 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "website_description": "Free healthy food for moms, babies, and young kids",
+    "value_type": "benefit",
+    "value_format": null,
+    "has_calculator": true,
+    "show_on_current_benefits": true,
+    "show_in_has_benefits_step": false,
+    "base_program": "wic"
+  },
+  "documents": [
+    {
+      "external_name": "mo_id_proof",
+      "text": "Proof of identity (ex: photo ID for adults; birth certificate for children)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_home",
+      "text": "Proof of Missouri residency (ex: utility bill, rent or mortgage receipt, voter registration card, or pay stub with your address)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_earned_income",
+      "text": "Proof of income from the last 30 days (not needed if you get SNAP, Temporary Assistance, or qualifying MO HealthNet)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "mo_tellink",
+      "name": "TEL-LINK",
+      "phone_number": "+18008355465",
+      "email": "TEL-LINK@health.mo.gov",
+      "assistance_link": "https://health.mo.gov/living/families/tellink/",
+      "description": "TEL-LINK provides confidential information and referrals for maternal and child health services. Call or text to find your closest WIC provider."
+    }
+  ]
+}

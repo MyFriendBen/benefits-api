@@ -29,7 +29,6 @@
     "estimated_delivery_time": "About 21 days after e-filing; EITC refunds may be held until mid-February",
     "estimated_value": "",
     "value_format": "estimated_annual",
-    "value_type": "tax_credit",
     "website_description": "Tax credit for workers with low to moderate income",
     "base_program": "eitc",
     "show_on_current_benefits": true,

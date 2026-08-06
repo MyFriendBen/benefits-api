@@ -29,7 +29,6 @@
     "estimated_delivery_time": "About 21 days after e-filing",
     "estimated_value": "",
     "value_format": "estimated_annual",
-    "value_type": "tax_credit",
     "website_description": "Federal tax credit for families with children or other dependents",
     "base_program": "ctc",
     "show_on_current_benefits": true,

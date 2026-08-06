@@ -93,8 +93,7 @@ def _build_context(screen: Screen) -> dict:
             program = {
                 "external_name": p.name_abbreviated,
                 "name": p.name,
-                # Whole dollars. Frequency is governed by value_type; see the
-                # API contract's open question on units.
+                # Whole dollars.
                 "estimated_value": int(p.estimated_value) if p.estimated_value is not None else None,
                 "estimated_application_time": p.estimated_application_time,
             }

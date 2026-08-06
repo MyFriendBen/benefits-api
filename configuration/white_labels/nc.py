@@ -2585,7 +2585,10 @@ class NcConfigurationData(ConfigurationData):
         },
     }
 
+    # Inherit base referrer_data (favicon, uiOptions, etc.) and override only the
+    # keys NC customizes. NC keeps its own noResultMessage (noResultMessage.nc key).
     referrer_data = {
+        **ConfigurationData.referrer_data,
         "theme": {"default": "default", "211nc": "twoOneOneNC", "lanc": "nc_lanc", "ccla": "nc_ccla"},
         "logoSource": {
             "default": "MFB_NCLogo",
@@ -2676,6 +2679,18 @@ class NcConfigurationData(ConfigurationData):
     feedback_links = {
         "survey": "https://airtable.com/app8EC0NO7FrnAMlP/pagiU2dMjYRofDxEn/form",
         "email": "myfriendben@codethedream.org",
+    }
+
+    results_survey = {
+        "link": "https://unxld498dnz.typeform.com/to/UGxcaziD",
+        "intro": {
+            "_label": "resultsSurvey.intro",
+            "_default_message": "Help us improve MyFriendBen — tell us about your experience.",
+        },
+        "button": {
+            "_label": "resultsSurvey.button",
+            "_default_message": "Share your feedback",
+        },
     }
 
     override_text = {}

@@ -28,7 +28,6 @@
     "estimated_delivery_time": "45 days",
     "estimated_value": "",
     "value_format": null,
-    "value_type": "benefit",
     "website_description": "Free or low-cost health coverage for Washington residents",
     "base_program": "medicaid",
     "show_on_current_benefits": true,

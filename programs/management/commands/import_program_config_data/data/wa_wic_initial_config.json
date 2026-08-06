@@ -18,7 +18,6 @@
         "estimated_delivery_time": "",
         "estimated_value": "",
         "value_format": null,
-        "value_type": "benefit",
         "website_description": "WIC provides healthy food and nutrition support for pregnant people, new parents, and children under age five",
         "show_on_current_benefits": true,
         "has_calculator": true,

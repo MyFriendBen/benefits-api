@@ -29,7 +29,6 @@
     "estimated_delivery_time": "",
     "estimated_value": "",
     "value_format": "estimated_annual",
-    "value_type": "benefit",
     "website_description": "Free or low-cost school lunches for kids",
     "base_program": "nslp",
     "show_on_current_benefits": true,

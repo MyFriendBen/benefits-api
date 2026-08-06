@@ -4,6 +4,7 @@ from .co import CoConfigurationData
 from .il import IlConfigurationData
 from .ks import KsConfigurationData
 from .ma import MaConfigurationData
+from .mo import MoConfigurationData
 from .nc import NcConfigurationData
 from .tx import TxConfigurationData
 from .wa import WaConfigurationData
@@ -18,6 +19,7 @@ white_label_config: dict[str, ConfigurationData] = {
     "il": IlConfigurationData,
     "ks": KsConfigurationData,
     "ma": MaConfigurationData,
+    "mo": MoConfigurationData,
     "nc": NcConfigurationData,
     "tx": TxConfigurationData,
     "wa": WaConfigurationData,

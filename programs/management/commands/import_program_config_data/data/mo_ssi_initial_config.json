@@ -1,0 +1,128 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "program_category": {
+    "external_name": "mo_cash",
+    "name": "Cash Assistance",
+    "icon": "cash"
+  },
+  "program": {
+    "name_abbreviated": "mo_ssi",
+    "year": "2026",
+    "base_program": "ssi",
+    "legal_status_required": [
+      "citizen",
+      "refugee",
+      "gc_5plus"
+    ],
+    "name": "Supplemental Security Income (SSI)",
+    "description": "Supplemental Security Income (SSI) gives monthly cash payments. It helps older adults and people who are blind or have a disability.\n\nYour monthly payment depends on your income, living situation, and other factors. You can use the money for food, clothing, housing, and other basic needs.\n\nSSI has a resource limit. Resources include cash and money in bank accounts. Some things you own do not count. Social Security checks your resources when you apply. Living in some institutions may also affect your SSI payment.\n\nClick 'Apply Now' to start your SSI application with Social Security. You can also apply by phone by calling 1-800-772-1213.",
+    "description_short": "Monthly cash help for older adults and people who are blind or have a disability",
+    "learn_more_link": "https://www.ssa.gov/ssi",
+    "apply_button_link": "https://www.ssa.gov/apply/ssi",
+    "apply_button_description": "",
+    "estimated_application_time": "30 - 60 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": null,
+    "website_description": "Monthly cash help for older adults and people who are blind or have a disability",
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true,
+    "show_in_has_benefits_step": true,
+    "has_calculator": true
+  },
+  "warning_messages": [
+    {
+      "external_name": "mo_ssi_ssdi_interaction",
+      "calculator": "_show",
+      "message": "If you get SSDI, the amount of your SSI payment may be lower. In some cases, you may not get SSI if you also get SSDI."
+    },
+    {
+      "external_name": "mo_ssi_approval_time",
+      "calculator": "_show",
+      "message": "If you apply based on a disability, the first decision usually takes 6 to 8 months. If Social Security denies your application, you can appeal the decision."
+    }
+  ],
+  "documents": [
+    {
+      "external_name": "mo_id_proof",
+      "text": "Proof of identity, if requested (such as a driver's license or state ID)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_ssn",
+      "text": "Social Security card or number",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_ssi_age",
+      "text": "Proof of age (birth certificate or other birth record)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_home",
+      "text": "Lease, rent receipt, and household cost information",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_earned_income",
+      "text": "Proof of work income (pay stubs or tax return)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_unearned_income",
+      "text": "Proof of other income (award letters, bank statements, or court orders)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_us_status",
+      "text": "Proof of citizenship or immigration status",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_ssi_resources",
+      "text": "Bank statements and records of property or other resources",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_ssi_medical",
+      "text": "Medical records, provider contacts, and medicines (for disability or blindness claims)",
+      "link_url": "https://www.ssa.gov/disability/disability_starter_kits.htm",
+      "link_text": "View disability checklist"
+    },
+    {
+      "external_name": "mo_ssi_work_history",
+      "text": "Work history (for disability claims)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_ssi_school_records",
+      "text": "School records or IEP (for child disability claims)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "mo_whole_person",
+      "name": "The Whole Person",
+      "email": "hello@thewholeperson.org",
+      "phone_number": "+18165610304",
+      "description": "The Whole Person helps people with disabilities apply for SSI or SSDI. Staff can help gather documents, communicate with Social Security, and prepare appeals.",
+      "assistance_link": "https://thewholeperson.org/support-services/",
+      "counties": ["Cass", "Clay", "Jackson", "Platte", "Andrew", "Atchison", "Buchanan", "Clinton", "DeKalb", "Gentry", "Holt", "Nodaway", "Worth"],
+      "languages": []
+    }
+  ]
+}

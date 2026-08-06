@@ -1,0 +1,106 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "program_category": {
+    "external_name": "mo_tax",
+    "name": "Tax Credits",
+    "icon": "tax_credit",
+    "tax_category": true
+  },
+  "program": {
+    "name_abbreviated": "mo_ctc",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "refugee",
+      "gc_5plus",
+      "gc_5less",
+      "otherWithWorkPermission"
+    ],
+    "name": "Federal Child Tax Credit (CTC)",
+    "description_short": "A federal tax credit for families with qualifying children",
+    "description": "The Child Tax Credit lowers the amount you owe on your federal taxes. You can claim one credit for each qualifying child in your household.\n\nYou claim the credit when you file your federal tax return. Some families may get part of the credit as a refund.\n\nChildren claimed for this credit must be U.S. citizens, nationals, or residents, and they need Social Security numbers valid for work. If you file on your own, you need a Social Security number valid for work. If you file jointly, one of you needs a Social Security number valid for work, and the other can use a Social Security number or an ITIN. Every Social Security number and ITIN used for this credit must be issued by the date your return is due, including extensions.\n\nTo claim this credit, click \"File for free\" to file your federal tax return at no cost.",
+    "learn_more_link": "https://www.irs.gov/credits-deductions/individuals/child-tax-credit",
+    "apply_button_link": "https://www.irs.gov/filing/free-file-do-your-federal-taxes-for-free",
+    "apply_button_description": "File for free",
+    "estimated_application_time": "45 minutes",
+    "estimated_delivery_time": "21 days after e-filing",
+    "estimated_value": "",
+    "value_format": "estimated_annual",
+    "website_description": "A federal tax credit for families with qualifying children",
+    "base_program": "ctc",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": [
+    {
+      "external_name": "mo_ctc_ssn",
+      "text": "Social Security cards for you and each qualifying child; if filing jointly, your spouse's Social Security card or ITIN letter",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_id_proof",
+      "text": "Proof of identity (ex: driver's license, state ID, passport)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_ctc_w2",
+      "text": "Form W-2 for all household members in tax unit",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_ctc_1099",
+      "text": "1099 for all household members in tax unit",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_ctc_prior_year_return",
+      "text": "Last year's federal tax return or prior-year adjusted gross income, if you filed before",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_ctc_schedule_8812",
+      "text": "Schedule 8812 (Credits for Qualifying Children and Other Dependents)",
+      "link_url": "https://www.irs.gov/forms-pubs/about-schedule-8812-form-1040",
+      "link_text": "View Schedule 8812 on IRS.gov"
+    },
+    {
+      "external_name": "mo_ctc_form_1040",
+      "text": "Form 1040 (U.S. Individual Income Tax Return)",
+      "link_url": "https://www.irs.gov/forms-pubs/about-form-1040",
+      "link_text": "View Form 1040 on IRS.gov"
+    },
+    {
+      "external_name": "mo_ctc_form_8862",
+      "text": "Form 8862, if the IRS previously reduced or denied your Child Tax Credit for a reason other than a math or clerical error",
+      "link_url": "https://www.irs.gov/forms-pubs/about-form-8862",
+      "link_text": "View Form 8862 on IRS.gov"
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "mo_ctc_vita_free_tax_prep",
+      "name": "VITA Free Tax Preparation (IRS Volunteer Income Tax Assistance)",
+      "phone_number": "+18009069887",
+      "email": "",
+      "assistance_link": "https://freetaxassistance.for.irs.gov/s/sitelocator",
+      "description": "Free tax preparation help for people who earn low to moderate income. Trained volunteers can help you file your federal return and claim the tax credits you qualify for, including the CTC."
+    },
+    {
+      "external_name": "mo_ctc_aarp_tax_aide",
+      "name": "AARP Foundation Tax-Aide",
+      "phone_number": "+18882277669",
+      "email": "taxaide@aarp.org",
+      "assistance_link": "https://www.aarp.org/money/taxes/aarp-taxaide/",
+      "description": "AARP Foundation Tax-Aide provides free federal tax preparation help at sites across Missouri. Volunteers can help you claim the CTC on your federal return. No AARP membership required. Use the site locator to find an appointment near you."
+    }
+  ]
+}

@@ -13,7 +13,8 @@ from screener.models import Screen, HouseholdMember, WhiteLabel, Expense, Income
 from programs.programs.policyengine.policy_engine import pe_input
 from programs.programs.tx.pe.spm import TxSnap, TxLifeline, TxTanf
 from programs.programs.tx.pe.member import TxWic, TxSsi, TxCsfp, TxChip
-from programs.programs.tx.pe.tax import TxEitc, TxCtc, TxAca
+from programs.programs.federal.pe.tax import Eitc
+from programs.programs.tx.pe.tax import TxAca
 from programs.programs.policyengine.calculators.constants import (
     MAIN_TAX_UNIT,
     SECONDARY_TAX_UNIT,
@@ -468,11 +469,15 @@ class TestTxChipPeInput(TxPeInputTestBase):
 
 
 class TestTxEitcPeInput(TxPeInputTestBase):
-    """Tests for TxEitc calculator pe_input dependencies."""
+    """Tests for the tx_eitc calculator's pe_input dependencies.
+
+    tx_eitc is the shared federal ``Eitc`` class, so this exercises the federal
+    calculator against a TX screen.
+    """
 
     def test_includes_all_pe_input_fields(self):
-        """Test that pe_input includes all TxEitc pe_inputs dependencies."""
-        result = pe_input(self.screen, [TxEitc])
+        """Test that pe_input includes all Eitc pe_inputs dependencies."""
+        result = pe_input(self.screen, [Eitc])
         household = result["household"]
         tax_units = household["tax_units"]
         people = household["people"]
@@ -501,8 +506,8 @@ class TestTxEitcPeInput(TxPeInputTestBase):
             self.assertIn(field, people[head_id])
 
     def test_includes_pe_output_field(self):
-        """Test that pe_input includes TxEitc pe_outputs."""
-        result = pe_input(self.screen, [TxEitc])
+        """Test that pe_input includes Eitc pe_outputs."""
+        result = pe_input(self.screen, [Eitc])
         tax_units = result["household"]["tax_units"]
 
         self.assertIn(MAIN_TAX_UNIT, tax_units)
@@ -510,7 +515,7 @@ class TestTxEitcPeInput(TxPeInputTestBase):
 
     def test_tax_unit_relationships_are_correct(self):
         """Test that tax unit relationships are correctly set."""
-        result = pe_input(self.screen, [TxEitc])
+        result = pe_input(self.screen, [Eitc])
         people = result["household"]["people"]
 
         spouse_id = str(self.spouse.id)
@@ -525,7 +530,7 @@ class TestTxEitcPeInput(TxPeInputTestBase):
             self.assertTrue(people[child_id]["is_tax_unit_dependent"][period_key])
 
     def test_with_single_parent(self):
-        """Test that TxEitc handles single parent households correctly."""
+        """Test that Eitc handles single parent households correctly."""
         single_parent_screen = Screen.objects.create(
             white_label=self.white_label,
             zipcode="78701",
@@ -551,41 +556,12 @@ class TestTxEitcPeInput(TxPeInputTestBase):
             age=3,
         )
 
-        result = pe_input(single_parent_screen, [TxEitc])
+        result = pe_input(single_parent_screen, [Eitc])
         tax_units = result["household"]["tax_units"]
 
         self.assertIn(MAIN_TAX_UNIT, tax_units)
         self.assertIn(str(single_parent.id), tax_units[MAIN_TAX_UNIT]["members"])
         self.assertIn(str(child.id), tax_units[MAIN_TAX_UNIT]["members"])
-
-
-class TestTxCtcPeInput(TxPeInputTestBase):
-    """Tests for TxCtc calculator pe_input dependencies."""
-
-    def test_populates_tax_unit_fields(self):
-        """Test that TxCtc populates tax unit and member fields correctly."""
-        result = pe_input(self.screen, [TxCtc])
-        household = result["household"]
-        people = household["people"]
-        tax_units = household["tax_units"]
-
-        # Tax unit structure exists
-        self.assertIn(MAIN_TAX_UNIT, tax_units)
-        main_tax_unit = tax_units[MAIN_TAX_UNIT]
-
-        # All members in tax unit
-        self.assertIn(str(self.head.id), main_tax_unit["members"])
-        self.assertIn(str(self.spouse.id), main_tax_unit["members"])
-        self.assertIn(str(self.child.id), main_tax_unit["members"])
-
-        # CTC output field
-        self.assertIn("ctc_value", main_tax_unit)
-
-        # Member fields
-        head_id = str(self.head.id)
-        self.assertIn("age", people[head_id])
-        self.assertIn("is_tax_unit_dependent", people[head_id])
-        self.assertIn("employment_income", people[head_id])
 
 
 class TestTxAcaPeInput(TxPeInputTestBase):
@@ -676,13 +652,13 @@ class TestTxCombinedCalculatorsPeInput(TxPeInputTestBase):
         self.assertIn("snap", spm_unit)
 
     def test_eitc_and_snap_combined(self):
-        """Test that pe_input handles both TxEitc and TxSnap together."""
-        result = pe_input(self.screen, [TxEitc, TxSnap])
+        """Test that pe_input handles both Eitc and TxSnap together."""
+        result = pe_input(self.screen, [Eitc, TxSnap])
         household = result["household"]
         spm_unit = household["spm_units"]["spm_unit"]
         tax_units = household["tax_units"]
 
-        # TxEitc fields
+        # Eitc fields
         self.assertIn(MAIN_TAX_UNIT, tax_units)
         self.assertIn("eitc", tax_units[MAIN_TAX_UNIT])
 
@@ -733,7 +709,7 @@ class TestTxCombinedCalculatorsPeInput(TxPeInputTestBase):
 
     def test_all_state_codes_match(self):
         """Test that state_code is TX regardless of which calculator is used."""
-        calculators = [TxSnap, TxWic, TxEitc, TxSsi, TxTanf, TxChip, TxAca]
+        calculators = [TxSnap, TxWic, Eitc, TxSsi, TxTanf, TxChip, TxAca]
 
         for calc in calculators:
             result = pe_input(self.screen, [calc])

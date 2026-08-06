@@ -27,7 +27,6 @@
     "estimated_delivery_time": "45 - 90 days",
     "estimated_value": "",
     "value_format": "estimated_annual",
-    "value_type": "benefit",
     "website_description": "Free or low-cost health coverage for eligible Kansans",
     "base_program": "medicaid",
     "show_on_current_benefits": true,
