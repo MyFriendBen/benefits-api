@@ -141,6 +141,38 @@ class TestCoHeadStartLocation(CountySheetTestCase):
         self.assertEqual(len(e.fail_messages), 1)
 
 
+class TestCoHeadStartMultiCountyZip(CountySheetTestCase):
+    """
+    Most CO zipcodes span several counties, so when `screen.county` is unset the county
+    loop really does iterate. It `break`s on the first county the sheet knows about, so a
+    leading FALSE county rejects the household even when a later one is flagged TRUE.
+    """
+
+    counties = {"Adams County": False, "Denver County": True}
+
+    def test_first_county_flagged_false_rejects_even_though_a_later_one_is_true(self):
+        # 80022 resolves to ["Adams County", "Denver County"]; the loop stops at Adams
+        calc = make_calculator(county=None, zipcode="80022", household_size=1, household_income=0)
+        e = Eligibility()
+        calc.household_eligible(e)
+        self.assertFalse(e.eligible)
+
+    def test_leading_true_county_is_eligible_on_the_same_zipcode(self):
+        with patch.object(CoHeadStart.counties, "fetch", return_value={"Adams County": True, "Denver County": False}):
+            calc = make_calculator(county=None, zipcode="80022", household_size=1, household_income=0)
+            e = Eligibility()
+            calc.household_eligible(e)
+            self.assertTrue(e.eligible)
+
+    def test_a_county_absent_from_the_sheet_does_not_stop_the_loop(self):
+        # Adams is missing from the sheet, so the loop keeps looking and finds Denver
+        with patch.object(CoHeadStart.counties, "fetch", return_value={"Denver County": True}):
+            calc = make_calculator(county=None, zipcode="80022", household_size=1, household_income=0)
+            e = Eligibility()
+            calc.household_eligible(e)
+            self.assertTrue(e.eligible)
+
+
 class TestCoHeadStartEmptyCountySheet(TestCase):
     """A failed sheet fetch degrades to `{}`, which makes everyone ineligible."""
 

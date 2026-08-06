@@ -14,6 +14,8 @@ Notes:
   - `_is_surviving_spouse` is hardcoded to False because the screener has no question
     for it; that is asserted so the stub doesn't get forgotten.
   - The income limits are flat dollar amounts on the calculator, not FPL-derived.
+  - Members are real (unsaved) `HouseholdMember` instances rather than mocks so that
+    `has_disability` is genuinely exercised across all three of its fields.
 """
 
 from unittest.mock import Mock
@@ -24,13 +26,21 @@ from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalcul
 from programs.programs.co import co_calculators
 from programs.programs.co.property_credit_rebate.calculator import PropertyCreditRebate
 from programs.util import Dependencies, DependencyError
+from screener.models import HouseholdMember
 
 
 def make_member(age=70, disabled=False, visually_impaired=False, long_term_disability=False):
-    member = Mock()
-    member.age = age
-    member.has_disability = Mock(return_value=disabled or visually_impaired or long_term_disability)
-    return member
+    """
+    A real, unsaved `HouseholdMember` so that `has_disability` runs for real. Mocking its
+    return value would collapse the three disability fields into one and hide a change to
+    any of them.
+    """
+    return HouseholdMember(
+        age=age,
+        disabled=disabled,
+        visually_impaired=visually_impaired,
+        long_term_disability=long_term_disability,
+    )
 
 
 def make_calculator(
