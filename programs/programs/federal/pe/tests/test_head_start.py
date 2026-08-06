@@ -49,6 +49,16 @@ class TestFederalHeadStart(TestCase):
     def test_is_a_member_calculator(self):
         self.assertTrue(issubclass(HeadStart, PolicyEngineMembersCalculator))
 
+    def test_reads_the_person_level_pe_category(self):
+        """Head Start is valued per child, so the value must be read out of
+        PolicyEngine's ``people`` bucket. A wrong ``pe_category`` looks up the
+        variable in the wrong entity and yields no value at all.
+
+        Asserted here rather than only on the base class because this is the
+        property that makes a *per-child* program work.
+        """
+        self.assertEqual(HeadStart.pe_category, "people")
+
     def test_pe_name_is_head_start(self):
         self.assertEqual(HeadStart.pe_name, "head_start")
 
@@ -91,6 +101,9 @@ class TestFederalEarlyHeadStart(TestCase):
 
     def test_is_a_member_calculator(self):
         self.assertTrue(issubclass(EarlyHeadStart, PolicyEngineMembersCalculator))
+
+    def test_reads_the_person_level_pe_category(self):
+        self.assertEqual(EarlyHeadStart.pe_category, "people")
 
     def test_pe_name_is_early_head_start(self):
         self.assertEqual(EarlyHeadStart.pe_name, "early_head_start")
@@ -162,6 +175,12 @@ class TestRegisteredHeadStartSubclassContract(TestCase):
         for slug in self.early_head_start:
             self.assertTrue(slug.endswith("early_head_start"), f"{slug} resolves EarlyHeadStart")
 
+    def test_pe_category_is_inherited_unchanged(self):
+        """Every state reads its per-child value from the ``people`` bucket."""
+        for slug, calc in self.all.items():
+            with self.subTest(slug=slug):
+                self.assertEqual(calc.pe_category, "people")
+
     def test_pe_name_is_inherited_unchanged(self):
         for slug, calc in self.head_start.items():
             with self.subTest(slug=slug):
@@ -205,6 +224,23 @@ class TestRegisteredHeadStartSubclassContract(TestCase):
         for slug, calc in self.all.items():
             with self.subTest(slug=slug):
                 self.assertEqual(_state_codes(calc)[0].state.lower(), slug.split("_", 1)[0])
+
+    def test_adds_nothing_beyond_the_state_code(self):
+        """A subclass's inputs are exactly the federal set plus its state code. An
+        extra input is either dead weight PolicyEngine ignores or a sign the state is
+        modelling variance the ``Fed (value varies)`` tier says does not exist.
+
+        Expressed as a set difference rather than a hardcoded count so that adding a
+        federal input updates every state at once instead of failing N state tests.
+        """
+        for slug, calc in self.head_start.items():
+            with self.subTest(slug=slug):
+                extra = set(calc.pe_inputs) - set(HeadStart.pe_inputs) - set(_state_codes(calc))
+                self.assertEqual(extra, set(), f"{slug} adds {[d.__name__ for d in extra]}")
+        for slug, calc in self.early_head_start.items():
+            with self.subTest(slug=slug):
+                extra = set(calc.pe_inputs) - set(EarlyHeadStart.pe_inputs) - set(_state_codes(calc))
+                self.assertEqual(extra, set(), f"{slug} adds {[d.__name__ for d in extra]}")
 
     def test_no_subclass_overrides_member_value(self):
         """The value is PolicyEngine's per-child figure, taken as-is. A state
