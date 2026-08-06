@@ -6,6 +6,11 @@ subject. A program's own spec-scenario tests live next to the program
 (``programs/programs/{state}/{program}/tests/``), not here.
 
 If this test fails to replay, the harness is broken; see docs/TESTING.md.
+
+One caveat when it *does* fail: the subject is a real calculator, ``TxHeadStart``, which
+inherits its inputs from the federal ``HeadStart``. Adding an input there changes the request
+body and so breaks this test with a body mismatch — that is a signal about the calculator
+change, not about the harness. Re-record after reviewing the new body.
 """
 
 import pytest
@@ -24,7 +29,9 @@ from .spec_scenarios import (
 
 @pytest.mark.integration
 class TestPeSpecScenarioHarness(PeSpecScenarioTestCase):
-    pe_version = "1.779.3"
+    # A version PolicyEngine currently serves, so this cassette can actually be re-recorded.
+    # PE no longer serves 1.779.3; the value is unchanged at 1.784.3.
+    pe_version = "1.784.3"
 
     def test_replays_a_member_level_program_from_a_cassette(self):
         """One household, one POST, one cassette: a 3-year-old under the income limit.

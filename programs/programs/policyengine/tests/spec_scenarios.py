@@ -19,16 +19,22 @@ three are handled here:
    ``pin_pe_version`` removes both.
 3. **A bearer token that isn't fetched during replay.** The auth0 host is in VCR's
    ``ignore_hosts`` so the token exchange is never written to a cassette (its response body
-   is a real token). Recording fetches one live; replay seeds a placeholder.
+   is a real token). ``PE_RECORD=1`` fetches one live; every other run seeds a placeholder
+   and touches no network at all.
 
 These helpers run exactly one POST to household.api per scenario, which is what makes a
 cassette hold a single meaningful interaction.
+
+A pinned version and ``VCR_MODE=all`` are incompatible by construction — PolicyEngine only
+serves what ``current``/``frontier`` currently resolve to — so these tests skip under ``all``
+rather than fail a release. Re-recording is always also the act of adopting a new version.
 """
 
 import math
 import os
 from typing import Optional
 
+import pytest
 from decouple import config
 from django.test import TestCase
 from django.utils import timezone
@@ -46,10 +52,24 @@ from ..policy_engine import pe_input
 # regardless of the token, and conftest redacts the Authorization header from cassettes.
 TEST_PE_TOKEN = "pe-spec-scenario-token"
 
+# Env var that opts a run in to recording. Recording is explicit rather than inferred from
+# VCR_MODE: the default mode ("once") only records when the cassette file is missing, so the
+# mode alone can't tell us whether this run needs a real token.
+PE_RECORD_ENV_VAR = "PE_RECORD"
+_TRUTHY = ("1", "true", "yes")
+
 
 def _can_record() -> bool:
-    """Whether this run may need a real token: credentials configured and a record mode
-    that can actually write. ``VCR_MODE=none`` never records, so it never needs one."""
+    """Whether this run intends to record live, and so needs a real bearer token.
+
+    Opt-in via ``PE_RECORD=1``. Without it an ordinary replay run never touches auth0 — which
+    matters because ``ignore_hosts`` lets the token exchange through to the network, so
+    inferring "might record" from the presence of credentials made every local run of a
+    fully-recorded suite fire a live auth call for no benefit.
+    """
+    if os.getenv(PE_RECORD_ENV_VAR, "").lower() not in _TRUTHY:
+        return False
+
     has_credentials = bool(config("POLICY_ENGINE_CLIENT_ID", default="")) and bool(
         config("POLICY_ENGINE_CLIENT_SECRET", default="")
     )
@@ -57,16 +77,29 @@ def _can_record() -> bool:
     return has_credentials and os.getenv("VCR_MODE", "once").lower() != "none"
 
 
+def _forces_live_recording() -> bool:
+    """Whether VCR_MODE makes replay impossible for this run.
+
+    ``all`` never replays, so it re-runs every scenario against live PolicyEngine. That can't
+    work here: these cassettes pin an exact model version, and PolicyEngine serves only what
+    ``current``/``frontier`` currently resolve to — once it promotes past the pin, the same
+    request returns 422 ``unsupported_version``. Refreshing a cassette is therefore a
+    deliberate act (bump ``pe_version``, re-record, review the value diff — see
+    docs/TESTING.md), never something a CI run should attempt on its own.
+    """
+    return os.getenv("VCR_MODE", "once").lower() == "all"
+
+
 def seed_pe_token(token: str = TEST_PE_TOKEN) -> None:
     """Make a bearer token available without recording the auth exchange.
 
-    When recording, leave the cache alone so ``PrivateApiSim`` fetches a real token — the
-    auth0 host is in VCR's ``ignore_hosts``, so that request passes through and is never
-    written to a cassette (its response body is a live token).
+    When recording (``PE_RECORD=1``), leave the cache alone so ``PrivateApiSim`` fetches a real
+    token — the auth0 host is in VCR's ``ignore_hosts``, so that request passes through and is
+    never written to a cassette (its response body is a live token).
 
-    When replaying, seed a placeholder so nothing tries to authenticate at all. The cache is
-    an in-process class attribute on ``PrivateApiSim`` (not the Django cache), so this holds
-    for the rest of the test process.
+    Otherwise seed a placeholder so nothing tries to authenticate at all. The cache is an
+    in-process class attribute on ``PrivateApiSim`` (not the Django cache), so this holds for
+    the rest of the test process.
     """
     if _can_record():
         return
@@ -189,6 +222,17 @@ def calc_pe_program(
     """
     calculator = calculator_class(screen, program, missing_dependencies or Dependencies())
 
+    # The one production step we can't skip silently. calc_pe_eligibility drops a calculator
+    # that can't calc *before* building a payload, so the program never reaches the screener
+    # at all — a scenario asserting on calc() output when can_calc() is False would be
+    # asserting against a path production never takes.
+    if not calculator.can_calc():
+        raise AssertionError(
+            f"{calculator_class.__name__} cannot calc for this screen (missing dependencies), so "
+            "production would omit this program entirely rather than calling PolicyEngine. Assert "
+            "on the program's absence instead of on an Eligibility."
+        )
+
     sim = PrivateApiSim(pe_input(screen, [calculator]))
     calculator.set_engine(sim)
 
@@ -210,9 +254,14 @@ class PeSpecScenarioTestCase(TestCase):
     """Base class for a program's spec-scenario tests.
 
     Subclasses set ``pe_version`` to the version the cassettes were recorded at (keep it in
-    sync with the pinned ``PolicyEngineConfig`` version; changing it means re-recording), and
-    mark the class ``@pytest.mark.integration`` so the VCR fixture applies.
+    sync with the pinned ``PolicyEngineConfig`` version; changing it means re-recording).
     """
+
+    # Applies VCR to every subclass. Carried here rather than left to each subclass to
+    # decorate: a class that forgot the marker would get no cassette at all, call PolicyEngine
+    # live on every run, pass locally for anyone with credentials, and fail in CI with a 401
+    # that looks like a program bug. Subclasses may still decorate themselves — marks compose.
+    pytestmark = pytest.mark.integration
 
     # Exact MAJOR.MINOR.PATCH the cassettes in this module were recorded against.
     pe_version: str = ""
@@ -224,6 +273,13 @@ class PeSpecScenarioTestCase(TestCase):
             raise AssertionError(
                 f"{type(self).__name__} must set pe_version to the exact PolicyEngine version "
                 "its cassettes were recorded at."
+            )
+
+        if _forces_live_recording():
+            self.skipTest(
+                f"VCR_MODE=all re-records live, but these cassettes pin PolicyEngine "
+                f"{self.pe_version}, which PolicyEngine stops serving once it promotes past it "
+                "(422 unsupported_version). Refresh cassettes deliberately — see docs/TESTING.md."
             )
 
         pin_pe_version(self.pe_version)

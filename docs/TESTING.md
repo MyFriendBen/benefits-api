@@ -52,7 +52,7 @@ Controlled by the `VCR_MODE` environment variable:
 |------------|----------|----------|-----------|
 | **PRs** (`pr-validation`) | `new_episodes` | **Flexible:** Replays existing interactions. Records new HTTP requests not yet in cassette. | ✅ Yes (only for new HTTP requests) |
 | **Push to main** (`deploy-staging`) | `new_episodes` | Same as PRs. | ✅ Yes (only for new HTTP requests) |
-| **Release** (`deploy-production`) | `all` | **Fresh start:** Never replays. Re-records ALL cassettes from scratch. | ✅ Yes (every test hits the live API) |
+| **Release** (`deploy-production`) | `all` | **Fresh start:** Never replays. Re-records ALL cassettes from scratch. PolicyEngine spec-scenario tests skip (see below). | ✅ Yes (every non-skipped test hits the live API) |
 | **Local (default)** | `once` | **Strict:** Replays existing cassettes. **Errors if test makes new HTTP request not in cassette.** | Only if entire cassette file missing |
 | **Strict playback** | `none` | **Read-only:** Replays only. Never records. Errors on any new HTTP requests. | ❌ No (never records) |
 
@@ -103,7 +103,7 @@ from programs.programs.policyengine.tests.spec_scenarios import (
     screener_value,
 )
 
-@pytest.mark.integration          # applies VCR
+@pytest.mark.integration          # applies VCR (the base class carries this too)
 class TestTxHeadStart(PeSpecScenarioTestCase):
     pe_version = "1.779.3"        # version the cassettes were recorded at
 
@@ -133,7 +133,7 @@ Run these with `pytest`, **not** `manage.py test` — VCR is a pytest fixture, s
 
 ```bash
 # 1. Record (needs POLICY_ENGINE_CLIENT_ID / POLICY_ENGINE_CLIENT_SECRET)
-VCR_MODE=once venv/bin/pytest programs/programs/tx/head_start/tests/ -v
+PE_RECORD=1 VCR_MODE=once venv/bin/pytest programs/programs/tx/head_start/tests/ -v
 
 # 2. Prove it replays with no network
 VCR_MODE=none venv/bin/pytest programs/programs/tx/head_start/tests/ -q
@@ -141,6 +141,8 @@ VCR_MODE=none venv/bin/pytest programs/programs/tx/head_start/tests/ -q
 # 3. Commit the cassettes with the tests
 git add programs/programs/tx/head_start/tests/
 ```
+
+`PE_RECORD=1` is what allows the live auth0 token exchange. Without it every run seeds a placeholder token and touches no network, so an ordinary `pytest` never authenticates even on a machine with PolicyEngine credentials in `.env`.
 
 The pinned version must be one PolicyEngine currently serves — it rejects exact versions other than what `current`/`frontier` resolve to:
 
@@ -152,7 +154,11 @@ curl -s https://household.api.policyengine.org/versions/us
 
 A cassette is a snapshot of one PolicyEngine version's answer. When we bump the pin, or PolicyEngine promotes a release past it, re-record: update `pe_version`, delete the affected cassettes, re-run step 1, and review the value diff. A changed value is a signal, not a formality — either the spec's expected number needs review or PolicyEngine changed behavior. Update `spec.md` and the assertion together.
 
-Cassettes are never written when a test raises (`record_on_exception=False`), so a failed recording can't leave an error response behind to replay. If a recording attempt fails, fix the cause and re-run.
+Re-recording and adopting a new PolicyEngine version are always the same act: PolicyEngine serves only what `current`/`frontier` currently resolve to, and returns `422 unsupported_version` for anything else. A cassette can never be refreshed at its original pin.
+
+Because of that, these tests **skip under `VCR_MODE=all`** (which never replays and would re-run every scenario against a version PolicyEngine may no longer serve). Live drift detection belongs in a scheduled job that bumps the pin deliberately, not in a deploy.
+
+Anything a *failing* test records is discarded on teardown — the cassette is restored, or removed if the test created it — so a bad recording can't leave an error response behind to replay forever. If a recording attempt fails, fix the cause and re-run. (Note that VCR's own `record_on_exception` cannot do this from inside a fixture: pytest never throws a test failure into a fixture generator, so `Cassette.__exit__` sees a clean exit. `conftest.py` tracks the outcome itself via `pytest_runtest_makereport`.)
 
 ---
 
@@ -232,7 +238,7 @@ git diff integrations/**/cassettes/*.yaml
 
 **Purpose**: Catch API breaking changes before a production release.
 
-**Caveat for PolicyEngine**: this makes a production deploy depend on live PolicyEngine, and it produces no drift report — a changed PE answer surfaces as a failed deploy rather than a triage signal. Whether `deploy-production` should keep `all` is an open question (see MFB-1565); the intended home for live PE re-runs is a scheduled, non-blocking drift job.
+**PolicyEngine spec-scenario tests skip in this mode.** `all` never replays, and these cassettes pin an exact model version that PolicyEngine stops serving as soon as it promotes past it (`422 unsupported_version`) — so re-recording them on a release could only ever fail, and it would make a production deploy depend on live PolicyEngine with no drift report besides. Live PE re-runs belong in a scheduled, non-blocking drift job that bumps the pin deliberately (see MFB-1565). HUD cassettes still re-record here as before.
 
 ---
 

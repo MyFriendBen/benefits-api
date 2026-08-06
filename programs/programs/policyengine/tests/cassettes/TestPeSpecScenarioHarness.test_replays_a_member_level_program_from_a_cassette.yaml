@@ -14,7 +14,7 @@ interactions:
       {"members": ["1", "2"]}}, "families": {"family": {"members": ["1", "2"]}}, "households":
       {"household": {"members": ["1", "2"], "state_code": {"2025": "TX"}}}, "spm_units":
       {"spm_unit": {"members": ["1", "2"], "snap": {"2025": null}, "tanf": {"2025":
-      null}}}, "marital_units": {}}, "version": "1.779.3"}'
+      null}}}, "marital_units": {}}, "version": "1.784.3"}'
     headers:
       Accept:
       - '*/*'
@@ -47,11 +47,11 @@ interactions:
         "families": {"family": {"members": ["1", "2"]}}, "households": {"household":
         {"members": ["1", "2"], "state_code": {"2025": "TX"}}}, "spm_units": {"spm_unit":
         {"members": ["1", "2"], "snap": {"2025": 2895.2998}, "tanf": {"2025": 0.0}}},
-        "marital_units": {}}, "policyengine_bundle": {"model_version": "1.779.3",
+        "marital_units": {}}, "policyengine_bundle": {"model_version": "1.784.3",
         "data_version": null, "dataset": null}}'
     headers:
       Alt-Svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      - h3=":443"; ma=2592000
       Content-Length:
       - '1305'
       access-control-allow-origin:
@@ -59,15 +59,15 @@ interactions:
       content-type:
       - application/json
       date:
-      - Tue, 04 Aug 2026 08:56:28 GMT
+      - Thu, 06 Aug 2026 14:49:57 GMT
       server:
       - Google Frontend
       traceparent:
-      - 00-9c70c8b2437aff71405972904874ebfd-3ae47c8da2a73085-00
+      - 00-f0fc5fd969910cf4a87bae015cc0fa63-3e35f9b43ec4737c-01
       via:
       - 1.1 google
       x-cloud-trace-context:
-      - 9c70c8b2437aff71405972904874ebfd
+      - f0fc5fd969910cf4a87bae015cc0fa63;o=1
       x-policyengine-backend:
       - modal
       x-policyengine-primary-backend:
@@ -75,7 +75,7 @@ interactions:
       x-policyengine-primary-state:
       - healthy
       x-policyengine-request-id:
-      - 009f1c39-e038-49ea-82ff-d83234b9efb4
+      - 3d80f994-ab7b-4c47-a74d-da6069207798
       x-policyengine-route-channel:
       - current
     status:
