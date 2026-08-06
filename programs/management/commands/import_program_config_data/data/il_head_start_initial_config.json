@@ -17,11 +17,11 @@
       "non_citizen"
     ],
     "name": "Head Start",
-    "description": "Head Start is a free preschool program for eligible children ages 3 to 5. It provides early learning, meals, health and dental screenings, and support for families. These services help children prepare for school.\n\nLocal organizations provide Head Start services in communities across Illinois. The value shown is an estimate of these services, not cash paid to your family. Each program serves a local area. Families with the greatest needs get priority, and there may be a waiting list.\n\nChildren experiencing homelessness qualify for Head Start regardless of family income. Some local programs can also enroll a limited number of children from families with higher incomes. Even if you don’t see eligibility in your results, contact a local program to ask about your options.\n\nSelect “Find your local Head Start agency” to find a nearby program and start the application process.",
+    "description": "Head Start is a free preschool program for eligible children ages 3 to 5. It provides early learning, meals, health and dental screenings, and support for families. These services help children prepare for school.\n\nLocal organizations provide Head Start services in communities across Illinois. The value shown is an estimate of these services, not cash paid to your family. Each program serves a local area. Families with the greatest needs get priority, and there may be a waiting list.\n\nChildren experiencing homelessness or in foster care qualify for Head Start regardless of family income. Some local programs can also enroll a limited number of children from families with higher incomes.\n\nSelect “Find your local agency” to find a nearby program and start the application process.",
     "description_short": "Free preschool, meals, and health services for eligible children ages 3 to 5",
     "learn_more_link": "https://headstart.gov/publication/discover-what-head-start-programs-offer",
     "apply_button_link": "https://headstart.gov/center-locator?state=IL&radius=50",
-    "apply_button_description": "Find your local Head Start agency",
+    "apply_button_description": "Find your local agency",
     "estimated_application_time": "30 - 60 minutes",
     "estimated_delivery_time": "",
     "estimated_value": "",
