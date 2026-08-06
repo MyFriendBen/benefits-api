@@ -715,6 +715,26 @@ class ReceivesMedicaidDependency(Member):
         return self.member.has_insurance_types(("medicaid", "chp", "family_planning"))
 
 
+class HasEsiDependency(Member):
+    """
+    Sends whether the member currently has employer-sponsored insurance.
+    Matches PolicyEngine's ``has_esi`` input variable.
+
+    Load-bearing for ACA PTC: 26 U.S.C. 36B(c)(2)(C) disqualifies anyone enrolled in an
+    eligible employer plan, and PolicyEngine reads exactly this field to apply it. Without
+    it an otherwise-eligible household with job-based coverage is scored as PTC-eligible.
+
+    Sending ``False`` is equivalent to omitting the field (verified against the PE API), so
+    this is safe to send unconditionally rather than returning ``None`` for the negative
+    case the way ``IsMedicareEligibleDependency`` does.
+    """
+
+    field = "has_esi"
+
+    def value(self):
+        return self.member.has_insurance_types(("employer",))
+
+
 class HasBccQualifyingCoverageDependency(Member):
     """
     Determines whether the member has disqualifying insurance coverage for IL BCC program.

@@ -1745,3 +1745,65 @@ class TestSsiEarnedAndUnearnedIncomeDependencies(TestCase):
     def test_both_return_zero_with_no_income(self):
         self.assertEqual(member.SsiEarnedIncomeDependency(self.screen, self.head, {}).value(), 0)
         self.assertEqual(member.SsiUnearnedIncomeDependency(self.screen, self.head, {}).value(), 0)
+
+
+class TestHasEsiDependency(TestCase):
+    """
+    Tests for HasEsiDependency, which maps the screener's employer-insurance checkbox to
+    PolicyEngine's ``has_esi``.
+
+    This is the statutory employer-coverage disqualifier for the ACA Premium Tax Credit
+    (26 U.S.C. 36B(c)(2)(C)). PolicyEngine only applies it if we send the field, so the
+    False case matters as much as the True case: a member with *some other* coverage must
+    not be scored as having job-based coverage.
+    """
+
+    def setUp(self):
+        from screener.models import Insurance
+
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="64108",
+            county="Jackson County",
+            household_size=1,
+            completed=False,
+        )
+
+        self.with_employer = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=40)
+        Insurance.objects.create(household_member=self.with_employer, employer=True, none=False)
+
+        self.uninsured = HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=38)
+        Insurance.objects.create(household_member=self.uninsured, none=True)
+
+        self.with_medicaid = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=10)
+        Insurance.objects.create(household_member=self.with_medicaid, medicaid=True, none=False)
+
+        # No Insurance row at all — has_insurance_types() short-circuits to False.
+        self.no_insurance_record = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=7)
+
+    def test_value_true_when_member_has_employer_coverage(self):
+        self.assertTrue(member.HasEsiDependency(self.screen, self.with_employer, {}).value())
+
+    def test_value_false_when_member_is_uninsured(self):
+        self.assertFalse(member.HasEsiDependency(self.screen, self.uninsured, {}).value())
+
+    def test_value_false_for_non_employer_coverage(self):
+        """Medicaid is not employer-sponsored — it must not trip the ESI disqualifier."""
+        self.assertFalse(member.HasEsiDependency(self.screen, self.with_medicaid, {}).value())
+
+    def test_value_false_when_no_insurance_record_exists(self):
+        self.assertFalse(member.HasEsiDependency(self.screen, self.no_insurance_record, {}).value())
+
+    def test_returns_bool_not_none(self):
+        """False must be sent, not None — the field is safe to send unconditionally."""
+        for household_member in (self.with_employer, self.uninsured, self.no_insurance_record):
+            self.assertIsInstance(member.HasEsiDependency(self.screen, household_member, {}).value(), bool)
+
+    def test_field_name_matches_policyengine_variable(self):
+        self.assertEqual(member.HasEsiDependency.field, "has_esi")
+
+    def test_is_member_level_dependency(self):
+        from programs.programs.policyengine.calculators.dependencies.base import Member
+
+        self.assertTrue(issubclass(member.HasEsiDependency, Member))

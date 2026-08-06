@@ -1,0 +1,82 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "program_category": {
+    "external_name": "mo_health_care",
+    "name": "Health Care",
+    "icon": "health_care"
+  },
+  "program": {
+    "name_abbreviated": "mo_aca_ptc",
+    "active": true,
+    "year": 2026,
+    "base_program": "aca",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission"
+    ],
+    "name": "ACA Premium Tax Credit",
+    "description": "Premium Tax Credit (PTC) can help pay for a health plan through the federal Marketplace. It can lower your monthly insurance bill. The amount depends on your household and expected income for the year.\n\nYou can use all, some, or none of the credit each month. MyFriendBen shows the estimated maximum you may receive. Your actual savings may be lower based on the plan you choose. You must enroll in a plan and pay any amount left on the monthly bill.\n\nHealth insurance offered through your job or a family member's job may affect whether you qualify. The Marketplace application will ask about any current coverage or job-based plans available to your household.\n\nSelect \"Apply Now\" to create an account and apply for coverage through HealthCare.gov.",
+    "description_short": "Health insurance marketplace and premium tax credit",
+    "learn_more_link": "https://www.healthcare.gov/lower-costs/save-on-monthly-premiums/",
+    "apply_button_link": "https://www.healthcare.gov/create-account",
+    "apply_button_description": "",
+    "estimated_application_time": "30 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_type": "tax_credit",
+    "value_format": null,
+    "has_calculator": true,
+    "show_on_current_benefits": true,
+    "show_in_has_benefits_step": false,
+    "website_description": "Health insurance marketplace and premium tax credit"
+  },
+  "documents": [
+    {
+      "external_name": "mo_ssn",
+      "text": "Social Security numbers for each person applying, if they have one",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_us_status",
+      "text": "Citizenship or immigration documents or numbers for each person applying, if needed",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_income_proof",
+      "text": "Income records (ex: pay stubs, tax forms, or benefit letters)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_health_insurance",
+      "text": "Current health insurance information, if applicable",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_aca_ptc_employer_coverage",
+      "text": "Information about health insurance offered through a job",
+      "link_url": "https://www.healthcare.gov/downloads/employer-coverage-tool.pdf",
+      "link_text": "Employer Coverage Tool for job-based plans"
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "mo_ma4",
+      "name": "Missouri Association of Area Agencies on Aging (ma4)",
+      "email": "info@ma4web.org",
+      "description": "ma4 provides free, unbiased help with Marketplace health coverage. A Navigator can help you compare plans and apply. Help is available in person, by phone, or online.",
+      "assistance_link": "https://www.ma4web.org/services/ma4-marketplace-navigators/",
+      "phone_number": "+14178689551",
+      "counties": [],
+      "languages": []
+    }
+  ]
+}

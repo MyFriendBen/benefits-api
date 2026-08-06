@@ -49,6 +49,20 @@ class CountyDependency(Household):
     dependencies: ClassVar[list[str]] = ["county"]
     state_dependency_class: ClassVar[Optional[Type]] = None  # Override in subclasses
 
+    # Normalized county tokens that PolicyEngine names WITHOUT the "_COUNTY" insert —
+    # county-equivalents that aren't counties: independent cities (St. Louis MO,
+    # Baltimore MD, Carson City NV, and Virginia's 38), and, if we ever ship those
+    # states, Louisiana parishes and Alaska boroughs / census areas.
+    #
+    # This matters because PolicyEngine does NOT reject an unknown county_str. It
+    # silently falls back to a default rating area, so a bad token surfaces as a
+    # plausible-but-wrong benefit value rather than an error. For MO ACA PTC the
+    # unrecognized ST_LOUIS_CITY_COUNTY_MO returned an SLCSP of $9,121 instead of
+    # $6,275 — a ~$2,846/year overstatement that nothing would have flagged.
+    #
+    # Empty by default: no behavior change for any state that doesn't set it.
+    independent_cities: ClassVar[tuple[str, ...]] = ()
+
     def value(self):
         if self.state_dependency_class is None:
             raise ValueError(f"{self.__class__.__name__} must define state_dependency_class")
@@ -64,6 +78,10 @@ class CountyDependency(Household):
         county_token = re.sub(r"[^\w\s]", "", county_str)  # Remove non-alphanumeric except spaces
         county_token = re.sub(r"\s+", "_", county_token.strip())  # Replace whitespace with underscores
         county_token = county_token.upper()  # Uppercase
+
+        # County-equivalents PolicyEngine names without the "_COUNTY" insert
+        if county_token in self.independent_cities:
+            return f"{county_token}_{state_code}"
 
         # Don't append COUNTY if it's already in the county token
         if county_token.endswith("COUNTY"):
@@ -90,6 +108,26 @@ class TxCountyDependency(CountyDependency):
 
 class KsCountyDependency(CountyDependency):
     state_dependency_class = KsStateCodeDependency
+
+
+class MoCountyDependency(CountyDependency):
+    """
+    Missouri county token, with the St. Louis City special case handled.
+
+    Missouri has one independent city — St. Louis — which is its own county-equivalent
+    (FIPS 29510) and is *not* part of St. Louis County. The screener's ZIP map stores it
+    as the literal string ``"St. Louis City"``, which the base normalizer would otherwise
+    turn into ``ST_LOUIS_CITY_COUNTY_MO``. PolicyEngine's own token is
+    ``ST_LOUIS_CITY_MO`` (verified against ``county_fips`` 29510, which returns the same
+    value); see ``CountyDependency.independent_cities`` for why the mismatch is dangerous.
+
+    Every other one of Missouri's 114 counties resolves correctly through the base
+    normalizer — checked by sweeping the full ``counties_by_zipcode`` list against the
+    PE API.
+    """
+
+    state_dependency_class = MoStateCodeDependency
+    independent_cities = ("ST_LOUIS_CITY",)
 
 
 class ZipCodeDependency(Household):
