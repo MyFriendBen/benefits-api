@@ -3,10 +3,13 @@
     "code": "mo"
   },
   "program_category": {
-    "external_name": "mo_health_care"
+    "external_name": "mo_health_care",
+    "name": "Health Care",
+    "icon": "health_care"
   },
   "program": {
     "name_abbreviated": "mo_aca_ptc",
+    "active": true,
     "year": 2026,
     "base_program": "aca",
     "legal_status_required": [
