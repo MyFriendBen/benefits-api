@@ -61,6 +61,8 @@ This is an estimated annual value of Head Start services, not cash paid to the h
 
 > Each eligible scenario asserts the expected **dollar value** ($17,227 per eligible child), so a scenario breaks if PolicyEngine's Illinois spending/enrollment parameters drift. Ineligible scenarios carry no value.
 
+**Reference date: 2026-08-06.** The parenthesised ages below are derived from the birth month/year as of that date. Enter the birth month/year, not the age — the birth dates are what matter, and the age labels go stale as the date moves. Only the children's ages are load-bearing (the 3–5 window and the age-7 exclusion); adult ages are incidental.
+
 All six verified locally against live PolicyEngine (model 1.784.3), 6/6 matching:
 
 | # | Scenario | Expected | Result |
@@ -81,7 +83,7 @@ All six verified locally against live PolicyEngine (model 1.784.3), 6/6 matching
 - **Household**: Number of people: `3`
 - **Person 1 (Head of Household)**: Birth month/year `March 1996` (age 30), Relationship `Head of Household`, Has income `Yes`, Employment income `$1,500`/month, Citizenship `U.S. Citizen`
 - **Person 2 (Child)**: Birth month/year `March 2022` (age 4), Relationship `Child`, Has income `No`
-- **Person 3 (Spouse)**: Birth month/year `July 2000` (age 25), Relationship `Spouse`, Has income `No`
+- **Person 3 (Spouse)**: Birth month/year `July 2000` (age 26), Relationship `Spouse`, Has income `No`
 - **Current Benefits**: none
 
 **Why this matters**: The most common Head Start pathway. At $1,500/month ($18,000/year) for a household of 3, income is below 100% FPL.
@@ -126,12 +128,12 @@ All six verified locally against live PolicyEngine (model 1.784.3), 6/6 matching
 **Steps**:
 - **Location**: ZIP code `60629`, county `Cook`
 - **Household**: Number of people: `3`
-- **Person 1 (Head of Household)**: Birth month/year `March 1990` (age 36), Relationship `Head of Household`, Has income `Yes`, Employment income `$4,167`/month ($50,000/year), Citizenship `U.S. Citizen`
-- **Person 2 (Spouse)**: Birth month/year `June 1992` (age 33), Relationship `Spouse`, Has income `No`
+- **Person 1 (Head of Household)**: Birth month/year `March 1990` (age 36), Relationship `Head of Household`, Has income `Yes`, Employment income `$4,167`/month ($50,004/year), Citizenship `U.S. Citizen`
+- **Person 2 (Spouse)**: Birth month/year `June 1992` (age 34), Relationship `Spouse`, Has income `No`
 - **Person 3 (Child)**: Birth month/year `March 2022` (age 4), Relationship `Child`, Has income `No`
 - **Current Benefits**: `SNAP`
 
-**Why this matters**: Validates that SNAP categorical eligibility independently qualifies a family regardless of income — a distinct code branch from Scenario 1. The same logic applies to TANF and SSI. The $50,000 figure is a test input chosen to clear the income limit, not Head Start's official threshold.
+**Why this matters**: Validates that SNAP categorical eligibility independently qualifies a family regardless of income — a distinct code branch from Scenario 1. The same logic applies to TANF and SSI. The $50,004 figure is a test input chosen to clear the income limit, not Head Start's official threshold.
 
 Reaching this branch required fixing the `Snap` PE input dependency, which gated on `screen.has_benefit("snap")` — an exact match on a bare name no white label uses, so reported SNAP never reached PolicyEngine. It now reads `has_base_benefit("snap")`, matching the sibling `Tanf` dependency. KS shipped its Head Start with this scenario documented as a known limitation; it is now fixed for every state.
 
@@ -144,8 +146,8 @@ Reaching this branch required fixing the `Snap` PE input dependency, which gated
 **Steps**:
 - **Location**: ZIP code `60629`, county `Cook`
 - **Household**: Number of people: `3`
-- **Person 1 (Head of Household)**: Birth month/year `March 1990` (age 36), Relationship `Head of Household`, Has income `Yes`, Employment income `$4,167`/month ($50,000/year), Citizenship `U.S. Citizen`
-- **Person 2 (Spouse)**: Birth month/year `June 1992` (age 33), Relationship `Spouse`, Has income `No`
+- **Person 1 (Head of Household)**: Birth month/year `March 1990` (age 36), Relationship `Head of Household`, Has income `Yes`, Employment income `$4,167`/month ($50,004/year), Citizenship `U.S. Citizen`
+- **Person 2 (Spouse)**: Birth month/year `June 1992` (age 34), Relationship `Spouse`, Has income `No`
 - **Person 3 (Child)**: Birth month/year `March 2022` (age 4), Relationship `Child`, Has income `No`
 - **Current Benefits**: none
 
