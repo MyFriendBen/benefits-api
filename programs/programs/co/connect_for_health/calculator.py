@@ -1,24 +1,33 @@
 from integrations.services.sheets.sheets import GoogleSheets
-from integrations.util.cache import Cache
+from integrations.services.sheets.cache import GoogleSheetsCache
 from programs.co_county_zips import counties_from_screen
 from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
 from screener.models import HouseholdMember
 from programs.programs.helpers import medicaid_eligible
 import programs.programs.messages as messages
+from sentry_sdk import capture_message
 
 
-class CFHCache(Cache):
-    expire_time = 60 * 60 * 24
-    default = {}
+class CfhCountyValuesCache(GoogleSheetsCache):
+    CACHE_KEY = "cfh_county_values"
     sheet_id = "1SuOhwX5psXsipMS_G5DE_f9jLS2qWxf6temxY445EQg"
     range_name = "current report"
-    average_column = "Average Monthly Premium Tax Credit"
-    county_column = "County\n(source here)"
+    _COUNTY_COLUMN = "County\n(source here)"
+    _AVERAGE_COLUMN = "Average Monthly Premium Tax Credit"
 
-    def update(self):
-        data = GoogleSheets(self.sheet_id, self.range_name).data_by_column(self.county_column, self.average_column)
+    def _fetch_raw(self):
+        return GoogleSheets(self.sheet_id, self.range_name).data_by_column(self._COUNTY_COLUMN, self._AVERAGE_COLUMN)
 
-        return {row[self.county_column].strip() + " County": float(row[self.average_column]) for row in data}
+    def _process(self, raw_data):
+        values = {}
+        for row in raw_data:
+            try:
+                county_key = row[self._COUNTY_COLUMN].strip() + " County"
+                premium_value = float(row[self._AVERAGE_COLUMN])
+                values[county_key] = premium_value
+            except (KeyError, ValueError, AttributeError):
+                continue  # Skip malformed rows
+        return values
 
 
 class ConnectForHealth(ProgramCalculator):
@@ -26,7 +35,7 @@ class ConnectForHealth(ProgramCalculator):
     dependencies = ["insurance", "income_amount", "income_frequency", "zipcode", "household_size"]
     eligible_insurance_types = ["none", "private"]
     ineligible_insurance_types = ["va"]
-    county_values = CFHCache()
+    county_values = CfhCountyValuesCache()
 
     def household_eligible(self, e: Eligibility):
         # Medicade eligibility
@@ -55,6 +64,15 @@ class ConnectForHealth(ProgramCalculator):
         e.condition(not member.insurance.has_insurance_types(ConnectForHealth.ineligible_insurance_types))
 
     def member_value(self, member: HouseholdMember):
-        values = self.county_values.fetch()
+        values = self.county_values.get_data()
         county = counties_from_screen(self.screen)[0]
+        if county not in values:
+            # A $0 value is filtered out by the frontend's `value > 0` check, so the
+            # program silently vanishes from results rather than erroring. Report it,
+            # otherwise a renamed county or an empty sheet fetch is undetectable.
+            capture_message(
+                f"ConnectForHealth: no premium value for county {county!r} of {len(values)} cached",
+                level="warning",
+            )
+            return 0
         return int(values[county] * 12)

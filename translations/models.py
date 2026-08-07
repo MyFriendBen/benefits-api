@@ -1,37 +1,121 @@
+import zlib
+from collections import defaultdict
 from typing import Any
 from django.db import models
 from simple_history.models import HistoricalRecords
 from parler.models import TranslatableModel, TranslatedFields, TranslatableManager
 from django.conf import settings
 from dataclasses import dataclass
-from integrations.util.cache import Cache
+from django.core.cache import cache
 from translations.model_data import ModelDataController
 from sentry_sdk import capture_exception
 
 BLANK_TRANSLATION_PLACEHOLDER = "[PLACEHOLDER]"
 
+_TRANSLATION_CACHE_TIMEOUT = 60 * 60 * 24  # 1 day
 
-class TranslationCache(Cache):
-    expire_time = 24 * 60 * 60
-    default = {}
+# Spread expiry across this window instead of letting every language lapse at the
+# same instant. Written together, identical TTLs would guarantee a daily moment
+# where all 18 keys are cold at once and concurrent requests all rebuild.
+_TRANSLATION_CACHE_JITTER = 60 * 60 * 2  # 2 hours
 
-    def update(self):
-        langs = [lang["code"] for lang in settings.PARLER_LANGUAGES[None]]
-        translations = Translation.objects.prefetch_related("translations")
-        translations_dict = {}
-        for lang in langs:
-            lang_translations = {}
-            for translation in translations:
-                if translation.active:
-                    translation.set_current_language(lang)
-                    lang_translations[translation.label] = translation.text
-            translations_dict[lang] = lang_translations
-        return translations_dict
+# Bump when the cached value's shape changes. Old entries are then ignored and
+# age out on their own TTL, so a format change is self-invalidating on deploy
+# instead of needing a coordinated flush.
+_TRANSLATION_CACHE_VERSION = "v2"
+
+
+def _all_langs() -> list[str]:
+    return [lang["code"] for lang in settings.PARLER_LANGUAGES[None]]
+
+
+def _translation_cache_key(lang: str) -> str:
+    return f"translation_data:{_TRANSLATION_CACHE_VERSION}:{lang}"
+
+
+def _translation_cache_timeout(lang: str) -> int:
+    """TTL for one language, offset deterministically by language code.
+
+    Derived from a stable hash rather than a random one so every dyno agrees on
+    when a given language lapses; builtin hash() is salted per process and would
+    give each worker a different answer.
+    """
+    offset = zlib.crc32(lang.encode()) % _TRANSLATION_CACHE_JITTER
+    return _TRANSLATION_CACHE_TIMEOUT + offset
+
+
+def _build_translation_data() -> dict:
+    """Build {lang: {label: text}} for every language in a single query.
+
+    Deliberately avoids parler's descriptors: `translation.text` goes through
+    _get_translated_model(), which memoizes every access it serves via
+    _cache_translation() -> cache.set(). At ~8.5k active labels x 18 languages
+    that is ~156k cache writes per rebuild, which is fatal against a network
+    cache. Reading the translated table directly is ~10x faster and holds ~2.5x
+    less peak heap.
+    """
+    default_lang = settings.LANGUAGE_CODE
+
+    texts_by_label: dict[str, dict[str, str]] = defaultdict(dict)
+    rows = Translation.objects.filter(active=True).values_list(
+        "label", "translations__language_code", "translations__text"
+    )
+    for label, lang_code, text in rows.iterator(chunk_size=5000):
+        if lang_code is None:
+            # Active label with no translation rows at all.
+            texts_by_label.setdefault(label, {})
+            continue
+        texts_by_label[label][lang_code] = text
+
+    # Mirrors parler's use_fallback=True behaviour: fall back to the default
+    # language when a label has no row for the requested one.
+    return {
+        lang: {
+            label: (texts[lang] if lang in texts else texts.get(default_lang))
+            for label, texts in texts_by_label.items()
+        }
+        for lang in _all_langs()
+    }
+
+
+def _get_translation_data(langs: list[str] | None = None) -> dict:
+    """Return {lang: {label: text}}, cached one entry per language.
+
+    One key per language rather than a single combined blob: the combined dict
+    is ~15MB serialized against a 25MB Redis, and a single-language request only
+    needs its own ~1MB slice. A rebuild still populates every language, since
+    the underlying query fetches them all anyway.
+    """
+    wanted = list(langs) if langs is not None else _all_langs()
+
+    cached = cache.get_many([_translation_cache_key(lang) for lang in wanted])
+    data = {}
+    missing = []
+    for lang in wanted:
+        key = _translation_cache_key(lang)
+        if key in cached:
+            data[lang] = cached[key]
+        else:
+            missing.append(lang)
+
+    if missing:
+        built = _build_translation_data()
+        # Written one at a time rather than via set_many so each language can carry
+        # its own jittered TTL; set_many applies a single timeout to the whole batch.
+        for lang, value in built.items():
+            cache.set(_translation_cache_key(lang), value, timeout=_translation_cache_timeout(lang))
+        for lang in missing:
+            data[lang] = built[lang]
+
+    return data
+
+
+def _invalidate_translation_cache() -> None:
+    cache.delete_many([_translation_cache_key(lang) for lang in _all_langs()])
 
 
 class TranslationManager(TranslatableManager):
     use_in_migrations = True
-    translation_cache = TranslationCache()
     all_langs = [lang["code"] for lang in settings.PARLER_LANGUAGES[None]]
 
     def add_translation(self, label, default_message=BLANK_TRANSLATION_PLACEHOLDER, active=True, no_auto=False):
@@ -59,7 +143,7 @@ class TranslationManager(TranslatableManager):
             # Check if translation exists before creating
             if not parent.has_translation(lang):
                 parent.create_translation(lang, text="", edited=False)
-        self.translation_cache.invalid = True
+        _invalidate_translation_cache()
         return parent
 
     def edit_translation(self, label, lang, translation, manual=True):
@@ -71,7 +155,7 @@ class TranslationManager(TranslatableManager):
         parent.text = translation
         parent.edited = manual
         parent.save()
-        self.translation_cache.invalid = True
+        _invalidate_translation_cache()
         return parent
 
     def edit_translation_by_id(self, id, lang, translation, manual=True):
@@ -83,15 +167,11 @@ class TranslationManager(TranslatableManager):
         parent.text = translation
         parent.edited = manual
         parent.save()
-        self.translation_cache.invalid = True
+        _invalidate_translation_cache()
         return parent
 
     def all_translations(self, langs=all_langs):
-        translations_dict = {}
-        for lang in langs:
-            translations_dict[lang] = self.translation_cache.fetch()[lang]
-
-        return translations_dict
+        return _get_translation_data(langs)
 
     def export_translations(self):
         all_langs = settings.PARLER_LANGUAGES[None]
@@ -174,6 +254,11 @@ class Translation(TranslatableModel):
     label = models.CharField(max_length=128, null=False, blank=False, unique=True)
 
     objects = TranslationManager()
+
+    def delete(self, *args, **kwargs):
+        result = super().delete(*args, **kwargs)
+        _invalidate_translation_cache()
+        return result
 
     def save(self, *args, **kwargs):
         """

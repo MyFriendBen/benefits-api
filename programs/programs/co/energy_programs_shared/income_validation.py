@@ -1,6 +1,4 @@
-from programs.programs.co.energy_programs_shared.income_limits_cache import (
-    IncomeLimitsCache,
-)
+from integrations.services.income_limits import income_limits_cache
 from sentry_sdk import capture_message
 from screener.models import Screen
 
@@ -35,8 +33,7 @@ def get_income_limit(screen: Screen) -> int | None:
     county = screen.county
 
     # Fetch income limits data (keys are "Adams County", "Alamosa County", etc.)
-    income_limits_cache = IncomeLimitsCache()
-    limits_by_county = income_limits_cache.fetch()
+    limits_by_county = income_limits_cache.get_data()
     size_index = screen.household_size - 1 if screen.household_size else None
 
     # Check for valid income_limit

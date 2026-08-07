@@ -48,31 +48,28 @@ class TranslationView(views.APIView):
                 translations = Translation.objects.all_translations()
 
             return Response(translations)
-        except Exception as _:
-            # Cache is likely empty or corrupted, force rebuild and retry once
-            Translation.objects.translation_cache.invalid = True
-            try:
-                if language in all_langs:
-                    translations = Translation.objects.all_translations([language])
-                else:
-                    translations = Translation.objects.all_translations()
-                return Response(translations)
-            except Exception as retry_error:
-                # Capture the exception to Sentry for monitoring
-                capture_exception(retry_error)
+        except Exception as error:
+            # Deliberately neither retry the build nor invalidate here.
+            #
+            # Retrying inline doubles the work of an already failing request, which
+            # is what pushed this endpoint past the 30s router timeout when the cache
+            # backend was unreachable. Invalidating is worse than useless: a failed
+            # rebuild writes nothing, so there is no bad entry to clear, and the far
+            # likelier exception source is the rebuild itself (DB blip, statement
+            # timeout). Clearing would throw away every still-warm language and force
+            # the next request into a full rebuild against the same sick dependency.
+            capture_exception(error)
 
-                # Return appropriate error response
-                error_response = {
-                    "error": "Translations temporarily unavailable",
-                    "error_type": type(retry_error).__name__,
-                    "message": str(retry_error),
-                }
+            error_response = {
+                "error": "Translations temporarily unavailable",
+                "error_type": type(error).__name__,
+            }
 
-                # Add traceback in debug mode
-                if settings.DEBUG:
-                    error_response["traceback"] = traceback.format_exc()
+            # Add traceback in debug mode
+            if settings.DEBUG:
+                error_response["traceback"] = traceback.format_exc()
 
-                return Response(error_response, status=503)
+            return Response(error_response, status=503)
 
 
 class NewTranslationForm(forms.Form):

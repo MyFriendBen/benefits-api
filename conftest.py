@@ -200,6 +200,22 @@ def auto_vcr(request, vcr_config):
         yield
 
 
+@pytest.fixture(autouse=True)
+def clear_cache():
+    """Start every test with an empty cache.
+
+    LocMemCache gives each process its own cache, so isolation was implicit while
+    CI set no REDIS_URL. Against a real Redis the state outlives both the test and
+    the run, which makes order-dependent passes and stale-value failures easy to
+    introduce. Note this flushes the configured cache database, so pointing
+    REDIS_URL at a Redis you also use for development will clear it.
+    """
+    from django.core.cache import cache
+
+    cache.clear()
+    yield
+
+
 @pytest.fixture
 def integration_requires_token():
     """
