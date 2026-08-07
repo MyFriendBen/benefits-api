@@ -14,14 +14,19 @@ def make_member(age=30, pregnant=False, relationship="headOfHousehold"):
     return member
 
 
-def make_calculator(yearly_income=10_000, fpl_limit=15_000, members=None, has_benefit=None):
+def make_calculator(yearly_income=10_000, fpl_limit=15_000, members=None, has_benefit=None, has_apple_health=False):
     if has_benefit is None:
         has_benefit = {}
     mock_screen = Mock()
     mock_screen.calc_gross_income = Mock(return_value=yearly_income)
     mock_screen.household_members.all = Mock(return_value=members or [make_member()])
     mock_screen.household_size = len(members) if members else 1
-    mock_screen.has_benefit = Mock(side_effect=lambda b: has_benefit.get(b, False))
+    # SNAP/TANF adjunctive eligibility reads base_program; has_benefit is stubbed False so
+    # an exact-name read can't pass. Apple Health arrives as insurance, hence the
+    # separate has_insurance_types stub.
+    mock_screen.has_benefit = Mock(return_value=False)
+    mock_screen.has_base_benefit = Mock(side_effect=lambda b: has_benefit.get(b, False))
+    mock_screen.has_insurance_types = Mock(return_value=has_apple_health)
 
     mock_program = Mock()
     mock_program.year.get_limit = Mock(return_value=fpl_limit)
@@ -86,7 +91,7 @@ class TestWaWicMemberEligibility(TestCase):
 
 
 class TestWaWicHouseholdEligibility(TestCase):
-    def _run(self, yearly_income=10_000, fpl_limit=15_000, has_benefit=None, members=None):
+    def _run(self, yearly_income=10_000, fpl_limit=15_000, has_benefit=None, members=None, has_apple_health=False):
         if members is None:
             members = [make_member(age=29, pregnant=True)]
         calc = make_calculator(
@@ -94,6 +99,7 @@ class TestWaWicHouseholdEligibility(TestCase):
             fpl_limit=fpl_limit,
             members=members,
             has_benefit=has_benefit,
+            has_apple_health=has_apple_health,
         )
         e = Eligibility()
         for m in members:
@@ -117,7 +123,14 @@ class TestWaWicHouseholdEligibility(TestCase):
         self.assertTrue(self._run(yearly_income=50_000, has_benefit={"snap": True}))
 
     def test_medicaid_adjunctive_bypasses_income(self):
-        self.assertTrue(self._run(yearly_income=50_000, has_benefit={"medicaid": True}))
+        """Apple Health is insurance, not a has-benefits program, so this leg reads
+        has_insurance_types."""
+        self.assertTrue(self._run(yearly_income=50_000, has_apple_health=True))
+
+    def test_medicaid_as_a_reported_benefit_does_not_apply(self):
+        """No WA program is reportable with base_program="medicaid", so that signal must
+        not be what the Medicaid leg relies on."""
+        self.assertFalse(self._run(yearly_income=50_000, has_benefit={"medicaid": True}))
 
     def test_tanf_adjunctive_bypasses_income(self):
         self.assertTrue(self._run(yearly_income=50_000, has_benefit={"tanf": True}))

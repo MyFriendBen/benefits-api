@@ -59,7 +59,9 @@ class WaHeadStart(ProgramCalculator):
 
         # TANF, SSI, SNAP categorical eligibility per OHS interpretation (ACF-IM-HS-22-03)
         categorical = (
-            self.screen.has_benefit("tanf") or self.screen.has_benefit("ssi") or self.screen.has_benefit("snap")
+            self.screen.has_base_benefit("tanf")
+            or self.screen.has_base_benefit("ssi")
+            or self.screen.has_base_benefit("snap")
         )
 
         gross_income = self.screen.calc_gross_income("yearly", ["all"])

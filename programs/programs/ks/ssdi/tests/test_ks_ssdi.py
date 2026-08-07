@@ -41,7 +41,10 @@ def make_member(
 
 def make_calculator(has_ssdi=False):
     mock_screen = Mock()
-    mock_screen.has_benefit = Mock(side_effect=lambda b: has_ssdi if b == "ssdi" else False)
+    # SSDI is read via base_program; has_benefit is stubbed False so an exact-name read
+    # can't pass on a Mock's truthy default.
+    mock_screen.has_benefit = Mock(return_value=False)
+    mock_screen.has_base_benefit = Mock(side_effect=lambda b: has_ssdi if b == "ssdi" else False)
     mock_screen.household_members.all.return_value = []
     mock_screen.get_reference_date.return_value = date(2026, 4, 30)
 

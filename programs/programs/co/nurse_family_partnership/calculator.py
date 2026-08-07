@@ -61,6 +61,6 @@ class CoNurseFamilyPartnership(ProgramCalculator):
 
         insurance: Insurance = member.insurance
         has_medicaid = insurance.medicaid or insurance.emergency_medicaid
-        has_wic = self.screen.has_benefit("wic")
+        has_wic = self.screen.has_base_benefit("wic")
 
         e.condition(is_income_eligible or has_medicaid or has_wic)

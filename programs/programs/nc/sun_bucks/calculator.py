@@ -15,9 +15,9 @@ class SunBucks(ProgramCalculator):
         income_limit = int(self.fpl_percent * fpl.get_limit(self.screen.household_size))
         gross_income = int(self.screen.calc_gross_income("yearly", ["all"]))
 
-        # Must not have the following benefits
-        e.condition(not self.screen.has_benefit("snap"), messages.must_not_have_benefit("snap"))
-        e.condition(not self.screen.has_benefit("tanf"), messages.must_not_have_benefit("tanf"))
+        # Must not have the following benefits (SNAP/TANF households are auto-enrolled)
+        e.condition(not self.screen.has_base_benefit("snap"), messages.must_not_have_benefit("snap"))
+        e.condition(not self.screen.has_base_benefit("tanf"), messages.must_not_have_benefit("tanf"))
 
         e.condition(gross_income < income_limit, messages.income(gross_income, income_limit))
 

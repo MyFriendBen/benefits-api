@@ -7,7 +7,9 @@ import math
 
 class LowWageCovidRelief(ProgramCalculator):
     amount = 1_500
-    auto_eligible_benefits = ("tanf", "snap", "wic", "leap")
+    # Also used as `self.data` keys, which are name_abbreviated — so CO's names, not
+    # base program names.
+    auto_eligible_benefits = ("co_tanf", "co_snap", "co_wic", "leap")
     member_auto_eligible_benefits = (*STATE_MEDICAID_OPTIONS,)
     income_limits = {
         1: -math.inf,
@@ -34,7 +36,7 @@ class LowWageCovidRelief(ProgramCalculator):
 
         for benefit in LowWageCovidRelief.auto_eligible_benefits:
             entry = self.data.get(benefit)
-            if self.screen.has_benefit(benefit) or (entry is not None and entry.eligible):
+            if self.screen.has_benefit_or_variant(benefit) or (entry is not None and entry.eligible):
                 has_benefit = True
                 break
 

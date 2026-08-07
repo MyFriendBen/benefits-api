@@ -76,7 +76,7 @@ class WaSsdi(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility):
         e.condition(
-            not self.screen.has_benefit("ssdi"),
+            not self.screen.has_base_benefit("ssdi"),
             messages.must_not_have_benefit("SSDI"),
         )
 

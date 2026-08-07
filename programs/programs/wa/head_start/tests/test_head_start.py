@@ -32,9 +32,11 @@ def make_calculator(
 
     mock_screen = Mock()
     mock_screen.household_size = household_size
-    mock_screen.has_benefit = Mock(
+    # wa_head_start is an exact-name read; the categorical benefits go through
+    # base_program, so the two lookups are stubbed separately.
+    mock_screen.has_benefit = Mock(side_effect=lambda b: {"wa_head_start": has_head_start}.get(b, False))
+    mock_screen.has_base_benefit = Mock(
         side_effect=lambda b: {
-            "wa_head_start": has_head_start,
             "snap": has_snap,
             "tanf": has_tanf,
             "ssi": has_ssi,
@@ -236,6 +238,7 @@ class TestWaHeadStartBenefitValue(TestCase):
         mock_screen = Mock()
         mock_screen.household_size = 3
         mock_screen.has_benefit = Mock(return_value=False)
+        mock_screen.has_base_benefit = Mock(return_value=False)
         mock_screen.calc_gross_income = Mock(return_value=14400)
         mock_screen.household_members.all = Mock(
             return_value=[
@@ -262,6 +265,7 @@ class TestWaHeadStartBenefitValue(TestCase):
         mock_screen = Mock()
         mock_screen.household_size = 1
         mock_screen.has_benefit = Mock(return_value=False)
+        mock_screen.has_base_benefit = Mock(return_value=False)
         mock_screen.calc_gross_income = Mock(return_value=14400)
         mock_screen.household_members.all = Mock(
             return_value=[make_member(age=27, pregnant=True, relationship="headOfHousehold")]

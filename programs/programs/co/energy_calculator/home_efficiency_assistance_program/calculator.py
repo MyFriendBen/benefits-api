@@ -28,8 +28,10 @@ class EnergyCalculatorHomeEfficiencyAssistance(ProgramCalculator):
         "county",
         "energy_calculator",
     ]
+    # "leap" is a CO name that matches nothing here; CESN's LEAP row is cesn_leap,
+    # whose base_program is "liheap". The base group survives a rename of the row.
     presumptive_eligibility = [
-        "leap",
+        "liheap",
     ]
     utility_providers = [
         "co-colorado-springs-utilities",
@@ -40,7 +42,7 @@ class EnergyCalculatorHomeEfficiencyAssistance(ProgramCalculator):
     def household_eligible(self, e: Eligibility):
 
         # check if has any of the presumptive eligibility programs
-        presumed_eligible = any(self.screen.has_benefit(program) for program in self.presumptive_eligibility)
+        presumed_eligible = self.screen.has_benefit_from_list(self.presumptive_eligibility)
 
         if presumed_eligible:
             # if presumptive eligibility, done

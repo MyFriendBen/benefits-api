@@ -11,16 +11,24 @@ class EnergyCalculatorVehicleExchange(ProgramCalculator):
     amount = 4_000
     min_age = 18
     ami_percent = "80%"
-    presumptive_eligibility = ["co_care", "cowap", "rtdlive", "cesn_section_8", "ssdi", "wic", "leap", "snap", "ssi"]
+    # Exact CESN names alongside base_program groups; has_benefit_from_list resolves
+    # either. WAP is absent because it's read as calculated eligibility below.
+    presumptive_eligibility = [
+        "cesn_care",
+        "cesn_rtdlive",
+        "cesn_section_8",
+        "liheap",
+        "ssdi",
+        "wic",
+        "snap",
+        "ssi",
+    ]
     calculated_presumptive_eligibility = ["cesn_care", "cesn_cowap"]
     dependencies = ["age", "income_frequency", "income_amount", "energy_calculator"]
 
     def household_eligible(self, e: Eligibility):
         # presumptive eligibility
-        has_benefit = False
-        for benefit in self.presumptive_eligibility:
-            if self.screen.has_benefit(benefit):
-                has_benefit = True
+        has_benefit = self.screen.has_benefit_from_list(self.presumptive_eligibility)
 
         for program in self.calculated_presumptive_eligibility:
             entry = self.data.get(program)

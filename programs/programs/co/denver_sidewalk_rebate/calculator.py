@@ -23,11 +23,7 @@ class DenverSidewalkRebate(ProgramCalculator):
         income_eligible = income <= income_limit
 
         # categorical eligibility
-        categorical_eligible = False
-        for program in DenverSidewalkRebate.presumptive_eligibility:
-            if self.screen.has_benefit(program):
-                categorical_eligible = True
-                break
+        categorical_eligible = self.screen.has_benefit_from_list(DenverSidewalkRebate.presumptive_eligibility)
 
         for member in self.screen.household_members.all():
             if member.has_insurance("co_medicaid"):

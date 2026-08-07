@@ -36,8 +36,14 @@ class WaWic(ProgramCalculator):
         e.condition(is_pregnant or is_under_5)
 
     def household_eligible(self, e: Eligibility):
+        # WA captures Apple Health as insurance rather than as a has-benefits program, so
+        # the Medicaid leg reads insurance the way wa/wap does. Apple Health for Kids
+        # (CHIP) is deliberately excluded — whether it confers adjunctive eligibility is a
+        # policy question.
         adjunctive_eligible = (
-            self.screen.has_benefit("snap") or self.screen.has_benefit("medicaid") or self.screen.has_benefit("tanf")
+            self.screen.has_base_benefit("snap")
+            or self.screen.has_base_benefit("tanf")
+            or self.screen.has_insurance_types(("wa_apple_health_medicaid",))
         )
 
         if adjunctive_eligible:
