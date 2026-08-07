@@ -112,6 +112,8 @@ class Screen(models.Model):
     needs_veteran_services = models.BooleanField(default=False, blank=True, null=True)
     needs_disability_resources = models.BooleanField(default=False, blank=True, null=True)
     needs_aging_resources = models.BooleanField(default=False, blank=True, null=True)
+    needs_homeless_services = models.BooleanField(default=False, blank=True, null=True)
+    needs_free_low_cost_medical_care = models.BooleanField(default=False, blank=True, null=True)
     utm_id = models.CharField(max_length=64, blank=True, null=True)
     utm_source = models.CharField(max_length=64, blank=True, null=True)
     utm_medium = models.CharField(max_length=64, blank=True, null=True)
