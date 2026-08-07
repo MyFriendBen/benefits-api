@@ -12,11 +12,12 @@ class EnergyCalculatorVehicleExchange(ProgramCalculator):
     min_age = 18
     ami_percent = "80%"
     # Exact CESN names alongside base_program groups; has_benefit_from_list resolves
-    # either. CESN WAP is covered by calculated_presumptive_eligibility below.
+    # either. WAP is absent because it's read as calculated eligibility below.
     presumptive_eligibility = [
         "cesn_care",
         "cesn_rtdlive",
         "cesn_section_8",
+        "liheap",
         "ssdi",
         "wic",
         "snap",

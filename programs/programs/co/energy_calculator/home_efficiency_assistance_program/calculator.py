@@ -28,11 +28,10 @@ class EnergyCalculatorHomeEfficiencyAssistance(ProgramCalculator):
         "county",
         "energy_calculator",
     ]
-    # CESN's LEAP row is cesn_leap; "leap" is a CO name that matches nothing here.
-    # cesn_leap has show_in_has_benefits_step=False, so it isn't offered on the
-    # has-benefits step and this stays False until that flag changes.
+    # "leap" is a CO name that matches nothing here; CESN's LEAP row is cesn_leap,
+    # whose base_program is "liheap". The base group survives a rename of the row.
     presumptive_eligibility = [
-        "cesn_leap",
+        "liheap",
     ]
     utility_providers = [
         "co-colorado-springs-utilities",
