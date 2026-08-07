@@ -7,30 +7,30 @@ Eligibility requirements:
   3. Member is aged 3 to 5
 
 Notes:
-  - The participating-county list comes from a Google Sheet. `Cache.fetch()` swallows
-    fetch errors and returns the class default (`{}`), so a sheet outage silently makes
-    every Colorado household ineligible rather than raising. That behaviour is pinned
-    below so a future change to the cache doesn't slip past.
+  - The participating-county list comes from a Google Sheet. `GoogleSheetsCache.get_data()`
+    swallows fetch errors and falls back to the last known-good value, or `{}` when none is
+    cached, so a sheet outage silently makes every Colorado household ineligible rather than
+    raising. That behaviour is pinned below so a future change to the cache doesn't slip past.
   - The county lookup `break`s on the first county present in the sheet, so a county
     explicitly flagged FALSE is a rejection, not a "keep looking".
   - Both income limits are truncated with `int()` and compared with a strict `<`.
-  - FPL figures are imported from `FplCache.default` rather than copied, so they cannot
-    drift from the table production reads. That attribute is a plain offline literal —
-    `FplCache.update()` short-circuits with `return self.default` — so importing it costs
-    no database or network access.
+  - FPL figures are imported from `programs.models._FPL_DEFAULTS` rather than copied, so
+    they cannot drift from the table production reads. That constant is a plain offline
+    literal that `FederalPoveryLimit.as_dict()` reads directly, so importing it costs no
+    database or network access.
 """
 
 from unittest.mock import Mock, patch
 
 from django.test import TestCase
 
-from programs.models import FplCache
+from programs.models import _FPL_DEFAULTS
 from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
 from programs.programs.co import co_calculators
 from programs.programs.co.head_start.calculator import CoHeadStart
 from programs.util import Dependencies, DependencyError
 
-FPL_2025 = FplCache.default["2025"]
+FPL_2025 = _FPL_DEFAULTS["2025"]
 
 PARTICIPATING_COUNTIES = {
     "Denver County": True,
@@ -77,8 +77,8 @@ class CountySheetTestCase(TestCase):
     counties = PARTICIPATING_COUNTIES
 
     def setUp(self):
-        patcher = patch.object(CoHeadStart.counties, "fetch", return_value=dict(self.counties))
-        self.mock_counties_fetch = patcher.start()
+        patcher = patch.object(CoHeadStart.counties, "get_data", return_value=dict(self.counties))
+        self.mock_counties_get_data = patcher.start()
         self.addCleanup(patcher.stop)
 
 
@@ -114,8 +114,8 @@ class TestCoHeadStartClassAttributes(TestCase):
             ["age", "household_size", "income_frequency", "income_amount", "zipcode"],
         )
 
-    def test_county_cache_defaults_to_empty(self):
-        self.assertEqual(CoHeadStart.counties.default, {})
+    def test_county_cache_falls_back_to_empty(self):
+        self.assertEqual(CoHeadStart.counties._empty_fallback(), {})
 
 
 class TestCoHeadStartLocation(CountySheetTestCase):
@@ -162,7 +162,9 @@ class TestCoHeadStartMultiCountyZip(CountySheetTestCase):
         self.assertFalse(e.eligible)
 
     def test_leading_true_county_is_eligible_on_the_same_zipcode(self):
-        with patch.object(CoHeadStart.counties, "fetch", return_value={"Adams County": True, "Denver County": False}):
+        with patch.object(
+            CoHeadStart.counties, "get_data", return_value={"Adams County": True, "Denver County": False}
+        ):
             calc = make_calculator(county=None, zipcode="80022", household_size=1, household_income=0)
             e = Eligibility()
             calc.household_eligible(e)
@@ -170,7 +172,7 @@ class TestCoHeadStartMultiCountyZip(CountySheetTestCase):
 
     def test_a_county_absent_from_the_sheet_does_not_stop_the_loop(self):
         # Adams is missing from the sheet, so the loop keeps looking and finds Denver
-        with patch.object(CoHeadStart.counties, "fetch", return_value={"Denver County": True}):
+        with patch.object(CoHeadStart.counties, "get_data", return_value={"Denver County": True}):
             calc = make_calculator(county=None, zipcode="80022", household_size=1, household_income=0)
             e = Eligibility()
             calc.household_eligible(e)
@@ -181,7 +183,7 @@ class TestCoHeadStartEmptyCountySheet(TestCase):
     """A failed sheet fetch degrades to `{}`, which makes everyone ineligible."""
 
     def test_empty_sheet_makes_a_participating_county_ineligible(self):
-        with patch.object(CoHeadStart.counties, "fetch", return_value={}):
+        with patch.object(CoHeadStart.counties, "get_data", return_value={}):
             calc = make_calculator(county="Denver County", household_income=0)
             e = Eligibility()
             calc.household_eligible(e)

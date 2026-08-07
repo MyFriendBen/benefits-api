@@ -14,24 +14,24 @@ Notes:
     worth 0 and is reported to Sentry rather than raising.
   - CHP+ eligibility is read out of the sibling program's `Eligibility` in `data`, so
     members are matched by id.
-  - FPL figures are imported from `FplCache.default` rather than copied, so they cannot
-    drift from the table production reads. That attribute is a plain offline literal —
-    `FplCache.update()` short-circuits with `return self.default` — so importing it costs
-    no database or network access.
+  - FPL figures are imported from `programs.models._FPL_DEFAULTS` rather than copied, so
+    they cannot drift from the table production reads. That constant is a plain offline
+    literal that `FederalPoveryLimit.as_dict()` reads directly, so importing it costs no
+    database or network access.
 """
 
 from unittest.mock import Mock, patch
 
 from django.test import SimpleTestCase, TestCase
 
-from programs.models import FplCache
+from programs.models import _FPL_DEFAULTS
 from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
 from programs.programs.co import co_calculators
 from programs.programs.co.connect_for_health.calculator import CfhCountyValuesCache, ConnectForHealth
 from programs.util import Dependencies, DependencyError
 from screener.models import Insurance
 
-FPL_2025 = FplCache.default["2025"]
+FPL_2025 = _FPL_DEFAULTS["2025"]
 
 COUNTY_PREMIUM_TAX_CREDITS = {"Denver County": 500.0, "Jefferson County": 250.0}
 
@@ -276,7 +276,9 @@ class TestConnectForHealthValue(TestCase):
     """Member value is the county's average monthly premium tax credit, annualised."""
 
     def setUp(self):
-        patcher = patch.object(ConnectForHealth.county_values, "get_data", return_value=dict(COUNTY_PREMIUM_TAX_CREDITS))
+        patcher = patch.object(
+            ConnectForHealth.county_values, "get_data", return_value=dict(COUNTY_PREMIUM_TAX_CREDITS)
+        )
         self.mock_county_values = patcher.start()
         self.addCleanup(patcher.stop)
 
