@@ -6,22 +6,27 @@ Eligibility requirements:
   2. Member has no health insurance
 
 Notes:
-  - "age" is declared as a dependency but there is no age gate in `member_eligible`;
-    that is asserted below so a future age rule doesn't land silently.
-  - FPL figures used here are the real 2025 guidelines from `FplCache.default`.
+  - "age" is declared as a dependency but there is no age gate in `member_eligible`.
+    That is proven below with a spec-restricted mock that raises if `age` is read at all,
+    so a future age rule cannot land silently.
+  - FPL figures are imported from `FplCache.default` rather than copied, so they cannot
+    drift from the table production reads. That attribute is a plain offline literal —
+    `FplCache.update()` short-circuits with `return self.default` — so importing it costs
+    no database or network access.
 """
 
 from unittest.mock import Mock
 
 from django.test import TestCase
 
+from programs.models import FplCache
 from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
 from programs.programs.co import co_calculators
 from programs.programs.co.omnisalud.calculator import OmniSalud
 from programs.util import Dependencies, DependencyError
 from screener.models import Insurance
 
-FPL_2025 = {1: 15_650, 2: 21_150, 3: 26_650, 4: 32_150, 5: 37_650, 6: 43_150, 7: 48_650, 8: 54_150}
+FPL_2025 = FplCache.default["2025"]
 
 
 def make_member(**insurance_flags):
@@ -134,12 +139,15 @@ class TestOmniSaludMemberEligibility(TestCase):
     def test_member_with_employer_insurance_is_ineligible(self):
         self.assertFalse(self._run(make_member(employer=True)))
 
-    def test_age_is_not_a_member_gate(self):
-        # "age" is a declared dependency but no age condition is applied
-        for age in (0, 17, 18, 64, 65, 90):
-            member = make_member(none=True)
-            member.age = age
-            self.assertTrue(self._run(member), f"age {age} should not be gated")
+    def test_member_eligible_never_reads_age(self):
+        # "age" is a declared dependency, but `member_eligible` applies no age condition.
+        # Restricting the mock's spec to `insurance` makes any read of `member.age` raise
+        # AttributeError, so this fails loudly if an age gate is ever added — a loop over
+        # sample ages would not, since a Mock answers `.age` with a truthy Mock either way.
+        member = Mock(spec=["insurance"])
+        member.insurance = Insurance(none=True)
+
+        self.assertTrue(self._run(member))
 
 
 class TestOmniSaludEligible(TestCase):

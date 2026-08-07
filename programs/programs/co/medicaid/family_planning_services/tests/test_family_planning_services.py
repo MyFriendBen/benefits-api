@@ -13,37 +13,25 @@ Notes:
     FPL lookup lands at roughly double the true household size. That is a known bug
     tracked separately; the tests below deliberately pin the current behaviour so the
     suite stays green, and are flagged where they do so.
-  - FPL figures used here are the real 2025 guidelines from `FplCache.default`.
+  - The income limit is derived by the real `FederalPoveryLimit.get_limit`, not by a
+    copy of it. `get_limit` is pure arithmetic over `as_dict()`, which reads the offline
+    `FplCache.default` literal, so it needs neither the database nor the network — an
+    unsaved instance is enough.
 """
 
 from unittest.mock import Mock
 
 from django.test import TestCase
 
+from programs.models import FederalPoveryLimit
 from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
 from programs.programs.co import co_calculators
 from programs.programs.co.medicaid.family_planning_services.calculator import FamilyPlanningServices
 from programs.util import Dependencies, DependencyError
 from screener.models import Insurance
 
-FPL_2025 = {
-    1: 15_650,
-    2: 21_150,
-    3: 26_650,
-    4: 32_150,
-    5: 37_650,
-    6: 43_150,
-    7: 48_650,
-    8: 54_150,
-    "additional": 5_500,
-}
-
-
-def fpl_limit(household_size):
-    """Mirrors `FederalPoveryLimit.get_limit` without touching the database."""
-    if household_size <= 8:
-        return FPL_2025[household_size]
-    return FPL_2025[8] + FPL_2025["additional"] * (household_size - 8)
+# Unsaved on purpose: `get_limit` only reads `self.period` and the cached FPL table.
+FPL_2025 = FederalPoveryLimit(year="2025", period="2025")
 
 
 def make_member(age=30, pregnant=False, is_head=True, is_spouse=False, **insurance_flags):
@@ -73,7 +61,8 @@ def make_calculator(
     missing_dependencies=None,
 ):
     mock_program = Mock()
-    mock_program.year.get_limit = Mock(side_effect=fpl_limit)
+    # wraps the real method so call args are still recorded, but the arithmetic is real
+    mock_program.year.get_limit = Mock(side_effect=FPL_2025.get_limit)
 
     mock_screen = Mock()
     mock_screen.household_size = household_size

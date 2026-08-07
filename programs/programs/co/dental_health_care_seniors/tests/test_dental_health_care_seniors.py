@@ -10,20 +10,24 @@ Notes:
   - The income band is truncated with `int()`, so the boundary sits on the floored dollar.
   - Medicare does NOT disqualify a member, which matters for a 60+ program; that is
     asserted explicitly below.
-  - FPL figures used here are the real 2025 guidelines from `FplCache.default`.
+  - FPL figures are imported from `FplCache.default` rather than copied, so they cannot
+    drift from the table production reads. That attribute is a plain offline literal —
+    `FplCache.update()` short-circuits with `return self.default` — so importing it costs
+    no database or network access.
 """
 
 from unittest.mock import Mock
 
 from django.test import TestCase
 
+from programs.models import FplCache
 from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
 from programs.programs.co import co_calculators
 from programs.programs.co.dental_health_care_seniors.calculator import DentalHealthCareSeniors
 from programs.util import Dependencies, DependencyError
 from screener.models import Insurance
 
-FPL_2025 = {1: 15_650, 2: 21_150, 3: 26_650, 4: 32_150, 5: 37_650, 6: 43_150, 7: 48_650, 8: 54_150}
+FPL_2025 = FplCache.default["2025"]
 
 
 def make_member(age=65, **insurance_flags):
