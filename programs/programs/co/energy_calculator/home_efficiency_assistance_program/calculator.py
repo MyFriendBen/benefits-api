@@ -29,8 +29,8 @@ class EnergyCalculatorHomeEfficiencyAssistance(ProgramCalculator):
         "energy_calculator",
     ]
     # CESN's LEAP row is cesn_leap; "leap" is a CO name that matches nothing here.
-    # cesn_leap isn't offered in the has-benefits step yet, so this stays False until
-    # CESN's category_benefits config is fixed.
+    # cesn_leap has show_in_has_benefits_step=False, so it isn't offered on the
+    # has-benefits step and this stays False until that flag changes.
     presumptive_eligibility = [
         "cesn_leap",
     ]
