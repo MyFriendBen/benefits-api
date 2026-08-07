@@ -91,7 +91,7 @@ def make_calculator(
 def eligibility_with_members(count):
     """An `Eligibility` shaped the way `eligible()` hands it to `household_eligible`."""
     e = Eligibility()
-    for i in range(count):
+    for _ in range(count):
         e.add_member_eligibility(MemberEligibility(make_member()))
     return e
 
