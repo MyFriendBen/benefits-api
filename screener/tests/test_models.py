@@ -372,10 +372,6 @@ class TestScreen(TestCase):
             self.assertFalse(prefetched.has_benefit("ssi"))
 
     # Tests for Screen.has_benefit_or_variant() / has_benefit_from_list()
-    #
-    # A white label ships state-prefixed programs (co_snap, ks_snap, …), so an exact-name
-    # read of those base program names (has_benefit("snap")) is always False. These pin the
-    # two ways calculators are allowed to ask the question.
 
     def test_has_benefit_or_variant_matches_base_program(self):
         """A base program name resolves through the variant the white label actually ships."""
@@ -400,8 +396,8 @@ class TestScreen(TestCase):
 
     def test_has_benefit_from_list_mixed_exact_and_base_names(self):
         """presumptive_eligibility lists hold both kinds of name — CO WAP's
-        ("andcs", "ssi", "snap", "leap", "tanf") mixes CO-only programs with base programs.
-        Each entry must resolve on its own terms."""
+        ("andcs", "ssi", "snap", "leap", "tanf") mixes CO-only programs with base
+        programs — so each entry must resolve on its own terms."""
         seed_program(self.white_label, "andcs")
         seed_program(self.white_label, "co_snap", base_program="snap")
         presumptive = ["andcs", "ssi", "snap", "leap", "tanf"]

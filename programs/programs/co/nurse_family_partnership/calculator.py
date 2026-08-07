@@ -61,8 +61,6 @@ class CoNurseFamilyPartnership(ProgramCalculator):
 
         insurance: Insurance = member.insurance
         has_medicaid = insurance.medicaid or insurance.emergency_medicaid
-        # has_base_benefit resolves co_wic, the live CO program. The bare name matched only
-        # CO's retired "wic" row, which the has-benefits step no longer offers.
         has_wic = self.screen.has_base_benefit("wic")
 
         e.condition(is_income_eligible or has_medicaid or has_wic)

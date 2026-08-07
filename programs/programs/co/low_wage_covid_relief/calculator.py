@@ -7,11 +7,8 @@ import math
 
 class LowWageCovidRelief(ProgramCalculator):
     amount = 1_500
-    # CO's own program names, not base program names. Each entry is used twice — as a
-    # reported-receipt read AND as a `self.data` key — and `self.data` is keyed by
-    # `name_abbreviated` (see eligibility_results()), so a base name like "snap" resolves
-    # neither: it matched no CO program for the receipt read, and no `self.data` entry for
-    # the calculated-eligibility read.
+    # Also used as `self.data` keys, which are name_abbreviated — so CO's names, not
+    # base program names.
     auto_eligible_benefits = ("co_tanf", "co_snap", "co_wic", "leap")
     member_auto_eligible_benefits = (*STATE_MEDICAID_OPTIONS,)
     income_limits = {
@@ -37,8 +34,6 @@ class LowWageCovidRelief(ProgramCalculator):
         # other benefits
         has_benefit = False
 
-        # has_benefit_or_variant rather than has_benefit_from_list because the per-entry
-        # result is needed for the self.data lookup on the same name.
         for benefit in LowWageCovidRelief.auto_eligible_benefits:
             entry = self.data.get(benefit)
             if self.screen.has_benefit_or_variant(benefit) or (entry is not None and entry.eligible):

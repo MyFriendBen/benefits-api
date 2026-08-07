@@ -28,18 +28,11 @@ class EnergyCalculatorHomeEfficiencyAssistance(ProgramCalculator):
         "county",
         "energy_calculator",
     ]
-    # CESN program (see cesn_calculators). "leap" was a CO name that matches nothing on a
-    # CESN screen; CESN's LEAP row is cesn_leap, whose base_program is "liheap", so the
-    # base-program read is what resolves it.
-    #
-    # Caveat worth knowing before trusting this branch: cesn_leap has
-    # show_in_has_benefits_step=False, and CESN's category_benefits still offers the key
-    # "leap", which matches no CESN program and is dropped on write. So LEAP receipt is not
-    # currently capturable on a CESN screen and this stays False in practice. That is a
-    # configuration gap, not a naming one, and is tracked separately — the read is written
-    # correctly here so it starts working the moment the config is fixed.
+    # CESN's LEAP row is cesn_leap; "leap" is a CO name that matches nothing here.
+    # cesn_leap isn't offered in the has-benefits step yet, so this stays False until
+    # CESN's category_benefits config is fixed.
     presumptive_eligibility = [
-        "liheap",
+        "cesn_leap",
     ]
     utility_providers = [
         "co-colorado-springs-utilities",

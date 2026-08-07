@@ -71,7 +71,7 @@ class TestIlNurseFamilyPartnership(TestCase):
 
     def test_household_eligible_with_wic_regardless_of_income(self):
         """Test household is eligible with WIC (presumed eligibility) regardless of income."""
-        # IL ships il_wic, not a bare "wic" — the calculator resolves it via base_program.
+        # IL ships il_wic, resolved via base_program.
         seed_program(self.il_white_label, "il_wic", base_program="wic")
         _write_current_benefits(self.screen, ["il_wic"])
 

@@ -21,9 +21,8 @@ def make_calculator(yearly_income=10_000, fpl_limit=15_000, members=None, has_be
     mock_screen.calc_gross_income = Mock(return_value=yearly_income)
     mock_screen.household_members.all = Mock(return_value=members or [make_member()])
     mock_screen.household_size = len(members) if members else 1
-    # SNAP/TANF adjunctive eligibility reads base_program names (wa_snap / wa_tanf), so
-    # has_benefit is stubbed False — an exact-name read must not pass on a Mock. Medicaid
-    # is not a has-benefits program in WA; Apple Health arrives as insurance, hence the
+    # SNAP/TANF adjunctive eligibility reads base_program; has_benefit is stubbed False so
+    # an exact-name read can't pass. Apple Health arrives as insurance, hence the
     # separate has_insurance_types stub.
     mock_screen.has_benefit = Mock(return_value=False)
     mock_screen.has_base_benefit = Mock(side_effect=lambda b: has_benefit.get(b, False))
@@ -124,16 +123,13 @@ class TestWaWicHouseholdEligibility(TestCase):
         self.assertTrue(self._run(yearly_income=50_000, has_benefit={"snap": True}))
 
     def test_medicaid_adjunctive_bypasses_income(self):
-        """Apple Health comes in as insurance, not as a has-benefits program, so this leg
-        reads has_insurance_types rather than has_base_benefit("medicaid") — which is False
-        for every WA screen because no WA program carries base_program="medicaid" in the
-        has-benefits step."""
+        """Apple Health is insurance, not a has-benefits program, so this leg reads
+        has_insurance_types."""
         self.assertTrue(self._run(yearly_income=50_000, has_apple_health=True))
 
     def test_medicaid_as_a_reported_benefit_does_not_apply(self):
-        """Pins the reason the insurance read is the right one: nothing writes a
-        base_program="medicaid" row to current_benefits on a WA screen, so relying on that
-        signal would leave the Medicaid leg permanently dead."""
+        """No WA program is reportable with base_program="medicaid", so that signal must
+        not be what the Medicaid leg relies on."""
         self.assertFalse(self._run(yearly_income=50_000, has_benefit={"medicaid": True}))
 
     def test_tanf_adjunctive_bypasses_income(self):

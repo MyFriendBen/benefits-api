@@ -1,18 +1,12 @@
 """
-Pins the presumptive/categorical eligibility resolution for the calculators whose reads
-were dead until this change and which have no test suite of their own.
+Pins presumptive/categorical eligibility resolution for the calculators that declare base
+program names ("snap", "tanf", "wic") in a `presumptive_eligibility` or
+`categorically_eligible` list and have no test suite of their own.
 
-Each of these calculators declares a `presumptive_eligibility` (or `categorically_eligible`)
-list containing base program names — "snap", "tanf", "ssi", "wic". Those were read through
-the exact-match `Screen.has_benefit()`, which never matches, because white labels ship
-state-prefixed programs (co_snap, nc_tanf, tx_snap, …). So the presumptive branch was
-unreachable in production for every one of them.
-
-These tests exercise the resolution seam with real Program / CurrentBenefit rows rather
-than the calculators' full `household_eligible()`, which would need the AMI and
-income-limit integrations stubbed to say anything about this behavior. What's asserted is
-exactly what was broken: does receiving the state's SNAP/TANF/WIC program satisfy the
-calculator's declared presumptive list.
+These exercise the resolution seam with real Program / CurrentBenefit rows rather than the
+full `household_eligible()`, which would need the AMI and income-limit integrations stubbed
+to say anything about this behavior. What's asserted: does receiving the state's
+SNAP/TANF/WIC program satisfy the calculator's declared list.
 """
 
 from unittest.mock import Mock
@@ -101,8 +95,7 @@ class PresumptiveEligibilityResolutionTests(TestCase):
         return e.eligible
 
     def test_sun_bucks_excludes_a_snap_household(self):
-        """NC SUN Bucks excludes SNAP/TANF households because they're auto-enrolled. The
-        exclusion matched nothing before, so those households were shown the program."""
+        """NC SUN Bucks excludes SNAP/TANF households because they're auto-enrolled."""
         self._receive("nc_snap", "snap")
 
         self.assertFalse(self._sun_bucks_eligible())
@@ -118,8 +111,7 @@ class PresumptiveEligibilityResolutionTests(TestCase):
         self.assertTrue(self._sun_bucks_eligible())
 
     def test_wic_resolves_for_nurse_family_partnership(self):
-        """CO/IL Nurse-Family Partnership treat WIC receipt as an income-test bypass. IL
-        ships il_wic; CO's live program is co_wic (its bare "wic" row is retired)."""
+        """CO/IL Nurse-Family Partnership treat WIC receipt as an income-test bypass."""
         self._receive("il_wic", "wic")
 
         self.assertTrue(self.screen.has_base_benefit("wic"))

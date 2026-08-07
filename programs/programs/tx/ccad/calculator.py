@@ -22,8 +22,7 @@ class TxCcad(ProgramCalculator):
         e.condition(bool(age_eligible))
 
     def household_eligible(self, e: Eligibility):
-        # SNAP and TANF are household-level benefits that bypass the income test.
-        # has_base_benefit resolves the tx_snap / tx_tanf variants this white label offers.
+        # SNAP and TANF are household-level benefits that bypass the income test
         presumed_eligible = self.screen.has_base_benefit("snap") or self.screen.has_base_benefit("tanf")
 
         # SSI and Medicaid are individual — only counts if the age-eligible member has it

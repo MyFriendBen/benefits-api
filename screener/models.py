@@ -313,11 +313,8 @@ class Screen(models.Model):
         return any(member.has_insurance_types(types, strict) for member in self.household_members.all())
 
     def has_benefit_from_list(self, names: list[str]):
-        """True if the household receives any of `names`, where each entry may be an
-        exact `name_abbreviated` or a `base_program` group — see
-        has_benefit_or_variant(). Presumptive-eligibility lists mix both (e.g.
-        ("andcs", "ssi", "snap", "leap", "tanf") on CO WAP: state-specific names
-        alongside cross-state base programs)."""
+        """True if the household receives any of `names`. Each entry may be an exact
+        `name_abbreviated` or a `base_program` group — see has_benefit_or_variant()."""
         for program in names:
             if self.has_benefit_or_variant(program):
                 return True
@@ -396,16 +393,10 @@ class Screen(models.Model):
         """True if `name` matches the household's current benefits either exactly
         (`name_abbreviated`) or structurally (`base_program`).
 
-        For a single benefit prefer the precise method: `has_benefit("tx_snap")` when
-        the intent is that one state's program, `has_base_benefit("snap")` when it's
-        "any variant of SNAP". This exists for the mixed lists — a
-        `presumptive_eligibility` tuple naturally holds both kinds of name (e.g. the
-        CO-only `andcs` next to the cross-state `snap`).
-
-        A name can be both an exact program and a base_program group: CO, IL, MA and NC
-        each ship a program literally named `ssi` / `ssdi` whose `base_program` is the
-        same string. Matching either is the intended reading, since the group only ever
-        holds variants of that same benefit.
+        For a single benefit prefer the precise method — `has_benefit("tx_snap")` for one
+        state's program, `has_base_benefit("snap")` for any variant. This exists for the
+        mixed lists: a `presumptive_eligibility` tuple naturally holds both kinds of name
+        (the CO-only `andcs` next to the cross-state `snap`).
         """
         return self.has_benefit(name) or self.has_base_benefit(name)
 

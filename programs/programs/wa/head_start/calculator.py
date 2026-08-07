@@ -57,9 +57,7 @@ class WaHeadStart(ProgramCalculator):
         # Foster care categorical — any age-eligible member regardless of income (§ 1302.12(c)(1)(iv))
         has_foster_child = any(me.eligible and me.member.relationship == "fosterChild" for me in e.eligible_members)
 
-        # TANF, SSI, SNAP categorical eligibility per OHS interpretation (ACF-IM-HS-22-03).
-        # has_base_benefit resolves WA's wa_tanf / wa_ssi / wa_snap variants — the bare
-        # names are exact-match reads that never hit, so this never fired.
+        # TANF, SSI, SNAP categorical eligibility per OHS interpretation (ACF-IM-HS-22-03)
         categorical = (
             self.screen.has_base_benefit("tanf")
             or self.screen.has_base_benefit("ssi")

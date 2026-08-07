@@ -36,19 +36,10 @@ class WaWic(ProgramCalculator):
         e.condition(is_pregnant or is_under_5)
 
     def household_eligible(self, e: Eligibility):
-        # SNAP and TANF are reported in the has-benefits step, so they resolve through
-        # base_program (wa_snap / wa_tanf); the bare names were exact-match reads that
-        # never hit, so adjunctive eligibility never fired and every household fell
-        # through to the income test.
-        #
-        # Medicaid is NOT a has-benefits program in WA — Apple Health is collected as
-        # insurance, so wa_apple_health_medicaid never enters current_benefits and
-        # has_base_benefit("medicaid") would be False for every WA screen. Read it off
-        # insurance instead, the way wa/wap does.
-        #
-        # Only the Medicaid leg is counted. Apple Health for Kids maps to the CHP+ field
-        # and mixes Medicaid and CHIP coverage; whether CHIP confers WIC adjunctive
-        # eligibility in WA is a policy question, not a naming one, so it stays out.
+        # WA captures Apple Health as insurance rather than as a has-benefits program, so
+        # the Medicaid leg reads insurance the way wa/wap does. Apple Health for Kids
+        # (CHIP) is deliberately excluded — whether it confers adjunctive eligibility is a
+        # policy question.
         adjunctive_eligible = (
             self.screen.has_base_benefit("snap")
             or self.screen.has_base_benefit("tanf")

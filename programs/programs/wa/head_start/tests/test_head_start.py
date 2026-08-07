@@ -32,9 +32,8 @@ def make_calculator(
 
     mock_screen = Mock()
     mock_screen.household_size = household_size
-    # The calculator reads the WA-specific program by exact name and the categorical
-    # benefits by base_program, so the two lookups are mocked separately — a single
-    # has_benefit mock would let a base-name read silently pass on a Mock's truthy default.
+    # wa_head_start is an exact-name read; the categorical benefits go through
+    # base_program, so the two lookups are stubbed separately.
     mock_screen.has_benefit = Mock(side_effect=lambda b: {"wa_head_start": has_head_start}.get(b, False))
     mock_screen.has_base_benefit = Mock(
         side_effect=lambda b: {
