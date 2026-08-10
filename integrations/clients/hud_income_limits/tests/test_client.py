@@ -9,7 +9,7 @@ import copy
 import requests
 from contextlib import contextmanager
 from typing import Any
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from unittest.mock import Mock, patch
 from django.core.cache import cache
 
@@ -20,9 +20,11 @@ from integrations.clients.hud_income_limits.client import (
     Section8AmiPercent,
 )
 from screener.models import Screen, WhiteLabel
+from benefits.tests.cache_override import LOCAL_CACHE
 
 
 # Shared test fixtures
+@override_settings(CACHES=LOCAL_CACHE)
 class HudClientTestBase(TestCase):
     """Base test class with shared mock data fixtures."""
 
@@ -550,6 +552,7 @@ class TestHudIncomeClientCountyLookup(HudClientTestBase):
                 client._get_entity_id("TS", "Test County", 2025)
 
 
+@override_settings(CACHES=LOCAL_CACHE)
 class TestHudIncomeClientHTTPErrors(TestCase):
     """Test HTTP and network error handling."""
 
@@ -711,6 +714,7 @@ class TestHudIncomeClientHTTPErrors(TestCase):
         self.assertIn("GET", retry_config.allowed_methods)
 
 
+@override_settings(CACHES=LOCAL_CACHE)
 class TestHudIncomeClientFmrBasicdata(TestCase):
     """Regression: HUD sometimes returns data.basicdata as a list of dicts."""
 

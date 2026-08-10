@@ -7,131 +7,77 @@ from translations.model_data import ModelDataController
 from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
 from programs.programs import calculators
 from programs.util import Dependencies
-import requests
-from integrations.util.cache import Cache
 from typing import Optional, TypedDict, Union
 from programs.programs.translation_overrides import warning_calculators
 
+_FPL_DEFAULTS = {
+    "2023": {
+        1: 14_580,
+        2: 19_720,
+        3: 24_860,
+        4: 30_000,
+        5: 35_140,
+        6: 40_280,
+        7: 45_420,
+        8: 50_560,
+        "additional": 5_140,
+    },
+    "2024": {
+        1: 15_060,
+        2: 20_440,
+        3: 25_820,
+        4: 31_200,
+        5: 36_580,
+        6: 41_960,
+        7: 47_340,
+        8: 52_720,
+        "additional": 5_380,
+    },
+    "2025": {
+        1: 15_650,
+        2: 21_150,
+        3: 26_650,
+        4: 32_150,
+        5: 37_650,
+        6: 43_150,
+        7: 48_650,
+        8: 54_150,
+        "additional": 5_500,
+    },
+    "2026": {
+        1: 15_960,
+        2: 21_640,
+        3: 27_320,
+        4: 33_000,
+        5: 38_680,
+        6: 44_360,
+        7: 50_040,
+        8: 55_720,
+        "additional": 5_680,
+    },
+}
 
-class FplCache(Cache):
-    expire_time = 60 * 60 * 24  # 24 hours
-    default = {
-        "2023": {
-            1: 14_580,
-            2: 19_720,
-            3: 24_860,
-            4: 30_000,
-            5: 35_140,
-            6: 40_280,
-            7: 45_420,
-            8: 50_560,
-            "additional": 5_140,
-        },
-        "2024": {
-            1: 15_060,
-            2: 20_440,
-            3: 25_820,
-            4: 31_200,
-            5: 36_580,
-            6: 41_960,
-            7: 47_340,
-            8: 52_720,
-            "additional": 5_380,
-        },
-        "2025": {
-            1: 15_650,
-            2: 21_150,
-            3: 26_650,
-            4: 32_150,
-            5: 37_650,
-            6: 43_150,
-            7: 48_650,
-            8: 54_150,
-            "additional": 5_500,
-        },
-        "2026": {
-            1: 15_960,
-            2: 21_640,
-            3: 27_320,
-            4: 33_000,
-            5: 38_680,
-            6: 44_360,
-            7: 50_040,
-            8: 55_720,
-            "additional": 5_680,
-        },
-    }
-    api_url = "https://aspe.hhs.gov/topics/poverty-economic-mobility/poverty-guidelines/api/"
-    max_household_size = 8
 
-    class InvalidYear(Exception):
-        pass
+def _get_fpl_data() -> dict:
+    """Return the FPL table.
 
-    def update(self):
-        """
-        Get FPLs for all relevant years using the official ASPE Poverty Guidelines API
-        """
-        return self.default
-        fpls = FederalPoveryLimit.objects.filter(fpl__isnull=False).distinct()
-        fpl_dict = {}
-        for fpl in fpls:
-            household_sz_fpl = {}
-            # get the FPL for the household sizes 1-8
-            for i in range(1, self.max_household_size + 1):
-                try:
-                    data = self._fetch_income_limit(fpl.period, str(i))
-                except self.InvalidYear:
-                    household_sz_fpl = None
-                    break
+    Not cached: the values are a module-level constant, so a cache round-trip buys
+    nothing and costs a network hop. The pre-existing FplCache appeared to fetch
+    from the ASPE Poverty Guidelines API, but update() opened with
+    `return self.default`, leaving that request code unreachable -- the cached
+    value has only ever been this constant.
 
-                household_sz_fpl[i] = data
-                if i == self.max_household_size:
-                    income_limit_extra_member = self._fetch_income_limit(fpl.period, str(self.max_household_size + 1))
-                    household_sz_fpl["additional"] = income_limit_extra_member - data
-            fpl_dict[fpl.period] = household_sz_fpl
-
-        # replace invalid years with the most recent year's fpl
-        most_recent_year = 0
-        for year, values in fpl_dict.items():
-            if values is not None and int(year) > most_recent_year:
-                most_recent_year = int(year)
-
-        for year, values in fpl_dict.items():
-            if values is None:
-                fpl_dict[year] = fpl_dict[str(most_recent_year)].copy()
-
-        return fpl_dict
-
-    def _fetch_income_limit(self, year: str, household_size: str):
-        """
-        Request the FPL from the API for the indicated year and household size
-        """
-        response = requests.get(self._fpl_url(year, household_size), allow_redirects=False, timeout=(5, 30))
-        if "Location" in response.headers:
-            new_url = response.headers["Location"].replace("http", "https")
-            if "https://" not in new_url:
-                new_url = response.headers["Location"].replace("http", "https")
-            response = requests.get(new_url, timeout=(5, 30))
-
-        response.raise_for_status()
-        data = response.json()["data"]
-
-        if data is False:
-            raise self.InvalidYear(f"{year} FPL is not available")
-        return int(response.json()["data"]["income"])
-
-    def _fpl_url(self, year: str, household_size: str):
-        """
-        The URL to request the FPL for a year and household size
-        """
-        return self.api_url + year + "/us/" + household_size
+    Returning it directly also removes an identity hazard: a cache miss handed
+    back _FPL_DEFAULTS itself while a hit handed back a deserialized copy, so a
+    caller mutating the result corrupted the constant for the life of the process
+    but only on the miss path.
+    """
+    return _FPL_DEFAULTS
 
 
 class FederalPoveryLimit(models.Model):
     year = models.CharField(max_length=32, unique=True)
     period = models.CharField(max_length=32)
-
-    fpl_cache = FplCache()
 
     MAX_DEFINED_SIZE = 8
 
@@ -145,12 +91,7 @@ class FederalPoveryLimit(models.Model):
         return limits[self.MAX_DEFINED_SIZE] + limits["additional"] * additional_member_count
 
     def as_dict(self):
-        try:
-            return self.fpl_cache.fetch()[self.period]
-        except KeyError:
-            # the year is not cached, so invalidate the cache
-            self.fpl_cache.invalid = True
-            return self.fpl_cache.fetch()[self.period]
+        return _get_fpl_data()[self.period]
 
     def __str__(self):
         return self.year

@@ -1,19 +1,28 @@
 from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
 from programs.programs.helpers import medicaid_eligible
 import programs.programs.messages as messages
-from integrations.services.sheets import GoogleSheetsCache
+from integrations.services.sheets.cache import GoogleSheetsCache
 from screener.models import HouseholdMember
+from sentry_sdk import capture_message
 
 
 class ACACache(GoogleSheetsCache):
-    default = {}
+    CACHE_KEY = "nc_aca_data"
     sheet_id = "1tk8zfO_Ou96UvGrIwZoI3Pv8TvPZZipg7YfzGMT2o3c"
     range_name = "'current report'!A2:B101"
 
-    def update(self):
-        data = super().update()
-
-        return {d[0].strip() + " County": float(d[1].replace(",", "")) for d in data}
+    def _process(self, raw_data):
+        result = {}
+        for d in raw_data:
+            if len(d) < 2:
+                continue
+            try:
+                county_key = d[0].strip() + " County"
+                premium_value = float(d[1].replace(",", ""))
+                result[county_key] = premium_value
+            except (IndexError, ValueError, AttributeError):
+                continue  # Skip malformed rows
+        return result
 
 
 class ACASubsidiesNC(ProgramCalculator):
@@ -43,5 +52,15 @@ class ACASubsidiesNC(ProgramCalculator):
         e.condition(not member.insurance.has_insurance_types(ACASubsidiesNC.ineligible_insurance_types))
 
     def member_value(self, member: HouseholdMember):
-        values = self.county_values.fetch()
-        return values[self.screen.county] * 12
+        values = self.county_values.get_data()
+        county = self.screen.county
+        if county not in values:
+            # A $0 value is filtered out by the frontend's `value > 0` check, so the
+            # program silently vanishes from results rather than erroring. Report it,
+            # otherwise a renamed county or an empty sheet fetch is undetectable.
+            capture_message(
+                f"ACASubsidiesNC: no premium value for county {county!r} of {len(values)} cached",
+                level="warning",
+            )
+            return 0
+        return values[county] * 12

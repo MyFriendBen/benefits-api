@@ -15,7 +15,7 @@ Notes:
     suite stays green, and are flagged where they do so.
   - The income limit is derived by the real `FederalPoveryLimit.get_limit`, not by a
     copy of it. `get_limit` is pure arithmetic over `as_dict()`, which reads the offline
-    `FplCache.default` literal, so it needs neither the database nor the network — an
+    `_FPL_DEFAULTS` literal, so it needs neither the database nor the network — an
     unsaved instance is enough.
 """
 
