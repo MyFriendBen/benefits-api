@@ -32,7 +32,7 @@ class Ssdi(ProgramCalculator):
 
         # income
         income_limit = Ssdi.income_limit_blind if member.visually_impaired else Ssdi.income_limit
-        member_income = member.calc_gross_income("monthly", ("all",))
+        member_income = member.calc_gross_income("monthly", ("all",), exclude=["nurturingFutures"])
         e.condition(member_income < income_limit)
 
         # age
