@@ -68,3 +68,25 @@ wic_income = [
     member.Ssi,
     spm.Tanf,
 ]
+
+# PolicyEngine's actual-receipt contract (policyengine-us 1.779.3): countable income and
+# categorical eligibility follow the benefits a household reports receiving, not the ones
+# PolicyEngine simulates them as eligible for. See dependencies/receipt.py for the
+# reasoning; the amount inputs travel with the flags so a program adopting the contract
+# sends a coherent picture of each benefit.
+#
+# The set moves as a unit on purpose. Suppressing simulated SSI while leaving simulated
+# SNAP in place would just shift categorical eligibility onto the other phantom benefit,
+# and PE requests are a single shared payload — every program in a request sees these
+# inputs — so a partial adoption is a per-white-label inconsistency rather than a
+# narrower change.
+receipt_contract = [
+    member.Ssi,
+    member.ReceivesSsiDependency,
+    member.TakesUpSsiIfEligibleDependency,
+    spm.Tanf,
+    spm.ReceivesTanfDependency,
+    spm.TakesUpTanfIfEligibleDependency,
+    spm.ReceivesSnapDependency,
+    spm.TakesUpSnapIfEligibleDependency,
+]

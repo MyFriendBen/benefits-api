@@ -1,4 +1,5 @@
 from .base import Member
+from .receipt import SSI_INCOME_TYPE, member_reports_ssi, screen_reports_unattributed_ssi
 
 
 class AgeDependency(Member):
@@ -133,19 +134,37 @@ class Wic(Member):
     field = "wic"
 
 
+class WicIfTakesUp(Member):
+    """
+    PolicyEngine's would-be WIC entitlement — what the member is eligible for whether or
+    not they take it up. The WIC program reads this rather than ``wic``, which is
+    receipt-gated: ``takes_up_wic_if_eligible`` (or any downstream take-up suppression)
+    zeroes ``wic``, and every WIC calculator gates on that value being positive, so a
+    non-recipient would drop out of results entirely.
+    """
+
+    field = "wic_if_takes_up"
+    min_pe_version = (1, 779, 3)
+
+
 class Medicaid(Member):
     field = "medicaid"
 
 
 class Ssi(Member):
     """
-    SSI as both PE input and output.
+    The household's reported SSI amount, as PolicyEngine's person-level ``ssi`` input.
 
-    - If user reports SSI: use reported value
-    - If no reported SSI: return None so PE calculates eligibility
+    - If the member reports SSI: send the reported amount (annual; PE spreads it across
+      the months itself). PE uses it in place of its own computed SSI, so it counts as
+      income downstream and confers the categorical eligibility SSI receipt carries.
+    - Otherwise: None, so PE computes. Whether that computed amount is then *used*
+      depends on ``TakesUpSsiIfEligibleDependency`` — for a member who reports no SSI it
+      is suppressed, so PE's simulated SSI no longer counts as unearned income for
+      programs like IL AABD.
 
-    Warning: When PE calculates SSI, the value sometimes counts as unearned
-    income for downstream calculations (e.g., IL AABD).
+    An explicit amount wins over the take-up flag: PE's flag only suppresses its own
+    computed value.
     """
 
     field = "ssi"
@@ -156,8 +175,70 @@ class Ssi(Member):
     )
 
     def value(self):
-        ssi = self.member.calc_gross_income("yearly", ["sSI"])
+        ssi = self.member.calc_gross_income("yearly", [SSI_INCOME_TYPE])
         return None if ssi == 0 else ssi
+
+
+class SsiIfTakesUp(Member):
+    """
+    PolicyEngine's would-be SSI entitlement, independent of take-up. The SSI program
+    reads this rather than ``ssi``: with ``takes_up_ssi_if_eligible: False`` sent for
+    every non-recipient, ``ssi`` is 0 for exactly the people the program should be shown
+    to, and the frontend filters programs valued at $0 out of results.
+    """
+
+    field = "ssi_if_takes_up"
+    min_pe_version = (1, 779, 3)
+
+
+class ReceivesSsiDependency(Member):
+    """
+    Reported SSI receipt for this member.
+
+    Distinct from the ``ssi`` amount: a household can report receiving SSI while PE
+    computes their entitlement as $0 (high other income, say), and this is what keeps the
+    categorical eligibility that receipt confers — SNAP's SSI-recipient path, Medicaid's
+    SSI category — firing in that case.
+    """
+
+    field = "receives_ssi"
+    min_pe_version = (1, 779, 3)
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
+
+    def value(self):
+        return member_reports_ssi(self.member)
+
+
+class TakesUpSsiIfEligibleDependency(Member):
+    """
+    False for a member who reports no SSI, which stops PolicyEngine counting the SSI it
+    simulates for them as income they actually receive.
+
+    This is the lever behind the largest behavior change in the receipt contract: a
+    non-reporter whom PE models as SSI-eligible no longer carries phantom SSI income into
+    IL AABD, SNAP's income test, TX CEAP or the Medicaid/MSP SSI methodologies.
+
+    Left at PE's default (True) when the household reports SSI receipt that no member's
+    income stream accounts for — see ``screen_reports_unattributed_ssi``.
+    """
+
+    field = "takes_up_ssi_if_eligible"
+    min_pe_version = (1, 779, 3)
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
+
+    def value(self):
+        if member_reports_ssi(self.member):
+            return True
+
+        return screen_reports_unattributed_ssi(self.screen)
 
 
 class IsDisabledDependency(Member):
