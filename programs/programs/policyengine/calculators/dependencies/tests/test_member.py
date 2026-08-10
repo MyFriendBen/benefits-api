@@ -1807,3 +1807,82 @@ class TestHasEsiDependency(TestCase):
         from programs.programs.policyengine.calculators.dependencies.base import Member
 
         self.assertTrue(issubclass(member.HasEsiDependency, Member))
+
+
+class TestChildSupportReceivedDependency(TestCase):
+    """Child support *received*, sent to PolicyEngine as income (a WIC income source).
+
+    The pairing with ``SnapChildSupportDependency`` is the thing worth guarding: that one
+    sends child support *paid*, as an expense, under a different PE field. A household can
+    report both, and collapsing them would count a payer's outflow as their income.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=2,
+            completed=False,
+        )
+
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
+
+    def test_value_calculates_annual_child_support_received(self):
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=self.head,
+            type="childSupport",
+            amount=400,
+            frequency="monthly",
+        )
+
+        dep = member.ChildSupportReceivedDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 4800)  # $400/month * 12
+
+    def test_value_returns_zero_when_none_reported(self):
+        dep = member.ChildSupportReceivedDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 0)
+
+    def test_value_excludes_other_income_types(self):
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=self.head,
+            type="childSupport",
+            amount=400,
+            frequency="monthly",
+        )
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=self.head,
+            type="alimony",
+            amount=300,
+            frequency="monthly",
+        )
+
+        dep = member.ChildSupportReceivedDependency(self.screen, self.head, {})
+        self.assertEqual(dep.value(), 4800)
+
+    def test_field_name_matches_policyengine_variable(self):
+        self.assertEqual(member.ChildSupportReceivedDependency.field, "child_support_received")
+
+    def test_is_distinct_from_the_child_support_paid_expense(self):
+        """Received income and paid expense are separate PE fields, and both can be
+        non-zero for the same household."""
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=self.head,
+            type="childSupport",
+            amount=400,
+            frequency="monthly",
+        )
+        Expense.objects.create(screen=self.screen, type="childSupport", amount=500, frequency="monthly")
+
+        received = member.ChildSupportReceivedDependency(self.screen, self.head, {})
+        paid = member.SnapChildSupportDependency(self.screen, self.head, {})
+
+        self.assertNotEqual(received.field, paid.field)
+        self.assertEqual(received.value(), 4800)
+        self.assertEqual(paid.value(), 3000)  # $500/month * 12 / household_size(2)

@@ -89,6 +89,13 @@ class MaWic(Wic):
         "POSTPARTUM": 91,
         "BREASTFEEDING": 124,
     }
+    # WIC's FPG table branches on AK/HI vs. contiguous US, so the state code is
+    # load-bearing. This was the only WIC subclass not sending one — it worked only
+    # because a sibling MA program put the state in the shared payload.
+    pe_inputs = [
+        *Wic.pe_inputs,
+        dependency.household.MaStateCodeDependency,
+    ]
 
 
 class MaCcdf(Ccdf):

@@ -118,12 +118,19 @@ class TestTxWic(TestCase):
         self.assertIn(AgeDependency, TxWic.pe_inputs)
         self.assertEqual(AgeDependency.field, "age")
 
-    def test_pe_inputs_includes_school_meal_countable_income_dependency(self):
-        """Test that TxWic inherits SchoolMealCountableIncomeDependency from parent Wic class."""
+    def test_pe_inputs_includes_the_wic_income_bundle(self):
+        """TxWic inherits the WIC income sources from the parent Wic class.
+
+        These replaced ``school_meal_countable_income``, which WIC's tree never read: TX WIC
+        returned eligible at any reported income until the bundle landed. What the bundle
+        covers is pinned in ``federal/pe/tests/test_wic.py``.
+        """
+        from programs.programs.policyengine.calculators.dependencies import wic_income
         from programs.programs.policyengine.calculators.dependencies.spm import SchoolMealCountableIncomeDependency
 
-        self.assertIn(SchoolMealCountableIncomeDependency, TxWic.pe_inputs)
-        self.assertEqual(SchoolMealCountableIncomeDependency.field, "school_meal_countable_income")
+        for dep in wic_income:
+            self.assertIn(dep, TxWic.pe_inputs)
+        self.assertNotIn(SchoolMealCountableIncomeDependency, TxWic.pe_inputs)
 
     def test_has_same_pe_outputs_as_parent(self):
         """Test that TxWic has the same pe_outputs as parent Wic class."""
