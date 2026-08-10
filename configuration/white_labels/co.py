@@ -183,7 +183,7 @@ class CoConfigurationData(ConfigurationData):
             },
             "nurturingFutures": {
                 "_label": "incomeOptions.nurturingFutures",
-                "_default_message": "Nurturing Futures direct cash payment",
+                "_default_message": "Nurturing Futures Direct Cash Payment",
             },
         },
     }
