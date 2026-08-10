@@ -82,12 +82,16 @@ class IlAabd(PolicyEngineMembersCalculator):
         member_dependency.IsBlindDependency,
         member_dependency.IsDisabledDependency,
         member_dependency.SsiEarnedIncomeDependency,
-        member_dependency.SsiReportedDependency,
         member_dependency.SsiCountableResourcesDependency,
         # il_aabd_countable_income - unearned income types
         member_dependency.SocialSecurityIncomeDependency,
         member_dependency.SsdiReportedDependency,
-        member_dependency.Ssi,
+        # AABD counts SSI as unearned income, and PolicyEngine's simulated SSI used to
+        # count here whether or not the applicant received it — an applicant PE modelled as
+        # SSI-eligible was blocked from AABD by income they never got. The receipt contract
+        # supplies the reported amount and suppresses the simulated one (member_dependency.Ssi
+        # travels in the bundle).
+        *pe_dependency.receipt_contract,
         member_dependency.WorkersCompensationDependency,
         member_dependency.UnemploymentIncomeDependency,
         member_dependency.RetirementDistributionsDependency,

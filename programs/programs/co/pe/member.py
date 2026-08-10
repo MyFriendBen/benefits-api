@@ -29,7 +29,9 @@ class AidToTheNeedyAndDisabled(PolicyEngineMembersCalculator):
     pe_name = "co_state_supplement"
     pe_inputs = [
         dependency.member.SsiCountableResourcesDependency,
-        dependency.member.SsiReportedDependency,
+        # co_state_supplement tops up SSI, so it reads the `ssi` amount the receipt
+        # contract supplies (reported where reported, simulated-and-suppressed otherwise).
+        *dependency.receipt_contract,
         dependency.member.IsBlindDependency,
         dependency.member.IsDisabledDependency,
         dependency.member.SsiEarnedIncomeDependency,

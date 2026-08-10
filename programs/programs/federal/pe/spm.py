@@ -10,16 +10,13 @@ SNAP_BASE_INPUTS = [
     dependency.member.AgeDependency,
     dependency.member.MedicalExpenseDependency,
     dependency.member.IsDisabledDependency,
-    # TANF cash receipt drives SNAP categorical eligibility (income/asset tests bypassed):
-    # send the reported tanf amount directly as the tanf value. TANF has no reported/toggle
-    # seam, so a positive tanf value is what confers categorical eligibility.
-    #
-    # SSI categorical eligibility is deliberately NOT wired here. It requires
-    # use_reported_ssi, which is global per PE request (flips applicable_ssi for every
-    # program in the request — SNAP, IL AABD, KS TANF, TX CEAP), so it's a federal
-    # all-state change with cross-program effects (verified IL AABD $0->$10k swing).
-    # That work lives in MFB-1312 with all-consumer QA, not in this KS SNAP PR.
-    dependency.spm.Tanf,
+    # SNAP's categorical eligibility bypasses the income and asset tests for households
+    # receiving SSI or TANF, and PolicyEngine now keys that off actual receipt: the
+    # reported amount, or receives_ssi / receives_tanf where the household reports receipt
+    # we have no amount for. The take-up flags in the same bundle stop a household PE
+    # merely *models* as SSI/TANF-eligible from picking up categorical eligibility, and
+    # stop that phantom benefit counting as income in SNAP's own income test.
+    *dependency.receipt_contract,
     # Disabled treatment (uncapped shelter deduction, $4,500 asset limit) requires disability-
     # program receipt via is_usda_disabled, not the generic is_disabled flag: SsdiReportedDependency
     # feeds the SSDI amount, MeetsSsiDisabilityCriteriaDependency the SSI-disability input PE needs
@@ -40,7 +37,10 @@ SNAP_BASE_INPUTS = [
 
 
 class Snap(PolicyEngineSpmCalulator):
-    pe_name = "snap"
+    # The value is snap_if_takes_up, not snap: takes_up_snap_if_eligible is False for every
+    # household that doesn't already report receiving SNAP, which zeroes `snap` for exactly
+    # the households this program should be recommended to.
+    pe_name = "snap_if_takes_up"
     pe_inputs = [
         *SNAP_BASE_INPUTS,
         dependency.member.FullTimeCollegeStudentDependency,
@@ -48,7 +48,7 @@ class Snap(PolicyEngineSpmCalulator):
         dependency.member.SnapWorkExceptionDependency,
         dependency.member.SnapJobTrainingStudentDependency,
     ]
-    pe_outputs = [dependency.spm.Snap]
+    pe_outputs = [dependency.spm.SnapIfTakesUp]
     pe_period_month = "01"
 
     @property
@@ -79,12 +79,15 @@ class SchoolLunch(PolicyEngineSpmCalulator):
 
 
 class Tanf(PolicyEngineSpmCalulator):
-    pe_name = "tanf"
+    # tanf_if_takes_up rather than tanf, for the same reason as Snap above: the
+    # receipt-gated field is 0 for every household that isn't already on TANF.
+    pe_name = "tanf_if_takes_up"
     pe_inputs = [
         dependency.member.AgeDependency,
         dependency.member.FullTimeCollegeStudentDependency,
+        *dependency.receipt_contract,
     ]
-    pe_outputs = [dependency.spm.Tanf]
+    pe_outputs = [dependency.spm.TanfIfTakesUp]
 
 
 class Acp(PolicyEngineSpmCalulator):
@@ -106,5 +109,9 @@ class Lifeline(PolicyEngineSpmCalulator):
         # supplement (TX, WA) are unaffected since their value doesn't depend on it.
         dependency.spm.PhoneCostDependency,
         *dependency.irs_gross_income,
+        # Lifeline is categorically eligible off SNAP / TANF / SSI receipt, so it needs the
+        # receipt contract to distinguish a household on those programs from one PE merely
+        # models as eligible for them.
+        *dependency.receipt_contract,
     ]
     pe_outputs = [dependency.spm.Lifeline]

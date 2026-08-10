@@ -130,10 +130,6 @@ class MedicaidSeniorOrDisabled(Member):
     field = "is_optional_senior_or_disabled_for_medicaid"
 
 
-class Wic(Member):
-    field = "wic"
-
-
 class WicIfTakesUp(Member):
     """
     PolicyEngine's would-be WIC entitlement — what the member is eligible for whether or
@@ -387,40 +383,6 @@ class IsBlindDependency(Member):
         return self.member.visually_impaired or False
 
 
-class SsiReportedDependency(Member):
-    field = "ssi_reported"
-    dependencies = (
-        "income_type",
-        "income_amount",
-        "income_frequency",
-    )
-
-    def value(self):
-        return self.member.calc_gross_income("yearly", ["sSI"])
-
-
-class UseReportedSsiDependency(Member):
-    """
-    Tells PolicyEngine to count the household's *reported* SSI (ssi_reported)
-    instead of PE's *calculated* ssi wherever a program's countable income reads
-    applicable_ssi (the calculator opts in by including this in its pe_inputs).
-    We always send True so the screener's reported SSI drives the income test.
-
-    Person-level and global within a request: it flips applicable_ssi for every
-    program in that request, so only add it to calculators where reported SSI is
-    the correct measure.
-
-    min_pe_version gates this to the first model that defines use_reported_ssi;
-    sending it to an earlier model 400s the whole request.
-    """
-
-    field = "use_reported_ssi"
-    min_pe_version = (1, 742, 0)
-
-    def value(self):
-        return True
-
-
 class SsdiReportedDependency(Member):
     # Amount in "Social Security disability benefits (SSDI)"
     field = "social_security_disability"
@@ -447,10 +409,6 @@ class SsiCountableResourcesDependency(Member):
             ssi_assets = self.screen.household_assets / self.screen.num_adults()
 
         return int(ssi_assets)
-
-
-class SsiAmountIfEligible(Member):
-    field = "ssi_amount_if_eligible"
 
 
 class Andcs(Member):
