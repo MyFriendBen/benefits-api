@@ -52,7 +52,7 @@ class TestTxWic(TestCase):
         self.assertTrue(issubclass(TxWic, Wic))
 
         # Verify it has the expected properties
-        self.assertEqual(TxWic.pe_name, "wic")
+        self.assertEqual(TxWic.pe_name, "wic_if_takes_up")
         self.assertIsNotNone(TxWic.pe_inputs)
         self.assertGreater(len(TxWic.pe_inputs), 0)
 
@@ -151,7 +151,7 @@ class TestTxSsi(TestCase):
         self.assertTrue(issubclass(TxSsi, Ssi))
 
         # Verify it has the expected properties
-        self.assertEqual(TxSsi.pe_name, "ssi")
+        self.assertEqual(TxSsi.pe_name, "ssi_if_takes_up")
         self.assertIsNotNone(TxSsi.pe_inputs)
         self.assertGreater(len(TxSsi.pe_inputs), 0)
 
@@ -202,11 +202,12 @@ class TestTxSsi(TestCase):
 
         self.assertIn(SsiCountableResourcesDependency, TxSsi.pe_inputs)
 
-    def test_pe_inputs_includes_ssi_reported_dependency(self):
-        """Test that TxSsi inherits SsiReportedDependency from parent Ssi class."""
-        from programs.programs.policyengine.calculators.dependencies.member import SsiReportedDependency
+    def test_pe_inputs_includes_the_receipt_contract(self):
+        """TxSsi inherits the reported-amount and take-up inputs from the federal Ssi class."""
+        from programs.programs.policyengine.calculators.dependencies import receipt_contract
 
-        self.assertIn(SsiReportedDependency, TxSsi.pe_inputs)
+        for dep in receipt_contract:
+            self.assertIn(dep, TxSsi.pe_inputs)
 
     def test_pe_inputs_includes_is_blind_dependency(self):
         """Test that TxSsi inherits IsBlindDependency from parent Ssi class."""

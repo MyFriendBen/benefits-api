@@ -453,7 +453,7 @@ class TestWaSsi(TestCase):
 
     def test_pe_name_is_ssi(self):
         """pe_name is inherited from Ssi and resolves to PolicyEngine's `ssi` variable."""
-        self.assertEqual(WaSsi.pe_name, "ssi")
+        self.assertEqual(WaSsi.pe_name, "ssi_if_takes_up")
 
     def test_is_registered_in_wa_pe_calculators(self):
         """WaSsi is registered in the WA PE calculators dictionary as `wa_ssi`."""

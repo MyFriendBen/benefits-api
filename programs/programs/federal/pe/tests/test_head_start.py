@@ -27,7 +27,7 @@ from django.test import TestCase
 
 from programs.programs.federal.pe.member import EarlyHeadStart, HeadStart
 from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
-from programs.programs.policyengine.calculators.dependencies import irs_gross_income, member, spm
+from programs.programs.policyengine.calculators.dependencies import irs_gross_income, member, receipt_contract, spm
 from programs.programs.policyengine.calculators.dependencies.household import StateCode
 from programs.programs.policyengine.calculators.registry import all_member_calculators
 
@@ -72,11 +72,16 @@ class TestFederalHeadStart(TestCase):
         self.assertIn(member.FosterCareDependency, HeadStart.pe_inputs)
 
     def test_pe_inputs_include_categorical_benefit_signals(self):
-        """SNAP / TANF / SSI receipt qualifies a child regardless of income, so all
-        three must reach PolicyEngine's categorical-eligibility determination."""
-        self.assertIn(member.Ssi, HeadStart.pe_inputs)
-        self.assertIn(spm.Snap, HeadStart.pe_inputs)
-        self.assertIn(spm.Tanf, HeadStart.pe_inputs)
+        """
+        SNAP / TANF / SSI receipt qualifies a child regardless of income, so all three must
+        reach PolicyEngine's categorical-eligibility determination — as *receipt*, not as a
+        benefit PolicyEngine simulated the household as eligible for.
+        """
+        for dep in receipt_contract:
+            self.assertIn(dep, HeadStart.pe_inputs)
+        self.assertIn(spm.ReceivesSnapDependency, HeadStart.pe_inputs)
+        self.assertIn(spm.ReceivesTanfDependency, HeadStart.pe_inputs)
+        self.assertIn(member.ReceivesSsiDependency, HeadStart.pe_inputs)
 
     def test_pe_inputs_include_irs_gross_income(self):
         """Income drives the non-categorical (at-or-below-100%-FPL) pathway."""
@@ -121,9 +126,11 @@ class TestFederalEarlyHeadStart(TestCase):
         self.assertIn(member.FosterCareDependency, EarlyHeadStart.pe_inputs)
 
     def test_pe_inputs_include_categorical_benefit_signals(self):
-        self.assertIn(member.Ssi, EarlyHeadStart.pe_inputs)
-        self.assertIn(spm.Snap, EarlyHeadStart.pe_inputs)
-        self.assertIn(spm.Tanf, EarlyHeadStart.pe_inputs)
+        for dep in receipt_contract:
+            self.assertIn(dep, EarlyHeadStart.pe_inputs)
+        self.assertIn(spm.ReceivesSnapDependency, EarlyHeadStart.pe_inputs)
+        self.assertIn(spm.ReceivesTanfDependency, EarlyHeadStart.pe_inputs)
+        self.assertIn(member.ReceivesSsiDependency, EarlyHeadStart.pe_inputs)
 
     def test_pe_inputs_include_irs_gross_income(self):
         for income_input in irs_gross_income:

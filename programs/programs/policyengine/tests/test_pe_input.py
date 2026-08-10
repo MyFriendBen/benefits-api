@@ -291,8 +291,8 @@ class TestPeInputMultipleCalculators(PeInputTestBase):
         spm_unit = result["household"]["spm_units"]["spm_unit"]
         people = result["household"]["people"]
 
-        # SNAP adds snap output
-        self.assertIn("snap", spm_unit)
+        # SNAP adds its would-be-benefit output
+        self.assertIn("snap_if_takes_up", spm_unit)
 
         # WIC adds pregnancy/breastfeeding fields to people
         head_id = str(self.head.id)
