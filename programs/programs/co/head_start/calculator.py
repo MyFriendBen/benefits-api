@@ -50,7 +50,7 @@ class CoHeadStart(ProgramCalculator):
         fpl = self.program.year.as_dict()
         income_limit = int(fpl[self.screen.household_size] / 12)
         income_limit_adams_county = int(fpl[self.screen.household_size] / 12 * CoHeadStart.adams_percent_of_fpl)
-        gross_income = int(self.screen.calc_gross_income("monthly", ["all"]))
+        gross_income = int(self.screen.calc_gross_income("monthly", ["all"], exclude=["nurturingFutures"]))
 
         in_adams = CoHeadStart.adams_county in counties
         if in_adams:

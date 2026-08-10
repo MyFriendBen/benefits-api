@@ -181,6 +181,14 @@ class CoConfigurationData(ConfigurationData):
                 "_label": "incomeOptions.cOSDisability",
                 "_default_message": "Colorado State Disability Benefits",
             },
+            # Boulder County guaranteed income. Listed here rather than under "Gifts"
+            # because participants look for it as a government benefit. Enter the current
+            # monthly payment once, under one adult — the amount is not hardcoded, since
+            # Boulder County has approved an increase from $300 to $600 per household.
+            "nurturingFutures": {
+                "_label": "incomeOptions.nurturingFutures",
+                "_default_message": "Nurturing Futures direct cash payment",
+            },
         },
     }
 

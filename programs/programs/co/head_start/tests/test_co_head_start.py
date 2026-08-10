@@ -221,7 +221,7 @@ class TestCoHeadStartIncomeEligibility(CountySheetTestCase):
     def test_income_is_read_as_monthly_gross_of_all_types(self):
         calc = make_calculator(household_income=100)
         calc.household_eligible(Eligibility())
-        calc.screen.calc_gross_income.assert_called_once_with("monthly", ["all"])
+        calc.screen.calc_gross_income.assert_called_once_with("monthly", ["all"], exclude=["nurturingFutures"])
 
 
 class TestCoHeadStartAdamsCounty(CountySheetTestCase):
