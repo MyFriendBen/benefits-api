@@ -34,9 +34,11 @@ from programs.programs.policyengine.calculators.registry import all_member_calcu
 
 # PolicyEngine's gov.usda.wic.income.sources, in full (24 variables), so the coverage
 # assertions below are measured against WIC's real list rather than a subset of it.
+# Note that capital_gains is NOT among them: wic_countable_income is
+# ``add(spm_unit, period, sources) + max_(0, capital_gains)``, so it is a separate
+# positive-only term. CAPITAL_GAINS_TERM below covers it.
 WIC_INCOME_SOURCES = {
     "alimony_income",
-    "capital_gains",
     "child_support_received",
     "disability_benefits",
     "dividend_income",
@@ -48,18 +50,21 @@ WIC_INCOME_SOURCES = {
     "military_service_income",
     "miscellaneous_income",
     "pension_income",
+    "railroad_benefits",
     "rental_income",
     "retirement_distributions",
     "self_employment_income",
     "social_security",
     "ssi",
     "strike_benefits",
+    "survivor_benefits",
     "tanf",
     "unemployment_compensation",
     "veterans_benefits",
     "workers_compensation",
-    "railroad_benefits",
 }
+
+CAPITAL_GAINS_TERM = "capital_gains"
 
 # Several sources are reached through a PE ``adds`` chain rather than by name, so the
 # field we send and the source it lands in differ. Verified one field at a time against
@@ -67,24 +72,41 @@ WIC_INCOME_SOURCES = {
 SENT_FIELD_TO_SOURCE = {
     "taxable_pension_income": "pension_income",
     "taxable_ira_distributions": "retirement_distributions",
-    "long_term_capital_gains": "capital_gains",
+    "long_term_capital_gains": CAPITAL_GAINS_TERM,
 }
 
-# WIC sources with no screener field. Adding one should fail this test until the
-# mapping is added too, rather than silently staying unreachable.
+# The 11 sources we never populate. Grouped by *why*, because "unreachable" alone is
+# misleading — for most of these the household's money is still counted, just under a
+# different source. See the wic_income comment for the full reasoning.
 UNREACHABLE_SOURCES = {
+    # Counted elsewhere. PE's social_security adds social_security_disability /
+    # _survivors / _dependents / _retirement, so the screener's SSDI, SS survivor and SS
+    # dependent income is counted there; PE's standalone disability_benefits and
+    # survivor_benefits are the non-Social-Security buckets, additive with it. Veteran
+    # income goes out as taxable_pension_income, and investment income through the
+    # capital-gains term.
     "disability_benefits",
+    "survivor_benefits",
+    "veterans_benefits",
     "dividend_income",
+    "interest_income",
+    # Not collected by the screener at all.
     "educational_assistance",
     "financial_assistance",
     "gi_cash_assistance",
-    "interest_income",
     "military_service_income",
     "railroad_benefits",
     "strike_benefits",
-    # Both collected, but folded into taxable_pension_income / social_security rather
-    # than sent under their own names.
-    "veterans_benefits",
+}
+
+# Screener income the household reports that reaches no PE income field at all, so WIC
+# genuinely undercounts it. The state disability types are what PE's disability_benefits
+# holds; boarder arguably belongs in rental_income. Pinned so the gap stays visible.
+UNSENT_SCREENER_INCOME_TYPES = {
+    "cOSDisability",
+    "stateDisability",
+    "iLStateDisability",
+    "boarder",
 }
 
 
@@ -161,14 +183,44 @@ class TestFederalWicIncomeMapping(TestCase):
         UNREACHABLE_SOURCES would otherwise silently shrink the assertion above."""
         self.assertTrue(UNREACHABLE_SOURCES <= WIC_INCOME_SOURCES)
 
+    def test_sends_the_capital_gains_term(self):
+        """``capital_gains`` is not in WIC's source list — ``wic_countable_income`` is
+        ``add(spm_unit, period, sources) + max_(0, capital_gains)``, so it is a separate
+        term. The screener's investment income reaches it via ``long_term_capital_gains``,
+        which ``capital_gains`` adds. Negative gains clamp to zero (measured)."""
+        self.assertIn(CAPITAL_GAINS_TERM, {SENT_FIELD_TO_SOURCE.get(f, f) for f in _fields(Wic)})
+        self.assertNotIn(CAPITAL_GAINS_TERM, WIC_INCOME_SOURCES)
+
     def test_irs_gross_income_alone_is_not_enough(self):
-        """``MoWic`` shipped ``irs_gross_income`` as a partial fix. It reaches eight of
-        WIC's sources, so it makes wage-type income bind, but it leaves workers' comp,
-        alimony, gifts, child support, SSI and TANF unmapped. That gap is why the bundle
-        exists as its own list."""
+        """``MoWic`` shipped ``irs_gross_income`` as a partial fix. It reaches 7 of WIC's
+        24 sources (plus the capital-gains term), so it makes wage-type income bind, but
+        it leaves workers' comp, alimony, gifts, child support, SSI and TANF unmapped.
+        That gap is why the bundle exists as its own list."""
         irs_only = {SENT_FIELD_TO_SOURCE.get(dep.field, dep.field) for dep in irs_gross_income}
-        self.assertEqual(len(irs_only & WIC_INCOME_SOURCES), 8)
+        self.assertEqual(len(irs_only & WIC_INCOME_SOURCES), 7)
         self.assertLess(irs_only & WIC_INCOME_SOURCES, _sources_reached(Wic))
+
+    def test_ssdi_is_counted_through_social_security(self):
+        """The screener's ``sSDisability`` is Social Security Disability, and PE keeps it
+        in ``social_security`` (which adds ``social_security_disability``), not in the
+        standalone ``disability_benefits`` source. So SSDI *is* counted for WIC even
+        though we never send ``disability_benefits``. Measured: the two are additive, not
+        overlapping — 40k in each yields 80k of countable income."""
+        self.assertIn(member.SocialSecurityIncomeDependency, Wic.pe_inputs)
+        self.assertIn("sSDisability", member.SocialSecurityIncomeDependency.income_types)
+        self.assertEqual(member.SocialSecurityIncomeDependency.field, "social_security")
+
+    def test_state_disability_income_reaches_no_pe_field(self):
+        """The real undercount. ``disability_benefits`` is PE's non-Social-Security
+        disability bucket, and the screener's state disability types are exactly what
+        belongs in it — but no dependency reads them, so WIC never sees that income. This
+        affects CO, IL, MA and TX. Pinned so the gap can't be mistaken for coverage."""
+        sent_income_types = set()
+        for dep in Wic.pe_inputs:
+            sent_income_types.update(getattr(dep, "income_types", []))
+
+        self.assertTrue(UNSENT_SCREENER_INCOME_TYPES.isdisjoint(sent_income_types))
+        self.assertIn("disability_benefits", UNREACHABLE_SOURCES)
 
     def test_child_support_received_is_income_not_the_paid_expense(self):
         """``SnapChildSupportDependency`` sends child support *paid* as an expense. The
