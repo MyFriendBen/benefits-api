@@ -188,10 +188,13 @@ class TestFamilyPlanningServicesIncomeEligibility(TestCase):
     def test_zero_income_is_eligible(self):
         self.assertTrue(self._run(1, 0))
 
-    def test_cash_assistance_is_excluded_from_income(self):
+    def test_cash_assistance_and_nurturing_futures_are_excluded_from_income(self):
+        # Family planning services is a MAGI-based Medicaid pathway, so neither counts.
         calc = make_calculator(household_income=1_000)
         calc.household_eligible(eligibility_with_members(1))
-        calc.screen.calc_gross_income.assert_called_once_with("yearly", ["all"], exclude=["cashAssistance"])
+        calc.screen.calc_gross_income.assert_called_once_with(
+            "yearly", ["all"], exclude=["cashAssistance", "nurturingFutures"]
+        )
 
     def test_income_limit_is_sized_using_every_member_not_just_eligible_ones(self):
         # Known bug. All three members are counted even though none of the
