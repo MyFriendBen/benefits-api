@@ -513,6 +513,7 @@ class TestSchoolMealCountableIncomeDependency(TestCase):
             "sSSurvivor",
             "sSRetirement",
             "sSDependent",
+            "nurturingFutures",
         ]
 
         # The dependency should have these income types
@@ -520,6 +521,18 @@ class TestSchoolMealCountableIncomeDependency(TestCase):
 
         # And the value should match what calc_gross_income returns
         self.assertEqual(dep.value(), 48000)  # ($3000 + $1000) * 12
+
+    def test_value_includes_nurturing_futures(self):
+        """The Boulder County payment counts on the application-income path."""
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="wages", amount=2000, frequency="monthly"
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="nurturingFutures", amount=600, frequency="monthly"
+        )
+
+        dep = spm.SchoolMealCountableIncomeDependency(self.screen, None, {})
+        self.assertEqual(dep.value(), 31200)  # ($2000 + $600) * 12
 
 
 class TestSnapDependency(TestCase):
