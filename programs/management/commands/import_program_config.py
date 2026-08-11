@@ -196,7 +196,11 @@ class Command(BaseCommand):
         `Screen.county`. Returns None when no such configuration exists (in which case
         county validation is skipped), read the same way `add_counties` reads it.
         """
-        config_obj = Configuration.objects.filter(name="counties_by_zipcode", white_label=white_label).first()
+        config_obj = (
+            Configuration.objects.filter(name="counties_by_zipcode", white_label=white_label, active=True)
+            .order_by("-id")
+            .first()
+        )
         if config_obj is None:
             return None
 
@@ -240,8 +244,11 @@ class Command(BaseCommand):
                     continue
                 suggestion = ""
                 suffixed = f"{county_name} County"
+                bare = county_name[: -len(" County")] if county_name.endswith(" County") else None
                 if suffixed in valid_names:
                     suggestion = f" (did you mean '{suffixed}'?)"
+                elif bare and bare in valid_names:
+                    suggestion = f" (did you mean '{bare}'?)"
                 problems.append(f"navigator '{external_name}': '{county_name}'{suggestion}")
 
         if problems:

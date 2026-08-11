@@ -272,6 +272,24 @@ class ImportProgramConfigTestCase(TransactionTestCase):
         finally:
             Path(config_file).unlink()
 
+    def test_navigator_county_wrong_convention_fails_loudly_in_dry_run(self):
+        """The guard also runs under --dry-run: an invalid county raises and creates nothing."""
+        self._set_counties_by_zipcode({"11111": {"Jackson County": "Jackson County"}})
+
+        config = self.base_config.copy()
+        config["navigators"] = [self._navigator_config("test_nav", ["Jackson"])]
+        config_file = self._create_temp_config(config)
+
+        try:
+            with self.assertRaises(CommandError) as ctx:
+                call_command("import_program_config", config_file, "--dry-run", stdout=StringIO())
+
+            self.assertIn("did you mean 'Jackson County'", str(ctx.exception))
+            self.assertFalse(Program.objects.filter(name_abbreviated="test_program").exists())
+            self.assertFalse(Navigator.objects.filter(external_name="test_nav").exists())
+        finally:
+            Path(config_file).unlink()
+
     def test_navigator_county_matching_convention_succeeds(self):
         """A county name matching the map imports successfully and is linked."""
         self._set_counties_by_zipcode({"11111": {"Jackson County": "Jackson County"}})
@@ -313,8 +331,10 @@ class ImportProgramConfigTestCase(TransactionTestCase):
             call_command("import_program_config", ok_file, stdout=StringIO())
             self.assertTrue(Navigator.objects.filter(external_name="bare_nav").exists())
 
-            with self.assertRaises(CommandError):
+            with self.assertRaises(CommandError) as ctx:
                 call_command("import_program_config", bad_file, stdout=StringIO())
+            # Reverse suggestion: strip the erroneous suffix back to the bare map form.
+            self.assertIn("did you mean 'Cook'?", str(ctx.exception))
             self.assertFalse(Navigator.objects.filter(external_name="suffixed_nav").exists())
         finally:
             Path(ok_file).unlink()
