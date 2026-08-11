@@ -8,22 +8,23 @@
     "icon": "food"
   },
   "program": {
-    "name_abbreviated": "wa_snap",
+    "name_abbreviated": "wa_fap",
     "year": "2026",
     "legal_status_required": [
-      "citizen",
-      "gc_5plus"
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission"
     ],
-    "name": "Basic Food - Supplemental Nutrition Assistance Program (SNAP)",
-    "description": "Basic Food (also called SNAP or food stamps) helps you buy groceries each month. You get a card that works like a debit card at most grocery stores. The amount you get depends on your household size and income.\n\nMost people with low income can apply. Washington has higher income limits than many states. For most people, you do not need to meet an asset or savings test. If you get TANF (cash help) or SSI (disability benefits), you may qualify right away. College students may need to work at least 20 hours a week to qualify.",
-    "description_short": "Monthly help buying groceries for low-income households",
-    "learn_more_link": "https://www.dshs.wa.gov/esa/community-services-offices/basic-food",
+    "name": "Food Assistance Program (FAP) for Legal Immigrants",
+    "description": "The Food Assistance Program (FAP) helps you buy groceries each month if you are a legal immigrant who cannot get Basic Food (SNAP) because of your immigration status. You get a card that works like a debit card at most grocery stores.\n\nFAP pays the same amount as Basic Food. The amount you get depends on your household size and income. You may qualify if you have a green card but have not had it for 5 years yet, or if you are lawfully present in another way, such as having temporary protected status, being paroled into the U.S., or having a pending asylum application.\n\nYou must meet the same income and other rules as Basic Food. People without lawful immigration status cannot get FAP. You apply using the same application as Basic Food.",
+    "description_short": "Monthly help buying groceries for legal immigrants who cannot get Basic Food",
+    "learn_more_link": "https://www.dshs.wa.gov/esa/program-summary/food-assistance-program-legal-immigrants-fap",
     "apply_button_link": "https://www.washingtonconnection.org/home/",
     "apply_button_description": "",
     "estimated_application_time": "45 - 90 minutes",
     "estimated_delivery_time": "30 days",
     "estimated_value": "",
-    "website_description": "Monthly assistance to buy food",
+    "website_description": "Monthly assistance to buy food for legal immigrants",
     "show_in_has_benefits_step": true
   },
   "documents": [

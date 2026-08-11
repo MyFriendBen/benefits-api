@@ -11,6 +11,7 @@ wa_member_calculators = {
 }
 
 wa_spm_calculators = {
+    "wa_fap": spm.WaFap,
     "wa_lifeline": spm.WaLifeline,
     "wa_snap": spm.WaSnap,
     "wa_tanf": spm.WaTanf,

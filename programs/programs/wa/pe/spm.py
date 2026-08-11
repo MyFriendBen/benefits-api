@@ -16,6 +16,33 @@ class WaSnap(Snap):
     ]
 
 
+class WaFap(Snap):
+    """
+    Washington state-funded Food Assistance Program (FAP) for legal immigrants.
+
+    FAP pays 100% of the federal SNAP benefit level (WAC 388-400-0050), so the
+    dollar value is identical to Basic Food by design.  This class therefore
+    reuses the federal `snap` PolicyEngine variable and the same inputs as
+    `WaSnap`; there is deliberately no FAP-specific benefit math.
+
+    The programs differ only in *who* qualifies.  FAP serves legal immigrants
+    who are excluded from federal Basic Food solely by immigration status —
+    qualified aliens who have not yet met the five-year bar, and lawfully
+    present nonqualified aliens (PRUCOL).  That gate is expressed in the
+    program config's `legal_status_required` rather than here, matching the
+    approach documented on `WaTanf`.
+
+    The `legal_status_required` lists for `wa_fap` and `wa_snap` are mutually
+    exclusive so that a household is never shown both programs, which would
+    double-count the same PolicyEngine value.
+    """
+
+    pe_inputs = [
+        *Snap.pe_inputs,
+        dependency.household.WaStateCodeDependency,
+    ]
+
+
 class WaTanf(Tanf):
     """
     Washington TANF / SFA cash assistance calculator using PolicyEngine.
