@@ -2,7 +2,10 @@ from dataclasses import dataclass
 
 from django.core.management.base import BaseCommand
 from django.core.management import call_command
-from programs.management.commands.import_program_config import RECONCILE_SECTIONS
+from programs.management.commands.import_program_config import (
+    RECONCILE_SECTIONS,
+    Command as ImportProgramConfigCommand,
+)
 from programs.models import ProgramConfigImport, Program
 from screener.models import WhiteLabel
 from pathlib import Path
@@ -28,6 +31,9 @@ class ImportResults:
     failed: int = 0
     skipped: int = 0
     reconciled: int = 0
+    already_current: int = 0
+    links_to_add: int = 0
+    entities_to_create: int = 0
 
 
 class Command(BaseCommand):
@@ -250,6 +256,15 @@ class Command(BaseCommand):
                     self._record_import(config_file, result)
                     self.stdout.write(self.style.SUCCESS(f"✓ Imported and recorded: {config_file.name}"))
                 elif status == "reconciled":
+                    results.links_to_add += result.get("links_to_add", 0)
+                    results.entities_to_create += result.get("entities_to_create", 0)
+
+                    if not result.get("changed"):
+                        results.already_current += 1
+                        if not dry_run:
+                            self._record_import(config_file, result)
+                        continue
+
                     results.reconciled += 1
                     if dry_run:
                         self.stdout.write(self.style.WARNING(f"⋯ Would reconcile: {config_file.name}"))
@@ -277,6 +292,25 @@ class Command(BaseCommand):
 
         return results
 
+    def _summarize_reconcile_plan(
+        self, program: Program, config: dict[str, Any], only: list[str] | None
+    ) -> dict[str, Any]:
+        """
+        Count what a reconcile pass would change for one program.
+
+        Plan building is a read-only classification, so running it here as well as inside
+        the importer costs a few queries and keeps the run summary honest.
+        """
+        sections = tuple(s for s in RECONCILE_SECTIONS if s in (only or RECONCILE_SECTIONS))
+        plan = ImportProgramConfigCommand()._build_reconcile_plan(program, config, sections)
+        actions = [action for items in plan.values() for _, action in items]
+
+        return {
+            "links_to_add": actions.count("link"),
+            "entities_to_create": actions.count("create"),
+            "changed": any(action != "linked" for action in actions),
+        }
+
     def _record_import(self, config_file: Path, result: dict[str, Any]) -> None:
         """
         Record a config as applied, stamping the content hash it was applied from.
@@ -298,11 +332,23 @@ class Command(BaseCommand):
         self.stdout.write(self.style.WARNING(f"\n{'=' * 60}"))
         self.stdout.write(self.style.SUCCESS("Dry Run Complete" if dry_run else "Import Complete"))
         self.stdout.write(self.style.WARNING(f"{'=' * 60}"))
-        self.stdout.write(f"  Successful: {results.successful}")
-        if results.reconciled:
-            self.stdout.write(f"  Reconciled: {results.reconciled}")
-        self.stdout.write(f"  Skipped:    {results.skipped}  (still pending — nothing was applied)")
-        self.stdout.write(f"  Failed:     {results.failed}")
+
+        self.stdout.write(f"  Successful:     {results.successful}")
+        if results.reconciled or results.already_current:
+            reconcile_label = "To reconcile:  " if dry_run else "Reconciled:    "
+            self.stdout.write(f"  {reconcile_label} {results.reconciled}")
+            self.stdout.write(f"  Already current: {results.already_current}")
+        self.stdout.write(f"  Skipped:        {results.skipped}  (still pending — nothing was applied)")
+        self.stdout.write(f"  Failed:         {results.failed}")
+
+        if results.reconciled or results.already_current:
+            self.stdout.write("")
+            self.stdout.write(f"  Links to add:      {results.links_to_add}")
+            create_line = f"  Entities to create: {results.entities_to_create}"
+            # An unexpected entity creation is the signal to stop and look before applying,
+            # so it never gets to hide in a wall of green.
+            self.stdout.write(self.style.WARNING(create_line) if results.entities_to_create else create_line)
+
         if results.skipped:
             self.stdout.write(
                 self.style.WARNING(
@@ -430,11 +476,15 @@ class Command(BaseCommand):
 
         # Call the import_program_config command
         command_options: dict[str, Any] = {"stdout": self.stdout, "stderr": self.stderr}
+        plan_totals: dict[str, Any] = {}
         if reconcile:
             command_options["reconcile"] = True
             command_options["dry_run"] = dry_run
             if only:
                 command_options["only"] = list(only)
+            # Build the same plan the importer will, so the run summary can report real
+            # counts rather than treating every processed config as a change.
+            plan_totals = self._summarize_reconcile_plan(existing_program, config, only)
 
         try:
             call_command("import_program_config", str(config_file), **command_options)
@@ -442,6 +492,7 @@ class Command(BaseCommand):
                 "status": "reconciled" if reconcile else "success",
                 "program_name": program_name,
                 "white_label_code": white_label_code,
+                **plan_totals,
             }
         except Exception as e:
             return {

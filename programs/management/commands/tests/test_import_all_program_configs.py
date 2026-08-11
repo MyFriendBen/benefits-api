@@ -263,7 +263,7 @@ class SkippedConfigTrackingTest(TestCase):
 
         self.assertIn("Skipped", output)
         self.assertIn("still pending", output)
-        self.assertIn("Successful: 0", output)
+        self.assertRegex(output, r"Successful:\s+0")
         self.assertNotIn("recorded as imported", output)
 
     def test_successful_import_records_a_content_hash(self):
