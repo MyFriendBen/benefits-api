@@ -1,16 +1,19 @@
+import copy
 import json
 import tempfile
 from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
+from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase, TransactionTestCase
 
-from programs.models import Program, ProgramCategory, Navigator, County
+from programs.models import County, Navigator, Program, ProgramCategory, ProgramNavigator
 from screener.models import WhiteLabel
 from configuration.models import Configuration
+from translations.models import Translation
 
 
 class ImportProgramConfigTestCase(TransactionTestCase):
@@ -176,9 +179,10 @@ class ImportProgramConfigTestCase(TransactionTestCase):
         call_command("import_program_config", config_file, stdout=out)
         output = out.getvalue()
 
-        # Verify warning message
+        # Verify warning message offers both recovery paths
         self.assertIn("already exists", output)
-        self.assertIn("Use --override", output)
+        self.assertIn("--reconcile", output)
+        self.assertIn("--override", output)
 
         # Verify original program unchanged
         program = Program.objects.get(name_abbreviated="test_program")
@@ -420,3 +424,265 @@ class ImportProgramConfigTestCase(TransactionTestCase):
             self.assertIn("must be a JSON object", str(ctx.exception))
         finally:
             Path(config_file).unlink()
+
+class ReconcileProgramConfigTestCase(TransactionTestCase):
+    """
+    Tests for `import_program_config --reconcile` and the --override delete guard.
+
+    Reconcile repairs programs whose config was recorded as imported but never actually
+    applied. It has to be strictly additive: navigators created or hand-edited in the
+    admin, and any ordering curated there, must survive it untouched.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(code="test_wl", name="Test White Label")
+
+        self.base_config = {
+            "white_label": {"code": "test_wl"},
+            "program_category": {
+                "external_name": "test_category",
+                "icon": "test_icon",
+                "name": "Test Category",
+                "description": "Test category description",
+            },
+            "program": {
+                "name_abbreviated": "test_program",
+                "external_name": "test_program",
+                "name": "Test Program Name",
+                "description": "Test program description",
+                "active": True,
+            },
+            "navigators": [
+                {
+                    "external_name": "test_navigator",
+                    "name": "Test Navigator",
+                    "email": "navigator@example.com",
+                    "description": "Helps people apply",
+                    "assistance_link": "https://example.com/help",
+                    "counties": ["Denver County"],
+                }
+            ],
+        }
+
+        self.translate_patcher = patch("programs.management.commands.import_program_config.Translate")
+        mock_instance = self.translate_patcher.start().return_value
+        mock_instance.bulk_translate.side_effect = lambda langs, texts: {
+            text: {lang: f"{text} (translated to {lang})" for lang in langs} for text in texts
+        }
+        self.addCleanup(self.translate_patcher.stop)
+
+        self._temp_files: list[str] = []
+        self.addCleanup(self._cleanup_temp_files)
+
+    def _cleanup_temp_files(self):
+        for path in self._temp_files:
+            Path(path).unlink(missing_ok=True)
+
+    def _create_temp_config(self, config: dict) -> str:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(config, f)
+            self._temp_files.append(f.name)
+            return f.name
+
+    def _config_without_navigators(self) -> dict:
+        config = copy.deepcopy(self.base_config)
+        config.pop("navigators")
+        return config
+
+    def _make_admin_navigator(self, external_name: str) -> Navigator:
+        """Stand in for a navigator someone created by hand in the admin portal."""
+        navigator = Navigator.objects.new_navigator(white_label="test_wl", name=external_name, phone_number=None)
+        navigator.external_name = external_name
+        navigator.save()
+        return navigator
+
+    def _english(self, translation: Translation) -> str:
+        return Translation.objects.language(settings.LANGUAGE_CODE).get(pk=translation.pk).text
+
+    def test_reconcile_creates_missing_navigator_link(self):
+        """A program imported without its navigators gets them linked by a reconcile pass."""
+        call_command(
+            "import_program_config", self._create_temp_config(self._config_without_navigators()), stdout=StringIO()
+        )
+
+        program = Program.objects.get(name_abbreviated="test_program")
+        original_id = program.id
+        self.assertEqual(ProgramNavigator.objects.filter(program=program).count(), 0)
+
+        out = StringIO()
+        call_command("import_program_config", self._create_temp_config(self.base_config), "--reconcile", stdout=out)
+
+        links = ProgramNavigator.objects.filter(program=program)
+        self.assertEqual(links.count(), 1)
+        self.assertEqual(links.first().navigator.external_name, "test_navigator")
+
+        # The program itself is reused, not recreated
+        self.assertEqual(Program.objects.get(name_abbreviated="test_program").id, original_id)
+        self.assertIn("Reconciled", out.getvalue())
+
+    def test_reconcile_preserves_navigator_absent_from_config(self):
+        """An admin-created navigator is neither deleted nor unlinked by a reconcile pass."""
+        call_command("import_program_config", self._create_temp_config(self.base_config), stdout=StringIO())
+        program = Program.objects.get(name_abbreviated="test_program")
+
+        admin_navigator = self._make_admin_navigator("admin_only_navigator")
+        ProgramNavigator.objects.create(program=program, navigator=admin_navigator, order=1000)
+
+        call_command(
+            "import_program_config", self._create_temp_config(self.base_config), "--reconcile", stdout=StringIO()
+        )
+
+        self.assertTrue(Navigator.objects.filter(external_name="admin_only_navigator").exists())
+        self.assertTrue(ProgramNavigator.objects.filter(program=program, navigator=admin_navigator).exists())
+
+    def test_reconcile_does_not_overwrite_existing_navigator_fields(self):
+        """A hand-edited navigator name survives a reconcile pass that declares a different one."""
+        call_command("import_program_config", self._create_temp_config(self.base_config), stdout=StringIO())
+
+        navigator = Navigator.objects.get(external_name="test_navigator")
+        Translation.objects.edit_translation_by_id(
+            navigator.name.id, settings.LANGUAGE_CODE, "Hand Edited In Admin", manual=True
+        )
+
+        renamed = copy.deepcopy(self.base_config)
+        renamed["navigators"][0]["name"] = "Name From Config"
+        call_command("import_program_config", self._create_temp_config(renamed), "--reconcile", stdout=StringIO())
+
+        navigator.refresh_from_db()
+        self.assertEqual(self._english(navigator.name), "Hand Edited In Admin")
+
+    def test_reconcile_appends_new_links_after_existing_ones(self):
+        """New links go after existing ones so admin-curated ordering is not reshuffled."""
+        call_command(
+            "import_program_config", self._create_temp_config(self._config_without_navigators()), stdout=StringIO()
+        )
+        program = Program.objects.get(name_abbreviated="test_program")
+
+        admin_navigator = self._make_admin_navigator("admin_only_navigator")
+        ProgramNavigator.objects.create(program=program, navigator=admin_navigator, order=5)
+
+        call_command(
+            "import_program_config", self._create_temp_config(self.base_config), "--reconcile", stdout=StringIO()
+        )
+
+        config_link = ProgramNavigator.objects.get(program=program, navigator__external_name="test_navigator")
+        self.assertGreater(config_link.order, 5)
+
+    def test_reconcile_dry_run_reports_without_applying(self):
+        """A reconcile dry run names what it would add and changes nothing."""
+        call_command(
+            "import_program_config", self._create_temp_config(self._config_without_navigators()), stdout=StringIO()
+        )
+        program = Program.objects.get(name_abbreviated="test_program")
+
+        out = StringIO()
+        call_command(
+            "import_program_config",
+            self._create_temp_config(self.base_config),
+            "--reconcile",
+            "--dry-run",
+            stdout=out,
+        )
+        output = out.getvalue()
+
+        self.assertEqual(ProgramNavigator.objects.filter(program=program).count(), 0)
+        self.assertIn("test_navigator", output)
+        self.assertIn("Dry run", output)
+
+    def test_reconcile_reports_entities_it_would_create(self):
+        """A navigator that does not exist yet is flagged distinctly from one that just needs a link."""
+        call_command(
+            "import_program_config", self._create_temp_config(self._config_without_navigators()), stdout=StringIO()
+        )
+
+        out = StringIO()
+        call_command(
+            "import_program_config",
+            self._create_temp_config(self.base_config),
+            "--reconcile",
+            "--dry-run",
+            stdout=out,
+        )
+
+        self.assertIn("entity to create", out.getvalue())
+
+    def test_reconcile_only_limits_sections(self):
+        """--only navigators leaves the config's documents alone."""
+        with_documents = copy.deepcopy(self._config_without_navigators())
+        with_documents["documents"] = [{"external_name": "test_document", "text": "Bring photo ID"}]
+        call_command(
+            "import_program_config", self._create_temp_config(self._config_without_navigators()), stdout=StringIO()
+        )
+
+        both = copy.deepcopy(self.base_config)
+        both["documents"] = with_documents["documents"]
+
+        program = Program.objects.get(name_abbreviated="test_program")
+        call_command(
+            "import_program_config",
+            self._create_temp_config(both),
+            "--reconcile",
+            "--only",
+            "navigators",
+            stdout=StringIO(),
+        )
+
+        self.assertEqual(ProgramNavigator.objects.filter(program=program).count(), 1)
+        self.assertEqual(program.documents.count(), 0)
+
+    def test_reconcile_is_idempotent(self):
+        """Running reconcile twice does not duplicate links."""
+        call_command(
+            "import_program_config", self._create_temp_config(self._config_without_navigators()), stdout=StringIO()
+        )
+        config_file = self._create_temp_config(self.base_config)
+
+        call_command("import_program_config", config_file, "--reconcile", stdout=StringIO())
+        out = StringIO()
+        call_command("import_program_config", config_file, "--reconcile", stdout=out)
+
+        program = Program.objects.get(name_abbreviated="test_program")
+        self.assertEqual(ProgramNavigator.objects.filter(program=program).count(), 1)
+        self.assertIn("Already up to date", out.getvalue())
+
+    def test_reconcile_refuses_to_create_a_missing_program(self):
+        """Reconcile repairs existing programs only; it never creates one."""
+        out = StringIO()
+        call_command("import_program_config", self._create_temp_config(self.base_config), "--reconcile", stdout=out)
+
+        self.assertFalse(Program.objects.filter(name_abbreviated="test_program").exists())
+        self.assertIn("does not exist", out.getvalue())
+
+    def test_reconcile_and_override_are_mutually_exclusive(self):
+        with self.assertRaises(CommandError):
+            call_command(
+                "import_program_config",
+                self._create_temp_config(self.base_config),
+                "--reconcile",
+                "--override",
+                stdout=StringIO(),
+            )
+
+    def test_override_keeps_navigator_shared_through_program_navigator(self):
+        """
+        The --override delete guard has to read the relation the importer actually writes.
+
+        The importer and the admin both populate ProgramNavigator, never the legacy
+        `programs` M2M, so a guard that checks only the legacy relation sees every shared
+        navigator as unshared and deletes it.
+        """
+        call_command("import_program_config", self._create_temp_config(self.base_config), stdout=StringIO())
+        navigator = Navigator.objects.get(external_name="test_navigator")
+
+        other_program = Program.objects.new_program(white_label="test_wl", name_abbreviated="other_program")
+        ProgramNavigator.objects.create(program=other_program, navigator=navigator, order=0)
+
+        out = StringIO()
+        call_command("import_program_config", self._create_temp_config(self.base_config), "--override", stdout=out)
+
+        self.assertTrue(
+            Navigator.objects.filter(external_name="test_navigator").exists(),
+            "A navigator shared with another program must survive --override",
+        )
+        self.assertTrue(ProgramNavigator.objects.filter(program=other_program, navigator=navigator).exists())
+        self.assertIn("Keeping navigator", out.getvalue())
