@@ -3,12 +3,13 @@ Income-test coverage for the federal Ssdi calculator.
 
 The member income test compares monthly gross income against the SGA limit
 ($1,620, or $2,700 if visually impaired). It reads `("all",)`, so every income
-type a member reports counts toward that threshold.
+type a member reports counts toward that threshold except those the calculator
+excludes explicitly.
 
-The verified income rules on MFB-1273 list SSDI as having no direct impact from
-the Nurturing Futures direct cash payment, so it is excluded here. Without the
-exclusion a $600/month payment would flip a member with $1,020+ of other monthly
-income from eligible to ineligible.
+The Nurturing Futures direct cash payment is one such exclusion: the verified
+income rules for that program list SSDI as having no direct impact. Without it,
+a $600/month payment would flip a member with $1,020+ of other monthly income
+from eligible to ineligible.
 """
 
 from unittest.mock import Mock

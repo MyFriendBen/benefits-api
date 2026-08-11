@@ -3,8 +3,8 @@ Income-test coverage for MedicaidAdultWithDisability (`awd_medicaid`).
 
 This is a non-MAGI Medicaid pathway — it counts unearned income SSI-style rather
 than through MAGI, so the Nurturing Futures direct cash payment is excluded from the
-unearned side the same way it is for SSI itself. The verified income rules on
-MFB-1273 cover "MAGI-based Health First Colorado and CHP+" only, which is why this
+unearned side the same way it is for SSI itself. The verified income rules for that
+program cover "MAGI-based Health First Colorado and CHP+" only, which is why this
 pathway needed handling separately.
 
 Member income test: ((earned - $65) * 0.5) + (unearned - $20) <= 450% FPL.
