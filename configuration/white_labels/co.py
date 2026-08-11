@@ -181,6 +181,10 @@ class CoConfigurationData(ConfigurationData):
                 "_label": "incomeOptions.cOSDisability",
                 "_default_message": "Colorado State Disability Benefits",
             },
+            "nurturingFutures": {
+                "_label": "incomeOptions.nurturingFutures",
+                "_default_message": "Nurturing Futures Direct Cash Payment",
+            },
         },
     }
 

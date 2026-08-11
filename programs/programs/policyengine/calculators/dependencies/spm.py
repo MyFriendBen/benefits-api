@@ -380,6 +380,15 @@ class BroadbandCostDependency(SpmUnit):
 
 
 class SchoolMealCountableIncomeDependency(SpmUnit):
+    """
+    Feeds PE's ``school_meal_countable_income``, which only ``school_meal_fpg_ratio``
+    reads. Our Wic and CommoditySupplementalFoodProgram classes also send this field,
+    but PE's WIC and CSFP trees never read it, so changes here move school meals alone.
+
+    The tier still honors ``meets_school_meal_categorical_eligibility``, so households
+    categorically eligible through SNAP/TANF keep free meals regardless of this total.
+    """
+
     field = "school_meal_countable_income"
     income_types = [
         "wages",
@@ -391,6 +400,9 @@ class SchoolMealCountableIncomeDependency(SpmUnit):
         "sSSurvivor",
         "sSRetirement",
         "sSDependent",
+        # Counts on the application-income path. Only offered on the CO white label,
+        # so it contributes nothing to the other states that inherit this list.
+        "nurturingFutures",
     ]
 
     def value(self):

@@ -23,7 +23,7 @@ class MedicaidChildWithDisability(ProgramCalculator):
         earned = max(
             0, int(self.screen.calc_gross_income("yearly", ["earned"]) - MedicaidChildWithDisability.earned_deduction)
         )
-        unearned = self.screen.calc_gross_income("yearly", ["unearned"])
+        unearned = self.screen.calc_gross_income("yearly", ["unearned"], exclude=["nurturingFutures"])
         income = (earned + unearned) * MedicaidChildWithDisability.income_percent
         e.condition(income <= income_limit, messages.income(income, income_limit))
 

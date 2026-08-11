@@ -37,5 +37,7 @@ class MedicaidAdultWithDisability(ProgramCalculator):
         earned_percent = MedicaidAdultWithDisability.earned_percent
         earned = max(0, int((int(member.calc_gross_income("yearly", ["earned"])) - earned_deduction) * earned_percent))
         unearned_deduction = MedicaidAdultWithDisability.unearned_deduction
-        unearned = int(member.calc_gross_income("yearly", ["unearned"])) - unearned_deduction
+        unearned = (
+            int(member.calc_gross_income("yearly", ["unearned"], exclude=["nurturingFutures"])) - unearned_deduction
+        )
         e.condition(earned + unearned <= income_limit)

@@ -173,10 +173,13 @@ class TestConnectForHealthIncomeEligibility(TestCase):
     def test_zero_income_is_eligible(self):
         self.assertTrue(self._run(1, 0))
 
-    def test_cash_assistance_is_excluded_from_income(self):
+    def test_cash_assistance_and_nurturing_futures_are_excluded_from_income(self):
+        # Marketplace subsidies are MAGI-based, which excludes both.
         calc = make_calculator(household_income=1_000)
         calc.household_eligible(Eligibility())
-        calc.screen.calc_gross_income.assert_called_once_with("yearly", ["all"], exclude=["cashAssistance"])
+        calc.screen.calc_gross_income.assert_called_once_with(
+            "yearly", ["all"], exclude=["cashAssistance", "nurturingFutures"]
+        )
 
 
 class TestConnectForHealthMemberInsurance(TestCase):

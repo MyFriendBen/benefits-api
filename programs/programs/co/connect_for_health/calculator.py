@@ -44,7 +44,9 @@ class ConnectForHealth(ProgramCalculator):
         # Income
         fpl = self.program.year.as_dict()
         income_band = int(fpl[self.screen.household_size] * ConnectForHealth.percent_of_fpl)
-        gross_income = int(self.screen.calc_gross_income("yearly", ["all"], exclude=["cashAssistance"]))
+        gross_income = int(
+            self.screen.calc_gross_income("yearly", ["all"], exclude=["cashAssistance", "nurturingFutures"])
+        )
         e.condition(gross_income < income_band, messages.income(gross_income, income_band))
 
     def member_eligible(self, e: MemberEligibility):

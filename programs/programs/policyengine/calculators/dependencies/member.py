@@ -561,9 +561,10 @@ class IncomeDependency(Member):
         "income_frequency",
     )
     income_types = []
+    exclude_income_types = []
 
     def value(self):
-        return int(self.member.calc_gross_income("yearly", self.income_types))
+        return int(self.member.calc_gross_income("yearly", self.income_types, exclude=self.exclude_income_types))
 
 
 class EmploymentIncomeDependency(IncomeDependency):
@@ -637,6 +638,10 @@ class SsiEarnedIncomeDependency(IncomeDependency):
 class SsiUnearnedIncomeDependency(IncomeDependency):
     field = "ssi_unearned_income"
     income_types = ["unearned"]
+    # Nurturing Futures is only offered as an income source on the CO white label, so
+    # this exclusion is a no-op everywhere else. It reaches SSI, CO ANDCS and CO OAP,
+    # which all read ssi_unearned_income.
+    exclude_income_types = ["nurturingFutures"]
 
 
 class IlAabd(Member):

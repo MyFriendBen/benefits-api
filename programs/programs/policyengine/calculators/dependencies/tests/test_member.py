@@ -1746,6 +1746,33 @@ class TestSsiEarnedAndUnearnedIncomeDependencies(TestCase):
         self.assertEqual(member.SsiEarnedIncomeDependency(self.screen, self.head, {}).value(), 0)
         self.assertEqual(member.SsiUnearnedIncomeDependency(self.screen, self.head, {}).value(), 0)
 
+    def test_nurturing_futures_is_excluded_from_unearned(self):
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="pension", amount=200, frequency="monthly"
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="nurturingFutures", amount=600, frequency="monthly"
+        )
+
+        self.assertEqual(member.SsiUnearnedIncomeDependency(self.screen, self.head, {}).value(), 2400)
+
+    def test_nurturing_futures_is_the_one_break_in_the_partition(self):
+        """
+        The earned/unearned split otherwise covers every income stream. Nurturing Futures
+        is deliberately in neither bucket, so it is the sole gap against total income.
+        """
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="wages", amount=1000, frequency="monthly"
+        )
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="nurturingFutures", amount=600, frequency="monthly"
+        )
+
+        earned = member.SsiEarnedIncomeDependency(self.screen, self.head, {}).value()
+        unearned = member.SsiUnearnedIncomeDependency(self.screen, self.head, {}).value()
+
+        self.assertEqual(earned + unearned, self.head.calc_gross_income("yearly", ["all"]) - 7200)
+
 
 class TestHasEsiDependency(TestCase):
     """
