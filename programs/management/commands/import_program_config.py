@@ -15,11 +15,12 @@ from programs.models import (
     BaseProgram,
 )
 from screener.models import WhiteLabel
+from configuration.models import Configuration
 from integrations.clients.google_translate import Translate
 from django.conf import settings
 import argparse
 import json
-from typing import Any
+from typing import Any, Optional
 
 
 def truncate(text: str, max_length: int = 50) -> str:
@@ -104,6 +105,11 @@ class Command(BaseCommand):
         except WhiteLabel.DoesNotExist:
             raise CommandError(f"WhiteLabel with code '{white_label_code}' not found")
 
+        # Validate navigator county names against this white label's convention BEFORE any
+        # writes, so a mismatch fails loudly instead of silently creating a county that no
+        # screener household will ever match (MFB-1602).
+        self._validate_counties(config, white_label)
+
         # Check if program already exists
         existing_program = Program.objects.filter(name_abbreviated=program_name, white_label=white_label).first()
         overriding = bool(existing_program and override)
@@ -182,6 +188,70 @@ class Command(BaseCommand):
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"\nError during import: {e}\n" f"All changes have been rolled back."))
             raise
+
+    def _get_valid_county_names(self, white_label: WhiteLabel) -> Optional[set]:
+        """
+        Return the set of valid county-name strings for a white label, taken from its
+        `counties_by_zipcode` configuration — the same values the screener stores in
+        `Screen.county`. Returns None when no such configuration exists (in which case
+        county validation is skipped), read the same way `add_counties` reads it.
+        """
+        config_obj = Configuration.objects.filter(name="counties_by_zipcode", white_label=white_label).first()
+        if config_obj is None:
+            return None
+
+        data = config_obj.data
+        if isinstance(data, str):
+            data = json.loads(data)
+        if not data:
+            return None
+
+        valid = set()
+        for county_map in data.values():
+            if isinstance(county_map, dict):
+                valid.update(county_map.keys())
+        return valid
+
+    def _validate_counties(self, config: dict[str, Any], white_label: WhiteLabel) -> None:
+        """
+        Validate that every navigator `counties` entry exactly matches a county in the white
+        label's `counties_by_zipcode` map. Navigator county filters are an exact string match
+        against the screener's stored county, so a name in the wrong convention (e.g. bare
+        "Jackson" where the map sends "Jackson County") would silently never match and the
+        referral would be dropped. Fail loudly instead. (MFB-1602)
+        """
+        valid_names = self._get_valid_county_names(white_label)
+        if valid_names is None:
+            self.stdout.write(
+                self.style.WARNING(
+                    f"  Warning: no 'counties_by_zipcode' configuration found for white label "
+                    f"'{white_label.code}'; skipping navigator county validation."
+                )
+            )
+            return
+
+        problems = []
+        for nav_config in config.get("navigators", []):
+            if not isinstance(nav_config, dict):
+                continue
+            external_name = nav_config.get("external_name", "<unnamed>")
+            for county_name in nav_config.get("counties", []) or []:
+                if county_name in valid_names:
+                    continue
+                suggestion = ""
+                suffixed = f"{county_name} County"
+                if suffixed in valid_names:
+                    suggestion = f" (did you mean '{suffixed}'?)"
+                problems.append(f"navigator '{external_name}': '{county_name}'{suggestion}")
+
+        if problems:
+            joined = "\n  - ".join(problems)
+            raise CommandError(
+                f"Invalid county name(s) for white label '{white_label.code}' — not found in its "
+                f"'counties_by_zipcode' map:\n  - {joined}\n"
+                "Each 'counties' entry must exactly match a county the screener sends for this white "
+                f"label (see configuration/white_labels/{white_label.code}.py counties_by_zipcode)."
+            )
 
     def _delete_program_and_related(self, program: Program, config: dict[str, Any]) -> None:
         """

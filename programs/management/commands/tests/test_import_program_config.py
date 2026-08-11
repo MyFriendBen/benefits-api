@@ -8,8 +8,9 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase, TransactionTestCase
 
-from programs.models import Program, ProgramCategory
+from programs.models import Program, ProgramCategory, Navigator, County
 from screener.models import WhiteLabel
+from configuration.models import Configuration
 
 
 class ImportProgramConfigTestCase(TransactionTestCase):
@@ -221,3 +222,115 @@ class ImportProgramConfigTestCase(TransactionTestCase):
 
         Path(config_file).unlink()
         Path(invalid_config_file).unlink()
+
+    # --- MFB-1602: navigator county validation guard ---
+
+    def _navigator_config(self, external_name: str, counties: list) -> dict:
+        """Build a minimal new-navigator config carrying the given counties."""
+        return {
+            "external_name": external_name,
+            "name": f"{external_name} Name",
+            "email": "help@example.org",
+            "description": "Navigator description",
+            "assistance_link": "https://example.org/help",
+            "counties": counties,
+        }
+
+    def _set_counties_by_zipcode(self, mapping: dict) -> None:
+        """Create the white label's counties_by_zipcode Configuration row.
+
+        `mapping` is {zipcode: {county_name: display_name}}, matching the real config shape.
+        """
+        Configuration.objects.create(
+            name="counties_by_zipcode",
+            white_label=self.white_label,
+            data=mapping,
+            active=True,
+        )
+
+    def test_navigator_county_wrong_convention_fails_loudly(self):
+        """A bare county name on a suffixed-convention white label raises and rolls back."""
+        # Screener stores the suffixed form for this white label.
+        self._set_counties_by_zipcode({"11111": {"Jackson County": "Jackson County"}})
+
+        config = self.base_config.copy()
+        config["navigators"] = [self._navigator_config("test_nav", ["Jackson"])]
+        config_file = self._create_temp_config(config)
+
+        try:
+            with self.assertRaises(CommandError) as ctx:
+                call_command("import_program_config", config_file, stdout=StringIO())
+
+            message = str(ctx.exception)
+            self.assertIn("Jackson", message)
+            self.assertIn("did you mean 'Jackson County'", message)
+
+            # Fails before any writes: nothing should have been created.
+            self.assertFalse(Program.objects.filter(name_abbreviated="test_program").exists())
+            self.assertFalse(Navigator.objects.filter(external_name="test_nav").exists())
+            self.assertFalse(County.objects.filter(name="Jackson", white_label=self.white_label).exists())
+        finally:
+            Path(config_file).unlink()
+
+    def test_navigator_county_matching_convention_succeeds(self):
+        """A county name matching the map imports successfully and is linked."""
+        self._set_counties_by_zipcode({"11111": {"Jackson County": "Jackson County"}})
+
+        config = self.base_config.copy()
+        config["navigators"] = [self._navigator_config("test_nav", ["Jackson County"])]
+        config_file = self._create_temp_config(config)
+
+        try:
+            call_command("import_program_config", config_file, stdout=StringIO())
+
+            navigator = Navigator.objects.get(external_name="test_nav")
+            self.assertEqual(
+                list(navigator.counties.values_list("name", flat=True)),
+                ["Jackson County"],
+            )
+        finally:
+            Path(config_file).unlink()
+
+    def test_navigator_county_bare_convention_is_respected(self):
+        """The guard is convention-driven, not 'always suffix': a bare-map white label
+        accepts the bare name and rejects the suffixed one."""
+        self._set_counties_by_zipcode({"22222": {"Cook": "Cook"}})
+
+        ok_config = self.base_config.copy()
+        ok_config["navigators"] = [self._navigator_config("bare_nav", ["Cook"])]
+        ok_file = self._create_temp_config(ok_config)
+
+        bad_config = self.base_config.copy()
+        bad_config["program"] = {
+            **self.base_config["program"],
+            "name_abbreviated": "other_program",
+            "external_name": "other_program",
+        }
+        bad_config["navigators"] = [self._navigator_config("suffixed_nav", ["Cook County"])]
+        bad_file = self._create_temp_config(bad_config)
+
+        try:
+            call_command("import_program_config", ok_file, stdout=StringIO())
+            self.assertTrue(Navigator.objects.filter(external_name="bare_nav").exists())
+
+            with self.assertRaises(CommandError):
+                call_command("import_program_config", bad_file, stdout=StringIO())
+            self.assertFalse(Navigator.objects.filter(external_name="suffixed_nav").exists())
+        finally:
+            Path(ok_file).unlink()
+            Path(bad_file).unlink()
+
+    def test_navigator_county_validation_skipped_without_config(self):
+        """With no counties_by_zipcode config, validation is skipped (does not block)."""
+        # Intentionally no _set_counties_by_zipcode() — the config row is absent.
+        config = self.base_config.copy()
+        config["navigators"] = [self._navigator_config("test_nav", ["Anything"])]
+        config_file = self._create_temp_config(config)
+
+        try:
+            out = StringIO()
+            call_command("import_program_config", config_file, stdout=out)
+            self.assertIn("skipping navigator county validation", out.getvalue())
+            self.assertTrue(Navigator.objects.filter(external_name="test_nav").exists())
+        finally:
+            Path(config_file).unlink()
