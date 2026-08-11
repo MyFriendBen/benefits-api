@@ -307,14 +307,19 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # CONSENT & PRIVACY - Always needed for production
     # ==========================================================================================
 
-    # TODO: Add consent/terms links for each language
+    # Both keys must stay declared here even when the generic MyFriendBen pages below are
+    # correct — configuration.tests.TestLegalLinkConfiguration requires every white label
+    # to declare them in its own class body, so that inheriting the generic pages is a
+    # decision someone made rather than a key they forgot. Replace the URLs if this white
+    # label has its own policy pages, and add a locale key per translated page.
     consent_to_contact = {
-        "en-us": "",
+        "en-us": "https://www.myfriendben.org/terms-and-conditions/",
+        "es": "https://www.myfriendben.org/terminos-condiciones/",
     }
 
-    # TODO: Add privacy policy links for each language
     privacy_policy = {
-        "en-us": "",
+        "en-us": "https://www.myfriendben.org/privacy-policy/",
+        "es": "https://www.myfriendben.org/privacidad/",
     }
 
     # ==========================================================================================

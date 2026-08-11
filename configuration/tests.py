@@ -3,9 +3,10 @@ Unit tests for Configuration app serializers.
 """
 
 from unittest.mock import MagicMock, patch
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from configuration.models import Configuration
 from configuration.serializers import ConfigurationSerializer
+from configuration.white_labels import white_label_config
 from screener.models import WhiteLabel
 from screener.feature_flags import FeatureFlagConfig
 
@@ -150,3 +151,59 @@ class TestConfigurationSerializerFeatureFlags(TestCase):
 
         # Should return default value
         self.assertFalse(feature_flags["frontend_flag"])
+
+
+class TestLegalLinkConfiguration(SimpleTestCase):
+    """
+    Guards the privacy policy and terms links that every white label puts in its footer,
+    step-1 disclaimer, and sign-up consent copy.
+
+    KS, MO, and WA each shipped with these keys unset and inherited an empty-string
+    default, which renders as a link with an empty href — visibly a link, silently going
+    nowhere. Nothing caught it: the base class supplied a value, so no error was raised,
+    and the health check skips empty links entirely.
+
+    Both keys now have real defaults in the base class, so a missing override degrades to
+    the generic MyFriendBen pages instead of a dead link. These tests additionally require
+    each white label to declare both keys in its own class body, so that using the generic
+    pages stays a deliberate choice — a new white label cannot inherit legal links by
+    accident.
+    """
+
+    LEGAL_LINK_KEYS = ("privacy_policy", "consent_to_contact")
+
+    def test_every_white_label_declares_its_own_legal_links(self):
+        """Each white label must set both keys itself rather than inheriting them."""
+        for code, white_label_data in white_label_config.items():
+            for key in self.LEGAL_LINK_KEYS:
+                with self.subTest(white_label=code, key=key):
+                    self.assertIn(
+                        key,
+                        white_label_data.__dict__,
+                        f'White label "{code}" does not declare {key}. Add it to the white label config '
+                        f"(configuration/white_labels/{code}.py), even if the generic MyFriendBen page "
+                        "is the right link, so the choice is explicit.",
+                    )
+
+    def test_legal_links_are_populated_urls(self):
+        """Every declared locale must map to a real URL, not an empty or relative value."""
+        for code, white_label_data in white_label_config.items():
+            for key in self.LEGAL_LINK_KEYS:
+                links = getattr(white_label_data, key)
+
+                with self.subTest(white_label=code, key=key):
+                    self.assertIn(
+                        "en-us",
+                        links,
+                        f'White label "{code}" is missing the "en-us" fallback for {key}. The frontend '
+                        "falls back to en-us for every locale without its own translated page.",
+                    )
+
+                for locale, link in links.items():
+                    with self.subTest(white_label=code, key=key, locale=locale):
+                        self.assertTrue(
+                            link.startswith("https://"),
+                            f'White label "{code}" has a {key} link for "{locale}" that is not an '
+                            f"https URL: {link!r}. An empty string here renders as a link with an "
+                            "empty href.",
+                        )

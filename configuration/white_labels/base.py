@@ -467,13 +467,20 @@ class ConfigurationData:
     category_benefits = {}
 
     # Links to consent/terms pages, keyed by language code.
+    # The generic MyFriendBen pages are the default so that a white label which forgets
+    # to override these still renders working legal links rather than empty hrefs. Every
+    # white label must still declare both explicitly (enforced by
+    # configuration.tests.TestLegalLinkConfiguration) so using the generic pages is a
+    # deliberate choice rather than an oversight.
     consent_to_contact = {
-        "en-us": "",
+        "en-us": "https://www.myfriendben.org/terms-and-conditions/",
+        "es": "https://www.myfriendben.org/terminos-condiciones/",
     }
 
     # Links to privacy policy, keyed by language code.
     privacy_policy = {
-        "en-us": "",
+        "en-us": "https://www.myfriendben.org/privacy-policy/",
+        "es": "https://www.myfriendben.org/privacidad/",
     }
 
     # Configuration for branding, logos, steps, and UI options
