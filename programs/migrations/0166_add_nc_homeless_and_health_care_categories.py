@@ -30,12 +30,6 @@ def add_urgent_need_categories(apps, schema_editor):
         UrgentNeedCategory.objects.get_or_create(name=name)
 
 
-def remove_urgent_need_categories(apps, schema_editor):
-    UrgentNeedCategory = apps.get_model("programs", "UrgentNeedCategory")
-
-    UrgentNeedCategory.objects.filter(name__in=NEW_URGENT_NEED_CATEGORIES).delete()
-
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -43,5 +37,11 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(add_urgent_need_categories, remove_urgent_need_categories),
+        # Reverse is a no-op, not a delete-by-name: UrgentNeedCategory has no field
+        # that distinguishes a row created here from one that already existed or was
+        # reused later (e.g. import_urgent_need_config.py's _set_categories also
+        # get_or_create()s by this same name). Deleting by name on rollback would
+        # silently strip type_short off any real UrgentNeed resource that had since
+        # attached itself to one of these categories.
+        migrations.RunPython(add_urgent_need_categories, migrations.RunPython.noop),
     ]
