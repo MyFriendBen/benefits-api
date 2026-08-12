@@ -220,6 +220,18 @@ class SkippedConfigTrackingTest(TestCase):
         patcher.start()
         self.addCleanup(patcher.stop)
 
+        # Any test here that imports a config for a program that does not yet exist will
+        # create one, and creating a program translates its fields. Translate() reads
+        # GOOGLE_APPLICATION_CREDENTIALS at construction and does not consult
+        # ENABLE_GOOGLE_INTEGRATIONS, so without this the tests reach the real API where
+        # credentials exist and fail outright in CI, where they do not.
+        translate_patcher = patch("programs.management.commands.import_program_config.Translate")
+        translate = translate_patcher.start()
+        translate.return_value.bulk_translate.side_effect = lambda langs, texts: {
+            text: {lang: text for lang in langs} for text in texts
+        }
+        self.addCleanup(translate_patcher.stop)
+
     @staticmethod
     def _command_class():
         from programs.management.commands.import_all_program_configs import Command
@@ -301,12 +313,6 @@ class SkippedConfigTrackingTest(TestCase):
         End-to-end repair: a program that exists but never had its config applied gets
         its navigators linked by a --reconcile run, and only then is it recorded.
         """
-        translate = patch("programs.management.commands.import_program_config.Translate").start()
-        translate.return_value.bulk_translate.side_effect = lambda langs, texts: {
-            text: {lang: text for lang in langs} for text in texts
-        }
-        self.addCleanup(patch.stopall)
-
         with_navigator = dict(self.config)
         with_navigator["navigators"] = [
             {
