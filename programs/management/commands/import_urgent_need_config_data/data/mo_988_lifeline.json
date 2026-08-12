@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_988_lifeline",
+    "category_type": {
+      "external_name": "mo_behavioral_health",
+      "name": "Behavioral health",
+      "icon": "behavioral_health"
+    },
+    "type_short": [
+      "mental health"
+    ],
+    "translations": {
+      "name": "Missouri 988 Suicide & Crisis Lifeline (DMH)",
+      "description": "If you or someone you know is in crisis, call or text 988 or chat online. A crisis specialist will listen and help you find local support. The service is free, confidential, and open 24/7.",
+      "link": "https://missouri988.org/",
+      "warning": "",
+      "website_description": "Get free, confidential crisis support in Missouri.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

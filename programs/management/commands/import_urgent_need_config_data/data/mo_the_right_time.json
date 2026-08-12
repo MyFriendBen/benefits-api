@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_the_right_time",
+    "category_type": {
+      "external_name": "mo_family_planning",
+      "name": "Family planning",
+      "icon": "family_planning"
+    },
+    "type_short": [
+      "family planning"
+    ],
+    "translations": {
+      "name": "The Right Time",
+      "description": "You can get free or low-cost birth control through The Right Time. You can choose from all birth control methods. You do not need insurance to get care. Use the website to find a health center near you and make an appointment.",
+      "link": "https://therighttime.org/where-to-get-birth-control",
+      "warning": "",
+      "website_description": "Find a health center for free or low-cost birth control.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

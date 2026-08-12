@@ -1,0 +1,31 @@
+{
+  "white_label": {
+    "code": "il"
+  },
+  "need": {
+    "external_name": "il_st_louis_area_diaper_bank",
+    "category_type": {
+      "external_name": "il_baby_supplies"
+    },
+    "type_short": [
+      "baby supplies"
+    ],
+    "translations": {
+      "name": "St. Louis Area Diaper Bank",
+      "description": "You can get free diapers and other supplies from local groups that work with the Diaper Bank. The diaper program is for families with low incomes. Eligibility and pickup rules may also vary by location. Use the map on their website to find a place near you. Call 314-624-0888 with questions.",
+      "link": "https://stldiaperbank.org/find-supplies/",
+      "warning": "",
+      "website_description": "Find free diaper and period supplies near you.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "St. Clair",
+      "Madison"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

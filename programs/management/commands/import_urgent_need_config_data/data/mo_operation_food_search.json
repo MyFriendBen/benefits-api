@@ -1,0 +1,36 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_operation_food_search",
+    "category_type": {
+      "external_name": "mo_food_or_groceries",
+      "name": "Food or groceries",
+      "icon": "food_groceries"
+    },
+    "type_short": [
+      "food"
+    ],
+    "translations": {
+      "name": "Operation Food Search",
+      "description": "Operation Food Search helps people get food. Their child meal sites serve kids and teens age 18 and younger. Eligibility and requirements for other services vary by location. They also sell groceries for less through MetroMarket. Call 314-726-5355 and choose option 1, or use the Find Food Map to find help near you.",
+      "link": "https://www.operationfoodsearch.org/find-food/",
+      "warning": "",
+      "website_description": "Find free food, child meals, and low-cost grocery options in the St. Louis region",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "St. Louis City",
+      "St. Louis County",
+      "St. Charles County",
+      "Jefferson County",
+      "Franklin County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

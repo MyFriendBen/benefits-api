@@ -1,0 +1,33 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_archcity_defenders",
+    "category_type": {
+      "external_name": "mo_civil_legal_needs",
+      "name": "Civil legal needs",
+      "icon": "legal_services"
+    },
+    "type_short": [
+      "legal services"
+    ],
+    "translations": {
+      "name": "ArchCity Defenders",
+      "description": "ArchCity Defenders gives free legal help. They may help with criminal cases, traffic tickets, housing, and city court cases. They may also help with homelessness, police, or jail problems. Apply online. Call 314-361-8834 if you need help with the application.",
+      "link": "https://www.archcitydefenders.org/services/apply-for-services/",
+      "warning": "",
+      "website_description": "Apply for free legal help in the St. Louis area",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "St. Louis City",
+      "St. Louis County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

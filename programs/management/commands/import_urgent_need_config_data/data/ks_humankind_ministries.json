@@ -1,0 +1,32 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_humankind_ministries",
+    "category_type": {
+      "external_name": "ks_managing_housing_costs",
+      "name": "Managing housing costs",
+      "icon": "managing_housing"
+    },
+    "type_short": [
+      "housing"
+    ],
+    "translations": {
+      "name": "HumanKind Ministries",
+      "description": "HumanKind helps people in Wichita who are homeless or at risk of losing housing. They offer shelter, affordable housing, and help finding a stable place to live. Eligibility varies by program. Use their Get Help page to find the right service.",
+      "link": "https://www.humankindwichita.org/get-help/",
+      "warning": "",
+      "website_description": "Find shelter, housing, and other help in Wichita.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Sedgwick County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_legal_services",
+    "category_type": {
+      "external_name": "mo_civil_legal_needs",
+      "name": "Civil legal needs",
+      "icon": "legal_services"
+    },
+    "type_short": [
+      "legal services"
+    ],
+    "translations": {
+      "name": "Missouri Legal Services",
+      "description": "Missouri has four legal aid programs that offer free help with civil (non-criminal) problems. They may help with eviction, denied benefits, family law, and consumer issues. The website shows which program covers your county. You can apply by phone, and some programs also accept online applications. Help is free if you qualify based on income and the type of legal problem.",
+      "link": "https://www.lsmo.org/",
+      "warning": "",
+      "website_description": "Find free legal help in your area and learn how to apply.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

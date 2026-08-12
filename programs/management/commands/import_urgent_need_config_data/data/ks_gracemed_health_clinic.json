@@ -1,0 +1,32 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_gracemed_health_clinic",
+    "category_type": {
+      "external_name": "ks_free_low_cost_medical_care",
+      "name": "Free or lower cost health care",
+      "icon": "free_health_care"
+    },
+    "type_short": [
+      "free low cost medical care"
+    ],
+    "translations": {
+      "name": "GraceMed Health Clinic",
+      "description": "GraceMed offers medical, dental, and vision care in Wichita. Households at or below 200% of the federal poverty level can qualify for a sliding-fee discount; proof of income is required. You can still get care if you cannot afford to pay. Call 316-866-2000 for an appointment.",
+      "link": "https://www.gracemed.org/sliding-scale-discount-policy",
+      "warning": "",
+      "website_description": "Learn how to pay less for care at GraceMed.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Sedgwick County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

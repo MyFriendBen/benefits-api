@@ -32,6 +32,23 @@ class KsConfigurationData(ConfigurationData):
     }
 
     # ==========================================================================================
+    # IMMEDIATE NEED OPTIONS
+    # Base options plus a general health care tile; the base set only offers dental care, which
+    # leaves community health center resources with nowhere to surface.
+    # ==========================================================================================
+
+    acute_condition_options = {
+        **ConfigurationData.acute_condition_options,
+        "freeLowCostMedicalCare": {
+            "icon": {"_icon": "Health_care", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.freeLowCostMedicalCare",
+                "_default_message": "Free or lower cost health care",
+            },
+        },
+    }
+
+    # ==========================================================================================
     # HEALTH INSURANCE OPTIONS
     # Kansas Medicaid is branded "KanCare"
     # ==========================================================================================

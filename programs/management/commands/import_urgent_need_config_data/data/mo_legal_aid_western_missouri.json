@@ -1,0 +1,34 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_legal_aid_western_missouri",
+    "category_type": {
+      "external_name": "mo_civil_legal_needs",
+      "name": "Civil legal needs",
+      "icon": "legal_services"
+    },
+    "type_short": [
+      "legal services"
+    ],
+    "translations": {
+      "name": "Legal Aid of Western Missouri",
+      "description": "Legal Aid gives free help with housing, benefits, debt, and other legal problems. They do not handle criminal cases. Help depends on your income, what you own, and the type of legal problem. You must live in a county Legal Aid serves. Apply online or call 816-474-6750.",
+      "link": "https://lawmo.org/get-legal-help/",
+      "warning": "",
+      "website_description": "Get free legal help and learn how to apply.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Jackson County",
+      "Clay County",
+      "Platte County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

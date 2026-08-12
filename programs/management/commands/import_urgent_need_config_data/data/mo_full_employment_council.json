@@ -1,0 +1,36 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_full_employment_council",
+    "category_type": {
+      "external_name": "mo_job_resources",
+      "name": "Job resources",
+      "icon": "job_resources"
+    },
+    "type_short": [
+      "job resources"
+    ],
+    "translations": {
+      "name": "Full Employment Council",
+      "description": "The Full Employment Council helps people find jobs and build job skills. They offer career help, training, and connections to employers. Eligibility varies by service, and some training programs have extra rules. Create or update your MoJobs profile, then call 816-471-2330 to get started.",
+      "link": "https://www.feckc.org/",
+      "warning": "",
+      "website_description": "Find job help, training, and career services.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Jackson County",
+      "Clay County",
+      "Platte County",
+      "Cass County",
+      "Ray County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

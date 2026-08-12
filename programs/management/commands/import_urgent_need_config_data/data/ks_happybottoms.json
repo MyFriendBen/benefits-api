@@ -1,0 +1,33 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_happybottoms",
+    "category_type": {
+      "external_name": "ks_baby_supplies",
+      "name": "Diapers and other baby supplies",
+      "icon": "baby_supplies"
+    },
+    "type_short": [
+      "baby supplies"
+    ],
+    "translations": {
+      "name": "HappyBottoms",
+      "description": "HappyBottoms gives free diapers to families who need help and have children under age 4. You must live in an area HappyBottoms serves. Choose a diaper pickup location near you. Bring a document with your child’s name and birth date. Some locations ask you to sign up online first.",
+      "link": "https://happybottoms.org/get-diapers/",
+      "warning": "",
+      "website_description": "Find a place to get free diapers in the Kansas City area.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Wyandotte County",
+      "Johnson County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

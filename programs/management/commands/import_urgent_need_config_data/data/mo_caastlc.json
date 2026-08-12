@@ -1,0 +1,32 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_caastlc",
+    "category_type": {
+      "external_name": "mo_managing_housing_costs",
+      "name": "Managing housing costs",
+      "icon": "managing_housing"
+    },
+    "type_short": [
+      "housing"
+    ],
+    "translations": {
+      "name": "Community Action Agency of St. Louis County (CAASTLC)",
+      "description": "CAASTLC helps St. Louis County residents with housing and other needs. Rent or mortgage help depends on available funding. They can also help you understand your housing options. Call 314-446-4438 to ask about housing help.",
+      "link": "https://www.caastlc.org/",
+      "warning": "",
+      "website_description": "St. Louis County help with housing, utilities, jobs, food, and other needs",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "St. Louis County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

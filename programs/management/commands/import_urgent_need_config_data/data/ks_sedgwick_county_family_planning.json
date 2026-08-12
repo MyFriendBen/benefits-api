@@ -1,0 +1,32 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_sedgwick_county_family_planning",
+    "category_type": {
+      "external_name": "ks_family_planning",
+      "name": "Family planning",
+      "icon": "family_planning"
+    },
+    "type_short": [
+      "family planning"
+    ],
+    "translations": {
+      "name": "Sedgwick County Health Department Family Planning Clinic",
+      "description": "The clinic offers low-cost birth control, pregnancy tests, and health screenings. The clinic is for people with low incomes. Fees may be lower based on your income. Medicaid can help cover the cost. You do not need parental consent for family planning services. Call 316-660-7300 for an appointment.",
+      "link": "https://www.sedgwickcounty.org/health/services/family-planning/",
+      "warning": "",
+      "website_description": "Learn about family planning services and make an appointment.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Sedgwick County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}
