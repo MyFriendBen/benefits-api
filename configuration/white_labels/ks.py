@@ -1041,21 +1041,6 @@ class KsConfigurationData(ConfigurationData):
     }
 
     # ==========================================================================================
-    # CONSENT & PRIVACY
-    # ==========================================================================================
-
-    # KS uses the generic MyFriendBen legal pages, same as the other state white labels.
-    consent_to_contact = {
-        "en-us": "https://www.myfriendben.org/terms-and-conditions/",
-        "es": "https://www.myfriendben.org/terminos-condiciones/",
-    }
-
-    privacy_policy = {
-        "en-us": "https://www.myfriendben.org/privacy-policy/",
-        "es": "https://www.myfriendben.org/privacidad/",
-    }
-
-    # ==========================================================================================
     # REFERRER DATA
     # ==========================================================================================
 

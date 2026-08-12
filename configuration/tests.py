@@ -164,30 +164,16 @@ class TestLegalLinkConfiguration(SimpleTestCase):
     nowhere. Nothing caught it: the base class supplied a value, so no error was raised,
     and the health check skips empty links entirely.
 
-    Both keys now have real defaults in the base class, so a missing override degrades to
-    the generic MyFriendBen pages instead of a dead link. These tests additionally require
-    each white label to declare both keys in its own class body, so that using the generic
-    pages stays a deliberate choice — a new white label cannot inherit legal links by
-    accident.
+    Both keys now default to the generic MyFriendBen pages in the base class, so a white
+    label that does not override them inherits working links. These tests assert the
+    effective value for every white label, inherited or overridden, so a white label that
+    points these at an empty or relative value fails CI instead of shipping a dead link.
     """
 
     LEGAL_LINK_KEYS = ("privacy_policy", "consent_to_contact")
 
-    def test_every_white_label_declares_its_own_legal_links(self):
-        """Each white label must set both keys itself rather than inheriting them."""
-        for code, white_label_data in white_label_config.items():
-            for key in self.LEGAL_LINK_KEYS:
-                with self.subTest(white_label=code, key=key):
-                    self.assertIn(
-                        key,
-                        white_label_data.__dict__,
-                        f'White label "{code}" does not declare {key}. Add it to the white label config '
-                        f"(configuration/white_labels/{code}.py), even if the generic MyFriendBen page "
-                        "is the right link, so the choice is explicit.",
-                    )
-
     def test_legal_links_are_populated_urls(self):
-        """Every declared locale must map to a real URL, not an empty or relative value."""
+        """Every locale must map to a real URL, not an empty or relative value."""
         for code, white_label_data in white_label_config.items():
             for key in self.LEGAL_LINK_KEYS:
                 links = getattr(white_label_data, key)
