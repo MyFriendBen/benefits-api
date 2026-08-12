@@ -653,6 +653,30 @@ class ReconcileProgramConfigTestCase(TransactionTestCase):
         self.assertFalse(Program.objects.filter(name_abbreviated="test_program").exists())
         self.assertIn("does not exist", out.getvalue())
 
+    def test_reconcile_rejects_a_declaration_without_an_external_name(self):
+        """
+        A malformed declaration must fail loudly, not vanish from the plan.
+
+        Dropping it silently leaves an empty plan, which reads as "already up to date" — so
+        the config would report clean, apply nothing, and then be recorded as applied. That
+        is the defect this whole change exists to remove, so the plan validates the same
+        fields the import path does.
+        """
+        call_command(
+            "import_program_config", self._create_temp_config(self._config_without_navigators()), stdout=StringIO()
+        )
+        program = Program.objects.get(name_abbreviated="test_program")
+
+        malformed = copy.deepcopy(self.base_config)
+        del malformed["navigators"][0]["external_name"]
+
+        with self.assertRaises(CommandError) as raised:
+            call_command("import_program_config", self._create_temp_config(malformed), "--reconcile", stdout=StringIO())
+
+        self.assertIn("external_name", str(raised.exception))
+        self.assertIn("navigators[0]", str(raised.exception))
+        self.assertEqual(ProgramNavigator.objects.filter(program=program).count(), 0)
+
     def test_reconcile_and_override_are_mutually_exclusive(self):
         with self.assertRaises(CommandError):
             call_command(

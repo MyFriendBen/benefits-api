@@ -486,6 +486,11 @@ class Command(BaseCommand):
         Navigators are checked against ProgramNavigator only. A navigator present just in
         the legacy `programs` M2M is invisible to the results endpoint, so it is correctly
         reported as still needing a link.
+
+        A declaration without an external_name raises, matching the validation the import
+        path already applies. Skipping it instead would drop it from the plan, and an empty
+        plan reads as "already up to date" — so a malformed config would report clean and
+        then be recorded as applied without anything having been applied.
         """
         specs = [
             (
@@ -516,10 +521,10 @@ class Command(BaseCommand):
             if key not in sections:
                 continue
             items: list[tuple[str, str]] = []
-            for item_config in item_configs:
+            for i, item_config in enumerate(item_configs):
                 external_name = item_config.get("external_name")
                 if not external_name:
-                    continue
+                    raise CommandError(f"Missing required field 'external_name' in {key}[{i}]")
                 entity = model.objects.filter(external_name=external_name).first()
                 if entity is None:
                     items.append((external_name, "create"))

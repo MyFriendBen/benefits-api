@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from django.core.management.base import BaseCommand
 from django.core.management import call_command
@@ -33,7 +33,9 @@ class ImportResults:
     reconciled: int = 0
     already_current: int = 0
     links_to_add: int = 0
-    entities_to_create: int = 0
+    # Held by identity, not counted, so an entity declared by several configs is one entity.
+    entities_to_create: set[tuple[str, str]] = field(default_factory=set)
+    reconcile: bool = False
     partial_pass: bool = False
 
 
@@ -235,12 +237,13 @@ class Command(BaseCommand):
         # whole file — recording a partial apply as complete is the same defect as recording
         # a skip. Reconcile ignores tracking state when selecting files, so a partial pass
         # loses nothing by recording nothing.
+        results.reconcile = reconcile
         results.partial_pass = bool(only) and set(only) != set(RECONCILE_SECTIONS)
 
         verb = "reconcile" if reconcile else "import"
         self.stdout.write(self.style.WARNING(f"\n{'=' * 60}"))
         if dry_run:
-            self.stdout.write(self.style.WARNING(f"DRY RUN - No changes will be made"))
+            self.stdout.write(self.style.WARNING("DRY RUN - No changes will be made"))
         self.stdout.write(self.style.WARNING(f"{'=' * 60}\n"))
         self.stdout.write(f"Found {len(target_files)} config(s) to {verb}:\n")
         for f in target_files:
@@ -266,7 +269,7 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.SUCCESS(f"✓ Imported and recorded: {config_file.name}"))
                 elif status == "reconciled":
                     results.links_to_add += result.get("links_to_add", 0)
-                    results.entities_to_create += result.get("entities_to_create", 0)
+                    results.entities_to_create.update(result.get("entities_to_create", ()))
                     record = not dry_run and not results.partial_pass
 
                     if not result.get("changed"):
@@ -317,15 +320,22 @@ class Command(BaseCommand):
 
         Plan building is a read-only classification, so running it here as well as inside
         the importer costs a few queries and keeps the run summary honest.
+
+        Two things keep the totals comparable between a dry run and an apply. An entity that
+        has to be created also gets a link, so it counts towards both. And entities are
+        returned by identity rather than counted, because one entity is commonly declared by
+        several configs — `wa_211` by five — and a dry run classifies it as missing every
+        time, having applied nothing in between. Deduplicating across the run is what makes
+        `Entities to create` mean entities rather than declarations.
         """
         sections = tuple(s for s in RECONCILE_SECTIONS if s in (only or RECONCILE_SECTIONS))
         plan = ImportProgramConfigCommand()._build_reconcile_plan(program, config, sections)
-        actions = [action for items in plan.values() for _, action in items]
+        declarations = [(section, name, action) for section, items in plan.items() for name, action in items]
 
         return {
-            "links_to_add": actions.count("link"),
-            "entities_to_create": actions.count("create"),
-            "changed": any(action != "linked" for action in actions),
+            "links_to_add": sum(1 for _, _, action in declarations if action != "linked"),
+            "entities_to_create": {(section, name) for section, name, action in declarations if action == "create"},
+            "changed": any(action != "linked" for _, _, action in declarations),
         }
 
     def _record_import(self, config_file: Path, result: dict[str, Any]) -> None:
@@ -350,18 +360,20 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("Dry Run Complete" if dry_run else "Import Complete"))
         self.stdout.write(self.style.WARNING(f"{'=' * 60}"))
 
-        self.stdout.write(f"  Successful:     {results.successful}")
-        if results.reconciled or results.already_current:
-            reconcile_label = "To reconcile:  " if dry_run else "Reconciled:    "
-            self.stdout.write(f"  {reconcile_label} {results.reconciled}")
-            self.stdout.write(f"  Already current: {results.already_current}")
-        self.stdout.write(f"  Skipped:        {results.skipped}  (still pending — nothing was applied)")
-        self.stdout.write(f"  Failed:         {results.failed}")
+        self.stdout.write(f"  {'Successful:':<17} {results.successful}")
+        if results.reconcile:
+            reconcile_label = "To reconcile:" if dry_run else "Reconciled:"
+            self.stdout.write(f"  {reconcile_label:<17} {results.reconciled}")
+            self.stdout.write(f"  {'Already current:':<17} {results.already_current}")
+        self.stdout.write(f"  {'Skipped:':<17} {results.skipped}  (still pending — nothing was applied)")
+        self.stdout.write(f"  {'Failed:':<17} {results.failed}")
 
-        if results.reconciled or results.already_current:
+        # Printed for every reconcile run, including one where everything skipped, so that the
+        # two lines a production repair is gated on are never simply absent from the output.
+        if results.reconcile:
             self.stdout.write("")
-            self.stdout.write(f"  Links to add:      {results.links_to_add}")
-            create_line = f"  Entities to create: {results.entities_to_create}"
+            self.stdout.write(f"  {'Links to add:':<20} {results.links_to_add}")
+            create_line = f"  {'Entities to create:':<20} {len(results.entities_to_create)}"
             # An unexpected entity creation is the signal to stop and look before applying,
             # so it never gets to hide in a wall of green.
             self.stdout.write(self.style.WARNING(create_line) if results.entities_to_create else create_line)
@@ -375,12 +387,20 @@ class Command(BaseCommand):
             )
 
         if results.skipped:
-            self.stdout.write(
-                self.style.WARNING(
-                    "\nSkipped configs were not applied. Run with --reconcile to additively apply "
-                    "their warning messages, documents and navigators to the existing programs."
+            # The two modes skip for opposite reasons — a plain run skips programs that already
+            # exist, a reconcile run skips programs that don't — so the remedy differs. Telling a
+            # reconcile run to try --reconcile is circular, and it says so at the repair gate.
+            if results.reconcile:
+                remedy = (
+                    "A reconcile pass only repairs programs that already exist. Run without "
+                    "--reconcile to create the missing ones."
                 )
-            )
+            else:
+                remedy = (
+                    "Run with --reconcile to additively apply their warning messages, documents "
+                    "and navigators to the existing programs."
+                )
+            self.stdout.write(self.style.WARNING(f"\nSkipped configs were not applied. {remedy}"))
         self.stdout.write("")
 
     def _show_status(self, json_files: list[Path], import_records: dict[str, str]) -> None:
