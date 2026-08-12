@@ -33,6 +33,8 @@ def calc_pe_eligibility(
             continue
         valid_programs[name_abbr] = calculator
 
+    valid_programs = _drop_unreadable_programs(valid_programs, pe_version)
+
     empty_result: EligibilityPEResult = {
         "eligibility": {},
         "_pe_data": {"request": None, "response": None},
@@ -111,6 +113,78 @@ def all_eligibility(method: Sim, valid_programs: dict[str, PolicyEngineCalulator
     return all_eligibility
 
 
+def _resolve_comparable_version(programs: List[PolicyEngineCalulator], version: str) -> Optional[tuple]:
+    """Tuple form of `version`, for gating which inputs and outputs may be sent.
+
+    We send the "current" alias unpinned (its comparable form is None), but for gating we
+    still need to know what current concretely is — otherwise a min_pe_version floor can
+    never be met and gated fields are withheld forever. Resolve it from PE's published
+    /versions/us. If PE is unreachable this stays None, keeping the conservative
+    withhold-gated behavior. Only bother resolving when the request actually carries a
+    gated field — the vast majority don't, and resolving would be a needless (cached)
+    lookup."""
+    comparable_version = pe_versions.to_comparable_pe_version(version)
+    if comparable_version is None and _has_gated_input(programs):
+        comparable_version = pe_versions.resolve_unpinned_comparable_version()
+    return comparable_version
+
+
+def _drop_unreadable_programs(
+    valid_programs: dict[str, PolicyEngineCalulator],
+    pe_version: Optional[str],
+) -> dict[str, PolicyEngineCalulator]:
+    """Drop programs whose own output variable the resolved model doesn't define.
+
+    Version gating withholds such a field from the request, so PolicyEngine never returns
+    it and `Sim.value` raises KeyError on the missing key. `all_eligibility` doesn't
+    contain per-program failures, so a single unreadable program would empty the PE result
+    for the whole screen — every PolicyEngine program, not just that one.
+
+    Gated *inputs* need no equivalent: withholding one just leaves PolicyEngine to model
+    the value itself, which is the pre-contract behavior. Only outputs are load-bearing
+    this way, and the receipt-contract outputs (`*_if_takes_up`, floor 1.779.3) are the
+    first gated ones in the codebase.
+
+    This is reachable two ways: an exact `PolicyEngineConfig` pin below a floor, or PE's
+    /versions/us being unreachable while /calculate is healthy (they are separate
+    endpoints, and an unresolvable version withholds every gated field).
+    """
+    if not valid_programs:
+        return valid_programs
+
+    programs = list(valid_programs.values())
+    comparable_version = _resolve_comparable_version(programs, pe_versions.determine_pe_version(pe_version))
+
+    readable: dict[str, PolicyEngineCalulator] = {}
+    dropped: list[str] = []
+    for name_abbr, calculator in valid_programs.items():
+        unsupported = [
+            Data.field
+            for Data in calculator.pe_outputs
+            if not pe_versions.version_supports(
+                comparable_version,
+                getattr(Data, "min_pe_version", ()),
+                getattr(Data, "max_pe_version", ()),
+            )
+        ]
+        if unsupported:
+            dropped.append(f"{name_abbr} ({', '.join(unsupported)})")
+            continue
+        readable[name_abbr] = calculator
+
+    if dropped:
+        # Silently serving a screen without these is the failure this guard exists to
+        # avoid compounding — make the reason visible rather than inferring it from a
+        # program's absence.
+        capture_message(
+            f"PolicyEngine: dropped {len(dropped)} program(s) whose output variable the resolved "
+            f"model version does not define: {sorted(dropped)}",
+            level="warning",
+        )
+
+    return readable
+
+
 def _has_gated_input(programs: List[PolicyEngineCalulator]) -> bool:
     """True if any input/output in these programs is version-gated (has a
     min_pe_version or max_pe_version). Lets us skip resolving the PE version when
@@ -153,17 +227,7 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: 
     #                                   "current" alias (household.api resolves it server-side).
     #   comparable_version (tuple)  -> tuple representation to gate which inputs are sent
     version = pe_versions.determine_pe_version(pe_version)
-    comparable_version = pe_versions.to_comparable_pe_version(version)
-
-    # We send the "current" alias unpinned (comparable_version is None), but for input
-    # gating we still need to know what current concretely is — otherwise a min_pe_version
-    # floor can never be met and gated inputs (e.g. use_reported_ssi) are withheld forever.
-    # Resolve current from PE's published /versions/us. If PE is unreachable this stays
-    # None, keeping the conservative withhold-gated behavior (safe: PE just uses modeled
-    # values). Only bother resolving when this request actually carries a version-gated
-    # input — the vast majority don't, and resolving would be a needless (cached) lookup.
-    if comparable_version is None and _has_gated_input(programs):
-        comparable_version = pe_versions.resolve_unpinned_comparable_version()
+    comparable_version = _resolve_comparable_version(programs, version)
 
     members: list[HouseholdMember] = screen.household_members.all()
     relationship_map = screen.relationship_map()

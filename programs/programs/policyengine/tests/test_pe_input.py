@@ -13,7 +13,7 @@ from unittest.mock import patch
 from django.test import TestCase, override_settings
 from benefits.tests.cache_override import LOCAL_CACHE
 from screener.models import Screen, HouseholdMember, WhiteLabel, Expense, IncomeStream
-from programs.programs.policyengine.policy_engine import pe_input
+from programs.programs.policyengine.policy_engine import _drop_unreadable_programs, pe_input
 from programs.programs.policyengine.calculators.constants import (
     MAIN_TAX_UNIT,
     SECONDARY_TAX_UNIT,
@@ -297,6 +297,78 @@ class TestPeInputMultipleCalculators(PeInputTestBase):
         # WIC adds pregnancy/breastfeeding fields to people
         head_id = str(self.head.id)
         self.assertIn("age", people[head_id])
+
+
+class TestUnreadableProgramsAreDropped(PeInputTestBase):
+    """
+    A program whose own output variable the resolved model doesn't define must drop out of
+    the request cleanly.
+
+    Version gating withholds such a field, so PolicyEngine never returns it and
+    `Sim.value` raises KeyError on the missing key. `all_eligibility` has no per-program
+    error handling, so that KeyError propagates to `calc_pe_eligibility`'s catch-all and
+    empties the PE result for the *entire* screen — every PolicyEngine program, not just
+    the unreadable one.
+
+    The receipt-contract outputs (`*_if_takes_up`, floor 1.779.3) are the first gated
+    outputs in the codebase, so this path had no coverage before.
+    """
+
+    def setUp(self):
+        super().setUp()
+        from programs.programs.federal.pe.member import Ssi, Wic
+        from programs.programs.federal.pe.spm import Snap, Tanf
+
+        self.gated_output_programs = {"snap": Snap, "ssi": Ssi, "tanf": Tanf, "wic": Wic}
+
+    def _drop(self, programs, version):
+        return _drop_unreadable_programs(programs, version)
+
+    def test_kept_when_the_model_defines_their_output(self):
+        kept = self._drop(dict(self.gated_output_programs), "1.784.3")
+
+        self.assertEqual(set(kept), set(self.gated_output_programs))
+
+    def test_dropped_when_the_model_predates_their_output(self):
+        """Below the floor these four are unreadable — but the request still goes out for
+        everything else, rather than one KeyError taking the whole screen down."""
+        with patch("programs.programs.policyengine.policy_engine.capture_message"):
+            kept = self._drop(dict(self.gated_output_programs), "1.750.0")
+
+        self.assertEqual(kept, {})
+
+    def test_programs_with_ungated_outputs_survive_an_old_model(self):
+        """The guard is scoped to unreadable outputs — it must not thin out the rest of
+        the request, whose gated *inputs* degrade harmlessly to PolicyEngine modelling
+        the value itself."""
+        from programs.programs.federal.pe.spm import Acp, SchoolLunch
+
+        kept = self._drop({"acp": Acp, "nslp": SchoolLunch}, "1.750.0")
+
+        self.assertEqual(set(kept), {"acp", "nslp"})
+
+    def test_reports_the_drop(self):
+        """Serving a screen quietly missing SNAP is the failure this guard exists to avoid
+        compounding, so the reason has to be visible."""
+        with patch("programs.programs.policyengine.policy_engine.capture_message") as capture:
+            self._drop(dict(self.gated_output_programs), "1.750.0")
+
+        capture.assert_called_once()
+        message = capture.call_args[0][0]
+        self.assertIn("snap_if_takes_up", message)
+        self.assertEqual(capture.call_args[1]["level"], "warning")
+
+    def test_unresolvable_version_drops_them_too(self):
+        """PE's /versions/us is a different endpoint from /calculate: it can be down while
+        calculation is healthy. An unresolvable version withholds every gated field, so the
+        four programs are unreadable and must drop rather than KeyError."""
+        with patch(
+            "programs.programs.policyengine.policy_engine.pe_versions.resolve_unpinned_comparable_version",
+            return_value=None,
+        ), patch("programs.programs.policyengine.policy_engine.capture_message"):
+            kept = self._drop(dict(self.gated_output_programs), None)
+
+        self.assertEqual(kept, {})
 
 
 class TestPeInputVersionGating(PeInputTestBase):

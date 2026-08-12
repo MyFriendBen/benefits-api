@@ -59,6 +59,26 @@ class TestReceiptContractBundle(TestCase):
             expected = () if dep.field in UNGATED_FIELDS else (1, 779, 3)
             self.assertEqual(dep.min_pe_version, expected, f"{dep.field} carries the wrong version gate")
 
+    def test_the_suppressing_half_is_the_gated_half(self):
+        """
+        The bundle's gating is deliberately mixed, and this is what makes that safe.
+
+        Only `ssi` and `tanf` are ungated, and both are *amount* inputs that predate the
+        contract. Every field that can suppress a benefit or assert receipt is floored at
+        1.779.3. So below the floor we send amounts with no take-up flags — the
+        pre-contract behavior — and there is no resolvable version at which we tell
+        PolicyEngine to zero a benefit without also sending the evidence for it.
+
+        Flooring the amounts too (the symmetric-looking fix) would stop sending reported
+        SSI/TANF to older models, which is a regression, not a tightening.
+        """
+        for dep in receipt_contract:
+            suppresses_or_asserts_receipt = dep.field.startswith(("takes_up_", "receives_"))
+            if suppresses_or_asserts_receipt:
+                self.assertEqual(dep.min_pe_version, (1, 779, 3), f"{dep.field} must never outrun its floor")
+            else:
+                self.assertEqual(dep.field in UNGATED_FIELDS, True, f"{dep.field} is an unexpected ungated field")
+
     def test_would_be_outputs_are_version_gated(self):
         for dep in (member.SsiIfTakesUp, member.WicIfTakesUp, spm.SnapIfTakesUp, spm.TanfIfTakesUp):
             self.assertEqual(dep.min_pe_version, (1, 779, 3), dep.field)

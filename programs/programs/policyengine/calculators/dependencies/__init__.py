@@ -75,11 +75,20 @@ wic_income = [
 # reasoning; the amount inputs travel with the flags so a program adopting the contract
 # sends a coherent picture of each benefit.
 #
-# The set moves as a unit on purpose. Suppressing simulated SSI while leaving simulated
-# SNAP in place would just shift categorical eligibility onto the other phantom benefit,
-# and PE requests are a single shared payload — every program in a request sees these
-# inputs — so a partial adoption is a per-white-label inconsistency rather than a
+# The set moves as a unit across *calculators* on purpose. Suppressing simulated SSI while
+# leaving simulated SNAP in place would just shift categorical eligibility onto the other
+# phantom benefit, and PE requests are a single shared payload — every program in a request
+# sees these inputs — so a partial adoption is a per-white-label inconsistency rather than a
 # narrower change.
+#
+# The version gating within the bundle is deliberately NOT uniform: `ssi` and `tanf` predate
+# the contract by years and stay ungated, while the six receipt/take-up fields are floored at
+# 1.779.3. Flooring the amounts too would stop sending reported SSI/TANF to any older model —
+# a regression, since those amounts are load-bearing today (TX CEAP's income tier, SNAP
+# categorical from a reported amount). The asymmetry is safe because the *suppressing* half is
+# the gated half: below the floor we send amounts without take-up flags, which is exactly the
+# pre-contract behavior, and there is no version at which we suppress a benefit without also
+# sending the evidence for it. test_receipt_contract.py pins that direction.
 receipt_contract = [
     member.Ssi,
     member.ReceivesSsiDependency,
