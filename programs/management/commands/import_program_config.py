@@ -107,8 +107,8 @@ class Command(BaseCommand):
 
         # Validate navigator county names against this white label's convention BEFORE any
         # writes, so a mismatch fails loudly instead of silently creating a county that no
-        # screener household will ever match (MFB-1602).
-        self._validate_counties(config, white_label)
+        # screener household will ever match.
+        self._validate_counties(config, white_label, override=override)
 
         # Check if program already exists
         existing_program = Program.objects.filter(name_abbreviated=program_name, white_label=white_label).first()
@@ -206,7 +206,12 @@ class Command(BaseCommand):
 
         data = config_obj.data
         if isinstance(data, str):
-            data = json.loads(data)
+            try:
+                data = json.loads(data)
+            except json.JSONDecodeError as e:
+                raise CommandError(
+                    f"'counties_by_zipcode' config for white label '{white_label.code}' is not valid JSON: {e}"
+                )
         if not data:
             return None
 
@@ -216,13 +221,19 @@ class Command(BaseCommand):
                 valid.update(county_map.keys())
         return valid
 
-    def _validate_counties(self, config: dict[str, Any], white_label: WhiteLabel) -> None:
+    def _validate_counties(self, config: dict[str, Any], white_label: WhiteLabel, override: bool = False) -> None:
         """
         Validate that every navigator `counties` entry exactly matches a county in the white
         label's `counties_by_zipcode` map. Navigator county filters are an exact string match
         against the screener's stored county, so a name in the wrong convention (e.g. bare
         "Jackson" where the map sends "Jackson County") would silently never match and the
-        referral would be dropped. Fail loudly instead. (MFB-1602)
+        referral would be dropped. Fail loudly instead.
+
+        Counties are only persisted when a navigator is created. On a non-override import an
+        already-existing navigator is associated as-is and its config `counties` are ignored,
+        so validating them would block the import over a field that path never writes; those
+        are skipped. In override mode the navigator is recreated, so its counties are written
+        and are validated.
         """
         valid_names = self._get_valid_county_names(white_label)
         if valid_names is None:
@@ -239,16 +250,27 @@ class Command(BaseCommand):
             if not isinstance(nav_config, dict):
                 continue
             external_name = nav_config.get("external_name", "<unnamed>")
+
+            # Skip navigators whose counties this run won't write.
+            if (
+                not override
+                and isinstance(external_name, str)
+                and Navigator.objects.filter(external_name=external_name).exists()
+            ):
+                continue
+
             for county_name in nav_config.get("counties", []) or []:
+                if not isinstance(county_name, str):
+                    problems.append(f"navigator '{external_name}': {county_name!r} is not a string")
+                    continue
                 if county_name in valid_names:
                     continue
-                suggestion = ""
-                suffixed = f"{county_name} County"
-                bare = county_name[: -len(" County")] if county_name.endswith(" County") else None
-                if suffixed in valid_names:
-                    suggestion = f" (did you mean '{suffixed}'?)"
-                elif bare and bare in valid_names:
-                    suggestion = f" (did you mean '{bare}'?)"
+                other = (
+                    county_name[: -len(" County")]
+                    if county_name.endswith(" County")
+                    else f"{county_name} County"
+                )
+                suggestion = f" (did you mean '{other}'?)" if other in valid_names else ""
                 problems.append(f"navigator '{external_name}': '{county_name}'{suggestion}")
 
         if problems:

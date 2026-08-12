@@ -223,7 +223,7 @@ class ImportProgramConfigTestCase(TransactionTestCase):
         Path(config_file).unlink()
         Path(invalid_config_file).unlink()
 
-    # --- MFB-1602: navigator county validation guard ---
+    # --- navigator county validation guard ---
 
     def _navigator_config(self, external_name: str, counties: list) -> dict:
         """Build a minimal new-navigator config carrying the given counties."""
@@ -354,3 +354,49 @@ class ImportProgramConfigTestCase(TransactionTestCase):
             self.assertTrue(Navigator.objects.filter(external_name="test_nav").exists())
         finally:
             Path(config_file).unlink()
+
+    def test_navigator_county_non_string_entry_fails_loudly(self):
+        """A non-string county entry raises a CommandError, not a raw AttributeError."""
+        self._set_counties_by_zipcode({"11111": {"Jackson County": "Jackson County"}})
+
+        config = self.base_config.copy()
+        config["navigators"] = [self._navigator_config("test_nav", [None])]
+        config_file = self._create_temp_config(config)
+
+        try:
+            with self.assertRaises(CommandError) as ctx:
+                call_command("import_program_config", config_file, stdout=StringIO())
+            self.assertIn("is not a string", str(ctx.exception))
+            self.assertFalse(Navigator.objects.filter(external_name="test_nav").exists())
+        finally:
+            Path(config_file).unlink()
+
+    def test_navigator_county_not_validated_for_existing_navigator(self):
+        """A pre-existing navigator's config counties aren't written on a non-override import,
+        so they aren't validated — a bad name there must not block the import."""
+        self._set_counties_by_zipcode({"11111": {"Jackson County": "Jackson County"}})
+
+        # First import creates the program and navigator "reused_nav" with a valid county.
+        first = self.base_config.copy()
+        first["navigators"] = [self._navigator_config("reused_nav", ["Jackson County"])]
+        first_file = self._create_temp_config(first)
+
+        # Second import: a different program reuses the now-existing navigator with a BAD county.
+        second = self.base_config.copy()
+        second["program"] = {
+            **self.base_config["program"],
+            "name_abbreviated": "test_program_2",
+            "external_name": "test_program_2",
+        }
+        second["navigators"] = [self._navigator_config("reused_nav", ["Jackson"])]
+        second_file = self._create_temp_config(second)
+
+        try:
+            call_command("import_program_config", first_file, stdout=StringIO())
+            # Must NOT raise despite the bad "Jackson": reused_nav already exists, so its
+            # counties are ignored on this non-override import.
+            call_command("import_program_config", second_file, stdout=StringIO())
+            self.assertTrue(Program.objects.filter(name_abbreviated="test_program_2").exists())
+        finally:
+            Path(first_file).unlink()
+            Path(second_file).unlink()
