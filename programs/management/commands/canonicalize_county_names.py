@@ -84,6 +84,17 @@ class Command(BaseCommand):
                 continue
 
             valid_suffixed = suffixed_county_names(code)  # None => guard unavailable
+            if valid_suffixed is None:
+                # Without the ZIP->county map we can't tell a real county from an
+                # independent city (e.g. MO "St. Louis City"), so skip rather than
+                # blindly appending " County" to every bare row.
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"  [{code}] no ZIP->county map in white_label_config — skipping (no changes)"
+                    )
+                )
+                continue
+
             bare_rows = list(County.objects.filter(white_label=wl).exclude(name__endswith=SUFFIX).order_by("name"))
 
             self.stdout.write(self.style.MIGRATE_LABEL(f"  [{code}] {len(bare_rows)} bare county row(s)"))
