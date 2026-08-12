@@ -313,17 +313,7 @@ class SkippedConfigTrackingTest(TestCase):
         End-to-end repair: a program that exists but never had its config applied gets
         its navigators linked by a --reconcile run, and only then is it recorded.
         """
-        with_navigator = dict(self.config)
-        with_navigator["navigators"] = [
-            {
-                "external_name": "test_navigator",
-                "name": "Test Navigator",
-                "email": "navigator@example.com",
-                "description": "Helps people apply",
-                "assistance_link": "https://example.com/help",
-            }
-        ]
-        self.config_file.write_text(json.dumps(with_navigator), encoding="utf-8")
+        self._write_config_with_navigator()
 
         program = self._create_existing_program()
         self._run()
@@ -341,6 +331,54 @@ class SkippedConfigTrackingTest(TestCase):
         self._run("--reconcile", "--dry-run")
 
         self.assertFalse(ProgramConfigImport.objects.filter(filename="existing_program.json").exists())
+
+    def test_partial_reconcile_is_not_recorded_as_imported(self):
+        """
+        --only applies part of a config, so recording it would hide the rest.
+
+        A hash covering the whole file is a claim that the whole file was applied. Writing
+        one after a sectional pass is the same defect as recording a skip: the sections that
+        were never applied stop showing up as outstanding work.
+        """
+        self._write_config_with_navigator(with_document=True)
+        program = self._create_existing_program()
+
+        output = self._run("--reconcile", "--only", "navigators")
+
+        # The navigators section really was applied, and the documents section really wasn't.
+        self.assertEqual(ProgramNavigator.objects.filter(program=program).count(), 1)
+        self.assertEqual(program.documents.count(), 0)
+
+        self.assertFalse(
+            ProgramConfigImport.objects.filter(filename="existing_program.json").exists(),
+            "A partial (--only) pass must not record the config as imported",
+        )
+        self.assertIn("existing_program.json", self._pending_filenames())
+        self.assertIn("no config is recorded as imported", output)
+
+    def test_reconcile_naming_every_section_is_a_full_pass(self):
+        """--only listing all sections applies the whole config, so it records normally."""
+        self._write_config_with_navigator(with_document=True)
+        self._create_existing_program()
+
+        self._run("--reconcile", "--only", "warning_messages", "--only", "documents", "--only", "navigators")
+
+        self.assertTrue(ProgramConfigImport.objects.filter(filename="existing_program.json").exists())
+
+    def _write_config_with_navigator(self, with_document: bool = False):
+        config = dict(self.config)
+        config["navigators"] = [
+            {
+                "external_name": "test_navigator",
+                "name": "Test Navigator",
+                "email": "navigator@example.com",
+                "description": "Helps people apply",
+                "assistance_link": "https://example.com/help",
+            }
+        ]
+        if with_document:
+            config["documents"] = [{"external_name": "test_document", "text": "Bring photo ID"}]
+        self.config_file.write_text(json.dumps(config), encoding="utf-8")
 
     def _pending_filenames(self):
         command = self._command_class()()

@@ -34,6 +34,7 @@ class ImportResults:
     already_current: int = 0
     links_to_add: int = 0
     entities_to_create: int = 0
+    partial_pass: bool = False
 
 
 class Command(BaseCommand):
@@ -64,7 +65,8 @@ class Command(BaseCommand):
     navigators to the existing program without touching anything already there.
 
     Tracking rows store a hash of the config file, so editing a config re-opens it
-    as pending on the next run.
+    as pending on the next run. A row is only written when the whole config was
+    applied, so a --only pass records nothing.
     """
 
     # Path to the data directory containing JSON config files
@@ -99,7 +101,8 @@ class Command(BaseCommand):
             "--only",
             action="append",
             choices=list(RECONCILE_SECTIONS),
-            help="With --reconcile, limit the pass to these sections. Repeatable. Defaults to all of them.",
+            help="With --reconcile, limit the pass to these sections. Repeatable. Defaults to all of them. "
+            "A partial pass records nothing, since only part of each config is applied.",
         )
 
     def handle(self, *args: Any, **options: Any) -> None:
@@ -228,6 +231,12 @@ class Command(BaseCommand):
         """Process each target config file and return the results."""
         results = ImportResults()
 
+        # A --only pass applies part of a config, so it must not stamp a hash covering the
+        # whole file — recording a partial apply as complete is the same defect as recording
+        # a skip. Reconcile ignores tracking state when selecting files, so a partial pass
+        # loses nothing by recording nothing.
+        results.partial_pass = bool(only) and set(only) != set(RECONCILE_SECTIONS)
+
         verb = "reconcile" if reconcile else "import"
         self.stdout.write(self.style.WARNING(f"\n{'=' * 60}"))
         if dry_run:
@@ -258,19 +267,27 @@ class Command(BaseCommand):
                 elif status == "reconciled":
                     results.links_to_add += result.get("links_to_add", 0)
                     results.entities_to_create += result.get("entities_to_create", 0)
+                    record = not dry_run and not results.partial_pass
 
                     if not result.get("changed"):
                         results.already_current += 1
-                        if not dry_run:
+                        if record:
                             self._record_import(config_file, result)
                         continue
 
                     results.reconciled += 1
                     if dry_run:
                         self.stdout.write(self.style.WARNING(f"⋯ Would reconcile: {config_file.name}"))
-                    else:
+                    elif record:
                         self._record_import(config_file, result)
                         self.stdout.write(self.style.SUCCESS(f"✓ Reconciled and recorded: {config_file.name}"))
+                    else:
+                        self.stdout.write(
+                            self.style.SUCCESS(
+                                f"✓ Reconciled: {config_file.name} "
+                                f"(left pending — only part of the config was applied)"
+                            )
+                        )
                 elif status == "skipped":
                     # Deliberately no tracking row: nothing in this config was applied, so
                     # recording it would exclude it from every future run.
@@ -348,6 +365,14 @@ class Command(BaseCommand):
             # An unexpected entity creation is the signal to stop and look before applying,
             # so it never gets to hide in a wall of green.
             self.stdout.write(self.style.WARNING(create_line) if results.entities_to_create else create_line)
+
+        if results.partial_pass and (results.reconciled or results.already_current):
+            self.stdout.write(
+                self.style.WARNING(
+                    "\n--only applies part of each config, so no config is recorded as imported. "
+                    "The remaining sections need their own --reconcile run."
+                )
+            )
 
         if results.skipped:
             self.stdout.write(
