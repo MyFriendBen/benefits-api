@@ -3,6 +3,7 @@ Unit tests for Configuration app serializers.
 """
 
 from unittest.mock import MagicMock, patch
+from urllib.parse import urlparse
 from django.test import SimpleTestCase, TestCase
 from configuration.models import Configuration
 from configuration.serializers import ConfigurationSerializer
@@ -200,10 +201,15 @@ class TestLegalLinkConfiguration(SimpleTestCase):
                     )
 
                 for locale, link in links.items():
+                    # Parse rather than string-match the prefix: "https://" and
+                    # "https:///privacy-policy/" both start with the scheme but name no host,
+                    # so they reach the browser as dead links just like the empty string did.
+                    parsed = urlparse(link)
+
                     with self.subTest(white_label=code, key=key, locale=locale):
                         self.assertTrue(
-                            link.startswith("https://"),
+                            parsed.scheme == "https" and bool(parsed.netloc),
                             f'White label "{code}" has a {key} link for "{locale}" that is not an '
-                            f"https URL: {link!r}. An empty string here renders as a link with an "
-                            "empty href.",
+                            f"absolute https URL: {link!r}. An empty string here renders as a link "
+                            "with an empty href.",
                         )
