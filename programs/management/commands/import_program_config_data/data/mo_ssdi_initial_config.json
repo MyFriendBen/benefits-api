@@ -1,0 +1,94 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "program_category": {
+    "external_name": "mo_cash",
+    "name": "Cash Assistance",
+    "icon": "cash"
+  },
+  "program": {
+    "name_abbreviated": "mo_ssdi",
+    "year": "2026",
+    "base_program": "ssdi",
+    "legal_status_required": [
+      "citizen",
+      "non_citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission"
+    ],
+    "name": "Social Security Disability Insurance (SSDI)",
+    "description": "Social Security Disability Insurance (SSDI) gives monthly payments to workers with disabilities. People who are blind may also qualify. SSDI does not have a savings limit.\n\nYour past earnings determine how much you receive each month.\n\nSocial Security will check your work history to see if you qualify. They will also review whether your condition meets their disability rules.\n\nTo apply online, select Apply Now. You can also call 1-800-772-1213.",
+    "description_short": "Monthly cash benefits for workers with disabilities",
+    "learn_more_link": "https://www.ssa.gov/disability/eligibility",
+    "apply_button_link": "https://www.ssa.gov/apply?benefits=disability&age=adult",
+    "apply_button_description": "",
+    "estimated_application_time": "1 - 2 hours",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "value_format": null,
+    "value_type": "benefit",
+    "website_description": "Monthly cash benefits for workers with disabilities",
+    "show_on_current_benefits": true,
+    "show_in_has_benefits_step": false,
+    "has_calculator": true
+  },
+  "documents": [
+    {
+      "external_name": "mo_id_proof",
+      "text": "Proof of identity, if requested (such as a driver's license or state ID)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_ssn",
+      "text": "Social Security number",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_ssdi_medical_records",
+      "text": "Medical evidence you already have (ex: treatment records, test results, medications)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_ssdi_medical_contacts",
+      "text": "Names, addresses, and phone numbers of your doctors and treatment providers",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_ssdi_workers_comp",
+      "text": "Workers' compensation information, such as your claim number and injury date, if applicable",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_ssdi_work_history",
+      "text": "Jobs held in the 5 years before you became unable to work (ex: job titles, dates, duties, pay)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_earned_income",
+      "text": "Proof of income (ex: pay stubs, W-2 forms, tax returns)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "mo_whole_person",
+      "name": "The Whole Person",
+      "email": "hello@thewholeperson.org",
+      "phone_number": "+18165610304",
+      "description": "The Whole Person helps people with disabilities apply for SSI or SSDI. Staff can help gather documents, communicate with Social Security, and prepare appeals.",
+      "assistance_link": "https://thewholeperson.org/support-services/",
+      "counties": [],
+      "languages": []
+    }
+  ]
+}
