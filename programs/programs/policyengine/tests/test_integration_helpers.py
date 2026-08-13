@@ -1,8 +1,8 @@
-"""Harness test for the PolicyEngine spec-scenario helpers.
+"""Harness test for the PolicyEngine integration-test helpers.
 
 This validates the record/replay machinery itself — explicit primary keys, the pinned
 version, the pre-seeded token, and the body matcher in conftest — using one household as its
-subject. A program's own spec-scenario tests live next to the program
+subject. A program's own PolicyEngine tests live next to the program
 (``programs/programs/{state}/{program}/tests/``), not here.
 
 If this test fails to replay, the harness is broken; see docs/TESTING.md.
@@ -16,8 +16,8 @@ change, not about the harness. Re-record after reviewing the new body.
 import pytest
 
 from ...tx.pe.member import TxHeadStart
-from .spec_scenarios import (
-    PeSpecScenarioTestCase,
+from .integration_test_helpers import (
+    PeIntegrationTestCase,
     add_income,
     add_member,
     calc_pe_program,
@@ -28,7 +28,7 @@ from .spec_scenarios import (
 
 
 @pytest.mark.integration
-class TestPeSpecScenarioHarness(PeSpecScenarioTestCase):
+class TestPeIntegrationHarness(PeIntegrationTestCase):
     # A version PolicyEngine currently serves, so this cassette can actually be re-recorded.
     # PE no longer serves 1.779.3; the value is unchanged at 1.784.3.
     pe_version = "1.784.3"

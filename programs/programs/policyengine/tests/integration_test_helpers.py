@@ -1,10 +1,14 @@
-"""Support for PolicyEngine spec-scenario tests.
+"""Support for tests that run a PolicyEngine calculator end to end.
 
-A spec-scenario test mirrors one entry in a program's ``spec.md`` Test Scenarios section
-1:1 and asserts both eligibility and benefit value. Because the answer comes from
-PolicyEngine rather than from our code, these tests are marked ``@pytest.mark.integration``
-and run against a recorded VCR cassette: live once when the program is implemented, then
-replayed in CI. See docs/TESTING.md for the record/replay commands.
+These build a household, call one PolicyEngine calculator, and assert on the eligibility and
+value it returns. Because the answer comes from PolicyEngine rather than from our code, such
+tests are marked ``@pytest.mark.integration`` and run against a recorded VCR cassette: live
+once when the program is implemented, then replayed in CI. See docs/TESTING.md for the
+record/replay commands.
+
+Where the assertions come from is up to the caller — today that is usually a program's
+``spec.md`` Test Scenarios section, mirrored one test per scenario, but nothing here depends
+on that.
 
 Three things have to hold for a PolicyEngine call to be replayable from a cassette, and all
 three are handled here:
@@ -36,21 +40,22 @@ from typing import Optional
 
 import pytest
 from decouple import config
+from django.core.cache import cache
 from django.test import TestCase
-from django.utils import timezone
 
+from conftest import vcr_record_mode
 from configuration.models import PolicyEngineConfig
 from programs.models import FederalPoveryLimit, Program
 from programs.programs.calc import Eligibility
 from programs.util import Dependencies
 from screener.models import HouseholdMember, IncomeStream, Screen, WhiteLabel
 
-from ..engines import PrivateApiSim
+from ..engines import _PE_TOKEN_CACHE_KEY, PrivateApiSim
 from ..policy_engine import pe_input
 
 # Placeholder used when replaying. Never sent anywhere real: the recorded response replays
 # regardless of the token, and conftest redacts the Authorization header from cassettes.
-TEST_PE_TOKEN = "pe-spec-scenario-token"
+TEST_PE_TOKEN = "pe-integration-test-token"
 
 # Env var that opts a run in to recording. Recording is explicit rather than inferred from
 # VCR_MODE: the default mode ("once") only records when the cassette file is missing, so the
@@ -74,7 +79,7 @@ def _can_record() -> bool:
         config("POLICY_ENGINE_CLIENT_SECRET", default="")
     )
 
-    return has_credentials and os.getenv("VCR_MODE", "once").lower() != "none"
+    return has_credentials and vcr_record_mode() != "none"
 
 
 def _forces_live_recording() -> bool:
@@ -87,7 +92,7 @@ def _forces_live_recording() -> bool:
     deliberate act (bump ``pe_version``, re-record, review the value diff — see
     docs/TESTING.md), never something a CI run should attempt on its own.
     """
-    return os.getenv("VCR_MODE", "once").lower() == "all"
+    return vcr_record_mode() == "all"
 
 
 def seed_pe_token(token: str = TEST_PE_TOKEN) -> None:
@@ -97,17 +102,15 @@ def seed_pe_token(token: str = TEST_PE_TOKEN) -> None:
     token — the auth0 host is in VCR's ``ignore_hosts``, so that request passes through and is
     never written to a cassette (its response body is a live token).
 
-    Otherwise seed a placeholder so nothing tries to authenticate at all. The cache is an
-    in-process class attribute on ``PrivateApiSim`` (not the Django cache), so this holds for
-    the rest of the test process.
+    Otherwise seed a placeholder so nothing tries to authenticate at all. ``engines`` reads the
+    token from the Django cache, which the autouse ``clear_cache`` fixture empties before every
+    test — so this has to be re-seeded per test (``PeIntegrationTestCase.setUp`` does).
     """
     if _can_record():
         return
 
-    token_cache = PrivateApiSim.token
-    token_cache.save(token)
-    token_cache.last_update = timezone.now()
-    token_cache.invalid = False
+    # No expiry: the entry only has to outlive this one test, and clear_cache removes it.
+    cache.set(_PE_TOKEN_CACHE_KEY, token, timeout=None)
 
 
 def pin_pe_version(version: str) -> None:
@@ -244,14 +247,14 @@ def screener_value(eligibility: Eligibility) -> int:
 
     PolicyEngine returns fractional dollars (a member value can be 12076.413) and the API
     truncates before serving it (``screener/views.py`` ``clean_program``). Asserting the
-    truncated value keeps spec.md expectations in whole dollars — the number a QA run or a
-    user actually sees — instead of encoding sub-cent noise into every test.
+    truncated value lets expectations stay in whole dollars — the number a QA run or a user
+    actually sees — instead of encoding sub-cent noise into every test.
     """
     return math.trunc(eligibility.value)
 
 
-class PeSpecScenarioTestCase(TestCase):
-    """Base class for a program's spec-scenario tests.
+class PeIntegrationTestCase(TestCase):
+    """Base class for a program's PolicyEngine tests.
 
     Subclasses set ``pe_version`` to the version the cassettes were recorded at (keep it in
     sync with the pinned ``PolicyEngineConfig`` version; changing it means re-recording).

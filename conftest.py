@@ -15,8 +15,8 @@ All integration tests marked with @pytest.mark.integration automatically use VCR
 
 Two integrations use this harness:
 - HUD income limits (integrations/clients/hud_income_limits) — needs HUD_API_TOKEN to record
-- PolicyEngine program spec-scenario tests — see programs/programs/policyengine/tests/
-  spec_scenarios.py and docs/TESTING.md
+- PolicyEngine program tests — see programs/programs/policyengine/tests/
+  integration_test_helpers.py and docs/TESTING.md
 """
 
 import json
@@ -43,8 +43,36 @@ HUD_TEST_PATH_FRAGMENT = "hud_income_limits"
 # Hosts VCR passes straight through, never recording. PolicyEngine's OAuth exchange lives
 # here: its response body is a real bearer token, so it must not be written to a cassette.
 # Recording fetches a token live; replay pre-seeds a placeholder instead (see
-# programs/programs/policyengine/tests/spec_scenarios.py).
+# programs/programs/policyengine/tests/integration_test_helpers.py).
 VCR_IGNORE_HOSTS = ["policyengine.uk.auth0.com"]
+
+# Record modes VCR_MODE may name. Anything else falls back to "once".
+VALID_VCR_MODES = ("none", "new_episodes", "all", "once")
+DEFAULT_VCR_MODE = "once"
+
+
+def vcr_record_mode() -> str:
+    """The record mode this run uses. Raises on a VCR_MODE we don't recognize.
+
+    The single source of truth for reading VCR_MODE. Anything deciding behavior off the mode
+    goes through this rather than reading the environment directly, so nothing can disagree
+    with the mode the cassette is actually opened in.
+
+    An unrecognized value is an error rather than a silent fall back to the default: the modes
+    differ in whether they touch the network, so quietly substituting one for another turns a
+    typo into a behavior change. Mistyping ``none`` is the case that matters — the run was
+    meant to be strict, offline replay, and any other mode may record and authenticate live.
+    Unset (or empty) is not a typo and still means the default.
+    """
+    mode = os.getenv("VCR_MODE", "").strip().lower()
+
+    if not mode:
+        return DEFAULT_VCR_MODE
+
+    if mode not in VALID_VCR_MODES:
+        raise ValueError(f"Unrecognized VCR_MODE {mode!r}. Expected one of: {', '.join(VALID_VCR_MODES)}.")
+
+    return mode
 
 
 # Sensitive headers to redact in VCR cassettes
@@ -204,6 +232,20 @@ def policy_engine_body(r1, r2):
     return True
 
 
+def pytest_configure(config):
+    """Reject an unrecognized VCR_MODE before any test runs.
+
+    vcr_record_mode() would raise anyway at the point of use, but that surfaces as an error on
+    each integration test partway into the run. Checking at startup fails the whole session
+    immediately with the typo named. Re-raised as UsageError so it prints as a one-line
+    message about the environment rather than an internal traceback.
+    """
+    try:
+        vcr_record_mode()
+    except ValueError as e:
+        raise pytest.UsageError(str(e)) from e
+
+
 @pytest.hookimpl(wrapper=True, tryfirst=True)
 def pytest_runtest_makereport(item, call):
     """Stash each phase's report on the item so fixtures can see whether the test failed.
@@ -329,11 +371,7 @@ def auto_vcr(request, vcr_config):
     #   - "all": Fresh start - never replays, re-records everything from scratch (push to main in CI)
     #   - "once" (default): Strict - replays existing, errors if cassette missing new HTTP request (local dev)
     #   - "none": Read-only - replays only, never records, errors on new HTTP requests (strict mode)
-    vcr_mode = os.getenv("VCR_MODE", "once").lower()
-
-    # Validate and use the mode
-    valid_modes = ["none", "new_episodes", "all", "once"]
-    record_mode = vcr_mode if vcr_mode in valid_modes else "once"
+    record_mode = vcr_record_mode()
 
     # Log VCR configuration for visibility in CI
     logger.info(f"VCR mode: {record_mode} | Test: {request.node.name}")

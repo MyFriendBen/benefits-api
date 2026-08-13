@@ -92,19 +92,19 @@ pytest integrations/clients/hud_income_limits/tests/test_integration.py::TestHud
 
 Every program calculator gets tests that mirror its `spec.md` **Test Scenarios** 1:1 — one test per scenario, asserting eligibility *and* benefit value. Custom (MFB) calculators get plain unit tests, because the rules and amounts are our code. PolicyEngine calculators get the same assertions wrapped as VCR integration tests: the answer comes from PolicyEngine, so we record it once and replay it forever after.
 
-Helpers live in `programs/programs/policyengine/tests/spec_scenarios.py`; the harness itself is covered by `programs/programs/policyengine/tests/test_spec_scenarios.py`.
+Helpers live in `programs/programs/policyengine/tests/integration_test_helpers.py`; the harness itself is covered by `programs/programs/policyengine/tests/test_integration_helpers.py`. Nothing in the helpers is coupled to `spec.md` — they run a calculator and hand back an `Eligibility`; mirroring Test Scenarios is a convention of the callers.
 
 ### Writing one
 
 ```python
 import pytest
-from programs.programs.policyengine.tests.spec_scenarios import (
-    PeSpecScenarioTestCase, add_income, add_member, calc_pe_program, make_program, make_screen,
+from programs.programs.policyengine.tests.integration_test_helpers import (
+    PeIntegrationTestCase, add_income, add_member, calc_pe_program, make_program, make_screen,
     screener_value,
 )
 
 @pytest.mark.integration          # applies VCR (the base class carries this too)
-class TestTxHeadStart(PeSpecScenarioTestCase):
+class TestTxHeadStart(PeIntegrationTestCase):
     pe_version = "1.779.3"        # version the cassettes were recorded at
 
     def test_scenario_1_single_parent_child_age_3_under_income_limit(self):
