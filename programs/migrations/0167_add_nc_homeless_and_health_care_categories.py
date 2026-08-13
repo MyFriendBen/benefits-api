@@ -33,7 +33,7 @@ def add_urgent_need_categories(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("programs", "0165_add_nc_homeless_and_health_care_urgent_need_types"),
+        ("programs", "0166_programconfigimport_content_hash"),
     ]
 
     operations = [
