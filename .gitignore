@@ -49,3 +49,6 @@ programs/management/commands/import_urgent_need_config_data/import_new_resources
 
 # Old irrelevant files
 _archive/
+
+# Redis snapshot written into the repo root when redis-server runs locally
+dump.rdb
