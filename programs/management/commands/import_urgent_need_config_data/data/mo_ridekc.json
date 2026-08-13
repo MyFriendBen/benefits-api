@@ -1,0 +1,34 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_ridekc",
+    "category_type": {
+      "external_name": "mo_transportation",
+      "name": "Transportation",
+      "icon": "transportation"
+    },
+    "type_short": [
+      "transportation"
+    ],
+    "translations": {
+      "name": "RideKC Free & Reduced Fare Program",
+      "description": "RideKC offers lower bus fares for people who qualify. People ages 6 to 18 and 65 or older may qualify. People with Medicare or disabilities may also qualify. You may also qualify if you get certain benefits, such as SNAP or Medicaid. Children age 5 and younger ride free. Apply online for a reduced-fare pass.",
+      "link": "https://ridekc.org/fares-passes/",
+      "warning": "",
+      "website_description": "RideKC fares, reduced-fare prices, and application information",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Jackson County",
+      "Clay County",
+      "Platte County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

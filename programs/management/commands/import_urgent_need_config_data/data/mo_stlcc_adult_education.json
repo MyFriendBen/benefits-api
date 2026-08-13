@@ -1,0 +1,33 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_stlcc_adult_education",
+    "category_type": {
+      "external_name": "mo_education_resources",
+      "name": "Education and literacy",
+      "icon": "job_resources"
+    },
+    "type_short": [
+      "job resources"
+    ],
+    "translations": {
+      "name": "St. Louis Community College Adult Education and Literacy",
+      "description": "STLCC offers free classes for people who want to finish high school or learn English. High school equivalency classes are for people age 16 or older; if you are 16 or 17, extra school rules apply. Rules for other classes may differ. Orientation is required and walk-ins are not accepted. Class availability varies, so check the website for current enrollment details.",
+      "link": "https://stlcc.edu/programs-academics/adult-education-and-literacy/",
+      "warning": "",
+      "website_description": "Free high school equivalency and English classes",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "St. Louis City",
+      "St. Louis County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

@@ -22,7 +22,7 @@ class KsConfigurationData(ConfigurationData):
                     "_default_message": "Kansas 211 (United Way of Kansas)",
                     "_label": "moreHelp.211.name.ks",
                 },
-                "link": "https://www.211.org/",
+                "link": "https://unitedwayplains.org/211-information-and-referral/",
                 "phone": {
                     "_default_message": "Dial 2-1-1",
                     "_label": "moreHelp.211.phone.ks",
@@ -33,8 +33,12 @@ class KsConfigurationData(ConfigurationData):
 
     # ==========================================================================================
     # IMMEDIATE NEED OPTIONS
-    # Base options plus a general health care tile; the base set only offers dental care, which
-    # leaves community health center resources with nowhere to surface.
+    # Base options plus three tiles the base set doesn't offer:
+    #   freeLowCostMedicalCare - base only has dental care, leaving community health centers
+    #                            with nowhere to surface
+    #   savings                - reuses Screen.needs_college_savings (as CO does), but labelled
+    #                            broadly rather than CO's college-specific wording
+    #   transportation         - new Screen.needs_transportation field
     # ==========================================================================================
 
     acute_condition_options = {
@@ -44,6 +48,20 @@ class KsConfigurationData(ConfigurationData):
             "text": {
                 "_label": "acuteConditionOptions.freeLowCostMedicalCare",
                 "_default_message": "Free or lower cost health care",
+            },
+        },
+        "savings": {
+            "icon": {"_icon": "Savings", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.savings.ks",
+                "_default_message": "Savings",
+            },
+        },
+        "transportation": {
+            "icon": {"_icon": "Transportation", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.transportation",
+                "_default_message": "Transportation",
             },
         },
     }

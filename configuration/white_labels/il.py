@@ -111,6 +111,14 @@ class IlConfigurationData(ConfigurationData):
                 "_default_message": "Aging Community Resources",
             },
         },
+        # Currently backs one Metro East resource (Metro Transit reduced fares, St. Clair County).
+        "transportation": {
+            "icon": {"_icon": "Transportation", "_classname": "option-card-icon"},
+            "text": {
+                "_label": "acuteConditionOptions.transportation",
+                "_default_message": "Transportation",
+            },
+        },
     }
 
     sign_up_options = {

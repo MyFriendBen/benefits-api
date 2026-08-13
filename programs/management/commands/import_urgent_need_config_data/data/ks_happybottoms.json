@@ -23,7 +23,10 @@
     "functions": [],
     "counties": [
       "Wyandotte County",
-      "Johnson County"
+      "Johnson County",
+      "Doniphan County",
+      "Douglas County",
+      "Miami County"
     ],
     "required_expense_types": [],
     "active": true,

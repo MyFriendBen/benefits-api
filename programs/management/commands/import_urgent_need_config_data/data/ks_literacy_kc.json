@@ -1,0 +1,33 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_literacy_kc",
+    "category_type": {
+      "external_name": "ks_education_resources",
+      "name": "Education and literacy",
+      "icon": "job_resources"
+    },
+    "type_short": [
+      "job resources"
+    ],
+    "translations": {
+      "name": "Literacy KC",
+      "description": "Literacy KC offers free classes for reading, English, and computer skills. They also offer help earning a high school diploma or equivalency. Age and residency rules vary by program. Call 816-333-9332 to learn how to get started.",
+      "link": "https://literacykc.org/programs/",
+      "warning": "",
+      "website_description": "Free classes for reading, English, computer skills, and high school completion",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Wyandotte County",
+      "Johnson County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

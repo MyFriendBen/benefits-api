@@ -25,7 +25,17 @@
       "Jackson County",
       "Clay County",
       "Platte County",
-      "Cass County"
+      "Cass County",
+      "Ray County",
+      "Lafayette County",
+      "Jasper County",
+      "Holt County",
+      "DeKalb County",
+      "Daviess County",
+      "Clinton County",
+      "Buchanan County",
+      "Andrew County",
+      "Johnson County"
     ],
     "required_expense_types": [],
     "active": true,

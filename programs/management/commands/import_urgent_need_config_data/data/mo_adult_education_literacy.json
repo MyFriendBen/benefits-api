@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_adult_education_literacy",
+    "category_type": {
+      "external_name": "mo_education_resources",
+      "name": "Education and literacy",
+      "icon": "job_resources"
+    },
+    "type_short": [
+      "job resources"
+    ],
+    "translations": {
+      "name": "Missouri Adult Education & Literacy (AEL)",
+      "description": "AEL offers free classes in reading, math, English, and digital skills. It is for people age 17 or older. Some 16-year-olds can also join if they meet school rules. Classes can help you build basic skills, finish high school, or learn English. You can also prepare for the HiSET or GED. Classes are in person and online across Missouri.",
+      "link": "https://dese.mo.gov/college-career-readiness/adult-education-literacy",
+      "warning": "",
+      "website_description": "Find free reading, English, and high school completion classes.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}
