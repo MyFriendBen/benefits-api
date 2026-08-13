@@ -49,10 +49,5 @@
             "link_url": "https://www.irs.gov/trumpaccounts",
             "link_text": "IRS Trump Accounts page"
         }
-    ],
-    "warning_message": {
-        "external_name": "trump_account_notices",
-        "calculator": "_show",
-        "message": "Trump Accounts are expected to become available on or after July 4, 2026. Check IRS.gov/trumpaccounts for updates."
-    }
+    ]
 }
