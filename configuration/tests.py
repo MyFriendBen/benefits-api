@@ -156,18 +156,8 @@ class TestConfigurationSerializerFeatureFlags(TestCase):
 
 class TestLegalLinkConfiguration(SimpleTestCase):
     """
-    Guards the privacy policy and terms links that every white label puts in its footer,
-    step-1 disclaimer, and sign-up consent copy.
-
-    KS, MO, and WA each shipped with these keys unset and inherited an empty-string
-    default, which renders as a link with an empty href — visibly a link, silently going
-    nowhere. Nothing caught it: the base class supplied a value, so no error was raised,
-    and the health check skips empty links entirely.
-
-    Both keys now default to the generic MyFriendBen pages in the base class, so a white
-    label that does not override them inherits working links. These tests assert the
-    effective value for every white label, inherited or overridden, so a white label that
-    points these at an empty or relative value fails CI instead of shipping a dead link.
+    Asserts every white label's effective privacy policy and consent links are real URLs, so an
+    empty or relative value fails CI instead of shipping a dead link.
     """
 
     LEGAL_LINK_KEYS = ("privacy_policy", "consent_to_contact")

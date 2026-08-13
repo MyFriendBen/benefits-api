@@ -467,11 +467,6 @@ class ConfigurationData:
     category_benefits = {}
 
     # Links to consent/terms pages, keyed by language code.
-    # These default to the generic MyFriendBen pages rather than empty strings: an empty
-    # value renders as a link with an empty href, which is what KS, MO, and WA shipped for
-    # months. White labels inherit these and override only if they have their own policy
-    # pages. configuration.tests.TestLegalLinkConfiguration checks the effective value for
-    # every white label, so an override that is empty or relative fails CI.
     consent_to_contact = {
         "en-us": "https://www.myfriendben.org/terms-and-conditions/",
         "es": "https://www.myfriendben.org/terminos-condiciones/",
