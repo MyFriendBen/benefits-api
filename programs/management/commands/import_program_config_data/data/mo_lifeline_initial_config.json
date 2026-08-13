@@ -1,0 +1,74 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "program_category": {
+    "external_name": "mo_housing",
+    "name": "Housing and Utilities",
+    "icon": "housing"
+  },
+  "program": {
+    "name_abbreviated": "mo_lifeline",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "gc_5less",
+      "refugee",
+      "otherWithWorkPermission",
+      "non_citizen"
+    ],
+    "name": "Lifeline",
+    "description": "Lifeline is a federal program that lowers the monthly cost of qualifying phone, internet, or bundled service. People living on qualifying Tribal lands may get a larger discount. Missouri may also provide an extra discount for some landline services.\n\nAfter you qualify, choose a participating phone or internet company. The company applies the Lifeline discount to your monthly bill.\n\nEach household can get only one Lifeline benefit. Lifeline has special rules for deciding who counts as one household. There are also other ways to qualify for Lifeline. You may qualify through certain Tribal programs or Veterans Pension and Survivors Benefit. Special rules may also help survivors qualify.\n\nTo apply, select \"Apply Now\" to start your Lifeline application through Lifeline Support.",
+    "description_short": "Discount on monthly phone or internet service",
+    "learn_more_link": "https://psc.mo.gov/Telecommunications/Lifeline_and_Disabled_Programs_1",
+    "apply_button_link": "https://www.lifelinesupport.org/how-to-apply/",
+    "apply_button_description": "",
+    "estimated_application_time": "10 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "website_description": "Discount on monthly phone or internet service",
+    "base_program": "lifeline",
+    "value_format": null,
+    "value_type": "benefit",
+    "show_on_current_benefits": true,
+    "has_calculator": true,
+    "show_in_has_benefits_step": false
+  },
+  "documents": [
+    {
+      "external_name": "mo_id_proof",
+      "text": "Proof of identity, if requested (ex: driver's license, state ID, passport, or Tribal ID)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_home",
+      "text": "Proof of home address, if requested (ex: lease, utility bill, or mortgage statement)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_earned_income",
+      "text": "Proof of household income, if requested (ex: pay stubs, tax return, or benefits letter)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_lifeline_program_participation",
+      "text": "Proof of benefits, if requested (ex: SNAP, Medicaid, or SSI)",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "lifeline_support_center",
+      "name": "Lifeline Support Center",
+      "description": "Get help with your Lifeline application, documents, or application status.",
+      "phone_number": "+18002349473",
+      "email": "LifelineSupport@usac.org",
+      "assistance_link": "https://www.lifelinesupport.org/get-help/"
+    }
+  ]
+}
