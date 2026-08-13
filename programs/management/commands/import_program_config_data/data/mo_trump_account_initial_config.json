@@ -1,0 +1,74 @@
+{
+    "white_label": {
+        "code": "mo"
+    },
+    "program_category": {
+        "external_name": "mo_cash",
+        "name": "Cash Assistance",
+        "icon": "cash"
+    },
+    "program": {
+        "name_abbreviated": "trump_account",
+        "external_name": "mo_trump_account",
+        "legal_status_required": [
+            "citizen"
+        ],
+        "name": "530A (\"Trump\") Accounts",
+        "description_short": "$1,000 government contribution for children born 2025-2028",
+        "description": "A 530A (\"Trump\") Account is a savings and investment account for your child. The government adds a one-time $1,000 contribution to help the account grow.\n\nThe money stays invested so it can grow over the years. An adult manages the account while the child is under 18. After that, the account works more like a regular retirement account.\n\nYour child will need a valid Social Security Number to open the account and get the $1,000 contribution. If your child does not have one yet, you can apply for one at ssa.gov.\n\nEach child can have only one initial Trump Account. To get started, select \"Fill out Form 4547\" to sign in to your IRS account and submit the Trump Account election.",
+        "learn_more_link": "https://trumpaccounts.gov/",
+        "apply_button_link": "https://www.irs.gov/trumpaccounts",
+        "apply_button_description": "Fill out Form 4547",
+        "estimated_application_time": "5 - 10 minutes",
+        "estimated_delivery_time": "",
+        "estimated_value": "",
+        "value_format": "lump_sum",
+        "value_type": "benefit",
+        "website_description": "$1,000 government contribution for children born 2025-2028",
+        "show_on_current_benefits": true,
+        "has_calculator": true,
+        "show_in_has_benefits_step": false
+    },
+    "documents": [
+        {
+            "external_name": "trump_account_child_ssn",
+            "text": "Child's Social Security Number (SSN)",
+            "link_url": "https://www.ssa.gov/number-card/request-number-first-time",
+            "link_text": "Apply for a child's SSN at ssa.gov"
+        },
+        {
+            "external_name": "trump_account_child_birth_certificate",
+            "text": "Child's birth certificate or proof of age and citizenship",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "trump_account_parent_id",
+            "text": "Parent, guardian, or other authorized individual's government-issued photo ID (ex: driver's license, passport)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "trump_account_parent_ssn",
+            "text": "Parent or guardian's Social Security Number (SSN) or ITIN",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "trump_account_irs_form",
+            "text": "IRS Form 4547 (to elect to open a Trump Account)",
+            "link_url": "https://www.irs.gov/trumpaccounts",
+            "link_text": "IRS Trump Accounts page"
+        }
+    ],
+    "navigators": [
+        {
+            "external_name": "trump_account_call_center",
+            "name": "Trump Account Call Center",
+            "description": "Call center for questions about Trump Accounts.",
+            "phone_number": "+18668724547",
+            "email": "",
+            "assistance_link": "https://trumpaccount.com/us/en/support/"
+        }
+    ]
+}
