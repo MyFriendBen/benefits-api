@@ -1,16 +1,15 @@
 {
     "white_label": {
-        "code": "wa"
+        "code": "mo"
     },
     "program_category": {
-        "external_name": "wa_cash",
+        "external_name": "mo_cash",
         "name": "Cash Assistance",
         "icon": "cash"
     },
     "program": {
         "name_abbreviated": "trump_account",
-        "external_name": "wa_trump_account",
-        "year": "2026",
+        "external_name": "mo_trump_account",
         "legal_status_required": [
             "citizen"
         ],
@@ -26,7 +25,8 @@
         "website_description": "$1,000 government investment account for U.S. citizen children born 2025-2028",
         "show_on_current_benefits": true,
         "has_calculator": true,
-        "show_in_has_benefits_step": false
+        "show_in_has_benefits_step": false,
+        "year": "2026"
     },
     "navigators": [
         {
