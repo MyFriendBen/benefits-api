@@ -400,3 +400,23 @@ class ImportProgramConfigTestCase(TransactionTestCase):
         finally:
             Path(first_file).unlink()
             Path(second_file).unlink()
+
+    def test_counties_config_not_a_dict_fails_loudly(self):
+        """A counties_by_zipcode config that isn't a JSON object raises a CommandError."""
+        Configuration.objects.create(
+            name="counties_by_zipcode",
+            white_label=self.white_label,
+            data=["not", "a", "dict"],
+            active=True,
+        )
+
+        config = self.base_config.copy()
+        config["navigators"] = [self._navigator_config("test_nav", ["Jackson County"])]
+        config_file = self._create_temp_config(config)
+
+        try:
+            with self.assertRaises(CommandError) as ctx:
+                call_command("import_program_config", config_file, stdout=StringIO())
+            self.assertIn("must be a JSON object", str(ctx.exception))
+        finally:
+            Path(config_file).unlink()

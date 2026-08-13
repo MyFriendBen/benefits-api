@@ -105,11 +105,6 @@ class Command(BaseCommand):
         except WhiteLabel.DoesNotExist:
             raise CommandError(f"WhiteLabel with code '{white_label_code}' not found")
 
-        # Validate navigator county names against this white label's convention BEFORE any
-        # writes, so a mismatch fails loudly instead of silently creating a county that no
-        # screener household will ever match.
-        self._validate_counties(config, white_label, override=override)
-
         # Check if program already exists
         existing_program = Program.objects.filter(name_abbreviated=program_name, white_label=white_label).first()
         overriding = bool(existing_program and override)
@@ -123,6 +118,12 @@ class Command(BaseCommand):
                 )
             )
             return
+
+        # Validate navigator county names against this white label's convention BEFORE any
+        # writes (now that we know the import will proceed), scoped to the navigators this run
+        # will actually (re)create — so a mismatch fails loudly without blocking over counties
+        # that the existing-navigator path never writes.
+        self._validate_counties(config, white_label, existing_program=existing_program, overriding=overriding)
 
         if dry_run:
             self._print_dry_run_report(config, white_label_code, program_name)
@@ -211,7 +212,14 @@ class Command(BaseCommand):
             except json.JSONDecodeError as e:
                 raise CommandError(
                     f"'counties_by_zipcode' config for white label '{white_label.code}' is not valid JSON: {e}"
-                )
+                ) from e
+        if data is None:
+            return None
+        if not isinstance(data, dict):
+            raise CommandError(
+                f"'counties_by_zipcode' config for white label '{white_label.code}' must be a JSON object, "
+                f"got {type(data).__name__}."
+            )
         if not data:
             return None
 
@@ -221,7 +229,29 @@ class Command(BaseCommand):
                 valid.update(county_map.keys())
         return valid
 
-    def _validate_counties(self, config: dict[str, Any], white_label: WhiteLabel, override: bool = False) -> None:
+    def _navigator_counties_written(self, external_name: str, existing_program, overriding: bool) -> bool:
+        """
+        Whether `_import_navigators` will persist this navigator's counties on this run.
+
+        Counties are only written when a navigator is created. A brand-new navigator is always
+        created. An existing navigator is recreated only in override mode and only when it is
+        not shared with another program — mirroring `_delete_program_and_related`'s retention;
+        otherwise it is associated as-is and its config `counties` are ignored.
+        """
+        existing_nav = Navigator.objects.filter(external_name=external_name).first()
+        if existing_nav is None:
+            return True
+        if not overriding:
+            return False
+        return not existing_nav.programs.exclude(id=existing_program.id).exists()
+
+    def _validate_counties(
+        self,
+        config: dict[str, Any],
+        white_label: WhiteLabel,
+        existing_program: Optional[Program] = None,
+        overriding: bool = False,
+    ) -> None:
         """
         Validate that every navigator `counties` entry exactly matches a county in the white
         label's `counties_by_zipcode` map. Navigator county filters are an exact string match
@@ -229,11 +259,10 @@ class Command(BaseCommand):
         "Jackson" where the map sends "Jackson County") would silently never match and the
         referral would be dropped. Fail loudly instead.
 
-        Counties are only persisted when a navigator is created. On a non-override import an
-        already-existing navigator is associated as-is and its config `counties` are ignored,
-        so validating them would block the import over a field that path never writes; those
-        are skipped. In override mode the navigator is recreated, so its counties are written
-        and are validated.
+        Only the navigators this run will actually (re)create are validated (see
+        `_navigator_counties_written`): counties are written just on the create path, so
+        validating an association-only navigator would block the import over a field that path
+        never writes.
         """
         valid_names = self._get_valid_county_names(white_label)
         if valid_names is None:
@@ -252,10 +281,8 @@ class Command(BaseCommand):
             external_name = nav_config.get("external_name", "<unnamed>")
 
             # Skip navigators whose counties this run won't write.
-            if (
-                not override
-                and isinstance(external_name, str)
-                and Navigator.objects.filter(external_name=external_name).exists()
+            if isinstance(external_name, str) and not self._navigator_counties_written(
+                external_name, existing_program, overriding
             ):
                 continue
 
@@ -265,11 +292,7 @@ class Command(BaseCommand):
                     continue
                 if county_name in valid_names:
                     continue
-                other = (
-                    county_name[: -len(" County")]
-                    if county_name.endswith(" County")
-                    else f"{county_name} County"
-                )
+                other = county_name[: -len(" County")] if county_name.endswith(" County") else f"{county_name} County"
                 suggestion = f" (did you mean '{other}'?)" if other in valid_names else ""
                 problems.append(f"navigator '{external_name}': '{county_name}'{suggestion}")
 
