@@ -468,12 +468,14 @@ class ConfigurationData:
 
     # Links to consent/terms pages, keyed by language code.
     consent_to_contact = {
-        "en-us": "",
+        "en-us": "https://www.myfriendben.org/terms-and-conditions/",
+        "es": "https://www.myfriendben.org/terminos-condiciones/",
     }
 
     # Links to privacy policy, keyed by language code.
     privacy_policy = {
-        "en-us": "",
+        "en-us": "https://www.myfriendben.org/privacy-policy/",
+        "es": "https://www.myfriendben.org/privacidad/",
     }
 
     # Configuration for branding, logos, steps, and UI options

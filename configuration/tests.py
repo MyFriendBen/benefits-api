@@ -3,9 +3,11 @@ Unit tests for Configuration app serializers.
 """
 
 from unittest.mock import MagicMock, patch
-from django.test import TestCase
+from urllib.parse import urlparse
+from django.test import SimpleTestCase, TestCase
 from configuration.models import Configuration
 from configuration.serializers import ConfigurationSerializer
+from configuration.white_labels import white_label_config
 from screener.models import WhiteLabel
 from screener.feature_flags import FeatureFlagConfig
 
@@ -150,3 +152,40 @@ class TestConfigurationSerializerFeatureFlags(TestCase):
 
         # Should return default value
         self.assertFalse(feature_flags["frontend_flag"])
+
+
+class TestLegalLinkConfiguration(SimpleTestCase):
+    """
+    Asserts every white label's effective privacy policy and consent links are real URLs, so an
+    empty or relative value fails CI instead of shipping a dead link.
+    """
+
+    LEGAL_LINK_KEYS = ("privacy_policy", "consent_to_contact")
+
+    def test_legal_links_are_populated_urls(self):
+        """Every locale must map to a real URL, not an empty or relative value."""
+        for code, white_label_data in white_label_config.items():
+            for key in self.LEGAL_LINK_KEYS:
+                links = getattr(white_label_data, key)
+
+                with self.subTest(white_label=code, key=key):
+                    self.assertIn(
+                        "en-us",
+                        links,
+                        f'White label "{code}" is missing the "en-us" fallback for {key}. The frontend '
+                        "falls back to en-us for every locale without its own translated page.",
+                    )
+
+                for locale, link in links.items():
+                    # Parse rather than string-match the prefix: "https://" and
+                    # "https:///privacy-policy/" both start with the scheme but name no host,
+                    # so they reach the browser as dead links just like the empty string did.
+                    parsed = urlparse(link)
+
+                    with self.subTest(white_label=code, key=key, locale=locale):
+                        self.assertTrue(
+                            parsed.scheme == "https" and bool(parsed.netloc),
+                            f'White label "{code}" has a {key} link for "{locale}" that is not an '
+                            f"absolute https URL: {link!r}. An empty string here renders as a link "
+                            "with an empty href.",
+                        )
