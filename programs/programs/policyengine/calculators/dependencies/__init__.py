@@ -69,26 +69,17 @@ wic_income = [
     spm.Tanf,
 ]
 
-# PolicyEngine's actual-receipt contract (policyengine-us 1.779.3): countable income and
-# categorical eligibility follow the benefits a household reports receiving, not the ones
-# PolicyEngine simulates them as eligible for. See dependencies/receipt.py for the
-# reasoning; the amount inputs travel with the flags so a program adopting the contract
-# sends a coherent picture of each benefit.
+# PolicyEngine's actual-receipt contract: countable income and categorical eligibility follow
+# the benefits a household reports receiving, not the ones PolicyEngine simulates them as
+# eligible for. See dependencies/receipt.py.
 #
-# The set moves as a unit across *calculators* on purpose. Suppressing simulated SSI while
-# leaving simulated SNAP in place would just shift categorical eligibility onto the other
-# phantom benefit, and PE requests are a single shared payload — every program in a request
-# sees these inputs — so a partial adoption is a per-white-label inconsistency rather than a
-# narrower change.
+# Adopt it whole per calculator — suppressing one simulated benefit while leaving another just
+# shifts categorical eligibility onto the phantom that remains.
 #
-# The version gating within the bundle is deliberately NOT uniform: `ssi` and `tanf` predate
-# the contract by years and stay ungated, while the six receipt/take-up fields are floored at
-# 1.779.3. Flooring the amounts too would stop sending reported SSI/TANF to any older model —
-# a regression, since those amounts are load-bearing today (TX CEAP's income tier, SNAP
-# categorical from a reported amount). The asymmetry is safe because the *suppressing* half is
-# the gated half: below the floor we send amounts without take-up flags, which is exactly the
-# pre-contract behavior, and there is no version at which we suppress a benefit without also
-# sending the evidence for it. test_receipt_contract.py pins that direction.
+# The version gating is deliberately mixed: the amount inputs predate the contract and stay
+# ungated, so flooring them would stop sending reported SSI/TANF to older models. That is safe
+# because the gated half is the *suppressing* half — below the floor we send amounts without
+# take-up flags, never the reverse. test_receipt_contract.py pins that direction.
 receipt_contract = [
     member.Ssi,
     member.ReceivesSsiDependency,

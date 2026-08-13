@@ -131,13 +131,9 @@ class MedicaidSeniorOrDisabled(Member):
 
 
 class WicIfTakesUp(Member):
-    """
-    PolicyEngine's would-be WIC entitlement — what the member is eligible for whether or
-    not they take it up. The WIC program reads this rather than ``wic``, which is
-    receipt-gated: ``takes_up_wic_if_eligible`` (or any downstream take-up suppression)
-    zeroes ``wic``, and every WIC calculator gates on that value being positive, so a
-    non-recipient would drop out of results entirely.
-    """
+    """PolicyEngine's would-be WIC entitlement, independent of take-up. Every WIC calculator
+    gates on it being positive, and the receipt-gated ``wic`` is zeroed by any take-up
+    suppression."""
 
     field = "wic_if_takes_up"
     min_pe_version = (1, 779, 3)
@@ -149,18 +145,12 @@ class Medicaid(Member):
 
 class Ssi(Member):
     """
-    The household's reported SSI amount, as PolicyEngine's person-level ``ssi`` input.
+    The member's reported SSI amount, as PolicyEngine's person-level ``ssi`` input; None when
+    they report none, leaving PolicyEngine to compute it.
 
-    - If the member reports SSI: send the reported amount (annual; PE spreads it across
-      the months itself). PE uses it in place of its own computed SSI, so it counts as
-      income downstream and confers the categorical eligibility SSI receipt carries.
-    - Otherwise: None, so PE computes. Whether that computed amount is then *used*
-      depends on ``TakesUpSsiIfEligibleDependency`` — for a member who reports no SSI it
-      is suppressed, so PE's simulated SSI no longer counts as unearned income for
-      programs like IL AABD.
-
-    An explicit amount wins over the take-up flag: PE's flag only suppresses its own
-    computed value.
+    A reported amount replaces PolicyEngine's own figure, counting as income downstream and
+    conferring the categorical eligibility SSI receipt carries. It also wins over the take-up
+    flag, which only suppresses PolicyEngine's *computed* value.
     """
 
     field = "ssi"
@@ -176,12 +166,9 @@ class Ssi(Member):
 
 
 class SsiIfTakesUp(Member):
-    """
-    PolicyEngine's would-be SSI entitlement, independent of take-up. The SSI program
-    reads this rather than ``ssi``: with ``takes_up_ssi_if_eligible: False`` sent for
-    every non-recipient, ``ssi`` is 0 for exactly the people the program should be shown
-    to, and the frontend filters programs valued at $0 out of results.
-    """
+    """PolicyEngine's would-be SSI entitlement, independent of take-up. ``ssi`` is 0 for
+    exactly the people the SSI program should be shown to, and the frontend filters out
+    programs valued at $0."""
 
     field = "ssi_if_takes_up"
     min_pe_version = (1, 779, 3)
@@ -189,13 +176,9 @@ class SsiIfTakesUp(Member):
 
 class ReceivesSsiDependency(Member):
     """
-    Reported SSI receipt for this member.
-
-    Distinct from the ``ssi`` amount: a household can report receiving SSI while PE
-    computes their entitlement as $0 (high other income, say), and this is what keeps the
-    categorical eligibility that receipt confers — SNAP's SSI-recipient path, Medicaid's
-    SSI category — firing in that case. It is also the only signal for a household that
-    ticks the Current Benefits tile without entering an amount.
+    Reported SSI receipt for this member — the signal an amount can't express, since a
+    household can report receiving SSI where PolicyEngine computes their entitlement as $0,
+    or tick the Current Benefits tile without entering an amount at all.
 
     See ``member_receives_ssi`` for how a household-level tile is attributed to a person.
     """
@@ -215,15 +198,13 @@ class ReceivesSsiDependency(Member):
 
 class TakesUpSsiIfEligibleDependency(Member):
     """
-    False for a member who reports no SSI, which stops PolicyEngine counting the SSI it
-    simulates for them as income they actually receive.
+    False for a member who reports no SSI, so PolicyEngine stops counting the SSI it
+    simulates for them as income they receive — the lever behind this contract's largest
+    behavior change, across IL AABD, SNAP's income test, TX CEAP and the Medicaid/MSP SSI
+    methodologies.
 
-    This is the lever behind the largest behavior change in the receipt contract: a
-    non-reporter whom PE models as SSI-eligible no longer carries phantom SSI income into
-    IL AABD, SNAP's income test, TX CEAP or the Medicaid/MSP SSI methodologies.
-
-    Left at PE's default (True) when the household reports SSI receipt that we can't pin on
-    anyone — see ``screen_reports_unidentifiable_ssi``.
+    Left at PolicyEngine's default when the household's report can't be pinned on anyone —
+    see ``screen_reports_unidentifiable_ssi``.
     """
 
     field = "takes_up_ssi_if_eligible"

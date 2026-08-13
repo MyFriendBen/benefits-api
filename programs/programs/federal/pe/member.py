@@ -38,19 +38,15 @@ class Wic(PolicyEngineMembersCalculator):
         "POSTPARTUM": 0,
         "BREASTFEEDING": 0,
     }
-    # wic_if_takes_up rather than wic. WIC has no take-up flag of its own here, but the
-    # receipt-gated `wic` is zeroed by any downstream take-up suppression, and every WIC
-    # subclass gates on this value being positive — CO/IL/MA/NC map the category to a
-    # hardcoded amount, MO/TX return PolicyEngine's computed benefit. The would-be output
-    # is the same number today and stays correct if a take-up flag is ever added.
+    # The would-be output, since every WIC subclass gates on this being positive and the
+    # receipt-gated `wic` is zeroed by any take-up suppression.
     pe_name = "wic_if_takes_up"
     pe_inputs = [
         dependency.member.PregnancyDependency,
         dependency.member.ExpectedChildrenPregnancyDependency,
         dependency.member.AgeDependency,
         *dependency.wic_income,
-        # WIC's adjunct test reads SNAP/TANF receipt, so it needs the receipt contract to
-        # stop qualifying households off a SNAP or TANF benefit PolicyEngine only modelled.
+        # WIC's adjunct test reads SNAP/TANF receipt.
         *dependency.receipt_contract,
     ]
     pe_outputs = [dependency.member.WicIfTakesUp, dependency.member.WicCategory]
@@ -71,9 +67,8 @@ class Medicaid(PolicyEngineMembersCalculator):
         dependency.member.SsiCountableResourcesDependency,
         dependency.member.IsDisabledDependency,
         *dependency.irs_gross_income,
-        # medicaid_category has an SSI-recipient pathway. Without the receipt contract it
-        # fires off SSI PolicyEngine merely simulates, auto-enrolling people who don't
-        # receive SSI at all.
+        # medicaid_category has an SSI-recipient pathway, which must not fire off
+        # simulated SSI.
         *dependency.receipt_contract,
     ]
     pe_outputs = [
@@ -173,11 +168,8 @@ class PellGrant(PolicyEngineMembersCalculator):
 
 
 class Ssi(PolicyEngineMembersCalculator):
-    # ssi_if_takes_up rather than ssi: takes_up_ssi_if_eligible is False for anyone who
-    # doesn't report receiving SSI, which zeroes `ssi` for exactly the people this program
-    # should be recommended to. It also side-steps the input/output collision on `ssi` —
-    # for a member who *does* report an amount, `ssi` echoes back what they told us while
-    # ssi_if_takes_up is PolicyEngine's own computation.
+    # The would-be output: `ssi` is zeroed for non-reporters and merely echoes back the
+    # reported amount for reporters, so neither reflects what the program is worth.
     pe_name = "ssi_if_takes_up"
     pe_inputs = [
         dependency.member.SsiCountableResourcesDependency,
@@ -303,8 +295,7 @@ class Msp(PolicyEngineMembersCalculator):
         dependency.spm.CashAssetsDependency,
         dependency.member.MedicareQuartersOfCoverageDependency,
         dependency.member.IsMedicaidEligibleDependency,
-        # msp_countable_income uses SSI methodology and msp_category has an SSI pathway,
-        # both of which should follow reported receipt rather than simulated SSI.
+        # msp_countable_income uses SSI methodology and msp_category has an SSI pathway.
         *dependency.receipt_contract,
     ]
     pe_outputs = [

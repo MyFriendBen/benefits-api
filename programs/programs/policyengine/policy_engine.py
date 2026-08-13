@@ -129,13 +129,11 @@ def all_eligibility(method: Sim, valid_programs: dict[str, PolicyEngineCalulator
 def _resolve_comparable_version(programs: List[PolicyEngineCalulator], version: str) -> Optional[tuple]:
     """Tuple form of `version`, for gating which inputs and outputs may be sent.
 
-    We send the "current" alias unpinned (its comparable form is None), but for gating we
-    still need to know what current concretely is — otherwise a min_pe_version floor can
-    never be met and gated fields are withheld forever. Resolve it from PE's published
-    /versions/us. If PE is unreachable this stays None, keeping the conservative
-    withhold-gated behavior. Only bother resolving when the request actually carries a
-    gated field — the vast majority don't, and resolving would be a needless (cached)
-    lookup."""
+    The "current" alias has no comparable form of its own, so resolve what it points at from
+    PolicyEngine's /versions/us — otherwise a min_pe_version floor could never be met and
+    gated fields would be withheld forever. Stays None if PolicyEngine is unreachable, keeping
+    the conservative withhold-gated behavior. Only resolves when the request carries a gated
+    field, since most don't."""
     comparable_version = pe_versions.to_comparable_pe_version(version)
     if comparable_version is None and _has_gated_input(programs):
         comparable_version = pe_versions.resolve_unpinned_comparable_version()
@@ -148,21 +146,17 @@ def _drop_unreadable_programs(
 ) -> dict[str, PolicyEngineCalulator]:
     """Drop programs whose own output variable the resolved model doesn't define.
 
-    Version gating withholds such a field from the request, so PolicyEngine never returns
-    it and `Sim.value` raises KeyError on the missing key. `all_eligibility` doesn't
-    contain per-program failures, so a single unreadable program would empty the PE result
-    for the whole screen — every PolicyEngine program, not just that one.
+    Version gating withholds such a field, so PolicyEngine never returns it and `Sim.value`
+    raises KeyError on the missing key. `all_eligibility` has no per-program error handling, so
+    one unreadable program would empty the PE result for the whole screen.
 
-    Gated *inputs* need no equivalent: withholding one just leaves PolicyEngine to model
-    the value itself, which is the pre-contract behavior. Only outputs are load-bearing
-    this way, and the receipt-contract outputs (`*_if_takes_up`, floor 1.779.3) are the
-    first gated ones in the codebase.
+    Gated *inputs* need no equivalent — withholding one just leaves PolicyEngine to model the
+    value itself. Only outputs are load-bearing this way, and the receipt-contract outputs are
+    the first gated ones in the codebase.
 
-    This is reachable two ways: an exact `PolicyEngineConfig` pin below a floor, or PE's
-    /versions/us being unreachable while /calculate is healthy (they are separate
-    endpoints, and an unresolvable version withholds every gated field). `comparable_version`
-    is the request's single resolved version — None means unresolvable, which conservatively
-    drops every program carrying a gated output.
+    Reachable via an exact `PolicyEngineConfig` pin below a floor, or via /versions/us being
+    unreachable while /calculate is healthy. `comparable_version` is the request's single
+    resolved version; None conservatively drops every program carrying a gated output.
     """
     if not valid_programs:
         return valid_programs
@@ -185,9 +179,7 @@ def _drop_unreadable_programs(
         readable[name_abbr] = calculator
 
     if dropped:
-        # Silently serving a screen without these is the failure this guard exists to
-        # avoid compounding — make the reason visible rather than inferring it from a
-        # program's absence.
+        # Make the reason visible rather than leaving it inferred from a program's absence.
         capture_message(
             f"PolicyEngine: dropped {len(dropped)} program(s) whose output variable the resolved "
             f"model version does not define: {sorted(dropped)}",
@@ -218,10 +210,8 @@ def pe_input(
     Generate Policy Engine API request from the list of programs.
 
     `resolved_version` is the caller's already-resolved (version string, comparable version)
-    pair. `calc_pe_eligibility` passes it so the version that decides which programs are
-    readable is the same one that decides which fields are sent — resolving twice risks the
-    two disagreeing across a PolicyEngine release promotion or a cache expiry. Direct
-    callers may omit it and this resolves for itself.
+    pair, passed by `calc_pe_eligibility` so the version deciding which programs are readable
+    is the one deciding which fields are sent. Direct callers may omit it.
     """
     raw_input = {
         "household": {

@@ -359,10 +359,10 @@ class TestTxCeap(TestCase):
 
     def test_receipt_inputs_are_version_gated(self):
         """
-        Every field the contract adds landed in policyengine-us 1.779.3, so each carries
-        that floor and is never sent to an earlier model — an unknown input 400s the whole
-        request, taking every PE program in it down with it. The amount inputs (`ssi`,
-        `tanf`) have existed for years, so they stay ungated.
+        Every field the contract adds carries the floor of the release that introduced it, so
+        none is ever sent to an earlier model — an unknown input 400s the whole request, taking
+        every PE program in it down. The amount inputs (`ssi`, `tanf`) predate it and stay
+        ungated.
         """
         for dep in receipt_contract:
             expected = () if dep.field in ("ssi", "tanf") else (1, 779, 3)

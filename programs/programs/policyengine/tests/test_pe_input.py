@@ -310,8 +310,8 @@ class TestUnreadableProgramsAreDropped(PeInputTestBase):
     empties the PE result for the *entire* screen — every PolicyEngine program, not just
     the unreadable one.
 
-    The receipt-contract outputs (`*_if_takes_up`, floor 1.779.3) are the first gated
-    outputs in the codebase, so this path had no coverage before.
+    The receipt-contract outputs are the first gated outputs in the codebase, so this path
+    had no coverage before.
     """
 
     def setUp(self):

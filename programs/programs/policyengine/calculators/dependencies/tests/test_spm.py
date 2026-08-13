@@ -571,8 +571,8 @@ class TestSnapReceiptDependencies(TestCase):
         self.assertEqual(spm.TakesUpSnapIfEligibleDependency(self.screen, None, {}).field, "takes_up_snap_if_eligible")
 
     def test_version_gated_to_the_release_that_honors_them(self):
-        """Both are policyengine-us 1.779.3 fields (takes_up_snap_if_eligible predates it but
-        was ignored outside microsimulation). Sending either to an older model 400s the whole
+        """Both arrived with the contract (takes_up_snap_if_eligible predates it but was
+        ignored outside microsimulation). Sending either to an older model 400s the whole
         request, taking every PE program in it down."""
         self.assertEqual(spm.ReceivesSnapDependency.min_pe_version, (1, 779, 3))
         self.assertEqual(spm.TakesUpSnapIfEligibleDependency.min_pe_version, (1, 779, 3))

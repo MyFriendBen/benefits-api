@@ -10,9 +10,8 @@ Three things can silently break it:
 * One of the four programs left reading its receipt-gated field. Those read 0 for every
   non-recipient once the take-up flags go out, and the frontend drops programs valued at
   $0 — so the program would vanish from results for everyone not already on it.
-* A contract input losing its min_pe_version. Every field here landed in policyengine-us
-  1.779.3, and an unknown variable 400s the whole request, taking down every PolicyEngine
-  program in it, not just the one that sent it.
+* A contract input losing its min_pe_version. An unknown variable 400s the whole request,
+  taking down every PolicyEngine program in it, not just the one that sent it.
 """
 
 from django.test import TestCase
@@ -25,7 +24,7 @@ from programs.programs.ks.pe.spm import KsTanf
 from programs.programs.policyengine.calculators.dependencies import member, receipt_contract, spm
 from programs.programs.tx.pe.spm import TxCeap
 
-# The amount inputs predate the contract by years; everything else is a 1.779.3 field.
+# The amount inputs predate the contract; everything else arrived with it.
 UNGATED_FIELDS = {"ssi", "tanf"}
 
 
@@ -64,10 +63,10 @@ class TestReceiptContractBundle(TestCase):
         The bundle's gating is deliberately mixed, and this is what makes that safe.
 
         Only `ssi` and `tanf` are ungated, and both are *amount* inputs that predate the
-        contract. Every field that can suppress a benefit or assert receipt is floored at
-        1.779.3. So below the floor we send amounts with no take-up flags — the
-        pre-contract behavior — and there is no resolvable version at which we tell
-        PolicyEngine to zero a benefit without also sending the evidence for it.
+        contract. Every field that can suppress a benefit or assert receipt carries the floor.
+        So below it we send amounts with no take-up flags — the pre-contract behavior — and
+        there is no resolvable version at which we tell PolicyEngine to zero a benefit without
+        also sending the evidence for it.
 
         Flooring the amounts too (the symmetric-looking fix) would stop sending reported
         SSI/TANF to older models, which is a regression, not a tightening.
