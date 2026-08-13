@@ -1,5 +1,5 @@
 from .base import Member
-from .receipt import SSI_INCOME_TYPE, member_reports_ssi, screen_reports_unattributed_ssi
+from .receipt import SSI_INCOME_TYPE, member_receives_ssi, screen_reports_unidentifiable_ssi
 
 
 class AgeDependency(Member):
@@ -194,7 +194,10 @@ class ReceivesSsiDependency(Member):
     Distinct from the ``ssi`` amount: a household can report receiving SSI while PE
     computes their entitlement as $0 (high other income, say), and this is what keeps the
     categorical eligibility that receipt confers — SNAP's SSI-recipient path, Medicaid's
-    SSI category — firing in that case.
+    SSI category — firing in that case. It is also the only signal for a household that
+    ticks the Current Benefits tile without entering an amount.
+
+    See ``member_receives_ssi`` for how a household-level tile is attributed to a person.
     """
 
     field = "receives_ssi"
@@ -203,10 +206,11 @@ class ReceivesSsiDependency(Member):
         "income_type",
         "income_amount",
         "income_frequency",
+        "age",
     )
 
     def value(self):
-        return member_reports_ssi(self.member)
+        return member_receives_ssi(self.screen, self.member)
 
 
 class TakesUpSsiIfEligibleDependency(Member):
@@ -218,8 +222,8 @@ class TakesUpSsiIfEligibleDependency(Member):
     non-reporter whom PE models as SSI-eligible no longer carries phantom SSI income into
     IL AABD, SNAP's income test, TX CEAP or the Medicaid/MSP SSI methodologies.
 
-    Left at PE's default (True) when the household reports SSI receipt that no member's
-    income stream accounts for — see ``screen_reports_unattributed_ssi``.
+    Left at PE's default (True) when the household reports SSI receipt that we can't pin on
+    anyone — see ``screen_reports_unidentifiable_ssi``.
     """
 
     field = "takes_up_ssi_if_eligible"
@@ -228,13 +232,14 @@ class TakesUpSsiIfEligibleDependency(Member):
         "income_type",
         "income_amount",
         "income_frequency",
+        "age",
     )
 
     def value(self):
-        if member_reports_ssi(self.member):
+        if member_receives_ssi(self.screen, self.member):
             return True
 
-        return screen_reports_unattributed_ssi(self.screen)
+        return screen_reports_unidentifiable_ssi(self.screen)
 
 
 class IsDisabledDependency(Member):

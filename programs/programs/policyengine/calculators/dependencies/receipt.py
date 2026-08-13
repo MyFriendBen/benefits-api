@@ -34,6 +34,9 @@ from screener.models import HouseholdMember, Screen
 SSI_INCOME_TYPE = "sSI"
 TANF_INCOME_TYPE = "cashAssistance"
 
+# SSI's aged pathway (42 U.S.C. § 1382(a)); the blind/disabled pathways have no age floor.
+SSI_AGED_MIN_AGE = 65
+
 
 def screen_reports_snap(screen: Screen) -> bool:
     """
@@ -61,23 +64,72 @@ def screen_reports_tanf(screen: Screen) -> bool:
     return screen.has_base_benefit("tanf") or screen.calc_gross_income("yearly", [TANF_INCOME_TYPE]) > 0
 
 
-def member_reports_ssi(member: HouseholdMember) -> bool:
-    """
-    Whether this member reports an SSI amount. `ssi` and `receives_ssi` are person-level
-    in PolicyEngine, so receipt has to be attributed to the individual — crediting the
-    whole household would hand a non-disabled member the SSI-recipient Medicaid pathway.
-    """
+def member_reports_ssi_amount(member: HouseholdMember) -> bool:
+    """Whether this member reports an SSI dollar amount of their own."""
     return member.calc_gross_income("yearly", [SSI_INCOME_TYPE]) > 0
 
 
-def screen_reports_unattributed_ssi(screen: Screen) -> bool:
+def _could_receive_ssi(member: HouseholdMember) -> bool:
     """
-    Whether the household reports SSI receipt that we cannot attribute to any member —
-    the tile is ticked but no member reports an SSI amount.
+    Whether this member could be the SSI recipient in a household reporting SSI.
 
-    The signal is real, so suppressing simulated SSI for everyone would zero out a
-    genuine recipient's benefit; but there is no basis for picking which member receives
-    it. Callers leave PE's default take-up in place for the whole household, which is the
-    pre-contract behavior rather than a silent zeroing.
+    SSI is only payable to someone aged, blind or disabled (42 U.S.C. § 1382(a)), which is
+    also the screener data we have. Used only to decide *who* to attribute a household-level
+    report to — never to decide eligibility.
     """
-    return screen.has_base_benefit("ssi") and screen.calc_gross_income("yearly", [SSI_INCOME_TYPE]) == 0
+    age = member.calc_age()
+    if age is not None and age >= SSI_AGED_MIN_AGE:
+        return True
+
+    return bool(member.disabled or member.long_term_disability or member.visually_impaired)
+
+
+def member_receives_ssi(screen: Screen, member: HouseholdMember) -> bool:
+    """
+    Whether this member reports receiving SSI, from either signal: their own reported
+    amount, or the household's Current Benefits tile.
+
+    `ssi` and `receives_ssi` are person-level in PolicyEngine, so a household-level tile has
+    to be attributed to somebody — and PolicyEngine treats `receives_ssi` as conclusive.
+    Measured against the live API: the flag alone flips `medicaid_category` to
+    SSI_RECIPIENT with no demographic or income test, worth $15,167 to a non-disabled
+    30-year-old at $90k and $10,222 to a 3-year-old. So we attribute rather than broadcast:
+
+    - a member reporting their own amount receives SSI, full stop;
+    - otherwise, if the tile is ticked and *nobody* reports an amount, the members who could
+      plausibly be the recipient (aged/blind/disabled) are credited. One is enough for the
+      cross-program signal — SNAP's categorical eligibility fires off a single member.
+
+    A reported amount explains the tile, so when any member reports one the others are
+    non-recipients rather than additional recipients.
+    """
+    if member_reports_ssi_amount(member):
+        return True
+
+    if not screen.has_base_benefit("ssi"):
+        return False
+
+    if screen.calc_gross_income("yearly", [SSI_INCOME_TYPE]) > 0:
+        # Somebody's amount already accounts for the tile.
+        return False
+
+    return _could_receive_ssi(member)
+
+
+def screen_reports_unidentifiable_ssi(screen: Screen) -> bool:
+    """
+    Whether the household reports SSI receipt we can't pin on anyone: the tile is ticked,
+    no member reports an amount, and no member is aged, blind or disabled.
+
+    The signal is real — so suppressing simulated SSI across the household would zero out a
+    genuine recipient's benefit — but there is no defensible member to credit. Callers leave
+    PolicyEngine's default take-up in place for everyone, which is the pre-contract
+    behavior rather than a silent zeroing.
+    """
+    if not screen.has_base_benefit("ssi"):
+        return False
+
+    if screen.calc_gross_income("yearly", [SSI_INCOME_TYPE]) > 0:
+        return False
+
+    return not any(_could_receive_ssi(member) for member in screen.household_members.all())

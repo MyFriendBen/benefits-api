@@ -1571,11 +1571,15 @@ class TestCareExpensesDependency(TestCase):
 
 class TestSsiReceiptDependencies(TestCase):
     """
-    Tests for the SSI half of the actual-receipt contract. ``ssi`` and ``receives_ssi`` are
-    person-level, so receipt is attributed per member from that member's own ``sSI`` income
-    stream — crediting the whole household would hand a non-disabled member the
-    SSI-recipient Medicaid pathway. SSDI (``sSDisability``) is a different program and must
-    never be folded in.
+    Tests for the SSI half of the actual-receipt contract.
+
+    Receipt comes from either signal — the member's own ``sSI`` amount, or the household's
+    Current Benefits tile — but ``ssi`` and ``receives_ssi`` are person-level, so a
+    household-level tile has to be *attributed* rather than broadcast. PolicyEngine treats
+    ``receives_ssi`` as conclusive (measured: it alone flips ``medicaid_category`` to
+    SSI_RECIPIENT with no demographic or income test), so crediting everyone would hand
+    Medicaid to a toddler. SSDI (``sSDisability``) is a different program and must never be
+    folded in.
     """
 
     def setUp(self):
@@ -1587,8 +1591,11 @@ class TestSsiReceiptDependencies(TestCase):
             household_size=2,
             completed=False,
         )
+        # Aged head, working-age non-disabled spouse, young child: only the head could be
+        # an SSI recipient, so attribution is observable.
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=67)
-        self.spouse = HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=65)
+        self.spouse = HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=40)
+        self.child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=3)
 
     def _report_ssi(self, household_member, monthly):
         IncomeStream.objects.create(
@@ -1642,13 +1649,50 @@ class TestSsiReceiptDependencies(TestCase):
         self.assertFalse(member.TakesUpSsiIfEligibleDependency(self.screen, self.head, {}).value())
         self.assertTrue(member.ReceivesSsiDependency(self.screen, self.spouse, {}).value())
 
-    def test_unattributable_household_receipt_leaves_take_up_alone(self):
+    def test_tile_alone_confers_receipt_on_the_plausible_member(self):
         """
-        The household ticked SSI but no member reports an amount, so there is no basis for
-        picking a recipient. Lowering take-up for everyone would zero a real recipient's
-        SSI, so the whole household keeps PolicyEngine's default — the pre-contract
+        A household can tick the SSI tile without entering an amount — that is a report of
+        receipt and has to reach PolicyEngine, or their categorical eligibility silently
+        goes missing.
+
+        It lands on the aged head, not the whole household: SSI is only payable to someone
+        aged, blind or disabled, and one credited member is enough for the cross-program
+        signal (SNAP's categorical eligibility fires off a single member).
+        """
+        self._tick_ssi_tile()
+
+        self.assertTrue(member.ReceivesSsiDependency(self.screen, self.head, {}).value())
+        self.assertTrue(member.TakesUpSsiIfEligibleDependency(self.screen, self.head, {}).value())
+
+    def test_tile_does_not_credit_members_who_could_not_receive_ssi(self):
+        """
+        The non-disabled 40-year-old and the 3-year-old are not SSI recipients. Crediting
+        them would hand each the SSI-recipient Medicaid pathway — measured at $15,167 and
+        $10,222 against the live API, with no demographic or income test applied.
+        """
+        self._tick_ssi_tile()
+
+        for non_recipient in (self.spouse, self.child):
+            self.assertFalse(member.ReceivesSsiDependency(self.screen, non_recipient, {}).value())
+            self.assertFalse(member.TakesUpSsiIfEligibleDependency(self.screen, non_recipient, {}).value())
+
+    def test_tile_credits_a_disabled_member_of_any_age(self):
+        """The blind/disabled pathways have no age floor, so plausibility isn't just age."""
+        self.spouse.disabled = True
+        self.spouse.save()
+        self._tick_ssi_tile()
+
+        self.assertTrue(member.ReceivesSsiDependency(self.screen, self.spouse, {}).value())
+
+    def test_unidentifiable_household_receipt_leaves_take_up_alone(self):
+        """
+        Tile ticked, no amount, and nobody aged/blind/disabled — the report is real but there
+        is no defensible member to credit. Lowering take-up for everyone would zero a genuine
+        recipient's SSI, so the household keeps PolicyEngine's default: the pre-contract
         behavior rather than a silent zeroing.
         """
+        self.head.age = 40
+        self.head.save()
         self._tick_ssi_tile()
 
         self.assertTrue(member.TakesUpSsiIfEligibleDependency(self.screen, self.head, {}).value())
@@ -1665,12 +1709,14 @@ class TestSsiReceiptDependencies(TestCase):
 
         self.assertTrue(member.TakesUpSsiIfEligibleDependency(self.screen, self.head, {}).value())
         self.assertFalse(member.TakesUpSsiIfEligibleDependency(self.screen, self.spouse, {}).value())
+        self.assertFalse(member.ReceivesSsiDependency(self.screen, self.spouse, {}).value())
 
     def test_receipt_resolves_a_white_label_prefixed_ssi_program(self):
         """White labels ship ks_ssi / mo_ssi / tx_ssi, so the tile has to resolve by
         base_program rather than the bare name."""
         self._tick_ssi_tile("ks_ssi")
 
+        self.assertTrue(member.ReceivesSsiDependency(self.screen, self.head, {}).value())
         self.assertTrue(member.TakesUpSsiIfEligibleDependency(self.screen, self.head, {}).value())
 
     def test_ssdi_and_other_income_are_not_ssi(self):
