@@ -9,7 +9,7 @@
     },
     "program": {
         "name_abbreviated": "trump_account",
-        "year": "2025",
+        "year": "2026",
         "legal_status_required": [
             "citizen"
         ],
@@ -22,7 +22,11 @@
         "estimated_application_time": "5 minutes",
         "estimated_value": "",
         "value_format": "lump_sum",
-        "website_description": "$1,000 government investment account for U.S. citizen children born 2025-2028"
+        "website_description": "$1,000 government investment account for U.S. citizen children born 2025-2028",
+        "show_on_current_benefits": true,
+        "has_calculator": true,
+        "show_in_has_benefits_step": false,
+        "external_name": "tx_trump_account"
     },
     "documents": [
         {
@@ -33,21 +37,31 @@
         },
         {
             "external_name": "trump_account_child_birth_certificate",
-            "text": "Child's birth certificate or proof of age and citizenship",
+            "text": "Child's birth certificate or other proof of age and U.S. citizenship",
             "link_url": "",
             "link_text": ""
         },
         {
             "external_name": "trump_account_parent_id",
-            "text": "Parent or guardian's government-issued photo ID (ex: driver's license, passport)",
+            "text": "Parent, guardian, or other authorized individual's government-issued photo ID (ex: driver's license, passport)",
             "link_url": "",
             "link_text": ""
         },
         {
             "external_name": "trump_account_irs_form",
             "text": "IRS Form 4547 (to elect to open a Trump Account)",
-            "link_url": "https://www.irs.gov/trumpaccounts",
-            "link_text": "IRS Trump Accounts page"
+            "link_url": "https://www.irs.gov/form4547",
+            "link_text": "IRS Form 4547 page"
+        }
+    ],
+    "navigators": [
+        {
+            "external_name": "trump_account_call_center",
+            "name": "Trump Account Call Center",
+            "description": "Official Treasury call center for Trump Account questions. 866-USA-4547, 7 AM-10 PM ET daily.",
+            "phone_number": "+18668724547",
+            "email": "",
+            "assistance_link": "https://trumpaccounts.gov/"
         }
     ]
 }
