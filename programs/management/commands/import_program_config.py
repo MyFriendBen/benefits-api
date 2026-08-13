@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.db.models import Max
 from translations.models import Translation
 from programs.models import (
     Program,
@@ -28,6 +29,10 @@ def truncate(text: str, max_length: int = 50) -> str:
     return f"{text[:max_length]}..." if len(text) > max_length else text
 
 
+# Sections a --reconcile pass can apply, in the order they must run.
+RECONCILE_SECTIONS = ("warning_messages", "documents", "navigators")
+
+
 class Command(BaseCommand):
     help = """
     Import a new program from a JSON configuration file.
@@ -40,6 +45,12 @@ class Command(BaseCommand):
       python manage.py import_program_config <path/to/config.json>
       python manage.py import_program_config <path/to/config.json> --dry-run
       python manage.py import_program_config <path/to/config.json> --skip-translation
+      python manage.py import_program_config <path/to/config.json> --reconcile --dry-run
+      python manage.py import_program_config <path/to/config.json> --reconcile
+
+    If the program already exists the import is skipped. Use --reconcile to additively
+    apply the config's warning messages, documents and navigators to it, or --override
+    to delete and recreate it from scratch.
 
     For detailed documentation on JSON configuration format and examples,
     see: programs/management/commands/import_program_config_data/README.md
@@ -62,6 +73,20 @@ class Command(BaseCommand):
             help="Delete existing program and its navigators/documents before importing",
         )
         parser.add_argument(
+            "--reconcile",
+            action="store_true",
+            help="For a program that already exists, additively apply the warning messages, documents "
+            "and navigators declared in the config. Creates missing entities and missing links only; "
+            "never updates an existing entity, removes a link absent from the config, or touches "
+            "program fields or translations. Combine with --dry-run to preview.",
+        )
+        parser.add_argument(
+            "--only",
+            action="append",
+            choices=list(RECONCILE_SECTIONS),
+            help="With --reconcile, limit the pass to these sections. Repeatable. Defaults to all of them.",
+        )
+        parser.add_argument(
             "--skip-translation",
             action="store_true",
             help="Copy English text to all languages instead of calling Google Translate "
@@ -72,7 +97,19 @@ class Command(BaseCommand):
         config_file = options["config_file"]
         dry_run = options.get("dry_run", False)
         override = options.get("override", False)
+        reconcile = options.get("reconcile", False)
         self.skip_translation = bool(options.get("skip_translation", False))
+
+        if override and reconcile:
+            raise CommandError(
+                "--override and --reconcile are mutually exclusive. "
+                "--override recreates the program from scratch; --reconcile only adds what is missing."
+            )
+
+        only = options.get("only")
+        if only and not reconcile:
+            raise CommandError("--only has no effect without --reconcile.")
+        sections = tuple(s for s in RECONCILE_SECTIONS if s in (only or RECONCILE_SECTIONS))
 
         try:
             config = json.load(config_file)
@@ -109,12 +146,36 @@ class Command(BaseCommand):
         existing_program = Program.objects.filter(name_abbreviated=program_name, white_label=white_label).first()
         overriding = bool(existing_program and override)
 
+        if existing_program and reconcile:
+            # Reconcile creates navigators the config declares but the database lacks, and
+            # creating one writes its counties — so the county guard has to run here too, or a
+            # repair pass becomes a way to reintroduce exactly the mismatch it exists to block.
+            # Scoped like the guard itself: only when this pass will touch navigators at all, and
+            # with overriding=False, since reconcile never recreates an existing navigator.
+            if "navigators" in sections:
+                self._validate_counties(config, white_label, existing_program=existing_program, overriding=False)
+            self._reconcile_program(existing_program, config, sections=sections, dry_run=dry_run)
+            return
+
+        if reconcile:
+            # Reconcile repairs existing programs. Refusing to create keeps a repair run
+            # from quietly introducing programs nobody asked for.
+            self.stdout.write(
+                self.style.WARNING(
+                    f"\n⊘ Skipped: program '{program_name}' does not exist for white label "
+                    f"'{white_label_code}'. --reconcile only repairs existing programs; "
+                    f"run without it to create this one.\n"
+                )
+            )
+            return
+
         if existing_program and not override:
             self.stdout.write(
                 self.style.WARNING(
                     f"\nProgram '{program_name}' already exists for white label '{white_label_code}' "
                     f"(ID: {existing_program.id}). Skipping import.\n"
-                    f"Use --override to delete and recreate the program."
+                    f"Use --reconcile to additively apply the config's warning messages, documents and "
+                    f"navigators, or --override to delete and recreate the program."
                 )
             )
             return
@@ -156,23 +217,8 @@ class Command(BaseCommand):
                 )
 
                 # Step 3: Import warning message(s) (after program exists)
-                # Supports both:
-                #   - "warning_message"  (singular, object)  — original shape
-                #   - "warning_messages" (plural,   array)   — multi-warning shape
-                # Mutually exclusive; raises if both are present.
-                if "warning_message" in config and "warning_messages" in config:
-                    raise CommandError(
-                        "Config contains both 'warning_message' (singular) and 'warning_messages' (plural). "
-                        "Use one or the other, not both."
-                    )
-                if "warning_message" in config:
-                    self._import_warning_message(program, config["warning_message"])
-                elif "warning_messages" in config:
-                    warning_messages = config["warning_messages"]
-                    if not isinstance(warning_messages, list):
-                        raise CommandError("'warning_messages' must be an array")
-                    for warning_config in warning_messages:
-                        self._import_warning_message(program, warning_config)
+                for warning_config in self._warning_message_configs(config):
+                    self._import_warning_message(program, warning_config)
 
                 # Step 4: Import documents (after program exists)
                 if "documents" in config:
@@ -243,7 +289,13 @@ class Command(BaseCommand):
             return True
         if not overriding:
             return False
-        return not existing_nav.programs.exclude(id=existing_program.id).exists()
+        # Both relations, matching the delete guard: a navigator linked through the
+        # ProgramNavigator table is shared even though the legacy M2M says nothing.
+        shared = any(
+            getattr(existing_nav, relation).exclude(id=existing_program.id).exists()
+            for relation in ("programs_ordered", "programs")
+        )
+        return not shared
 
     def _validate_counties(
         self,
@@ -317,9 +369,13 @@ class Command(BaseCommand):
         program_name = program.name_abbreviated
 
         # Delete navigators and documents specified in config
-        for entity_type, model, config_key, related_name in [
-            ("navigator", Navigator, "navigators", "programs"),
-            ("document", Document, "documents", "program_documents"),
+        for entity_type, model, config_key, related_names in [
+            # Navigators live in two tables during the EXPAND phase of migration 0126:
+            # the app reads `programs_ordered` (the ProgramNavigator through table),
+            # while `programs` is the legacy M2M nothing on the import path populates.
+            # An entity linked in either table is still in use by another program.
+            ("navigator", Navigator, "navigators", ("programs_ordered", "programs")),
+            ("document", Document, "documents", ("program_documents",)),
         ]:
             for item_config in config.get(config_key, []):
                 external_name = item_config.get("external_name")
@@ -328,7 +384,8 @@ class Command(BaseCommand):
                 entity = model.objects.filter(external_name=external_name).first()
                 if not entity:
                     continue
-                if getattr(entity, related_name).exclude(id=program.id).exists():
+                shared = any(getattr(entity, rel).exclude(id=program.id).exists() for rel in related_names)
+                if shared:
                     self.stdout.write(f"  Keeping {entity_type} '{external_name}' (used by other programs)")
                 else:
                     entity.delete()
@@ -343,6 +400,174 @@ class Command(BaseCommand):
         # Delete the program
         program.delete()
         self.stdout.write(f"  Deleted program: {program_name}\n")
+
+    def _warning_message_configs(self, config: dict[str, Any]) -> list[dict[str, Any]]:
+        """
+        Return the warning messages declared in a config.
+
+        Supports both:
+          - "warning_message"  (singular, object)  — original shape
+          - "warning_messages" (plural,   array)   — multi-warning shape
+        Mutually exclusive; raises if both are present.
+        """
+        if "warning_message" in config and "warning_messages" in config:
+            raise CommandError(
+                "Config contains both 'warning_message' (singular) and 'warning_messages' (plural). "
+                "Use one or the other, not both."
+            )
+
+        if "warning_message" in config:
+            return [config["warning_message"]]
+
+        warning_messages = config.get("warning_messages", [])
+        if not isinstance(warning_messages, list):
+            raise CommandError("'warning_messages' must be an array")
+        return warning_messages
+
+    def _reconcile_program(
+        self,
+        program: Program,
+        config: dict[str, Any],
+        sections: tuple[str, ...] = RECONCILE_SECTIONS,
+        dry_run: bool = False,
+    ) -> None:
+        """
+        Additively apply a config to a program that already exists.
+
+        Creates the entities a config declares but the database lacks, and creates the
+        missing program associations. Existing entities are never updated and existing
+        associations are never removed, so navigators, documents and warning messages
+        added or hand-edited in the admin survive intact. Program fields, category and
+        translations are not touched at all.
+        """
+        header = "[Reconcile — dry run]" if dry_run else "[Reconcile]"
+        self.stdout.write(self.style.SUCCESS(f"\n{header} {program.name_abbreviated} (ID: {program.id})"))
+        if set(sections) != set(RECONCILE_SECTIONS):
+            self.stdout.write(f"Sections: {', '.join(sections)}")
+
+        plan = self._build_reconcile_plan(program, config, sections)
+        self._print_reconcile_plan(plan)
+
+        to_apply = [(name, action) for items in plan.values() for name, action in items if action != "linked"]
+        if not to_apply:
+            self.stdout.write(self.style.SUCCESS("\n✓ Already up to date — nothing to apply.\n"))
+            return
+
+        if dry_run:
+            self.stdout.write(self.style.WARNING("\n[Dry run] No changes applied.\n"))
+            return
+
+        try:
+            with transaction.atomic():
+                if "warning_messages" in sections:
+                    for warning_config in self._warning_message_configs(config):
+                        self._import_warning_message(program, warning_config)
+
+                if "documents" in sections and "documents" in config:
+                    self._import_documents(program, config["documents"])
+
+                if "navigators" in sections and "navigators" in config:
+                    # Append after any existing links so reconciling never reshuffles
+                    # an ordering someone set in the admin.
+                    self._import_navigators(
+                        program,
+                        config["navigators"],
+                        order_offset=self._next_navigator_order(program),
+                    )
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"\nError during reconcile: {e}\nAll changes have been rolled back."))
+            raise
+
+        links = sum(1 for _, action in to_apply if action == "link")
+        created = sum(1 for _, action in to_apply if action == "create")
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"\n✓ Reconciled {program.name_abbreviated}: " f"{links} link(s) added, {created} entity(ies) created\n"
+            )
+        )
+
+    def _build_reconcile_plan(
+        self, program: Program, config: dict[str, Any], sections: tuple[str, ...] = RECONCILE_SECTIONS
+    ) -> dict[str, list[tuple[str, str]]]:
+        """
+        Classify every entity a config declares against the program's current state.
+
+        Returns {section title: [(external_name, action)]} where action is "linked" (already
+        associated), "link" (entity exists but the association is missing) or "create"
+        (no such entity yet).
+
+        Navigators are checked against ProgramNavigator only. A navigator present just in
+        the legacy `programs` M2M is invisible to the results endpoint, so it is correctly
+        reported as still needing a link.
+
+        A declaration without an external_name raises, matching the validation the import
+        path already applies. Skipping it instead would drop it from the plan, and an empty
+        plan reads as "already up to date" — so a malformed config would report clean and
+        then be recorded as applied without anything having been applied.
+        """
+        specs = [
+            (
+                "warning_messages",
+                "Warning messages",
+                self._warning_message_configs(config),
+                WarningMessage,
+                lambda entity: entity.programs.filter(id=program.id).exists(),
+            ),
+            (
+                "documents",
+                "Documents",
+                config.get("documents", []),
+                Document,
+                lambda entity: program.documents.filter(id=entity.id).exists(),
+            ),
+            (
+                "navigators",
+                "Navigators",
+                config.get("navigators", []),
+                Navigator,
+                lambda entity: ProgramNavigator.objects.filter(program=program, navigator=entity).exists(),
+            ),
+        ]
+
+        plan: dict[str, list[tuple[str, str]]] = {}
+        for key, title, item_configs, model, is_linked in specs:
+            if key not in sections:
+                continue
+            items: list[tuple[str, str]] = []
+            for i, item_config in enumerate(item_configs):
+                external_name = item_config.get("external_name")
+                if not external_name:
+                    raise CommandError(f"Missing required field 'external_name' in {key}[{i}]")
+                entity = model.objects.filter(external_name=external_name).first()
+                if entity is None:
+                    items.append((external_name, "create"))
+                else:
+                    items.append((external_name, "linked" if is_linked(entity) else "link"))
+            plan[title] = items
+
+        return plan
+
+    def _print_reconcile_plan(self, plan: dict[str, list[tuple[str, str]]]) -> None:
+        """Print what reconciling would change, section by section."""
+        markers = {
+            "linked": ("✓", "already linked"),
+            "link": ("+", "link to add"),
+            "create": ("★", "entity to create"),
+        }
+
+        for section, items in plan.items():
+            if not items:
+                continue
+            self.stdout.write(self.style.SUCCESS(f"\n[{section}]"))
+            for external_name, action in items:
+                marker, description = markers[action]
+                line = f"  {marker} {external_name} ({description})"
+                self.stdout.write(line if action == "linked" else self.style.WARNING(line))
+
+    def _next_navigator_order(self, program: Program) -> int:
+        """Return the order value new navigator links should start at, appending after existing ones."""
+        highest = ProgramNavigator.objects.filter(program=program).aggregate(Max("order"))["order__max"]
+        return 0 if highest is None else highest + 1
 
     def _separate_program_fields(self, program_config: dict[str, Any]) -> tuple[dict[str, str], dict[str, Any]]:
         """
@@ -890,7 +1115,9 @@ class Command(BaseCommand):
         translated_fields = Document.objects.translated_fields
         self._bulk_update_entity_translations(document, translations, "document", translated_fields)
 
-    def _import_navigators(self, program: Program, navigators_config: list[dict[str, Any]]) -> None:
+    def _import_navigators(
+        self, program: Program, navigators_config: list[dict[str, Any]], order_offset: int = 0
+    ) -> None:
         """
         Import navigators for a program.
 
@@ -905,6 +1132,9 @@ class Command(BaseCommand):
         Args:
             program: The Program instance to associate navigators with
             navigators_config: List of navigator configurations from JSON
+            order_offset: Starting value for the order of newly created links. Defaults to 0
+                for a fresh import; reconcile passes the next free order so existing links
+                keep their position.
         """
         self.stdout.write(self.style.SUCCESS("\n[Navigators]"))
 
@@ -994,7 +1224,7 @@ class Command(BaseCommand):
                 ProgramNavigator.objects.get_or_create(
                     program=program,
                     navigator=navigator,
-                    defaults={"order": idx},
+                    defaults={"order": order_offset + idx},
                 )
             self.stdout.write(f"  Associated {len(navigators_to_associate)} navigator(s) with program")
 

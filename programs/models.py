@@ -1945,6 +1945,13 @@ class ProgramConfigImport(models.Model):
         auto_now_add=True,
         help_text="When this configuration was imported",
     )
+    content_hash = models.CharField(
+        max_length=64,
+        blank=True,
+        default="",
+        help_text="SHA-256 of the config file when it was applied. A file whose hash no longer matches "
+        "is treated as pending again, so edits to a config are picked up on the next run.",
+    )
 
     class Meta:
         ordering = ["-imported_at"]
