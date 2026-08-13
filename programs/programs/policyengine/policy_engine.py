@@ -33,7 +33,15 @@ def calc_pe_eligibility(
             continue
         valid_programs[name_abbr] = calculator
 
-    valid_programs = _drop_unreadable_programs(valid_programs, pe_version)
+    # Resolve the model version ONCE and thread it through both consumers: independent
+    # resolutions can disagree (PolicyEngine promotes a new `current`, or our cached lookup
+    # expires or fails between calls), and a disagreement is exactly the failure
+    # _drop_unreadable_programs exists to prevent — a program kept because the first
+    # resolution supported its output, then its field withheld because the second didn't.
+    version = pe_versions.determine_pe_version(pe_version)
+    comparable_version = _resolve_comparable_version(list(valid_programs.values()), version)
+
+    valid_programs = _drop_unreadable_programs(valid_programs, comparable_version)
 
     empty_result: EligibilityPEResult = {
         "eligibility": {},
@@ -43,7 +51,12 @@ def calc_pe_eligibility(
     if not valid_programs or not screen.household_members.all():
         return empty_result
 
-    input_data = pe_input(screen, valid_programs.values(), pe_version=pe_version)
+    input_data = pe_input(
+        screen,
+        valid_programs.values(),
+        pe_version=pe_version,
+        resolved_version=(version, comparable_version),
+    )
 
     # A single engine: the authenticated private household.api. There is deliberately no
     # fallback to the public api.policyengine.org — it ignores the request `version` field
@@ -131,7 +144,7 @@ def _resolve_comparable_version(programs: List[PolicyEngineCalulator], version: 
 
 def _drop_unreadable_programs(
     valid_programs: dict[str, PolicyEngineCalulator],
-    pe_version: Optional[str],
+    comparable_version: Optional[tuple],
 ) -> dict[str, PolicyEngineCalulator]:
     """Drop programs whose own output variable the resolved model doesn't define.
 
@@ -147,13 +160,12 @@ def _drop_unreadable_programs(
 
     This is reachable two ways: an exact `PolicyEngineConfig` pin below a floor, or PE's
     /versions/us being unreachable while /calculate is healthy (they are separate
-    endpoints, and an unresolvable version withholds every gated field).
+    endpoints, and an unresolvable version withholds every gated field). `comparable_version`
+    is the request's single resolved version — None means unresolvable, which conservatively
+    drops every program carrying a gated output.
     """
     if not valid_programs:
         return valid_programs
-
-    programs = list(valid_programs.values())
-    comparable_version = _resolve_comparable_version(programs, pe_versions.determine_pe_version(pe_version))
 
     readable: dict[str, PolicyEngineCalulator] = {}
     dropped: list[str] = []
@@ -196,9 +208,20 @@ def _has_gated_input(programs: List[PolicyEngineCalulator]) -> bool:
     return False
 
 
-def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: Optional[str] = None):
+def pe_input(
+    screen: Screen,
+    programs: List[PolicyEngineCalulator],
+    pe_version: Optional[str] = None,
+    resolved_version: Optional[tuple[str, Optional[tuple]]] = None,
+):
     """
     Generate Policy Engine API request from the list of programs.
+
+    `resolved_version` is the caller's already-resolved (version string, comparable version)
+    pair. `calc_pe_eligibility` passes it so the version that decides which programs are
+    readable is the same one that decides which fields are sent — resolving twice risks the
+    two disagreeing across a PolicyEngine release promotion or a cache expiry. Direct
+    callers may omit it and this resolves for itself.
     """
     raw_input = {
         "household": {
@@ -226,8 +249,15 @@ def pe_input(screen: Screen, programs: List[PolicyEngineCalulator], pe_version: 
     #                                   set: the DB pin, the test override, or the literal
     #                                   "current" alias (household.api resolves it server-side).
     #   comparable_version (tuple)  -> tuple representation to gate which inputs are sent
-    version = pe_versions.determine_pe_version(pe_version)
-    comparable_version = _resolve_comparable_version(programs, version)
+    #
+    # Send the alias, never the concrete resolution: household.api serves only what its
+    # aliases currently point at and 422s any other exact version, so a resolved-then-stale
+    # string would hard-fail every request once PolicyEngine promotes a release.
+    if resolved_version is not None:
+        version, comparable_version = resolved_version
+    else:
+        version = pe_versions.determine_pe_version(pe_version)
+        comparable_version = _resolve_comparable_version(programs, version)
 
     members: list[HouseholdMember] = screen.household_members.all()
     relationship_map = screen.relationship_map()

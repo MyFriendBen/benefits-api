@@ -8,7 +8,7 @@ independent of any specific calculator's dependencies.
 Calculator-specific dependency tests belong in the state's pe/tests/ directory.
 """
 
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from django.test import TestCase, override_settings
 from benefits.tests.cache_override import LOCAL_CACHE
@@ -321,11 +321,11 @@ class TestUnreadableProgramsAreDropped(PeInputTestBase):
 
         self.gated_output_programs = {"snap": Snap, "ssi": Ssi, "tanf": Tanf, "wic": Wic}
 
-    def _drop(self, programs, version):
-        return _drop_unreadable_programs(programs, version)
+    def _drop(self, programs, comparable_version):
+        return _drop_unreadable_programs(programs, comparable_version)
 
     def test_kept_when_the_model_defines_their_output(self):
-        kept = self._drop(dict(self.gated_output_programs), "1.784.3")
+        kept = self._drop(dict(self.gated_output_programs), (1, 784, 3))
 
         self.assertEqual(set(kept), set(self.gated_output_programs))
 
@@ -333,7 +333,7 @@ class TestUnreadableProgramsAreDropped(PeInputTestBase):
         """Below the floor these four are unreadable — but the request still goes out for
         everything else, rather than one KeyError taking the whole screen down."""
         with patch("programs.programs.policyengine.policy_engine.capture_message"):
-            kept = self._drop(dict(self.gated_output_programs), "1.750.0")
+            kept = self._drop(dict(self.gated_output_programs), (1, 750, 0))
 
         self.assertEqual(kept, {})
 
@@ -343,7 +343,7 @@ class TestUnreadableProgramsAreDropped(PeInputTestBase):
         the value itself."""
         from programs.programs.federal.pe.spm import Acp, SchoolLunch
 
-        kept = self._drop({"acp": Acp, "nslp": SchoolLunch}, "1.750.0")
+        kept = self._drop({"acp": Acp, "nslp": SchoolLunch}, (1, 750, 0))
 
         self.assertEqual(set(kept), {"acp", "nslp"})
 
@@ -351,7 +351,7 @@ class TestUnreadableProgramsAreDropped(PeInputTestBase):
         """Serving a screen quietly missing SNAP is the failure this guard exists to avoid
         compounding, so the reason has to be visible."""
         with patch("programs.programs.policyengine.policy_engine.capture_message") as capture:
-            self._drop(dict(self.gated_output_programs), "1.750.0")
+            self._drop(dict(self.gated_output_programs), (1, 750, 0))
 
         capture.assert_called_once()
         message = capture.call_args[0][0]
@@ -362,13 +362,50 @@ class TestUnreadableProgramsAreDropped(PeInputTestBase):
         """PE's /versions/us is a different endpoint from /calculate: it can be down while
         calculation is healthy. An unresolvable version withholds every gated field, so the
         four programs are unreadable and must drop rather than KeyError."""
-        with patch(
-            "programs.programs.policyengine.policy_engine.pe_versions.resolve_unpinned_comparable_version",
-            return_value=None,
-        ), patch("programs.programs.policyengine.policy_engine.capture_message"):
+        with patch("programs.programs.policyengine.policy_engine.capture_message"):
             kept = self._drop(dict(self.gated_output_programs), None)
 
         self.assertEqual(kept, {})
+
+    def test_pe_input_trusts_a_caller_resolved_version(self):
+        """When the caller has already resolved, pe_input must not resolve again — that second
+        lookup is where the two can disagree."""
+        with patch(
+            "programs.programs.policyengine.policy_engine.pe_versions.resolve_unpinned_comparable_version"
+        ) as resolve:
+            result = pe_input(
+                self.screen,
+                [self.gated_output_programs["snap"]],
+                resolved_version=("current", (1, 779, 3)),
+            )
+
+        resolve.assert_not_called()
+        # The floor is satisfied, so the gated fields ride along.
+        self.assertIn("receives_snap", result["household"]["spm_units"]["spm_unit"])
+        self.assertEqual(result["version"], "current")
+
+    def test_calc_pe_eligibility_resolves_once_and_threads_it(self):
+        """One resolution per request, handed to both the drop pass and the payload build."""
+        from programs.programs.policyengine.calculators.dependencies import member as member_deps
+        from programs.programs.policyengine.policy_engine import calc_pe_eligibility
+
+        calculator = Mock()
+        calculator.can_calc.return_value = True
+        calculator.pe_inputs = [member_deps.ReceivesSsiDependency]  # gated, so resolution is needed
+        calculator.pe_outputs = []  # ungated, so the drop pass keeps it
+
+        with patch(
+            "programs.programs.policyengine.policy_engine.pe_versions.resolve_unpinned_comparable_version",
+            return_value=(1, 779, 3),
+        ) as resolve, patch(
+            "programs.programs.policyengine.policy_engine.pe_input", return_value={}
+        ) as build_payload, patch(
+            "programs.programs.policyengine.policy_engine.pe_engines", []
+        ):
+            calc_pe_eligibility(self.screen, {"fake_program": calculator})
+
+        self.assertEqual(resolve.call_count, 1)
+        self.assertEqual(build_payload.call_args.kwargs["resolved_version"], ("current", (1, 779, 3)))
 
 
 class TestPeInputVersionGating(PeInputTestBase):
