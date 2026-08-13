@@ -147,6 +147,13 @@ class Command(BaseCommand):
         overriding = bool(existing_program and override)
 
         if existing_program and reconcile:
+            # Reconcile creates navigators the config declares but the database lacks, and
+            # creating one writes its counties — so the county guard has to run here too, or a
+            # repair pass becomes a way to reintroduce exactly the mismatch it exists to block.
+            # Scoped like the guard itself: only when this pass will touch navigators at all, and
+            # with overriding=False, since reconcile never recreates an existing navigator.
+            if "navigators" in sections:
+                self._validate_counties(config, white_label, existing_program=existing_program, overriding=False)
             self._reconcile_program(existing_program, config, sections=sections, dry_run=dry_run)
             return
 
@@ -282,7 +289,13 @@ class Command(BaseCommand):
             return True
         if not overriding:
             return False
-        return not existing_nav.programs.exclude(id=existing_program.id).exists()
+        # Both relations, matching the delete guard: a navigator linked through the
+        # ProgramNavigator table is shared even though the legacy M2M says nothing.
+        shared = any(
+            getattr(existing_nav, relation).exclude(id=existing_program.id).exists()
+            for relation in ("programs_ordered", "programs")
+        )
+        return not shared
 
     def _validate_counties(
         self,

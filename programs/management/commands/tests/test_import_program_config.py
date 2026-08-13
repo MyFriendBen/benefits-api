@@ -425,6 +425,7 @@ class ImportProgramConfigTestCase(TransactionTestCase):
         finally:
             Path(config_file).unlink()
 
+
 class ReconcileProgramConfigTestCase(TransactionTestCase):
     """
     Tests for `import_program_config --reconcile` and the --override delete guard.
@@ -498,6 +499,93 @@ class ReconcileProgramConfigTestCase(TransactionTestCase):
 
     def _english(self, translation: Translation) -> str:
         return Translation.objects.language(settings.LANGUAGE_CODE).get(pk=translation.pk).text
+
+    def _require_suffixed_counties(self) -> None:
+        """Make this white label's screener convention the suffixed form."""
+        Configuration.objects.create(
+            name="counties_by_zipcode",
+            white_label=self.white_label,
+            data={"80202": {"Denver County": "Denver County"}},
+            active=True,
+        )
+
+    def _config_with_bad_county(self) -> dict:
+        config = copy.deepcopy(self.base_config)
+        config["navigators"][0]["counties"] = ["Denver"]
+        return config
+
+    def test_reconcile_validates_navigator_counties(self):
+        """
+        Reconcile creates navigators, and creating one writes its counties, so the county
+        guard has to cover this path too — otherwise a repair pass is a way to reintroduce
+        the exact mismatch the guard exists to block.
+        """
+        call_command(
+            "import_program_config", self._create_temp_config(self._config_without_navigators()), stdout=StringIO()
+        )
+        program = Program.objects.get(name_abbreviated="test_program")
+        self._require_suffixed_counties()
+
+        with self.assertRaises(CommandError) as raised:
+            call_command(
+                "import_program_config",
+                self._create_temp_config(self._config_with_bad_county()),
+                "--reconcile",
+                stdout=StringIO(),
+            )
+
+        self.assertIn("did you mean 'Denver County'", str(raised.exception))
+        self.assertFalse(Navigator.objects.filter(external_name="test_navigator").exists())
+        self.assertEqual(ProgramNavigator.objects.filter(program=program).count(), 0)
+
+    def test_reconcile_only_documents_does_not_validate_navigator_counties(self):
+        """
+        The guard is scoped to what a run will write. A documents-only pass never touches
+        navigators, so it must not be blocked by a navigator's county names.
+        """
+        call_command(
+            "import_program_config", self._create_temp_config(self._config_without_navigators()), stdout=StringIO()
+        )
+        program = Program.objects.get(name_abbreviated="test_program")
+        self._require_suffixed_counties()
+
+        config = self._config_with_bad_county()
+        config["documents"] = [{"external_name": "test_document", "text": "Bring photo ID"}]
+
+        call_command(
+            "import_program_config",
+            self._create_temp_config(config),
+            "--reconcile",
+            "--only",
+            "documents",
+            stdout=StringIO(),
+        )
+
+        self.assertEqual(program.documents.count(), 1)
+        self.assertEqual(ProgramNavigator.objects.filter(program=program).count(), 0)
+
+    def test_override_skips_county_validation_for_a_navigator_it_will_not_recreate(self):
+        """
+        County validation is scoped to navigators a run will recreate, and that scoping has to
+        read the same relation the delete guard does. A navigator shared only through
+        ProgramNavigator is kept, so its counties are never rewritten — validating them would
+        block an override over a field this run does not touch.
+        """
+        call_command("import_program_config", self._create_temp_config(self.base_config), stdout=StringIO())
+        navigator = Navigator.objects.get(external_name="test_navigator")
+
+        other_program = Program.objects.new_program(white_label="test_wl", name_abbreviated="other_program")
+        ProgramNavigator.objects.create(program=other_program, navigator=navigator, order=0)
+
+        self._require_suffixed_counties()
+
+        out = StringIO()
+        call_command(
+            "import_program_config", self._create_temp_config(self._config_with_bad_county()), "--override", stdout=out
+        )
+
+        self.assertIn("Keeping navigator", out.getvalue())
+        self.assertTrue(Navigator.objects.filter(external_name="test_navigator").exists())
 
     def test_reconcile_creates_missing_navigator_link(self):
         """A program imported without its navigators gets them linked by a reconcile pass."""
