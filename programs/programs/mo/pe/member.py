@@ -2,6 +2,8 @@ from programs.programs.federal.pe.member import (
     Wic,
     HeadStart,
     EarlyHeadStart,
+    Medicaid,
+    Msp,
     Ssi,
 )
 import programs.framework.pe_dependencies as dependency
@@ -91,4 +93,41 @@ class MoSsi(Ssi):
     pe_inputs = [
         *Ssi.pe_inputs,
         dependency.household.MoStateCodeDependency,
+    ]
+
+
+class MoMsp(Msp):
+    """
+    Missouri Medicare Savings Program (QMB / SLMB / QI). Federal ``Msp`` plus the MO state
+    code and the state's Medicaid inputs (see ``Msp`` for why the Medicaid inputs are
+    required), mirroring ``KsMsp`` / ``TxMsp`` / ``IlMsp``.
+
+    MSP's income tiers are the federal floor in Missouri (100% / 120% / 135% FPL), so the
+    only MO-keyed input is the state code. It resolves
+    ``gov.hhs.medicare.savings_programs.eligibility.asset.applies``, which is ``true`` for
+    MO — Missouri does **not** waive the MSP resource test, unlike several states that
+    flipped to waived in 2024. Without the state code the asset test would silently not
+    apply and over-resourced households would show as eligible.
+
+    Missouri rules PolicyEngine does not model (accepted gaps, documented in
+    ``programs/programs/mo/msp/spec.md``):
+        - Missouri's QMB/SLMB assistance group also counts a Part-A-eligible dependent
+          child's income and resources. PE combines across the SSI marital unit only, and
+          neither PE nor the screener has a dependent child's Medicare status.
+        - Missouri's QMB income methodology excludes specific state cash-grant payments and
+          temporarily disregards each January's OASDI/SSI COLA until the updated FPL takes
+          effect in April. PE applies only the generic national SSI exclusions, so it
+          slightly understates countable income for those applicants.
+        - Conditional Part A is a QMB-only pathway in Missouri and is expressly barred for
+          SLMB. The screener's ``insurance.medicare`` field does not distinguish conditional
+          from standard Part A enrollment.
+        - The Part B Immunosuppressive Drug (Part B-ID) pathway of 42 CFR 435.123(b) is
+          absent from PolicyEngine entirely, so neither its eligibility route nor its lower
+          $121.60/month premium value is produced.
+    """
+
+    pe_inputs = [
+        *Msp.pe_inputs,
+        dependency.household.MoStateCodeDependency,
+        *Medicaid.pe_inputs,
     ]

@@ -47,6 +47,16 @@ the wiring and the two inherited inputs that are load-bearing rather than boiler
 get ``ssi: 0``) and ``SsiCountableResourcesDependency`` (the resource limit is a
 hard cutoff). The dependency values themselves are covered in
 ``policyengine/calculators/dependencies/tests/test_member.py``.
+
+MO MSP:
+
+``MoMsp`` wraps the federal ``Msp`` calculator and adds the MO state code plus the state's
+Medicaid inputs, mirroring ``KsMsp`` / ``TxMsp`` / ``IlMsp``. Missouri's MSP delta is
+eligibility-only and reduces to one thing PE can act on: the state code resolves the
+asset-test-applies parameter, which is ``true`` for MO. The income tiers are the federal
+floor. Tests here pin that wiring and the inputs each spec scenario depends on; the tier
+and dollar outcomes are PolicyEngine's and were verified live at the pinned model version
+1.786.5 — see ``programs/programs/mo/msp/spec.md``.
 """
 
 from unittest.mock import MagicMock, Mock
@@ -55,9 +65,16 @@ from django.test import TestCase
 from screener.models import HouseholdMember, IncomeStream, Screen, WhiteLabel
 
 import programs.framework.pe_dependencies as dependency
-from programs.programs.federal.pe.member import Wic, HeadStart, EarlyHeadStart, Ssi as FederalSsi
+from programs.programs.federal.pe.member import (
+    Wic,
+    HeadStart,
+    EarlyHeadStart,
+    Medicaid,
+    Msp,
+    Ssi as FederalSsi,
+)
 from programs.programs.mo.pe import mo_member_calculators, mo_pe_calculators
-from programs.programs.mo.pe.member import MoWic, MoHeadStart, MoEarlyHeadStart, MoSsi
+from programs.programs.mo.pe.member import MoWic, MoHeadStart, MoEarlyHeadStart, MoMsp, MoSsi
 from programs.framework.pe_base import PolicyEngineMembersCalculator
 from programs.framework.pe_dependencies import member as member_deps
 from programs.framework.pe_dependencies.household import MoStateCodeDependency
@@ -462,3 +479,167 @@ class TestMoSsiPeInput(TestCase):
         people = pe_input(self.screen, [self._calculator()])["household"]["people"]
 
         self.assertIn("ssi", people[str(self.head.id)])
+
+
+class TestMoMspWiring(TestCase):
+    """
+    ``MoMsp`` inherits the federal ``Msp`` calculator and adds the MO state code plus the
+    state's Medicaid inputs, mirroring ``KsMsp`` / ``TxMsp`` / ``IlMsp``.
+
+    MSP's income tiers are the federal floor in Missouri, so the state code is the only
+    MO-keyed input. It is load-bearing rather than boilerplate: it resolves PolicyEngine's
+    ``...eligibility.asset.applies`` parameter, which is ``true`` for MO. Dropping it would
+    silently stop applying the resource test and report over-resourced households as
+    eligible — the exact failure Scenario 4 guards.
+    """
+
+    def test_is_subclass_of_federal_msp(self):
+        self.assertTrue(issubclass(MoMsp, Msp))
+        self.assertTrue(issubclass(MoMsp, PolicyEngineMembersCalculator))
+
+    def test_pe_name_is_msp(self):
+        self.assertEqual(MoMsp.pe_name, "msp")
+
+    def test_is_registered_as_mo_medicare_savings(self):
+        self.assertIs(mo_member_calculators["mo_medicare_savings"], MoMsp)
+        self.assertIs(mo_pe_calculators["mo_medicare_savings"], MoMsp)
+
+    def test_is_registered_in_global_registry(self):
+        """A calculator missing from the registry never runs — screener/views.py iterates it."""
+        self.assertIs(all_member_calculators["mo_medicare_savings"], MoMsp)
+        self.assertIs(all_calculators["mo_medicare_savings"], MoMsp)
+
+    def test_pe_inputs_includes_mo_state_code(self):
+        """Resolves the MO asset-test-applies parameter — the one genuine MO delta."""
+        self.assertIn(MoStateCodeDependency, MoMsp.pe_inputs)
+
+    def test_pe_inputs_preserve_federal_msp_inputs(self):
+        """The MO wrapper only appends; it must not drop any federal input."""
+        for dep in Msp.pe_inputs:
+            self.assertIn(dep, MoMsp.pe_inputs)
+
+    def test_pe_inputs_include_medicaid_inputs(self):
+        """
+        QI eligibility requires the applicant NOT be Medicaid-eligible, and the asset test
+        reads ``ssi_countable_resources`` supplied by the Medicaid input set. Without these,
+        QI would never exclude Medicaid-eligible applicants (Scenario 7) and the asset test
+        would see $0 resources (Scenario 4).
+        """
+        for dep in Medicaid.pe_inputs:
+            self.assertIn(dep, MoMsp.pe_inputs)
+
+    def test_adds_nothing_but_state_code_and_medicaid_inputs(self):
+        """Pins "Δ for MO: eligibility only" — any further input is a new state-variance claim."""
+        extra = set(MoMsp.pe_inputs) - set(Msp.pe_inputs) - set(Medicaid.pe_inputs)
+        self.assertEqual(extra, {MoStateCodeDependency})
+
+    def test_pe_inputs_include_quarters_of_coverage(self):
+        """
+        Regression guard for the value. Without it PolicyEngine does not assume premium-free
+        Part A and returns a Part A premium on top of Part B, inflating the yearly figure
+        well past the $2,434.80 every eligible scenario asserts.
+        """
+        self.assertIn(member_deps.MedicareQuartersOfCoverageDependency, MoMsp.pe_inputs)
+
+    def test_pe_outputs_request_category_and_value(self):
+        """The category drives QMB/SLMB/QI tiering; the value is the displayed dollar amount."""
+        self.assertIn(member_deps.MspCategory, MoMsp.pe_outputs)
+        self.assertIn(member_deps.Msp, MoMsp.pe_outputs)
+
+    def test_does_not_override_member_value(self):
+        """MO displays PolicyEngine's computed premium value with no state adjustment."""
+        self.assertIs(MoMsp.member_value, PolicyEngineMembersCalculator.member_value)
+
+
+class TestMoMspPeInput(TestCase):
+    """
+    ``MoMsp``'s dependencies land in the pe_input payload sent to PolicyEngine.
+
+    These assert the inputs each spec scenario depends on actually reach PE. The
+    eligibility and dollar outcomes themselves are computed by PolicyEngine and were
+    verified live at the pinned model version 1.786.5 — see
+    ``programs/programs/mo/msp/spec.md``.
+    """
+
+    PERIOD = "2026"
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.white_label = WhiteLabel.objects.create(name="Missouri", code="mo", state_code="MO")
+
+    def setUp(self):
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="65101",
+            county="Cole County",
+            household_size=1,
+            household_assets=3_000,
+            completed=False,
+        )
+        self.head = HouseholdMember.objects.create(
+            screen=self.screen,
+            relationship="headOfHousehold",
+            age=71,
+        )
+
+    def _calculator(self):
+        program = Mock()
+        program.year.period = self.PERIOD
+        return MoMsp(self.screen, program, self.screen.missing_fields())
+
+    def test_sends_mo_state_code(self):
+        household = pe_input(self.screen, [self._calculator()])["household"]["households"]["household"]
+
+        self.assertIn("state_code", household)
+        self.assertIn("MO", household["state_code"].values())
+
+    def test_sends_msp_eligibility_inputs_for_the_member(self):
+        people = pe_input(self.screen, [self._calculator()])["household"]["people"]
+        head = people[str(self.head.id)]
+
+        for field in (
+            "age",
+            "is_medicare_eligible",
+            "ssi_earned_income",
+            "ssi_unearned_income",
+            "ssi_countable_resources",
+            "medicare_quarters_of_coverage",
+        ):
+            self.assertIn(field, head)
+
+    def test_sends_household_assets_for_the_asset_test(self):
+        """
+        MO does not waive the MSP resource test, so the reported assets must reach PE.
+        Scenario 4 ($15,000, over the $9,950 individual limit) turns on this input.
+        """
+        spm_unit = pe_input(self.screen, [self._calculator()])["household"]["spm_units"]["spm_unit"]
+
+        self.assertEqual(spm_unit["spm_unit_cash_assets"], {self.PERIOD: 3_000})
+
+    def test_assumes_premium_free_part_a(self):
+        """40 quarters — ~99% of beneficiaries — which zeroes the Part A premium."""
+        people = pe_input(self.screen, [self._calculator()])["household"]["people"]
+
+        self.assertEqual(people[str(self.head.id)]["medicare_quarters_of_coverage"], {self.PERIOD: 40})
+
+    def test_sends_social_security_as_ssi_unearned_income(self):
+        """
+        MSP's income test uses SSI methodology, so retirement income must arrive as
+        ``ssi_unearned_income`` — this is what places a household in the QMB/SLMB/QI tiers.
+        """
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=self.head,
+            type="sSRetirement",
+            amount=1_000,
+            frequency="monthly",
+        )
+
+        people = pe_input(self.screen, [self._calculator()])["household"]["people"]
+
+        self.assertEqual(people[str(self.head.id)]["ssi_unearned_income"], {self.PERIOD: 12_000})
+
+    def test_requests_msp_output_for_the_member(self):
+        people = pe_input(self.screen, [self._calculator()])["household"]["people"]
+
+        self.assertIn("msp", people[str(self.head.id)])

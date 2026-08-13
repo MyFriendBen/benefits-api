@@ -1,0 +1,96 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "program_category": {
+    "external_name": "mo_healthcare",
+    "name": "Health Care",
+    "icon": "health_care"
+  },
+  "program": {
+    "name_abbreviated": "mo_medicare_savings",
+    "year": "2026",
+    "legal_status_required": [
+      "citizen",
+      "gc_5plus",
+      "refugee",
+      "otherWithWorkPermission"
+    ],
+    "name": "Medicare Savings Program (MSP)",
+    "description": "Medicare Savings Programs (MSP) help people with Medicare pay their monthly premiums. Depending on your income, MSP may also cover your Medicare deductibles and coinsurance.\n\nIf you qualify, Missouri pays your Medicare Part B premium directly. You won’t receive a check, but your Social Security check will be smaller each month. There are three MSP levels, and which one you qualify for determines how much help you get.\n\nMSP limits the resources you own, like savings and investments. But some things don’t count toward that limit. These include your home, one vehicle, and a burial fund.\n\nSelect Apply Now to start your Medicare Savings Program application online.",
+    "description_short": "Help paying for Medicare premiums and costs",
+    "learn_more_link": "https://www.medicare.gov/basics/costs/help/medicare-savings-programs",
+    "apply_button_link": "https://formsportal.mo.gov/content/forms/af/moa/my-dss/family-support-division/im-1msp/im-1msp/.html",
+    "apply_button_description": "",
+    "estimated_application_time": "15 - 30 minutes",
+    "estimated_delivery_time": "",
+    "estimated_value": "",
+    "website_description": "Help paying for Medicare premiums and costs",
+    "value_type": "benefit",
+    "value_format": null,
+    "has_calculator": true,
+    "show_on_current_benefits": true,
+    "show_in_has_benefits_step": false,
+    "base_program": "medicare_savings"
+  },
+  "documents": [
+    {
+      "external_name": "mo_home",
+      "text": "Proof of home address (ex: lease, utility bill)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_id_proof",
+      "text": "Proof of identity (ex: driver's license, official state ID card)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_ssn_proof",
+      "text": "Social Security Number or proof you applied for one",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_medicare_card",
+      "text": "Medicare card showing Part A enrollment",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_earned_income",
+      "text": "Proof of earned income, if requested (ex: pay stubs, W-2, 1099)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_unearned_income",
+      "text": "Proof of unearned income, if requested (ex: Social Security, pension statement)",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_assets",
+      "text": "Proof of resources (ex: bank statements, investment accounts). Do not include your home, one vehicle, household goods, or a burial fund",
+      "link_url": "",
+      "link_text": ""
+    },
+    {
+      "external_name": "mo_us_status",
+      "text": "Proof of U.S. citizenship or qualified immigration status",
+      "link_url": "",
+      "link_text": ""
+    }
+  ],
+  "navigators": [
+    {
+      "external_name": "mo_ship",
+      "name": "Missouri State Health Insurance Assistance Program (SHIP)",
+      "description": "Missouri SHIP offers free, unbiased Medicare counseling from trained volunteers. They can explain your Medicare options. They help you compare plans. They also assist with billing and enrollment issues. These counselors don’t sell insurance or charge fees. So, you get objective advice across the state.",
+      "email": "",
+      "assistance_link": "https://www.missouriship.org/",
+      "phone_number": "+18003903330"
+    }
+  ]
+}
