@@ -12,6 +12,7 @@ mo_member_calculators = {
 }
 
 mo_spm_calculators = {
+    "mo_lifeline": spm.MoLifeline,
     "mo_nslp": spm.MoNslp,
 }
 
