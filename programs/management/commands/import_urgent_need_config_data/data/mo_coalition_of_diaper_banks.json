@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_coalition_of_diaper_banks",
+    "category_type": {
+      "external_name": "mo_baby_supplies",
+      "name": "Diapers and other baby supplies",
+      "icon": "baby_supplies"
+    },
+    "type_short": [
+      "baby supplies"
+    ],
+    "translations": {
+      "name": "Missouri Coalition of Diaper Banks",
+      "description": "Use the Locations page to find a diaper bank near you. Eligibility and pickup rules vary by diaper bank. Check the bank’s website to learn how to get diapers. Some banks also offer period supplies.",
+      "link": "https://modiaperbanks.org/locations/",
+      "warning": "",
+      "website_description": "Find a diaper bank near you in Missouri.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

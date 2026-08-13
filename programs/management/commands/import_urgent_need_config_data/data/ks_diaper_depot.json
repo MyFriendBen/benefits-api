@@ -1,0 +1,32 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_diaper_depot",
+    "category_type": {
+      "external_name": "ks_baby_supplies",
+      "name": "Diapers and other baby supplies",
+      "icon": "baby_supplies"
+    },
+    "type_short": [
+      "baby supplies"
+    ],
+    "translations": {
+      "name": "Diaper Depot (Fresh Hope / His Helping Hands)",
+      "description": "Diaper Depot helps families get diapers. If you qualify, you can get diapers each month. This is an income-based program. Call 316-425-0675 to ask if you qualify and make an appointment.",
+      "link": "https://www.ccc.org/diaperdepot/",
+      "warning": "",
+      "website_description": "Learn about Diaper Depot, check eligibility, and apply for diaper help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Sedgwick County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_carestl_health",
+    "category_type": {
+      "external_name": "mo_free_low_cost_medical_care",
+      "name": "Free or lower cost health care",
+      "icon": "free_health_care"
+    },
+    "type_short": [
+      "free low cost medical care"
+    ],
+    "translations": {
+      "name": "CareSTL Health",
+      "description": "CareSTL Health offers medical, dental, eye, and mental health care. You can get care even if you do not have insurance. If you do not have insurance and do not qualify for Medicaid, you may pay less. CareSTL uses your income and family size to set the discount. Call 314-633-6363 to make an appointment.",
+      "link": "https://carestlhealth.org/",
+      "warning": "",
+      "website_description": "Medical, dental, eye, and mental health care in St. Louis",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "St. Louis City",
+      "St. Louis County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

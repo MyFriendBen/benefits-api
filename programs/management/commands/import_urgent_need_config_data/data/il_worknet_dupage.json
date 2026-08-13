@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "il"
+  },
+  "need": {
+    "external_name": "il_worknet_dupage",
+    "category_type": {
+      "external_name": "il_job_resources"
+    },
+    "type_short": [
+      "job resources"
+    ],
+    "translations": {
+      "name": "WorkNet DuPage",
+      "description": "WorkNet DuPage helps people find training and jobs. It also helps businesses find and train good workers.",
+      "link": "https://worknetdupage.org/job-seekers/",
+      "warning": "",
+      "website_description": "Go here to connect with job resources",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "DuPage"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

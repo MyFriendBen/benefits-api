@@ -1,0 +1,33 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_affinia_healthcare",
+    "category_type": {
+      "external_name": "mo_free_low_cost_medical_care",
+      "name": "Free or lower cost health care",
+      "icon": "free_health_care"
+    },
+    "type_short": [
+      "free low cost medical care"
+    ],
+    "translations": {
+      "name": "Affinia Healthcare",
+      "description": "Affinia Healthcare offers medical, dental, and mental health care. You can get care even if you do not have insurance. If you qualify, you may pay less based on your income and family size. Call 314-814-8700 to make an appointment.",
+      "link": "https://affiniahealthcare.org/",
+      "warning": "",
+      "website_description": "Medical, dental, and mental health care in the St. Louis area",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "St. Louis City",
+      "St. Louis County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

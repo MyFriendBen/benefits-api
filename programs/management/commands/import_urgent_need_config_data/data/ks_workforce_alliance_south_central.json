@@ -1,0 +1,37 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_workforce_alliance_south_central",
+    "category_type": {
+      "external_name": "ks_job_resources",
+      "name": "Job resources",
+      "icon": "job_resources"
+    },
+    "type_short": [
+      "job resources"
+    ],
+    "translations": {
+      "name": "Workforce Alliance of South Central Kansas",
+      "description": "The Workforce Centers offer free help finding a job, writing a resume, and training for a new career. You need legal permission to work in the U.S. to get help from staff. Some training programs have their own rules. Walk-ins are welcome at 2021 N. Amidon.",
+      "link": "https://workforce-ks.com/",
+      "warning": "",
+      "website_description": "Find local job help, training, workshops, and Workforce Center services.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Sedgwick County",
+      "Butler County",
+      "Cowley County",
+      "Harper County",
+      "Kingman County",
+      "Sumner County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

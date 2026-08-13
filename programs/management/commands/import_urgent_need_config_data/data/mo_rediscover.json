@@ -1,0 +1,32 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_rediscover",
+    "category_type": {
+      "external_name": "mo_behavioral_health",
+      "name": "Behavioral health",
+      "icon": "behavioral_health"
+    },
+    "type_short": [
+      "mental health"
+    ],
+    "translations": {
+      "name": "ReDiscover",
+      "description": "ReDiscover offers mental health and substance use care for children and adults. Services include therapy, help with medications, and other support. Most programs are for people who live in the area ReDiscover serves. Call 816-966-0900 to get started.",
+      "link": "https://rediscovermh.org/",
+      "warning": "",
+      "website_description": "Find mental health and substance use care in the Kansas City area.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Jackson County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

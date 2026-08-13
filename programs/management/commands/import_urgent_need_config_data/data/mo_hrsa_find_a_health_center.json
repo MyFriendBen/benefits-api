@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_hrsa_find_a_health_center",
+    "category_type": {
+      "external_name": "mo_free_low_cost_medical_care",
+      "name": "Free or lower cost health care",
+      "icon": "free_health_care"
+    },
+    "type_short": [
+      "free low cost medical care"
+    ],
+    "translations": {
+      "name": "Find a Health Center (HRSA)",
+      "description": "Community Health Centers offer medical, dental, and mental health care. Many also offer pharmacy services. You can get care even if you do not have insurance. What you pay depends on your income and family size. Enter your ZIP code to find health centers near you anywhere in Missouri.",
+      "link": "https://findahealthcenter.hrsa.gov/",
+      "warning": "",
+      "website_description": "Find a health center near you and learn about lower-cost care.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

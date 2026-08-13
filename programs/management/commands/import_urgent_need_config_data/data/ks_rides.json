@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_rides",
+    "category_type": {
+      "external_name": "ks_transportation",
+      "name": "Transportation",
+      "icon": "transportation"
+    },
+    "type_short": [
+      "transportation"
+    ],
+    "translations": {
+      "name": "Kansas Rides (KS Rides)",
+      "description": "Kansas Rides helps you find transportation in your area. You can look for rides to the doctor, grocery store, work, or other places. Search by county or ask a Mobility Manager for help finding a ride. Costs and rules depend on the transportation provider.",
+      "link": "https://ksrides.org/",
+      "warning": "",
+      "website_description": "Find buses and other ride options in your Kansas county.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

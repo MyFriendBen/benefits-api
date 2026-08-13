@@ -1,0 +1,34 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_rainbows_united",
+    "category_type": {
+      "external_name": "ks_child_development",
+      "name": "Child's development",
+      "icon": "child_development"
+    },
+    "type_short": [
+      "child dev"
+    ],
+    "translations": {
+      "name": "Rainbows United",
+      "description": "Rainbows United helps children who are slow to walk, talk, or play learn and grow. They offer free check-ups on how your child is growing, in-home help for babies and toddlers, and preschool. Age and other rules depend on the service. Most in-home services are free.",
+      "link": "https://rainbowsunited.org/",
+      "warning": "",
+      "website_description": "Find developmental screenings, early intervention, preschool, and other help for children.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Sedgwick County",
+      "Butler County",
+      "Sumner County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

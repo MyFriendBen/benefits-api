@@ -1,0 +1,32 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_community_services_league",
+    "category_type": {
+      "external_name": "mo_managing_housing_costs",
+      "name": "Managing housing costs",
+      "icon": "managing_housing"
+    },
+    "type_short": [
+      "housing"
+    ],
+    "translations": {
+      "name": "Community Services League",
+      "description": "CSL helps people with food, clothing, rent, utilities, and finding a job. Some programs have income and residency rules. Visit a CSL location to ask what help you can get.",
+      "link": "https://www.cslcares.org/who-we-help",
+      "warning": "",
+      "website_description": "Find help with food, rent, utilities, clothing, and jobs.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Jackson County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

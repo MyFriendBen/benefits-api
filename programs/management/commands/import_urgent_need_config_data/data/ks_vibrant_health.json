@@ -1,0 +1,32 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_vibrant_health",
+    "category_type": {
+      "external_name": "ks_free_low_cost_medical_care",
+      "name": "Free or lower cost health care",
+      "icon": "free_health_care"
+    },
+    "type_short": [
+      "free low cost medical care"
+    ],
+    "translations": {
+      "name": "Vibrant Health",
+      "description": "Vibrant Health offers medical and dental care for children and adults. They also offer pregnancy care and mental health services. They take most insurance plans. Lower fees may be available based on your income and family size.",
+      "link": "https://vibranthealthkc.org/",
+      "warning": "",
+      "website_description": "Medical and dental care in Wyandotte County with lower fees based on income",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Wyandotte County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_planned_parenthood_central_west_end",
+    "category_type": {
+      "external_name": "mo_family_planning",
+      "name": "Family planning",
+      "icon": "family_planning"
+    },
+    "type_short": [
+      "family planning"
+    ],
+    "translations": {
+      "name": "Planned Parenthood - Central West End Health Center",
+      "description": "They offer birth control, pregnancy tests, STI care, and more. You can get care without insurance. Ask if you can pay less for care. Call 314-531-7526 or book online.",
+      "link": "https://www.plannedparenthood.org/health-center/missouri/saint-louis/63108/central-west-end-health-center-3301-90770",
+      "warning": "",
+      "website_description": "Get birth control, pregnancy tests, STI care, and other health services.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "St. Louis City"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_kansasworks",
+    "category_type": {
+      "external_name": "ks_job_resources",
+      "name": "Job resources",
+      "icon": "job_resources"
+    },
+    "type_short": [
+      "job resources"
+    ],
+    "translations": {
+      "name": "KANSASWORKS",
+      "description": "KANSASWORKS is a free job website. You can search for jobs, build a resume, find job fairs, and look for training programs. You can also get one-on-one help at a Workforce Center near you. Some training programs have their own rules. Call 877-509-6757 to find your nearest center.",
+      "link": "https://www.kansasworks.com/",
+      "warning": "",
+      "website_description": "Find jobs, training, job fairs, and Workforce Center help.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

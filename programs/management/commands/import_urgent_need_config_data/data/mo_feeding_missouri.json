@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_feeding_missouri",
+    "category_type": {
+      "external_name": "mo_food_or_groceries",
+      "name": "Food or groceries",
+      "icon": "food_groceries"
+    },
+    "type_short": [
+      "food"
+    ],
+    "translations": {
+      "name": "Feeding Missouri (Food Bank & Pantry Locator)",
+      "description": "Feeding Missouri helps you find free food near you. Enter your location to find a food pantry or mobile food distribution. Eligibility and requirements vary by pantry. Hours and locations can change, so check before you go.",
+      "link": "https://feedingmissouri.org/get-help/",
+      "warning": "",
+      "website_description": "Find food pantries and mobile food distributions across Missouri.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}
