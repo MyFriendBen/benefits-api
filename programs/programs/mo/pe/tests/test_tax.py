@@ -1,10 +1,11 @@
 """
 Unit tests for the MO tax-unit PolicyEngine calculator registrations.
 
-Missouri has no state CTC or state EITC and no MO-specific variance, so
-``mo_ctc`` and ``mo_eitc`` map straight to the shared federal ``Ctc`` and
-``Eitc`` classes rather than subclasses — the same treatment as ``ks_ctc``,
-``tx_ctc``/``tx_eitc``, and ``wa_ctc``/``wa_eitc``.
+Missouri has no state CTC, EITC, or CDCC and no MO-specific variance, so
+``mo_ctc``, ``mo_eitc``, and ``mo_cdcc_federal`` map straight to the shared
+federal ``Ctc``, ``Eitc``, and ``Cdcc`` classes rather than subclasses — the same
+treatment as ``ks_ctc``, ``ks_cdcc_federal``, ``tx_ctc``/``tx_eitc``, and
+``wa_ctc``/``wa_eitc``.
 
 ``mo_aca_ptc`` is the exception: ACA PTC eligibility is federal, but its dollar
 value is county-driven, so ``MoAca`` is a real subclass carrying the two extra
@@ -25,7 +26,7 @@ these slugs *are* those objects extends those guarantees here.
 from django.test import TestCase
 
 import programs.framework.pe_dependencies as dependency
-from programs.programs.federal.pe.tax import Aca, Ctc, Eitc
+from programs.programs.federal.pe.tax import Aca, Cdcc, Ctc, Eitc
 from programs.programs.mo.pe import mo_pe_calculators, mo_tax_unit_calculators
 from programs.programs.mo.pe.tax import MoAca
 from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
@@ -61,6 +62,25 @@ class TestMoEitcWiring(TestCase):
     def test_matches_builtin_federal_registry_key(self):
         """Same calculator the federal registry serves as ``eitc`` — no MO subclass."""
         self.assertIs(all_tax_unit_calculators["mo_eitc"], all_tax_unit_calculators["eitc"])
+
+
+class TestMoCdccFederalWiring(TestCase):
+    """mo_cdcc_federal registration against the shared federal Cdcc calculator."""
+
+    def test_is_federal_cdcc_everywhere(self):
+        self.assertIs(mo_tax_unit_calculators["mo_cdcc_federal"], Cdcc)
+        self.assertIs(mo_pe_calculators["mo_cdcc_federal"], Cdcc)
+        self.assertIs(all_tax_unit_calculators["mo_cdcc_federal"], Cdcc)
+        self.assertIs(all_calculators["mo_cdcc_federal"], Cdcc)
+
+    def test_matches_the_other_states_federal_cdcc(self):
+        """Kansas registers the same shared class under ``ks_cdcc_federal``. Unlike
+        ``ctc``/``eitc``, the federal registry exposes no bare ``cdcc`` key, so the
+        cross-state identity is what pins "no MO subclass"."""
+        self.assertIs(
+            all_tax_unit_calculators["mo_cdcc_federal"],
+            all_tax_unit_calculators["ks_cdcc_federal"],
+        )
 
 
 class TestMoAcaWiring(TestCase):
