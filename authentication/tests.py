@@ -1,6 +1,7 @@
 from django.contrib.admin.sites import AdminSite
+from django.contrib.admin.utils import flatten_fieldsets
 from django.contrib.auth.forms import AdminPasswordChangeForm
-from django.test import TestCase, override_settings
+from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 
 from .admin import CustomUserAdmin
@@ -95,8 +96,23 @@ class UserAdminPasswordTests(TestCase):
         """
         self.assertIn("email_or_cell", self.admin.search_fields)
 
+    def test_fieldsets_cover_every_editable_field(self):
+        """
+        Declaring explicit fieldsets replaces Django's auto-generated field list, so a
+        field added to the model is silently absent from the admin until it is listed
+        here. external_id (the HubSpot contact ID) was dropped this way once already.
+        """
+        declared = set(flatten_fieldsets(self.admin.fieldsets))
+        editable = {f.name for f in User._meta.get_fields() if getattr(f, "editable", False) and not f.auto_created}
+
+        self.assertEqual(
+            editable - declared,
+            set(),
+            "editable User fields missing from CustomUserAdmin.fieldsets",
+        )
+
     def _request_for(self, user):
-        request = self.client.request().wsgi_request
+        request = RequestFactory().get("/")
         request.user = user
         return request
 
@@ -133,5 +149,8 @@ class UserAdminChangePasswordViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
         self.target.refresh_from_db()
+        # A form-error re-render also returns 200, so assert the edit actually persisted.
+        # Otherwise this test could silently rot into a no-op that proves nothing.
+        self.assertEqual(self.target.first_name, "Updated")
         self.assertEqual(self.target.password, original_hash)
         self.assertTrue(self.target.check_password("target-password-123"))

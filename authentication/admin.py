@@ -136,6 +136,8 @@ class CustomUserAdmin(SecureAdmin, UserAdmin):
             },
         ),
         ("Contact preferences", {"fields": ("tcpa_consent", "explicit_tcpa_consent", "send_offers", "send_updates")}),
+        # external_id is the HubSpot contact ID, used when debugging CRM sync.
+        ("Integrations", {"fields": ("external_id",)}),
         ("Important dates", {"fields": ("last_login", "date_joined")}),
     )
 

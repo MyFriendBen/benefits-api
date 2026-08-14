@@ -13,7 +13,7 @@ class UserManager(BaseUserManager):
         if not email_or_cell:
             raise ValueError("Users must have an email address or cell phone number")
 
-        user = self.model(email_or_cell=email_or_cell, password=password, explicit_tcpa_consent=False)
+        user = self.model(email_or_cell=email_or_cell, explicit_tcpa_consent=False)
 
         user.set_password(password)
         user.save(using=self._db)
