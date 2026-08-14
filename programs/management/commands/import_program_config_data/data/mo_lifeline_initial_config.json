@@ -73,7 +73,7 @@
     ],
     "warning_messages": [
         {
-            "external_name": "wa_lifeline_snap_enrollment",
+            "external_name": "lifeline_snap_enrollment",
             "calculator": "_show",
             "message": "If your screener results indicate you are eligible for SNAP, you should enroll in SNAP before applying for Lifeline."
         }
