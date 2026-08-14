@@ -33,13 +33,19 @@ class UserAdminPasswordTests(TestCase):
         self.assertEqual(password_field.__class__.__name__, "ReadOnlyPasswordHashField")
 
     def test_saving_user_via_admin_form_preserves_password(self):
-        """Editing an unrelated field through the admin form must not damage the hash."""
+        """
+        Editing an unrelated field through the admin form must not damage the hash.
+
+        The submitted password must differ from the stored hash. Submitting the hash
+        back over itself is a no-op even on the broken code path, so the test would
+        pass regardless of whether the field is writable.
+        """
         request = self._request_for(self.superuser)
         form_class = self.admin.get_form(request, obj=self.user)
 
         data = {
             "email_or_cell": self.user.email_or_cell,
-            "password": self.user.password,  # what the rendered form would submit back
+            "password": "autofilled-by-the-browser",
             "first_name": "Graciela",
             "is_active": "on",
             "date_joined_0": "2026-01-01",
@@ -89,12 +95,15 @@ class UserAdminPasswordTests(TestCase):
         self.assertNotEqual(created.password, raw_password)
         self.assertTrue(created.check_password(raw_password))
 
-    def test_search_uses_username_field(self):
+    def test_search_finds_user_by_email_or_cell(self):
         """
-        Admin search must cover email_or_cell. The nullable `email` field is empty for
-        most screener-created users, so searching it alone returns nothing.
+        Admin search must find a user by email_or_cell. The nullable `email` field is
+        empty for most screener-created users, so searching it alone returns nothing.
         """
-        self.assertIn("email_or_cell", self.admin.search_fields)
+        request = self._request_for(self.superuser)
+        queryset, _ = self.admin.get_search_results(request, User.objects.all(), "graciela@example.com")
+
+        self.assertIn(self.user, queryset)
 
     def test_fieldsets_cover_every_editable_field(self):
         """
@@ -130,6 +139,11 @@ class UserAdminChangePasswordViewTests(TestCase):
         self.client.force_login(self.superuser)
 
     def test_change_view_post_preserves_password(self):
+        """
+        Simulates the production failure: a browser autofills the password field on the
+        change form and the admin saves it. The submitted value must differ from the
+        stored hash, or the corrupting write is a no-op and proves nothing.
+        """
         url = reverse("admin:authentication_user_change", args=[self.target.pk])
         original_hash = self.target.password
 
@@ -137,7 +151,7 @@ class UserAdminChangePasswordViewTests(TestCase):
             url,
             {
                 "email_or_cell": self.target.email_or_cell,
-                "password": original_hash,
+                "password": "autofilled-by-the-browser",
                 "first_name": "Updated",
                 "is_active": "on",
                 "date_joined_0": "2026-01-01",
