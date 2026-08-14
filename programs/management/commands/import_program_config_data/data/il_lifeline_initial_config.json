@@ -1,14 +1,14 @@
 {
     "white_label": {
-        "code": "wa"
+        "code": "il"
     },
     "program_category": {
-        "external_name": "wa_housing",
+        "external_name": "il_housing",
         "name": "Housing and Utilities",
         "icon": "housing"
     },
     "program": {
-        "name_abbreviated": "wa_lifeline",
+        "name_abbreviated": "lifeline",
         "year": "2026",
         "legal_status_required": [
             "citizen",
@@ -33,7 +33,7 @@
         "show_on_current_benefits": true,
         "has_calculator": true,
         "show_in_has_benefits_step": false,
-        "external_name": "wa_lifeline"
+        "external_name": "il_lifeline"
     },
     "documents": [
         {
@@ -61,13 +61,6 @@
             "link_text": ""
         }
     ],
-    "warning_messages": [
-        {
-            "external_name": "lifeline_snap_enrollment",
-            "calculator": "_show",
-            "message": "If your screener results indicate you are eligible for SNAP, you should enroll in SNAP before applying for Lifeline."
-        }
-    ],
     "navigators": [
         {
             "external_name": "lifeline_support_center",
@@ -76,6 +69,16 @@
             "phone_number": "+18002349473",
             "email": "LifelineSupport@usac.org",
             "assistance_link": "https://www.lifelinesupport.org/"
+        },
+        {
+            "external_name": "mana_a_mana"
+        }
+    ],
+    "warning_messages": [
+        {
+            "external_name": "lifeline_snap_enrollment",
+            "calculator": "_show",
+            "message": "If your screener results indicate you are eligible for SNAP, you should enroll in SNAP before applying for Lifeline."
         }
     ]
 }
