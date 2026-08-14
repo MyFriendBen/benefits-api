@@ -1,0 +1,76 @@
+{
+    "white_label": {
+        "code": "mo"
+    },
+    "program_category": {
+        "external_name": "mo_tax",
+        "name": "Tax Credits",
+        "icon": "tax_credit"
+    },
+    "program": {
+        "name_abbreviated": "mo_cdcc_federal",
+        "external_name": "mo_cdcc_federal",
+        "year": "2026",
+        "legal_status_required": [
+            "citizen",
+            "non_citizen",
+            "gc_5plus",
+            "gc_5less",
+            "refugee",
+            "otherWithWorkPermission"
+        ],
+        "name": "Federal Child and Dependent Care Credit (CDCC)",
+        "description_short": "Federal tax credit for childcare or dependent care expenses when you work or look for work",
+        "description": "This is a federal tax credit for people who pay for childcare or dependent care so they can work or look for work. It can lower how much you owe on your federal taxes.\n\nThe amount depends on your income and eligible care expenses. The percentage used to calculate the credit depends on your income. This credit can lower the federal taxes you owe, but you won't get any unused credit back as a refund.\n\nIf you're married and file a separate tax return from your spouse, you usually can't get this credit. Some people who live apart from their spouse may still qualify. Dependent Care FSA benefits can reduce the expenses used to calculate your credit.\n\nYou claim this credit on your federal tax return using Form 2441. You'll need your care provider's name, address, and tax ID number. Select \"File Now\" to file your federal return through IRS Free File.",
+        "learn_more_link": "https://www.irs.gov/credits-deductions/individuals/child-and-dependent-care-credit-information",
+        "apply_button_link": "https://www.irs.gov/e-file-do-your-taxes-for-free",
+        "apply_button_description": "File Now",
+        "estimated_application_time": "45 minutes",
+        "estimated_delivery_time": "",
+        "estimated_value": "",
+        "value_format": "estimated_annual",
+        "website_description": "Federal tax credit for childcare or dependent care expenses when you work or look for work",
+        "base_program": "cdcc",
+        "show_on_current_benefits": true,
+        "has_calculator": true,
+        "show_in_has_benefits_step": false
+    },
+    "documents": [
+        {
+            "external_name": "mo_ssn_or_itin",
+            "text": "SSN or ITIN for you and your spouse (if filing jointly), and a tax ID number for each qualifying person",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "mo_earned_income",
+            "text": "Proof of earned income (W-2, 1099, or Schedule C)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "mo_dependent_care_expenses",
+            "text": "Records of dependent care expenses and your provider's name, address, and tax ID number",
+            "link_url": "",
+            "link_text": ""
+        }
+    ],
+    "navigators": [
+        {
+            "external_name": "mo_211",
+            "name": "Missouri 211",
+            "email": "",
+            "description": "Missouri 211 connects residents to local services and can help you find free tax preparation during tax season.",
+            "assistance_link": "https://www.211helps.org/",
+            "phone_number": "+18004274626"
+        },
+        {
+            "external_name": "mo_aarp_tax_aide",
+            "name": "AARP Foundation Tax-Aide",
+            "email": "taxaide@aarp.org",
+            "description": "AARP Foundation Tax-Aide provides free federal tax preparation help at sites across Missouri. Volunteers can help you claim the Child and Dependent Care Credit on your federal return. You don't have to be an AARP member. Visit the website to learn how to get tax help.",
+            "assistance_link": "https://www.aarp.org/money/taxes/aarp-taxaide/",
+            "phone_number": "+18882277669"
+        }
+    ]
+}
