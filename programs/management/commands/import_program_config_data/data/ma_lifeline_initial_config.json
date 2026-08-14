@@ -1,14 +1,14 @@
 {
     "white_label": {
-        "code": "mo"
+        "code": "ma"
     },
     "program_category": {
-        "external_name": "mo_housing",
+        "external_name": "ma_housing",
         "name": "Housing and Utilities",
         "icon": "housing"
     },
     "program": {
-        "name_abbreviated": "mo_lifeline",
+        "name_abbreviated": "lifeline",
         "year": "2026",
         "legal_status_required": [
             "citizen",
@@ -33,7 +33,7 @@
         "show_on_current_benefits": true,
         "has_calculator": true,
         "show_in_has_benefits_step": false,
-        "external_name": "mo_lifeline"
+        "external_name": "ma_lifeline"
     },
     "documents": [
         {
