@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "co"
+  },
+  "need": {
+    "external_name": "co_dollar_for",
+    "category_type": {
+      "external_name": "co_medical_expenses_and_debt",
+      "name": "Medical Expenses & Debt",
+      "icon": "medical_expenses_and_debt"
+    },
+    "type_short": [
+      "medical expenses and debt"
+    ],
+    "translations": {
+      "name": "Dollar For",
+      "description": "Dollar For helps patients get help paying their hospital bills. Some programs can lower your bill or even cancel it, based on how much money you make.",
+      "link": "https://dollarfor.org/",
+      "warning": "",
+      "website_description": "Find out if you qualify on the website.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

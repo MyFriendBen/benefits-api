@@ -300,6 +300,7 @@ class ScreenSerializer(serializers.ModelSerializer):
             "needs_homeless_services",
             "needs_free_low_cost_medical_care",
             "needs_transportation",
+            "needs_medical_expenses_and_debt",
             "utm_id",
             "utm_source",
             "utm_medium",
