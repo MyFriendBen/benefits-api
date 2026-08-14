@@ -6,24 +6,14 @@ class MoLifeline(Lifeline):
     """
     Missouri Lifeline Phone and Internet Discount calculator.
 
-    Uses PolicyEngine's federal ``lifeline`` calculator as-is. Missouri has no
-    state supplement in PolicyEngine: ``lifeline.py`` layers state amounts only for
-    CA and OR (via ``gov.states.<state>.fcc.lifeline.in_effect``) and adds explicit
-    per-state supplements only for TX (``tx_lifeline_supplement``) and KS
-    (``ks_lifeline_supplement``). MO matches none of those branches, so a Missouri
-    household receives the federal benefit — $9.25/month, or $34.25/month on
-    qualifying rural Tribal land — capped at its combined phone and broadband cost.
+    Uses PolicyEngine's federal ``lifeline`` calculator as-is: PE carries state
+    supplements for CA, OR, TX, and KS, and Missouri matches none of them, so a
+    Missouri household receives the federal benefit only.
 
-    ``MoStateCodeDependency`` is added for the same reason the sibling states add
-    theirs: ``pe_input()`` never sends ``state_code`` on its own, and PE's Lifeline
-    chain reads ``state_code_str`` in both ``lifeline`` (state supplement branch) and
-    ``is_lifeline_income_eligible`` (the TX 150% FPG expansion versus the federal
-    135% limit). Sending MO explicitly keeps PE on the federal branch by fact rather
-    than by whichever state PE would otherwise default to. Mirrors the KsLifeline /
-    TxLifeline / WaLifeline pattern.
-
-    The base ``Lifeline.pe_inputs`` supply broadband and phone cost plus the IRS gross
-    income set that feeds ``fcc_fpg_ratio``; MO adds no inputs beyond the state code.
+    ``MoStateCodeDependency`` is load-bearing. ``pe_input()`` never sends
+    ``state_code`` on its own, and PE's Lifeline chain branches on it for both the
+    state supplement and the income limit (TX expands to 150% FPG against the
+    federal 135%). Without it PE falls back to its own default state.
     """
 
     pe_inputs = [
