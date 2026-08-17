@@ -1,0 +1,176 @@
+[
+  {
+    "scenario_key": "clearly_eligible",
+    "notes": "KS Food Assistance (SNAP) - Single Adult, Low Wage Income - Clearly Eligible. Kansas is one of only 7 states that has NOT adopted broad-based categorical eligibility (CBPP, 'Over 40 States Use Broad-Based Categorical Eligibility', cbpp.org/charts/over-40-states-use-broad-based-categorical-eligibility) -- KsSnap (ks/pe/spm.py) is confirmed pure pass-through with no state-specific waiver comparable to WA's/NC's BBCE mechanism, so scenarios reuse the same generic shapes CO's/TX's do rather than adding a state-specific stress case (same reasoning as TX). No independently-sourced expected dollar value exists for KS. Used by the generalized SNAP parity harness (DECISIONS.md D-017).",
+    "household": {
+      "white_label": "ks",
+      "household_size": 1,
+      "zipcode": "67202",
+      "county": "Sedgwick County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 3,
+          "birth_year": 1999,
+          "age": 27,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 850.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ks_snap",
+      "eligible": true
+    }
+  },
+  {
+    "scenario_key": "clearly_ineligible",
+    "notes": "KS Food Assistance (SNAP) - Single Adult, High Wage Income - Should NOT Be Eligible. Kansas applies the strict federal 130% FPL gross income test with no BBCE expansion (CBPP chart, cbpp.org/charts/over-40-states-use-broad-based-categorical-eligibility). Used by the generalized SNAP parity harness (DECISIONS.md D-017).",
+    "household": {
+      "white_label": "ks",
+      "household_size": 1,
+      "zipcode": "66603",
+      "county": "Shawnee County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 11,
+          "birth_year": 1992,
+          "age": 33,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3900.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ks_snap",
+      "eligible": false
+    }
+  },
+  {
+    "scenario_key": "household_size_edge",
+    "notes": "KS Food Assistance (SNAP) - Single Working Parent, Two Children - Household Size Edge Case. Exercises pe_input()'s per-member loop with multiple HouseholdMembers, independently composed (single parent + 2 kids, not TX's two-parent family of 4). Used by the generalized SNAP parity harness (DECISIONS.md D-017). No independently-sourced expected dollar value exists for KS.",
+    "household": {
+      "white_label": "ks",
+      "household_size": 3,
+      "zipcode": "66204",
+      "county": "Johnson County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 5,
+          "birth_year": 1990,
+          "age": 36,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1900.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 8,
+          "birth_year": 2015,
+          "age": 10,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 2,
+          "birth_year": 2019,
+          "age": 7,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": [
+        { "type": "rent", "amount": 1100.0, "frequency": "monthly" },
+        { "type": "childcare", "amount": 350.0, "frequency": "monthly" }
+      ]
+    },
+    "expected_results": {
+      "program_name": "ks_snap",
+      "eligible": true
+    }
+  },
+  {
+    "scenario_key": "elderly_member",
+    "notes": "KS Food Assistance (SNAP) - Single Elderly Adult, Social Security Income - Federal Elderly Deduction Path. Exercises SNAP's real elderly-specific handling (age 60+), independent of any state-specific mechanism -- KS has no BBCE (CBPP chart). Used by the generalized SNAP parity harness (DECISIONS.md D-017). No independently-sourced expected dollar value exists for KS.",
+    "household": {
+      "white_label": "ks",
+      "household_size": 1,
+      "zipcode": "66101",
+      "county": "Wyandotte County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 4,
+          "birth_year": 1954,
+          "age": 71,
+          "disabled": false,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 1100.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "medicare": true
+          }
+        }
+      ],
+      "expenses": [
+        { "type": "rent", "amount": 800.0, "frequency": "monthly" }
+      ]
+    },
+    "expected_results": {
+      "program_name": "ks_snap",
+      "eligible": true
+    }
+  }
+]

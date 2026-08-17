@@ -1,0 +1,219 @@
+[
+  {
+    "scenario_key": "clearly_eligible",
+    "notes": "NC Food and Nutrition Services (SNAP) - Single Adult, Low Wage Income - Clearly Eligible. No independently-sourced expected dollar value exists for NC (unlike WA's value:864, traced to real commit 9a8019fd) -- no nc_snap.json or NC SNAP research predates this project (confirmed via git log search). Used by the generalized SNAP parity harness (DECISIONS.md D-017) to compare old NcSnap vs new SnapCalculator against a real PolicyEngine response.",
+    "household": {
+      "white_label": "nc",
+      "household_size": 1,
+      "zipcode": "27601",
+      "county": "Wake County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 4,
+          "birth_year": 1998,
+          "age": 28,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 980.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "nc_snap",
+      "eligible": true
+    }
+  },
+  {
+    "scenario_key": "clearly_ineligible",
+    "notes": "NC Food and Nutrition Services (SNAP) - Single Adult, High Wage Income Above 200% FPL Expanded Categorical Eligibility Threshold - Should NOT Be Eligible. $3,350/mo exceeds the 200% FPL gross income limit for HH=1 (~$2,608/mo, NC FNS Manual Section 220.02.E.2), so the household fails both expanded categorical eligibility and the standard gross income test. No independently-sourced expected dollar value exists for NC. Used by the generalized SNAP parity harness (DECISIONS.md D-017).",
+    "household": {
+      "white_label": "nc",
+      "household_size": 1,
+      "zipcode": "27601",
+      "county": "Wake County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 4,
+          "birth_year": 1998,
+          "age": 28,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3350.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "nc_snap",
+      "eligible": false
+    }
+  },
+  {
+    "scenario_key": "household_size_edge",
+    "notes": "NC Food and Nutrition Services (SNAP) - Three-Person Household, Two Working Adults and One Child - Household Size Edge Case. Exercises pe_input()'s per-member loop with multiple HouseholdMembers, independently composed (3 members, not CO's/TX's 4; different incomes/rent, no childcare expense). Used by the generalized SNAP parity harness (DECISIONS.md D-017). No independently-sourced expected dollar value exists for NC.",
+    "household": {
+      "white_label": "nc",
+      "household_size": 3,
+      "zipcode": "28202",
+      "county": "Mecklenburg County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 11,
+          "birth_year": 1985,
+          "age": 40,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2100.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "birth_month": 2,
+          "birth_year": 1988,
+          "age": 38,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 700.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 5,
+          "birth_year": 2017,
+          "age": 9,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": [
+        { "type": "rent", "amount": 1200.0, "frequency": "monthly" }
+      ]
+    },
+    "expected_results": {
+      "program_name": "nc_snap",
+      "eligible": true
+    }
+  },
+  {
+    "scenario_key": "elderly_member",
+    "notes": "NC Food and Nutrition Services (SNAP) - Single Elderly Adult, Social Security Income - Federal Elderly Deduction Path. Exercises SNAP's real elderly-specific handling (age 60+), independent of any state-specific mechanism, with NC-specific location/ages/amounts (not copied from CO's/TX's elderly_member scenario). Used by the generalized SNAP parity harness (DECISIONS.md D-017). No independently-sourced expected dollar value exists for NC.",
+    "household": {
+      "white_label": "nc",
+      "household_size": 1,
+      "zipcode": "28801",
+      "county": "Buncombe County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 9,
+          "birth_year": 1957,
+          "age": 68,
+          "disabled": false,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 1050.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "medicare": true
+          }
+        }
+      ],
+      "expenses": [
+        { "type": "rent", "amount": 750.0, "frequency": "monthly" }
+      ]
+    },
+    "expected_results": {
+      "program_name": "nc_snap",
+      "eligible": true
+    }
+  },
+  {
+    "scenario_key": "nc_expanded_cat_elig_net_income",
+    "notes": "NC Food and Nutrition Services (SNAP) - Expanded (200%) Categorical Eligibility Regression Test - Gross Income Passes 200% FPL, Net Income Would Exceed 100% FPL But Is Irrelevant. NC's own state-specific BBCE-equivalent mechanism, independently researched (not copied from WA's spec/fixture): NC FNS Manual Section 220 'Categorical Eligibility' (Change #02-2024, effective 2024-10-01, ncdhhs.gov/providers/dhhs-policies-manuals-and-forms, FNS-220-Categorical-Eligibility-10.2024.pdf). Section 220.02.E ('Expanded (200%) Categorical Eligibility') grants categorical eligibility once gross household income is at or below the 200% FPL maximum allowable gross income limit (and 3 other non-income criteria are met). Section 220.05.A.2 then states categorically eligible households (including expanded 200% cat-elig) are 'exempt from the gross and net income limits test' -- i.e. once the 200% gross test passes, the net income test does not gate eligibility, the same practical effect as WA's net_applies=false waiver, independently sourced from NC's own manual rather than assumed to work the same way. Gross income ($2,350/mo) is below the 200% FPL limit (~$2,608/mo for HH=1); net income after standard SNAP deductions (~20% earned income deduction + standard deduction, roughly $1,616/mo) would exceed the 100% FPL limit (~$1,304/mo) if the net test applied -- this scenario exists specifically to confirm PolicyEngine implements NC's expanded-categorical net-income exemption the same way it implements WA's, empirically, not just by policy citation. No independently-sourced expected dollar value exists for NC. Used by the generalized SNAP parity harness (DECISIONS.md D-017).",
+    "household": {
+      "white_label": "nc",
+      "household_size": 1,
+      "zipcode": "27401",
+      "county": "Guilford County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 8,
+          "birth_year": 1990,
+          "age": 36,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2350.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "nc_snap",
+      "eligible": true
+    }
+  }
+]

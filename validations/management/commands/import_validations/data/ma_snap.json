@@ -1,0 +1,219 @@
+[
+  {
+    "scenario_key": "clearly_eligible",
+    "notes": "MA Supplemental Nutrition Assistance Program (SNAP) - Single Adult, Low Wage Income - Clearly Eligible. No independently-sourced expected dollar value exists for MA -- checked git history first, confirmed no prior MA SNAP work predates this project. Used by the generalized SNAP parity harness (DECISIONS.md D-017) to compare old MaSnap vs new SnapCalculator against a real PolicyEngine response.",
+    "household": {
+      "white_label": "ma",
+      "household_size": 1,
+      "zipcode": "02118",
+      "county": "Suffolk County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 7,
+          "birth_year": 1997,
+          "age": 29,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 850.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ma_snap",
+      "eligible": true
+    }
+  },
+  {
+    "scenario_key": "clearly_ineligible",
+    "notes": "MA Supplemental Nutrition Assistance Program (SNAP) - Single Adult, High Wage Income Well Above the 200% FPL BBCE Ceiling - Should NOT Be Eligible. Massachusetts uses broad-based categorical eligibility (BBCE) at 200% FPL gross income, the maximum allowed under federal rules (106 CMR 364.976, 'Gross Monthly Categorical Eligibility Income Standards', mass.gov/doc/gross-monthly-categorical-eligibility-income-standards-as-referenced-at-106-cmr-364976/download) -- this income is chosen well above even that elevated ceiling so the household fails regardless of BBCE. Used by the generalized SNAP parity harness (DECISIONS.md D-017).",
+    "household": {
+      "white_label": "ma",
+      "household_size": 1,
+      "zipcode": "01608",
+      "county": "Worcester County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 10,
+          "birth_year": 1995,
+          "age": 31,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 3900.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ma_snap",
+      "eligible": false
+    }
+  },
+  {
+    "scenario_key": "household_size_edge",
+    "notes": "MA Supplemental Nutrition Assistance Program (SNAP) - Two Working Adults, One Child - Household Size Edge Case. Exercises pe_input()'s per-member loop with multiple HouseholdMembers, independently composed (own MA city/incomes/ages, not copied from CO/WA/TX/NC's equivalent scenario). Used by the generalized SNAP parity harness (DECISIONS.md D-017). No independently-sourced expected dollar value exists for MA.",
+    "household": {
+      "white_label": "ma",
+      "household_size": 3,
+      "zipcode": "01103",
+      "county": "Hampden County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 6,
+          "birth_year": 1987,
+          "age": 39,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 1950.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "birth_month": 12,
+          "birth_year": 1989,
+          "age": 36,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 600.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 3,
+          "birth_year": 2018,
+          "age": 8,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": [
+        { "type": "rent", "amount": 1350.0, "frequency": "monthly" }
+      ]
+    },
+    "expected_results": {
+      "program_name": "ma_snap",
+      "eligible": true
+    }
+  },
+  {
+    "scenario_key": "elderly_member",
+    "notes": "MA Supplemental Nutrition Assistance Program (SNAP) - Single Elderly Adult, Social Security Income - Federal Elderly Deduction Path. Exercises SNAP's real elderly-specific handling (age 60+), independent of MA's own BBCE mechanism, with MA-specific location/age/amounts (not copied from another state's elderly_member scenario). Used by the generalized SNAP parity harness (DECISIONS.md D-017). No independently-sourced expected dollar value exists for MA.",
+    "household": {
+      "white_label": "ma",
+      "household_size": 1,
+      "zipcode": "01852",
+      "county": "Middlesex County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 1,
+          "birth_year": 1955,
+          "age": 70,
+          "disabled": false,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 1000.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "medicare": true
+          }
+        }
+      ],
+      "expenses": [
+        { "type": "rent", "amount": 950.0, "frequency": "monthly" }
+      ]
+    },
+    "expected_results": {
+      "program_name": "ma_snap",
+      "eligible": true
+    }
+  },
+  {
+    "scenario_key": "ma_bbce_categorical_net_income_exemption",
+    "notes": "MA Supplemental Nutrition Assistance Program (SNAP) - MA's Own State-Specific BBCE Mechanism Regression Test - Gross Income Passes MA's 200% FPL BBCE Ceiling; Net Income Would Fail the Standard 100% FPL Test But Is Irrelevant. Went in with a narrower hypothesis, corrected after seeing the real recorded response -- worth stating both, since the correction is the actual finding. 106 CMR 364.976 ('Gross Monthly Categorical Eligibility Income Standards', mass.gov/doc/gross-monthly-categorical-eligibility-income-standards-as-referenced-at-106-cmr-364976/download) sets MA's broad-based categorical eligibility gross-income ceiling at 200% FPL. A secondary plain-language source (Massachusetts Legal Help, '68. Is there a gross income test for SNAP?', masslegalhelp.org/public-benefits-ssi/snap-food-benefits/68-there-gross-income-test-snap) reads as though the net income test still applies to the general population regardless of BBCE status, which was the original hypothesis this scenario was built to test -- gross wage income ($2,000/mo) chosen comfortably above the standard federal 130% FPL gross test but below MA's 200% FPL BBCE ceiling, with net income after standard SNAP deductions (~$1,400/mo, above the ~$1,255/mo 100% FPL net limit for FFY2024 HH=1) landing well past the net threshold. The actual Docker-recorded response returned a real, non-zero $23.28/mo benefit (the federal SNAP minimum allotment) -- the same value NC's expanded-cat-elig scenario returned last session for an analogous gross-passes/net-would-fail household -- meaning PolicyEngine implements MA's BBCE as a full categorical exemption from *both* the gross and net income tests, the same mechanism as WA's net_applies=false waiver and NC's Section 220.05.A.2 exemption, not the narrower gross-only reading the secondary source suggested. Most likely explanation: BBCE works by granting categorical eligibility via a token non-cash TANF-funded service, and federal categorical eligibility (7 CFR 273.2(j)) exempts a household from standard gross AND net income tests by definition -- the secondary source's caveat likely describes households processed outside that categorical path, not the common case PolicyEngine models here. Not independently re-verified beyond this one household; flagged as the actual, corrected finding rather than silently editing away the wrong hypothesis. No independently-sourced expected dollar value exists for MA. Used by the generalized SNAP parity harness (DECISIONS.md D-017).",
+    "household": {
+      "white_label": "ma",
+      "household_size": 1,
+      "zipcode": "02139",
+      "county": "Middlesex County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 9,
+          "birth_year": 1991,
+          "age": 34,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2000.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "ma_snap",
+      "eligible": true
+    }
+  }
+]

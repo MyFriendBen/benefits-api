@@ -1,0 +1,188 @@
+[
+  {
+    "scenario_key": "clearly_eligible",
+    "notes": "TX SNAP - Single Adult, Low Wage Income - Clearly Eligible. Used by the TX SNAP parallel-verification harness (DECISIONS.md D-013/D-014/D-015) to compare old TxSnap vs new SnapCalculator against a real PolicyEngine response.",
+    "household": {
+      "white_label": "tx",
+      "household_size": 1,
+      "zipcode": "79901",
+      "county": "El Paso County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 6,
+          "birth_year": 1994,
+          "age": 30,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 900.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+        
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_snap",
+      "eligible": true
+    }
+  },
+  {
+    "scenario_key": "clearly_ineligible",
+    "notes": "TX SNAP - Single Adult, High Wage Income - Should NOT Be Eligible. Used by the TX SNAP parallel-verification harness (DECISIONS.md D-013/D-014/D-015) to compare old TxSnap vs new SnapCalculator against a real PolicyEngine response.",
+    "household": {
+      "white_label": "tx",
+      "household_size": 1,
+      "zipcode": "79901",
+      "county": "El Paso County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 6,
+          "birth_year": 1994,
+          "age": 30,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 4200.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": []
+    },
+    "expected_results": {
+      "program_name": "tx_snap",
+      "eligible": false
+    }
+  },
+  {
+    "scenario_key": "household_size_edge",
+    "notes": "TX SNAP - Family of Four, Two Working Adults and Two Children - Household Size Edge Case. Exercises pe_input()'s per-member loop with multiple HouseholdMembers. Used by the TX SNAP parallel-verification harness (DECISIONS.md D-013/D-014/D-015).",
+    "household": {
+      "white_label": "tx",
+      "household_size": 4,
+      "zipcode": "75201",
+      "county": "Dallas County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 3,
+          "birth_year": 1989,
+          "age": 35,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "wages",
+              "amount": 2200.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "spouse",
+          "birth_month": 9,
+          "birth_year": 1991,
+          "age": 33,
+          "has_income": false,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 1,
+          "birth_year": 2016,
+          "age": 10,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        },
+        {
+          "relationship": "child",
+          "birth_month": 7,
+          "birth_year": 2019,
+          "age": 6,
+          "income_streams": [],
+          "insurance": {
+            "none": true
+          }
+        }
+      ],
+      "expenses": [
+        { "type": "rent", "amount": 1500.0, "frequency": "monthly" },
+        { "type": "childcare", "amount": 400.0, "frequency": "monthly" }
+      ]
+    },
+    "expected_results": {
+      "program_name": "tx_snap",
+      "eligible": true
+    }
+  },
+  {
+    "scenario_key": "elderly_member",
+    "notes": "TX SNAP - Single Elderly Adult, Social Security Income - Federal Elderly Deduction Path. Exercises SNAP's real elderly-specific handling (age 60+), independent of any state-specific mechanism -- TX SNAP has no state-specific waiver comparable to WA's BBCE (confirmed pure pass-through during the Phase 4 audit). Used by the TX SNAP parallel-verification harness (DECISIONS.md D-013/D-014/D-015).",
+    "household": {
+      "white_label": "tx",
+      "household_size": 1,
+      "zipcode": "78701",
+      "county": "Travis County",
+      "household_assets": 0.0,
+      "agree_to_tos": true,
+      "is_13_or_older": true,
+      "household_members": [
+        {
+          "relationship": "headOfHousehold",
+          "birth_month": 2,
+          "birth_year": 1958,
+          "age": 67,
+          "disabled": false,
+          "has_income": true,
+          "income_streams": [
+            {
+              "type": "sSRetirement",
+              "amount": 1200.0,
+              "frequency": "monthly"
+            }
+          ],
+          "insurance": {
+            "medicare": true
+          }
+        }
+      ],
+      "expenses": [
+        { "type": "rent", "amount": 900.0, "frequency": "monthly" }
+      ]
+    },
+    "expected_results": {
+      "program_name": "tx_snap",
+      "eligible": true
+    }
+  }
+]
