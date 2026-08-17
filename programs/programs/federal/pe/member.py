@@ -38,9 +38,7 @@ class Wic(PolicyEngineMembersCalculator):
         "POSTPARTUM": 0,
         "BREASTFEEDING": 0,
     }
-    # The would-be output, since every WIC subclass gates on this being positive and the
-    # receipt-gated `wic` is zeroed by any take-up suppression.
-    pe_name = "wic_if_takes_up"
+    pe_name = "wic"
     pe_inputs = [
         dependency.member.PregnancyDependency,
         dependency.member.ExpectedChildrenPregnancyDependency,
@@ -49,7 +47,7 @@ class Wic(PolicyEngineMembersCalculator):
         # WIC's adjunct test reads SNAP/TANF receipt.
         *dependency.receipt_contract,
     ]
-    pe_outputs = [dependency.member.WicIfTakesUp, dependency.member.WicCategory]
+    pe_outputs = [dependency.member.Wic, dependency.member.WicCategory]
 
     def member_value(self, member: HouseholdMember):
         if self.get_member_variable(member.id) <= 0:
@@ -168,8 +166,10 @@ class PellGrant(PolicyEngineMembersCalculator):
 
 
 class Ssi(PolicyEngineMembersCalculator):
-    # The would-be output: `ssi` is zeroed for non-reporters and merely echoes back the
-    # reported amount for reporters, so neither reflects what the program is worth.
+    # PolicyEngine gates `ssi` on the take-up flag, so it reads 0 for anyone reporting no SSI —
+    # exactly the people this program should be recommended to — and for reporters it just
+    # echoes back the amount they told us. Neither is the entitlement worth showing; the
+    # ungated output is.
     pe_name = "ssi_if_takes_up"
     pe_inputs = [
         dependency.member.SsiCountableResourcesDependency,

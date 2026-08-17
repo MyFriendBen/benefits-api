@@ -316,10 +316,11 @@ class TestUnreadableProgramsAreDropped(PeInputTestBase):
 
     def setUp(self):
         super().setUp()
-        from programs.programs.federal.pe.member import Ssi, Wic
+        from programs.programs.federal.pe.member import Ssi
         from programs.programs.federal.pe.spm import Snap, Tanf
 
-        self.gated_output_programs = {"snap": Snap, "ssi": Ssi, "tanf": Tanf, "wic": Wic}
+        # WIC is deliberately absent: it reads the ungated `wic`, so no floor applies to it.
+        self.gated_output_programs = {"snap": Snap, "ssi": Ssi, "tanf": Tanf}
 
     def _drop(self, programs, comparable_version):
         return _drop_unreadable_programs(programs, comparable_version)
@@ -330,7 +331,7 @@ class TestUnreadableProgramsAreDropped(PeInputTestBase):
         self.assertEqual(set(kept), set(self.gated_output_programs))
 
     def test_dropped_when_the_model_predates_their_output(self):
-        """Below the floor these four are unreadable — but the request still goes out for
+        """Below the floor these three are unreadable — but the request still goes out for
         everything else, rather than one KeyError taking the whole screen down."""
         with patch("programs.programs.policyengine.policy_engine.capture_message"):
             kept = self._drop(dict(self.gated_output_programs), (1, 750, 0))
@@ -347,6 +348,16 @@ class TestUnreadableProgramsAreDropped(PeInputTestBase):
 
         self.assertEqual(set(kept), {"acp", "nslp"})
 
+    def test_wic_survives_an_old_model(self):
+        """WIC reads the ungated `wic`, which every supported model defines, so it is not
+        exposed to the floor. Switching it to `wic_if_takes_up` would put it here for no
+        behavioral gain — the two are equal for every payload we send."""
+        from programs.programs.federal.pe.member import Wic
+
+        kept = self._drop({"wic": Wic}, (1, 750, 0))
+
+        self.assertEqual(set(kept), {"wic"})
+
     def test_reports_the_drop(self):
         """Serving a screen quietly missing SNAP is the failure this guard exists to avoid
         compounding, so the reason has to be visible."""
@@ -361,7 +372,7 @@ class TestUnreadableProgramsAreDropped(PeInputTestBase):
     def test_unresolvable_version_drops_them_too(self):
         """PE's /versions/us is a different endpoint from /calculate: it can be down while
         calculation is healthy. An unresolvable version withholds every gated field, so the
-        four programs are unreadable and must drop rather than KeyError."""
+        three programs are unreadable and must drop rather than KeyError."""
         with patch("programs.programs.policyengine.policy_engine.capture_message"):
             kept = self._drop(dict(self.gated_output_programs), None)
 

@@ -52,7 +52,7 @@ class TestTxWic(TestCase):
         self.assertTrue(issubclass(TxWic, Wic))
 
         # Verify it has the expected properties
-        self.assertEqual(TxWic.pe_name, "wic_if_takes_up")
+        self.assertEqual(TxWic.pe_name, "wic")
         self.assertIsNotNone(TxWic.pe_inputs)
         self.assertGreater(len(TxWic.pe_inputs), 0)
 

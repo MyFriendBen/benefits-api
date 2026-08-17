@@ -76,10 +76,11 @@ wic_income = [
 # Adopt it whole per calculator — suppressing one simulated benefit while leaving another just
 # shifts categorical eligibility onto the phantom that remains.
 #
-# The version gating is deliberately mixed: the amount inputs predate the contract and stay
-# ungated, so flooring them would stop sending reported SSI/TANF to older models. That is safe
-# because the gated half is the *suppressing* half — below the floor we send amounts without
-# take-up flags, never the reverse. test_receipt_contract.py pins that direction.
+# The version gating is deliberately mixed: the amount inputs stay ungated, since every
+# supported model reads them and flooring them would withhold reported SSI/TANF from older
+# ones. That is safe because the gated half is the *suppressing* half — below the floor we
+# send amounts without take-up flags, never the reverse. test_receipt_contract.py pins that
+# direction.
 receipt_contract = [
     member.Ssi,
     member.ReceivesSsiDependency,

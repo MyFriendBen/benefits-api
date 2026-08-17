@@ -62,14 +62,13 @@ class TestReceiptContractBundle(TestCase):
         """
         The bundle's gating is deliberately mixed, and this is what makes that safe.
 
-        Only `ssi` and `tanf` are ungated, and both are *amount* inputs that predate the
-        contract. Every field that can suppress a benefit or assert receipt carries the floor.
-        So below it we send amounts with no take-up flags — the pre-contract behavior — and
-        there is no resolvable version at which we tell PolicyEngine to zero a benefit without
-        also sending the evidence for it.
+        Only the `ssi` and `tanf` *amount* inputs are ungated; every field that can suppress a
+        benefit or assert receipt carries the floor. So below the floor we send amounts with no
+        take-up flags, and there is no resolvable version at which we tell PolicyEngine to zero
+        a benefit without also sending the evidence for it.
 
-        Flooring the amounts too (the symmetric-looking fix) would stop sending reported
-        SSI/TANF to older models, which is a regression, not a tightening.
+        Flooring the amounts too — the symmetric-looking alternative — would withhold reported
+        SSI/TANF from older models, which loses information rather than tightening anything.
         """
         for dep in receipt_contract:
             suppresses_or_asserts_receipt = dep.field.startswith(("takes_up_", "receives_"))
@@ -79,14 +78,31 @@ class TestReceiptContractBundle(TestCase):
                 self.assertEqual(dep.field in UNGATED_FIELDS, True, f"{dep.field} is an unexpected ungated field")
 
     def test_would_be_outputs_are_version_gated(self):
-        for dep in (member.SsiIfTakesUp, member.WicIfTakesUp, spm.SnapIfTakesUp, spm.TanfIfTakesUp):
+        for dep in (member.SsiIfTakesUp, spm.SnapIfTakesUp, spm.TanfIfTakesUp):
             self.assertEqual(dep.min_pe_version, (1, 779, 3), dep.field)
+
+    def test_wic_stays_on_the_ungated_output(self):
+        """
+        WIC is not switched to `wic_if_takes_up`, because for our payloads the two are the same
+        number: `wic` is `wic_if_takes_up` gated on `takes_up_wic_if_eligible`, which defaults
+        True and which we never send. `receives_wic` is measurably inert, so it is not wired
+        either — there is no WIC suppression for a would-be output to route around.
+
+        Staying ungated keeps WIC out of `_drop_unreadable_programs` below the version floor.
+        """
+        self.assertEqual(member.Wic.min_pe_version, ())
+        sent_fields = {dep.field for dep in receipt_contract}
+        self.assertNotIn("takes_up_wic_if_eligible", sent_fields)
+        self.assertNotIn("receives_wic", sent_fields)
 
 
 class TestProgramsReadWouldBeOutputs(TestCase):
     """
-    The four programs the contract gates must report what the household *would* get, not
-    the receipt-gated field the take-up flags zero out.
+    A program the contract gates must report what the household *would* get, not the
+    receipt-gated field its take-up flag zeroes out.
+
+    That means `*_if_takes_up` for SNAP, TANF and SSI. WIC is the exception: we send no WIC
+    take-up flag, so its plain output is already the would-be value.
     """
 
     def test_snap(self):
@@ -101,9 +117,12 @@ class TestProgramsReadWouldBeOutputs(TestCase):
         self.assertEqual(Ssi.pe_name, "ssi_if_takes_up")
         self.assertEqual(Ssi.pe_outputs, [member.SsiIfTakesUp])
 
-    def test_wic(self):
-        self.assertEqual(Wic.pe_name, "wic_if_takes_up")
-        self.assertIn(member.WicIfTakesUp, Wic.pe_outputs)
+    def test_wic_reads_the_ungated_output(self):
+        """The exception: `wic` is already the would-be value, since `takes_up_wic_if_eligible`
+        is never sent and holds at its True default. See
+        `test_wic_stays_on_the_ungated_output`."""
+        self.assertEqual(Wic.pe_name, "wic")
+        self.assertIn(member.Wic, Wic.pe_outputs)
 
 
 class TestAdoptingCalculators(TestCase):
@@ -153,18 +172,21 @@ class TestAdoptingCalculators(TestCase):
         self._assert_adopts(KsTanf)  # excludes SSI recipients from the assistance unit
 
 
-class TestRetiredSsiBridge(TestCase):
+class TestSupersededSsiInputsStayAbsent(TestCase):
     """
-    The reported-SSI bridge is gone: reported SSI is the `ssi` input, and suppression is the
-    take-up flag. Verified against the live API that ssi_reported without use_reported_ssi
-    moves nothing — not ssi, applicable_ssi, co_state_supplement, il_aabd_person or tx_ceap.
+    Reported SSI travels as the `ssi` amount and suppression as the take-up flag, so the
+    separate `ssi_reported` / `use_reported_ssi` channel must not come back. Measured against
+    the live API, `ssi_reported` without `use_reported_ssi` moves nothing — not `ssi`,
+    `applicable_ssi`, `co_state_supplement`, `il_aabd_person` or `tx_ceap` — so re-adding it
+    would read as a working input while doing nothing.
     """
 
-    def test_dependencies_are_removed(self):
+    def test_reported_ssi_dependencies_are_absent(self):
         for name in ("SsiReportedDependency", "UseReportedSsiDependency", "SsiAmountIfEligible"):
-            self.assertFalse(hasattr(member, name), f"{name} should have been removed with the reported-SSI bridge")
+            self.assertFalse(hasattr(member, name), f"{name} duplicates the `ssi` input and must stay absent")
 
-    def test_snap_receipt_sentinel_is_removed(self):
-        """The `snap: 1` sentinel pinned PolicyEngine's computed SNAP to $1/mo for anyone
-        reporting receipt, polluting the income every other program in the request read."""
+    def test_snap_receipt_sentinel_is_absent(self):
+        """A `snap: 1` input pins PolicyEngine's computed SNAP to $1/mo for anyone reporting
+        receipt, polluting the income every other program in the request reads. `receives_snap`
+        carries that signal without a dollar value."""
         self.assertFalse(hasattr(spm, "Snap"))

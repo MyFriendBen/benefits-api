@@ -1,5 +1,5 @@
 from .base import Member
-from .receipt import SSI_INCOME_TYPE, member_receives_ssi, screen_reports_unidentifiable_ssi
+from .receipt import SSI_INCOME_TYPE, member_reports_ssi_amount, screen_reports_ssi_without_amount
 
 
 class AgeDependency(Member):
@@ -130,13 +130,19 @@ class MedicaidSeniorOrDisabled(Member):
     field = "is_optional_senior_or_disabled_for_medicaid"
 
 
-class WicIfTakesUp(Member):
-    """PolicyEngine's would-be WIC entitlement, independent of take-up. Every WIC calculator
-    gates on it being positive, and the receipt-gated ``wic`` is zeroed by any take-up
-    suppression."""
+class Wic(Member):
+    """
+    PolicyEngine's ``wic`` person output — the member's WIC entitlement by food package.
 
-    field = "wic_if_takes_up"
-    min_pe_version = (1, 779, 3)
+    Already the would-be value for our payloads, unlike SSI/SNAP/TANF, whose programs need the
+    ``*_if_takes_up`` variants: ``wic`` is ``wic_if_takes_up`` gated on
+    ``takes_up_wic_if_eligible``, which defaults True and which we never send, so the two are
+    equal for every household we submit. (``receives_wic`` is measurably inert, so it is not
+    wired either.) Being ungated also keeps WIC clear of the ``min_pe_version`` floor, and so of
+    ``_drop_unreadable_programs``.
+    """
+
+    field = "wic"
 
 
 class Medicaid(Member):
@@ -166,9 +172,14 @@ class Ssi(Member):
 
 
 class SsiIfTakesUp(Member):
-    """PolicyEngine's would-be SSI entitlement, independent of take-up. ``ssi`` is 0 for
-    exactly the people the SSI program should be shown to, and the frontend filters out
-    programs valued at $0."""
+    """
+    PolicyEngine's ``ssi_if_takes_up`` person output: the SSI this member would get if they took
+    the program up, regardless of reported take-up.
+
+    What the SSI program reads, since the plain ``ssi`` output is gated on
+    ``takes_up_ssi_if_eligible`` and so reads 0 for exactly the non-recipients the program
+    should be recommended to — and the frontend filters out programs valued at $0.
+    """
 
     field = "ssi_if_takes_up"
     min_pe_version = (1, 779, 3)
@@ -176,11 +187,17 @@ class SsiIfTakesUp(Member):
 
 class ReceivesSsiDependency(Member):
     """
-    Reported SSI receipt for this member — the signal an amount can't express, since a
-    household can report receiving SSI where PolicyEngine computes their entitlement as $0,
-    or tick the Current Benefits tile without entering an amount at all.
+    PolicyEngine's ``receives_ssi`` person input: this member is a reported SSI recipient.
 
-    See ``member_receives_ssi`` for how a household-level tile is attributed to a person.
+    Read alongside the ``ssi`` amount rather than instead of it — every consumer tests
+    ``(ssi > 0) | receives_ssi`` (``meets_snap_categorical_eligibility``,
+    ``is_ssi_recipient_for_medicaid`` and its 209(b) variant). So the boolean is what carries
+    receipt when PolicyEngine computes the member's own entitlement as $0, the one case an
+    amount cannot express.
+
+    Set from a reported amount only, since that is the only per-member signal the screener
+    captures. PolicyEngine treats the flag as conclusive — it confers the SSI-recipient
+    Medicaid pathway with no demographic or income test — so it is never inferred.
     """
 
     field = "receives_ssi"
@@ -189,22 +206,25 @@ class ReceivesSsiDependency(Member):
         "income_type",
         "income_amount",
         "income_frequency",
-        "age",
     )
 
     def value(self):
-        return member_receives_ssi(self.screen, self.member)
+        return member_reports_ssi_amount(self.member)
 
 
 class TakesUpSsiIfEligibleDependency(Member):
     """
-    False for a member who reports no SSI, so PolicyEngine stops counting the SSI it
-    simulates for them as income they receive — the lever behind this contract's largest
-    behavior change, across IL AABD, SNAP's income test, TX CEAP and the Medicaid/MSP SSI
-    methodologies.
+    PolicyEngine's ``takes_up_ssi_if_eligible`` person input, default True. False stops
+    PolicyEngine from counting the SSI it simulates for this member as income they receive, and
+    withdraws the categorical eligibility that receipt confers — reaching IL AABD, SNAP's
+    income test, TX CEAP and the Medicaid/MSP SSI methodologies.
 
-    Left at PolicyEngine's default when the household's report can't be pinned on anyone —
-    see ``screen_reports_unidentifiable_ssi``.
+    Lowered for a member reporting no SSI amount, which is the point of the receipt contract:
+    a simulated entitlement is not income.
+
+    Held at the default for a household that ticked the SSI tile without an amount — somebody
+    receives SSI but nothing says who, and zeroing them all would suppress a real benefit. See
+    ``screen_reports_ssi_without_amount``.
     """
 
     field = "takes_up_ssi_if_eligible"
@@ -213,14 +233,13 @@ class TakesUpSsiIfEligibleDependency(Member):
         "income_type",
         "income_amount",
         "income_frequency",
-        "age",
     )
 
     def value(self):
-        if member_receives_ssi(self.screen, self.member):
+        if member_reports_ssi_amount(self.member):
             return True
 
-        return screen_reports_unidentifiable_ssi(self.screen)
+        return screen_reports_ssi_without_amount(self.screen)
 
 
 class IsDisabledDependency(Member):

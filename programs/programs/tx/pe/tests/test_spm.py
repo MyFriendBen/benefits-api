@@ -350,9 +350,6 @@ class TestTxCeap(TestCase):
         contract supplies the household's reported amount where they report one, and
         suppresses PolicyEngine's simulated SSI otherwise — without it, modeled SSI counts
         as income and SS/SSI households land in the wrong (too-generous) benefit tier.
-
-        This replaced the ssi_reported / use_reported_ssi bridge, which solved the same
-        problem through a separate reported-SSI channel.
         """
         for dep in receipt_contract:
             self.assertIn(dep, TxCeap.pe_inputs)

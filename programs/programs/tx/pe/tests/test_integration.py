@@ -299,7 +299,7 @@ class TestTxWicPeInput(TxPeInputTestBase):
         people = result["household"]["people"]
 
         for member_id in [str(self.head.id), str(self.spouse.id), str(self.child.id)]:
-            self.assertIn("wic_if_takes_up", people[member_id])
+            self.assertIn("wic", people[member_id])
             self.assertIn("wic_category", people[member_id])
 
     def test_pregnancy_fields_for_pregnant_member(self):
@@ -333,7 +333,7 @@ class TestTxWicPeInput(TxPeInputTestBase):
         infant_id = str(infant.id)
 
         self.assertIn("age", people[infant_id])
-        self.assertIn("wic_if_takes_up", people[infant_id])
+        self.assertIn("wic", people[infant_id])
 
 
 class TestTxSsiPeInput(TxPeInputTestBase):

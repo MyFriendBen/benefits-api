@@ -82,8 +82,9 @@ class TestMoWicWiring(TestCase):
         self.assertTrue(issubclass(MoWic, PolicyEngineMembersCalculator))
 
     def test_uses_federal_wic_pe_name(self):
-        """The would-be output, inherited from the federal calculator — see ``Wic``."""
-        self.assertEqual(MoWic.pe_name, "wic_if_takes_up")
+        """Inherited from the federal calculator, which stays on the ungated ``wic`` — see
+        ``Wic``."""
+        self.assertEqual(MoWic.pe_name, "wic")
 
     def test_registered_as_mo_wic(self):
         self.assertIs(mo_member_calculators["mo_wic"], MoWic)
@@ -130,7 +131,7 @@ class TestMoWicWiring(TestCase):
 
     def test_keeps_federal_pe_outputs(self):
         self.assertEqual(MoWic.pe_outputs, Wic.pe_outputs)
-        self.assertIn(member_deps.WicIfTakesUp, MoWic.pe_outputs)
+        self.assertIn(member_deps.Wic, MoWic.pe_outputs)
         self.assertIn(member_deps.WicCategory, MoWic.pe_outputs)
 
 
@@ -284,7 +285,7 @@ class TestMoWicPeInput(TestCase):
 
         for member in (self.head, self.child, self.infant):
             member_id = str(member.id)
-            self.assertIn("wic_if_takes_up", people[member_id])
+            self.assertIn("wic", people[member_id])
             self.assertIn("wic_category", people[member_id])
 
 
