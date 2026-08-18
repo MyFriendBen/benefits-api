@@ -1,22 +1,21 @@
 """
-The custom (MFB) calculators, discovered rather than listed.
+The custom (MFB) calculators, keyed by the ``Program`` row each one backs.
 
-This was nine imports and a dict merge, one entry per state. Each calculator now
-declares its own ``name_abbreviated`` and `programs.framework.registry.build`
-finds it, so adding a program touches one file instead of the calculator plus its
-state's dict.
+Assembled by `programs.framework.registry.build`, which walks the package and
+reads the ``program_code`` every calculator declares. Adding a program means
+writing the calculator; nothing here needs editing.
 
 PolicyEngine calculators are excluded even though they subclass
 ``ProgramCalculator``. This registry is what `Program.eligibility()` resolves
 against, and it constructs a calculator with four arguments
 (``screen, program, data, missing_dependencies``) where the PolicyEngine base
-takes three. That was the split before and it is a real difference in
-construction, not bookkeeping.
+takes three. They are registered in
+`integrations.clients.policyengine.registry` instead. MFB-1678 tracks making the
+two engines siblings so the construction difference goes away.
 
-`calculators` is built on first access rather than at import. `programs.models`
-imports it at module scope, and discovery imports every calculator — including
-the PolicyEngine ones, whose base imports ``Program`` straight back out of
-`programs.models`. Building eagerly deadlocks on that cycle. The module-level
+`calculators` is built on first access. `programs.models` imports it at module
+scope, and discovery imports every calculator — including the PolicyEngine ones,
+whose base imports ``Program`` back out of `programs.models`. The module-level
 ``__getattr__`` keeps the public name a plain mapping for callers while deferring
 the walk until models has finished loading.
 """

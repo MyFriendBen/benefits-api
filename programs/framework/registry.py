@@ -8,28 +8,29 @@ program calculators (``Program.name_abbreviated``), warning calculators
 (``UrgentNeedFunction.name``) and program-category cap calculators
 (``ProgramCategory.calculator``).
 
-Each class declares the key it answers to, and the registry is assembled by
-walking the package at import. Nothing hand-maintains a dict, so adding a
-program is one file instead of a file plus a registry edit — and a duplicate key
-raises here instead of silently overwriting whichever entry lost the merge.
+Each class declares the key it answers to and `build` assembles the registry by
+walking the package at import, so adding a program means writing one file. A
+duplicate key raises rather than resolving to whichever class happens to be
+found second.
 
 A class declares one of two things about itself, and there is no third option:
 
 - ``program_code`` — the ``Program.name_abbreviated`` of the row it backs. Named
   for what it is on this side of the boundary: a reference to a row, not a
-  property of the class. The database column is still ``name_abbreviated``;
-  renaming it, the serializers and the frontend to match is tracked separately.
+  property of the class. The database column is ``name_abbreviated``; MFB-1679
+  brings the two names together.
 - ``abstract=True`` — it exists to be subclassed and backs no row.
 
-Saying neither is an error. That was the old failure mode wearing a new hat: a
-calculator written, registered nowhere, silently returning nothing. Saying it via
-a class keyword rather than a flag attribute is deliberate — ``abstract=True`` is
-read by ``__init_subclass__`` at class creation, so the answer cannot drift from
-the class it describes.
+Declaring neither raises. Silence would read the same whether the class is a base
+or whether someone forgot the code, leaving a calculator that is written,
+registered nowhere, and returns nothing. ``abstract=True`` is a class keyword read
+by ``__init_subclass__`` at class creation rather than an attribute, so the answer
+cannot drift from the class it describes.
 
-A class may be both keyed and subclassed. ``Snap`` backs the ``snap`` row and is
-inherited by seven states. Fourteen classes are dual-role like that today, which
-is why "is it a base?" cannot be inferred from whether anything subclasses it.
+A class may declare a code *and* be subclassed. ``Snap`` backs the ``snap`` row
+and is inherited by seven states; fourteen classes are dual-role like that. That
+is why base-versus-program cannot be inferred from whether anything subclasses a
+class, and has to be declared.
 """
 
 import importlib
@@ -54,10 +55,8 @@ class UnregisteredCalculator(Exception):
 class DuplicateRegistryKey(Exception):
     """Two classes claim the same key.
 
-    Raised at import rather than left to whichever class the merge order
-    happened to favour. `screener/views.py` used to build
-    `{p.name_abbreviated: p for p in all_programs}`, which silently kept the
-    last one.
+    Raised at import, so a collision surfaces at deploy rather than resolving
+    silently to whichever class was found second.
     """
 
 
@@ -80,10 +79,10 @@ def _walk_classes(package_name: str, base: type[T]) -> Iterator[type[T]]:
     seen: set[type] = set()
 
     # Walked from the filesystem rather than with pkgutil.walk_packages, which
-    # recurses only through directories that have an __init__.py and stops
-    # silently at the first that does not. Several program directories hold only
-    # a spec.md, and nc/medicaid is a bare namespace directory — under pkgutil
-    # every calculator below those was skipped without an error.
+    # recurses only through directories holding an __init__.py and stops at the
+    # first that does not, without raising. Program directories are not uniformly
+    # packages: some hold only a spec.md, and nc/medicaid is a bare namespace
+    # directory. Everything below such a directory has to stay reachable.
     for path in sorted(pathlib.Path(next(iter(package.__path__))).rglob("*.py")):
         parts = path.relative_to(next(iter(package.__path__))).with_suffix("").parts
         if any(p == "__pycache__" for p in parts):
@@ -108,9 +107,9 @@ def _walk_classes(package_name: str, base: type[T]) -> Iterator[type[T]]:
             if not isinstance(attr, type):
                 continue
             # `attr.__module__ != name` skips classes this module merely imported,
-            # so a class is considered once, where it is defined. Checked before
-            # `seen`, or a re-export in an earlier module marks the class seen and
-            # its real definition is then skipped.
+            # so a class is considered once, at its definition. This filter runs
+            # before the `seen` check: a class re-exported by an earlier module
+            # must not be marked seen there, or its definition is skipped.
             if not (issubclass(attr, base) and attr is not base and attr.__module__ == name):
                 continue
             if attr in seen:

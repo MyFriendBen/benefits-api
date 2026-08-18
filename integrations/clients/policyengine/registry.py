@@ -1,19 +1,14 @@
 """
-The PolicyEngine calculators, discovered rather than listed.
+The PolicyEngine calculators, keyed by the ``Program`` row each one backs.
 
-This was sixty lines of imports and dict merges, one block per state per
-PolicyEngine entity. Each calculator now declares its own ``name_abbreviated``
-and `programs.framework.registry.build` finds it, so adding a program touches
-one file instead of a calculator plus a state dict plus this module — the third
-of which was easy to forget, and forgetting it meant the program silently
-returned no value.
+Assembled by `programs.framework.registry.build`, which walks the package and
+reads the ``program_code`` every calculator declares. Adding a program means
+writing the calculator; nothing here needs editing.
 
-Entity type is read off the base class the calculator inherits, not off which
-dict it was listed in. Those two disagreed: ``il_aca`` and ``nc_aca`` sat in the
-member dict while subclassing ``PolicyEngineTaxUnitCalulator``. Nothing broke,
-because the per-entity dicts have no runtime consumer — ``pe_category`` on the
-class is what the request payload keys off, and that was correct. Deriving the
-split from the class makes the two impossible to disagree.
+Entity type is read off the base class a calculator inherits, so the member, spm
+and tax-unit groupings cannot disagree with the classes themselves. ``pe_category``
+on the class is what the request payload keys off; these groupings exist for
+callers that need one entity's calculators.
 """
 
 from programs.framework.pe_base import (

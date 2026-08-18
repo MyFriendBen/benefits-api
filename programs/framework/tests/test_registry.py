@@ -1,16 +1,17 @@
 """Tests for the discovery that builds the key -> class registries.
 
-The failure mode this guards against is a registry that is quietly *incomplete*
-— a program silently absent rather than an error. Two real bugs during
-development produced exactly that, and both are pinned below:
+The failure these guard against is a registry that is quietly *incomplete* — a
+program absent rather than an error — so the assertions are about reach: that
+discovery finds calculators wherever they live, and finds them once.
 
-- ``pkgutil.walk_packages`` recurses only through directories that have an
-  ``__init__.py``, and stops at the first that does not without raising. Several
-  program directories hold only a ``spec.md``, and ``nc/medicaid`` is a bare
-  namespace directory, so every calculator underneath was skipped.
-- Marking a class "seen" before checking whether it is a subclass meant a class
-  re-exported by an earlier module was skipped at its real definition. That
-  capped discovery at 115 of 235.
+Two properties of the walk are load-bearing and easy to break:
+
+- It walks the filesystem rather than using ``pkgutil.walk_packages``, which
+  recurses only through directories holding an ``__init__.py``. Program
+  directories are not uniformly packages: some hold only a ``spec.md``, and
+  ``nc/medicaid`` is a bare namespace directory.
+- It filters on where a class is *defined* before marking it seen, so a class
+  re-exported by another module is still found at its definition.
 """
 
 from django.test import SimpleTestCase
@@ -42,8 +43,8 @@ class WalkClassesTests(SimpleTestCase):
         """A spec-only or namespace directory must not hide the calculators below it.
 
         ``mo/head_start/`` and ``tx/liheap/`` contain only a ``spec.md``, and
-        ``nc/medicaid/`` has no ``__init__.py`` of its own — the exact shape that
-        made ``pkgutil.walk_packages`` stop early.
+        ``nc/medicaid/`` has no ``__init__.py`` of its own. A package-based walk
+        stops at directories like these without raising.
         """
         found = {c.__name__ for c in _walk_classes("programs.programs", ProgramCalculator)}
 
@@ -54,8 +55,9 @@ class WalkClassesTests(SimpleTestCase):
     def test_finds_plain_mfb_calculators_not_only_policyengine_ones(self):
         """Both engines are discovered.
 
-        When the seen-set was checked too early, only PolicyEngine calculators
-        survived — every plain ``ProgramCalculator`` was dropped.
+        Custom calculators are the ones at risk here: they are re-exported through
+        state ``__init__`` modules, so a walk that marks a class seen before
+        checking where it was defined finds only the PolicyEngine half.
         """
         found = list(_walk_classes("programs.programs", ProgramCalculator))
         mfb = [c for c in found if not issubclass(c, PolicyEngineCalulator)]
@@ -116,9 +118,8 @@ class BuildTests(SimpleTestCase):
     def test_duplicate_keys_raise_and_name_both_classes(self):
         """Two classes claiming one key is an error, and the message says which.
 
-        This is the case `screener/views.py` used to swallow: it built
-        `{p.name_abbreviated: p for p in all_programs}`, so a collision silently
-        kept whichever row came last.
+        A collision has no correct silent resolution — either class could be the
+        one a row means — so it raises at import with both names in the message.
         """
         with self.assertRaises(DuplicateRegistryKey) as ctx:
             build(_DUPLICATE_PACKAGE, _FixtureBase)
@@ -129,41 +130,50 @@ class BuildTests(SimpleTestCase):
         self.assertIn("SecondClaimant", message)
 
 
-class DiscoveryMatchesTheHandMaintainedDictsTests(SimpleTestCase):
-    """Discovery reproduces the hand-written dicts exactly.
+class RegistryCoversEveryCalculatorTests(SimpleTestCase):
+    """Every calculator in the tree reaches the registry, and nothing else does.
 
-    This is the argument that retiring them preserves behaviour: same keys, same
-    classes, nothing missing and nothing extra. It is deliberately written against
-    the real registries rather than a fixture, and it is the test to delete last —
-    once the dicts are gone there is nothing left to compare against.
+    Written against the real registries rather than a fixture: the value is in
+    catching a calculator that stops being discoverable, which a fixture cannot
+    see.
     """
 
-    def test_every_key_resolves_to_the_same_class_either_way(self):
+    def test_the_two_engine_registries_partition_every_discovered_calculator(self):
+        """The custom and PolicyEngine registries together cover the whole tree.
+
+        Each is a filtered view of the same walk, so a calculator missing from both
+        means discovery stopped reaching it, and a calculator in both means the
+        engine split is wrong.
+        """
         from integrations.clients.policyengine.registry import all_calculators
         from programs.programs import calculators
 
-        hand_maintained = {**calculators, **all_calculators}
+        published = {**calculators, **all_calculators}
         discovered = build("programs.programs", ProgramCalculator)
 
         self.assertEqual(
-            set(hand_maintained) - set(discovered),
+            set(discovered) - set(published),
             set(),
-            "a key in the dicts was not discovered — a program would silently disappear",
+            "a discovered calculator reaches neither registry, so nothing can resolve it",
         )
         self.assertEqual(
-            set(discovered) - set(hand_maintained),
+            set(published) - set(discovered),
             set(),
-            "discovery found a key the dicts do not have",
+            "a registry holds a code discovery does not find",
         )
-        self.assertEqual(hand_maintained, discovered)
+        self.assertEqual(
+            set(calculators) & set(all_calculators),
+            set(),
+            "a calculator is registered as both custom and PolicyEngine",
+        )
 
     def test_the_federal_bases_states_subclass_are_not_registered(self):
-        """A base with no Program row of its own must claim no key.
+        """A base with no Program row of its own claims no code.
 
-        ``Cdcc`` is the live example: MFB-1207 registered it directly as
-        ``ks_cdcc_federal``, so when this branch added ``KsCdccFederal`` and
-        ``MoCdccFederal`` the base was left holding a key two classes then claimed.
-        The duplicate guard caught it, which is what it is for.
+        The temptation is to register a base directly under whichever state slug
+        first needs it — ``Cdcc`` under ``ks_cdcc_federal``, say. It reads as
+        harmless while one state uses it and breaks when a second arrives, because
+        the base and the new state's subclass then claim the same code.
         """
         from programs.programs.federal.pe.member import Ccdf, EarlyHeadStart, HeadStart, Medicaid
         from programs.programs.federal.pe.tax import Cdcc

@@ -91,8 +91,9 @@ class ProgramCalculator:
     """
 
     #: Set by ``abstract=True`` in the class definition. Read via ``vars()`` so it
-    #: is never inherited — a subclass of an abstract base is concrete unless it
-    #: says otherwise, which is the common case.
+    #: is never inherited: a subclass of an abstract base is concrete unless it
+    #: says otherwise, which is the common case — every state subclass of a family
+    #: base is a real program.
     _abstract = True
 
     def __init_subclass__(cls, abstract: bool = False, **kwargs) -> None:
