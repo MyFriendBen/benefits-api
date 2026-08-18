@@ -643,3 +643,36 @@ class TestMoMspPeInput(TestCase):
         people = pe_input(self.screen, [self._calculator()])["household"]["people"]
 
         self.assertIn("msp", people[str(self.head.id)])
+
+    def test_sends_medicaid_determination_inputs(self):
+        """
+        QI is barred for anyone eligible for full MO HealthNet — ``is_qi_eligible`` excludes
+        ``is_medicaid_eligible``. PolicyEngine *derives* that flag rather than accepting a
+        reported value: it appears in the payload as a requested output (``None``), not as an
+        input we set. What ``MoMsp`` must supply is the evidence behind it, which is why it
+        carries ``Medicaid.pe_inputs`` — the income, resource, and categorical facts PE needs
+        to make the determination. Without them the QI exclusion could not bind. Scenario 7
+        exercises the outcome; this pins the inputs that make it reachable.
+        """
+        people = pe_input(self.screen, [self._calculator()])["household"]["people"]
+        head = people[str(self.head.id)]
+
+        for field in (
+            "is_pregnant",
+            "is_disabled",
+            "employment_income",
+            "self_employment_income",
+            "rental_income",
+            "social_security",
+            "taxable_pension_income",
+            "unemployment_compensation",
+            "ssi",
+            "receives_ssi",
+            "takes_up_ssi_if_eligible",
+            "ssi_countable_resources",
+        ):
+            self.assertIn(field, head)
+
+        # Derived by PolicyEngine, not reported by us: requested as an output so the QI
+        # exclusion is evaluated, and left unset so PE computes it from the inputs above.
+        self.assertEqual(head["is_medicaid_eligible"], {self.PERIOD: None})

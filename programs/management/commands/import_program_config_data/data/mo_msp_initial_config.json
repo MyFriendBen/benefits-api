@@ -17,7 +17,7 @@
       "otherWithWorkPermission"
     ],
     "name": "Medicare Savings Program (MSP)",
-    "description": "Medicare Savings Programs (MSP) help people with Medicare pay their monthly premiums. Depending on your income, MSP may also cover your Medicare deductibles and coinsurance.\n\nIf you qualify, Missouri pays your Medicare Part B premium directly. You won’t receive a check, but your Social Security check will be smaller each month. There are three MSP levels, and which one you qualify for determines how much help you get.\n\nMSP limits the resources you own, like savings and investments. But some things don’t count toward that limit. These include your home, one vehicle, and a burial fund.\n\nSelect Apply Now to start your Medicare Savings Program application online.",
+    "description": "Medicare Savings Programs (MSP) help people with Medicare pay their monthly premiums. Depending on your income, MSP may also cover your Medicare deductibles and coinsurance.\n\nIf you qualify, Missouri pays your Medicare Part B premium directly. You won’t receive a check, but the Part B premium is no longer deducted from your Social Security payment, so your monthly check is larger. There are three MSP levels, and which one you qualify for determines how much help you get.\n\nMSP limits the resources you own, like savings and investments. But some things don’t count toward that limit. These include your home, one vehicle, and a burial fund.\n\nSelect Apply Now to start your Medicare Savings Program application online.",
     "description_short": "Help paying for Medicare premiums and costs",
     "learn_more_link": "https://www.medicare.gov/basics/costs/help/medicare-savings-programs",
     "apply_button_link": "https://formsportal.mo.gov/content/forms/af/moa/my-dss/family-support-division/im-1msp/im-1msp/.html",
@@ -54,7 +54,7 @@
     },
     {
       "external_name": "mo_medicare_card",
-      "text": "Medicare card showing Part A enrollment",
+      "text": "Medicare card showing Part A enrollment, if you have one. You can also apply with proof that you applied for Part A or that you conditionally enrolled for QMB.",
       "link_url": "",
       "link_text": ""
     },
