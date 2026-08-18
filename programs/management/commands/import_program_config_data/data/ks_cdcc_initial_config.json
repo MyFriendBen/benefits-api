@@ -10,6 +10,7 @@
   },
   "program": {
     "name_abbreviated": "ks_cdcc",
+    "base_program": "cdcc",
     "year": "2026",
     "legal_status_required": [
       "citizen",

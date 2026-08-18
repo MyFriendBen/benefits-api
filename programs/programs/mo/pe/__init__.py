@@ -1,4 +1,4 @@
-from programs.programs.federal.pe.tax import Ctc, Eitc
+from programs.programs.federal.pe.tax import Cdcc, Ctc, Eitc
 import programs.programs.mo.pe.member as member
 import programs.programs.mo.pe.spm as spm
 import programs.programs.mo.pe.tax as tax
@@ -19,6 +19,7 @@ mo_spm_calculators = {
 mo_tax_unit_calculators = {
     "mo_ctc": Ctc,
     "mo_eitc": Eitc,
+    "mo_cdcc_federal": Cdcc,
     "mo_aca_ptc": tax.MoAca,
 }
 
