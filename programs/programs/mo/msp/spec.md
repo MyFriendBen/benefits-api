@@ -82,35 +82,31 @@ PolicyEngine's `msp` variable (monthly, per person) = `msp_benefit_value`, compu
 
 ---
 
-## Implementation
+## Implementation Coverage
 
 `MoMsp` subclasses the shared federal `Msp` PolicyEngine calculator, adding the MO state code
 and the Medicaid inputs, the same shape as the KS / TX / IL MSP calculators. The state code is
 the only MO-keyed input; MO's income limits match the federal floor exactly.
 
-**Measured by the calculator**: Medicare Part A enrollment (age ≥ 65 path), income tiering
-(QMB / SLMB / QI), the asset test with current limits, the QI-vs-Medicaid exclusion, MO
-residency, and citizenship / legal status.
-
-**Not measured — general**, shared with the KS / IL / TX implementations:
-- Under-65 disability- or ESRD-based Medicare eligibility. The screener has no field for it.
-- Quarters of Medicare-covered employment, so applicants without premium-free Part A are not
-  distinguished. Premium-free Part A is assumed.
-- QI's first-come-first-served federal allotment and prior-year priority rule. Neither
-  PolicyEngine nor the screener has a concept of application timing.
-
-**Not measured — Missouri-specific**:
-- Missouri's QMB/SLMB assistance group also counts a Part-A-eligible dependent child's income
-  and resources. PolicyEngine combines across the SSI marital unit only, and neither it nor the
-  screener knows a dependent child's Medicare status.
-- Missouri's QMB income methodology excludes specific state cash-grant payments and disregards
-  each January's COLA until the updated FPL takes effect in April. PolicyEngine applies only the
-  generic national SSI exclusions, so it slightly understates countable income for those
-  applicants.
-- Conditional Part A is a QMB-only pathway in Missouri and is expressly barred for SLMB. The
-  screener's Medicare field does not distinguish conditional from standard Part A enrollment.
-- The Part B-ID pathway of 42 CFR 435.123(b) is absent from PolicyEngine, so neither that
-  eligibility route nor its lower $121.60/month premium is produced.
+- ✅ **Evaluable criteria**: Medicare Part A enrollment (age ≥ 65 path), income tiering
+  (QMB / SLMB / QI), the asset test, the QI-vs-Medicaid exclusion, MO residency, and
+  citizenship / legal status.
+- ⚠️ **Data gaps, not MO-specific** (shared with the KS / IL / TX implementations): under-65
+  disability- or ESRD-based Medicare eligibility, which the screener has no field for; quarters
+  of Medicare-covered employment, so applicants without premium-free Part A are not
+  distinguished and premium-free Part A is assumed; and QI's first-come-first-served federal
+  allotment and prior-year priority rule, since neither PolicyEngine nor the screener has a
+  concept of application timing.
+- ⚠️ **Data gaps, MO-specific**: Missouri's QMB/SLMB assistance group also counts a
+  Part-A-eligible dependent child's income and resources, while PolicyEngine combines across the
+  SSI marital unit only and neither it nor the screener knows a dependent child's Medicare
+  status. Missouri's QMB income methodology excludes specific state cash-grant payments and
+  disregards each January's COLA until the updated FPL takes effect in April, where PolicyEngine
+  applies only the generic national SSI exclusions — so it slightly understates countable income
+  for those applicants. Conditional Part A is a QMB-only pathway in Missouri and is expressly
+  barred for SLMB, but the screener's Medicare field does not distinguish it from standard Part A
+  enrollment. The Part B-ID pathway of 42 CFR 435.123(b) is absent from PolicyEngine, so neither
+  that eligibility route nor its lower premium is produced.
 
 Missouri anchors its resource-counting rules to its own manual (0865.010.15 / MHABD Appendix J).
 The specific dollar exclusions in that appendix are not published outside Missouri's internal
@@ -119,7 +115,7 @@ standard federal SSI figures are used.
 
 ---
 
-## Source Documentation
+## Research Sources
 
 - [MO IM-4 MSP consumer flyer](https://dssmanuals.mo.gov/wp-content/uploads/2020/09/im-4msp.pdf) (08/2024 revision)
 - [MO HealthNet Eligibility for Non-MAGI Programs (07/2026)](https://dssmanuals.mo.gov/wp-content/uploads/2018/10/appendix_k.pdf) — QMB/SLMB/QI income & resource limits, citizenship requirement
