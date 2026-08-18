@@ -4,6 +4,7 @@ import programs.framework.pe_dependencies as dependency
 
 
 class Coeitc(PolicyEngineTaxUnitCalulator):
+    name_abbreviated = "coeitc"
     pe_name = "co_eitc"
     pe_inputs = [
         *Eitc.pe_inputs,
@@ -13,6 +14,7 @@ class Coeitc(PolicyEngineTaxUnitCalulator):
 
 
 class Coctc(PolicyEngineTaxUnitCalulator):
+    name_abbreviated = "coctc"
     pe_name = "co_ctc"
     pe_inputs = [
         *Ctc.pe_inputs,
@@ -22,6 +24,7 @@ class Coctc(PolicyEngineTaxUnitCalulator):
 
 
 class CoCareWorkerCredit(PolicyEngineTaxUnitCalulator):
+    name_abbreviated = "co_tax_credit_care_worker"
     pe_name = "co_care_worker_credit"
     pe_inputs = [
         dependency.member.CareWorkerEligibleDependency,
@@ -46,3 +49,5 @@ class CoExpandedEitc(Coeitc):
 
     Until then this deliberately overrides nothing.
     """
+
+    name_abbreviated = "co_expanded_eitc"

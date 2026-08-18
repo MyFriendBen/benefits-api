@@ -16,6 +16,7 @@ from screener.models import HouseholdMember
 
 # NOTE: MassHealth is Medicaid in MA
 class MaMassHealth(Medicaid):
+    name_abbreviated = "ma_mass_health"
     pe_inputs = [
         *Medicaid.pe_inputs,
         *Chip.pe_inputs,
@@ -59,6 +60,7 @@ class MaMassHealth(Medicaid):
 
 # NOTE: MassHealth Limited is Emergency Medicaid in MA
 class MaMassHealthLimited(Medicaid):
+    name_abbreviated = "ma_mass_health_limited"
     pe_inputs = [
         *Medicaid.pe_inputs,
         dependency.household.MaStateCodeDependency,
@@ -80,6 +82,7 @@ class MaMassHealthLimited(Medicaid):
 
 
 class MaWic(Wic):
+    name_abbreviated = "ma_wic"
     wic_categories = {
         "NONE": 0,
         "INFANT": 186,
@@ -99,6 +102,7 @@ class MaWic(Wic):
 
 
 class MaCcdf(Ccdf):
+    name_abbreviated = "ma_ccdf"
     cost_by_age = (
         # cost, age
         (23_191, 2),
@@ -124,6 +128,8 @@ class MaMbta(PolicyEngineMembersCalculator):
     Only available to residents within the MBTA service district
     (178 cities/towns in eastern Massachusetts including Boston).
     """
+
+    name_abbreviated = "ma_mbta"
 
     eligible_cities = frozenset(
         [
@@ -344,6 +350,7 @@ class MaMbta(PolicyEngineMembersCalculator):
 
 
 class MaStateSupplementProgram(PolicyEngineMembersCalculator):
+    name_abbreviated = "ma_ssp"
     pe_name = "ma_state_supplement"
     pe_inputs = [
         dependency.member.AgeDependency,
@@ -358,6 +365,8 @@ class MaStateSupplementProgram(PolicyEngineMembersCalculator):
 class MaHeadStart(HeadStart):
     """Massachusetts Head Start (ages 3-5) — federal ``HeadStart`` PE calculator + MA state code."""
 
+    name_abbreviated = "ma_head_start"
+
     pe_inputs = [
         *HeadStart.pe_inputs,
         dependency.household.MaStateCodeDependency,
@@ -365,6 +374,7 @@ class MaHeadStart(HeadStart):
 
 
 class MaCsfp(CommoditySupplementalFoodProgram):
+    name_abbreviated = "ma_csfp"
     pe_inputs = [
         *CommoditySupplementalFoodProgram.pe_inputs,
         dependency.household.MaStateCodeDependency,
@@ -374,6 +384,8 @@ class MaCsfp(CommoditySupplementalFoodProgram):
 
 class MaEarlyHeadStart(EarlyHeadStart):
     """Massachusetts Early Head Start (birth-3 / pregnant) — federal ``EarlyHeadStart`` PE calculator + MA state code."""
+
+    name_abbreviated = "ma_early_head_start"
 
     pe_inputs = [
         *EarlyHeadStart.pe_inputs,

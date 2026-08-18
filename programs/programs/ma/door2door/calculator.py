@@ -19,6 +19,8 @@ class MaDoorToDoor(ProgramCalculator):
     Source: https://www.scmtransportation.org/services-by-city.html
     """
 
+    name_abbreviated = "ma_door_to_door"
+
     amount = 1
     eligible_city = "Cambridge"
     min_age = 60

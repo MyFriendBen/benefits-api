@@ -8,6 +8,7 @@ since we switched to retrieving the details via the Rewiring America API.
 
 
 class EnergyCalculatorVehicleExchange(ProgramCalculator):
+    name_abbreviated = "cesn_energy_vec"
     amount = 4_000
     min_age = 18
     ami_percent = "80%"

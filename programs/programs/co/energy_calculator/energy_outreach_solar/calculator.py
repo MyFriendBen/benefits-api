@@ -4,6 +4,7 @@ from programs.programs.co.energy_calculator.util import has_renter_expenses
 
 
 class EnergyCalculatorEnergyOutreachSolar(ProgramCalculator):
+    name_abbreviated = "cesn_eocs"
     amount = 1
     dependencies = ["household_size", "energy_calculator", "income_amount", "income_frequency"]
     electricity_providers = ["co-black-hills-energy", "co-xcel-energy"]

@@ -5,6 +5,7 @@ import programs.framework.eligibility_messages as messages
 
 
 class DenverSidewalkRebate(ProgramCalculator):
+    name_abbreviated = "dsr"
     county = "Denver County"
     ami_percent = "60%"
     presumptive_eligibility = ["snap", "tanf", "cccap"]

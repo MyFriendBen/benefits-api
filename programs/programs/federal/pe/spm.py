@@ -33,6 +33,7 @@ SNAP_BASE_INPUTS = [
 
 
 class Snap(PolicyEngineSpmCalulator):
+    name_abbreviated = "snap"
     # PolicyEngine gates `snap` on the take-up flag, so it reads 0 for any household reporting
     # no SNAP — exactly the households this program should be recommended to. The ungated
     # output is what they'd receive if they applied, which is the number worth showing them.
@@ -66,6 +67,8 @@ class SchoolLunch(PolicyEngineSpmCalulator):
     ``AgeDependency`` is sent so PE can derive ``is_in_k12_school``.
     """
 
+    name_abbreviated = "nslp"
+
     pe_name = "school_meal_net_subsidy"
     pe_inputs = [
         dependency.spm.SchoolMealCountableIncomeDependency,
@@ -75,6 +78,7 @@ class SchoolLunch(PolicyEngineSpmCalulator):
 
 
 class Tanf(PolicyEngineSpmCalulator):
+    name_abbreviated = "tanf"
     # The ungated output, for the same reason as Snap above.
     pe_name = "tanf_if_takes_up"
     pe_inputs = [
@@ -86,6 +90,7 @@ class Tanf(PolicyEngineSpmCalulator):
 
 
 class Acp(PolicyEngineSpmCalulator):
+    name_abbreviated = "acp"
     pe_name = "acp"
     pe_inputs = [
         dependency.spm.BroadbandCostDependency,
@@ -95,6 +100,7 @@ class Acp(PolicyEngineSpmCalulator):
 
 
 class Lifeline(PolicyEngineSpmCalulator):
+    name_abbreviated = "lifeline"
     pe_name = "lifeline"
     pe_inputs = [
         dependency.spm.BroadbandCostDependency,

@@ -4,6 +4,7 @@ import programs.framework.eligibility_messages as messages
 
 
 class NcEmergencyMedicaid(ProgramCalculator):
+    name_abbreviated = "nc_emergency_medicaid"
     # $6,268/yr | ~$522/mo
     member_amount = 6268
     max_age = 64

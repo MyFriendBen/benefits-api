@@ -3,6 +3,7 @@ from screener.models import HouseholdMember
 
 
 class UniversalPreschool(ProgramCalculator):
+    name_abbreviated = "upk"
     qualifying_age = 3
     age = 4
     income_limit = 1

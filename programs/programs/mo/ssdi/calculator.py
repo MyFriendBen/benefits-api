@@ -13,6 +13,8 @@ class MoSsdi(ProgramCalculator):
     federal rules used by other states (e.g. ks_ssdi, wa_ssdi).
     """
 
+    name_abbreviated = "mo_ssdi"
+
     # 2026 Substantial Gainful Activity thresholds (SSA 2026 COLA fact sheet).
     sga_non_blind = 1_690
     sga_blind = 2_830

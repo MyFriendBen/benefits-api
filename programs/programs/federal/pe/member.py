@@ -30,6 +30,8 @@ class Wic(PolicyEngineMembersCalculator):
     computed benefit (MO/TX).
     """
 
+    name_abbreviated = "wic"
+
     wic_categories = {
         "NONE": 0,
         "INFANT": 0,
@@ -150,6 +152,7 @@ class Chip(PolicyEngineMembersCalculator):
 
 
 class PellGrant(PolicyEngineMembersCalculator):
+    name_abbreviated = "pell_grant"
     pe_name = "pell_grant"
     pe_inputs = [
         dependency.member.PellGrantDependentAvailableIncomeDependency,
@@ -166,6 +169,7 @@ class PellGrant(PolicyEngineMembersCalculator):
 
 
 class Ssi(PolicyEngineMembersCalculator):
+    name_abbreviated = "ssi"
     # PolicyEngine gates `ssi` on the take-up flag, so it reads 0 for anyone reporting no SSI —
     # exactly the people this program should be recommended to — and for reporters it just
     # echoes back the amount they told us. Neither is the entitlement worth showing; the
@@ -188,6 +192,7 @@ class Ssi(PolicyEngineMembersCalculator):
 
 
 class CommoditySupplementalFoodProgram(PolicyEngineMembersCalculator):
+    name_abbreviated = "csfp"
     pe_name = "commodity_supplemental_food_program"
     pe_inputs = [
         dependency.member.AgeDependency,

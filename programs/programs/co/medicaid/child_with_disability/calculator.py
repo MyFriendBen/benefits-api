@@ -4,6 +4,7 @@ import programs.framework.eligibility_messages as messages
 
 
 class MedicaidChildWithDisability(ProgramCalculator):
+    name_abbreviated = "cwd_medicaid"
     max_age = 18
     min_employment_age = 16
     max_income_percent = 3

@@ -25,6 +25,8 @@ class WaSeniorDisabledPte(ProgramCalculator):
       - Cotenant income: household gross income used as conservative approximation.
     """
 
+    name_abbreviated = "wa_senior_disabled_pte"
+
     # 2024-2026 WA DOR county income thresholds: (Threshold 1, Threshold 2, Threshold 3)
     # Eligibility requires income <= Threshold 3; tier affects benefit level.
     # Source: WA DOR Income Thresholds for Tax Years 2024-2026

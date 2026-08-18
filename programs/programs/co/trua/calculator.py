@@ -5,6 +5,7 @@ from programs.co_county_zips import counties_from_screen
 
 
 class Trua(ProgramCalculator):
+    name_abbreviated = "trua"
     county = "Denver County"
     ami_percent = "80%"
     amount = 6_500

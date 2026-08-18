@@ -4,6 +4,7 @@ import programs.framework.eligibility_messages as messages
 
 
 class FamilyPlanningServices(ProgramCalculator):
+    name_abbreviated = "fps"
     member_amount = 404
     min_age = 12
     fpl_percent = 2.65

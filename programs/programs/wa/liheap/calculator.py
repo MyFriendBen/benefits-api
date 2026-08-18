@@ -9,6 +9,8 @@ class WaLiheap(ProgramCalculator):
     clamped to $250–$1,250. No categorical eligibility in WA.
     """
 
+    name_abbreviated = "wa_liheap"
+
     fpl_percent = 1.5
     min_benefit = 250
     max_benefit = 1_250

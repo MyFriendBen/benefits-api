@@ -3,6 +3,7 @@ from programs.framework.mixins import IlTransportationMixin
 
 
 class IlTransitReducedFare(IlTransportationMixin, ProgramCalculator):
+    name_abbreviated = "il_transit_reduced_fare"
     dependencies = ["age", "visually_impaired", "disabled", "county"]
     eligible_counties = [
         "Cook",

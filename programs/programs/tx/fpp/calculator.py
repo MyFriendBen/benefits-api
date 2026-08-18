@@ -38,6 +38,8 @@ class TxFpp(ProgramCalculator):
       members.
     """
 
+    name_abbreviated = "tx_fpp"
+
     max_age = 64
     fpl_percent = 2.5
     member_amount = 266.84

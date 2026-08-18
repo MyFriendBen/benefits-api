@@ -3,6 +3,7 @@ from programs.framework.base import Eligibility, ProgramCalculator
 
 
 class EnergyCalculatorEmergencyAssistance(ProgramCalculator):
+    name_abbreviated = "cesn_ea"
     amount = 1
     county = "Denver County"
     fpl_percent = 4

@@ -3,6 +3,7 @@ import math
 
 
 class SeniorHousingIncomeTaxCredit(ProgramCalculator):
+    name_abbreviated = "shitc"
     amount = 800
     income_reduction = 25000
     reduction_interval = 500

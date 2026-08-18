@@ -8,6 +8,7 @@ from programs.programs.co.energy_calculator.weatherization_assistance.calculator
 
 
 class EnergyCalculatorPercentageOfIncomePaymentPlan(ProgramCalculator):
+    name_abbreviated = "cesn_poipp"
     amount = 1
     dependencies = [
         *EnergyCalculatorEnergyAssistance.dependencies,

@@ -4,6 +4,7 @@ import math
 
 
 class Tabor(ProgramCalculator):
+    name_abbreviated = "tabor"
     min_age = 18
     member_amount = 800
     income_limits = {

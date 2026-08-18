@@ -5,6 +5,7 @@ from programs.framework.mixins import IlMedicaidFplIncomeCheckMixin
 
 
 class MomsAndBabies(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
+    name_abbreviated = "il_moms_and_babies"
     adult_member_amount = 474 * 12  # $474/month for adults
     newborn_member_amount = 284 * 12  # $284/month for newborns
     fpl_percent = 2.13  # 213% FPL

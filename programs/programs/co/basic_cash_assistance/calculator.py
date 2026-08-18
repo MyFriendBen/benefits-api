@@ -4,6 +4,7 @@ from programs.co_county_zips import counties_from_screen
 
 
 class BasicCashAssistance(ProgramCalculator):
+    name_abbreviated = "bca"
     amount = 1_000
     county = "Denver County"
     dependencies = ["zipcode", "age"]

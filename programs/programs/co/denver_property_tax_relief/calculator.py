@@ -5,6 +5,7 @@ import programs.framework.eligibility_messages as messages
 
 
 class DenverPropertyTaxRelief(ProgramCalculator):
+    name_abbreviated = "dptr"
     amount = 252
     ami_percent_rental_single = 0.25
     ami_percent_rental_couple = 0.30

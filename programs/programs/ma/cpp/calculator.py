@@ -25,6 +25,8 @@ class MaCpp(ProgramCalculator):
     Source: https://earlychildhoodcambridge.org/cpp/
     """
 
+    name_abbreviated = "ma_cpp"
+
     amount = 1  # Value varies (free tuition); frontend displays "Varies"
     eligible_city = "Cambridge"
     hud_county = "Middlesex"  # Cambridge is in Middlesex County, MA

@@ -3,6 +3,7 @@ import programs.framework.pe_dependencies as dependency
 
 
 class TxAca(Aca):
+    name_abbreviated = "tx_aca"
     pe_name = "aca_ptc"
     pe_inputs = [
         *Aca.pe_inputs,
@@ -18,6 +19,8 @@ class TxCtc(Ctc):
     federal ``ctc_value`` unchanged. See ``MoCtc`` for why no state code is sent.
     """
 
+    name_abbreviated = "tx_ctc"
+
 
 class TxEitc(Eitc):
     """
@@ -25,3 +28,5 @@ class TxEitc(Eitc):
 
     Texas has no state EITC. PolicyEngine's ``eitc`` is federal.
     """
+
+    name_abbreviated = "tx_eitc"

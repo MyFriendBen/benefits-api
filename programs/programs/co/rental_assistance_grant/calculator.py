@@ -44,6 +44,7 @@ class RAGCache(GoogleSheetsCache):
 
 
 class RentalAssistanceGrant(ProgramCalculator):
+    name_abbreviated = "rag"
     amount = 10_000
     dependencies = ["income_amount", "income_frequency", "household_size", "zipcode"]
     income_limits = RAGCache()

@@ -5,6 +5,7 @@ from typing import ClassVar
 
 
 class WeatherizationAssistance(ProgramCalculator):
+    name_abbreviated = "cowap"
     presumptive_eligibility = ("andcs", "ssi", "snap", "leap", "tanf")
     amount = 350
     dependencies: ClassVar[list[str]] = [

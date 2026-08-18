@@ -3,6 +3,7 @@ import programs.framework.eligibility_messages as messages
 
 
 class EnergyResourceCenter(ProgramCalculator):
+    name_abbreviated = "erc"
     amount = 4000
     income_bands = {1: 2880, 2: 3766, 3: 4652, 4: 5539, 5: 6425, 6: 7311, 7: 7477, 8: 7644}
     dependencies = ["household_size", "income_amount", "income_frequency"]

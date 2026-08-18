@@ -4,6 +4,7 @@ from screener.models import HouseholdMember
 
 
 class PropertyCreditRebate(ProgramCalculator):
+    name_abbreviated = "cpcr"
     amount = 1_154
     min_age = 65
     disabled_min_age = 18

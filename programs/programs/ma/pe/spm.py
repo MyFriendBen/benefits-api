@@ -5,6 +5,7 @@ from programs.programs.federal.pe.spm import Snap
 
 
 class MaSnap(Snap):
+    name_abbreviated = "ma_snap"
     pe_inputs = [
         *Snap.pe_inputs,
         dependency.household.MaStateCodeDependency,
@@ -12,6 +13,7 @@ class MaSnap(Snap):
 
 
 class MaTafdc(PolicyEngineSpmCalulator):
+    name_abbreviated = "ma_tafdc"
     pe_name = "ma_tafdc"
     pe_inputs = [
         dependency.spm.PreSubsidyChildcareExpensesDependency,
@@ -30,6 +32,7 @@ class MaTafdc(PolicyEngineSpmCalulator):
 
 
 class MaEaedc(PolicyEngineSpmCalulator):
+    name_abbreviated = "ma_eaedc"
     pe_name = "ma_eaedc"
     pe_inputs = [
         dependency.spm.MaEaedcLivingArangementDependency,
@@ -53,6 +56,7 @@ class MaEaedc(PolicyEngineSpmCalulator):
 
 
 class MaHeap(PolicyEngineSpmCalulator):
+    name_abbreviated = "ma_heap"
     pe_name = "ma_liheap"
 
     pe_inputs = [

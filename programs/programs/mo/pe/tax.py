@@ -37,6 +37,8 @@ class MoAca(Aca):
     result as an estimated maximum accordingly.
     """
 
+    name_abbreviated = "mo_aca_ptc"
+
     pe_inputs = [
         *Aca.pe_inputs,
         dependency.household.MoStateCodeDependency,
@@ -61,6 +63,8 @@ class MoCtc(Ctc):
     PolicyEngine variables and so do send a state code.
     """
 
+    name_abbreviated = "mo_ctc"
+
 
 class MoEitc(Eitc):
     """
@@ -69,6 +73,8 @@ class MoEitc(Eitc):
     Missouri has no state EITC. Same reasoning as ``MoCtc``: PolicyEngine's
     ``eitc`` is federal, so there is nothing state-specific to add.
     """
+
+    name_abbreviated = "mo_eitc"
 
 
 class MoCdccFederal(Cdcc):
@@ -81,3 +87,5 @@ class MoCdccFederal(Cdcc):
     no state-specific input to add. Exists as its own class so the registry maps
     one key to one calculator.
     """
+
+    name_abbreviated = "mo_cdcc_federal"

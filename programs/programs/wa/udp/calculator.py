@@ -19,6 +19,8 @@ class WaUdp(ProgramCalculator):
     screening. Calculator assumes neither disqualifying condition applies (inclusivity assumption).
     """
 
+    name_abbreviated = "wa_udp"
+
     amount = 732  # average annual savings per seattle.gov/human-services UDP page
 
     # 2026 70% WA State Median Income annual limits — WA DSHS, effective January 1, 2026

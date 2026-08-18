@@ -26,6 +26,8 @@ class IlAccessDuPage(ProgramCalculator):
         via Medicare eligibility (criterion 3), not an age cutoff.
     """
 
+    name_abbreviated = "il_access_dupage"
+
     fpl_percent = 2.5
     min_age = 19
     # Nominal sentinel so the program clears the frontend's `value > 0` visibility

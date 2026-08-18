@@ -29,6 +29,7 @@ class CccapFplCache(GoogleSheetsCache):
 
 
 class ChildCareAssistance(ProgramCalculator):
+    name_abbreviated = "cccap"
     preschool_value = 6000
     afterschool_value = 1700
     max_age_preschool = 4

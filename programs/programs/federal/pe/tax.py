@@ -4,6 +4,7 @@ import programs.framework.pe_dependencies as dependency
 
 
 class Eitc(PolicyEngineTaxUnitCalulator):
+    name_abbreviated = "eitc"
     pe_name = "eitc"
     pe_inputs = [
         dependency.member.AgeDependency,
@@ -15,6 +16,7 @@ class Eitc(PolicyEngineTaxUnitCalulator):
 
 
 class Ctc(PolicyEngineTaxUnitCalulator):
+    name_abbreviated = "ctc"
     pe_name = "ctc_value"
     pe_inputs = [
         dependency.member.AgeDependency,
@@ -26,6 +28,7 @@ class Ctc(PolicyEngineTaxUnitCalulator):
 
 
 class Cdcc(PolicyEngineTaxUnitCalulator):
+    name_abbreviated = "ks_cdcc_federal"
     pe_name = "cdcc"
     pe_inputs = [
         dependency.member.AgeDependency,
