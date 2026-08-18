@@ -1,7 +1,7 @@
 import programs.programs.il.pe.tax as tax
 import programs.programs.il.pe.spm as spm
 import programs.programs.il.pe.member as member
-from programs.programs.policyengine.calculators.base import PolicyEngineCalulator
+from programs.framework.pe_base import PolicyEngineCalulator
 
 il_member_calculators = {
     "il_medicaid": member.IlMedicaid,

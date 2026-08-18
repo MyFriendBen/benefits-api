@@ -1,6 +1,6 @@
 from programs.programs.federal.pe.member import Medicaid
-from programs.programs.policyengine.calculators.base import PolicyEngineTaxUnitCalulator
-import programs.programs.policyengine.calculators.dependencies as dependency
+from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
+import programs.framework.pe_dependencies as dependency
 
 
 class Eitc(PolicyEngineTaxUnitCalulator):

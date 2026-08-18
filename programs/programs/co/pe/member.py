@@ -1,7 +1,7 @@
-from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
+from programs.framework.pe_base import PolicyEngineMembersCalculator
 from programs.programs.federal.pe.member import CommoditySupplementalFoodProgram, Medicaid
 from programs.programs.federal.pe.member import Wic
-import programs.programs.policyengine.calculators.dependencies as dependency
+import programs.framework.pe_dependencies as dependency
 from screener.models import HouseholdMember
 
 

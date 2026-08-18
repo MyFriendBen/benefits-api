@@ -1,5 +1,5 @@
 from datetime import date, timedelta
-from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
+from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
 
 
 class TrumpAccount(ProgramCalculator):

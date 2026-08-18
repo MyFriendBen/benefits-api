@@ -13,7 +13,7 @@ from unittest.mock import Mock
 
 from django.test import TestCase
 
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 from programs.programs.federal import federal_calculators
 from programs.programs.federal.trump_account.calculator import TrumpAccount
 

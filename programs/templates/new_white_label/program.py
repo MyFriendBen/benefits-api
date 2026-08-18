@@ -1,4 +1,4 @@
-from programs.programs.calc import MemberEligibility, ProgramCalculator
+from programs.framework.base import MemberEligibility, ProgramCalculator
 
 
 # NOTE: This an example program where each child in the household would get $750

@@ -15,7 +15,7 @@ from unittest.mock import Mock
 
 from django.test import TestCase
 
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 from programs.programs.co import co_calculators
 from programs.programs.co.denver_preschool_program.calculator import DenverPreschoolProgram
 from programs.util import Dependencies, DependencyError

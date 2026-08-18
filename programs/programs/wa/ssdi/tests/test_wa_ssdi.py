@@ -4,7 +4,7 @@ from datetime import date
 
 from programs.programs.wa import wa_calculators
 from programs.programs.wa.ssdi.calculator import WaSsdi
-from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
+from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
 
 
 def make_member(

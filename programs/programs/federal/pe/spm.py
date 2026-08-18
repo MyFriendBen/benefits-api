@@ -1,5 +1,5 @@
-from programs.programs.policyengine.calculators.base import PolicyEngineSpmCalulator
-import programs.programs.policyengine.calculators.dependencies as dependency
+from programs.framework.pe_base import PolicyEngineSpmCalulator
+import programs.framework.pe_dependencies as dependency
 
 SNAP_BASE_INPUTS = [
     dependency.spm.SnapUnearnedIncomeDependency,

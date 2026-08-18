@@ -2,10 +2,10 @@ from programs.programs.{{code}}.pe import spm
 import programs.programs.{{code}}.pe.tax as tax
 import programs.programs.{{code}}.pe.member as member
 import programs.programs.{{code}}.pe.spm as spm
-from programs.programs.policyengine.calculators.base import PolicyEngineCalulator
+from programs.framework.pe_base import PolicyEngineCalulator
 
 
-# TODO: update /programs/programs/policyengine/calculators/__init__.py
+# TODO: update /integrations/clients/policyengine/registry.py
 {{code}}_member_calculators = {  # TODO: add state specific member benefits from PE
     "{{code}}_medicaid": member.{{code_capitalize}}Medicaid,
 }

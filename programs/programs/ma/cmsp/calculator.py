@@ -1,4 +1,4 @@
-from programs.programs.calc import ProgramCalculator, MemberEligibility
+from programs.framework.base import ProgramCalculator, MemberEligibility
 
 
 class MaCmsp(ProgramCalculator):

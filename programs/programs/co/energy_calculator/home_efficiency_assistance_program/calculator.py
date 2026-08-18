@@ -1,6 +1,6 @@
-import programs.programs.messages as messages
+import programs.framework.eligibility_messages as messages
 from integrations.services.income_limits import smi
-from programs.programs.calc import Eligibility, ProgramCalculator
+from programs.framework.base import Eligibility, ProgramCalculator
 
 
 class EnergyCalculatorHomeEfficiencyAssistance(ProgramCalculator):

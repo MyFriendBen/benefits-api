@@ -1,5 +1,5 @@
-from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
-import programs.programs.policyengine.calculators.dependencies as dependency
+from programs.framework.pe_base import PolicyEngineMembersCalculator
+import programs.framework.pe_dependencies as dependency
 from screener.models import HouseholdMember
 
 

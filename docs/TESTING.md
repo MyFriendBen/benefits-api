@@ -92,13 +92,17 @@ pytest integrations/clients/hud_income_limits/tests/test_integration.py::TestHud
 
 Every program calculator gets tests that mirror its `spec.md` **Test Scenarios** 1:1 — one test per scenario, asserting eligibility *and* benefit value. Custom (MFB) calculators get plain unit tests, because the rules and amounts are our code. PolicyEngine calculators get the same assertions wrapped as VCR integration tests: the answer comes from PolicyEngine, so we record it once and replay it forever after.
 
-Helpers live in `programs/programs/policyengine/tests/integration_test_helpers.py`; the harness itself is covered by `programs/programs/policyengine/tests/test_integration_helpers.py`. Nothing in the helpers is coupled to `spec.md` — they run a calculator and hand back an `Eligibility`; mirroring Test Scenarios is a convention of the callers.
+Helpers live in `programs/framework/tests/integration_test_helpers.py`; the harness itself is covered by `programs/framework/tests/test_integration_helpers.py`. Nothing in the helpers is coupled to `spec.md` — they run a calculator and hand back an `Eligibility`; mirroring Test Scenarios is a convention of the callers.
+
+The harness sits in `framework/` rather than with the PolicyEngine client because it builds `Screen`s and runs calculators. `integrations/clients/policyengine/` is the wire layer only — the POST, the token cache, version resolution — and holds no cassettes.
+
+**A program's own tests and cassettes live next to the program**, not here: `programs/programs/{state}/{program}/tests/` with a `cassettes/` directory beside them. `conftest.py` derives `cassette_library_dir` from each test file's own directory, so a test and its cassettes always travel together.
 
 ### Writing one
 
 ```python
 import pytest
-from programs.programs.policyengine.tests.integration_test_helpers import (
+from programs.framework.tests.integration_test_helpers import (
     PeIntegrationTestCase, add_income, add_member, calc_pe_program, make_program, make_screen,
     screener_value,
 )

@@ -15,7 +15,7 @@ from unittest.mock import Mock, MagicMock
 
 from programs.programs.wa import wa_calculators
 from programs.programs.wa.head_start.calculator import WaHeadStart
-from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
+from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
 
 
 def make_calculator(

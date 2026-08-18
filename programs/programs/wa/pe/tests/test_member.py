@@ -24,11 +24,11 @@ from unittest.mock import Mock, MagicMock
 from django.test import TestCase
 
 from programs.programs.federal.pe.member import Medicaid, Ssi
-from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
-from programs.programs.policyengine.calculators.dependencies import (
+from programs.framework.pe_base import PolicyEngineMembersCalculator
+from programs.framework.pe_dependencies import (
     member as member_deps,
 )
-from programs.programs.policyengine.calculators.dependencies.household import (
+from programs.framework.pe_dependencies.household import (
     WaStateCodeDependency,
 )
 from programs.programs.wa.pe import wa_member_calculators, wa_pe_calculators

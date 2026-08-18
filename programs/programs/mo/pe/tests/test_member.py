@@ -54,14 +54,14 @@ from unittest.mock import MagicMock, Mock
 from django.test import TestCase
 from screener.models import HouseholdMember, IncomeStream, Screen, WhiteLabel
 
-import programs.programs.policyengine.calculators.dependencies as dependency
+import programs.framework.pe_dependencies as dependency
 from programs.programs.federal.pe.member import Wic, HeadStart, EarlyHeadStart, Ssi as FederalSsi
 from programs.programs.mo.pe import mo_member_calculators, mo_pe_calculators
 from programs.programs.mo.pe.member import MoWic, MoHeadStart, MoEarlyHeadStart, MoSsi
-from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
-from programs.programs.policyengine.calculators.dependencies import member as member_deps
-from programs.programs.policyengine.calculators.dependencies.household import MoStateCodeDependency
-from programs.programs.policyengine.calculators.dependencies.member import (
+from programs.framework.pe_base import PolicyEngineMembersCalculator
+from programs.framework.pe_dependencies import member as member_deps
+from programs.framework.pe_dependencies.household import MoStateCodeDependency
+from programs.framework.pe_dependencies.member import (
     IsBlindDependency,
     MeetsSsiDisabilityCriteriaDependency,
     Ssi,
@@ -70,8 +70,8 @@ from programs.programs.policyengine.calculators.dependencies.member import (
     SsiIfTakesUp,
     SsiUnearnedIncomeDependency,
 )
-from programs.programs.policyengine.calculators.registry import all_calculators, all_member_calculators
-from programs.programs.policyengine.policy_engine import pe_input
+from integrations.clients.policyengine.registry import all_calculators, all_member_calculators
+from integrations.clients.policyengine.policy_engine import pe_input
 
 
 class TestMoWicWiring(TestCase):

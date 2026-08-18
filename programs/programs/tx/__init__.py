@@ -1,5 +1,5 @@
 from .ccad.calculator import TxCcad
-from ..calc import ProgramCalculator
+from programs.framework.base import ProgramCalculator
 from .fpp.calculator import TxFpp
 from .hcv.calculator import TxHcv
 from .hse.calculator import TxHse

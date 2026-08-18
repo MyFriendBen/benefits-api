@@ -4,7 +4,7 @@ from programs.programs.federal.pe.member import (
     EarlyHeadStart,
     Ssi,
 )
-import programs.programs.policyengine.calculators.dependencies as dependency
+import programs.framework.pe_dependencies as dependency
 from screener.models import HouseholdMember
 
 

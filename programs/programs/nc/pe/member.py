@@ -1,4 +1,4 @@
-import programs.programs.policyengine.calculators.dependencies as dependency
+import programs.framework.pe_dependencies as dependency
 from programs.programs.federal.pe.member import Medicaid
 from programs.programs.federal.pe.member import Wic
 from programs.programs.federal.pe.tax import Aca

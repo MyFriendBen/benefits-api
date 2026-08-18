@@ -2,7 +2,7 @@ from datetime import date
 from typing import Optional
 
 from screener.models import HouseholdMember
-from programs.programs.calc import MemberEligibility, ProgramCalculator
+from programs.framework.base import MemberEligibility, ProgramCalculator
 
 
 class MaBabySteps(ProgramCalculator):

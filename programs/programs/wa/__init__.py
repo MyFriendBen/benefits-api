@@ -7,7 +7,7 @@ from .liheap.calculator import WaLiheap
 from .wsos_bas.calculator import WaWsosBas
 from .wsos_cts.calculator import WaWsosCts
 from .wsos_grd.calculator import WaWsosGrd
-from ..calc import ProgramCalculator
+from programs.framework.base import ProgramCalculator
 from .seattle_fresh_bucks.calculator import WaSeattleFreshBucks
 from .senior_disabled_pte.calculator import WaSeniorDisabledPte
 from .ssdi.calculator import WaSsdi

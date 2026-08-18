@@ -31,15 +31,15 @@ from unittest.mock import Mock, MagicMock
 from django.test import TestCase
 
 from programs.programs.federal.pe.member import Medicaid
-from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
-from programs.programs.policyengine.calculators.dependencies import member as member_deps
-from programs.programs.policyengine.calculators.dependencies.household import KsStateCodeDependency
-from programs.programs.policyengine.calculators.dependencies.member import (
+from programs.framework.pe_base import PolicyEngineMembersCalculator
+from programs.framework.pe_dependencies import member as member_deps
+from programs.framework.pe_dependencies.household import KsStateCodeDependency
+from programs.framework.pe_dependencies.member import (
     AgeDependency,
     PregnancyDependency,
     Chip,
 )
-from programs.programs.policyengine.calculators.dependencies.tax import KsChipPremium
+from programs.framework.pe_dependencies.tax import KsChipPremium
 from programs.programs.ks.pe import ks_member_calculators, ks_pe_calculators
 from programs.programs.ks.pe.member import KsKanCare, KsChip, KsMsp, KsEarlyHeadStart
 from programs.programs.federal.pe.member import EarlyHeadStart

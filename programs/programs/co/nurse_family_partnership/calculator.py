@@ -1,4 +1,4 @@
-from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
+from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
 from screener.models import Insurance
 
 

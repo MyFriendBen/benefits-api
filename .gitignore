@@ -52,3 +52,10 @@ _archive/
 
 # Redis snapshot written into the repo root when redis-server runs locally
 dump.rdb
+
+# Agent scratch space
+.scout/
+
+# Local research artifacts and one-off reports (belong in Linear/Outline, not git)
+PE_LATENCY_REPORT.md
+*_scoping.csv

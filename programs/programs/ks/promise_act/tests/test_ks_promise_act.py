@@ -21,7 +21,7 @@ from unittest.mock import Mock
 
 from programs.programs.ks import ks_calculators
 from programs.programs.ks.promise_act.calculator import KsPromiseAct
-from programs.programs.calc import ProgramCalculator, Eligibility
+from programs.framework.base import ProgramCalculator, Eligibility
 
 
 def make_calculator(income=45_000, household_size=1, members=None):

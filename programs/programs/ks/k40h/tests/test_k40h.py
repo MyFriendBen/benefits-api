@@ -19,7 +19,7 @@ from unittest.mock import Mock
 
 from programs.programs.ks import ks_calculators
 from programs.programs.ks.k40h.calculator import KsK40h
-from programs.programs.calc import ProgramCalculator
+from programs.framework.base import ProgramCalculator
 
 
 def make_member(

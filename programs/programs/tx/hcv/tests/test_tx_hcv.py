@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 from integrations.clients.hud_income_limits import HudIncomeClientError
 from programs.programs.tx import tx_calculators
 from programs.programs.tx.hcv.calculator import TxHcv
-from programs.programs.calc import ProgramCalculator, Eligibility
+from programs.framework.base import ProgramCalculator, Eligibility
 
 
 def make_member(

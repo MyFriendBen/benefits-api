@@ -1,6 +1,6 @@
-import programs.programs.policyengine.calculators.dependencies as dependency
+import programs.framework.pe_dependencies as dependency
 from programs.programs.federal.pe.spm import Snap, Lifeline, SchoolLunch, Tanf
-from programs.programs.policyengine.calculators.base import PolicyEngineSpmCalulator
+from programs.framework.pe_base import PolicyEngineSpmCalulator
 
 
 class TxSnap(Snap):

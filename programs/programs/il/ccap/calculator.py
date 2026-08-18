@@ -1,5 +1,5 @@
-from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
-import programs.programs.messages as messages
+from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
+import programs.framework.eligibility_messages as messages
 from .rate_data import SUBSIDY_RATE_TABLE, COPAYMENT_TABLE_A
 
 

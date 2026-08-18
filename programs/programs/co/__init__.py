@@ -32,7 +32,7 @@ from .senior_housing_tax_credit.calculator import SeniorHousingIncomeTaxCredit
 from .jeffco_student_benefits.calculator import JeffcoStudentBenefits
 from .head_start.calculator import CoHeadStart
 from .collegeinvest_first_step.calculator import CoCollegeInvestFirstStep
-from ..calc import ProgramCalculator
+from programs.framework.base import ProgramCalculator
 
 co_calculators: dict[str, type[ProgramCalculator]] = {
     "rtdlive": RtdLive,

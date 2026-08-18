@@ -101,7 +101,7 @@ python manage.py import_urgent_need_config programs/management/commands/import_u
 - **translations** (required): English strings for all translatable fields; auto-translated to other languages.
   - Required keys: `name`, `description`, `link`, `warning`, `website_description`.
   - Optional key: `notification_message`.
-- **functions** (optional): Calculator names; each must be registered in `programs.programs.urgent_needs.urgent_need_functions`. If you don’t need custom logic, omit this array.
+- **functions** (optional): Calculator names; each must be registered in `programs.urgent_needs.urgent_need_functions`. If you don’t need custom logic, omit this array.
 - **phone_number** (optional): E.164 preferred.
 - **counties** (optional): Names; created under the same white label if missing.
 - **required_expense_types** (optional): Names aligning with `ExpenseType` (created if missing).

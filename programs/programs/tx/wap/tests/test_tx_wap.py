@@ -11,7 +11,7 @@ from unittest.mock import Mock
 
 from programs.programs.tx import tx_calculators
 from programs.programs.tx.wap.calculator import TxWap
-from programs.programs.calc import ProgramCalculator, Eligibility
+from programs.framework.base import ProgramCalculator, Eligibility
 
 
 def make_calculator(

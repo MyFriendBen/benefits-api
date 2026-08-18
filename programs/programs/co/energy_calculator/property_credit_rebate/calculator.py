@@ -1,4 +1,4 @@
-from programs.programs.calc import MemberEligibility
+from programs.framework.base import MemberEligibility
 from programs.programs.co.property_credit_rebate.calculator import PropertyCreditRebate
 from screener.models import HouseholdMember
 

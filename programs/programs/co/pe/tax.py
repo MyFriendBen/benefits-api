@@ -1,6 +1,6 @@
-from programs.programs.policyengine.calculators.base import PolicyEngineTaxUnitCalulator
+from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
 from programs.programs.federal.pe.tax import Eitc, Ctc
-import programs.programs.policyengine.calculators.dependencies as dependency
+import programs.framework.pe_dependencies as dependency
 
 
 class Coeitc(PolicyEngineTaxUnitCalulator):

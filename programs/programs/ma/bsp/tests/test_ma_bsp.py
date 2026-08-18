@@ -19,7 +19,7 @@ from unittest.mock import patch
 from django.test import TestCase
 
 from programs.models import Program
-from programs.programs.calc import ProgramCalculator
+from programs.framework.base import ProgramCalculator
 from programs.programs.ma import ma_calculators
 from programs.programs.ma.bsp.calculator import MaBabySteps
 from programs.util import Dependencies

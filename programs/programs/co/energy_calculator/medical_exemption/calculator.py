@@ -1,4 +1,4 @@
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 
 
 class EnergyCalculatorMedicalExemption(ProgramCalculator):

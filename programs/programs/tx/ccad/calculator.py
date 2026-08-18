@@ -1,4 +1,4 @@
-from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
+from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
 
 
 class TxCcad(ProgramCalculator):

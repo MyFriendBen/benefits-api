@@ -18,7 +18,7 @@ from unittest.mock import Mock
 from django.test import TestCase
 
 from programs.models import _FPL_DEFAULTS
-from programs.programs.calc import MemberEligibility
+from programs.framework.base import MemberEligibility
 from programs.programs.co.medicaid.adult_with_disability.calculator import MedicaidAdultWithDisability
 from programs.util import Dependencies
 

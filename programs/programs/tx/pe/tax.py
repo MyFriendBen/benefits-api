@@ -1,5 +1,5 @@
 from programs.programs.federal.pe.tax import Aca
-import programs.programs.policyengine.calculators.dependencies as dependency
+import programs.framework.pe_dependencies as dependency
 
 
 class TxAca(Aca):

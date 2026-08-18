@@ -1,5 +1,5 @@
-from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
-from programs.programs.helpers import medicaid_eligible
+from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
+from programs.framework.helpers import medicaid_eligible
 
 
 class IlEmergencyMedicaid(ProgramCalculator):

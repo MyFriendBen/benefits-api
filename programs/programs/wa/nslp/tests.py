@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.test import TestCase
 
 from programs.models import Program, FederalPoveryLimit
-from programs.programs.calc import MemberEligibility
+from programs.framework.base import MemberEligibility
 from programs.programs.wa import wa_calculators
 from programs.programs.wa.nslp.calculator import WaNslp
 from programs.util import Dependencies

@@ -31,11 +31,11 @@ from django.test import TestCase
 from programs.programs.federal.pe.spm import Lifeline, SchoolLunch
 from programs.programs.mo.pe import mo_pe_calculators, mo_spm_calculators
 from programs.programs.mo.pe.spm import MoLifeline, MoNslp
-from programs.programs.policyengine.calculators.registry import (
+from integrations.clients.policyengine.registry import (
     all_calculators,
     all_spm_unit_calculators,
 )
-import programs.programs.policyengine.calculators.dependencies as dependency
+import programs.framework.pe_dependencies as dependency
 
 
 class TestMoLifelineWiring(TestCase):

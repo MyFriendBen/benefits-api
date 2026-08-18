@@ -1,6 +1,6 @@
-from programs.programs.calc import ProgramCalculator, Eligibility
-from programs.programs.mixins import IlTransportationMixin
-import programs.programs.messages as messages
+from programs.framework.base import ProgramCalculator, Eligibility
+from programs.framework.mixins import IlTransportationMixin
+import programs.framework.eligibility_messages as messages
 
 
 class IlBenefitAccess(IlTransportationMixin, ProgramCalculator):

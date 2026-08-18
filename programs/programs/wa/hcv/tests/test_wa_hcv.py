@@ -3,7 +3,7 @@ from unittest.mock import Mock, patch, PropertyMock
 
 from programs.programs.wa import wa_calculators
 from programs.programs.wa.hcv.calculator import WaHcv
-from programs.programs.calc import ProgramCalculator, Eligibility
+from programs.framework.base import ProgramCalculator, Eligibility
 
 
 def make_member(

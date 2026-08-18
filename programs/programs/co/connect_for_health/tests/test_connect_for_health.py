@@ -25,7 +25,7 @@ from unittest.mock import Mock, patch
 from django.test import SimpleTestCase, TestCase
 
 from programs.models import _FPL_DEFAULTS
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 from programs.programs.co import co_calculators
 from programs.programs.co.connect_for_health.calculator import CfhCountyValuesCache, ConnectForHealth
 from programs.util import Dependencies, DependencyError

@@ -2,7 +2,7 @@ from programs.programs.federal.pe.tax import Ctc, Eitc
 import programs.programs.wa.pe.member as member
 import programs.programs.wa.pe.spm as spm
 import programs.programs.wa.pe.tax as tax
-from programs.programs.policyengine.calculators.base import PolicyEngineCalulator
+from programs.framework.pe_base import PolicyEngineCalulator
 
 wa_member_calculators = {
     "wa_apple_health_for_kids": member.WaAppleHealthForKids,

@@ -14,7 +14,7 @@ from unittest.mock import Mock, patch
 
 from programs.programs.ma import ma_calculators
 from programs.programs.ma.homebridge.calculator import MaHomeBridge
-from programs.programs.calc import ProgramCalculator, Eligibility
+from programs.framework.base import ProgramCalculator, Eligibility
 
 
 class TestMaHomeBridgeCalculator(TestCase):

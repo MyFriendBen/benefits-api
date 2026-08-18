@@ -14,7 +14,7 @@ from programs.models import (
     UrgentNeedFunction,
     UrgentNeedType,
 )
-from programs.programs.urgent_needs import urgent_need_functions
+from programs.urgent_needs import urgent_need_functions
 from screener.models import WhiteLabel
 from programs.management.commands._translation_utils import TranslationImportMixin
 from translations.models import Translation

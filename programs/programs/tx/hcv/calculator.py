@@ -2,8 +2,8 @@ import logging
 from types import MappingProxyType
 
 from integrations.clients.hud_income_limits import hud_client, HudIncomeClientError
-from programs.programs.calc import Eligibility, ProgramCalculator
-import programs.programs.messages as messages
+from programs.framework.base import Eligibility, ProgramCalculator
+import programs.framework.eligibility_messages as messages
 
 logger = logging.getLogger(__name__)
 

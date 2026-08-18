@@ -14,7 +14,7 @@ from unittest.mock import Mock
 
 from programs.programs.ma import ma_calculators
 from programs.programs.ma.dhsp_afterschool.calculator import MaDhspAfterschool
-from programs.programs.calc import ProgramCalculator, Eligibility
+from programs.framework.base import ProgramCalculator, Eligibility
 
 
 class TestMaDhspAfterschoolCalculator(TestCase):

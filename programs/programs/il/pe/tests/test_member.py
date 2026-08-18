@@ -18,10 +18,10 @@ MEDICARE_PART_B_ANNUAL_2025 = 2220.0  # Annual Medicare Part B premium ($185/mon
 IBCCP_SCREENING_VALUE = 400  # Average out-of-pocket cost for cancer screening services
 HBWD_ELIGIBLE_VALUE = 1  # Indicates eligible (value displayed as "Varies" in UI)
 
-from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
-from programs.programs.policyengine.calculators.dependencies import member as member_dependency
-from programs.programs.policyengine.calculators.dependencies import irs_gross_income
-from programs.programs.policyengine.calculators.dependencies.household import IlStateCodeDependency
+from programs.framework.pe_base import PolicyEngineMembersCalculator
+from programs.framework.pe_dependencies import member as member_dependency
+from programs.framework.pe_dependencies import irs_gross_income
+from programs.framework.pe_dependencies.household import IlStateCodeDependency
 from programs.programs.il.pe import il_pe_calculators, il_member_calculators
 from programs.programs.il.pe.member import (
     IlMsp,
@@ -70,7 +70,7 @@ class TestIlMsp(TestCase):
 
     def test_pe_inputs_includes_asset_dependency(self):
         """Test that CashAssetsDependency is in pe_inputs for asset limits."""
-        from programs.programs.policyengine.calculators.dependencies import spm as spm_dependency
+        from programs.framework.pe_dependencies import spm as spm_dependency
 
         self.assertIn(spm_dependency.CashAssetsDependency, IlMsp.pe_inputs)
 

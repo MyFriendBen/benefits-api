@@ -9,8 +9,11 @@ These tests verify MA-specific calculator logic for CSFP including:
 from django.test import TestCase
 
 from programs.programs.federal.pe.member import CommoditySupplementalFoodProgram
-from programs.programs.policyengine.calculators.dependencies import household
-from programs.programs.policyengine.calculators.dependencies.household import MaStateCodeDependency, MaCountyDependency
+from programs.framework.pe_dependencies import household
+from programs.framework.pe_dependencies.household import (
+    MaStateCodeDependency,
+    MaCountyDependency,
+)
 from programs.programs.ma.pe import ma_pe_calculators
 from programs.programs.ma.pe.member import MaCsfp
 
@@ -40,13 +43,13 @@ class TestMaCsfp(TestCase):
             self.assertIn(parent_input, MaCsfp.pe_inputs)
 
     def test_pe_inputs_includes_age_dependency(self):
-        from programs.programs.policyengine.calculators.dependencies.member import AgeDependency
+        from programs.framework.pe_dependencies.member import AgeDependency
 
         self.assertIn(AgeDependency, MaCsfp.pe_inputs)
         self.assertEqual(AgeDependency.field, "age")
 
     def test_pe_inputs_includes_school_meal_countable_income_dependency(self):
-        from programs.programs.policyengine.calculators.dependencies.spm import SchoolMealCountableIncomeDependency
+        from programs.framework.pe_dependencies.spm import SchoolMealCountableIncomeDependency
 
         self.assertIn(SchoolMealCountableIncomeDependency, MaCsfp.pe_inputs)
         self.assertEqual(SchoolMealCountableIncomeDependency.field, "school_meal_countable_income")

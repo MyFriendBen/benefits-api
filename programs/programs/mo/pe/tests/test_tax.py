@@ -24,12 +24,12 @@ these slugs *are* those objects extends those guarantees here.
 
 from django.test import TestCase
 
-import programs.programs.policyengine.calculators.dependencies as dependency
+import programs.framework.pe_dependencies as dependency
 from programs.programs.federal.pe.tax import Aca, Ctc, Eitc
 from programs.programs.mo.pe import mo_pe_calculators, mo_tax_unit_calculators
 from programs.programs.mo.pe.tax import MoAca
-from programs.programs.policyengine.calculators.base import PolicyEngineTaxUnitCalulator
-from programs.programs.policyengine.calculators.registry import (
+from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
+from integrations.clients.policyengine.registry import (
     all_calculators,
     all_tax_unit_calculators,
 )

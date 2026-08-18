@@ -14,7 +14,7 @@ from unittest.mock import Mock
 
 from programs.programs.ma import ma_calculators
 from programs.programs.ma.door2door.calculator import MaDoorToDoor
-from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
+from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
 
 
 class TestMaDoorToDoorCalculator(TestCase):

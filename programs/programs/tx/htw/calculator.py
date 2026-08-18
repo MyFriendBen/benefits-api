@@ -1,5 +1,5 @@
-from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
-from programs.programs import messages
+from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
+from programs.framework import eligibility_messages as messages
 
 
 class TxHtw(ProgramCalculator):
