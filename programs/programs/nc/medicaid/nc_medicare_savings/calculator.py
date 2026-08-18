@@ -1,4 +1,4 @@
-from programs.programs.calc import MemberEligibility
+from programs.framework.base import MemberEligibility
 from programs.programs.federal.medicare_savings.calculator import MedicareSavings
 from typing import ClassVar
 
