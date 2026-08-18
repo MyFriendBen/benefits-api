@@ -18,9 +18,9 @@ mo_spm_calculators = {
 }
 
 mo_tax_unit_calculators = {
-    "mo_ctc": Ctc,
-    "mo_eitc": Eitc,
-    "mo_cdcc_federal": Cdcc,
+    "mo_ctc": tax.MoCtc,
+    "mo_eitc": tax.MoEitc,
+    "mo_cdcc_federal": tax.MoCdccFederal,
     "mo_aca_ptc": tax.MoAca,
 }
 

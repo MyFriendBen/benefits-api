@@ -20,7 +20,7 @@ co_member_calculators = {
 # for). Today both rows produce identical eligibility output.
 co_tax_unit_calculators = {
     "coeitc": tax.Coeitc,
-    "co_expanded_eitc": tax.Coeitc,
+    "co_expanded_eitc": tax.CoExpandedEitc,
     "coctc": tax.Coctc,
     "co_tax_credit_care_worker": tax.CoCareWorkerCredit,
 }

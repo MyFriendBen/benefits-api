@@ -268,6 +268,27 @@ class IlFamilyPlanningProgram(PolicyEngineMembersCalculator):
         return 1
 
 
+class IlHfsFpp(IlFamilyPlanningProgram):
+    """
+    HFS Family Planning Program (``il_hfs_fpp``).
+
+    Requires qualified immigration status, unlike ``il_fppe``. That distinction is
+    not yet modelled: PolicyEngine resolves both rows through the same
+    ``il_fpp_eligible`` variable, so this currently overrides nothing and exists
+    so the registry maps one key to one calculator. If the immigration-status
+    requirement is ever modelled, it belongs here.
+    """
+
+
+class IlFppe(IlFamilyPlanningProgram):
+    """
+    Family Planning Presumptive Eligibility (``il_fppe``).
+
+    No immigration-status requirement, unlike ``il_hfs_fpp``. Same situation:
+    both share ``il_fpp_eligible`` today, so this overrides nothing.
+    """
+
+
 class IlMpe(PolicyEngineMembersCalculator):
     """
     Illinois Medicaid Presumptive Eligibility (Pregnancy)

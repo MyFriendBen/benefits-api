@@ -24,6 +24,8 @@ from programs.framework.pe_dependencies import irs_gross_income
 from programs.framework.pe_dependencies.household import IlStateCodeDependency
 from programs.programs.il.pe import il_pe_calculators, il_member_calculators
 from programs.programs.il.pe.member import (
+    IlFppe,
+    IlHfsFpp,
     IlMsp,
     IlAabd,
     IlHbwd,
@@ -329,27 +331,37 @@ class TestIlFamilyPlanningProgram(TestCase):
         self.assertGreater(len(IlFamilyPlanningProgram.pe_inputs), 0)
 
     def test_is_registered_in_il_pe_calculators_for_hfs_fpp(self):
-        """Test that IL HFS FPP is registered in the calculators dictionary."""
-        # Verify il_hfs_fpp is in the calculators dictionary
+        """``il_hfs_fpp`` resolves to its own thin subclass of the shared FPP calculator."""
         self.assertIn("il_hfs_fpp", il_pe_calculators)
-
-        # Verify it points to the correct class
-        self.assertEqual(il_pe_calculators["il_hfs_fpp"], IlFamilyPlanningProgram)
+        self.assertIs(il_pe_calculators["il_hfs_fpp"], IlHfsFpp)
+        self.assertTrue(issubclass(IlHfsFpp, IlFamilyPlanningProgram))
 
     def test_is_registered_in_il_pe_calculators_for_fppe(self):
-        """Test that IL FPPE is registered in the calculators dictionary."""
-        # Verify il_fppe is in the calculators dictionary
+        """``il_fppe`` resolves to its own thin subclass of the shared FPP calculator."""
         self.assertIn("il_fppe", il_pe_calculators)
-
-        # Verify it points to the correct class
-        self.assertEqual(il_pe_calculators["il_fppe"], IlFamilyPlanningProgram)
+        self.assertIs(il_pe_calculators["il_fppe"], IlFppe)
+        self.assertTrue(issubclass(IlFppe, IlFamilyPlanningProgram))
 
     def test_is_registered_in_il_member_calculators(self):
-        """Test that both FPP programs are registered in the member calculators dictionary."""
+        """Both FPP rows are registered, each to its own subclass."""
         self.assertIn("il_hfs_fpp", il_member_calculators)
         self.assertIn("il_fppe", il_member_calculators)
-        self.assertEqual(il_member_calculators["il_hfs_fpp"], IlFamilyPlanningProgram)
-        self.assertEqual(il_member_calculators["il_fppe"], IlFamilyPlanningProgram)
+        self.assertIs(il_member_calculators["il_hfs_fpp"], IlHfsFpp)
+        self.assertIs(il_member_calculators["il_fppe"], IlFppe)
+
+    def test_the_two_fpp_subclasses_do_not_diverge_from_the_shared_calculator(self):
+        """Neither subclass overrides anything yet.
+
+        ``il_hfs_fpp`` requires qualified immigration status and ``il_fppe`` does not,
+        but PolicyEngine resolves both through the same ``il_fpp_eligible`` variable, so
+        that distinction is unmodelled. The subclasses exist so the registry maps one key
+        to one calculator. If the immigration-status requirement is ever modelled, this
+        test is what will fail and force the change to be deliberate.
+        """
+        for sub in (IlHfsFpp, IlFppe):
+            self.assertEqual(sub.pe_name, IlFamilyPlanningProgram.pe_name)
+            self.assertEqual(list(sub.pe_inputs), list(IlFamilyPlanningProgram.pe_inputs))
+            self.assertEqual(list(sub.pe_outputs), list(IlFamilyPlanningProgram.pe_outputs))
 
     def test_pe_name_is_il_fpp_eligible(self):
         """Test that IlFamilyPlanningProgram has the correct pe_name for PolicyEngine API calls."""

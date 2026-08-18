@@ -21,8 +21,8 @@ tx_member_calculators = {
 }
 
 tx_tax_unit_calculators = {
-    "tx_eitc": Eitc,
-    "tx_ctc": Ctc,
+    "tx_eitc": tax.TxEitc,
+    "tx_ctc": tax.TxCtc,
     "tx_aca": tax.TxAca,
 }
 

@@ -31,7 +31,7 @@ from integrations.clients.policyengine.registry import (
     all_tax_unit_calculators,
 )
 from programs.programs.wa.pe import wa_pe_calculators, wa_tax_calculators
-from programs.programs.wa.pe.tax import WaWftc
+from programs.programs.wa.pe.tax import WaCtc, WaEitc, WaWftc
 
 
 class TestWaEitc(TestCase):
@@ -46,14 +46,24 @@ class TestWaEitc(TestCase):
     """
 
     def test_is_federal_eitc_everywhere(self):
-        self.assertIs(wa_tax_calculators["wa_eitc"], Eitc)
-        self.assertIs(wa_pe_calculators["wa_eitc"], Eitc)
-        self.assertIs(all_tax_unit_calculators["wa_eitc"], Eitc)
-        self.assertIs(all_calculators["wa_eitc"], Eitc)
+        self.assertIs(wa_tax_calculators["wa_eitc"], WaEitc)
+        self.assertIs(wa_pe_calculators["wa_eitc"], WaEitc)
+        self.assertIs(all_tax_unit_calculators["wa_eitc"], WaEitc)
+        self.assertIs(all_calculators["wa_eitc"], WaEitc)
 
-    def test_matches_builtin_federal_registry_key(self):
-        """Same calculator as global `eitc` — no WA-specific subclass."""
-        self.assertIs(all_tax_unit_calculators["wa_eitc"], all_tax_unit_calculators["eitc"])
+    def test_is_the_federal_calculator_with_nothing_added(self):
+        """A thin subclass of the federal calculator: same PE variable, same inputs.
+
+        WA has no state EITC, so ``wa_eitc`` must not diverge from the federal
+        credit. It is its own class only so the registry maps one key to one
+        calculator. Asserting it overrides nothing is stricter than asserting
+        identity with ``Eitc`` was: a subclass that added an input would still be a
+        subclass, but would fail here.
+        """
+        self.assertTrue(issubclass(WaEitc, Eitc))
+        self.assertEqual(WaEitc.pe_name, Eitc.pe_name)
+        self.assertEqual(list(WaEitc.pe_inputs), list(Eitc.pe_inputs))
+        self.assertEqual(list(WaEitc.pe_outputs), list(Eitc.pe_outputs))
 
 
 class TestWaCtc(TestCase):
@@ -66,14 +76,24 @@ class TestWaCtc(TestCase):
 
     def test_is_federal_ctc_everywhere(self):
         """Washington registers the WA program slug against the federal class."""
-        self.assertIs(wa_tax_calculators["wa_ctc"], Ctc)
-        self.assertIs(wa_pe_calculators["wa_ctc"], Ctc)
-        self.assertIs(all_tax_unit_calculators["wa_ctc"], Ctc)
-        self.assertIs(all_calculators["wa_ctc"], Ctc)
+        self.assertIs(wa_tax_calculators["wa_ctc"], WaCtc)
+        self.assertIs(wa_pe_calculators["wa_ctc"], WaCtc)
+        self.assertIs(all_tax_unit_calculators["wa_ctc"], WaCtc)
+        self.assertIs(all_calculators["wa_ctc"], WaCtc)
 
-    def test_matches_builtin_federal_registry_key(self):
-        """Same calculator as global `ctc` — no WA-specific subclass."""
-        self.assertIs(all_tax_unit_calculators["wa_ctc"], all_tax_unit_calculators["ctc"])
+    def test_is_the_federal_calculator_with_nothing_added(self):
+        """A thin subclass of the federal calculator: same PE variable, same inputs.
+
+        WA has no state CTC, so ``wa_ctc`` must not diverge from the federal
+        credit. It is its own class only so the registry maps one key to one
+        calculator. Asserting it overrides nothing is stricter than asserting
+        identity with ``Ctc`` was: a subclass that added an input would still be a
+        subclass, but would fail here.
+        """
+        self.assertTrue(issubclass(WaCtc, Ctc))
+        self.assertEqual(WaCtc.pe_name, Ctc.pe_name)
+        self.assertEqual(list(WaCtc.pe_inputs), list(Ctc.pe_inputs))
+        self.assertEqual(list(WaCtc.pe_outputs), list(Ctc.pe_outputs))
 
 
 class TestWaWftc(TestCase):

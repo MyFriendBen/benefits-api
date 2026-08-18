@@ -16,8 +16,8 @@ ks_member_calculators = {
 ks_tax_unit_calculators = {
     "ks_eitc": tax.Kseitc,
     "ks_cdcc": tax.KsCdcc,
-    "ks_cdcc_federal": Cdcc,
-    "ks_ctc": Ctc,
+    "ks_cdcc_federal": tax.KsCdccFederal,
+    "ks_ctc": tax.KsCtc,
 }
 
 ks_spm_calculators = {

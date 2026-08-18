@@ -1,4 +1,4 @@
-from programs.programs.federal.pe.tax import Eitc
+from programs.programs.federal.pe.tax import Ctc, Eitc
 from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
 import programs.framework.pe_dependencies as dependency
 
@@ -38,3 +38,24 @@ class WaWftc(PolicyEngineTaxUnitCalulator):
         dependency.household.WaStateCodeDependency,
     ]
     pe_outputs = [dependency.tax.WaWftc]
+
+
+class WaCtc(Ctc):
+    """
+    Federal Child Tax Credit surfaced to Washington users as ``wa_ctc``.
+
+    Washington has no state CTC. Reads PolicyEngine's federal ``ctc_value``
+    unchanged; see ``MoCtc`` for why no state code is sent.
+
+    Distinct from ``wa_wftc`` (Working Families Tax Credit), which is a real
+    Washington credit with its own calculator.
+    """
+
+
+class WaEitc(Eitc):
+    """
+    Federal EITC surfaced to Washington users as ``wa_eitc``.
+
+    PolicyEngine's ``eitc`` is federal. Washington's own credit is the Working
+    Families Tax Credit, handled separately.
+    """
