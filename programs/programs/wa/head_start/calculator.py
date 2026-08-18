@@ -24,7 +24,7 @@ class WaHeadStart(ProgramCalculator):
     Applied equally to EHS participants and pregnant women as a simplifying assumption.
     """
 
-    name_abbreviated = "wa_head_start"
+    program_code = "wa_head_start"
 
     # HS Preschool: ages 3–5 ("no older than required school age" = kindergarten-entry age in WA)
     hs_min_age = 3

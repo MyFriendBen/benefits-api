@@ -13,7 +13,7 @@ class KsSsdi(ProgramCalculator):
     federal rules used by other states (e.g. wa_ssdi).
     """
 
-    name_abbreviated = "ks_ssdi"
+    program_code = "ks_ssdi"
 
     sga_non_blind = 1_690
     sga_blind = 2_830

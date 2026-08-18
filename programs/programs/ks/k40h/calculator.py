@@ -41,7 +41,7 @@ class KsK40h(ProgramCalculator):
     verified at application, not by the screener.
     """
 
-    name_abbreviated = "ks_k40h"
+    program_code = "ks_k40h"
 
     income_limit = 43_389
     max_property_tax = 700

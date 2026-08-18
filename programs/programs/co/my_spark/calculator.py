@@ -4,7 +4,7 @@ from programs.co_county_zips import counties_from_screen
 
 
 class MySpark(ProgramCalculator):
-    name_abbreviated = "myspark"
+    program_code = "myspark"
     member_amount = 1_000
     max_age = 14
     min_age = 11

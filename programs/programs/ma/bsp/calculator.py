@@ -45,7 +45,7 @@ class MaBabySteps(ProgramCalculator):
     (full sourcing in spec.md)
     """
 
-    name_abbreviated = "ma_bsp"
+    program_code = "ma_bsp"
 
     # One-time $50 seed deposit per qualifying child (lump sum, not a monthly benefit).
     member_amount = 50

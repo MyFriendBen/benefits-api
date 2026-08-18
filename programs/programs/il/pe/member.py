@@ -10,7 +10,7 @@ from programs.framework.pe_base import PolicyEngineMembersCalculator
 class IlMedicaid(federal_member.Medicaid):
     """Base Illinois Medicaid eligibility through PolicyEngine"""
 
-    name_abbreviated = "il_medicaid"
+    program_code = "il_medicaid"
 
     medicaid_categories = {
         "NONE": 0,
@@ -32,7 +32,7 @@ class IlMedicaid(federal_member.Medicaid):
 
 
 class IlWic(federal_member.Wic):
-    name_abbreviated = "il_wic"
+    program_code = "il_wic"
     wic_categories = {
         "NONE": 0,
         "INFANT": 130,
@@ -48,7 +48,7 @@ class IlWic(federal_member.Wic):
 
 
 class IlAca(tax.Aca):
-    name_abbreviated = "il_aca"
+    program_code = "il_aca"
     pe_name = "aca_ptc"
     pe_inputs = [
         *tax.Aca.pe_inputs,
@@ -76,7 +76,7 @@ class IlAabd(PolicyEngineMembersCalculator):
     based on household circumstances and IL AABD area (1-8).
     """
 
-    name_abbreviated = "il_aabd"
+    program_code = "il_aabd"
 
     pe_name = "il_aabd_person"
     pe_inputs = [
@@ -144,7 +144,7 @@ class IlHbwd(PolicyEngineMembersCalculator):
           not used as the program's member_value)
     """
 
-    name_abbreviated = "il_hbwd"
+    program_code = "il_hbwd"
 
     pe_name = "il_hbwd_person"
     pe_inputs = [
@@ -206,7 +206,7 @@ class IlBccp(PolicyEngineMembersCalculator):
     - Not eligible for Medicaid, All Kids, or other HFS insurance
     """
 
-    name_abbreviated = "il_ibccp"
+    program_code = "il_ibccp"
 
     pe_name = "il_bcc_eligible"
     pe_category = "people"
@@ -289,7 +289,7 @@ class IlHfsFpp(IlFamilyPlanningProgram):
     requirement is ever modelled, it belongs here.
     """
 
-    name_abbreviated = "il_hfs_fpp"
+    program_code = "il_hfs_fpp"
 
 
 class IlFppe(IlFamilyPlanningProgram):
@@ -300,7 +300,7 @@ class IlFppe(IlFamilyPlanningProgram):
     both share ``il_fpp_eligible`` today, so this overrides nothing.
     """
 
-    name_abbreviated = "il_fppe"
+    program_code = "il_fppe"
 
 
 class IlMpe(PolicyEngineMembersCalculator):
@@ -316,7 +316,7 @@ class IlMpe(PolicyEngineMembersCalculator):
         - Not already enrolled in Medicaid for the eligible individual
     """
 
-    name_abbreviated = "il_mpe"
+    program_code = "il_mpe"
 
     pe_name = "il_mpe_eligible"
     pe_category = "people"
@@ -347,7 +347,7 @@ class IlMsp(federal_member.Msp):
     """Illinois Medicare Savings Program. Federal ``Msp`` plus the IL state code and
     ``IlMedicaid`` inputs (see ``Msp`` for why the Medicaid inputs are required)."""
 
-    name_abbreviated = "il_msp"
+    program_code = "il_msp"
 
     pe_inputs = [
         *federal_member.Msp.pe_inputs,
@@ -364,7 +364,7 @@ class IlHeadStart(federal_member.HeadStart):
     Start (birth to age 3, and pregnant women) is a separate program.
     """
 
-    name_abbreviated = "il_head_start"
+    program_code = "il_head_start"
 
     pe_inputs = [
         *federal_member.HeadStart.pe_inputs,

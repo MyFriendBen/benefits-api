@@ -4,7 +4,7 @@ from programs.co_county_zips import counties_from_screen
 
 
 class DenverPreschoolProgram(ProgramCalculator):
-    name_abbreviated = "dpp"
+    program_code = "dpp"
     member_amount = 594 * 12
     min_age = 3
     max_age = 4

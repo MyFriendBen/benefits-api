@@ -51,7 +51,7 @@ class BoulderAmiCache(GoogleSheetsCache):
 
 
 class NurturingFutures(ProgramCalculator):
-    name_abbreviated = "nf"
+    program_code = "nf"
     county = "Boulder County"
     head_min_age = 18
     child_max_age = 3

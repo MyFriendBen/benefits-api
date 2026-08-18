@@ -2,7 +2,7 @@ from programs.programs.co.weatherization_assistance.calculator import Weatheriza
 
 
 class EnergyCalculatorWeatherizationAssistance(WeatherizationAssistance):
-    name_abbreviated = "cesn_cowap"
+    program_code = "cesn_cowap"
     dependencies = [*WeatherizationAssistance.dependencies, "energy_calculator"]
     electric_providers = [
         "co-xcel-energy",

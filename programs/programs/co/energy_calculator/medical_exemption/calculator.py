@@ -2,7 +2,7 @@ from programs.framework.base import Eligibility, MemberEligibility, ProgramCalcu
 
 
 class EnergyCalculatorMedicalExemption(ProgramCalculator):
-    name_abbreviated = "cesn_energy_mep"
+    program_code = "cesn_energy_mep"
     amount = 1
     max_fpl = 4
     providers = ["co-xcel-energy"]

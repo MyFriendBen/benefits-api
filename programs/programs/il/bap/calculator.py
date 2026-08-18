@@ -4,7 +4,7 @@ import programs.framework.eligibility_messages as messages
 
 
 class IlBenefitAccess(IlTransportationMixin, ProgramCalculator):
-    name_abbreviated = "il_bap"
+    program_code = "il_bap"
     dependencies = [
         "age",
         "household_size",

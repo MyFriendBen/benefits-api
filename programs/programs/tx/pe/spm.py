@@ -4,7 +4,7 @@ from programs.framework.pe_base import PolicyEngineSpmCalulator
 
 
 class TxSnap(Snap):
-    name_abbreviated = "tx_snap"
+    program_code = "tx_snap"
     pe_inputs = [
         *Snap.pe_inputs,
         dependency.household.TxStateCodeDependency,
@@ -12,7 +12,7 @@ class TxSnap(Snap):
 
 
 class TxLifeline(Lifeline):
-    name_abbreviated = "tx_lifeline"
+    program_code = "tx_lifeline"
     pe_inputs = [
         *Lifeline.pe_inputs,
         dependency.household.TxStateCodeDependency,
@@ -28,7 +28,7 @@ class TxNslp(SchoolLunch):
     TX state code dependency.
     """
 
-    name_abbreviated = "tx_nslp"
+    program_code = "tx_nslp"
 
     pe_inputs = [
         *SchoolLunch.pe_inputs,
@@ -52,7 +52,7 @@ class TxTanf(Tanf):
     to be incorrectly denied for a family of 3 with 1 parent.
     """
 
-    name_abbreviated = "tx_tanf"
+    program_code = "tx_tanf"
 
     pe_name = "tx_tanf"
     pe_inputs = [
@@ -78,7 +78,7 @@ class TxCcs(PolicyEngineSpmCalulator):
     and benefit values.
     """
 
-    name_abbreviated = "tx_ccs"
+    program_code = "tx_ccs"
 
     pe_name = "tx_ccs"
     pe_inputs = [
@@ -107,7 +107,7 @@ class TxCeap(PolicyEngineSpmCalulator):
     10 TAC § 6.309(e)), capped by the household's reported energy expenses.
     """
 
-    name_abbreviated = "tx_liheap"
+    program_code = "tx_liheap"
 
     pe_name = "tx_ceap"
     pe_inputs = [

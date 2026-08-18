@@ -17,7 +17,7 @@ class WaSeattleFreshBucks(ProgramCalculator):
     language preference) is not modeled.
     """
 
-    name_abbreviated = "wa_seattle_fresh_bucks"
+    program_code = "wa_seattle_fresh_bucks"
 
     amount = 60 * 12
     min_age = 18

@@ -3,7 +3,7 @@ import programs.framework.eligibility_messages as messages
 
 
 class NCLieap(ProgramCalculator):
-    name_abbreviated = "nc_lieap"
+    program_code = "nc_lieap"
     fpl_percent = 1.3
     fpl_percent_senior_disabled = 1.5
     earned_deduction = 0.2

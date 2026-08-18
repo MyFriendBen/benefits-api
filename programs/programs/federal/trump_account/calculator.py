@@ -24,7 +24,7 @@ class TrumpAccount(ProgramCalculator):
     - Program launch date (accounts available July 4, 2026 or later)
     """
 
-    name_abbreviated = "trump_account"
+    program_code = "trump_account"
 
     pilot_contribution = 1_000
     pilot_start = date(2025, 1, 1)

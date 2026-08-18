@@ -3,7 +3,7 @@ import programs.framework.eligibility_messages as messages
 
 
 class OmniSalud(ProgramCalculator):
-    name_abbreviated = "omnisalud"
+    program_code = "omnisalud"
     income_percent = 1.5
     insurance = ["none"]
     member_amount = 610 * 12

@@ -44,7 +44,7 @@ class WaWsosGrd(ProgramCalculator):
         (Official 2026 WSOS GRD MFI Chart)
     """
 
-    name_abbreviated = "wa_wsos_grd"
+    program_code = "wa_wsos_grd"
 
     # 2026 WSOS GRD MFI thresholds in dollars per year (155% MFI = upper cutoff used
     # by the screener). Per-household-size lookup table sourced from the official

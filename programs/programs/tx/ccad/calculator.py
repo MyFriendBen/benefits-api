@@ -2,7 +2,7 @@ from programs.framework.base import ProgramCalculator, Eligibility, MemberEligib
 
 
 class TxCcad(ProgramCalculator):
-    name_abbreviated = "tx_ccad"
+    program_code = "tx_ccad"
     min_age = 65
     min_age_disabled = 21
     fpl_percent = 3

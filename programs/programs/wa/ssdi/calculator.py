@@ -10,7 +10,7 @@ class WaSsdi(ProgramCalculator):
     Assumes sufficient work credits (data gap — screener does not capture work history).
     """
 
-    name_abbreviated = "wa_ssdi"
+    program_code = "wa_ssdi"
 
     sga_non_blind = 1_690
     sga_blind = 2_830

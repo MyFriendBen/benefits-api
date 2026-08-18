@@ -26,7 +26,7 @@ class ACACache(GoogleSheetsCache):
 
 
 class ACASubsidiesNC(ProgramCalculator):
-    name_abbreviated = "nc_aca_mfb_version"
+    program_code = "nc_aca_mfb_version"
     percent_of_fpl = 4
     dependencies = ["insurance", "income_amount", "income_frequency", "county", "household_size"]
     eligible_insurance_types = ["none", "private"]

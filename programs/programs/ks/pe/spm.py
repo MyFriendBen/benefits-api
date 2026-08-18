@@ -34,7 +34,7 @@ class KsTanf(Tanf):
       without them the deduction never applies and the benefit is understated.
     """
 
-    name_abbreviated = "ks_tanf"
+    program_code = "ks_tanf"
 
     pe_name = "ks_tanf"
     pe_inputs = [
@@ -64,7 +64,7 @@ class KsSnap(Snap):
     SNAP parameters, so passing the KS state code is all that is required.
     """
 
-    name_abbreviated = "ks_snap"
+    program_code = "ks_snap"
 
     pe_inputs = [
         *Snap.pe_inputs,
@@ -84,7 +84,7 @@ class KsNslp(SchoolLunch):
     PolicyEngine resolves any state-keyed parameters correctly.
     """
 
-    name_abbreviated = "ks_nslp"
+    program_code = "ks_nslp"
 
     pe_inputs = [
         *SchoolLunch.pe_inputs,
@@ -108,7 +108,7 @@ class KsLifeline(Lifeline):
     adding the KS state code so PE resolves the KS supplement parameters.
     """
 
-    name_abbreviated = "ks_lifeline"
+    program_code = "ks_lifeline"
 
     pe_inputs = [
         *Lifeline.pe_inputs,

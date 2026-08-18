@@ -25,7 +25,7 @@ class MaCpp(ProgramCalculator):
     Source: https://earlychildhoodcambridge.org/cpp/
     """
 
-    name_abbreviated = "ma_cpp"
+    program_code = "ma_cpp"
 
     amount = 1  # Value varies (free tuition); frontend displays "Varies"
     eligible_city = "Cambridge"

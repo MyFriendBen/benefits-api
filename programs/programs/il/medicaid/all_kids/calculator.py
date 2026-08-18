@@ -5,7 +5,7 @@ from programs.framework.mixins import IlMedicaidFplIncomeCheckMixin
 
 
 class AllKids(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
-    name_abbreviated = "il_all_kids"
+    program_code = "il_all_kids"
     member_amount = 284 * 12  # $284/month
     max_age = 18  # Under 19
     dependencies = ["age", "household_size", "pregnant", "income_amount", "income_frequency"]

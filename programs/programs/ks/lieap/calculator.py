@@ -39,7 +39,7 @@ class KsLieap(ProgramCalculator):
     not published.
     """
 
-    name_abbreviated = "ks_lieap"
+    program_code = "ks_lieap"
 
     fpl_percent = 1.5
     amount = 680

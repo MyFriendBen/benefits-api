@@ -15,7 +15,10 @@ raises here instead of silently overwriting whichever entry lost the merge.
 
 A class declares one of two things about itself, and there is no third option:
 
-- ``name_abbreviated`` — it backs the ``Program`` row of that name.
+- ``program_code`` — the ``Program.name_abbreviated`` of the row it backs. Named
+  for what it is on this side of the boundary: a reference to a row, not a
+  property of the class. The database column is still ``name_abbreviated``;
+  renaming it, the serializers and the frontend to match is tracked separately.
 - ``abstract=True`` — it exists to be subclassed and backs no row.
 
 Saying neither is an error. That was the old failure mode wearing a new hat: a
@@ -36,7 +39,7 @@ from typing import Iterator, Optional, TypeVar
 T = TypeVar("T")
 
 #: Attribute a class sets to claim a database key.
-KEY_ATTR = "name_abbreviated"
+KEY_ATTR = "program_code"
 
 
 class UnregisteredCalculator(Exception):

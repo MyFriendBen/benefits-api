@@ -8,7 +8,7 @@ from programs.programs.co.energy_calculator.weatherization_assistance.calculator
 
 
 class EnergyCalculatorGasAffordabilityBlackHills(ProgramCalculator):
-    name_abbreviated = "cesn_bhgap"
+    program_code = "cesn_bhgap"
     amount = 1
     dependencies = [
         *EnergyCalculatorEnergyAssistance.dependencies,

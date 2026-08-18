@@ -4,7 +4,7 @@ import programs.framework.pe_dependencies as dependency
 
 
 class Kseitc(PolicyEngineTaxUnitCalulator):
-    name_abbreviated = "ks_eitc"
+    program_code = "ks_eitc"
     pe_name = "ks_total_eitc"
     pe_inputs = [
         *Eitc.pe_inputs,
@@ -14,7 +14,7 @@ class Kseitc(PolicyEngineTaxUnitCalulator):
 
 
 class KsCdcc(PolicyEngineTaxUnitCalulator):
-    name_abbreviated = "ks_cdcc"
+    program_code = "ks_cdcc"
     pe_name = "ks_cdcc"
     pe_inputs = [
         dependency.member.AgeDependency,
@@ -43,7 +43,7 @@ class KsCtc(Ctc):
     the key prefix.
     """
 
-    name_abbreviated = "ks_ctc"
+    program_code = "ks_ctc"
 
 
 class KsCdccFederal(Cdcc):
@@ -56,4 +56,4 @@ class KsCdccFederal(Cdcc):
     unchanged and exists so the registry maps one key to one calculator.
     """
 
-    name_abbreviated = "ks_cdcc_federal"
+    program_code = "ks_cdcc_federal"

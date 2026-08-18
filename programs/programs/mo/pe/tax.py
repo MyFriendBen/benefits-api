@@ -37,7 +37,7 @@ class MoAca(Aca):
     result as an estimated maximum accordingly.
     """
 
-    name_abbreviated = "mo_aca_ptc"
+    program_code = "mo_aca_ptc"
 
     pe_inputs = [
         *Aca.pe_inputs,
@@ -63,7 +63,7 @@ class MoCtc(Ctc):
     PolicyEngine variables and so do send a state code.
     """
 
-    name_abbreviated = "mo_ctc"
+    program_code = "mo_ctc"
 
 
 class MoEitc(Eitc):
@@ -74,7 +74,7 @@ class MoEitc(Eitc):
     ``eitc`` is federal, so there is nothing state-specific to add.
     """
 
-    name_abbreviated = "mo_eitc"
+    program_code = "mo_eitc"
 
 
 class MoCdccFederal(Cdcc):
@@ -88,4 +88,4 @@ class MoCdccFederal(Cdcc):
     one key to one calculator.
     """
 
-    name_abbreviated = "mo_cdcc_federal"
+    program_code = "mo_cdcc_federal"

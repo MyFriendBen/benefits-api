@@ -171,9 +171,9 @@ class DiscoveryMatchesTheHandMaintainedDictsTests(SimpleTestCase):
         for base in (Cdcc, Medicaid, HeadStart, EarlyHeadStart, Ccdf):
             with self.subTest(base=base.__name__):
                 self.assertNotIn(
-                    "name_abbreviated",
+                    "program_code",
                     vars(base),
-                    f"{base.__name__} is a base that states subclass; it must not claim a key",
+                    f"{base.__name__} is a base that states subclass; it must not claim a code",
                 )
 
 
@@ -198,7 +198,7 @@ class AbstractDeclarationTests(SimpleTestCase):
             pass
 
         class Child(Base):
-            name_abbreviated = "abstract_test_child"
+            program_code = "abstract_test_child"
 
         self.assertTrue(is_abstract(Base))
         self.assertFalse(is_abstract(Child))

@@ -16,7 +16,7 @@ class MoLifeline(Lifeline):
     federal 135%). Without it PE falls back to its own default state.
     """
 
-    name_abbreviated = "mo_lifeline"
+    program_code = "mo_lifeline"
 
     pe_inputs = [
         *Lifeline.pe_inputs,
@@ -49,7 +49,7 @@ class MoNslp(SchoolLunch):
     free meals regardless of income. ``test_spm.py`` pins it for that reason.
     """
 
-    name_abbreviated = "mo_nslp"
+    program_code = "mo_nslp"
 
     pe_inputs = [
         *SchoolLunch.pe_inputs,

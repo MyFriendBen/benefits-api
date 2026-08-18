@@ -4,7 +4,7 @@ import programs.framework.eligibility_messages as messages
 
 
 class MyDenver(ProgramCalculator):
-    name_abbreviated = "mydenver"
+    program_code = "mydenver"
     eligible_counties = ["Denver County"]
     child_age_min = 5
     child_age_max = 18

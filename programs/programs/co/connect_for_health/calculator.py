@@ -31,7 +31,7 @@ class CfhCountyValuesCache(GoogleSheetsCache):
 
 
 class ConnectForHealth(ProgramCalculator):
-    name_abbreviated = "cfhc"
+    program_code = "cfhc"
     percent_of_fpl = 4
     dependencies = ["insurance", "income_amount", "income_frequency", "zipcode", "household_size"]
     eligible_insurance_types = ["none", "private"]

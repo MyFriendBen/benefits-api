@@ -2,7 +2,7 @@ from programs.framework.base import MemberEligibility, ProgramCalculator
 
 
 class TxSsdi(ProgramCalculator):
-    name_abbreviated = "tx_ssdi"
+    program_code = "tx_ssdi"
     income_limit = 1_690  # 2026 non-blind SGA threshold
     income_limit_blind = 2_830  # 2026 blind SGA threshold
     member_amount = 1_580 * 12  # average annual SSDI benefit

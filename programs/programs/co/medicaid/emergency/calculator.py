@@ -4,7 +4,7 @@ import programs.framework.eligibility_messages as messages
 
 
 class CoEmergencyMedicaid(ProgramCalculator):
-    name_abbreviated = "emergency_medicaid"
+    program_code = "emergency_medicaid"
     amount = 9_540
     insurance_types = ["none"]
     dependencies = ["insurance"]

@@ -40,7 +40,7 @@ class TxHse(ProgramCalculator):
     Source: https://statutes.capitol.texas.gov/?tab=1&code=TX&chapter=TX.11&artSec=
     """
 
-    name_abbreviated = "tx_hse"
+    program_code = "tx_hse"
 
     amount = 1200
     senior_disabled_amount = 1700

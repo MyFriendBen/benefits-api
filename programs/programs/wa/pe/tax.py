@@ -32,7 +32,7 @@ class WaWftc(PolicyEngineTaxUnitCalulator):
     filing jointly (the most common case), matching the description copy.
     """
 
-    name_abbreviated = "wa_wftc"
+    program_code = "wa_wftc"
 
     pe_name = "wa_working_families_tax_credit"
     pe_inputs = [
@@ -53,7 +53,7 @@ class WaCtc(Ctc):
     Washington credit with its own calculator.
     """
 
-    name_abbreviated = "wa_ctc"
+    program_code = "wa_ctc"
 
 
 class WaEitc(Eitc):
@@ -64,4 +64,4 @@ class WaEitc(Eitc):
     Families Tax Credit, handled separately.
     """
 
-    name_abbreviated = "wa_eitc"
+    program_code = "wa_eitc"

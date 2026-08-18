@@ -81,11 +81,11 @@ class ProgramCalculator:
 
     Every subclass declares one of two things about itself:
 
-    - ``name_abbreviated`` — the ``Program`` row it backs.
+    - ``program_code`` — the ``Program.name_abbreviated`` of the row it backs.
     - ``abstract=True`` in the class definition — it exists to be subclassed and
       backs no row of its own.
 
-    Declaring neither raises when the registry is built. A class may declare a key
+    Declaring neither raises when the registry is built. A class may declare a code
     *and* be subclassed: ``Snap`` backs the ``snap`` row and is inherited by seven
     states, so being a base and being a program are not mutually exclusive.
     """

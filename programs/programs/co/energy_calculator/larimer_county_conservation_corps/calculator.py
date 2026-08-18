@@ -2,7 +2,7 @@ from programs.framework.base import Eligibility, ProgramCalculator
 
 
 class EnergyCalculatorLarimerConservationCorps(ProgramCalculator):
-    name_abbreviated = "cesn_lccc"
+    program_code = "cesn_lccc"
     amount = 1
     dependencies = ["energy_calculator"]
     utility_providers = [

@@ -3,7 +3,7 @@ import programs.framework.eligibility_messages as messages
 
 
 class DentalHealthCareSeniors(ProgramCalculator):
-    name_abbreviated = "cdhcs"
+    program_code = "cdhcs"
     member_amount = 80 * 12
     min_age = 60
     percent_of_fpl = 2.5

@@ -5,7 +5,7 @@ from programs.programs.federal.pe.tax import Aca
 
 
 class NcMedicaid(Medicaid):
-    name_abbreviated = "nc_medicaid"
+    program_code = "nc_medicaid"
     pe_inputs = [
         *Medicaid.pe_inputs,
         dependency.household.NcStateCodeDependency,
@@ -27,7 +27,7 @@ class NcMedicaid(Medicaid):
 
 
 class NcWic(Wic):
-    name_abbreviated = "nc_wic"
+    program_code = "nc_wic"
     wic_categories = {
         "NONE": 0,
         "INFANT": 60,
@@ -43,7 +43,7 @@ class NcWic(Wic):
 
 
 class NcAca(Aca):
-    name_abbreviated = "nc_aca"
+    program_code = "nc_aca"
     pe_name = "aca_ptc"
     pe_inputs = [
         *Aca.pe_inputs,

@@ -4,7 +4,7 @@ from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
 
 
 class Ileitc(PolicyEngineTaxUnitCalulator):
-    name_abbreviated = "il_eitc"
+    program_code = "il_eitc"
     pe_name = "il_eitc"
     pe_inputs = [
         *Eitc.pe_inputs,
@@ -14,7 +14,7 @@ class Ileitc(PolicyEngineTaxUnitCalulator):
 
 
 class Ilctc(PolicyEngineTaxUnitCalulator):
-    name_abbreviated = "il_ctc"
+    program_code = "il_ctc"
     pe_name = "il_ctc"
     pe_inputs = [
         *Ctc.pe_inputs,

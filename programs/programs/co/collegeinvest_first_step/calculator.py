@@ -14,7 +14,7 @@ class CoCollegeInvestFirstStep(ProgramCalculator):
     data; both gaps are noted in the program description.
     """
 
-    name_abbreviated = "co_collegeinvest_first_step"
+    program_code = "co_collegeinvest_first_step"
 
     member_amount = 121
     max_age = 7

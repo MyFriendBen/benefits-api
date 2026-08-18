@@ -3,7 +3,7 @@ import programs.framework.eligibility_messages as messages
 
 
 class SunBucks(ProgramCalculator):
-    name_abbreviated = "sunbucks"
+    program_code = "sunbucks"
     member_amount = 120
     min_age = 7
     max_age = 16

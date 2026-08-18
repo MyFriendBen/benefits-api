@@ -33,7 +33,7 @@ class MaYouthworks(ProgramCalculator):
     Source: https://commcorp.org/program/youthworks/ (see spec.md for full sourcing)
     """
 
-    name_abbreviated = "ma_youthworks"
+    program_code = "ma_youthworks"
 
     min_age = 14
     max_age = 25

@@ -18,7 +18,7 @@ class WaWic(ProgramCalculator):
     postpartum/breastfeeding window (medium impact, approximated via infant presence).
     """
 
-    name_abbreviated = "wa_wic"
+    program_code = "wa_wic"
 
     max_child_age = 5
     fpl_percent = 1.85

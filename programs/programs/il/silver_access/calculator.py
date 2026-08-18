@@ -15,7 +15,7 @@ class IlSilverAccess(ProgramCalculator):
     exclusion applies only to currently-reported coverage, not unenrolled offers.
     """
 
-    name_abbreviated = "il_silver_access"
+    program_code = "il_silver_access"
 
     member_amount = 150 * 12  # $150/month × 12 = $1,800/year
     fpl_percent = 2.5  # 250% FPL income ceiling

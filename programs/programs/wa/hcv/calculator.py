@@ -16,7 +16,7 @@ class WaHcv(ProgramCalculator):
     Data gaps: citizenship, criminal history, real property ownership, student dual-income test.
     """
 
-    name_abbreviated = "wa_hcv"
+    program_code = "wa_hcv"
 
     amount = 0
     asset_limit = 100_000

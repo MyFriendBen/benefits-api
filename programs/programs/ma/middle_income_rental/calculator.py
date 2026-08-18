@@ -25,7 +25,7 @@ class MaMiddleIncomeRental(ProgramCalculator):
     - https://www.cambridgema.gov/~/media/Files/CDD/Housing/incomelimits/hudincomeguidelines.ashx
     """
 
-    name_abbreviated = "ma_middle_income_rental"
+    program_code = "ma_middle_income_rental"
 
     # Cambridge is a city in Middlesex County - used for HUD AMI lookups
     eligible_city = "Cambridge"

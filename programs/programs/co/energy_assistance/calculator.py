@@ -35,7 +35,7 @@ class LeapValueCache(GoogleSheetsCache):
 
 
 class EnergyAssistance(ProgramCalculator):
-    name_abbreviated = "leap"
+    program_code = "leap"
     county_values = LeapValueCache()
     smi_percent = 0.6
     expenses = ["rent", "mortgage"]

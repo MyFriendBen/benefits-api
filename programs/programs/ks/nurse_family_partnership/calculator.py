@@ -47,7 +47,7 @@ class KsNurseFamilyPartnership(ProgramCalculator):
     - https://www.nursefamilypartnership.org/locations/kansas/
     """
 
-    name_abbreviated = "ks_nurse_family_partnership"
+    program_code = "ks_nurse_family_partnership"
 
     fpl_percent = 1.71
     eligible_counties = ["Shawnee County", "Johnson County"]

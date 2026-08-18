@@ -3,7 +3,7 @@ from typing import ClassVar
 
 
 class MedicareSavings(ProgramCalculator):
-    name_abbreviated = "medicare_savings"
+    program_code = "medicare_savings"
     eligible_insurance_types = ("none", "employer", "private", "medicare")
     asset_limit = {
         "single": 11_160,

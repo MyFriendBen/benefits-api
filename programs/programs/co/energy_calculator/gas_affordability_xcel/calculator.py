@@ -8,7 +8,7 @@ from programs.programs.co.energy_calculator.weatherization_assistance.calculator
 
 
 class EnergyCalculatorGasAffordabilityXcel(ProgramCalculator):
-    name_abbreviated = "cesn_xcelgap"
+    program_code = "cesn_xcelgap"
     amount = 1
     dependencies = [
         *EnergyCalculatorEnergyAssistance.dependencies,

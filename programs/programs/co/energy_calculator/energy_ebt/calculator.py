@@ -2,7 +2,7 @@ from programs.framework.base import Eligibility, ProgramCalculator
 
 
 class EnergyCalculatorEnergyEbt(ProgramCalculator):
-    name_abbreviated = "cesn_energy_ebt"
+    program_code = "cesn_energy_ebt"
     amount = 21
     max_fpl = 2
     dependencies = ["income_frequency", "income_amount", "household_size"]

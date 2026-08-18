@@ -5,7 +5,7 @@ from programs.framework.mixins import IlMedicaidFplIncomeCheckMixin
 
 
 class FamilyCare(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
-    name_abbreviated = "il_family_care"
+    program_code = "il_family_care"
     member_amount = 474 * 12
     max_child_age = 18
     fpl_percent = 1.38

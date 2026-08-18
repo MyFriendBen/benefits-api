@@ -26,7 +26,7 @@ class MoWic(Wic):
     the frontend's ``value > 0`` filter would drop the program from results entirely.
     """
 
-    name_abbreviated = "mo_wic"
+    program_code = "mo_wic"
 
     pe_inputs = [
         *Wic.pe_inputs,
@@ -41,7 +41,7 @@ class MoWic(Wic):
 class MoHeadStart(HeadStart):
     """Missouri Head Start (ages 3-5) — federal ``HeadStart`` PE calculator + MO state code."""
 
-    name_abbreviated = "mo_head_start"
+    program_code = "mo_head_start"
 
     pe_inputs = [
         *HeadStart.pe_inputs,
@@ -52,7 +52,7 @@ class MoHeadStart(HeadStart):
 class MoEarlyHeadStart(EarlyHeadStart):
     """Missouri Early Head Start (birth-3 / pregnant) — federal ``EarlyHeadStart`` PE calculator + MO state code."""
 
-    name_abbreviated = "mo_early_head_start"
+    program_code = "mo_early_head_start"
 
     pe_inputs = [
         *EarlyHeadStart.pe_inputs,
@@ -96,7 +96,7 @@ class MoSsi(Ssi):
     ``show_in_has_benefits_step: true``.
     """
 
-    name_abbreviated = "mo_ssi"
+    program_code = "mo_ssi"
 
     pe_inputs = [
         *Ssi.pe_inputs,

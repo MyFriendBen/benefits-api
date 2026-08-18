@@ -5,7 +5,7 @@ class FixtureBase:
     same way it treats real calculators.
     """
 
-    name_abbreviated = ""
+    program_code = ""
     _abstract = True
 
     def __init_subclass__(cls, abstract: bool = False, **kwargs) -> None:

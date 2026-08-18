@@ -6,7 +6,7 @@ from screener.models import HouseholdMember
 
 
 class CoMedicaid(Medicaid):
-    name_abbreviated = "co_medicaid"
+    program_code = "co_medicaid"
     medicaid_categories = {
         "NONE": 0,
         "ADULT": 310,
@@ -27,7 +27,7 @@ class CoMedicaid(Medicaid):
 
 
 class AidToTheNeedyAndDisabled(PolicyEngineMembersCalculator):
-    name_abbreviated = "andcs"
+    program_code = "andcs"
     pe_name = "co_state_supplement"
     pe_inputs = [
         dependency.member.SsiCountableResourcesDependency,
@@ -48,7 +48,7 @@ class AidToTheNeedyAndDisabled(PolicyEngineMembersCalculator):
 
 
 class OldAgePension(PolicyEngineMembersCalculator):
-    name_abbreviated = "oap"
+    program_code = "oap"
     pe_name = "co_oap"
     pe_inputs = [
         dependency.member.SsiCountableResourcesDependency,
@@ -64,7 +64,7 @@ class OldAgePension(PolicyEngineMembersCalculator):
 
 
 class Chp(PolicyEngineMembersCalculator):
-    name_abbreviated = "chp"
+    program_code = "chp"
     pe_name = "co_chp"
     pe_inputs = [
         dependency.member.AgeDependency,
@@ -87,7 +87,7 @@ class Chp(PolicyEngineMembersCalculator):
 
 
 class FamilyAffordabilityTaxCredit(PolicyEngineMembersCalculator):
-    name_abbreviated = "fatc"
+    program_code = "fatc"
     pe_name = "co_family_affordability_credit"
     pe_inputs = [
         dependency.member.AgeDependency,
@@ -100,7 +100,7 @@ class FamilyAffordabilityTaxCredit(PolicyEngineMembersCalculator):
 
 
 class CoWic(Wic):
-    name_abbreviated = "co_wic"
+    program_code = "co_wic"
     wic_categories = {
         "NONE": 0,
         "INFANT": 130,
@@ -116,7 +116,7 @@ class CoWic(Wic):
 
 
 class EveryDayEats(CommoditySupplementalFoodProgram):
-    name_abbreviated = "ede"
+    program_code = "ede"
     amount = 600
 
     def member_value(self, member: HouseholdMember):

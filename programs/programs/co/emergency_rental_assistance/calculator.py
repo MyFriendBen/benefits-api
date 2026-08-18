@@ -4,7 +4,7 @@ import programs.framework.eligibility_messages as messages
 
 
 class EmergencyRentalAssistance(ProgramCalculator):
-    name_abbreviated = "erap"
+    program_code = "erap"
     amount = 13_848
     ami_percent = "80%"
     expenses = ["rent"]

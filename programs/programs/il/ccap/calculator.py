@@ -21,7 +21,7 @@ class IlChildCareAssistanceProgram(ProgramCalculator):
     a monthly copayment based on income and family size. The copayment is per family, not per child.
     """
 
-    name_abbreviated = "il_ccap"
+    program_code = "il_ccap"
 
     dependencies = ["age", "county", "income_amount", "income_frequency", "household_size"]
     # Per IDHS policy 01.01.02, eligible children include:

@@ -25,7 +25,7 @@ class MaDhspAfterschool(ProgramCalculator):
     Source: https://www.finditcambridge.org/programs/dhsp-afterschool-programs-lottery
     """
 
-    name_abbreviated = "ma_dhsp_afterschool"
+    program_code = "ma_dhsp_afterschool"
 
     eligible_city = "Cambridge"
     # K-8 typically covers ages 5-14 (Kindergarten through 8th grade)

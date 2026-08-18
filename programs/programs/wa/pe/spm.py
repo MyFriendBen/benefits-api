@@ -3,7 +3,7 @@ from programs.programs.federal.pe.spm import Lifeline, Snap, Tanf
 
 
 class WaLifeline(Lifeline):
-    name_abbreviated = "wa_lifeline"
+    program_code = "wa_lifeline"
     pe_inputs = [
         *Lifeline.pe_inputs,
         dependency.household.WaStateCodeDependency,
@@ -11,7 +11,7 @@ class WaLifeline(Lifeline):
 
 
 class WaSnap(Snap):
-    name_abbreviated = "wa_snap"
+    program_code = "wa_snap"
     pe_inputs = [
         *Snap.pe_inputs,
         dependency.household.WaStateCodeDependency,
@@ -41,7 +41,7 @@ class WaTanf(Tanf):
     the known gross-income-approximation limitation.
     """
 
-    name_abbreviated = "wa_tanf"
+    program_code = "wa_tanf"
 
     pe_name = "wa_tanf"
     pe_inputs = [

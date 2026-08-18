@@ -20,7 +20,7 @@ class EnergyCalculatorHomeEfficiencyAssistance(ProgramCalculator):
             - Income at or below 60% of State Median Income (SMI)
     """
 
-    name_abbreviated = "cesn_heap"
+    program_code = "cesn_heap"
 
     amount = 1  # Benefit amount not calculated; eligibility determination only
     dependencies = [

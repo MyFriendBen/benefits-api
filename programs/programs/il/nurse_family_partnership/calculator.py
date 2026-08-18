@@ -34,7 +34,7 @@ class IlNurseFamilyPartnership(ProgramCalculator):
     - CEDA (Community and Economic Development Association of Cook County) WIC Program
     """
 
-    name_abbreviated = "il_nfp"
+    program_code = "il_nfp"
 
     fpl_percent = 3
     # annual amt = total value divided by length of program (2.5 years)

@@ -4,7 +4,7 @@ import programs.framework.eligibility_messages as messages
 
 
 class MedicaidAdultWithDisability(ProgramCalculator):
-    name_abbreviated = "awd_medicaid"
+    program_code = "awd_medicaid"
     min_age = 16
     max_income_percent = 4.5
     earned_deduction = 65

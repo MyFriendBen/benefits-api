@@ -2,7 +2,7 @@ from programs.framework.tests.registry_fixtures.base import FixtureBase
 
 
 class FixtureParent(FixtureBase):
-    name_abbreviated = "fixture_parent"
+    program_code = "fixture_parent"
 
 
 class FixtureChildWithNoKeyOfItsOwn(FixtureParent, abstract=True):

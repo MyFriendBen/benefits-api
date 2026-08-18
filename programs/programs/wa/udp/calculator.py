@@ -19,7 +19,7 @@ class WaUdp(ProgramCalculator):
     screening. Calculator assumes neither disqualifying condition applies (inclusivity assumption).
     """
 
-    name_abbreviated = "wa_udp"
+    program_code = "wa_udp"
 
     amount = 732  # average annual savings per seattle.gov/human-services UDP page
 

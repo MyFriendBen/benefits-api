@@ -5,7 +5,7 @@ from screener.models import HouseholdMember
 
 
 class WaAppleHealthMedicaid(Medicaid):
-    name_abbreviated = "wa_apple_health_medicaid"
+    program_code = "wa_apple_health_medicaid"
     pe_inputs = [
         *Medicaid.pe_inputs,
         dependency.household.WaStateCodeDependency,
@@ -120,7 +120,7 @@ class WaAppleHealthForKids(PolicyEngineMembersCalculator):
     Value: $2,801/year per eligible child (KFF 2023 CHILD bucket).
     """
 
-    name_abbreviated = "wa_apple_health_for_kids"
+    program_code = "wa_apple_health_for_kids"
 
     pe_name = "wa_apple_health_kids_eligible"
     pe_inputs = [
@@ -166,7 +166,7 @@ class WaSsi(Ssi):
     PolicyEngine variable mapping, and the 15 reference test scenarios.
     """
 
-    name_abbreviated = "wa_ssi"
+    program_code = "wa_ssi"
 
     pe_inputs = [
         *Ssi.pe_inputs,
