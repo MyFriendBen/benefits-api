@@ -13,9 +13,20 @@ walking the package at import. Nothing hand-maintains a dict, so adding a
 program is one file instead of a file plus a registry edit — and a duplicate key
 raises here instead of silently overwriting whichever entry lost the merge.
 
-A class with no key is not registered. That is how abstract bases stay out:
-``ProgramCalculator`` itself, the PolicyEngine entity bases, and any
-family base a state subclasses.
+A class declares one of two things about itself, and there is no third option:
+
+- ``name_abbreviated`` — it backs the ``Program`` row of that name.
+- ``abstract=True`` — it exists to be subclassed and backs no row.
+
+Saying neither is an error. That was the old failure mode wearing a new hat: a
+calculator written, registered nowhere, silently returning nothing. Saying it via
+a class keyword rather than a flag attribute is deliberate — ``abstract=True`` is
+read by ``__init_subclass__`` at class creation, so the answer cannot drift from
+the class it describes.
+
+A class may be both keyed and subclassed. ``Snap`` backs the ``snap`` row and is
+inherited by seven states. Fourteen classes are dual-role like that today, which
+is why "is it a base?" cannot be inferred from whether anything subclasses it.
 """
 
 import importlib
@@ -28,6 +39,15 @@ T = TypeVar("T")
 KEY_ATTR = "name_abbreviated"
 
 
+class UnregisteredCalculator(Exception):
+    """A calculator declared neither a key nor ``abstract=True``.
+
+    Silence is ambiguous — it reads the same whether the class is a base or whether
+    someone forgot the key — so it is rejected rather than guessed at. A base says
+    ``abstract=True``; a program says ``name_abbreviated``.
+    """
+
+
 class DuplicateRegistryKey(Exception):
     """Two classes claim the same key.
 
@@ -36,6 +56,15 @@ class DuplicateRegistryKey(Exception):
     `{p.name_abbreviated: p for p in all_programs}`, which silently kept the
     last one.
     """
+
+
+def is_abstract(cls: type) -> bool:
+    """True when the class declared ``abstract=True`` in its definition.
+
+    Read from ``vars()`` rather than inherited: a subclass of an abstract base is
+    concrete unless it says otherwise.
+    """
+    return bool(vars(cls).get("_abstract", False))
 
 
 def _walk_classes(package_name: str, base: type[T]) -> Iterator[type[T]]:
@@ -95,15 +124,16 @@ def build(package_name: str, base: type[T], key_attr: str = KEY_ATTR) -> dict[st
     """
     registry: dict[str, type[T]] = {}
     origins: dict[str, str] = {}
+    undeclared: list[type[T]] = []
 
     for cls in _walk_classes(package_name, base):
-        key: Optional[str] = getattr(cls, key_attr, None)
+        # Read from vars(), not getattr: an inherited key means this subclass forgot
+        # to declare its own, and registering it would hand the parent's key to the
+        # child or raise a duplicate pointing at the wrong file.
+        key: Optional[str] = vars(cls).get(key_attr)
         if not key or not isinstance(key, str):
-            continue
-        # An inherited key means the subclass forgot to declare its own. Registering
-        # it would hand the parent's key to the child, or raise a duplicate that
-        # points at the wrong file.
-        if key_attr not in vars(cls):
+            if not is_abstract(cls):
+                undeclared.append(cls)
             continue
         if key in registry:
             raise DuplicateRegistryKey(
@@ -113,5 +143,13 @@ def build(package_name: str, base: type[T], key_attr: str = KEY_ATTR) -> dict[st
             )
         registry[key] = cls
         origins[key] = cls.__module__
+
+    if undeclared:
+        listed = "\n  ".join(f"{c.__module__}.{c.__name__}" for c in sorted(undeclared, key=lambda c: c.__name__))
+        raise UnregisteredCalculator(
+            f"These calculators declared neither {key_attr} nor abstract=True:\n  {listed}\n"
+            f"Set {key_attr} to the Program.name_abbreviated it backs, or pass "
+            f"abstract=True in the class definition if it exists only to be subclassed."
+        )
 
     return registry

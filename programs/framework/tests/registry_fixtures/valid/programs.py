@@ -5,5 +5,10 @@ class FixtureParent(FixtureBase):
     name_abbreviated = "fixture_parent"
 
 
-class FixtureChildWithNoKeyOfItsOwn(FixtureParent):
-    """Inherits `fixture_parent` without declaring a key, so must not register."""
+class FixtureChildWithNoKeyOfItsOwn(FixtureParent, abstract=True):
+    """Inherits ``fixture_parent`` without declaring a key.
+
+    Marked abstract so this fixture is about the inherited-key rule rather than the
+    declare-something rule: an inherited key must not register the subclass, or the
+    parent's key would silently point at the child.
+    """

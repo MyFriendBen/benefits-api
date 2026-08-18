@@ -246,7 +246,7 @@ class IlBccp(PolicyEngineMembersCalculator):
         return 0
 
 
-class IlFamilyPlanningProgram(PolicyEngineMembersCalculator):
+class IlFamilyPlanningProgram(PolicyEngineMembersCalculator, abstract=True):
     """
     Illinois Family Planning Program (FPP) eligibility calculator.
 

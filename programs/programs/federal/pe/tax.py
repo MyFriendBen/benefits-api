@@ -27,7 +27,7 @@ class Ctc(PolicyEngineTaxUnitCalulator):
     pe_outputs = [dependency.tax.Ctc]
 
 
-class Cdcc(PolicyEngineTaxUnitCalulator):
+class Cdcc(PolicyEngineTaxUnitCalulator, abstract=True):
     pe_name = "cdcc"
     pe_inputs = [
         dependency.member.AgeDependency,
@@ -44,7 +44,7 @@ class Cdcc(PolicyEngineTaxUnitCalulator):
     pe_outputs = [dependency.tax.Cdcc]
 
 
-class Aca(PolicyEngineTaxUnitCalulator):
+class Aca(PolicyEngineTaxUnitCalulator, abstract=True):
     pe_name = "aca_ptc"
     pe_inputs = [
         *Medicaid.pe_inputs,

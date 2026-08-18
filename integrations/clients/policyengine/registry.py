@@ -1,12 +1,19 @@
 """
-Registry of all PolicyEngine calculators.
+The PolicyEngine calculators, discovered rather than listed.
 
-This module aggregates all state-specific and federal calculators into unified
-dictionaries. It's separated from __init__.py to avoid circular imports when
-importing base classes.
+This was sixty lines of imports and dict merges, one block per state per
+PolicyEngine entity. Each calculator now declares its own ``name_abbreviated``
+and `programs.framework.registry.build` finds it, so adding a program touches
+one file instead of a calculator plus a state dict plus this module — the third
+of which was easy to forget, and forgetting it meant the program silently
+returned no value.
 
-Import from this module when you need access to the calculator dictionaries:
-    from integrations.clients.policyengine.registry import all_calculators
+Entity type is read off the base class the calculator inherits, not off which
+dict it was listed in. Those two disagreed: ``il_aca`` and ``nc_aca`` sat in the
+member dict while subclassing ``PolicyEngineTaxUnitCalulator``. Nothing broke,
+because the per-entity dicts have no runtime consumer — ``pe_category`` on the
+class is what the request payload keys off, and that was correct. Deriving the
+split from the class makes the two impossible to disagree.
 """
 
 from programs.framework.pe_base import (
@@ -15,79 +22,18 @@ from programs.framework.pe_base import (
     PolicyEngineSpmCalulator,
     PolicyEngineTaxUnitCalulator,
 )
-from programs.programs.co.pe import (
-    co_member_calculators,
-    co_spm_calculators,
-    co_tax_unit_calculators,
-)
-from programs.programs.federal.pe import (
-    federal_member_calculators,
-    federal_spm_unit_calculators,
-    federal_tax_unit_calculators,
-)
-from programs.programs.il.pe import (
-    il_member_calculators,
-    il_spm_calculators,
-    il_tax_unit_calculators,
-)
-from programs.programs.ks.pe import (
-    ks_member_calculators,
-    ks_spm_calculators,
-    ks_tax_unit_calculators,
-)
-from programs.programs.ma.pe import (
-    ma_member_calculators,
-    ma_spm_calculators,
-    ma_tax_unit_calculators,
-)
-from programs.programs.mo.pe import mo_member_calculators, mo_spm_calculators, mo_tax_unit_calculators
-from programs.programs.nc.pe import nc_member_calculators, nc_spm_calculators
-from programs.programs.tx.pe import (
-    tx_member_calculators,
-    tx_spm_calculators,
-    tx_tax_unit_calculators,
-)
-from programs.programs.wa.pe import wa_member_calculators, wa_spm_calculators, wa_tax_calculators
+from programs.framework.registry import build
 
-all_member_calculators: dict[str, type[PolicyEngineMembersCalculator]] = {
-    **co_member_calculators,
-    **federal_member_calculators,
-    **il_member_calculators,
-    **ks_member_calculators,
-    **ma_member_calculators,
-    **mo_member_calculators,
-    **nc_member_calculators,
-    **tx_member_calculators,
-    **wa_member_calculators,
-}
+#: Every PolicyEngine calculator, keyed by the ``Program.name_abbreviated`` it answers to.
+all_calculators: dict[str, type[PolicyEngineCalulator]] = build("programs.programs", PolicyEngineCalulator)
 
-all_spm_unit_calculators: dict[str, type[PolicyEngineSpmCalulator]] = {
-    **co_spm_calculators,
-    **federal_spm_unit_calculators,
-    **il_spm_calculators,
-    **ks_spm_calculators,
-    **ma_spm_calculators,
-    **mo_spm_calculators,
-    **nc_spm_calculators,
-    **tx_spm_calculators,
-    **wa_spm_calculators,
-}
 
-all_tax_unit_calculators: dict[str, type[PolicyEngineTaxUnitCalulator]] = {
-    **co_tax_unit_calculators,
-    **federal_tax_unit_calculators,
-    **il_tax_unit_calculators,
-    **ks_tax_unit_calculators,
-    **ma_tax_unit_calculators,
-    **mo_tax_unit_calculators,
-    **tx_tax_unit_calculators,
-    **wa_tax_calculators,
-}
+def _of_entity(entity):
+    return {key: cls for key, cls in all_calculators.items() if issubclass(cls, entity)}
 
-all_calculators: dict[str, type[PolicyEngineCalulator]] = {
-    **all_member_calculators,
-    **all_spm_unit_calculators,
-    **all_tax_unit_calculators,
-}
+
+all_member_calculators: dict[str, type[PolicyEngineMembersCalculator]] = _of_entity(PolicyEngineMembersCalculator)
+all_spm_unit_calculators: dict[str, type[PolicyEngineSpmCalulator]] = _of_entity(PolicyEngineSpmCalulator)
+all_tax_unit_calculators: dict[str, type[PolicyEngineTaxUnitCalulator]] = _of_entity(PolicyEngineTaxUnitCalulator)
 
 all_pe_programs = all_calculators.keys()

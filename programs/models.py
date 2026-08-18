@@ -5,7 +5,6 @@ from phonenumber_field.modelfields import PhoneNumberField
 from screener.models import WhiteLabel
 from translations.model_data import ModelDataController
 from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
-from programs.programs import calculators
 from programs.util import Dependencies
 from typing import Optional, TypedDict, Union
 from programs.translation_overrides import warning_calculators
@@ -779,6 +778,11 @@ class Program(models.Model):
     # contains the eligibility information and values for all currently
     # calculated benefits in the chain.
     def eligibility(self, screen, data, missing_dependencies: Dependencies):
+        # Imported here rather than at module scope: the registry is built by
+        # walking every calculator, and the PolicyEngine base imports Program
+        # from this module. At import time that cycle is unresolvable.
+        from programs.programs import calculators
+
         Calculator = calculators[self.name_abbreviated.lower()]
 
         calculator = Calculator(screen, self, data, missing_dependencies)

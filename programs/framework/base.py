@@ -78,7 +78,26 @@ class Eligibility:
 class ProgramCalculator:
     """
     Base class for all Programs
+
+    Every subclass declares one of two things about itself:
+
+    - ``name_abbreviated`` — the ``Program`` row it backs.
+    - ``abstract=True`` in the class definition — it exists to be subclassed and
+      backs no row of its own.
+
+    Declaring neither raises when the registry is built. A class may declare a key
+    *and* be subclassed: ``Snap`` backs the ``snap`` row and is inherited by seven
+    states, so being a base and being a program are not mutually exclusive.
     """
+
+    #: Set by ``abstract=True`` in the class definition. Read via ``vars()`` so it
+    #: is never inherited — a subclass of an abstract base is concrete unless it
+    #: says otherwise, which is the common case.
+    _abstract = True
+
+    def __init_subclass__(cls, abstract: bool = False, **kwargs) -> None:
+        super().__init_subclass__(**kwargs)
+        cls._abstract = abstract
 
     dependencies = tuple()
     amount = 0

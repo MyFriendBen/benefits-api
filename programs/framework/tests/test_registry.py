@@ -17,7 +17,13 @@ from django.test import SimpleTestCase
 
 from programs.framework.base import ProgramCalculator
 from programs.framework.pe_base import PolicyEngineCalulator
-from programs.framework.registry import DuplicateRegistryKey, _walk_classes, build
+from programs.framework.registry import (
+    DuplicateRegistryKey,
+    UnregisteredCalculator,
+    _walk_classes,
+    build,
+    is_abstract,
+)
 from programs.framework.tests.registry_fixtures.base import FixtureBase as _FixtureBase
 from programs.framework.tests.registry_fixtures.valid.programs import (
     FixtureChildWithNoKeyOfItsOwn as _FixtureChildWithNoKeyOfItsOwn,
@@ -26,6 +32,7 @@ from programs.framework.tests.registry_fixtures.valid.programs import FixturePar
 
 _FIXTURE_PACKAGE = "programs.framework.tests.registry_fixtures.valid"
 _DUPLICATE_PACKAGE = "programs.framework.tests.registry_fixtures.duplicate"
+_UNDECLARED_PACKAGE = "programs.framework.tests.registry_fixtures.undeclared"
 
 
 class WalkClassesTests(SimpleTestCase):
@@ -97,6 +104,9 @@ class BuildTests(SimpleTestCase):
         Registering it would either hand the parent's key to the child or raise a
         duplicate that points at the wrong file. Built against a throwaway package
         so the assertion is about `build`, not about a hand-made exception.
+
+        The fixture child is marked abstract so this test isolates the inherited-key
+        rule; declaring nothing at all is a separate error, covered below.
         """
         registry = build(_FIXTURE_PACKAGE, _FixtureBase)
 
@@ -165,3 +175,71 @@ class DiscoveryMatchesTheHandMaintainedDictsTests(SimpleTestCase):
                     vars(base),
                     f"{base.__name__} is a base that states subclass; it must not claim a key",
                 )
+
+
+class AbstractDeclarationTests(SimpleTestCase):
+    """A class says what it is; nothing is inferred.
+
+    Base-versus-program cannot be read off the data — a calculator with no
+    ``Program`` row is normal (written but not configured yet) and a row with no
+    calculator is normal (tracking-only). It cannot be inferred from whether
+    anything subclasses the class either: ``Chip`` is a base with zero subclasses,
+    and fourteen classes are both keyed and subclassed. So each class declares.
+    """
+
+    def test_abstract_is_not_inherited(self):
+        """A subclass of an abstract base is concrete unless it says otherwise.
+
+        This is the common case — every state subclass of ``HeadStart`` is a real
+        program — so it must be the default.
+        """
+
+        class Base(ProgramCalculator, abstract=True):
+            pass
+
+        class Child(Base):
+            name_abbreviated = "abstract_test_child"
+
+        self.assertTrue(is_abstract(Base))
+        self.assertFalse(is_abstract(Child))
+
+    def test_declaring_neither_a_key_nor_abstract_raises(self):
+        """Silence is ambiguous, so it is rejected rather than guessed at."""
+        with self.assertRaises(UnregisteredCalculator) as ctx:
+            build(_UNDECLARED_PACKAGE, _FixtureBase)
+
+        message = str(ctx.exception)
+        self.assertIn("DeclaredNothing", message)
+        self.assertIn("abstract=True", message)
+
+    def test_a_keyed_class_may_also_be_subclassed(self):
+        """Being a base and being a program are not mutually exclusive.
+
+        ``Snap`` backs the ``snap`` row and is inherited by seven states. Fourteen
+        classes are dual-role like that, which is why "is it a base?" cannot be
+        inferred from whether anything subclasses it.
+        """
+        from programs.programs.federal.pe.spm import Snap
+
+        registry = build("programs.programs", ProgramCalculator)
+
+        self.assertIs(registry["snap"], Snap)
+        self.assertFalse(is_abstract(Snap))
+        self.assertGreater(
+            len(
+                [
+                    c
+                    for c in _walk_classes("programs.programs", ProgramCalculator)
+                    if issubclass(c, Snap) and c is not Snap
+                ]
+            ),
+            1,
+        )
+
+    def test_the_family_bases_declare_themselves_abstract(self):
+        from programs.programs.federal.pe.member import Ccdf, Chip, EarlyHeadStart, HeadStart, Medicaid, Msp
+        from programs.programs.federal.pe.tax import Aca, Cdcc
+
+        for cls in (Medicaid, Chip, HeadStart, EarlyHeadStart, Ccdf, Msp, Aca, Cdcc):
+            with self.subTest(cls=cls.__name__):
+                self.assertTrue(is_abstract(cls), f"{cls.__name__} backs no Program row")
