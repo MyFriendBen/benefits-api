@@ -24,16 +24,8 @@ from programs.framework.registry import (
     _walk_classes,
     build,
     is_abstract,
+    register,
 )
-from programs.framework.tests.registry_fixtures.base import FixtureBase as _FixtureBase
-from programs.framework.tests.registry_fixtures.valid.programs import (
-    FixtureChildWithNoKeyOfItsOwn as _FixtureChildWithNoKeyOfItsOwn,
-)
-from programs.framework.tests.registry_fixtures.valid.programs import FixtureParent as _FixtureParent
-
-_FIXTURE_PACKAGE = "programs.framework.tests.registry_fixtures.valid"
-_DUPLICATE_PACKAGE = "programs.framework.tests.registry_fixtures.duplicate"
-_UNDECLARED_PACKAGE = "programs.framework.tests.registry_fixtures.undeclared"
 
 
 class WalkClassesTests(SimpleTestCase):
@@ -100,32 +92,42 @@ class BuildTests(SimpleTestCase):
         self.assertNotIn("", registry)
         self.assertTrue(all(k for k in registry), "an empty key was registered")
 
-    def test_an_inherited_key_does_not_register_the_subclass(self):
-        """A subclass that forgets its own key is skipped, not given its parent's.
+    def test_an_inherited_code_does_not_register_the_subclass(self):
+        """A subclass claims its own code or none; it never inherits one.
 
-        Registering it would either hand the parent's key to the child or raise a
-        duplicate that points at the wrong file. Built against a throwaway package
-        so the assertion is about `build`, not about a hand-made exception.
-
-        The fixture child is marked abstract so this test isolates the inherited-key
-        rule; declaring nothing at all is a separate error, covered below.
+        Registering on an inherited code would either hand the parent's row to the
+        child or raise a duplicate naming the wrong file.
         """
-        registry = build(_FIXTURE_PACKAGE, _FixtureBase)
 
-        self.assertIs(registry["fixture_parent"], _FixtureParent)
-        self.assertNotIn(_FixtureChildWithNoKeyOfItsOwn, registry.values())
+        class Parent(ProgramCalculator):
+            program_code = "registry_test_parent"
+
+        class Child(Parent, abstract=True):
+            pass
+
+        registry = register([Parent, Child])
+
+        self.assertIs(registry["registry_test_parent"], Parent)
+        self.assertNotIn(Child, registry.values())
 
     def test_duplicate_keys_raise_and_name_both_classes(self):
-        """Two classes claiming one key is an error, and the message says which.
+        """Two classes claiming one code is an error, and the message says which.
 
-        A collision has no correct silent resolution — either class could be the
-        one a row means — so it raises at import with both names in the message.
+        A collision has no correct silent resolution — either class could be the one
+        a row means — so it raises with both names in the message.
         """
+
+        class FirstClaimant(ProgramCalculator):
+            program_code = "registry_test_duplicate"
+
+        class SecondClaimant(ProgramCalculator):
+            program_code = "registry_test_duplicate"
+
         with self.assertRaises(DuplicateRegistryKey) as ctx:
-            build(_DUPLICATE_PACKAGE, _FixtureBase)
+            register([FirstClaimant, SecondClaimant])
 
         message = str(ctx.exception)
-        self.assertIn("fixture_duplicate", message)
+        self.assertIn("registry_test_duplicate", message)
         self.assertIn("FirstClaimant", message)
         self.assertIn("SecondClaimant", message)
 
@@ -215,8 +217,12 @@ class AbstractDeclarationTests(SimpleTestCase):
 
     def test_declaring_neither_a_key_nor_abstract_raises(self):
         """Silence is ambiguous, so it is rejected rather than guessed at."""
+
+        class DeclaredNothing(ProgramCalculator):
+            pass
+
         with self.assertRaises(UnregisteredCalculator) as ctx:
-            build(_UNDECLARED_PACKAGE, _FixtureBase)
+            register([DeclaredNothing])
 
         message = str(ctx.exception)
         self.assertIn("DeclaredNothing", message)

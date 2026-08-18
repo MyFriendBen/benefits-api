@@ -35,7 +35,7 @@ class, and has to be declared.
 
 import importlib
 import pathlib
-from typing import Iterator, Optional, TypeVar
+from typing import Iterable, Iterator, Optional, TypeVar
 
 T = TypeVar("T")
 
@@ -118,33 +118,33 @@ def _walk_classes(package_name: str, base: type[T]) -> Iterator[type[T]]:
             yield attr
 
 
-def build(package_name: str, base: type[T], key_attr: str = KEY_ATTR) -> dict[str, type[T]]:
-    """Map key -> class for every keyed subclass of `base` under `package_name`.
+def register(classes: Iterable[type[T]], key_attr: str = KEY_ATTR) -> dict[str, type[T]]:
+    """Map code -> class for `classes`, rejecting anything ambiguous.
 
-    A class is registered when it sets `key_attr` to a non-empty string. Bases
-    and mixins leave it unset and stay out.
+    Separate from the package walk so the rules can be exercised against a handful
+    of classes rather than a directory tree.
     """
     registry: dict[str, type[T]] = {}
     origins: dict[str, str] = {}
     undeclared: list[type[T]] = []
 
-    for cls in _walk_classes(package_name, base):
-        # Read from vars(), not getattr: an inherited key means this subclass forgot
-        # to declare its own, and registering it would hand the parent's key to the
+    for cls in classes:
+        # Read from vars(), not getattr: an inherited code means this subclass forgot
+        # to declare its own, and registering it would hand the parent's code to the
         # child or raise a duplicate pointing at the wrong file.
-        key: Optional[str] = vars(cls).get(key_attr)
-        if not key or not isinstance(key, str):
+        code: Optional[str] = vars(cls).get(key_attr)
+        if not code or not isinstance(code, str):
             if not is_abstract(cls):
                 undeclared.append(cls)
             continue
-        if key in registry:
+        if code in registry:
             raise DuplicateRegistryKey(
-                f"{key!r} is claimed by both {origins[key]}.{registry[key].__name__} "
+                f"{code!r} is claimed by both {origins[code]}.{registry[code].__name__} "
                 f"and {cls.__module__}.{cls.__name__}. "
                 f"Each database key must map to exactly one class."
             )
-        registry[key] = cls
-        origins[key] = cls.__module__
+        registry[code] = cls
+        origins[code] = cls.__module__
 
     if undeclared:
         listed = "\n  ".join(f"{c.__module__}.{c.__name__}" for c in sorted(undeclared, key=lambda c: c.__name__))
@@ -155,3 +155,8 @@ def build(package_name: str, base: type[T], key_attr: str = KEY_ATTR) -> dict[st
         )
 
     return registry
+
+
+def build(package_name: str, base: type[T], key_attr: str = KEY_ATTR) -> dict[str, type[T]]:
+    """Map code -> class for every keyed subclass of `base` under `package_name`."""
+    return register(_walk_classes(package_name, base), key_attr)
