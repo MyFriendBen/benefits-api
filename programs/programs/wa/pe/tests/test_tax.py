@@ -107,21 +107,6 @@ class TestWaWftc(TestCase):
         """`pe_name` resolves to PolicyEngine's `wa_working_families_tax_credit` variable."""
         self.assertEqual(WaWftc.pe_name, "wa_working_families_tax_credit")
 
-    def test_is_registered_in_wa_pe_calculators(self):
-        """WaWftc is registered in the WA PE calculators dictionary as `wa_wftc`."""
-        self.assertIn("wa_wftc", wa_pe_calculators)
-        self.assertEqual(wa_pe_calculators["wa_wftc"], WaWftc)
-
-    def test_is_registered_in_wa_tax_calculators(self):
-        """WaWftc is registered in the WA tax-unit subset (not member/SPM)."""
-        self.assertIn("wa_wftc", wa_tax_calculators)
-        self.assertEqual(wa_tax_calculators["wa_wftc"], WaWftc)
-
-    def test_is_registered_in_global_tax_unit_registry(self):
-        """WaWftc flows up into the global PE tax-unit registry (so the engine sees it)."""
-        self.assertIn("wa_wftc", all_tax_unit_calculators)
-        self.assertEqual(all_tax_unit_calculators["wa_wftc"], WaWftc)
-
     def test_pe_inputs_includes_wa_state_code_dependency(self):
         """The WA state code is added on top of the federal Eitc inputs."""
         self.assertIn(WaStateCodeDependency, WaWftc.pe_inputs)

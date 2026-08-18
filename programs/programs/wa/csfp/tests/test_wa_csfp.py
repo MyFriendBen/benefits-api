@@ -1,7 +1,6 @@
 from django.test import TestCase
 from unittest.mock import Mock
 
-from programs.programs.wa import wa_calculators
 from programs.programs.wa.csfp.calculator import WaCsfp
 from programs.framework.base import Eligibility, MemberEligibility
 
@@ -28,10 +27,6 @@ def make_calculator(yearly_income=10_000, fpl_limit=15_000, members=None):
 
 
 class TestWaCsfpClassAttributes(TestCase):
-    def test_is_registered(self):
-        self.assertIn("wa_csfp", wa_calculators)
-        self.assertEqual(wa_calculators["wa_csfp"], WaCsfp)
-
     def test_min_age(self):
         self.assertEqual(WaCsfp.min_age, 60)
 

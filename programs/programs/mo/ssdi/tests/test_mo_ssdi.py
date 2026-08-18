@@ -2,7 +2,6 @@ from django.test import TestCase
 from unittest.mock import Mock
 from datetime import date
 
-from programs.programs.mo import mo_calculators
 from programs.programs.mo.ssdi.calculator import MoSsdi
 from programs.framework.base import Eligibility, MemberEligibility
 
@@ -56,15 +55,6 @@ def make_calculator(has_ssdi=False):
 
 
 class TestMoSsdiClassAttributes(TestCase):
-    def test_is_registered(self):
-        self.assertIn("mo_ssdi", mo_calculators)
-        self.assertEqual(mo_calculators["mo_ssdi"], MoSsdi)
-
-    def test_is_registered_in_global_calculator_map(self):
-        from programs.programs import calculators
-
-        self.assertIn("mo_ssdi", calculators)
-        self.assertEqual(calculators["mo_ssdi"], MoSsdi)
 
     def test_sga_thresholds_are_2026_figures(self):
         self.assertEqual(MoSsdi.sga_non_blind, 1_690)

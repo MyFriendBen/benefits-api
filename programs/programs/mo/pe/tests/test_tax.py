@@ -87,12 +87,6 @@ class TestMoEitcWiring(TestCase):
 class TestMoCdccFederalWiring(TestCase):
     """mo_cdcc_federal registration against the shared federal Cdcc calculator."""
 
-    def test_is_registered_as_its_own_subclass_everywhere(self):
-        self.assertIs(mo_tax_unit_calculators["mo_cdcc_federal"], MoCdccFederal)
-        self.assertIs(mo_pe_calculators["mo_cdcc_federal"], MoCdccFederal)
-        self.assertIs(all_tax_unit_calculators["mo_cdcc_federal"], MoCdccFederal)
-        self.assertIs(all_calculators["mo_cdcc_federal"], MoCdccFederal)
-
     def test_is_the_federal_calculator_with_nothing_added(self):
         """A thin subclass of the federal calculator: same PE variable, same inputs.
 

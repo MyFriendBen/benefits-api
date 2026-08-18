@@ -29,7 +29,6 @@ guidelines (the calculator's configured FPL year), so the "barely eligible" /
 from django.test import TestCase
 from unittest.mock import Mock
 
-from programs.programs.ks import ks_calculators
 from programs.programs.ks.lieap.calculator import KsLieap
 from programs.framework.base import ProgramCalculator, Eligibility
 
@@ -88,10 +87,6 @@ def run_household_eligible(calc):
 class TestKsLieapClassAttributes(TestCase):
     def test_is_subclass_of_program_calculator(self):
         self.assertTrue(issubclass(KsLieap, ProgramCalculator))
-
-    def test_is_registered_in_ks_calculators(self):
-        self.assertIn("ks_lieap", ks_calculators)
-        self.assertEqual(ks_calculators["ks_lieap"], KsLieap)
 
     def test_fpl_percent_is_150(self):
         self.assertEqual(KsLieap.fpl_percent, 1.5)

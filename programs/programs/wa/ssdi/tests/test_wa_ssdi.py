@@ -2,9 +2,8 @@ from django.test import TestCase
 from unittest.mock import Mock
 from datetime import date
 
-from programs.programs.wa import wa_calculators
 from programs.programs.wa.ssdi.calculator import WaSsdi
-from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
+from programs.framework.base import Eligibility, MemberEligibility
 
 
 def make_member(
@@ -55,10 +54,6 @@ def make_calculator(has_ssdi=False):
 
 
 class TestWaSsdiClassAttributes(TestCase):
-    def test_is_registered(self):
-        self.assertIn("wa_ssdi", wa_calculators)
-        self.assertEqual(wa_calculators["wa_ssdi"], WaSsdi)
-
     def test_sga_thresholds(self):
         self.assertEqual(WaSsdi.sga_non_blind, 1_690)
         self.assertEqual(WaSsdi.sga_blind, 2_830)

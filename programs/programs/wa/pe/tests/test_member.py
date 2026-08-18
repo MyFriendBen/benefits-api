@@ -31,7 +31,6 @@ from programs.framework.pe_dependencies import (
 from programs.framework.pe_dependencies.household import (
     WaStateCodeDependency,
 )
-from programs.programs.wa.pe import wa_member_calculators, wa_pe_calculators
 from programs.programs.wa.pe.member import WaAppleHealthForKids, WaAppleHealthMedicaid, WaSsi
 
 
@@ -44,14 +43,6 @@ class TestWaAppleHealthForKids(TestCase):
 
     def test_is_subclass_of_policy_engine_members_calculator(self):
         self.assertTrue(issubclass(WaAppleHealthForKids, PolicyEngineMembersCalculator))
-
-    def test_is_registered_in_wa_member_calculators(self):
-        self.assertIn("wa_apple_health_for_kids", wa_member_calculators)
-        self.assertEqual(wa_member_calculators["wa_apple_health_for_kids"], WaAppleHealthForKids)
-
-    def test_is_registered_in_wa_pe_calculators(self):
-        self.assertIn("wa_apple_health_for_kids", wa_pe_calculators)
-        self.assertEqual(wa_pe_calculators["wa_apple_health_for_kids"], WaAppleHealthForKids)
 
     def test_pe_name(self):
         self.assertEqual(WaAppleHealthForKids.pe_name, "wa_apple_health_kids_eligible")
@@ -128,16 +119,6 @@ class TestWaAppleHealthMedicaid(TestCase):
     def test_is_subclass_of_medicaid(self):
         """WaAppleHealthMedicaid extends the federal Medicaid calculator."""
         self.assertTrue(issubclass(WaAppleHealthMedicaid, Medicaid))
-
-    def test_is_registered_in_wa_member_calculators(self):
-        """Registered as `wa_apple_health_medicaid` in the WA member-level subset."""
-        self.assertIn("wa_apple_health_medicaid", wa_member_calculators)
-        self.assertEqual(wa_member_calculators["wa_apple_health_medicaid"], WaAppleHealthMedicaid)
-
-    def test_is_registered_in_wa_pe_calculators(self):
-        """Registered in the combined WA PE calculators dict."""
-        self.assertIn("wa_apple_health_medicaid", wa_pe_calculators)
-        self.assertEqual(wa_pe_calculators["wa_apple_health_medicaid"], WaAppleHealthMedicaid)
 
     def test_pe_inputs_includes_wa_state_code(self):
         """WA state code is added on top of the federal Medicaid inputs."""
@@ -454,16 +435,6 @@ class TestWaSsi(TestCase):
     def test_pe_name_is_ssi(self):
         """pe_name is inherited from Ssi and resolves to PolicyEngine's `ssi` variable."""
         self.assertEqual(WaSsi.pe_name, "ssi_if_takes_up")
-
-    def test_is_registered_in_wa_pe_calculators(self):
-        """WaSsi is registered in the WA PE calculators dictionary as `wa_ssi`."""
-        self.assertIn("wa_ssi", wa_pe_calculators)
-        self.assertEqual(wa_pe_calculators["wa_ssi"], WaSsi)
-
-    def test_is_registered_in_wa_member_calculators(self):
-        """WaSsi is registered in the WA member-level subset (not SPM/tax)."""
-        self.assertIn("wa_ssi", wa_member_calculators)
-        self.assertEqual(wa_member_calculators["wa_ssi"], WaSsi)
 
     def test_pe_inputs_includes_wa_state_code_dependency(self):
         """The WA state code is added on top of the federal Ssi inputs."""

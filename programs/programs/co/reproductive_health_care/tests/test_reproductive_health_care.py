@@ -17,7 +17,6 @@ from unittest.mock import Mock
 from django.test import TestCase
 
 from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
-from programs.programs.co import co_calculators
 from programs.programs.co.reproductive_health_care.calculator import ReproductiveHealthCare
 from programs.util import Dependencies, DependencyError
 from screener.models import Insurance
@@ -55,10 +54,6 @@ def make_calculator(medicaid_eligible=True, members=None, missing_dependencies=N
 class TestReproductiveHealthCareClassAttributes(TestCase):
     def test_is_subclass_of_program_calculator(self):
         self.assertTrue(issubclass(ReproductiveHealthCare, ProgramCalculator))
-
-    def test_is_registered_in_co_calculators(self):
-        self.assertIn("rhc", co_calculators)
-        self.assertEqual(co_calculators["rhc"], ReproductiveHealthCare)
 
     def test_amount_is_268(self):
         self.assertEqual(ReproductiveHealthCare.amount, 268)

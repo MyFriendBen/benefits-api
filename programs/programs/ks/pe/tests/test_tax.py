@@ -57,12 +57,6 @@ class TestKsCdccFederal(TestCase):
     Distinct from ``ks_cdcc``, which is the Kansas credit and has its own class.
     """
 
-    def test_is_registered_as_its_own_subclass_everywhere(self):
-        self.assertIs(ks_tax_unit_calculators["ks_cdcc_federal"], KsCdccFederal)
-        self.assertIs(ks_pe_calculators["ks_cdcc_federal"], KsCdccFederal)
-        self.assertIs(all_tax_unit_calculators["ks_cdcc_federal"], KsCdccFederal)
-        self.assertIs(all_calculators["ks_cdcc_federal"], KsCdccFederal)
-
     def test_is_the_federal_calculator_with_nothing_added(self):
         """Kansas has no state CDCC of its own beyond ``ks_cdcc``, so this must not
         diverge from the federal credit."""

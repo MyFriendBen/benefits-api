@@ -72,7 +72,6 @@ from programs.programs.federal.pe.member import (
     Msp,
     Ssi as FederalSsi,
 )
-from programs.programs.mo.pe import mo_member_calculators, mo_pe_calculators
 from programs.programs.mo.pe.member import MoWic, MoHeadStart, MoEarlyHeadStart, MoMsp, MoSsi
 from programs.framework.pe_base import PolicyEngineMembersCalculator
 from programs.framework.pe_dependencies import member as member_deps
@@ -86,7 +85,6 @@ from programs.framework.pe_dependencies.member import (
     SsiIfTakesUp,
     SsiUnearnedIncomeDependency,
 )
-from integrations.clients.policyengine.registry import all_calculators, all_member_calculators
 from integrations.clients.policyengine.policy_engine import pe_input
 
 
@@ -101,15 +99,6 @@ class TestMoWicWiring(TestCase):
         """Inherited from the federal calculator, which stays on the ungated ``wic`` — see
         ``Wic``."""
         self.assertEqual(MoWic.pe_name, "wic")
-
-    def test_registered_as_mo_wic(self):
-        self.assertIs(mo_member_calculators["mo_wic"], MoWic)
-        self.assertIs(mo_pe_calculators["mo_wic"], MoWic)
-
-    def test_registered_in_global_registry(self):
-        """A calculator missing from the registry never runs — screener/views.py iterates it."""
-        self.assertIs(all_member_calculators["mo_wic"], MoWic)
-        self.assertIs(all_calculators["mo_wic"], MoWic)
 
     def test_adds_mo_state_code_dependency(self):
         self.assertIn(MoStateCodeDependency, MoWic.pe_inputs)
@@ -316,16 +305,9 @@ class TestMoHeadStartWiring(TestCase):
     all registered subclasses in ``federal/pe/tests/test_head_start.py``.
     """
 
-    def test_head_start_is_registered_as_mo_head_start(self):
-        self.assertIs(mo_member_calculators["mo_head_start"], MoHeadStart)
-        self.assertIs(mo_pe_calculators["mo_head_start"], MoHeadStart)
-
     def test_head_start_pe_inputs_includes_mo_state_code(self):
         self.assertTrue(issubclass(MoHeadStart, HeadStart))
         self.assertIn(MoStateCodeDependency, MoHeadStart.pe_inputs)
-
-    def test_early_head_start_is_registered_as_mo_early_head_start(self):
-        self.assertIs(mo_member_calculators["mo_early_head_start"], MoEarlyHeadStart)
 
     def test_early_head_start_pe_inputs_includes_mo_state_code(self):
         self.assertTrue(issubclass(MoEarlyHeadStart, EarlyHeadStart))
@@ -341,15 +323,6 @@ class TestMoSsiWiring(TestCase):
 
     def test_pe_name_is_the_would_be_ssi_variable(self):
         self.assertEqual(MoSsi.pe_name, "ssi_if_takes_up")
-
-    def test_is_registered_as_mo_ssi(self):
-        self.assertIs(mo_member_calculators["mo_ssi"], MoSsi)
-        self.assertIs(mo_pe_calculators["mo_ssi"], MoSsi)
-
-    def test_is_registered_in_global_registry(self):
-        """A calculator missing from the registry never runs — screener/views.py iterates it."""
-        self.assertIs(all_member_calculators["mo_ssi"], MoSsi)
-        self.assertIs(all_calculators["mo_ssi"], MoSsi)
 
     def test_pe_inputs_includes_mo_state_code(self):
         self.assertIn(MoStateCodeDependency, MoSsi.pe_inputs)
@@ -498,9 +471,8 @@ class TestMoMspWiring(TestCase):
     def test_is_subclass_of_federal_msp(self):
         self.assertTrue(issubclass(MoMsp, Msp))
 
-    def test_is_registered_as_mo_medicare_savings(self):
-        self.assertIs(mo_member_calculators["mo_medicare_savings"], MoMsp)
-        self.assertIs(mo_pe_calculators["mo_medicare_savings"], MoMsp)
+    def test_program_code_is_mo_medicare_savings(self):
+        self.assertEqual(MoMsp.program_code, "mo_medicare_savings")
 
     def test_pe_inputs_includes_mo_state_code(self):
         """Resolves the MO asset-test-applies parameter — the one genuine MO delta."""

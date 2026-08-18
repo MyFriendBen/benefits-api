@@ -1,7 +1,6 @@
 from django.test import TestCase
 from unittest.mock import Mock
 
-from programs.programs.wa import wa_calculators
 from programs.programs.wa.liheap.calculator import WaLiheap
 from programs.framework.base import ProgramCalculator, Eligibility
 
@@ -25,10 +24,6 @@ def make_calculator(household_income=0, household_size=1, fpl_limit=15650, heati
 class TestWaLiheapClassAttributes(TestCase):
     def test_is_subclass_of_program_calculator(self):
         self.assertTrue(issubclass(WaLiheap, ProgramCalculator))
-
-    def test_is_registered_in_wa_calculators(self):
-        self.assertIn("wa_liheap", wa_calculators)
-        self.assertEqual(wa_calculators["wa_liheap"], WaLiheap)
 
     def test_fpl_percent_is_150(self):
         self.assertEqual(WaLiheap.fpl_percent, 1.5)

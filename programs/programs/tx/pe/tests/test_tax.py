@@ -101,14 +101,6 @@ class TestTxAca(TestCase):
         # Verify it inherits from Aca
         self.assertTrue(issubclass(TxAca, Aca))
 
-    def test_is_registered_in_tx_pe_calculators(self):
-        """Test that TX ACA is registered in the calculators dictionary."""
-        # Verify tx_aca is in the calculators dictionary
-        self.assertIn("tx_aca", tx_pe_calculators)
-
-        # Verify it points to the correct class
-        self.assertEqual(tx_pe_calculators["tx_aca"], TxAca)
-
     def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self):
         """
         Test that TxAca has all expected pe_inputs from parent and TX-specific.

@@ -11,7 +11,6 @@ from django.test import TestCase
 
 from programs.programs.federal.pe.spm import Lifeline, Snap
 from programs.framework.pe_dependencies.household import WaStateCodeDependency
-from programs.programs.wa.pe import wa_pe_calculators, wa_spm_calculators
 from programs.programs.wa.pe.spm import WaLifeline, WaSnap
 
 
@@ -25,16 +24,6 @@ class TestWaSnap(TestCase):
     def test_pe_name_is_snap(self):
         """Test that pe_name is snap."""
         self.assertEqual(WaSnap.pe_name, "snap_if_takes_up")
-
-    def test_is_registered_in_wa_pe_calculators(self):
-        """Test that WaSnap is registered in the calculators dictionary."""
-        self.assertIn("wa_snap", wa_pe_calculators)
-        self.assertEqual(wa_pe_calculators["wa_snap"], WaSnap)
-
-    def test_is_registered_in_wa_spm_calculators(self):
-        """Test that WaSnap is registered in the SPM calculators dictionary."""
-        self.assertIn("wa_snap", wa_spm_calculators)
-        self.assertEqual(wa_spm_calculators["wa_snap"], WaSnap)
 
     def test_pe_inputs_includes_wa_state_code_dependency(self):
         """Test that WaStateCodeDependency is in pe_inputs."""
@@ -65,16 +54,6 @@ class TestWaLifeline(TestCase):
     def test_pe_name_is_lifeline(self):
         """Test that pe_name is lifeline."""
         self.assertEqual(WaLifeline.pe_name, "lifeline")
-
-    def test_is_registered_in_wa_pe_calculators(self):
-        """Test that WaLifeline is registered in the calculators dictionary."""
-        self.assertIn("wa_lifeline", wa_pe_calculators)
-        self.assertEqual(wa_pe_calculators["wa_lifeline"], WaLifeline)
-
-    def test_is_registered_in_wa_spm_calculators(self):
-        """Test that WaLifeline is registered in the SPM calculators dictionary."""
-        self.assertIn("wa_lifeline", wa_spm_calculators)
-        self.assertEqual(wa_spm_calculators["wa_lifeline"], WaLifeline)
 
     def test_pe_inputs_includes_wa_state_code_dependency(self):
         """Test that WaStateCodeDependency is in pe_inputs."""

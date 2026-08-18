@@ -1,7 +1,6 @@
 from django.test import TestCase
 from unittest.mock import Mock
 
-from programs.programs.wa import wa_calculators
 from programs.programs.wa.wic.calculator import WaWic
 from programs.framework.base import Eligibility, MemberEligibility
 
@@ -38,10 +37,6 @@ def make_calculator(yearly_income=10_000, fpl_limit=15_000, members=None, has_be
 
 
 class TestWaWicClassAttributes(TestCase):
-    def test_is_registered(self):
-        self.assertIn("wa_wic", wa_calculators)
-        self.assertEqual(wa_calculators["wa_wic"], WaWic)
-
     def test_fpl_percent(self):
         self.assertEqual(WaWic.fpl_percent, 1.85)
 

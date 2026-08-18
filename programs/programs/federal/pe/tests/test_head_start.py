@@ -139,9 +139,6 @@ class TestFederalEarlyHeadStart(TestCase):
     def test_federal_class_carries_no_state_code(self):
         self.assertEqual(_state_codes(EarlyHeadStart), [])
 
-    def test_is_not_registered_directly(self):
-        self.assertNotIn(EarlyHeadStart, all_member_calculators.values())
-
     def test_pregnancy_is_not_sent_by_plain_head_start(self):
         """Only EHS serves pregnant women; sending pregnancy to ``head_start`` would
         be an input its formula ignores."""

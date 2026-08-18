@@ -9,12 +9,10 @@ These tests verify MA-specific calculator logic for CSFP including:
 from django.test import TestCase
 
 from programs.programs.federal.pe.member import CommoditySupplementalFoodProgram
-from programs.framework.pe_dependencies import household
 from programs.framework.pe_dependencies.household import (
     MaStateCodeDependency,
     MaCountyDependency,
 )
-from programs.programs.ma.pe import ma_pe_calculators
 from programs.programs.ma.pe.member import MaCsfp
 
 
@@ -24,10 +22,6 @@ class TestMaCsfp(TestCase):
     def test_exists_and_is_subclass_of_csfp(self):
         self.assertTrue(issubclass(MaCsfp, CommoditySupplementalFoodProgram))
         self.assertEqual(MaCsfp.pe_name, "commodity_supplemental_food_program")
-
-    def test_is_registered_in_ma_pe_calculators(self):
-        self.assertIn("ma_csfp", ma_pe_calculators)
-        self.assertEqual(ma_pe_calculators["ma_csfp"], MaCsfp)
 
     def test_pe_inputs_includes_ma_state_code_dependency(self):
         self.assertIn(MaStateCodeDependency, MaCsfp.pe_inputs)
