@@ -5,11 +5,9 @@
 - **Program**: Medicare Savings Program (MSP) — QMB / SLMB / QI
 - **State**: MO
 - **White Label**: mo
-- **Implementation**: PolicyEngine (`msp` variable, category sub-variable `msp_category`: QMB > SLMB > QI priority). Eligibility (age/Medicare enrollment, income, asset test) and benefit value are computed by PolicyEngine; the only state-keyed **PE input** is `state_code: MO`, which resolves PE's asset-test-applies parameter. Missouri does have several additional state-specific policy nuances beyond that PE input — see the confirmed MO-specific limitations in Implementation below — none of which are configurable via PE and are documented as accepted gaps instead.
-- **Engine + Tier**: PE, Fed (elig varies) — config + **full spec**, per the ticket's own Decision block.
-- **Research Date**: 2026-08-02
-- **Implementation Verification**: 2026-08-12 — all 10 scenarios (plus the Scenario 9 companion point) re-run through the actual `MoMsp` calculator against live PolicyEngine at the **pinned model version `1.786.5`**, the version MFB serves. Results in the Implementation Verification Log at the end of this document. The 120% boundary was re-confirmed as **SLMB** at 1.786.5; see the note on criterion 2, which now also records why PolicyEngine's checked-out source appears to disagree.
-- **Review Date**: 2026-08-06 (revised after Discovery-review flags — see corrections marked "Correction from initial draft") — **re-verified 2026-08-06** against `MoMsp`'s actual source code, `benefits-api`'s config-import validation, and 10 live calls to PolicyEngine's production API (not assumed from documentation or from PolicyEngine's unreleased source); see the Verification Log at the end of this document.
+- **Implementation**: PolicyEngine (`msp` variable, category sub-variable `msp_category`: QMB > SLMB > QI priority). Eligibility (age/Medicare enrollment, income, asset test) and benefit value are computed by PolicyEngine; the only state-keyed **PE input** is `state_code: MO`, which resolves PE's asset-test-applies parameter. Missouri does have several additional state-specific policy nuances beyond that PE input. Those are not configurable through PolicyEngine and are recorded under Implementation as gaps.
+- **Engine + Tier**: PE, Fed (elig varies)
+- **Part B premium (2026)**: $202.90/month
 
 ---
 
@@ -28,14 +26,18 @@
    - **Missouri-specific assistance-group rule not modeled by PE (documented limitation)**: Missouri's manual (0865.010.10.05) states QMB eligibility, while determined per-individual, considers the income and resources of "the claimant; the claimant's spouse, if living together; and Part A eligible dependent children in the home." Missouri's SLMB manual (0870.010.00) requires meeting "all eligibility requirements of the QMB program except for the income limit," so this assistance-group rule carries over to SLMB. PolicyEngine's `msp_countable_income` and `msp_asset_eligible` only combine income/resources across the SSI **marital unit** (claimant + spouse) — there is no PE concept of a Part-A-eligible dependent child expanding the assistance group. This is a genuine Missouri rule PE does not currently reflect; document it as a PE limitation rather than attempting to model it, since neither PE nor the screener has a "dependent child's Medicare status" field.
    - **Missouri-specific income methodology not modeled by PE (documented limitation)**: PolicyEngine's `msp_countable_income` applies only the generic national SSI exclusions listed above. Missouri's own QMB manual (0865-010-10-20) additionally (a) applies all Medical Assistance income exemptions, (b) excludes specific state cash-grant payments (Temporary Assistance, SP, BP, SAB, SNC) from countable income, and (c) temporarily disregards each January's OASDI/SSI COLA increase until the updated FPL takes effect in April (MO Senate Bill 577, 2007). None of these three MO-specific rules are represented in PE's formula. Practical effect: PE will very slightly understate MSP-countable income (i.e. slightly undercount eligibility) for applicants who (a) receive one of the excluded cash grants, or (b) apply in Jan–Mar of a year with a fresh COLA increase. This is a PE limitation, not a spec error — document rather than attempt to model, since the screener has no field for cash-grant-type income or application month precision.
    - Source: [MO DSS — QMB Income Exemptions/Deductions](https://dssmanuals.mo.gov/mo-healthnet-for-the-aged-blind-and-disabled/0865-000-00/0865-010-00/0865-010-10/0865-010-10-20/)
-   - Tiers — **verified by calling PolicyEngine's live production API directly** (`household.api.policyengine.org`, model version `1.784.3` — the version resolved at research time on 2026-08-06; MFB now serves the pinned `1.786.5`, and the tier boundaries below were re-confirmed unchanged at that pin, see the Implementation Verification Log), not just read from source, because the two disagree (see note below):
-     - **QMB**: countable income ≤ 100% FPL (confirmed: $1,330/mo countable is QMB; $1,331/mo is SLMB, for household size 1)
-     - **SLMB**: countable income > 100% and **≤ 120%** FPL (confirmed: $1,596/mo countable — exactly 120% FPL — is still SLMB; $1,597/mo is QI)
-     - **QI**: countable income **> 120%** and < 135% FPL, **and not otherwise eligible for full MO HealthNet** (confirmed: $1,795/mo countable is QI; $1,796/mo is ineligible — the true cutoff is $1,795.50 = 135% of $1,330, so this lands correctly on the "less than 135%" side for both whole-dollar values)
-   - **Important discrepancy, resolved in favor of the live API**: PolicyEngine's own **unreleased `master`-branch source** (`is_slmb_eligible`/`is_qi_eligible` in `policyengine_us/variables/gov/hhs/medicare/savings_programs/category/`) already implements the CFR-exact boundary (SLMB `< 120%`, QI `>= 120%`, moving the 120% edge case into QI) — and that source is what a first-pass reading of "the code" turns up, which is what an earlier draft of this spec did. But **the currently-deployed, callable API (what `MoMsp`/`Msp` actually hits in production) has not yet shipped that change** and still treats exactly 120% as SLMB. Since MFB's calculator sends `"version": "current"` (no version pin for this program) and reads whatever's live, **the live behavior — not the master-branch source, and not the CFR text in isolation — is what a QA pass against the real calculator will see.** If PolicyEngine promotes their master-branch fix into a new default release, this boundary will silently move (SLMB→QI at exactly 120%) with no MFB code change required; the dollar value is identical either way ($202.90), so only the category label would change. Re-run the two boundary scenarios below after any PolicyEngine version bump to confirm which side of 120% the live API currently lands on.
-   - **Re-confirmed at implementation time (2026-08-12), with the version numbers that explain the split.** MFB now pins PolicyEngine to **`1.786.5`**, and at that version exactly 120% FPL still resolves to **SLMB** ($1,616/mo gross → $1,596/mo countable → SLMB; $1,617/mo → QI). So the spec text above remains correct for what we actually serve. The reason a source reading suggests otherwise: the local `policyengine-us` checkout is at **`1.794.0`**, which is *ahead of our pin*, and its `is_slmb_eligible` / `is_qi_eligible` do implement the CFR-exact boundary (SLMB `< 120%`, QI `>= 120%`) — that change landed in PE's "Fix MSP income and resource eligibility logic" commit. **Reading the checked-out PE source therefore describes a version we do not run.** The boundary flips to QI only when MFB's pin moves past that release; the dollar value ($202.90/mo) is unchanged either way, so only the category label moves. Scenario 9 asserts the category precisely so this surfaces as a visible test update on the next pin bump rather than a silent change.
-   - Source: 42 U.S.C. § 1396a(a)(10)(E); 42 U.S.C. § 1396d(p)(3); 42 CFR § 435.123/.124/.125 (describes the *target* CFR-exact boundary, not yet live); PolicyEngine live API (`household.api.policyengine.org/us/calculate`, verified directly at research-time model `1.784.3` and re-confirmed at the deployed pin `1.786.5` — see Source Documentation)
-   - Missouri's own published income-limit table (MO HealthNet Non-MAGI chart, 07/2026) uses "income under X%" language for all three tiers and its manual separately describes SLMB2/QI as "more than 120%" — that phrasing actually **matches** the live PE behavior above (SLMB extends through 120%, QI starts above it), so there is no Missouri-specific Δ here: Missouri's own wording and PE's live behavior agree; it's PE's own unreleased future source that disagrees with both.
+   - Tiers (household of 1 figures use the 2026 FPL of $1,330/mo):
+     - **QMB**: countable income ≤ 100% FPL
+     - **SLMB**: countable income > 100% and ≤ 120% FPL
+     - **QI**: countable income > 120% and < 135% FPL, and not otherwise eligible for full MO HealthNet
+   - The 135% ceiling is exclusive (42 CFR 435.125(b), "less than 135 percent").
+   - **The 120% boundary belongs to SLMB, not QI.** 42 CFR and PolicyEngine's newer source both
+     place exactly 120% in QI, but the PolicyEngine version MFB serves resolves it to SLMB; QI
+     starts one dollar higher. The dollar value is identical either way ($202.90/mo) — only the
+     category label differs. Scenarios 9 and 9b assert the category on both sides of the
+     crossover, so a PolicyEngine version bump that moves this boundary surfaces as a visible
+     test update rather than a silent change.
+   - Missouri's own manual describes SLMB2/QI as "more than 120%", which matches the behavior above — SLMB extends through 120% and QI starts above it. There is no Missouri-specific delta in the tiers.
    - **QI Priority Criteria (federal, not MO-specific, and not modeled)**: QI enrollment nationwide is first-come-first-served against an annual capped federal allotment (Social Security Act §1902(a)(10)(E)(iv), §1933 — the QI provision Missouri's own manual cites as QI's legal basis at 0870.005.00), with priority given to people who received QI the prior year. This is not spelled out explicitly in Missouri's own manual text (searched 0870.005–0870.045), but it's confirmed federal law governing every state's QI program including Missouri's. PolicyEngine and MFB's screener have no concept of application timing or a funding allotment, so this is a permanent, non-MO-specific documented limitation — not a gap worth a test scenario.
 
 3. **Resource (asset) test applies in Missouri — not waived**
@@ -43,7 +45,7 @@
    - Limits (2026): **$9,950 individual / $14,910 couple** — same national limits PolicyEngine already uses (`gov.hhs.medicare.savings_programs.eligibility.asset.individual` / `.couple`)
    - Source: this is the ticket's flagged state-keyed input — PolicyEngine's `gov.hhs.medicare.savings_programs.eligibility.asset.applies` parameter has `MO: true` (since 2024-01-01), meaning the asset test is not waived in Missouri. **This is the actual MO-specific Δ**: a MO calculator must pass `state_code: MO` into PE's `msp` computation so this parameter resolves correctly to "applies," rather than defaulting to a waived state's behavior.
    - Exclusions (not counted toward the limit): primary home, one vehicle, household goods, burial funds up to $1,500, life insurance with face value up to $1,500 (PolicyEngine's `ssi_countable_resources` applies the current, generic federal SSI resource-counting rules — same figures PE uses for every state).
-   - **Correction from initial draft**: this list was previously cited as "per KS precedent." Missouri's own manual (0865.010.15) instead anchors QMB resource-counting to "anything considered as available under the December 1973 eligibility guidelines for aged and disabled persons," with current exclusion detail in **MHABD Appendix J** — cite Missouri's own manual, not another state's spec, going forward. **Decision**: two direct attempts to retrieve Appendix J's specific dollar exclusions (burial fund, life insurance face value) from Missouri's published manual PDFs returned only the general Non-MAGI income/resource *limit* tables (already reflected above), not the underlying exclusion-detail appendix content — those specific dollar figures are not published in a form reachable outside Missouri's internal case-management system. Given PE's resource-counting formula (`ssi_countable_resources`) is a single generic national implementation shared by every state (not state-keyed), and no evidence surfaced of Missouri publishing a *different* dollar figure than the standard federal SSI $1,500/$1,500 exclusions, the implementation uses PE's figures as-is. This is a final decision, not an open question — if a future engagement with Missouri DSS surfaces a differing published figure, that would be a new, separate finding at that time.
+   - Missouri anchors QMB resource-counting to "anything considered as available under the December 1973 eligibility guidelines for aged and disabled persons" (manual 0865.010.15), with exclusion detail in MHABD Appendix J. Appendix J's specific dollar exclusions are not published outside Missouri's internal case-management system, and PolicyEngine's resource formula is a single generic national implementation rather than a state-keyed one, so its standard federal SSI figures are used.
    - Screener limitation (not MO-specific): `household_assets` is a single household-wide field, not split by marital unit, so a couple's assets are already combined by construction — matches PE's couple-limit application when a spouse is present.
 
 4. **Not concurrently eligible for full MO HealthNet (Medicaid) — QI only**
@@ -57,7 +59,7 @@
 
 6. **U.S. citizen or qualified non-citizen (all three tiers)**
    - Screener field: citizenship/immigration-status field (config `program.legal_status_required`: `citizen`, `gc_5plus`, `refugee`, `otherWithWorkPermission`)
-   - **Correction from initial draft**: this criterion was omitted from the Eligibility Criteria prose even though the config already implements it correctly. Missouri's own MO HealthNet Non-MAGI eligibility chart lists "U.S. citizen or qualified noncitizen" as a requirement for QMB, and states SLMB/QI eligibility is "same as QMB, other than income and resource limits" — i.e. the citizenship requirement applies to all three tiers. No config change needed; this closes a spec/config documentation gap only.
+   - Missouri's own MO HealthNet Non-MAGI eligibility chart lists "U.S. citizen or qualified noncitizen" as a requirement for QMB, and states SLMB/QI eligibility is "same as QMB, other than income and resource limits" — i.e. the citizenship requirement applies to all three tiers.
    - Source: [MO HealthNet Eligibility for Non-MAGI Programs (07/2026)](https://dssmanuals.mo.gov/wp-content/uploads/2018/10/appendix_k.pdf)
 
 ---
@@ -75,19 +77,45 @@ PolicyEngine's `msp` variable (monthly, per person) = `msp_benefit_value`, compu
 
 - For the rare applicant without premium-free Part A (30–39 quarters: **+$311/mo**; under 30 quarters: **+$565/mo**, both 2026 values), QMB's value would be higher than SLMB/QI's. The screener has no field for "quarters of Medicare-covered employment," so — matching the existing calculator's implicit assumption and KS/IL/TX precedent — implementation should assume premium-free Part A as the default case and treat the non-premium-free Part A scenario as an accepted, documented gap (same class of gap as the under-65-disability Medicare pathway above).
 - **Not included in `msp`**: QMB's Medicare cost-sharing (coinsurance/deductible) coverage is a *separate* PolicyEngine variable (`qmb_cost_sharing`, using a flat 20% cost-sharing approximation rate) that rolls into the annual `msp_cost` total but is **not** part of the monthly `msp`/`msp_benefit_value` figure.
-- **Committed methodology (was "Recommend surfacing..." in the initial draft — now settled)**: MFB displays PolicyEngine's monthly `msp` premium value as the headline dollar amount. QMB's displayed value includes the modeled Part A + Part B premium amount; SLMB/QI's displayed value includes Part B only. QMB's Medicare cost-sharing protection is described qualitatively in the program description (already done) but is **not** added into the displayed `msp` dollar figure.
+- **Displayed value**: MFB displays PolicyEngine's monthly `msp` premium value as the headline dollar amount. QMB's displayed value includes the modeled Part A + Part B premium amount; SLMB/QI's displayed value includes Part B only. QMB's Medicare cost-sharing protection is described qualitatively in the program description but is **not** added into the displayed `msp` dollar figure.
 - **Part B-ID value limitation (not modeled)**: CMS sets the 2026 standard Part B Immunosuppressive Drug (Part B-ID) premium at **$121.60/month** — a separate, lower figure from the standard $202.90/month Part B premium. Since PolicyEngine doesn't model the Part B-ID eligibility pathway at all (see Eligibility Criteria, criterion 1), it correspondingly can't produce this $121.60 value. Document as a paired eligibility + value limitation; do not attempt to hand-calculate it outside PE.
 
 ---
 
 ## Implementation
 
-- ✅ Evaluable: Medicare Part A enrollment (age ≥ 65 path), income tiering (QMB ≤100% / SLMB >100–≤120% / QI >120–<135% FPL — the live-API-verified boundaries; see criterion 2), asset test (applies in MO, current 2026 limits), QI-vs-Medicaid exclusion, MO residency, citizenship/legal status (config already correct; now also documented in prose).
-- ⚠️ Known limitations, **not MO-specific** (shared with KS/IL/TX precedent): under-65 disability/ESRD-based Medicare eligibility not captured; "quarters of Medicare-covered employment" not captured, so non-premium-free Part A cases (a minority) aren't distinguished; QI's first-come-first-served federal allotment/priority rule not modeled (no application-timing concept exists in PE or the screener).
-- ⚠️ Known limitations, **MO-specific, confirmed against MO DSS manuals** (new — not previously documented): (1) Missouri's QMB/SLMB assistance group additionally considers a Part-A-eligible dependent child's income/resources, which PE's marital-unit-only model doesn't capture; (2) Missouri's QMB income methodology applies state-specific cash-grant exclusions and a Jan–Mar COLA disregard that PE's generic national SSI methodology doesn't apply; (3) conditional Part A is a QMB-only Medicare pathway in Missouri (confirmed explicitly barred for SLMB) — not distinguishable by the screener; (4) the federal Part B-ID pathway (42 CFR 435.123(b)) is entirely unmodeled by PE. Resource-exclusion citation was corrected from a borrowed KS precedent to Missouri's own manual (0865.010.15 / MHABD Appendix J); the specific dollar exclusions in that appendix aren't published outside Missouri's internal system, so PE's generic SSI figures are used as-is — a settled decision, not an open item.
-- ✅ Implemented: `MoMsp` calculator already exists in `benefits-api` (`programs/programs/mo/pe/member.py`), subclassing the shared federal `Msp` PE calculator exactly like `KsMsp`/`TxMsp`/`IlMsp`, with `MoStateCodeDependency` + `Medicaid.pe_inputs` added. Verified directly by reading the calculator source and its test suite (`test_member.py::TestMoMspWiring`) — this is not a to-be-built component.
-- **Verified end-to-end against PolicyEngine's live API**, not just against source code: all 8 original acceptance scenarios plus the two boundary scenarios below were run against `household.api.policyengine.org` (research-time model `1.784.3`; re-run at the deployed pin `1.786.5` at implementation time) using `MoMsp`'s exact `pe_inputs`, and every eligibility/category/dollar-value result matched this spec's claims (after the boundary correction above).
-- The only eligibility criterion requiring a MO-specific PE input remains the asset-test-applies state parameter (`state_code: MO`); MO's income limits match the federal floor exactly. The MO-specific *gaps* above are documentation/limitations, not additional PE inputs to configure. Config JSON (`mo_msp_initial_config.json`) was statically checked against `import_program_config.py`'s validation rules — see verdict at the end of this document.
+`MoMsp` subclasses the shared federal `Msp` PolicyEngine calculator, adding the MO state code
+and the Medicaid inputs, the same shape as the KS / TX / IL MSP calculators. The state code is
+the only MO-keyed input; MO's income limits match the federal floor exactly.
+
+**Measured by the calculator**: Medicare Part A enrollment (age ≥ 65 path), income tiering
+(QMB / SLMB / QI), the asset test with current limits, the QI-vs-Medicaid exclusion, MO
+residency, and citizenship / legal status.
+
+**Not measured — general**, shared with the KS / IL / TX implementations:
+- Under-65 disability- or ESRD-based Medicare eligibility. The screener has no field for it.
+- Quarters of Medicare-covered employment, so applicants without premium-free Part A are not
+  distinguished. Premium-free Part A is assumed.
+- QI's first-come-first-served federal allotment and prior-year priority rule. Neither
+  PolicyEngine nor the screener has a concept of application timing.
+
+**Not measured — Missouri-specific**:
+- Missouri's QMB/SLMB assistance group also counts a Part-A-eligible dependent child's income
+  and resources. PolicyEngine combines across the SSI marital unit only, and neither it nor the
+  screener knows a dependent child's Medicare status.
+- Missouri's QMB income methodology excludes specific state cash-grant payments and disregards
+  each January's COLA until the updated FPL takes effect in April. PolicyEngine applies only the
+  generic national SSI exclusions, so it slightly understates countable income for those
+  applicants.
+- Conditional Part A is a QMB-only pathway in Missouri and is expressly barred for SLMB. The
+  screener's Medicare field does not distinguish conditional from standard Part A enrollment.
+- The Part B-ID pathway of 42 CFR 435.123(b) is absent from PolicyEngine, so neither that
+  eligibility route nor its lower $121.60/month premium is produced.
+
+Missouri anchors its resource-counting rules to its own manual (0865.010.15 / MHABD Appendix J).
+The specific dollar exclusions in that appendix are not published outside Missouri's internal
+system, and PolicyEngine's resource formula is a single generic national implementation, so its
+standard federal SSI figures are used.
 
 ---
 
@@ -121,8 +149,8 @@ PolicyEngine's `msp` variable (monthly, per person) = `msp_benefit_value`, compu
 - [ ] Scenario 6 (Applicant age 60, not on Medicare — Medicare-enrollment gate): User should be **ineligible**
 - [ ] Scenario 7 (Income in the QI band, but already has full MO HealthNet — QI categorical exclusion): User should be **ineligible**
 - [ ] Scenario 8 (Income above 135% FPL — too high for any MSP tier): User should be **ineligible**
-- [ ] Scenario 9 (Income exactly at 120% FPL — SLMB/QI boundary): User should be **eligible as SLMB** (live PE behavior, confirmed 2026-08-06 — not QI, despite CFR text and PE's future source suggesting otherwise), not eligible as QI — $202.90/month
-- [ ] Scenario 10 (Income exactly at 135% FPL — QI upper boundary): User should be **ineligible** (135% itself is the cutoff, not an included value) — confirmed against live PE
+- [ ] Scenario 9 (Income exactly at 120% FPL — SLMB/QI boundary): User should be **eligible as SLMB** (not QI) — $202.90/month
+- [ ] Scenario 10 (Income exactly at 135% FPL — QI upper boundary): User should be **ineligible** (135% itself is the cutoff, not an included value)
 
 ---
 
@@ -244,8 +272,10 @@ PolicyEngine's `msp` variable (monthly, per person) = `msp_benefit_value`, compu
 
 ---
 
-### Scenario 9: Income Exactly at the 120% FPL Boundary — Must Resolve to SLMB (Live PE Behavior), Not QI
-**What we're checking**: This spec's own first-pass "fix" got this backwards — reading 42 CFR text and PolicyEngine's *unreleased* `master`-branch source suggested 120% should belong to QI. A direct call to PolicyEngine's actual **live production API** (verified 2026-08-06 at research-time model `1.784.3`, and again at the deployed pin `1.786.5` on 2026-08-12) proved the opposite is currently true: countable income of exactly $1,596/mo (120% FPL for household size 1) resolves to **SLMB**, and QI only starts at $1,597/mo. This scenario pins that live behavior so it's caught if it ever silently changes.
+### Scenario 9: Income Exactly at the 120% FPL Boundary — SLMB, Not QI
+**What we're checking**: The exact SLMB/QI crossover. At the PolicyEngine version MFB serves,
+countable income of exactly $1,596/mo (120% FPL for household size 1) resolves to **SLMB**; QI
+starts at $1,597/mo.
 **Expected**: Eligible as **SLMB** — $202.90/month (not QI). A companion check one dollar higher ($1,617/mo gross → $1,597/mo countable) should resolve to **QI**, same $202.90/month — run both to confirm the exact crossover point, not just one side of it.
 
 **Steps**:
@@ -255,12 +285,12 @@ PolicyEngine's `msp` variable (monthly, per person) = `msp_benefit_value`, compu
 - **Current Benefits**: Select no current benefits
 - **Assets**: Household resources: `$3,000`
 
-**Why this matters**: A pure boundary test, and a live-vs-source discrepancy worth pinning explicitly. If PolicyEngine promotes their `master`-branch fix into a new default release, this scenario's expected category will flip from SLMB to QI at the same dollar value — assert `msp_category` (or the equivalent MFB-facing category label), not just the dollar amount, so a future PE version bump surfaces as a visible, intentional test update rather than a silent behavior change.
+**Why this matters**: A pure boundary test. Assert the category, not just the dollar amount — 42 CFR and PolicyEngine's newer source place this point in QI, so a PolicyEngine version bump will flip the expected category at the same dollar value, and that should surface as a visible test update.
 
 ---
 
 ### Scenario 10: Income At the 135% FPL Ceiling — Must Be Ineligible
-**What we're checking**: 135% FPL is an exclusive ceiling (`< 135%`, per 42 CFR 435.125(b): "less than 135 percent"), not an included endpoint. **Confirmed against PolicyEngine's live production API** (2026-08-06): countable income of $1,795/mo is still QI-eligible; $1,796/mo is not. (The true unrounded cutoff is $1,795.50 = 135% of $1,330 — both whole-dollar test points land correctly on either side of it, and this is the one boundary where the live API and PE's future/unreleased source agree, unlike Scenario 9's 120% edge.)
+**What we're checking**: 135% FPL is an exclusive ceiling (42 CFR 435.125(b), "less than 135 percent"), not an included endpoint. Countable income of $1,795/mo is still QI-eligible; $1,796/mo is not. The unrounded cutoff is $1,795.50.
 **Expected**: Not eligible (income at/above the QI ceiling)
 
 **Steps**:
@@ -270,97 +300,3 @@ PolicyEngine's `msp` variable (monthly, per person) = `msp_benefit_value`, compu
 - **Assets**: Household resources: `$3,000`
 
 **Why this matters**: Confirms the top income ceiling (135% FPL) is enforced as a hard, exclusive cutoff, not a soft/highest-tier catch-all.
-
----
-
-## Verification Log (2026-08-06)
-
-This spec was re-verified end-to-end after a Discovery-review flagged multiple issues in the prior draft. Every claim below was checked against a primary source (live API, actual repo source, or a state manual) — nothing here is inferred or assumed. Sources: PolicyEngine's live `household.api.policyengine.org` (research-time model `1.784.3`; the deployed pin is `1.786.5`), the `benefits-api` repo at commit `679dd92` (2026-07-30), and the MO DSS manual pages cited throughout.
-
-### Config static check (`mo_msp_initial_config.json` vs. `import_program_config.py`)
-
-| Rule | Config value | Result |
-|---|---|---|
-| Required top-level fields (`white_label`, `program_category`, `program`) | all present | ✅ Pass |
-| `white_label.code` present | `"mo"` | ✅ Pass |
-| `WhiteLabel` "mo" exists in DB | — | ⚠️ Needs live DB to confirm — but "mo" is already referenced by 4 other live MO configs (WIC, Head Start, Early Head Start, NSLP), so this is low-risk |
-| `program.name_abbreviated` present, matches calculator registry | `"mo_medicare_savings"` | ✅ Pass — matches `mo_member_calculators["mo_medicare_savings"] == MoMsp` in the actual repo (`test_member.py`) |
-| Program doesn't already exist for this white label (or `--override` needed) | — | ⚠️ Needs live DB — no `mo_msp_initial_config.json` exists yet in the repo's own data folder, so this is very likely a fresh import |
-| `program_category.external_name` present; if new, `icon`+`name` required | `"mo_healthcare"`, icon `"health_care"`, name `"Health Care"` | ✅ Pass either way — no existing MO config uses `mo_healthcare` yet (MO's other configs use `mo_child_care`/`mo_food`), so this creates a new category, but it exactly matches KS's identical, already-live `ks_healthcare`/`"Health Care"`/`"health_care"` pattern |
-| `program.year` resolves to a `FederalPoveryLimit` row | `"2026"` | ⚠️ Needs live DB (soft warning only, not a hard failure if missing) — identical value already used by KS's live, working `ks_msp_initial_config.json` |
-| `legal_status_required` codes exist | `citizen`, `gc_5plus`, `refugee`, `otherWithWorkPermission` | ✅ Very low risk — each code is already used in 87–115 other configs in this repo |
-| `base_program` is a valid `BaseProgram` choice | `"medicare_savings"` | ✅ Pass — confirmed present in `BaseProgram` choices via repo migrations |
-| All 10 translatable `program` fields match `Program.objects.translated_fields` exactly | `description`, `description_short`, `name`, `learn_more_link`, `apply_button_link`, `apply_button_description`, `estimated_delivery_time`, `estimated_application_time`, `estimated_value`, `website_description` | ✅ Pass — exact match, nothing silently dropped |
-| Documents: `external_name` + `text` present for all 8 (new-document requirement) | all 8 present | ✅ Pass |
-| Navigator: `external_name`, `name`, `email`, `description`, `assistance_link` keys present | all present (note: `email` is an empty string — passes the *presence* check the importer runs, but is empty; confirm intentional, MO SHIP's contact is phone-based per `phone_number`) | ✅ Pass (structural) |
-| `"value_type": "benefit"` key | present in config | ℹ️ No-op — `Program` has no `value_type` model field; the importer silently ignores this key. Harmless (shared by 5 other configs in the repo), not a defect, doesn't need removing |
-
-**Verdict: Ready for devs.** No hard-failure rules are violated. The only unresolved items are DB-existence checks that can't be verified without a live database, and each is corroborated by an already-live sibling config using the identical value.
-
-### Live PolicyEngine API verification (all 10 test scenarios)
-
-Called `household.api.policyengine.org/us/calculate` directly using `MoMsp`'s actual `pe_inputs` (confirmed from `programs/programs/federal/pe/member.py` + `programs/programs/mo/pe/member.py`), not assumed field names.
-
-| Scenario | Sent | PE returned | Spec claims | Match? |
-|---|---|---|---|---|
-| 1 — QMB golden path | $1,000/mo, $3,000 assets | QMB, $202.90 | QMB, $202.90 | ✅ |
-| 2 — SLMB band | $1,500/mo | SLMB, $202.90 | SLMB, $202.90 | ✅ |
-| 3 — QI band | $1,700/mo, no Medicaid | QI, $202.90 | QI, $202.90 | ✅ |
-| 4 — over asset limit | $1,000/mo, $15,000 assets | Ineligible | Ineligible | ✅ |
-| 5 — married couple | $900+$800/mo, $10,000 assets | Both QMB, $202.90 each | Both QMB, $202.90 each | ✅ |
-| 6 — age 60, no Medicare | $1,000/mo | Ineligible | Ineligible | ✅ |
-| 7 — QI band + Medicaid | $1,700/mo + Medicaid | Ineligible | Ineligible | ✅ |
-| 8 — above 135% FPL | $1,900/mo | Ineligible | Ineligible | ✅ |
-| 9 — exactly 120% FPL | $1,616/mo (countable $1,596) | **SLMB**, $202.90 | Corrected to SLMB (was wrongly QI) | ✅ (after fix) |
-| 9-companion — $1/mo above | $1,617/mo (countable $1,597) | QI, $202.90 | QI, $202.90 | ✅ |
-| 10 — exactly 135% FPL | $1,816/mo (countable $1,796) | Ineligible | Ineligible | ✅ |
-
-All 10 scenarios (plus the Scenario 9 companion point) now match live PolicyEngine output exactly. The only discrepancy found (Scenario 9's boundary) was in this spec's own prior draft, not in the calculator — it's been corrected above.
-
----
-
-## Program Configuration
-File: `mo_msp_initial_config.json`
-
----
-
-## Implementation Verification Log (2026-08-12, PolicyEngine `1.786.5`)
-
-Run at implementation time through the **actual `MoMsp` calculator** (not hand-built API payloads):
-real `Screen` / `HouseholdMember` / `IncomeStream` / `Insurance` rows were created for each
-scenario and passed to `calc_pe_eligibility`, so the inputs are exactly what the screener sends.
-The model version is MFB's pinned `1.786.5`, read from `PolicyEngineConfig`.
-
-Values below are **yearly** (the calculator's native output). $2,434.80/yr = $202.90/mo × 12,
-the 2026 standard Part B premium — matching every eligible scenario's expected monthly figure.
-
-| Scenario | Expected | Measured (1.786.5) | Category | Match |
-|---|---|---|---|---|
-| 1 — QMB golden path ($1,000/mo, $3k assets) | Eligible, $202.90/mo | Eligible, $2,434.80/yr | QMB | ✅ |
-| 2 — SLMB band ($1,500/mo) | Eligible, $202.90/mo | Eligible, $2,434.80/yr | SLMB | ✅ |
-| 3 — QI band ($1,700/mo, no Medicaid) | Eligible, $202.90/mo | Eligible, $2,434.80/yr | QI | ✅ |
-| 4 — over asset limit ($15,000) | Ineligible | Ineligible, $0 | NONE | ✅ |
-| 5 — married couple ($900 + $800/mo, $10k assets) | Eligible, $202.90/mo each | Eligible, $4,869.60/yr household | QMB + QMB | ✅ |
-| 6 — age 60, no Medicare | Ineligible | Ineligible, $0 | NONE | ✅ |
-| 7 — QI band + Medicaid | Ineligible | Ineligible, $0 | NONE | ✅ |
-| 8 — above 135% FPL ($1,900/mo) | Ineligible | Ineligible, $0 | NONE | ✅ |
-| 9 — exactly 120% FPL ($1,616/mo) | Eligible as **SLMB** | Eligible, $2,434.80/yr | **SLMB** | ✅ |
-| 9b — one dollar above ($1,617/mo) | Eligible as **QI** | Eligible, $2,434.80/yr | **QI** | ✅ |
-| 10 — at 135% FPL ($1,816/mo) | Ineligible | Ineligible, $0 | NONE | ✅ |
-
-**11/11 match, $0 delta.** Confirmed alongside the run:
-
-- **MO's asset test applies.** Scenario 4 flips to ineligible purely on assets, which only
-  happens because `MoStateCodeDependency` resolves MO's `asset.applies = true`. This is the one
-  genuine MO delta, and it is exercised rather than merely asserted.
-- **The 120% boundary is SLMB at our pinned version** (Scenarios 9 / 9b bracket the crossover at
-  exactly one dollar). See the version note on criterion 2 for why PE's checked-out source reads
-  differently.
-- **Per-person scaling is correct.** Scenario 5 returns exactly double the single-person value,
-  confirming the value is not capped at one premium per household.
-- **Premium-free Part A holds.** Every eligible tier returns the Part B premium alone; QMB is not
-  inflated by a Part A premium, because `MedicareQuartersOfCoverageDependency` sends 40 quarters.
-
-Unit tests covering this wiring live in `programs/programs/mo/pe/tests/test_member.py`
-(`TestMoMspWiring`, `TestMoMspPeInput`). Per the current testing standard, no VCR cassettes were
-written; the PE-sourced figures above are the live verification of record.
