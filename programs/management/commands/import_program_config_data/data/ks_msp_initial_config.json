@@ -19,7 +19,7 @@
     ],
     "name": "Medicare Savings Program (MSP)",
     "description_short": "Help paying for Medicare premiums and costs",
-    "description": "Medicare Savings Program (MSP) helps people with Medicare pay their monthly premiums. If your income is low enough, it may also cover your deductibles, copays, and other out-of-pocket costs.\n\nIf approved, KanCare pays your Medicare Part B premium to Medicare for you. You won't get a check. Instead, if that premium is taken out of your Social Security now, it will stop, so your monthly payment goes up. If you pay Medicare by bill, those bills stop. There are three levels of MSP, and the one you qualify for determines how much help you get. At the highest level (QMB), doctors and hospitals also can't charge you deductibles, copays, or coinsurance for care that Medicare covers. Prescriptions work separately: QMB also signs you up for Extra Help, which brings most drug copays down to a few dollars.\n\nMSP has a limit on the assets you can own, but many things don't count. Things that don't count: your home, one vehicle, household goods, burial funds up to $1,500, and life insurance with a face value up to $1,500.\n\nSelect Apply Online to start your application on Kansas's online benefits portal.",
+    "description": "Medicare Savings Program (MSP) helps people with Medicare pay their monthly premiums. If your income is low enough, it may also cover your deductibles, copays, and other out-of-pocket costs.\n\nIf approved, KanCare pays your Medicare Part B premium to Medicare for you. You won't get a check. Instead, if that premium is taken out of your Social Security now, it will stop, so your monthly payment goes up. If you pay Medicare by bill, those bills stop. There are three levels of MSP, and the one you qualify for determines how much help you get. At the highest level (QMB), doctors and hospitals also can't charge you deductibles, copays, or coinsurance for care that Medicare covers. Prescriptions work separately: QMB also signs you up for Extra Help, which brings most drug copays down to a few dollars.\n\nMSP has a limit on the assets you can own, but many things don't count. Things that don't count: your home, one vehicle, household goods, burial funds, and life insurance.\n\nSelect Apply Online to start your application on Kansas's online benefits portal.",
     "learn_more_link": "https://www.medicare.gov/basics/costs/help/medicare-savings-programs",
     "apply_button_link": "https://cssp.kees.ks.gov/apspssp/ssp.portal",
     "apply_button_description": "",
@@ -64,7 +64,7 @@
     },
     {
       "external_name": "ks_assets",
-      "text": "Proof of assets (ex: bank statements, investment accounts). Do not include your home, one vehicle, household goods, burial funds up to $1,500, or life insurance with a face value up to $1,500",
+      "text": "Proof of assets (ex: bank statements, investment accounts). Do not include your home, one vehicle, household goods, burial funds, or life insurance",
       "link_url": "",
       "link_text": ""
     },
