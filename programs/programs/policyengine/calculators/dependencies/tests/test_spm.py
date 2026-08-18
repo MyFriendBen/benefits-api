@@ -535,8 +535,16 @@ class TestSchoolMealCountableIncomeDependency(TestCase):
         self.assertEqual(dep.value(), 31200)  # ($2000 + $600) * 12
 
 
-class TestSnapDependency(TestCase):
-    """Tests for Snap dependency — dual-role as PE input (categorical eligibility) and output (benefit amount)."""
+class TestSnapReceiptDependencies(TestCase):
+    """
+    Tests for the SNAP half of the actual-receipt contract: receives_snap confers the
+    categorical eligibility SNAP receipt carries on other programs, and
+    takes_up_snap_if_eligible suppresses the SNAP PolicyEngine would otherwise simulate
+    for a household that reports not receiving it.
+
+    The Current Benefits tile is the only signal — the screener captures no SNAP amount —
+    so both read the same way and an unticked tile means "not receiving".
+    """
 
     def setUp(self):
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
@@ -547,10 +555,6 @@ class TestSnapDependency(TestCase):
             household_size=2,
             completed=False,
         )
-
-    def test_field_name(self):
-        dep = spm.Snap(self.screen, None, {})
-        self.assertEqual(dep.field, "snap")
 
     def _report_snap(self, name_abbreviated: str):
         """Seed a SNAP program under `name_abbreviated` with base_program set
@@ -562,41 +566,46 @@ class TestSnapDependency(TestCase):
         )
         _write_current_benefits(self.screen, [name_abbreviated])
 
-    def test_value_returns_1_when_screen_has_snap(self):
-        """When user reports having SNAP, send 1 to PE to enable categorical eligibility."""
+    def test_field_names(self):
+        self.assertEqual(spm.ReceivesSnapDependency(self.screen, None, {}).field, "receives_snap")
+        self.assertEqual(spm.TakesUpSnapIfEligibleDependency(self.screen, None, {}).field, "takes_up_snap_if_eligible")
+
+    def test_version_gated_to_the_release_that_honors_them(self):
+        """Both arrived with the contract (takes_up_snap_if_eligible predates it but was
+        ignored outside microsimulation). Sending either to an older model 400s the whole
+        request, taking every PE program in it down."""
+        self.assertEqual(spm.ReceivesSnapDependency.min_pe_version, (1, 779, 3))
+        self.assertEqual(spm.TakesUpSnapIfEligibleDependency.min_pe_version, (1, 779, 3))
+
+    def test_reported_snap_receipt(self):
         self._report_snap("snap")
 
-        dep = spm.Snap(self.screen, None, {})
-        self.assertEqual(dep.value(), 1)
+        self.assertTrue(spm.ReceivesSnapDependency(self.screen, None, {}).value())
+        self.assertTrue(spm.TakesUpSnapIfEligibleDependency(self.screen, None, {}).value())
 
-    def test_value_returns_1_for_a_white_label_prefixed_snap(self):
-        """Every white label names its SNAP program with a prefix (il_snap, ks_snap, …).
-        Resolving by base_program rather than exact name is what lets reported SNAP reach
-        PE at all — an exact bare-name match found nothing, so no household ever hit the
-        Head Start / Early Head Start categorical branch."""
+    def test_reported_snap_receipt_under_a_white_label_prefixed_name(self):
+        """Every white label names its SNAP program with a prefix (il_snap, ks_snap, …), so
+        receipt has to resolve by base_program — an exact bare-name match finds nothing."""
         self._report_snap("il_snap")
 
-        dep = spm.Snap(self.screen, None, {})
-        self.assertEqual(dep.value(), 1)
+        self.assertTrue(spm.ReceivesSnapDependency(self.screen, None, {}).value())
+        self.assertTrue(spm.TakesUpSnapIfEligibleDependency(self.screen, None, {}).value())
 
-    def test_value_returns_none_when_screen_does_not_have_snap(self):
-        """When user does not report SNAP, return None so PE calculates the benefit amount."""
-        dep = spm.Snap(self.screen, None, {})
-        self.assertIsNone(dep.value())
+    def test_no_reported_snap_lowers_take_up(self):
+        self.assertFalse(spm.ReceivesSnapDependency(self.screen, None, {}).value())
+        self.assertFalse(spm.TakesUpSnapIfEligibleDependency(self.screen, None, {}).value())
 
-    def test_value_returns_none_for_an_unrelated_reported_benefit(self):
-        """base_program is what matches — an unrelated current benefit must not be read as
-        reported SNAP."""
+    def test_an_unrelated_reported_benefit_is_not_snap(self):
         seed_program(self.white_label, "il_tanf")
         Program.objects.filter(white_label=self.white_label, name_abbreviated="il_tanf").update(base_program="tanf")
         _write_current_benefits(self.screen, ["il_tanf"])
 
-        dep = spm.Snap(self.screen, None, {})
-        self.assertIsNone(dep.value())
+        self.assertFalse(spm.ReceivesSnapDependency(self.screen, None, {}).value())
+        self.assertFalse(spm.TakesUpSnapIfEligibleDependency(self.screen, None, {}).value())
 
 
-class TestTanfDependency(TestCase):
-    """Tests for Tanf dependency — dual-role as PE input (categorical eligibility) and output (benefit amount)."""
+class TestSnapIfTakesUpDependency(TestCase):
+    """The SNAP program's output — the would-be entitlement, which survives the take-up flag."""
 
     def setUp(self):
         self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
@@ -609,39 +618,96 @@ class TestTanfDependency(TestCase):
         )
 
     def test_field_name(self):
-        dep = spm.Tanf(self.screen, None, {})
-        self.assertEqual(dep.field, "tanf")
+        self.assertEqual(spm.SnapIfTakesUp(self.screen, None, {}).field, "snap_if_takes_up")
 
-    def _report_tanf(self):
+    def test_version_gated(self):
+        self.assertEqual(spm.SnapIfTakesUp.min_pe_version, (1, 779, 3))
+
+
+class TestTanfDependencies(TestCase):
+    """
+    Tests for the TANF half of the actual-receipt contract. Unlike SNAP, TANF has an
+    amount: the reported cash-assistance income stream is both the value sent to
+    PolicyEngine and, on its own, proof of receipt.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=2,
+            completed=False,
+        )
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
+
+    def _report_cash_assistance(self, monthly: int):
+        IncomeStream.objects.create(
+            screen=self.screen, household_member=self.head, type="cashAssistance", amount=monthly, frequency="monthly"
+        )
+
+    def _tick_tanf_tile(self):
         """Seed a TANF program with base_program set (seed_program leaves it None) and
         record receipt on the screen, mirroring how has_base_benefit resolves variants."""
         seed_program(self.white_label, "tanf")
         Program.objects.filter(white_label=self.white_label, name_abbreviated="tanf").update(base_program="tanf")
         _write_current_benefits(self.screen, ["tanf"])
 
-    def test_value_returns_reported_amount_when_screen_has_tanf(self):
-        """When the household reports TANF with a cash amount, send that amount to PE."""
-        head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=35)
+    def test_field_names(self):
+        self.assertEqual(spm.Tanf(self.screen, None, {}).field, "tanf")
+        self.assertEqual(spm.ReceivesTanfDependency(self.screen, None, {}).field, "receives_tanf")
+        self.assertEqual(spm.TakesUpTanfIfEligibleDependency(self.screen, None, {}).field, "takes_up_tanf_if_eligible")
+        self.assertEqual(spm.TanfIfTakesUp(self.screen, None, {}).field, "tanf_if_takes_up")
+
+    def test_new_fields_are_version_gated(self):
+        self.assertEqual(spm.ReceivesTanfDependency.min_pe_version, (1, 779, 3))
+        self.assertEqual(spm.TakesUpTanfIfEligibleDependency.min_pe_version, (1, 779, 3))
+        self.assertEqual(spm.TanfIfTakesUp.min_pe_version, (1, 779, 3))
+        self.assertEqual(spm.Tanf.min_pe_version, ())
+
+    def test_sends_the_reported_amount_annualized(self):
+        self._report_cash_assistance(400)
+        self._tick_tanf_tile()
+
+        self.assertEqual(spm.Tanf(self.screen, None, {}).value(), 4800)  # $400/month * 12
+
+    def test_reported_amount_alone_is_receipt(self):
+        """
+        A household can enter a cash-assistance amount without ticking the tile. Reading
+        that as "not receiving" would send takes_up_tanf_if_eligible: false alongside their
+        own reported TANF amount.
+        """
+        self._report_cash_assistance(400)
+
+        self.assertEqual(spm.Tanf(self.screen, None, {}).value(), 4800)
+        self.assertTrue(spm.ReceivesTanfDependency(self.screen, None, {}).value())
+        self.assertTrue(spm.TakesUpTanfIfEligibleDependency(self.screen, None, {}).value())
+
+    def test_tile_without_an_amount_is_receipt_without_a_value(self):
+        """
+        receives_tanf is exactly the case an amount can't express: PolicyEngine may compute
+        the household's TANF as $0, and the boolean is what keeps the categorical
+        eligibility their receipt confers firing anyway.
+        """
+        self._tick_tanf_tile()
+
+        self.assertIsNone(spm.Tanf(self.screen, None, {}).value())
+        self.assertTrue(spm.ReceivesTanfDependency(self.screen, None, {}).value())
+        self.assertTrue(spm.TakesUpTanfIfEligibleDependency(self.screen, None, {}).value())
+
+    def test_no_reported_tanf_lowers_take_up(self):
+        self.assertIsNone(spm.Tanf(self.screen, None, {}).value())
+        self.assertFalse(spm.ReceivesTanfDependency(self.screen, None, {}).value())
+        self.assertFalse(spm.TakesUpTanfIfEligibleDependency(self.screen, None, {}).value())
+
+    def test_other_income_is_not_cash_assistance(self):
         IncomeStream.objects.create(
-            screen=self.screen, household_member=head, type="cashAssistance", amount=400, frequency="monthly"
+            screen=self.screen, household_member=self.head, type="wages", amount=2000, frequency="monthly"
         )
-        self._report_tanf()
 
-        dep = spm.Tanf(self.screen, None, {})
-        self.assertEqual(dep.value(), 4800)  # $400/month * 12
-
-    def test_value_returns_none_when_tanf_reported_without_amount(self):
-        """Reported receipt but no cash amount collected: return None (don't override with a
-        placeholder), so PE computes the benefit rather than seeing a bogus value."""
-        self._report_tanf()
-
-        dep = spm.Tanf(self.screen, None, {})
-        self.assertIsNone(dep.value())
-
-    def test_value_returns_none_when_screen_does_not_have_tanf(self):
-        """When user does not report TANF, return None so PE calculates the benefit amount."""
-        dep = spm.Tanf(self.screen, None, {})
-        self.assertIsNone(dep.value())
+        self.assertIsNone(spm.Tanf(self.screen, None, {}).value())
+        self.assertFalse(spm.ReceivesTanfDependency(self.screen, None, {}).value())
 
 
 class TestWaTanfDependency(TestCase):

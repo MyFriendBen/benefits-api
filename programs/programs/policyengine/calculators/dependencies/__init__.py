@@ -68,3 +68,26 @@ wic_income = [
     member.Ssi,
     spm.Tanf,
 ]
+
+# PolicyEngine's actual-receipt contract: countable income and categorical eligibility follow
+# the benefits a household reports receiving, not the ones PolicyEngine simulates them as
+# eligible for. See dependencies/receipt.py.
+#
+# Adopt it whole per calculator — suppressing one simulated benefit while leaving another just
+# shifts categorical eligibility onto the phantom that remains.
+#
+# The version gating is deliberately mixed: the amount inputs stay ungated, since every
+# supported model reads them and flooring them would withhold reported SSI/TANF from older
+# ones. That is safe because the gated half is the *suppressing* half — below the floor we
+# send amounts without take-up flags, never the reverse. test_receipt_contract.py pins that
+# direction.
+receipt_contract = [
+    member.Ssi,
+    member.ReceivesSsiDependency,
+    member.TakesUpSsiIfEligibleDependency,
+    spm.Tanf,
+    spm.ReceivesTanfDependency,
+    spm.TakesUpTanfIfEligibleDependency,
+    spm.ReceivesSnapDependency,
+    spm.TakesUpSnapIfEligibleDependency,
+]

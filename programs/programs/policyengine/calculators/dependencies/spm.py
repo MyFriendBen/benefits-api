@@ -1,5 +1,6 @@
 from screener.models import HouseholdMember
 from .base import SpmUnit
+from .receipt import TANF_INCOME_TYPE, screen_reports_snap, screen_reports_tanf
 
 
 class ChildCareDependency(SpmUnit):
@@ -60,10 +61,42 @@ class SnapGrossIncomeDependency(SpmUnit):
 
 
 class TakesUpSnapIfEligibleDependency(SpmUnit):
+    """
+    PolicyEngine's ``takes_up_snap_if_eligible`` spm_unit input, default True. False stops
+    PolicyEngine counting the SNAP it simulates for the household as income they receive, and
+    withdraws the categorical eligibility SNAP receipt confers (Head Start / Early Head Start,
+    WIC's adjunct test).
+
+    Lowered for a household that does not report receiving SNAP. The tile is the only signal,
+    so an unticked one reads as "not receiving" — unlike SSI and TANF, where a reported amount
+    can stand in for it.
+
+    The gate is the release where this field started applying through the API, not the one that
+    introduced it.
+    """
+
     field = "takes_up_snap_if_eligible"
+    min_pe_version = (1, 779, 3)
 
     def value(self):
-        return True
+        return screen_reports_snap(self.screen)
+
+
+class ReceivesSnapDependency(SpmUnit):
+    """
+    PolicyEngine's ``receives_snap`` spm_unit input: the household is a reported SNAP recipient.
+
+    Confers SNAP-based categorical eligibility on other programs even where PolicyEngine
+    computes the household's own SNAP as $0 — the case a computed amount cannot express.
+    spm_unit-scoped, matching the household scope of the tile it reads, so unlike SSI it needs
+    no attribution to a member.
+    """
+
+    field = "receives_snap"
+    min_pe_version = (1, 779, 3)
+
+    def value(self):
+        return screen_reports_snap(self.screen)
 
 
 class HasHeatingCoolingExpenseDependency(SpmUnit):
@@ -148,33 +181,18 @@ class SnapEmergencyAllotmentDependency(SpmUnit):
         return 0
 
 
-class Snap(SpmUnit):
+class SnapIfTakesUp(SpmUnit):
     """
-    snap as both PE input and output.
+    PolicyEngine's ``snap_if_takes_up`` spm_unit output: the SNAP the household would get if it
+    took the program up, regardless of reported take-up.
 
-    - If user reports having snap: send 1 so PE treats the household as
-      receiving SNAP, enabling categorical eligibility for programs like
-      Head Start and Early Head Start.
-    - If no reported snap: return None so PE calculates the SNAP benefit
-      amount the household is eligible for.
-
-    ``has_base_benefit`` covers every white-label variant (il_snap, ks_snap, co_snap,
-    …); ``has_benefit`` is an exact match on the bare name, which no white label uses,
-    so reported SNAP never reached PE and the categorical branch could not fire.
-    ``Tanf`` below reads the same way for the same reason.
-
-    Sending 1 does overwrite PE's *calculated* snap for this household, so the SNAP
-    program's own value becomes $1/mo. That is only ever the households that reported
-    receiving SNAP, and the results layer flags those `already_has` and filters the
-    program out (see ``isProgramBasicallyVisible``), so the clamped value is never
-    surfaced. PE models no reported-vs-calculated split for snap the way it does for
-    ssi (``ssi_reported`` / ``use_reported_ssi``), so this is the available signal.
+    What the SNAP program reads, since the plain ``snap`` output is gated on
+    ``takes_up_snap_if_eligible`` and so reads 0 for exactly the non-recipients the program
+    should be recommended to.
     """
 
-    field = "snap"
-
-    def value(self):
-        return 1 if self.screen.has_base_benefit("snap") else None
+    field = "snap_if_takes_up"
+    min_pe_version = (1, 779, 3)
 
 
 class Acp(SpmUnit):
@@ -203,25 +221,84 @@ class Lifeline(SpmUnit):
 
 class Tanf(SpmUnit):
     """
-    tanf as both PE input and output.
+    The household's reported TANF amount, as PolicyEngine's ``tanf`` input; None when none is
+    reported, leaving PolicyEngine to compute it.
 
-    When the household reports a TANF cash amount, send it as the `tanf` value. A
-    positive `tanf` drives SNAP/Head Start/WIC categorical eligibility, and consumers
-    that read the amount (spm_unit_benefits, tx_ceap_countable_income, HUD income) get
-    the real figure. Otherwise send None so PE computes the benefit — we only override
-    when we have an actual reported amount.
-
-    has_base_benefit covers every white-label variant (ks_tanf, co_tanf, ma_tafdc, …);
-    has_benefit is an exact match that would miss the prefixed names.
+    A positive value drives SNAP / Head Start / WIC categorical eligibility and gives the
+    consumers that read the amount (spm_unit_benefits, tx_ceap_countable_income, HUD income)
+    the real figure. The amount is itself the receipt signal, so this does not require the tile.
     """
 
     field = "tanf"
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
 
     def value(self):
-        if not self.screen.has_base_benefit("tanf"):
-            return None
-        reported_amount = self.screen.calc_gross_income("yearly", ["cashAssistance"])
+        reported_amount = self.screen.calc_gross_income("yearly", [TANF_INCOME_TYPE])
         return reported_amount if reported_amount > 0 else None
+
+
+class TanfIfTakesUp(SpmUnit):
+    """
+    PolicyEngine's ``tanf_if_takes_up`` spm_unit output: the TANF the household would get if it
+    took the program up, summed across the state programs, regardless of reported take-up.
+
+    What the TANF program reads, since the plain ``tanf`` output is gated on
+    ``takes_up_tanf_if_eligible`` and so reads 0 for exactly the non-recipients the program
+    should be recommended to.
+    """
+
+    field = "tanf_if_takes_up"
+    min_pe_version = (1, 779, 3)
+
+
+class ReceivesTanfDependency(SpmUnit):
+    """
+    PolicyEngine's ``receives_tanf`` spm_unit input: the household is a reported TANF recipient.
+
+    Confers the categorical eligibility TANF carries (SNAP, Head Start, WIC's adjunct test) even
+    where PolicyEngine computes the household's own TANF as $0 — the case a reported amount
+    cannot express. spm_unit-scoped, matching the household scope of the signals it reads, so
+    unlike SSI it needs no attribution to a member.
+
+    ``is_tanf_enrolled`` defaults to this, so it need not be sent separately.
+    """
+
+    field = "receives_tanf"
+    min_pe_version = (1, 779, 3)
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
+
+    def value(self):
+        return screen_reports_tanf(self.screen)
+
+
+class TakesUpTanfIfEligibleDependency(SpmUnit):
+    """
+    PolicyEngine's ``takes_up_tanf_if_eligible`` spm_unit input, default True. False stops
+    PolicyEngine counting the TANF it simulates for the household as income they receive, and
+    withdraws the categorical eligibility that receipt confers.
+
+    Lowered for a household reporting no TANF by either signal — the tile or a cash-assistance
+    amount.
+    """
+
+    field = "takes_up_tanf_if_eligible"
+    min_pe_version = (1, 779, 3)
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
+
+    def value(self):
+        return screen_reports_tanf(self.screen)
 
 
 class CoTanf(SpmUnit):

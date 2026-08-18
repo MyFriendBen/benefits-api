@@ -29,9 +29,10 @@ from .integration_test_helpers import (
 
 @pytest.mark.integration
 class TestPeIntegrationHarness(PeIntegrationTestCase):
-    # A version PolicyEngine currently serves, so this cassette can actually be re-recorded.
-    # PE no longer serves 1.779.3; the value is unchanged at 1.784.3.
-    pe_version = "1.784.3"
+    # Must be a version PolicyEngine still serves, or re-recording 422s with
+    # `unsupported_version`. Retirement happens within days of a promotion, so expect to bump
+    # this; the asserted value has held across 1.779.3 → 1.784.3 → 1.786.5.
+    pe_version = "1.786.5"
 
     def test_replays_a_member_level_program_from_a_cassette(self):
         """One household, one POST, one cassette: a 3-year-old under the income limit.

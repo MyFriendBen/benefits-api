@@ -10,16 +10,9 @@ SNAP_BASE_INPUTS = [
     dependency.member.AgeDependency,
     dependency.member.MedicalExpenseDependency,
     dependency.member.IsDisabledDependency,
-    # TANF cash receipt drives SNAP categorical eligibility (income/asset tests bypassed):
-    # send the reported tanf amount directly as the tanf value. TANF has no reported/toggle
-    # seam, so a positive tanf value is what confers categorical eligibility.
-    #
-    # SSI categorical eligibility is deliberately NOT wired here. It requires
-    # use_reported_ssi, which is global per PE request (flips applicable_ssi for every
-    # program in the request — SNAP, IL AABD, KS TANF, TX CEAP), so it's a federal
-    # all-state change with cross-program effects (verified IL AABD $0->$10k swing).
-    # That work lives in MFB-1312 with all-consumer QA, not in this KS SNAP PR.
-    dependency.spm.Tanf,
+    # SNAP's categorical eligibility bypasses the income and asset tests for SSI/TANF
+    # recipients, which PolicyEngine keys off actual receipt rather than simulated benefits.
+    *dependency.receipt_contract,
     # Disabled treatment (uncapped shelter deduction, $4,500 asset limit) requires disability-
     # program receipt via is_usda_disabled, not the generic is_disabled flag: SsdiReportedDependency
     # feeds the SSDI amount, MeetsSsiDisabilityCriteriaDependency the SSI-disability input PE needs
@@ -40,7 +33,10 @@ SNAP_BASE_INPUTS = [
 
 
 class Snap(PolicyEngineSpmCalulator):
-    pe_name = "snap"
+    # PolicyEngine gates `snap` on the take-up flag, so it reads 0 for any household reporting
+    # no SNAP — exactly the households this program should be recommended to. The ungated
+    # output is what they'd receive if they applied, which is the number worth showing them.
+    pe_name = "snap_if_takes_up"
     pe_inputs = [
         *SNAP_BASE_INPUTS,
         dependency.member.FullTimeCollegeStudentDependency,
@@ -48,7 +44,7 @@ class Snap(PolicyEngineSpmCalulator):
         dependency.member.SnapWorkExceptionDependency,
         dependency.member.SnapJobTrainingStudentDependency,
     ]
-    pe_outputs = [dependency.spm.Snap]
+    pe_outputs = [dependency.spm.SnapIfTakesUp]
     pe_period_month = "01"
 
     @property
@@ -79,12 +75,14 @@ class SchoolLunch(PolicyEngineSpmCalulator):
 
 
 class Tanf(PolicyEngineSpmCalulator):
-    pe_name = "tanf"
+    # The ungated output, for the same reason as Snap above.
+    pe_name = "tanf_if_takes_up"
     pe_inputs = [
         dependency.member.AgeDependency,
         dependency.member.FullTimeCollegeStudentDependency,
+        *dependency.receipt_contract,
     ]
-    pe_outputs = [dependency.spm.Tanf]
+    pe_outputs = [dependency.spm.TanfIfTakesUp]
 
 
 class Acp(PolicyEngineSpmCalulator):
@@ -106,5 +104,7 @@ class Lifeline(PolicyEngineSpmCalulator):
         # supplement (TX, WA) are unaffected since their value doesn't depend on it.
         dependency.spm.PhoneCostDependency,
         *dependency.irs_gross_income,
+        # Categorically eligible off SNAP / TANF / SSI receipt.
+        *dependency.receipt_contract,
     ]
     pe_outputs = [dependency.spm.Lifeline]

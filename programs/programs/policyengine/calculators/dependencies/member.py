@@ -1,4 +1,5 @@
 from .base import Member
+from .receipt import SSI_INCOME_TYPE, member_reports_ssi_amount, screen_reports_ssi_without_amount
 
 
 class AgeDependency(Member):
@@ -130,6 +131,17 @@ class MedicaidSeniorOrDisabled(Member):
 
 
 class Wic(Member):
+    """
+    PolicyEngine's ``wic`` person output — the member's WIC entitlement by food package.
+
+    Already the would-be value for our payloads, unlike SSI/SNAP/TANF, whose programs need the
+    ``*_if_takes_up`` variants: ``wic`` is ``wic_if_takes_up`` gated on
+    ``takes_up_wic_if_eligible``, which defaults True and which we never send, so the two are
+    equal for every household we submit. (``receives_wic`` is measurably inert, so it is not
+    wired either.) Being ungated also keeps WIC clear of the ``min_pe_version`` floor, and so of
+    ``_drop_unreadable_programs``.
+    """
+
     field = "wic"
 
 
@@ -139,13 +151,12 @@ class Medicaid(Member):
 
 class Ssi(Member):
     """
-    SSI as both PE input and output.
+    The member's reported SSI amount, as PolicyEngine's person-level ``ssi`` input; None when
+    they report none, leaving PolicyEngine to compute it.
 
-    - If user reports SSI: use reported value
-    - If no reported SSI: return None so PE calculates eligibility
-
-    Warning: When PE calculates SSI, the value sometimes counts as unearned
-    income for downstream calculations (e.g., IL AABD).
+    A reported amount replaces PolicyEngine's own figure, counting as income downstream and
+    conferring the categorical eligibility SSI receipt carries. It also wins over the take-up
+    flag, which only suppresses PolicyEngine's *computed* value.
     """
 
     field = "ssi"
@@ -156,8 +167,79 @@ class Ssi(Member):
     )
 
     def value(self):
-        ssi = self.member.calc_gross_income("yearly", ["sSI"])
+        ssi = self.member.calc_gross_income("yearly", [SSI_INCOME_TYPE])
         return None if ssi == 0 else ssi
+
+
+class SsiIfTakesUp(Member):
+    """
+    PolicyEngine's ``ssi_if_takes_up`` person output: the SSI this member would get if they took
+    the program up, regardless of reported take-up.
+
+    What the SSI program reads, since the plain ``ssi`` output is gated on
+    ``takes_up_ssi_if_eligible`` and so reads 0 for exactly the non-recipients the program
+    should be recommended to — and the frontend filters out programs valued at $0.
+    """
+
+    field = "ssi_if_takes_up"
+    min_pe_version = (1, 779, 3)
+
+
+class ReceivesSsiDependency(Member):
+    """
+    PolicyEngine's ``receives_ssi`` person input: this member is a reported SSI recipient.
+
+    Read alongside the ``ssi`` amount rather than instead of it — every consumer tests
+    ``(ssi > 0) | receives_ssi`` (``meets_snap_categorical_eligibility``,
+    ``is_ssi_recipient_for_medicaid`` and its 209(b) variant). So the boolean is what carries
+    receipt when PolicyEngine computes the member's own entitlement as $0, the one case an
+    amount cannot express.
+
+    Set from a reported amount only, since that is the only per-member signal the screener
+    captures. PolicyEngine treats the flag as conclusive — it confers the SSI-recipient
+    Medicaid pathway with no demographic or income test — so it is never inferred.
+    """
+
+    field = "receives_ssi"
+    min_pe_version = (1, 779, 3)
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
+
+    def value(self):
+        return member_reports_ssi_amount(self.member)
+
+
+class TakesUpSsiIfEligibleDependency(Member):
+    """
+    PolicyEngine's ``takes_up_ssi_if_eligible`` person input, default True. False stops
+    PolicyEngine from counting the SSI it simulates for this member as income they receive, and
+    withdraws the categorical eligibility that receipt confers — reaching IL AABD, SNAP's
+    income test, TX CEAP and the Medicaid/MSP SSI methodologies.
+
+    Lowered for a member reporting no SSI amount, which is the point of the receipt contract:
+    a simulated entitlement is not income.
+
+    Held at the default for a household that ticked the SSI tile without an amount — somebody
+    receives SSI but nothing says who, and zeroing them all would suppress a real benefit. See
+    ``screen_reports_ssi_without_amount``.
+    """
+
+    field = "takes_up_ssi_if_eligible"
+    min_pe_version = (1, 779, 3)
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
+
+    def value(self):
+        if member_reports_ssi_amount(self.member):
+            return True
+
+        return screen_reports_ssi_without_amount(self.screen)
 
 
 class IsDisabledDependency(Member):
@@ -306,40 +388,6 @@ class IsBlindDependency(Member):
         return self.member.visually_impaired or False
 
 
-class SsiReportedDependency(Member):
-    field = "ssi_reported"
-    dependencies = (
-        "income_type",
-        "income_amount",
-        "income_frequency",
-    )
-
-    def value(self):
-        return self.member.calc_gross_income("yearly", ["sSI"])
-
-
-class UseReportedSsiDependency(Member):
-    """
-    Tells PolicyEngine to count the household's *reported* SSI (ssi_reported)
-    instead of PE's *calculated* ssi wherever a program's countable income reads
-    applicable_ssi (the calculator opts in by including this in its pe_inputs).
-    We always send True so the screener's reported SSI drives the income test.
-
-    Person-level and global within a request: it flips applicable_ssi for every
-    program in that request, so only add it to calculators where reported SSI is
-    the correct measure.
-
-    min_pe_version gates this to the first model that defines use_reported_ssi;
-    sending it to an earlier model 400s the whole request.
-    """
-
-    field = "use_reported_ssi"
-    min_pe_version = (1, 742, 0)
-
-    def value(self):
-        return True
-
-
 class SsdiReportedDependency(Member):
     # Amount in "Social Security disability benefits (SSDI)"
     field = "social_security_disability"
@@ -366,10 +414,6 @@ class SsiCountableResourcesDependency(Member):
             ssi_assets = self.screen.household_assets / self.screen.num_adults()
 
         return int(ssi_assets)
-
-
-class SsiAmountIfEligible(Member):
-    field = "ssi_amount_if_eligible"
 
 
 class Andcs(Member):

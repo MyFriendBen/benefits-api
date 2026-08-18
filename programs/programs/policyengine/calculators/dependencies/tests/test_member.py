@@ -7,6 +7,9 @@ to determine TX SNAP and Lifeline eligibility and benefit amounts.
 
 from django.test import TestCase
 from screener.models import Screen, HouseholdMember, WhiteLabel, Expense, IncomeStream
+from programs.models import Program
+from screener.tests.helpers import seed_program
+from screener.serializers import _write_current_benefits
 from programs.programs.policyengine.calculators.dependencies import member
 
 
@@ -1566,11 +1569,17 @@ class TestCareExpensesDependency(TestCase):
         self.assertEqual(member.CareExpensesDependency(self.screen, d1, {}).value(), 3000)
 
 
-class TestSsiReportedDependency(TestCase):
+class TestSsiReceiptDependencies(TestCase):
     """
-    Tests for SsiReportedDependency, which tells PolicyEngine how much SSI the member
-    already reports receiving. Only the screener's ``sSI`` income type counts — SSDI
-    (``sSDisability``) is a different program and must not be folded in.
+    Tests for the SSI half of the actual-receipt contract.
+
+    ``ssi`` and ``receives_ssi`` are person-level, and a reported amount is the only per-member
+    SSI signal the screener captures, so receipt is read from the amount alone. The
+    household-scoped Current Benefits tile names no recipient, and PolicyEngine treats
+    ``receives_ssi`` as conclusive (measured: it alone flips ``medicaid_category`` to
+    SSI_RECIPIENT with no demographic or income test), so a tile is never attributed to a
+    guessed member. It still holds take-up at PolicyEngine's default so a real recipient is not
+    zeroed. SSDI (``sSDisability``) is a different program and must never be folded in.
     """
 
     def setUp(self):
@@ -1579,32 +1588,144 @@ class TestSsiReportedDependency(TestCase):
             white_label=self.white_label,
             zipcode="65101",
             county="Test County",
-            household_size=1,
+            household_size=2,
             completed=False,
         )
+        # Aged head, working-age non-disabled spouse, young child: only the head could be
+        # an SSI recipient, so attribution is observable.
         self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=67)
+        self.spouse = HouseholdMember.objects.create(screen=self.screen, relationship="spouse", age=40)
+        self.child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=3)
 
-    def test_field_name(self):
-        self.assertEqual(member.SsiReportedDependency(self.screen, self.head, {}).field, "ssi_reported")
-
-    def test_value_annualizes_reported_ssi(self):
+    def _report_ssi(self, household_member, monthly):
         IncomeStream.objects.create(
-            screen=self.screen, household_member=self.head, type="sSI", amount=943, frequency="monthly"
+            screen=self.screen, household_member=household_member, type="sSI", amount=monthly, frequency="monthly"
         )
-        self.assertEqual(member.SsiReportedDependency(self.screen, self.head, {}).value(), 11316)
 
-    def test_value_returns_zero_when_no_ssi_reported(self):
-        self.assertEqual(member.SsiReportedDependency(self.screen, self.head, {}).value(), 0)
+    def _tick_ssi_tile(self, name_abbreviated="ssi"):
+        seed_program(self.white_label, name_abbreviated)
+        Program.objects.filter(white_label=self.white_label, name_abbreviated=name_abbreviated).update(
+            base_program="ssi"
+        )
+        _write_current_benefits(self.screen, [name_abbreviated])
 
-    def test_value_excludes_ssdi_and_other_income(self):
-        """SSDI is a separate program; counting it as reported SSI would suppress the benefit."""
+    def test_field_names(self):
+        self.assertEqual(member.Ssi(self.screen, self.head, {}).field, "ssi")
+        self.assertEqual(member.ReceivesSsiDependency(self.screen, self.head, {}).field, "receives_ssi")
+        self.assertEqual(
+            member.TakesUpSsiIfEligibleDependency(self.screen, self.head, {}).field, "takes_up_ssi_if_eligible"
+        )
+        self.assertEqual(member.SsiIfTakesUp(self.screen, self.head, {}).field, "ssi_if_takes_up")
+
+    def test_new_fields_are_version_gated(self):
+        self.assertEqual(member.ReceivesSsiDependency.min_pe_version, (1, 779, 3))
+        self.assertEqual(member.TakesUpSsiIfEligibleDependency.min_pe_version, (1, 779, 3))
+        self.assertEqual(member.SsiIfTakesUp.min_pe_version, (1, 779, 3))
+        self.assertEqual(member.Ssi.min_pe_version, ())
+
+    def test_sends_the_reported_amount_annualized(self):
+        self._report_ssi(self.head, 943)
+
+        self.assertEqual(member.Ssi(self.screen, self.head, {}).value(), 11316)
+        self.assertTrue(member.ReceivesSsiDependency(self.screen, self.head, {}).value())
+        self.assertTrue(member.TakesUpSsiIfEligibleDependency(self.screen, self.head, {}).value())
+
+    def test_no_reported_ssi_lowers_take_up(self):
+        """
+        Lowering take-up is what keeps PolicyEngine from counting the SSI it simulates for a
+        non-reporter as income they receive — load-bearing for IL AABD, which that phantom
+        income blocks outright, and for SNAP's income test.
+        """
+        self.assertIsNone(member.Ssi(self.screen, self.head, {}).value())
+        self.assertFalse(member.ReceivesSsiDependency(self.screen, self.head, {}).value())
+        self.assertFalse(member.TakesUpSsiIfEligibleDependency(self.screen, self.head, {}).value())
+
+    def test_receipt_is_scoped_to_the_reporting_member(self):
+        """A spouse's SSI is not this member's — ``ssi`` is person-level."""
+        self._report_ssi(self.spouse, 943)
+
+        self.assertIsNone(member.Ssi(self.screen, self.head, {}).value())
+        self.assertFalse(member.ReceivesSsiDependency(self.screen, self.head, {}).value())
+        self.assertFalse(member.TakesUpSsiIfEligibleDependency(self.screen, self.head, {}).value())
+        self.assertTrue(member.ReceivesSsiDependency(self.screen, self.spouse, {}).value())
+
+    def test_tile_without_an_amount_asserts_nobody_receives_ssi(self):
+        """
+        A ticked tile is household-scoped, so it names no recipient. With an aged head, a
+        working-age spouse and a child all equally unexcluded by the data we hold, crediting any
+        of them is a guess — and PolicyEngine would treat it as conclusive, handing that member
+        the SSI-recipient Medicaid pathway with no demographic or income test (measured at
+        $15,167 for the spouse, $10,222 for the child).
+        """
+        self._tick_ssi_tile()
+
+        for household_member in (self.head, self.spouse, self.child):
+            self.assertFalse(member.ReceivesSsiDependency(self.screen, household_member, {}).value())
+
+    def test_tile_without_an_amount_leaves_take_up_alone(self):
+        """
+        The tile is not discarded, though: somebody here receives SSI, so lowering take-up would
+        zero the simulated SSI of whoever that is. The whole household keeps PolicyEngine's
+        default instead — unknown stays unknown rather than becoming a denial.
+        """
+        self._tick_ssi_tile()
+
+        for household_member in (self.head, self.spouse, self.child):
+            self.assertTrue(member.TakesUpSsiIfEligibleDependency(self.screen, household_member, {}).value())
+
+    def test_a_reported_amount_explains_the_tile_for_the_rest_of_the_household(self):
+        """Once a member accounts for the household's SSI, members reporting nothing are
+        suppressed normally — otherwise one SSI recipient would shield every relative's
+        simulated SSI from suppression."""
+        self._tick_ssi_tile()
+        self._report_ssi(self.head, 943)
+
+        self.assertTrue(member.TakesUpSsiIfEligibleDependency(self.screen, self.head, {}).value())
+        self.assertTrue(member.ReceivesSsiDependency(self.screen, self.head, {}).value())
+        self.assertFalse(member.TakesUpSsiIfEligibleDependency(self.screen, self.spouse, {}).value())
+        self.assertFalse(member.ReceivesSsiDependency(self.screen, self.spouse, {}).value())
+
+    def test_tile_resolves_a_white_label_prefixed_ssi_program(self):
+        """White labels ship ks_ssi / mo_ssi / tx_ssi, so the tile has to resolve by
+        base_program rather than the bare name for take-up to be held at the default."""
+        self._tick_ssi_tile("ks_ssi")
+
+        self.assertTrue(member.TakesUpSsiIfEligibleDependency(self.screen, self.head, {}).value())
+
+    def test_ssdi_and_other_income_are_not_ssi(self):
         IncomeStream.objects.create(
             screen=self.screen, household_member=self.head, type="sSDisability", amount=1000, frequency="monthly"
         )
         IncomeStream.objects.create(
             screen=self.screen, household_member=self.head, type="wages", amount=500, frequency="monthly"
         )
-        self.assertEqual(member.SsiReportedDependency(self.screen, self.head, {}).value(), 0)
+
+        self.assertIsNone(member.Ssi(self.screen, self.head, {}).value())
+        self.assertFalse(member.ReceivesSsiDependency(self.screen, self.head, {}).value())
+        self.assertFalse(member.TakesUpSsiIfEligibleDependency(self.screen, self.head, {}).value())
+
+
+class TestWicDependency(TestCase):
+    """
+    The WIC program's output stays on the ungated ``wic``.
+
+    ``wic`` is ``wic_if_takes_up`` gated on ``takes_up_wic_if_eligible``, which defaults True and
+    which we never send, so the two are the same number for every payload we submit. Staying
+    ungated keeps WIC out of the version floor and so out of ``_drop_unreadable_programs``.
+    """
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label, zipcode="65101", county="Test County", household_size=1, completed=False
+        )
+        self.head = HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=29)
+
+    def test_field_name(self):
+        self.assertEqual(member.Wic(self.screen, self.head, {}).field, "wic")
+
+    def test_not_version_gated(self):
+        self.assertEqual(member.Wic.min_pe_version, ())
 
 
 class TestSsiCountableResourcesDependency(TestCase):

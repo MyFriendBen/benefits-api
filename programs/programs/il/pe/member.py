@@ -82,12 +82,13 @@ class IlAabd(PolicyEngineMembersCalculator):
         member_dependency.IsBlindDependency,
         member_dependency.IsDisabledDependency,
         member_dependency.SsiEarnedIncomeDependency,
-        member_dependency.SsiReportedDependency,
         member_dependency.SsiCountableResourcesDependency,
         # il_aabd_countable_income - unearned income types
         member_dependency.SocialSecurityIncomeDependency,
         member_dependency.SsdiReportedDependency,
-        member_dependency.Ssi,
+        # AABD counts SSI as unearned income, so simulated SSI would block an applicant
+        # with income they never received. Supplies member_dependency.Ssi.
+        *pe_dependency.receipt_contract,
         member_dependency.WorkersCompensationDependency,
         member_dependency.UnemploymentIncomeDependency,
         member_dependency.RetirementDistributionsDependency,

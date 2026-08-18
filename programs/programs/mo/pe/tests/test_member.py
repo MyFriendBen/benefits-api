@@ -67,7 +67,7 @@ from programs.programs.policyengine.calculators.dependencies.member import (
     Ssi,
     SsiCountableResourcesDependency,
     SsiEarnedIncomeDependency,
-    SsiReportedDependency,
+    SsiIfTakesUp,
     SsiUnearnedIncomeDependency,
 )
 from programs.programs.policyengine.calculators.registry import all_calculators, all_member_calculators
@@ -82,6 +82,8 @@ class TestMoWicWiring(TestCase):
         self.assertTrue(issubclass(MoWic, PolicyEngineMembersCalculator))
 
     def test_uses_federal_wic_pe_name(self):
+        """Inherited from the federal calculator, which stays on the ungated ``wic`` — see
+        ``Wic``."""
         self.assertEqual(MoWic.pe_name, "wic")
 
     def test_registered_as_mo_wic(self):
@@ -321,8 +323,8 @@ class TestMoSsiWiring(TestCase):
         self.assertTrue(issubclass(MoSsi, FederalSsi))
         self.assertTrue(issubclass(MoSsi, PolicyEngineMembersCalculator))
 
-    def test_pe_name_is_ssi(self):
-        self.assertEqual(MoSsi.pe_name, "ssi")
+    def test_pe_name_is_the_would_be_ssi_variable(self):
+        self.assertEqual(MoSsi.pe_name, "ssi_if_takes_up")
 
     def test_is_registered_as_mo_ssi(self):
         self.assertIs(mo_member_calculators["mo_ssi"], MoSsi)
@@ -363,10 +365,14 @@ class TestMoSsiWiring(TestCase):
         self.assertIn(SsiCountableResourcesDependency, MoSsi.pe_inputs)
         self.assertIn(SsiEarnedIncomeDependency, MoSsi.pe_inputs)
         self.assertIn(SsiUnearnedIncomeDependency, MoSsi.pe_inputs)
-        self.assertIn(SsiReportedDependency, MoSsi.pe_inputs)
+        self.assertIn(Ssi, MoSsi.pe_inputs)
 
-    def test_pe_outputs_is_ssi_variable(self):
-        self.assertEqual(MoSsi.pe_outputs, [Ssi])
+    def test_pe_outputs_is_the_would_be_ssi_variable(self):
+        """
+        ssi_if_takes_up, not ssi: takes_up_ssi_if_eligible is False for anyone not
+        reporting SSI, which zeroes ``ssi`` for exactly the people mo_ssi is for.
+        """
+        self.assertEqual(MoSsi.pe_outputs, [SsiIfTakesUp])
 
     def test_does_not_override_member_value(self):
         """
@@ -417,7 +423,7 @@ class TestMoSsiPeInput(TestCase):
         people = pe_input(self.screen, [self._calculator()])["household"]["people"]
         head = people[str(self.head.id)]
 
-        for field in ("age", "is_blind", "is_disabled", "ssi_countable_resources", "ssi_reported"):
+        for field in ("age", "is_blind", "is_disabled", "ssi_countable_resources", "ssi"):
             self.assertIn(field, head)
 
     def test_splits_household_assets_into_countable_resources(self):

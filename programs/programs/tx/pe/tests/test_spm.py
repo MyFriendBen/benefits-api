@@ -12,7 +12,13 @@ as they test Screen model methods, not TX-specific logic.
 from django.test import TestCase
 
 from programs.programs.federal.pe.spm import Lifeline, Snap, SchoolLunch, Tanf
-from programs.programs.policyengine.calculators.dependencies import household, irs_gross_income, member, spm
+from programs.programs.policyengine.calculators.dependencies import (
+    household,
+    irs_gross_income,
+    member,
+    receipt_contract,
+    spm,
+)
 from programs.programs.policyengine.calculators.dependencies.household import TxStateCodeDependency
 from programs.programs.tx.pe import tx_pe_calculators
 from programs.programs.tx.pe.spm import TxCeap, TxLifeline, TxSnap, TxNslp, TxTanf
@@ -31,7 +37,7 @@ class TestTxSnap(TestCase):
         self.assertTrue(issubclass(TxSnap, Snap))
 
         # Verify it has the expected properties
-        self.assertEqual(TxSnap.pe_name, "snap")
+        self.assertEqual(TxSnap.pe_name, "snap_if_takes_up")
         self.assertIsNotNone(TxSnap.pe_inputs)
         self.assertGreater(len(TxSnap.pe_inputs), 0)
 
@@ -338,28 +344,23 @@ class TestTxCeap(TestCase):
         self.assertIn(spm.TxCeap, TxCeap.pe_outputs)
         self.assertEqual(spm.TxCeap.field, "tx_ceap")
 
-    def test_pe_inputs_includes_reported_ssi_inputs(self):
+    def test_pe_inputs_includes_the_receipt_contract(self):
         """
-        MFB-1146: tx_ceap counts applicable_ssi, which only reflects the household's
-        *reported* SSI when use_reported_ssi is sent True. Both the reported amount
-        and the toggle must be in pe_inputs, otherwise PE counts modeled SSI and
-        SS/SSI households land in the wrong (too-generous) benefit tier.
+        tx_ceap counts SSI via applicable_ssi, which follows the `ssi` input. The receipt
+        contract supplies the household's reported amount where they report one, and
+        suppresses PolicyEngine's simulated SSI otherwise — without it, modeled SSI counts
+        as income and SS/SSI households land in the wrong (too-generous) benefit tier.
         """
-        self.assertIn(member.SsiReportedDependency, TxCeap.pe_inputs)
-        self.assertIn(member.UseReportedSsiDependency, TxCeap.pe_inputs)
-        self.assertEqual(member.UseReportedSsiDependency.field, "use_reported_ssi")
+        for dep in receipt_contract:
+            self.assertIn(dep, TxCeap.pe_inputs)
 
-    def test_use_reported_ssi_is_version_gated(self):
+    def test_receipt_inputs_are_version_gated(self):
         """
-        use_reported_ssi / applicable_ssi were added in policyengine-us 1.742.0.
-        The dependency must carry that floor so it is never sent to an earlier model
-        (which would 400 the whole request). The reported-amount input (ssi_reported)
-        has existed since 2022, so it stays ungated.
+        Every field the contract adds carries the floor of the release that introduced it, so
+        none is ever sent to an earlier model — an unknown input 400s the whole request, taking
+        every PE program in it down. The amount inputs (`ssi`, `tanf`) predate it and stay
+        ungated.
         """
-        self.assertEqual(member.UseReportedSsiDependency.min_pe_version, (1, 742, 0))
-        self.assertEqual(member.SsiReportedDependency.min_pe_version, ())
-
-    def test_use_reported_ssi_value_is_true(self):
-        """The toggle is always True so the screener's reported SSI drives the income test."""
-        dep = member.UseReportedSsiDependency(None, None, {})
-        self.assertTrue(dep.value())
+        for dep in receipt_contract:
+            expected = () if dep.field in ("ssi", "tanf") else (1, 779, 3)
+            self.assertEqual(dep.min_pe_version, expected, dep.field)

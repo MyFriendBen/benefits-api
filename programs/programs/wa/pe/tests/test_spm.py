@@ -24,7 +24,7 @@ class TestWaSnap(TestCase):
 
     def test_pe_name_is_snap(self):
         """Test that pe_name is snap."""
-        self.assertEqual(WaSnap.pe_name, "snap")
+        self.assertEqual(WaSnap.pe_name, "snap_if_takes_up")
 
     def test_is_registered_in_wa_pe_calculators(self):
         """Test that WaSnap is registered in the calculators dictionary."""
