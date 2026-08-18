@@ -1,10 +1,10 @@
 import programs.programs.federal.pe.member as federal_member
 import programs.programs.federal.pe.tax as tax
-import programs.programs.policyengine.calculators.dependencies as pe_dependency
-import programs.programs.policyengine.calculators.dependencies.household as household_dependency
-import programs.programs.policyengine.calculators.dependencies.member as member_dependency
-import programs.programs.policyengine.calculators.dependencies.spm as spm_dependency
-from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
+import programs.framework.pe_dependencies as pe_dependency
+import programs.framework.pe_dependencies.household as household_dependency
+import programs.framework.pe_dependencies.member as member_dependency
+import programs.framework.pe_dependencies.spm as spm_dependency
+from programs.framework.pe_base import PolicyEngineMembersCalculator
 
 
 class IlMedicaid(federal_member.Medicaid):

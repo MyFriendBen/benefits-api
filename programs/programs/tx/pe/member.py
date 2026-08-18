@@ -7,10 +7,10 @@ from programs.programs.federal.pe.member import (
     EarlyHeadStart,
     Msp,
 )
-from programs.programs.policyengine.calculators.base import (
+from programs.framework.pe_base import (
     PolicyEngineMembersCalculator,
 )
-import programs.programs.policyengine.calculators.dependencies as dependency
+import programs.framework.pe_dependencies as dependency
 from screener.models import HouseholdMember
 
 

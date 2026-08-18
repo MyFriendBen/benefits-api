@@ -14,7 +14,7 @@ from unittest.mock import Mock, call
 
 from django.test import SimpleTestCase as TestCase
 
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 from programs.programs.tx import tx_calculators
 from programs.programs.tx.ssdi.calculator import TxSsdi
 

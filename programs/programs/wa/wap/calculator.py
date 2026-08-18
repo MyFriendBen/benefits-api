@@ -1,5 +1,5 @@
-import programs.programs.messages as messages
-from programs.programs.calc import Eligibility, ProgramCalculator
+import programs.framework.eligibility_messages as messages
+from programs.framework.base import Eligibility, ProgramCalculator
 from typing import ClassVar
 
 

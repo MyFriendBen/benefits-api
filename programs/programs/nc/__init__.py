@@ -9,7 +9,7 @@ from .sun_bucks.calculator import SunBucks
 from .nc_crisis_intervention.calculator import NCCrisisIntervention
 from .medicaid.family_planning_services.calculator import NCFamilyPlanningServices
 from .nc_head_start.calculator import NCHeadStart
-from ..calc import ProgramCalculator
+from programs.framework.base import ProgramCalculator
 
 nc_calculators: dict[str, type[ProgramCalculator]] = {
     "nc_emergency_medicaid": NcEmergencyMedicaid,

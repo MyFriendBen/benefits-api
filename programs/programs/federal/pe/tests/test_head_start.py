@@ -26,10 +26,10 @@ state.
 from django.test import TestCase
 
 from programs.programs.federal.pe.member import EarlyHeadStart, HeadStart
-from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
-from programs.programs.policyengine.calculators.dependencies import irs_gross_income, member, receipt_contract, spm
-from programs.programs.policyengine.calculators.dependencies.household import StateCode
-from programs.programs.policyengine.calculators.registry import all_member_calculators
+from programs.framework.pe_base import PolicyEngineMembersCalculator
+from programs.framework.pe_dependencies import irs_gross_income, member, receipt_contract, spm
+from programs.framework.pe_dependencies.household import StateCode
+from integrations.clients.policyengine.registry import all_member_calculators
 
 
 def _registered_subclasses(base: type) -> dict[str, type]:

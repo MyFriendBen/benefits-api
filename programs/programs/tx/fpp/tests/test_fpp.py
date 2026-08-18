@@ -18,7 +18,7 @@ from unittest.mock import Mock
 
 from programs.programs.tx import tx_calculators
 from programs.programs.tx.fpp.calculator import TxFpp
-from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
+from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
 
 
 def make_member(age=30, medicaid=False, emergency_medicaid=False, employer=False, none=True, earned=0):

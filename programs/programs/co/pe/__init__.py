@@ -2,7 +2,7 @@ from programs.programs.co.pe import spm
 import programs.programs.co.pe.tax as tax
 import programs.programs.co.pe.member as member
 import programs.programs.co.pe.spm as spm
-from programs.programs.policyengine.calculators.base import PolicyEngineCalulator
+from programs.framework.pe_base import PolicyEngineCalulator
 
 co_member_calculators = {
     "co_medicaid": member.CoMedicaid,

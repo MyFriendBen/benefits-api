@@ -22,14 +22,14 @@ from django.test import TestCase
 
 from programs.programs.federal.pe import federal_tax_unit_calculators
 from programs.programs.federal.pe.tax import Ctc, Eitc
-from programs.programs.policyengine.calculators.base import PolicyEngineTaxUnitCalulator
-from programs.programs.policyengine.calculators.dependencies import (
+from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
+from programs.framework.pe_dependencies import (
     irs_gross_income,
     member,
     tax,
 )
-from programs.programs.policyengine.calculators.dependencies.household import StateCode
-from programs.programs.policyengine.calculators.registry import (
+from programs.framework.pe_dependencies.household import StateCode
+from integrations.clients.policyengine.registry import (
     all_calculators,
     all_tax_unit_calculators,
 )

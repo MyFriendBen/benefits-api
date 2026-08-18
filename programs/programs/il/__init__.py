@@ -10,7 +10,7 @@ from .ccap.calculator import IlChildCareAssistanceProgram
 from .nurse_family_partnership.calculator import IlNurseFamilyPartnership
 from .silver_access.calculator import IlSilverAccess
 from .access_dupage.calculator import IlAccessDuPage
-from ..calc import ProgramCalculator
+from programs.framework.base import ProgramCalculator
 
 il_calculators: dict[str, type[ProgramCalculator]] = {
     "il_family_care": FamilyCare,

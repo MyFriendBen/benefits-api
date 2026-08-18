@@ -4,7 +4,7 @@ from datetime import date
 
 from programs.programs.ks import ks_calculators
 from programs.programs.ks.ssdi.calculator import KsSsdi
-from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
+from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
 
 
 def make_member(

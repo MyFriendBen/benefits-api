@@ -11,10 +11,10 @@ These tests verify IL-specific calculator logic for SPM-level programs including
 from django.test import TestCase
 from unittest.mock import Mock, MagicMock
 
-from programs.programs.policyengine.calculators.base import PolicyEngineSpmCalulator
-from programs.programs.policyengine.calculators.dependencies import spm as spm_dependency
-from programs.programs.policyengine.calculators.dependencies import household as household_dependency
-from programs.programs.policyengine.calculators.dependencies.household import IlStateCodeDependency
+from programs.framework.pe_base import PolicyEngineSpmCalulator
+from programs.framework.pe_dependencies import spm as spm_dependency
+from programs.framework.pe_dependencies import household as household_dependency
+from programs.framework.pe_dependencies.household import IlStateCodeDependency
 from programs.programs.federal.pe.spm import Snap, SchoolLunch, Tanf
 from programs.programs.il.pe import il_pe_calculators, il_spm_calculators
 from programs.programs.il.pe.spm import IlSnap, IlNslp, IlTanf, IlLiheap
@@ -153,7 +153,7 @@ class TestIlLiheap(TestCase):
 
     def test_pe_inputs_includes_heating_expense_person_dependency(self):
         """Test that HeatingExpensePersonDependency is in pe_inputs."""
-        from programs.programs.policyengine.calculators.dependencies import member as member_dependency
+        from programs.framework.pe_dependencies import member as member_dependency
 
         self.assertIn(member_dependency.HeatingExpensePersonDependency, IlLiheap.pe_inputs)
 

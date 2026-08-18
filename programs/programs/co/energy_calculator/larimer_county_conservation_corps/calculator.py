@@ -1,4 +1,4 @@
-from programs.programs.calc import Eligibility, ProgramCalculator
+from programs.framework.base import Eligibility, ProgramCalculator
 
 
 class EnergyCalculatorLarimerConservationCorps(ProgramCalculator):

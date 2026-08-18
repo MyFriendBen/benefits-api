@@ -4,7 +4,7 @@ from datetime import date
 
 from programs.programs.mo import mo_calculators
 from programs.programs.mo.ssdi.calculator import MoSsdi
-from programs.programs.calc import Eligibility, MemberEligibility
+from programs.framework.base import Eligibility, MemberEligibility
 
 
 def make_member(

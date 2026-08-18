@@ -1,7 +1,7 @@
 from integrations.services.income_limits import smi
 from integrations.services.sheets.cache import GoogleSheetsCache
-from programs.programs.calc import ProgramCalculator, Eligibility
-import programs.programs.messages as messages
+from programs.framework.base import ProgramCalculator, Eligibility
+import programs.framework.eligibility_messages as messages
 from programs.co_county_zips import counties_from_screen
 import math
 

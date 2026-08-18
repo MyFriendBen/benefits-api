@@ -13,7 +13,7 @@ from unittest.mock import Mock, MagicMock
 
 from programs.programs.tx import tx_calculators
 from programs.programs.tx.ccad.calculator import TxCcad
-from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
+from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
 
 
 def make_calculator(

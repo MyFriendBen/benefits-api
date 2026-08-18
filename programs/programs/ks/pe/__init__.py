@@ -2,7 +2,7 @@ import programs.programs.ks.pe.member as member
 import programs.programs.ks.pe.spm as spm
 import programs.programs.ks.pe.tax as tax
 from programs.programs.federal.pe.tax import Ctc, Cdcc
-from programs.programs.policyengine.calculators.base import PolicyEngineCalulator
+from programs.framework.pe_base import PolicyEngineCalulator
 
 ks_member_calculators = {
     "ks_medicaid": member.KsKanCare,

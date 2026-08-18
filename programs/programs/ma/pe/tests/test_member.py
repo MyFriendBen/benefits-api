@@ -9,7 +9,7 @@ across every state's Head Start lives in ``federal/pe/tests/test_head_start.py``
 from django.test import TestCase
 
 from programs.programs.federal.pe.member import EarlyHeadStart, HeadStart
-from programs.programs.policyengine.calculators.dependencies.household import MaStateCodeDependency
+from programs.framework.pe_dependencies.household import MaStateCodeDependency
 from programs.programs.ma.pe import ma_pe_calculators
 from programs.programs.ma.pe.member import MaHeadStart, MaEarlyHeadStart
 

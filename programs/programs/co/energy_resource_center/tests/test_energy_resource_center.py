@@ -14,7 +14,7 @@ from unittest.mock import Mock
 
 from django.test import TestCase
 
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 from programs.programs.co import co_calculators
 from programs.programs.co.energy_resource_center.calculator import EnergyResourceCenter
 from programs.util import Dependencies, DependencyError

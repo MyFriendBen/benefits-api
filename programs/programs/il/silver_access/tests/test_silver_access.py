@@ -1,7 +1,7 @@
 from django.test import TestCase
 from unittest.mock import Mock, MagicMock
 
-from programs.programs.calc import Eligibility, MemberEligibility
+from programs.framework.base import Eligibility, MemberEligibility
 from programs.programs.il import il_calculators
 from programs.programs.il.silver_access.calculator import IlSilverAccess
 

@@ -1,6 +1,6 @@
 from programs.programs.federal.pe.member import Ssi
-from programs.programs.policyengine.calculators.base import PolicyEngineSpmCalulator
-import programs.programs.policyengine.calculators.dependencies as dependency
+from programs.framework.pe_base import PolicyEngineSpmCalulator
+import programs.framework.pe_dependencies as dependency
 from programs.programs.federal.pe.spm import Snap
 
 

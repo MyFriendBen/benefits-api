@@ -1,4 +1,4 @@
-from programs.programs.calc import MemberEligibility, ProgramCalculator
+from programs.framework.base import MemberEligibility, ProgramCalculator
 from programs.util import Dependencies
 from screener.models import HouseholdMember, Screen
 from typing import TYPE_CHECKING

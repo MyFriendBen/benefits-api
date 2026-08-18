@@ -1,4 +1,4 @@
-from programs.programs.calc import ProgramCalculator, Eligibility
+from programs.framework.base import ProgramCalculator, Eligibility
 from typing import ClassVar
 
 

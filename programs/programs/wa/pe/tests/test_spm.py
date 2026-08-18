@@ -10,7 +10,7 @@ These tests verify WA-specific calculator logic including:
 from django.test import TestCase
 
 from programs.programs.federal.pe.spm import Lifeline, Snap
-from programs.programs.policyengine.calculators.dependencies.household import WaStateCodeDependency
+from programs.framework.pe_dependencies.household import WaStateCodeDependency
 from programs.programs.wa.pe import wa_pe_calculators, wa_spm_calculators
 from programs.programs.wa.pe.spm import WaLifeline, WaSnap
 

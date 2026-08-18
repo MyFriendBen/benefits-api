@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 from programs.programs.wa import wa_calculators
 from programs.programs.wa.orca_lift.calculator import WaOrcaLift
-from programs.programs.calc import Eligibility, MemberEligibility
+from programs.framework.base import Eligibility, MemberEligibility
 
 
 def make_member(age=35, birth_year_month=None, yearly_income=24_000, insurance_medicaid=False, insurance_chp=False):

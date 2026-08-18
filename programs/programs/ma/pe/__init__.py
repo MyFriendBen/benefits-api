@@ -1,7 +1,7 @@
 import programs.programs.ma.pe.tax as tax
 import programs.programs.ma.pe.member as member
 import programs.programs.ma.pe.spm as spm
-from programs.programs.policyengine.calculators.base import PolicyEngineCalulator
+from programs.framework.pe_base import PolicyEngineCalulator
 
 ma_member_calculators = {
     "ma_wic": member.MaWic,

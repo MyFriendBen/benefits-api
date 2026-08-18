@@ -1,4 +1,4 @@
-from .calc import ProgramCalculator
+from programs.framework.base import ProgramCalculator
 from .co import co_calculators
 from .federal import federal_calculators
 from .il import il_calculators

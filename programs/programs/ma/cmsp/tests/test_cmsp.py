@@ -18,7 +18,7 @@ from unittest.mock import Mock
 
 from programs.programs.ma import ma_calculators
 from programs.programs.ma.cmsp.calculator import MaCmsp
-from programs.programs.calc import ProgramCalculator
+from programs.framework.base import ProgramCalculator
 
 
 class TestMaCmspCalculator(TestCase):

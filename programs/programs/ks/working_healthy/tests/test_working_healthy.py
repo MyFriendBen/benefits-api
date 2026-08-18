@@ -23,7 +23,7 @@ from unittest.mock import Mock
 
 from programs.programs.ks import ks_calculators
 from programs.programs.ks.working_healthy.calculator import KsWorkingHealthy
-from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
+from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
 
 VALUE_PER_MEMBER = 19_051
 

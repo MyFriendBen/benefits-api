@@ -1,5 +1,5 @@
-import programs.programs.policyengine.calculators.dependencies as dependency
-from programs.programs.policyengine.calculators.base import PolicyEngineSpmCalulator
+import programs.framework.pe_dependencies as dependency
+from programs.framework.pe_base import PolicyEngineSpmCalulator
 from programs.programs.federal.pe.spm import Snap, Tanf
 
 

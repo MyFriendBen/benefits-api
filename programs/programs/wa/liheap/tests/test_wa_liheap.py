@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 from programs.programs.wa import wa_calculators
 from programs.programs.wa.liheap.calculator import WaLiheap
-from programs.programs.calc import ProgramCalculator, Eligibility
+from programs.framework.base import ProgramCalculator, Eligibility
 
 
 def make_calculator(household_income=0, household_size=1, fpl_limit=15650, heating_expense=0):

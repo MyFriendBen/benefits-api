@@ -20,7 +20,7 @@ from django.test import TestCase
 from programs.programs.ks.pe import ks_spm_calculators, ks_pe_calculators
 from programs.programs.ks.pe.spm import KsTanf
 from programs.programs.federal.pe.spm import Tanf
-import programs.programs.policyengine.calculators.dependencies as dependency
+import programs.framework.pe_dependencies as dependency
 
 
 class TestKsTanfWiring(TestCase):

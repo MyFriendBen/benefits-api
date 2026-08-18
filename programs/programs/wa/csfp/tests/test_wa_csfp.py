@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 from programs.programs.wa import wa_calculators
 from programs.programs.wa.csfp.calculator import WaCsfp
-from programs.programs.calc import Eligibility, MemberEligibility
+from programs.framework.base import Eligibility, MemberEligibility
 
 
 def make_member(age=65):

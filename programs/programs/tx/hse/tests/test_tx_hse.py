@@ -16,7 +16,7 @@ from unittest.mock import Mock
 
 from programs.programs.tx import tx_calculators
 from programs.programs.tx.hse.calculator import TxHse
-from programs.programs.calc import ProgramCalculator, Eligibility
+from programs.framework.base import ProgramCalculator, Eligibility
 
 
 def make_member(age: int | None = 40, disabled=False, visually_impaired=False, long_term_disability=False):

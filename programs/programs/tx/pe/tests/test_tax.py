@@ -13,11 +13,11 @@ the registration. The calculators' own properties live in
 from django.test import TestCase
 
 from programs.programs.federal.pe.tax import Eitc, Ctc, Aca
-from programs.programs.policyengine.calculators.dependencies import household
-from programs.programs.policyengine.calculators.dependencies.household import (
+from programs.framework.pe_dependencies import household
+from programs.framework.pe_dependencies.household import (
     TxStateCodeDependency,
 )
-from programs.programs.policyengine.calculators.registry import (
+from integrations.clients.policyengine.registry import (
     all_calculators,
     all_tax_unit_calculators,
 )

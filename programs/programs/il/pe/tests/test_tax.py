@@ -9,9 +9,9 @@ These tests verify IL-specific calculator logic for tax-level programs including
 from django.test import TestCase
 from unittest.mock import Mock, MagicMock
 
-from programs.programs.policyengine.calculators.base import PolicyEngineTaxUnitCalulator
-from programs.programs.policyengine.calculators.dependencies import tax as tax_dependency
-from programs.programs.policyengine.calculators.dependencies.household import IlStateCodeDependency
+from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
+from programs.framework.pe_dependencies import tax as tax_dependency
+from programs.framework.pe_dependencies.household import IlStateCodeDependency
 from programs.programs.federal.pe.tax import Eitc, Ctc
 from programs.programs.il.pe import il_pe_calculators, il_tax_unit_calculators
 from programs.programs.il.pe.tax import Ileitc, Ilctc

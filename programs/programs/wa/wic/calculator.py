@@ -1,6 +1,6 @@
 import math
-import programs.programs.messages as messages
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
+import programs.framework.eligibility_messages as messages
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 
 
 class WaWic(ProgramCalculator):

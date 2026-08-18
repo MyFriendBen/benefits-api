@@ -1,6 +1,6 @@
 from integrations.services.income_limits import ami
 from programs.co_county_zips import counties_from_screen
-from programs.programs.calc import Eligibility, ProgramCalculator
+from programs.framework.base import Eligibility, ProgramCalculator
 
 
 class EnergyCalculatorAffordableResidentialEnergy(ProgramCalculator):

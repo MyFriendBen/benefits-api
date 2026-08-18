@@ -19,7 +19,7 @@ from django.test import TestCase
 
 from programs.programs.federal.pe.tax import Cdcc, Ctc
 from programs.programs.ks.pe import ks_pe_calculators, ks_tax_unit_calculators
-from programs.programs.policyengine.calculators.registry import (
+from integrations.clients.policyengine.registry import (
     all_calculators,
     all_tax_unit_calculators,
 )

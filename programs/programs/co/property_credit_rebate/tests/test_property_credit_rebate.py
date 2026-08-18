@@ -22,7 +22,7 @@ from unittest.mock import Mock
 
 from django.test import TestCase
 
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 from programs.programs.co import co_calculators
 from programs.programs.co.property_credit_rebate.calculator import PropertyCreditRebate
 from programs.util import Dependencies, DependencyError

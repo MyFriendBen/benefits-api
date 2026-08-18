@@ -1,4 +1,4 @@
-import programs.programs.policyengine.calculators.dependencies as dependency
+import programs.framework.pe_dependencies as dependency
 from programs.programs.federal.pe.spm import Lifeline, Snap, Tanf
 
 

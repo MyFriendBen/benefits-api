@@ -20,7 +20,7 @@ from unittest.mock import Mock
 
 from programs.programs.il import il_calculators
 from programs.programs.il.access_dupage.calculator import IlAccessDuPage
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 
 
 def make_member(age=40, insurance="none"):

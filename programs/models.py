@@ -8,7 +8,7 @@ from translations.models import BLANK_TRANSLATION_PLACEHOLDER, Translation
 from programs.programs import calculators
 from programs.util import Dependencies
 from typing import Optional, TypedDict, Union
-from programs.programs.translation_overrides import warning_calculators
+from programs.translation_overrides import warning_calculators
 
 _FPL_DEFAULTS = {
     "2023": {

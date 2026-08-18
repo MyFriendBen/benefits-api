@@ -1,7 +1,7 @@
 from programs.programs.nc.pe import spm
 import programs.programs.nc.pe.member as member
 import programs.programs.nc.pe.spm as spm
-from programs.programs.policyengine.calculators.base import PolicyEngineCalulator
+from programs.framework.pe_base import PolicyEngineCalulator
 
 nc_member_calculators = {
     "nc_medicaid": member.NcMedicaid,

@@ -2,7 +2,7 @@ from .homebridge.calculator import MaHomeBridge
 from .dhsp_afterschool.calculator import MaDhspAfterschool
 from .door2door.calculator import MaDoorToDoor
 from .taxi_discount.calculator import MaTaxiDiscount
-from ..calc import ProgramCalculator
+from programs.framework.base import ProgramCalculator
 from .cha.calculator import Cha
 from .cpp.calculator import MaCpp
 from .middle_income_rental.calculator import MaMiddleIncomeRental

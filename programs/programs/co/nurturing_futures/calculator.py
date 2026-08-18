@@ -1,7 +1,7 @@
 from integrations.services.sheets.cache import GoogleSheetsCache
 from programs.co_county_zips import counties_from_screen
-from programs.programs.calc import Eligibility, ProgramCalculator
-import programs.programs.messages as messages
+from programs.framework.base import Eligibility, ProgramCalculator
+import programs.framework.eligibility_messages as messages
 from sentry_sdk import capture_message
 
 

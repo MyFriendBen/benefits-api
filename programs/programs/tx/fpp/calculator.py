@@ -1,7 +1,7 @@
 from typing import ClassVar
 
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
-import programs.programs.messages as messages
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
+import programs.framework.eligibility_messages as messages
 
 
 class TxFpp(ProgramCalculator):

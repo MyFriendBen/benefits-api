@@ -11,7 +11,7 @@ from unittest.mock import Mock
 from django.test import TestCase
 
 from programs.programs.ma.pe.spm import MaTafdc
-from programs.programs.policyengine.calculators.dependencies.member import (
+from programs.framework.pe_dependencies.member import (
     MaTafdcPregnancyEligibleDependency,
     PregnancyDependency,
 )

@@ -17,7 +17,7 @@ from unittest.mock import Mock, patch
 
 from programs.programs.ma import ma_calculators
 from programs.programs.ma.middle_income_rental.calculator import MaMiddleIncomeRental
-from programs.programs.calc import ProgramCalculator, Eligibility
+from programs.framework.base import ProgramCalculator, Eligibility
 
 
 class TestMaMiddleIncomeRentalCalculator(TestCase):

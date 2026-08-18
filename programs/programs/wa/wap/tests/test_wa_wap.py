@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 from programs.programs.wa import wa_calculators
 from programs.programs.wa.wap.calculator import WaWap
-from programs.programs.calc import Eligibility, MemberEligibility
+from programs.framework.base import Eligibility, MemberEligibility
 
 
 def make_member(insurance_medicaid=False, insurance_chp=False):

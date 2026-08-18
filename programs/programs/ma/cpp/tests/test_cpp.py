@@ -17,7 +17,7 @@ from unittest.mock import Mock, patch
 
 from programs.programs.ma import ma_calculators
 from programs.programs.ma.cpp.calculator import MaCpp
-from programs.programs.calc import ProgramCalculator
+from programs.framework.base import ProgramCalculator
 
 
 class TestMaCppCalculator(TestCase):

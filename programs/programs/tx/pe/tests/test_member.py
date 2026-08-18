@@ -19,9 +19,9 @@ from programs.programs.federal.pe.member import (
     HeadStart,
     EarlyHeadStart,
 )
-from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
-from programs.programs.policyengine.calculators.dependencies import household, member
-from programs.programs.policyengine.calculators.dependencies.household import TxStateCodeDependency
+from programs.framework.pe_base import PolicyEngineMembersCalculator
+from programs.framework.pe_dependencies import household, member
+from programs.framework.pe_dependencies.household import TxStateCodeDependency
 from programs.programs.tx.pe import tx_pe_calculators
 from programs.programs.tx.pe.member import (
     TxWic,
@@ -97,14 +97,14 @@ class TestTxWic(TestCase):
 
     def test_pe_inputs_includes_pregnancy_dependency(self):
         """Test that TxWic inherits PregnancyDependency from parent Wic class."""
-        from programs.programs.policyengine.calculators.dependencies.member import PregnancyDependency
+        from programs.framework.pe_dependencies.member import PregnancyDependency
 
         self.assertIn(PregnancyDependency, TxWic.pe_inputs)
         self.assertEqual(PregnancyDependency.field, "is_pregnant")
 
     def test_pe_inputs_includes_expected_children_pregnancy_dependency(self):
         """Test that TxWic inherits ExpectedChildrenPregnancyDependency from parent Wic class."""
-        from programs.programs.policyengine.calculators.dependencies.member import (
+        from programs.framework.pe_dependencies.member import (
             ExpectedChildrenPregnancyDependency,
         )
 
@@ -113,7 +113,7 @@ class TestTxWic(TestCase):
 
     def test_pe_inputs_includes_age_dependency(self):
         """Test that TxWic inherits AgeDependency from parent Wic class."""
-        from programs.programs.policyengine.calculators.dependencies.member import AgeDependency
+        from programs.framework.pe_dependencies.member import AgeDependency
 
         self.assertIn(AgeDependency, TxWic.pe_inputs)
         self.assertEqual(AgeDependency.field, "age")
@@ -125,8 +125,8 @@ class TestTxWic(TestCase):
         returned eligible at any reported income until the bundle landed. What the bundle
         covers is pinned in ``federal/pe/tests/test_wic.py``.
         """
-        from programs.programs.policyengine.calculators.dependencies import wic_income
-        from programs.programs.policyengine.calculators.dependencies.spm import SchoolMealCountableIncomeDependency
+        from programs.framework.pe_dependencies import wic_income
+        from programs.framework.pe_dependencies.spm import SchoolMealCountableIncomeDependency
 
         for dep in wic_income:
             self.assertIn(dep, TxWic.pe_inputs)
@@ -196,7 +196,7 @@ class TestTxSsi(TestCase):
 
     def test_pe_inputs_includes_ssi_countable_resources_dependency(self):
         """Test that TxSsi inherits SsiCountableResourcesDependency from parent Ssi class."""
-        from programs.programs.policyengine.calculators.dependencies.member import (
+        from programs.framework.pe_dependencies.member import (
             SsiCountableResourcesDependency,
         )
 
@@ -204,38 +204,38 @@ class TestTxSsi(TestCase):
 
     def test_pe_inputs_includes_the_receipt_contract(self):
         """TxSsi inherits the reported-amount and take-up inputs from the federal Ssi class."""
-        from programs.programs.policyengine.calculators.dependencies import receipt_contract
+        from programs.framework.pe_dependencies import receipt_contract
 
         for dep in receipt_contract:
             self.assertIn(dep, TxSsi.pe_inputs)
 
     def test_pe_inputs_includes_is_blind_dependency(self):
         """Test that TxSsi inherits IsBlindDependency from parent Ssi class."""
-        from programs.programs.policyengine.calculators.dependencies.member import IsBlindDependency
+        from programs.framework.pe_dependencies.member import IsBlindDependency
 
         self.assertIn(IsBlindDependency, TxSsi.pe_inputs)
 
     def test_pe_inputs_includes_is_disabled_dependency(self):
         """Test that TxSsi inherits IsDisabledDependency from parent Ssi class."""
-        from programs.programs.policyengine.calculators.dependencies.member import IsDisabledDependency
+        from programs.framework.pe_dependencies.member import IsDisabledDependency
 
         self.assertIn(IsDisabledDependency, TxSsi.pe_inputs)
 
     def test_pe_inputs_includes_ssi_earned_income_dependency(self):
         """Test that TxSsi inherits SsiEarnedIncomeDependency from parent Ssi class."""
-        from programs.programs.policyengine.calculators.dependencies.member import SsiEarnedIncomeDependency
+        from programs.framework.pe_dependencies.member import SsiEarnedIncomeDependency
 
         self.assertIn(SsiEarnedIncomeDependency, TxSsi.pe_inputs)
 
     def test_pe_inputs_includes_ssi_unearned_income_dependency(self):
         """Test that TxSsi inherits SsiUnearnedIncomeDependency from parent Ssi class."""
-        from programs.programs.policyengine.calculators.dependencies.member import SsiUnearnedIncomeDependency
+        from programs.framework.pe_dependencies.member import SsiUnearnedIncomeDependency
 
         self.assertIn(SsiUnearnedIncomeDependency, TxSsi.pe_inputs)
 
     def test_pe_inputs_includes_age_dependency(self):
         """Test that TxSsi inherits AgeDependency from parent Ssi class."""
-        from programs.programs.policyengine.calculators.dependencies.member import AgeDependency
+        from programs.framework.pe_dependencies.member import AgeDependency
 
         self.assertIn(AgeDependency, TxSsi.pe_inputs)
         self.assertEqual(AgeDependency.field, "age")
@@ -304,14 +304,14 @@ class TestTxCsfp(TestCase):
 
     def test_pe_inputs_includes_age_dependency(self):
         """Test that TxCsfp inherits AgeDependency from parent CommoditySupplementalFoodProgram class."""
-        from programs.programs.policyengine.calculators.dependencies.member import AgeDependency
+        from programs.framework.pe_dependencies.member import AgeDependency
 
         self.assertIn(AgeDependency, TxCsfp.pe_inputs)
         self.assertEqual(AgeDependency.field, "age")
 
     def test_pe_inputs_includes_school_meal_countable_income_dependency(self):
         """Test that TxCsfp inherits SchoolMealCountableIncomeDependency from parent CommoditySupplementalFoodProgram class."""
-        from programs.programs.policyengine.calculators.dependencies.spm import SchoolMealCountableIncomeDependency
+        from programs.framework.pe_dependencies.spm import SchoolMealCountableIncomeDependency
 
         self.assertIn(SchoolMealCountableIncomeDependency, TxCsfp.pe_inputs)
         self.assertEqual(SchoolMealCountableIncomeDependency.field, "school_meal_countable_income")
@@ -354,14 +354,14 @@ class TestTxChip(TestCase):
 
     def test_pe_inputs_includes_age_dependency(self):
         """Test that TxChip includes AgeDependency in pe_inputs."""
-        from programs.programs.policyengine.calculators.dependencies.member import AgeDependency
+        from programs.framework.pe_dependencies.member import AgeDependency
 
         self.assertIn(AgeDependency, TxChip.pe_inputs)
         self.assertEqual(AgeDependency.field, "age")
 
     def test_pe_inputs_includes_pregnancy_dependency(self):
         """Test that TxChip includes PregnancyDependency in pe_inputs."""
-        from programs.programs.policyengine.calculators.dependencies.member import PregnancyDependency
+        from programs.framework.pe_dependencies.member import PregnancyDependency
 
         self.assertIn(PregnancyDependency, TxChip.pe_inputs)
         self.assertEqual(PregnancyDependency.field, "is_pregnant")
@@ -393,7 +393,7 @@ class TestTxChip(TestCase):
 
     def test_pe_outputs_includes_chip_dependency(self):
         """Test that TxChip has Chip dependency in pe_outputs."""
-        from programs.programs.policyengine.calculators.dependencies.member import Chip
+        from programs.framework.pe_dependencies.member import Chip
 
         self.assertIn(Chip, TxChip.pe_outputs)
 
@@ -1529,21 +1529,21 @@ class TestTxHarrisCountyRides(TestCase):
 
     def test_pe_inputs_includes_age_dependency(self):
         """Test that TxHarrisCountyRides includes AgeDependency in pe_inputs."""
-        from programs.programs.policyengine.calculators.dependencies.member import AgeDependency
+        from programs.framework.pe_dependencies.member import AgeDependency
 
         self.assertIn(AgeDependency, TxHarrisCountyRides.pe_inputs)
         self.assertEqual(AgeDependency.field, "age")
 
     def test_pe_inputs_includes_is_disabled_dependency(self):
         """Test that TxHarrisCountyRides includes IsDisabledDependency in pe_inputs."""
-        from programs.programs.policyengine.calculators.dependencies.member import IsDisabledDependency
+        from programs.framework.pe_dependencies.member import IsDisabledDependency
 
         self.assertIn(IsDisabledDependency, TxHarrisCountyRides.pe_inputs)
         self.assertEqual(IsDisabledDependency.field, "is_disabled")
 
     def test_pe_inputs_includes_is_blind_dependency(self):
         """Test that TxHarrisCountyRides includes IsBlindDependency in pe_inputs."""
-        from programs.programs.policyengine.calculators.dependencies.member import IsBlindDependency
+        from programs.framework.pe_dependencies.member import IsBlindDependency
 
         self.assertIn(IsBlindDependency, TxHarrisCountyRides.pe_inputs)
         self.assertEqual(IsBlindDependency.field, "is_blind")

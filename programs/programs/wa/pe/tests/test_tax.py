@@ -23,10 +23,10 @@ exercises against PolicyEngine via `python manage.py validate --program wa_wftc`
 from django.test import TestCase
 
 from programs.programs.federal.pe.tax import Ctc, Eitc
-from programs.programs.policyengine.calculators.base import PolicyEngineTaxUnitCalulator
-from programs.programs.policyengine.calculators.dependencies import tax as tax_dependency
-from programs.programs.policyengine.calculators.dependencies.household import WaStateCodeDependency
-from programs.programs.policyengine.calculators.registry import (
+from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
+from programs.framework.pe_dependencies import tax as tax_dependency
+from programs.framework.pe_dependencies.household import WaStateCodeDependency
+from integrations.clients.policyengine.registry import (
     all_calculators,
     all_tax_unit_calculators,
 )

@@ -1,5 +1,5 @@
 from integrations.services.income_limits import ami
-from programs.programs.calc import Eligibility, ProgramCalculator
+from programs.framework.base import Eligibility, ProgramCalculator
 from programs.programs.co.energy_calculator.util import has_renter_expenses
 
 

@@ -1,7 +1,7 @@
 import programs.programs.federal.pe.tax as tax
 import programs.programs.federal.pe.spm as spm
 import programs.programs.federal.pe.member as member
-from programs.programs.policyengine.calculators.base import PolicyEngineCalulator
+from programs.framework.pe_base import PolicyEngineCalulator
 
 federal_member_calculators = {
     "wic": member.Wic,

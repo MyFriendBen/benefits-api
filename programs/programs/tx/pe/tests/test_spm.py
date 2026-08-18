@@ -12,14 +12,14 @@ as they test Screen model methods, not TX-specific logic.
 from django.test import TestCase
 
 from programs.programs.federal.pe.spm import Lifeline, Snap, SchoolLunch, Tanf
-from programs.programs.policyengine.calculators.dependencies import (
+from programs.framework.pe_dependencies import (
     household,
     irs_gross_income,
     member,
     receipt_contract,
     spm,
 )
-from programs.programs.policyengine.calculators.dependencies.household import TxStateCodeDependency
+from programs.framework.pe_dependencies.household import TxStateCodeDependency
 from programs.programs.tx.pe import tx_pe_calculators
 from programs.programs.tx.pe.spm import TxCeap, TxLifeline, TxSnap, TxNslp, TxTanf
 

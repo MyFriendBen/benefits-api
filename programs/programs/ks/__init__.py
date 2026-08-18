@@ -1,4 +1,4 @@
-from ..calc import ProgramCalculator
+from programs.framework.base import ProgramCalculator
 from .ssdi.calculator import KsSsdi
 from .k40h.calculator import KsK40h
 from .working_healthy.calculator import KsWorkingHealthy

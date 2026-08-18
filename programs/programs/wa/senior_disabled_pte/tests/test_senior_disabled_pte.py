@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 from programs.programs.wa import wa_calculators
 from programs.programs.wa.senior_disabled_pte.calculator import WaSeniorDisabledPte
-from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
+from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
 
 
 def make_member(age=70, long_term_disability=False, disabled=False, veteran=False):
