@@ -48,7 +48,7 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     # TODO: Add public charge information link
     public_charge_rule = {"link": ""}
 
-    # TODO: Add help resources shown when user clicks "More Help" button at bottom of results
+    # TODO: Add help resources shown on the "Immediate Help" tab of the results page
     more_help_options = {
         "moreHelpOptions": [
             {
@@ -404,7 +404,7 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",
-                "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. If you indicated need for an immediate resource, please click on the \"Near-Term Benefits\" tab. For additional resources, please click the 'More Help' button below to get the resources you're looking for.",
+                "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. If you have an urgent need, please click on the \"Additional Resources\" tab. You can also click the \"Immediate Help\" tab to find other local resources.",
             },
         },
         "defaultLanguage": {"default": "en-us"},

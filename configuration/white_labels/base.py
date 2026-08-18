@@ -28,16 +28,11 @@ class ConfigurationData:
     # Link to public charge information for your state
     public_charge_rule = {"link": ""}
 
-    # Resources shown at bottom of results page (e.g., 2-1-1, state help lines)
-    more_help_options = {
-        "moreHelpOptions": [
-            {
-                "name": {"_default_message": "", "_label": ""},
-                "link": "",
-                "phone": {"_default_message": "", "_label": ""},
-            },
-        ]
-    }
+    # Resources shown on the Immediate Help tab (e.g., 2-1-1, state help lines). Empty by
+    # default rather than a placeholder entry: this now renders as a permanent tab (was
+    # previously only reachable via a button), so a placeholder with blank name/link would
+    # show an empty resource card to anyone on a white label that doesn't override this.
+    more_help_options = {"moreHelpOptions": []}
 
     # Urgent needs shown in "acuteHHConditions" step (customize or set to {} if not used)
     acute_condition_options = {
@@ -521,7 +516,7 @@ class ConfigurationData:
         "noResultMessage": {
             "default": {
                 "_label": "noResultMessage",
-                "_default_message": "It looks like you may not qualify for benefits included in MyFriendBen at this time. If you indicated need for an immediate resource, please click on the \"Near-Term Benefits\" tab. For additional resources, please click the 'More Help' button below to get the resources you're looking for.",
+                "_default_message": 'It looks like you may not qualify for benefits included in MyFriendBen at this time. If you have an urgent need, please click on the "Additional Resources" tab. You can also click the "Immediate Help" tab to find other local resources.',
             },
         },
     }
