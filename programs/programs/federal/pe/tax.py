@@ -28,7 +28,6 @@ class Ctc(PolicyEngineTaxUnitCalulator):
 
 
 class Cdcc(PolicyEngineTaxUnitCalulator):
-    name_abbreviated = "ks_cdcc_federal"
     pe_name = "cdcc"
     pe_inputs = [
         dependency.member.AgeDependency,

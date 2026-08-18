@@ -117,3 +117,51 @@ class BuildTests(SimpleTestCase):
         self.assertIn("fixture_duplicate", message)
         self.assertIn("FirstClaimant", message)
         self.assertIn("SecondClaimant", message)
+
+
+class DiscoveryMatchesTheHandMaintainedDictsTests(SimpleTestCase):
+    """Discovery reproduces the hand-written dicts exactly.
+
+    This is the argument that retiring them preserves behaviour: same keys, same
+    classes, nothing missing and nothing extra. It is deliberately written against
+    the real registries rather than a fixture, and it is the test to delete last —
+    once the dicts are gone there is nothing left to compare against.
+    """
+
+    def test_every_key_resolves_to_the_same_class_either_way(self):
+        from integrations.clients.policyengine.registry import all_calculators
+        from programs.programs import calculators
+
+        hand_maintained = {**calculators, **all_calculators}
+        discovered = build("programs.programs", ProgramCalculator)
+
+        self.assertEqual(
+            set(hand_maintained) - set(discovered),
+            set(),
+            "a key in the dicts was not discovered — a program would silently disappear",
+        )
+        self.assertEqual(
+            set(discovered) - set(hand_maintained),
+            set(),
+            "discovery found a key the dicts do not have",
+        )
+        self.assertEqual(hand_maintained, discovered)
+
+    def test_the_federal_bases_states_subclass_are_not_registered(self):
+        """A base with no Program row of its own must claim no key.
+
+        ``Cdcc`` is the live example: MFB-1207 registered it directly as
+        ``ks_cdcc_federal``, so when this branch added ``KsCdccFederal`` and
+        ``MoCdccFederal`` the base was left holding a key two classes then claimed.
+        The duplicate guard caught it, which is what it is for.
+        """
+        from programs.programs.federal.pe.member import Ccdf, EarlyHeadStart, HeadStart, Medicaid
+        from programs.programs.federal.pe.tax import Cdcc
+
+        for base in (Cdcc, Medicaid, HeadStart, EarlyHeadStart, Ccdf):
+            with self.subTest(base=base.__name__):
+                self.assertNotIn(
+                    "name_abbreviated",
+                    vars(base),
+                    f"{base.__name__} is a base that states subclass; it must not claim a key",
+                )

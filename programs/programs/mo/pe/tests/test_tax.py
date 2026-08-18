@@ -28,7 +28,7 @@ from django.test import TestCase
 import programs.framework.pe_dependencies as dependency
 from programs.programs.federal.pe.tax import Aca, Cdcc, Ctc, Eitc
 from programs.programs.mo.pe import mo_pe_calculators, mo_tax_unit_calculators
-from programs.programs.mo.pe.tax import MoAca, MoCtc, MoEitc
+from programs.programs.mo.pe.tax import MoAca, MoCdccFederal, MoCtc, MoEitc
 from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
 from integrations.clients.policyengine.registry import (
     all_calculators,
@@ -87,20 +87,26 @@ class TestMoEitcWiring(TestCase):
 class TestMoCdccFederalWiring(TestCase):
     """mo_cdcc_federal registration against the shared federal Cdcc calculator."""
 
-    def test_is_federal_cdcc_everywhere(self):
-        self.assertIs(mo_tax_unit_calculators["mo_cdcc_federal"], Cdcc)
-        self.assertIs(mo_pe_calculators["mo_cdcc_federal"], Cdcc)
-        self.assertIs(all_tax_unit_calculators["mo_cdcc_federal"], Cdcc)
-        self.assertIs(all_calculators["mo_cdcc_federal"], Cdcc)
+    def test_is_registered_as_its_own_subclass_everywhere(self):
+        self.assertIs(mo_tax_unit_calculators["mo_cdcc_federal"], MoCdccFederal)
+        self.assertIs(mo_pe_calculators["mo_cdcc_federal"], MoCdccFederal)
+        self.assertIs(all_tax_unit_calculators["mo_cdcc_federal"], MoCdccFederal)
+        self.assertIs(all_calculators["mo_cdcc_federal"], MoCdccFederal)
 
-    def test_matches_the_other_states_federal_cdcc(self):
-        """Kansas registers the same shared class under ``ks_cdcc_federal``. Unlike
-        ``ctc``/``eitc``, the federal registry exposes no bare ``cdcc`` key, so the
-        cross-state identity is what pins "no MO subclass"."""
-        self.assertIs(
-            all_tax_unit_calculators["mo_cdcc_federal"],
-            all_tax_unit_calculators["ks_cdcc_federal"],
-        )
+    def test_is_the_federal_calculator_with_nothing_added(self):
+        """A thin subclass of the federal calculator: same PE variable, same inputs.
+
+        Missouri has no state CDCC, so ``mo_cdcc_federal`` must not diverge from the
+        federal credit. It is its own class only so the registry maps one key to one
+        calculator — Kansas registers ``ks_cdcc_federal`` against ``KsCdccFederal``
+        for the same reason. Asserting it overrides nothing is stricter than the
+        cross-state identity this replaced: a subclass that added an input would
+        still be a subclass, but would fail here.
+        """
+        self.assertTrue(issubclass(MoCdccFederal, Cdcc))
+        self.assertEqual(MoCdccFederal.pe_name, Cdcc.pe_name)
+        self.assertEqual(list(MoCdccFederal.pe_inputs), list(Cdcc.pe_inputs))
+        self.assertEqual(list(MoCdccFederal.pe_outputs), list(Cdcc.pe_outputs))
 
 
 class TestMoAcaWiring(TestCase):
