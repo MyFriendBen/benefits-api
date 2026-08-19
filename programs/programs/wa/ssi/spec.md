@@ -397,7 +397,7 @@ This program will be implemented as a PolicyEngine calculator in a follow-up PR.
 **What we're checking**: Earned-income exclusion path — confirms the screener applies the $65 + ½ remaining exclusion (distinct from the unearned-only Scenario 11), and that earned income reduces but does not eliminate the SSI benefit.
 
 **Expected**: Eligible (reduced benefit; $836.50/month)
-**Expected `value`**: `10038` (`$994 − ($400 − $20 − $65) × ½ = $836.50/month × 12`; truncated to int per `validate.py`)
+**Expected `value`**: `10038` (`$994 − ($400 − $20 − $65) × ½ = $836.50/month × 12`; truncated to int)
 
 **Steps**:
 - **Location**: ZIP `98101`, County `King`
@@ -491,13 +491,11 @@ The SSI alien restriction (8 U.S.C. § 1612(a)(2)) is enforced through the progr
 - [Legal Information Institute — 42 U.S.C. Chapter 7, Subchapter XVI (SSI)](https://www.law.cornell.edu/uscode/text/42/chapter-7/subchapter-XVI)
 - [eCFR — 20 CFR Part 416 (SSI for the Aged, Blind, and Disabled)](https://www.ecfr.gov/current/title-20/chapter-III/part-416)
 
-## JSON Test Cases
+## Expected Scenario Outcomes
 
-File: `validations/management/commands/import_validations/data/wa_ssi.json`
+All 15 scenarios listed above are the dev's reference for implementation.
 
-The validations file currently contains the 3 representative scenarios called for by the canonical "Checking Program Researcher Output" reviewer guide (eligible standard, ineligible primary exclusion, earned-income edge case). The full 15 scenarios listed above remain in this spec.md as the dev's reference for implementation and future expansion.
-
-**Important — `value` is annual**: the screener stores `program_eligibility.estimated_value` as an **annual** dollar figure (see `screener/management/commands/export_screener_data.py` and the `* 12` pattern in calculator implementations). All `value` numbers in `wa_ssi.json` are monthly × 12. `validate.py` casts to `int(validation.value)`, so non-integer monthly amounts truncate after annualization.
+**Important — `value` is annual**: the screener stores `program_eligibility.estimated_value` as an **annual** dollar figure (see `screener/management/commands/export_screener_data.py` and the `* 12` pattern in calculator implementations). All `value` numbers below are monthly × 12.
 
 Expected `value` per scenario (annual):
 

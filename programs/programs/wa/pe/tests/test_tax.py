@@ -14,9 +14,8 @@ The eligibility math itself (federal EITC phase-in/phase-out, MFJ adjustments,
 investment-income cap, the 25-64 age floor for childless filers, qualifying-
 child rules, and the WA-specific scaling + $50 minimum-credit floor) lives in
 PolicyEngine and is tested by PolicyEngine's own test suite — not duplicated
-here. See `programs/programs/wa/wftc/spec.md` for the 9 reference scenarios
-that the end-to-end validation suite (`validations/.../wa_wftc.json`)
-exercises against PolicyEngine via `python manage.py validate --program wa_wftc`.
+here. See the "Test Scenarios" section of `programs/programs/wa/wftc/spec.md`
+for the 9 reference scenarios covering this program.
 """
 
 from django.test import TestCase

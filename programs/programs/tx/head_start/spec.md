@@ -82,7 +82,6 @@ Generated via program-researcher tool on 2026-03-11.
 
 Files committed to repo:
 - Program config: `programs/management/commands/import_program_config_data/data/tx_head_start_initial_config.json`
-- Test cases: `validations/management/commands/import_validations/data/tx_head_start.json`
 
 
 ## Acceptance Criteria
@@ -286,9 +285,6 @@ Files committed to repo:
 
 - https://aspe.hhs.gov/topics/poverty-economic-mobility/poverty-guidelines
 - https://www.earlychildhood.texas.gov/about-eligibility-screener
-
-## JSON Test Cases
-File: `validations/management/commands/import_validations/data/tx_head_start.json`
 
 ## Generated Program Configuration
 File: `programs/management/commands/import_program_config_data/data/tx_head_start_initial_config.json`

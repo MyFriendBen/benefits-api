@@ -1,4 +1,6 @@
 from datetime import date, timedelta
+
+from django.utils import timezone
 from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
 
 
@@ -36,7 +38,7 @@ class TrumpAccount(ProgramCalculator):
     def member_eligible(self, e: MemberEligibility):
         member = e.member
         if member.pregnant:
-            estimated_due_date = self.screen.get_reference_date() + timedelta(days=self.gestation_days)
+            estimated_due_date = timezone.now().date() + timedelta(days=self.gestation_days)
             e.condition(self.pilot_start <= estimated_due_date <= self.pilot_end)
         else:
             birth_year_month = member.birth_year_month

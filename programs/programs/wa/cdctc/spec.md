@@ -87,7 +87,6 @@ Pre-calculator release:
 
 - [`programs/management/commands/import_program_config_data/data/wa_cdctc_initial_config.json`](../../../../programs/management/commands/import_program_config_data/data/wa_cdctc_initial_config.json)
 - [`programs/programs/wa/cdctc/spec.md`](spec.md)
-- [`validations/management/commands/import_validations/data/wa_cdctc.json`](../../../../validations/management/commands/import_validations/data/wa_cdctc.json)
 
 ## Acceptance criteria (Discovery)
 

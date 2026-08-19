@@ -23,7 +23,6 @@ from screener.models import (
 from authentication.serializers import UserOffersSerializer
 from rest_framework import serializers
 from translations.serializers import TranslationSerializer
-from validations.serializers import ValidationSerializer
 
 
 class MessageSerializer(serializers.ModelSerializer):
@@ -100,7 +99,6 @@ class HouseholdMemberSerializer(serializers.ModelSerializer):
         data["birth_year_month"] = birth_year_month
 
         if "age" not in data or data["age"] is None:
-            # No reference_date needed - member is being created, no screen/validations exist yet
             data["age"] = HouseholdMember.age_from_date(birth_year_month)
 
         return data
@@ -263,7 +261,6 @@ class ScreenSerializer(serializers.ModelSerializer):
             "is_test_data",
             "start_date",
             "submission_date",
-            "frozen",
             "agree_to_tos",
             "is_13_or_older",
             "zipcode",
@@ -312,7 +309,6 @@ class ScreenSerializer(serializers.ModelSerializer):
             "id",
             "uuid",
             "submision_date",
-            "frozen",
             "last_email_request_date",
             "completed",
             "user",
@@ -383,9 +379,6 @@ class ScreenSerializer(serializers.ModelSerializer):
         return screen
 
     def update(self, instance, validated_data):
-        if instance.frozen:
-            return instance
-
         household_members = validated_data.pop("household_members")
         expenses = validated_data.pop("expenses")
         energy_calculator_screen = validated_data.pop("energy_calculator", None)
@@ -553,7 +546,6 @@ class ResultsSerializer(serializers.Serializer):
     screen_id = serializers.CharField()
     default_language = serializers.CharField()
     missing_programs = serializers.BooleanField()
-    validations = ValidationSerializer(many=True)
     program_categories = ProgramCategorySerializer(many=True)
     pe_data = serializers.DictField(required=False, allow_null=True)
     # Ids of external APIs (e.g. "policy_engine") that failed while computing these

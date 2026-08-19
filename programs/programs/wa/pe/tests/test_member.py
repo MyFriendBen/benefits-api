@@ -13,10 +13,9 @@ These tests verify WA-specific calculator wiring and custom eligibility logic:
 The eligibility math itself (FBR-minus-countable-income, the
 $20 + $65 + 1/2 income exclusion stack, SGA cutoff, ISM (VTR/PMV) reductions,
 and spousal/parental deeming) lives in PolicyEngine and is tested by
-PolicyEngine's own test suite — not duplicated here. See
-`programs/programs/wa/ssi/spec.md` for the 15 reference scenarios that the
-end-to-end validation suite (`validations/.../wa_ssi.json`) exercises against
-PolicyEngine via `python manage.py validate --program wa_ssi`.
+PolicyEngine's own test suite — not duplicated here. See the "Test Scenarios"
+section of `programs/programs/wa/ssi/spec.md` for the 15 reference scenarios
+covering this program.
 """
 
 from unittest.mock import Mock, MagicMock
