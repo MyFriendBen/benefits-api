@@ -5,7 +5,6 @@ from django.test import SimpleTestCase as TestCase
 from programs.framework.base import MemberEligibility
 from programs.programs.nc.medicaid.nc_medicare_savings.calculator import MedicareSavingsNC
 
-
 # Approximate 2026 federal FPL values (48 contiguous states, yearly)
 FPL = {
     1: 15_960,
@@ -132,7 +131,8 @@ class TestScenario3IneligibleSpouseNoDependents(TestCase):
     """
     Scenario 3: head age 66 (Medicare), spouse age 50 (no Medicare), no children, assets $5,000.
     Head: SS Retirement $800/month (unearned). Spouse: wages $3,000/month (earned).
-    Step 1: A/B countable $9,360 + deemed spouse $30,024 = $39,384 (over $15,960 FPL) → FAIL.
+    Deemed: $36,000 earned - $5,976 allowance = $30,024 remainder; $30,024 > $5,976 limit → gate passes, deem $30,024.
+    Step 1: A/B countable $9,360 + deemed $30,024 = $39,384 (over $15,960 FPL) → FAIL.
     Step 2: skipped, no dependents under 18 → FAIL.
     Spouse fails member_eligible outright (age 50, no Medicare, no SSDI).
     """
@@ -157,7 +157,8 @@ class TestScenario4IneligibleSpouseWithTeenChild(TestCase):
     """
     Scenario 4: head age 66 (Medicare), spouse age 55 (no Medicare), child age 14.
     Head: wages $1,500/month. Spouse: wages $1,500/month.
-    Step 1: A/B countable $8,490 + deemed spouse $12,024 = $20,514 (over $15,960 FPL) → FAIL.
+    Deemed: $18,000 earned - $5,976 allowance = $12,024 remainder; $12,024 > $5,976 limit → gate passes, deem $12,024.
+    Step 1: A/B countable $8,490 + deemed $12,024 = $20,514 (over $15,960 FPL) → FAIL.
     Step 2: family size 3, combined countable $17,490 (below $36,612 at 135% FPL) → PASS.
     Spouse and child fail member_eligible (no Medicare/SSDI, under 65).
     """
@@ -188,7 +189,8 @@ class TestScenario5IneligibleSpouseSSRIWithDepChild(TestCase):
     """
     Scenario 5: head age 66 (Medicare, SS Retirement $1,500/mo unearned),
     spouse age 55 (no insurance, wages $1,500/mo), child age 15.
-    Step 1: A/B countable $17,760 + deemed spouse $12,024 = $29,784 (over $15,960 FPL) → FAIL.
+    Deemed: $18,000 earned - $5,976 allowance = $12,024 remainder; $12,024 > $5,976 limit → gate passes, deem $12,024.
+    Step 1: A/B countable $17,760 + deemed $12,024 = $29,784 (over $15,960 FPL) → FAIL.
     Step 2: family size 3, combined countable $26,370 (below $36,612 at 135% FPL) → PASS.
     Key difference from Scenario 4: head has unearned income, not wages.
     """
@@ -247,4 +249,10 @@ class TestScenario6SSISpouseWithDepChild(TestCase):
 
     def test_child_is_not_eligible(self):
         e = run_member_eligible(self.calculator, self.child)
+        self.assertFalse(e.eligible)
+
+    def test_ssi_disqualifies_an_otherwise_eligible_member(self):
+        member = make_member(pk=4, age=66, yearly_ssi=1_116)
+        calculator = make_calculator([member])
+        e = run_member_eligible(calculator, member)
         self.assertFalse(e.eligible)
