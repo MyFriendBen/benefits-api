@@ -4,7 +4,7 @@
 - **State:** TX (`tx`)
 - **name_abbreviated:** `tx_fpp`
 - **Tickets:** MFB-1088 (custom-calculator migration), MFB-1325 (FPP Policy Manual countable-income rules)
-- **Calculator:** `programs/programs/tx/fpp/calculator.py` (`TxFpp`)
+- **Calculator:** `programs/programs/cross_white_label/family_planning/tx.py` (`TxFpp`)
 
 ## Background
 

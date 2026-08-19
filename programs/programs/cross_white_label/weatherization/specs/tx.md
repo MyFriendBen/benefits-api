@@ -62,8 +62,8 @@ TX-specific note: Texas households tend to have above-average cooling loads (hot
 
 **Value Estimate Sources**:
 - [DOE WAP Overview — "an average of $372 or more every year"](https://www.energy.gov/scep/wap/weatherization-assistance-program)
-- CO WAP: `amount = 350` (`programs/programs/co/weatherization_assistance/calculator.py`)
-- NC WAP: `amount = 300` (`programs/programs/nc/nc_weatherization/calculator.py`)
+- CO WAP: `amount = 350` (`programs/programs/cross_white_label/weatherization/co.py`)
+- NC WAP: `amount = 300` (`programs/programs/cross_white_label/weatherization/nc.py`)
 
 ## Implementation Coverage
 

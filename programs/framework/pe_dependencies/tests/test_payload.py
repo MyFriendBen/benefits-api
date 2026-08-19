@@ -38,8 +38,6 @@ class PeInputTestBase(TestCase):
 
     def setUp(self):
         """Set up test screen with household members."""
-        # Import here to avoid circular imports at module level
-
         self.calculator_class = TxSnap
 
         self.screen = Screen.objects.create(

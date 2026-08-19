@@ -137,13 +137,13 @@ Run these with `pytest`, **not** `manage.py test` — VCR is a pytest fixture, s
 
 ```bash
 # 1. Record (needs POLICY_ENGINE_CLIENT_ID / POLICY_ENGINE_CLIENT_SECRET)
-PE_RECORD=1 VCR_MODE=once venv/bin/pytest programs/programs/tx/head_start/tests/ -v
+PE_RECORD=1 VCR_MODE=once venv/bin/pytest programs/programs/mo/pts/tests/ -v
 
 # 2. Prove it replays with no network
-VCR_MODE=none venv/bin/pytest programs/programs/tx/head_start/tests/ -q
+VCR_MODE=none venv/bin/pytest programs/programs/mo/pts/tests/ -q
 
 # 3. Commit the cassettes with the tests
-git add programs/programs/tx/head_start/tests/
+git add programs/programs/mo/pts/tests/
 ```
 
 `PE_RECORD=1` is what allows the live auth0 token exchange. Without it every run seeds a placeholder token and touches no network, so an ordinary `pytest` never authenticates even on a machine with PolicyEngine credentials in `.env`.
