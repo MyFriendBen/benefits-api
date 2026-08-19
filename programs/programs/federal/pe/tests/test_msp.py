@@ -24,15 +24,13 @@ from programs.framework.pe_base import PolicyEngineMembersCalculator
 from programs.framework.pe_dependencies import member
 from programs.framework.pe_dependencies.household import StateCode
 from programs.framework.pe_dependencies.payload import pe_input
-from integrations.clients.policyengine.registry import all_calculators, all_member_calculators
+from integrations.clients.policyengine.registry import all_calculators
 from screener.models import HouseholdMember, Insurance, Screen, WhiteLabel
 
 
 def _registered_subclasses(base: type) -> dict[str, type]:
     """Every calculator registered under a program slug that subclasses ``base``."""
-    return {
-        slug: calc for slug, calc in all_member_calculators.items() if isinstance(calc, type) and issubclass(calc, base)
-    }
+    return {slug: calc for slug, calc in all_calculators.items() if isinstance(calc, type) and issubclass(calc, base)}
 
 
 def _state_codes(calculator: type) -> set[type]:
@@ -84,7 +82,7 @@ class TestFederalMsp(TestCase):
 
     def test_is_not_registered_directly(self):
         """Unlike Ctc/Eitc, MSP is never registered bare — the asset test needs a state."""
-        self.assertNotIn(Msp, all_member_calculators.values())
+        self.assertNotIn(Msp, all_calculators.values())
 
 
 class TestRegisteredMspSubclassContract(TestCase):
