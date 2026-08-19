@@ -1,6 +1,5 @@
-from programs.framework.base import Eligibility
-from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
 from programs.programs.federal.pe.tax import Aca, Cdcc, Ctc, Eitc
+from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
 import programs.framework.pe_dependencies as dependency
 
 
@@ -123,14 +122,14 @@ class MoPts(PolicyEngineTaxUnitCalulator):
     See ``programs/programs/mo/pts/spec.md`` for the rule and the scenarios. PolicyEngine
     models it in full, so this supplies inputs and reads the result.
 
-    Two things here are not boilerplate:
+    Six inputs replace or supplement the usual ones, each because a shared dependency sends
+    the right dollars to a PolicyEngine variable this formula does not read. The reason is
+    on each dependency class; ``spec.md`` records which scenario caught it.
 
-    - ``eligible()`` reads PolicyEngine's own eligibility flag instead of the base class's
-      ``value > 0``. This credit floors at $0 for a household that still qualifies, so
-      value-derived eligibility would report it ineligible.
-    - Six inputs replace or supplement the usual ones, each because a shared dependency
-      sends the right dollars to a PolicyEngine variable this formula does not read. The
-      reason is on each dependency class; ``spec.md`` records which scenario caught it.
+    The credit floors at $0 for a household that satisfies every eligibility gate, so the
+    base class's ``value > 0`` reports such a household ineligible. That is the intended
+    result: a $0 credit is filtered from the results page either way, and telling someone
+    they qualify for nothing would only invite a pointless filing.
     """
 
     program_code = "mo_pts"
@@ -160,12 +159,4 @@ class MoPts(PolicyEngineTaxUnitCalulator):
     ]
     pe_outputs = [
         dependency.tax.MoPropertyTaxCredit,
-        dependency.tax.MoPtcTaxUnitEligible,
     ]
-
-    def eligible(self) -> Eligibility:
-        e = super().eligible()
-
-        e.eligible = self.any_tax_unit(dependency.tax.MoPtcTaxUnitEligible)
-
-        return e

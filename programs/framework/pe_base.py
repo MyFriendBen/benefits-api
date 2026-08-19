@@ -114,21 +114,6 @@ class PolicyEngineTaxUnitCalulator(PolicyEngineCalulator):
         except KeyError:
             return 0  # if the second tax unit does not exist
 
-    def any_tax_unit(self, dependency: type[PolicyEngineScreenInput]) -> bool:
-        """True if `dependency`'s field is truthy for any tax unit.
-
-        For a program whose eligibility PolicyEngine reports separately from its value,
-        rather than the default `value > 0`.
-        """
-        for unit in ALL_TAX_UNITS:
-            try:
-                if self.sim.value(dependency.unit, unit, dependency.field, self.pe_period):
-                    return True
-            except KeyError:
-                continue  # if the second tax unit does not exist
-
-        return False
-
 
 class PolicyEngineMembersCalculator(PolicyEngineCalulator):
     pe_category = "people"

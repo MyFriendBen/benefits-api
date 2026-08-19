@@ -6,8 +6,8 @@ One test per ``programs/programs/mo/pts/spec.md`` Test Scenario (1–22), each a
 both the eligibility result and the dollar value, plus wiring and input-routing tests
 for the six dependencies whose absence changes those results.
 
-PolicyEngine owns the whole rule (``mo_property_tax_credit`` and
-``mo_ptc_taxunit_eligible``), so the scenario tests assert against the values
+PolicyEngine owns the whole rule (``mo_property_tax_credit``), so the scenario tests
+assert against the values
 PolicyEngine returned for each scenario's household at the pinned model version, run
 live during implementation. Those values are recorded in ``PE_RESULTS`` and every one
 matched the spec's expected figure to the dollar. Re-running them here would require a
@@ -29,7 +29,7 @@ flag set, veteran income -> pension          13 / 22                  $0 / $272
 neither                                      13 / 22                  $0 / $272
 ``AgeDependency`` (screening-date age)       6                        ineligible, $0
 no ``social_security_survivors`` component   12                       ineligible, $0
-``ssi_reported`` instead of ``ssi``          17                       $1,178 (want $1,069)
+reported-SSI channel instead of ``ssi``      17                       $1,178 (want $1,069)
 ===========================================  =======================  =================
 
 The $272 row is the reason these tests assert value and not just eligibility: that
@@ -74,7 +74,7 @@ PE_RESULTS = {
     16: (False, 0),
     17: (True, 1069),
     18: (False, 0),
-    19: (True, 0),
+    19: (False, 0),  # PE reports eligible; a $0 credit is not surfaced (see TestZeroCreditIsNotSurfaced)
     20: (True, 1474),
     21: (True, 578),
     22: (True, 1100),
@@ -167,9 +167,8 @@ class TestWiring(MoPtsScenarioTestCase):
     def test_reads_mo_property_tax_credit(self):
         self.assertEqual(MoPts.pe_name, "mo_property_tax_credit")
 
-    def test_reads_both_the_amount_and_the_eligibility_flag(self):
-        self.assertIn(dependency.tax.MoPropertyTaxCredit, MoPts.pe_outputs)
-        self.assertIn(dependency.tax.MoPtcTaxUnitEligible, MoPts.pe_outputs)
+    def test_reads_the_credit_amount(self):
+        self.assertEqual(MoPts.pe_outputs, [dependency.tax.MoPropertyTaxCredit])
 
     def test_sends_mo_state_code(self):
         screen = self.build_screen(
@@ -182,14 +181,22 @@ class TestWiring(MoPtsScenarioTestCase):
         self.assertIn("MO", household["state_code"].values())
 
 
-class TestEligibilityIsReadFromPolicyEngine(MoPtsScenarioTestCase):
-    """``eligible()`` reads ``mo_ptc_taxunit_eligible`` instead of inferring from value."""
+class TestZeroCreditIsNotSurfaced(MoPtsScenarioTestCase):
+    """A $0 credit is reported ineligible, which is what the results page shows anyway.
 
-    def test_overrides_the_base_class_value_derived_eligibility(self):
-        self.assertIsNot(MoPts.eligible, PolicyEngineTaxUnitCalulator.eligible)
+    PolicyEngine models eligibility (``mo_ptc_taxunit_eligible``) separately from the
+    amount, and a household can satisfy every gate while the phaseout floors the credit at
+    $0 (spec Benefit Value item 8). We deliberately do not read that flag: the frontend
+    requires ``program.eligible && programValue(program) > 0`` to show a program, so
+    surfacing "eligible for $0" would be filtered identically while inviting a filing that
+    pays nothing.
+    """
 
-    def test_eligibility_flag_is_requested(self):
-        """The flag has to be in the request for ``eligible()`` to have anything to read."""
+    def test_uses_the_base_class_value_derived_eligibility(self):
+        """No ``eligible()`` override — the inherited ``value > 0`` is the intended rule."""
+        self.assertIs(MoPts.eligible, PolicyEngineTaxUnitCalulator.eligible)
+
+    def test_does_not_request_the_eligibility_flag(self):
         screen = self.build_screen(
             [{"birth": (1954, 1), "relationship": "headOfHousehold", "incomes": {"pension": 37_900}}],
             "renting",
@@ -197,15 +204,7 @@ class TestEligibilityIsReadFromPolicyEngine(MoPtsScenarioTestCase):
             600,
         )
         tax_unit = self.payload(screen)["household"]["tax_units"]["main_tax_unit"]
-        self.assertIn("mo_ptc_taxunit_eligible", tax_unit)
-
-    def test_scenario_19_household_is_eligible_at_zero(self):
-        """Scenario 19 is the case value-derived eligibility gets wrong: the phaseout
-        exceeds the rent equivalent, so the credit floors at $0 while the household still
-        qualifies."""
-        eligible, value = PE_RESULTS[19]
-        self.assertTrue(eligible)
-        self.assertEqual(value, 0)
+        self.assertNotIn("mo_ptc_taxunit_eligible", tax_unit)
 
 
 class TestVeteranIncomeRouting(MoPtsScenarioTestCase):
@@ -475,8 +474,8 @@ class TestSpecScenarios(MoPtsScenarioTestCase):
     def test_scenario_18_zero_qualifying_payment(self):
         self.assert_scenario(18, False, 0)
 
-    def test_scenario_19_eligible_at_the_zero_floor(self):
-        self.assert_scenario(19, True, 0)
+    def test_scenario_19_zero_floor_is_not_surfaced(self):
+        self.assert_scenario(19, False, 0)
 
     def test_scenario_20_spouse_general_disability_pathway(self):
         self.assert_scenario(20, True, 1_474)

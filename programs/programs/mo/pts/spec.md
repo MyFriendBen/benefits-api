@@ -63,7 +63,7 @@ None. The PTC has no priority, preference, or served-first criteria — all appl
    - Each band's midpoint is a half-dollar value (band is open at the lower bound, closed at the upper): e.g., $1,031–$1,055 → midpoint $1,042.50.
    - Credit = (payment-band midpoint) − (phaseout % × income-band midpoint), rounded half-up to the nearest dollar.
    - **Terminal-band rule**: for each of the four tiers, truncate the final income band at that tier's statutory upper limit (not extended to a full $495 width) — MFB's committed implementation rule, based on the 2025 chart's own precedent of truncating its final row at the chart's overall ceiling.
-8. Result floored at **$0** — a household can satisfy every eligibility gate and still receive $0 (not a statutory exclusion).
+8. Result floored at **$0** — a household can satisfy every eligibility gate and still receive $0 (not a statutory exclusion). MFB reports a $0 result as ineligible and does not surface it; see Scenario 19.
 9. Credit is computed **before** any delinquent-tax debt offset (RSMo §135.815, extended by §135.830); the offset is a downstream payment-administration step, not part of the calculator's output.
 10. Unmodeled allocation detail — special assessments/penalties/interest/service charges, partial ownership, part-year ownership, multiple homesteads, mixed/business use, non-arm's-length or excess rent, bundled services, shared-rent/facility adjustments (RSMo §135.010, §135.025): use the household's reported out-of-pocket property tax or rent as an inclusive proxy; DOR may adjust the qualifying amount when the claim is filed.
 
@@ -405,9 +405,11 @@ No new screener field or feature is required by any acceptance criterion above.
 
 ---
 
-### Scenario 19: Eligible, $0 Floor
-**What this tests**: The $0-floor result — a household can be eligible but receive $0, rather than being excluded outright.
-**Expected**: Eligible, **$0**
+### Scenario 19: $0 Floor Is Not Surfaced
+**What this tests**: The $0-floor result — a household satisfies every eligibility gate and the phaseout still floors the credit at $0.
+**Expected**: Not shown (**$0**)
+
+**Note on the expected result.** Discovery recorded this as "Eligible, $0", which is correct as a statement about the statute — the $0 is a phaseout outcome, not an exclusion (Benefit Value item 8). It is not a correct expected *screener* result. The results page requires `program.eligible && programValue(program) > 0` to display a program (`filterPrograms.ts`), so a $0 credit is never shown whichever way eligibility is reported. The calculator therefore uses the inherited `value > 0` rule and reports this household ineligible: telling someone they qualify for $0 would invite a filing that pays nothing. PolicyEngine's separate `mo_ptc_taxunit_eligible` flag is deliberately not read.
 
 **Household inputs**:
 - **Location**: Enter ZIP code `65101`, Select county `Cole`
