@@ -10,6 +10,36 @@ class AgeDependency(Member):
         return self.member.calc_age()
 
 
+class AgeAtEndOfClaimYearDependency(Member):
+    """
+    Age as of December 31 of ``claim_year``.
+
+    ``AgeDependency`` reports age on the screening date, which understates by one year
+    anybody whose birthday falls later in the calendar year. A rule that awards a benefit
+    on age "attained on or before December 31" of the claim year needs the end-of-year
+    age, or a household screened in August qualifies only if it screens again in
+    December.
+
+    Subclasses set ``claim_year``. Falls back to the screening-date age when the member's
+    birth year is unknown.
+    """
+
+    field = "age"
+    dependencies = ("age",)
+    claim_year = None
+
+    def value(self):
+        birth_year = self.member.birth_year
+        if birth_year is None or self.claim_year is None:
+            return self.member.calc_age()
+
+        return self.claim_year - birth_year
+
+
+class AgeAtEndOf2026Dependency(AgeAtEndOfClaimYearDependency):
+    claim_year = 2026
+
+
 class PregnancyDependency(Member):
     field = "is_pregnant"
 
@@ -631,6 +661,64 @@ class PensionIncomeDependency(IncomeDependency):
     income_types = ["pension", "veteran"]
 
 
+class PensionIncomeWithoutVeteranDependency(IncomeDependency):
+    """
+    Pension income with the ``veteran`` income stream held back, for calculators that
+    also send ``VeteransBenefitsDependency``.
+
+    ``PensionIncomeDependency`` folds ``veteran`` into ``taxable_pension_income``. A
+    calculator that reads PolicyEngine's ``veterans_benefits`` variable needs the
+    veteran stream to arrive there instead; sending it in both places would double-count
+    it. Pairing this class with ``VeteransBenefitsDependency`` routes each stream to
+    exactly one PolicyEngine field.
+    """
+
+    field = "taxable_pension_income"
+    income_types = ["pension"]
+
+
+class VeteransBenefitsDependency(IncomeDependency):
+    """
+    The ``veteran`` income stream as PolicyEngine's ``veterans_benefits``.
+
+    State rules that exclude veterans' payments from countable income read
+    ``veterans_benefits`` specifically. Income routed through
+    ``taxable_pension_income`` reaches those formulas by a different path
+    (``adjusted_gross_income``) that the exclusion cannot see, so the exclusion never
+    fires. Use with ``PensionIncomeWithoutVeteranDependency`` to avoid double-counting.
+    """
+
+    field = "veterans_benefits"
+    income_types = ["veteran"]
+
+
+class IsFullyDisabledServiceConnectedVeteranDependency(Member):
+    """
+    PolicyEngine's ``is_fully_disabled_service_connected_veteran`` person input, which
+    gates the exclusion of veterans' benefits from countable income in state formulas
+    such as Missouri's property tax credit.
+
+    PolicyEngine defines no formula for it, so it is only ever true if we send it. The
+    screener has no VA disability-rating or service-causation field, and
+    ``HouseholdMember.veteran`` is not populated by the frontend, so this proxies off
+    the two signals that are collected: a ``veteran`` income stream (the established
+    veteran proxy, also used by KS K-40H and CO Denver property tax relief) combined
+    with self-reported disability. The proxy is inclusive — it does not distinguish a
+    100% rating from a lower one.
+    """
+
+    field = "is_fully_disabled_service_connected_veteran"
+    dependencies = (
+        "income_type",
+        "income_amount",
+        "income_frequency",
+    )
+
+    def value(self):
+        receives_veteran_income = self.member.calc_gross_income("yearly", ["veteran"]) > 0
+        return receives_veteran_income and (self.member.disabled or self.member.long_term_disability)
+
+
 class SocialSecurityIncomeDependency(IncomeDependency):
     """
     Social Security benefits (not including SSI).
@@ -642,6 +730,22 @@ class SocialSecurityIncomeDependency(IncomeDependency):
 
     field = "social_security"
     income_types = ["sSDisability", "sSSurvivor", "sSRetirement", "sSDependent"]
+
+
+class SocialSecuritySurvivorsIncomeDependency(IncomeDependency):
+    """
+    The ``sSSurvivor`` income stream as PolicyEngine's ``social_security_survivors``.
+
+    ``SocialSecurityIncomeDependency`` reports the four Social Security streams as a
+    single ``social_security`` total. PolicyEngine defines ``social_security`` as the sum
+    of its four components, so setting the total leaves every component at zero — and a
+    rule that tests survivor benefits specifically reads ``social_security_survivors``,
+    which never sees the money. Sending the component alongside the total does not
+    double-count: the total we send already includes it.
+    """
+
+    field = "social_security_survivors"
+    income_types = ["sSSurvivor"]
 
 
 class InvestmentIncomeDependency(IncomeDependency):

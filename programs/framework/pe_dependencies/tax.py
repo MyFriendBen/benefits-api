@@ -69,6 +69,10 @@ class Aca(TaxUnit):
     field = "aca_ptc"
 
 
+class MoPropertyTaxCredit(TaxUnit):
+    field = "mo_property_tax_credit"
+
+
 # WARN: this does not take into account multiple tax units
 class PellGrantPrimaryIncomeDependency(TaxUnit):
     field = "pell_grant_primary_income"
