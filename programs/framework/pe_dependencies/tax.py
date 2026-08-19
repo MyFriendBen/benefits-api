@@ -69,6 +69,21 @@ class Aca(TaxUnit):
     field = "aca_ptc"
 
 
+class MoPropertyTaxCredit(TaxUnit):
+    field = "mo_property_tax_credit"
+
+
+class MoPtcTaxUnitEligible(TaxUnit):
+    """
+    Missouri property tax credit eligibility, read separately from the credit amount.
+
+    The credit floors at $0 while the household still qualifies, so eligibility cannot
+    be inferred from a positive value.
+    """
+
+    field = "mo_ptc_taxunit_eligible"
+
+
 # WARN: this does not take into account multiple tax units
 class PellGrantPrimaryIncomeDependency(TaxUnit):
     field = "pell_grant_primary_income"
