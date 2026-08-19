@@ -31,13 +31,3 @@ SNAP_BASE_INPUTS = [
     dependency.spm.HoaFeesExpenseDependency,
     dependency.spm.HomeownersInsuranceExpenseDependency,
 ]
-
-
-class Acp(PolicyEngineSpmCalulator):
-    program_code = "acp"
-    pe_name = "acp"
-    pe_inputs = [
-        dependency.spm.BroadbandCostDependency,
-        *dependency.irs_gross_income,
-    ]
-    pe_outputs = [dependency.spm.Acp]

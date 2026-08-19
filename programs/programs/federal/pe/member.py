@@ -26,20 +26,3 @@ class Chip(PolicyEngineMembersCalculator, abstract=True):
         chip_category = self.get_member_dependency_value(dependency.member.ChipCategory, member.id)
 
         return self.chip_categories[chip_category] * 12
-
-
-class PellGrant(PolicyEngineMembersCalculator):
-    program_code = "pell_grant"
-    pe_name = "pell_grant"
-    pe_inputs = [
-        dependency.member.PellGrantDependentAvailableIncomeDependency,
-        dependency.member.PellGrantCountableAssetsDependency,
-        dependency.member.CostOfAttendingCollegeDependency,
-        dependency.member.PellGrantMonthsInSchoolDependency,
-        dependency.tax.PellGrantPrimaryIncomeDependency,
-        dependency.tax.PellGrantDependentsInCollegeDependency,
-        dependency.member.TaxUnitDependentDependency,
-        dependency.member.TaxUnitHeadDependency,
-        dependency.member.TaxUnitSpouseDependency,
-    ]
-    pe_outputs = [dependency.member.PellGrant]

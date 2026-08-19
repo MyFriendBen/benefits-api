@@ -24,7 +24,6 @@ from programs.framework.pe_base import PolicyEngineMembersCalculator
 from programs.framework.pe_dependencies import member as member_dependency
 from programs.framework.pe_dependencies import irs_gross_income
 from programs.framework.pe_dependencies.household import IlStateCodeDependency
-from programs.programs.il.pe.member import IlBccp
 from programs.programs.cross_white_label.msp.il import IlMsp
 from programs.programs.cross_white_label.head_start.base import HeadStart
 from programs.programs.cross_white_label.head_start.il import IlHeadStart
@@ -34,6 +33,7 @@ from programs.programs.cross_white_label.medicaid.disability.il_aabd import IlAa
 from programs.programs.cross_white_label.medicaid.disability.il_hbwd import IlHbwd
 from programs.programs.cross_white_label.family_planning.il_base import IlFamilyPlanningProgram
 from programs.programs.cross_white_label.medicaid.presumptive.il import IlMpe
+from programs.programs.white_labels.il.ibccp.calculator import IlBccp
 
 
 class TestIlMsp(TestCase):

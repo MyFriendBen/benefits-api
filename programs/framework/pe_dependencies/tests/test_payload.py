@@ -25,6 +25,7 @@ from programs.programs.cross_white_label.tanf.base import Tanf
 from programs.programs.cross_white_label.wic.base import Wic
 from programs.programs.cross_white_label.wic.tx import TxWic
 from programs.programs.cross_white_label.ssi.base import Ssi
+from programs.programs.white_labels.federal.acp.calculator import Acp
 
 
 @override_settings(CACHES=LOCAL_CACHE)
@@ -342,7 +343,6 @@ class TestUnreadableProgramsAreDropped(PeInputTestBase):
         """The guard is scoped to unreadable outputs — it must not thin out the rest of
         the request, whose gated *inputs* degrade harmlessly to PolicyEngine modelling
         the value itself."""
-        from programs.programs.federal.pe.spm import Acp
 
         kept = self._drop({"acp": Acp, "nslp": SchoolLunch}, (1, 750, 0))
 

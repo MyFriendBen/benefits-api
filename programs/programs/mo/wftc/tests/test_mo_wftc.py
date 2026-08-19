@@ -19,8 +19,8 @@ from programs.framework.tests.integration_test_helpers import (
     make_screen,
     screener_value,
 )
-from programs.programs.mo.pe.tax import MoWftc
 from screener.models import Expense
+from programs.programs.white_labels.mo.wftc.calculator import MoWftc
 
 PE_VERSION = "1.786.5"
 

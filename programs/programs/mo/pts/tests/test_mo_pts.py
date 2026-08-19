@@ -28,8 +28,8 @@ from programs.framework.tests.integration_test_helpers import (
     make_screen,
     screener_value,
 )
-from programs.programs.mo.pe.tax import MoPts
 from screener.models import Expense
+from programs.programs.white_labels.mo.pts.calculator import MoPts
 
 PE_VERSION = "1.786.5"
 CLAIM_YEAR = 2026

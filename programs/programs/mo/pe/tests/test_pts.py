@@ -39,8 +39,8 @@ from integrations.clients.policyengine.registry import all_calculators
 from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
 from programs.framework.pe_dependencies.payload import pe_input
 from programs.models import WhiteLabel
-from programs.programs.mo.pe.tax import MoPts
 from screener.models import Expense, HouseholdMember, IncomeStream, Screen
+from programs.programs.white_labels.mo.pts.calculator import MoPts
 
 PERIOD = "2026"
 CLAIM_YEAR = 2026

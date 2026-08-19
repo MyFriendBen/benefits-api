@@ -24,7 +24,6 @@ these slugs *are* those objects extends those guarantees here.
 from django.test import TestCase
 
 import programs.framework.pe_dependencies as dependency
-from programs.programs.mo.pe.tax import MoWftc
 from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
 from integrations.clients.policyengine.registry import all_calculators
 from programs.programs.cross_white_label.cdcc.base import Cdcc
@@ -35,6 +34,7 @@ from programs.programs.cross_white_label.ctc.base import Ctc
 from programs.programs.cross_white_label.ctc.mo import MoCtc
 from programs.programs.cross_white_label.aca.base import Aca
 from programs.programs.cross_white_label.aca.mo import MoAca
+from programs.programs.white_labels.mo.wftc.calculator import MoWftc
 
 
 class TestMoCtcWiring(TestCase):
