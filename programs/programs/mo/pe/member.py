@@ -1,13 +1,7 @@
-from programs.programs.federal.pe.member import (
-    Wic,
-    HeadStart,
-    EarlyHeadStart,
-    Medicaid,
-    Msp,
-    Ssi,
-)
+from programs.programs.federal.pe.member import Wic, HeadStart, EarlyHeadStart, Msp, Ssi
 import programs.framework.pe_dependencies as dependency
 from screener.models import HouseholdMember
+from programs.programs.cross_white_label.medicaid.base import Medicaid
 
 
 class MoWic(Wic):

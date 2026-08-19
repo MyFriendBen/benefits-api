@@ -30,6 +30,7 @@ from programs.framework.registry import (
     is_abstract,
     register,
 )
+from programs.programs.cross_white_label.medicaid.base import Medicaid
 
 
 class WalkClassesTests(SimpleTestCase):

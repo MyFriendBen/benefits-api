@@ -23,7 +23,7 @@ from unittest.mock import Mock, MagicMock
 
 from django.test import TestCase
 
-from programs.programs.federal.pe.member import Medicaid, Ssi
+from programs.programs.federal.pe.member import Ssi
 from programs.framework.pe_base import PolicyEngineMembersCalculator
 from programs.framework.pe_dependencies import (
     member as member_deps,
@@ -31,7 +31,9 @@ from programs.framework.pe_dependencies import (
 from programs.framework.pe_dependencies.household import (
     WaStateCodeDependency,
 )
-from programs.programs.wa.pe.member import WaAppleHealthForKids, WaAppleHealthMedicaid, WaSsi
+from programs.programs.wa.pe.member import WaAppleHealthForKids, WaSsi
+from programs.programs.cross_white_label.medicaid.base import Medicaid
+from programs.programs.cross_white_label.medicaid.wa import WaAppleHealthMedicaid
 
 
 class TestWaAppleHealthForKids(TestCase):

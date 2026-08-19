@@ -19,13 +19,14 @@ from unittest.mock import Mock
 
 from django.test import TestCase
 
-from programs.programs.federal.pe.member import Medicaid, Msp
+from programs.programs.federal.pe.member import Msp
 from programs.framework.pe_base import PolicyEngineMembersCalculator
 from programs.framework.pe_dependencies import member
 from programs.framework.pe_dependencies.household import StateCode
 from programs.framework.pe_dependencies.payload import pe_input
 from integrations.clients.policyengine.registry import all_calculators
 from screener.models import HouseholdMember, Insurance, Screen, WhiteLabel
+from programs.programs.cross_white_label.medicaid.base import Medicaid
 
 
 def _registered_subclasses(base: type) -> dict[str, type]:
