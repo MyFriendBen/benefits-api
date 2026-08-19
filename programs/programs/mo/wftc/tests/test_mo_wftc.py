@@ -86,7 +86,7 @@ class TestScenario01GoldenPath(MoWftcScenarioTestCase):
 
 
 class TestScenario02TaxYear2023Rate(MoWftcScenarioTestCase):
-    """TY2023 applies the 10% rate rather than 20% → eligible, $105."""
+    """TY2023 applies the 10% rate rather than 20% → eligible, $104."""
 
     screen_id = 9102
     tax_year = "2023"
@@ -127,7 +127,7 @@ class TestScenario04NoRemainingLiability(MoWftcScenarioTestCase):
 
 
 class TestScenario05CappedCredit(MoWftcScenarioTestCase):
-    """Remaining liability is below 20% of the federal EITC, so it binds → $293."""
+    """Remaining liability is below 20% of the federal EITC, so it binds → $292."""
 
     screen_id = 9105
 
@@ -152,7 +152,7 @@ class TestScenario06FederalEitcPhasedOut(MoWftcScenarioTestCase):
 
 
 class TestScenario07InvestmentAtThreshold(MoWftcScenarioTestCase):
-    """Exactly $4,400 is at the TY2025 threshold, not over it → eligible, $193."""
+    """Exactly $4,400 is at the TY2025 threshold, not over it → eligible, $192."""
 
     screen_id = 9107
 
@@ -191,7 +191,7 @@ class TestScenario09InvestmentAtThreshold2023(MoWftcScenarioTestCase):
 
 
 class TestScenario10InvestmentAtThreshold2024(MoWftcScenarioTestCase):
-    """TY2024's threshold is $4,300, and exactly that stays eligible → $153."""
+    """TY2024's threshold is $4,300, and exactly that stays eligible → $152."""
 
     screen_id = 9110
     tax_year = "2024"
@@ -218,7 +218,7 @@ class TestScenario11InvestmentOneOverThreshold2024(MoWftcScenarioTestCase):
 
 
 class TestScenario12SingleChildlessWorker(MoWftcScenarioTestCase):
-    """A childless filer gets the much smaller childless federal EITC → $17."""
+    """A childless filer gets the much smaller childless federal EITC → $16."""
 
     screen_id = 9112
 
@@ -283,7 +283,7 @@ class TestScenario15RentalCountsTowardInvestmentGate(MoWftcScenarioTestCase):
 
 
 class TestScenario16PropertyTaxCreditPartiallyReducesLiability(MoWftcScenarioTestCase):
-    """The property tax credit reduces but does not exhaust liability → $15."""
+    """The property tax credit reduces but does not exhaust liability → $14."""
 
     screen_id = 9116
 
