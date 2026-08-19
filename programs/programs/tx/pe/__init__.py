@@ -1,42 +1,5 @@
-from programs.programs.federal.pe.tax import Ctc, Eitc
-import programs.programs.tx.pe.member as member
-import programs.programs.tx.pe.spm as spm
-import programs.programs.tx.pe.tax as tax
-from programs.framework.pe_base import PolicyEngineCalulator
+"""PolicyEngine calculators for TX.
 
-tx_member_calculators = {
-    "tx_wic": member.TxWic,
-    "tx_ssi": member.TxSsi,
-    "tx_csfp": member.TxCsfp,
-    "tx_chip": member.TxChip,
-    "tx_medicaid_for_children": member.TxMedicaidForChildren,
-    "tx_medicaid_for_pregnant_women": member.TxMedicaidForPregnantWomen,
-    "tx_medicaid_for_parents_and_caretakers": member.TxMedicaidForParentsAndCaretakers,
-    "tx_harris_rides": member.TxHarrisCountyRides,
-    "tx_emergency_medicaid": member.TxEmergencyMedicaid,
-    "tx_dart": member.TxDart,
-    "tx_head_start": member.TxHeadStart,
-    "tx_early_head_start": member.TxEarlyHeadStart,
-    "tx_medicare_savings_program": member.TxMsp,
-}
-
-tx_tax_unit_calculators = {
-    "tx_eitc": Eitc,
-    "tx_ctc": Ctc,
-    "tx_aca": tax.TxAca,
-}
-
-tx_spm_calculators = {
-    "tx_snap": spm.TxSnap,
-    "tx_lifeline": spm.TxLifeline,
-    "tx_nslp": spm.TxNslp,
-    "tx_tanf": spm.TxTanf,
-    "tx_ccs": spm.TxCcs,
-    "tx_liheap": spm.TxCeap,
-}
-
-tx_pe_calculators: dict[str, type[PolicyEngineCalulator]] = {
-    **tx_member_calculators,
-    **tx_tax_unit_calculators,
-    **tx_spm_calculators,
-}
+Each calculator in `member`, `spm` and `tax` declares the ``Program`` row it backs
+and is found by `programs.framework.registry`, so there is nothing to list here.
+"""

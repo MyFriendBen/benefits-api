@@ -23,7 +23,6 @@ from unittest.mock import Mock
 from django.test import TestCase
 
 from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
-from programs.programs.co import co_calculators
 from programs.programs.co.property_credit_rebate.calculator import PropertyCreditRebate
 from programs.util import Dependencies, DependencyError
 from screener.models import HouseholdMember
@@ -67,10 +66,6 @@ def make_calculator(
 class TestPropertyCreditRebateClassAttributes(TestCase):
     def test_is_subclass_of_program_calculator(self):
         self.assertTrue(issubclass(PropertyCreditRebate, ProgramCalculator))
-
-    def test_is_registered_in_co_calculators(self):
-        self.assertIn("cpcr", co_calculators)
-        self.assertEqual(co_calculators["cpcr"], PropertyCreditRebate)
 
     def test_amount_is_1154(self):
         self.assertEqual(PropertyCreditRebate.amount, 1_154)

@@ -16,7 +16,6 @@ Benefit value: $266.84/year per eligible member.
 from django.test import TestCase
 from unittest.mock import Mock
 
-from programs.programs.tx import tx_calculators
 from programs.programs.tx.fpp.calculator import TxFpp
 from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
 
@@ -110,10 +109,6 @@ def add_eligible_member(e, member):
 class TestTxFppClassAttributes(TestCase):
     def test_is_subclass_of_program_calculator(self):
         self.assertTrue(issubclass(TxFpp, ProgramCalculator))
-
-    def test_is_registered_in_tx_calculators(self):
-        self.assertIn("tx_fpp", tx_calculators)
-        self.assertEqual(tx_calculators["tx_fpp"], TxFpp)
 
     def test_max_age_is_64(self):
         self.assertEqual(TxFpp.max_age, 64)

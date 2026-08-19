@@ -58,6 +58,8 @@ class WaWsosBas(ProgramCalculator):
         Baccalaureate-C15-MFI-Chart.pdf (Official 2026 BaS MFI Chart)
     """
 
+    program_code = "wa_wsos_bas"
+
     # 2026 WSOS BaS 125% MFI thresholds in dollars per year. Per-household-
     # size lookup table sourced from the official BaS MFI Chart linked
     # above. BaS has only this single tier (unlike GRD which also has a

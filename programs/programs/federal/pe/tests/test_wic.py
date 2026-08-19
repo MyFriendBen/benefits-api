@@ -30,7 +30,7 @@ from programs.programs.federal.pe.member import Wic
 from programs.framework.pe_base import PolicyEngineMembersCalculator
 from programs.framework.pe_dependencies import irs_gross_income, member, spm, wic_income
 from programs.framework.pe_dependencies.household import StateCode
-from integrations.clients.policyengine.registry import all_member_calculators
+from integrations.clients.policyengine.registry import all_calculators
 
 # PolicyEngine's gov.usda.wic.income.sources, in full (24 variables), so the coverage
 # assertions below are measured against WIC's real list rather than a subset of it.
@@ -130,7 +130,7 @@ def _registered_state_wic_calculators() -> dict[str, type]:
     per-state assertions it defines."""
     return {
         slug: calc
-        for slug, calc in all_member_calculators.items()
+        for slug, calc in all_calculators.items()
         if isinstance(calc, type) and issubclass(calc, Wic) and calc is not Wic
     }
 

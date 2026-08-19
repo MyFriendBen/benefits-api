@@ -44,6 +44,8 @@ class TxHcv(ProgramCalculator):
     medical/childcare deductions, mixed-status proration, live-in aides.
     """
 
+    program_code = "tx_hcv"
+
     amount = 0
     asset_limit = 100_000
     min_head_age = 18

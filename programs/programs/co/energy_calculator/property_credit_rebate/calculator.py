@@ -4,6 +4,7 @@ from screener.models import HouseholdMember
 
 
 class EnergyCalculatorPropertyCreditRebate(PropertyCreditRebate):
+    program_code = "cesn_cpcr"
     surviving_spouse_age = 58
     dependencies = [*PropertyCreditRebate.dependencies, "energy_calculator"]
 

@@ -21,6 +21,8 @@ class Cha(ProgramCalculator):
     with subsidy covering the rest up to a cap.
     """
 
+    program_code = "ma_cha"
+
     # Value is highly variable (depends on income, rent, waitlist status)
     # Return 1 to indicate eligibility; frontend displays "Varies"
     amount = 1

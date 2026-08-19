@@ -39,6 +39,8 @@ class KsPromiseAct(ProgramCalculator):
     the estimate is the maximum a student with no other assistance would receive.
     """
 
+    program_code = "ks_promise_act"
+
     # Size-tiered income limits (K.S.A. 74-32,274).
     small_household_limit = 100_000  # family of 1-2
     base_household_limit = 150_000  # family of 3

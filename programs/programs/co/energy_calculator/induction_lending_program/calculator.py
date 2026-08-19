@@ -14,6 +14,8 @@ class EnergyCalculatorInductionLendingProgram(ProgramCalculator):
     - Must be a Boulder County resident (verified via ZIP code)
     """
 
+    program_code = "cesn_ilp"
+
     # Equpiment retails ~$150; value set to reflect that + loan access benefit
     amount = 100
     county = "Boulder County"

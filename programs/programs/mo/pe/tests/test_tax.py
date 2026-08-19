@@ -11,11 +11,9 @@ treatment as ``ks_ctc``, ``ks_cdcc_federal``, ``tx_ctc``/``tx_eitc``, and
 value is county-driven, so ``MoAca`` is a real subclass carrying the two extra
 inputs Missouri's value depends on.
 
-That makes registration the only MO-side fact to pin, and one part of it is
-load-bearing: ``mo_tax_unit_calculators`` must be spread into the global
-``all_tax_unit_calculators`` in ``registry.py``. ``screener.views`` resolves
-``Program.name_abbreviated`` against ``all_calculators``, so a program registered
-only in ``mo_pe_calculators`` is invisible to it and silently returns no value.
+That makes the MO-side facts worth pinning narrow: that each slug resolves to its
+own class, and that the thin subclasses over ``Ctc`` and ``Eitc`` add nothing to
+the federal calculators they wrap.
 
 Everything else about the calculators (``pe_name``, ``pe_outputs``, the input set,
 and the absence of a state code) is a property of the shared federal classes and
@@ -27,73 +25,67 @@ from django.test import TestCase
 
 import programs.framework.pe_dependencies as dependency
 from programs.programs.federal.pe.tax import Aca, Cdcc, Ctc, Eitc
-from programs.programs.mo.pe import mo_pe_calculators, mo_tax_unit_calculators
-from programs.programs.mo.pe.tax import MoAca
+from programs.programs.mo.pe.tax import MoAca, MoCdccFederal, MoCtc, MoEitc
 from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
-from integrations.clients.policyengine.registry import (
-    all_calculators,
-    all_tax_unit_calculators,
-)
 
 
 class TestMoCtcWiring(TestCase):
     """mo_ctc registration against the shared federal Ctc calculator."""
 
-    def test_is_federal_ctc_everywhere(self):
-        self.assertIs(mo_tax_unit_calculators["mo_ctc"], Ctc)
-        self.assertIs(mo_pe_calculators["mo_ctc"], Ctc)
-        self.assertIs(all_tax_unit_calculators["mo_ctc"], Ctc)
-        self.assertIs(all_calculators["mo_ctc"], Ctc)
+    def test_is_the_federal_calculator_with_nothing_added(self):
+        """A thin subclass of the federal calculator: same PE variable, same inputs.
 
-    def test_matches_builtin_federal_registry_key(self):
-        """Same calculator the federal registry serves as ``ctc`` — no MO subclass."""
-        self.assertIs(all_tax_unit_calculators["mo_ctc"], all_tax_unit_calculators["ctc"])
+        MO has no state CTC, so ``mo_ctc`` must not diverge from the federal
+        credit. It is its own class only so the registry maps one key to one
+        calculator. Asserting it overrides nothing is stricter than asserting
+        identity with ``Ctc`` was: a subclass that added an input would still be a
+        subclass, but would fail here.
+        """
+        self.assertTrue(issubclass(MoCtc, Ctc))
+        self.assertEqual(MoCtc.pe_name, Ctc.pe_name)
+        self.assertEqual(list(MoCtc.pe_inputs), list(Ctc.pe_inputs))
+        self.assertEqual(list(MoCtc.pe_outputs), list(Ctc.pe_outputs))
 
 
 class TestMoEitcWiring(TestCase):
     """mo_eitc registration against the shared federal Eitc calculator."""
 
-    def test_is_federal_eitc_everywhere(self):
-        self.assertIs(mo_tax_unit_calculators["mo_eitc"], Eitc)
-        self.assertIs(mo_pe_calculators["mo_eitc"], Eitc)
-        self.assertIs(all_tax_unit_calculators["mo_eitc"], Eitc)
-        self.assertIs(all_calculators["mo_eitc"], Eitc)
+    def test_is_the_federal_calculator_with_nothing_added(self):
+        """A thin subclass of the federal calculator: same PE variable, same inputs.
 
-    def test_matches_builtin_federal_registry_key(self):
-        """Same calculator the federal registry serves as ``eitc`` — no MO subclass."""
-        self.assertIs(all_tax_unit_calculators["mo_eitc"], all_tax_unit_calculators["eitc"])
+        MO has no state EITC, so ``mo_eitc`` must not diverge from the federal
+        credit. It is its own class only so the registry maps one key to one
+        calculator. Asserting it overrides nothing is stricter than asserting
+        identity with ``Eitc`` was: a subclass that added an input would still be a
+        subclass, but would fail here.
+        """
+        self.assertTrue(issubclass(MoEitc, Eitc))
+        self.assertEqual(MoEitc.pe_name, Eitc.pe_name)
+        self.assertEqual(list(MoEitc.pe_inputs), list(Eitc.pe_inputs))
+        self.assertEqual(list(MoEitc.pe_outputs), list(Eitc.pe_outputs))
 
 
 class TestMoCdccFederalWiring(TestCase):
     """mo_cdcc_federal registration against the shared federal Cdcc calculator."""
 
-    def test_is_federal_cdcc_everywhere(self):
-        self.assertIs(mo_tax_unit_calculators["mo_cdcc_federal"], Cdcc)
-        self.assertIs(mo_pe_calculators["mo_cdcc_federal"], Cdcc)
-        self.assertIs(all_tax_unit_calculators["mo_cdcc_federal"], Cdcc)
-        self.assertIs(all_calculators["mo_cdcc_federal"], Cdcc)
+    def test_is_the_federal_calculator_with_nothing_added(self):
+        """A thin subclass of the federal calculator: same PE variable, same inputs.
 
-    def test_matches_the_other_states_federal_cdcc(self):
-        """Kansas registers the same shared class under ``ks_cdcc_federal``. Unlike
-        ``ctc``/``eitc``, the federal registry exposes no bare ``cdcc`` key, so the
-        cross-state identity is what pins "no MO subclass"."""
-        self.assertIs(
-            all_tax_unit_calculators["mo_cdcc_federal"],
-            all_tax_unit_calculators["ks_cdcc_federal"],
-        )
+        Missouri has no state CDCC, so ``mo_cdcc_federal`` must not diverge from the
+        federal credit. It is its own class only so the registry maps one key to one
+        calculator — Kansas registers ``ks_cdcc_federal`` against ``KsCdccFederal``
+        for the same reason. Asserting it overrides nothing is stricter than the
+        cross-state identity this replaced: a subclass that added an input would
+        still be a subclass, but would fail here.
+        """
+        self.assertTrue(issubclass(MoCdccFederal, Cdcc))
+        self.assertEqual(MoCdccFederal.pe_name, Cdcc.pe_name)
+        self.assertEqual(list(MoCdccFederal.pe_inputs), list(Cdcc.pe_inputs))
+        self.assertEqual(list(MoCdccFederal.pe_outputs), list(Cdcc.pe_outputs))
 
 
 class TestMoAcaWiring(TestCase):
     """mo_aca_ptc registration and the MO-specific inputs on MoAca."""
-
-    def test_registered_under_config_name_abbreviated(self):
-        """The registry key must equal the program's ``name_abbreviated`` in
-        ``mo_aca_ptc_initial_config.json`` — ``screener.views`` resolves calculators by
-        that string, so a mismatch silently returns no value."""
-        self.assertIs(mo_tax_unit_calculators["mo_aca_ptc"], MoAca)
-        self.assertIs(mo_pe_calculators["mo_aca_ptc"], MoAca)
-        self.assertIs(all_tax_unit_calculators["mo_aca_ptc"], MoAca)
-        self.assertIs(all_calculators["mo_aca_ptc"], MoAca)
 
     def test_subclasses_federal_aca(self):
         self.assertTrue(issubclass(MoAca, Aca))

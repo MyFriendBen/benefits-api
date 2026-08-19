@@ -1,6 +1,5 @@
-from programs.framework.base import ProgramCalculator
-from .ssdi.calculator import MoSsdi
+"""Custom (MFB) calculators for MO.
 
-mo_calculators: dict[str, type[ProgramCalculator]] = {
-    "mo_ssdi": MoSsdi,
-}
+Each calculator declares the ``Program`` row it backs and is found by
+`programs.framework.registry`, so there is nothing to list here.
+"""

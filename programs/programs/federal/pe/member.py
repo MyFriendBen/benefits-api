@@ -30,6 +30,8 @@ class Wic(PolicyEngineMembersCalculator):
     computed benefit (MO/TX).
     """
 
+    program_code = "wic"
+
     wic_categories = {
         "NONE": 0,
         "INFANT": 0,
@@ -57,7 +59,7 @@ class Wic(PolicyEngineMembersCalculator):
         return self.wic_categories[wic_category] * 12
 
 
-class Medicaid(PolicyEngineMembersCalculator):
+class Medicaid(PolicyEngineMembersCalculator, abstract=True):
     pe_name = "medicaid"
     pe_inputs = [
         dependency.member.AgeDependency,
@@ -126,7 +128,7 @@ class Medicaid(PolicyEngineMembersCalculator):
         return self.medicaid_categories[medicaid_category] * 12
 
 
-class Chip(PolicyEngineMembersCalculator):
+class Chip(PolicyEngineMembersCalculator, abstract=True):
     pe_name = "chip_category"
     pe_inputs = [
         dependency.member.AgeDependency,
@@ -150,6 +152,7 @@ class Chip(PolicyEngineMembersCalculator):
 
 
 class PellGrant(PolicyEngineMembersCalculator):
+    program_code = "pell_grant"
     pe_name = "pell_grant"
     pe_inputs = [
         dependency.member.PellGrantDependentAvailableIncomeDependency,
@@ -166,6 +169,7 @@ class PellGrant(PolicyEngineMembersCalculator):
 
 
 class Ssi(PolicyEngineMembersCalculator):
+    program_code = "ssi"
     # PolicyEngine gates `ssi` on the take-up flag, so it reads 0 for anyone reporting no SSI —
     # exactly the people this program should be recommended to — and for reporters it just
     # echoes back the amount they told us. Neither is the entitlement worth showing; the
@@ -188,6 +192,7 @@ class Ssi(PolicyEngineMembersCalculator):
 
 
 class CommoditySupplementalFoodProgram(PolicyEngineMembersCalculator):
+    program_code = "csfp"
     pe_name = "commodity_supplemental_food_program"
     pe_inputs = [
         dependency.member.AgeDependency,
@@ -196,7 +201,7 @@ class CommoditySupplementalFoodProgram(PolicyEngineMembersCalculator):
     pe_outputs = [dependency.member.CommoditySupplementalFoodProgram]
 
 
-class Ccdf(PolicyEngineMembersCalculator):
+class Ccdf(PolicyEngineMembersCalculator, abstract=True):
     pe_name = "is_ccdf_eligible"
     pe_inputs = [
         dependency.spm.AssetsDependency,
@@ -220,7 +225,7 @@ class Ccdf(PolicyEngineMembersCalculator):
         return self.child_care_cost(member)
 
 
-class HeadStart(PolicyEngineMembersCalculator):
+class HeadStart(PolicyEngineMembersCalculator, abstract=True):
     """
     Federal Head Start (ages 3-5). Eligibility and per-child value are computed by
     PolicyEngine's ``head_start`` variable. State subclasses add their state-code
@@ -238,7 +243,7 @@ class HeadStart(PolicyEngineMembersCalculator):
     pe_outputs = [dependency.member.HeadStart]
 
 
-class EarlyHeadStart(PolicyEngineMembersCalculator):
+class EarlyHeadStart(PolicyEngineMembersCalculator, abstract=True):
     """
     Federal Early Head Start (birth to age 3, and pregnant women). Same computed
     eligibility/value model as ``HeadStart`` via PolicyEngine's ``early_head_start``
@@ -257,7 +262,7 @@ class EarlyHeadStart(PolicyEngineMembersCalculator):
     pe_outputs = [dependency.member.EarlyHeadStart]
 
 
-class Msp(PolicyEngineMembersCalculator):
+class Msp(PolicyEngineMembersCalculator, abstract=True):
     """
     Federal Medicare Savings Program (QMB/SLMB/QI). Eligibility, category, and value
     are computed by PolicyEngine's ``msp`` variable; MSP rules are federal, so state

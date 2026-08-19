@@ -29,12 +29,7 @@ These tests pin that wiring so a future refactor can't silently drop it.
 from django.test import TestCase
 
 from programs.programs.federal.pe.spm import Lifeline, SchoolLunch
-from programs.programs.mo.pe import mo_pe_calculators, mo_spm_calculators
 from programs.programs.mo.pe.spm import MoLifeline, MoNslp
-from integrations.clients.policyengine.registry import (
-    all_calculators,
-    all_spm_unit_calculators,
-)
 import programs.framework.pe_dependencies as dependency
 
 
@@ -47,22 +42,6 @@ class TestMoLifelineWiring(TestCase):
     def test_pe_name_is_lifeline(self):
         """The federal SPM-level variable; MO adds no state variable of its own."""
         self.assertEqual(MoLifeline.pe_name, "lifeline")
-
-    def test_is_registered_in_mo_spm_calculators(self):
-        self.assertIn("mo_lifeline", mo_spm_calculators)
-        self.assertIs(mo_spm_calculators["mo_lifeline"], MoLifeline)
-
-    def test_is_registered_in_mo_pe_calculators(self):
-        self.assertIn("mo_lifeline", mo_pe_calculators)
-        self.assertIs(mo_pe_calculators["mo_lifeline"], MoLifeline)
-
-    def test_is_registered_in_the_global_registry(self):
-        """screener.views matches Program.name_abbreviated against all_calculators keys,
-        so the MO spm calculators must be spread into the global registry too."""
-        self.assertIn("mo_lifeline", all_spm_unit_calculators)
-        self.assertIs(all_spm_unit_calculators["mo_lifeline"], MoLifeline)
-        self.assertIn("mo_lifeline", all_calculators)
-        self.assertIs(all_calculators["mo_lifeline"], MoLifeline)
 
     def test_pe_outputs_are_inherited_from_lifeline(self):
         self.assertEqual(MoLifeline.pe_outputs, [dependency.spm.Lifeline])
@@ -103,22 +82,6 @@ class TestMoNslpWiring(TestCase):
     def test_pe_name_is_school_meal_net_subsidy(self):
         """The annual net subsidy, not the per-day ``school_meal_daily_subsidy``."""
         self.assertEqual(MoNslp.pe_name, "school_meal_net_subsidy")
-
-    def test_is_registered_in_mo_spm_calculators(self):
-        self.assertIn("mo_nslp", mo_spm_calculators)
-        self.assertIs(mo_spm_calculators["mo_nslp"], MoNslp)
-
-    def test_is_registered_in_mo_pe_calculators(self):
-        self.assertIn("mo_nslp", mo_pe_calculators)
-        self.assertIs(mo_pe_calculators["mo_nslp"], MoNslp)
-
-    def test_is_registered_in_the_global_registry(self):
-        """screener.views matches Program.name_abbreviated against all_calculators keys,
-        so the MO spm calculators must be spread into the global registry too."""
-        self.assertIn("mo_nslp", all_spm_unit_calculators)
-        self.assertIs(all_spm_unit_calculators["mo_nslp"], MoNslp)
-        self.assertIn("mo_nslp", all_calculators)
-        self.assertIs(all_calculators["mo_nslp"], MoNslp)
 
     def test_pe_outputs_are_inherited_from_school_lunch(self):
         self.assertEqual(

@@ -4,6 +4,7 @@ from programs.programs.federal.pe.spm import Snap, SchoolLunch, Tanf
 
 
 class IlSnap(Snap):
+    program_code = "il_snap"
     pe_inputs = [
         *Snap.pe_inputs,
         dependency.household.IlStateCodeDependency,
@@ -11,6 +12,7 @@ class IlSnap(Snap):
 
 
 class IlNslp(SchoolLunch):
+    program_code = "il_nslp"
     pe_inputs = [
         *SchoolLunch.pe_inputs,
         dependency.household.IlStateCodeDependency,
@@ -18,6 +20,7 @@ class IlNslp(SchoolLunch):
 
 
 class IlTanf(Tanf):
+    program_code = "il_tanf"
     pe_name = "il_tanf"
     pe_inputs = [
         *Tanf.pe_inputs,
@@ -52,6 +55,8 @@ class IlLiheap(PolicyEngineSpmCalulator):
     Households that already receive IL LIHEAP are flagged and handled by the
     results layer (via ``already_has``), not in this calculator.
     """
+
+    program_code = "il_liheap"
 
     pe_name = "il_liheap"
     pe_inputs = [

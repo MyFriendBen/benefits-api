@@ -3,6 +3,7 @@ import programs.framework.eligibility_messages as messages
 
 
 class NCWeatherization(ProgramCalculator):
+    program_code = "ncwap"
     fpl_percent = 2
     expenses = [
         "rent",

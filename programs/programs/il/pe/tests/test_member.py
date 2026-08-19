@@ -11,6 +11,8 @@ These tests verify IL-specific calculator logic for member-level programs includ
 """
 
 from django.test import TestCase
+
+from integrations.clients.policyengine.registry import all_calculators
 from unittest.mock import Mock, MagicMock
 
 # Named constants for benefit values used in tests
@@ -22,8 +24,9 @@ from programs.framework.pe_base import PolicyEngineMembersCalculator
 from programs.framework.pe_dependencies import member as member_dependency
 from programs.framework.pe_dependencies import irs_gross_income
 from programs.framework.pe_dependencies.household import IlStateCodeDependency
-from programs.programs.il.pe import il_pe_calculators, il_member_calculators
 from programs.programs.il.pe.member import (
+    IlFppe,
+    IlHfsFpp,
     IlMsp,
     IlAabd,
     IlHbwd,
@@ -43,9 +46,13 @@ class TestIlMsp(TestCase):
     registered subclasses in ``federal/pe/tests/test_msp.py``.
     """
 
-    def test_is_registered_in_il_calculators(self):
-        self.assertIs(il_pe_calculators["il_msp"], IlMsp)
-        self.assertIs(il_member_calculators["il_msp"], IlMsp)
+    def test_exists_and_is_subclass_of_policy_engine_members_calculator(self):
+        """Test that IlMsp is a subclass of PolicyEngineMembersCalculator."""
+        self.assertTrue(issubclass(IlMsp, PolicyEngineMembersCalculator))
+
+    def test_pe_name_is_msp(self):
+        """Test that IlMsp has the correct pe_name for PolicyEngine API calls."""
+        self.assertEqual(IlMsp.pe_name, "msp")
 
     def test_pe_inputs_includes_il_state_code_dependency(self):
         """Resolves the MSP asset-test-applies parameter, which is true for Illinois."""
@@ -58,16 +65,6 @@ class TestIlAabd(TestCase):
     def test_exists_and_is_subclass_of_policy_engine_members_calculator(self):
         """Test that IlAabd is a subclass of PolicyEngineMembersCalculator."""
         self.assertTrue(issubclass(IlAabd, PolicyEngineMembersCalculator))
-
-    def test_is_registered_in_il_pe_calculators(self):
-        """Test that IlAabd is registered in the calculators dictionary."""
-        self.assertIn("il_aabd", il_pe_calculators)
-        self.assertEqual(il_pe_calculators["il_aabd"], IlAabd)
-
-    def test_is_registered_in_il_member_calculators(self):
-        """Test that IlAabd is registered in the member calculators dictionary."""
-        self.assertIn("il_aabd", il_member_calculators)
-        self.assertEqual(il_member_calculators["il_aabd"], IlAabd)
 
     def test_pe_name_is_il_aabd_person(self):
         """Test that IlAabd has the correct pe_name."""
@@ -105,16 +102,6 @@ class TestIlHbwd(TestCase):
     def test_exists_and_is_subclass_of_policy_engine_members_calculator(self):
         """Test that IlHbwd is a subclass of PolicyEngineMembersCalculator."""
         self.assertTrue(issubclass(IlHbwd, PolicyEngineMembersCalculator))
-
-    def test_is_registered_in_il_pe_calculators(self):
-        """Test that IlHbwd is registered in the calculators dictionary."""
-        self.assertIn("il_hbwd", il_pe_calculators)
-        self.assertEqual(il_pe_calculators["il_hbwd"], IlHbwd)
-
-    def test_is_registered_in_il_member_calculators(self):
-        """Test that IlHbwd is registered in the member calculators dictionary."""
-        self.assertIn("il_hbwd", il_member_calculators)
-        self.assertEqual(il_member_calculators["il_hbwd"], IlHbwd)
 
     def test_pe_name_is_il_hbwd_person(self):
         """Test that IlHbwd has the correct pe_name."""
@@ -180,16 +167,6 @@ class TestIlBccp(TestCase):
     def test_exists_and_is_subclass_of_policy_engine_members_calculator(self):
         """Test that IlBccp is a subclass of PolicyEngineMembersCalculator."""
         self.assertTrue(issubclass(IlBccp, PolicyEngineMembersCalculator))
-
-    def test_is_registered_in_il_pe_calculators(self):
-        """Test that IlBccp is registered in the calculators dictionary."""
-        self.assertIn("il_ibccp", il_pe_calculators)
-        self.assertEqual(il_pe_calculators["il_ibccp"], IlBccp)
-
-    def test_is_registered_in_il_member_calculators(self):
-        """Test that IlBccp is registered in the member calculators dictionary."""
-        self.assertIn("il_ibccp", il_member_calculators)
-        self.assertEqual(il_member_calculators["il_ibccp"], IlBccp)
 
     def test_pe_name_is_il_bcc_eligible(self):
         """Test that IlBccp has the correct pe_name."""
@@ -261,16 +238,6 @@ class TestIlMpe(TestCase):
         """Test that IlMpe is a subclass of PolicyEngineMembersCalculator."""
         self.assertTrue(issubclass(IlMpe, PolicyEngineMembersCalculator))
 
-    def test_is_registered_in_il_pe_calculators(self):
-        """Test that IlMpe is registered in the calculators dictionary."""
-        self.assertIn("il_mpe", il_pe_calculators)
-        self.assertEqual(il_pe_calculators["il_mpe"], IlMpe)
-
-    def test_is_registered_in_il_member_calculators(self):
-        """Test that IlMpe is registered in the member calculators dictionary."""
-        self.assertIn("il_mpe", il_member_calculators)
-        self.assertEqual(il_member_calculators["il_mpe"], IlMpe)
-
     def test_pe_name_is_il_mpe_eligible(self):
         """Test that IlMpe has the correct pe_name."""
         self.assertEqual(IlMpe.pe_name, "il_mpe_eligible")
@@ -328,28 +295,29 @@ class TestIlFamilyPlanningProgram(TestCase):
         self.assertIsNotNone(IlFamilyPlanningProgram.pe_inputs)
         self.assertGreater(len(IlFamilyPlanningProgram.pe_inputs), 0)
 
-    def test_is_registered_in_il_pe_calculators_for_hfs_fpp(self):
-        """Test that IL HFS FPP is registered in the calculators dictionary."""
-        # Verify il_hfs_fpp is in the calculators dictionary
-        self.assertIn("il_hfs_fpp", il_pe_calculators)
+    def test_is_registered_for_hfs_fpp(self):
+        """``il_hfs_fpp`` resolves to its own thin subclass of the shared FPP calculator."""
+        self.assertIs(all_calculators["il_hfs_fpp"], IlHfsFpp)
+        self.assertTrue(issubclass(IlHfsFpp, IlFamilyPlanningProgram))
 
-        # Verify it points to the correct class
-        self.assertEqual(il_pe_calculators["il_hfs_fpp"], IlFamilyPlanningProgram)
+    def test_is_registered_for_fppe(self):
+        """``il_fppe`` resolves to its own thin subclass of the shared FPP calculator."""
+        self.assertIs(all_calculators["il_fppe"], IlFppe)
+        self.assertTrue(issubclass(IlFppe, IlFamilyPlanningProgram))
 
-    def test_is_registered_in_il_pe_calculators_for_fppe(self):
-        """Test that IL FPPE is registered in the calculators dictionary."""
-        # Verify il_fppe is in the calculators dictionary
-        self.assertIn("il_fppe", il_pe_calculators)
+    def test_the_two_fpp_subclasses_do_not_diverge_from_the_shared_calculator(self):
+        """Neither subclass overrides anything yet.
 
-        # Verify it points to the correct class
-        self.assertEqual(il_pe_calculators["il_fppe"], IlFamilyPlanningProgram)
-
-    def test_is_registered_in_il_member_calculators(self):
-        """Test that both FPP programs are registered in the member calculators dictionary."""
-        self.assertIn("il_hfs_fpp", il_member_calculators)
-        self.assertIn("il_fppe", il_member_calculators)
-        self.assertEqual(il_member_calculators["il_hfs_fpp"], IlFamilyPlanningProgram)
-        self.assertEqual(il_member_calculators["il_fppe"], IlFamilyPlanningProgram)
+        ``il_hfs_fpp`` requires qualified immigration status and ``il_fppe`` does not,
+        but PolicyEngine resolves both through the same ``il_fpp_eligible`` variable, so
+        that distinction is unmodelled. The subclasses exist so the registry maps one key
+        to one calculator. If the immigration-status requirement is ever modelled, this
+        test is what will fail and force the change to be deliberate.
+        """
+        for sub in (IlHfsFpp, IlFppe):
+            self.assertEqual(sub.pe_name, IlFamilyPlanningProgram.pe_name)
+            self.assertEqual(list(sub.pe_inputs), list(IlFamilyPlanningProgram.pe_inputs))
+            self.assertEqual(list(sub.pe_outputs), list(IlFamilyPlanningProgram.pe_outputs))
 
     def test_pe_name_is_il_fpp_eligible(self):
         """Test that IlFamilyPlanningProgram has the correct pe_name for PolicyEngine API calls."""
@@ -430,10 +398,6 @@ class TestIlHeadStartWiring(TestCase):
 
     def test_is_subclass_of_head_start(self):
         self.assertTrue(issubclass(IlHeadStart, HeadStart))
-
-    def test_is_registered_as_il_head_start(self):
-        self.assertIs(il_member_calculators["il_head_start"], IlHeadStart)
-        self.assertIs(il_pe_calculators["il_head_start"], IlHeadStart)
 
     def test_pe_inputs_includes_il_state_code(self):
         """The IL state code is what selects IL's spending/enrollment parameters in PE,

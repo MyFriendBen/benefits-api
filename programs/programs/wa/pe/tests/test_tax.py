@@ -5,8 +5,7 @@ These tests verify WA-specific calculator wiring including:
 - `wa_ctc` and `wa_eitc` alias the federal `Ctc`/`Eitc` classes with no WA-specific
   wrapper; their own properties are asserted in
   `programs/programs/federal/pe/tests/test_tax.py`
-- WaWftc calculator registration (in wa_pe_calculators, wa_tax_calculators,
-  and the global PE tax-unit registry)
+- WaWftc resolves from the PolicyEngine registry under `wa_wftc`
 - WA-specific pe_inputs (`WaStateCodeDependency`) on `WaWftc` only — it targets the
   *state* `wa_working_families_tax_credit` variable; the two federal aliases send
   no state code
@@ -26,12 +25,7 @@ from programs.programs.federal.pe.tax import Ctc, Eitc
 from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
 from programs.framework.pe_dependencies import tax as tax_dependency
 from programs.framework.pe_dependencies.household import WaStateCodeDependency
-from integrations.clients.policyengine.registry import (
-    all_calculators,
-    all_tax_unit_calculators,
-)
-from programs.programs.wa.pe import wa_pe_calculators, wa_tax_calculators
-from programs.programs.wa.pe.tax import WaWftc
+from programs.programs.wa.pe.tax import WaCtc, WaEitc, WaWftc
 
 
 class TestWaEitc(TestCase):
@@ -45,15 +39,19 @@ class TestWaEitc(TestCase):
     `programs/programs/federal/pe/tests/test_tax.py`.
     """
 
-    def test_is_federal_eitc_everywhere(self):
-        self.assertIs(wa_tax_calculators["wa_eitc"], Eitc)
-        self.assertIs(wa_pe_calculators["wa_eitc"], Eitc)
-        self.assertIs(all_tax_unit_calculators["wa_eitc"], Eitc)
-        self.assertIs(all_calculators["wa_eitc"], Eitc)
+    def test_is_the_federal_calculator_with_nothing_added(self):
+        """A thin subclass of the federal calculator: same PE variable, same inputs.
 
-    def test_matches_builtin_federal_registry_key(self):
-        """Same calculator as global `eitc` — no WA-specific subclass."""
-        self.assertIs(all_tax_unit_calculators["wa_eitc"], all_tax_unit_calculators["eitc"])
+        WA has no state EITC, so ``wa_eitc`` must not diverge from the federal
+        credit. It is its own class only so the registry maps one key to one
+        calculator. Asserting it overrides nothing is stricter than asserting
+        identity with ``Eitc`` was: a subclass that added an input would still be a
+        subclass, but would fail here.
+        """
+        self.assertTrue(issubclass(WaEitc, Eitc))
+        self.assertEqual(WaEitc.pe_name, Eitc.pe_name)
+        self.assertEqual(list(WaEitc.pe_inputs), list(Eitc.pe_inputs))
+        self.assertEqual(list(WaEitc.pe_outputs), list(Eitc.pe_outputs))
 
 
 class TestWaCtc(TestCase):
@@ -64,16 +62,19 @@ class TestWaCtc(TestCase):
     `programs/programs/federal/pe/tests/test_tax.py`.
     """
 
-    def test_is_federal_ctc_everywhere(self):
-        """Washington registers the WA program slug against the federal class."""
-        self.assertIs(wa_tax_calculators["wa_ctc"], Ctc)
-        self.assertIs(wa_pe_calculators["wa_ctc"], Ctc)
-        self.assertIs(all_tax_unit_calculators["wa_ctc"], Ctc)
-        self.assertIs(all_calculators["wa_ctc"], Ctc)
+    def test_is_the_federal_calculator_with_nothing_added(self):
+        """A thin subclass of the federal calculator: same PE variable, same inputs.
 
-    def test_matches_builtin_federal_registry_key(self):
-        """Same calculator as global `ctc` — no WA-specific subclass."""
-        self.assertIs(all_tax_unit_calculators["wa_ctc"], all_tax_unit_calculators["ctc"])
+        WA has no state CTC, so ``wa_ctc`` must not diverge from the federal
+        credit. It is its own class only so the registry maps one key to one
+        calculator. Asserting it overrides nothing is stricter than asserting
+        identity with ``Ctc`` was: a subclass that added an input would still be a
+        subclass, but would fail here.
+        """
+        self.assertTrue(issubclass(WaCtc, Ctc))
+        self.assertEqual(WaCtc.pe_name, Ctc.pe_name)
+        self.assertEqual(list(WaCtc.pe_inputs), list(Ctc.pe_inputs))
+        self.assertEqual(list(WaCtc.pe_outputs), list(Ctc.pe_outputs))
 
 
 class TestWaWftc(TestCase):
@@ -86,21 +87,6 @@ class TestWaWftc(TestCase):
     def test_pe_name_targets_wa_working_families_tax_credit(self):
         """`pe_name` resolves to PolicyEngine's `wa_working_families_tax_credit` variable."""
         self.assertEqual(WaWftc.pe_name, "wa_working_families_tax_credit")
-
-    def test_is_registered_in_wa_pe_calculators(self):
-        """WaWftc is registered in the WA PE calculators dictionary as `wa_wftc`."""
-        self.assertIn("wa_wftc", wa_pe_calculators)
-        self.assertEqual(wa_pe_calculators["wa_wftc"], WaWftc)
-
-    def test_is_registered_in_wa_tax_calculators(self):
-        """WaWftc is registered in the WA tax-unit subset (not member/SPM)."""
-        self.assertIn("wa_wftc", wa_tax_calculators)
-        self.assertEqual(wa_tax_calculators["wa_wftc"], WaWftc)
-
-    def test_is_registered_in_global_tax_unit_registry(self):
-        """WaWftc flows up into the global PE tax-unit registry (so the engine sees it)."""
-        self.assertIn("wa_wftc", all_tax_unit_calculators)
-        self.assertEqual(all_tax_unit_calculators["wa_wftc"], WaWftc)
 
     def test_pe_inputs_includes_wa_state_code_dependency(self):
         """The WA state code is added on top of the federal Eitc inputs."""

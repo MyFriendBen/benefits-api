@@ -12,7 +12,6 @@ Eligibility requirements:
 from django.test import TestCase
 from unittest.mock import Mock
 
-from programs.programs.ma import ma_calculators
 from programs.programs.ma.taxi_discount.calculator import MaTaxiDiscount
 from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
 
@@ -23,11 +22,6 @@ class TestMaTaxiDiscountCalculator(TestCase):
     def test_exists_and_is_subclass_of_program_calculator(self):
         """Test that MaTaxiDiscount calculator class exists and inherits correctly."""
         self.assertTrue(issubclass(MaTaxiDiscount, ProgramCalculator))
-
-    def test_is_registered_in_ma_calculators(self):
-        """Test that Taxi Discount is registered in the MA calculators dictionary."""
-        self.assertIn("ma_taxi_discount", ma_calculators)
-        self.assertEqual(ma_calculators["ma_taxi_discount"], MaTaxiDiscount)
 
     def test_eligible_city_is_cambridge(self):
         """Test that the eligible city is set to Cambridge."""

@@ -4,6 +4,7 @@ import programs.framework.eligibility_messages as messages
 
 
 class JeffcoStudentBenefits(ProgramCalculator):
+    program_code = "jeffco_student_benefits"
     county = "Jefferson County"
     child_age_min = 3
     child_age_max = 19

@@ -5,6 +5,7 @@ import programs.framework.eligibility_messages as messages
 
 
 class DenverTrashRebate(ProgramCalculator):
+    program_code = "dtr"
     amount = 252
     ami_percent = "60%"
     county = "Denver County"

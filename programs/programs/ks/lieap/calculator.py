@@ -39,6 +39,8 @@ class KsLieap(ProgramCalculator):
     not published.
     """
 
+    program_code = "ks_lieap"
+
     fpl_percent = 1.5
     amount = 680
     expenses = ("rent", "mortgage", "heating")

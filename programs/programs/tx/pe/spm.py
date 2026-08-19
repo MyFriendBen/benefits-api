@@ -4,6 +4,7 @@ from programs.framework.pe_base import PolicyEngineSpmCalulator
 
 
 class TxSnap(Snap):
+    program_code = "tx_snap"
     pe_inputs = [
         *Snap.pe_inputs,
         dependency.household.TxStateCodeDependency,
@@ -11,6 +12,7 @@ class TxSnap(Snap):
 
 
 class TxLifeline(Lifeline):
+    program_code = "tx_lifeline"
     pe_inputs = [
         *Lifeline.pe_inputs,
         dependency.household.TxStateCodeDependency,
@@ -25,6 +27,8 @@ class TxNslp(SchoolLunch):
     and benefit values. Inherits from federal SchoolLunch calculator and adds
     TX state code dependency.
     """
+
+    program_code = "tx_nslp"
 
     pe_inputs = [
         *SchoolLunch.pe_inputs,
@@ -47,6 +51,8 @@ class TxTanf(Tanf):
     these deductions and caused households with gross wages between ~$188-$402/month
     to be incorrectly denied for a family of 3 with 1 parent.
     """
+
+    program_code = "tx_tanf"
 
     pe_name = "tx_tanf"
     pe_inputs = [
@@ -71,6 +77,8 @@ class TxCcs(PolicyEngineSpmCalulator):
     Uses PolicyEngine-calculated benefit amounts for TX-specific CCS eligibility
     and benefit values.
     """
+
+    program_code = "tx_ccs"
 
     pe_name = "tx_ccs"
     pe_inputs = [
@@ -98,6 +106,8 @@ class TxCeap(PolicyEngineSpmCalulator):
     annual utility-assistance amount (1,800 / 1,500 / 1,200 by FPG bracket per
     10 TAC § 6.309(e)), capped by the household's reported energy expenses.
     """
+
+    program_code = "tx_liheap"
 
     pe_name = "tx_ceap"
     pe_inputs = [

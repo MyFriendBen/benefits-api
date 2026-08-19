@@ -15,6 +15,8 @@ class IlSilverAccess(ProgramCalculator):
     exclusion applies only to currently-reported coverage, not unenrolled offers.
     """
 
+    program_code = "il_silver_access"
+
     member_amount = 150 * 12  # $150/month × 12 = $1,800/year
     fpl_percent = 2.5  # 250% FPL income ceiling
     medicaid_fpl_percent = 1.38  # 138% FPL — inline Medicaid income threshold

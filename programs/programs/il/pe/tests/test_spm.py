@@ -13,10 +13,8 @@ from unittest.mock import Mock, MagicMock
 
 from programs.framework.pe_base import PolicyEngineSpmCalulator
 from programs.framework.pe_dependencies import spm as spm_dependency
-from programs.framework.pe_dependencies import household as household_dependency
 from programs.framework.pe_dependencies.household import IlStateCodeDependency
 from programs.programs.federal.pe.spm import Snap, SchoolLunch, Tanf
-from programs.programs.il.pe import il_pe_calculators, il_spm_calculators
 from programs.programs.il.pe.spm import IlSnap, IlNslp, IlTanf, IlLiheap
 
 
@@ -26,16 +24,6 @@ class TestIlSnap(TestCase):
     def test_exists_and_is_subclass_of_snap(self):
         """Test that IlSnap is a subclass of federal Snap."""
         self.assertTrue(issubclass(IlSnap, Snap))
-
-    def test_is_registered_in_il_pe_calculators(self):
-        """Test that IlSnap is registered in the calculators dictionary."""
-        self.assertIn("il_snap", il_pe_calculators)
-        self.assertEqual(il_pe_calculators["il_snap"], IlSnap)
-
-    def test_is_registered_in_il_spm_calculators(self):
-        """Test that IlSnap is registered in the SPM calculators dictionary."""
-        self.assertIn("il_snap", il_spm_calculators)
-        self.assertEqual(il_spm_calculators["il_snap"], IlSnap)
 
     def test_pe_inputs_includes_il_state_code_dependency(self):
         """Test that IlStateCodeDependency is in pe_inputs."""
@@ -53,16 +41,6 @@ class TestIlNslp(TestCase):
     def test_exists_and_is_subclass_of_school_lunch(self):
         """Test that IlNslp is a subclass of federal SchoolLunch."""
         self.assertTrue(issubclass(IlNslp, SchoolLunch))
-
-    def test_is_registered_in_il_pe_calculators(self):
-        """Test that IlNslp is registered in the calculators dictionary."""
-        self.assertIn("il_nslp", il_pe_calculators)
-        self.assertEqual(il_pe_calculators["il_nslp"], IlNslp)
-
-    def test_is_registered_in_il_spm_calculators(self):
-        """Test that IlNslp is registered in the SPM calculators dictionary."""
-        self.assertIn("il_nslp", il_spm_calculators)
-        self.assertEqual(il_spm_calculators["il_nslp"], IlNslp)
 
     def test_pe_inputs_includes_il_state_code_dependency(self):
         """Test that IlStateCodeDependency is in pe_inputs."""
@@ -87,16 +65,6 @@ class TestIlTanf(TestCase):
     def test_exists_and_is_subclass_of_tanf(self):
         """Test that IlTanf is a subclass of federal Tanf."""
         self.assertTrue(issubclass(IlTanf, Tanf))
-
-    def test_is_registered_in_il_pe_calculators(self):
-        """Test that IlTanf is registered in the calculators dictionary."""
-        self.assertIn("il_tanf", il_pe_calculators)
-        self.assertEqual(il_pe_calculators["il_tanf"], IlTanf)
-
-    def test_is_registered_in_il_spm_calculators(self):
-        """Test that IlTanf is registered in the SPM calculators dictionary."""
-        self.assertIn("il_tanf", il_spm_calculators)
-        self.assertEqual(il_spm_calculators["il_tanf"], IlTanf)
 
     def test_pe_name_is_il_tanf(self):
         """Test that pe_name is il_tanf."""
@@ -127,16 +95,6 @@ class TestIlLiheap(TestCase):
     def test_exists_and_is_subclass_of_policy_engine_spm_calculator(self):
         """Test that IlLiheap is a subclass of PolicyEngineSpmCalulator."""
         self.assertTrue(issubclass(IlLiheap, PolicyEngineSpmCalulator))
-
-    def test_is_registered_in_il_pe_calculators(self):
-        """Test that IlLiheap is registered in the calculators dictionary."""
-        self.assertIn("il_liheap", il_pe_calculators)
-        self.assertEqual(il_pe_calculators["il_liheap"], IlLiheap)
-
-    def test_is_registered_in_il_spm_calculators(self):
-        """Test that IlLiheap is registered in the SPM calculators dictionary."""
-        self.assertIn("il_liheap", il_spm_calculators)
-        self.assertEqual(il_spm_calculators["il_liheap"], IlLiheap)
 
     def test_pe_name_is_il_liheap(self):
         """Test that pe_name is il_liheap."""

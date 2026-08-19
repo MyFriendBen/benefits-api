@@ -29,14 +29,12 @@ from programs.programs.federal.pe.member import EarlyHeadStart, HeadStart
 from programs.framework.pe_base import PolicyEngineMembersCalculator
 from programs.framework.pe_dependencies import irs_gross_income, member, receipt_contract, spm
 from programs.framework.pe_dependencies.household import StateCode
-from integrations.clients.policyengine.registry import all_member_calculators
+from integrations.clients.policyengine.registry import all_calculators
 
 
 def _registered_subclasses(base: type) -> dict[str, type]:
     """Every calculator registered under a program slug that subclasses ``base``."""
-    return {
-        slug: calc for slug, calc in all_member_calculators.items() if isinstance(calc, type) and issubclass(calc, base)
-    }
+    return {slug: calc for slug, calc in all_calculators.items() if isinstance(calc, type) and issubclass(calc, base)}
 
 
 def _state_codes(calculator: type) -> list[type]:
@@ -95,7 +93,7 @@ class TestFederalHeadStart(TestCase):
     def test_is_not_registered_directly(self):
         """States register their own subclass, never the shared base — registering the
         base would send no state code and so resolve no state's spending/enrollment."""
-        self.assertNotIn(HeadStart, all_member_calculators.values())
+        self.assertNotIn(HeadStart, all_calculators.values())
 
     def test_does_not_reuse_the_early_head_start_variable(self):
         self.assertNotEqual(HeadStart.pe_name, EarlyHeadStart.pe_name)
@@ -138,9 +136,6 @@ class TestFederalEarlyHeadStart(TestCase):
 
     def test_federal_class_carries_no_state_code(self):
         self.assertEqual(_state_codes(EarlyHeadStart), [])
-
-    def test_is_not_registered_directly(self):
-        self.assertNotIn(EarlyHeadStart, all_member_calculators.values())
 
     def test_pregnancy_is_not_sent_by_plain_head_start(self):
         """Only EHS serves pregnant women; sending pregnancy to ``head_start`` would

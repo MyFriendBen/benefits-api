@@ -33,6 +33,8 @@ class MaYouthworks(ProgramCalculator):
     Source: https://commcorp.org/program/youthworks/ (see spec.md for full sourcing)
     """
 
+    program_code = "ma_youthworks"
+
     min_age = 14
     max_age = 25
     fpl_percent = 2

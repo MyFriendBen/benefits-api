@@ -62,13 +62,6 @@ class TestWaWsosBas(TestCase):
 
     # --- Class wiring --------------------------------------------------------
 
-    def test_registered_in_wa_calculators(self):
-        """Calculator is registered in the WA program registry under wa_wsos_bas."""
-        from programs.programs.wa import wa_calculators
-
-        self.assertIn("wa_wsos_bas", wa_calculators)
-        self.assertIs(wa_calculators["wa_wsos_bas"], WaWsosBas)
-
     def test_amount_is_22500_lump_sum(self):
         """The published BaS lump-sum award is $22,500."""
         self.assertEqual(WaWsosBas.amount, 22_500)

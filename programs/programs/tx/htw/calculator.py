@@ -15,6 +15,8 @@ class TxHtw(ProgramCalculator):
     members); citizenship/immigration handled via legal_status_required config.
     """
 
+    program_code = "tx_htw"
+
     fpl_percent = 2.042
     min_age = 15
     max_age = 44

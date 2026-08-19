@@ -19,6 +19,8 @@ class MaTaxiDiscount(ProgramCalculator):
     Source: https://www.cambridgema.gov/services/cambridgetaxidiscountcouponprogram
     """
 
+    program_code = "ma_taxi_discount"
+
     member_amount = 50 * 12  # $600/year per eligible person
     eligible_city = "Cambridge"
     min_age = 60
