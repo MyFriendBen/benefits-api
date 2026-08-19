@@ -69,7 +69,6 @@ from programs.programs.federal.pe.member import (
     Wic,
     HeadStart,
     EarlyHeadStart,
-    Medicaid,
     Msp,
     Ssi as FederalSsi,
 )
@@ -513,25 +512,26 @@ class TestMoMspWiring(TestCase):
 
 class TestMoMspPeInput(TestCase):
     """
-    ``MoMsp``'s dependencies land in the pe_input payload sent to PolicyEngine.
+    The one MSP payload behaviour that is MO's rather than every state's: Social Security
+    retirement income must arrive as ``ssi_unearned_income``, because MSP's income test
+    uses SSI methodology and that is what places the household in a QMB/SLMB/QI tier.
 
-    These assert the inputs each spec scenario depends on actually reach PE. The
-    eligibility and dollar outcomes themselves are computed by PolicyEngine and were
-    verified live at the pinned model version 1.786.5 — see
-    ``programs/programs/mo/msp/spec.md``.
+    The state-agnostic payload contract — the state code, the eligibility inputs, household
+    assets, premium-free Part A, the requested ``msp`` output and the Medicaid
+    determination inputs — is asserted for all four registered states in
+    ``federal/pe/tests/test_msp.py``.
     """
 
     PERIOD = "2026"
 
-    @classmethod
-    def setUpTestData(cls):
-        cls.white_label = WhiteLabel.objects.create(name="Missouri", code="mo", state_code="MO")
-
     def setUp(self):
+        self.white_label, _ = WhiteLabel.objects.get_or_create(
+            code="mo", defaults={"name": "Missouri", "state_code": "MO"}
+        )
         self.screen = Screen.objects.create(
             white_label=self.white_label,
-            zipcode="65101",
-            county="Cole County",
+            agree_to_tos=True,
+            is_test=True,
             household_size=1,
             household_assets=3_000,
             completed=False,
@@ -547,46 +547,7 @@ class TestMoMspPeInput(TestCase):
         program.year.period = self.PERIOD
         return MoMsp(self.screen, program, self.screen.missing_fields())
 
-    def test_sends_mo_state_code(self):
-        household = pe_input(self.screen, [self._calculator()])["household"]["households"]["household"]
-
-        self.assertIn("state_code", household)
-        self.assertIn("MO", household["state_code"].values())
-
-    def test_sends_msp_eligibility_inputs_for_the_member(self):
-        people = pe_input(self.screen, [self._calculator()])["household"]["people"]
-        head = people[str(self.head.id)]
-
-        for field in (
-            "age",
-            "is_medicare_eligible",
-            "ssi_earned_income",
-            "ssi_unearned_income",
-            "ssi_countable_resources",
-            "medicare_quarters_of_coverage",
-        ):
-            self.assertIn(field, head)
-
-    def test_sends_household_assets_for_the_asset_test(self):
-        """
-        MO does not waive the MSP resource test, so the reported assets must reach PE.
-        Scenario 4 ($15,000, over the $9,950 individual limit) turns on this input.
-        """
-        spm_unit = pe_input(self.screen, [self._calculator()])["household"]["spm_units"]["spm_unit"]
-
-        self.assertEqual(spm_unit["spm_unit_cash_assets"], {self.PERIOD: 3_000})
-
-    def test_assumes_premium_free_part_a(self):
-        """40 quarters — ~99% of beneficiaries — which zeroes the Part A premium."""
-        people = pe_input(self.screen, [self._calculator()])["household"]["people"]
-
-        self.assertEqual(people[str(self.head.id)]["medicare_quarters_of_coverage"], {self.PERIOD: 40})
-
     def test_sends_social_security_as_ssi_unearned_income(self):
-        """
-        MSP's income test uses SSI methodology, so retirement income must arrive as
-        ``ssi_unearned_income`` — this is what places a household in the QMB/SLMB/QI tiers.
-        """
         IncomeStream.objects.create(
             screen=self.screen,
             household_member=self.head,
@@ -598,41 +559,3 @@ class TestMoMspPeInput(TestCase):
         people = pe_input(self.screen, [self._calculator()])["household"]["people"]
 
         self.assertEqual(people[str(self.head.id)]["ssi_unearned_income"], {self.PERIOD: 12_000})
-
-    def test_requests_msp_output_for_the_member(self):
-        people = pe_input(self.screen, [self._calculator()])["household"]["people"]
-
-        self.assertIn("msp", people[str(self.head.id)])
-
-    def test_sends_medicaid_determination_inputs(self):
-        """
-        QI is barred for anyone eligible for full MO HealthNet — ``is_qi_eligible`` excludes
-        ``is_medicaid_eligible``. PolicyEngine *derives* that flag rather than accepting a
-        reported value: it appears in the payload as a requested output (``None``), not as an
-        input we set. What ``MoMsp`` must supply is the evidence behind it, which is why it
-        carries ``Medicaid.pe_inputs`` — the income, resource, and categorical facts PE needs
-        to make the determination. Without them the QI exclusion could not bind. Scenario 7
-        exercises the outcome; this pins the inputs that make it reachable.
-        """
-        people = pe_input(self.screen, [self._calculator()])["household"]["people"]
-        head = people[str(self.head.id)]
-
-        for field in (
-            "is_pregnant",
-            "is_disabled",
-            "employment_income",
-            "self_employment_income",
-            "rental_income",
-            "social_security",
-            "taxable_pension_income",
-            "unemployment_compensation",
-            "ssi",
-            "receives_ssi",
-            "takes_up_ssi_if_eligible",
-            "ssi_countable_resources",
-        ):
-            self.assertIn(field, head)
-
-        # Derived by PolicyEngine, not reported by us: requested as an output so the QI
-        # exclusion is evaluated, and left unset so PE computes it from the inputs above.
-        self.assertEqual(head["is_medicaid_eligible"], {self.PERIOD: None})

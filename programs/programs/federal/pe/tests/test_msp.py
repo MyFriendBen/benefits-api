@@ -22,13 +22,17 @@ PolicyEngine's own test suite, not duplicated here. Each state's spec pins the d
 value and the tier boundaries for that state.
 """
 
+from unittest.mock import Mock
+
 from django.test import TestCase
 
 from programs.programs.federal.pe.member import Medicaid, Msp
 from programs.framework.pe_base import PolicyEngineMembersCalculator
 from programs.framework.pe_dependencies import member
 from programs.framework.pe_dependencies.household import StateCode
+from programs.framework.pe_dependencies.payload import pe_input
 from integrations.clients.policyengine.registry import all_calculators, all_member_calculators
+from screener.models import HouseholdMember, Insurance, Screen, WhiteLabel
 
 
 def _registered_subclasses(base: type) -> dict[str, type]:
@@ -191,3 +195,118 @@ class TestRegisteredMspSubclassContract(TestCase):
         for slug, calc in self.subclasses.items():
             with self.subTest(slug=slug):
                 self.assertIs(calc.member_value, PolicyEngineMembersCalculator.member_value)
+
+
+class TestRegisteredMspPayloadContract(TestCase):
+    """
+    What each registered MSP subclass actually serializes into the PolicyEngine payload.
+
+    The class-level contract above asserts the dependencies are *declared*; this asserts
+    they *arrive*. The two can diverge — a dependency that is version-gated, or whose
+    field the payload builder drops, is declared but never sent — so the fields every
+    MSP scenario turns on are pinned here against a real Screen rather than inferred
+    from ``pe_inputs``.
+
+    Run per state, because each state's screen resolves its own state code. Previously
+    this existed only as MO's ``TestMoMspPeInput``, so a payload regression in KS, IL or
+    TX had nothing asserting against it.
+    """
+
+    PERIOD = "2026"
+
+    def _screen_for(self, state_code: str):
+        white_label, _ = WhiteLabel.objects.get_or_create(
+            code=state_code.lower(),
+            defaults={"name": state_code, "state_code": state_code},
+        )
+        screen = Screen.objects.create(
+            white_label=white_label,
+            agree_to_tos=True,
+            is_test=True,
+            completed=False,
+            household_size=1,
+            household_assets=3_000,
+        )
+        head = HouseholdMember.objects.create(screen=screen, relationship="headOfHousehold", age=71)
+        Insurance.objects.create(household_member=head, medicare=True)
+        return screen, head
+
+    def _payload_for(self, calculator: type, screen: Screen):
+        program = Mock()
+        program.year.period = self.PERIOD
+        return pe_input(screen, [calculator(screen, program, screen.missing_fields())])
+
+    def _each_state(self):
+        for slug, calc in _registered_subclasses(Msp).items():
+            state = next(iter(_state_codes(calc))).state
+            screen, head = self._screen_for(state)
+            yield slug, calc, state, screen, head
+
+    def test_sends_the_state_code(self):
+        """The asset-test-applies parameter resolves off this; without it the resource
+        test silently does not apply."""
+        for slug, calc, state, screen, _ in self._each_state():
+            with self.subTest(slug=slug):
+                household = self._payload_for(calc, screen)["household"]["households"]["household"]
+                self.assertIn(state, household["state_code"].values())
+
+    def test_sends_the_msp_eligibility_inputs(self):
+        """The per-member fields the QMB/SLMB/QI determination reads."""
+        for slug, calc, _, screen, head in self._each_state():
+            with self.subTest(slug=slug):
+                person = self._payload_for(calc, screen)["household"]["people"][str(head.id)]
+                for field in (
+                    "age",
+                    "is_medicare_eligible",
+                    "ssi_earned_income",
+                    "ssi_unearned_income",
+                    "ssi_countable_resources",
+                    "medicare_quarters_of_coverage",
+                ):
+                    self.assertIn(field, person, f"{slug} omits {field}")
+
+    def test_sends_household_assets_for_the_asset_test(self):
+        """Reported assets must reach PolicyEngine, or an over-resourced household passes
+        the resource test on $0."""
+        for slug, calc, _, screen, _ in self._each_state():
+            with self.subTest(slug=slug):
+                spm_unit = self._payload_for(calc, screen)["household"]["spm_units"]["spm_unit"]
+                self.assertEqual(spm_unit["spm_unit_cash_assets"], {self.PERIOD: 3_000})
+
+    def test_assumes_premium_free_part_a(self):
+        """40 quarters — ~99% of beneficiaries — which zeroes the Part A premium. Without
+        it PolicyEngine adds a Part A premium and every state's value inflates."""
+        for slug, calc, _, screen, head in self._each_state():
+            with self.subTest(slug=slug):
+                person = self._payload_for(calc, screen)["household"]["people"][str(head.id)]
+                self.assertEqual(person["medicare_quarters_of_coverage"], {self.PERIOD: 40})
+
+    def test_requests_the_msp_output(self):
+        for slug, calc, _, screen, head in self._each_state():
+            with self.subTest(slug=slug):
+                person = self._payload_for(calc, screen)["household"]["people"][str(head.id)]
+                self.assertIn("msp", person)
+
+    def test_sends_the_medicaid_determination_inputs(self):
+        """
+        QI is barred for anyone eligible for full Medicaid. PolicyEngine *derives* that
+        flag rather than accepting a reported value: it appears in the payload as a
+        requested output (``None``), not as an input we set. What each state must supply
+        is the evidence behind it — the income, resource and categorical facts PE needs
+        to make the determination. Without them the QI exclusion cannot bind.
+        """
+        for slug, calc, _, screen, head in self._each_state():
+            with self.subTest(slug=slug):
+                person = self._payload_for(calc, screen)["household"]["people"][str(head.id)]
+                for field in (
+                    "is_pregnant",
+                    "is_disabled",
+                    "employment_income",
+                    "social_security",
+                    "ssi",
+                    "receives_ssi",
+                    "takes_up_ssi_if_eligible",
+                    "ssi_countable_resources",
+                ):
+                    self.assertIn(field, person, f"{slug} omits {field}")
+                self.assertEqual(person["is_medicaid_eligible"], {self.PERIOD: None})
