@@ -18,7 +18,6 @@ from django.test import TestCase
 
 from programs.programs.co.pe.member import AidToTheNeedyAndDisabled
 from programs.programs.federal.pe.spm import SNAP_BASE_INPUTS
-from programs.programs.il.pe.member import IlAabd
 from programs.framework.pe_dependencies import member, receipt_contract, spm
 from programs.programs.cross_white_label.medicaid.base import Medicaid
 from programs.programs.cross_white_label.lifeline.base import Lifeline
@@ -31,6 +30,7 @@ from programs.programs.cross_white_label.msp.base import Msp
 from programs.programs.cross_white_label.head_start.base import HeadStart
 from programs.programs.cross_white_label.early_head_start.base import EarlyHeadStart
 from programs.programs.cross_white_label.liheap.tx import TxCeap
+from programs.programs.cross_white_label.medicaid.disability.il_ilaabd import IlAabd
 
 # The amount inputs predate the contract; everything else arrived with it.
 UNGATED_FIELDS = {"ssi", "tanf"}

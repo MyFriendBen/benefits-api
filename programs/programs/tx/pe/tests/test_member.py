@@ -14,7 +14,7 @@ from unittest.mock import Mock, MagicMock
 from programs.framework.pe_base import PolicyEngineMembersCalculator
 from programs.framework.pe_dependencies import household, member
 from programs.framework.pe_dependencies.household import TxStateCodeDependency
-from programs.programs.tx.pe.member import TxChip, TxHarrisCountyRides, TxDart
+from programs.programs.tx.pe.member import TxHarrisCountyRides, TxDart
 from programs.programs.cross_white_label.medicaid.base import Medicaid
 from programs.programs.cross_white_label.medicaid.tx.emergency_medicaid.calculator import TxEmergencyMedicaid
 from programs.programs.cross_white_label.medicaid.tx.for_children.calculator import TxMedicaidForChildren
@@ -32,6 +32,7 @@ from programs.programs.cross_white_label.early_head_start.base import EarlyHeadS
 from programs.programs.cross_white_label.early_head_start.tx import TxEarlyHeadStart
 from programs.programs.cross_white_label.csfp.base import CommoditySupplementalFoodProgram
 from programs.programs.cross_white_label.csfp.tx import TxCsfp
+from programs.programs.cross_white_label.medicaid.chip.tx import TxChip
 
 
 class TestTxWic(TestCase):

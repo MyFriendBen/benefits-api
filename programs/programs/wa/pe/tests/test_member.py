@@ -30,11 +30,11 @@ from programs.framework.pe_dependencies import (
 from programs.framework.pe_dependencies.household import (
     WaStateCodeDependency,
 )
-from programs.programs.wa.pe.member import WaAppleHealthForKids
 from programs.programs.cross_white_label.medicaid.base import Medicaid
 from programs.programs.cross_white_label.medicaid.wa import WaAppleHealthMedicaid
 from programs.programs.cross_white_label.ssi.base import Ssi
 from programs.programs.cross_white_label.ssi.wa import WaSsi
+from programs.programs.cross_white_label.medicaid.chip.wa import WaAppleHealthForKids
 
 
 class TestWaAppleHealthForKids(TestCase):

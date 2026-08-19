@@ -4,25 +4,6 @@ from programs.programs.cross_white_label.snap.base import Snap
 from programs.programs.cross_white_label.ssi.base import Ssi
 
 
-class MaTafdc(PolicyEngineSpmCalulator):
-    program_code = "ma_tafdc"
-    pe_name = "ma_tafdc"
-    pe_inputs = [
-        dependency.spm.PreSubsidyChildcareExpensesDependency,
-        dependency.member.MaTanfCountableGrossEarnedIncomeDependency,
-        dependency.member.MaTanfCountableGrossUnearnedIncomeDependency,
-        dependency.member.TaxUnitDependentDependency,
-        dependency.member.MaTotalHoursWorkedDependency,
-        dependency.member.AgeDependency,
-        dependency.member.PregnancyDependency,
-        dependency.member.MaTafdcPregnancyEligibleDependency,
-        dependency.household.IsInPublicHousingDependency,
-        dependency.household.MaStateCodeDependency,
-    ]
-
-    pe_outputs = [dependency.spm.MaTafdc]
-
-
 class MaEaedc(PolicyEngineSpmCalulator):
     program_code = "ma_eaedc"
     pe_name = "ma_eaedc"

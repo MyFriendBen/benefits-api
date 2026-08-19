@@ -1,7 +1,8 @@
 from programs.framework.pe_base import PolicyEngineMembersCalculator
 import programs.framework.pe_dependencies as dependency
 from programs.programs.federal.pe.member import Chip
-from .spm import MaTafdc, MaEaedc
+from .spm import MaEaedc
+from programs.programs.cross_white_label.tanf.ma import MaTafdc
 from programs.programs.cross_white_label.snap.ma import MaSnap
 from screener.models import HouseholdMember
 from programs.programs.cross_white_label.ccdf.base import Ccdf

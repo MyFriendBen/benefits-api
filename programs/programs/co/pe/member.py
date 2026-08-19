@@ -43,29 +43,6 @@ class OldAgePension(PolicyEngineMembersCalculator):
     pe_outputs = [dependency.member.Oap]
 
 
-class Chp(PolicyEngineMembersCalculator):
-    program_code = "chp"
-    pe_name = "co_chp"
-    pe_inputs = [
-        dependency.member.AgeDependency,
-        dependency.member.PregnancyDependency,
-        dependency.member.ExpectedChildrenPregnancyDependency,
-        dependency.household.CoStateCodeDependency,
-        *dependency.irs_gross_income,
-    ]
-    pe_outputs = [dependency.member.ChpEligible]
-
-    amount = 200 * 12
-
-    def member_value(self, member: HouseholdMember):
-        chp_eligible = self.get_member_dependency_value(dependency.member.ChpEligible, member.id) > 0
-
-        if chp_eligible and self.screen.has_insurance_types(("none",)):
-            return self.amount
-
-        return 0
-
-
 class FamilyAffordabilityTaxCredit(PolicyEngineMembersCalculator):
     program_code = "fatc"
     pe_name = "co_family_affordability_credit"

@@ -24,11 +24,11 @@ from django.test import TestCase
 from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
 from programs.framework.pe_dependencies import tax as tax_dependency
 from programs.framework.pe_dependencies.household import WaStateCodeDependency
-from programs.programs.wa.pe.tax import WaWftc
 from programs.programs.cross_white_label.eitc.base import Eitc
 from programs.programs.cross_white_label.eitc.wa import WaEitc
 from programs.programs.cross_white_label.ctc.base import Ctc
 from programs.programs.cross_white_label.ctc.wa import WaCtc
+from programs.programs.cross_white_label.eitc.wa_wftc import WaWftc
 
 
 class TestWaEitc(TestCase):

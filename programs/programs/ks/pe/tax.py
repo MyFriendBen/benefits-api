@@ -5,16 +5,6 @@ from programs.programs.cross_white_label.eitc.base import Eitc
 from programs.programs.cross_white_label.ctc.base import Ctc
 
 
-class Kseitc(PolicyEngineTaxUnitCalulator):
-    program_code = "ks_eitc"
-    pe_name = "ks_total_eitc"
-    pe_inputs = [
-        *Eitc.pe_inputs,
-        dependency.household.KsStateCodeDependency,
-    ]
-    pe_outputs = [dependency.tax.Kseitc]
-
-
 class KsCdcc(PolicyEngineTaxUnitCalulator):
     program_code = "ks_cdcc"
     pe_name = "ks_cdcc"
