@@ -65,14 +65,6 @@ from django.test import TestCase
 from screener.models import HouseholdMember, IncomeStream, Screen, WhiteLabel
 
 import programs.framework.pe_dependencies as dependency
-from programs.programs.federal.pe.member import (
-    Wic,
-    HeadStart,
-    EarlyHeadStart,
-    Msp,
-    Ssi as FederalSsi,
-)
-from programs.programs.mo.pe.member import MoWic, MoHeadStart, MoEarlyHeadStart, MoMsp, MoSsi
 from programs.framework.pe_base import PolicyEngineMembersCalculator
 from programs.framework.pe_dependencies import member as member_deps
 from programs.framework.pe_dependencies.household import MoStateCodeDependency
@@ -86,6 +78,16 @@ from programs.framework.pe_dependencies.member import (
     SsiUnearnedIncomeDependency,
 )
 from integrations.clients.policyengine.policy_engine import pe_input
+from programs.programs.cross_white_label.wic.base import Wic
+from programs.programs.cross_white_label.wic.mo import MoWic
+from programs.programs.cross_white_label.ssi.mo import MoSsi
+from programs.programs.cross_white_label.msp.base import Msp
+from programs.programs.cross_white_label.msp.mo import MoMsp
+from programs.programs.cross_white_label.head_start.base import HeadStart
+from programs.programs.cross_white_label.head_start.mo import MoHeadStart
+from programs.programs.cross_white_label.early_head_start.base import EarlyHeadStart
+from programs.programs.cross_white_label.early_head_start.mo import MoEarlyHeadStart
+from programs.programs.cross_white_label.ssi.base import Ssi as FederalSsi
 
 
 class TestMoWicWiring(TestCase):

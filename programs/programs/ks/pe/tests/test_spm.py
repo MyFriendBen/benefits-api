@@ -17,9 +17,9 @@ These tests pin the wiring so a future refactor can't silently drop one again.
 
 from django.test import TestCase
 
-from programs.programs.ks.pe.spm import KsTanf
-from programs.programs.federal.pe.spm import Tanf
 import programs.framework.pe_dependencies as dependency
+from programs.programs.cross_white_label.tanf.base import Tanf
+from programs.programs.cross_white_label.tanf.ks import KsTanf
 
 
 class TestKsTanfWiring(TestCase):

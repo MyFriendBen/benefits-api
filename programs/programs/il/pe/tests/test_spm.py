@@ -14,8 +14,13 @@ from unittest.mock import Mock, MagicMock
 from programs.framework.pe_base import PolicyEngineSpmCalulator
 from programs.framework.pe_dependencies import spm as spm_dependency
 from programs.framework.pe_dependencies.household import IlStateCodeDependency
-from programs.programs.federal.pe.spm import Snap, SchoolLunch, Tanf
-from programs.programs.il.pe.spm import IlSnap, IlNslp, IlTanf, IlLiheap
+from programs.programs.cross_white_label.nslp.base import SchoolLunch
+from programs.programs.cross_white_label.nslp.il import IlNslp
+from programs.programs.cross_white_label.snap.base import Snap
+from programs.programs.cross_white_label.snap.il import IlSnap
+from programs.programs.cross_white_label.tanf.base import Tanf
+from programs.programs.cross_white_label.tanf.il import IlTanf
+from programs.programs.cross_white_label.liheap.il import IlLiheap
 
 
 class TestIlSnap(TestCase):

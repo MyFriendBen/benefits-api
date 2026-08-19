@@ -26,11 +26,11 @@ pinned here is which inputs we send.
 
 from django.test import TestCase
 
-from programs.programs.federal.pe.member import Wic
 from programs.framework.pe_base import PolicyEngineMembersCalculator
 from programs.framework.pe_dependencies import irs_gross_income, member, spm, wic_income
 from programs.framework.pe_dependencies.household import StateCode
 from integrations.clients.policyengine.registry import all_calculators
+from programs.programs.cross_white_label.wic.base import Wic
 
 # PolicyEngine's gov.usda.wic.income.sources, in full (24 variables), so the coverage
 # assertions below are measured against WIC's real list rather than a subset of it.

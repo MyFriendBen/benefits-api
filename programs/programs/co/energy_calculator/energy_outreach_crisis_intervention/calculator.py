@@ -1,5 +1,5 @@
 from programs.framework.base import Eligibility, ProgramCalculator
-from programs.programs.co.energy_calculator.energy_assistance.calculator import EnergyCalculatorEnergyAssistance
+from programs.programs.cross_white_label.liheap.cesn import EnergyCalculatorEnergyAssistance
 from programs.programs.co.energy_calculator.util import has_renter_expenses
 
 

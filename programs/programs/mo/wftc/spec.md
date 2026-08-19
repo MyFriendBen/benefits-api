@@ -444,4 +444,4 @@ Missouri's real test would route this filer to Publication 596 Worksheet 1, whos
 - `.../mo_ptc_taxunit_eligible.py` — Property Tax Credit age/disability eligibility paths.
 
 **MFB backend source**
-- `MyFriendBen/benefits-api`, `programs/programs/policyengine/calculators/dependencies/member.py` — `InvestmentIncomeDependency` (→ PE `long_term_capital_gains`), `RentalIncomeDependency` (→ PE `rental_income`), `TaxUnitHeadDependency`, `TaxUnitSpouseDependency`, `RentDependency`, `PropertyTaxExpenseDependency`.
+- `MyFriendBen/benefits-api`, `programs/framework/pe_dependencies/member.py` — `InvestmentIncomeDependency` (→ PE `long_term_capital_gains`), `RentalIncomeDependency` (→ PE `rental_income`), `TaxUnitHeadDependency`, `TaxUnitSpouseDependency`, `RentDependency`, `PropertyTaxExpenseDependency`.

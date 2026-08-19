@@ -28,9 +28,11 @@ These tests pin that wiring so a future refactor can't silently drop it.
 
 from django.test import TestCase
 
-from programs.programs.federal.pe.spm import Lifeline, SchoolLunch
-from programs.programs.mo.pe.spm import MoLifeline, MoNslp
 import programs.framework.pe_dependencies as dependency
+from programs.programs.cross_white_label.lifeline.base import Lifeline
+from programs.programs.cross_white_label.lifeline.mo import MoLifeline
+from programs.programs.cross_white_label.nslp.base import SchoolLunch
+from programs.programs.cross_white_label.nslp.mo import MoNslp
 
 
 class TestMoLifelineWiring(TestCase):

@@ -1,5 +1,6 @@
 from programs.framework.pe_base import PolicyEngineSpmCalulator
 import programs.framework.pe_dependencies as dependency
+from programs.programs.cross_white_label.snap.base import Snap
 
 SNAP_BASE_INPUTS = [
     dependency.spm.SnapUnearnedIncomeDependency,
@@ -32,63 +33,6 @@ SNAP_BASE_INPUTS = [
 ]
 
 
-class Snap(PolicyEngineSpmCalulator):
-    program_code = "snap"
-    # PolicyEngine gates `snap` on the take-up flag, so it reads 0 for any household reporting
-    # no SNAP — exactly the households this program should be recommended to. The ungated
-    # output is what they'd receive if they applied, which is the number worth showing them.
-    pe_name = "snap_if_takes_up"
-    pe_inputs = [
-        *SNAP_BASE_INPUTS,
-        dependency.member.FullTimeCollegeStudentDependency,
-        dependency.member.PartTimeCollegeStudentDependency,
-        dependency.member.SnapWorkExceptionDependency,
-        dependency.member.SnapJobTrainingStudentDependency,
-    ]
-    pe_outputs = [dependency.spm.SnapIfTakesUp]
-    pe_period_month = "01"
-
-    @property
-    def pe_output_period(self):
-        return self.pe_period + "-" + self.pe_period_month
-
-    def household_value(self):
-        return int(self.sim.value(self.pe_category, self.pe_sub_category, self.pe_name, self.pe_output_period)) * 12
-
-
-class SchoolLunch(PolicyEngineSpmCalulator):
-    """
-    National School Lunch Program (NSLP) — free/reduced-price school meals.
-
-    The value is PolicyEngine's ``school_meal_net_subsidy``: the annual value of
-    free/reduced meals above the full-price baseline, computed from USDA per-meal
-    rates × school days × the household's K-12 children (ages 5–17, imputed by PE
-    from ``age``). PAID-tier households net to $0, so eligibility is value > 0.
-    ``AgeDependency`` is sent so PE can derive ``is_in_k12_school``.
-    """
-
-    program_code = "nslp"
-
-    pe_name = "school_meal_net_subsidy"
-    pe_inputs = [
-        dependency.spm.SchoolMealCountableIncomeDependency,
-        dependency.member.AgeDependency,
-    ]
-    pe_outputs = [dependency.spm.SchoolMealNetSubsidy, dependency.spm.SchoolMealTier]
-
-
-class Tanf(PolicyEngineSpmCalulator):
-    program_code = "tanf"
-    # The ungated output, for the same reason as Snap above.
-    pe_name = "tanf_if_takes_up"
-    pe_inputs = [
-        dependency.member.AgeDependency,
-        dependency.member.FullTimeCollegeStudentDependency,
-        *dependency.receipt_contract,
-    ]
-    pe_outputs = [dependency.spm.TanfIfTakesUp]
-
-
 class Acp(PolicyEngineSpmCalulator):
     program_code = "acp"
     pe_name = "acp"
@@ -97,20 +41,3 @@ class Acp(PolicyEngineSpmCalulator):
         *dependency.irs_gross_income,
     ]
     pe_outputs = [dependency.spm.Acp]
-
-
-class Lifeline(PolicyEngineSpmCalulator):
-    program_code = "lifeline"
-    pe_name = "lifeline"
-    pe_inputs = [
-        dependency.spm.BroadbandCostDependency,
-        # phone_cost gates PE's state Lifeline supplements (e.g. KS: the supplement is
-        # released only up to phone_cost). Sent for all states that inherit Lifeline so
-        # a phone-service supplement is never silently zeroed out; states without such a
-        # supplement (TX, WA) are unaffected since their value doesn't depend on it.
-        dependency.spm.PhoneCostDependency,
-        *dependency.irs_gross_income,
-        # Categorically eligible off SNAP / TANF / SSI receipt.
-        *dependency.receipt_contract,
-    ]
-    pe_outputs = [dependency.spm.Lifeline]

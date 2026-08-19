@@ -8,12 +8,12 @@ These tests verify MA-specific calculator logic for CSFP including:
 
 from django.test import TestCase
 
-from programs.programs.federal.pe.member import CommoditySupplementalFoodProgram
 from programs.framework.pe_dependencies.household import (
     MaStateCodeDependency,
     MaCountyDependency,
 )
-from programs.programs.ma.pe.member import MaCsfp
+from programs.programs.cross_white_label.csfp.base import CommoditySupplementalFoodProgram
+from programs.programs.cross_white_label.csfp.ma import MaCsfp
 
 
 class TestMaCsfp(TestCase):

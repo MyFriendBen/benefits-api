@@ -10,11 +10,11 @@ from unittest.mock import Mock
 
 from django.test import TestCase
 
-from programs.programs.ma.pe.spm import MaTafdc
 from programs.framework.pe_dependencies.member import (
     MaTafdcPregnancyEligibleDependency,
     PregnancyDependency,
 )
+from programs.programs.cross_white_label.tanf.ma import MaTafdc
 
 
 class TestMaTafdcPregnancyEligibleDependency(TestCase):

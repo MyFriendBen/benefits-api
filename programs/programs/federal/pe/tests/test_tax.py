@@ -20,7 +20,6 @@ covered by PolicyEngine's own test suite, not duplicated here.
 
 from django.test import TestCase
 
-from programs.programs.federal.pe.tax import Ctc, Eitc
 from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
 from programs.framework.pe_dependencies import (
     irs_gross_income,
@@ -28,6 +27,8 @@ from programs.framework.pe_dependencies import (
     tax,
 )
 from programs.framework.pe_dependencies.household import StateCode
+from programs.programs.cross_white_label.eitc.base import Eitc
+from programs.programs.cross_white_label.ctc.base import Ctc
 
 
 class TestFederalCtc(TestCase):

@@ -11,7 +11,6 @@ as they test Screen model methods, not TX-specific logic.
 
 from django.test import TestCase
 
-from programs.programs.federal.pe.spm import Lifeline, Snap, SchoolLunch, Tanf
 from programs.framework.pe_dependencies import (
     household,
     irs_gross_income,
@@ -20,7 +19,15 @@ from programs.framework.pe_dependencies import (
     spm,
 )
 from programs.framework.pe_dependencies.household import TxStateCodeDependency
-from programs.programs.tx.pe.spm import TxCeap, TxLifeline, TxSnap, TxNslp, TxTanf
+from programs.programs.cross_white_label.lifeline.base import Lifeline
+from programs.programs.cross_white_label.lifeline.tx import TxLifeline
+from programs.programs.cross_white_label.nslp.base import SchoolLunch
+from programs.programs.cross_white_label.nslp.tx import TxNslp
+from programs.programs.cross_white_label.snap.base import Snap
+from programs.programs.cross_white_label.snap.tx import TxSnap
+from programs.programs.cross_white_label.tanf.base import Tanf
+from programs.programs.cross_white_label.tanf.tx import TxTanf
+from programs.programs.cross_white_label.liheap.tx import TxCeap
 
 
 class TestTxSnap(TestCase):
