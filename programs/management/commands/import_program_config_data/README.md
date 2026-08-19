@@ -336,16 +336,26 @@ Optional:
 Before importing a program, you need to create the eligibility calculator:
 
 1. **Create calculator directory**: `programs/programs/{white_label}/program_name/`
-2. **Create calculator.py**: Implement your eligibility logic
-3. **Register in __init__.py**: Add to `{white_label}_calculators` dict
+2. **Create calculator.py**: Implement your eligibility logic, declaring the
+   `Program` row the calculator backs
 
 Example for IL CSFP:
 ```python
-# programs/programs/il/__init__.py
-il_calculators: dict[str, type[ProgramCalculator]] = {
-    "il_csfp": IlCommoditySupplementalFoodProgram,  # Key must match name_abbreviated
-    # ... other calculators
-}
+# programs/programs/il/csfp/calculator.py
+class IlCommoditySupplementalFoodProgram(ProgramCalculator):
+    program_code = "il_csfp"  # must match the config's name_abbreviated
+```
+
+That is the only registration step. `programs.framework.registry` finds the
+calculator by walking the package, so there is no dict to add it to. A class that
+declares neither `program_code` nor `abstract=True` raises at import rather than
+going unregistered.
+
+A base class that exists only to be subclassed declares itself instead:
+
+```python
+class HeadStart(PolicyEngineMembersCalculator, abstract=True):
+    ...
 ```
 
 ### Step 2: Create the JSON Config File

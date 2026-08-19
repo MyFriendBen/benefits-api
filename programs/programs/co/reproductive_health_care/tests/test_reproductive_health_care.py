@@ -6,7 +6,7 @@ Eligibility requirements:
   2. Member has no health insurance
 
 Notes:
-  - `rhc` is currently inactive, but the calculator is still registered in `co_calculators`
+  - `rhc` is currently inactive, but the calculator is still registered
     and would run as soon as the program is switched on.
   - Insurance is exercised through real (unsaved) `Insurance` instances so that the
     `dont_know` aliasing inside `has_insurance_types` is covered rather than mocked away.
