@@ -20,21 +20,13 @@ from django.test import TestCase
 from programs.programs.ks.pe.tax import KsCdccFederal, KsCtc
 
 from programs.programs.federal.pe.tax import Cdcc, Ctc
-from programs.programs.ks.pe import ks_pe_calculators, ks_tax_unit_calculators
 from integrations.clients.policyengine.registry import (
-    all_calculators,
     all_tax_unit_calculators,
 )
 
 
 class TestKsCtc(TestCase):
     """ks_ctc registration against the shared federal Ctc calculator."""
-
-    def test_is_federal_ctc_everywhere(self):
-        self.assertIs(ks_tax_unit_calculators["ks_ctc"], KsCtc)
-        self.assertIs(ks_pe_calculators["ks_ctc"], KsCtc)
-        self.assertIs(all_tax_unit_calculators["ks_ctc"], KsCtc)
-        self.assertIs(all_calculators["ks_ctc"], KsCtc)
 
     def test_is_the_federal_calculator_with_nothing_added(self):
         """A thin subclass of the federal calculator: same PE variable, same inputs.

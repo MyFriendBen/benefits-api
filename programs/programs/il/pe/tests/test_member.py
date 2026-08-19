@@ -11,6 +11,8 @@ These tests verify IL-specific calculator logic for member-level programs includ
 """
 
 from django.test import TestCase
+
+from integrations.clients.policyengine.registry import all_calculators
 from unittest.mock import Mock, MagicMock
 
 # Named constants for benefit values used in tests
@@ -22,7 +24,6 @@ from programs.framework.pe_base import PolicyEngineMembersCalculator
 from programs.framework.pe_dependencies import member as member_dependency
 from programs.framework.pe_dependencies import irs_gross_income
 from programs.framework.pe_dependencies.household import IlStateCodeDependency
-from programs.programs.il.pe import il_pe_calculators
 from programs.programs.il.pe.member import (
     IlFppe,
     IlHfsFpp,
@@ -294,16 +295,14 @@ class TestIlFamilyPlanningProgram(TestCase):
         self.assertIsNotNone(IlFamilyPlanningProgram.pe_inputs)
         self.assertGreater(len(IlFamilyPlanningProgram.pe_inputs), 0)
 
-    def test_is_registered_in_il_pe_calculators_for_hfs_fpp(self):
+    def test_is_registered_for_hfs_fpp(self):
         """``il_hfs_fpp`` resolves to its own thin subclass of the shared FPP calculator."""
-        self.assertIn("il_hfs_fpp", il_pe_calculators)
-        self.assertIs(il_pe_calculators["il_hfs_fpp"], IlHfsFpp)
+        self.assertIs(all_calculators["il_hfs_fpp"], IlHfsFpp)
         self.assertTrue(issubclass(IlHfsFpp, IlFamilyPlanningProgram))
 
-    def test_is_registered_in_il_pe_calculators_for_fppe(self):
+    def test_is_registered_for_fppe(self):
         """``il_fppe`` resolves to its own thin subclass of the shared FPP calculator."""
-        self.assertIn("il_fppe", il_pe_calculators)
-        self.assertIs(il_pe_calculators["il_fppe"], IlFppe)
+        self.assertIs(all_calculators["il_fppe"], IlFppe)
         self.assertTrue(issubclass(IlFppe, IlFamilyPlanningProgram))
 
     def test_the_two_fpp_subclasses_do_not_diverge_from_the_shared_calculator(self):

@@ -117,6 +117,8 @@ class MoMsp(Msp):
     Missouri rules PolicyEngine does not model are recorded in the MO MSP spec.
     """
 
+    program_code = "mo_medicare_savings"
+
     pe_inputs = [
         *Msp.pe_inputs,
         dependency.household.MoStateCodeDependency,

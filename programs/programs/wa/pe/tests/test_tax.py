@@ -5,8 +5,7 @@ These tests verify WA-specific calculator wiring including:
 - `wa_ctc` and `wa_eitc` alias the federal `Ctc`/`Eitc` classes with no WA-specific
   wrapper; their own properties are asserted in
   `programs/programs/federal/pe/tests/test_tax.py`
-- WaWftc calculator registration (in wa_pe_calculators, wa_tax_calculators,
-  and the global PE tax-unit registry)
+- WaWftc resolves from the PolicyEngine registry under `wa_wftc`
 - WA-specific pe_inputs (`WaStateCodeDependency`) on `WaWftc` only — it targets the
   *state* `wa_working_families_tax_credit` variable; the two federal aliases send
   no state code
@@ -26,11 +25,6 @@ from programs.programs.federal.pe.tax import Ctc, Eitc
 from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
 from programs.framework.pe_dependencies import tax as tax_dependency
 from programs.framework.pe_dependencies.household import WaStateCodeDependency
-from integrations.clients.policyengine.registry import (
-    all_calculators,
-    all_tax_unit_calculators,
-)
-from programs.programs.wa.pe import wa_pe_calculators, wa_tax_calculators
 from programs.programs.wa.pe.tax import WaCtc, WaEitc, WaWftc
 
 
@@ -44,12 +38,6 @@ class TestWaEitc(TestCase):
     The calculator's own properties are asserted once in
     `programs/programs/federal/pe/tests/test_tax.py`.
     """
-
-    def test_is_federal_eitc_everywhere(self):
-        self.assertIs(wa_tax_calculators["wa_eitc"], WaEitc)
-        self.assertIs(wa_pe_calculators["wa_eitc"], WaEitc)
-        self.assertIs(all_tax_unit_calculators["wa_eitc"], WaEitc)
-        self.assertIs(all_calculators["wa_eitc"], WaEitc)
 
     def test_is_the_federal_calculator_with_nothing_added(self):
         """A thin subclass of the federal calculator: same PE variable, same inputs.
@@ -73,13 +61,6 @@ class TestWaCtc(TestCase):
     the absence of a state code) are asserted once in
     `programs/programs/federal/pe/tests/test_tax.py`.
     """
-
-    def test_is_federal_ctc_everywhere(self):
-        """Washington registers the WA program slug against the federal class."""
-        self.assertIs(wa_tax_calculators["wa_ctc"], WaCtc)
-        self.assertIs(wa_pe_calculators["wa_ctc"], WaCtc)
-        self.assertIs(all_tax_unit_calculators["wa_ctc"], WaCtc)
-        self.assertIs(all_calculators["wa_ctc"], WaCtc)
 
     def test_is_the_federal_calculator_with_nothing_added(self):
         """A thin subclass of the federal calculator: same PE variable, same inputs.

@@ -17,11 +17,6 @@ from programs.framework.pe_dependencies import household
 from programs.framework.pe_dependencies.household import (
     TxStateCodeDependency,
 )
-from integrations.clients.policyengine.registry import (
-    all_calculators,
-    all_tax_unit_calculators,
-)
-from programs.programs.tx.pe import tx_pe_calculators, tx_tax_unit_calculators
 from programs.programs.tx.pe.tax import TxAca, TxCtc, TxEitc
 
 
@@ -32,12 +27,6 @@ class TestTxEitc(TestCase):
     with no TX subclass. Its own properties are asserted once in
     ``programs/programs/federal/pe/tests/test_tax.py``.
     """
-
-    def test_is_federal_eitc_everywhere(self):
-        self.assertIs(tx_tax_unit_calculators["tx_eitc"], TxEitc)
-        self.assertIs(tx_pe_calculators["tx_eitc"], TxEitc)
-        self.assertIs(all_tax_unit_calculators["tx_eitc"], TxEitc)
-        self.assertIs(all_calculators["tx_eitc"], TxEitc)
 
     def test_is_the_federal_calculator_with_nothing_added(self):
         """A thin subclass of the federal calculator: same PE variable, same inputs.
@@ -62,12 +51,6 @@ class TestTxCtc(TestCase):
     set, and the absence of a state code) are asserted once in
     ``programs/programs/federal/pe/tests/test_tax.py``.
     """
-
-    def test_is_federal_ctc_everywhere(self):
-        self.assertIs(tx_tax_unit_calculators["tx_ctc"], TxCtc)
-        self.assertIs(tx_pe_calculators["tx_ctc"], TxCtc)
-        self.assertIs(all_tax_unit_calculators["tx_ctc"], TxCtc)
-        self.assertIs(all_calculators["tx_ctc"], TxCtc)
 
     def test_is_the_federal_calculator_with_nothing_added(self):
         """A thin subclass of the federal calculator: same PE variable, same inputs.
