@@ -6,7 +6,8 @@ from typing import ClassVar
 class MedicareSavingsNC(MedicareSavings):
     program_code = "nc_medicare_savings"
     ineligible_insurance_types: ClassVar[tuple[str, ...]] = ("va", "medicaid")
-    asset_limit: ClassVar[dict[str, int]] = {"single": 9_660, "married": 14_470}
+    # Update the MQB reserve limits for 2026 on 8/19/2026
+    asset_limit: ClassVar[dict[str, int]] = {"single": 9_950, "married": 14_910}
     medicaid_asset_limit: ClassVar[dict[str, int]] = {"single": 2_000, "married": 3_000}  # NC ABD Medicaid
     # NC-specific: 2026 Medicare Part B premium ($202.90/month → rounded to $203/month per eligible member)
     # Source: https://www.cms.gov/newsroom/fact-sheets/2026-medicare-parts-b-premiums-deductibles
@@ -158,7 +159,10 @@ class MedicareSavingsNC(MedicareSavings):
             unearned = 0
             earned = max(0, earned - remaining)
 
-        return max(0, earned + unearned)
+        remainder = max(0, earned + unearned)
+        if remainder <= self.living_allowance:
+            return 0.0
+        return remainder
 
     def _get_parents_in_household(self, member, exclude_ssi: bool = True) -> list:
         """Return parent(s) of the member. Excludes SSI recipients when exclude_ssi is True."""
