@@ -17,13 +17,12 @@ Three things can silently break it:
 from django.test import TestCase
 
 from programs.programs.co.pe.member import AidToTheNeedyAndDisabled
-from programs.programs.federal.pe.member import EarlyHeadStart, HeadStart, Msp, Ssi, Wic
+from programs.programs.federal.pe.member import EarlyHeadStart, HeadStart, Medicaid, Msp, Ssi, Wic
 from programs.programs.federal.pe.spm import SNAP_BASE_INPUTS, Lifeline, Snap, Tanf
 from programs.programs.il.pe.member import IlAabd
 from programs.programs.ks.pe.spm import KsTanf
 from programs.framework.pe_dependencies import member, receipt_contract, spm
 from programs.programs.tx.pe.spm import TxCeap
-from programs.programs.cross_white_label.medicaid.base import Medicaid
 
 # The amount inputs predate the contract; everything else arrived with it.
 UNGATED_FIELDS = {"ssi", "tanf"}

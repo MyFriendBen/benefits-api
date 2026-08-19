@@ -15,8 +15,8 @@ state-specific FPL thresholds (typically 74-100%).
 from django.test import TestCase
 from unittest.mock import Mock, MagicMock
 
+from programs.programs.federal.pe.member import Medicaid
 from programs.framework.pe_dependencies import member as member_dependency
-from programs.programs.cross_white_label.medicaid.base import Medicaid
 
 
 class TestMedicaidSeniorEligibility(TestCase):

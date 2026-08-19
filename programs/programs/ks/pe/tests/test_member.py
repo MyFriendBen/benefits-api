@@ -30,6 +30,7 @@ from unittest.mock import Mock, MagicMock
 
 from django.test import TestCase
 
+from programs.programs.federal.pe.member import Medicaid
 from programs.framework.pe_base import PolicyEngineMembersCalculator
 from programs.framework.pe_dependencies import member as member_deps
 from programs.framework.pe_dependencies.household import KsStateCodeDependency
@@ -39,10 +40,8 @@ from programs.framework.pe_dependencies.member import (
     Chip,
 )
 from programs.framework.pe_dependencies.tax import KsChipPremium
-from programs.programs.ks.pe.member import KsChip, KsMsp, KsEarlyHeadStart
+from programs.programs.ks.pe.member import KsKanCare, KsChip, KsMsp, KsEarlyHeadStart
 from programs.programs.federal.pe.member import EarlyHeadStart
-from programs.programs.cross_white_label.medicaid.base import Medicaid
-from programs.programs.cross_white_label.medicaid.ks import KsKanCare
 
 # Annual value tiers (medicaid_categories * 12)
 MAGI = 3_648  # INFANT / YOUNG_CHILD / OLDER_CHILD / PREGNANT / PARENT / ADULT / YOUNG_ADULT

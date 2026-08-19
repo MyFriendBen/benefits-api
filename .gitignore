@@ -59,10 +59,3 @@ dump.rdb
 # Local research artifacts and one-off reports (belong in Linear/Outline, not git)
 PE_LATENCY_REPORT.md
 *_scoping.csv
-venv
-
-# phase 3 migration scripts (not shipped)
-addimp.py
-drive.py
-movefam.py
-regsnap.py

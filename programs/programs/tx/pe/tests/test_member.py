@@ -11,7 +11,14 @@ from django.test import TestCase
 
 from unittest.mock import Mock, MagicMock
 
-from programs.programs.federal.pe.member import Wic, Ssi, CommoditySupplementalFoodProgram, HeadStart, EarlyHeadStart
+from programs.programs.federal.pe.member import (
+    Wic,
+    Ssi,
+    CommoditySupplementalFoodProgram,
+    Medicaid,
+    HeadStart,
+    EarlyHeadStart,
+)
 from programs.framework.pe_base import PolicyEngineMembersCalculator
 from programs.framework.pe_dependencies import household, member
 from programs.framework.pe_dependencies.household import TxStateCodeDependency
@@ -20,17 +27,14 @@ from programs.programs.tx.pe.member import (
     TxSsi,
     TxCsfp,
     TxChip,
+    TxMedicaidForChildren,
+    TxMedicaidForPregnantWomen,
+    TxMedicaidForParentsAndCaretakers,
     TxHarrisCountyRides,
+    TxEmergencyMedicaid,
     TxDart,
     TxHeadStart,
     TxEarlyHeadStart,
-)
-from programs.programs.cross_white_label.medicaid.base import Medicaid
-from programs.programs.cross_white_label.medicaid.tx import (
-    TxEmergencyMedicaid,
-    TxMedicaidForChildren,
-    TxMedicaidForParentsAndCaretakers,
-    TxMedicaidForPregnantWomen,
 )
 
 
