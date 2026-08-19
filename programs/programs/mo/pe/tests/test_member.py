@@ -485,17 +485,14 @@ class TestMoMspWiring(TestCase):
     MO-specific MSP wiring. ``MoMsp`` is the federal ``Msp`` calculator plus the MO state
     code and the Medicaid inputs.
 
-    The shared contract every state's MSP must satisfy (pe_name, pe_category, pe_outputs,
-    no federal input dropped, the Medicaid input set, exactly one state code matching the
-    slug, nothing added beyond that, no ``member_value`` override) is asserted once for
-    all registered subclasses in ``federal/pe/tests/test_msp.py``. Only what is
-    MO-specific is asserted here.
+    The shared contract (pe_name, pe_outputs, no federal input dropped, the Medicaid
+    input set, exactly one state code matching the slug, no ``member_value`` override) is
+    asserted for all registered subclasses in ``federal/pe/tests/test_msp.py``.
 
     MSP's income tiers are the federal floor in Missouri, so the state code is the only
-    MO-keyed input — and it is load-bearing rather than boilerplate: it resolves
-    PolicyEngine's asset-test-applies parameter, which is ``true`` for MO. Dropping it
-    would silently stop applying the resource test and report over-resourced households as
-    eligible, the exact failure Scenario 4 guards.
+    MO-keyed input. It resolves PolicyEngine's asset-test-applies parameter, which is
+    ``true`` for MO — dropping it would stop applying the resource test and report
+    over-resourced households as eligible, the failure Scenario 4 guards.
     """
 
     def test_is_subclass_of_federal_msp(self):

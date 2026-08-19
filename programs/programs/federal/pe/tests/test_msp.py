@@ -1,25 +1,18 @@
 """
 Unit tests for the shared federal Medicare Savings Program PolicyEngine calculator.
 
-States subclass ``Msp`` to append their own state code and their Medicaid inputs. The
-state code is load-bearing rather than boilerplate: it resolves
-``gov.hhs.medicare.savings_programs.eligibility.asset.applies``, which decides whether
-the resource test applies at all. A state that dropped it would silently stop screening
-assets and report over-resourced households as eligible.
+States subclass ``Msp`` to append their own state code and Medicaid inputs. The state
+code resolves ``gov.hhs.medicare.savings_programs.eligibility.asset.applies``, which
+decides whether the resource test applies at all — a state that dropped it would
+silently stop screening assets and report over-resourced households as eligible.
 
-That makes the federal wiring a cross-state contract. The tests below assert it once
-against every registered subclass rather than per state, so:
+The federal wiring is therefore a cross-state contract, asserted here once against every
+registered subclass so that a state is covered the moment it is registered. A state file
+only needs to prove what is state-specific: that it registers under the expected slug and
+sends its own state code.
 
-* every state's MSP is covered even where its own file has no tests (TX had none), and
-* a newly added state inherits the whole contract the moment it is registered.
-
-A state file therefore only needs to prove what is genuinely state-specific: that it
-registers under the expected slug and sends its own state code.
-
-The eligibility math, the QMB/SLMB/QI tiering, and the premium value itself live in
-PolicyEngine (``msp``, ``msp_category``, ``msp_eligible``) and are covered by
-PolicyEngine's own test suite, not duplicated here. Each state's spec pins the dollar
-value and the tier boundaries for that state.
+Eligibility, the QMB/SLMB/QI tiering and the premium value live in PolicyEngine and are
+covered by its test suite. Each state's spec pins the dollar value and tier boundaries.
 """
 
 from unittest.mock import Mock
@@ -98,10 +91,8 @@ class TestRegisteredMspSubclassContract(TestCase):
     """
     The cross-state contract, asserted against every registered subclass of ``Msp``.
 
-    These are the assertions that were previously copy-pasted into each state's
-    ``test_member.py``. Holding them here means a new state is covered as soon as it is
-    registered, and a state that quietly drops a federal input fails here rather than
-    passing because nobody wrote that state's copy of the test.
+    Holding these here means a state that quietly drops a federal input fails, rather
+    than passing because nobody wrote that state's copy of the test.
     """
 
     def setUp(self):
@@ -199,17 +190,14 @@ class TestRegisteredMspSubclassContract(TestCase):
 
 class TestRegisteredMspPayloadContract(TestCase):
     """
-    What each registered MSP subclass actually serializes into the PolicyEngine payload.
+    What each registered MSP subclass serializes into the PolicyEngine payload.
 
-    The class-level contract above asserts the dependencies are *declared*; this asserts
-    they *arrive*. The two can diverge — a dependency that is version-gated, or whose
-    field the payload builder drops, is declared but never sent — so the fields every
-    MSP scenario turns on are pinned here against a real Screen rather than inferred
-    from ``pe_inputs``.
+    The contract above asserts the dependencies are *declared*; this asserts they
+    *arrive*. The two can diverge — a version-gated dependency, or one whose field the
+    payload builder drops, is declared but never sent — so the fields every MSP scenario
+    turns on are pinned against a real Screen rather than inferred from ``pe_inputs``.
 
-    Run per state, because each state's screen resolves its own state code. Previously
-    this existed only as MO's ``TestMoMspPeInput``, so a payload regression in KS, IL or
-    TX had nothing asserting against it.
+    Run per state, because each state's screen resolves its own state code.
     """
 
     PERIOD = "2026"
