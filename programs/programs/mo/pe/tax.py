@@ -135,6 +135,17 @@ class MoWftc(PolicyEngineTaxUnitCalulator):
         # (Form MO-WFTC Lines 7-9), and PolicyEngine computes that credit from
         # ``real_estate_taxes``. The federal Eitc input set does not send it, so
         # without this the property tax credit is always $0 and the cap is too high.
+        #
+        # ``RentDependency`` is deliberately not sent, even though PolicyEngine's
+        # property tax credit also counts 20% of gross rent. A renter's credit only
+        # survives below Missouri's renter income limit ($27,500 for TY2025, against
+        # $30,000 for an owner-occupied homestead), and Missouri liability for a
+        # household this size does not turn positive until roughly $28,400 of wages.
+        # Those windows do not overlap, so rent can raise the property tax credit but
+        # never changes the WFTC cap: measured across an 11-point wage sweep at PE
+        # 1.786.5, sending rent moved ``mo_property_tax_credit`` from $0 to as much as
+        # $107 while ``mo_wftc`` stayed identical at every point. Adding it would also
+        # put ``rent: 0`` in every request, invalidating all 16 recorded cassettes.
         dependency.member.PropertyTaxExpenseDependency,
         dependency.household.MoStateCodeDependency,
     ]
