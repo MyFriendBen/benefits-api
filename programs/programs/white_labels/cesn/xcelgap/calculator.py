@@ -1,14 +1,14 @@
 from programs.framework.base import Eligibility, ProgramCalculator
-from programs.programs.co.energy_calculator.util import has_renter_expenses
 from programs.programs.cross_white_label.liheap.cesn import EnergyCalculatorEnergyAssistance
-from programs.programs.co.energy_calculator.energy_outreach.calculator import EnergyCalculatorEnergyOutreach
+from programs.programs.white_labels.cesn.eoc.calculator import EnergyCalculatorEnergyOutreach
+from programs.programs.co.energy_calculator.util import has_renter_expenses
 from programs.programs.cross_white_label.weatherization.cesn import (
     EnergyCalculatorWeatherizationAssistance,
 )
 
 
-class EnergyCalculatorGasAffordabilityBlackHills(ProgramCalculator):
-    program_code = "cesn_bhgap"
+class EnergyCalculatorGasAffordabilityXcel(ProgramCalculator):
+    program_code = "cesn_xcelgap"
     amount = 1
     dependencies = [
         *EnergyCalculatorEnergyAssistance.dependencies,
@@ -20,9 +20,8 @@ class EnergyCalculatorGasAffordabilityBlackHills(ProgramCalculator):
         "cesn_leap",
         "cesn_eoc",
         "cesn_cowap",
-        "cesn_care",
     ]
-    gas_providers = ["co-black-hills-energy-gas"]
+    gas_providers = ["co-xcel-energy-gas"]
 
     def household_eligible(self, e: Eligibility):
         # eligible for another program

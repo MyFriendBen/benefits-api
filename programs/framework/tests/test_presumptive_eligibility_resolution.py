@@ -20,7 +20,7 @@ from django.test import TestCase
 from programs.framework.base import Eligibility
 from programs.programs.co.denver_sidewalk_rebate.calculator import DenverSidewalkRebate
 from programs.programs.co.denver_trash_rebate.calculator import DenverTrashRebate
-from programs.programs.co.energy_calculator.vehicle_exchange.calculator import EnergyCalculatorVehicleExchange
+from programs.programs.white_labels.cesn.energy_vec.calculator import EnergyCalculatorVehicleExchange
 from programs.programs.cross_white_label.weatherization.co import WeatherizationAssistance
 from programs.programs.cross_white_label.head_start.nc import NCHeadStart
 from programs.programs.nc.sun_bucks.calculator import SunBucks
