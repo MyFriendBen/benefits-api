@@ -161,7 +161,7 @@ class MedicareSavingsNC(MedicareSavings):
 
         remainder = max(0, earned + unearned)
         if remainder <= self.living_allowance:
-            return 0.0
+            return 0
         return remainder
 
     def _get_parents_in_household(self, member, exclude_ssi: bool = True) -> list:
