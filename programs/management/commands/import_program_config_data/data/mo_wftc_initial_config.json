@@ -1,0 +1,80 @@
+{
+    "white_label": {
+        "code": "mo"
+    },
+    "program_category": {
+        "external_name": "mo_tax",
+        "name": "Tax Credits",
+        "icon": "tax_credit"
+    },
+    "program": {
+        "name_abbreviated": "mo_wftc",
+        "year": "2026",
+        "legal_status_required": [
+            "citizen",
+            "gc_5plus",
+            "gc_5less",
+            "refugee",
+            "otherWithWorkPermission"
+        ],
+        "name": "Missouri Working Family Tax Credit (WFTC)",
+        "description": "Missouri's Working Family Tax Credit (WFTC) helps working people lower their Missouri taxes. You may qualify if you get the federal Earned Income Tax Credit (EITC). For tax year 2024 and forward, the WFTC is generally 20% of your federal EITC. Your credit cannot be more than the Missouri income tax you still owe.\n\nThe WFTC is nonrefundable. It can lower your Missouri income tax to zero. You will not get any unused credit as cash, and you cannot use it in a future tax year.\n\nSome tax rules may change your result. You may not qualify if you file married filing separately. You may also not qualify if someone claims you as a dependent. Rental or other investment income may affect your eligibility. Other Missouri tax credits may lower your WFTC amount.\n\nSelect \"File Now\" to see your options for filing your Missouri income tax return and claim the WFTC.",
+        "description_short": "A Missouri tax credit worth 20% of your federal Earned Income Tax Credit",
+        "learn_more_link": "https://dor.mo.gov/faq/taxation/individual/missouri-working-family-tax-credit.html",
+        "apply_button_link": "https://dor.mo.gov/taxation/individual/tax-types/income/filing.html",
+        "apply_button_description": "File Now",
+        "estimated_application_time": "45 minutes",
+        "estimated_delivery_time": "1 - 6 weeks",
+        "estimated_value": "",
+        "value_format": "estimated_annual",
+        "website_description": "A Missouri tax credit worth 20% of your federal Earned Income Tax Credit",
+        "show_on_current_benefits": true,
+        "show_in_has_benefits_step": false,
+        "has_calculator": true,
+        "external_name": "mo_wftc"
+    },
+    "documents": [
+        {
+            "external_name": "mo_federal_return",
+            "text": "Copy of your federal tax return (Form 1040 or 1040-SR)",
+            "link_url": "",
+            "link_text": ""
+        },
+        {
+            "external_name": "mo_schedule_eic",
+            "text": "Federal Schedule EIC, if required for your federal EITC claim",
+            "link_url": "https://www.irs.gov/forms-pubs/about-schedule-eic-form-1040",
+            "link_text": "Schedule EIC"
+        },
+        {
+            "external_name": "mo_wftc_form",
+            "text": "Completed Form MO-WFTC",
+            "link_url": "https://dor.mo.gov/forms/MO-WFTC_2025.pdf",
+            "link_text": "Form MO-WFTC"
+        },
+        {
+            "external_name": "mo_ssn",
+            "text": "Social Security Number for yourself, your spouse, and any qualifying children claimed",
+            "link_url": "",
+            "link_text": ""
+        }
+    ],
+    "navigators": [
+        {
+            "external_name": "mo_motax_vita",
+            "name": "MoTax: Missouri Taxpayer Education Initiative",
+            "phone_number": "",
+            "email": "",
+            "assistance_link": "https://extension.missouri.edu/programs/motax-missouri-taxpayer-education-initiative",
+            "description": "MoTax offers free help with federal and Missouri tax returns."
+        },
+        {
+            "external_name": "mo_aarp_tax_aide",
+            "name": "AARP Foundation Tax-Aide",
+            "phone_number": "+18882277669",
+            "email": "taxaide@aarp.org",
+            "assistance_link": "https://www.aarp.org/money/taxes/aarp-taxaide/",
+            "description": "AARP Foundation Tax-Aide offers free help with taxes. It helps people age 50 and older and people with lower incomes. You do not need to be an AARP member."
+        }
+    ]
+}
