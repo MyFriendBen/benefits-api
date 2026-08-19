@@ -1,35 +1,8 @@
 from programs.framework.pe_base import PolicyEngineSpmCalulator
 import programs.framework.pe_dependencies as dependency
-from programs.programs.federal.pe.spm import Snap, SchoolLunch, Tanf
-
-
-class IlSnap(Snap):
-    program_code = "il_snap"
-    pe_inputs = [
-        *Snap.pe_inputs,
-        dependency.household.IlStateCodeDependency,
-    ]
-
-
-class IlNslp(SchoolLunch):
-    program_code = "il_nslp"
-    pe_inputs = [
-        *SchoolLunch.pe_inputs,
-        dependency.household.IlStateCodeDependency,
-    ]
-
-
-class IlTanf(Tanf):
-    program_code = "il_tanf"
-    pe_name = "il_tanf"
-    pe_inputs = [
-        *Tanf.pe_inputs,
-        dependency.household.IlStateCodeDependency,
-        dependency.spm.IlTanfCountableEarnedIncomeDependency,
-        dependency.spm.IlTanfCountableGrossUnearnedIncomeDependency,
-    ]
-
-    pe_outputs = [dependency.spm.IlTanf]
+from programs.programs.cross_white_label.nslp.base import SchoolLunch
+from programs.programs.cross_white_label.snap.base import Snap
+from programs.programs.cross_white_label.tanf.base import Tanf
 
 
 class IlLiheap(PolicyEngineSpmCalulator):

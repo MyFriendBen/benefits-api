@@ -9,9 +9,11 @@ These tests verify WA-specific calculator logic including:
 
 from django.test import TestCase
 
-from programs.programs.federal.pe.spm import Lifeline, Snap
 from programs.framework.pe_dependencies.household import WaStateCodeDependency
-from programs.programs.wa.pe.spm import WaLifeline, WaSnap
+from programs.programs.cross_white_label.lifeline.base import Lifeline
+from programs.programs.cross_white_label.lifeline.wa import WaLifeline
+from programs.programs.cross_white_label.snap.base import Snap
+from programs.programs.cross_white_label.snap.wa import WaSnap
 
 
 class TestWaSnap(TestCase):

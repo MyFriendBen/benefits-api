@@ -17,12 +17,14 @@ and are not covered by this module.
 """
 
 from django.test import TestCase
-from programs.programs.ks.pe.tax import KsCdccFederal, KsCtc
 
-from programs.programs.federal.pe.tax import Cdcc, Ctc
 from integrations.clients.policyengine.registry import (
     all_calculators,
 )
+from programs.programs.cross_white_label.cdcc.base import Cdcc
+from programs.programs.cross_white_label.cdcc.ks import KsCdccFederal
+from programs.programs.cross_white_label.ctc.base import Ctc
+from programs.programs.cross_white_label.ctc.ks import KsCtc
 
 
 class TestKsCtc(TestCase):

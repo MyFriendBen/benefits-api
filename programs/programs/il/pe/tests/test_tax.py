@@ -11,8 +11,9 @@ from django.test import TestCase
 from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
 from programs.framework.pe_dependencies import tax as tax_dependency
 from programs.framework.pe_dependencies.household import IlStateCodeDependency
-from programs.programs.federal.pe.tax import Eitc, Ctc
 from programs.programs.il.pe.tax import Ileitc, Ilctc
+from programs.programs.cross_white_label.eitc.base import Eitc
+from programs.programs.cross_white_label.ctc.base import Ctc
 
 
 class TestIleitc(TestCase):

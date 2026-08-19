@@ -8,7 +8,8 @@ from programs.programs.federal.pe.member import (
     HeadStart,
     EarlyHeadStart,
 )
-from .spm import MaSnap, MaTafdc, MaEaedc
+from .spm import MaTafdc, MaEaedc
+from programs.programs.cross_white_label.snap.ma import MaSnap
 from screener.models import HouseholdMember
 from programs.programs.cross_white_label.ccdf.base import Ccdf
 from programs.programs.cross_white_label.medicaid.ma.mass_health.calculator import MaMassHealth

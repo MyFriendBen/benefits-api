@@ -18,6 +18,10 @@ from programs.framework.pe_dependencies.constants import (
     MAIN_TAX_UNIT,
     SECONDARY_TAX_UNIT,
 )
+from programs.programs.cross_white_label.nslp.base import SchoolLunch
+from programs.programs.cross_white_label.snap.base import Snap
+from programs.programs.cross_white_label.snap.tx import TxSnap
+from programs.programs.cross_white_label.tanf.base import Tanf
 
 
 @override_settings(CACHES=LOCAL_CACHE)
@@ -32,7 +36,6 @@ class PeInputTestBase(TestCase):
     def setUp(self):
         """Set up test screen with household members."""
         # Import here to avoid circular imports at module level
-        from programs.programs.tx.pe.spm import TxSnap
 
         self.calculator_class = TxSnap
 
@@ -268,7 +271,6 @@ class TestPeInputMultipleCalculators(PeInputTestBase):
 
     def test_with_multiple_calculators(self):
         """Test that pe_input handles multiple calculator inputs correctly."""
-        from programs.programs.federal.pe.spm import SchoolLunch
 
         result = pe_input(self.screen, [self.calculator_class, SchoolLunch])
 
@@ -317,7 +319,6 @@ class TestUnreadableProgramsAreDropped(PeInputTestBase):
     def setUp(self):
         super().setUp()
         from programs.programs.federal.pe.member import Ssi
-        from programs.programs.federal.pe.spm import Snap, Tanf
 
         # WIC is deliberately absent: it reads the ungated `wic`, so no floor applies to it.
         self.gated_output_programs = {"snap": Snap, "ssi": Ssi, "tanf": Tanf}
@@ -342,7 +343,7 @@ class TestUnreadableProgramsAreDropped(PeInputTestBase):
         """The guard is scoped to unreadable outputs — it must not thin out the rest of
         the request, whose gated *inputs* degrade harmlessly to PolicyEngine modelling
         the value itself."""
-        from programs.programs.federal.pe.spm import Acp, SchoolLunch
+        from programs.programs.federal.pe.spm import Acp
 
         kept = self._drop({"acp": Acp, "nslp": SchoolLunch}, (1, 750, 0))
 

@@ -1,6 +1,8 @@
 from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
-from programs.programs.federal.pe.tax import Cdcc, Ctc, Eitc
 import programs.framework.pe_dependencies as dependency
+from programs.programs.cross_white_label.cdcc.base import Cdcc
+from programs.programs.cross_white_label.eitc.base import Eitc
+from programs.programs.cross_white_label.ctc.base import Ctc
 
 
 class Kseitc(PolicyEngineTaxUnitCalulator):
@@ -30,30 +32,3 @@ class KsCdcc(PolicyEngineTaxUnitCalulator):
         *dependency.irs_gross_income,
     ]
     pe_outputs = [dependency.tax.KsCdcc]
-
-
-class KsCtc(Ctc):
-    """
-    Federal Child Tax Credit surfaced to Kansas users as ``ks_ctc``.
-
-    Kansas has no state CTC, so this reads PolicyEngine's federal ``ctc_value``
-    unchanged. Note the asymmetry with ``ks_eitc``, which resolves to ``Kseitc``
-    and does send a state code: that one reads ``ks_total_eitc``, a genuinely
-    Kansas-specific PolicyEngine variable. State code follows the variable, not
-    the key prefix.
-    """
-
-    program_code = "ks_ctc"
-
-
-class KsCdccFederal(Cdcc):
-    """
-    Federal Child and Dependent Care Credit surfaced to Kansas users as
-    ``ks_cdcc_federal``.
-
-    Distinct from ``ks_cdcc``, which is Kansas's own credit and has its own
-    calculator (``KsCdcc``). This one reads PolicyEngine's federal ``cdcc``
-    unchanged and exists so the registry maps one key to one calculator.
-    """
-
-    program_code = "ks_cdcc_federal"

@@ -1,6 +1,7 @@
-from programs.programs.federal.pe.tax import Aca, Eitc
+from programs.programs.federal.pe.tax import Aca
 import programs.framework.pe_dependencies as dependency
 from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
+from programs.programs.cross_white_label.eitc.base import Eitc
 
 
 class Maeitc(PolicyEngineTaxUnitCalulator):

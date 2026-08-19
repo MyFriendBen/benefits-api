@@ -2,6 +2,7 @@ from django.test import TestCase
 from screener.models import Screen, HouseholdMember, WhiteLabel, IncomeStream
 from programs.framework.pe_dependencies.payload import pe_input
 from programs.framework.pe_dependencies.constants import MAIN_TAX_UNIT, SECONDARY_TAX_UNIT
+from programs.programs.cross_white_label.snap.tx import TxSnap
 
 
 class TestQualifyingRelativeUnitSplitting(TestCase):
@@ -18,8 +19,6 @@ class TestQualifyingRelativeUnitSplitting(TestCase):
         IncomeStream.objects.create(
             screen=self.screen, household_member=self.head, type="wages", amount=50_000, frequency="yearly"
         )
-
-        from programs.programs.tx.pe.spm import TxSnap
 
         self.calc_class = TxSnap
 

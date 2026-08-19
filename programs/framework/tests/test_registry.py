@@ -32,6 +32,8 @@ from programs.framework.registry import (
 )
 from programs.programs.cross_white_label.ccdf.base import Ccdf
 from programs.programs.cross_white_label.medicaid.base import Medicaid
+from programs.programs.cross_white_label.cdcc.base import Cdcc
+from programs.programs.cross_white_label.snap.base import Snap
 
 
 class WalkClassesTests(SimpleTestCase):
@@ -186,7 +188,6 @@ class RegistryCoversEveryCalculatorTests(SimpleTestCase):
         from programs.programs.cross_white_label.ccdf.base import Ccdf
         from programs.programs.cross_white_label.medicaid.base import Medicaid
         from programs.programs.federal.pe.member import EarlyHeadStart, HeadStart
-        from programs.programs.federal.pe.tax import Cdcc
 
         for base in (Cdcc, Medicaid, HeadStart, EarlyHeadStart, Ccdf):
             with self.subTest(base=base.__name__):
@@ -243,7 +244,6 @@ class AbstractDeclarationTests(SimpleTestCase):
         classes are dual-role like that, which is why "is it a base?" cannot be
         inferred from whether anything subclasses it.
         """
-        from programs.programs.federal.pe.spm import Snap
 
         registry = build("programs.programs", ProgramCalculator)
 
@@ -264,7 +264,7 @@ class AbstractDeclarationTests(SimpleTestCase):
         from programs.programs.cross_white_label.ccdf.base import Ccdf
         from programs.programs.cross_white_label.medicaid.base import Medicaid
         from programs.programs.federal.pe.member import Chip, EarlyHeadStart, HeadStart, Msp
-        from programs.programs.federal.pe.tax import Aca, Cdcc
+        from programs.programs.federal.pe.tax import Aca
 
         for cls in (Medicaid, Chip, HeadStart, EarlyHeadStart, Ccdf, Msp, Aca, Cdcc):
             with self.subTest(cls=cls.__name__):

@@ -1,15 +1,7 @@
 from programs.programs.federal.pe.member import Ssi
 from programs.framework.pe_base import PolicyEngineSpmCalulator
 import programs.framework.pe_dependencies as dependency
-from programs.programs.federal.pe.spm import Snap
-
-
-class MaSnap(Snap):
-    program_code = "ma_snap"
-    pe_inputs = [
-        *Snap.pe_inputs,
-        dependency.household.MaStateCodeDependency,
-    ]
+from programs.programs.cross_white_label.snap.base import Snap
 
 
 class MaTafdc(PolicyEngineSpmCalulator):
