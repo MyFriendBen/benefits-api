@@ -5,8 +5,10 @@ from programs.programs.cross_white_label.eitc.base import Eitc
 
 class WaEitc(Eitc):
     """
-    Washington has no state EITC, so this reuses the federal calculation
-    unchanged. It exists so the WA row resolves to a WA-named class.
+    Federal EITC surfaced to Washington users as ``wa_eitc``.
+
+    PolicyEngine's ``eitc`` is federal. Washington's own credit is the Working
+    Families Tax Credit, handled separately.
     """
 
     program_code = "wa_eitc"
