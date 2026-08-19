@@ -12,6 +12,8 @@ class MedicareSavingsNC(MedicareSavings):
     member_amount: ClassVar[int] = 203 * 12
     # Living Allowance for SSI deeming (MA-2260 §IV.D-E). Update annually.
     living_allowance: ClassVar[int] = 498 * 12
+    # Monthly income increment per person beyond family size 8 at 135% FPL. Update annually.
+    additional_per_person: ClassVar[int] = 639 * 12
 
     def member_eligible(self, e: MemberEligibility):
         """
@@ -123,14 +125,19 @@ class MedicareSavingsNC(MedicareSavings):
         """
         if member.age < 18:
             parents_on_ssi = any(
-                p.calc_gross_income("yearly", ["sSI"]) > 0 for p in self._get_parents_in_household(member)
+                p.calc_gross_income("yearly", ["sSI"]) > 0
+                for p in self._get_parents_in_household(member, exclude_ssi=False)
             )
             return "medicaid_individual" if parents_on_ssi else "medicaid_child"
         if not spouse:
             return "medicaid_individual"
         if spouse.calc_gross_income("yearly", ["sSI"]) > 0:
             return "medicaid_individual"  # spouse already on SSI
-        spouse_medicare_eligible = spouse.has_insurance_types(("medicare",), strict=False) or spouse.age >= 65
+        spouse_medicare_eligible = (
+            spouse.has_insurance_types(("medicare",), strict=False)
+            or spouse.age >= self.min_age
+            or spouse.calc_gross_income("yearly", ["sSDisability"]) > 0
+        )
         if spouse_medicare_eligible:
             return "medicaid_couple"
         return "individual_with_ineligible_spouse"
@@ -152,20 +159,19 @@ class MedicareSavingsNC(MedicareSavings):
 
         return max(0, earned + unearned)
 
-    def _get_parents_in_household(self, member) -> list:
-        """Return non-SSI parent(s) of the member for Medicaid Child deeming."""
+    def _get_parents_in_household(self, member, exclude_ssi: bool = True) -> list:
+        """Return parent(s) of the member. Excludes SSI recipients when exclude_ssi is True."""
         household = list(self.screen.household_members.all())
-        if member.relationship in ("child", "fosterChild"):
-            return [
-                m
-                for m in household
-                if m.relationship in ("headOfHousehold", "spouse", "domesticPartner")
-                and m.calc_gross_income("yearly", ["sSI"]) == 0
-            ]
+        parent_relationships = (
+            ("headOfHousehold", "spouse", "domesticPartner")
+            if member.relationship in ("child", "fosterChild")
+            else ("parent", "fosterParent")
+        )
         return [
             m
             for m in household
-            if m.relationship in ("parent", "fosterParent") and m.calc_gross_income("yearly", ["sSI"]) == 0
+            if m.relationship in parent_relationships
+            and (not exclude_ssi or m.calc_gross_income("yearly", ["sSI"]) == 0)
         ]
 
     def _passes_family_size_methodology(self, member, spouse) -> bool:
@@ -204,13 +210,12 @@ class MedicareSavingsNC(MedicareSavings):
         return countable_income <= max_income
 
     def _get_family_size_income_limit(self, family_size: int) -> float | None:
-        """Chart-based income limit for step 2. For family size > 8, add $639 per additional person."""
-        ADDITIONAL_PER_PERSON = 639
+        """Chart-based income limit for step 2. For family size > 8, add $639/month per additional person."""
         capped_size = min(family_size, 8)
         _, max_income = self.get_fpl_limits(capped_size)
         if max_income is None:
             return None
         if family_size > 8:
-            max_income += ADDITIONAL_PER_PERSON * (family_size - 8)
+            max_income += self.additional_per_person * (family_size - 8)
 
         return max_income
