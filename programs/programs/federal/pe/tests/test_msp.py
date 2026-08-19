@@ -99,9 +99,19 @@ class TestRegisteredMspSubclassContract(TestCase):
         self.subclasses = _registered_subclasses(Msp)
 
     def test_states_are_registered(self):
-        """A guard on the discovery itself: if the registry stopped exposing these,
-        every other test in this class would vacuously pass over an empty dict."""
-        self.assertGreaterEqual(len(self.subclasses), 1)
+        """
+        A guard on the discovery itself. Every other test here loops over
+        ``self.subclasses``, so a state that stopped being registered would take its
+        coverage with it and leave the rest of the class passing on the states that
+        remain.
+
+        Pinned to the exact expected set rather than a minimum count, so both losing a
+        state and gaining one are deliberate edits to this line.
+        """
+        self.assertEqual(
+            set(self.subclasses),
+            {"il_msp", "ks_medicare_savings", "mo_medicare_savings", "tx_medicare_savings_program"},
+        )
 
     def test_registered_in_the_global_registry(self):
         """A calculator missing from the registry never runs — screener/views.py
@@ -122,10 +132,11 @@ class TestRegisteredMspSubclassContract(TestCase):
                 self.assertEqual(calc.pe_name, "msp")
 
     def test_pe_outputs_are_inherited_unchanged(self):
+        """Equality, not membership: a state that added or swapped an output would still
+        contain the two federal ones, so containment would not catch it."""
         for slug, calc in self.subclasses.items():
             with self.subTest(slug=slug):
-                self.assertIn(member.MspCategory, calc.pe_outputs)
-                self.assertIn(member.Msp, calc.pe_outputs)
+                self.assertEqual(list(calc.pe_outputs), list(Msp.pe_outputs))
 
     def test_no_federal_input_is_dropped(self):
         """A subclass appends; it must never subtract. Dropping

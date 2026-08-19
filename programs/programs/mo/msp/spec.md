@@ -88,9 +88,12 @@ PolicyEngine's `msp` variable (monthly, per person) = `msp_benefit_value`, compu
 and the Medicaid inputs, the same shape as the KS / TX / IL MSP calculators. The state code is
 the only MO-keyed input; MO's income limits match the federal floor exactly.
 
-- ✅ **Evaluable criteria**: Medicare Part A enrollment (age ≥ 65 path), income tiering
-  (QMB / SLMB / QI), the asset test, the QI-vs-Medicaid exclusion, MO residency, and
-  citizenship / legal status.
+- ✅ **Evaluable by the calculator**: Medicare Part A enrollment (age ≥ 65 path), income
+  tiering (QMB / SLMB / QI), the asset test, and the QI-vs-Medicaid exclusion.
+- ✅ **Enforced by configuration, not the calculator**: Missouri residency, which the `mo`
+  white label gates, and citizenship / immigration status, which `legal_status_required`
+  gates. `MoMsp` receives no input for either — the state code selects Missouri's
+  asset-test rule, it does not check where the applicant lives.
 - ⚠️ **Data gaps, not MO-specific** (shared with the KS / IL / TX implementations): under-65
   disability- or ESRD-based Medicare eligibility, which the screener has no field for; quarters
   of Medicare-covered employment, so applicants without premium-free Part A are not
