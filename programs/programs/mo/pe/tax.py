@@ -1,6 +1,5 @@
 from programs.framework.base import Eligibility
 from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
-from programs.framework.pe_dependencies.constants import ALL_TAX_UNITS
 from programs.programs.federal.pe.tax import Aca, Cdcc, Ctc, Eitc
 import programs.framework.pe_dependencies as dependency
 
@@ -119,64 +118,19 @@ class MoWftc(PolicyEngineTaxUnitCalulator):
 
 class MoPts(PolicyEngineTaxUnitCalulator):
     """
-    Missouri Property Tax Credit, the "Circuit Breaker" (RSMo §§135.010–135.030).
+    Missouri Property Tax Credit, the "Circuit Breaker".
 
-    An annual refundable credit against Missouri property tax or rent for a claimant who
-    is 65 or older, disabled, a service-disabled veteran, or a 60-or-older surviving
-    spouse receiving Social Security survivor benefits. PolicyEngine models the whole
-    rule — the four filing-status/ownership income limits, the $2,800/$5,800 married
-    offsets, the $14,300 minimum base, the $495 income and $25 payment increments, the
-    1/16-point-per-increment phaseout capped at 2%, and the $1,055 renter / $1,550 owner
-    caps — so this class supplies inputs and reads the result.
+    See ``programs/programs/mo/pts/spec.md`` for the rule and the scenarios. PolicyEngine
+    models it in full, so this supplies inputs and reads the result.
 
-    Three things beyond a bare ``pe_name``/``pe_outputs`` registration:
+    Two things here are not boilerplate:
 
-    - ``eligible()`` is overridden to read ``mo_ptc_taxunit_eligible`` rather than infer
-      eligibility from the credit amount. The credit is the payment-band midpoint less
-      the phaseout, floored at $0, so a household near the top of its income tier with a
-      small qualifying payment qualifies for the program and is awarded nothing. The base
-      class's ``eligible = value > 0`` would report such a household as ineligible.
-
-    - Veteran income is routed to ``veterans_benefits`` via
-      ``VeteransBenefitsDependency``, with ``PensionIncomeWithoutVeteranDependency``
-      replacing the shared ``PensionIncomeDependency`` so the stream is not counted
-      twice. ``mo_ptc_gross_income`` excludes veterans' benefits by subtracting
-      ``veterans_benefits`` specifically; the shared mapping delivers the same dollars
-      under ``taxable_pension_income``, which reaches the formula through
-      ``mo_adjusted_gross_income`` where the exclusion cannot reach it.
-
-    - ``IsFullyDisabledServiceConnectedVeteranDependency`` sets the person-level flag the
-      exclusion is gated on. PolicyEngine gives it no formula, so it is false unless
-      sent. It is scoped to this calculator rather than a shared dependency list because
-      it also drives ``military_disabled_head``/``military_disabled_spouse``,
-      ``mi_exemptions``, and ``il_cta_military_service_pass_eligible``.
-
-    The mapping and the flag are jointly required: with only one of the two, a
-    veteran-income household's credit is computed off unexcluded income.
-
-    Three further inputs depart from the usual set for the same reason — a shared
-    dependency delivers the right dollars to the wrong PolicyEngine variable:
-
-    - ``AgeAtEndOf2026Dependency`` replaces ``AgeDependency``. The statute measures age
-      on December 31 of the claim year; ``AgeDependency`` measures it on the screening
-      date, so a claimant born in September 1961 reads as 64 and fails the age-65
-      pathway for most of the year in which they actually qualify.
-    - ``SocialSecuritySurvivorsIncomeDependency`` accompanies
-      ``SocialSecurityIncomeDependency``. The survivor pathway reads
-      ``social_security_survivors``, but the shared dependency reports only the
-      ``social_security`` total, which PolicyEngine defines as the sum of its
-      components — setting the total leaves every component at zero.
-    - ``Ssi`` replaces ``SsiReportedDependency``. ``mo_ptc_gross_income`` adds the ``ssi``
-      variable, and ``ssi_reported`` no longer reaches it: it feeds only the deprecated
-      ``applicable_ssi``, which no PolicyEngine program reads. ``Ssi`` sets ``ssi``
-      directly from reported income and leaves it unset (PolicyEngine-simulated) when
-      the household reports none.
-
-    Data gaps carried by the inputs, all resolved inclusively: full-year Missouri
-    residency and tax-year homestead location are not collected, so a current
-    owned/rented residence stands in; ownership duration is not collected, so any
-    homeowner is treated as a full-year owner; and the claimant's actual filing status is
-    not collected, so PolicyEngine's filing status derived from spouse presence stands in.
+    - ``eligible()`` reads PolicyEngine's own eligibility flag instead of the base class's
+      ``value > 0``. This credit floors at $0 for a household that still qualifies, so
+      value-derived eligibility would report it ineligible.
+    - Six inputs replace or supplement the usual ones, each because a shared dependency
+      sends the right dollars to a PolicyEngine variable this formula does not read. The
+      reason is on each dependency class; ``spec.md`` records which scenario caught it.
     """
 
     program_code = "mo_pts"
@@ -212,23 +166,6 @@ class MoPts(PolicyEngineTaxUnitCalulator):
     def eligible(self) -> Eligibility:
         e = super().eligible()
 
-        e.eligible = self._pe_eligible()
+        e.eligible = self.any_tax_unit(dependency.tax.MoPtcTaxUnitEligible)
 
         return e
-
-    def _pe_eligible(self) -> bool:
-        """True if PolicyEngine reports any tax unit eligible for the credit."""
-        for unit in ALL_TAX_UNITS:
-            try:
-                if self.sim.value(
-                    dependency.tax.MoPtcTaxUnitEligible.unit,
-                    unit,
-                    dependency.tax.MoPtcTaxUnitEligible.field,
-                    self.pe_period,
-                ):
-                    return True
-            except KeyError:
-                # The secondary tax unit is omitted from the request when empty.
-                continue
-
-        return False
