@@ -483,72 +483,32 @@ class TestMoSsiPeInput(TestCase):
 
 class TestMoMspWiring(TestCase):
     """
-    ``MoMsp`` inherits the federal ``Msp`` calculator and adds the MO state code plus the
-    state's Medicaid inputs, mirroring ``KsMsp`` / ``TxMsp`` / ``IlMsp``.
+    MO-specific MSP wiring. ``MoMsp`` is the federal ``Msp`` calculator plus the MO state
+    code and the Medicaid inputs.
+
+    The shared contract every state's MSP must satisfy (pe_name, pe_category, pe_outputs,
+    no federal input dropped, the Medicaid input set, exactly one state code matching the
+    slug, nothing added beyond that, no ``member_value`` override) is asserted once for
+    all registered subclasses in ``federal/pe/tests/test_msp.py``. Only what is
+    MO-specific is asserted here.
 
     MSP's income tiers are the federal floor in Missouri, so the state code is the only
-    MO-keyed input. It is load-bearing rather than boilerplate: it resolves PolicyEngine's
-    ``...eligibility.asset.applies`` parameter, which is ``true`` for MO. Dropping it would
-    silently stop applying the resource test and report over-resourced households as
-    eligible — the exact failure Scenario 4 guards.
+    MO-keyed input — and it is load-bearing rather than boilerplate: it resolves
+    PolicyEngine's asset-test-applies parameter, which is ``true`` for MO. Dropping it
+    would silently stop applying the resource test and report over-resourced households as
+    eligible, the exact failure Scenario 4 guards.
     """
 
     def test_is_subclass_of_federal_msp(self):
         self.assertTrue(issubclass(MoMsp, Msp))
-        self.assertTrue(issubclass(MoMsp, PolicyEngineMembersCalculator))
-
-    def test_pe_name_is_msp(self):
-        self.assertEqual(MoMsp.pe_name, "msp")
 
     def test_is_registered_as_mo_medicare_savings(self):
         self.assertIs(mo_member_calculators["mo_medicare_savings"], MoMsp)
         self.assertIs(mo_pe_calculators["mo_medicare_savings"], MoMsp)
 
-    def test_is_registered_in_global_registry(self):
-        """A calculator missing from the registry never runs — screener/views.py iterates it."""
-        self.assertIs(all_member_calculators["mo_medicare_savings"], MoMsp)
-        self.assertIs(all_calculators["mo_medicare_savings"], MoMsp)
-
     def test_pe_inputs_includes_mo_state_code(self):
         """Resolves the MO asset-test-applies parameter — the one genuine MO delta."""
         self.assertIn(MoStateCodeDependency, MoMsp.pe_inputs)
-
-    def test_pe_inputs_preserve_federal_msp_inputs(self):
-        """The MO wrapper only appends; it must not drop any federal input."""
-        for dep in Msp.pe_inputs:
-            self.assertIn(dep, MoMsp.pe_inputs)
-
-    def test_pe_inputs_include_medicaid_inputs(self):
-        """
-        QI eligibility requires the applicant NOT be Medicaid-eligible, and the asset test
-        reads ``ssi_countable_resources`` supplied by the Medicaid input set. Without these,
-        QI would never exclude Medicaid-eligible applicants (Scenario 7) and the asset test
-        would see $0 resources (Scenario 4).
-        """
-        for dep in Medicaid.pe_inputs:
-            self.assertIn(dep, MoMsp.pe_inputs)
-
-    def test_adds_nothing_but_state_code_and_medicaid_inputs(self):
-        """Pins "Δ for MO: eligibility only" — any further input is a new state-variance claim."""
-        extra = set(MoMsp.pe_inputs) - set(Msp.pe_inputs) - set(Medicaid.pe_inputs)
-        self.assertEqual(extra, {MoStateCodeDependency})
-
-    def test_pe_inputs_include_quarters_of_coverage(self):
-        """
-        Regression guard for the value. Without it PolicyEngine does not assume premium-free
-        Part A and returns a Part A premium on top of Part B, inflating the yearly figure
-        well past the $2,434.80 every eligible scenario asserts.
-        """
-        self.assertIn(member_deps.MedicareQuartersOfCoverageDependency, MoMsp.pe_inputs)
-
-    def test_pe_outputs_request_category_and_value(self):
-        """The category drives QMB/SLMB/QI tiering; the value is the displayed dollar amount."""
-        self.assertIn(member_deps.MspCategory, MoMsp.pe_outputs)
-        self.assertIn(member_deps.Msp, MoMsp.pe_outputs)
-
-    def test_does_not_override_member_value(self):
-        """MO displays PolicyEngine's computed premium value with no state adjustment."""
-        self.assertIs(MoMsp.member_value, PolicyEngineMembersCalculator.member_value)
 
 
 class TestMoMspPeInput(TestCase):

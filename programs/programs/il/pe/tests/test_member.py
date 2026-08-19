@@ -36,84 +36,20 @@ from programs.programs.federal.pe.member import HeadStart
 
 
 class TestIlMsp(TestCase):
-    """Tests for Illinois Medicare Savings Program calculator."""
+    """
+    IL-specific MSP wiring. The shared contract every state's MSP must satisfy (pe_name,
+    pe_category, pe_outputs, no federal input dropped, the Medicaid input set, exactly one
+    state code matching the slug, no ``member_value`` override) is asserted once for all
+    registered subclasses in ``federal/pe/tests/test_msp.py``.
+    """
 
-    def test_exists_and_is_subclass_of_policy_engine_members_calculator(self):
-        """Test that IlMsp is a subclass of PolicyEngineMembersCalculator."""
-        self.assertTrue(issubclass(IlMsp, PolicyEngineMembersCalculator))
-
-    def test_is_registered_in_il_pe_calculators(self):
-        """Test that IlMsp is registered in the calculators dictionary."""
-        self.assertIn("il_msp", il_pe_calculators)
-        self.assertEqual(il_pe_calculators["il_msp"], IlMsp)
-
-    def test_is_registered_in_il_member_calculators(self):
-        """Test that IlMsp is registered in the member calculators dictionary."""
-        self.assertIn("il_msp", il_member_calculators)
-        self.assertEqual(il_member_calculators["il_msp"], IlMsp)
-
-    def test_pe_name_is_msp(self):
-        """Test that IlMsp has the correct pe_name for PolicyEngine API calls."""
-        self.assertEqual(IlMsp.pe_name, "msp")
+    def test_is_registered_in_il_calculators(self):
+        self.assertIs(il_pe_calculators["il_msp"], IlMsp)
+        self.assertIs(il_member_calculators["il_msp"], IlMsp)
 
     def test_pe_inputs_includes_il_state_code_dependency(self):
-        """Test that IlStateCodeDependency is in pe_inputs."""
+        """Resolves the MSP asset-test-applies parameter, which is true for Illinois."""
         self.assertIn(IlStateCodeDependency, IlMsp.pe_inputs)
-
-    def test_pe_inputs_includes_medicare_eligibility(self):
-        """Test that Medicare eligibility dependency is in pe_inputs."""
-        self.assertIn(member_dependency.IsMedicareEligibleDependency, IlMsp.pe_inputs)
-
-    def test_pe_inputs_includes_age_dependency(self):
-        """Test that AgeDependency is in pe_inputs."""
-        self.assertIn(member_dependency.AgeDependency, IlMsp.pe_inputs)
-
-    def test_pe_inputs_includes_asset_dependency(self):
-        """Test that CashAssetsDependency is in pe_inputs for asset limits."""
-        from programs.framework.pe_dependencies import spm as spm_dependency
-
-        self.assertIn(spm_dependency.CashAssetsDependency, IlMsp.pe_inputs)
-
-    def test_pe_outputs_includes_msp_eligible(self):
-        """Test that MspEligible is in pe_outputs."""
-        self.assertIn(member_dependency.MspEligible, IlMsp.pe_outputs)
-
-    def test_pe_outputs_includes_msp_category(self):
-        """Test that MspCategory is in pe_outputs."""
-        self.assertIn(member_dependency.MspCategory, IlMsp.pe_outputs)
-
-    def test_pe_outputs_includes_msp_value(self):
-        """Test that Msp value dependency is in pe_outputs."""
-        self.assertIn(member_dependency.Msp, IlMsp.pe_outputs)
-
-    def test_member_value_returns_yearly_benefit(self):
-        """Test that member_value returns yearly benefit from PolicyEngine."""
-        calculator = IlMsp(Mock(), Mock(), Mock())
-        calculator._sim = MagicMock()
-        # PolicyEngine returns annual value when queried with annual period
-        calculator.get_member_variable = Mock(return_value=MEDICARE_PART_B_ANNUAL_2025)
-
-        member = Mock()
-        member.id = 1
-
-        result = calculator.member_value(member)
-
-        # PolicyEngine returns annual benefit directly (no * 12 multiplication)
-        self.assertEqual(result, MEDICARE_PART_B_ANNUAL_2025)
-
-    def test_member_value_returns_zero_when_not_eligible(self):
-        """Test that member_value returns 0 when not eligible (PE returns 0)."""
-        calculator = IlMsp(Mock(), Mock(), Mock())
-        calculator._sim = MagicMock()
-        # PolicyEngine returns 0 when not eligible
-        calculator.get_member_variable = Mock(return_value=0)
-
-        member = Mock()
-        member.id = 1
-
-        result = calculator.member_value(member)
-
-        self.assertEqual(result, 0)
 
 
 class TestIlAabd(TestCase):
