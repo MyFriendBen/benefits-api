@@ -355,8 +355,5 @@ This implementation covers the three remaining MSP sub-programs: QMB, SLMB, and 
 - https://www.hhs.texas.gov/handbooks/medicaid-elderly-people-disabilities-handbook/appendix-ix-medicare-savings-program-information
 - https://www.hhs.texas.gov/handbooks/medicaid-elderly-people-disabilities-handbook/q-1000-medicare-savings-programs-overview
 
-## JSON Test Cases
-File: `validations/management/commands/import_validations/data/tx_medicare_savings_program.json`
-
 ## Program Configuration
 File: `programs/management/commands/import_program_config_data/data/tx_medicare_savings_program_initial_config.json`

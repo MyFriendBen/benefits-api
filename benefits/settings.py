@@ -125,9 +125,11 @@ INSTALLED_APPS = [
     # Custom apps - order determines admin sidebar position
     "screener.apps.ScreenerConfig",
     "configuration.apps.ConfigurationConfig",
+    # Retained only so migration 0005 (DeleteModel) applies in every environment;
+    # the app has no models, views, or commands. Remove once 0005 is deployed everywhere.
+    "validations.apps.ValidationsConfig",
     "programs.apps.ProgramsConfig",
     "translations.apps.TranslationsConfig",
-    "validations.apps.ValidationsConfig",
     "integrations.apps.IntegrationsConfig",
     "rest_framework",
     "rest_framework.authtoken",
@@ -444,6 +446,6 @@ GOOGLE_MAPS_API_KEY = config("GOOGLE_MAPS_API_KEY", default="")
 GRAPH_MODELS = {
     "output": "./_mfb_uml.png",
     "group_models": True,
-    "app_labels": ["screener", "programs", "configuration", "validations", "authentication"],
+    "app_labels": ["screener", "programs", "configuration", "authentication"],
     "exclude_models": ["Translation"],
 }

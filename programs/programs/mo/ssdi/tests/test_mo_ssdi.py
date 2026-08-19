@@ -1,9 +1,12 @@
 from django.test import TestCase
+from freezegun import freeze_time
 from unittest.mock import Mock
 from datetime import date
 
 from programs.programs.mo.ssdi.calculator import MoSsdi
 from programs.framework.base import Eligibility, MemberEligibility
+
+REFERENCE_DATE = date(2026, 4, 30)
 
 
 def make_member(
@@ -45,7 +48,6 @@ def make_calculator(has_ssdi=False):
     mock_screen.has_benefit = Mock(return_value=False)
     mock_screen.has_base_benefit = Mock(side_effect=lambda b: has_ssdi if b == "ssdi" else False)
     mock_screen.household_members.all.return_value = []
-    mock_screen.get_reference_date.return_value = date(2026, 4, 30)
 
     mock_program = Mock()
     mock_missing_deps = Mock()
@@ -89,6 +91,7 @@ class TestMoSsdiFraSchedule(TestCase):
         self.assertEqual(MoSsdi._get_fra(1970), (67, 0))
 
 
+@freeze_time(REFERENCE_DATE)
 class TestMoSsdiMemberEligibility(TestCase):
     def _run(self, member):
         calc = make_calculator()
@@ -144,6 +147,7 @@ class TestMoSsdiMemberEligibility(TestCase):
         self.assertFalse(self._run(member))
 
 
+@freeze_time(REFERENCE_DATE)
 class TestMoSsdiHouseholdEligibility(TestCase):
     def _run(self, has_ssdi=False, eligible_members=None):
         calc = make_calculator(has_ssdi=has_ssdi)
@@ -171,6 +175,7 @@ class TestMoSsdiHouseholdEligibility(TestCase):
         self.assertFalse(e.eligible)
 
 
+@freeze_time(REFERENCE_DATE)
 class TestMoSsdiValue(TestCase):
     def test_eligible_member_gets_current_ssa_average(self):
         calc = make_calculator()

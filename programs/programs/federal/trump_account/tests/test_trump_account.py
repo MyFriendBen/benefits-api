@@ -12,15 +12,17 @@ from datetime import date, timedelta
 from unittest.mock import Mock
 
 from django.test import TestCase
+from freezegun import freeze_time
 
 from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 from programs.programs.federal.trump_account.calculator import TrumpAccount
 
+DEFAULT_NOW = date(2026, 3, 11)
 
-def make_calculator(reference_date=None):
+
+def make_calculator():
     """Create a TrumpAccount calculator with a mocked screen."""
     mock_screen = Mock()
-    mock_screen.get_reference_date.return_value = reference_date or date(2026, 3, 11)
     mock_program = Mock()
     mock_missing_deps = Mock()
     mock_missing_deps.has.return_value = False
@@ -41,6 +43,7 @@ class TestTrumpAccountRegistration(TestCase):
         self.assertTrue(issubclass(TrumpAccount, ProgramCalculator))
 
 
+@freeze_time(DEFAULT_NOW)
 class TestTrumpAccountPilotWindow(TestCase):
     """Tests for pilot window boundary conditions using birth_year_month."""
 
@@ -70,6 +73,7 @@ class TestTrumpAccountPilotWindow(TestCase):
         self.assertFalse(self._run_member_eligible(None))
 
 
+@freeze_time(DEFAULT_NOW)
 class TestTrumpAccountAgeCeiling(TestCase):
     """Tests for the age <= 17 (under 18) requirement."""
 
@@ -97,11 +101,12 @@ class TestTrumpAccountPregnancy(TestCase):
     """Tests for the pregnancy path: due date = reference_date + 280 days."""
 
     def _run_member_eligible(self, reference_date):
-        calculator = make_calculator(reference_date=reference_date)
-        member = make_member(pregnant=True)
-        e = MemberEligibility(member)
-        calculator.member_eligible(e)
-        return e.eligible
+        with freeze_time(reference_date):
+            calculator = make_calculator()
+            member = make_member(pregnant=True)
+            e = MemberEligibility(member)
+            calculator.member_eligible(e)
+            return e.eligible
 
     def test_due_date_inside_pilot_window_is_eligible(self):
         # reference_date + 280 days lands in mid-2026 (well inside window)
@@ -133,13 +138,15 @@ class TestTrumpAccountPregnancy(TestCase):
 
     def test_pregnant_member_skips_birth_year_month_check(self):
         # birth_year_month=None would fail the non-pregnant path; pregnancy path ignores it
-        calculator = make_calculator(reference_date=date(2025, 6, 1))
-        member = make_member(pregnant=True, birth_year_month=None)
-        e = MemberEligibility(member)
-        calculator.member_eligible(e)
-        self.assertTrue(e.eligible)
+        with freeze_time(date(2025, 6, 1)):
+            calculator = make_calculator()
+            member = make_member(pregnant=True, birth_year_month=None)
+            e = MemberEligibility(member)
+            calculator.member_eligible(e)
+            self.assertTrue(e.eligible)
 
 
+@freeze_time(DEFAULT_NOW)
 class TestTrumpAccountValue(TestCase):
     """Tests for the $1,000 value assignment."""
 

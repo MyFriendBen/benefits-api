@@ -8,15 +8,15 @@ income, asset, insurance, or benefit-receipt gate, and Massachusetts residency i
 upstream by white-label routing.
 
 Scenario numbers in the test names map to the "Test Scenarios" section of spec.md. Per that
-section, every scenario is evaluated as of July 22, 2026, so `Screen.get_reference_date` is
-frozen to that date for the whole suite — otherwise the fixed birth months below would drift
-out of the branches they are meant to exercise.
+section, every scenario is evaluated as of July 22, 2026, so the whole suite runs under
+`freeze_time(FROZEN_DATE)` — otherwise the fixed birth months below would drift out of the
+branches they are meant to exercise.
 """
 
 from datetime import date
-from unittest.mock import patch
 
 from django.test import TestCase
+from freezegun import freeze_time
 
 from programs.models import Program
 from programs.framework.base import ProgramCalculator
@@ -44,6 +44,7 @@ RELATIONSHIP_CANDIDACY = {
 }
 
 
+@freeze_time(FROZEN_DATE)
 class MaBabyStepsTestCase(TestCase):
     """Shared fixtures: an MA white label, a program row, and a frozen reference date."""
 
@@ -51,11 +52,6 @@ class MaBabyStepsTestCase(TestCase):
     def setUpTestData(cls):
         cls.white_label = WhiteLabel.objects.create(name="Massachusetts", code="ma", state_code="MA")
         cls.program = Program.objects.new_program(white_label="ma", name_abbreviated="ma_bsp")
-
-    def setUp(self):
-        patcher = patch.object(Screen, "get_reference_date", lambda _self: FROZEN_DATE)
-        patcher.start()
-        self.addCleanup(patcher.stop)
 
     def make_screen(self, zipcode="02101", county="Boston", household_size=2):
         # MA stores city name in the county field (see MFB-548).
@@ -71,7 +67,7 @@ class MaBabyStepsTestCase(TestCase):
     def make_member(self, screen, relationship, birth_year_month=None, monthly_income=0):
         age = None
         if birth_year_month is not None:
-            age = HouseholdMember.age_from_date(birth_year_month, FROZEN_DATE)
+            age = HouseholdMember.age_from_date(birth_year_month)
 
         member = HouseholdMember.objects.create(
             screen=screen,

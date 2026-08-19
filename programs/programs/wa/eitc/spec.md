@@ -247,7 +247,6 @@ Generated via MFB-851 research on 2026-03-31; dev-feedback cleanup completed on 
 
 Files to be committed to repo:
 - Program config: `programs/management/commands/import_program_config_data/data/wa_eitc_initial_config.json`
-- Test cases: `validations/management/commands/import_validations/data/wa_eitc.json`
 
 ## Acceptance Criteria
 
@@ -477,9 +476,6 @@ Total income: $2,500 + $1,000 = $3,500/month ($42,000/year), well below $50,434 
 **Why this matters**: Tests the ineligible side of the TY2025 investment income ceiling under 26 U.S.C. § 32(i). At $12,000 annual investment income, this household exceeds the $11,950 cap by $50 — confirming the screener applies a strict cutoff rather than rounding or softening the boundary. Pairs with Scenario 12 (just under the limit, eligible) to validate both sides of the boundary. The household is otherwise fully EITC-eligible — investment income is the only disqualifying factor.
 
 ---
-
-## JSON Test Cases
-File: `validations/management/commands/import_validations/data/wa_eitc.json`
 
 ## Generated Program Configuration
 File: `programs/management/commands/import_program_config_data/data/wa_eitc_initial_config.json`

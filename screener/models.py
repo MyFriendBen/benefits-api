@@ -123,21 +123,6 @@ class Screen(models.Model):
     utm_content = models.CharField(max_length=128, blank=True, null=True)
     utm_term = models.CharField(max_length=128, blank=True, null=True)
 
-    @property
-    def frozen(self):
-        return self.validations.count() > 0
-
-    def get_reference_date(self) -> date:
-        """
-        Get the reference date for age calculations.
-        For frozen screens (with validations), use the earliest validation's created_date
-        to keep ages consistent over time. For non-frozen screens, use current date.
-        """
-        earliest_validation = self.validations.order_by("created_date").first()
-        if earliest_validation and earliest_validation.created_date:
-            return earliest_validation.created_date.date()
-        return timezone.now().date()
-
     def calc_gross_income(self, frequency, types, exclude=[]):
         household_members = self.household_members.all()
         gross_income = 0
@@ -600,7 +585,7 @@ class HouseholdMember(models.Model):
         )
 
         # Path 2: Qualifying Relative
-        threshold = get_qualifying_relative_threshold(self.screen.get_reference_date().year)
+        threshold = get_qualifying_relative_threshold(timezone.now().year)
         is_qualifying_relative = has_eligible_relationship and self.calc_gross_income("yearly", ["all"]) < threshold
 
         return is_qualifying_child or is_qualifying_relative
@@ -634,12 +619,11 @@ class HouseholdMember(models.Model):
         if self.birth_year_month is None:
             return self.age
 
-        reference_date = self.screen.get_reference_date()
-        return self.age_from_date(self.birth_year_month, reference_date)
+        return self.age_from_date(self.birth_year_month)
 
     @staticmethod
-    def age_from_date(birth_year_month: date, reference_date: Optional[date] = None) -> int:
-        today = reference_date if reference_date else timezone.now()
+    def age_from_date(birth_year_month: date) -> int:
+        today = timezone.now()
 
         if today.month >= birth_year_month.month:
             return today.year - birth_year_month.year
@@ -650,7 +634,7 @@ class HouseholdMember(models.Model):
         if self.birth_year_month is None:
             return float(self.age) if self.age is not None else None
 
-        reference_date = self.screen.get_reference_date()
+        reference_date = timezone.now().date()
 
         current_year = reference_date.year + reference_date.month / 12
         birth_year = self.birth_year_month.year + self.birth_year_month.month / 12

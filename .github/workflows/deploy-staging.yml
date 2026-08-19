@@ -96,15 +96,6 @@ jobs:
           heroku-api-key: ${{ secrets.HEROKU_API_KEY }}
           heroku-app-name: ${{ secrets.HEROKU_STAGING_APP_NAME }}
 
-      - name: Run validations
-        if: success()
-        id: validations
-        uses: ./.github/actions/heroku-validations
-        with:
-          heroku-api-key: ${{ secrets.HEROKU_API_KEY }}
-          heroku-app-name: ${{ secrets.HEROKU_STAGING_APP_NAME }}
-          validation-sheet-id: ${{ secrets.VALIDATION_SHEET_ID }}
-
       - name: Send success notification to Slack
         if: success()
         uses: ./.github/actions/slack-notify

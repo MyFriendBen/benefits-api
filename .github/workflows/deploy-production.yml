@@ -107,18 +107,6 @@ jobs:
           heroku-api-key: ${{ secrets.HEROKU_API_KEY }}
           heroku-app-name: ${{ secrets.HEROKU_PROD_APP_NAME }}
 
-      - name: Run validations
-        if: success()
-        id: validations
-        # TODO: Step consistently times out (see: MFB-470, MFB-472)
-        continue-on-error: true
-        run: exit 1
-        # uses: ./.github/actions/heroku-validations
-        # with:
-        #   heroku-api-key: ${{ secrets.HEROKU_API_KEY }}
-        #   heroku-app-name: ${{ secrets.HEROKU_PROD_APP_NAME }}
-        #   validation-sheet-id: ${{ secrets.VALIDATION_SHEET_ID }}
-
       - name: Sync translations to staging
         if: success()
         id: sync_translations
@@ -188,10 +176,9 @@ jobs:
         run: |
           MIGRATIONS_STATUS="${{ steps.migrations.outcome }}"
           CONFIG_STATUS="${{ steps.config.outcome }}"
-          VALIDATIONS_STATUS="${{ steps.validations.outcome }}"
           SYNC_TRANSLATIONS_STATUS="${{ steps.sync_translations.outcome }}"
 
-          if [ "$MIGRATIONS_STATUS" == "success" ] && [ "$CONFIG_STATUS" == "success" ] && [ "$VALIDATIONS_STATUS" == "success" ] && [ "$SYNC_TRANSLATIONS_STATUS" == "success" ]; then
+          if [ "$MIGRATIONS_STATUS" == "success" ] && [ "$CONFIG_STATUS" == "success" ] && [ "$SYNC_TRANSLATIONS_STATUS" == "success" ]; then
             echo "status=success" >> $GITHUB_OUTPUT
           else
             echo "status=completed-with-warnings" >> $GITHUB_OUTPUT
@@ -208,10 +195,7 @@ jobs:
           release-url: ${{ github.event.release.html_url }}
           migrations-status: ${{ steps.migrations.outcome }}
           config-status: ${{ steps.config.outcome }}
-          pull-validations-status: skipped
-          validations-status: ${{ steps.validations.outcome }}
           sync-translations-status: ${{ steps.sync_translations.outcome }}
-          validation-sheet-id: ${{ secrets.VALIDATION_SHEET_ID }}
 
       - name: Send deployment failure notification to Slack
         if: failure()
