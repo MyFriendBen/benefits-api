@@ -12,9 +12,14 @@ as they test Screen model methods, not TX-specific logic.
 from django.test import TestCase
 
 from programs.programs.federal.pe.spm import Lifeline, Snap, SchoolLunch, Tanf
-from programs.programs.policyengine.calculators.dependencies import household, irs_gross_income, member, spm
-from programs.programs.policyengine.calculators.dependencies.household import TxStateCodeDependency
-from programs.programs.tx.pe import tx_pe_calculators
+from programs.framework.pe_dependencies import (
+    household,
+    irs_gross_income,
+    member,
+    receipt_contract,
+    spm,
+)
+from programs.framework.pe_dependencies.household import TxStateCodeDependency
 from programs.programs.tx.pe.spm import TxCeap, TxLifeline, TxSnap, TxNslp, TxTanf
 
 
@@ -31,17 +36,9 @@ class TestTxSnap(TestCase):
         self.assertTrue(issubclass(TxSnap, Snap))
 
         # Verify it has the expected properties
-        self.assertEqual(TxSnap.pe_name, "snap")
+        self.assertEqual(TxSnap.pe_name, "snap_if_takes_up")
         self.assertIsNotNone(TxSnap.pe_inputs)
         self.assertGreater(len(TxSnap.pe_inputs), 0)
-
-    def test_is_registered_in_tx_pe_calculators(self):
-        """Test that TX SNAP is registered in the calculators dictionary."""
-        # Verify tx_snap is in the calculators dictionary
-        self.assertIn("tx_snap", tx_pe_calculators)
-
-        # Verify it points to the correct class
-        self.assertEqual(tx_pe_calculators["tx_snap"], TxSnap)
 
     def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self):
         """
@@ -92,14 +89,6 @@ class TestTxLifeline(TestCase):
         self.assertIsNotNone(TxLifeline.pe_inputs)
         self.assertGreater(len(TxLifeline.pe_inputs), 0)
 
-    def test_is_registered_in_tx_pe_calculators(self):
-        """Test that TX Lifeline is registered in the calculators dictionary."""
-        # Verify tx_lifeline is in the calculators dictionary
-        self.assertIn("tx_lifeline", tx_pe_calculators)
-
-        # Verify it points to the correct class
-        self.assertEqual(tx_pe_calculators["tx_lifeline"], TxLifeline)
-
     def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self):
         """
         Test that TxLifeline has all expected pe_inputs from parent and TX-specific.
@@ -148,14 +137,6 @@ class TestTxNslp(TestCase):
         self.assertEqual(TxNslp.pe_name, "school_meal_net_subsidy")
         self.assertIsNotNone(TxNslp.pe_inputs)
         self.assertGreater(len(TxNslp.pe_inputs), 0)
-
-    def test_is_registered_in_tx_pe_calculators(self):
-        """Test that TX NSLP is registered in the calculators dictionary."""
-        # Verify tx_nslp is in the calculators dictionary
-        self.assertIn("tx_nslp", tx_pe_calculators)
-
-        # Verify it points to the correct class
-        self.assertEqual(tx_pe_calculators["tx_nslp"], TxNslp)
 
     def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self):
         """
@@ -207,14 +188,6 @@ class TestTxTanf(TestCase):
         self.assertGreater(len(TxTanf.pe_inputs), 0)
         self.assertIsNotNone(TxTanf.pe_outputs)
         self.assertGreater(len(TxTanf.pe_outputs), 0)
-
-    def test_is_registered_in_tx_pe_calculators(self):
-        """Test that TX TANF is registered in the calculators dictionary."""
-        # Verify tx_tanf is in the calculators dictionary
-        self.assertIn("tx_tanf", tx_pe_calculators)
-
-        # Verify it points to the correct class
-        self.assertEqual(tx_pe_calculators["tx_tanf"], TxTanf)
 
     def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self):
         """
@@ -313,11 +286,6 @@ class TestTxCeap(TestCase):
         self.assertIsNotNone(TxCeap.pe_outputs)
         self.assertGreater(len(TxCeap.pe_outputs), 0)
 
-    def test_is_registered_in_tx_pe_calculators(self):
-        """Test that TX LIHEAP (CEAP) is registered under the tx_liheap program key."""
-        self.assertIn("tx_liheap", tx_pe_calculators)
-        self.assertEqual(tx_pe_calculators["tx_liheap"], TxCeap)
-
     def test_pe_inputs_includes_tx_state_code_dependency(self):
         """TxStateCodeDependency gates tx_ceap to TX (defined_for=StateCode.TX)."""
         self.assertIn(TxStateCodeDependency, TxCeap.pe_inputs)
@@ -338,28 +306,23 @@ class TestTxCeap(TestCase):
         self.assertIn(spm.TxCeap, TxCeap.pe_outputs)
         self.assertEqual(spm.TxCeap.field, "tx_ceap")
 
-    def test_pe_inputs_includes_reported_ssi_inputs(self):
+    def test_pe_inputs_includes_the_receipt_contract(self):
         """
-        MFB-1146: tx_ceap counts applicable_ssi, which only reflects the household's
-        *reported* SSI when use_reported_ssi is sent True. Both the reported amount
-        and the toggle must be in pe_inputs, otherwise PE counts modeled SSI and
-        SS/SSI households land in the wrong (too-generous) benefit tier.
+        tx_ceap counts SSI via applicable_ssi, which follows the `ssi` input. The receipt
+        contract supplies the household's reported amount where they report one, and
+        suppresses PolicyEngine's simulated SSI otherwise — without it, modeled SSI counts
+        as income and SS/SSI households land in the wrong (too-generous) benefit tier.
         """
-        self.assertIn(member.SsiReportedDependency, TxCeap.pe_inputs)
-        self.assertIn(member.UseReportedSsiDependency, TxCeap.pe_inputs)
-        self.assertEqual(member.UseReportedSsiDependency.field, "use_reported_ssi")
+        for dep in receipt_contract:
+            self.assertIn(dep, TxCeap.pe_inputs)
 
-    def test_use_reported_ssi_is_version_gated(self):
+    def test_receipt_inputs_are_version_gated(self):
         """
-        use_reported_ssi / applicable_ssi were added in policyengine-us 1.742.0.
-        The dependency must carry that floor so it is never sent to an earlier model
-        (which would 400 the whole request). The reported-amount input (ssi_reported)
-        has existed since 2022, so it stays ungated.
+        Every field the contract adds carries the floor of the release that introduced it, so
+        none is ever sent to an earlier model — an unknown input 400s the whole request, taking
+        every PE program in it down. The amount inputs (`ssi`, `tanf`) predate it and stay
+        ungated.
         """
-        self.assertEqual(member.UseReportedSsiDependency.min_pe_version, (1, 742, 0))
-        self.assertEqual(member.SsiReportedDependency.min_pe_version, ())
-
-    def test_use_reported_ssi_value_is_true(self):
-        """The toggle is always True so the screener's reported SSI drives the income test."""
-        dep = member.UseReportedSsiDependency(None, None, {})
-        self.assertTrue(dep.value())
+        for dep in receipt_contract:
+            expected = () if dep.field in ("ssi", "tanf") else (1, 779, 3)
+            self.assertEqual(dep.min_pe_version, expected, dep.field)

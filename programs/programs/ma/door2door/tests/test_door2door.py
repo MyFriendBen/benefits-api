@@ -12,9 +12,8 @@ Eligibility requirements:
 from django.test import TestCase
 from unittest.mock import Mock
 
-from programs.programs.ma import ma_calculators
 from programs.programs.ma.door2door.calculator import MaDoorToDoor
-from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
+from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
 
 
 class TestMaDoorToDoorCalculator(TestCase):
@@ -23,11 +22,6 @@ class TestMaDoorToDoorCalculator(TestCase):
     def test_exists_and_is_subclass_of_program_calculator(self):
         """Test that MaDoorToDoor calculator class exists and inherits correctly."""
         self.assertTrue(issubclass(MaDoorToDoor, ProgramCalculator))
-
-    def test_is_registered_in_ma_calculators(self):
-        """Test that Door2Door is registered in the MA calculators dictionary."""
-        self.assertIn("ma_door_to_door", ma_calculators)
-        self.assertEqual(ma_calculators["ma_door_to_door"], MaDoorToDoor)
 
     def test_eligible_city_is_cambridge(self):
         """Test that the eligible city is set to Cambridge."""

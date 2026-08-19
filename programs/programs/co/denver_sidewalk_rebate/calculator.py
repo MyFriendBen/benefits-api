@@ -1,10 +1,11 @@
 from integrations.services.income_limits import ami
 from programs.co_county_zips import counties_from_screen
-from programs.programs.calc import Eligibility, ProgramCalculator, MemberEligibility
-import programs.programs.messages as messages
+from programs.framework.base import Eligibility, ProgramCalculator, MemberEligibility
+import programs.framework.eligibility_messages as messages
 
 
 class DenverSidewalkRebate(ProgramCalculator):
+    program_code = "dsr"
     county = "Denver County"
     ami_percent = "60%"
     presumptive_eligibility = ["snap", "tanf", "cccap"]

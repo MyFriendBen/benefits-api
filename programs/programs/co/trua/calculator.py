@@ -1,10 +1,11 @@
 from integrations.services.income_limits import ami
-from programs.programs.calc import Eligibility, ProgramCalculator
-import programs.programs.messages as messages
+from programs.framework.base import Eligibility, ProgramCalculator
+import programs.framework.eligibility_messages as messages
 from programs.co_county_zips import counties_from_screen
 
 
 class Trua(ProgramCalculator):
+    program_code = "trua"
     county = "Denver County"
     ami_percent = "80%"
     amount = 6_500

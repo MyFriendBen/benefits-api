@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_first_steps",
+    "category_type": {
+      "external_name": "mo_child_development",
+      "name": "Child's development",
+      "icon": "child_development"
+    },
+    "type_short": [
+      "child dev"
+    ],
+    "translations": {
+      "name": "Missouri First Steps",
+      "description": "First Steps helps children from birth to age 3. It is for children with developmental delays or certain diagnosed conditions. Specialists work with your family during everyday activities. A parent can make a referral online or by phone.",
+      "link": "https://dese.mo.gov/childhood/early-intervention/first-steps/how-to-make-referral",
+      "warning": "",
+      "website_description": "Learn who can get First Steps and make a referral.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

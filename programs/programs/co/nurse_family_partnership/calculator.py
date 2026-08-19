@@ -1,4 +1,4 @@
-from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
+from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
 from screener.models import Insurance
 
 
@@ -29,6 +29,8 @@ class CoNurseFamilyPartnership(ProgramCalculator):
     - https://www.elpasocountyhealth.org/appointments-adults-children-families/nurse-family-partnership-nfp/
     - https://www.larimer.gov/health/maternal-child-and-family-health/nurse-family-partnership-program
     """
+
+    program_code = "co_nfp"
 
     fpl_percent = 2
     # Only mother's income is considered; household size of 2 (mother + unborn child)

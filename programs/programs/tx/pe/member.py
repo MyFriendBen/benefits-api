@@ -7,10 +7,10 @@ from programs.programs.federal.pe.member import (
     EarlyHeadStart,
     Msp,
 )
-from programs.programs.policyengine.calculators.base import (
+from programs.framework.pe_base import (
     PolicyEngineMembersCalculator,
 )
-import programs.programs.policyengine.calculators.dependencies as dependency
+import programs.framework.pe_dependencies as dependency
 from screener.models import HouseholdMember
 
 
@@ -19,6 +19,8 @@ class TxWic(Wic):
     Texas WIC calculator that uses PolicyEngine's calculated benefit amounts
     instead of state-specific category amounts.
     """
+
+    program_code = "tx_wic"
 
     pe_inputs = [
         *Wic.pe_inputs,
@@ -39,6 +41,8 @@ class TxSsi(Ssi):
     Extends the federal SSI calculator with Texas state code dependency.
     """
 
+    program_code = "tx_ssi"
+
     pe_inputs = [
         *Ssi.pe_inputs,
         dependency.household.TxStateCodeDependency,
@@ -50,6 +54,8 @@ class TxCsfp(CommoditySupplementalFoodProgram):
     Texas Commodity Supplemental Food Program (CSFP) calculator that uses PolicyEngine's calculations.
     Extends the federal CSFP calculator with Texas state code dependency.
     """
+
+    program_code = "tx_csfp"
 
     pe_inputs = [
         *CommoditySupplementalFoodProgram.pe_inputs,
@@ -69,6 +75,8 @@ class TxMedicaidForChildren(Medicaid):
     - Must not have other health insurance
     - Income eligibility determined by PolicyEngine
     """
+
+    program_code = "tx_medicaid_for_children"
 
     pe_inputs = [
         *Medicaid.pe_inputs,
@@ -103,6 +111,8 @@ class TxMedicaidForPregnantWomen(Medicaid):
     - Must not have other health insurance
     - Income eligibility determined by PolicyEngine
     """
+
+    program_code = "tx_medicaid_for_pregnant_women"
 
     pe_inputs = [
         *Medicaid.pe_inputs,
@@ -141,6 +151,8 @@ class TxMedicaidForParentsAndCaretakers(Medicaid):
     - Must have a qualifying relationship to a child: parent, step-parent, sibling, step-sibling, grandparent, or related in some other way
     - Income eligibility determined by PolicyEngine
     """
+
+    program_code = "tx_medicaid_for_parents_and_caretakers"
 
     pe_inputs = [
         *Medicaid.pe_inputs,
@@ -230,6 +242,8 @@ class TxEmergencyMedicaid(Medicaid):
       they must have a qualifying condition to receive benefits.
     """
 
+    program_code = "tx_emergency_medicaid"
+
     pe_inputs = [
         *Medicaid.pe_inputs,
         dependency.household.TxStateCodeDependency,
@@ -256,6 +270,8 @@ class TxChip(PolicyEngineMembersCalculator):
     for TX-specific CHIP eligibility determination.
     Inherits from PolicyEngineMembersCalculator and uses the same inputs as the federal Chip calculator.
     """
+
+    program_code = "tx_chip"
 
     pe_name = "chip"
     pe_inputs = [
@@ -298,6 +314,8 @@ class TxHarrisCountyRides(PolicyEngineMembersCalculator):
     PolicyEngine handles all eligibility requirements
     """
 
+    program_code = "tx_harris_rides"
+
     pe_name = "tx_harris_rides_eligible"
     pe_outputs = [dependency.member.TxHarrisRidesEligible]
     pe_inputs = [
@@ -333,6 +351,8 @@ class TxDart(PolicyEngineMembersCalculator):
     Reference: https://www.dart.org/fare/general-fares-and-overview/reduced-fares
     """
 
+    program_code = "tx_dart"
+
     pe_name = "tx_dart_benefit_person"
     pe_inputs = [
         # Core demographics
@@ -366,6 +386,8 @@ class TxDart(PolicyEngineMembersCalculator):
 class TxHeadStart(HeadStart):
     """Texas Head Start (ages 3-5) — federal ``HeadStart`` PE calculator + TX state code."""
 
+    program_code = "tx_head_start"
+
     pe_inputs = [
         *HeadStart.pe_inputs,
         dependency.household.TxStateCodeDependency,
@@ -374,6 +396,8 @@ class TxHeadStart(HeadStart):
 
 class TxEarlyHeadStart(EarlyHeadStart):
     """Texas Early Head Start (birth-3 / pregnant) — federal ``EarlyHeadStart`` PE calculator + TX state code."""
+
+    program_code = "tx_early_head_start"
 
     pe_inputs = [
         *EarlyHeadStart.pe_inputs,
@@ -384,6 +408,8 @@ class TxEarlyHeadStart(EarlyHeadStart):
 class TxMsp(Msp):
     """Texas Medicare Savings Program. Federal ``Msp`` plus the TX state code and the state's
     Medicaid inputs (see ``Msp`` for why the Medicaid inputs are required)."""
+
+    program_code = "tx_medicare_savings_program"
 
     pe_inputs = [
         *Msp.pe_inputs,

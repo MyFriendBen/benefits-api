@@ -1,5 +1,5 @@
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
-import programs.programs.messages as messages
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
+import programs.framework.eligibility_messages as messages
 
 
 class KsK40h(ProgramCalculator):
@@ -40,6 +40,8 @@ class KsK40h(ProgramCalculator):
     certification/SGA, VA 50%+ rating, and the statute-only anti-abuse bars — all
     verified at application, not by the screener.
     """
+
+    program_code = "ks_k40h"
 
     income_limit = 43_389
     max_property_tax = 700

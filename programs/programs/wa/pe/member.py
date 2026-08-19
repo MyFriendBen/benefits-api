@@ -1,10 +1,11 @@
-import programs.programs.policyengine.calculators.dependencies as dependency
+import programs.framework.pe_dependencies as dependency
 from programs.programs.federal.pe.member import Medicaid, Ssi
-from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
+from programs.framework.pe_base import PolicyEngineMembersCalculator
 from screener.models import HouseholdMember
 
 
 class WaAppleHealthMedicaid(Medicaid):
+    program_code = "wa_apple_health_medicaid"
     pe_inputs = [
         *Medicaid.pe_inputs,
         dependency.household.WaStateCodeDependency,
@@ -119,6 +120,8 @@ class WaAppleHealthForKids(PolicyEngineMembersCalculator):
     Value: $2,801/year per eligible child (KFF 2023 CHILD bucket).
     """
 
+    program_code = "wa_apple_health_for_kids"
+
     pe_name = "wa_apple_health_kids_eligible"
     pe_inputs = [
         *Medicaid.pe_inputs,
@@ -162,6 +165,8 @@ class WaSsi(Ssi):
     See `programs/programs/wa/ssi/spec.md` for the full eligibility criteria,
     PolicyEngine variable mapping, and the 15 reference test scenarios.
     """
+
+    program_code = "wa_ssi"
 
     pe_inputs = [
         *Ssi.pe_inputs,

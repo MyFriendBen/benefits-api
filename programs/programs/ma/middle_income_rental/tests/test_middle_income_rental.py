@@ -15,9 +15,8 @@ income-restricted rental program, including:
 from django.test import TestCase
 from unittest.mock import Mock, patch
 
-from programs.programs.ma import ma_calculators
 from programs.programs.ma.middle_income_rental.calculator import MaMiddleIncomeRental
-from programs.programs.calc import ProgramCalculator, Eligibility
+from programs.framework.base import ProgramCalculator, Eligibility
 
 
 class TestMaMiddleIncomeRentalCalculator(TestCase):
@@ -26,11 +25,6 @@ class TestMaMiddleIncomeRentalCalculator(TestCase):
     def test_exists_and_is_subclass_of_program_calculator(self):
         """Test that MaMiddleIncomeRental calculator class exists and inherits correctly."""
         self.assertTrue(issubclass(MaMiddleIncomeRental, ProgramCalculator))
-
-    def test_is_registered_in_ma_calculators(self):
-        """Test that Middle-Income Rental is registered in the MA calculators dictionary."""
-        self.assertIn("ma_middle_income_rental", ma_calculators)
-        self.assertEqual(ma_calculators["ma_middle_income_rental"], MaMiddleIncomeRental)
 
     def test_eligible_city_is_cambridge(self):
         """Test that the eligible city is set to Cambridge."""

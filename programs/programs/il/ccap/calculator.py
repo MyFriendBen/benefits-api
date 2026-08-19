@@ -1,5 +1,5 @@
-from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
-import programs.programs.messages as messages
+from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
+import programs.framework.eligibility_messages as messages
 from .rate_data import SUBSIDY_RATE_TABLE, COPAYMENT_TABLE_A
 
 
@@ -20,6 +20,8 @@ class IlChildCareAssistanceProgram(ProgramCalculator):
     Note: The estimated value represents the state subsidy amount. Families are required to pay
     a monthly copayment based on income and family size. The copayment is per family, not per child.
     """
+
+    program_code = "il_ccap"
 
     dependencies = ["age", "county", "income_amount", "income_frequency", "household_size"]
     # Per IDHS policy 01.01.02, eligible children include:

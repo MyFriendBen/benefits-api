@@ -2,7 +2,7 @@ from datetime import date
 from typing import Optional
 
 from screener.models import HouseholdMember
-from programs.programs.calc import MemberEligibility, ProgramCalculator
+from programs.framework.base import MemberEligibility, ProgramCalculator
 
 
 class MaBabySteps(ProgramCalculator):
@@ -44,6 +44,8 @@ class MaBabySteps(ProgramCalculator):
     Sources: https://www.mass.gov/info-details/babysteps; https://www.mefa.org/article/babysteps/
     (full sourcing in spec.md)
     """
+
+    program_code = "ma_bsp"
 
     # One-time $50 seed deposit per qualifying child (lump sum, not a monthly benefit).
     member_amount = 50

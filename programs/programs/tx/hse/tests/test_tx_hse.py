@@ -14,9 +14,8 @@ Benefit value:
 from django.test import TestCase
 from unittest.mock import Mock
 
-from programs.programs.tx import tx_calculators
 from programs.programs.tx.hse.calculator import TxHse
-from programs.programs.calc import ProgramCalculator, Eligibility
+from programs.framework.base import ProgramCalculator, Eligibility
 
 
 def make_member(age: int | None = 40, disabled=False, visually_impaired=False, long_term_disability=False):
@@ -53,10 +52,6 @@ def run_household_eligible(calc):
 class TestTxHseClassAttributes(TestCase):
     def test_is_subclass_of_program_calculator(self):
         self.assertTrue(issubclass(TxHse, ProgramCalculator))
-
-    def test_is_registered_in_tx_calculators(self):
-        self.assertIn("tx_hse", tx_calculators)
-        self.assertEqual(tx_calculators["tx_hse"], TxHse)
 
     def test_base_amount_is_1200(self):
         self.assertEqual(TxHse.amount, 1200)

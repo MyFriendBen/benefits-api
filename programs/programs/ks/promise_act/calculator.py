@@ -1,5 +1,5 @@
-from programs.programs.calc import Eligibility, ProgramCalculator
-import programs.programs.messages as messages
+from programs.framework.base import Eligibility, ProgramCalculator
+import programs.framework.eligibility_messages as messages
 
 
 class KsPromiseAct(ProgramCalculator):
@@ -38,6 +38,8 @@ class KsPromiseAct(ProgramCalculator):
     prior Promise Act receipt, or the lifetime cap ($20,000 / 68 credit hours), so
     the estimate is the maximum a student with no other assistance would receive.
     """
+
+    program_code = "ks_promise_act"
 
     # Size-tiered income limits (K.S.A. 74-32,274).
     small_household_limit = 100_000  # family of 1-2

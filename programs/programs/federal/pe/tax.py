@@ -1,9 +1,10 @@
 from programs.programs.federal.pe.member import Medicaid
-from programs.programs.policyengine.calculators.base import PolicyEngineTaxUnitCalulator
-import programs.programs.policyengine.calculators.dependencies as dependency
+from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
+import programs.framework.pe_dependencies as dependency
 
 
 class Eitc(PolicyEngineTaxUnitCalulator):
+    program_code = "eitc"
     pe_name = "eitc"
     pe_inputs = [
         dependency.member.AgeDependency,
@@ -15,6 +16,7 @@ class Eitc(PolicyEngineTaxUnitCalulator):
 
 
 class Ctc(PolicyEngineTaxUnitCalulator):
+    program_code = "ctc"
     pe_name = "ctc_value"
     pe_inputs = [
         dependency.member.AgeDependency,
@@ -25,7 +27,7 @@ class Ctc(PolicyEngineTaxUnitCalulator):
     pe_outputs = [dependency.tax.Ctc]
 
 
-class Cdcc(PolicyEngineTaxUnitCalulator):
+class Cdcc(PolicyEngineTaxUnitCalulator, abstract=True):
     pe_name = "cdcc"
     pe_inputs = [
         dependency.member.AgeDependency,
@@ -42,7 +44,7 @@ class Cdcc(PolicyEngineTaxUnitCalulator):
     pe_outputs = [dependency.tax.Cdcc]
 
 
-class Aca(PolicyEngineTaxUnitCalulator):
+class Aca(PolicyEngineTaxUnitCalulator, abstract=True):
     pe_name = "aca_ptc"
     pe_inputs = [
         *Medicaid.pe_inputs,

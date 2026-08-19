@@ -1,10 +1,11 @@
 from programs.programs.federal.pe.member import Ssi
-from programs.programs.policyengine.calculators.base import PolicyEngineSpmCalulator
-import programs.programs.policyengine.calculators.dependencies as dependency
+from programs.framework.pe_base import PolicyEngineSpmCalulator
+import programs.framework.pe_dependencies as dependency
 from programs.programs.federal.pe.spm import Snap
 
 
 class MaSnap(Snap):
+    program_code = "ma_snap"
     pe_inputs = [
         *Snap.pe_inputs,
         dependency.household.MaStateCodeDependency,
@@ -12,6 +13,7 @@ class MaSnap(Snap):
 
 
 class MaTafdc(PolicyEngineSpmCalulator):
+    program_code = "ma_tafdc"
     pe_name = "ma_tafdc"
     pe_inputs = [
         dependency.spm.PreSubsidyChildcareExpensesDependency,
@@ -30,6 +32,7 @@ class MaTafdc(PolicyEngineSpmCalulator):
 
 
 class MaEaedc(PolicyEngineSpmCalulator):
+    program_code = "ma_eaedc"
     pe_name = "ma_eaedc"
     pe_inputs = [
         dependency.spm.MaEaedcLivingArangementDependency,
@@ -53,6 +56,7 @@ class MaEaedc(PolicyEngineSpmCalulator):
 
 
 class MaHeap(PolicyEngineSpmCalulator):
+    program_code = "ma_heap"
     pe_name = "ma_liheap"
 
     pe_inputs = [

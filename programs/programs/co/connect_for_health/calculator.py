@@ -1,10 +1,10 @@
 from integrations.services.sheets.sheets import GoogleSheets
 from integrations.services.sheets.cache import GoogleSheetsCache
 from programs.co_county_zips import counties_from_screen
-from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
+from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
 from screener.models import HouseholdMember
-from programs.programs.helpers import medicaid_eligible
-import programs.programs.messages as messages
+from programs.framework.helpers import medicaid_eligible
+import programs.framework.eligibility_messages as messages
 from sentry_sdk import capture_message
 
 
@@ -31,6 +31,7 @@ class CfhCountyValuesCache(GoogleSheetsCache):
 
 
 class ConnectForHealth(ProgramCalculator):
+    program_code = "cfhc"
     percent_of_fpl = 4
     dependencies = ["insurance", "income_amount", "income_frequency", "zipcode", "household_size"]
     eligible_insurance_types = ["none", "private"]

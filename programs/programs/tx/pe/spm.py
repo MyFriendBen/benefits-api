@@ -1,9 +1,10 @@
-import programs.programs.policyengine.calculators.dependencies as dependency
+import programs.framework.pe_dependencies as dependency
 from programs.programs.federal.pe.spm import Snap, Lifeline, SchoolLunch, Tanf
-from programs.programs.policyengine.calculators.base import PolicyEngineSpmCalulator
+from programs.framework.pe_base import PolicyEngineSpmCalulator
 
 
 class TxSnap(Snap):
+    program_code = "tx_snap"
     pe_inputs = [
         *Snap.pe_inputs,
         dependency.household.TxStateCodeDependency,
@@ -11,6 +12,7 @@ class TxSnap(Snap):
 
 
 class TxLifeline(Lifeline):
+    program_code = "tx_lifeline"
     pe_inputs = [
         *Lifeline.pe_inputs,
         dependency.household.TxStateCodeDependency,
@@ -25,6 +27,8 @@ class TxNslp(SchoolLunch):
     and benefit values. Inherits from federal SchoolLunch calculator and adds
     TX state code dependency.
     """
+
+    program_code = "tx_nslp"
 
     pe_inputs = [
         *SchoolLunch.pe_inputs,
@@ -47,6 +51,8 @@ class TxTanf(Tanf):
     these deductions and caused households with gross wages between ~$188-$402/month
     to be incorrectly denied for a family of 3 with 1 parent.
     """
+
+    program_code = "tx_tanf"
 
     pe_name = "tx_tanf"
     pe_inputs = [
@@ -71,6 +77,8 @@ class TxCcs(PolicyEngineSpmCalulator):
     Uses PolicyEngine-calculated benefit amounts for TX-specific CCS eligibility
     and benefit values.
     """
+
+    program_code = "tx_ccs"
 
     pe_name = "tx_ccs"
     pe_inputs = [
@@ -99,16 +107,17 @@ class TxCeap(PolicyEngineSpmCalulator):
     10 TAC § 6.309(e)), capped by the household's reported energy expenses.
     """
 
+    program_code = "tx_liheap"
+
     pe_name = "tx_ceap"
     pe_inputs = [
         dependency.household.TxStateCodeDependency,
         *dependency.irs_gross_income,
-        # tx_ceap counts SSI via applicable_ssi, which uses the household's reported
-        # SSI only when use_reported_ssi is True; otherwise PE substitutes its own
-        # modeled SSI (~0 for screener inputs), undercounting income. Send both the
-        # reported amount and the toggle so the household's actual SSI drives the tier.
-        dependency.member.SsiReportedDependency,
-        dependency.member.UseReportedSsiDependency,
+        # tx_ceap counts SSI via applicable_ssi, which follows the `ssi` input: the
+        # household's reported amount where they report one, and PolicyEngine's own
+        # simulated SSI otherwise. The take-up flag suppresses that simulated value for
+        # anyone reporting no SSI, keeping a modelled benefit out of their FPG tier.
+        *dependency.receipt_contract,
         # tx_ceap caps the payment at electricity_expense + gas_expense; route the
         # screener's energy expenses into electricity_expense so the cap is non-zero.
         dependency.spm.TxCeapEnergyExpenseDependency,

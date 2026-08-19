@@ -14,8 +14,7 @@ from unittest.mock import Mock, call
 
 from django.test import SimpleTestCase as TestCase
 
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
-from programs.programs.tx import tx_calculators
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 from programs.programs.tx.ssdi.calculator import TxSsdi
 
 
@@ -73,10 +72,6 @@ def run_member_eligible(member):
 class TestTxSsdiRegistration(TestCase):
     def test_is_subclass_of_program_calculator(self):
         self.assertTrue(issubclass(TxSsdi, ProgramCalculator))
-
-    def test_registered_in_tx_calculators(self):
-        self.assertIn("tx_ssdi", tx_calculators)
-        self.assertEqual(tx_calculators["tx_ssdi"], TxSsdi)
 
 
 class TestTxSsdiDisabilityCheck(TestCase):

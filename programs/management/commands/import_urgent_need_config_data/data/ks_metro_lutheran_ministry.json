@@ -1,0 +1,33 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_metro_lutheran_ministry",
+    "category_type": {
+      "external_name": "ks_managing_housing_costs",
+      "name": "Managing housing costs",
+      "icon": "managing_housing"
+    },
+    "type_short": [
+      "housing"
+    ],
+    "translations": {
+      "name": "Metro Lutheran Ministry",
+      "description": "MLM helps people pay rent and utility bills during a crisis. Your income, housing, and where you live can affect whether you get help. Help also depends on available funds. Fill out the online form when it opens each month. You can get this help once every 12 months.",
+      "link": "https://mlmkc.org/assistance/",
+      "warning": "",
+      "website_description": "Apply for help with rent or utility bills.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Wyandotte County",
+      "Johnson County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

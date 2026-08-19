@@ -9,9 +9,8 @@ Eligibility requirements:
 from django.test import TestCase
 from unittest.mock import Mock
 
-from programs.programs.tx import tx_calculators
 from programs.programs.tx.wap.calculator import TxWap
-from programs.programs.calc import ProgramCalculator, Eligibility
+from programs.framework.base import ProgramCalculator, Eligibility
 
 
 def make_calculator(
@@ -53,10 +52,6 @@ def run_household_eligible(calc):
 class TestTxWapClassAttributes(TestCase):
     def test_is_subclass_of_program_calculator(self):
         self.assertTrue(issubclass(TxWap, ProgramCalculator))
-
-    def test_is_registered_in_tx_calculators(self):
-        self.assertIn("tx_wap", tx_calculators)
-        self.assertEqual(tx_calculators["tx_wap"], TxWap)
 
     def test_fpl_percent_is_2(self):
         self.assertEqual(TxWap.fpl_percent, 2)

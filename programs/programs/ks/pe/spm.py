@@ -1,4 +1,4 @@
-import programs.programs.policyengine.calculators.dependencies as dependency
+import programs.framework.pe_dependencies as dependency
 from programs.programs.federal.pe.spm import Snap, SchoolLunch, Lifeline, Tanf
 
 
@@ -34,13 +34,17 @@ class KsTanf(Tanf):
       without them the deduction never applies and the benefit is understated.
     """
 
+    program_code = "ks_tanf"
+
     pe_name = "ks_tanf"
     pe_inputs = [
         *Tanf.pe_inputs,
         dependency.household.KsStateCodeDependency,
         dependency.household.KsCountyDependency,
         dependency.member.PregnancyDependency,
-        dependency.member.Ssi,
+        # ks_tanf_is_assistance_unit_member excludes SSI recipients from the assistance
+        # unit, which should follow reported receipt rather than simulated SSI.
+        *dependency.receipt_contract,
         dependency.spm.CashAssetsDependency,
         dependency.spm.ChildCareDependency,
         dependency.spm.PreSubsidyChildcareExpensesDependency,
@@ -60,6 +64,8 @@ class KsSnap(Snap):
     SNAP parameters, so passing the KS state code is all that is required.
     """
 
+    program_code = "ks_snap"
+
     pe_inputs = [
         *Snap.pe_inputs,
         dependency.household.KsStateCodeDependency,
@@ -77,6 +83,8 @@ class KsNslp(SchoolLunch):
     inherit the federal eligibility/value logic and add the KS state code so
     PolicyEngine resolves any state-keyed parameters correctly.
     """
+
+    program_code = "ks_nslp"
 
     pe_inputs = [
         *SchoolLunch.pe_inputs,
@@ -99,6 +107,8 @@ class KsLifeline(Lifeline):
     $111/year instead of $204.24/year. Mirrors the TxLifeline / WaLifeline pattern,
     adding the KS state code so PE resolves the KS supplement parameters.
     """
+
+    program_code = "ks_lifeline"
 
     pe_inputs = [
         *Lifeline.pe_inputs,

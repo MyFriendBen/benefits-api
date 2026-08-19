@@ -1,9 +1,10 @@
-from programs.programs.calc import Eligibility, ProgramCalculator
+from programs.framework.base import Eligibility, ProgramCalculator
 from programs.programs.co.energy_calculator.energy_assistance.calculator import EnergyCalculatorEnergyAssistance
 from programs.programs.co.energy_calculator.util import has_renter_expenses
 
 
 class EnergyCalculatorEnergyOutreachCrisisIntervention(ProgramCalculator):
+    program_code = "cesn_eoccip"
     amount = 1
     dependencies = [*EnergyCalculatorEnergyAssistance.dependencies, "energy_calculator"]
 

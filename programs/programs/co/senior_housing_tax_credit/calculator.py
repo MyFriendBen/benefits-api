@@ -1,8 +1,9 @@
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 import math
 
 
 class SeniorHousingIncomeTaxCredit(ProgramCalculator):
+    program_code = "shitc"
     amount = 800
     income_reduction = 25000
     reduction_interval = 500

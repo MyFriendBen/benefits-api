@@ -1,0 +1,33 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_metro_transit_reduced_fare",
+    "category_type": {
+      "external_name": "mo_transportation",
+      "name": "Transportation",
+      "icon": "transportation"
+    },
+    "type_short": [
+      "transportation"
+    ],
+    "translations": {
+      "name": "Metro Transit Reduced Fare Programs",
+      "description": "Metro Transit gives some riders lower fares on MetroBus and MetroLink. This includes people age 65 or older, people with disabilities, and Medicare cardholders. Seniors need a photo ID from the government. Riders who are applying because of a disability must first be approved by Metro ADA Services. Call 314-982-1510 to get started.",
+      "link": "https://www.metrostlouis.org/reduced-fare-program/",
+      "warning": "",
+      "website_description": "Reduced MetroBus and MetroLink fares for seniors, people with disabilities, and Medicare cardholders",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "St. Louis City",
+      "St. Louis County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

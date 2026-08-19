@@ -1,0 +1,52 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_legal_services_eastern_missouri",
+    "category_type": {
+      "external_name": "mo_civil_legal_needs",
+      "name": "Civil legal needs",
+      "icon": "legal_services"
+    },
+    "type_short": [
+      "legal services"
+    ],
+    "translations": {
+      "name": "Legal Services of Eastern Missouri",
+      "description": "Legal Services of Eastern Missouri gives free legal help. It helps older adults and people with low incomes. Help also depends on the type of legal problem. You must live in one of the 21 eastern Missouri counties they serve. You can apply online or call 314-534-4200 or 800-444-0514. They do not handle criminal cases.",
+      "link": "https://lsem.org/get-help-now/",
+      "warning": "",
+      "website_description": "Apply for free legal help in eastern Missouri",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Audrain County",
+      "Clark County",
+      "Franklin County",
+      "Jefferson County",
+      "Knox County",
+      "Lewis County",
+      "Lincoln County",
+      "Marion County",
+      "Monroe County",
+      "Montgomery County",
+      "Pike County",
+      "Ralls County",
+      "Randolph County",
+      "St. Charles County",
+      "St. Francois County",
+      "St. Louis City",
+      "St. Louis County",
+      "Ste. Genevieve County",
+      "Shelby County",
+      "Warren County",
+      "Washington County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

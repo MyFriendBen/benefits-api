@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_housing_resources_corporation",
+    "category_type": {
+      "external_name": "ks_managing_housing_costs",
+      "name": "Managing housing costs",
+      "icon": "managing_housing"
+    },
+    "type_short": [
+      "housing"
+    ],
+    "translations": {
+      "name": "Kansas Housing Resources Corporation (KHRC)",
+      "description": "KHRC connects Kansas residents with housing help. You can find help with rent, help paying for home energy, programs for buying a home, and other housing help. Eligibility varies by program. Use the site to find programs and local providers that serve your area.",
+      "link": "https://kshousingcorp.org/",
+      "warning": "",
+      "website_description": "Find help with housing, rent, home energy costs, and buying a home in Kansas.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

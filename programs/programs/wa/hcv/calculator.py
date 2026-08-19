@@ -1,8 +1,8 @@
 import logging
 
 from integrations.clients.hud_income_limits import hud_client, HudIncomeClientError
-from programs.programs.calc import Eligibility, ProgramCalculator
-import programs.programs.messages as messages
+from programs.framework.base import Eligibility, ProgramCalculator
+import programs.framework.eligibility_messages as messages
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +15,8 @@ class WaHcv(ProgramCalculator):
     Benefit: HAP = Payment Standard (100% FMR) minus Total Tenant Payment.
     Data gaps: citizenship, criminal history, real property ownership, student dual-income test.
     """
+
+    program_code = "wa_hcv"
 
     amount = 0
     asset_limit = 100_000

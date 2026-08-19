@@ -1,7 +1,7 @@
 from typing import ClassVar
 
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
-import programs.programs.messages as messages
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
+import programs.framework.eligibility_messages as messages
 
 
 class TxFpp(ProgramCalculator):
@@ -37,6 +37,8 @@ class TxFpp(ProgramCalculator):
       294,954 clients served). The household total scales with the number of eligible
       members.
     """
+
+    program_code = "tx_fpp"
 
     max_age = 64
     fpl_percent = 2.5

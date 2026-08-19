@@ -1,9 +1,37 @@
-from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
-import programs.programs.policyengine.calculators.dependencies as dependency
+from programs.framework.pe_base import PolicyEngineMembersCalculator
+import programs.framework.pe_dependencies as dependency
 from screener.models import HouseholdMember
 
 
 class Wic(PolicyEngineMembersCalculator):
+    """
+    Federal WIC. PolicyEngine decides it with::
+
+        demographic_eligible & (meets_income_test | meets_categorical_test) & nutritional_risk
+
+    The only income input here used to be ``school_meal_countable_income``, which WIC's
+    tree never reads — ``wic_countable_income`` sums its own parameter list,
+    ``gov.usda.wic.income.sources``. Supplying none of those sources let PE substitute an
+    imputation, and because that imputation also satisfied the categorical branch, WIC came
+    back eligible at any reported income (measured: eligible at $150k/yr). ``wic_income`` is
+    that source list, as far as the screener collects it.
+
+    Adjunctive eligibility above 185% FPL is correct, not a bug: 42 U.S.C. § 1786(d)(2)(A)
+    makes SNAP/TANF/Medicaid receipt its own pathway, and the 185% figure attaches only to
+    the income-test pathway. The practical boundary is the state's Medicaid limit — in MO,
+    ~201% FPL via MO HealthNet for Pregnant Women — so QA scenarios asserting a hard 185%
+    cutoff will flag correct behavior as a bug.
+
+    Nutritional risk has no screener field and defaults True in PE, so the third term is
+    always satisfied.
+
+    The base ``wic_categories`` are all zeros; state subclasses either override them with
+    per-category amounts (CO/IL/MA/NC) or override ``member_value`` to return PE's own
+    computed benefit (MO/TX).
+    """
+
+    program_code = "wic"
+
     wic_categories = {
         "NONE": 0,
         "INFANT": 0,
@@ -17,7 +45,9 @@ class Wic(PolicyEngineMembersCalculator):
         dependency.member.PregnancyDependency,
         dependency.member.ExpectedChildrenPregnancyDependency,
         dependency.member.AgeDependency,
-        dependency.spm.SchoolMealCountableIncomeDependency,
+        *dependency.wic_income,
+        # WIC's adjunct test reads SNAP/TANF receipt.
+        *dependency.receipt_contract,
     ]
     pe_outputs = [dependency.member.Wic, dependency.member.WicCategory]
 
@@ -29,7 +59,7 @@ class Wic(PolicyEngineMembersCalculator):
         return self.wic_categories[wic_category] * 12
 
 
-class Medicaid(PolicyEngineMembersCalculator):
+class Medicaid(PolicyEngineMembersCalculator, abstract=True):
     pe_name = "medicaid"
     pe_inputs = [
         dependency.member.AgeDependency,
@@ -37,6 +67,9 @@ class Medicaid(PolicyEngineMembersCalculator):
         dependency.member.SsiCountableResourcesDependency,
         dependency.member.IsDisabledDependency,
         *dependency.irs_gross_income,
+        # medicaid_category has an SSI-recipient pathway, which must not fire off
+        # simulated SSI.
+        *dependency.receipt_contract,
     ]
     pe_outputs = [
         dependency.member.AgeDependency,
@@ -95,7 +128,7 @@ class Medicaid(PolicyEngineMembersCalculator):
         return self.medicaid_categories[medicaid_category] * 12
 
 
-class Chip(PolicyEngineMembersCalculator):
+class Chip(PolicyEngineMembersCalculator, abstract=True):
     pe_name = "chip_category"
     pe_inputs = [
         dependency.member.AgeDependency,
@@ -119,6 +152,7 @@ class Chip(PolicyEngineMembersCalculator):
 
 
 class PellGrant(PolicyEngineMembersCalculator):
+    program_code = "pell_grant"
     pe_name = "pell_grant"
     pe_inputs = [
         dependency.member.PellGrantDependentAvailableIncomeDependency,
@@ -135,10 +169,15 @@ class PellGrant(PolicyEngineMembersCalculator):
 
 
 class Ssi(PolicyEngineMembersCalculator):
-    pe_name = "ssi"
+    program_code = "ssi"
+    # PolicyEngine gates `ssi` on the take-up flag, so it reads 0 for anyone reporting no SSI —
+    # exactly the people this program should be recommended to — and for reporters it just
+    # echoes back the amount they told us. Neither is the entitlement worth showing; the
+    # ungated output is.
+    pe_name = "ssi_if_takes_up"
     pe_inputs = [
         dependency.member.SsiCountableResourcesDependency,
-        dependency.member.SsiReportedDependency,
+        *dependency.receipt_contract,
         dependency.member.IsBlindDependency,
         dependency.member.IsDisabledDependency,
         dependency.member.MeetsSsiDisabilityCriteriaDependency,
@@ -149,10 +188,11 @@ class Ssi(PolicyEngineMembersCalculator):
         dependency.member.TaxUnitHeadDependency,
         dependency.member.TaxUnitDependentDependency,
     ]
-    pe_outputs = [dependency.member.Ssi]
+    pe_outputs = [dependency.member.SsiIfTakesUp]
 
 
 class CommoditySupplementalFoodProgram(PolicyEngineMembersCalculator):
+    program_code = "csfp"
     pe_name = "commodity_supplemental_food_program"
     pe_inputs = [
         dependency.member.AgeDependency,
@@ -161,7 +201,7 @@ class CommoditySupplementalFoodProgram(PolicyEngineMembersCalculator):
     pe_outputs = [dependency.member.CommoditySupplementalFoodProgram]
 
 
-class Ccdf(PolicyEngineMembersCalculator):
+class Ccdf(PolicyEngineMembersCalculator, abstract=True):
     pe_name = "is_ccdf_eligible"
     pe_inputs = [
         dependency.spm.AssetsDependency,
@@ -185,12 +225,12 @@ class Ccdf(PolicyEngineMembersCalculator):
         return self.child_care_cost(member)
 
 
-class HeadStart(PolicyEngineMembersCalculator):
+class HeadStart(PolicyEngineMembersCalculator, abstract=True):
     """
     Federal Head Start (ages 3-5). Eligibility and per-child value are computed by
     PolicyEngine's ``head_start`` variable. State subclasses add their state-code
     dependency; the rest of the inputs are shared. Categorical eligibility is fed
-    by the SSI/SNAP/TANF inputs plus foster care.
+    by the receipt contract (SSI/SNAP/TANF) plus foster care.
     """
 
     pe_name = "head_start"
@@ -198,14 +238,12 @@ class HeadStart(PolicyEngineMembersCalculator):
         dependency.member.AgeDependency,
         dependency.member.FosterCareDependency,
         *dependency.irs_gross_income,
-        dependency.member.Ssi,
-        dependency.spm.Snap,
-        dependency.spm.Tanf,
+        *dependency.receipt_contract,
     ]
     pe_outputs = [dependency.member.HeadStart]
 
 
-class EarlyHeadStart(PolicyEngineMembersCalculator):
+class EarlyHeadStart(PolicyEngineMembersCalculator, abstract=True):
     """
     Federal Early Head Start (birth to age 3, and pregnant women). Same computed
     eligibility/value model as ``HeadStart`` via PolicyEngine's ``early_head_start``
@@ -219,14 +257,12 @@ class EarlyHeadStart(PolicyEngineMembersCalculator):
         dependency.member.PregnancyDependency,
         dependency.member.FosterCareDependency,
         *dependency.irs_gross_income,
-        dependency.member.Ssi,
-        dependency.spm.Snap,
-        dependency.spm.Tanf,
+        *dependency.receipt_contract,
     ]
     pe_outputs = [dependency.member.EarlyHeadStart]
 
 
-class Msp(PolicyEngineMembersCalculator):
+class Msp(PolicyEngineMembersCalculator, abstract=True):
     """
     Federal Medicare Savings Program (QMB/SLMB/QI). Eligibility, category, and value
     are computed by PolicyEngine's ``msp`` variable; MSP rules are federal, so state
@@ -264,6 +300,8 @@ class Msp(PolicyEngineMembersCalculator):
         dependency.spm.CashAssetsDependency,
         dependency.member.MedicareQuartersOfCoverageDependency,
         dependency.member.IsMedicaidEligibleDependency,
+        # msp_countable_income uses SSI methodology and msp_category has an SSI pathway.
+        *dependency.receipt_contract,
     ]
     pe_outputs = [
         dependency.member.MspEligible,

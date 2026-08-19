@@ -1,5 +1,5 @@
-import programs.programs.messages as messages
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
+import programs.framework.eligibility_messages as messages
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 
 
 class WaHeadStart(ProgramCalculator):
@@ -23,6 +23,8 @@ class WaHeadStart(ProgramCalculator):
     Benefit value: $10,381/year per eligible participant (WSIPP Program #272, 2023 dollars).
     Applied equally to EHS participants and pregnant women as a simplifying assumption.
     """
+
+    program_code = "wa_head_start"
 
     # HS Preschool: ages 3–5 ("no older than required school age" = kindergarten-entry age in WA)
     hs_min_age = 3

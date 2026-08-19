@@ -1,8 +1,9 @@
 from programs.co_county_zips import counties_from_screen
-from programs.programs.calc import Eligibility, ProgramCalculator
+from programs.framework.base import Eligibility, ProgramCalculator
 
 
 class EnergyCalculatorEmergencyAssistance(ProgramCalculator):
+    program_code = "cesn_ea"
     amount = 1
     county = "Denver County"
     fpl_percent = 4

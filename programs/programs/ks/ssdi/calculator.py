@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Optional
-from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
-from programs.programs import messages
+from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
+from programs.framework import eligibility_messages as messages
 
 
 class KsSsdi(ProgramCalculator):
@@ -12,6 +12,8 @@ class KsSsdi(ProgramCalculator):
     SSDI is a federal program with no state variance, so this calculator mirrors the
     federal rules used by other states (e.g. wa_ssdi).
     """
+
+    program_code = "ks_ssdi"
 
     sga_non_blind = 1_690
     sga_blind = 2_830

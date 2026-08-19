@@ -1,0 +1,28 @@
+{
+  "white_label": {
+    "code": "wa"
+  },
+  "need": {
+    "external_name": "wa_dol_id_help",
+    "category_type": {
+      "external_name": "wa_legal_services"
+    },
+    "type_short": [
+      "legal services"
+    ],
+    "translations": {
+      "name": "Washington State Department of Licensing - ID Help",
+      "description": "Washington State gives people who don't have a home a free state ID card. You can only get the free one once in your life. After that, it costs $5. Caseworkers can also help you gather the papers you need to get your ID.",
+      "link": "https://dol.wa.gov/id-cards/id-help-unhoused",
+      "warning": "",
+      "website_description": "Go here to find a representative in your county.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

@@ -1,6 +1,6 @@
 import math
-import programs.programs.messages as messages
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
+import programs.framework.eligibility_messages as messages
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 
 
 class WaCsfp(ProgramCalculator):
@@ -19,6 +19,8 @@ class WaCsfp(ProgramCalculator):
 
     State residency is enforced via the `wa` white label routing.
     """
+
+    program_code = "wa_csfp"
 
     min_age = 60
     fpl_percent = 1.5

@@ -1,8 +1,9 @@
-import programs.programs.policyengine.calculators.dependencies as dependency
+import programs.framework.pe_dependencies as dependency
 from programs.programs.federal.pe.spm import Lifeline, Snap, Tanf
 
 
 class WaLifeline(Lifeline):
+    program_code = "wa_lifeline"
     pe_inputs = [
         *Lifeline.pe_inputs,
         dependency.household.WaStateCodeDependency,
@@ -10,6 +11,7 @@ class WaLifeline(Lifeline):
 
 
 class WaSnap(Snap):
+    program_code = "wa_snap"
     pe_inputs = [
         *Snap.pe_inputs,
         dependency.household.WaStateCodeDependency,
@@ -38,6 +40,8 @@ class WaTanf(Tanf):
     See programs/programs/wa/tanf/spec.md for full eligibility criteria and
     the known gross-income-approximation limitation.
     """
+
+    program_code = "wa_tanf"
 
     pe_name = "wa_tanf"
     pe_inputs = [

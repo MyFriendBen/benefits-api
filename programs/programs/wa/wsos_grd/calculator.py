@@ -1,5 +1,5 @@
-import programs.programs.messages as messages
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
+import programs.framework.eligibility_messages as messages
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 
 
 class WaWsosGrd(ProgramCalculator):
@@ -43,6 +43,8 @@ class WaWsosGrd(ProgramCalculator):
       - https://waopportunityscholarship.org/wp-content/uploads/2025/12/GRD-C7-MFI-Chart-1-1.pdf
         (Official 2026 WSOS GRD MFI Chart)
     """
+
+    program_code = "wa_wsos_grd"
 
     # 2026 WSOS GRD MFI thresholds in dollars per year (155% MFI = upper cutoff used
     # by the screener). Per-household-size lookup table sourced from the official

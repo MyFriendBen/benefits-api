@@ -1,9 +1,10 @@
-from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
-from programs.programs.helpers import medicaid_eligible
-import programs.programs.messages as messages
+from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
+from programs.framework.helpers import medicaid_eligible
+import programs.framework.eligibility_messages as messages
 
 
 class NcEmergencyMedicaid(ProgramCalculator):
+    program_code = "nc_emergency_medicaid"
     # $6,268/yr | ~$522/mo
     member_amount = 6268
     max_age = 64

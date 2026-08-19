@@ -1,4 +1,4 @@
-from programs.programs.calc import ProgramCalculator
+from programs.framework.base import ProgramCalculator
 from .affordable_residential_energy.calculator import EnergyCalculatorAffordableResidentialEnergy
 from .electric_affordability_black_hills.calculator import (
     EnergyCalculatorElectricityAffordabilityBlackHills,

@@ -17,12 +17,12 @@ MO WIC layers:
    unchanged would value every eligible member at $0 and the frontend's ``value > 0``
    filter would drop the program from results entirely.
 
-3. **Income reaches PolicyEngine** — ``MoWic`` adds the ``irs_gross_income`` bundle the federal
-   inputs omit. Without it PE supplies none of WIC's own income sources, substitutes an
-   imputation, and returns WIC as eligible at any reported income (verified live: $108k/yr came
-   back eligible). This is a *partial* fix covering wage-type income only — see the gap note on
-   ``MoWic.pe_inputs``. co_wic / nc_wic / ma_wic / tx_wic remain affected and are tracked
-   separately.
+3. **Income reaches PolicyEngine** — WIC's income sources now come from the federal
+   ``Wic``'s ``wic_income`` bundle, which every state inherits. ``MoWic`` briefly carried a
+   partial ``irs_gross_income`` fix of its own; that is superseded and must not come back.
+   Which sources the bundle covers, and why, is pinned once in
+   ``federal/pe/tests/test_wic.py``; the assertions here only check that MO inherits it and
+   that a reported wage actually lands in the payload.
 
 MO Head Start / Early Head Start:
 
@@ -47,6 +47,16 @@ the wiring and the two inherited inputs that are load-bearing rather than boiler
 get ``ssi: 0``) and ``SsiCountableResourcesDependency`` (the resource limit is a
 hard cutoff). The dependency values themselves are covered in
 ``policyengine/calculators/dependencies/tests/test_member.py``.
+
+MO MSP:
+
+``MoMsp`` wraps the federal ``Msp`` calculator and adds the MO state code plus the state's
+Medicaid inputs, mirroring ``KsMsp`` / ``TxMsp`` / ``IlMsp``. Missouri's MSP delta is
+eligibility-only and reduces to one thing PE can act on: the state code resolves the
+asset-test-applies parameter, which is ``true`` for MO. The income tiers are the federal
+floor. Tests here pin that wiring and the inputs each spec scenario depends on; the tier
+and dollar outcomes are PolicyEngine's and were verified live at the pinned model version
+1.786.5 — see ``programs/programs/mo/msp/spec.md``.
 """
 
 from unittest.mock import MagicMock, Mock
@@ -54,24 +64,28 @@ from unittest.mock import MagicMock, Mock
 from django.test import TestCase
 from screener.models import HouseholdMember, IncomeStream, Screen, WhiteLabel
 
-import programs.programs.policyengine.calculators.dependencies as dependency
-from programs.programs.federal.pe.member import Wic, HeadStart, EarlyHeadStart, Ssi as FederalSsi
-from programs.programs.mo.pe import mo_member_calculators, mo_pe_calculators
-from programs.programs.mo.pe.member import MoWic, MoHeadStart, MoEarlyHeadStart, MoSsi
-from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
-from programs.programs.policyengine.calculators.dependencies import member as member_deps
-from programs.programs.policyengine.calculators.dependencies.household import MoStateCodeDependency
-from programs.programs.policyengine.calculators.dependencies.member import (
+import programs.framework.pe_dependencies as dependency
+from programs.programs.federal.pe.member import (
+    Wic,
+    HeadStart,
+    EarlyHeadStart,
+    Msp,
+    Ssi as FederalSsi,
+)
+from programs.programs.mo.pe.member import MoWic, MoHeadStart, MoEarlyHeadStart, MoMsp, MoSsi
+from programs.framework.pe_base import PolicyEngineMembersCalculator
+from programs.framework.pe_dependencies import member as member_deps
+from programs.framework.pe_dependencies.household import MoStateCodeDependency
+from programs.framework.pe_dependencies.member import (
     IsBlindDependency,
     MeetsSsiDisabilityCriteriaDependency,
     Ssi,
     SsiCountableResourcesDependency,
     SsiEarnedIncomeDependency,
-    SsiReportedDependency,
+    SsiIfTakesUp,
     SsiUnearnedIncomeDependency,
 )
-from programs.programs.policyengine.calculators.registry import all_calculators, all_member_calculators
-from programs.programs.policyengine.policy_engine import pe_input
+from integrations.clients.policyengine.policy_engine import pe_input
 
 
 class TestMoWicWiring(TestCase):
@@ -82,16 +96,9 @@ class TestMoWicWiring(TestCase):
         self.assertTrue(issubclass(MoWic, PolicyEngineMembersCalculator))
 
     def test_uses_federal_wic_pe_name(self):
+        """Inherited from the federal calculator, which stays on the ungated ``wic`` — see
+        ``Wic``."""
         self.assertEqual(MoWic.pe_name, "wic")
-
-    def test_registered_as_mo_wic(self):
-        self.assertIs(mo_member_calculators["mo_wic"], MoWic)
-        self.assertIs(mo_pe_calculators["mo_wic"], MoWic)
-
-    def test_registered_in_global_registry(self):
-        """A calculator missing from the registry never runs — screener/views.py iterates it."""
-        self.assertIs(all_member_calculators["mo_wic"], MoWic)
-        self.assertIs(all_calculators["mo_wic"], MoWic)
 
     def test_adds_mo_state_code_dependency(self):
         self.assertIn(MoStateCodeDependency, MoWic.pe_inputs)
@@ -100,72 +107,31 @@ class TestMoWicWiring(TestCase):
         for dep in Wic.pe_inputs:
             self.assertIn(dep, MoWic.pe_inputs)
 
-    def test_sends_gross_income_so_wage_income_binds(self):
+    def test_inherits_the_wic_income_bundle(self):
         """
         Regression guard for WIC income-blindness.
 
-        The federal inputs carry only ``school_meal_countable_income``, which PolicyEngine's WIC
-        tree never reads — ``wic_countable_income`` sums ``gov.usda.wic.income.sources`` instead.
-        Supplying none of those sources lets PE substitute its own imputation and find the
-        household categorically (adjunct) eligible, and since ``is_wic_eligible`` is
-        ``demographic & (income_test | categorical) & nutritional_risk`` that alone returns WIC as
-        eligible at any reported income.
+        WIC's income term reads ``gov.usda.wic.income.sources``, not the school-meals
+        aggregate the federal calculator used to send. Supplying none of those sources let PE
+        substitute an imputation and find the household categorically (adjunct) eligible, and
+        since ``is_wic_eligible`` is ``demographic & (income_test | categorical) &
+        nutritional_risk`` that alone returned WIC as eligible at any reported income.
+
+        What the bundle covers is asserted in ``federal/pe/tests/test_wic.py``; this only pins
+        that MO gets it.
         """
-        for dep in dependency.irs_gross_income:
+        for dep in dependency.wic_income:
             self.assertIn(dep, MoWic.pe_inputs)
 
-    def test_wic_income_source_coverage_is_partial(self):
+    def test_does_not_re_add_a_local_income_fix(self):
         """
-        Pins the known gap so it can't drift unnoticed.
-
-        ``irs_gross_income`` supplies 5 of the 24 variables in PE's ``gov.usda.wic.income.sources``.
-        If this starts failing, either the bundle or WIC's source list changed — re-check the gap
-        note on ``MoWic.pe_inputs`` before adjusting the number.
+        ``MoWic`` shipped ``irs_gross_income`` as a partial fix while the federal calculator
+        was still blind. The federal bundle supersedes it, and re-adding a local subset here
+        would silently narrow MO's coverage relative to every other state.
         """
-        wic_income_sources = {
-            "employment_income",
-            "self_employment_income",
-            "military_service_income",
-            "dividend_income",
-            "interest_income",
-            "gi_cash_assistance",
-            "social_security",
-            "ssi",
-            "tanf",
-            "pension_income",
-            "survivor_benefits",
-            "financial_assistance",
-            "miscellaneous_income",
-            "veterans_benefits",
-            "unemployment_compensation",
-            "strike_benefits",
-            "rental_income",
-            "retirement_distributions",
-            "alimony_income",
-            "child_support_received",
-            "disability_benefits",
-            "workers_compensation",
-            "educational_assistance",
-            "railroad_benefits",
-        }
-        sent = {dep.field for dep in MoWic.pe_inputs if hasattr(dep, "field")}
-
         self.assertEqual(
-            sent & wic_income_sources,
-            {
-                "employment_income",
-                "self_employment_income",
-                "social_security",
-                "unemployment_compensation",
-                "rental_income",
-            },
-        )
-
-    def test_federal_wic_alone_would_not_send_gross_income(self):
-        """Pins *why* the bundle is added here: the federal parent omits it (unlike ``Medicaid``)."""
-        self.assertFalse(
-            any(dep in Wic.pe_inputs for dep in dependency.irs_gross_income),
-            "federal Wic now sends gross income — MoWic's override and its comment are redundant",
+            [dep for dep in MoWic.pe_inputs if dep not in Wic.pe_inputs],
+            [MoStateCodeDependency],
         )
 
     def test_keeps_federal_pe_outputs(self):
@@ -273,14 +239,31 @@ class TestMoWicPeInput(TestCase):
         spm_unit = household["spm_units"]["spm_unit"]
         people = household["people"]
 
-        # SPM-level dependency
-        self.assertIn("school_meal_countable_income", spm_unit)
+        # SPM-level dependency: TANF, a WIC income source in its own right
+        self.assertIn("tanf", spm_unit)
 
         # Member-level dependencies
         head_id = str(self.head.id)
         self.assertIn("is_pregnant", people[head_id])
         self.assertIn("current_pregnancies", people[head_id])
         self.assertIn("age", people[head_id])
+
+    def test_wic_alone_carries_every_income_source(self):
+        """
+        The payload is built from the WIC calculator *alone*, which is the only assertion
+        that catches this regression. With siblings present it passes either way — and that
+        is precisely why the bug survived: CO/MA/NC/TX screens run Medicaid and Head Start,
+        both of which send ``irs_gross_income``, so WIC borrowed their inputs. MO shipped WIC
+        as its only program and the omission became visible immediately.
+        """
+        result = pe_input(self.screen, [self._calculator()])
+        head = result["household"]["people"][str(self.head.id)]
+        spm_unit = result["household"]["spm_units"]["spm_unit"]
+
+        for dep in dependency.wic_income:
+            with self.subTest(field=dep.field):
+                unit = spm_unit if dep in (dependency.spm.Tanf,) else head
+                self.assertIn(dep.field, unit)
 
     def test_sends_reported_income_to_policyengine(self):
         """
@@ -322,16 +305,9 @@ class TestMoHeadStartWiring(TestCase):
     all registered subclasses in ``federal/pe/tests/test_head_start.py``.
     """
 
-    def test_head_start_is_registered_as_mo_head_start(self):
-        self.assertIs(mo_member_calculators["mo_head_start"], MoHeadStart)
-        self.assertIs(mo_pe_calculators["mo_head_start"], MoHeadStart)
-
     def test_head_start_pe_inputs_includes_mo_state_code(self):
         self.assertTrue(issubclass(MoHeadStart, HeadStart))
         self.assertIn(MoStateCodeDependency, MoHeadStart.pe_inputs)
-
-    def test_early_head_start_is_registered_as_mo_early_head_start(self):
-        self.assertIs(mo_member_calculators["mo_early_head_start"], MoEarlyHeadStart)
 
     def test_early_head_start_pe_inputs_includes_mo_state_code(self):
         self.assertTrue(issubclass(MoEarlyHeadStart, EarlyHeadStart))
@@ -345,17 +321,8 @@ class TestMoSsiWiring(TestCase):
         self.assertTrue(issubclass(MoSsi, FederalSsi))
         self.assertTrue(issubclass(MoSsi, PolicyEngineMembersCalculator))
 
-    def test_pe_name_is_ssi(self):
-        self.assertEqual(MoSsi.pe_name, "ssi")
-
-    def test_is_registered_as_mo_ssi(self):
-        self.assertIs(mo_member_calculators["mo_ssi"], MoSsi)
-        self.assertIs(mo_pe_calculators["mo_ssi"], MoSsi)
-
-    def test_is_registered_in_global_registry(self):
-        """A calculator missing from the registry never runs — screener/views.py iterates it."""
-        self.assertIs(all_member_calculators["mo_ssi"], MoSsi)
-        self.assertIs(all_calculators["mo_ssi"], MoSsi)
+    def test_pe_name_is_the_would_be_ssi_variable(self):
+        self.assertEqual(MoSsi.pe_name, "ssi_if_takes_up")
 
     def test_pe_inputs_includes_mo_state_code(self):
         self.assertIn(MoStateCodeDependency, MoSsi.pe_inputs)
@@ -387,10 +354,14 @@ class TestMoSsiWiring(TestCase):
         self.assertIn(SsiCountableResourcesDependency, MoSsi.pe_inputs)
         self.assertIn(SsiEarnedIncomeDependency, MoSsi.pe_inputs)
         self.assertIn(SsiUnearnedIncomeDependency, MoSsi.pe_inputs)
-        self.assertIn(SsiReportedDependency, MoSsi.pe_inputs)
+        self.assertIn(Ssi, MoSsi.pe_inputs)
 
-    def test_pe_outputs_is_ssi_variable(self):
-        self.assertEqual(MoSsi.pe_outputs, [Ssi])
+    def test_pe_outputs_is_the_would_be_ssi_variable(self):
+        """
+        ssi_if_takes_up, not ssi: takes_up_ssi_if_eligible is False for anyone not
+        reporting SSI, which zeroes ``ssi`` for exactly the people mo_ssi is for.
+        """
+        self.assertEqual(MoSsi.pe_outputs, [SsiIfTakesUp])
 
     def test_does_not_override_member_value(self):
         """
@@ -441,7 +412,7 @@ class TestMoSsiPeInput(TestCase):
         people = pe_input(self.screen, [self._calculator()])["household"]["people"]
         head = people[str(self.head.id)]
 
-        for field in ("age", "is_blind", "is_disabled", "ssi_countable_resources", "ssi_reported"):
+        for field in ("age", "is_blind", "is_disabled", "ssi_countable_resources", "ssi"):
             self.assertIn(field, head)
 
     def test_splits_household_assets_into_countable_resources(self):
@@ -480,3 +451,80 @@ class TestMoSsiPeInput(TestCase):
         people = pe_input(self.screen, [self._calculator()])["household"]["people"]
 
         self.assertIn("ssi", people[str(self.head.id)])
+
+
+class TestMoMspWiring(TestCase):
+    """
+    MO-specific MSP wiring. ``MoMsp`` is the federal ``Msp`` calculator plus the MO state
+    code and the Medicaid inputs.
+
+    The shared contract (pe_name, pe_outputs, no federal input dropped, the Medicaid
+    input set, exactly one state code matching the slug, no ``member_value`` override) is
+    asserted for all registered subclasses in ``federal/pe/tests/test_msp.py``.
+
+    MSP's income tiers are the federal floor in Missouri, so the state code is the only
+    MO-keyed input. It resolves PolicyEngine's asset-test-applies parameter, which is
+    ``true`` for MO — dropping it would stop applying the resource test and report
+    over-resourced households as eligible, the failure Scenario 4 guards.
+    """
+
+    def test_is_subclass_of_federal_msp(self):
+        self.assertTrue(issubclass(MoMsp, Msp))
+
+    def test_program_code_is_mo_medicare_savings(self):
+        self.assertEqual(MoMsp.program_code, "mo_medicare_savings")
+
+    def test_pe_inputs_includes_mo_state_code(self):
+        """Resolves the MO asset-test-applies parameter — the one genuine MO delta."""
+        self.assertIn(MoStateCodeDependency, MoMsp.pe_inputs)
+
+
+class TestMoMspPeInput(TestCase):
+    """
+    The one MSP payload behaviour that is MO's rather than every state's: Social Security
+    retirement income must arrive as ``ssi_unearned_income``, because MSP's income test
+    uses SSI methodology and that is what places the household in a QMB/SLMB/QI tier.
+
+    The state-agnostic payload contract — the state code, the eligibility inputs, household
+    assets, premium-free Part A, the requested ``msp`` output and the Medicaid
+    determination inputs — is asserted for all four registered states in
+    ``federal/pe/tests/test_msp.py``.
+    """
+
+    PERIOD = "2026"
+
+    def setUp(self):
+        self.white_label, _ = WhiteLabel.objects.get_or_create(
+            code="mo", defaults={"name": "Missouri", "state_code": "MO"}
+        )
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            agree_to_tos=True,
+            is_test=True,
+            household_size=1,
+            household_assets=3_000,
+            completed=False,
+        )
+        self.head = HouseholdMember.objects.create(
+            screen=self.screen,
+            relationship="headOfHousehold",
+            age=71,
+        )
+
+    def _calculator(self):
+        program = Mock()
+        program.year.period = self.PERIOD
+        return MoMsp(self.screen, program, self.screen.missing_fields())
+
+    def test_sends_social_security_as_ssi_unearned_income(self):
+        IncomeStream.objects.create(
+            screen=self.screen,
+            household_member=self.head,
+            type="sSRetirement",
+            amount=1_000,
+            frequency="monthly",
+        )
+
+        people = pe_input(self.screen, [self._calculator()])["household"]["people"]
+
+        self.assertEqual(people[str(self.head.id)]["ssi_unearned_income"], {self.PERIOD: 12_000})

@@ -15,8 +15,7 @@ from unittest.mock import Mock
 
 from django.test import TestCase
 
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
-from programs.programs.co import co_calculators
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 from programs.programs.co.denver_preschool_program.calculator import DenverPreschoolProgram
 from programs.util import Dependencies, DependencyError
 
@@ -44,10 +43,6 @@ def make_calculator(county="Denver County", zipcode="80205", members=None, missi
 class TestDenverPreschoolProgramClassAttributes(TestCase):
     def test_is_subclass_of_program_calculator(self):
         self.assertTrue(issubclass(DenverPreschoolProgram, ProgramCalculator))
-
-    def test_is_registered_in_co_calculators(self):
-        self.assertIn("dpp", co_calculators)
-        self.assertEqual(co_calculators["dpp"], DenverPreschoolProgram)
 
     def test_member_amount_is_594_a_month(self):
         self.assertEqual(DenverPreschoolProgram.member_amount, 594 * 12)

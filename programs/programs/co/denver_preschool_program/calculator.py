@@ -1,9 +1,10 @@
-from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
-import programs.programs.messages as messages
+from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
+import programs.framework.eligibility_messages as messages
 from programs.co_county_zips import counties_from_screen
 
 
 class DenverPreschoolProgram(ProgramCalculator):
+    program_code = "dpp"
     member_amount = 594 * 12
     min_age = 3
     max_age = 4

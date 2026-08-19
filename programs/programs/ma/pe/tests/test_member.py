@@ -9,8 +9,7 @@ across every state's Head Start lives in ``federal/pe/tests/test_head_start.py``
 from django.test import TestCase
 
 from programs.programs.federal.pe.member import EarlyHeadStart, HeadStart
-from programs.programs.policyengine.calculators.dependencies.household import MaStateCodeDependency
-from programs.programs.ma.pe import ma_pe_calculators
+from programs.framework.pe_dependencies.household import MaStateCodeDependency
 from programs.programs.ma.pe.member import MaHeadStart, MaEarlyHeadStart
 
 
@@ -27,15 +26,9 @@ class TestMaHeadStartWiring(TestCase):
     mocks against the base class implementation.
     """
 
-    def test_head_start_is_registered_as_ma_head_start(self):
-        self.assertIs(ma_pe_calculators["ma_head_start"], MaHeadStart)
-
     def test_head_start_pe_inputs_includes_ma_state_code(self):
         self.assertTrue(issubclass(MaHeadStart, HeadStart))
         self.assertIn(MaStateCodeDependency, MaHeadStart.pe_inputs)
-
-    def test_early_head_start_is_registered_as_ma_early_head_start(self):
-        self.assertIs(ma_pe_calculators["ma_early_head_start"], MaEarlyHeadStart)
 
     def test_early_head_start_pe_inputs_includes_ma_state_code(self):
         self.assertTrue(issubclass(MaEarlyHeadStart, EarlyHeadStart))

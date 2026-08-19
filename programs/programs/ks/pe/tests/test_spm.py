@@ -17,10 +17,9 @@ These tests pin the wiring so a future refactor can't silently drop one again.
 
 from django.test import TestCase
 
-from programs.programs.ks.pe import ks_spm_calculators, ks_pe_calculators
 from programs.programs.ks.pe.spm import KsTanf
 from programs.programs.federal.pe.spm import Tanf
-import programs.programs.policyengine.calculators.dependencies as dependency
+import programs.framework.pe_dependencies as dependency
 
 
 class TestKsTanfWiring(TestCase):
@@ -31,14 +30,6 @@ class TestKsTanfWiring(TestCase):
 
     def test_pe_name_is_ks_tanf(self):
         self.assertEqual(KsTanf.pe_name, "ks_tanf")
-
-    def test_is_registered_in_ks_spm_calculators(self):
-        self.assertIn("ks_tanf", ks_spm_calculators)
-        self.assertEqual(ks_spm_calculators["ks_tanf"], KsTanf)
-
-    def test_is_registered_in_ks_pe_calculators(self):
-        self.assertIn("ks_tanf", ks_pe_calculators)
-        self.assertEqual(ks_pe_calculators["ks_tanf"], KsTanf)
 
     def test_pe_output_is_ks_tanf(self):
         self.assertEqual(KsTanf.pe_outputs, [dependency.spm.KsTanf])

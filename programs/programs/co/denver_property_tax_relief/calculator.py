@@ -1,10 +1,11 @@
 from integrations.services.income_limits import ami
 from programs.co_county_zips import counties_from_screen
-from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
-import programs.programs.messages as messages
+from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
+import programs.framework.eligibility_messages as messages
 
 
 class DenverPropertyTaxRelief(ProgramCalculator):
+    program_code = "dptr"
     amount = 252
     ami_percent_rental_single = 0.25
     ami_percent_rental_couple = 0.30

@@ -1,5 +1,5 @@
-from programs.programs.calc import ProgramCalculator, Eligibility
-import programs.programs.messages as messages
+from programs.framework.base import ProgramCalculator, Eligibility
+import programs.framework.eligibility_messages as messages
 from programs.co_county_zips import counties_from_screen
 from integrations.services.sheets.cache import GoogleSheetsCache
 from sentry_sdk import capture_message
@@ -44,6 +44,7 @@ class RAGCache(GoogleSheetsCache):
 
 
 class RentalAssistanceGrant(ProgramCalculator):
+    program_code = "rag"
     amount = 10_000
     dependencies = ["income_amount", "income_frequency", "household_size", "zipcode"]
     income_limits = RAGCache()

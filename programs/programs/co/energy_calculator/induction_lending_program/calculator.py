@@ -1,5 +1,5 @@
 from programs.co_county_zips import counties_from_screen
-from programs.programs.calc import Eligibility, ProgramCalculator
+from programs.framework.base import Eligibility, ProgramCalculator
 
 
 class EnergyCalculatorInductionLendingProgram(ProgramCalculator):
@@ -13,6 +13,8 @@ class EnergyCalculatorInductionLendingProgram(ProgramCalculator):
     Eligibility criteria:
     - Must be a Boulder County resident (verified via ZIP code)
     """
+
+    program_code = "cesn_ilp"
 
     # Equpiment retails ~$150; value set to reflect that + loan access benefit
     amount = 100

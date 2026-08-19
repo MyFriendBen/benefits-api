@@ -13,8 +13,7 @@ from unittest.mock import Mock
 
 from django.test import TestCase
 
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
-from programs.programs.federal import federal_calculators
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 from programs.programs.federal.trump_account.calculator import TrumpAccount
 
 
@@ -40,10 +39,6 @@ def make_member(age=1, birth_year_month=None, pregnant=False):
 class TestTrumpAccountRegistration(TestCase):
     def test_is_subclass_of_program_calculator(self):
         self.assertTrue(issubclass(TrumpAccount, ProgramCalculator))
-
-    def test_registered_in_federal_calculators(self):
-        self.assertIn("trump_account", federal_calculators)
-        self.assertEqual(federal_calculators["trump_account"], TrumpAccount)
 
 
 class TestTrumpAccountPilotWindow(TestCase):

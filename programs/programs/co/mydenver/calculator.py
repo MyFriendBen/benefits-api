@@ -1,9 +1,10 @@
-from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
+from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
 from programs.co_county_zips import counties_from_screen
-import programs.programs.messages as messages
+import programs.framework.eligibility_messages as messages
 
 
 class MyDenver(ProgramCalculator):
+    program_code = "mydenver"
     eligible_counties = ["Denver County"]
     child_age_min = 5
     child_age_max = 18

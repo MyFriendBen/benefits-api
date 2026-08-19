@@ -1,5 +1,5 @@
-from programs.programs.calc import Eligibility, ProgramCalculator
-import programs.programs.messages as messages
+from programs.framework.base import Eligibility, ProgramCalculator
+import programs.framework.eligibility_messages as messages
 from typing import ClassVar
 
 
@@ -18,6 +18,8 @@ class WaUdp(ProgramCalculator):
     Data gaps: account ownership and meter sharing (mixed-load exclusion) cannot be verified at
     screening. Calculator assumes neither disqualifying condition applies (inclusivity assumption).
     """
+
+    program_code = "wa_udp"
 
     amount = 732  # average annual savings per seattle.gov/human-services UDP page
 

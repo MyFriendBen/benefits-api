@@ -1,5 +1,5 @@
-from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
-import programs.programs.policyengine.calculators.dependencies as dependency
+from programs.framework.pe_base import PolicyEngineMembersCalculator
+import programs.framework.pe_dependencies as dependency
 from programs.programs.federal.pe.member import (
     Ccdf,
     Chip,
@@ -16,6 +16,7 @@ from screener.models import HouseholdMember
 
 # NOTE: MassHealth is Medicaid in MA
 class MaMassHealth(Medicaid):
+    program_code = "ma_mass_health"
     pe_inputs = [
         *Medicaid.pe_inputs,
         *Chip.pe_inputs,
@@ -59,6 +60,7 @@ class MaMassHealth(Medicaid):
 
 # NOTE: MassHealth Limited is Emergency Medicaid in MA
 class MaMassHealthLimited(Medicaid):
+    program_code = "ma_mass_health_limited"
     pe_inputs = [
         *Medicaid.pe_inputs,
         dependency.household.MaStateCodeDependency,
@@ -80,6 +82,7 @@ class MaMassHealthLimited(Medicaid):
 
 
 class MaWic(Wic):
+    program_code = "ma_wic"
     wic_categories = {
         "NONE": 0,
         "INFANT": 186,
@@ -89,9 +92,17 @@ class MaWic(Wic):
         "POSTPARTUM": 91,
         "BREASTFEEDING": 124,
     }
+    # WIC's FPG table branches on AK/HI vs. contiguous US, so the state code is
+    # load-bearing. This was the only WIC subclass not sending one — it worked only
+    # because a sibling MA program put the state in the shared payload.
+    pe_inputs = [
+        *Wic.pe_inputs,
+        dependency.household.MaStateCodeDependency,
+    ]
 
 
 class MaCcdf(Ccdf):
+    program_code = "ma_ccdf"
     cost_by_age = (
         # cost, age
         (23_191, 2),
@@ -117,6 +128,8 @@ class MaMbta(PolicyEngineMembersCalculator):
     Only available to residents within the MBTA service district
     (178 cities/towns in eastern Massachusetts including Boston).
     """
+
+    program_code = "ma_mbta"
 
     eligible_cities = frozenset(
         [
@@ -337,6 +350,7 @@ class MaMbta(PolicyEngineMembersCalculator):
 
 
 class MaStateSupplementProgram(PolicyEngineMembersCalculator):
+    program_code = "ma_ssp"
     pe_name = "ma_state_supplement"
     pe_inputs = [
         dependency.member.AgeDependency,
@@ -351,6 +365,8 @@ class MaStateSupplementProgram(PolicyEngineMembersCalculator):
 class MaHeadStart(HeadStart):
     """Massachusetts Head Start (ages 3-5) — federal ``HeadStart`` PE calculator + MA state code."""
 
+    program_code = "ma_head_start"
+
     pe_inputs = [
         *HeadStart.pe_inputs,
         dependency.household.MaStateCodeDependency,
@@ -358,6 +374,7 @@ class MaHeadStart(HeadStart):
 
 
 class MaCsfp(CommoditySupplementalFoodProgram):
+    program_code = "ma_csfp"
     pe_inputs = [
         *CommoditySupplementalFoodProgram.pe_inputs,
         dependency.household.MaStateCodeDependency,
@@ -367,6 +384,8 @@ class MaCsfp(CommoditySupplementalFoodProgram):
 
 class MaEarlyHeadStart(EarlyHeadStart):
     """Massachusetts Early Head Start (birth-3 / pregnant) — federal ``EarlyHeadStart`` PE calculator + MA state code."""
+
+    program_code = "ma_early_head_start"
 
     pe_inputs = [
         *EarlyHeadStart.pe_inputs,

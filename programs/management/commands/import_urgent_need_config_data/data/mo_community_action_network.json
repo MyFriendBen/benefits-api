@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_community_action_network",
+    "category_type": {
+      "external_name": "mo_managing_housing_costs",
+      "name": "Managing housing costs",
+      "icon": "managing_housing"
+    },
+    "type_short": [
+      "housing"
+    ],
+    "translations": {
+      "name": "Missouri Community Action Network",
+      "description": "Community Action Agencies serve every Missouri county. They may help with rent, utility bills, housing, and other needs. Most programs are for people with low incomes, and eligibility varies by agency. Use the website to find the agency that covers your county and ask what help is available right now.",
+      "link": "https://www.communityaction.org/get-help.html",
+      "warning": "",
+      "website_description": "Find local help with rent, bills, housing, and more.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

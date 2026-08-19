@@ -1,10 +1,11 @@
-from programs.programs.calc import Eligibility, ProgramCalculator
-import programs.programs.messages as messages
+from programs.framework.base import Eligibility, ProgramCalculator
+import programs.framework.eligibility_messages as messages
 from integrations.services.income_limits import income_limits_cache
 from typing import ClassVar
 
 
 class WeatherizationAssistance(ProgramCalculator):
+    program_code = "cowap"
     presumptive_eligibility = ("andcs", "ssi", "snap", "leap", "tanf")
     amount = 350
     dependencies: ClassVar[list[str]] = [

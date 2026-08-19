@@ -1,0 +1,38 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_st_louis_area_diaper_bank",
+    "category_type": {
+      "external_name": "mo_baby_supplies",
+      "name": "Diapers and other baby supplies",
+      "icon": "baby_supplies"
+    },
+    "type_short": [
+      "baby supplies"
+    ],
+    "translations": {
+      "name": "St. Louis Area Diaper Bank",
+      "description": "You can get free diapers and other supplies from local groups that work with the Diaper Bank. The diaper program is for families with low incomes. Eligibility and pickup rules may also vary by location. Use the map on their website to find a place near you. Call 314-624-0888 with questions.",
+      "link": "https://stldiaperbank.org/find-supplies/",
+      "warning": "",
+      "website_description": "Find free diaper and period supplies near you.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "St. Louis City",
+      "St. Louis County",
+      "St. Charles County",
+      "Jefferson County",
+      "Warren County",
+      "Lincoln County",
+      "Montgomery County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

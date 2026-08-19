@@ -1,5 +1,5 @@
-from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
-import programs.programs.messages as messages
+from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
+import programs.framework.eligibility_messages as messages
 
 
 class MaDoorToDoor(ProgramCalculator):
@@ -18,6 +18,8 @@ class MaDoorToDoor(ProgramCalculator):
 
     Source: https://www.scmtransportation.org/services-by-city.html
     """
+
+    program_code = "ma_door_to_door"
 
     amount = 1
     eligible_city = "Cambridge"

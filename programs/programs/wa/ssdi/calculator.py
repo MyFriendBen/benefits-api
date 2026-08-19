@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Optional
-from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
-from programs.programs import messages
+from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
+from programs.framework import eligibility_messages as messages
 
 
 class WaSsdi(ProgramCalculator):
@@ -9,6 +9,8 @@ class WaSsdi(ProgramCalculator):
     Uses per-member eligibility with birth-year-based FRA schedule and dual SGA thresholds.
     Assumes sufficient work credits (data gap — screener does not capture work history).
     """
+
+    program_code = "wa_ssdi"
 
     sga_non_blind = 1_690
     sga_blind = 2_830

@@ -32,12 +32,6 @@ class TestCoCollegeInvestFirstStep(TestCase):
     def test_member_amount_is_121(self):
         self.assertEqual(CoCollegeInvestFirstStep.member_amount, 121)
 
-    def test_registered_in_co_calculators(self):
-        from programs.programs.co import co_calculators
-
-        self.assertIn("co_collegeinvest_first_step", co_calculators)
-        self.assertIs(co_calculators["co_collegeinvest_first_step"], CoCollegeInvestFirstStep)
-
     # --- eligible ---
 
     def test_eligible_newborn(self):

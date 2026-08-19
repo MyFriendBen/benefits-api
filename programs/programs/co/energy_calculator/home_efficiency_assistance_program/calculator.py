@@ -1,6 +1,6 @@
-import programs.programs.messages as messages
+import programs.framework.eligibility_messages as messages
 from integrations.services.income_limits import smi
-from programs.programs.calc import Eligibility, ProgramCalculator
+from programs.framework.base import Eligibility, ProgramCalculator
 
 
 class EnergyCalculatorHomeEfficiencyAssistance(ProgramCalculator):
@@ -19,6 +19,8 @@ class EnergyCalculatorHomeEfficiencyAssistance(ProgramCalculator):
             - Homeowner
             - Income at or below 60% of State Median Income (SMI)
     """
+
+    program_code = "cesn_heap"
 
     amount = 1  # Benefit amount not calculated; eligibility determination only
     dependencies = [

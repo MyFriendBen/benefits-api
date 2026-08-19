@@ -1,4 +1,4 @@
-from programs.programs.calc import MemberEligibility, ProgramCalculator
+from programs.framework.base import MemberEligibility, ProgramCalculator
 from programs.util import Dependencies
 from screener.models import HouseholdMember, Screen
 from typing import TYPE_CHECKING
@@ -8,6 +8,7 @@ if TYPE_CHECKING:
 
 
 class Ssdi(ProgramCalculator):
+    program_code = "ssdi"
     income_limit = 1_620
     income_limit_blind = 2_700
     amount = 1_580

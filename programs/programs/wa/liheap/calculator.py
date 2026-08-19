@@ -1,5 +1,5 @@
-from programs.programs.calc import ProgramCalculator, Eligibility
-import programs.programs.messages as messages
+from programs.framework.base import ProgramCalculator, Eligibility
+import programs.framework.eligibility_messages as messages
 from typing import ClassVar
 
 
@@ -8,6 +8,8 @@ class WaLiheap(ProgramCalculator):
     Benefit is a percentage of annual heat cost scaled by income-to-FPL ratio,
     clamped to $250–$1,250. No categorical eligibility in WA.
     """
+
+    program_code = "wa_liheap"
 
     fpl_percent = 1.5
     min_benefit = 250

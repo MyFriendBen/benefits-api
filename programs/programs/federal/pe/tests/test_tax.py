@@ -20,19 +20,14 @@ covered by PolicyEngine's own test suite, not duplicated here.
 
 from django.test import TestCase
 
-from programs.programs.federal.pe import federal_tax_unit_calculators
 from programs.programs.federal.pe.tax import Ctc, Eitc
-from programs.programs.policyengine.calculators.base import PolicyEngineTaxUnitCalulator
-from programs.programs.policyengine.calculators.dependencies import (
+from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
+from programs.framework.pe_dependencies import (
     irs_gross_income,
     member,
     tax,
 )
-from programs.programs.policyengine.calculators.dependencies.household import StateCode
-from programs.programs.policyengine.calculators.registry import (
-    all_calculators,
-    all_tax_unit_calculators,
-)
+from programs.framework.pe_dependencies.household import StateCode
 
 
 class TestFederalCtc(TestCase):
@@ -40,11 +35,6 @@ class TestFederalCtc(TestCase):
 
     def test_is_a_tax_unit_calculator(self):
         self.assertTrue(issubclass(Ctc, PolicyEngineTaxUnitCalulator))
-
-    def test_is_registered_as_ctc(self):
-        self.assertIs(federal_tax_unit_calculators["ctc"], Ctc)
-        self.assertIs(all_tax_unit_calculators["ctc"], Ctc)
-        self.assertIs(all_calculators["ctc"], Ctc)
 
     def test_pe_name_is_ctc_value(self):
         """``ctc_value`` is the amount actually received — the credit after it is
@@ -91,11 +81,6 @@ class TestFederalEitc(TestCase):
 
     def test_is_a_tax_unit_calculator(self):
         self.assertTrue(issubclass(Eitc, PolicyEngineTaxUnitCalulator))
-
-    def test_is_registered_as_eitc(self):
-        self.assertIs(federal_tax_unit_calculators["eitc"], Eitc)
-        self.assertIs(all_tax_unit_calculators["eitc"], Eitc)
-        self.assertIs(all_calculators["eitc"], Eitc)
 
     def test_pe_name_is_eitc(self):
         self.assertEqual(Eitc.pe_name, "eitc")

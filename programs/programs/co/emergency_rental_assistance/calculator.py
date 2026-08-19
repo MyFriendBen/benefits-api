@@ -1,9 +1,10 @@
 from integrations.services.income_limits import ami
-from programs.programs.calc import Eligibility, ProgramCalculator
-import programs.programs.messages as messages
+from programs.framework.base import Eligibility, ProgramCalculator
+import programs.framework.eligibility_messages as messages
 
 
 class EmergencyRentalAssistance(ProgramCalculator):
+    program_code = "erap"
     amount = 13_848
     ami_percent = "80%"
     expenses = ["rent"]

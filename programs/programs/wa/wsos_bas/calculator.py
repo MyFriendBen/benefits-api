@@ -1,5 +1,5 @@
-import programs.programs.messages as messages
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
+import programs.framework.eligibility_messages as messages
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 
 
 class WaWsosBas(ProgramCalculator):
@@ -57,6 +57,8 @@ class WaWsosBas(ProgramCalculator):
       - https://waopportunityscholarship.org/wp-content/uploads/2025/10/
         Baccalaureate-C15-MFI-Chart.pdf (Official 2026 BaS MFI Chart)
     """
+
+    program_code = "wa_wsos_bas"
 
     # 2026 WSOS BaS 125% MFI thresholds in dollars per year. Per-household-
     # size lookup table sourced from the official BaS MFI Chart linked

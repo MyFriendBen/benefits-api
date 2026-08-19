@@ -19,8 +19,7 @@ from unittest.mock import patch
 from django.test import TestCase
 
 from programs.models import Program
-from programs.programs.calc import ProgramCalculator
-from programs.programs.ma import ma_calculators
+from programs.framework.base import ProgramCalculator
 from programs.programs.ma.bsp.calculator import MaBabySteps
 from programs.util import Dependencies
 from screener.models import CurrentBenefit, HouseholdMember, IncomeStream, Screen, WhiteLabel
@@ -104,10 +103,6 @@ class MaBabyStepsTestCase(TestCase):
 class TestMaBabyStepsClassAttributes(MaBabyStepsTestCase):
     def test_is_subclass_of_program_calculator(self):
         self.assertTrue(issubclass(MaBabySteps, ProgramCalculator))
-
-    def test_is_registered_in_ma_calculators(self):
-        self.assertIn("ma_bsp", ma_calculators)
-        self.assertIs(ma_calculators["ma_bsp"], MaBabySteps)
 
     def test_member_amount_is_50(self):
         """$50 one-time seed deposit per child — a lump sum, so it is not annualized."""

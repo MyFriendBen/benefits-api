@@ -1,8 +1,9 @@
-from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
-import programs.programs.messages as messages
+from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
+import programs.framework.eligibility_messages as messages
 
 
 class SunBucks(ProgramCalculator):
+    program_code = "sunbucks"
     member_amount = 120
     min_age = 7
     max_age = 16

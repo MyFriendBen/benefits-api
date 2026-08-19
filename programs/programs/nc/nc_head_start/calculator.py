@@ -1,6 +1,6 @@
 from integrations.services.sheets.cache import GoogleSheetsCache
-from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
-import programs.programs.messages as messages
+from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
+import programs.framework.eligibility_messages as messages
 from programs.co_county_zips import counties_from_screen
 
 
@@ -32,6 +32,7 @@ class NcHeadStartMarketRatesCache(GoogleSheetsCache):
 
 
 class NCHeadStart(ProgramCalculator):
+    program_code = "nc_head_start"
     amount = 0
     member_amount = 0
     min_age = 0

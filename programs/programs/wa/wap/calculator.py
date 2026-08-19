@@ -1,5 +1,5 @@
-import programs.programs.messages as messages
-from programs.programs.calc import Eligibility, ProgramCalculator
+import programs.framework.eligibility_messages as messages
+from programs.framework.base import Eligibility, ProgramCalculator
 from typing import ClassVar
 
 
@@ -20,6 +20,8 @@ class WaWap(ProgramCalculator):
     building occupancy test, post-eligibility energy audit, Seattle HomeWise 80% AMI
     variation. State residency is enforced via the `wa` white label routing.
     """
+
+    program_code = "wa_wap"
 
     fpl_percent = 2.0
     amount = 7_669  # one-time lump-sum per WA Commerce estimate

@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_community_mental_health_centers",
+    "category_type": {
+      "external_name": "ks_behavioral_health",
+      "name": "Behavioral health",
+      "icon": "behavioral_health"
+    },
+    "type_short": [
+      "mental health"
+    ],
+    "translations": {
+      "name": "Community Mental Health Centers of Kansas (CMHC Map)",
+      "description": "Community Mental Health Centers provide mental health services across Kansas. They offer counseling, psychiatric care, crisis help, and other support. Use the map or directory to find a center near you. Services are available regardless of income.",
+      "link": "https://acmhck.org/about-cmhcs/",
+      "warning": "",
+      "website_description": "Map/directory to find Community Mental Health Centers across Kansas",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

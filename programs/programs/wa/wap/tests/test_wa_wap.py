@@ -1,9 +1,8 @@
 from django.test import TestCase
 from unittest.mock import Mock
 
-from programs.programs.wa import wa_calculators
 from programs.programs.wa.wap.calculator import WaWap
-from programs.programs.calc import Eligibility, MemberEligibility
+from programs.framework.base import Eligibility, MemberEligibility
 
 
 def make_member(insurance_medicaid=False, insurance_chp=False):
@@ -55,10 +54,6 @@ def make_calculator(
 
 
 class TestWaWapClassAttributes(TestCase):
-    def test_is_registered(self):
-        self.assertIn("wa_wap", wa_calculators)
-        self.assertEqual(wa_calculators["wa_wap"], WaWap)
-
     def test_fpl_percent(self):
         self.assertEqual(WaWap.fpl_percent, 2.0)
 

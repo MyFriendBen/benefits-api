@@ -2,7 +2,7 @@ from django.test import TestCase
 from programs.programs.il.ccap.calculator import IlChildCareAssistanceProgram
 from screener.models import Screen, HouseholdMember, IncomeStream, WhiteLabel
 from programs.models import Program, FederalPoveryLimit
-from programs.programs.calc import Eligibility
+from programs.framework.base import Eligibility
 from programs.util import Dependencies
 
 

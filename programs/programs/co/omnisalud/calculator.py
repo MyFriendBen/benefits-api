@@ -1,8 +1,9 @@
-from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
-import programs.programs.messages as messages
+from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
+import programs.framework.eligibility_messages as messages
 
 
 class OmniSalud(ProgramCalculator):
+    program_code = "omnisalud"
     income_percent = 1.5
     insurance = ["none"]
     member_amount = 610 * 12

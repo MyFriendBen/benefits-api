@@ -1,5 +1,5 @@
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
-import programs.programs.messages as messages
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
+import programs.framework.eligibility_messages as messages
 
 
 class IlAccessDuPage(ProgramCalculator):
@@ -25,6 +25,8 @@ class IlAccessDuPage(ProgramCalculator):
       - Age 19 or older. There is no upper age limit; people 65+ are effectively excluded
         via Medicare eligibility (criterion 3), not an age cutoff.
     """
+
+    program_code = "il_access_dupage"
 
     fpl_percent = 2.5
     min_age = 19

@@ -1,9 +1,10 @@
-from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
-from programs.programs.helpers import medicaid_eligible
-import programs.programs.messages as messages
+from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
+from programs.framework.helpers import medicaid_eligible
+import programs.framework.eligibility_messages as messages
 
 
 class MedicaidChildWithDisability(ProgramCalculator):
+    program_code = "cwd_medicaid"
     max_age = 18
     min_employment_age = 16
     max_income_percent = 3

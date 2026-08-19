@@ -1,6 +1,6 @@
 import math
-import programs.programs.messages as messages
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
+import programs.framework.eligibility_messages as messages
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 
 
 class WaWic(ProgramCalculator):
@@ -17,6 +17,8 @@ class WaWic(ProgramCalculator):
     Data gaps: nutritional risk assessment (low impact, procedural);
     postpartum/breastfeeding window (medium impact, approximated via infant presence).
     """
+
+    program_code = "wa_wic"
 
     max_child_age = 5
     fpl_percent = 1.85

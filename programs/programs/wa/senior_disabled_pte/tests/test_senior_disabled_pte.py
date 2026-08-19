@@ -1,9 +1,8 @@
 from django.test import TestCase
 from unittest.mock import Mock
 
-from programs.programs.wa import wa_calculators
 from programs.programs.wa.senior_disabled_pte.calculator import WaSeniorDisabledPte
-from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
+from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
 
 
 def make_member(age=70, long_term_disability=False, disabled=False, veteran=False):
@@ -29,10 +28,6 @@ def make_calculator(county="King County", household_income=14_400, property_tax_
 
 
 class TestClassAttributes(TestCase):
-    def test_is_registered_in_wa_calculators(self):
-        self.assertIn("wa_senior_disabled_pte", wa_calculators)
-        self.assertEqual(wa_calculators["wa_senior_disabled_pte"], WaSeniorDisabledPte)
-
     def test_is_subclass_of_program_calculator(self):
         self.assertTrue(issubclass(WaSeniorDisabledPte, ProgramCalculator))
 

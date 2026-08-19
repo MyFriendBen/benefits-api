@@ -12,9 +12,8 @@ for Cambridge's K-8 afterschool program, including:
 from django.test import TestCase
 from unittest.mock import Mock
 
-from programs.programs.ma import ma_calculators
 from programs.programs.ma.dhsp_afterschool.calculator import MaDhspAfterschool
-from programs.programs.calc import ProgramCalculator, Eligibility
+from programs.framework.base import ProgramCalculator
 
 
 class TestMaDhspAfterschoolCalculator(TestCase):
@@ -23,11 +22,6 @@ class TestMaDhspAfterschoolCalculator(TestCase):
     def test_exists_and_is_subclass_of_program_calculator(self):
         """Test that MaDhspAfterschool calculator class exists and inherits correctly."""
         self.assertTrue(issubclass(MaDhspAfterschool, ProgramCalculator))
-
-    def test_is_registered_in_ma_calculators(self):
-        """Test that DHSP Afterschool is registered in the MA calculators dictionary."""
-        self.assertIn("ma_dhsp_afterschool", ma_calculators)
-        self.assertEqual(ma_calculators["ma_dhsp_afterschool"], MaDhspAfterschool)
 
     def test_eligible_city_is_cambridge(self):
         """Test that the eligible city is set to Cambridge."""

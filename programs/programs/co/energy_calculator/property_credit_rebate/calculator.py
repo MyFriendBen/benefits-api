@@ -1,9 +1,10 @@
-from programs.programs.calc import MemberEligibility
+from programs.framework.base import MemberEligibility
 from programs.programs.co.property_credit_rebate.calculator import PropertyCreditRebate
 from screener.models import HouseholdMember
 
 
 class EnergyCalculatorPropertyCreditRebate(PropertyCreditRebate):
+    program_code = "cesn_cpcr"
     surviving_spouse_age = 58
     dependencies = [*PropertyCreditRebate.dependencies, "energy_calculator"]
 

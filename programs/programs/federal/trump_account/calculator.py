@@ -1,5 +1,5 @@
 from datetime import date, timedelta
-from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
+from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
 
 
 class TrumpAccount(ProgramCalculator):
@@ -23,6 +23,8 @@ class TrumpAccount(ProgramCalculator):
     - Duplicate account check (screener does not track existing Trump Accounts)
     - Program launch date (accounts available July 4, 2026 or later)
     """
+
+    program_code = "trump_account"
 
     pilot_contribution = 1_000
     pilot_start = date(2025, 1, 1)

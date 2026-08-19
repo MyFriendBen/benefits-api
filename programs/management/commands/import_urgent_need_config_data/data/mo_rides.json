@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_rides",
+    "category_type": {
+      "external_name": "mo_transportation",
+      "name": "Transportation",
+      "icon": "transportation"
+    },
+    "type_short": [
+      "transportation"
+    ],
+    "translations": {
+      "name": "MO Rides",
+      "description": "MO Rides helps you find transportation in your area. You can look for rides to the doctor, grocery store, work, or other places. Search the online directory by county or call 844-836-7433 for help finding a provider. Costs and rules depend on the transportation provider.",
+      "link": "https://morides.org/",
+      "warning": "",
+      "website_description": "Find transportation options in your county.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

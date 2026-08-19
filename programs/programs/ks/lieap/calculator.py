@@ -1,5 +1,5 @@
-from programs.programs.calc import ProgramCalculator, Eligibility
-import programs.programs.messages as messages
+from programs.framework.base import ProgramCalculator, Eligibility
+import programs.framework.eligibility_messages as messages
 from typing import ClassVar
 
 
@@ -38,6 +38,8 @@ class KsLieap(ProgramCalculator):
     used because the fuel-provider rate-tier matrix that sets the real amount is
     not published.
     """
+
+    program_code = "ks_lieap"
 
     fpl_percent = 1.5
     amount = 680

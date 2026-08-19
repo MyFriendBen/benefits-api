@@ -1,6 +1,6 @@
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
-from programs.programs.helpers import medicaid_eligible
-import programs.programs.messages as messages
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
+from programs.framework.helpers import medicaid_eligible
+import programs.framework.eligibility_messages as messages
 
 
 class KsWorkingHealthy(ProgramCalculator):
@@ -35,6 +35,8 @@ class KsWorkingHealthy(ProgramCalculator):
     retirement/IDA resource exemptions, institutional residence, residency intent,
     fraud-conviction bar. See spec.md for the full treatment.
     """
+
+    program_code = "ks_working_healthy"
 
     min_age = 16
     max_age = 64

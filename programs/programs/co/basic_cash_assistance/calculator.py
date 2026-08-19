@@ -1,9 +1,10 @@
-import programs.programs.messages as messages
-from programs.programs.calc import Eligibility, ProgramCalculator
+import programs.framework.eligibility_messages as messages
+from programs.framework.base import Eligibility, ProgramCalculator
 from programs.co_county_zips import counties_from_screen
 
 
 class BasicCashAssistance(ProgramCalculator):
+    program_code = "bca"
     amount = 1_000
     county = "Denver County"
     dependencies = ["zipcode", "age"]

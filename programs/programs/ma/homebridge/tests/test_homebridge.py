@@ -12,9 +12,8 @@ homebuyer assistance program, including:
 from django.test import TestCase
 from unittest.mock import Mock, patch
 
-from programs.programs.ma import ma_calculators
 from programs.programs.ma.homebridge.calculator import MaHomeBridge
-from programs.programs.calc import ProgramCalculator, Eligibility
+from programs.framework.base import ProgramCalculator, Eligibility
 
 
 class TestMaHomeBridgeCalculator(TestCase):
@@ -23,11 +22,6 @@ class TestMaHomeBridgeCalculator(TestCase):
     def test_exists_and_is_subclass_of_program_calculator(self):
         """Test that MaHomeBridge calculator class exists and inherits correctly."""
         self.assertTrue(issubclass(MaHomeBridge, ProgramCalculator))
-
-    def test_is_registered_in_ma_calculators(self):
-        """Test that HomeBridge is registered in the MA calculators dictionary."""
-        self.assertIn("ma_homebridge", ma_calculators)
-        self.assertEqual(ma_calculators["ma_homebridge"], MaHomeBridge)
 
     def test_eligible_city_is_cambridge(self):
         """Test that the eligible city is set to Cambridge."""

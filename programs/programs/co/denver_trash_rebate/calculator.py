@@ -1,10 +1,11 @@
 from integrations.services.income_limits import ami
 from programs.co_county_zips import counties_from_screen
-from programs.programs.calc import ProgramCalculator, Eligibility
-import programs.programs.messages as messages
+from programs.framework.base import ProgramCalculator, Eligibility
+import programs.framework.eligibility_messages as messages
 
 
 class DenverTrashRebate(ProgramCalculator):
+    program_code = "dtr"
     amount = 252
     ami_percent = "60%"
     county = "Denver County"

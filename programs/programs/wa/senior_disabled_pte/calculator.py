@@ -1,5 +1,5 @@
-import programs.programs.messages as messages
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
+import programs.framework.eligibility_messages as messages
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 
 
 class WaSeniorDisabledPte(ProgramCalculator):
@@ -24,6 +24,8 @@ class WaSeniorDisabledPte(ProgramCalculator):
       - Surviving spouse/domestic partner continuation: no screener field; omitted.
       - Cotenant income: household gross income used as conservative approximation.
     """
+
+    program_code = "wa_senior_disabled_pte"
 
     # 2024-2026 WA DOR county income thresholds: (Threshold 1, Threshold 2, Threshold 3)
     # Eligibility requires income <= Threshold 3; tier affects benefit level.

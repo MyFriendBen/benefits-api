@@ -1,0 +1,37 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_legal_services_kansas_city",
+    "category_type": {
+      "external_name": "ks_civil_legal_needs",
+      "name": "Civil legal needs",
+      "icon": "legal_services"
+    },
+    "type_short": [
+      "legal services"
+    ],
+    "translations": {
+      "name": "Kansas Legal Services (Kansas City office)",
+      "description": "Kansas Legal Services offers free or low-cost help with legal problems that are not criminal cases. Help depends on your income and the type of legal problem you have. They can help with family, housing, benefits, and safety problems. You can apply online or call 316-267-3975.",
+      "link": "https://www.kansaslegalservices.org/node/47/legal-assistance-office-kansas-city",
+      "warning": "",
+      "website_description": "Get legal help, apply online, or find free legal forms.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Franklin County",
+      "Johnson County",
+      "Leavenworth County",
+      "Linn County",
+      "Miami County",
+      "Wyandotte County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

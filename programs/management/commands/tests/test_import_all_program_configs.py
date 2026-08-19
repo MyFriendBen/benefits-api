@@ -8,7 +8,8 @@ from django.core.management import call_command
 from django.db import IntegrityError
 from django.test import TestCase
 
-from programs.models import Program, ProgramConfigImport, ProgramCategory
+from programs.management.commands.import_all_program_configs import config_content_hash
+from programs.models import Navigator, Program, ProgramConfigImport, ProgramCategory, ProgramNavigator
 from screener.models import WhiteLabel
 
 
@@ -185,6 +186,283 @@ class ImportAllProgramConfigsCommandTest(TestCase):
 
         output = self.err.getvalue()
         self.assertIn("File not found", output)
+
+
+class SkippedConfigTrackingTest(TestCase):
+    """
+    A skipped config must stay pending.
+
+    Recording a skip as an import is what permanently excluded configs from future runs,
+    so their navigators, documents and warning messages were never applied. These tests
+    pin the corrected behaviour: nothing applied means nothing recorded.
+    """
+
+    def setUp(self):
+        self.out = StringIO()
+        self.err = StringIO()
+        ProgramConfigImport.objects.all().delete()
+        WhiteLabel.objects.get_or_create(code="co", defaults={"name": "Colorado", "state_code": "CO"})
+
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.data_dir = Path(self.temp_dir.name) / "data"
+        self.data_dir.mkdir()
+
+        self.config = {
+            "white_label": {"code": "co"},
+            "program_category": {"external_name": "test_category", "icon": "icon", "name": "Test Category"},
+            "program": {"name_abbreviated": "existing_program"},
+        }
+        self.config_file = self.data_dir / "existing_program.json"
+        self.config_file.write_text(json.dumps(self.config), encoding="utf-8")
+
+        patcher = patch.object(self._command_class(), "DATA_DIR", self.data_dir)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+        # Any test here that imports a config for a program that does not yet exist will
+        # create one, and creating a program translates its fields. Translate() reads
+        # GOOGLE_APPLICATION_CREDENTIALS at construction and does not consult
+        # ENABLE_GOOGLE_INTEGRATIONS, so without this the tests reach the real API where
+        # credentials exist and fail outright in CI, where they do not.
+        translate_patcher = patch("programs.management.commands.import_program_config.Translate")
+        translate = translate_patcher.start()
+        translate.return_value.bulk_translate.side_effect = lambda langs, texts: {
+            text: {lang: text for lang in langs} for text in texts
+        }
+        self.addCleanup(translate_patcher.stop)
+
+    @staticmethod
+    def _command_class():
+        from programs.management.commands.import_all_program_configs import Command
+
+        return Command
+
+    def _create_existing_program(self):
+        return Program.objects.new_program(white_label="co", name_abbreviated="existing_program")
+
+    def _run(self, *args):
+        out = StringIO()
+        call_command("import_all_program_configs", *args, stdout=out, stderr=self.err)
+        return out.getvalue()
+
+    def test_skipped_config_is_not_recorded_as_imported(self):
+        """The config a skip touched must not gain a tracking row."""
+        self._create_existing_program()
+
+        self._run()
+
+        self.assertFalse(
+            ProgramConfigImport.objects.filter(filename="existing_program.json").exists(),
+            "A skipped config must not be recorded as imported",
+        )
+
+    def test_skipped_config_stays_pending_on_the_next_run(self):
+        """The exclusion must not be permanent — a skipped config comes back as pending."""
+        self._create_existing_program()
+        self._run()
+
+        output = self._run("--list")
+
+        self.assertIn("existing_program.json", output)
+        self.assertIn("Status: pending", output)
+
+    def test_skip_is_reported_distinctly_from_success(self):
+        """A run where everything skipped must not read as a clean import."""
+        self._create_existing_program()
+
+        output = self._run()
+
+        self.assertIn("Skipped", output)
+        self.assertIn("still pending", output)
+        self.assertRegex(output, r"Successful:\s+0")
+        self.assertNotIn("recorded as imported", output)
+
+    def test_successful_import_records_a_content_hash(self):
+        output = self._run()
+
+        record = ProgramConfigImport.objects.get(filename="existing_program.json")
+        self.assertEqual(record.content_hash, config_content_hash(self.config_file))
+        self.assertIn("Imported and recorded", output)
+
+    def test_edited_config_becomes_pending_again(self):
+        """A tracking row is a claim about specific content, so edits re-open the config."""
+        self._run()
+        self.assertFalse(self._pending_filenames())
+
+        edited = dict(self.config)
+        edited["documents"] = [{"external_name": "new_document", "text": "Bring photo ID"}]
+        self.config_file.write_text(json.dumps(edited), encoding="utf-8")
+
+        self.assertIn("existing_program.json", self._pending_filenames())
+        self.assertIn("file edited since it was imported", self._run("--list"))
+
+    def test_legacy_record_without_a_hash_is_treated_as_applied(self):
+        """Rows that predate hashing must not all re-open at once."""
+        ProgramConfigImport.objects.create(
+            filename="existing_program.json",
+            program_name="existing_program",
+            white_label_code="co",
+            content_hash="",
+        )
+
+        self.assertEqual(self._pending_filenames(), [])
+
+    def test_reconcile_repairs_a_config_that_was_skipped(self):
+        """
+        End-to-end repair: a program that exists but never had its config applied gets
+        its navigators linked by a --reconcile run, and only then is it recorded.
+        """
+        self._write_config_with_navigator()
+
+        program = self._create_existing_program()
+        self._run()
+        self.assertEqual(ProgramNavigator.objects.filter(program=program).count(), 0)
+
+        output = self._run("--reconcile")
+
+        self.assertEqual(ProgramNavigator.objects.filter(program=program).count(), 1)
+        self.assertIn("Reconciled and recorded", output)
+        self.assertTrue(ProgramConfigImport.objects.filter(filename="existing_program.json").exists())
+
+    def test_reconcile_dry_run_records_nothing(self):
+        self._create_existing_program()
+
+        self._run("--reconcile", "--dry-run")
+
+        self.assertFalse(ProgramConfigImport.objects.filter(filename="existing_program.json").exists())
+
+    def test_partial_reconcile_is_not_recorded_as_imported(self):
+        """
+        --only applies part of a config, so recording it would hide the rest.
+
+        A hash covering the whole file is a claim that the whole file was applied. Writing
+        one after a sectional pass is the same defect as recording a skip: the sections that
+        were never applied stop showing up as outstanding work.
+        """
+        self._write_config_with_navigator(with_document=True)
+        program = self._create_existing_program()
+
+        output = self._run("--reconcile", "--only", "navigators")
+
+        # The navigators section really was applied, and the documents section really wasn't.
+        self.assertEqual(ProgramNavigator.objects.filter(program=program).count(), 1)
+        self.assertEqual(program.documents.count(), 0)
+
+        self.assertFalse(
+            ProgramConfigImport.objects.filter(filename="existing_program.json").exists(),
+            "A partial (--only) pass must not record the config as imported",
+        )
+        self.assertIn("existing_program.json", self._pending_filenames())
+        self.assertIn("no config is recorded as imported", output)
+
+    def test_reconcile_naming_every_section_is_a_full_pass(self):
+        """--only listing all sections applies the whole config, so it records normally."""
+        self._write_config_with_navigator(with_document=True)
+        self._create_existing_program()
+
+        self._run("--reconcile", "--only", "warning_messages", "--only", "documents", "--only", "navigators")
+
+        self.assertTrue(ProgramConfigImport.objects.filter(filename="existing_program.json").exists())
+
+    def test_dry_run_counts_a_shared_navigator_as_one_entity_and_two_links(self):
+        """
+        Two configs declaring one missing navigator is one entity and two links.
+
+        A dry run applies nothing between configs, so both classify the navigator as missing.
+        Counting declarations would report two entities and no links — wrong in both
+        directions, and wrong in the number a production repair is gated on.
+        """
+        self._write_config_with_navigator()
+        self._create_existing_program()
+        self._write_second_config_sharing_the_navigator()
+
+        output = self._run("--reconcile", "--dry-run")
+
+        self.assertRegex(output, r"Entities to create:\s+1")
+        self.assertRegex(output, r"Links to add:\s+2")
+
+    def test_dry_run_totals_match_the_apply(self):
+        """The gate is only meaningful if applying produces what the dry run predicted."""
+        self._write_config_with_navigator()
+        self._create_existing_program()
+        self._write_second_config_sharing_the_navigator()
+
+        dry_run = self._run("--reconcile", "--dry-run")
+        applied = self._run("--reconcile")
+
+        for expected in (r"Entities to create:\s+1", r"Links to add:\s+2"):
+            self.assertRegex(dry_run, expected)
+            self.assertRegex(applied, expected)
+
+        self.assertEqual(Navigator.objects.filter(external_name="test_navigator").count(), 1)
+        self.assertEqual(ProgramNavigator.objects.filter(navigator__external_name="test_navigator").count(), 2)
+
+    def test_reconcile_skip_advice_does_not_point_back_at_reconcile(self):
+        """
+        A reconcile run skips programs that do not exist, so advising --reconcile is circular.
+
+        The gate lines are printed too, since a run where everything skipped must still show
+        the two totals a repair is approved against rather than omitting them.
+        """
+        output = self._run("--reconcile")
+
+        self.assertRegex(output, r"Skipped:\s+1")
+        self.assertIn("Run without --reconcile to create the missing ones", output)
+        self.assertNotIn("Run with --reconcile to additively apply", output)
+        self.assertRegex(output, r"Links to add:\s+0")
+        self.assertRegex(output, r"Entities to create:\s+0")
+
+    def test_malformed_declaration_fails_instead_of_being_recorded(self):
+        """
+        A config the plan cannot classify counts as Failed, not as already current.
+
+        Before, a navigator missing its external_name dropped out of the plan, the config read
+        as "already up to date", and a tracking row then claimed it had been applied — nothing
+        linked, and the config excluded from the honest accounting the rest of this change adds.
+        """
+        config = dict(self.config)
+        config["navigators"] = [{k: v for k, v in self.NAVIGATOR.items() if k != "external_name"}]
+        self.config_file.write_text(json.dumps(config), encoding="utf-8")
+        program = self._create_existing_program()
+
+        output = self._run("--reconcile")
+
+        self.assertRegex(output, r"Failed:\s+1")
+        self.assertRegex(output, r"Already current:\s+0")
+        self.assertFalse(
+            ProgramConfigImport.objects.filter(filename="existing_program.json").exists(),
+            "A config that failed to reconcile must not be recorded as imported",
+        )
+        self.assertEqual(ProgramNavigator.objects.filter(program=program).count(), 0)
+
+    NAVIGATOR = {
+        "external_name": "test_navigator",
+        "name": "Test Navigator",
+        "email": "navigator@example.com",
+        "description": "Helps people apply",
+        "assistance_link": "https://example.com/help",
+    }
+
+    def _write_config_with_navigator(self, with_document: bool = False):
+        config = dict(self.config)
+        config["navigators"] = [self.NAVIGATOR]
+        if with_document:
+            config["documents"] = [{"external_name": "test_document", "text": "Bring photo ID"}]
+        self.config_file.write_text(json.dumps(config), encoding="utf-8")
+
+    def _write_second_config_sharing_the_navigator(self, program_name: str = "second_program"):
+        """A second existing program whose config declares the same navigator."""
+        config = dict(self.config)
+        config["program"] = {"name_abbreviated": program_name}
+        config["navigators"] = [self.NAVIGATOR]
+        (self.data_dir / f"{program_name}.json").write_text(json.dumps(config), encoding="utf-8")
+        return Program.objects.new_program(white_label="co", name_abbreviated=program_name)
+
+    def _pending_filenames(self):
+        command = self._command_class()()
+        records = command._get_import_records()
+        return [f.name for f in self.data_dir.glob("*.json") if command._is_pending(f, records)]
 
 
 class ProgramConfigImportModelTest(TestCase):

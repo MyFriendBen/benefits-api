@@ -1,7 +1,7 @@
 from decimal import Decimal
 
-import programs.programs.messages as messages
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
+import programs.framework.eligibility_messages as messages
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 from screener.models import HouseholdMember, IncomeStream
 
 
@@ -21,6 +21,8 @@ class WaNslp(ProgramCalculator):
     proxy 5–18, FDPIR, migrant/runaway, CEP/Provision 2/3, Medicaid direct
     certification. Medicaid alone must not create categorical eligibility.
     """
+
+    program_code = "wa_nslp"
 
     # Likely school-meal student proxy (spec): not using `student` (postsecondary).
     SCHOOL_MEAL_RELATIONSHIPS = frozenset({"child", "fosterChild", "grandChild"})

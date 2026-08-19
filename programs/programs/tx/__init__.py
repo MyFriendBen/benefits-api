@@ -1,18 +1,5 @@
-from .ccad.calculator import TxCcad
-from ..calc import ProgramCalculator
-from .fpp.calculator import TxFpp
-from .hcv.calculator import TxHcv
-from .hse.calculator import TxHse
-from .htw.calculator import TxHtw
-from .ssdi.calculator import TxSsdi
-from .wap.calculator import TxWap
+"""Custom (MFB) calculators for TX.
 
-tx_calculators: dict[str, type[ProgramCalculator]] = {
-    "tx_ssdi": TxSsdi,
-    "tx_ccad": TxCcad,
-    "tx_wap": TxWap,
-    "tx_hse": TxHse,
-    "tx_htw": TxHtw,
-    "tx_fpp": TxFpp,
-    "tx_hcv": TxHcv,
-}
+Each calculator declares the ``Program`` row it backs and is found by
+`programs.framework.registry`, so there is nothing to list here.
+"""

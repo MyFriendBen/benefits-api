@@ -1,0 +1,91 @@
+interactions:
+- request:
+    body: '{"household": {"people": {"1": {"age": {"2025": 34}, "was_in_foster_care":
+      {"2025": null}, "employment_income": {"2025": 17952}, "self_employment_income":
+      {"2025": 0}, "rental_income": {"2025": 0}, "taxable_pension_income": {"2025":
+      0}, "social_security": {"2025": 0}, "unemployment_compensation": {"2025": 0},
+      "long_term_capital_gains": {"2025": 0}, "taxable_ira_distributions": {"2025":
+      0}, "ssi": {"2025": null}, "receives_ssi": {"2025": false}, "takes_up_ssi_if_eligible":
+      {"2025": false}, "head_start": {"2025": null}}, "2": {"age": {"2025": 3}, "was_in_foster_care":
+      {"2025": null}, "employment_income": {"2025": 0}, "self_employment_income":
+      {"2025": 0}, "rental_income": {"2025": 0}, "taxable_pension_income": {"2025":
+      0}, "social_security": {"2025": 0}, "unemployment_compensation": {"2025": 0},
+      "long_term_capital_gains": {"2025": 0}, "taxable_ira_distributions": {"2025":
+      0}, "ssi": {"2025": null}, "receives_ssi": {"2025": false}, "takes_up_ssi_if_eligible":
+      {"2025": false}, "head_start": {"2025": null}}}, "tax_units": {"main_tax_unit":
+      {"members": ["1", "2"]}}, "families": {"family": {"members": ["1", "2"]}}, "households":
+      {"household": {"members": ["1", "2"], "state_code": {"2025": "TX"}}}, "spm_units":
+      {"spm_unit": {"members": ["1", "2"], "tanf": {"2025": null}, "receives_tanf":
+      {"2025": false}, "takes_up_tanf_if_eligible": {"2025": false}, "receives_snap":
+      {"2025": false}, "takes_up_snap_if_eligible": {"2025": false}}}, "marital_units":
+      {}}, "version": "1.786.5"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1489'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.4
+    method: POST
+    uri: https://household.api.policyengine.org/us/calculate
+  response:
+    body:
+      string: '{"status": "ok", "message": null, "result": {"people": {"1": {"age":
+        {"2025": 34}, "was_in_foster_care": {"2025": false}, "employment_income":
+        {"2025": 17952}, "self_employment_income": {"2025": 0}, "rental_income": {"2025":
+        0}, "taxable_pension_income": {"2025": 0}, "social_security": {"2025": 0},
+        "unemployment_compensation": {"2025": 0}, "long_term_capital_gains": {"2025":
+        0}, "taxable_ira_distributions": {"2025": 0}, "ssi": {"2025": 0.0}, "receives_ssi":
+        {"2025": false}, "takes_up_ssi_if_eligible": {"2025": false}, "head_start":
+        {"2025": 0.0}}, "2": {"age": {"2025": 3}, "was_in_foster_care": {"2025": false},
+        "employment_income": {"2025": 0}, "self_employment_income": {"2025": 0}, "rental_income":
+        {"2025": 0}, "taxable_pension_income": {"2025": 0}, "social_security": {"2025":
+        0}, "unemployment_compensation": {"2025": 0}, "long_term_capital_gains": {"2025":
+        0}, "taxable_ira_distributions": {"2025": 0}, "ssi": {"2025": 0.0}, "receives_ssi":
+        {"2025": false}, "takes_up_ssi_if_eligible": {"2025": false}, "head_start":
+        {"2025": 12076.413}}}, "tax_units": {"main_tax_unit": {"members": ["1", "2"]}},
+        "families": {"family": {"members": ["1", "2"]}}, "households": {"household":
+        {"members": ["1", "2"], "state_code": {"2025": "TX"}}}, "spm_units": {"spm_unit":
+        {"members": ["1", "2"], "tanf": {"2025": 0.0}, "receives_tanf": {"2025": false},
+        "takes_up_tanf_if_eligible": {"2025": false}, "receives_snap": {"2025": false},
+        "takes_up_snap_if_eligible": {"2025": false}}}, "marital_units": {}}, "policyengine_bundle":
+        {"model_version": "1.786.5", "data_version": null, "dataset": null}}'
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Length:
+      - '1592'
+      access-control-allow-origin:
+      - '*'
+      content-type:
+      - application/json
+      date:
+      - Mon, 17 Aug 2026 22:44:39 GMT
+      server:
+      - Google Frontend
+      traceparent:
+      - 00-d1e999408e28594483be0e596440a669-2cb0a08213d8b32e-01
+      via:
+      - 1.1 google
+      x-cloud-trace-context:
+      - d1e999408e28594483be0e596440a669;o=1
+      x-policyengine-backend:
+      - modal
+      x-policyengine-primary-backend:
+      - modal
+      x-policyengine-primary-state:
+      - healthy
+      x-policyengine-request-id:
+      - 1b9d18ce-596d-4254-8d3b-1081cc39d91e
+      x-policyengine-route-channel:
+      - current
+    status:
+      code: 200
+      message: OK
+version: 1

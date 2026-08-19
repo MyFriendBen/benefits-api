@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "il"
+  },
+  "need": {
+    "external_name": "il_employment_connection",
+    "category_type": {
+      "external_name": "il_job_resources"
+    },
+    "type_short": [
+      "job resources"
+    ],
+    "translations": {
+      "name": "Employment Connection",
+      "description": "Employment Connection helps people find and keep jobs. They offer free job training, job leads, interview help, and other support. Eligibility depends on the program. Some programs help people who have trouble finding work. Others help people who have been in the justice system. Call 314-333-5627 in St. Louis or 314-499-7209 in St. Ann.",
+      "link": "https://www.employmentstl.org/programs-1",
+      "warning": "",
+      "website_description": "Free job training and help finding work",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "St. Clair"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

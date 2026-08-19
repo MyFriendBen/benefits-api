@@ -1,5 +1,5 @@
-from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
-import programs.programs.messages as messages
+from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
+import programs.framework.eligibility_messages as messages
 
 
 class MaYouthworks(ProgramCalculator):
@@ -32,6 +32,8 @@ class MaYouthworks(ProgramCalculator):
 
     Source: https://commcorp.org/program/youthworks/ (see spec.md for full sourcing)
     """
+
+    program_code = "ma_youthworks"
 
     min_age = 14
     max_age = 25

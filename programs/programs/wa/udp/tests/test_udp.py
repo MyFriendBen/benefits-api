@@ -1,9 +1,8 @@
 from django.test import TestCase
 from unittest.mock import Mock
 
-from programs.programs.wa import wa_calculators
 from programs.programs.wa.udp.calculator import WaUdp
-from programs.programs.calc import ProgramCalculator, Eligibility
+from programs.framework.base import ProgramCalculator, Eligibility
 
 
 def make_member(age, yearly_income=0, ssi_income=0):
@@ -52,10 +51,6 @@ def run_household_eligible(calc):
 class TestWaUdpClassAttributes(TestCase):
     def test_is_subclass_of_program_calculator(self):
         self.assertTrue(issubclass(WaUdp, ProgramCalculator))
-
-    def test_is_registered_in_wa_calculators(self):
-        self.assertIn("wa_udp", wa_calculators)
-        self.assertEqual(wa_calculators["wa_udp"], WaUdp)
 
     def test_amount_is_732(self):
         self.assertEqual(WaUdp.amount, 732)

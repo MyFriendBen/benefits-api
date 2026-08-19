@@ -13,16 +13,11 @@ the registration. The calculators' own properties live in
 from django.test import TestCase
 
 from programs.programs.federal.pe.tax import Eitc, Ctc, Aca
-from programs.programs.policyengine.calculators.dependencies import household
-from programs.programs.policyengine.calculators.dependencies.household import (
+from programs.framework.pe_dependencies import household
+from programs.framework.pe_dependencies.household import (
     TxStateCodeDependency,
 )
-from programs.programs.policyengine.calculators.registry import (
-    all_calculators,
-    all_tax_unit_calculators,
-)
-from programs.programs.tx.pe import tx_pe_calculators, tx_tax_unit_calculators
-from programs.programs.tx.pe.tax import TxAca
+from programs.programs.tx.pe.tax import TxAca, TxCtc, TxEitc
 
 
 class TestTxEitc(TestCase):
@@ -33,15 +28,19 @@ class TestTxEitc(TestCase):
     ``programs/programs/federal/pe/tests/test_tax.py``.
     """
 
-    def test_is_federal_eitc_everywhere(self):
-        self.assertIs(tx_tax_unit_calculators["tx_eitc"], Eitc)
-        self.assertIs(tx_pe_calculators["tx_eitc"], Eitc)
-        self.assertIs(all_tax_unit_calculators["tx_eitc"], Eitc)
-        self.assertIs(all_calculators["tx_eitc"], Eitc)
+    def test_is_the_federal_calculator_with_nothing_added(self):
+        """A thin subclass of the federal calculator: same PE variable, same inputs.
 
-    def test_matches_builtin_federal_registry_key(self):
-        """Same calculator the federal registry serves as ``eitc`` — no TX subclass."""
-        self.assertIs(all_tax_unit_calculators["tx_eitc"], all_tax_unit_calculators["eitc"])
+        TX has no state EITC, so ``tx_eitc`` must not diverge from the federal
+        credit. It is its own class only so the registry maps one key to one
+        calculator. Asserting it overrides nothing is stricter than asserting
+        identity with ``Eitc`` was: a subclass that added an input would still be a
+        subclass, but would fail here.
+        """
+        self.assertTrue(issubclass(TxEitc, Eitc))
+        self.assertEqual(TxEitc.pe_name, Eitc.pe_name)
+        self.assertEqual(list(TxEitc.pe_inputs), list(Eitc.pe_inputs))
+        self.assertEqual(list(TxEitc.pe_outputs), list(Eitc.pe_outputs))
 
 
 class TestTxCtc(TestCase):
@@ -53,15 +52,19 @@ class TestTxCtc(TestCase):
     ``programs/programs/federal/pe/tests/test_tax.py``.
     """
 
-    def test_is_federal_ctc_everywhere(self):
-        self.assertIs(tx_tax_unit_calculators["tx_ctc"], Ctc)
-        self.assertIs(tx_pe_calculators["tx_ctc"], Ctc)
-        self.assertIs(all_tax_unit_calculators["tx_ctc"], Ctc)
-        self.assertIs(all_calculators["tx_ctc"], Ctc)
+    def test_is_the_federal_calculator_with_nothing_added(self):
+        """A thin subclass of the federal calculator: same PE variable, same inputs.
 
-    def test_matches_builtin_federal_registry_key(self):
-        """Same calculator the federal registry serves as ``ctc`` — no TX subclass."""
-        self.assertIs(all_tax_unit_calculators["tx_ctc"], all_tax_unit_calculators["ctc"])
+        TX has no state CTC, so ``tx_ctc`` must not diverge from the federal
+        credit. It is its own class only so the registry maps one key to one
+        calculator. Asserting it overrides nothing is stricter than asserting
+        identity with ``Ctc`` was: a subclass that added an input would still be a
+        subclass, but would fail here.
+        """
+        self.assertTrue(issubclass(TxCtc, Ctc))
+        self.assertEqual(TxCtc.pe_name, Ctc.pe_name)
+        self.assertEqual(list(TxCtc.pe_inputs), list(Ctc.pe_inputs))
+        self.assertEqual(list(TxCtc.pe_outputs), list(Ctc.pe_outputs))
 
 
 class TestTxAca(TestCase):
@@ -80,14 +83,6 @@ class TestTxAca(TestCase):
 
         # Verify it inherits from Aca
         self.assertTrue(issubclass(TxAca, Aca))
-
-    def test_is_registered_in_tx_pe_calculators(self):
-        """Test that TX ACA is registered in the calculators dictionary."""
-        # Verify tx_aca is in the calculators dictionary
-        self.assertIn("tx_aca", tx_pe_calculators)
-
-        # Verify it points to the correct class
-        self.assertEqual(tx_pe_calculators["tx_aca"], TxAca)
 
     def test_pe_inputs_includes_all_parent_inputs_plus_tx_specific(self):
         """

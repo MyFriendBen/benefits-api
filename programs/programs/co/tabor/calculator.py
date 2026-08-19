@@ -1,9 +1,10 @@
-from programs.programs.calc import MemberEligibility, ProgramCalculator
+from programs.framework.base import MemberEligibility, ProgramCalculator
 from screener.models import HouseholdMember
 import math
 
 
 class Tabor(ProgramCalculator):
+    program_code = "tabor"
     min_age = 18
     member_amount = 800
     income_limits = {

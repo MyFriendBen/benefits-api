@@ -1,4 +1,4 @@
-from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
+from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
 
 
 class IlNurseFamilyPartnership(ProgramCalculator):
@@ -33,6 +33,8 @@ class IlNurseFamilyPartnership(ProgramCalculator):
     - https://www.cebc4cw.org/program/nurse-family-partnership/
     - CEDA (Community and Economic Development Association of Cook County) WIC Program
     """
+
+    program_code = "il_nfp"
 
     fpl_percent = 3
     # annual amt = total value divided by length of program (2.5 years)

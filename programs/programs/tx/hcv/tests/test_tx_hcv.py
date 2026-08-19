@@ -2,9 +2,8 @@ from django.test import TestCase
 from unittest.mock import Mock, patch
 
 from integrations.clients.hud_income_limits import HudIncomeClientError
-from programs.programs.tx import tx_calculators
 from programs.programs.tx.hcv.calculator import TxHcv
-from programs.programs.calc import ProgramCalculator, Eligibility
+from programs.framework.base import ProgramCalculator, Eligibility
 
 
 def make_member(
@@ -91,10 +90,6 @@ def patch_hud(il_ami=10_000_000, payment_standard=0, il_error=False):
 class TestTxHcvClassAttributes(TestCase):
     def test_is_subclass_of_program_calculator(self):
         self.assertTrue(issubclass(TxHcv, ProgramCalculator))
-
-    def test_is_registered_in_tx_calculators(self):
-        self.assertIn("tx_hcv", tx_calculators)
-        self.assertEqual(tx_calculators["tx_hcv"], TxHcv)
 
     def test_asset_limit_is_100k(self):
         self.assertEqual(TxHcv.asset_limit, 100_000)

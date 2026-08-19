@@ -1,10 +1,5 @@
-from .ssdi.calculator import Ssdi
-from .medicare_savings.calculator import MedicareSavings
-from .trump_account.calculator import TrumpAccount
-from ..calc import ProgramCalculator
+"""Custom (MFB) calculators for FEDERAL.
 
-federal_calculators: dict[str, type[ProgramCalculator]] = {
-    "ssdi": Ssdi,
-    "medicare_savings": MedicareSavings,
-    "trump_account": TrumpAccount,
-}
+Each calculator declares the ``Program`` row it backs and is found by
+`programs.framework.registry`, so there is nothing to list here.
+"""

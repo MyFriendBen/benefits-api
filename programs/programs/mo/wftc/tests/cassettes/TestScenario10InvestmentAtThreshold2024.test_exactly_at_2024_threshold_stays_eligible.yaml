@@ -1,0 +1,86 @@
+interactions:
+- request:
+    body: '{"household": {"people": {"91101": {"age": {"2024": 34}, "is_tax_unit_spouse":
+      {"2024": false}, "is_tax_unit_dependent": {"2024": false}, "employment_income":
+      {"2024": 40000}, "self_employment_income": {"2024": 0}, "rental_income": {"2024":
+      0}, "taxable_pension_income": {"2024": 0}, "social_security": {"2024": 0}, "unemployment_compensation":
+      {"2024": 0}, "long_term_capital_gains": {"2024": 4300}, "taxable_ira_distributions":
+      {"2024": 0}, "real_estate_taxes": {"2024": 0}}, "91102": {"age": {"2024": 9},
+      "is_tax_unit_spouse": {"2024": false}, "is_tax_unit_dependent": {"2024": true},
+      "employment_income": {"2024": 0}, "self_employment_income": {"2024": 0}, "rental_income":
+      {"2024": 0}, "taxable_pension_income": {"2024": 0}, "social_security": {"2024":
+      0}, "unemployment_compensation": {"2024": 0}, "long_term_capital_gains": {"2024":
+      0}, "taxable_ira_distributions": {"2024": 0}, "real_estate_taxes": {"2024":
+      0}}}, "tax_units": {"main_tax_unit": {"members": ["91101", "91102"], "mo_wftc":
+      {"2024": null}}}, "families": {"family": {"members": ["91101", "91102"]}}, "households":
+      {"household": {"members": ["91101", "91102"], "state_code": {"2024": "MO"}}},
+      "spm_units": {"spm_unit": {"members": ["91101", "91102"]}}, "marital_units":
+      {}}, "version": "1.786.5"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1266'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.4
+    method: POST
+    uri: https://household.api.policyengine.org/us/calculate
+  response:
+    body:
+      string: '{"status": "ok", "message": null, "result": {"people": {"91101": {"age":
+        {"2024": 34}, "is_tax_unit_spouse": {"2024": false}, "is_tax_unit_dependent":
+        {"2024": false}, "employment_income": {"2024": 40000}, "self_employment_income":
+        {"2024": 0}, "rental_income": {"2024": 0}, "taxable_pension_income": {"2024":
+        0}, "social_security": {"2024": 0}, "unemployment_compensation": {"2024":
+        0}, "long_term_capital_gains": {"2024": 4300}, "taxable_ira_distributions":
+        {"2024": 0}, "real_estate_taxes": {"2024": 0}}, "91102": {"age": {"2024":
+        9}, "is_tax_unit_spouse": {"2024": false}, "is_tax_unit_dependent": {"2024":
+        true}, "employment_income": {"2024": 0}, "self_employment_income": {"2024":
+        0}, "rental_income": {"2024": 0}, "taxable_pension_income": {"2024": 0}, "social_security":
+        {"2024": 0}, "unemployment_compensation": {"2024": 0}, "long_term_capital_gains":
+        {"2024": 0}, "taxable_ira_distributions": {"2024": 0}, "real_estate_taxes":
+        {"2024": 0}}}, "tax_units": {"main_tax_unit": {"members": ["91101", "91102"],
+        "mo_wftc": {"2024": 152.90323}}}, "families": {"family": {"members": ["91101",
+        "91102"]}}, "households": {"household": {"members": ["91101", "91102"], "state_code":
+        {"2024": "MO"}}}, "spm_units": {"spm_unit": {"members": ["91101", "91102"]}},
+        "marital_units": {}}, "policyengine_bundle": {"model_version": "1.786.5",
+        "data_version": null, "dataset": null}}'
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Length:
+      - '1371'
+      access-control-allow-origin:
+      - '*'
+      content-type:
+      - application/json
+      date:
+      - Tue, 18 Aug 2026 20:12:54 GMT
+      server:
+      - Google Frontend
+      traceparent:
+      - 00-1475a04fb3faab3e4ab9d434eee9a04c-f43c326822e15da7-01
+      via:
+      - 1.1 google
+      x-cloud-trace-context:
+      - 1475a04fb3faab3e4ab9d434eee9a04c;o=1
+      x-policyengine-backend:
+      - modal
+      x-policyengine-primary-backend:
+      - modal
+      x-policyengine-primary-state:
+      - healthy
+      x-policyengine-request-id:
+      - bf2a7f32-4cd4-4f5d-8ad1-4cb158ac7aeb
+      x-policyengine-route-channel:
+      - current
+    status:
+      code: 200
+      message: OK
+version: 1

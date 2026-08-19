@@ -1,5 +1,5 @@
 from integrations.services.income_limits import ami
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 
 """
 As of January 21, 2026, the EnergyCalculatorVehicleExchange program has been set to inactive in CESN
@@ -8,6 +8,7 @@ since we switched to retrieving the details via the Rewiring America API.
 
 
 class EnergyCalculatorVehicleExchange(ProgramCalculator):
+    program_code = "cesn_energy_vec"
     amount = 4_000
     min_age = 18
     ami_percent = "80%"

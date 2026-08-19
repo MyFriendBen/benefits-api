@@ -6,11 +6,11 @@ from django.shortcuts import get_object_or_404
 from integrations.clients.rewiring_america import RewiringAmericaClient
 from integrations.clients.google_places import GooglePlacesClient
 from integrations.services.communications import MessageUser
-from programs.programs.policyengine import versions as pe_versions
+from integrations.clients.policyengine import versions as pe_versions
 from programs.models import Referrer
-from programs.programs.helpers import STATE_MEDICAID_OPTIONS
-from programs.programs.policyengine.calculators.registry import all_calculators
-from programs.programs.urgent_needs.base import UrgentNeedFunction
+from programs.framework.helpers import STATE_MEDICAID_OPTIONS
+from integrations.clients.policyengine.registry import all_calculators
+from programs.urgent_needs.base import UrgentNeedFunction
 from django.db import transaction
 from screener.models import (
     Screen,
@@ -39,10 +39,10 @@ from screener.serializers import (
     RemImpactSerializer,
     CurrentBenefitToggleSerializer,
 )
-from programs.programs.policyengine.policy_engine import calc_pe_eligibility
+from integrations.clients.policyengine.policy_engine import calc_pe_eligibility
 from integrations.external_api_status import track_external_api_failures, get_external_api_failures
 from programs.util import DependencyError, Dependencies
-from programs.programs.urgent_needs import urgent_need_functions
+from programs.urgent_needs import urgent_need_functions
 from programs.models import (
     Document,
     Navigator,
@@ -54,9 +54,9 @@ from programs.models import (
     WarningMessage,
     TranslationOverride,
 )
-from programs.programs.categories import ProgramCategoryCapCalculator, category_cap_calculators
+from programs.categories import ProgramCategoryCapCalculator, category_cap_calculators
 from django.core.exceptions import ObjectDoesNotExist
-from programs.programs.warnings import warning_calculators
+from programs.warnings import warning_calculators
 from programs.serializers import HasBenefitsProgramSerializer
 from validations.serializers import ValidationSerializer
 from .webhooks import get_web_hook
@@ -693,6 +693,8 @@ def urgent_need_results(screen: Screen, data):
         "aging resources": screen.needs_aging_resources,
         "homeless services": screen.needs_homeless_services,
         "free low cost medical care": screen.needs_free_low_cost_medical_care,
+        "transportation": screen.needs_transportation,
+        "medical expenses and debt": screen.needs_medical_expenses_and_debt,
     }
 
     missing_dependencies = screen.missing_fields()

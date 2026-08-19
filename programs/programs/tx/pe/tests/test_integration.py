@@ -10,12 +10,12 @@ Tests are organized by calculator type (SPM, member, tax).
 
 from django.test import TestCase
 from screener.models import Screen, HouseholdMember, WhiteLabel, Expense, IncomeStream
-from programs.programs.policyengine.policy_engine import pe_input
+from integrations.clients.policyengine.policy_engine import pe_input
 from programs.programs.tx.pe.spm import TxSnap, TxLifeline, TxTanf
 from programs.programs.tx.pe.member import TxWic, TxSsi, TxCsfp, TxChip
 from programs.programs.federal.pe.tax import Eitc
 from programs.programs.tx.pe.tax import TxAca
-from programs.programs.policyengine.calculators.constants import (
+from programs.framework.pe_dependencies.constants import (
     MAIN_TAX_UNIT,
     SECONDARY_TAX_UNIT,
 )
@@ -151,8 +151,8 @@ class TestTxSnapPeInput(TxPeInputTestBase):
         """Test that pe_input includes TxSnap pe_outputs."""
         result = pe_input(self.screen, [TxSnap])
         spm_unit = result["household"]["spm_units"]["spm_unit"]
-        self.assertIn("snap", spm_unit)
-        self.assertIsInstance(spm_unit["snap"], dict)
+        self.assertIn("snap_if_takes_up", spm_unit)
+        self.assertIsInstance(spm_unit["snap_if_takes_up"], dict)
 
     def test_state_code_is_tx(self):
         """Test that TxStateCodeDependency sets state_code to TX."""
@@ -281,14 +281,17 @@ class TestTxWicPeInput(TxPeInputTestBase):
         spm_unit = household["spm_units"]["spm_unit"]
         people = household["people"]
 
-        # SPM-level dependency
-        self.assertIn("school_meal_countable_income", spm_unit)
+        # SPM-level dependency: TANF, a WIC income source in its own right
+        self.assertIn("tanf", spm_unit)
 
         # Member-level dependencies
         head_id = str(self.head.id)
         self.assertIn("is_pregnant", people[head_id])
         self.assertIn("current_pregnancies", people[head_id])
         self.assertIn("age", people[head_id])
+        # WIC's own income sources, which replaced school_meal_countable_income
+        self.assertIn("employment_income", people[head_id])
+        self.assertIn("child_support_received", people[head_id])
 
     def test_includes_pe_output_fields(self):
         """Test that pe_input includes TxWic pe_outputs."""
@@ -345,7 +348,9 @@ class TestTxSsiPeInput(TxPeInputTestBase):
         # SSI-specific member dependencies
         ssi_fields = [
             "ssi_countable_resources",
-            "ssi_reported",
+            "ssi",
+            "receives_ssi",
+            "takes_up_ssi_if_eligible",
             "is_blind",
             "is_disabled",
             "ssi_earned_income",
@@ -361,8 +366,8 @@ class TestTxSsiPeInput(TxPeInputTestBase):
         people = result["household"]["people"]
         head_id = str(self.head.id)
 
-        self.assertIn("ssi", people[head_id])
-        self.assertIsInstance(people[head_id]["ssi"], dict)
+        self.assertIn("ssi_if_takes_up", people[head_id])
+        self.assertIsInstance(people[head_id]["ssi_if_takes_up"], dict)
 
     def test_disability_fields_populated(self):
         """Test that disability fields are populated correctly."""
@@ -644,12 +649,12 @@ class TestTxCombinedCalculatorsPeInput(TxPeInputTestBase):
         head_id = str(self.head.id)
 
         # TxWic fields
-        self.assertIn("school_meal_countable_income", spm_unit)
         self.assertIn("wic", people[head_id])
+        self.assertIn("employment_income", people[head_id])
 
         # TxSnap fields
         self.assertIn("snap_assets", spm_unit)
-        self.assertIn("snap", spm_unit)
+        self.assertIn("snap_if_takes_up", spm_unit)
 
     def test_eitc_and_snap_combined(self):
         """Test that pe_input handles both Eitc and TxSnap together."""
@@ -663,7 +668,7 @@ class TestTxCombinedCalculatorsPeInput(TxPeInputTestBase):
         self.assertIn("eitc", tax_units[MAIN_TAX_UNIT])
 
         # TxSnap fields
-        self.assertIn("snap", spm_unit)
+        self.assertIn("snap_if_takes_up", spm_unit)
 
     def test_ssi_and_snap_combined(self):
         """Test that pe_input handles both TxSsi and TxSnap together."""
@@ -678,7 +683,7 @@ class TestTxCombinedCalculatorsPeInput(TxPeInputTestBase):
         self.assertIn("ssi_countable_resources", people[head_id])
 
         # TxSnap fields
-        self.assertIn("snap", spm_unit)
+        self.assertIn("snap_if_takes_up", spm_unit)
 
     def test_chip_and_snap_combined(self):
         """Test that pe_input handles both TxChip and TxSnap together."""
@@ -692,7 +697,7 @@ class TestTxCombinedCalculatorsPeInput(TxPeInputTestBase):
         self.assertIn("chip", people[head_id])
 
         # TxSnap fields
-        self.assertIn("snap", spm_unit)
+        self.assertIn("snap_if_takes_up", spm_unit)
 
     def test_aca_and_snap_combined(self):
         """Test that pe_input handles both TxAca and TxSnap together."""
@@ -705,7 +710,7 @@ class TestTxCombinedCalculatorsPeInput(TxPeInputTestBase):
         self.assertIn("aca_ptc", tax_units[MAIN_TAX_UNIT])
 
         # TxSnap fields
-        self.assertIn("snap", spm_unit)
+        self.assertIn("snap_if_takes_up", spm_unit)
 
     def test_all_state_codes_match(self):
         """Test that state_code is TX regardless of which calculator is used."""

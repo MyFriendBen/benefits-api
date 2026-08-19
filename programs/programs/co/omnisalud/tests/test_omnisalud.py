@@ -20,8 +20,7 @@ from unittest.mock import Mock
 from django.test import TestCase
 
 from programs.models import _FPL_DEFAULTS
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
-from programs.programs.co import co_calculators
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 from programs.programs.co.omnisalud.calculator import OmniSalud
 from programs.util import Dependencies, DependencyError
 from screener.models import Insurance
@@ -55,10 +54,6 @@ def make_calculator(household_size=1, household_income=0, members=None, missing_
 class TestOmniSaludClassAttributes(TestCase):
     def test_is_subclass_of_program_calculator(self):
         self.assertTrue(issubclass(OmniSalud, ProgramCalculator))
-
-    def test_is_registered_in_co_calculators(self):
-        self.assertIn("omnisalud", co_calculators)
-        self.assertEqual(co_calculators["omnisalud"], OmniSalud)
 
     def test_member_amount_is_610_a_month(self):
         self.assertEqual(OmniSalud.member_amount, 610 * 12)

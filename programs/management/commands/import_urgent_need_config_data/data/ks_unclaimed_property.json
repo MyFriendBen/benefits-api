@@ -1,0 +1,30 @@
+{
+  "white_label": {
+    "code": "ks"
+  },
+  "need": {
+    "external_name": "ks_unclaimed_property",
+    "category_type": {
+      "external_name": "ks_savings",
+      "name": "Savings to improve financial stability",
+      "icon": "savings"
+    },
+    "type_short": [
+      "savings"
+    ],
+    "translations": {
+      "name": "Kansas State Treasurer - Unclaimed Property (Kansas Cash)",
+      "description": "Kansas may have money or property that belongs to you. Searching is always free. Anyone can search, but only the owner or a legal heir can claim the property. Type in your name to see if the state is holding money for you.",
+      "link": "https://kansascash.ks.gov/",
+      "warning": "",
+      "website_description": "Kansas State Treasurer's free search and claim site for unclaimed money and property",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

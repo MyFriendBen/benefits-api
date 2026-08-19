@@ -16,7 +16,7 @@ from unittest.mock import Mock
 
 from django.test import TestCase
 
-from programs.programs.calc import MemberEligibility
+from programs.framework.base import MemberEligibility
 from programs.programs.federal.ssdi.calculator import Ssdi
 from programs.util import Dependencies
 

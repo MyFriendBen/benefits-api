@@ -1,4 +1,4 @@
-from programs.programs.calc import ProgramCalculator, MemberEligibility
+from programs.framework.base import ProgramCalculator, MemberEligibility
 
 
 class MaCmsp(ProgramCalculator):
@@ -11,6 +11,8 @@ class MaCmsp(ProgramCalculator):
     Sources:
     - https://www.mass.gov/childrens-medical-security-plan
     """
+
+    program_code = "ma_cmsp"
 
     # $239/month * 12 = $2,868/year per eligible uninsured child.
     # Matches the MassHealth child coverage value used for INFANT, YOUNG_CHILD, and OLDER_CHILD

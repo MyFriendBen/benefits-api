@@ -1,5 +1,5 @@
-from programs.programs.calc import ProgramCalculator, Eligibility
-import programs.programs.messages as messages
+from programs.framework.base import ProgramCalculator, Eligibility
+import programs.framework.eligibility_messages as messages
 from integrations.clients.hud_income_limits import hud_client, HudIncomeClientError
 
 
@@ -24,6 +24,8 @@ class MaMiddleIncomeRental(ProgramCalculator):
     - https://www.cambridgema.gov/-/media/Files/CDD/Housing/ForApplicants/hsg_mid_inc_app.pdf
     - https://www.cambridgema.gov/~/media/Files/CDD/Housing/incomelimits/hudincomeguidelines.ashx
     """
+
+    program_code = "ma_middle_income_rental"
 
     # Cambridge is a city in Middlesex County - used for HUD AMI lookups
     eligible_city = "Cambridge"

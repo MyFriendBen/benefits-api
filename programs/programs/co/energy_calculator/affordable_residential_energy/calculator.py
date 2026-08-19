@@ -1,9 +1,10 @@
 from integrations.services.income_limits import ami
 from programs.co_county_zips import counties_from_screen
-from programs.programs.calc import Eligibility, ProgramCalculator
+from programs.framework.base import Eligibility, ProgramCalculator
 
 
 class EnergyCalculatorAffordableResidentialEnergy(ProgramCalculator):
+    program_code = "cesn_care"
     amount = 1
     dependencies = ["household_size", "energy_calculator", "income_amount", "income_frequency", "county"]
     electricity_providers = [

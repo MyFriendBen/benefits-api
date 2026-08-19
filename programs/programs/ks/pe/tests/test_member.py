@@ -31,16 +31,15 @@ from unittest.mock import Mock, MagicMock
 from django.test import TestCase
 
 from programs.programs.federal.pe.member import Medicaid
-from programs.programs.policyengine.calculators.base import PolicyEngineMembersCalculator
-from programs.programs.policyengine.calculators.dependencies import member as member_deps
-from programs.programs.policyengine.calculators.dependencies.household import KsStateCodeDependency
-from programs.programs.policyengine.calculators.dependencies.member import (
+from programs.framework.pe_base import PolicyEngineMembersCalculator
+from programs.framework.pe_dependencies import member as member_deps
+from programs.framework.pe_dependencies.household import KsStateCodeDependency
+from programs.framework.pe_dependencies.member import (
     AgeDependency,
     PregnancyDependency,
     Chip,
 )
-from programs.programs.policyengine.calculators.dependencies.tax import KsChipPremium
-from programs.programs.ks.pe import ks_member_calculators, ks_pe_calculators
+from programs.framework.pe_dependencies.tax import KsChipPremium
 from programs.programs.ks.pe.member import KsKanCare, KsChip, KsMsp, KsEarlyHeadStart
 from programs.programs.federal.pe.member import EarlyHeadStart
 
@@ -55,14 +54,6 @@ class TestKsKanCareWiring(TestCase):
 
     def test_is_subclass_of_medicaid(self):
         self.assertTrue(issubclass(KsKanCare, Medicaid))
-
-    def test_is_registered_in_ks_member_calculators(self):
-        self.assertIn("ks_medicaid", ks_member_calculators)
-        self.assertEqual(ks_member_calculators["ks_medicaid"], KsKanCare)
-
-    def test_is_registered_in_ks_pe_calculators(self):
-        self.assertIn("ks_medicaid", ks_pe_calculators)
-        self.assertEqual(ks_pe_calculators["ks_medicaid"], KsKanCare)
 
     def test_pe_name_is_medicaid(self):
         self.assertEqual(KsKanCare.pe_name, "medicaid")
@@ -337,11 +328,6 @@ class TestKsChip(TestCase):
         self.assertIsNotNone(KsChip.pe_inputs)
         self.assertGreater(len(KsChip.pe_inputs), 0)
 
-    def test_is_registered_in_ks_pe_calculators(self):
-        """KS CHIP is registered under the ks_chip name_abbreviated."""
-        self.assertIn("ks_chip", ks_pe_calculators)
-        self.assertEqual(ks_pe_calculators["ks_chip"], KsChip)
-
     def test_pe_name_is_chip(self):
         """KsChip reads PolicyEngine's federal `chip` output."""
         self.assertEqual(KsChip.pe_name, "chip")
@@ -424,14 +410,22 @@ class TestKsChip(TestCase):
 
 
 class TestKsMspWiring(TestCase):
-    """KsMsp registration and pe_inputs handling."""
+    """
+    KS-specific MSP wiring. The shared contract every state's MSP must satisfy (pe_name,
+    pe_category, pe_outputs, no federal input dropped, the Medicaid input set, exactly one
+    state code matching the slug, no ``member_value`` override) is asserted once for all
+    registered subclasses in ``federal/pe/tests/test_msp.py``.
+    """
 
-    def test_is_registered_in_ks_member_calculators(self):
-        self.assertIn("ks_medicare_savings", ks_member_calculators)
-        self.assertEqual(ks_member_calculators["ks_medicare_savings"], KsMsp)
+    def test_program_code_is_ks_medicare_savings(self):
+        self.assertEqual(KsMsp.program_code, "ks_medicare_savings")
 
     def test_pe_name_is_msp(self):
         self.assertEqual(KsMsp.pe_name, "msp")
+
+    def test_pe_inputs_includes_ks_state_code(self):
+        """Resolves the MSP asset-test-applies parameter, which is true for Kansas."""
+        self.assertIn(KsStateCodeDependency, KsMsp.pe_inputs)
 
     def test_pe_inputs_includes_medicaid_inputs(self):
         """MSP needs *Medicaid.pe_inputs for the QI ~is_medicaid_eligible check and for the
@@ -472,10 +466,6 @@ class TestKsEarlyHeadStartWiring(TestCase):
     end-to-end against the live PolicyEngine API — see
     ``programs/programs/ks/early_head_start/spec.md``.
     """
-
-    def test_is_registered_as_ks_early_head_start(self):
-        self.assertIs(ks_member_calculators["ks_early_head_start"], KsEarlyHeadStart)
-        self.assertIs(ks_pe_calculators["ks_early_head_start"], KsEarlyHeadStart)
 
     def test_pe_inputs_includes_ks_state_code(self):
         self.assertTrue(issubclass(KsEarlyHeadStart, EarlyHeadStart))

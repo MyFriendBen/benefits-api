@@ -10,7 +10,7 @@ from unittest.mock import Mock
 
 from screener.models import Screen, HouseholdMember, WhiteLabel, IncomeStream
 from programs.programs.co.rtdlive.calculator import RtdLive
-from programs.programs.calc import MemberEligibility
+from programs.framework.base import MemberEligibility
 
 # 2024 FPL values (48 contiguous states), mocked for deterministic tests
 FPL_2024 = {1: 15060, 2: 20440, 3: 25820, 4: 31200}

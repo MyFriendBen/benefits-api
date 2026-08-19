@@ -1,10 +1,11 @@
-from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
-from programs.programs.helpers import medicaid_eligible
-import programs.programs.messages as messages
-from programs.programs.mixins import IlMedicaidFplIncomeCheckMixin
+from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
+from programs.framework.helpers import medicaid_eligible
+import programs.framework.eligibility_messages as messages
+from programs.framework.mixins import IlMedicaidFplIncomeCheckMixin
 
 
 class AllKids(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
+    program_code = "il_all_kids"
     member_amount = 284 * 12  # $284/month
     max_age = 18  # Under 19
     dependencies = ["age", "household_size", "pregnant", "income_amount", "income_frequency"]

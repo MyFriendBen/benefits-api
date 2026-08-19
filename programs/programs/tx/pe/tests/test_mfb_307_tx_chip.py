@@ -1,8 +1,8 @@
 from django.test import TestCase
 from screener.models import Screen, HouseholdMember, WhiteLabel, IncomeStream, Insurance
-from programs.programs.policyengine.policy_engine import pe_input
+from integrations.clients.policyengine.policy_engine import pe_input
 from programs.programs.tx.pe.member import TxChip
-from programs.programs.policyengine.calculators.constants import MAIN_TAX_UNIT, SECONDARY_TAX_UNIT
+from programs.framework.pe_dependencies.constants import MAIN_TAX_UNIT, SECONDARY_TAX_UNIT
 
 
 class TestMfb307TxChipIntegration(TestCase):

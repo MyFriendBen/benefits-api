@@ -1,9 +1,8 @@
 from django.test import TestCase
 from unittest.mock import Mock
 
-from programs.programs.wa import wa_calculators
 from programs.programs.wa.orca_lift.calculator import WaOrcaLift
-from programs.programs.calc import Eligibility, MemberEligibility
+from programs.framework.base import MemberEligibility
 
 
 def make_member(age=35, birth_year_month=None, yearly_income=24_000, insurance_medicaid=False, insurance_chp=False):
@@ -74,10 +73,6 @@ def make_calculator(
 
 
 class TestWaOrcaLiftClassAttributes(TestCase):
-    def test_is_registered(self):
-        self.assertIn("wa_orca_lift", wa_calculators)
-        self.assertEqual(wa_calculators["wa_orca_lift"], WaOrcaLift)
-
     def test_min_max_age(self):
         self.assertEqual(WaOrcaLift.min_age, 19)
         self.assertEqual(WaOrcaLift.max_age, 64)

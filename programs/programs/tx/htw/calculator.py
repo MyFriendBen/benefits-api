@@ -1,5 +1,5 @@
-from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
-from programs.programs import messages
+from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
+from programs.framework import eligibility_messages as messages
 
 
 class TxHtw(ProgramCalculator):
@@ -14,6 +14,8 @@ class TxHtw(ProgramCalculator):
     Data gaps: screener has no sex/gender field (gender criterion assumed met for all
     members); citizenship/immigration handled via legal_status_required config.
     """
+
+    program_code = "tx_htw"
 
     fpl_percent = 2.042
     min_age = 15

@@ -1,8 +1,9 @@
-import programs.programs.policyengine.calculators.dependencies as dependency
+import programs.framework.pe_dependencies as dependency
 from programs.programs.federal.pe.spm import Snap, Tanf
 
 
 class CoSnap(Snap):
+    program_code = "co_snap"
     pe_inputs = [
         *Snap.pe_inputs,
         dependency.household.CoStateCodeDependency,
@@ -10,6 +11,7 @@ class CoSnap(Snap):
 
 
 class CoTanf(Tanf):
+    program_code = "co_tanf"
     pe_name = "co_tanf"
     pe_inputs = [
         *Tanf.pe_inputs,

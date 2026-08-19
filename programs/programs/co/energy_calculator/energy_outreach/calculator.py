@@ -1,9 +1,10 @@
 from integrations.services.income_limits import ami
-from programs.programs.calc import Eligibility, ProgramCalculator
+from programs.framework.base import Eligibility, ProgramCalculator
 from programs.programs.co.energy_calculator.util import has_renter_expenses
 
 
 class EnergyCalculatorEnergyOutreach(ProgramCalculator):
+    program_code = "cesn_eoc"
     ami_percent = "80%"
     amount = 1_000_000  # move to the top of the list
     dependencies = ["energy_calculator", "income_frequency", "income_amount", "household_size", "county"]

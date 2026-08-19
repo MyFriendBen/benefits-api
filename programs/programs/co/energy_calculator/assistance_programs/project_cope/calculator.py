@@ -1,7 +1,8 @@
-from programs.programs.calc import Eligibility, ProgramCalculator
+from programs.framework.base import Eligibility, ProgramCalculator
 
 
 class EnergyCalculatorProjectCOPE(ProgramCalculator):
+    program_code = "cesn_cope"
     amount = 1
     dependencies = ["energy_calculator"]
     utility_providers = ["co-colorado-springs-utilities", "co-colorado-springs-utilities-gas"]

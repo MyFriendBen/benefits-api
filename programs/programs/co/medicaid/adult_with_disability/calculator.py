@@ -1,9 +1,10 @@
-from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
-from programs.programs.helpers import medicaid_eligible
-import programs.programs.messages as messages
+from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
+from programs.framework.helpers import medicaid_eligible
+import programs.framework.eligibility_messages as messages
 
 
 class MedicaidAdultWithDisability(ProgramCalculator):
+    program_code = "awd_medicaid"
     min_age = 16
     max_income_percent = 4.5
     earned_deduction = 65

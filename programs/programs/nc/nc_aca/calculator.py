@@ -1,6 +1,6 @@
-from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
-from programs.programs.helpers import medicaid_eligible
-import programs.programs.messages as messages
+from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
+from programs.framework.helpers import medicaid_eligible
+import programs.framework.eligibility_messages as messages
 from integrations.services.sheets.cache import GoogleSheetsCache
 from screener.models import HouseholdMember
 from sentry_sdk import capture_message
@@ -26,6 +26,7 @@ class ACACache(GoogleSheetsCache):
 
 
 class ACASubsidiesNC(ProgramCalculator):
+    program_code = "nc_aca_mfb_version"
     percent_of_fpl = 4
     dependencies = ["insurance", "income_amount", "income_frequency", "county", "household_size"]
     eligible_insurance_types = ["none", "private"]

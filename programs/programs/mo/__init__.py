@@ -1,3 +1,5 @@
-from ..calc import ProgramCalculator
+"""Custom (MFB) calculators for MO.
 
-mo_calculators: dict[str, type[ProgramCalculator]] = {}
+Each calculator declares the ``Program`` row it backs and is found by
+`programs.framework.registry`, so there is nothing to list here.
+"""

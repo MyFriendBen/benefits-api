@@ -1,9 +1,10 @@
-from programs.programs.calc import ProgramCalculator, Eligibility
-import programs.programs.messages as messages
+from programs.framework.base import ProgramCalculator, Eligibility
+import programs.framework.eligibility_messages as messages
 from typing import ClassVar
 
 
 class TxWap(ProgramCalculator):
+    program_code = "tx_wap"
     fpl_percent = 2
     amount = 372
     # NOTE: LIHEAP should also qualify for categorical eligibility, but is not currently available for TX

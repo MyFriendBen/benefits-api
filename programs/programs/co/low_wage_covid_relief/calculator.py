@@ -1,11 +1,12 @@
-from programs.programs.calc import ProgramCalculator, Eligibility
-from programs.programs.helpers import STATE_MEDICAID_OPTIONS
-import programs.programs.messages as messages
+from programs.framework.base import ProgramCalculator, Eligibility
+from programs.framework.helpers import STATE_MEDICAID_OPTIONS
+import programs.framework.eligibility_messages as messages
 from programs.co_county_zips import counties_from_screen
 import math
 
 
 class LowWageCovidRelief(ProgramCalculator):
+    program_code = "lwcr"
     amount = 1_500
     # Also used as `self.data` keys, which are name_abbreviated — so CO's names, not
     # base program names.

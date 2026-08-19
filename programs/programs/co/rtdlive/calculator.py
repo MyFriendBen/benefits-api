@@ -1,10 +1,11 @@
-from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
+from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
 from programs.co_county_zips import counties_from_screen
-import programs.programs.messages as messages
+import programs.framework.eligibility_messages as messages
 from screener.models import HouseholdMember
 
 
 class RtdLive(ProgramCalculator):
+    program_code = "rtdlive"
     eligible_counties = [
         "Adams County",
         "Arapahoe County",

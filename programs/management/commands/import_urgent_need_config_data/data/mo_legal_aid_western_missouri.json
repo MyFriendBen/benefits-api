@@ -1,0 +1,71 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_legal_aid_western_missouri",
+    "category_type": {
+      "external_name": "mo_civil_legal_needs",
+      "name": "Civil legal needs",
+      "icon": "legal_services"
+    },
+    "type_short": [
+      "legal services"
+    ],
+    "translations": {
+      "name": "Legal Aid of Western Missouri",
+      "description": "Legal Aid gives free help with housing, benefits, debt, and other legal problems. They do not handle criminal cases. Help depends on your income, what you own, and the type of legal problem. You must live in a county Legal Aid serves. Apply online or call 816-474-6750.",
+      "link": "https://lawmo.org/get-legal-help/",
+      "warning": "",
+      "website_description": "Get free legal help and learn how to apply.",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "Andrew County",
+      "Atchison County",
+      "Barton County",
+      "Bates County",
+      "Benton County",
+      "Buchanan County",
+      "Caldwell County",
+      "Camden County",
+      "Carroll County",
+      "Cass County",
+      "Clay County",
+      "Clinton County",
+      "Daviess County",
+      "DeKalb County",
+      "Gentry County",
+      "Grundy County",
+      "Harrison County",
+      "Henry County",
+      "Hickory County",
+      "Holt County",
+      "Jackson County",
+      "Jasper County",
+      "Johnson County",
+      "Lafayette County",
+      "Linn County",
+      "Livingston County",
+      "McDonald County",
+      "Mercer County",
+      "Morgan County",
+      "Newton County",
+      "Nodaway County",
+      "Pettis County",
+      "Platte County",
+      "Putnam County",
+      "Ray County",
+      "Saline County",
+      "St. Clair County",
+      "Sullivan County",
+      "Vernon County",
+      "Worth County"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

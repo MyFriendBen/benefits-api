@@ -1,9 +1,10 @@
 from programs.programs.federal.pe.tax import Eitc, Ctc
-import programs.programs.policyengine.calculators.dependencies as dependency
-from programs.programs.policyengine.calculators.base import PolicyEngineTaxUnitCalulator
+import programs.framework.pe_dependencies as dependency
+from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
 
 
 class Ileitc(PolicyEngineTaxUnitCalulator):
+    program_code = "il_eitc"
     pe_name = "il_eitc"
     pe_inputs = [
         *Eitc.pe_inputs,
@@ -13,6 +14,7 @@ class Ileitc(PolicyEngineTaxUnitCalulator):
 
 
 class Ilctc(PolicyEngineTaxUnitCalulator):
+    program_code = "il_ctc"
     pe_name = "il_ctc"
     pe_inputs = [
         *Ctc.pe_inputs,

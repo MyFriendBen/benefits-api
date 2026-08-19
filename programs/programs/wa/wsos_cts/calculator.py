@@ -1,5 +1,5 @@
-import programs.programs.messages as messages
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
+import programs.framework.eligibility_messages as messages
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 
 
 class WaWsosCts(ProgramCalculator):
@@ -26,6 +26,8 @@ class WaWsosCts(ProgramCalculator):
         bachelor's (BaS applies instead); high school credential by June of application
         year; credit/enrollment intensity rules (e.g. ≥3 credits/term).
     """
+
+    program_code = "wa_wsos_cts"
 
     # 2026 WSOS CTS 125% MFI ($/year) by household size — official CTS MFI chart
     # (same published 125% tier values as BaS for sizes 1–6).

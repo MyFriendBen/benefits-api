@@ -1,5 +1,5 @@
-from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
-import programs.programs.messages as messages
+from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
+import programs.framework.eligibility_messages as messages
 
 
 class KsNurseFamilyPartnership(ProgramCalculator):
@@ -46,6 +46,8 @@ class KsNurseFamilyPartnership(ProgramCalculator):
     - https://www.jocogov.org/department/health/pregnancy-services
     - https://www.nursefamilypartnership.org/locations/kansas/
     """
+
+    program_code = "ks_nurse_family_partnership"
 
     fpl_percent = 1.71
     eligible_counties = ["Shawnee County", "Johnson County"]

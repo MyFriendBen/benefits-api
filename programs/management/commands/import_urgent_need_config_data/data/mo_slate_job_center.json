@@ -1,0 +1,32 @@
+{
+  "white_label": {
+    "code": "mo"
+  },
+  "need": {
+    "external_name": "mo_slate_job_center",
+    "category_type": {
+      "external_name": "mo_job_resources",
+      "name": "Job resources",
+      "icon": "job_resources"
+    },
+    "type_short": [
+      "job resources"
+    ],
+    "translations": {
+      "name": "SLATE Missouri Job Center",
+      "description": "SLATE Missouri Job Center gives free help with jobs and job training. Basic Job Center services are open to adults age 18 or older. Training and youth programs have their own rules. You can also use computers and join free workshops. You can register with MoJobs before you visit to save time. Call 314-589-8000 with questions.",
+      "link": "https://www.stlouis-mo.gov/slate/index.cfm",
+      "warning": "",
+      "website_description": "Free job search and training help in St. Louis",
+      "notification_message": ""
+    },
+    "functions": [],
+    "counties": [
+      "St. Louis City"
+    ],
+    "required_expense_types": [],
+    "active": true,
+    "low_confidence": false,
+    "show_on_current_benefits": true
+  }
+}

@@ -1,8 +1,9 @@
-from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
-import programs.programs.messages as messages
+from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
+import programs.framework.eligibility_messages as messages
 
 
 class DentalHealthCareSeniors(ProgramCalculator):
+    program_code = "cdhcs"
     member_amount = 80 * 12
     min_age = 60
     percent_of_fpl = 2.5

@@ -1,9 +1,10 @@
-import programs.programs.policyengine.calculators.dependencies as dependency
-from programs.programs.policyengine.calculators.base import PolicyEngineSpmCalulator
+import programs.framework.pe_dependencies as dependency
+from programs.framework.pe_base import PolicyEngineSpmCalulator
 from programs.programs.federal.pe.spm import Snap, Tanf
 
 
 class NcSnap(Snap):
+    program_code = "nc_snap"
     pe_inputs = [
         *Snap.pe_inputs,
         dependency.household.NcStateCodeDependency,
@@ -11,6 +12,7 @@ class NcSnap(Snap):
 
 
 class NcTanf(Tanf):
+    program_code = "nc_tanf"
     pe_name = "nc_tanf"
     pe_inputs = [
         *Tanf.pe_inputs,
@@ -23,6 +25,7 @@ class NcTanf(Tanf):
 
 
 class NcScca(PolicyEngineSpmCalulator):
+    program_code = "nc_scca"
     pe_name = "nc_scca_maximum_payment"
     pe_inputs = [
         dependency.household.NcStateCodeDependency,

@@ -1,4 +1,4 @@
-from programs.programs.calc import Eligibility, ProgramCalculator
+from programs.framework.base import Eligibility, ProgramCalculator
 from programs.programs.co.energy_calculator.util import has_renter_expenses
 from programs.programs.co.energy_calculator.energy_assistance.calculator import EnergyCalculatorEnergyAssistance
 from programs.programs.co.energy_calculator.energy_outreach.calculator import EnergyCalculatorEnergyOutreach
@@ -8,6 +8,7 @@ from programs.programs.co.energy_calculator.weatherization_assistance.calculator
 
 
 class EnergyCalculatorElectricityAffordabilityBlackHills(ProgramCalculator):
+    program_code = "cesn_bheap"
     amount = 1
     dependencies = [
         *EnergyCalculatorEnergyAssistance.dependencies,

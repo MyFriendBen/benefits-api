@@ -1,5 +1,5 @@
-from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
-import programs.programs.messages as messages
+from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
+import programs.framework.eligibility_messages as messages
 
 
 class IlSilverAccess(ProgramCalculator):
@@ -14,6 +14,8 @@ class IlSilverAccess(ProgramCalculator):
     are surfaced in the description rather than gated in the screener. Employer/VA
     exclusion applies only to currently-reported coverage, not unenrolled offers.
     """
+
+    program_code = "il_silver_access"
 
     member_amount = 150 * 12  # $150/month × 12 = $1,800/year
     fpl_percent = 2.5  # 250% FPL income ceiling

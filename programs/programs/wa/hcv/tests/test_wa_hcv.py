@@ -1,9 +1,8 @@
 from django.test import TestCase
-from unittest.mock import Mock, patch, PropertyMock
+from unittest.mock import Mock, patch
 
-from programs.programs.wa import wa_calculators
 from programs.programs.wa.hcv.calculator import WaHcv
-from programs.programs.calc import ProgramCalculator, Eligibility
+from programs.framework.base import ProgramCalculator, Eligibility
 
 
 def make_member(
@@ -105,10 +104,6 @@ def patch_hud_client(il_ami_value=50000, fmr_value=2000, il_error=False, fmr_err
 class TestWaHcvClassAttributes(TestCase):
     def test_is_subclass_of_program_calculator(self):
         self.assertTrue(issubclass(WaHcv, ProgramCalculator))
-
-    def test_is_registered_in_wa_calculators(self):
-        self.assertIn("wa_hcv", wa_calculators)
-        self.assertEqual(wa_calculators["wa_hcv"], WaHcv)
 
     def test_asset_limit_is_100k(self):
         self.assertEqual(WaHcv.asset_limit, 100_000)

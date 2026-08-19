@@ -9,8 +9,8 @@ from django.test import TestCase
 
 from configuration.admin import PolicyEngineConfigAdmin
 from configuration.models import PolicyEngineConfig
-from programs.programs.policyengine.policy_engine import pe_input
-from programs.programs.policyengine.versions import determine_pe_version
+from integrations.clients.policyengine.policy_engine import pe_input
+from integrations.clients.policyengine.versions import determine_pe_version
 from screener.models import Screen, WhiteLabel
 
 

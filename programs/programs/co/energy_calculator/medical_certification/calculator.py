@@ -1,7 +1,8 @@
-from programs.programs.calc import Eligibility, MemberEligibility, ProgramCalculator
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 
 
 class EnergyCalculatorMedicalCertification(ProgramCalculator):
+    program_code = "cesn_mcp"
     amount = 1
     providers = ["co-xcel-energy"]
     dependencies = ["income_frequency", "income_amount", "household_size", "energy_calculator"]

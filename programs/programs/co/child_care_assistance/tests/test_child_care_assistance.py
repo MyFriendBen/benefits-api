@@ -15,7 +15,7 @@ from unittest.mock import Mock, patch
 from django.test import TestCase
 
 from programs.models import _FPL_DEFAULTS
-from programs.programs.calc import Eligibility
+from programs.framework.base import Eligibility
 from programs.programs.co.child_care_assistance.calculator import ChildCareAssistance
 from programs.util import Dependencies
 

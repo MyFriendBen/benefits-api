@@ -1,8 +1,9 @@
-from programs.programs.calc import ProgramCalculator, Eligibility
-import programs.programs.messages as messages
+from programs.framework.base import ProgramCalculator, Eligibility
+import programs.framework.eligibility_messages as messages
 
 
 class NCWeatherization(ProgramCalculator):
+    program_code = "ncwap"
     fpl_percent = 2
     expenses = [
         "rent",

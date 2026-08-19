@@ -1,9 +1,9 @@
 from screener.models import HouseholdMember
-from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
+from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
 from integrations.services.sheets.cache import GoogleSheetsCache
 
 from programs.co_county_zips import counties_from_screen
-import programs.programs.messages as messages
+import programs.framework.eligibility_messages as messages
 
 
 class CccapFplCache(GoogleSheetsCache):
@@ -29,6 +29,7 @@ class CccapFplCache(GoogleSheetsCache):
 
 
 class ChildCareAssistance(ProgramCalculator):
+    program_code = "cccap"
     preschool_value = 6000
     afterschool_value = 1700
     max_age_preschool = 4

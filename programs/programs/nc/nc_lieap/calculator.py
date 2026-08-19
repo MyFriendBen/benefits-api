@@ -1,8 +1,9 @@
-from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
-import programs.programs.messages as messages
+from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
+import programs.framework.eligibility_messages as messages
 
 
 class NCLieap(ProgramCalculator):
+    program_code = "nc_lieap"
     fpl_percent = 1.3
     fpl_percent_senior_disabled = 1.5
     earned_deduction = 0.2

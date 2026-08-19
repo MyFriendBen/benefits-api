@@ -3,8 +3,7 @@ from decimal import Decimal
 from django.test import TestCase
 
 from programs.models import Program, FederalPoveryLimit
-from programs.programs.calc import MemberEligibility
-from programs.programs.wa import wa_calculators
+from programs.framework.base import MemberEligibility
 from programs.programs.wa.nslp.calculator import WaNslp
 from programs.util import Dependencies
 from screener.models import HouseholdMember, IncomeStream, Screen, WhiteLabel
@@ -33,10 +32,6 @@ class TestWaNslp(TestCase):
         )
         defaults.update(kwargs)
         return Screen.objects.create(**defaults)
-
-    def test_registered(self):
-        self.assertIn("wa_nslp", wa_calculators)
-        self.assertIs(wa_calculators["wa_nslp"], WaNslp)
 
     def test_eligible_by_income_below_free_tier(self):
         """Spec / validation: HH 3, one school-age child, income below reduced cap."""

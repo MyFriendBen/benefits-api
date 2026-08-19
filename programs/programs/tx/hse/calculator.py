@@ -1,4 +1,4 @@
-from programs.programs.calc import ProgramCalculator, Eligibility
+from programs.framework.base import ProgramCalculator, Eligibility
 from typing import ClassVar
 
 
@@ -39,6 +39,8 @@ class TxHse(ProgramCalculator):
     work due to blindness.
     Source: https://statutes.capitol.texas.gov/?tab=1&code=TX&chapter=TX.11&artSec=
     """
+
+    program_code = "tx_hse"
 
     amount = 1200
     senior_disabled_amount = 1700

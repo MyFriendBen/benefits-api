@@ -1,4 +1,4 @@
-from programs.programs.calc import MemberEligibility, ProgramCalculator
+from programs.framework.base import MemberEligibility, ProgramCalculator
 
 
 class CoCollegeInvestFirstStep(ProgramCalculator):
@@ -13,6 +13,8 @@ class CoCollegeInvestFirstStep(ProgramCalculator):
     qualify even if the child was born out of state) are not verifiable from screener
     data; both gaps are noted in the program description.
     """
+
+    program_code = "co_collegeinvest_first_step"
 
     member_amount = 121
     max_age = 7

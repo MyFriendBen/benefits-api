@@ -12,9 +12,8 @@ Eligibility requirements:
 from django.test import TestCase
 from unittest.mock import Mock
 
-from programs.programs.tx import tx_calculators
 from programs.programs.tx.htw.calculator import TxHtw
-from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
+from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
 
 
 def make_member(
@@ -68,10 +67,6 @@ def make_calculator(household_income=0, household_size=1, fpl_limit=15_000):
 class TestTxHtwClassAttributes(TestCase):
     def test_is_subclass_of_program_calculator(self):
         self.assertTrue(issubclass(TxHtw, ProgramCalculator))
-
-    def test_is_registered_in_tx_calculators(self):
-        self.assertIn("tx_htw", tx_calculators)
-        self.assertEqual(tx_calculators["tx_htw"], TxHtw)
 
     def test_fpl_percent_is_2042(self):
         self.assertEqual(TxHtw.fpl_percent, 2.042)

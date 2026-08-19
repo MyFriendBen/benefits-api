@@ -15,9 +15,8 @@ including:
 from django.test import TestCase
 from unittest.mock import Mock, patch
 
-from programs.programs.ma import ma_calculators
 from programs.programs.ma.cpp.calculator import MaCpp
-from programs.programs.calc import ProgramCalculator
+from programs.framework.base import ProgramCalculator
 
 
 class TestMaCppCalculator(TestCase):
@@ -26,11 +25,6 @@ class TestMaCppCalculator(TestCase):
     def test_exists_and_is_subclass_of_program_calculator(self):
         """Test that MaCpp calculator class exists and inherits correctly."""
         self.assertTrue(issubclass(MaCpp, ProgramCalculator))
-
-    def test_is_registered_in_ma_calculators(self):
-        """Test that CPP is registered in the MA calculators dictionary."""
-        self.assertIn("ma_cpp", ma_calculators)
-        self.assertEqual(ma_calculators["ma_cpp"], MaCpp)
 
     def test_eligible_city_is_cambridge(self):
         """Test that the eligible city is set to Cambridge."""

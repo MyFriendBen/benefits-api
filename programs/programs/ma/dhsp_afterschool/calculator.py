@@ -1,5 +1,5 @@
-from programs.programs.calc import ProgramCalculator, Eligibility, MemberEligibility
-import programs.programs.messages as messages
+from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
+import programs.framework.eligibility_messages as messages
 
 
 class MaDhspAfterschool(ProgramCalculator):
@@ -24,6 +24,8 @@ class MaDhspAfterschool(ProgramCalculator):
 
     Source: https://www.finditcambridge.org/programs/dhsp-afterschool-programs-lottery
     """
+
+    program_code = "ma_dhsp_afterschool"
 
     eligible_city = "Cambridge"
     # K-8 typically covers ages 5-14 (Kindergarten through 8th grade)

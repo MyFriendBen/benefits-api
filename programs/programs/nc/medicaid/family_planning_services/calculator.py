@@ -1,9 +1,10 @@
-from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
-from programs.programs.helpers import medicaid_eligible
-import programs.programs.messages as messages
+from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
+from programs.framework.helpers import medicaid_eligible
+import programs.framework.eligibility_messages as messages
 
 
 class NCFamilyPlanningServices(ProgramCalculator):
+    program_code = "nc_fps"
     member_amount = 404
     min_age = 12
     fpl_percent = 1.95

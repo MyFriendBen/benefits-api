@@ -1,9 +1,10 @@
-from programs.programs.calc import MemberEligibility, ProgramCalculator, Eligibility
+from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
 from programs.co_county_zips import counties_from_screen
-import programs.programs.messages as messages
+import programs.framework.eligibility_messages as messages
 
 
 class JeffcoStudentBenefits(ProgramCalculator):
+    program_code = "jeffco_student_benefits"
     county = "Jefferson County"
     child_age_min = 3
     child_age_max = 19

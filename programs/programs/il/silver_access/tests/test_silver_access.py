@@ -1,8 +1,7 @@
 from django.test import TestCase
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock
 
-from programs.programs.calc import Eligibility, MemberEligibility
-from programs.programs.il import il_calculators
+from programs.framework.base import Eligibility, MemberEligibility
 from programs.programs.il.silver_access.calculator import IlSilverAccess
 
 
@@ -52,10 +51,6 @@ def make_calculator(county="DuPage", household_size=1, gross_income=30_000, memb
 
 
 class TestIlSilverAccessRegistration(TestCase):
-    def test_registered_in_il_calculators(self):
-        self.assertIn("il_silver_access", il_calculators)
-        self.assertIs(il_calculators["il_silver_access"], IlSilverAccess)
-
     def test_class_attributes(self):
         self.assertEqual(IlSilverAccess.member_amount, 1_800)
         self.assertEqual(IlSilverAccess.fpl_percent, 2.5)

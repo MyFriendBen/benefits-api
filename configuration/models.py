@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 from screener.models import WhiteLabel
-from programs.programs.policyengine import versions as pe_versions
+from integrations.clients.policyengine import versions as pe_versions
 from .fields import OrderedJSONField
 
 
