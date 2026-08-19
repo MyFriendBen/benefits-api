@@ -49,15 +49,7 @@ class {{code_capitalize}}ConfigurationData(ConfigurationData):
     public_charge_rule = {"link": ""}
 
     # TODO: Add help resources shown on the "Immediate Help" tab of the results page
-    more_help_options = {
-        "moreHelpOptions": [
-            {
-                "name": {"_default_message": "", "_label": ""},
-                "link": "",
-                "phone": {"_default_message": "", "_label": ""},
-            },
-        ]
-    }
+    more_help_options = {"moreHelpOptions": []}
 
     # ==========================================================================================
     # ACUTE CONDITION OPTIONS - Usually inherited as is from ConfigurationData
