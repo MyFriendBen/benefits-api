@@ -22,7 +22,6 @@ Real 2025 FPL base (100%) values used in fixtures, by household size:
 from django.test import TestCase
 from unittest.mock import Mock
 
-from programs.programs.ma import ma_calculators
 from programs.programs.ma.youthworks.calculator import MaYouthworks
 from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
 
@@ -69,10 +68,6 @@ def make_calculator(members, household_yearly_income, household_size=None):
 class TestMaYouthworksClassAttributes(TestCase):
     def test_is_subclass_of_program_calculator(self):
         self.assertTrue(issubclass(MaYouthworks, ProgramCalculator))
-
-    def test_is_registered_in_ma_calculators(self):
-        self.assertIn("ma_youthworks", ma_calculators)
-        self.assertEqual(ma_calculators["ma_youthworks"], MaYouthworks)
 
     def test_min_age_is_14(self):
         self.assertEqual(MaYouthworks.min_age, 14)

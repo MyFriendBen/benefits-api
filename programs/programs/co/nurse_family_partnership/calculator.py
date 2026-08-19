@@ -30,6 +30,8 @@ class CoNurseFamilyPartnership(ProgramCalculator):
     - https://www.larimer.gov/health/maternal-child-and-family-health/nurse-family-partnership-program
     """
 
+    program_code = "co_nfp"
+
     fpl_percent = 2
     # Only mother's income is considered; household size of 2 (mother + unborn child)
     income_household_size = 2

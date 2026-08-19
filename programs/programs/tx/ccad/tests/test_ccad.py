@@ -9,9 +9,8 @@ Eligibility requirements:
 """
 
 from django.test import TestCase
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock
 
-from programs.programs.tx import tx_calculators
 from programs.programs.tx.ccad.calculator import TxCcad
 from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
 
@@ -65,10 +64,6 @@ def make_eligible_member_e(member):
 class TestTxCcadClassAttributes(TestCase):
     def test_is_subclass_of_program_calculator(self):
         self.assertTrue(issubclass(TxCcad, ProgramCalculator))
-
-    def test_is_registered_in_tx_calculators(self):
-        self.assertIn("tx_ccad", tx_calculators)
-        self.assertEqual(tx_calculators["tx_ccad"], TxCcad)
 
     def test_min_age_is_65(self):
         self.assertEqual(TxCcad.min_age, 65)

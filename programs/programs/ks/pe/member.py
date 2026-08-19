@@ -17,6 +17,8 @@ class KsSsi(Ssi):
     year.
     """
 
+    program_code = "ks_ssi"
+
     pe_inputs = [
         *Ssi.pe_inputs,
         dependency.household.KsStateCodeDependency,
@@ -36,6 +38,8 @@ class KsKanCare(Medicaid):
       SSI-criterion inputs (leaving the SGA earnings test intact). Without them,
       disabled/blind applicants would wrongly return ineligible.
     """
+
+    program_code = "ks_medicaid"
 
     pe_inputs = [
         *Medicaid.pe_inputs,
@@ -78,6 +82,8 @@ class KsChip(PolicyEngineMembersCalculator):
     test of its own.
     """
 
+    program_code = "ks_chip"
+
     pe_name = "chip"
     pe_inputs = [
         *KsKanCare.pe_inputs,
@@ -106,6 +112,8 @@ class KsMsp(Msp):
     """Kansas Medicare Savings Program. Federal ``Msp`` plus the KS state code and KanCare's
     Medicaid inputs (see ``Msp`` for why the Medicaid inputs are required)."""
 
+    program_code = "ks_medicare_savings"
+
     pe_inputs = [
         *Msp.pe_inputs,
         dependency.household.KsStateCodeDependency,
@@ -121,6 +129,8 @@ class KsHeadStart(HeadStart):
     Start (birth to age 3, and pregnant women) is a separate program.
     """
 
+    program_code = "ks_head_start"
+
     pe_inputs = [
         *HeadStart.pe_inputs,
         dependency.household.KsStateCodeDependency,
@@ -135,6 +145,8 @@ class KsEarlyHeadStart(EarlyHeadStart):
     ``early_head_start`` variable with no KS-specific variance. Head Start (ages
     3-5) is a separate program (``KsHeadStart``).
     """
+
+    program_code = "ks_early_head_start"
 
     pe_inputs = [
         *EarlyHeadStart.pe_inputs,

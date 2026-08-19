@@ -1,4 +1,5 @@
-from programs.programs.federal.pe.tax import Aca
+from programs.programs.federal.pe.tax import Aca, Cdcc, Ctc, Eitc
+from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
 import programs.framework.pe_dependencies as dependency
 
 
@@ -37,9 +38,125 @@ class MoAca(Aca):
     result as an estimated maximum accordingly.
     """
 
+    program_code = "mo_aca_ptc"
+
     pe_inputs = [
         *Aca.pe_inputs,
         dependency.household.MoStateCodeDependency,
         dependency.household.MoCountyDependency,
         dependency.member.HasEsiDependency,
+    ]
+
+
+class MoCtc(Ctc):
+    """
+    Federal Child Tax Credit surfaced to Missouri users as ``mo_ctc``.
+
+    Missouri has no state CTC, so this reads PolicyEngine's federal ``ctc_value``
+    with no Missouri-specific input. Deliberately adds nothing: ``ctc_value`` is
+    federal end to end (``min(ctc, ctc_limiting_tax_liability + refundable_ctc)``,
+    and the limiting-liability term zeroes SALT), so sending a state code would
+    add an input the formula never reads. Verified live against PolicyEngine
+    1.786.5: identical values with no state code, MO, TX and CA.
+
+    It exists as its own class so the registry maps one key to one calculator.
+    Contrast ``il_ctc`` / ``coctc``, which read genuinely state-specific
+    PolicyEngine variables and so do send a state code.
+    """
+
+    program_code = "mo_ctc"
+
+
+class MoEitc(Eitc):
+    """
+    Federal EITC surfaced to Missouri users as ``mo_eitc``.
+
+    Missouri has no state EITC. Same reasoning as ``MoCtc``: PolicyEngine's
+    ``eitc`` is federal, so there is nothing state-specific to add.
+    """
+
+    program_code = "mo_eitc"
+
+
+class MoCdccFederal(Cdcc):
+    """
+    Federal Child and Dependent Care Credit surfaced to Missouri users as
+    ``mo_cdcc_federal``.
+
+    Missouri has no state CDCC, so this reads PolicyEngine's federal ``cdcc``
+    unchanged. Same reasoning as ``MoCtc``: the variable is federal, so there is
+    no state-specific input to add. Exists as its own class so the registry maps
+    one key to one calculator.
+    """
+
+    program_code = "mo_cdcc_federal"
+
+
+class MoWftc(PolicyEngineTaxUnitCalulator):
+    """
+    Missouri Working Family Tax Credit — state EITC piggyback.
+
+    A thin wrapper: PolicyEngine's ``mo_wftc`` models the whole credit, including the
+    eligibility gate, the year-specific rate, and the liability cap net of the property
+    tax credit. See ``programs/programs/mo/wftc/spec.md`` for the rules, the accepted
+    approximations, and the screener gaps this does not block on.
+    """
+
+    program_code = "mo_wftc"
+
+    pe_name = "mo_wftc"
+    pe_inputs = [
+        *Eitc.pe_inputs,
+        # Not in the federal Eitc set, and the liability cap is computed after the
+        # property tax credit, which PolicyEngine derives from real_estate_taxes.
+        dependency.member.PropertyTaxExpenseDependency,
+        dependency.household.MoStateCodeDependency,
+    ]
+    pe_outputs = [dependency.tax.MoWftc]
+
+
+class MoPts(PolicyEngineTaxUnitCalulator):
+    """
+    Missouri Property Tax Credit, the "Circuit Breaker".
+
+    See ``programs/programs/mo/pts/spec.md`` for the rule and the scenarios. PolicyEngine
+    models it in full, so this supplies inputs and reads the result.
+
+    Six inputs replace or supplement the usual ones, each because a shared dependency sends
+    the right dollars to a PolicyEngine variable this formula does not read. The reason is
+    on each dependency class; ``spec.md`` records which scenario caught it.
+
+    The credit floors at $0 for a household that satisfies every eligibility gate, so the
+    base class's ``value > 0`` reports such a household ineligible. That is the intended
+    result: a $0 credit is filtered from the results page either way, and telling someone
+    they qualify for nothing would only invite a pointless filing.
+    """
+
+    program_code = "mo_pts"
+
+    pe_name = "mo_property_tax_credit"
+    pe_inputs = [
+        dependency.member.AgeAtEndOf2026Dependency,
+        dependency.member.TaxUnitHeadDependency,
+        dependency.member.TaxUnitSpouseDependency,
+        dependency.member.TaxUnitDependentDependency,
+        dependency.member.IsDisabledDependency,
+        dependency.member.IsFullyDisabledServiceConnectedVeteranDependency,
+        dependency.member.PropertyTaxExpenseDependency,
+        dependency.member.RentDependency,
+        dependency.member.Ssi,
+        dependency.member.VeteransBenefitsDependency,
+        dependency.member.PensionIncomeWithoutVeteranDependency,
+        dependency.member.EmploymentIncomeDependency,
+        dependency.member.SelfEmploymentIncomeDependency,
+        dependency.member.RentalIncomeDependency,
+        dependency.member.SocialSecurityIncomeDependency,
+        dependency.member.SocialSecuritySurvivorsIncomeDependency,
+        dependency.member.UnemploymentIncomeDependency,
+        dependency.member.InvestmentIncomeDependency,
+        dependency.member.RetirementDistributionsDependency,
+        dependency.household.MoStateCodeDependency,
+    ]
+    pe_outputs = [
+        dependency.tax.MoPropertyTaxCredit,
     ]

@@ -16,6 +16,8 @@ class MoLifeline(Lifeline):
     federal 135%). Without it PE falls back to its own default state.
     """
 
+    program_code = "mo_lifeline"
+
     pe_inputs = [
         *Lifeline.pe_inputs,
         dependency.household.MoStateCodeDependency,
@@ -46,6 +48,8 @@ class MoNslp(SchoolLunch):
     So without this input every Missouri household would be shown eligible for
     free meals regardless of income. ``test_spm.py`` pins it for that reason.
     """
+
+    program_code = "mo_nslp"
 
     pe_inputs = [
         *SchoolLunch.pe_inputs,

@@ -20,6 +20,8 @@ class WaCsfp(ProgramCalculator):
     State residency is enforced via the `wa` white label routing.
     """
 
+    program_code = "wa_csfp"
+
     min_age = 60
     fpl_percent = 1.5
     member_amount = 50 * 12  # $50/month — stored as annual value

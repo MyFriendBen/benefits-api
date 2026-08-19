@@ -18,7 +18,6 @@ the "$1".
 from django.test import TestCase
 from unittest.mock import Mock
 
-from programs.programs.il import il_calculators
 from programs.programs.il.access_dupage.calculator import IlAccessDuPage
 from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 
@@ -69,10 +68,6 @@ def make_eligible_member_e(member):
 class TestIlAccessDuPageClassAttributes(TestCase):
     def test_is_subclass_of_program_calculator(self):
         self.assertTrue(issubclass(IlAccessDuPage, ProgramCalculator))
-
-    def test_is_registered_in_il_calculators(self):
-        self.assertIn("il_access_dupage", il_calculators)
-        self.assertEqual(il_calculators["il_access_dupage"], IlAccessDuPage)
 
     def test_fpl_percent_is_2_5(self):
         self.assertEqual(IlAccessDuPage.fpl_percent, 2.5)

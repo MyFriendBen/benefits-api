@@ -3,6 +3,7 @@ from programs.framework.mixins import IlTransportationMixin
 
 
 class IlCommoditySupplementalFoodProgram(ProgramCalculator):
+    program_code = "il_csfp"
     dependencies = ["age", "county", "income_amount", "income_frequency", "household_size"]
     eligible_counties = [
         "Alexander",

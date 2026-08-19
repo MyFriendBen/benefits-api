@@ -10,6 +10,8 @@ from programs.framework.pe_base import PolicyEngineMembersCalculator
 class IlMedicaid(federal_member.Medicaid):
     """Base Illinois Medicaid eligibility through PolicyEngine"""
 
+    program_code = "il_medicaid"
+
     medicaid_categories = {
         "NONE": 0,
         "ADULT": 474,
@@ -30,6 +32,7 @@ class IlMedicaid(federal_member.Medicaid):
 
 
 class IlWic(federal_member.Wic):
+    program_code = "il_wic"
     wic_categories = {
         "NONE": 0,
         "INFANT": 130,
@@ -45,6 +48,7 @@ class IlWic(federal_member.Wic):
 
 
 class IlAca(tax.Aca):
+    program_code = "il_aca"
     pe_name = "aca_ptc"
     pe_inputs = [
         *tax.Aca.pe_inputs,
@@ -71,6 +75,8 @@ class IlAabd(PolicyEngineMembersCalculator):
     Need standard includes personal allowance, shelter allowance, and utility allowance
     based on household circumstances and IL AABD area (1-8).
     """
+
+    program_code = "il_aabd"
 
     pe_name = "il_aabd_person"
     pe_inputs = [
@@ -138,6 +144,8 @@ class IlHbwd(PolicyEngineMembersCalculator):
           not used as the program's member_value)
     """
 
+    program_code = "il_hbwd"
+
     pe_name = "il_hbwd_person"
     pe_inputs = [
         # age eligible
@@ -198,6 +206,8 @@ class IlBccp(PolicyEngineMembersCalculator):
     - Not eligible for Medicaid, All Kids, or other HFS insurance
     """
 
+    program_code = "il_ibccp"
+
     pe_name = "il_bcc_eligible"
     pe_category = "people"
 
@@ -236,7 +246,7 @@ class IlBccp(PolicyEngineMembersCalculator):
         return 0
 
 
-class IlFamilyPlanningProgram(PolicyEngineMembersCalculator):
+class IlFamilyPlanningProgram(PolicyEngineMembersCalculator, abstract=True):
     """
     Illinois Family Planning Program (FPP) eligibility calculator.
 
@@ -268,6 +278,31 @@ class IlFamilyPlanningProgram(PolicyEngineMembersCalculator):
         return 1
 
 
+class IlHfsFpp(IlFamilyPlanningProgram):
+    """
+    HFS Family Planning Program (``il_hfs_fpp``).
+
+    Requires qualified immigration status, unlike ``il_fppe``. That distinction is
+    not yet modelled: PolicyEngine resolves both rows through the same
+    ``il_fpp_eligible`` variable, so this currently overrides nothing and exists
+    so the registry maps one key to one calculator. If the immigration-status
+    requirement is ever modelled, it belongs here.
+    """
+
+    program_code = "il_hfs_fpp"
+
+
+class IlFppe(IlFamilyPlanningProgram):
+    """
+    Family Planning Presumptive Eligibility (``il_fppe``).
+
+    No immigration-status requirement, unlike ``il_hfs_fpp``. Same situation:
+    both share ``il_fpp_eligible`` today, so this overrides nothing.
+    """
+
+    program_code = "il_fppe"
+
+
 class IlMpe(PolicyEngineMembersCalculator):
     """
     Illinois Medicaid Presumptive Eligibility (Pregnancy)
@@ -280,6 +315,8 @@ class IlMpe(PolicyEngineMembersCalculator):
         approximately 200% of the FPL)
         - Not already enrolled in Medicaid for the eligible individual
     """
+
+    program_code = "il_mpe"
 
     pe_name = "il_mpe_eligible"
     pe_category = "people"
@@ -310,6 +347,8 @@ class IlMsp(federal_member.Msp):
     """Illinois Medicare Savings Program. Federal ``Msp`` plus the IL state code and
     ``IlMedicaid`` inputs (see ``Msp`` for why the Medicaid inputs are required)."""
 
+    program_code = "il_msp"
+
     pe_inputs = [
         *federal_member.Msp.pe_inputs,
         household_dependency.IlStateCodeDependency,
@@ -324,6 +363,8 @@ class IlHeadStart(federal_member.HeadStart):
     value are computed by PolicyEngine with no IL-specific variance. Early Head
     Start (birth to age 3, and pregnant women) is a separate program.
     """
+
+    program_code = "il_head_start"
 
     pe_inputs = [
         *federal_member.HeadStart.pe_inputs,

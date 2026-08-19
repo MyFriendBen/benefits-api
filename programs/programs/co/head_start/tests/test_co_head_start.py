@@ -26,7 +26,6 @@ from django.test import TestCase
 
 from programs.models import _FPL_DEFAULTS
 from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
-from programs.programs.co import co_calculators
 from programs.programs.co.head_start.calculator import CoHeadStart
 from programs.util import Dependencies, DependencyError
 
@@ -85,10 +84,6 @@ class CountySheetTestCase(TestCase):
 class TestCoHeadStartClassAttributes(TestCase):
     def test_is_subclass_of_program_calculator(self):
         self.assertTrue(issubclass(CoHeadStart, ProgramCalculator))
-
-    def test_is_registered_in_co_calculators(self):
-        self.assertIn("co_head_start", co_calculators)
-        self.assertEqual(co_calculators["co_head_start"], CoHeadStart)
 
     def test_member_amount_is_10655(self):
         self.assertEqual(CoHeadStart.member_amount, 10_655)

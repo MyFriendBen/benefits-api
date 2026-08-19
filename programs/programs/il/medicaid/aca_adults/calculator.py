@@ -5,6 +5,7 @@ from programs.framework.mixins import IlMedicaidFplIncomeCheckMixin
 
 
 class AcaAdults(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
+    program_code = "il_aca_adults"
     member_amount = 474 * 12  # $474/month
     min_age = 19
     max_age = 64

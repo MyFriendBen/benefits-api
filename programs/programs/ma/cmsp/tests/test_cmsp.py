@@ -16,7 +16,6 @@ including:
 from django.test import TestCase
 from unittest.mock import Mock
 
-from programs.programs.ma import ma_calculators
 from programs.programs.ma.cmsp.calculator import MaCmsp
 from programs.framework.base import ProgramCalculator
 
@@ -27,11 +26,6 @@ class TestMaCmspCalculator(TestCase):
     def test_exists_and_is_subclass_of_program_calculator(self):
         """Test that MaCmsp calculator class exists and inherits correctly."""
         self.assertTrue(issubclass(MaCmsp, ProgramCalculator))
-
-    def test_is_registered_in_ma_calculators(self):
-        """Test that CMSP is registered in the MA calculators dictionary."""
-        self.assertIn("ma_cmsp", ma_calculators)
-        self.assertEqual(ma_calculators["ma_cmsp"], MaCmsp)
 
     def test_member_amount_is_2868(self):
         """Test that member_amount is $2,868/year ($239/month) per eligible uninsured child."""

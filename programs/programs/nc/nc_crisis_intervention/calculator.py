@@ -3,6 +3,7 @@ import programs.framework.eligibility_messages as messages
 
 
 class NCCrisisIntervention(ProgramCalculator):
+    program_code = "nccip"
     expenses = ["rent", "mortgage", "heating", "cooling"]
     fpl_percent = 1.5
     amount = 600

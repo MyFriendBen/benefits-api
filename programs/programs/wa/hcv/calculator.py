@@ -16,6 +16,8 @@ class WaHcv(ProgramCalculator):
     Data gaps: citizenship, criminal history, real property ownership, student dual-income test.
     """
 
+    program_code = "wa_hcv"
+
     amount = 0
     asset_limit = 100_000
     dependent_deduction_annual = 480

@@ -7,13 +7,11 @@ These tests verify IL-specific calculator logic for tax-level programs including
 """
 
 from django.test import TestCase
-from unittest.mock import Mock, MagicMock
 
 from programs.framework.pe_base import PolicyEngineTaxUnitCalulator
 from programs.framework.pe_dependencies import tax as tax_dependency
 from programs.framework.pe_dependencies.household import IlStateCodeDependency
 from programs.programs.federal.pe.tax import Eitc, Ctc
-from programs.programs.il.pe import il_pe_calculators, il_tax_unit_calculators
 from programs.programs.il.pe.tax import Ileitc, Ilctc
 
 
@@ -23,16 +21,6 @@ class TestIleitc(TestCase):
     def test_exists_and_is_subclass_of_policy_engine_tax_unit_calculator(self):
         """Test that Ileitc is a subclass of PolicyEngineTaxUnitCalulator."""
         self.assertTrue(issubclass(Ileitc, PolicyEngineTaxUnitCalulator))
-
-    def test_is_registered_in_il_pe_calculators(self):
-        """Test that Ileitc is registered in the calculators dictionary."""
-        self.assertIn("il_eitc", il_pe_calculators)
-        self.assertEqual(il_pe_calculators["il_eitc"], Ileitc)
-
-    def test_is_registered_in_il_tax_unit_calculators(self):
-        """Test that Ileitc is registered in the tax calculators dictionary."""
-        self.assertIn("il_eitc", il_tax_unit_calculators)
-        self.assertEqual(il_tax_unit_calculators["il_eitc"], Ileitc)
 
     def test_pe_name_is_il_eitc(self):
         """Test that pe_name is il_eitc."""
@@ -58,16 +46,6 @@ class TestIlctc(TestCase):
     def test_exists_and_is_subclass_of_policy_engine_tax_unit_calculator(self):
         """Test that Ilctc is a subclass of PolicyEngineTaxUnitCalulator."""
         self.assertTrue(issubclass(Ilctc, PolicyEngineTaxUnitCalulator))
-
-    def test_is_registered_in_il_pe_calculators(self):
-        """Test that Ilctc is registered in the calculators dictionary."""
-        self.assertIn("il_ctc", il_pe_calculators)
-        self.assertEqual(il_pe_calculators["il_ctc"], Ilctc)
-
-    def test_is_registered_in_il_tax_unit_calculators(self):
-        """Test that Ilctc is registered in the tax calculators dictionary."""
-        self.assertIn("il_ctc", il_tax_unit_calculators)
-        self.assertEqual(il_tax_unit_calculators["il_ctc"], Ilctc)
 
     def test_pe_name_is_il_ctc(self):
         """Test that pe_name is il_ctc."""

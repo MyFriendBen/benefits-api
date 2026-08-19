@@ -5,6 +5,7 @@ from screener.models import HouseholdMember
 
 
 class RtdLive(ProgramCalculator):
+    program_code = "rtdlive"
     eligible_counties = [
         "Adams County",
         "Arapahoe County",

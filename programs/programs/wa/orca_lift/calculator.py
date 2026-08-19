@@ -20,6 +20,8 @@ class WaOrcaLift(ProgramCalculator):
     Value: $864/year per eligible cardholder (= $72/month PugetPass differential x 12).
     """
 
+    program_code = "wa_orca_lift"
+
     min_age = 19
     max_age = 64
     fpl_percent = 2.0

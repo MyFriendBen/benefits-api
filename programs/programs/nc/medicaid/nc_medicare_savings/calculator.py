@@ -4,6 +4,7 @@ from typing import ClassVar
 
 
 class MedicareSavingsNC(MedicareSavings):
+    program_code = "nc_medicare_savings"
     ineligible_insurance_types: ClassVar[tuple[str, ...]] = ("va", "medicaid")
     asset_limit: ClassVar[dict[str, int]] = {"single": 9_660, "married": 14_470}
     medicaid_asset_limit: ClassVar[dict[str, int]] = {"single": 2_000, "married": 3_000}  # NC ABD Medicaid

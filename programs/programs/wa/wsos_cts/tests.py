@@ -45,12 +45,6 @@ class TestWaWsosCts(TestCase):
     def _calc(self, screen):
         return WaWsosCts(screen, self.mock_program, {}, Dependencies())
 
-    def test_registered_in_wa_calculators(self):
-        from programs.programs.wa import wa_calculators
-
-        self.assertIn("wa_wsos_cts", wa_calculators)
-        self.assertIs(wa_calculators["wa_wsos_cts"], WaWsosCts)
-
     def test_no_published_lump_sum_value(self):
         self.assertEqual(WaWsosCts.amount, 0)
 

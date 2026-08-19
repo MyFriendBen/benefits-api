@@ -2,6 +2,8 @@ from programs.programs.federal.pe.member import (
     Wic,
     HeadStart,
     EarlyHeadStart,
+    Medicaid,
+    Msp,
     Ssi,
 )
 import programs.framework.pe_dependencies as dependency
@@ -24,6 +26,8 @@ class MoWic(Wic):
     the frontend's ``value > 0`` filter would drop the program from results entirely.
     """
 
+    program_code = "mo_wic"
+
     pe_inputs = [
         *Wic.pe_inputs,
         dependency.household.MoStateCodeDependency,
@@ -37,6 +41,8 @@ class MoWic(Wic):
 class MoHeadStart(HeadStart):
     """Missouri Head Start (ages 3-5) — federal ``HeadStart`` PE calculator + MO state code."""
 
+    program_code = "mo_head_start"
+
     pe_inputs = [
         *HeadStart.pe_inputs,
         dependency.household.MoStateCodeDependency,
@@ -45,6 +51,8 @@ class MoHeadStart(HeadStart):
 
 class MoEarlyHeadStart(EarlyHeadStart):
     """Missouri Early Head Start (birth-3 / pregnant) — federal ``EarlyHeadStart`` PE calculator + MO state code."""
+
+    program_code = "mo_early_head_start"
 
     pe_inputs = [
         *EarlyHeadStart.pe_inputs,
@@ -88,7 +96,31 @@ class MoSsi(Ssi):
     ``show_in_has_benefits_step: true``.
     """
 
+    program_code = "mo_ssi"
+
     pe_inputs = [
         *Ssi.pe_inputs,
         dependency.household.MoStateCodeDependency,
+    ]
+
+
+class MoMsp(Msp):
+    """
+    Missouri Medicare Savings Program (QMB / SLMB / QI) — federal ``Msp`` plus the MO state
+    code and Medicaid inputs, mirroring ``KsMsp`` / ``TxMsp`` / ``IlMsp``.
+
+    The income tiers are the federal floor in Missouri, so the state code is the only
+    MO-keyed input. It resolves the MSP asset-test-applies parameter, which is ``true`` for
+    MO — without it the resource test would silently not apply and over-resourced
+    households would show as eligible.
+
+    Missouri rules PolicyEngine does not model are recorded in the MO MSP spec.
+    """
+
+    program_code = "mo_medicare_savings"
+
+    pe_inputs = [
+        *Msp.pe_inputs,
+        dependency.household.MoStateCodeDependency,
+        *Medicaid.pe_inputs,
     ]

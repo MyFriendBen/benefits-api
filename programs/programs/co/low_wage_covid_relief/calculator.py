@@ -6,6 +6,7 @@ import math
 
 
 class LowWageCovidRelief(ProgramCalculator):
+    program_code = "lwcr"
     amount = 1_500
     # Also used as `self.data` keys, which are name_abbreviated — so CO's names, not
     # base program names.

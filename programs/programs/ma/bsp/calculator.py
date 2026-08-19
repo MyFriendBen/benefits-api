@@ -45,6 +45,8 @@ class MaBabySteps(ProgramCalculator):
     (full sourcing in spec.md)
     """
 
+    program_code = "ma_bsp"
+
     # One-time $50 seed deposit per qualifying child (lump sum, not a monthly benefit).
     member_amount = 50
     # BabySteps began operating January 1, 2020 — no earlier birth qualifies via the birth pathway.

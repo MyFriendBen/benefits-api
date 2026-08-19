@@ -44,12 +44,6 @@ class TestWaSeattleFreshBucks(TestCase):
 
     # --- Class attributes ---
 
-    def test_registered_in_wa_calculators(self):
-        from programs.programs.wa import wa_calculators
-
-        self.assertIn("wa_seattle_fresh_bucks", wa_calculators)
-        self.assertIs(wa_calculators["wa_seattle_fresh_bucks"], WaSeattleFreshBucks)
-
     def test_amount_is_yearly(self):
         self.assertEqual(WaSeattleFreshBucks.amount, 60 * 12)
 

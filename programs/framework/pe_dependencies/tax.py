@@ -34,6 +34,10 @@ class Ileitc(TaxUnit):
     field = "il_eitc"
 
 
+class MoWftc(TaxUnit):
+    field = "mo_wftc"
+
+
 class Kseitc(TaxUnit):
     field = "ks_total_eitc"
 
@@ -63,6 +67,10 @@ class KsCdcc(TaxUnit):
 
 class Aca(TaxUnit):
     field = "aca_ptc"
+
+
+class MoPropertyTaxCredit(TaxUnit):
+    field = "mo_property_tax_credit"
 
 
 # WARN: this does not take into account multiple tax units

@@ -26,7 +26,6 @@ from django.test import SimpleTestCase, TestCase
 
 from programs.models import _FPL_DEFAULTS
 from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
-from programs.programs.co import co_calculators
 from programs.programs.co.connect_for_health.calculator import CfhCountyValuesCache, ConnectForHealth
 from programs.util import Dependencies, DependencyError
 from screener.models import Insurance
@@ -98,10 +97,6 @@ def make_calculator(
 class TestConnectForHealthClassAttributes(TestCase):
     def test_is_subclass_of_program_calculator(self):
         self.assertTrue(issubclass(ConnectForHealth, ProgramCalculator))
-
-    def test_is_registered_in_co_calculators(self):
-        self.assertIn("cfhc", co_calculators)
-        self.assertEqual(co_calculators["cfhc"], ConnectForHealth)
 
     def test_percent_of_fpl_is_400_percent(self):
         self.assertEqual(ConnectForHealth.percent_of_fpl, 4)

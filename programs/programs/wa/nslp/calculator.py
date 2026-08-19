@@ -22,6 +22,8 @@ class WaNslp(ProgramCalculator):
     certification. Medicaid alone must not create categorical eligibility.
     """
 
+    program_code = "wa_nslp"
+
     # Likely school-meal student proxy (spec): not using `student` (postsecondary).
     SCHOOL_MEAL_RELATIONSHIPS = frozenset({"child", "fosterChild", "grandChild"})
     MIN_SCHOOL_MEAL_AGE = 5

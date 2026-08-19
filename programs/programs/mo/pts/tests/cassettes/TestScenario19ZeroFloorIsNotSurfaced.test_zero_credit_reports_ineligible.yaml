@@ -1,0 +1,80 @@
+interactions:
+- request:
+    body: '{"household": {"people": {"82191": {"age": {"2026": 72}, "is_tax_unit_head":
+      {"2026": true}, "is_tax_unit_spouse": {"2026": false}, "is_tax_unit_dependent":
+      {"2026": false}, "is_disabled": {"2026": null}, "is_fully_disabled_service_connected_veteran":
+      {"2026": false}, "real_estate_taxes": {"2026": 0}, "rent": {"2026": 600}, "ssi":
+      {"2026": null}, "veterans_benefits": {"2026": 0}, "taxable_pension_income":
+      {"2026": 37900}, "employment_income": {"2026": 0}, "self_employment_income":
+      {"2026": 0}, "rental_income": {"2026": 0}, "social_security": {"2026": 0}, "social_security_survivors":
+      {"2026": 0}, "unemployment_compensation": {"2026": 0}, "long_term_capital_gains":
+      {"2026": 0}, "taxable_ira_distributions": {"2026": 0}}}, "tax_units": {"main_tax_unit":
+      {"members": ["82191"], "mo_property_tax_credit": {"2026": null}}}, "families":
+      {"family": {"members": ["82191"]}}, "households": {"household": {"members":
+      ["82191"], "state_code": {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members":
+      ["82191"]}}, "marital_units": {}}, "version": "1.786.5"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1052'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.4
+    method: POST
+    uri: https://household.api.policyengine.org/us/calculate
+  response:
+    body:
+      string: '{"status": "ok", "message": null, "result": {"people": {"82191": {"age":
+        {"2026": 72}, "is_tax_unit_head": {"2026": true}, "is_tax_unit_spouse": {"2026":
+        false}, "is_tax_unit_dependent": {"2026": false}, "is_disabled": {"2026":
+        false}, "is_fully_disabled_service_connected_veteran": {"2026": false}, "real_estate_taxes":
+        {"2026": 0}, "rent": {"2026": 600}, "ssi": {"2026": 0.0}, "veterans_benefits":
+        {"2026": 0}, "taxable_pension_income": {"2026": 37900}, "employment_income":
+        {"2026": 0}, "self_employment_income": {"2026": 0}, "rental_income": {"2026":
+        0}, "social_security": {"2026": 0}, "social_security_survivors": {"2026":
+        0}, "unemployment_compensation": {"2026": 0}, "long_term_capital_gains": {"2026":
+        0}, "taxable_ira_distributions": {"2026": 0}}}, "tax_units": {"main_tax_unit":
+        {"members": ["82191"], "mo_property_tax_credit": {"2026": 0.0}}}, "families":
+        {"family": {"members": ["82191"]}}, "households": {"household": {"members":
+        ["82191"], "state_code": {"2026": "MO"}}}, "spm_units": {"spm_unit": {"members":
+        ["82191"]}}, "marital_units": {}}, "policyengine_bundle": {"model_version":
+        "1.786.5", "data_version": null, "dataset": null}}'
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Length:
+      - '1151'
+      access-control-allow-origin:
+      - '*'
+      content-type:
+      - application/json
+      date:
+      - Wed, 19 Aug 2026 18:13:32 GMT
+      server:
+      - Google Frontend
+      traceparent:
+      - 00-5a50d5e713b77a240efd15e308d9d9a5-66ff3d77e36b604c-00
+      via:
+      - 1.1 google
+      x-cloud-trace-context:
+      - 5a50d5e713b77a240efd15e308d9d9a5
+      x-policyengine-backend:
+      - modal
+      x-policyengine-primary-backend:
+      - modal
+      x-policyengine-primary-state:
+      - healthy
+      x-policyengine-request-id:
+      - e1620ab0-53ea-4d38-bdb5-7e967947bd0d
+      x-policyengine-route-channel:
+      - current
+    status:
+      code: 200
+      message: OK
+version: 1

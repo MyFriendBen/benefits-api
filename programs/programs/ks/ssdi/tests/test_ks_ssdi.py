@@ -2,9 +2,8 @@ from django.test import TestCase
 from unittest.mock import Mock
 from datetime import date
 
-from programs.programs.ks import ks_calculators
 from programs.programs.ks.ssdi.calculator import KsSsdi
-from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
+from programs.framework.base import Eligibility, MemberEligibility
 
 
 def make_member(
@@ -56,10 +55,6 @@ def make_calculator(has_ssdi=False):
 
 
 class TestKsSsdiClassAttributes(TestCase):
-    def test_is_registered(self):
-        self.assertIn("ks_ssdi", ks_calculators)
-        self.assertEqual(ks_calculators["ks_ssdi"], KsSsdi)
-
     def test_sga_thresholds(self):
         self.assertEqual(KsSsdi.sga_non_blind, 1_690)
         self.assertEqual(KsSsdi.sga_blind, 2_830)

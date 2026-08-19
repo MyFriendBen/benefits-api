@@ -36,6 +36,8 @@ class KsWorkingHealthy(ProgramCalculator):
     fraud-conviction bar. See spec.md for the full treatment.
     """
 
+    program_code = "ks_working_healthy"
+
     min_age = 16
     max_age = 64
     max_income_percent = 3.0

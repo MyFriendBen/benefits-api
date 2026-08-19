@@ -4,6 +4,7 @@ import programs.framework.eligibility_messages as messages
 
 
 class ReproductiveHealthCare(ProgramCalculator):
+    program_code = "rhc"
     amount = 268
     dependencies = ["insurance"]
 

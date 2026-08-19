@@ -19,7 +19,6 @@ Test scenarios mirror the spec's Acceptance Criteria / Test Scenarios (1-7).
 from django.test import TestCase
 from unittest.mock import Mock
 
-from programs.programs.ks import ks_calculators
 from programs.programs.ks.promise_act.calculator import KsPromiseAct
 from programs.framework.base import ProgramCalculator, Eligibility
 
@@ -49,10 +48,6 @@ def run_household_eligible(calc):
 class TestKsPromiseActClassAttributes(TestCase):
     def test_is_subclass_of_program_calculator(self):
         self.assertTrue(issubclass(KsPromiseAct, ProgramCalculator))
-
-    def test_is_registered_in_ks_calculators(self):
-        self.assertIn("ks_promise_act", ks_calculators)
-        self.assertEqual(ks_calculators["ks_promise_act"], KsPromiseAct)
 
     def test_amount_is_3960(self):
         self.assertEqual(KsPromiseAct.amount, 3_960)

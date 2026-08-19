@@ -21,9 +21,8 @@ per-enrollee cost; see calculator + spec.md Benefit Value).
 from django.test import TestCase
 from unittest.mock import Mock
 
-from programs.programs.ks import ks_calculators
 from programs.programs.ks.working_healthy.calculator import KsWorkingHealthy
-from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
+from programs.framework.base import ProgramCalculator
 
 VALUE_PER_MEMBER = 19_051
 
@@ -107,10 +106,6 @@ def run(calc):
 class TestClassAttributes(TestCase):
     def test_is_subclass(self):
         self.assertTrue(issubclass(KsWorkingHealthy, ProgramCalculator))
-
-    def test_registered(self):
-        self.assertIn("ks_working_healthy", ks_calculators)
-        self.assertEqual(ks_calculators["ks_working_healthy"], KsWorkingHealthy)
 
     def test_constants(self):
         self.assertEqual(KsWorkingHealthy.min_age, 16)

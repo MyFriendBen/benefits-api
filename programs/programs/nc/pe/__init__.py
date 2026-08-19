@@ -1,21 +1,5 @@
-from programs.programs.nc.pe import spm
-import programs.programs.nc.pe.member as member
-import programs.programs.nc.pe.spm as spm
-from programs.framework.pe_base import PolicyEngineCalulator
+"""PolicyEngine calculators for NC.
 
-nc_member_calculators = {
-    "nc_medicaid": member.NcMedicaid,
-    "nc_wic": member.NcWic,
-    "nc_aca": member.NcAca,
-}
-
-nc_spm_calculators = {
-    "nc_snap": spm.NcSnap,
-    "nc_tanf": spm.NcTanf,
-    "nc_scca": spm.NcScca,
-}
-
-nc_pe_calculators: dict[str, type[PolicyEngineCalulator]] = {
-    **nc_member_calculators,
-    **nc_spm_calculators,
-}
+Each calculator in `member`, `spm` and `tax` declares the ``Program`` row it backs
+and is found by `programs.framework.registry`, so there is nothing to list here.
+"""

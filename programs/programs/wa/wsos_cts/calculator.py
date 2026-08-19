@@ -27,6 +27,8 @@ class WaWsosCts(ProgramCalculator):
         year; credit/enrollment intensity rules (e.g. ≥3 credits/term).
     """
 
+    program_code = "wa_wsos_cts"
+
     # 2026 WSOS CTS 125% MFI ($/year) by household size — official CTS MFI chart
     # (same published 125% tier values as BaS for sizes 1–6).
     MFI_125_BY_SIZE = {

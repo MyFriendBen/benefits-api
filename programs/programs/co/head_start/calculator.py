@@ -25,6 +25,7 @@ class CoHeadStartCountyEligibleCache(GoogleSheetsCache):
 
 
 class CoHeadStart(ProgramCalculator):
+    program_code = "co_head_start"
     member_amount = 10655
     max_age = 5
     min_age = 3

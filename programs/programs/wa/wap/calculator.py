@@ -21,6 +21,8 @@ class WaWap(ProgramCalculator):
     variation. State residency is enforced via the `wa` white label routing.
     """
 
+    program_code = "wa_wap"
+
     fpl_percent = 2.0
     amount = 7_669  # one-time lump-sum per WA Commerce estimate
 

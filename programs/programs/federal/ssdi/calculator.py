@@ -8,6 +8,7 @@ if TYPE_CHECKING:
 
 
 class Ssdi(ProgramCalculator):
+    program_code = "ssdi"
     income_limit = 1_620
     income_limit_blind = 2_700
     amount = 1_580

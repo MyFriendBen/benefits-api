@@ -15,7 +15,6 @@ from unittest.mock import Mock
 from django.test import TestCase
 
 from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
-from programs.programs.co import co_calculators
 from programs.programs.co.energy_resource_center.calculator import EnergyResourceCenter
 from programs.util import Dependencies, DependencyError
 
@@ -43,10 +42,6 @@ def make_calculator(household_size=1, household_income=0, members=None, missing_
 class TestEnergyResourceCenterClassAttributes(TestCase):
     def test_is_subclass_of_program_calculator(self):
         self.assertTrue(issubclass(EnergyResourceCenter, ProgramCalculator))
-
-    def test_is_registered_in_co_calculators(self):
-        self.assertIn("erc", co_calculators)
-        self.assertEqual(co_calculators["erc"], EnergyResourceCenter)
 
     def test_amount_is_4000(self):
         self.assertEqual(EnergyResourceCenter.amount, 4000)

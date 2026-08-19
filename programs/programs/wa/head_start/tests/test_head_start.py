@@ -11,9 +11,8 @@ Eligibility requirements:
 """
 
 from django.test import TestCase
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock
 
-from programs.programs.wa import wa_calculators
 from programs.programs.wa.head_start.calculator import WaHeadStart
 from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
 
@@ -67,10 +66,6 @@ def make_eligible_member_e(member):
 class TestWaHeadStartClassAttributes(TestCase):
     def test_is_subclass_of_program_calculator(self):
         self.assertTrue(issubclass(WaHeadStart, ProgramCalculator))
-
-    def test_is_registered_in_wa_calculators(self):
-        self.assertIn("wa_head_start", wa_calculators)
-        self.assertEqual(wa_calculators["wa_head_start"], WaHeadStart)
 
     def test_hs_min_age(self):
         self.assertEqual(WaHeadStart.hs_min_age, 3)

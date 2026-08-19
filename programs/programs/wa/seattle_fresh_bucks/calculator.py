@@ -17,6 +17,8 @@ class WaSeattleFreshBucks(ProgramCalculator):
     language preference) is not modeled.
     """
 
+    program_code = "wa_seattle_fresh_bucks"
+
     amount = 60 * 12
     min_age = 18
     max_ami_percent = "80%"

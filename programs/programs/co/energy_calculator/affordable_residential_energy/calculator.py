@@ -4,6 +4,7 @@ from programs.framework.base import Eligibility, ProgramCalculator
 
 
 class EnergyCalculatorAffordableResidentialEnergy(ProgramCalculator):
+    program_code = "cesn_care"
     amount = 1
     dependencies = ["household_size", "energy_calculator", "income_amount", "income_frequency", "county"]
     electricity_providers = [

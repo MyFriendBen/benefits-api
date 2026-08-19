@@ -32,6 +32,7 @@ class NcHeadStartMarketRatesCache(GoogleSheetsCache):
 
 
 class NCHeadStart(ProgramCalculator):
+    program_code = "nc_head_start"
     amount = 0
     member_amount = 0
     min_age = 0

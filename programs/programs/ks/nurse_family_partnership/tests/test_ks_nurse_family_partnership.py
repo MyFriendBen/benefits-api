@@ -21,7 +21,6 @@ and in spec.md):
 """
 
 from django.test import TestCase
-from programs.programs.ks import ks_calculators
 from programs.programs.ks.nurse_family_partnership.calculator import KsNurseFamilyPartnership
 from screener.models import Screen, HouseholdMember, IncomeStream, WhiteLabel
 from screener.serializers import _write_current_benefits
@@ -87,10 +86,6 @@ class TestKsNurseFamilyPartnership(TestCase):
     # ------------------------------------------------------------------ #
     # Class attributes / registration
     # ------------------------------------------------------------------ #
-    def test_registered_in_ks_calculators(self):
-        self.assertIn("ks_nurse_family_partnership", ks_calculators)
-        self.assertIs(ks_calculators["ks_nurse_family_partnership"], KsNurseFamilyPartnership)
-
     def test_class_attributes(self):
         self.assertEqual(KsNurseFamilyPartnership.fpl_percent, 1.71)
         self.assertEqual(KsNurseFamilyPartnership.amount, EXPECTED_VALUE)

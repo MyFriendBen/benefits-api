@@ -24,6 +24,8 @@ class MaHomeBridge(ProgramCalculator):
     - Liquid assets above $40,000 contributed to purchase
     """
 
+    program_code = "ma_homebridge"
+
     # Cambridge is a city in Middlesex County - used for HUD AMI lookups
     eligible_city = "Cambridge"
     hud_county = "Middlesex"

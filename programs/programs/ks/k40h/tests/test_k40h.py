@@ -17,7 +17,6 @@ birth-year math).
 from django.test import TestCase
 from unittest.mock import Mock
 
-from programs.programs.ks import ks_calculators
 from programs.programs.ks.k40h.calculator import KsK40h
 from programs.framework.base import ProgramCalculator
 
@@ -80,10 +79,6 @@ def run(calc):
 class TestClassAttributes(TestCase):
     def test_is_subclass(self):
         self.assertTrue(issubclass(KsK40h, ProgramCalculator))
-
-    def test_registered(self):
-        self.assertIn("ks_k40h", ks_calculators)
-        self.assertEqual(ks_calculators["ks_k40h"], KsK40h)
 
     def test_constants(self):
         self.assertEqual(KsK40h.income_limit, 43_389)

@@ -47,6 +47,8 @@ class KsNurseFamilyPartnership(ProgramCalculator):
     - https://www.nursefamilypartnership.org/locations/kansas/
     """
 
+    program_code = "ks_nurse_family_partnership"
+
     fpl_percent = 1.71
     eligible_counties = ["Shawnee County", "Johnson County"]
     # Only the head's own children (prior live births) disqualify. Step/foster
