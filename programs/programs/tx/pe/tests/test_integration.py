@@ -11,8 +11,7 @@ Tests are organized by calculator type (SPM, member, tax).
 from django.test import TestCase
 from screener.models import Screen, HouseholdMember, WhiteLabel, Expense, IncomeStream
 from integrations.clients.policyengine.policy_engine import pe_input
-from programs.programs.tx.pe.member import TxWic, TxSsi, TxCsfp, TxChip
-from programs.programs.tx.pe.tax import TxAca
+from programs.programs.tx.pe.member import TxChip
 from programs.framework.pe_dependencies.constants import (
     MAIN_TAX_UNIT,
     SECONDARY_TAX_UNIT,
@@ -21,6 +20,10 @@ from programs.programs.cross_white_label.eitc.base import Eitc
 from programs.programs.cross_white_label.lifeline.tx import TxLifeline
 from programs.programs.cross_white_label.snap.tx import TxSnap
 from programs.programs.cross_white_label.tanf.tx import TxTanf
+from programs.programs.cross_white_label.wic.tx import TxWic
+from programs.programs.cross_white_label.ssi.tx import TxSsi
+from programs.programs.cross_white_label.aca.tx import TxAca
+from programs.programs.cross_white_label.csfp.tx import TxCsfp
 
 
 class TxPeInputTestBase(TestCase):

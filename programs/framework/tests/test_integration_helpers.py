@@ -15,7 +15,6 @@ change, not about the harness. Re-record after reviewing the new body.
 
 import pytest
 
-from programs.programs.tx.pe.member import TxHeadStart
 from .integration_test_helpers import (
     PeIntegrationTestCase,
     add_income,
@@ -25,6 +24,7 @@ from .integration_test_helpers import (
     make_screen,
     screener_value,
 )
+from programs.programs.cross_white_label.head_start.tx import TxHeadStart
 
 
 @pytest.mark.integration

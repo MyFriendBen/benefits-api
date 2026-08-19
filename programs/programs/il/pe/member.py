@@ -7,32 +7,7 @@ import programs.framework.pe_dependencies.spm as spm_dependency
 from programs.framework.pe_base import PolicyEngineMembersCalculator
 from programs.programs.cross_white_label.medicaid.il import IlMedicaid
 from programs.programs.cross_white_label.medicaid.base import Medicaid
-
-
-class IlWic(federal_member.Wic):
-    program_code = "il_wic"
-    wic_categories = {
-        "NONE": 0,
-        "INFANT": 130,
-        "CHILD": 79,
-        "PREGNANT": 104,
-        "POSTPARTUM": 88,
-        "BREASTFEEDING": 121,
-    }
-    pe_inputs = [
-        *federal_member.Wic.pe_inputs,
-        household_dependency.IlStateCodeDependency,
-    ]
-
-
-class IlAca(tax.Aca):
-    program_code = "il_aca"
-    pe_name = "aca_ptc"
-    pe_inputs = [
-        *tax.Aca.pe_inputs,
-        household_dependency.IlStateCodeDependency,
-        household_dependency.IlCountyDependency,
-    ]
+from programs.programs.cross_white_label.ssi.base import Ssi
 
 
 class IlAabd(PolicyEngineMembersCalculator):
@@ -319,32 +294,3 @@ class IlMpe(PolicyEngineMembersCalculator):
             return 0
 
         return 1
-
-
-class IlMsp(federal_member.Msp):
-    """Illinois Medicare Savings Program. Federal ``Msp`` plus the IL state code and
-    ``IlMedicaid`` inputs (see ``Msp`` for why the Medicaid inputs are required)."""
-
-    program_code = "il_msp"
-
-    pe_inputs = [
-        *federal_member.Msp.pe_inputs,
-        household_dependency.IlStateCodeDependency,
-        *IlMedicaid.pe_inputs,
-    ]
-
-
-class IlHeadStart(federal_member.HeadStart):
-    """
-    Illinois Head Start (ages 3-5). Thin wrapper on the federal ``HeadStart`` PE
-    calculator that adds the IL state code; all eligibility and the per-child
-    value are computed by PolicyEngine with no IL-specific variance. Early Head
-    Start (birth to age 3, and pregnant women) is a separate program.
-    """
-
-    program_code = "il_head_start"
-
-    pe_inputs = [
-        *federal_member.HeadStart.pe_inputs,
-        household_dependency.IlStateCodeDependency,
-    ]

@@ -1,66 +1,15 @@
-from programs.programs.federal.pe.member import (
-    Wic,
-    Ssi,
-    CommoditySupplementalFoodProgram,
-    HeadStart,
-    EarlyHeadStart,
-    Msp,
-)
 from programs.framework.pe_base import (
     PolicyEngineMembersCalculator,
 )
 import programs.framework.pe_dependencies as dependency
 from screener.models import HouseholdMember
 from programs.programs.cross_white_label.medicaid.base import Medicaid
-
-
-class TxWic(Wic):
-    """
-    Texas WIC calculator that uses PolicyEngine's calculated benefit amounts
-    instead of state-specific category amounts.
-    """
-
-    program_code = "tx_wic"
-
-    pe_inputs = [
-        *Wic.pe_inputs,
-        dependency.household.TxStateCodeDependency,
-    ]
-
-    def member_value(self, member: HouseholdMember):
-        """
-        Returns the PolicyEngine-calculated WIC benefit amount for this member.
-        Unlike the parent class, this doesn't use hardcoded category-based amounts.
-        """
-        return self.get_member_variable(member.id)
-
-
-class TxSsi(Ssi):
-    """
-    Texas SSI calculator that uses PolicyEngine's calculated benefit amounts.
-    Extends the federal SSI calculator with Texas state code dependency.
-    """
-
-    program_code = "tx_ssi"
-
-    pe_inputs = [
-        *Ssi.pe_inputs,
-        dependency.household.TxStateCodeDependency,
-    ]
-
-
-class TxCsfp(CommoditySupplementalFoodProgram):
-    """
-    Texas Commodity Supplemental Food Program (CSFP) calculator that uses PolicyEngine's calculations.
-    Extends the federal CSFP calculator with Texas state code dependency.
-    """
-
-    program_code = "tx_csfp"
-
-    pe_inputs = [
-        *CommoditySupplementalFoodProgram.pe_inputs,
-        dependency.household.TxStateCodeDependency,
-    ]
+from programs.programs.cross_white_label.wic.base import Wic
+from programs.programs.cross_white_label.ssi.base import Ssi
+from programs.programs.cross_white_label.msp.base import Msp
+from programs.programs.cross_white_label.head_start.base import HeadStart
+from programs.programs.cross_white_label.early_head_start.base import EarlyHeadStart
+from programs.programs.cross_white_label.csfp.base import CommoditySupplementalFoodProgram
 
 
 class TxChip(PolicyEngineMembersCalculator):
@@ -180,38 +129,3 @@ class TxDart(PolicyEngineMembersCalculator):
         We return the PolicyEngine-calculated value directly.
         """
         return self.get_member_variable(member.id)
-
-
-class TxHeadStart(HeadStart):
-    """Texas Head Start (ages 3-5) — federal ``HeadStart`` PE calculator + TX state code."""
-
-    program_code = "tx_head_start"
-
-    pe_inputs = [
-        *HeadStart.pe_inputs,
-        dependency.household.TxStateCodeDependency,
-    ]
-
-
-class TxEarlyHeadStart(EarlyHeadStart):
-    """Texas Early Head Start (birth-3 / pregnant) — federal ``EarlyHeadStart`` PE calculator + TX state code."""
-
-    program_code = "tx_early_head_start"
-
-    pe_inputs = [
-        *EarlyHeadStart.pe_inputs,
-        dependency.household.TxStateCodeDependency,
-    ]
-
-
-class TxMsp(Msp):
-    """Texas Medicare Savings Program. Federal ``Msp`` plus the TX state code and the state's
-    Medicaid inputs (see ``Msp`` for why the Medicaid inputs are required)."""
-
-    program_code = "tx_medicare_savings_program"
-
-    pe_inputs = [
-        *Msp.pe_inputs,
-        dependency.household.TxStateCodeDependency,
-        *Medicaid.pe_inputs,
-    ]

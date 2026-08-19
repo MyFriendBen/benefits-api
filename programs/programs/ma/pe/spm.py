@@ -1,7 +1,7 @@
-from programs.programs.federal.pe.member import Ssi
 from programs.framework.pe_base import PolicyEngineSpmCalulator
 import programs.framework.pe_dependencies as dependency
 from programs.programs.cross_white_label.snap.base import Snap
+from programs.programs.cross_white_label.ssi.base import Ssi
 
 
 class MaTafdc(PolicyEngineSpmCalulator):

@@ -1,11 +1,10 @@
 """IL Medicaid."""
 
 from programs.programs.cross_white_label.medicaid.base import Medicaid
-import programs.programs.federal.pe.member as federal_member
 import programs.framework.pe_dependencies.household as household_dependency
 
 
-class IlMedicaid(federal_member.Medicaid):
+class IlMedicaid(Medicaid):
     """Base Illinois Medicaid eligibility through PolicyEngine"""
 
     program_code = "il_medicaid"
@@ -24,6 +23,6 @@ class IlMedicaid(federal_member.Medicaid):
         "DISABLED": 474,
     }
     pe_inputs = [
-        *federal_member.Medicaid.pe_inputs,
+        *Medicaid.pe_inputs,
         household_dependency.IlStateCodeDependency,
     ]

@@ -39,10 +39,12 @@ from programs.framework.pe_dependencies.member import (
     Chip,
 )
 from programs.framework.pe_dependencies.tax import KsChipPremium
-from programs.programs.ks.pe.member import KsChip, KsMsp, KsEarlyHeadStart
-from programs.programs.federal.pe.member import EarlyHeadStart
+from programs.programs.ks.pe.member import KsChip
 from programs.programs.cross_white_label.medicaid.base import Medicaid
 from programs.programs.cross_white_label.medicaid.ks import KsKanCare
+from programs.programs.cross_white_label.msp.ks import KsMsp
+from programs.programs.cross_white_label.early_head_start.base import EarlyHeadStart
+from programs.programs.cross_white_label.early_head_start.ks import KsEarlyHeadStart
 
 # Annual value tiers (medicaid_categories * 12)
 MAGI = 3_648  # INFANT / YOUNG_CHILD / OLDER_CHILD / PREGNANT / PARENT / ADULT / YOUNG_ADULT

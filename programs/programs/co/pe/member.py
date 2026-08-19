@@ -1,9 +1,9 @@
 from programs.framework.pe_base import PolicyEngineMembersCalculator
-from programs.programs.federal.pe.member import CommoditySupplementalFoodProgram
-from programs.programs.federal.pe.member import Wic
 import programs.framework.pe_dependencies as dependency
 from screener.models import HouseholdMember
 from programs.programs.cross_white_label.medicaid.base import Medicaid
+from programs.programs.cross_white_label.wic.base import Wic
+from programs.programs.cross_white_label.csfp.base import CommoditySupplementalFoodProgram
 
 
 class AidToTheNeedyAndDisabled(PolicyEngineMembersCalculator):
@@ -77,32 +77,3 @@ class FamilyAffordabilityTaxCredit(PolicyEngineMembersCalculator):
         *dependency.irs_gross_income,
     ]
     pe_outputs = [dependency.member.FamilyAffordabilityTaxCredit]
-
-
-class CoWic(Wic):
-    program_code = "co_wic"
-    wic_categories = {
-        "NONE": 0,
-        "INFANT": 130,
-        "CHILD": 79,
-        "PREGNANT": 104,
-        "POSTPARTUM": 88,
-        "BREASTFEEDING": 121,
-    }
-    pe_inputs = [
-        *Wic.pe_inputs,
-        dependency.household.CoStateCodeDependency,
-    ]
-
-
-class EveryDayEats(CommoditySupplementalFoodProgram):
-    program_code = "ede"
-    amount = 600
-
-    def member_value(self, member: HouseholdMember):
-        ede_eligible = self.get_member_variable(member.id) > 0
-
-        if ede_eligible:
-            return self.amount
-
-        return 0

@@ -12,16 +12,16 @@ the registration. The calculators' own properties live in
 
 from django.test import TestCase
 
-from programs.programs.federal.pe.tax import Aca
 from programs.framework.pe_dependencies import household
 from programs.framework.pe_dependencies.household import (
     TxStateCodeDependency,
 )
-from programs.programs.tx.pe.tax import TxAca
 from programs.programs.cross_white_label.eitc.base import Eitc
 from programs.programs.cross_white_label.eitc.tx import TxEitc
 from programs.programs.cross_white_label.ctc.base import Ctc
 from programs.programs.cross_white_label.ctc.tx import TxCtc
+from programs.programs.cross_white_label.aca.base import Aca
+from programs.programs.cross_white_label.aca.tx import TxAca
 
 
 class TestTxEitc(TestCase):

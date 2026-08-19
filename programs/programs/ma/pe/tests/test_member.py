@@ -8,9 +8,11 @@ across every state's Head Start lives in ``federal/pe/tests/test_head_start.py``
 
 from django.test import TestCase
 
-from programs.programs.federal.pe.member import EarlyHeadStart, HeadStart
 from programs.framework.pe_dependencies.household import MaStateCodeDependency
-from programs.programs.ma.pe.member import MaHeadStart, MaEarlyHeadStart
+from programs.programs.cross_white_label.head_start.base import HeadStart
+from programs.programs.cross_white_label.head_start.ma import MaHeadStart
+from programs.programs.cross_white_label.early_head_start.base import EarlyHeadStart
+from programs.programs.cross_white_label.early_head_start.ma import MaEarlyHeadStart
 
 
 class TestMaHeadStartWiring(TestCase):

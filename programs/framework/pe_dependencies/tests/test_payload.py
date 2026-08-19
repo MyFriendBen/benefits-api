@@ -22,6 +22,9 @@ from programs.programs.cross_white_label.nslp.base import SchoolLunch
 from programs.programs.cross_white_label.snap.base import Snap
 from programs.programs.cross_white_label.snap.tx import TxSnap
 from programs.programs.cross_white_label.tanf.base import Tanf
+from programs.programs.cross_white_label.wic.base import Wic
+from programs.programs.cross_white_label.wic.tx import TxWic
+from programs.programs.cross_white_label.ssi.base import Ssi
 
 
 @override_settings(CACHES=LOCAL_CACHE)
@@ -285,7 +288,6 @@ class TestPeInputMultipleCalculators(PeInputTestBase):
 
     def test_calculator_dependencies_are_merged(self):
         """Test that dependencies from multiple calculators are merged."""
-        from programs.programs.tx.pe.member import TxWic
 
         result = pe_input(self.screen, [self.calculator_class, TxWic])
 
@@ -318,7 +320,6 @@ class TestUnreadableProgramsAreDropped(PeInputTestBase):
 
     def setUp(self):
         super().setUp()
-        from programs.programs.federal.pe.member import Ssi
 
         # WIC is deliberately absent: it reads the ungated `wic`, so no floor applies to it.
         self.gated_output_programs = {"snap": Snap, "ssi": Ssi, "tanf": Tanf}
@@ -353,7 +354,6 @@ class TestUnreadableProgramsAreDropped(PeInputTestBase):
         """WIC reads the ungated `wic`, which every supported model defines, so it is not
         exposed to the floor. Switching it to `wic_if_takes_up` would put it here for no
         behavioral gain — the two are equal for every payload we send."""
-        from programs.programs.federal.pe.member import Wic
 
         kept = self._drop({"wic": Wic}, (1, 750, 0))
 
@@ -427,7 +427,6 @@ class TestPeInputVersionGating(PeInputTestBase):
 
     def setUp(self):
         super().setUp()
-        from programs.programs.federal.pe.member import Ssi
 
         self.ssi = Ssi
         self.head_id = str(self.head.id)

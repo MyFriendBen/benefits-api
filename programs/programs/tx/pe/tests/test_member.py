@@ -11,20 +11,10 @@ from django.test import TestCase
 
 from unittest.mock import Mock, MagicMock
 
-from programs.programs.federal.pe.member import Wic, Ssi, CommoditySupplementalFoodProgram, HeadStart, EarlyHeadStart
 from programs.framework.pe_base import PolicyEngineMembersCalculator
 from programs.framework.pe_dependencies import household, member
 from programs.framework.pe_dependencies.household import TxStateCodeDependency
-from programs.programs.tx.pe.member import (
-    TxWic,
-    TxSsi,
-    TxCsfp,
-    TxChip,
-    TxHarrisCountyRides,
-    TxDart,
-    TxHeadStart,
-    TxEarlyHeadStart,
-)
+from programs.programs.tx.pe.member import TxChip, TxHarrisCountyRides, TxDart
 from programs.programs.cross_white_label.medicaid.base import Medicaid
 from programs.programs.cross_white_label.medicaid.tx.emergency_medicaid.calculator import TxEmergencyMedicaid
 from programs.programs.cross_white_label.medicaid.tx.for_children.calculator import TxMedicaidForChildren
@@ -32,6 +22,16 @@ from programs.programs.cross_white_label.medicaid.tx.for_parents_and_caretakers.
     TxMedicaidForParentsAndCaretakers,
 )
 from programs.programs.cross_white_label.medicaid.tx.for_pregnant_women.calculator import TxMedicaidForPregnantWomen
+from programs.programs.cross_white_label.wic.base import Wic
+from programs.programs.cross_white_label.wic.tx import TxWic
+from programs.programs.cross_white_label.ssi.base import Ssi
+from programs.programs.cross_white_label.ssi.tx import TxSsi
+from programs.programs.cross_white_label.head_start.base import HeadStart
+from programs.programs.cross_white_label.head_start.tx import TxHeadStart
+from programs.programs.cross_white_label.early_head_start.base import EarlyHeadStart
+from programs.programs.cross_white_label.early_head_start.tx import TxEarlyHeadStart
+from programs.programs.cross_white_label.csfp.base import CommoditySupplementalFoodProgram
+from programs.programs.cross_white_label.csfp.tx import TxCsfp
 
 
 class TestTxWic(TestCase):
