@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.utils import timezone
 from configuration.white_labels.base import ConfigurationData
 from screener.irs_parameters import get_qualifying_relative_threshold
 from screener.models import (
@@ -88,13 +89,13 @@ class TestIsDependent(TestCase):
 
     def test_qualifying_relative_exactly_at_threshold(self):
         # IRS rule is "less than" — at threshold should NOT be a dependent
-        threshold = get_qualifying_relative_threshold(self.screen.get_reference_date().year)
+        threshold = get_qualifying_relative_threshold(timezone.now().year)
         adult_child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=19)
         self._add_yearly_income(adult_child, threshold)
         self.assertFalse(adult_child.is_dependent())
 
     def test_qualifying_relative_above_threshold(self):
-        threshold = get_qualifying_relative_threshold(self.screen.get_reference_date().year)
+        threshold = get_qualifying_relative_threshold(timezone.now().year)
         adult_child = HouseholdMember.objects.create(screen=self.screen, relationship="child", age=19)
         self._add_yearly_income(adult_child, threshold + 1)
         self.assertFalse(adult_child.is_dependent())

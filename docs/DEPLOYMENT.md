@@ -22,7 +22,7 @@ All composite actions are located in `.github/actions/`:
 1. **setup-python-django** - Sets up Python 3.12 with pip caching and installs dependencies from `requirements.txt`
 2. **run-django-checks** - Runs Django system checks and database migrations
 3. **deploy-to-heroku** - Installs Heroku CLI and deploys using `akhileshns/heroku-deploy@v3.14.15`
-4. **heroku-post-deploy** - Runs post-deployment scripts (migrations, config, validations)
+4. **heroku-post-deploy** - Runs post-deployment scripts (migrations, config)
 5. **slack-notify** - Sends deployment notifications with status (success/failure/in-progress/completed-with-warnings)
 6. **run-tests** - Configurable test execution with VCR modes and optional Codecov upload
 
@@ -133,8 +133,7 @@ gh workflow view "Deploy to Staging"
 3. **Code deploys to Heroku Staging** (only if tests pass)
 4. Database migrations run (`python manage.py migrate`)
 5. Configurations are added (`python manage.py add_config --all`)
-6. Validations run (`python manage.py validate`)
-7. Slack notification sent on failure only
+6. Slack notification sent on failure only
 
 **Important**: Deployment will NOT proceed if tests or linting fail. Fix the issues and push again.
 
@@ -211,10 +210,8 @@ When you create a draft release, the following automated process begins:
 2. **Code deployment** - Exact code from the release tag is deployed to Heroku Production (30-minute timeout)
 3. **Database migrations** - `python manage.py migrate`
 4. **Configuration updates** - `python manage.py add_config --all`
-5. **Pull validations** - `python manage.py pull_validations` from staging
-6. **Run validations** - `python manage.py validate`
-7. **Sync translations** - Export from production → Validate JSON → Save to `mfb-translations` repo → Import to staging
-8. **Slack notifications** - Status updates sent to team at each stage (in-progress, success/warnings, or failure)
+5. **Sync translations** - Export from production → Validate JSON → Save to `mfb-translations` repo → Import to staging
+6. **Slack notifications** - Status updates sent to team at each stage (in-progress, success/warnings, or failure)
 
 **Important**:
 - Tests run automatically on draft creation, but **do not block** manual publishing

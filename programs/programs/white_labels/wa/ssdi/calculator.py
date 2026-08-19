@@ -1,5 +1,7 @@
 from datetime import date
 from typing import Optional
+
+from django.utils import timezone
 from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
 from programs.framework import eligibility_messages as messages
 
@@ -64,7 +66,7 @@ class WaSsdi(ProgramCalculator):
         e.condition(member.long_term_disability is True)
 
         if member.birth_year is not None:
-            e.condition(self._is_under_fra(member.birth_year, member.birth_month, self.screen.get_reference_date()))
+            e.condition(self._is_under_fra(member.birth_year, member.birth_month, timezone.now().date()))
 
         earned_income = member.calc_gross_income("monthly", ["earned"])
         sga_limit = self.sga_blind if member.visually_impaired else self.sga_non_blind
