@@ -1,4 +1,4 @@
-from programs.programs.co.weatherization_assistance.calculator import WeatherizationAssistance
+from programs.programs.cross_white_label.weatherization.co import WeatherizationAssistance
 
 
 class EnergyCalculatorWeatherizationAssistance(WeatherizationAssistance):

@@ -6,7 +6,7 @@ from programs.programs.cross_white_label.tanf.ma import MaTafdc
 from programs.programs.cross_white_label.snap.ma import MaSnap
 from screener.models import HouseholdMember
 from programs.programs.cross_white_label.ccdf.base import Ccdf
-from programs.programs.cross_white_label.medicaid.ma.mass_health.calculator import MaMassHealth
+from programs.programs.cross_white_label.medicaid.ma import MaMassHealth
 from programs.programs.cross_white_label.medicaid.base import Medicaid
 from programs.programs.cross_white_label.wic.base import Wic
 from programs.programs.cross_white_label.ssi.base import Ssi

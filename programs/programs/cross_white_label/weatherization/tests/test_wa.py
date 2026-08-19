@@ -1,7 +1,7 @@
 from django.test import TestCase
 from unittest.mock import Mock
 
-from programs.programs.wa.wap.calculator import WaWap
+from programs.programs.cross_white_label.weatherization.wa import WaWap
 from programs.framework.base import Eligibility, MemberEligibility
 
 

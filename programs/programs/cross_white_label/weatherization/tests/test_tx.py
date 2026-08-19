@@ -9,7 +9,7 @@ Eligibility requirements:
 from django.test import TestCase
 from unittest.mock import Mock
 
-from programs.programs.tx.wap.calculator import TxWap
+from programs.programs.cross_white_label.weatherization.tx import TxWap
 from programs.framework.base import ProgramCalculator, Eligibility
 
 

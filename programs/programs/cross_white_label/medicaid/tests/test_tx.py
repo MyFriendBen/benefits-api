@@ -4,12 +4,12 @@ from unittest.mock import MagicMock
 from programs.programs.cross_white_label.medicaid.base import Medicaid
 from unittest.mock import Mock
 from django.test import TestCase
-from programs.programs.cross_white_label.medicaid.tx.emergency_medicaid.calculator import TxEmergencyMedicaid
-from programs.programs.cross_white_label.medicaid.tx.for_children.calculator import TxMedicaidForChildren
-from programs.programs.cross_white_label.medicaid.tx.for_parents_and_caretakers.calculator import (
+from programs.programs.cross_white_label.medicaid.emergency.tx import TxEmergencyMedicaid
+from programs.programs.cross_white_label.medicaid.for_children.tx import TxMedicaidForChildren
+from programs.programs.cross_white_label.medicaid.for_parents_and_caretakers.tx import (
     TxMedicaidForParentsAndCaretakers,
 )
-from programs.programs.cross_white_label.medicaid.tx.for_pregnant_women.calculator import TxMedicaidForPregnantWomen
+from programs.programs.cross_white_label.medicaid.for_pregnant_women.tx import TxMedicaidForPregnantWomen
 from programs.framework.pe_dependencies.household import TxStateCodeDependency
 from programs.framework.pe_dependencies import household
 from programs.framework.pe_dependencies import member

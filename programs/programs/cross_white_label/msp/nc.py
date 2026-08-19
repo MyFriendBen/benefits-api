@@ -1,5 +1,5 @@
 from programs.framework.base import MemberEligibility
-from programs.programs.federal.medicare_savings.calculator import MedicareSavings
+from programs.programs.cross_white_label.msp.base_mfb import MedicareSavings
 from typing import ClassVar
 
 
