@@ -1,36 +1,38 @@
 """
-Builds the registries that map a database key to the class implementing it.
+Builds the registry that maps a ``Program.name_abbreviated`` to the calculator
+implementing it.
 
-Five kinds of row point at code by name, and the name lives in the database:
-program calculators (``Program.name_abbreviated``), warning calculators
-(``WarningMessage.calculator``), translation overrides
-(``TranslationOverride.calculator``), urgent-need functions
-(``UrgentNeedFunction.name``) and program-category cap calculators
-(``ProgramCategory.calculator``).
-
-Each class declares the key it answers to and `build` assembles the registry by
-walking the package at import, so adding a program means writing one file. A
-duplicate key raises rather than resolving to whichever class happens to be
-found second.
-
-A class declares one of two things about itself, and there is no third option:
+Every calculator declares one of two things about itself, and declaring neither
+raises:
 
 - ``program_code`` — the ``Program.name_abbreviated`` of the row it backs. Named
   for what it is on this side of the boundary: a reference to a row, not a
   property of the class. The database column is ``name_abbreviated``; MFB-1679
   brings the two names together.
-- ``abstract=True`` — it exists to be subclassed and backs no row.
+- ``abstract=True`` in the class definition — it exists to be subclassed and backs
+  no row.
 
-Declaring neither raises. Silence would read the same whether the class is a base
-or whether someone forgot the code, leaving a calculator that is written,
-registered nowhere, and returns nothing. ``abstract=True`` is a class keyword read
-by ``__init_subclass__`` at class creation rather than an attribute, so the answer
-cannot drift from the class it describes.
+Silence would read the same whether the class is a base or whether someone forgot
+the code, leaving a calculator that is written, registered nowhere, and returns
+nothing. ``abstract=True`` is a class keyword read by ``__init_subclass__`` at
+class creation rather than an attribute, so the answer cannot drift from the class
+it describes.
 
 A class may declare a code *and* be subclassed. ``Snap`` backs the ``snap`` row
 and is inherited by seven states; fourteen classes are dual-role like that. That
 is why base-versus-program cannot be inferred from whether anything subclasses a
 class, and has to be declared.
+
+`build` walks a package and reads the key off each class it finds, so adding a
+calculator means writing a single file. A duplicate key raises rather than
+resolving to whichever class happens to be found second.
+
+Four other models name their implementing class the same way — ``WarningMessage``,
+``TranslationOverride``, ``UrgentNeedFunction`` and ``ProgramCategory`` — and still
+keep hand-maintained dictionaries beside their base classes. `build` is generic
+enough to serve them, but each base class needs the ``__init_subclass__`` hook that
+reads ``abstract=True`` before it can, or its own bases would raise as unkeyed
+implementations. MFB-1681 tracks that.
 """
 
 import importlib
@@ -61,10 +63,10 @@ class DuplicateRegistryKey(Exception):
 
 
 def is_abstract(cls: type) -> bool:
-    """True when the class declared ``abstract=True`` in its definition.
+    """True when the class declared ``abstract=True`` in its own definition.
 
-    Read from ``vars()`` rather than inherited: a subclass of an abstract base is
-    concrete unless it says otherwise.
+    ``vars()`` rather than ``getattr`` so a class that declared nothing reads False
+    even if it subclasses a base that declared True.
     """
     return bool(vars(cls).get("_abstract", False))
 

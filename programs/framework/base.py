@@ -90,14 +90,16 @@ class ProgramCalculator:
     states, so being a base and being a program are not mutually exclusive.
     """
 
-    #: Set by ``abstract=True`` in the class definition. Read via ``vars()`` so it
-    #: is never inherited: a subclass of an abstract base is concrete unless it
-    #: says otherwise, which is the common case — every state subclass of a family
-    #: base is a real program.
+    #: Whether this class declared ``abstract=True``. Set on every subclass, so it
+    #: is a fact about that class rather than something it inherits: subclassing an
+    #: abstract base does not make you abstract. ``MaHeadStart(HeadStart)`` is a real
+    #: program even though ``HeadStart`` is a base.
     _abstract = True
 
     def __init_subclass__(cls, abstract: bool = False, **kwargs) -> None:
         super().__init_subclass__(**kwargs)
+        # Assigned unconditionally, which is what stops inheritance: a subclass that
+        # says nothing gets False here rather than reading its parent's True.
         cls._abstract = abstract
 
     dependencies = tuple()
