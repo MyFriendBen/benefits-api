@@ -21,7 +21,7 @@ from programs.programs.ks.pe.tax import KsCdccFederal, KsCtc
 
 from programs.programs.federal.pe.tax import Cdcc, Ctc
 from integrations.clients.policyengine.registry import (
-    all_tax_unit_calculators,
+    all_calculators,
 )
 
 
@@ -60,6 +60,6 @@ class TestKsCdccFederal(TestCase):
     def test_is_not_the_kansas_cdcc(self):
         """The federal and Kansas CDCC slugs resolve to different calculators."""
         self.assertIsNot(
-            all_tax_unit_calculators["ks_cdcc_federal"],
-            all_tax_unit_calculators["ks_cdcc"],
+            all_calculators["ks_cdcc_federal"],
+            all_calculators["ks_cdcc"],
         )
