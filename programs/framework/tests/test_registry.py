@@ -30,6 +30,8 @@ from programs.framework.registry import (
     is_abstract,
     register,
 )
+from programs.programs.cross_white_label.ccdf.base import Ccdf
+from programs.programs.cross_white_label.medicaid.base import Medicaid
 
 
 class WalkClassesTests(SimpleTestCase):
@@ -181,7 +183,9 @@ class RegistryCoversEveryCalculatorTests(SimpleTestCase):
         harmless while one state uses it and breaks when a second arrives, because
         the base and the new state's subclass then claim the same code.
         """
-        from programs.programs.federal.pe.member import Ccdf, EarlyHeadStart, HeadStart, Medicaid
+        from programs.programs.cross_white_label.ccdf.base import Ccdf
+        from programs.programs.cross_white_label.medicaid.base import Medicaid
+        from programs.programs.federal.pe.member import EarlyHeadStart, HeadStart
         from programs.programs.federal.pe.tax import Cdcc
 
         for base in (Cdcc, Medicaid, HeadStart, EarlyHeadStart, Ccdf):
@@ -257,7 +261,9 @@ class AbstractDeclarationTests(SimpleTestCase):
         )
 
     def test_the_family_bases_declare_themselves_abstract(self):
-        from programs.programs.federal.pe.member import Ccdf, Chip, EarlyHeadStart, HeadStart, Medicaid, Msp
+        from programs.programs.cross_white_label.ccdf.base import Ccdf
+        from programs.programs.cross_white_label.medicaid.base import Medicaid
+        from programs.programs.federal.pe.member import Chip, EarlyHeadStart, HeadStart, Msp
         from programs.programs.federal.pe.tax import Aca, Cdcc
 
         for cls in (Medicaid, Chip, HeadStart, EarlyHeadStart, Ccdf, Msp, Aca, Cdcc):

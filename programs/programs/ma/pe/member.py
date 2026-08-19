@@ -1,9 +1,7 @@
 from programs.framework.pe_base import PolicyEngineMembersCalculator
 import programs.framework.pe_dependencies as dependency
 from programs.programs.federal.pe.member import (
-    Ccdf,
     Chip,
-    Medicaid,
     Wic,
     Ssi,
     CommoditySupplementalFoodProgram,
@@ -12,73 +10,14 @@ from programs.programs.federal.pe.member import (
 )
 from .spm import MaSnap, MaTafdc, MaEaedc
 from screener.models import HouseholdMember
-
+from programs.programs.cross_white_label.ccdf.base import Ccdf
+from programs.programs.cross_white_label.medicaid.ma.mass_health.calculator import MaMassHealth
+from programs.programs.cross_white_label.medicaid.base import Medicaid
 
 # NOTE: MassHealth is Medicaid in MA
-class MaMassHealth(Medicaid):
-    program_code = "ma_mass_health"
-    pe_inputs = [
-        *Medicaid.pe_inputs,
-        *Chip.pe_inputs,
-        dependency.household.MaStateCodeDependency,
-    ]
-    pe_outputs = [
-        *Medicaid.pe_outputs,
-        *Chip.pe_outputs,
-    ]
-
-    medicaid_categories = {
-        "NONE": 0,
-        "ADULT": 419,
-        "INFANT": 239,
-        "YOUNG_CHILD": 239,
-        "OLDER_CHILD": 239,
-        "PREGNANT": 419,
-        "YOUNG_ADULT": 419,
-        "PARENT": 419,
-        "SSI_RECIPIENT": 419,
-        "AGED": 185,
-        "DISABLED": 419,
-    }
-
-    chip_categories = {
-        "CHILD": 239,
-        "PREGNANT_STANDARD": 0,
-        "PREGNANT_FCEP": 0,
-        "NONE": 0,
-    }
-
-    def member_value(self, member: HouseholdMember):
-        medicaid_value = super().member_value(member)
-
-        if medicaid_value > 0:
-            return medicaid_value
-
-        chip_category = self.get_member_dependency_value(dependency.member.ChipCategory, member.id)
-        return self.chip_categories[chip_category] * 12
 
 
 # NOTE: MassHealth Limited is Emergency Medicaid in MA
-class MaMassHealthLimited(Medicaid):
-    program_code = "ma_mass_health_limited"
-    pe_inputs = [
-        *Medicaid.pe_inputs,
-        dependency.household.MaStateCodeDependency,
-    ]
-
-    medicaid_categories = {
-        "NONE": 0,
-        "ADULT": 255,
-        "INFANT": 255,
-        "YOUNG_CHILD": 255,
-        "OLDER_CHILD": 255,
-        "PREGNANT": 255,
-        "YOUNG_ADULT": 255,
-        "PARENT": 255,
-        "SSI_RECIPIENT": 255,
-        "AGED": 255,
-        "DISABLED": 255,
-    }
 
 
 class MaWic(Wic):
@@ -99,26 +38,6 @@ class MaWic(Wic):
         *Wic.pe_inputs,
         dependency.household.MaStateCodeDependency,
     ]
-
-
-class MaCcdf(Ccdf):
-    program_code = "ma_ccdf"
-    cost_by_age = (
-        # cost, age
-        (23_191, 2),
-        (21_125, 3),
-        (16_572, 4.5),
-        (12_632, 14),
-    )
-
-    def child_care_cost(self, member: HouseholdMember):
-        age = member.fraction_age()
-
-        for [cost, age_limit] in self.cost_by_age:
-            if age < age_limit:
-                return cost
-
-        return 0
 
 
 class MaMbta(PolicyEngineMembersCalculator):
