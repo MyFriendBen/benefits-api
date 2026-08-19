@@ -1,4 +1,4 @@
-from programs.programs.co.energy_assistance.calculator import EnergyAssistance
+from programs.programs.cross_white_label.liheap.co import EnergyAssistance
 
 
 class EnergyCalculatorEnergyAssistance(EnergyAssistance):

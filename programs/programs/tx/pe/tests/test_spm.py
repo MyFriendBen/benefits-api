@@ -19,7 +19,6 @@ from programs.framework.pe_dependencies import (
     spm,
 )
 from programs.framework.pe_dependencies.household import TxStateCodeDependency
-from programs.programs.tx.pe.spm import TxCeap
 from programs.programs.cross_white_label.lifeline.base import Lifeline
 from programs.programs.cross_white_label.lifeline.tx import TxLifeline
 from programs.programs.cross_white_label.nslp.base import SchoolLunch
@@ -28,6 +27,7 @@ from programs.programs.cross_white_label.snap.base import Snap
 from programs.programs.cross_white_label.snap.tx import TxSnap
 from programs.programs.cross_white_label.tanf.base import Tanf
 from programs.programs.cross_white_label.tanf.tx import TxTanf
+from programs.programs.cross_white_label.liheap.tx import TxCeap
 
 
 class TestTxSnap(TestCase):

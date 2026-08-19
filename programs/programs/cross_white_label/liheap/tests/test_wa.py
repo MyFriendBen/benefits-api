@@ -1,7 +1,7 @@
 from django.test import TestCase
 from unittest.mock import Mock
 
-from programs.programs.wa.liheap.calculator import WaLiheap
+from programs.programs.cross_white_label.liheap.wa import WaLiheap
 from programs.framework.base import ProgramCalculator, Eligibility
 
 

@@ -29,7 +29,7 @@ guidelines (the calculator's configured FPL year), so the "barely eligible" /
 from django.test import TestCase
 from unittest.mock import Mock
 
-from programs.programs.ks.lieap.calculator import KsLieap
+from programs.programs.cross_white_label.liheap.ks import KsLieap
 from programs.framework.base import ProgramCalculator, Eligibility
 
 # 100% FPL by household size such that 1.5x matches the 2026 150% FPL caps
