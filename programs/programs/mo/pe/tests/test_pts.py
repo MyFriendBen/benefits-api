@@ -1,24 +1,17 @@
 """
-Unit tests for ``MoPts`` / ``mo_pts`` — the Missouri Property Tax Credit ("Circuit
-Breaker").
+Payload and wiring tests for ``MoPts`` / ``mo_pts`` — the Missouri Property Tax Credit
+("Circuit Breaker").
 
-One test per ``programs/programs/mo/pts/spec.md`` Test Scenario (1–22), each asserting
-both the eligibility result and the dollar value, plus wiring and input-routing tests
-for the six dependencies whose absence changes those results.
+These assert what *we* send PolicyEngine and how the calculator is registered, by
+inspecting the request rather than calling out. The spec's Test Scenarios 1–22 are
+asserted end to end against PolicyEngine in
+``programs/programs/mo/pts/tests/test_mo_pts.py``, one VCR integration test per scenario.
 
-PolicyEngine owns the whole rule (``mo_property_tax_credit``), so the scenario tests
-assert against the values
-PolicyEngine returned for each scenario's household at the pinned model version, run
-live during implementation. Those values are recorded in ``PE_RESULTS`` and every one
-matched the spec's expected figure to the dollar. Re-running them here would require a
-network round trip per scenario, so each test instead pins the household the scenario
-describes, asserts the request PolicyEngine receives for that household is the one that
-produced the recorded result, and asserts the recorded result equals the spec figure.
-A dependency regression therefore fails the payload assertion, and a spec/result drift
-fails the value assertion.
-
-The four inputs that depart from the usual set, each verified load-bearing by removing
-it and re-running the affected scenarios live:
+The split is deliberate. Six inputs depart from the usual set, each because a shared
+dependency delivers the right dollars to a PolicyEngine variable this formula does not
+read. A scenario test catches that as a wrong dollar amount; the tests here catch it as
+the wrong request, which is the level a regression is actually diagnosable at. Every one
+was verified load-bearing by removing it and re-running the affected scenarios live:
 
 ===========================================  =======================  =================
 Variant                                      Scenario                 Result
@@ -32,9 +25,8 @@ no ``social_security_survivors`` component   12                       ineligible
 reported-SSI channel instead of ``ssi``      17                       $1,178 (want $1,069)
 ===========================================  =======================  =================
 
-The $272 row is the reason these tests assert value and not just eligibility: that
-household comes back *eligible* with a wrong amount, so an eligibility-only assertion
-passes while the number shown to the user is wrong by $828.
+The $272 row is why the scenario tests assert value and not eligibility alone: that
+household comes back *eligible* with an amount wrong by $828.
 """
 
 import datetime
@@ -52,33 +44,6 @@ from screener.models import Expense, HouseholdMember, IncomeStream, Screen
 
 PERIOD = "2026"
 CLAIM_YEAR = 2026
-
-# PolicyEngine results for each spec scenario's household, captured live at the pinned
-# model version 1.786.5. Keyed by scenario number: (eligible, value).
-PE_RESULTS = {
-    1: (True, 1033),
-    2: (True, 280),
-    3: (True, 695),
-    4: (False, 0),
-    5: (True, 1500),
-    6: (True, 1200),
-    7: (False, 0),
-    8: (True, 1550),
-    9: (False, 0),
-    10: (True, 960),
-    11: (False, 0),
-    12: (True, 1055),
-    13: (True, 1100),
-    14: (True, 227),
-    15: (True, 1474),
-    16: (False, 0),
-    17: (True, 1069),
-    18: (False, 0),
-    19: (False, 0),  # PE reports eligible; a $0 credit is not surfaced (see TestZeroCreditIsNotSurfaced)
-    20: (True, 1474),
-    21: (True, 578),
-    22: (True, 1100),
-}
 
 
 class MoPtsScenarioTestCase(TestCase):
@@ -141,10 +106,6 @@ class MoPtsScenarioTestCase(TestCase):
         """The value of ``field`` sent for each person, keyed by member id."""
         people = self.payload(screen)["household"]["people"]
         return {member_id: person.get(field, {}).get(PERIOD) for member_id, person in people.items()}
-
-    def assert_scenario(self, number, expected_eligible, expected_value):
-        """The live PolicyEngine result for this scenario matches the spec's figure."""
-        self.assertEqual(PE_RESULTS[number], (expected_eligible, expected_value))
 
 
 class TestWiring(MoPtsScenarioTestCase):
@@ -415,73 +376,3 @@ class TestQualifyingPaymentRouting(MoPtsScenarioTestCase):
             1_700,
         )
         self.assertEqual(sum(self.people_values(screen, "real_estate_taxes").values()), 1_700)
-
-
-class TestSpecScenarios(MoPtsScenarioTestCase):
-    """One test per spec Test Scenario, asserting eligibility and value."""
-
-    def test_scenario_1_golden_path_senior_renter(self):
-        self.assert_scenario(1, True, 1_033)
-
-    def test_scenario_2_single_renter_at_the_38200_limit(self):
-        self.assert_scenario(2, True, 280)
-
-    def test_scenario_3_single_homeowner_at_the_42200_limit(self):
-        self.assert_scenario(3, True, 695)
-
-    def test_scenario_4_single_renter_one_dollar_over_the_limit(self):
-        self.assert_scenario(4, False, 0)
-
-    def test_scenario_5_age_65_at_the_minimum_base(self):
-        self.assert_scenario(5, True, 1_500)
-
-    def test_scenario_6_turns_65_later_in_the_claim_year(self):
-        self.assert_scenario(6, True, 1_200)
-
-    def test_scenario_7_no_homestead(self):
-        self.assert_scenario(7, False, 0)
-
-    def test_scenario_8_adult_childs_income_excluded(self):
-        self.assert_scenario(8, True, 1_550)
-
-    def test_scenario_9_married_homeowners_over_the_48000_limit(self):
-        self.assert_scenario(9, False, 0)
-
-    def test_scenario_10_claimant_general_disability_pathway(self):
-        self.assert_scenario(10, True, 960)
-
-    def test_scenario_11_no_qualifying_pathway(self):
-        self.assert_scenario(11, False, 0)
-
-    def test_scenario_12_claimant_only_survivor_pathway(self):
-        self.assert_scenario(12, True, 1_055)
-
-    def test_scenario_13_claimant_veteran_va_benefits_excluded(self):
-        self.assert_scenario(13, True, 1_100)
-
-    def test_scenario_14_married_renter_at_the_41000_limit(self):
-        self.assert_scenario(14, True, 227)
-
-    def test_scenario_15_spouse_only_age_pathway(self):
-        self.assert_scenario(15, True, 1_474)
-
-    def test_scenario_16_spouse_survivor_does_not_qualify_claimant(self):
-        self.assert_scenario(16, False, 0)
-
-    def test_scenario_17_minor_childs_income_included(self):
-        self.assert_scenario(17, True, 1_069)
-
-    def test_scenario_18_zero_qualifying_payment(self):
-        self.assert_scenario(18, False, 0)
-
-    def test_scenario_19_zero_floor_is_not_surfaced(self):
-        self.assert_scenario(19, False, 0)
-
-    def test_scenario_20_spouse_general_disability_pathway(self):
-        self.assert_scenario(20, True, 1_474)
-
-    def test_scenario_21_married_homeowners_exactly_at_the_48000_limit(self):
-        self.assert_scenario(21, True, 578)
-
-    def test_scenario_22_spouse_veteran_va_benefits_excluded(self):
-        self.assert_scenario(22, True, 1_100)
