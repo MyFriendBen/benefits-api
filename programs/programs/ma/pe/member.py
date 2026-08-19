@@ -1,7 +1,6 @@
 from programs.framework.pe_base import PolicyEngineMembersCalculator
 import programs.framework.pe_dependencies as dependency
 from programs.programs.federal.pe.member import (
-    Ccdf,
     Chip,
     Medicaid,
     Wic,
@@ -99,26 +98,6 @@ class MaWic(Wic):
         *Wic.pe_inputs,
         dependency.household.MaStateCodeDependency,
     ]
-
-
-class MaCcdf(Ccdf):
-    program_code = "ma_ccdf"
-    cost_by_age = (
-        # cost, age
-        (23_191, 2),
-        (21_125, 3),
-        (16_572, 4.5),
-        (12_632, 14),
-    )
-
-    def child_care_cost(self, member: HouseholdMember):
-        age = member.fraction_age()
-
-        for [cost, age_limit] in self.cost_by_age:
-            if age < age_limit:
-                return cost
-
-        return 0
 
 
 class MaMbta(PolicyEngineMembersCalculator):

@@ -201,30 +201,6 @@ class CommoditySupplementalFoodProgram(PolicyEngineMembersCalculator):
     pe_outputs = [dependency.member.CommoditySupplementalFoodProgram]
 
 
-class Ccdf(PolicyEngineMembersCalculator, abstract=True):
-    pe_name = "is_ccdf_eligible"
-    pe_inputs = [
-        dependency.spm.AssetsDependency,
-        dependency.member.CcdfReasonCareEligibleDependency,
-        dependency.member.EmploymentIncomeDependency,
-        dependency.member.SelfEmploymentIncomeDependency,
-        dependency.member.PensionIncomeDependency,
-        dependency.member.InvestmentIncomeDependency,
-        dependency.member.RentalIncomeDependency,
-        dependency.member.MiscellaneousIncomeDependency,
-    ]
-    pe_outputs = [dependency.member.Ccdf]
-
-    def child_care_cost(self, member: HouseholdMember) -> int:
-        raise NotImplemented("Please define the 'child_care_cost' method")
-
-    def member_value(self, member: HouseholdMember):
-        if not self.get_member_variable(member.id):
-            return 0
-
-        return self.child_care_cost(member)
-
-
 class HeadStart(PolicyEngineMembersCalculator, abstract=True):
     """
     Federal Head Start (ages 3-5). Eligibility and per-child value are computed by
