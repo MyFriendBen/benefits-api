@@ -14,11 +14,15 @@ Two properties of the walk are load-bearing and easy to break:
   re-exported by another module is still found at its definition.
 """
 
+import importlib
+from unittest import mock
+
 from django.test import SimpleTestCase
 
 from programs.framework.base import ProgramCalculator
 from programs.framework.pe_base import PolicyEngineCalulator
 from programs.framework.registry import (
+    _module_names,
     DuplicateRegistryKey,
     UnregisteredCalculator,
     _walk_classes,
@@ -259,3 +263,53 @@ class AbstractDeclarationTests(SimpleTestCase):
         for cls in (Medicaid, Chip, HeadStart, EarlyHeadStart, Ccdf, Msp, Aca, Cdcc):
             with self.subTest(cls=cls.__name__):
                 self.assertTrue(is_abstract(cls), f"{cls.__name__} backs no Program row")
+
+
+class ModuleWalkTests(SimpleTestCase):
+    """What the walk includes, and what it must not."""
+
+    def _names(self):
+        package = importlib.import_module("programs.programs")
+        return list(_module_names("programs.programs", package))
+
+    def test_no_test_module_is_walked(self):
+        """A test module's throwaway subclasses must not reach the registry.
+
+        One claiming a real code would collide with the calculator it stands in for,
+        and the collision would name a test file. Test code appears as ``tests.py``,
+        ``test_x.py`` and ``tests/test_x.py``; all three are excluded.
+        """
+        leaked = [name for name in self._names() if ".tests" in name or name.rsplit(".", 1)[-1].startswith("test_")]
+
+        self.assertEqual(leaked, [], "a test module reached the walk")
+
+    def test_a_module_that_cannot_be_imported_raises(self):
+        """An unimportable module must not quietly shrink the registry.
+
+        Swallowing the error would drop that module's calculators and leave no trace
+        — a program written, registered nowhere, returning nothing. Asserted by
+        making one real module unimportable and checking the walk stops, rather than
+        by pointing at a package that does not exist: that would fail on the
+        package import and never reach the per-module loop this guards.
+        """
+        real_import = importlib.import_module
+        broken = "programs.programs.tx.pe.tax"
+
+        def fail_on_one(name, *args, **kwargs):
+            if name == broken:
+                raise ModuleNotFoundError(f"No module named {name!r}")
+            return real_import(name, *args, **kwargs)
+
+        with mock.patch.object(importlib, "import_module", side_effect=fail_on_one):
+            with self.assertRaises(ModuleNotFoundError):
+                list(_walk_classes("programs.programs", ProgramCalculator))
+
+    def test_every_directory_on_the_package_path_is_walked(self):
+        """``__path__`` is a list, and only reading its first entry would silently
+        skip whole directories of a namespace package."""
+        package = importlib.import_module("programs.programs")
+        names = self._names()
+
+        for entry in package.__path__:
+            with self.subTest(entry=entry):
+                self.assertTrue(names, f"nothing walked under {entry}")

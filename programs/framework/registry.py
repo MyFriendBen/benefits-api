@@ -69,40 +69,54 @@ def is_abstract(cls: type) -> bool:
     return bool(vars(cls).get("_abstract", False))
 
 
+def _module_names(package_name: str, package) -> Iterator[str]:
+    """Yield the importable module name of every .py file under `package`.
+
+    Walked from the filesystem rather than with ``pkgutil.walk_packages``, which
+    recurses only through directories holding an ``__init__.py`` and stops at the
+    first that does not, without raising. Program directories are not uniformly
+    packages: some hold only a ``spec.md``, and ``nc/medicaid`` is a bare namespace
+    directory. Everything below such a directory has to stay reachable.
+    """
+    # __path__ is a list. A namespace package spans several directories, and the
+    # other registries this will cover are likelier to than programs.programs is.
+    for entry in package.__path__:
+        root = pathlib.Path(entry)
+        for path in sorted(root.rglob("*.py")):
+            parts = path.relative_to(root).with_suffix("").parts
+            if "__pycache__" in parts:
+                continue
+            # A test module's throwaway subclasses must not reach the registry,
+            # where one claiming a real code would collide with the calculator it
+            # stands in for. Matched on the module itself and on its immediate
+            # parent, so `x/tests.py`, `x/test_y.py` and `x/tests/test_y.py` are all
+            # excluded while a program directory deeper in the path is not.
+            if parts[-1] in ("tests", "conftest") or parts[-1].startswith("test_"):
+                continue
+            if len(parts) > 1 and parts[-2] == "tests":
+                continue
+            if parts[-1] == "__init__":
+                parts = parts[:-1]
+                if not parts:
+                    continue
+            yield f"{package_name}." + ".".join(parts)
+
+
 def _walk_classes(package_name: str, base: type[T]) -> Iterator[type[T]]:
     """Yield every subclass of `base` defined anywhere under `package_name`.
 
-    Imports each module, so an import error surfaces here rather than at the
-    first request that needs the class.
+    Imports each module, so a module that cannot be imported raises here rather
+    than quietly taking its calculators out of the registry.
     """
     package = importlib.import_module(package_name)
     seen: set[type] = set()
 
-    # Walked from the filesystem rather than with pkgutil.walk_packages, which
-    # recurses only through directories holding an __init__.py and stops at the
-    # first that does not, without raising. Program directories are not uniformly
-    # packages: some hold only a spec.md, and nc/medicaid is a bare namespace
-    # directory. Everything below such a directory has to stay reachable.
-    for path in sorted(pathlib.Path(next(iter(package.__path__))).rglob("*.py")):
-        parts = path.relative_to(next(iter(package.__path__))).with_suffix("").parts
-        if any(p == "__pycache__" for p in parts):
-            continue
-        # Test modules define throwaway subclasses; a fixture that claimed a real
-        # key would otherwise collide with the calculator it stands in for.
-        if "tests" in parts:
-            continue
-        if parts[-1] == "__init__":
-            parts = parts[:-1]
-            if not parts:
-                continue
-        name = f"{package_name}." + ".".join(parts)
-        try:
-            module = importlib.import_module(name)
-        except ImportError:
-            # A directory without __init__.py is not importable as a package, but
-            # its modules still are once addressed directly; anything genuinely
-            # broken is caught by the repo-wide import check.
-            continue
+    for name in _module_names(package_name, package):
+        # Deliberately unguarded. Swallowing an ImportError here would hide the
+        # program rather than the error, and modules under a directory with no
+        # __init__.py import fine when addressed directly, so there is nothing
+        # legitimate to catch.
+        module = importlib.import_module(name)
         for attr in vars(module).values():
             if not isinstance(attr, type):
                 continue
