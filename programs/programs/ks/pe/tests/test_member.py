@@ -424,24 +424,19 @@ class TestKsChip(TestCase):
 
 
 class TestKsMspWiring(TestCase):
-    """KsMsp registration and pe_inputs handling."""
+    """
+    KS-specific MSP wiring. The shared contract every state's MSP must satisfy (pe_name,
+    pe_category, pe_outputs, no federal input dropped, the Medicaid input set, exactly one
+    state code matching the slug, no ``member_value`` override) is asserted once for all
+    registered subclasses in ``federal/pe/tests/test_msp.py``.
+    """
 
     def test_is_registered_in_ks_member_calculators(self):
-        self.assertIn("ks_medicare_savings", ks_member_calculators)
-        self.assertEqual(ks_member_calculators["ks_medicare_savings"], KsMsp)
+        self.assertIs(ks_member_calculators["ks_medicare_savings"], KsMsp)
 
-    def test_pe_name_is_msp(self):
-        self.assertEqual(KsMsp.pe_name, "msp")
-
-    def test_pe_inputs_includes_medicaid_inputs(self):
-        """MSP needs *Medicaid.pe_inputs for the QI ~is_medicaid_eligible check and for the
-        msp_asset_eligible resource test."""
-        for medicaid_input in Medicaid.pe_inputs:
-            self.assertIn(medicaid_input, KsMsp.pe_inputs)
-
-    def test_pe_inputs_includes_ssi_countable_resources(self):
-        """Without it, msp_asset_eligible sees $0 and an over-asset applicant wrongly qualifies."""
-        self.assertIn(member_deps.SsiCountableResourcesDependency, KsMsp.pe_inputs)
+    def test_pe_inputs_includes_ks_state_code(self):
+        """Resolves the MSP asset-test-applies parameter, which is true for Kansas."""
+        self.assertIn(KsStateCodeDependency, KsMsp.pe_inputs)
 
 
 class TestKsMspKanCareAssetConsistency(TestCase):

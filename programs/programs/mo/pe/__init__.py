@@ -9,6 +9,7 @@ mo_member_calculators = {
     "mo_head_start": member.MoHeadStart,
     "mo_early_head_start": member.MoEarlyHeadStart,
     "mo_ssi": member.MoSsi,
+    "mo_medicare_savings": member.MoMsp,
 }
 
 mo_spm_calculators = {
