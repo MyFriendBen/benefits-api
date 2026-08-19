@@ -96,34 +96,10 @@ class MoWftc(PolicyEngineTaxUnitCalulator):
     """
     Missouri Working Family Tax Credit — state EITC piggyback.
 
-    A thin wrapper around PolicyEngine's ``mo_wftc``. Missouri's credit is a
-    percentage of the federal EITC (10% for TY2023, 20% from TY2024), capped at the
-    filer's remaining Missouri tax liability after the property tax credit. PE models
-    the whole chain: ``mo_wftc_eligible`` for the gate, ``mo_wftc_potential`` for the
-    rate-multiplied amount, ``mo_wftc_liability_cap`` for the Form MO-WFTC Lines 7-9
-    netting, and ``mo_wftc`` for the final smaller-of result.
-
-    Inputs reuse the federal ``Eitc.pe_inputs`` set and add the MO state code so
-    PolicyEngine applies the Missouri credit rather than the federal EITC alone.
-
-    **Investment-income gate — a known approximation on both sides.** Missouri has two
-    tests: most filers use a four-component measure (tax-exempt and taxable interest,
-    ordinary dividends, and positive capital gain net income), but Form MO-WFTC routes
-    filers with Schedule E, Form 4797, Form 8814, personal-property rental, or passive
-    activity to IRS Pub. 596 Worksheet 1, which folds in rental and royalty amounts.
-    The screener collects a single coarse ``rental`` total and cannot reconstruct
-    Worksheet 1, so neither we nor PolicyEngine implement Missouri's real branching
-    test. PE approximates with ``eitc_relevant_investment_income``, which counts rental
-    dollar-for-dollar against the threshold. We accept that approximation rather than
-    override the gate: it errs toward excluding a household whose true Worksheet 1
-    result might have cleared the limit, and the Department of Revenue makes the actual
-    determination. See ``spec.md`` criterion 5.
-
-    Screener gaps the calculator does NOT block on, per spec.md:
-      - Whether the filer will actually file a Missouri return for the year
-      - Whether the filer is claimed as a dependent elsewhere (no screener field)
-      - Married-filing-separately, which Missouri excludes but the screener cannot
-        detect: spouses are treated as filing jointly, the most common case
+    A thin wrapper: PolicyEngine's ``mo_wftc`` models the whole credit, including the
+    eligibility gate, the year-specific rate, and the liability cap net of the property
+    tax credit. See ``programs/programs/mo/wftc/spec.md`` for the rules, the accepted
+    approximations, and the screener gaps this does not block on.
     """
 
     program_code = "mo_wftc"
@@ -131,21 +107,8 @@ class MoWftc(PolicyEngineTaxUnitCalulator):
     pe_name = "mo_wftc"
     pe_inputs = [
         *Eitc.pe_inputs,
-        # The credit is capped at Missouri liability *after* the property tax credit
-        # (Form MO-WFTC Lines 7-9), and PolicyEngine computes that credit from
-        # ``real_estate_taxes``. The federal Eitc input set does not send it, so
-        # without this the property tax credit is always $0 and the cap is too high.
-        #
-        # ``RentDependency`` is deliberately not sent, even though PolicyEngine's
-        # property tax credit also counts 20% of gross rent. A renter's credit only
-        # survives below Missouri's renter income limit ($27,500 for TY2025, against
-        # $30,000 for an owner-occupied homestead), and Missouri liability for a
-        # household this size does not turn positive until roughly $28,400 of wages.
-        # Those windows do not overlap, so rent can raise the property tax credit but
-        # never changes the WFTC cap: measured across an 11-point wage sweep at PE
-        # 1.786.5, sending rent moved ``mo_property_tax_credit`` from $0 to as much as
-        # $107 while ``mo_wftc`` stayed identical at every point. Adding it would also
-        # put ``rent: 0`` in every request, invalidating all 16 recorded cassettes.
+        # Not in the federal Eitc set, and the liability cap is computed after the
+        # property tax credit, which PolicyEngine derives from real_estate_taxes.
         dependency.member.PropertyTaxExpenseDependency,
         dependency.household.MoStateCodeDependency,
     ]

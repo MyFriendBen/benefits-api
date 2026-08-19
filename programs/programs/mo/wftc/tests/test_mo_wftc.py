@@ -52,11 +52,7 @@ class MoWftcScenarioTestCase(PeIntegrationTestCase):
         return calc_pe_program(screen, MoWftc, self.program)
 
     def add_property_tax(self, member, amount):
-        """Annual real estate taxes paid, which feed PolicyEngine's ``real_estate_taxes``.
-
-        No harness helper exists for expenses, and the property tax credit cannot be
-        computed without this — scenarios 14 and 16 turn on it.
-        """
+        """Annual real estate taxes paid, feeding PolicyEngine's ``real_estate_taxes``."""
         return Expense.objects.create(
             screen=member.screen,
             household_member=member,
@@ -118,8 +114,7 @@ class TestScenario03InvestmentOverLimit(MoWftcScenarioTestCase):
 class TestScenario04NoRemainingLiability(MoWftcScenarioTestCase):
     """The credit is capped at remaining Missouri liability, which is $0 here.
 
-    PolicyEngine's ``mo_wftc_eligible`` is True and ``mo_wftc_potential`` is positive;
-    the liability cap is what zeroes the credit. Eligibility follows the value.
+    The gate passes and the potential credit is positive; the cap is what zeroes it.
     """
 
     screen_id = 9104
@@ -255,8 +250,7 @@ class TestScenario13MarriedFilingCombined(MoWftcScenarioTestCase):
 class TestScenario14PropertyTaxCreditAbsorbsLiability(MoWftcScenarioTestCase):
     """The property tax credit consumes all remaining liability → not eligible.
 
-    Confirms the WFTC cap is computed *after* the property tax credit, per Form
-    MO-WFTC Lines 7-9.
+    Fails as eligible/$1 if ``real_estate_taxes`` is not sent.
     """
 
     screen_id = 9114
@@ -274,16 +268,9 @@ class TestScenario14PropertyTaxCreditAbsorbsLiability(MoWftcScenarioTestCase):
 class TestScenario15RentalCountsTowardInvestmentGate(MoWftcScenarioTestCase):
     """Rental income counts toward the investment gate → not eligible.
 
-    The one intentional divergence from Missouri's own test. Missouri routes filers
-    with rental income to Pub. 596 Worksheet 1, which the screener cannot reconstruct
-    from a single coarse rental total; PolicyEngine substitutes
-    ``eitc_relevant_investment_income``, which counts rental dollar-for-dollar. We
-    accept PolicyEngine's approximation rather than override the gate, so a household
-    with $5,000 of rental income is excluded even though its true Worksheet 1 result
-    might have cleared the threshold. See ``spec.md`` criterion 5.
-
-    A calculator applying a rental-exempt four-component gate would return $174 here,
-    so this test is what detects that behavior.
+    A rental-exempt gate would return $174 instead, so this is the test that
+    detects one. See ``spec.md`` criterion 5 for why PolicyEngine's measure is
+    the accepted one.
     """
 
     screen_id = 9115

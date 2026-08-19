@@ -97,8 +97,7 @@ class TestMoWftcWiring(TestCase):
         self.assertIs(all_calculators["mo_wftc"], MoWftc)
 
     def test_reads_missouris_own_credit(self):
-        """Not the federal ``eitc`` — PolicyEngine models Missouri's percentage,
-        liability cap, and property-tax netting in ``mo_wftc``."""
+        """Missouri's own variable, not the federal ``eitc``."""
         self.assertEqual(MoWftc.pe_name, "mo_wftc")
         self.assertEqual(MoWftc.pe_outputs, [dependency.tax.MoWftc])
 
@@ -106,10 +105,8 @@ class TestMoWftcWiring(TestCase):
         self.assertIn(dependency.household.MoStateCodeDependency, MoWftc.pe_inputs)
 
     def test_sends_real_estate_taxes(self):
-        """The credit is capped at liability *after* the property tax credit, which
-        PolicyEngine derives from ``real_estate_taxes``. The federal Eitc input set
-        omits it, so without this the cap is never reduced: scenario 14 flips from
-        ineligible to eligible and scenario 16 pays $34 instead of $14."""
+        """Not in the federal Eitc set. Without it the liability cap is never
+        reduced: scenario 14 flips to eligible and scenario 16 pays $34, not $14."""
         self.assertIn(dependency.member.PropertyTaxExpenseDependency, MoWftc.pe_inputs)
 
     def test_preserves_every_federal_eitc_input(self):
