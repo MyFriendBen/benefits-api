@@ -2098,3 +2098,43 @@ class TestNonSsiBankAccountAssetsDependency(TestCase):
         self.screen.household_assets = 0
         self.screen.save()
         self.assertEqual(self._dep(self._add()).value(), 0)
+
+
+class TestInSecondarySchoolDependency(TestCase):
+    """Tests for InSecondarySchoolDependency, PolicyEngine's `is_in_secondary_school`
+    person input. Confined to age 18, the only age where it changes the assistance-unit
+    answer: PolicyEngine infers is_tax_unit_dependent False for an 18-year-old child,
+    which removes the child and their caretaker from the unit."""
+
+    def setUp(self):
+        self.white_label = WhiteLabel.objects.create(name="Test State", code="test", state_code="TS")
+        self.screen = Screen.objects.create(
+            white_label=self.white_label,
+            zipcode="78701",
+            county="Test County",
+            household_size=2,
+            completed=False,
+        )
+        HouseholdMember.objects.create(screen=self.screen, relationship="headOfHousehold", age=40)
+
+    def _dep(self, age, relationship="child"):
+        m = HouseholdMember.objects.create(screen=self.screen, relationship=relationship, age=age)
+        return member.InSecondarySchoolDependency(self.screen, m, {})
+
+    def test_field_name(self):
+        self.assertEqual(self._dep(18).field, "is_in_secondary_school")
+
+    def test_true_for_an_18_year_old_dependent_child(self):
+        self.assertTrue(self._dep(18).value())
+
+    def test_false_for_a_17_year_old(self):
+        """Under-18s already satisfy mo_tanf_dependent_child through is_child, so the
+        input is not asserted for them."""
+        self.assertFalse(self._dep(17).value())
+
+    def test_false_for_a_19_year_old(self):
+        """Over Missouri's age limit whatever the enrollment."""
+        self.assertFalse(self._dep(19).value())
+
+    def test_none_for_the_head_of_household(self):
+        self.assertIsNone(self._dep(40, relationship="headOfHousehold").value())

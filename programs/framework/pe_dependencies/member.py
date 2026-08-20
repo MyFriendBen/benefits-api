@@ -1109,3 +1109,36 @@ class NonSsiBankAccountAssetsDependency(Member):
             return 0
 
         return int(assets) / len(non_ssi_members)
+
+
+class InSecondarySchoolDependency(Member):
+    """
+    PolicyEngine's ``is_in_secondary_school`` person input, for a dependent child old
+    enough that PolicyEngine's own tax-dependency inference would otherwise drop them.
+
+    ``is_tax_unit_dependent`` is what ``mo_tanf_dependent_child`` reads for anybody not
+    strictly under 18, and PolicyEngine infers it from student status: for an 18-year-old
+    child it comes back False, which removes the child *and* their caretaker from the
+    assistance unit (the caretaker test requires a dependent child in the tax unit), so
+    the household is denied outright.
+
+    The screener cannot confirm secondary-school attendance — ``student`` and
+    ``student_full_time`` ask about college, university or community college, a different
+    fact, and a ``False`` there does not disprove secondary enrollment. Missouri's
+    dependent-child rule covers a child under 19 in secondary school or equivalent
+    vocational training, so this reports the inclusive default the spec commits to for an
+    age-18 dependent child: assume the qualifying enrollment MFB has no field to rule out.
+    Under-18 children need nothing here — ``is_child`` already satisfies the test — so the
+    input is confined to the ages where it changes the answer.
+    """
+
+    field = "is_in_secondary_school"
+    dependencies = ("relationship", "age")
+
+    def value(self):
+        if not self.member.is_dependent():
+            return None
+
+        # 18 is the only age this changes: under-18s already pass on is_child, and a
+        # 19-year-old is over Missouri's limit whatever their enrollment.
+        return self.member.age == 18

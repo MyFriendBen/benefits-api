@@ -87,3 +87,10 @@ class TestMoTanfWiring(TestCase):
         for a 19-year-old it returns them as a second caretaker, inflating the payment
         standard. Both are settled by sending the screener's own answer."""
         self.assertIn(dependency.member.TaxUnitDependentDependency, MoTanf.pe_inputs)
+
+    def test_pe_inputs_includes_in_secondary_school(self):
+        """PolicyEngine infers is_tax_unit_dependent False for an 18-year-old child unless
+        secondary-school enrollment is asserted, which drops the child and the caretaker
+        from the unit and denies the household. Verified live: unit size 0 without it,
+        $234.09/month with it."""
+        self.assertIn(dependency.member.InSecondarySchoolDependency, MoTanf.pe_inputs)

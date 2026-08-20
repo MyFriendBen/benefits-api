@@ -73,6 +73,7 @@ class MoTanf(Tanf):
         dependency.household.MoStateCodeDependency,
         dependency.member.PregnancyDependency,
         dependency.member.TaxUnitDependentDependency,
+        dependency.member.InSecondarySchoolDependency,
         *dependency.irs_gross_income,
         dependency.member.NonSsiBankAccountAssetsDependency,
         dependency.spm.ChildCareDependency,
