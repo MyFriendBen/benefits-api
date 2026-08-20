@@ -367,6 +367,31 @@ def update_navigators(
         data[idx]["navigators"] = [serialized_navigator(navigator) for navigator in navigators]
 
 
+# The order programs are calculated in. A program that reads another program's result
+# out of `data` must be listed after it, because `data` holds only what has already been
+# calculated. Programs not listed here calculate last, in any order.
+#
+# STATE_MEDICAID_OPTIONS is spliced in so each state's Medicaid resolves before the
+# programs gating on it through `ProgramCalculator.medicaid_eligible`. That gate raises
+# rather than reading False when its key is absent, which makes this ordering
+# load-bearing; `screener/tests/test_calc_order.py` asserts it holds.
+CALC_ORDER = (
+    "tanf",
+    "ssi",
+    "nslp",
+    "leap",
+    "chp",
+    *STATE_MEDICAID_OPTIONS,
+    "emergency_medicaid",
+    "wic",
+    "andcs",
+    "cesn_leap",
+    "cesn_eoc",
+    "cesn_cowap",
+    "cesn_care",
+)
+
+
 def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] = None):
     try:
         referrer = Referrer.objects.prefetch_related("remove_programs", "primary_navigators").get(
@@ -438,26 +463,10 @@ def eligibility_results(screen: Screen, batch=False, pe_version: Optional[str] =
     pe_programs = pe_calculators.keys()
 
     def sort_first(program):
-        calc_order = (
-            "tanf",
-            "ssi",
-            "nslp",
-            "leap",
-            "chp",
-            *STATE_MEDICAID_OPTIONS,
-            "emergency_medicaid",
-            "wic",
-            "andcs",
-            "cesn_leap",
-            "cesn_eoc",
-            "cesn_cowap",
-            "cesn_care",
-        )
+        if program.name_abbreviated not in CALC_ORDER:
+            return len(CALC_ORDER)
 
-        if program.name_abbreviated not in calc_order:
-            return len(calc_order)
-
-        return calc_order.index(program.name_abbreviated)
+        return CALC_ORDER.index(program.name_abbreviated)
 
     missing_programs = False
 

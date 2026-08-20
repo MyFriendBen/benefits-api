@@ -1,5 +1,4 @@
 from programs.framework.base import MemberEligibility, ProgramCalculator, Eligibility
-from programs.framework.helpers import medicaid_eligible
 import programs.framework.eligibility_messages as messages
 
 
@@ -18,7 +17,7 @@ class FamilyPlanningServices(ProgramCalculator):
         e.condition(has_no_insurance, messages.has_no_insurance())
 
         # Not Medicaid eligible
-        e.condition(not medicaid_eligible(self.data), messages.must_not_have_benefit("Medicaid"))
+        e.condition(not self.medicaid_eligible("co_medicaid"), messages.must_not_have_benefit("Medicaid"))
 
         # Income
         fpl = self.program.year

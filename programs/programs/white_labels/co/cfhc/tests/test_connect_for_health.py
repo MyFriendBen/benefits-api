@@ -133,8 +133,11 @@ class TestConnectForHealthMedicaidExclusion(TestCase):
     def test_non_medicaid_household_is_eligible(self):
         self.assertTrue(self._run(False).eligible)
 
-    def test_household_is_eligible_when_medicaid_was_not_calculated(self):
-        self.assertTrue(self._run(None).eligible)
+    def test_uncalculated_medicaid_raises_rather_than_reading_as_not_eligible(self):
+        """An absent key means "not calculated", which is a different answer from
+        "calculated, and not eligible" — so it must not quietly pass the exclusion."""
+        with self.assertRaises(DependencyError):
+            self._run(None)
 
     def test_medicaid_eligible_household_gets_a_fail_message(self):
         e = self._run(True)

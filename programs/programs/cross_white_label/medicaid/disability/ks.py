@@ -1,5 +1,4 @@
 from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
-from programs.framework.helpers import medicaid_eligible
 import programs.framework.eligibility_messages as messages
 
 
@@ -68,7 +67,7 @@ class KsWorkingHealthy(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility):
         # Not otherwise covered by full Medicaid through another category.
-        e.condition(not medicaid_eligible(self.data), messages.must_not_have_benefit("Medicaid"))
+        e.condition(not self.medicaid_eligible("ks_medicaid"), messages.must_not_have_benefit("Medicaid"))
 
         # Countable resources <= $15,000 flat (any size family group; KEESM §5130).
         assets = self.screen.household_assets if self.screen.household_assets is not None else 0
