@@ -16,7 +16,7 @@ Three things can silently break it:
 
 from django.test import TestCase
 
-from programs.programs.federal.pe.spm import SNAP_BASE_INPUTS
+from programs.programs.cross_white_label.snap.base import SNAP_BASE_INPUTS
 from programs.framework.pe_dependencies import member, receipt_contract, spm
 from programs.programs.cross_white_label.medicaid.base import Medicaid
 from programs.programs.cross_white_label.lifeline.base import Lifeline

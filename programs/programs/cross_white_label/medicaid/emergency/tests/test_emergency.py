@@ -14,6 +14,7 @@ from programs.programs.cross_white_label.medicaid.emergency.il import IlEmergenc
 from screener.models import Screen, HouseholdMember, Insurance, WhiteLabel
 from programs.models import Program, FederalPoveryLimit
 from programs.util import Dependencies
+from programs.framework.pe_dependencies import member
 
 # Named constants for test values
 EMERGENCY_MEDICAID_VALUE = 2_000  # Average ER visit cost

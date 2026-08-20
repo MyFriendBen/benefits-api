@@ -23,6 +23,7 @@ from unittest.mock import Mock
 
 from programs.programs.cross_white_label.medicaid.disability.ks import KsWorkingHealthy
 from programs.framework.base import ProgramCalculator
+from programs.framework.pe_dependencies import member
 
 VALUE_PER_MEMBER = 19_051
 

@@ -18,12 +18,12 @@ from unittest.mock import Mock
 from django.test import TestCase
 
 from programs.framework.base import Eligibility
-from programs.programs.co.denver_sidewalk_rebate.calculator import DenverSidewalkRebate
-from programs.programs.co.denver_trash_rebate.calculator import DenverTrashRebate
+from programs.programs.white_labels.co.dsr.calculator import DenverSidewalkRebate
+from programs.programs.white_labels.co.dtr.calculator import DenverTrashRebate
 from programs.programs.white_labels.cesn.energy_vec.calculator import EnergyCalculatorVehicleExchange
 from programs.programs.cross_white_label.weatherization.co import WeatherizationAssistance
 from programs.programs.cross_white_label.head_start.nc import NCHeadStart
-from programs.programs.nc.sun_bucks.calculator import SunBucks
+from programs.programs.white_labels.nc.sunbucks.calculator import SunBucks
 from programs.programs.cross_white_label.weatherization.tx import TxWap
 from screener.models import Screen, WhiteLabel
 from screener.serializers import _write_current_benefits

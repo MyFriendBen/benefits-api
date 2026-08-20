@@ -26,6 +26,7 @@ from programs.programs.cross_white_label.wic.base import Wic
 from programs.programs.cross_white_label.wic.tx import TxWic
 from programs.programs.cross_white_label.ssi.base import Ssi
 from programs.programs.white_labels.federal.acp.calculator import Acp
+from programs.framework.pe_dependencies import household
 
 
 @override_settings(CACHES=LOCAL_CACHE)

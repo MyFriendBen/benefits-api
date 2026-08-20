@@ -7,6 +7,7 @@ from unittest.mock import patch
 from datetime import datetime
 from django.utils import timezone
 from typing import ClassVar
+from programs.framework.pe_dependencies import member
 
 
 class TestNCHeadStart(TestCase):

@@ -7,6 +7,7 @@ from django.test import TestCase
 from programs.programs.cross_white_label.medicaid.wa import WaAppleHealthMedicaid
 from programs.framework.pe_dependencies.household import WaStateCodeDependency
 from programs.framework.pe_dependencies import member as member_deps
+from programs.framework.pe_dependencies import member
 
 
 class TestWaAppleHealthMedicaid(TestCase):

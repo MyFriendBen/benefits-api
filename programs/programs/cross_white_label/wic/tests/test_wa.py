@@ -3,6 +3,7 @@ from unittest.mock import Mock
 
 from programs.programs.cross_white_label.wic.wa import WaWic
 from programs.framework.base import Eligibility, MemberEligibility
+from programs.framework.pe_dependencies import member
 
 
 def make_member(age=30, pregnant=False, relationship="headOfHousehold"):

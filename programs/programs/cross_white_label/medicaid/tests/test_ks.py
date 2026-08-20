@@ -7,6 +7,7 @@ from programs.programs.cross_white_label.medicaid.base import Medicaid
 from unittest.mock import Mock
 from django.test import TestCase
 from programs.framework.pe_dependencies import member as member_deps
+from programs.framework.pe_dependencies import member
 
 MAGI = 3_648
 AGED = 20_508

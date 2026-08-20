@@ -1,6 +1,6 @@
 from integrations.services.income_limits import ami
 from programs.framework.base import Eligibility, ProgramCalculator
-from programs.programs.co.energy_calculator.util import has_renter_expenses
+from programs.programs.white_labels.cesn.util import has_renter_expenses
 
 
 class EnergyCalculatorEnergyOutreach(ProgramCalculator):

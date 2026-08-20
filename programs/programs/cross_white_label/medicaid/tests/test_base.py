@@ -17,6 +17,7 @@ from unittest.mock import Mock, MagicMock
 
 from programs.framework.pe_dependencies import member as member_dependency
 from programs.programs.cross_white_label.medicaid.base import Medicaid
+from programs.framework.pe_dependencies import member
 
 
 class TestMedicaidSeniorEligibility(TestCase):
