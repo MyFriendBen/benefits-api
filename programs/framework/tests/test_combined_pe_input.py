@@ -1,7 +1,14 @@
-"""Recovered from pe/pe/tests."""
+"""Payload assembly when several calculators are requested together.
+
+One request carries every calculator a screen needs, so the payload builder has to
+merge their inputs rather than emit one household per program. These assert the
+merge for pairs that reach different entity levels — SNAP is SPM-scoped, WIC, SSI
+and CHIP are per-member, EITC and ACA are tax-unit — since that is where a naive
+merge drops a field.
+"""
 
 from integrations.clients.policyengine.policy_engine import pe_input
-from programs.framework.pe_dependencies.constants import MAIN_TAX_UNIT, SECONDARY_TAX_UNIT
+from programs.framework.pe_dependencies.constants import MAIN_TAX_UNIT
 from programs.programs.cross_white_label.eitc.base import Eitc
 from programs.programs.cross_white_label.snap.tx import TxSnap
 from programs.programs.cross_white_label.tanf.tx import TxTanf
