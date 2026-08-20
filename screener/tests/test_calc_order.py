@@ -88,7 +88,7 @@ def _gate_arguments(class_node: ast.ClassDef, attrs: dict) -> list:
         if not (
             isinstance(node, ast.Call)
             and isinstance(node.func, ast.Attribute)
-            and node.func.attr in ("program_eligible", "member_program_eligible")
+            and node.func.attr in ("program_eligible", "member_program_eligible", "any_program_eligible")
             and node.args
         ):
             continue
@@ -224,26 +224,25 @@ class TestUpstreamsAreOrderedBeforeTheirDependents(SimpleTestCase):
 
 
 class TestEveryEntryEarnsItsSlot(SimpleTestCase):
-    """A hand-listed slot only does something if a `program_eligible()` gate reads it, or if
-    the entry is itself a gating program that must run after its upstream. An entry that is
-    neither is ordering nothing, and a reader has no way to tell that from the tuple.
+    """A hand-listed slot only does something if something gates on that program. A program
+    that merely gates on others needs no slot: unlisted sorts last, which is already after
+    everything it reads. Listing one anyway asserts an ordering nothing depends on, and a
+    reader cannot tell that from the tuple.
 
     The derived Medicaid block is exempt: those slots are deliberately pre-emptive, so the
     first program to gate on a state's Medicaid finds it already ordered."""
 
     def test_no_hand_listed_entry_is_ordering_nothing(self):
-        gates = find_program_gates()
-        upstreams = {upstream for _, _, upstream in gates}
-        gaters = {gating for _, gating, _ in gates if gating}
+        upstreams = {upstream for _, _, upstream in find_program_gates()}
         derived = set(medicaid_program_codes())
 
-        idle = [name for name in CALC_ORDER if name not in derived and name not in upstreams and name not in gaters]
+        idle = [name for name in CALC_ORDER if name not in derived and name not in upstreams]
         self.assertEqual(
             idle,
             [],
-            f"CALC_ORDER entries that nothing gates on and that gate on nothing: {idle}. "
-            "Either a gate was removed and the slot outlived it, or the dependency is "
-            "expressed some other way and does not belong here.",
+            f"CALC_ORDER entries that nothing gates on: {idle}. Either a gate was removed "
+            "and the slot outlived it, or the program only gates on others — in which case "
+            "it sorts last anyway and needs no slot.",
         )
 
 
@@ -268,12 +267,16 @@ class TestMedicaidProgramCodes(SimpleTestCase):
         the ordering."""
         self.assertNotIn("medicaid", medicaid_program_codes())
 
-    def test_all_are_ordered_before_the_unprefixed_emergency_medicaid(self):
-        """CO's `emergency_medicaid` sits directly after the Medicaid block; this keeps
-        that relationship true if the ordering is rearranged."""
-        for name in medicaid_program_codes():
-            with self.subTest(name=name):
-                self.assertLess(CALC_ORDER.index(name), CALC_ORDER.index("emergency_medicaid"))
+    def test_all_are_ordered_before_the_programs_that_gate_on_them(self):
+        """Every Medicaid slot precedes any listed program that reads a Medicaid result, so
+        the derived block cannot drift after its dependents."""
+        derived = set(medicaid_program_codes())
+
+        for _, gating, upstream in find_program_gates():
+            if upstream not in derived or gating not in CALC_ORDER:
+                continue
+            with self.subTest(gating=gating, upstream=upstream):
+                self.assertLess(CALC_ORDER.index(upstream), CALC_ORDER.index(gating))
 
     def test_derivation_sees_every_subclass_in_a_fresh_interpreter(self):
         """`__subclasses__()` only sees imported classes, so this derivation depends on the

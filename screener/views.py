@@ -401,12 +401,12 @@ CALC_ORDER = (
     "nslp",
     "chp",
     *medicaid_program_codes(),
-    # Custom calculators that gate on a Medicaid result rather than subclassing
-    # `Medicaid`, so they are not part of the derived block and have to be placed after it.
-    "emergency_medicaid",
+    # Custom calculators that gate on Medicaid rather than subclassing `Medicaid`, and are
+    # themselves gated on by il_aca_adults — so they sit after the derived block and before
+    # their own dependent. A program that only gates on others needs no slot: unlisted
+    # sorts last, which is already after everything it reads.
     "il_family_care",
     "il_moms_and_babies",
-    "il_aca_adults",
     "cesn_leap",
     "cesn_eoc",
     "cesn_cowap",

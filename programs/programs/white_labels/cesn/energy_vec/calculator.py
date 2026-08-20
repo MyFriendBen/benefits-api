@@ -31,9 +31,7 @@ class EnergyCalculatorVehicleExchange(ProgramCalculator):
         # presumptive eligibility
         has_benefit = self.screen.has_benefit_from_list(self.presumptive_eligibility)
 
-        for program in self.calculated_presumptive_eligibility:
-            if self.program_eligible(program):
-                has_benefit = True
+        has_benefit = has_benefit or self.any_program_eligible(self.calculated_presumptive_eligibility)
 
         # income
         income_limit = ami.get_screen_ami(self.screen, self.ami_percent, self.program.year.period)

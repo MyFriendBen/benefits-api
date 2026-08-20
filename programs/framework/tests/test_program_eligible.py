@@ -112,3 +112,39 @@ class TestMemberProgramEligible(SimpleTestCase):
         calc = make_calculator({"co_medicaid": household_with_members({1: True})})
         with self.assertRaises(DependencyError):
             calc.member_program_eligible("chp", member(1))
+
+
+class TestAnyProgramEligible(SimpleTestCase):
+    """A presumptive-eligibility list is one of several ways to qualify, so a sibling that
+    was not calculated is not an error — unlike a single named dependency."""
+
+    def test_true_when_any_is_eligible(self):
+        calc = make_calculator({"cesn_leap": eligibility(True), "cesn_eoc": eligibility(False)})
+        self.assertTrue(calc.any_program_eligible(["cesn_eoc", "cesn_leap"]))
+
+    def test_false_when_none_is_eligible(self):
+        calc = make_calculator({"cesn_leap": eligibility(False), "cesn_eoc": eligibility(False)})
+        self.assertFalse(calc.any_program_eligible(["cesn_leap", "cesn_eoc"]))
+
+    def test_an_uncalculated_sibling_does_not_raise(self):
+        """The activation-coupling case: one deactivated row must not drop the caller from
+        results when another program in the list already qualifies the household."""
+        calc = make_calculator({"cesn_leap": eligibility(True)})
+        self.assertTrue(calc.any_program_eligible(["cesn_leap", "cesn_care", "cesn_cowap"]))
+
+    def test_all_absent_is_false_not_a_raise(self):
+        calc = make_calculator({})
+        self.assertFalse(calc.any_program_eligible(["cesn_leap", "cesn_care"]))
+
+    def test_stops_at_the_first_eligible_program(self):
+        """Short-circuits, so a later entry is never consulted once the answer is settled."""
+        consulted = []
+
+        class Recording(dict):
+            def get(self, key, default=None):
+                consulted.append(key)
+                return super().get(key, default)
+
+        calc = make_calculator(Recording({"cesn_leap": eligibility(True)}))
+        self.assertTrue(calc.any_program_eligible(["cesn_leap", "cesn_care"]))
+        self.assertEqual(consulted, ["cesn_leap"])

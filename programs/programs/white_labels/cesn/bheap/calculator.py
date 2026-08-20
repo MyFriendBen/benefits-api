@@ -26,11 +26,7 @@ class EnergyCalculatorElectricityAffordabilityBlackHills(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility):
         # eligible for another program
-        has_another_program = False
-        for program in self.presumptive_eligibility:
-            if self.program_eligible(program):
-                has_another_program = True
-        e.condition(has_another_program)
+        e.condition(self.any_program_eligible(self.presumptive_eligibility))
 
         # has electric provider
         e.condition(self.screen.energy_calculator.has_electricity_provider(self.electricity_providers))

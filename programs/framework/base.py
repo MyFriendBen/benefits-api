@@ -207,6 +207,27 @@ class ProgramCalculator:
 
         return self.data[program_code].eligible
 
+    def any_program_eligible(self, program_codes) -> bool:
+        """
+        Whether the household is eligible for any of ``program_codes``.
+
+        A presumptive-eligibility list asks "does this household already qualify for one of
+        these?", so it stops at the first yes and treats a program that was not calculated
+        as one this household does not have. Requiring the whole list to be present would
+        couple the caller to every sibling being active: one deactivated row would raise and
+        drop the caller from results, even when an earlier program in the list already
+        answered yes.
+
+        Use `program_eligible` for a single named dependency, where absence is a real
+        problem rather than one of several ways to qualify.
+        """
+        for program_code in program_codes:
+            entry = self.data.get(program_code)
+            if entry is not None and entry.eligible:
+                return True
+
+        return False
+
     def member_program_eligible(self, program_code: str, member: HouseholdMember) -> bool:
         """
         Whether `member` is eligible for ``program_code``, another program this one gates
