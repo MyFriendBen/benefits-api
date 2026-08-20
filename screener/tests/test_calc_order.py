@@ -223,6 +223,30 @@ class TestUpstreamsAreOrderedBeforeTheirDependents(SimpleTestCase):
                 )
 
 
+class TestEveryEntryEarnsItsSlot(SimpleTestCase):
+    """A hand-listed slot only does something if a `program_eligible()` gate reads it, or if
+    the entry is itself a gating program that must run after its upstream. An entry that is
+    neither is ordering nothing, and a reader has no way to tell that from the tuple.
+
+    The derived Medicaid block is exempt: those slots are deliberately pre-emptive, so the
+    first program to gate on a state's Medicaid finds it already ordered."""
+
+    def test_no_hand_listed_entry_is_ordering_nothing(self):
+        gates = find_program_gates()
+        upstreams = {upstream for _, _, upstream in gates}
+        gaters = {gating for _, gating, _ in gates if gating}
+        derived = set(medicaid_program_codes())
+
+        idle = [name for name in CALC_ORDER if name not in derived and name not in upstreams and name not in gaters]
+        self.assertEqual(
+            idle,
+            [],
+            f"CALC_ORDER entries that nothing gates on and that gate on nothing: {idle}. "
+            "Either a gate was removed and the slot outlived it, or the dependency is "
+            "expressed some other way and does not belong here.",
+        )
+
+
 class TestMedicaidProgramCodes(SimpleTestCase):
     """The Medicaid block is derived from the `Medicaid` class hierarchy, not listed."""
 

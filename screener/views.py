@@ -398,19 +398,15 @@ def medicaid_program_codes() -> tuple:
 # That gate raises rather than reading False when its key is absent, which makes this
 # ordering load-bearing; `screener/tests/test_calc_order.py` asserts it holds.
 CALC_ORDER = (
-    "tanf",
-    "ssi",
     "nslp",
-    "leap",
     "chp",
     *medicaid_program_codes(),
+    # Custom calculators that gate on a Medicaid result rather than subclassing
+    # `Medicaid`, so they are not part of the derived block and have to be placed after it.
     "emergency_medicaid",
-    # il_aca_adults gates on both of these, so they resolve first.
     "il_family_care",
     "il_moms_and_babies",
     "il_aca_adults",
-    "wic",
-    "andcs",
     "cesn_leap",
     "cesn_eoc",
     "cesn_cowap",
