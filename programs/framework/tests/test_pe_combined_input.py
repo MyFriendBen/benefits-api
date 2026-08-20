@@ -16,7 +16,7 @@ from programs.programs.cross_white_label.wic.tx import TxWic
 from programs.programs.cross_white_label.ssi.tx import TxSsi
 from programs.programs.cross_white_label.aca.tx import TxAca
 from programs.programs.cross_white_label.medicaid.chip.tx import TxChip
-from programs.programs.testing.pe_input_test_base import TxPeInputTestBase
+from programs.programs.testing_fixtures.pe_input_test_base import TxPeInputTestBase
 from programs.framework.pe_dependencies import household
 
 

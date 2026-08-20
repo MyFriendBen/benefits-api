@@ -79,7 +79,7 @@ wic_income = [
 # The version gating is deliberately mixed: the amount inputs stay ungated, since every
 # supported model reads them and flooring them would withhold reported SSI/TANF from older
 # ones. That is safe because the gated half is the *suppressing* half — below the floor we
-# send amounts without take-up flags, never the reverse. test_receipt_contract.py pins that
+# send amounts without take-up flags, never the reverse. test_pe_receipt_contract.py pins that
 # direction.
 receipt_contract = [
     member.Ssi,

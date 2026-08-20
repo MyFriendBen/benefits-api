@@ -15,7 +15,7 @@ change, not about the harness. Re-record after reviewing the new body.
 
 import pytest
 
-from programs.programs.testing.pe_integration import (
+from programs.programs.testing_fixtures.pe_integration import (
     PeIntegrationTestCase,
     add_income,
     add_member,

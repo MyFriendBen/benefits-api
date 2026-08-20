@@ -8,7 +8,7 @@ than a stubbed lookup, because the exclusion reads the resolved current-benefit 
 from unittest.mock import Mock
 from programs.framework.base import Eligibility
 from programs.programs.white_labels.nc.sunbucks.calculator import SunBucks
-from programs.programs.testing.current_benefit_fixtures import ReceivesBenefitTestCase
+from programs.programs.testing_fixtures.current_benefit_fixtures import ReceivesBenefitTestCase
 
 
 class SunBucksPresumptiveExclusionTests(ReceivesBenefitTestCase):

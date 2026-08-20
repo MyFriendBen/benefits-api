@@ -92,7 +92,7 @@ pytest integrations/clients/hud_income_limits/tests/test_integration.py::TestHud
 
 Every program calculator gets tests that mirror its `spec.md` **Test Scenarios** 1:1 — one test per scenario, asserting eligibility *and* benefit value. Custom (MFB) calculators get plain unit tests, because the rules and amounts are our code. PolicyEngine calculators get the same assertions wrapped as VCR integration tests: the answer comes from PolicyEngine, so we record it once and replay it forever after.
 
-Helpers live in `programs/framework/tests/integration_test_helpers.py`; the harness itself is covered by `programs/framework/tests/test_integration_helpers.py`. Nothing in the helpers is coupled to `spec.md` — they run a calculator and hand back an `Eligibility`; mirroring Test Scenarios is a convention of the callers.
+Helpers live in `programs/programs/testing_fixtures/pe_integration.py`; the harness itself is covered by `programs/framework/tests/test_pe_integration_harness.py`. Nothing in the helpers is coupled to `spec.md` — they run a calculator and hand back an `Eligibility`; mirroring Test Scenarios is a convention of the callers.
 
 The harness sits in `framework/` rather than with the PolicyEngine client because it builds `Screen`s and runs calculators. `integrations/clients/policyengine/` is the wire layer only — the POST, the token cache, version resolution — and holds no cassettes.
 
@@ -137,13 +137,13 @@ Run these with `pytest`, **not** `manage.py test` — VCR is a pytest fixture, s
 
 ```bash
 # 1. Record (needs POLICY_ENGINE_CLIENT_ID / POLICY_ENGINE_CLIENT_SECRET)
-PE_RECORD=1 VCR_MODE=once venv/bin/pytest programs/programs/mo/pts/tests/ -v
+PE_RECORD=1 VCR_MODE=once venv/bin/pytest programs/programs/white_labels/mo/pts/tests/ -v
 
 # 2. Prove it replays with no network
-VCR_MODE=none venv/bin/pytest programs/programs/mo/pts/tests/ -q
+VCR_MODE=none venv/bin/pytest programs/programs/white_labels/mo/pts/tests/ -q
 
 # 3. Commit the cassettes with the tests
-git add programs/programs/mo/pts/tests/
+git add programs/programs/white_labels/mo/pts/tests/
 ```
 
 `PE_RECORD=1` is what allows the live auth0 token exchange. Without it every run seeds a placeholder token and touches no network, so an ordinary `pytest` never authenticates even on a machine with PolicyEngine credentials in `.env`.

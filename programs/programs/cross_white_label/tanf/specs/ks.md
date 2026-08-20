@@ -125,7 +125,7 @@
 
 ### Calculator type: pure PolicyEngine (no hybrid)
 
-`ks_tanf` is implemented as a **pure PolicyEngine passthrough** (`KsTanf` in `programs/programs/ks/pe/spm.py`): it wires the household's circumstances into PE via `pe_inputs` and returns PE's eligibility and benefit value unchanged. Per team policy, calculators are kept either **pure-PE** or **pure-custom** — MFB does **not** add MFB-side eligibility overrides on top of a PE calculator (no hybrid). Any KS TANF rule that PolicyEngine does not model is therefore handled by an inclusivity assumption and/or raised in the PE delta report for PE to implement — it is not coded on the MFB side.
+`ks_tanf` is implemented as a **pure PolicyEngine passthrough** (`KsTanf` in `programs/programs/cross_white_label/tanf/ks.py`): it wires the household's circumstances into PE via `pe_inputs` and returns PE's eligibility and benefit value unchanged. Per team policy, calculators are kept either **pure-PE** or **pure-custom** — MFB does **not** add MFB-side eligibility overrides on top of a PE calculator (no hybrid). Any KS TANF rule that PolicyEngine does not model is therefore handled by an inclusivity assumption and/or raised in the PE delta report for PE to implement — it is not coded on the MFB side.
 
 ### Deferred, PE-dependent limitations
 

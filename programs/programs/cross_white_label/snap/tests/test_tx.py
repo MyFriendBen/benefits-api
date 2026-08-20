@@ -2,7 +2,7 @@
 
 from programs.programs.cross_white_label.snap.tx import TxSnap
 from integrations.clients.policyengine.policy_engine import pe_input
-from programs.programs.testing.pe_input_test_base import TxPeInputTestBase
+from programs.programs.testing_fixtures.pe_input_test_base import TxPeInputTestBase
 from django.test import TestCase
 from programs.programs.cross_white_label.snap.base import Snap
 from programs.framework.pe_dependencies.household import TxStateCodeDependency

@@ -14,7 +14,7 @@ from programs.programs.cross_white_label.weatherization.co import Weatherization
 from programs.programs.cross_white_label.head_start.nc import NCHeadStart
 from programs.programs.white_labels.nc.sunbucks.calculator import SunBucks
 from programs.programs.cross_white_label.weatherization.tx import TxWap
-from programs.programs.testing.current_benefit_fixtures import ReceivesBenefitTestCase
+from programs.programs.testing_fixtures.current_benefit_fixtures import ReceivesBenefitTestCase
 
 
 class PresumptiveEligibilityResolutionTests(ReceivesBenefitTestCase):

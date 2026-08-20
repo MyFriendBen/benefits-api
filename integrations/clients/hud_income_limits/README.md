@@ -269,7 +269,7 @@ Here's a real example from the codebase:
 
 **Before:**
 ```python
-# programs/programs/co/trua/calculator.py
+# programs/programs/white_labels/co/trua/calculator.py
 from integrations.services.income_limits import ami
 
 class TruaCalculator(ProgramCalculator):
@@ -287,7 +287,7 @@ class TruaCalculator(ProgramCalculator):
 
 **After:**
 ```python
-# programs/programs/co/trua/calculator.py
+# programs/programs/white_labels/co/trua/calculator.py
 from integrations.clients.hud_income_limits import hud_client
 
 class TruaCalculator(ProgramCalculator):

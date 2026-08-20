@@ -5,7 +5,7 @@ of its own test. Pins that a state-prefixed WIC program satisfies the check.
 """
 
 from programs.framework.base import Eligibility
-from programs.programs.testing.current_benefit_fixtures import ReceivesBenefitTestCase
+from programs.programs.testing_fixtures.current_benefit_fixtures import ReceivesBenefitTestCase
 
 
 class NurseFamilyPartnershipWicBypassTests(ReceivesBenefitTestCase):

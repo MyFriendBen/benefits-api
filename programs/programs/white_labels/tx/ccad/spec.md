@@ -60,7 +60,7 @@ The dominant service is **Primary Home Care (PHC)** — personal care attendants
 
 ## Test Scenarios
 
-Scenarios marked `[validation]` are included in `tx_ccad.json` as automated validations run in CI. All scenarios are covered by unit tests in `programs/programs/tx/ccad/tests/test_ccad.py`. All scenarios are used for Playwright QA against local/staging/prod.
+Scenarios marked `[validation]` are included in `tx_ccad.json` as automated validations run in CI. All scenarios are covered by unit tests in `programs/programs/white_labels/tx/ccad/tests/test_ccad.py`. All scenarios are used for Playwright QA against local/staging/prod.
 
 ---
 
