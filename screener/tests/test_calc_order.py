@@ -1,7 +1,8 @@
 """
 Guards `screener.views.CALC_ORDER` against the failure it is the only defense for.
 
-A calculator that calls `self.program_eligible("x")` reads x's computed result out of
+A calculator that calls `self.program_eligible("x")` — or its member-scope sibling
+`member_program_eligible` — reads x's computed result out of
 `data`, which holds only the programs already calculated. Correctness therefore rests
 entirely on the ordering in CALC_ORDER, and nothing else asserts it. If an upstream
 program lost its slot, or a gating program were ordered ahead of what it depends on, the
@@ -85,7 +86,7 @@ def _gate_arguments(class_node: ast.ClassDef, attrs: dict) -> list:
         if not (
             isinstance(node, ast.Call)
             and isinstance(node.func, ast.Attribute)
-            and node.func.attr == "program_eligible"
+            and node.func.attr in ("program_eligible", "member_program_eligible")
             and node.args
         ):
             continue
@@ -154,7 +155,7 @@ def find_unresolved_gate_arguments():
 class TestProgramGatesAreDiscoverable(SimpleTestCase):
     def test_gates_exist(self):
         """A regex that matched nothing would make every test below vacuously pass."""
-        self.assertNotEqual(find_program_gates(), [], "found no self.program_eligible() call sites")
+        self.assertNotEqual(find_program_gates(), [], "found no program_eligible() call sites")
 
     def test_every_gate_argument_resolves_to_a_program_code(self):
         """A call this test cannot resolve is a call it cannot guard. Failing here is the

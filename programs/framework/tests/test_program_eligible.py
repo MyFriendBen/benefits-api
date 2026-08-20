@@ -13,7 +13,7 @@ from unittest.mock import Mock
 
 from django.test import SimpleTestCase
 
-from programs.framework.base import Eligibility, ProgramCalculator
+from programs.framework.base import Eligibility, MemberEligibility, ProgramCalculator
 from programs.util import DependencyError
 
 
@@ -65,3 +65,50 @@ class TestProgramEligibleRaisesRatherThanGuessing(SimpleTestCase):
             with self.subTest(code=code):
                 calc = make_calculator({code: eligibility(True)})
                 self.assertTrue(calc.program_eligible(code))
+
+
+def member(member_id):
+    m = Mock()
+    m.id = member_id
+    return m
+
+
+def household_with_members(verdicts):
+    """An upstream `Eligibility` carrying a per-member verdict, keyed by member id."""
+    e = Eligibility()
+    for member_id, is_eligible in verdicts.items():
+        me = MemberEligibility(member(member_id))
+        me.eligible = is_eligible
+        e.add_member_eligibility(me)
+    return e
+
+
+class TestMemberProgramEligible(SimpleTestCase):
+    """`member_program_eligible` is `program_eligible` at member scope: CFHC excludes a
+    member who qualifies for CHP+, which is a per-member verdict, not a household one."""
+
+    def test_returns_the_named_members_verdict(self):
+        calc = make_calculator({"chp": household_with_members({1: True, 2: False})})
+        self.assertTrue(calc.member_program_eligible("chp", member(1)))
+        self.assertFalse(calc.member_program_eligible("chp", member(2)))
+
+    def test_member_absent_from_the_upstream_is_not_eligible(self):
+        """The upstream records a verdict for every member it evaluated, so no entry means
+        it did not consider them — not eligible, rather than an error."""
+        calc = make_calculator({"chp": household_with_members({1: True})})
+        self.assertFalse(calc.member_program_eligible("chp", member(99)))
+
+    def test_no_members_evaluated_is_not_eligible(self):
+        calc = make_calculator({"chp": Eligibility()})
+        self.assertFalse(calc.member_program_eligible("chp", member(1)))
+
+    def test_absent_upstream_raises(self):
+        """Same contract as the household form: "not calculated" is not an answer."""
+        calc = make_calculator({})
+        with self.assertRaises(DependencyError):
+            calc.member_program_eligible("chp", member(1))
+
+    def test_another_programs_result_does_not_satisfy_the_gate(self):
+        calc = make_calculator({"co_medicaid": household_with_members({1: True})})
+        with self.assertRaises(DependencyError):
+            calc.member_program_eligible("chp", member(1))

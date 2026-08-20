@@ -207,6 +207,25 @@ class ProgramCalculator:
 
         return self.data[program_code].eligible
 
+    def member_program_eligible(self, program_code: str, member: HouseholdMember) -> bool:
+        """
+        Whether `member` is eligible for ``program_code``, another program this one gates
+        on at member rather than household scope.
+
+        Same contract as `program_eligible`: an absent key means "not calculated", which is
+        a different answer from "calculated, and not eligible", so it raises. A member with
+        no entry in the upstream's results is not eligible for it — the upstream records a
+        verdict for every member it evaluated, so a gap means it did not consider them.
+        """
+        if program_code not in self.data:
+            raise DependencyError()
+
+        for member_eligibility in self.data[program_code].eligible_members:
+            if member_eligibility.member.id == member.id:
+                return member_eligibility.eligible
+
+        return False
+
     def can_calc(self):
         """
         Returns whether or not the program can be calculated with the missing dependencies

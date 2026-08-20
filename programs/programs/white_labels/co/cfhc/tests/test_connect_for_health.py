@@ -51,8 +51,11 @@ def make_data(medicaid_eligible=False, chp=None):
         medicaid.eligible = medicaid_eligible
         data["co_medicaid"] = medicaid
 
-    if chp is not None:
-        data["chp"] = chp
+    # `chp` is in CALC_ORDER, so it is always calculated before CFHC. Absent means "not
+    # calculated", which raises rather than skipping the CHP+ exclusion — so the default
+    # is a real result recording no eligible members. Pass chp=None explicitly only to
+    # exercise that raise.
+    data["chp"] = chp if chp is not None else Eligibility()
 
     return data
 
