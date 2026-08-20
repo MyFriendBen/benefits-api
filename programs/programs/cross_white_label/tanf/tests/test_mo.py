@@ -79,3 +79,11 @@ class TestMoTanfWiring(TestCase):
 
     def test_pe_inputs_have_no_duplicates(self):
         self.assertEqual(len(MoTanf.pe_inputs), len(set(MoTanf.pe_inputs)))
+
+    def test_pe_inputs_includes_tax_unit_dependent(self):
+        """mo_tanf_dependent_child reads is_tax_unit_dependent, and the caretaker test
+        requires a dependent child in the tax unit. PolicyEngine's own inference returns
+        False for an 18-year-old child, dropping the child and the caretaker from the unit;
+        for a 19-year-old it returns them as a second caretaker, inflating the payment
+        standard. Both are settled by sending the screener's own answer."""
+        self.assertIn(dependency.member.TaxUnitDependentDependency, MoTanf.pe_inputs)

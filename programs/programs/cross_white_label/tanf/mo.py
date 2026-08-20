@@ -49,6 +49,13 @@ class MoTanf(Tanf):
       is understated.
     - ``AgeDependency`` (inherited) — drives ``monthly_age`` for the dependent-child test
       and the care-deduction age brackets.
+    - ``TaxUnitDependentDependency`` — load-bearing in both directions, because
+      ``mo_tanf_dependent_child`` reads ``is_tax_unit_dependent | is_child`` and the
+      caretaker test requires a dependent child somewhere in the tax unit. Left to
+      PolicyEngine's own inference, an 18-year-old child comes back ``False``, which drops
+      both that child *and* their caretaker from the unit, denying the household outright
+      (verified against live PE: unit size 0). A 19-year-old goes the other way and is
+      counted as a second caretaker, inflating the payment standard by one size band.
 
     Three Missouri rules PolicyEngine does not model are shipped as disclosed gaps rather
     than corrected here, so that every number this calculator returns is PolicyEngine's:
@@ -65,6 +72,7 @@ class MoTanf(Tanf):
         *Tanf.pe_inputs,
         dependency.household.MoStateCodeDependency,
         dependency.member.PregnancyDependency,
+        dependency.member.TaxUnitDependentDependency,
         *dependency.irs_gross_income,
         dependency.member.NonSsiBankAccountAssetsDependency,
         dependency.spm.ChildCareDependency,
