@@ -15,12 +15,14 @@ new gating program is covered by these tests the day it is written.
 
 import ast
 import re
+import subprocess
+import sys
 from pathlib import Path
 from typing import Optional
 
 from django.test import SimpleTestCase
 
-from screener.views import CALC_ORDER, STATE_MEDICAID_OPTIONS
+from screener.views import CALC_ORDER, medicaid_program_codes
 
 PROGRAMS_ROOT = Path(__file__).resolve().parents[2] / "programs" / "programs"
 
@@ -221,18 +223,61 @@ class TestUpstreamsAreOrderedBeforeTheirDependents(SimpleTestCase):
                 )
 
 
-class TestStateMedicaidOptions(SimpleTestCase):
-    def test_all_options_are_ordered_before_the_unprefixed_emergency_medicaid(self):
-        """CO's `emergency_medicaid` is spliced in directly after the Medicaid block; this
-        keeps that relationship true if the tuple is reordered."""
-        for name in STATE_MEDICAID_OPTIONS:
+class TestMedicaidProgramCodes(SimpleTestCase):
+    """The Medicaid block is derived from the `Medicaid` class hierarchy, not listed."""
+
+    def test_every_medicaid_calculator_gets_a_slot(self):
+        """The bug this replaces: a hand-maintained list omitted ma_mass_health and
+        wa_apple_health_medicaid, so an MA or WA program gating on its own Medicaid found
+        no slot and raised, vanishing from results."""
+        for name in medicaid_program_codes():
+            with self.subTest(name=name):
+                self.assertIn(name, CALC_ORDER)
+
+    def test_the_states_the_old_list_omitted_are_included(self):
+        codes = medicaid_program_codes()
+        self.assertIn("ma_mass_health", codes)
+        self.assertIn("wa_apple_health_medicaid", codes)
+
+    def test_the_abstract_base_is_not_included(self):
+        """`Medicaid` itself backs no row; including it would put a non-existent program in
+        the ordering."""
+        self.assertNotIn("medicaid", medicaid_program_codes())
+
+    def test_all_are_ordered_before_the_unprefixed_emergency_medicaid(self):
+        """CO's `emergency_medicaid` sits directly after the Medicaid block; this keeps
+        that relationship true if the ordering is rearranged."""
+        for name in medicaid_program_codes():
             with self.subTest(name=name):
                 self.assertLess(CALC_ORDER.index(name), CALC_ORDER.index("emergency_medicaid"))
 
-    def test_every_option_is_backed_by_a_calculator(self):
+    def test_derivation_sees_every_subclass_in_a_fresh_interpreter(self):
+        """`__subclasses__()` only sees imported classes, so this derivation depends on the
+        calculator packages having been walked. Guards that in a subprocess, where nothing
+        else has imported them first."""
+        script = (
+            "import django, os;"
+            "os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'benefits.settings');"
+            "django.setup();"
+            "from screener.views import medicaid_program_codes;"
+            "print(','.join(medicaid_program_codes()))"
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            capture_output=True,
+            text=True,
+            cwd=Path(__file__).resolve().parents[2],
+        )
+        self.assertEqual(result.returncode, 0, result.stderr[-2000:])
+        codes = result.stdout.strip().splitlines()[-1].split(",")
+        self.assertIn("ma_mass_health", codes)
+        self.assertIn("wa_apple_health_medicaid", codes)
+        self.assertEqual(sorted(codes), sorted(medicaid_program_codes()))
+
+    def test_every_derived_code_is_backed_by_a_calculator(self):
         registered = _registered_program_codes()
 
-        for name in STATE_MEDICAID_OPTIONS:
+        for name in medicaid_program_codes():
             with self.subTest(name=name):
                 self.assertIn(name, registered)
 

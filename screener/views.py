@@ -10,6 +10,7 @@ from integrations.clients.policyengine import versions as pe_versions
 from programs.models import Referrer
 from integrations.clients.policyengine.registry import all_calculators
 from programs.urgent_needs.base import UrgentNeedFunction
+from programs.programs.cross_white_label.medicaid.base import Medicaid
 from django.db import transaction
 from screener.models import (
     Screen,
@@ -366,31 +367,52 @@ def update_navigators(
         data[idx]["navigators"] = [serialized_navigator(navigator) for navigator in navigators]
 
 
-# Each state's Medicaid program. Spliced into CALC_ORDER below so a state's Medicaid
-# resolves before the programs gating on it; a state missing from here reserves no slot,
-# and its dependents raise DependencyError instead of being calculated.
-STATE_MEDICAID_OPTIONS = (
-    "co_medicaid",
-    "nc_medicaid",
-    "il_medicaid",
-    "ks_medicaid",
-)
+def medicaid_program_codes() -> tuple:
+    """Every program code backed by a `Medicaid` calculator.
+
+    Read off the class hierarchy rather than listed, because a list is the bug this
+    ordering exists to prevent: the hand-maintained version omitted ma_mass_health and
+    wa_apple_health_medicaid, so an MA or WA program gating on its own Medicaid would have
+    found no slot here and raised DependencyError — vanishing from results rather than
+    erroring. A new state's Medicaid is ordered the day its calculator is written.
+
+    Includes the narrower members of the family (ma_mass_health_limited, TX's four). They
+    are Medicaid rows too, and resolving them early costs nothing.
+    """
+
+    # __subclasses__() only sees imported classes. The `all_calculators` import at the top
+    # of this module builds the PolicyEngine registry eagerly, and building it walks every
+    # calculator package — so every Medicaid subclass is imported before this runs. That
+    # import is load-bearing for this function, not just for its own use below.
+    def subclasses(cls):
+        for subclass in cls.__subclasses__():
+            yield subclass
+            yield from subclasses(subclass)
+
+    return tuple(
+        sorted(
+            subclass.program_code
+            for subclass in subclasses(Medicaid)
+            if not subclass._abstract and getattr(subclass, "program_code", None)
+        )
+    )
+
 
 # The order programs are calculated in. A program that reads another program's result
 # out of `data` must be listed after it, because `data` holds only what has already been
 # calculated. Programs not listed here calculate last, in any order.
 #
-# STATE_MEDICAID_OPTIONS is spliced in so each state's Medicaid resolves before the
-# programs gating on it through `ProgramCalculator.program_eligible`. That gate raises
-# rather than reading False when its key is absent, which makes this ordering
-# load-bearing; `screener/tests/test_calc_order.py` asserts it holds.
+# The Medicaid programs are derived rather than listed, so each state's Medicaid
+# resolves before the programs gating on it through `ProgramCalculator.program_eligible`.
+# That gate raises rather than reading False when its key is absent, which makes this
+# ordering load-bearing; `screener/tests/test_calc_order.py` asserts it holds.
 CALC_ORDER = (
     "tanf",
     "ssi",
     "nslp",
     "leap",
     "chp",
-    *STATE_MEDICAID_OPTIONS,
+    *medicaid_program_codes(),
     "emergency_medicaid",
     # il_aca_adults gates on both of these, so they resolve first.
     "il_family_care",
