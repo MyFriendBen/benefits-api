@@ -96,7 +96,7 @@ def patch_hud_client(il_ami_value=50000, fmr_value=2000, il_error=False, fmr_err
         return fmr_value
 
     return patch.multiple(
-        "programs.programs.white_labels.tx.hcv.calculator.hud_client",
+        "programs.programs.white_labels.wa.hcv.calculator.hud_client",
         get_screen_il_ami=Mock(side_effect=il_side_effect),
         get_screen_payment_standard=Mock(side_effect=payment_standard_side_effect),
     )
@@ -408,7 +408,7 @@ class TestWaHcvCalc(TestCase):
         head = make_member(age=35)
         calc = make_calculator(members=[head], household_size=1, gross_income=21600)
         with patch.multiple(
-            "programs.programs.white_labels.tx.hcv.calculator.hud_client",
+            "programs.programs.white_labels.wa.hcv.calculator.hud_client",
             get_screen_il_ami=Mock(return_value=50000),
             get_screen_payment_standard=Mock(side_effect=KeyError("unexpected")),
         ):
@@ -419,7 +419,7 @@ class TestWaHcvCalc(TestCase):
         head = make_member(age=35)
         calc = make_calculator(members=[head], gross_income=21600)
         with patch.multiple(
-            "programs.programs.white_labels.tx.hcv.calculator.hud_client",
+            "programs.programs.white_labels.wa.hcv.calculator.hud_client",
             get_screen_il_ami=Mock(side_effect=KeyError("unexpected")),
             get_screen_payment_standard=Mock(return_value=2000),
         ):

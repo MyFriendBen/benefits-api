@@ -20,7 +20,7 @@ class TestIlHeadStartWiring(TestCase):
 
     The spec's dollar-value scenarios ($17,227 per eligible child) are verified
     against PolicyEngine's IL spending/enrollment parameters — see
-    ``programs/programs/il/head_start/spec.md``.
+    ``programs/programs/cross_white_label/head_start/specs/il.md``.
     """
 
     def test_is_subclass_of_head_start(self):

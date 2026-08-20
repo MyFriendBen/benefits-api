@@ -16,7 +16,7 @@ class MaCmsp(ProgramCalculator):
 
     # $239/month * 12 = $2,868/year per eligible uninsured child.
     # Matches the MassHealth child coverage value used for INFANT, YOUNG_CHILD, and OLDER_CHILD
-    # categories in MaMassHealth.medicaid_categories (programs/programs/ma/pe/member.py).
+    # categories in MaMassHealth.medicaid_categories (programs/programs/cross_white_label/medicaid/ma.py).
     member_amount = 2868
     dependencies = ["age", "health_insurance"]
 

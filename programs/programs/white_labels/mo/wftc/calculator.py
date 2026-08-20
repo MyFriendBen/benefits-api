@@ -11,7 +11,7 @@ class MoWftc(PolicyEngineTaxUnitCalulator):
 
     A thin wrapper: PolicyEngine's ``mo_wftc`` models the whole credit, including the
     eligibility gate, the year-specific rate, and the liability cap net of the property
-    tax credit. See ``programs/programs/mo/wftc/spec.md`` for the rules, the accepted
+    tax credit. See ``programs/programs/white_labels/mo/wftc/spec.md`` for the rules, the accepted
     approximations, and the screener gaps this does not block on.
     """
 

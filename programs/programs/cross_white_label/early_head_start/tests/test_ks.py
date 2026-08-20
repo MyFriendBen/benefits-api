@@ -17,7 +17,7 @@ class TestKsEarlyHeadStartWiring(TestCase):
 
     The spec's dollar-value scenarios ($13,323 per eligible individual) are verified
     end-to-end against the live PolicyEngine API — see
-    ``programs/programs/ks/early_head_start/spec.md``.
+    ``programs/programs/cross_white_label/early_head_start/specs/ks.md``.
     """
 
     def test_pe_inputs_includes_ks_state_code(self):

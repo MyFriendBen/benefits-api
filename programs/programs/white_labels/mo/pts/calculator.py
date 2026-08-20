@@ -8,7 +8,7 @@ class MoPts(PolicyEngineTaxUnitCalulator):
     """
     Missouri Property Tax Credit, the "Circuit Breaker".
 
-    See ``programs/programs/mo/pts/spec.md`` for the rule and the scenarios. PolicyEngine
+    See ``programs/programs/white_labels/mo/pts/spec.md`` for the rule and the scenarios. PolicyEngine
     models it in full, so this supplies inputs and reads the result.
 
     Six inputs replace or supplement the usual ones, each because a shared dependency sends

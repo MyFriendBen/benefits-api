@@ -5,7 +5,7 @@ Payload and wiring tests for ``MoPts`` / ``mo_pts`` — the Missouri Property Ta
 These assert what *we* send PolicyEngine and how the calculator is registered, by
 inspecting the request rather than calling out. The spec's Test Scenarios 1–22 are
 asserted end to end against PolicyEngine in
-``programs/programs/mo/pts/tests/test_mo_pts.py``, one VCR integration test per scenario.
+``programs/programs/white_labels/mo/pts/tests/test_mo_pts.py``, one VCR integration test per scenario.
 
 The split is deliberate. Six inputs depart from the usual set, each because a shared
 dependency delivers the right dollars to a PolicyEngine variable this formula does not

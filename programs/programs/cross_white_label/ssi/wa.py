@@ -28,7 +28,7 @@ class WaSsi(Ssi):
     one layer up via `Screen.has_benefit("wa_ssi")`, which reads from the
     `CurrentBenefit` join table.
 
-    See `programs/programs/wa/ssi/spec.md` for the full eligibility criteria,
+    See `programs/programs/cross_white_label/ssi/specs/wa.md` for the full eligibility criteria,
     PolicyEngine variable mapping, and the 15 reference test scenarios.
     """
 

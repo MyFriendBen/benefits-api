@@ -17,7 +17,7 @@ class TestWaEitc(TestCase):
     `wa_working_families_tax_credit` variable and does need the state code.
 
     The calculator's own properties are asserted once in
-    `programs/programs/federal/pe/tests/test_tax.py`.
+    `programs/programs/cross_white_label/eitc/tests/test_federal.py`.
     """
 
     def test_is_the_federal_calculator_with_nothing_added(self):

@@ -23,7 +23,7 @@ class WaTanf(Tanf):
     `legal_status_required`; `wa_show_all_cash_assistance_programs` is set to
     True to bypass PE's per-member immigration check and avoid double-filtering.
 
-    See programs/programs/wa/tanf/spec.md for full eligibility criteria and
+    See programs/programs/cross_white_label/tanf/specs/wa.md for full eligibility criteria and
     the known gross-income-approximation limitation.
     """
 

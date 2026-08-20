@@ -11,7 +11,7 @@ class TestTxCtc(TestCase):
     The federal CTC has no Texas variance, so the slug maps to the shared class
     with no TX subclass. Its own properties (``pe_name``, ``pe_outputs``, the input
     set, and the absence of a state code) are asserted once in
-    ``programs/programs/federal/pe/tests/test_tax.py``.
+    ``programs/programs/cross_white_label/ctc/tests/test_federal.py``.
     """
 
     def test_is_the_federal_calculator_with_nothing_added(self):
