@@ -368,17 +368,8 @@ def update_navigators(
 
 
 def medicaid_program_codes() -> tuple:
-    """Every program code backed by a `Medicaid` calculator.
-
-    Read off the class hierarchy rather than listed, because a list is the bug this
-    ordering exists to prevent: the hand-maintained version omitted ma_mass_health and
-    wa_apple_health_medicaid, so an MA or WA program gating on its own Medicaid would have
-    found no slot here and raised DependencyError — vanishing from results rather than
-    erroring. A new state's Medicaid is ordered the day its calculator is written.
-
-    Includes the narrower members of the family (ma_mass_health_limited, TX's four). They
-    are Medicaid rows too, and resolving them early costs nothing.
-    """
+    """Every program code backed by a `Medicaid` calculator, including the narrower members
+    of the family (`ma_mass_health_limited`, TX's four)."""
 
     # __subclasses__() only sees imported classes. The `all_calculators` import at the top
     # of this module builds the PolicyEngine registry eagerly, and building it walks every
