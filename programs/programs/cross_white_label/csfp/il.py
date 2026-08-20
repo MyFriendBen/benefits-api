@@ -1,5 +1,4 @@
 from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
-from programs.framework.mixins import IlTransportationMixin
 
 
 class IlCommoditySupplementalFoodProgram(ProgramCalculator):

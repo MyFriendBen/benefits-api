@@ -26,7 +26,7 @@ class TxChip(PolicyEngineMembersCalculator):
     # NOTE: This feels like it belongs in member_eligible, but due to the PolicyEngineCalculator.member_eligible
     # implementation (which sets both MemberEligibilty.eligible and confusingly MemberEligibility.value), this turned
     # out to be the lesser of two evils. It also follows an established pattern for using business logic to act on PE's
-    # results (see: benefits-be/programs/programs/co/pe/member.py#L74).
+    # results (see: benefits-be/programs/programs/cross_white_label/medicaid/chip/co.py#L74).
     def member_value(self, member):
         """
         Returns the CHIP benefit value for this member, applying additional insurance eligibility rules.

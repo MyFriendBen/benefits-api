@@ -1,6 +1,5 @@
 """IL Medicaid Presumptive Eligibility (pregnancy)."""
 
-import programs.programs.federal.pe.member as federal_member
 import programs.framework.pe_dependencies as pe_dependency
 import programs.framework.pe_dependencies.household as household_dependency
 import programs.framework.pe_dependencies.member as member_dependency

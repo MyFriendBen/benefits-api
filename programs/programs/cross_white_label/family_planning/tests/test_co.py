@@ -28,6 +28,7 @@ from programs.framework.base import Eligibility, MemberEligibility, ProgramCalcu
 from programs.programs.cross_white_label.family_planning.co import FamilyPlanningServices
 from programs.util import Dependencies, DependencyError
 from screener.models import Insurance
+from programs.framework.pe_dependencies import member
 
 # Unsaved on purpose: `get_limit` only reads `self.period` and the cached FPL table.
 FPL_2025 = FederalPoveryLimit(year="2025", period="2025")

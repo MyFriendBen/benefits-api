@@ -23,6 +23,7 @@ from programs.programs.cross_white_label.medicaid.disability.co_adult import (
     MedicaidAdultWithDisability,
 )
 from programs.util import Dependencies
+from programs.framework.pe_dependencies import member
 
 FPL_2025 = _FPL_DEFAULTS["2025"]
 

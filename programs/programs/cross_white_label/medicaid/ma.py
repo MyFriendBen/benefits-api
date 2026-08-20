@@ -1,7 +1,7 @@
 """MaMassHealth."""
 
 from programs.programs.cross_white_label.medicaid.base import Medicaid
-from programs.programs.federal.pe.member import Chip
+from programs.programs.cross_white_label.medicaid.chip.base import Chip
 from screener.models import HouseholdMember
 import programs.framework.pe_dependencies as dependency
 

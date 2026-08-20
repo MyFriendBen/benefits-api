@@ -38,6 +38,7 @@ from programs.programs.cross_white_label.msp.base import Msp
 from programs.programs.cross_white_label.head_start.base import HeadStart
 from programs.programs.cross_white_label.early_head_start.base import EarlyHeadStart
 from programs.programs.cross_white_label.aca.base import Aca
+from programs.programs.cross_white_label.medicaid.chip.base import Chip
 
 
 class WalkClassesTests(SimpleTestCase):
@@ -266,7 +267,6 @@ class AbstractDeclarationTests(SimpleTestCase):
     def test_the_family_bases_declare_themselves_abstract(self):
         from programs.programs.cross_white_label.ccdf.base import Ccdf
         from programs.programs.cross_white_label.medicaid.base import Medicaid
-        from programs.programs.federal.pe.member import Chip
 
         for cls in (Medicaid, Chip, HeadStart, EarlyHeadStart, Ccdf, Msp, Aca, Cdcc):
             with self.subTest(cls=cls.__name__):
@@ -301,7 +301,7 @@ class ModuleWalkTests(SimpleTestCase):
         package import and never reach the per-module loop this guards.
         """
         real_import = importlib.import_module
-        broken = "programs.programs.tx.pe.tax"
+        broken = "programs.programs.cross_white_label.snap.tx"
 
         def fail_on_one(name, *args, **kwargs):
             if name == broken:

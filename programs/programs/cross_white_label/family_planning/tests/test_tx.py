@@ -18,6 +18,7 @@ from unittest.mock import Mock
 
 from programs.programs.cross_white_label.family_planning.tx import TxFpp
 from programs.framework.base import ProgramCalculator, Eligibility, MemberEligibility
+from programs.framework.pe_dependencies import member
 
 
 def make_member(age=30, medicaid=False, emergency_medicaid=False, employer=False, none=True, earned=0):
