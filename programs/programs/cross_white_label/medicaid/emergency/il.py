@@ -11,7 +11,7 @@ class IlEmergencyMedicaid(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility):
         # Must qualify for Medicaid
-        e.condition(self.medicaid_eligible("il_medicaid"))
+        e.condition(self.program_eligible("il_medicaid"))
 
     def member_eligible(self, e: MemberEligibility):
         member = e.member

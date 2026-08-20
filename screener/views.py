@@ -372,7 +372,7 @@ def update_navigators(
 # calculated. Programs not listed here calculate last, in any order.
 #
 # STATE_MEDICAID_OPTIONS is spliced in so each state's Medicaid resolves before the
-# programs gating on it through `ProgramCalculator.medicaid_eligible`. That gate raises
+# programs gating on it through `ProgramCalculator.program_eligible`. That gate raises
 # rather than reading False when its key is absent, which makes this ordering
 # load-bearing; `screener/tests/test_calc_order.py` asserts it holds.
 CALC_ORDER = (
@@ -383,6 +383,10 @@ CALC_ORDER = (
     "chp",
     *STATE_MEDICAID_OPTIONS,
     "emergency_medicaid",
+    # il_aca_adults gates on both of these, so they resolve first.
+    "il_family_care",
+    "il_moms_and_babies",
+    "il_aca_adults",
     "wic",
     "andcs",
     "cesn_leap",

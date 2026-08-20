@@ -29,7 +29,7 @@ class NCFamilyPlanningServices(ProgramCalculator):
             NCFamilyPlanningServices.medicaid_fpl_limit * fpl.get_limit(self.screen.household_size)
         )
         if gross_income < income_limit_for_full_medicaid:
-            e.condition(not self.medicaid_eligible("nc_medicaid"), messages.must_not_have_benefit("Medicaid"))
+            e.condition(not self.program_eligible("nc_medicaid"), messages.must_not_have_benefit("Medicaid"))
 
     def member_eligible(self, e: MemberEligibility):
         member = e.member

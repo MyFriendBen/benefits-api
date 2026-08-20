@@ -14,7 +14,6 @@ class EnergyCalculatorEnergyEbt(ProgramCalculator):
         e.condition(income <= income_limit)
 
         # no LEAP
-        cesn_leap = self.data.get("cesn_leap")
         already_has_leap = self.screen.has_benefit("cesn_leap")
-        can_get_leap = already_has_leap or (cesn_leap is not None and cesn_leap.eligible)
+        can_get_leap = already_has_leap or self.program_eligible("cesn_leap")
         e.condition(not can_get_leap)

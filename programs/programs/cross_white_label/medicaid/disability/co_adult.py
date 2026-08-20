@@ -16,7 +16,7 @@ class MedicaidAdultWithDisability(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility):
         # Does not qualify for Medicaid
-        e.condition(not self.medicaid_eligible("co_medicaid"), messages.must_not_have_benefit("Medicaid"))
+        e.condition(not self.program_eligible("co_medicaid"), messages.must_not_have_benefit("Medicaid"))
 
     def member_eligible(self, e: MemberEligibility):
         member = e.member

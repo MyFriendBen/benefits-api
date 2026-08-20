@@ -19,18 +19,16 @@ class AcaAdults(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
 
     def household_eligible(self, e: Eligibility):
         # Must have base Medicaid eligibility
-        e.condition(self.medicaid_eligible("il_medicaid"), messages.must_have_benefit("Medicaid"))
+        e.condition(self.program_eligible("il_medicaid"), messages.must_have_benefit("Medicaid"))
 
         # Check income against 138% FPL (includes 5% disregard)
         self.check_fpl_income(e, 1.38)
 
         # Must NOT be eligible for FamilyCare
-        family_care_eligible = "il_family_care" in self.data and self.data["il_family_care"].eligible
-        e.condition(not family_care_eligible, messages.must_not_have_benefit("FamilyCare"))
+        e.condition(not self.program_eligible("il_family_care"), messages.must_not_have_benefit("FamilyCare"))
 
         # Must NOT be eligible for Moms & Babies
-        moms_and_babies_eligible = "il_moms_and_babies" in self.data and self.data["il_moms_and_babies"].eligible
-        e.condition(not moms_and_babies_eligible, messages.must_not_have_benefit("Moms & Babies"))
+        e.condition(not self.program_eligible("il_moms_and_babies"), messages.must_not_have_benefit("Moms & Babies"))
 
     def member_eligible(self, e: MemberEligibility):
         member = e.member

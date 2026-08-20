@@ -25,7 +25,7 @@ class NcEmergencyMedicaid(ProgramCalculator):
                 fpl_percent = 2.11
 
         # Medicaid eligibility
-        e.condition(self.medicaid_eligible("nc_medicaid"), messages.must_have_benefit("Medicaid"))
+        e.condition(self.program_eligible("nc_medicaid"), messages.must_have_benefit("Medicaid"))
 
         # Income
         fpl = self.program.year

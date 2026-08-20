@@ -189,18 +189,18 @@ class ProgramCalculator:
 
         return eligibility
 
-    def medicaid_eligible(self, program_code: str) -> bool:
+    def program_eligible(self, program_code: str) -> bool:
         """
-        Whether the household is eligible for ``program_code``, the Medicaid program this
-        calculator gates on. Callers name their own state's program, so the dependency is
-        visible in the file that has it.
+        Whether the household is eligible for ``program_code``, another program this one
+        gates on. Callers name the program, so the dependency is visible in the file that
+        has it.
 
         ``self.data`` holds only the programs already calculated, so this relies on
-        `screener.views.CALC_ORDER` placing Medicaid first. An absent key means "not
-        calculated", which is a different answer from "calculated, and not eligible" — so
-        it raises instead of returning False. ``DependencyError`` is what the eligibility
-        loop already catches for an uncalculable program, so the dependent program is left
-        out of the results rather than reported ineligible on a guess.
+        `screener.views.CALC_ORDER` listing ``program_code`` first. An absent key means
+        "not calculated", which is a different answer from "calculated, and not eligible" —
+        so it raises instead of returning False. ``DependencyError`` is what the
+        eligibility loop already catches for an uncalculable program, so the dependent
+        program is left out of the results rather than reported ineligible on a guess.
         """
         if program_code not in self.data:
             raise DependencyError()

@@ -14,7 +14,7 @@ class FamilyCare(ProgramCalculator, IlMedicaidFplIncomeCheckMixin):
 
     def household_eligible(self, e: Eligibility):
         # Must have base Medicaid eligibility
-        e.condition(self.medicaid_eligible("il_medicaid"), messages.must_have_benefit("Medicaid"))
+        e.condition(self.program_eligible("il_medicaid"), messages.must_have_benefit("Medicaid"))
 
         # Check income against 138% FPL (includes 5% disregard)
         self.check_fpl_income(e, self.fpl_percent)

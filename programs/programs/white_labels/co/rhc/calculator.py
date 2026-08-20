@@ -9,7 +9,7 @@ class ReproductiveHealthCare(ProgramCalculator):
 
     def household_eligible(self, e: Eligibility):
         # Medicade eligibility
-        e.condition(self.medicaid_eligible("co_medicaid"), messages.must_have_benefit("Medicaid"))
+        e.condition(self.program_eligible("co_medicaid"), messages.must_have_benefit("Medicaid"))
 
     def member_eligible(self, e: MemberEligibility):
         member = e.member

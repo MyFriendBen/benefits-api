@@ -295,7 +295,7 @@ class TestSpecScenarios(TestCase):
 
     def test_medicaid_mutex_reads_ks_medicaid_key(self):
         # Structural coverage for the Criterion-8 mutex (household_eligible ->
-        # self.medicaid_eligible("ks_medicaid")). Take an otherwise fully-eligible adult
+        # self.program_eligible("ks_medicaid")). Take an otherwise fully-eligible adult
         # and toggle only the regular-Medicaid result. This is the branch the QA gap
         # exposed: a household that qualifies for regular Medicaid is excluded from
         # Working Healthy.
