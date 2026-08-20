@@ -1068,3 +1068,44 @@ class SelfEmploymentIncomeBeforeLsrDependency(IncomeDependency):
 
 class WaAppleHealthKidsEligible(Member):
     field = "wa_apple_health_kids_eligible"
+
+
+class NonSsiBankAccountAssetsDependency(Member):
+    """
+    The household's reported liquid assets, attributed only to members who do not report
+    SSI — the person-level half of PolicyEngine's ``spm_unit_cash_assets``
+    (``adds = ["bank_account_assets", "stock_assets", "bond_assets"]``).
+
+    Missouri excludes an SSI recipient's resources from the TANF resource test
+    (13 CSR 40-2.310(1)(F); DSS Manual 0210.005.10 — "Exclude the expenses, income, and
+    resources of the SSI, SP, or SAB participants"). PolicyEngine implements that
+    exclusion in ``mo_tanf_countable_resources``, but it can only fire on assets
+    attributed to people: the formula subtracts each SSI recipient's person-level
+    components from the unit total. A household that sends only the
+    ``spm_unit_cash_assets`` aggregate has nothing to subtract, so the exclusion never
+    applies and the SSI member's share counts against the limit.
+
+    ``Screen.household_assets`` is a single household figure with no per-member ownership,
+    so the split cannot be read from the screener. Attributing the whole amount to the
+    non-SSI members is the assumption the exclusion asks for — it treats none of the
+    aggregate as the excluded member's, which is what Missouri does with resources it has
+    identified as theirs. Where no member reports SSI this reproduces the aggregate
+    exactly, so it is a no-op for every household the exclusion does not concern.
+
+    Sent instead of ``spm.CashAssetsDependency``, never alongside it: the two write
+    different halves of the same PolicyEngine total, and sending both would count the
+    aggregate twice.
+    """
+
+    field = "bank_account_assets"
+
+    def value(self):
+        if member_reports_ssi_amount(self.member):
+            return 0
+
+        assets = self.screen.household_assets or 0
+        non_ssi_members = [m for m in self.screen.household_members.all() if not member_reports_ssi_amount(m)]
+        if not non_ssi_members:
+            return 0
+
+        return int(assets) / len(non_ssi_members)
