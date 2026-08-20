@@ -218,8 +218,12 @@ class ProgramCalculator:
         drop the caller from results, even when an earlier program in the list already
         answered yes.
 
-        Use `program_eligible` for a single named dependency, where absence is a real
-        problem rather than one of several ways to qualify.
+        Only for a list the caller must *qualify* through. Treating absence as "no" is the
+        conservative reading there — the household loses a way in it may not have had. On an
+        *exclusion* it is the permissive one: absence would read as "not eligible for the
+        thing that disqualifies them", so the program is offered to someone who should have
+        been screened out. Use `program_eligible` and let it raise for those, which is why
+        `cesn_energy_ebt` and `cesn_eoccip` gate on `cesn_leap` strictly.
         """
         for program_code in program_codes:
             entry = self.data.get(program_code)
