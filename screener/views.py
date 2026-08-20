@@ -8,7 +8,6 @@ from integrations.clients.google_places import GooglePlacesClient
 from integrations.services.communications import MessageUser
 from integrations.clients.policyengine import versions as pe_versions
 from programs.models import Referrer
-from programs.framework.helpers import STATE_MEDICAID_OPTIONS
 from integrations.clients.policyengine.registry import all_calculators
 from programs.urgent_needs.base import UrgentNeedFunction
 from django.db import transaction
@@ -366,6 +365,16 @@ def update_navigators(
         navigators = referrer_prioritization(eligibility_filtered, primary_navs)
         data[idx]["navigators"] = [serialized_navigator(navigator) for navigator in navigators]
 
+
+# Each state's Medicaid program. Spliced into CALC_ORDER below so a state's Medicaid
+# resolves before the programs gating on it; a state missing from here reserves no slot,
+# and its dependents raise DependencyError instead of being calculated.
+STATE_MEDICAID_OPTIONS = (
+    "co_medicaid",
+    "nc_medicaid",
+    "il_medicaid",
+    "ks_medicaid",
+)
 
 # The order programs are calculated in. A program that reads another program's result
 # out of `data` must be listed after it, because `data` holds only what has already been

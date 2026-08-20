@@ -19,13 +19,9 @@ from typing import Optional
 
 from django.test import SimpleTestCase
 
-from programs.framework.helpers import STATE_MEDICAID_OPTIONS
-from screener.views import CALC_ORDER
+from screener.views import CALC_ORDER, STATE_MEDICAID_OPTIONS
 
 PROGRAMS_ROOT = Path(__file__).resolve().parents[2] / "programs" / "programs"
-
-# self.program_eligible("co_medicaid")
-GATE_CALL = re.compile(r"""self\.program_eligible\(\s*["']([a-z0-9_]+)["']\s*\)""")
 
 
 def _registered_program_codes() -> set:
@@ -38,18 +34,82 @@ def _registered_program_codes() -> set:
     return set(calculators) | set(all_calculators)
 
 
-def _program_code(source: str) -> Optional[str]:
-    """The `program_code` a calculator module declares, if it declares one."""
-    for node in ast.walk(ast.parse(source)):
-        if not isinstance(node, ast.ClassDef):
+def _string_assignments(class_node: ast.ClassDef) -> dict:
+    """Class attributes assigned a plain string, or a list/tuple of plain strings.
+
+    `program_eligible` is called two ways: with a literal, and with a loop variable over
+    a class attribute holding a list of codes (CESN's `presumptive_eligibility`). Both
+    are dependencies and both must be discovered, or the loop form is silently unguarded.
+    """
+    values = {}
+    for stmt in class_node.body:
+        if not isinstance(stmt, ast.Assign):
             continue
-        for stmt in node.body:
-            if (
-                isinstance(stmt, ast.Assign)
-                and any(getattr(t, "id", None) == "program_code" for t in stmt.targets)
-                and isinstance(stmt.value, ast.Constant)
-            ):
-                return stmt.value.value
+        names = [t.id for t in stmt.targets if isinstance(t, ast.Name)]
+        if not names:
+            continue
+        node = stmt.value
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            resolved = [node.value]
+        elif isinstance(node, (ast.List, ast.Tuple)):
+            resolved = [e.value for e in node.elts if isinstance(e, ast.Constant) and isinstance(e.value, str)]
+            # A starred or computed element means the list is not fully known here.
+            if len(resolved) != len(node.elts):
+                continue
+        else:
+            continue
+        for name in names:
+            values[name] = resolved
+    return values
+
+
+def _gate_arguments(class_node: ast.ClassDef, attrs: dict) -> list:
+    """Every program code passed to `self.program_eligible(...)` inside this class.
+
+    Resolves a literal argument directly, and a loop variable back to the class attribute
+    it iterates. An argument that resolves to neither is reported so it cannot pass
+    unnoticed.
+    """
+    codes, unresolved = [], []
+    # Loop variable -> the attribute it iterates: `for program in self.presumptive_eligibility`
+    loop_sources = {}
+    for node in ast.walk(class_node):
+        if isinstance(node, ast.For) and isinstance(node.target, ast.Name):
+            it = node.iter
+            if isinstance(it, ast.Attribute) and it.attr in attrs:
+                loop_sources[node.target.id] = it.attr
+            elif isinstance(it, ast.Name) and it.id in attrs:
+                loop_sources[node.target.id] = it.id
+
+    for node in ast.walk(class_node):
+        if not (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "program_eligible"
+            and node.args
+        ):
+            continue
+        arg = node.args[0]
+        if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+            codes.append(arg.value)
+        elif isinstance(arg, ast.Name) and arg.id in loop_sources:
+            codes.extend(attrs[loop_sources[arg.id]])
+        elif isinstance(arg, ast.Attribute) and arg.attr in attrs:
+            codes.extend(attrs[arg.attr])
+        else:
+            unresolved.append(ast.dump(arg))
+    return codes, unresolved
+
+
+def _program_code(class_node: ast.ClassDef) -> Optional[str]:
+    """The `program_code` a calculator class declares, if it declares one."""
+    for stmt in class_node.body:
+        if (
+            isinstance(stmt, ast.Assign)
+            and any(getattr(t, "id", None) == "program_code" for t in stmt.targets)
+            and isinstance(stmt.value, ast.Constant)
+        ):
+            return stmt.value.value
     return None
 
 
@@ -60,19 +120,60 @@ def find_program_gates():
         if "/tests/" in path.as_posix():
             continue
         source = path.read_text()
-        depends_on = GATE_CALL.findall(source)
-        if not depends_on:
+        if "program_eligible" not in source:
             continue
-        gating_code = _program_code(source)
-        for upstream_code in sorted(set(depends_on)):
-            gates.append((path, gating_code, upstream_code))
+        for node in ast.walk(ast.parse(source)):
+            if not isinstance(node, ast.ClassDef):
+                continue
+            attrs = _string_assignments(node)
+            codes, _ = _gate_arguments(node, attrs)
+            gating_code = _program_code(node)
+            for upstream_code in sorted(set(codes)):
+                gates.append((path, gating_code, upstream_code))
     return gates
+
+
+def find_unresolved_gate_arguments():
+    """Call sites whose argument this test could not resolve to a program code."""
+    unresolved = []
+    for path in PROGRAMS_ROOT.rglob("*.py"):
+        if "/tests/" in path.as_posix():
+            continue
+        source = path.read_text()
+        if "program_eligible" not in source:
+            continue
+        for node in ast.walk(ast.parse(source)):
+            if not isinstance(node, ast.ClassDef):
+                continue
+            _, bad = _gate_arguments(node, _string_assignments(node))
+            for dump in bad:
+                unresolved.append((path, dump))
+    return unresolved
 
 
 class TestProgramGatesAreDiscoverable(SimpleTestCase):
     def test_gates_exist(self):
         """A regex that matched nothing would make every test below vacuously pass."""
         self.assertNotEqual(find_program_gates(), [], "found no self.program_eligible() call sites")
+
+    def test_every_gate_argument_resolves_to_a_program_code(self):
+        """A call this test cannot resolve is a call it cannot guard. Failing here is the
+        signal to teach `_gate_arguments` the new form, not to skip the call site."""
+        unresolved = find_unresolved_gate_arguments()
+        self.assertEqual(
+            unresolved,
+            [],
+            f"program_eligible() called with an argument this test cannot resolve: {unresolved}",
+        )
+
+    def test_loop_form_call_sites_are_discovered(self):
+        """The CESN affordability programs pass a loop variable over
+        `presumptive_eligibility` rather than a literal. Regex-based discovery missed
+        these, leaving them unguarded; this pins that they are found."""
+        found = {(g, u) for _, g, u in find_program_gates()}
+        self.assertIn(("cesn_xceleap", "cesn_leap"), found)
+        self.assertIn(("cesn_xceleap", "cesn_cowap"), found)
+        self.assertIn(("cesn_bheap", "cesn_care"), found)
 
     def test_every_gating_calculator_declares_a_program_code(self):
         for path, gating_code, _ in find_program_gates():

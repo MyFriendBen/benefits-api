@@ -28,8 +28,7 @@ class EnergyCalculatorGasAffordabilityBlackHills(ProgramCalculator):
         # eligible for another program
         has_another_program = False
         for program in self.presumptive_eligibility:
-            entry = self.data.get(program)
-            if entry is not None and entry.eligible:
+            if self.program_eligible(program):
                 has_another_program = True
         e.condition(has_another_program)
 

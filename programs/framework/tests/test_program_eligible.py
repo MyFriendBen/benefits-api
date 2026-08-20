@@ -59,7 +59,7 @@ class TestProgramEligibleRaisesRatherThanGuessing(SimpleTestCase):
 
     def test_states_the_old_tuple_omitted_are_readable(self):
         """ma_mass_health and wa_apple_health_medicaid were absent from
-        STATE_MEDICAID_OPTIONS, so the old helper returned False for them no matter the
+        the old helper's state list, so it returned False for them no matter the
         household. Nothing about them is special now."""
         for code in ("ma_mass_health", "wa_apple_health_medicaid"):
             with self.subTest(code=code):
